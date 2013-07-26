@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Ti hcp (hexagonal axis)</chemical_name_common>
+	<space_group_IT_number>194</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.29508</a>
+		<b unit="nm">0.29508</b>
+		<c unit="nm">0.46855</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+	<atom_site>
+		<label>Ti001</label>
+		<symbol>Ti</symbol>
+		<fract_xyz>0.33333 0.66667 0.25</fract_xyz>
+		<DebyeTemperature unit="K">420</DebyeTemperature>
+	</atom_site>
+	<citation>Wyckoff R W G Second edition. Interscience Publishers, New York, New York, Crystal Structures (1963) 83;
+	R. R. Pawar, and V. T. Deshpande, Acta Crystallogr., 1968, 24A, 316.
+	http://www.webelements.com/titanium/crystal_structure.html;
+	</citation>
+</cif>

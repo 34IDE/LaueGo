@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<diffractometer xmlns="http://sector34.xray.aps.anl.gov/diffractometer" type="fourc">
+	<dateWritten>Thu, Feb 21, 2013</dateWritten>
+	<timeWritten>17:10:03.6 (-6)</timeWritten>
+	<EPOCH start="midnight Jan 1, 1904" unit="sec">3444311404</EPOCH>
+
+	<Detectors Ndetectors="1" last="0">				<!-- Ndetectors, number of detectors defined & last one used -->
+		<Detector N="0">
+			<Npixels>487 195</Npixels>				<!-- Nx,Ny is number of un-binned pixels in full detector -->
+			<size unit="mm">83.764 33.54</size>		<!-- sizeX,sizeY otuside size of full detector -->
+			<R unit="radian">0 0 -1.57079633</R>	<!-- Rotation and translation vector -->
+			<P unit="mm">6.708 2.236 1039.400</P>
+			<timeMeasured>Wed, Feb 20, 2013, 4:27:56 PM</timeMeasured>	<!-- when this geometry was calculated -->
+			<note>Reset to Christian's values</note>
+			<ID>PILATUS 100K, 1-0005, APS</ID>		<!-- unique detector ID -->
+		</Detector>
+	</Detectors>
+</diffractometer>
