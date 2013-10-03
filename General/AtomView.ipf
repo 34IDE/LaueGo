@@ -1,17 +1,17 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.12
+#pragma version = 0.19
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.72
 #include "GizmoZoomTranslate", version>=1.37
 #include "LatticeSym", version>=3.78
 #requiredPackages "LatticeSym;"
-#initFunctionName "Init_AtomView()"
+#initFunctionName "Init_AtomViewLattice()"
 
 // These Constant values can be OverRidden by adding the line in your Main Procedure window.  Don't change this file.
 Constant AtomView_GrayBkg = 0.75	// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
 Constant AtomView_BondLineWidth = 5	// Can OverRide with :OverRide Constant AtomView_BondLineWidth=3
-Constant AtomView_UseCovalent = 0	// Can OverRide with :OverRide Constant AtomView_UseCovalent=1
+Constant AtomView_UseCovalent = 1	// Can OverRide with :OverRide Constant AtomView_UseCovalent=1
 												// turn this flag on to use covalent radius instead of atomic radius.
 Constant AtomView_SphereQuality = 50	// Can OverRide with :OverRide Constant AtomView_SphereQuality=100
 Constant AtomView_UseBlend = -1		// Can OverRide with :OverRide Constant AtomView_UseBlend=1, 0=NoBlend, 1=Blend, -1=Auto
@@ -35,14 +35,35 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	Variable refNum, kind
 	String file,pathName,type,creator
 	if ((kind==1) || (kind==2))		// an experiment (packed or unpacked)
-		Init_AtomView()
+		Init_AtomViewLattice()
 	endif
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
-	Init_AtomView()
+	Init_AtomViewLattice()
 End
 
+
+
+Static Function AtomViewPopMenuProc(pa) : PopupMenuControl		// used in the LatticeSym Panel
+	STRUCT WMPopupAction &pa
+	if (pa.eventCode != 2)
+		return 0
+	endif
+
+	if (strsearch(pa.popStr,"Make Cells of Atoms",0,2)>=0)
+		//	printf "¥MakeCellsOfLattice(NaN,NaN,NaN)\r"
+		MakeCellsOfLattice(NaN,NaN,NaN)
+	elseif (strsearch(pa.popStr,"Gizmo of Atoms",0,2)>=0)
+		printf "¥MakeAtomViewGizmo($\"\")\r"
+		MakeAtomViewGizmo($"")
+	elseif (strsearch(pa.popStr,"Atom Type at Cursor",0,2)>=0)
+		printf "¥ShowAtomViewInfo(1)\r"
+		print ShowAtomViewInfo(1)
+	endif
+
+	return 0
+End
 
 
 
@@ -85,7 +106,11 @@ Static Function/T ShowAtomViewInfo(alert)
 	Variable bondLenMax = NumberByKey("bondLenMax",wNote,"=")
 
 	String str
-	sprintf str, "atom#%d,   %s [Z=%g]\rbond max = %g nm",pnt,type,Z,bondLenMax
+	if (bondLenMax>0)
+		sprintf str, "atom#%d,   %s [Z=%g]\rbond max = %g nm",pnt,type,Z,bondLenMax
+	else
+		sprintf str, "atom#%d,   %s [Z=%g]",pnt,type,Z
+	endif
 
 	if (alert)
 		DoAlert 0,str
@@ -94,6 +119,9 @@ Static Function/T ShowAtomViewInfo(alert)
 End
 
 
+
+//  ============================================================================  //
+//  ==================== Start Make Cell(s) info to Display ====================  //
 
 Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 	Variable Na,Nb,Nc				// number of cells in each direction, default is 1
@@ -110,10 +138,10 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		return $""
 	endif
 
-	if (numtype(Na+Nb+Nc) || Na<1 || Nb<1 || Nc<1)
-		Na = numtype(Na) || Na<1 ? 1 : round(Na)
-		Nb = numtype(Nb) || Nb<1 ? 1 : round(Nb)
-		Nc = numtype(Nc) || Nc<1 ? 1 : round(Nc)
+	if (numtype(Na+Nb+Nc) || Na<0.1 || Nb<0.1 || Nc<0.1)
+		Na = numtype(Na) || Na<0.1 ? 1 : Na
+		Nb = numtype(Nb) || Nb<0.1 ? 1 : Nb
+		Nc = numtype(Nc) || Nc<0.1 ? 1 : Nc
 		Prompt Na,"Number of Cells along a"
 		Prompt Nb,"Number of Cells along b"
 		Prompt Nc,"Number of Cells along c"
@@ -127,7 +155,7 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		if (V_flag)
 			return $""
 		endif
-		printf "MakeCellsOfLattice(%g, %g, %g",Na,Nb,Nc
+		printf "¥MakeCellsOfLattice(%g, %g, %g",Na,Nb,Nc
 		if (numtype(blen)==0 || !ParamIsDefault(blen))
 			printf ", blen=%g",blen
 		endif
@@ -136,9 +164,6 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		endif
 		printf ")\r"
 	endif
-	Na = round(Na)
-	Nb = round(Nb)
-	Nc = round(Nc)
 	GizmoScaleSize = numtype(GizmoScaleSize) || GizmoScaleSize<=0 ? 1 : GizmoScaleSize
 	if (!(Na>0 && Nb>0 && Nc>0 && numtype(Na+Nb+Nc)==0))
 		return $""
@@ -172,9 +197,9 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	Variable Na,Nb,Nc				// number of cells in each direction, default is 1
 	Variable bLen					// maximum distance that gets a bond
 	Variable GizmoScaleSize	// 1 gives nice pictures
-	Na = numtype(Na) || Na<1 ? 1 : round(Na)
-	Nb = numtype(Nb) || Nb<1 ? 1 : round(Nb)
-	Nc = numtype(Nc) || Nc<1 ? 1 : round(Nc)
+	Na = numtype(Na) || Na<=0 ? 1 : Na
+	Nb = numtype(Nb) || Nb<=0 ? 1 : Nb
+	Nc = numtype(Nc) || Nc<=0 ? 1 : Nc
 	bLen = ParamIsDefault(bLen) ? NaN : bLen
 	bLen = bLen>0 ? bLen : NaN
 	GizmoScaleSize = ParamIsDefault(GizmoScaleSize) ? 1 : GizmoScaleSize
@@ -189,7 +214,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	direct[0][0] = xtal.a0;		direct[0][1] = xtal.b0;		direct[0][2] = xtal.c0
 	direct[1][0] = xtal.a1;		direct[1][1] = xtal.b1;		direct[1][2] = xtal.c1
 	direct[2][0] = xtal.a2;		direct[2][1] = xtal.b2;		direct[2][2] = xtal.c2
-	Make/N=3/D/FREE Ns={Na,Nb,Nc}
+	Make/N=3/D/FREE Ns={ceil(Na),ceil(Nb),ceil(Nc)}
 	MatrixOp/FREE/O maxSize0 = maxVal(abs((direct x Ns)))		// find biggest size
 	Variable maxSize=maxSize0[0]
 
@@ -219,7 +244,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 
 	Make/N=4/FREE rgbai
 	String wNote="", atomType
-	Variable rad, m, Zatom, occupy, Natom, Ni
+	Variable rad, m, Zatom, occupy, Natom, Ni, covRad, atomRad
 	for (Natom=0,m=0; m<xtalN; m+=1)					// loop over each atom type
 		Wave atomi=$(atomFldr + "atom"+num2istr(m))
 		if (!WaveExists(atomi))
@@ -228,11 +253,10 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		wNote = note(atomi)
 		Zatom = NumberByKey("Zatom",wNote,"=")
 		Zatom = Zatom>0 ? Zatom : 1
-		if (AtomView_UseCovalent)
-			rad = Element_covRadius(Zatom)/10			// radius in nm (not Angstrom)
-		else
-			rad = Element_atomRadius(Zatom)/10
-		endif
+		covRad = Element_covRadius(Zatom)/10			// covalent radius in nm (not Angstrom)
+		atomRad = Element_atomRadius(Zatom)/10
+		rad = AtomView_UseCovalent && numtype(covRad)==0 ? covRad : atomRad
+		rad = rad>0 ? rad : 2.0							// default radius, probably for trans-uranics
 		occupy = NumberByKey("occupy",wNote,"=")
 		occupy = occupy>=0 ? limit(occupy,0,1) : 1
 		atomType = StringByKey("atomType",wNote,"=")
@@ -240,7 +264,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		rgbai[0,2] = rgb[p]
 		rgbai[3] = occupy*0.5
 
-		Wave xyzi = RepeatOneAtomSet(atomi,Na=Na,Nb=Nb,Nc=Nc)
+		Wave xyzi = RepeatOneAtomSet(atomi,Na,Nb,Nc)
 		if (!WaveExists(xyzi))
 			continue
 		endif
@@ -288,8 +312,17 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
 	wNote = ReplaceNumberByKey("Natom",wNote,Natom,"=")
 	String str
-	sprintf str,"%d %d %d",Na,Nb,Nc
+	sprintf str,"%g %g %g",Na,Nb,Nc
 	wNote = ReplaceStringByKey("Nabc",wNote,str,"=")
+
+	Make/N=3/D/FREE a={xtal.a0,xtal.a1,xtal.a2}, b={xtal.b0,xtal.b1,xtal.b2}, c={xtal.c0,xtal.c1,xtal.c2}
+	a = abs(a)<1e-12 ? 0 : a
+	b = abs(b)<1e-12 ? 0 : b
+	c = abs(c)<1e-12 ? 0 : c
+	wNote = ReplaceStringByKey("aVec",wNote,vec2str(a,bare=1,sep=","),"=")
+	wNote = ReplaceStringByKey("bVec",wNote,vec2str(b,bare=1,sep=","),"=")
+	wNote = ReplaceStringByKey("cVec",wNote,vec2str(c,bare=1,sep=","),"=")
+
 	if (blen>0)
 		wNote = ReplaceNumberByKey("bondLenMax",wNote,blen,"=")
 	endif
@@ -326,15 +359,12 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 End
 
 
-Static Function/WAVE RepeatOneAtomSet(atomi,[Na,Nb,Nc])
+Static Function/WAVE RepeatOneAtomSet(atomi,Na,Nb,Nc)
 	Wave atomi						// these are RELATIVE coordinates, assumed in range [0,1)
 	Variable Na,Nb,Nc				// number of cells in each direction, default is 1
-	Na = ParamIsDefault(Na) ? 1 : Na
-	Nb = ParamIsDefault(Nb) ? 1 : Nb
-	Nc = ParamIsDefault(Nc) ? 1 : Nc
-	Na = numtype(Na) || Na<1 ? 1 : round(Na)
-	Nb = numtype(Nb) || Nb<1 ? 1 : round(Nb)
-	Nc = numtype(Nc) || Nc<1 ? 1 : round(Nc)
+	Na = numtype(Na) || Na<0.1 ? 1 : Na
+	Nb = numtype(Nb) || Nb<0.1 ? 1 : Nb
+	Nc = numtype(Nc) || Nc<0.1 ? 1 : Nc
 
 	Variable Ni=DimSize(atomi,0)
 	if (Ni<1)
@@ -346,9 +376,9 @@ Static Function/WAVE RepeatOneAtomSet(atomi,[Na,Nb,Nc])
 
 	Make/N=3/D/FREE ahat={1,0,0}, bhat={0,1,0}, chat={0,0,1}, v
 	Variable ia,ib,ic, i
-	for (N=0,ic=0; ic<=Nc; ic+=1)
-		for (ib=0; ib<=Nb; ib+=1)
-			for (ia=0; ia<=Na; ia+=1)
+	for (N=0,ic=0; ic<=ceil(Nc); ic+=1)
+		for (ib=0; ib<=ceil(Nb); ib+=1)
+			for (ia=0; ia<=ceil(Na); ia+=1)
 				for (i=0;i<Ni;i+=1)	// loop over each atom in atomi
 					v = atomi[i][p] + ia*ahat[p] + ib*bhat[p] + ic*chat[p]
 					if (v[0]<=Na && v[1]<=Nb && v[2]<=Nc)	// keep this atom
@@ -376,9 +406,9 @@ Static Function/WAVE MakeCellOutline(prefix,xtal,[Na,Nb,Nc,name])	// makes a giz
 	Na = ParamIsDefault(Na) ? 1 : Na
 	Nb = ParamIsDefault(Nb) ? 1 : Nb
 	Nc = ParamIsDefault(Nc) ? 1 : Nc
-	Na = numtype(Na) || Na<1 ? 1 : round(Na)
-	Nb = numtype(Nb) || Nb<1 ? 1 : round(Nb)
-	Nc = numtype(Nc) || Nc<1 ? 1 : round(Nc)
+	Na = numtype(Na) || Na<1 ? 1 : ceil(Na)
+	Nb = numtype(Nb) || Nb<1 ? 1 : ceil(Nb)
+	Nc = numtype(Nc) || Nc<1 ? 1 : ceil(Nc)
 	name = SelectString(ParamIsDefault(name),name,"")
 
 	Make/N=3/FREE/D a,b,c			// the lattice vectors
@@ -539,11 +569,16 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	endif
 	Variable N=DimSize(xyz,0)
 
-	String name = GetWavesDataFolder(xyz,1)+prefix+"_Bonds"
+	String name = GetWavesDataFolder(xyz,2)
+	name = ReplaceString("_XYZ",name,"_Type")
+	Wave/T types = $name
+
+	name = GetWavesDataFolder(xyz,1)+prefix+"_Bonds"
 	Variable Nmax=300, Nbonds=0
 	Make/N=(Nmax,3)/O $name/WAVE=bonds = NaN
 	name += "_Source"
 	Make/N=(Nmax)/O $name/WAVE=bsource = NaN
+	String buniqueName = GetWavesDataFolder(xyz,1)+prefix+"_Bonds_Unique"
 
 	String wNote="waveClass=atomViewBonds;"
 	wNote = ReplaceStringByKey("source",wNote,GetWavesDataFolder(xyz,2),"=")
@@ -586,6 +621,34 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	wNote = ReplaceNumberByKey("Nbonds",wNote,Nbonds,"=")
 	Note/K bonds, wNote
 	Note/K bsource, ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Source","=")
+
+	// Store the unique bonds found here
+	Make/N=(Nb,3)/O/T $buniqueName/WAVE=bunique = ""
+	Make/N=3/D/FREE bvec
+	Variable dup,m,Nu=0		// Nu is number of unique bonds
+	String b0,b1
+	for (i=0,Nu=0; i<Nb; i+=3)
+		b0 = types[bsource[i]]
+		b1 = types[bsource[i+1]]
+
+		for (m=0,dup=0; m<Nu && !dup; m+=1)	// search if b0,b1 already in bunique
+			dup += stringmatch(bunique[m][0],b0) && stringmatch(bunique[m][1],b1)
+			dup += stringmatch(bunique[m][0],b1) && stringmatch(bunique[m][1],b0)
+		endfor
+		if (!dup)										// no match, add this bond
+			bunique[Nu][0] = b0
+			bunique[Nu][1] = b1
+			bvec = bonds[i][p] - bonds[i+1][p]
+			bunique[Nu][2] = num2str(norm(bvec))
+			Nu += 1
+		endif
+	endfor
+	Redimension/N=(Nu,-1) bunique
+	wNote = RemoveByKey("Nbonds",wNote,"=")
+	wNote = ReplaceNumberByKey("NbondsUnique",wNote,Nu,"=")
+	wNote = ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Unique","=")
+	Note/K bunique, wNote
+
 	return bonds
 End
 //	Function test_MakeBondList_blen()
@@ -594,6 +657,28 @@ End
 //	
 //		print "wave name =",NameOfWave(wb)
 //	End
+
+Function PrintComputedBondListXML(fldr)		// print the computed bond list from MakeBondList_blen()
+	String fldr
+	fldr = SelectString(strlen(fldr),"",":")+fldr
+
+	String bList = WaveListClass("atomViewBonds_Unique","*","MINCOLS:3,MAXCOLS:3,TEXT:1",fldr=fldr)
+	if (ItemsInList(bList)==1)
+		Wave/T bunique = $StringFromList(0,bList)
+	endif
+	if (!WaveExists(bunique))
+		print "Could not find *_Bonds_Unique wave"
+		return 1
+	endif
+	Variable i,Nb=DimSize(bunique,0), blen
+	for (i=0;i<Nb;i+=1)
+		blen = str2num(bunique[i][2])
+		printf"\t<bond_chemical unit=\"nm\" n0=\"%s\" n1=\"%s\">%.4g</bond_chemical>\r",bunique[i][0],bunique[i][1],blen
+	endfor
+	return 0
+End
+
+
 
 
 Static Function/WAVE atomRGB(Z,maxVal)		// returns the Jmol color for an atom
@@ -662,9 +747,20 @@ End
 //	printf "dmin = %g\r",dmin
 //End
 
+//  ===================== End Make Cell(s) info to Display =====================  //
+//  ============================================================================  //
 
-Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
+
+
+//  ============================= Start Make Gizmo =============================  //
+//  ============================================================================  //
+
+Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Gizmo
 	Wave xyz
+	Variable showNames					// if true, show a,b,c labels on lattice vectors
+	Variable scaleFactor				// scale up model in Gizmo Window
+	scaleFactor = ParamIsDefault(scaleFactor) ? 1.25 : scaleFactor
+	scaleFactor = numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
 	if(exists("NewGizmo")!=4)			// Do nothing if the Gizmo XOP is not available.
 		DoAlert 0, "Gizmo XOP must be installed"
 		return ""
@@ -739,13 +835,16 @@ Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
 	String desc=StringByKey("desc",wNote,"=")
 	Variable Na,Nb,Nc
 	String title2="", title3=""
-	sscanf StringByKey("Nabc",wNote,"="),"%d %d %d", Na,Nb,Nc
-	if ((Na>1 || Nb>1 || Nc>1) && V_flag==3)
-		sprintf title2,"%d x %d x %d cells",Na,Nb,Nc
+	sscanf StringByKey("Nabc",wNote,"="),"%g %g %g", Na,Nb,Nc
+	if ((Na>0.1 || Nb>0.1 || Nc>0.1) && V_flag==3)
+		sprintf title2,"%g x %g x %g cells",Na,Nb,Nc
 	endif
 	if (bondLenMax>0)
 		sprintf title3,"max bond length = %g nm",bondLenMax
 	endif
+	Wave a = str2vec(StringByKey("aVec",wNote,"="),sep=",")
+	Wave b = str2vec(StringByKey("bVec",wNote,"="),sep=",")
+	Wave c = str2vec(StringByKey("cVec",wNote,"="),sep=",")
 
 	Variable useBlend = AtomView_UseBlend			// 0=no blend, 1=blend, -1=auto
 	Make/N=3/D/FREE xyz0
@@ -757,13 +856,19 @@ Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
 	endfor
 	useBlend = useBlend<0 ? 0 : !(!useBlend)	// if no duplicate atoms found, useBlend=0 (no blending)
 
-	String str, objectList="", attributeList="", titleGroup=""
+	String str, objectList="", attributeList="", titleGroup="", scaleBarGroup=""
 	Execute "NewGizmo/N="+gizName+"/T=\""+gizName+"\" /W=(234,45,992,803)"
 	Execute "ModifyGizmo startRecMacro"
 	titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
 
+	MatrixOP/FREE maxX = maxVal(col(xyz,0))
+	MatrixOP/FREE maxY = maxVal(col(xyz,1))
+	MatrixOP/FREE maxZ = maxVal(col(xyz,2))
+	Variable maxLength = max(max(maxX,maxY),maxZ)
+	scaleBarGroup = AddScaleBarGroup("",maxLength,"nm",scaleFactor=scaleFactor)
+
 	Variable fixedLight = 0
-	if (strlen(titleGroup) && fixedLight)
+	if (strlen(titleGroup+scaleBarGroup) && fixedLight)
 		Execute "AppendToGizmo light=Directional,name=lightFixed"				// this light is fixed (just like title)
 		Execute "ModifyGizmo light=lightFixed property={ position,0,0,-1,0}"
 		Execute "ModifyGizmo light=lightFixed property={ direction,0,0,-1}"
@@ -780,6 +885,29 @@ Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
 //	Execute "ModifyGizmo light=lightMoving property={ diffuse,0,0,0,1}"
 	Execute "ModifyGizmo light=lightMoving property={ ambient,0.866667,0.866667,0.866667,1}"
 	Execute "ModifyGizmo light=lightMoving property={ diffuse,0.866667,0.866667,0.866667,1}"
+
+	if (numpnts(a)==3 && numpnts(b)==3 && numpnts(c)==3)
+		if (ParamIsDefault(showNames))
+			objectList += AddRealLatticeAxesGroup("",a,b,c)+";"
+		else
+			objectList += AddRealLatticeAxesGroup("",a,b,c,showNames=showNames)+";"
+		endif
+	else
+		// ************************* Group Object Start *******************
+		objectList += "groupAxisCue;"
+		Execute "AppendToGizmo group,name=groupAxisCue"
+		Execute "ModifyGizmo currentGroupObject=\"groupAxisCue\""
+		Execute "AppendToGizmo freeAxesCue={0,0,0,1},name=freeAxesCue0"
+		Execute "AppendToGizmo attribute lineWidth=2, name=lineWidthCue"
+		Execute "AppendToGizmo attribute specular={0,0,0,1,1032},name=specularOFF"
+		Execute "AppendToGizmo attribute shininess={0,1032},name=shininessOFF"
+		Execute "ModifyGizmo setDisplayList=0, attribute=lineWidthCue"
+		Execute "ModifyGizmo setDisplayList=1, attribute=specularOFF"
+		Execute "ModifyGizmo setDisplayList=1, attribute=shininessOFF"
+		Execute "ModifyGizmo setDisplayList=2, object=freeAxesCue0"
+		Execute "ModifyGizmo currentGroupObject=\"::\""
+		// ************************* Group Object End *******************
+	endif
 
 	sprintf str,"AppendToGizmo sphere={0.1,%d,%d},name=generalAtom",AtomView_SphereQuality,AtomView_SphereQuality
 	Execute str									// This is a generic atom, with shininess & some specular, no color or size
@@ -805,12 +933,13 @@ Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
 		objectList += "atomViewBonds;"
 		Variable Nbonds = NumberByKey("Nbonds",note(bonds),"=")
 		Variable lineWidth = limit(2+3.9*exp(-0.0046*Nbonds),1,8)
-		lineWidth = numtype(lineWidth) ? 3 : round(lineWidth*100)/100
+		lineWidth = numtype(lineWidth) ? 3 : round(lineWidth*5)/5
 		Execute "AppendToGizmo Path="+GetWavesDataFolder(bonds,2)+",name=atomViewBonds"
 		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColorType,1}"
 		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ lineWidthType,1}"
 		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ lineWidth,"+num2str(lineWidth)+"}"
-		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,0,0,0,1}"
+//		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,0,0,0,1}"
+		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,0.4,0.4,0.4,1}"
 			Execute "ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}"
 		Execute "AppendToGizmo attribute specular={0.1,0.1,0.1,1,1032},name=specularBond0"
 	endif
@@ -846,35 +975,25 @@ Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
 		Execute "ModifyGizmo userString={CubeCorners,\"AtomViewCubeCorners\"}"	// save name of cube corner object
 	endif
 
-	// ************************* Group Object Start *******************
-	objectList += "groupAxisCue"
-	Execute "AppendToGizmo group,name=groupAxisCue"
-	Execute "ModifyGizmo currentGroupObject=\"groupAxisCue\""
-	Execute "AppendToGizmo freeAxesCue={0,0,0,1},name=freeAxesCue0"
-	Execute "AppendToGizmo attribute lineWidth=2, name=lineWidthCue"
-	Execute "AppendToGizmo attribute specular={0,0,0,1,1032},name=specularOFF"
-	Execute "AppendToGizmo attribute shininess={0,1032},name=shininessOFF"
-	Execute "ModifyGizmo setDisplayList=0, attribute=lineWidthCue"
-	Execute "ModifyGizmo setDisplayList=1, attribute=specularOFF"
-	Execute "ModifyGizmo setDisplayList=1, attribute=shininessOFF"
-	Execute "ModifyGizmo setDisplayList=2, object=freeAxesCue0"
-	Execute "ModifyGizmo currentGroupObject=\"::\""
-	// ************************* Group Object End *******************
-
 	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendingFunction"
-
 	sprintf str,"{%g,%g,%g,1}",AtomView_GrayBkg,AtomView_GrayBkg,AtomView_GrayBkg
 	Execute "ModifyGizmo setDisplayList=-1, opName=clearColor0, operation=clearColor, data="+str
 
-	if (strlen(titleGroup))
+	if (strlen(titleGroup+scaleBarGroup))
 		if (fixedLight)
 			Execute "ModifyGizmo setDisplayList=-1, object=lightFixed"
 		endif
-		Execute "ModifyGizmo setDisplayList=-1, object="+titleGroup
+		if (strlen(titleGroup))
+			Execute "ModifyGizmo setDisplayList=-1, object="+titleGroup
+		endif
+		if (strlen(scaleBarGroup))
+			Execute "ModifyGizmo setDisplayList=-1, object="+scaleBarGroup
+		endif
 		Execute "ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform"
 	endif
 	Execute "ModifyGizmo setDisplayList=-1, opName=orthoBase, operation=ortho, data={-2,2,-2,2,-3,3}"
-	Execute "ModifyGizmo setDisplayList=-1, opName=scaleBase, operation=scale, data={1.25,1.25,1.25}"
+	sprintf str, "ModifyGizmo setDisplayList=-1, opName=scaleBase, operation=scale, data={%g,%g,%g}",scaleFactor,scaleFactor,scaleFactor
+	Execute str
 
 	if (useBlend)
 		Execute "ModifyGizmo setDisplayList=-1, attribute=blendingFunction"
@@ -892,6 +1011,12 @@ Function/T MakeAtomViewGizmo(xyz)			// returns name of Gizmo
 	Execute "ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}"
 	Execute "ModifyGizmo autoscaling=1"
 	Execute "ModifyGizmo currentGroupObject=\"\""
+	if (strlen(scaleBarGroup))
+		Execute "ModifyGizmo namedHookStr={ScaleBarHook,\"GizmoUtil#GzimoReSetScaleBarHookProc\"}"
+	endif
+	if (strlen(title2))
+		Execute "ModifyGizmo namedHookStr={ScaleBarHook,\"AtomView#AtomViewGizmoFixHookProc\"}"
+	endif
 	Execute "ModifyGizmo compile"
 	//	Execute "ModifyGizmo showInfo"
 	Execute "ModifyGizmo bringToFront"
@@ -901,22 +1026,210 @@ End
 
 
 
+Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
+	String groupName			// probably "RealLatticeAxesGroup0", If this is empty, then a unique name will be assigned
+	Wave ain,bin,cin
+	String font
+	Variable showNames		// if true, show a,b,c labels on lattice vectors
+	font = SelectString(ParamIsDefault(font),font,"Geneva")
+	font = SelectString(strlen(font),"Geneva",font)
+	showNames = ParamIsDefault(showNames) ? 0 : showNames
+	showNames = numtype(showNames) ? 0 : !(!showNames)
+
+	if (numpnts(ain)!=3 || numpnts(bin)!=3 || numpnts(cin)!=3)
+		return ""
+	endif
+	Duplicate/FREE ain,a
+	Duplicate/FREE bin,b
+	Duplicate/FREE cin,c
+	Variable len=max(norm(a),norm(b))
+	len = max(len,norm(c))
+	a /= len
+	b /= len
+	c /= len
+	Make/N=3/D/FREE aM=-a, bM=-b, cM=-c
+
+	Variable angle
+	Make/N=4/D/FREE rotX, rotY, rotZ
+	Make/N=3/D/FREE zhat={0,0,1}, hat
+	Cross zhat,a
+	Wave W_Cross=W_Cross
+	W_Cross /= norm(a)
+	angle = asin(normalize(W_Cross))*180/PI		// angle (degree)
+	rotX[1,3] = W_Cross[p-1]
+	rotX[0] = angle
+
+	Cross zhat,b
+	W_Cross /= norm(b)
+	angle = asin(normalize(W_Cross))*180/PI		// angle (degree)
+	rotY[1,3] = W_Cross[p-1]
+	rotY[0] = angle
+
+	Cross zhat,c
+	W_Cross /= norm(c)
+	angle = asin(normalize(W_Cross))*180/PI		// angle (degree)
+	rotZ[1,3] = W_Cross[p-1]
+	rotZ[0] = angle
+	KillWaves/Z W_Cross
+
+	if (CheckName(groupName,5))						// invalid groupName passed, create one
+		if (strlen(groupName)<1)						// create a unique group name
+			NewDataFolder/O root:Packages				// ensure Packages exists
+			NewDataFolder/O root:Packages:JZT_GizmoUtility	// ensure geometry exists
+			if (exists("root:Packages:JZT_GizmoUtility:RealLatticeNumber")!=2)
+				Variable/G root:Packages:JZT_GizmoUtility:RealLatticeNumber=-1
+			endif
+			NVAR RealLatticeNumber = root:Packages:JZT_GizmoUtility:RealLatticeNumber
+			RealLatticeNumber = numtype(RealLatticeNumber) ? -1 : limit(round(RealLatticeNumber),-1,Inf)
+			RealLatticeNumber += 1
+			groupName = "RealLatticeAxesGroup"+num2istr(RealLatticeNumber)
+		endif
+		groupName = CleanupName(groupName,0)
+	endif
+	if (CheckName(groupName,5))						// invalid groupName passed, give up
+		return ""
+	endif
+
+	// ************************* Group Object Start *******************
+	Execute "AppendToGizmo group,name="+groupName
+	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
+	Execute "AppendToGizmo cylinder={0.02,0,0.1,25,25},name=cylinderArrow"
+	Execute "AppendToGizmo line={0,0,0,"+vec2str(a,bare=1)+"}, name=lineX"
+	Execute "AppendToGizmo line={0,0,0,"+vec2str(b,bare=1)+"}, name=lineY"
+	Execute "AppendToGizmo line={0,0,0,"+vec2str(c,bare=1)+"}, name=lineZ"
+	if (showNames)
+		Execute "AppendToGizmo string=\"a\",strFont=\""+font+"\",name=string_a"
+		Execute "ModifyGizmo modifyObject=string_a property={Clipped,0}"
+		Execute "AppendToGizmo string=\"b\",strFont=\""+font+"\",name=string_b"
+		Execute "ModifyGizmo modifyObject=string_b property={Clipped,0}"
+		Execute "AppendToGizmo string=\"c\",strFont=\""+font+"\",name=string_c"
+		Execute "ModifyGizmo modifyObject=string_c property={Clipped,0}"
+	endif
+	Execute "AppendToGizmo attribute lineWidth=2, name=lineWidthArrow"
+	Execute "AppendToGizmo attribute color={1,0,0,1},name=colorRed"
+	Execute "AppendToGizmo attribute color={0,1,0,1},name=colorGreen"
+	Execute "AppendToGizmo attribute color={0,0,1,1},name=colorBlue"
+	Execute "AppendToGizmo attribute specular={0,0,0,1,1032},name=specularOFF"
+	Execute "AppendToGizmo attribute shininess={0,1032},name=shininessOFF"
+
+	Execute "ModifyGizmo setDisplayList=0, attribute=shininessOFF"
+	Execute "ModifyGizmo setDisplayList=1, attribute=lineWidthArrow"
+
+
+	Execute "ModifyGizmo setDisplayList=-1, attribute=colorRed"
+	Execute "ModifyGizmo setDisplayList=-1, object=lineX"
+	Execute "ModifyGizmo setDisplayList=-1, opName=translateX, operation=translate, data={"+vec2str(a,bare=1)+"}"
+	Execute "ModifyGizmo setDisplayList=-1, opName=rotateX, operation=rotate, data={"+vec2str(rotX,bare=1)+"}"
+	Execute "ModifyGizmo setDisplayList=-1, object=cylinderArrow"
+	if (showNames)
+		Execute "ModifyGizmo setDisplayList=-1, opName=scale_a, operation=scale, data={0.1,0.1,0.1}"
+		Execute "ModifyGizmo setDisplayList=-1, object=string_a"
+		Execute "ModifyGizmo setDisplayList=-1, opName=scaleM, operation=scale, data={10,10,10}"
+	endif
+	rotX[0] = -rotX[0]
+	Execute "ModifyGizmo setDisplayList=-1, opName=rotateMX, operation=rotate, data={"+vec2str(rotX,bare=1)+"}"
+	Execute "ModifyGizmo setDisplayList=-1, opName=translateMX, operation=translate, data={"+vec2str(aM,bare=1)+"}"
+
+	Execute "ModifyGizmo setDisplayList=-1, attribute=colorGreen"
+	Execute "ModifyGizmo setDisplayList=-1, object=lineY"
+	Execute "ModifyGizmo setDisplayList=-1, opName=translateY, operation=translate, data={"+vec2str(b,bare=1)+"}"
+	Execute "ModifyGizmo setDisplayList=-1, opName=rotateY, operation=rotate, data={-90,1,0,0}"
+	Execute "ModifyGizmo setDisplayList=-1, object=cylinderArrow"
+	if (showNames)
+		Execute "ModifyGizmo setDisplayList=-1, opName=scale_b, operation=scale, data={0.1,0.1,0.1}"
+		Execute "ModifyGizmo setDisplayList=-1, object=string_b"
+		Execute "ModifyGizmo setDisplayList=-1, opName=scaleMb, operation=scale, data={10,10,10}"
+	endif
+	Execute "ModifyGizmo setDisplayList=-1, opName=rotateMY, operation=rotate, data={90,1,0,0}"
+	Execute "ModifyGizmo setDisplayList=-1, opName=translateMY, operation=translate, data={"+vec2str(bM,bare=1)+"}"
+
+	Execute "ModifyGizmo setDisplayList=-1, attribute=colorBlue"
+	Execute "ModifyGizmo setDisplayList=-1, object=lineZ"
+	Execute "ModifyGizmo setDisplayList=-1, opName=translateZ, operation=translate, data={"+vec2str(c,bare=1)+"}"
+	Execute "ModifyGizmo setDisplayList=-1, object=cylinderArrow"
+	if (showNames)
+		Execute "ModifyGizmo setDisplayList=-1, opName=scale_c, operation=scale, data={0.1,0.1,0.1}"
+		Execute "ModifyGizmo setDisplayList=-1, object=string_c"
+		Execute "ModifyGizmo setDisplayList=-1, opName=scaleMc, operation=scale, data={10,10,10}"
+	endif
+	Execute "ModifyGizmo setDisplayList=-1, opName=translateMZ, operation=translate, data={"+vec2str(b,bare=1)+"}"
+
+	Execute "ModifyGizmo currentGroupObject=\"::\""
+	// ************************* Group Object End *******************
+
+	return groupName
+End
 
 
 
+Static Function AtomViewGizmoFixHookProc(s)
+	STRUCT WMGizmoHookStruct &s
+	if (!StringMatch(s.eventName,"scale"))
+		return 0
+	endif
+	String win=s.winName
+
+	Execute "GetGizmo/N="+win+"/Z objectList"
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+	Wave xyz=$""
+	String str, title2=""
+	Variable i0,i1,i
+	for (i=0;i<DimSize(TW_gizmoObjectList,0);i+=1)	// find the xyz wave
+
+		if (StringMatch(TW_gizmoObjectList[i],"*AppendToGizmo Scatter=*,name=atomViewAtoms"))
+			str = TW_gizmoObjectList[i]
+			i0 = strsearch(str,"Scatter=",0,2)+8
+			i1 = strsearch(str,",name=atomViewAtoms",i0,2)-1
+			Wave xyz=$(str[i0,i1])
+			str = StringByKey("Nabc",note(xyz),"=")
+			if (strlen(str)>1)
+				title2 = ReplaceString(" ",str," x ")+" cells"	// new title2 string
+			endif
+			break
+		endif
+	endfor
+	KillWaves/Z TW_gizmoObjectList
+	KillStrings/Z S_gizmoObjectList
+	if (strlen(title2)<1)
+		return 0
+	endif
+
+	Execute "GetGizmo/N="+win+"/Z objectNameList"
+	SVAR S_ObjectNames=S_ObjectNames
+	String titleGroupName=""									// find the name of the title group
+	for (i=0;i<ItemsInList(S_ObjectNames);i+=1)
+		if (stringmatch(StringFromList(i,S_ObjectNames),"gizmoStringGroup*"))
+		titleGroupName = StringFromList(i,S_ObjectNames)
+		endif
+	endfor
+	KillStrings/Z S_ObjectNames
+	if (strlen(titleGroupName)<1)
+		return 0
+	endif
+
+	Execute "ModifyGizmo/N="+win+"/Z startRecMacro"
+	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\""+titleGroupName+"\""
+	Execute "ModifyGizmo/N="+win+"/Z modifyObject=Title2, property={string,\""+title2+"\"}"
+	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
+	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
+	return 0	 
+End
+
+//  ============================================================================  //
+//  ============================== End Make Gizmo ==============================  //
 
 
 
 //  ============================================================================  //
-//  =============================== Start Initialization  =============================== //
+//  =========================== Start Initialization  =========================== //
 
-Function Init_AtomView()
+Function Init_AtomViewLattice()
 	InitLatticeSymPackage()
 	ElementDataInitPackage()
 	InitGizmoZoomTranslate()
 	return 0
 End
 
-//  ================================ End Initialization  =============================== //
+//  ============================ End Initialization  ============================ //
 //  ============================================================================  //
 

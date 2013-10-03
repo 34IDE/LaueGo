@@ -1,9 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.09
+#pragma version = 0.10
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
-#initFunctionName "Init_Powder()"
+#initFunctionName "Init_PowderPatternLattice()"
 
 
 Menu "Analysis"
@@ -30,12 +30,38 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	Variable refNum, kind
 	String file,pathName,type,creator
 	if ((kind==1) || (kind==2) || (kind==12))		// an experiment (packed or unpacked), or an ipf file
-		Init_Powder()
+		Init_PowderPatternLattice()
 	endif
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
-	Init_Powder()
+	Init_PowderPatternLattice()
+End
+
+
+Static Function PowderPatternPopMenuProc(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+	if (pa.eventCode != 2)
+		return 0
+	endif
+
+	if (strsearch(pa.popStr,"Calculate Powder Lines",0,2)>=0)
+		printf "¥CalcPowderLines(NaN)\r"
+		CalcPowderLines(NaN)
+	elseif (strsearch(pa.popStr,"Make Powder Pattern from Lines",0,2)>=0)
+		printf "¥PowderPatternFromLines($\"\",NaN)\r"
+		PowderPatternFromLines($"",NaN)
+	elseif (strsearch(pa.popStr,"Graph of Powder Pattern",0,2)>=0)
+		printf "¥GraphPowderPattern($\"\")\r"
+		print GraphPowderPattern($"")
+	elseif (strsearch(pa.popStr,"Graph of Powder Lines",0,2)>=0)
+		printf "¥GraphPowderLines($\"\")\r"
+		print GraphPowderLines($"")
+	elseif (strsearch(pa.popStr,"Table of Powder Lines",0,2)>=0)
+		printf "¥TablePowderLines($\"\")\r"
+		print TablePowderLines($"")
+	endif
+	return 0
 End
 
 
@@ -731,7 +757,7 @@ End
 
 
 
-Function Init_Powder()
+Function Init_PowderPatternLattice()
 	if (!DataFolderExists("root:Packages:Lattices:Powder") && exists("Get_f")!=6)		// do not have Cromer-Liberman, warn the user
 		DoAlert/T="Cromer-Liberman not Loaded" 1, "Cromer-Liberman NOT Loaded.\rFor accurate line intensities include Cromer-Liberman?"
 		if (V_flag==1)

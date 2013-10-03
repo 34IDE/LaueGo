@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 1.75
+#pragma version = 1.76
 #pragma ModuleName=elements
 #include "MaterialsLocate"								// used to find the path to the materials files
 Constant MIN_LINE_SEPARATION_FRACTION = 0.15	// you can over ride this in your main procedure window.
@@ -621,7 +621,7 @@ Function Element_atomRadius(Z)
 	atomRadius += "1.41;1.37;1.39;1.4;1.12;1.03;2.48;2.15;1.78;1.6;1.46;1.39;1.36;1.34;1.34;"
 	atomRadius += "1.37;1.44;1.71;1.66;1.62;1.59;1.42;1.32;1.24;2.67;2.22;1.38;1.81;1.82;1.82;"
 	atomRadius += " ;1.81;1.99;1.8;1.8;1.8;1.79;1.78;1.77;1.94;1.75;1.67;1.49;1.41;1.37;"
-	atomRadius += "1.35;1.36;1.39;1.46;1.6;1.71;1.75;1.7;1.67;1.45;1.34;2.7;2.33;1.88;1.8;"
+	atomRadius += "1.35;1.36;1.39;1.46;1.6;1.71;1.75;1.7;1.67;1.45;1.34;2.7;2.33;1.88;1.8;1.63;1.56;"
 	return (str2num(StringFromList(Z-1,atomRadius)))
 End
 
@@ -665,7 +665,7 @@ Function Element_covRadius(Z)
 	covRadius += "1.26;1.22;1.2;1.16;1.14;1.89;2.16;1.91;1.62;1.45;1.34;1.3;1.27;1.25;1.25;"
 	covRadius += "1.28;1.34;1.41;1.44;1.41;1.4;1.36;1.33;1.31;2.35;1.98;1.25;1.65;1.65;1.64;"
 	covRadius += "1.63;1.62;1.85;1.61;1.59;1.59;1.58;1.57;1.56;1.7;1.56;1.44;1.34;1.3;1.28;"
-	covRadius += "1.26;1.27;1.3;1.34;1.49;1.48;1.47;1.46;1.53;1.47;;;;;1.65;"
+	covRadius += "1.26;1.27;1.3;1.34;1.49;1.48;1.47;1.46;1.53;1.47;;;;;1.65;2.0;1.96;"
 	return (str2num(StringFromList(Z-1,covRadius)))
 End
 

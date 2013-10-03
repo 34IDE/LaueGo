@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.77
+#pragma version = 0.79
 #include "microGeometryN", version>=1.28
 
 
@@ -32,6 +32,7 @@ Menu LaueGoMainMenuName
 		"  test first of many Optimizations",testOneOptimize(NaN)
 		"-"
 		"Calculate Wire Origin",calcWireOrigin(NaN,NaN,NaN,NaN,NaN)
+		"For Detector in Direct Beam, find P from pixel",findPxPyFromPixel(NaN,NaN,NaN)
 	End
 End
 
@@ -313,7 +314,7 @@ Function/T MakeCalibData(dNum)					// Make the calibration list needed by Optimi
 
 	// always ask for Ename, even side detectors can have energies, algthough they don't need them
 	String Ename=""														// find the list of energies that goes with FullPeakList
-	wlist = SelectString(dNum,"","_none_;")+WaveListClass("measuredEnergies*","*","DIMS:1,MAXROWS:"+num2istr(Npeaks))
+	wlist = SelectString(dNum,"","_none_;")+WaveListClass("measuredEnergies","*","MAXCOLS:1,MAXROWS:"+num2istr(Npeaks))
 	if (ItemsInList(wlist))
 		Prompt Ename,"Measured Energies",popup,wlist
 		DoPrompt "Energies",Ename
@@ -330,6 +331,7 @@ Function/T MakeCalibData(dNum)					// Make the calibration list needed by Optimi
 		Duplicate/O Emeasured, $(NameOfWave(Emeasured)+"_dE")	// not really needed, just to look at.
 		Wave deltaE = $(NameOfWave(Emeasured)+"_dE")
 		SetScale d 0,0,"eV", deltaE
+		Note/K deltaE, ReplaceStringByKey("waveClass", note(Emeasured), "measuredEnergies_dE","=")
 	endif
 
 	Variable rhox, rhoy, rhoz
@@ -619,7 +621,7 @@ Function/WAVE EnterMeasuredEnergies(peakID)				// Allows easy entry of Emeasured
 
 	eName=UniqueName("Emeasured"+color,1,0)
 	Make/N=(Nfit) $eName/WAVE=Emeasured=NaN
-	String wNote="waveClass=measuredEnergies"+color+";"
+	String wNote="waveClass=measuredEnergies;"
 	wNote = ReplaceStringByKey("detectorID",wNote,detectorID,"=")
 	Note/K Emeasured, wNote
 
@@ -1521,6 +1523,53 @@ End
 
 // ==================================== End of EPICS update ====================================
 //=======================================================================================
+
+
+
+Function findPxPyFromPixel(detNum,px,py)			// For Detector in the beam, find P from (px,py)
+	Variable detNum									// detector number, usually 0
+	Variable px,py										// pixel at center
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)						//fill the geometry structure with current values
+	STRUCT detectorGeometry d
+	Variable detNumMax = (g.Ndetectors)-1
+
+	if (!(detNum>=0 && px>=0 && py>=0))			// need to prompt
+		String str,popStr
+		sprintf str, "Detector Number [0, %d]", detNumMax
+		detNum += 1
+		Prompt detNum, str, popup, expandRange("0-"+num2str(detNumMax),";")
+		Prompt px, "X-pixel where beam hits"
+		Prompt py, "Y-pixel where beam hits"
+		DoPrompt "Incident Beam Pixel", detNum, px,py
+		if (V_flag)
+			return 1
+		endif
+		detNum -= 1
+		printf "¥findPxPyFromPixel(%g, %.6g, %.6g)\r",detNum,px,py
+	endif
+
+	String alertStr=""
+	if (detNum != limit(round(detNum),0,detNumMax))
+		sprintf alertStr "Detector number \"%g\" is NOT an integer in the range [0, %d]", detNum,detNumMax
+	else
+		d = g.d[0]
+		if (!(d.used))
+			sprintf alertStr "Detector \"%g\" is not used", detNum
+		endif
+	endif
+	if (strlen(alertStr))
+		DoAlert 0, alertStr
+	endif
+
+	Variable xp,yp										// x' and y' (requiring z'=0), detector starts centered on origin and perpendicular to z-axis
+	xp = (px - 0.5*(d.Nx-1)) * d.sizeX/d.Nx	// (x' y' z'), position on detector
+	yp = (py - 0.5*(d.Ny-1)) * d.sizeY/d.Ny
+	printf "for Detector %g (id=%s) with center at pixel [%.1f, %.1f], use P = {%.6g, %.6g, %.6g}\r",detNum,d.detectorID,px,py,-xp/1000,-yp/1000,(d.P[2])/1000
+	return 0
+End
+
+
 
 
 // ==================================== End of Calibration =====================================

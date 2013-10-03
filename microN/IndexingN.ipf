@@ -1,21 +1,25 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.36
+#pragma version = 4.38
 #include "LatticeSym", version>=3.55
 #include "microGeometryN", version>=1.16
 #include "Masking", version>1.00
 #include "ImageDisplayScaling", version>=1.81
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&2)
 #include "tiff"
-#else
-#if (Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.207
+//#else
+#endif
+//#if (Exists("HDF5OpenFile")==4)
+#if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&1 && Exists("HDF5OpenFile")==4)
+#include "HDF5images", version>=0.26
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
 #include "WinView", version>=1.96
-#else
+//#else
 #endif
+Constant INDEXING_MAX_CALC = 40
+Constant INDEXING_MAX_TEST = 51
 
 //	with version 2.50, I changed so that yc in the file header always superceedes yc in the geo panel
 //	with version 3.00, allow use of both microGeo and microGeoN
@@ -152,16 +156,16 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 			badWave = badWave && (DimSize(FullPeakList2,0)<1 || DimSize(FullPeakList2,1)!=11)
 		endif
 	endif
-	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<40) || !(keVmaxTest>1 && keVmaxTest<51)
+	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
 	badNums += numtype(hp+kp+lp)
 	badNums += !(cone>1 && cone<180)
 	badNums += (abs(hp)+abs(kp)+abs(lp))==0
 	if (badWave || badNums)
-		keVmaxCalc = (keVmaxCalc>1 && keVmaxCalc<40) ? keVmaxCalc : NaN
+		keVmaxCalc = (keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) ? keVmaxCalc : NaN
 		keVmaxCalc = numtype(keVmaxCalc) ? NumVarOrDefault("root:Packages:micro:Index:keVmaxCalc",NaN) : keVmaxCalc
 		keVmaxCalc = numtype(keVmaxCalc) ? pick_keV_calc() : keVmaxCalc
-		keVmaxTest = (keVmaxTest>1 && keVmaxTest<51) ? keVmaxTest : NaN
+		keVmaxTest = (keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST) ? keVmaxTest : NaN
 		keVmaxTest = numtype(keVmaxTest) ? NumVarOrDefault("root:Packages:micro:Index:keVmaxTest",NaN) : keVmaxTest
 		keVmaxTest = numtype(keVmaxTest) ? min(3*keVmaxCalc,50) : keVmaxTest
 		angleTolerance = (angleTolerance>=0.01 && angleTolerance<10) ? angleTolerance : NumVarOrDefault("root:Packages:micro:Index:angleTolerance",(is4500S ? 0.5 : 0.1))
@@ -238,7 +242,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 			endif
 			maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : NumVarOrDefault("root:Packages:micro:Index:maxSpots",-1)
 		endif
-		badNums= !(keVmaxCalc>1 && keVmaxCalc<40) || !(keVmaxTest>1 && keVmaxTest<51)
+		badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 		badNums += !(angleTolerance>=0.01 && angleTolerance<10)
 		badNums += numtype(hp+kp+lp) + !(cone>1 && cone<180)
 		badNums += (abs(hp)+abs(kp)+abs(lp))==0
@@ -1819,7 +1823,7 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 		Wave FullPeakList2=$""
 	endif
 
-	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<40) || !(keVmaxTest>1 && keVmaxTest<51)
+	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
 	badNums += numtype(hp+kp++lp)
 	badNums += !(cone>1 && cone<180)
@@ -1940,11 +1944,13 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 
 	err = strsearch(result,"writing output to file '",0)<0
 	if (err)
-		DoAlert 0, "failure in runEulerCommand()"
-		print "\r\r"
-		print cmd
-		print "\r\r"
-		print result
+		if (!NumVarOrDefault("root:Packages:micro:Index:SKIP_EULER_ERRORS",0))
+			DoAlert 0, "failure in runEulerCommand()"
+			print "\r\r"
+			print cmd
+			print "\r\r"
+			print result
+		endif
 		return ""								// there is no index file
 	endif
 	Variable i = strsearch(result,"writing output to file '",0)
@@ -7634,6 +7640,9 @@ Static Function/S NewImageGraphLocal(image)
 	Wave image
 	String result = NewImageGraph(image,1)
 	Wave image = $result
+	if (!WaveExists(image))
+		return ""
+	endif
 
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)					//fill the geometry structure with current values
@@ -7645,6 +7654,10 @@ Static Function/S NewImageGraphLocal(image)
 	Make/N=3/FREE xyz = {0,1,-1}				// Q of surface normal
 	Variable/C pz =  q2pixel(g.d[dnum],xyz)		// pixel location of surface normal
 	Variable px=real(pz), py=imag(pz), Nx=g.d[dnum].Nx, Ny=g.d[dnum].Ny
+	if (numtype(px+py))							// perhaps the beam is on path of direct beam
+		xyz = {0,0, g.d[dnum].P[2]}
+		XYZ2pixel(g.d[dnum],xyz,px,py)
+	endif
 	if (px==limit(px,0,Nx-1) && py==limit(py,0,Ny-1))
 		DrawMarker(px,py,round(Nx/10),round(Ny/10),"cross gap",dash=2,layer="UserAxes")
 	endif

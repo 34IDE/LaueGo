@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma IgorVersion = 6.22
 #pragma ModuleName=ColorNames
 #pragma hide = 1
@@ -76,6 +76,139 @@ End
 
 
 
+Function/WAVE colorCircleRGB(angle,[maxVal])// returns fully saturated colors
+	Variable angle								// angle (rad)
+	Variable maxVal
+	maxVal = ParamIsDefault(maxVal) ? 1 : maxVal
+	maxVal = maxVal>0 && numtype(maxVal)==0 ? maxVal : 1
+
+	Make/N=3/FREE rgb
+	Variable a									// a is always in range [0,1)
+	angle = mod(angle,2*PI)					// angle must be in range [0,2*PI)
+	angle += angle<0 ? 2*PI : 0
+	if (numtype(angle))
+		rgb = NaN
+	elseif (angle< 2/3*PI)						// [0,60¡), red -> green
+		a = angle / (2/3*PI)
+		rgb = {1-a, a, 0}
+	elseif (angle< 4/3*PI)						// [60,120¡)
+		a = (angle-2/3*PI) / (2/3*PI)
+		rgb = {0, 1-a, a}
+	else											// [120,360¡)
+		a = (angle-4/3*PI) / (2/3*PI)
+		rgb = {a, 0, 1-a}
+	endif
+	rgb = sqrt(rgb)
+
+	Variable m = WaveMax(rgb)
+	rgb = limit(rgb*maxVal/m,0,maxVal)		// saturate the rgb, and clip to allowed range
+
+	if (maxVal==65535)						// for 65535, use unsigned 16bit ints
+		rgb = numtype(rgb) ? 0 : rgb
+		rgb = round(rgb)
+		Redimension/U/W rgb
+	endif
+	return rgb
+End
+//	Function test_colorCircleRGB(angle)
+//		Variable angle							// (degree)
+//		Wave rgb = colorCircleRGB(angle*PI/180)
+//		printf "%g¡  ->  %s\r",angle,vec2str(rgb)
+//	End
+//
+//	Function test_colorCircleRGB()
+//		Variable N=361
+//		Make/N=(N)/O xTest,yTest
+//		Make/N=(N,3)/O/W/U rgbTest
+//		SetScale/I x 0,2*PI,"", xTest,yTest
+//	
+//		xTest = cos(x)
+//		yTest = sin(x)
+//	
+//		Variable i, angle
+//		for (i=0;i<N;i+=1)
+//			angle = i*DimDelta(xTest,0) + DimOffset(xTest,0)
+//			Wave rgb = colorCircleRGB(angle,maxVal=65535)
+//			rgbTest[i][] = rgb[q]
+//		endfor
+//	End
+
+
+Function/WAVE symmetricWhiteRGB(val,[maxVal])	// red -> magenta -> white -> cyan -> blue
+	Variable val									// value in range [-1,1]
+	Variable maxVal
+	maxVal = ParamIsDefault(maxVal) ? 1 : maxVal
+	maxVal = maxVal>0 && numtype(maxVal)==0 ? maxVal : 1
+
+	Make/N=3/D/FREE rgb=NaN, red={1,0,0}, magenta={1,0,1}, white={1,1,1}, cyan={0,1,1}, blue={0,0,1}
+	val = 2*limit(val,-1,1)					// change range to [-2,2]
+	if (val>1)									// go from cyan -> blue, (1,2]
+		val += -1								// change range of val to [0,1]
+		rgb = (1-val)*cyan + val*blue
+
+	elseif (val>0)								// go from white -> cyan, (0,1]
+		//	rgb = (1-val)*white + val*cyan
+		rgb = sqrt(abs((1-val)*white + val*cyan))
+
+	elseif (val>-1)								// go from magenta -> white, [-1,0)
+		val += 1
+		//	rgb = (1-val)*magenta + val*white
+		rgb = sqrt(abs((1-val)*magenta + val*white))
+
+	elseif (val>=-2)							// go from red -> magenta, [-2,1)
+		val += 2
+		rgb = (1-val)*red + val*magenta
+	endif
+
+	Variable m = WaveMax(rgb)
+	rgb = limit(rgb*maxVal/m,0,maxVal)		// saturate the rgb, and clip to allowed range
+
+	if (maxVal==65535)						// for 65535, use unsigned 16bit ints
+		rgb = numtype(rgb) ? 0 : rgb
+		rgb = round(rgb)
+		Redimension/U/W rgb
+	endif
+	return rgb
+End
+
+
+Function/WAVE symmetricBlackRGB(val,[maxVal])	// red -> magenta -> black -> cyan -> blue
+	Variable val									// value in range [-1,1]
+	Variable maxVal
+	maxVal = ParamIsDefault(maxVal) ? 1 : maxVal
+	maxVal = maxVal>0 && numtype(maxVal)==0 ? maxVal : 1
+
+	Make/N=3/D/FREE rgb=NaN, red={1,0,0}, magenta={1,0,1}, black={0,0,0}, cyan={0,1,1}, blue={0,0,1}
+	val = 2*limit(val,-1,1)					// change range to [-2,2]
+	Variable valIn = val
+	if (val>1)									// go from cyan -> blue, (1,2]
+		val += -1								// change range of val to [0,1]
+		rgb = (1-val)*cyan + val*blue
+
+	elseif (val>0)								// go from black -> cyan, (0,1]
+		//	rgb = (1-val)*black + val*cyan
+		rgb = sqrt(abs((1-val)*black + val*cyan))
+
+	elseif (val>-1)								// go from magenta -> black, [-1,0)
+		val += 1
+		//	rgb = (1-val)*magenta + val*black
+		rgb = sqrt(abs((1-val)*magenta + val*black))
+
+	elseif (val>=-2)							// go from red -> magenta, [-2,1)
+		val += 2
+		rgb = (1-val)*red + val*magenta
+	endif
+
+	Variable m = abs(valIn)<1 ? 1 : WaveMax(rgb)	// saturate colors for abs(vals[i]) > 1
+	rgb = limit(rgb*maxVal/m,0,maxVal)		// clip to allowed range
+
+	if (maxVal==65535)						// for 65535, use unsigned 16bit ints
+		rgb = numtype(rgb) ? 0 : rgb
+		rgb = round(rgb)
+		Redimension/U/W rgb
+	endif
+	return rgb
+End
 
 
 
