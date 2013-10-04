@@ -64,7 +64,7 @@ def compareFiles(Vfiles, actualFiles):		# returns a string detailing mis-matches
 
 	if len(diffsMissingOnDisk)>0:
 		if len(diffs)>0: diffs += '\n'
-		diffs += '*** Missing file Disk\n'+diffsMissingOnDisk
+		diffs += '*** Missing file on Disk\n'+diffsMissingOnDisk
 
 	if len(diffsHash)>0:
 		if len(diffs)>0: diffs += '\n'
@@ -122,9 +122,9 @@ def MakeVersionStatusDict(FolderPath):
 
 	actualFiles = dict()
 	for root, dirs, files in os.walk(FolderPath):
-		if oldName(root): continue							# skip directories with old versions
+		if ignoreName(root): continue						# skip directories with old versions
 		for dir in dirs:
-			if oldName(dir):
+			if ignoreName(dir):
 				dirs.remove(dir)  							# don't visit old directories
 
 		for dir in dirs:
@@ -237,17 +237,19 @@ def MakeVersionStatusDict(FolderPath):
 
 
 
-def oldName(name):
+def ignoreName(name):								# ignore folders or files with this name
 	low = name.lower()
-	old = False
-	if low.find('old')==0: old=True					# starts with old
-	if '/old' in low: old=True
-	if 'old/' in low: old=True
-	if (len(low)-low.rfind('old'))==3: old=True		# ends with old
-	if 'old version' in low: old=True				# skip definitely old versions
-	if '(no copy)' in low: old=True					# obviously not this
-	if low[0]=='.': old=True						# no hidden files or hidden directories
-	return old
+	ignore = False
+	if low.find('old')==0: ignore=True				# starts with old
+	if '/old' in low: ignore=True
+	if 'old/' in low: ignore=True
+	if (len(low)-low.rfind('old'))==3: ignore=True	# ends with old
+	if 'old version' in low: ignore=True			# skip definitely old versions
+	if '(no copy)' in low: ignore=True				# obviously not this
+	if low[0]=='.': ignore=True						# no hidden files or hidden directories
+
+	if low=='new': ignore=True
+	return ignore
 
 
 def is_exe(fullpath):

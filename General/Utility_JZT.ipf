@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.15
+#pragma version = 3.16
 #pragma hide = 1
 
 Menu "Graph"
@@ -46,6 +46,7 @@ End
 //		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
+//		StopAllTimers(), stops all the Igor timers
 //		dateStr2ISO8601Str(), convert a date to an ISO 8601 format
 //		str2vec(), convert a string to a vector
 //		RomanNumeral(j) converts a number to a Roman Numeral string
@@ -2161,6 +2162,18 @@ Function/T MoreWaveNoteInfoProto(ww,list)		// additions to the list, only called
 	Wave ww
 	String list
 	return list
+End
+
+
+Function StopAllTimers()
+	Variable i
+	String str=""
+	for(i=0;i<=9;i+=1)
+		str += SelectString(stopMSTimer(i),"",num2istr(i)+" ")
+	endfor
+	if (strlen(str))
+		printf "timers %s were running\r",str
+	endif
 End
 
 
