@@ -241,8 +241,8 @@ Static Function setMICRO_GEOMETRY_VERSION_PATH([preset])
 	endif
 	Execute/P insert
 	Execute/P "COMPILEPROCEDURES "
-	Execute/P "Init_microGeo()"
-	Execute/P "MakeMicroPanel(-1)"
+	Execute/P/Q "Init_microGeo()"
+	Execute/P/Q "MakeMicroPanel(-1)"
 	return 0
 End
 
