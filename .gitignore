@@ -4,7 +4,8 @@
 *(no\ copy)*/
 "*\ old/"
 old/
-*/new/*
+/new/*
+new/
 
 #################
 ## Eclipse
