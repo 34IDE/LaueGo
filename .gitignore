@@ -4,6 +4,7 @@
 *(no\ copy)*/
 "*\ old/"
 old/
+/old/*
 /new/*
 new/
 
