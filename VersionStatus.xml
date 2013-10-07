@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, October 04, 2013" time="02:23:31 PM CDT" isoTime="2013-10-04T14:23:31"></written>
+	<written date="Monday, October 07, 2013" time="12:27:31 PM CDT" isoTime="2013-10-07T12:27:31"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>249</fileCount>
 	<file version="nan" time="2011-07-05T09:35:26" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -108,7 +108,7 @@
 	<file version="nan" time="2001-07-10T16:19:31" md5="aae9f1d667166806950f2a6a9ef84b62" ext=".mtl">materials/BePF-60.mtl</file>
 	<file version="nan" time="2013-03-21T13:01:06" md5="4db7d860a567fcf9047e74ffb6bdaacc" ext=".xml">geometrys/geoN_2012-06-13_17-40-22.xml</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="dd344d5361f0c84a1605e918d51dce54" ext=".xml">materials/Sn-sg225.xml</file>
-	<file version="3.01" time="2013-10-04T14:19:55" md5="5841077b1c75435e1432e22af7f9e012" ext=".ipf">always/GeneralFirst.ipf</file>
+	<file version="3.02" time="2013-10-06T16:45:16" md5="078b9f18e793fbb91392569f2086d566" ext=".ipf">always/GeneralFirst.ipf</file>
 	<file version="nan" time="2013-03-21T13:01:07" md5="6bcac22bfb97414500a8cee93c81ca52" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2001-07-10T16:19:31" md5="ac132b62932b7b1a1f62fbc7c16dd821" ext=".mtl">materials/BeIF-1LowZ.mtl</file>
 	<file version="3.2" time="2007-07-18T23:54:53" md5="c3ec209d863503d9aeccfba331972cee" ext=".ipf">General/IonChamber.ipf</file>
@@ -195,7 +195,7 @@
 	<file version="nan" time="2012-03-06T09:07:50" md5="3dda90a250836b5ea6408c1dfc55da10" ext="">microN/peaksearch_i386</file>
 	<file version="nan" time="2013-03-28T16:55:30" md5="3d08b21e7482c977c19d1b44c51a0b1c" ext="">microN/Euler_i386</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="d9dfea55d4a5aeb08899d381ca00b5a8" ext=".xml">materials/LaSrMnO3_Hex.xml</file>
-	<file version="3.1" time="2013-10-04T13:54:19" md5="5be9c38f61acc0e8ad8f10c2a849d0b6" ext=".ipf">microN/microBeamStart34ID.ipf</file>
+	<file version="3.2" time="2013-10-06T16:33:57" md5="d3f9d5057d1f3409b472e79bc794c060" ext=".ipf">microN/microBeamStart34ID.ipf</file>
 	<file version="0.01" time="2013-04-10T12:38:01" md5="43e2c35ce8dd75959e913ff3623703e0" ext=".ipf">General/JZT-analysis.ipf</file>
 	<file version="nan" time="2004-12-09T21:16:08" md5="bee773763d7607a0f1627ea23702f982" ext=".mtl">materials/CuO.mtl</file>
 	<file version="nan" time="2013-06-29T16:02:57" md5="5f3d492fb5a4d98cd3f30dfd40daa5e0" ext=".mtl">materials/EggShell.mtl</file>
@@ -207,9 +207,9 @@
 	<file version="nan" time="2013-07-08T22:14:48" md5="f4d804ac3d4f00babd1c74ba6b8ab493" ext=".xml">materials/BaKFeAs_RT.xml</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="d576c009d52da5d8b836570c387f6eb9" ext=".xml">materials/Mg2SiO4.xml</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="ca031a1c8133fc9f52a01a7439b2952c" ext=".xml">materials/permalloy.xml</file>
-	<file version="2" time="2013-10-04T13:32:10" md5="72af8f54f889d62925621b2b75b2d8f4" ext=".ipf">always/LaueGoFirst.ipf</file>
+	<file version="2.01" time="2013-10-06T16:35:55" md5="16a732ed406700b9ecb59cf9bd35ed2d" ext=".ipf">always/LaueGoFirst.ipf</file>
 	<file version="nan" time="2013-10-03T16:12:34" md5="5da6e3e5cbb9d1fe9be3d72a61213469" ext=".txt">General/Physical Constants.txt</file>
-	<file version="2.3" time="2013-10-04T13:36:15" md5="c5d516c8604bf07012270a2bbcd52bb3" ext=".ipf">always/always first.ipf</file>
+	<file version="nan" time="2013-10-07T12:24:00" md5="7fab74f203c96142ed06f2bd7cf50ed0" ext=".ipf">always/always first.ipf</file>
 	<file version="1.76" time="2013-09-24T12:49:43" md5="e495c6aefc35af6d5c7ad40c005e12ed" ext=".ipf">General/Elements.ipf</file>
 	<file version="nan" time="2012-02-15T14:06:02" md5="f32795db1dc1c31411d7c33b21865108" ext=".xml">materials/LaAlO3_Rhom.xml</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="7281e5483efea8dd559e3c07b8b627d4" ext=".xml">materials/ni-steel.xml</file>

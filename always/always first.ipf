@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-Constant JZTalwaysFirst_Version=2.4
+Constant JZTalwaysFirst_Version=2.5
 //#pragma version = JZTalwaysFirst_Version
 //#pragma IndependentModule=JZTalwaysFirst
 #include "GeneralFirst", version>=3.0
@@ -20,6 +20,7 @@ End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	printf "%s  %s  starting new Untitled Igor Experiment on '%s'\r\r",date(),time(),getHostName(1)
+	return 0
 	//	GetWindow kwCmdHist wsize
 	//	V_right = (V_right>900) ? V_right-100 : V_right
 	//	MoveWindow /C V_left+20,V_top-40,V_right,V_bottom-2
