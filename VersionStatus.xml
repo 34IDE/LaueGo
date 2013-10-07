@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, October 07, 2013" time="12:27:31 PM CDT" isoTime="2013-10-07T12:27:31"></written>
+	<written date="Monday, October 07, 2013" time="05:30:49 PM CDT" isoTime="2013-10-07T17:30:49"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>249</fileCount>
 	<file version="nan" time="2011-07-05T09:35:26" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -195,7 +195,7 @@
 	<file version="nan" time="2012-03-06T09:07:50" md5="3dda90a250836b5ea6408c1dfc55da10" ext="">microN/peaksearch_i386</file>
 	<file version="nan" time="2013-03-28T16:55:30" md5="3d08b21e7482c977c19d1b44c51a0b1c" ext="">microN/Euler_i386</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="d9dfea55d4a5aeb08899d381ca00b5a8" ext=".xml">materials/LaSrMnO3_Hex.xml</file>
-	<file version="3.2" time="2013-10-06T16:33:57" md5="d3f9d5057d1f3409b472e79bc794c060" ext=".ipf">microN/microBeamStart34ID.ipf</file>
+	<file version="3.3" time="2013-10-07T12:46:57" md5="808c2afa92a3f4df971c6f7fa25e0e2f" ext=".ipf">microN/microBeamStart34ID.ipf</file>
 	<file version="0.01" time="2013-04-10T12:38:01" md5="43e2c35ce8dd75959e913ff3623703e0" ext=".ipf">General/JZT-analysis.ipf</file>
 	<file version="nan" time="2004-12-09T21:16:08" md5="bee773763d7607a0f1627ea23702f982" ext=".mtl">materials/CuO.mtl</file>
 	<file version="nan" time="2013-06-29T16:02:57" md5="5f3d492fb5a4d98cd3f30dfd40daa5e0" ext=".mtl">materials/EggShell.mtl</file>

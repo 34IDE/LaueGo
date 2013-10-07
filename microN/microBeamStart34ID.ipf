@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 3.2
+#pragma version = 3.3
 
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
@@ -9,4 +9,5 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 		Execute/P/Q "LaueGoFirst#setMICRO_GEOMETRY_VERSION_PATH()"
 		Execute/P "INSERTINCLUDE  \"mdaFiles\", version>=1.08";Execute/P "COMPILEPROCEDURES "
 	endif
+	return 0
 End
