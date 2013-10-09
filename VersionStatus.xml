@@ -3,7 +3,7 @@
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
 	<written date="Monday, October 07, 2013" time="05:30:49 PM CDT" isoTime="2013-10-07T17:30:49"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>249</fileCount>
+	<fileCount>248</fileCount>
 	<file version="nan" time="2011-07-05T09:35:26" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-06-08T00:31:59" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
@@ -91,7 +91,6 @@
 	<file version="1" time="2013-04-10T12:41:44" md5="2c6e8d607203b6f33a328d508651f713" ext=".ipf">General/PoleFigure.ipf</file>
 	<file version="nan" time="2010-10-02T17:16:30" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
 	<file version="nan" time="2001-07-10T16:19:31" md5="b9fe430376660d4f30e40f8f04789109" ext=".mtl">materials/water.mtl</file>
-	<file version="nan" time="2010-12-01T11:15:34" md5="" ext=".app">install JZT Macros.app</file>
 	<file version="2.01" time="2013-10-03T16:12:34" md5="40c0b918da175b88e70c76c9264fd6d9" ext=".ipf">General/Reorient.ipf</file>
 	<file version="nan" time="2008-04-30T16:11:02" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
 	<file version="nan" time="2013-03-21T13:01:01" md5="6cb23957d309efbc4e66bbd674b4640b" ext=".xml">geometrys/geoN_2012-11-26_16-29-15.xml</file>
