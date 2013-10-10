@@ -213,7 +213,7 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 	pixel2xyz(d,ref0.px,ref0.py,A,kf)			// convert pixel position to the beam line coordinate system
 //		Wave rot = detectorMatrix(A)			// a point detector
 //		MatrixOP/FREE/O kf = rot x ki
-	normalize(kf)								// change length of kf to 2¹/lambda
+	normalize(kf)								// change length of kf to 2Ï€/lambda
 	kf *= 2*PI/(ref0.lambda)
 	Wave Tmat = diffractMatrix(A)
 	MatrixOP/FREE/O qhklMeasured = Inv(Tmat) x (kf-ki)
@@ -232,7 +232,7 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 	pixel2xyz(d,ref1.px,ref1.py,A,kf)		// convert pixel position to the beam line coordinate system
 //		Wave rot = detectorMatrix(A)			// a point detector
 //		MatrixOP/FREE/O kf = rot x ki
-	normalize(kf)								// change length of kf to 2¹/lambda
+	normalize(kf)								// change length of kf to 2Ï€/lambda
 	kf *= 2*PI/(ref1.lambda)
 	Wave Tmat = diffractMatrix(A)
 	MatrixOP/FREE/O qhklMeasured = Inv(Tmat) x (kf-ki)
@@ -418,7 +418,7 @@ Static Function LabelReLabelGraphMovieFrame(movieFrame)
 		mot = StringFromList(i,motors)
 		val = specInfo(scanNum,mot)
 		if (numtype(val)==0)
-			str += "\r"+WordToGreek(mot)+" = "+num2str(val)+"¡"
+			str += "\r"+WordToGreek(mot)+" = "+num2str(val)+"Â°"
 		endif
 	endfor
 	if (keV>0)
@@ -604,7 +604,7 @@ Function printSampleStructure(s)
 
 	if (!LatticeSym#LatticeBad(s.xtal))
 		String sym = getHMboth(s.xtal.SpaceGroup)
-		printf "    for '%s'  lattice is  #%d   %s     %.9gnm, %.9gnm, %.9gnm,   %g¡, %g¡, %g¡\r",s.xtal.desc,s.xtal.SpaceGroup,sym,s.xtal.a,s.xtal.b,s.xtal.c,s.xtal.alpha,s.xtal.beta,s.xtal.gam
+		printf "    for '%s'  lattice is  #%d   %s     %.9gnm, %.9gnm, %.9gnm,   %gÂ°, %gÂ°, %gÂ°\r",s.xtal.desc,s.xtal.SpaceGroup,sym,s.xtal.a,s.xtal.b,s.xtal.c,s.xtal.alpha,s.xtal.beta,s.xtal.gam
 	endif
 
 	if (s.Nrefs > 0 && !sampleRefBad(s.refs[0]) && !sampleRefBad(s.refs[1]))
@@ -1101,7 +1101,7 @@ ThreadSafe Function/WAVE simpleVerticalDetectorMatrix(A0)// returns a rotation m
 	Variable A0										// vertical detector angle (degree)
 	Variable tth=A0*PI/180						// 2theta (rad), this is the angle of the arm, not actual scattering angle
 	Make/N=(3,3)/D/FREE rot
-	Variable c=cos(tth), s=sin(tth)					// positive rotation is up from +z (at 0¡) to +y (at A0=90¡)
+	Variable c=cos(tth), s=sin(tth)					// positive rotation is up from +z (at 0Â°) to +y (at A0=90Â°)
 	rot[0][0] = {1, 0, 0}
 	rot[0][1] = {0, c,-s}
 	rot[0][2] = {0, s, c}
@@ -1116,12 +1116,12 @@ ThreadSafe Function/WAVE doubleDetectorMatrix(delta,nu)// returns a rotation mat
 	Variable nu								// holds delta rotates about a vertical axis, moves delta sideways (degree)
 
 	Variable c=cos(delta*PI/180), s=sin(delta*PI/180)
-	Make/N=(3,3)/D/FREE rotDelta		// positive rotation is up from +z (at 0¡) to +y (at delta=90¡)
+	Make/N=(3,3)/D/FREE rotDelta		// positive rotation is up from +z (at 0Â°) to +y (at delta=90Â°)
 	rotDelta[0][0] = {1, 0, 0}				// rotation matrix about x-axis
 	rotDelta[0][1] = {0, c,-s}
 	rotDelta[0][2] = {0, s, c}
 
-	c = cos(nu*PI/180)					// positive rotation is from +z (at 0¡) to +x (at nu=90¡)
+	c = cos(nu*PI/180)					// positive rotation is from +z (at 0Â°) to +x (at nu=90Â°)
 	s = sin(nu*PI/180)
 	Make/N=(3,3)/D/FREE rotNu
 	rotNu[0][0] = {c, 0,-s}				// rotation matrix about y-axis
@@ -1603,7 +1603,7 @@ Static Function DetectorReferenceOrientation(d,point)			// sets d to the referen
 		d.used = 1
 		d.Nx = 1 ;			d.Ny = 1							// number of un-binned pixels in whole detector
 		d.sizeX = 10;		d.sizeY = 10						// outside size of detector (mm)
-		d.R[0]=0;			d.R[1]=0;			d.R[2]=0		// angle of detector, theta = 0¡
+		d.R[0]=0;			d.R[1]=0;			d.R[2]=0		// angle of detector, theta = 0Â°
 		d.P[0]=0;			d.P[1]=0;			d.P[2]=1000	// offset to detector (mm)
 		d.timeMeasured = ""
 		d.geoNote = ""
@@ -1614,7 +1614,7 @@ Static Function DetectorReferenceOrientation(d,point)			// sets d to the referen
 		d.used = 1
 		d.Nx = 487 ;				d.Ny = 195					// number of un-binned pixels in whole detector
 		d.sizeX = 487*0.172;		d.sizeY = 195*0.172		// outside size of detector (mm)
-		d.R[0]=0;			d.R[1]=0;			d.R[2]=0		// angle of detector @ theta=0¡
+		d.R[0]=0;			d.R[1]=0;			d.R[2]=0		// angle of detector @ theta=0Â°
 		d.P[0]=0;			d.P[1]=0;			d.P[2]=1000	// offset to detector (mm)
 		d.timeMeasured = ""
 		d.geoNote = ""
@@ -1659,7 +1659,7 @@ Static Function printOneDetector(d,[more])			// print the details for passed det
 	printf "	Nx=%d, Ny=%d						// number of un-binned pixels in detector\r",d.Nx,d.Ny
 	printf "	sizeX=%g, sizeY=%g			// size of detector (mm)\r",(d.sizeX), (d.sizeY)
 	printf "	   pixel size is %g x %g mm\r",(d.sizeX)/(d.Nx), (d.sizeY)/(d.Ny)
-	printf "	R = {%.8g, %.8g, %.8g}, a rotation of %.7g¡			// rotation vector\r",d.R[0],d.R[1],d.R[2],sqrt(d.R[0]*d.R[0] + d.R[1]*d.R[1] + d.R[2]*d.R[2])*180/PI
+	printf "	R = {%.8g, %.8g, %.8g}, a rotation of %.7gÂ°			// rotation vector\r",d.R[0],d.R[1],d.R[2],sqrt(d.R[0]*d.R[0] + d.R[1]*d.R[1] + d.R[2]*d.R[2])*180/PI
 	printf "	P = {%g, %g, %g}							// translation vector (mm)\r", d.P[0], d.P[1], d.P[2]
 	if (numtype((d.px0)+(d.py0))==0)
 		printf "	    incident beam hits pixel {%g, %g}\r", d.px0, d.py0
@@ -1698,7 +1698,7 @@ Static Function printOneDetector(d,[more])			// print the details for passed det
 //	tthZ =  tthRange(d)
 //	tthMin = min(tthMin,real(tthZ))
 //	tthMax = max(tthMax,imag(tthZ))
-//	printf "\tangle ranges:  chi = [%g, %g¡],  2th = [%g, %g¡]\r", real(chiZ),imag(chiZ),real(tthZ),imag(tthZ)
+//	printf "\tangle ranges:  chi = [%g, %gÂ°],  2th = [%g, %gÂ°]\r", real(chiZ),imag(chiZ),real(tthZ),imag(tthZ)
 //	return 0
 End
 
@@ -2259,7 +2259,7 @@ Static Function DetectorBad(d)
 	bad += (d.Ny<1 || d.Ny>5000)
 	bad += (d.sizeX<1 || d.sizeX>2000)											// detector cannot be larger than 2m
 	bad += (d.sizeY<1 || d.sizeY>2000)
-	bad += (abs(d.R[0])>2*PI || abs(d.R[1])>2*PI || abs(d.R[2])>2*PI)		// rotation cannot be more than 2¹
+	bad += (abs(d.R[0])>2*PI || abs(d.R[1])>2*PI || abs(d.R[2])>2*PI)		// rotation cannot be more than 2Ï€
 	bad += (abs(d.P[0])>4000 || abs(d.P[0])>4000 || abs(d.P[0])>4000)		// P cannot be more than 4m in any direction
 	bad += InValidPilatus(d)													// can only be bad if ID looks like a Pilatus 100K
 	return (!(!bad))
@@ -2517,7 +2517,7 @@ Static Function ResetSetPilatus100Kcalibration(xydir,px0,py0,dist)
 
 	Make/N=3/D/FREE Rvec
 	Variable angle = axisOfMatrix(rho,Rvec)
-	printf "rotation axis = %s,   angle = %g¡\r",vec2str(Rvec), angle
+	printf "rotation axis = %s,   angle = %gÂ°\r",vec2str(Rvec), angle
 	Rvec *= angle*PI/180
 
 	Variable/C pz = PvectorFromPixels(px0,py0)
@@ -2531,7 +2531,7 @@ Static Function ResetSetPilatus100Kcalibration(xydir,px0,py0,dist)
 
 	print " "
 	print "reset detector to:"
-	printf "Using Nx=%g,  Ny=%g,  Æpixel=%g µm\r",Nx,Ny,dpixel
+	printf "Using Nx=%g,  Ny=%g,  âˆ†pixel=%g Âµm\r",Nx,Ny,dpixel
 	printf "R[3] = \"%s\"\r",Rstr
 	printf "P[3] = \"%s\",  pixel=[%g, %g]\r",Pstr,px0,py0
 
@@ -2590,13 +2590,13 @@ Static Function axisOfMatrix(rot,axis)
 
 	Variable cosine = (MatrixTrace(rot)-1)/2		// trace = 1 + 2*cos(theta)
 	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180¡ rotation,
+	if (cosine<= -1)								// special for 180Â° rotation,
 		axis[0] = sqrt((rot[0][0]+1)/2)
 		axis[1] = sqrt((rot[1][1]+1)/2)
 		axis[2] = sqrt((rot[2][2]+1)/2)			// always assume z positive
 		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
 		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-	else												// rotaion < 180¡, usual formula works
+	else												// rotaion < 180Â°, usual formula works
 		axis[0] = rot[2][1] - rot[1][2]
 		axis[1] = rot[0][2] - rot[2][0]
 		axis[2] = rot[1][0] - rot[0][1]

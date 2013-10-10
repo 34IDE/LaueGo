@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.44
+#pragma version = 0.45
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -52,10 +52,12 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	if ((kind==1) || (kind==2))		// an experiment (packed or unpacked)
 		init_specImage("")
 	endif
+	return 0
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	init_specImage("")
+	return 0
 End
 
 
@@ -97,7 +99,7 @@ End
 //		endif
 //		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
 //		Wave mask = $maskName
-//		printf "¥MakeQspaceVolumeSpec(\"%s\"", scanRange
+//		printf "â€¢MakeQspaceVolumeSpec(\"%s\"", scanRange
 //		if (strlen(maskName))
 //			printf ", mask=%s",maskName
 //		endif
@@ -438,7 +440,7 @@ Function/WAVE MakeQspaceVolumeSpec(scanRange,[mask,Nthreads,doConvex])
 		maskName = ""
 	endif
 	if (printIt)
-		printf "¥MakeQspaceVolumeSpec(\"%s\"", scanRange
+		printf "â€¢MakeQspaceVolumeSpec(\"%s\"", scanRange
 		if (strlen(maskName))
 			printf ", mask=%s",maskName
 		endif
@@ -1108,7 +1110,7 @@ Static Function/T GraphDiffractometerImage(image)
 			aName = StringFromList(i,DiffractometerAxisNames)
 			angle = NumberByKey(aName,wnote,"=")				// first check wavenote for angle
 			angle = numtype(angle) ? specInfo(scanNum,aName) : angle	// angle is not in wavenote, so check specInfo()
-			sprintf str1, "%s = %.3f¡",aName,angle
+			sprintf str1, "%s = %.3fÂ°",aName,angle
 			str += SelectString(i>0,"",", ")+str1					// accumulate the "name=angle, "
 		endfor
 		title += "\r\\Zr070"+str+"\\M"
@@ -1221,7 +1223,7 @@ Static Function getQofImageHook(s)									// Shift-mouseDown=follow mouse and s
 		sprintf str,"\r\f01hkl\f00 = [%.3f, %.3f, %.3f]",hkl[0],hkl[1],hkl[2]
 		tagStr += str
 	endif
-	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f\\F'Symbol'°\\]0",px,py,2*theta*180/PI
+	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f\\F'Symbol'âˆž\\]0",px,py,2*theta*180/PI
 	tagStr += str
 
 	px = limit(px,0,DimSize(image,0)-1)							// needed in case (px,py) is outside the image

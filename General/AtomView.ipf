@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.19
+#pragma version = 0.20
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.72
@@ -37,10 +37,12 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	if ((kind==1) || (kind==2))		// an experiment (packed or unpacked)
 		Init_AtomViewLattice()
 	endif
+	return 0
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	Init_AtomViewLattice()
+	return 0
 End
 
 
@@ -52,13 +54,13 @@ Static Function AtomViewPopMenuProc(pa) : PopupMenuControl		// used in the Latti
 	endif
 
 	if (strsearch(pa.popStr,"Make Cells of Atoms",0,2)>=0)
-		//	printf "¥MakeCellsOfLattice(NaN,NaN,NaN)\r"
+		//	printf "â€¢MakeCellsOfLattice(NaN,NaN,NaN)\r"
 		MakeCellsOfLattice(NaN,NaN,NaN)
 	elseif (strsearch(pa.popStr,"Gizmo of Atoms",0,2)>=0)
-		printf "¥MakeAtomViewGizmo($\"\")\r"
+		printf "â€¢MakeAtomViewGizmo($\"\")\r"
 		MakeAtomViewGizmo($"")
 	elseif (strsearch(pa.popStr,"Atom Type at Cursor",0,2)>=0)
-		printf "¥ShowAtomViewInfo(1)\r"
+		printf "â€¢ShowAtomViewInfo(1)\r"
 		print ShowAtomViewInfo(1)
 	endif
 
@@ -155,7 +157,7 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		if (V_flag)
 			return $""
 		endif
-		printf "¥MakeCellsOfLattice(%g, %g, %g",Na,Nb,Nc
+		printf "â€¢MakeCellsOfLattice(%g, %g, %g",Na,Nb,Nc
 		if (numtype(blen)==0 || !ParamIsDefault(blen))
 			printf ", blen=%g",blen
 		endif
