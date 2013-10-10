@@ -14,7 +14,7 @@ The following applies to both MS Windows and Mac computers. "[MyDocuments]" refe
 
 3.	Copy all unzipped files and subfolders into "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\User Procedures".
 
-4.	(First-time installation only) Inside the "User Procedures" folder, among everything youíve just copied, find subfolder named "always". Create a shortcut to this "always" folder inside "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\Igor Procedures".
+4.	(First-time installation only) Inside the "User Procedures" folder, among everything you√≠ve just copied, find subfolder named "always". Copy the file "always first.ipf", and put the copy in the folder "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\Igor Procedures".
 
 5.	(First-time installation only) Find files "HDF5 Help.ihf" and "HDF5.xop" under path "C:\Program Files (x86)\WaveMetrics\Igor Pro Folder\More Extensions\File Loaders" on a PC, or "Applications\IgorPro 6.x Folder\More Extensions\File Loaders" on a Mac. Create shortcuts to both files inside "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\Igor Extensions".
 
