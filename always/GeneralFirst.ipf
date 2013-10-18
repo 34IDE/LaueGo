@@ -1,6 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.02
-#pragma IndependentModule=JZTgeneral
+#pragma version = 3.03
+#pragma ModuleName = JZTgeneral
+#pragma hide = 1
+//	#pragma IndependentModule=JZTgeneral
 //	DefaultFont "Helvetica"		// This is in "JonFirst.ipf", that is enough
 
 Menu "Analysis"
