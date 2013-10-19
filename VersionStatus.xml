@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, October 18, 2013" time="06:08:17 PM CDT" isoTime="2013-10-18T18:08:17"></written>
+	<written date="Saturday, October 19, 2013" time="04:10:16 PM CDT" isoTime="2013-10-19T16:10:16"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>248</fileCount>
 	<file version="nan" time="2011-07-05T09:35:26" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -25,7 +25,7 @@
 	<file version="nan" time="2011-07-05T09:35:26" md5="3137d5743b8846f6d6373513d29a92a7" ext=".xml">materials/NdGaO3.xml</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="45092064aa2f391fcad76837b1322c01" ext=".xml">materials/LaMnO3_Ortho.xml</file>
 	<file version="nan" time="2013-03-21T13:00:57" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.27" time="2013-10-10T11:29:00" md5="070e6d31e045e7d677ba20d4cc214779" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.29" time="2013-10-19T16:07:51" md5="47528d0e7a945267e69552d9e2c1ee29" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="c017c7408f271d5d935d61a458904881" ext=".xml">materials/Ni3Al.xml</file>
 	<file version="0.01" time="2013-10-03T16:12:34" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" ext=".ipf">General/absorption.ipf</file>
 	<file version="nan" time="2011-07-05T09:35:26" md5="89037fe313f31195b4aced86d4e09779" ext=".xml">materials/Sn-sg141-best.xml</file>

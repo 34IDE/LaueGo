@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.27
+#pragma version = 2.29
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
 
@@ -89,6 +89,8 @@ Static strConstant specFileFilters = "spec Files (*.spc):.spc;text Files (*.txt)
 // Feb 19, 2013, added specFileFilters, so that Open commands properly support file filters
 //
 // Feb 26, 2013, changed LoadRangeOfSpecScans() so it does not try to load already loaded scans
+//
+// Oct 18, 2013, changed DisplayRangeOfSpecScans() so that overlay = "new+append" works right
 
 Menu "Data"
 	"-"
@@ -207,8 +209,11 @@ Function DisplayRangeOfSpecScans(range,fileName,path,overlay)
 		// everything in range is in the file
 	endif
 
-	String overlay0=overlay, overlay_i
-	if (strlen(WinList("*","","WIN:1"))==0 && stringmatch(overlay,"append"))
+	String overlay0=overlay, overlay_i			// overlay0 is first, overlay_i is all others
+	if (StringMatch(overlay,"new+append"))
+		overlay0 = "new"
+		overlay = "append"
+	elseif (strlen(WinList("*","","WIN:1"))==0 && stringmatch(overlay,"append"))
 		overlay0 = "new"
 	endif
 	Variable j0,j1
@@ -2815,11 +2820,12 @@ Function specInformation(scanNum)
 				return 2										// finally give up
 	endif
 
-	String miscString_temp__ = "–none–;"
-	String motorString_temp__ = "–none–;"
-	String pvString_temp1__ = "–none–;"
-	String pvString_temp2__ = "–none–;"
-	String pvString_temp3__ = "–none–;"
+	String noneStr = "_none_"
+	String miscString_temp__ = noneStr+";"
+	String motorString_temp__ = noneStr+";"
+	String pvString_temp1__ = noneStr+";"
+	String pvString_temp2__ = noneStr+";"
+	String pvString_temp3__ = noneStr+";"
 
 	if (exists(folderName+"specCommand")==2)
 		SVAR specCommand= $(folderName+"specCommand")
@@ -2865,7 +2871,7 @@ Function specInformation(scanNum)
 		pvString_temp3__ = ChangePartsOfString(pvString_temp3__,":","   ")
 	endif
 
-	String misc="–none–",motor="–none–",PV1="–none–",PV2="–none–",PV3="–none–"
+	String misc=noneStr,motor=noneStr,PV1=noneStr,PV2=noneStr,PV3=noneStr
 	Prompt misc "spec info",popup, miscString_temp__
 	Prompt motor "spec motors",popup, motorString_temp__
 	Prompt PV1 "Front end EPICS PV's",popup, pvString_temp1__
@@ -2874,19 +2880,19 @@ Function specInformation(scanNum)
 	DoPrompt "pick",misc,motor,PV1,PV2,PV3
 
 	sprintf str, "   for scan %d,   ",scanNum
-	if (cmpstr(misc,"–none–"))
+	if (cmpstr(misc,noneStr))
 		print str,misc
 	endif
-	if (cmpstr(motor,"–none–"))
+	if (cmpstr(motor,noneStr))
 		print str,motor
 	endif
-	if (cmpstr(PV1,"–none–"))
+	if (cmpstr(PV1,noneStr))
 		print str,PV1
 	endif
-	if (cmpstr(PV2,"–none–"))
+	if (cmpstr(PV2,noneStr))
 		print str,PV2
 	endif
-	if (cmpstr(PV3,"–none–"))
+	if (cmpstr(PV3,noneStr))
 		print str,PV3
 	endif
 	return 0
