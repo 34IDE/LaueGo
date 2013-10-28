@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 0.14
+#pragma version = 0.15
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -268,18 +268,18 @@ Function/WAVE MakeGizmocubeCorners(xyz)
 
 	Variable printIt = strlen(GetRTStackInfo(2))<=0
 	if (printIt)
-		printf "X = [%g, %g], 	âÆ=%g\r",Xlo,Xhi,dX
-		printf "Y = [%g, %g], 		âÆ=%g\r",Ylo,Yhi,dY
-		printf "Z = [%g, %g], 	âÆ=%g\r",Zlo,Zhi,dZ
+		printf "X = [%g, %g], 	Æ=%g\r",Xlo,Xhi,dX
+		printf "Y = [%g, %g], 	Æ=%g\r",Ylo,Yhi,dY
+		printf "Z = [%g, %g], 	Æ=%g\r",Zlo,Zhi,dZ
 	endif
 	mid = (Xlo+Xhi)/2;		Xlo = mid-d;	Xhi = mid+d
 	mid = (Ylo+Yhi)/2;		Ylo = mid-d;	Yhi = mid+d
 	mid = (Zlo+zhi)/2;		Zlo = mid-d;	Zhi = mid+d
 	if (printIt)
 		print " "
-		printf "X = [%g, %g], 	âÆ=%g\r",Xlo,Xhi,Xhi-Xlo
-		printf "Y = [%g, %g], 		âÆ=%g\r",Ylo,Yhi,Yhi-Ylo
-		printf "Z = [%g, %g], 	âÆ=%g\r",Zlo,Zhi,Zhi-Zlo
+		printf "X = [%g, %g], 	Æ=%g\r",Xlo,Xhi,Xhi-Xlo
+		printf "Y = [%g, %g], 	Æ=%g\r",Ylo,Yhi,Yhi-Ylo
+		printf "Z = [%g, %g], 	Æ=%g\r",Zlo,Zhi,Zhi-Zlo
 	endif
 
 	String name=CleanupName(NameOfWave(xyz)+"Corners",0)
