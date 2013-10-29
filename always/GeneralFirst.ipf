@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.03
+#pragma version = 3.04
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -83,7 +83,7 @@ End
 
 
 
-//	This provides for an easy way to load any package in the folder "Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures/Local Packages"
+//	This provides for an easy way to load any package in the folder "Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures/LocalPackages"
 //	just put the ipf file in there and it will be available to this function for loading.
 //	if the first 50 lines of the file contain a line such as   "#requiredPackages "HDF5images;microGeometryN;", then it will only load that file if the 
 //	ipf files in the list are already loaded.
@@ -92,7 +92,7 @@ End
 Function/T JZTgeneral_CheckForUserPackages(dirPath)
 	String dirPath				// full path to a directory
 
-	String rootPath = SpecialDirPath("Documents", 0, 0, 0 )+"WaveMetrics:Igor Pro 6 User Files:User Procedures:Local Packages:"
+	String rootPath = SpecialDirPath("Documents", 0, 0, 0 )+"WaveMetrics:Igor Pro 6 User Files:User Procedures:LocalPackages:"
 	dirPath = SelectString(strlen(dirPath),rootPath,dirPath)
 	String pre = dirPath[strlen(rootPath),Inf]
 	pre += SelectString(strlen(pre),"",":")
@@ -213,7 +213,7 @@ End
 Static Function/T getInitFunctionsName(ipf)
 	String ipf										// name of name of ipf file
 	String pathName = UniqueName("lpath",12,0)
-	NewPath/O/Q/Z $pathName ,  SpecialDirPath("Documents", 0, 0, 0 )+"WaveMetrics:Igor Pro 6 User Files:User Procedures:Local Packages:"
+	NewPath/O/Q/Z $pathName ,  SpecialDirPath("Documents", 0, 0, 0 )+"WaveMetrics:Igor Pro 6 User Files:User Procedures:LocalPackages:"
 	GetFileFolderInfo/P=$pathName/Q/Z=1 ipf
 	if (!V_isFile && strsearch(ipf,".ipf",0,2)<0)
 		ipf += ".ipf"

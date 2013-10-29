@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-put this into a folder named "Old VersionStatus"  which should be inside "Igor Shared Procedures" or "Local Packages", ...
+put this into a folder named "Old VersionStatus"  which should be inside "Igor Shared Procedures" or "LocalPackages", ...
 """
 
 import subprocess
