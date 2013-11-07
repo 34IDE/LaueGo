@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.16
+#pragma version = 3.17
 #pragma hide = 1
 
 Menu "Graph"
@@ -129,6 +129,21 @@ Function/S MenuItemIfWindowAbsent(item,win)		// Shows menu item if win NOT prese
 
 	GetWindow/Z $win, hide
 	return SelectString(V_flag,"(","")+item
+End
+
+// useful when just looking for a type of wave, no class information
+Function/S MenuItemIfWavesExists(item,matchStr,optionsStr,[invisible])
+	String item						// string that you want to appear in menu
+	String matchStr
+	String optionsStr				// options that are found in WaveList function optionsStr
+	Variable invisible				// controls menu item when conditions not met: true -> menu item absent, false or absent -> menu item grayed out
+	invisible = ParamIsDefault(invisible) ? 0 : invisible
+	invisible = numtype(invisible) ? 0 : invisible
+	String list = WaveList(matchStr,";",optionsStr)
+	if (invisible)
+		return SelectString(strlen(list),"",item)
+	endif
+	return SelectString(strlen(list),"(","")+item
 End
 
 //  =========================== End of Option Menu Functions ============================  //
