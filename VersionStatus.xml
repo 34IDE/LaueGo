@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-<<<<<<< HEAD
-	<written date="Thursday, November 07, 2013" time="06:41:47 PM CST" isoTime="2013-11-07T18:41:47"></written>
-=======
-<<<<<<< HEAD
-	<written date="Thursday, November 07, 2013" time="09:31:10 AM CST" isoTime="2013-11-07T09:31:10"></written>
-=======
-	<written date="Thursday, November 07, 2013" time="09:29:09 AM CST" isoTime="2013-11-07T09:29:09"></written>
->>>>>>> 1b270b955407dbf9899d2df62b02a08481c2c791
->>>>>>> 45bbcf9285c842350228cead73bae05ade24e578
+	<written date="Friday, November 08, 2013" time="09:24:51 AM CST" isoTime="2013-11-08T09:24:51"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>248</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -94,7 +86,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="f9205ebcdb3875f765a8c01568c12988" ext=".xml">materials/LaMnO3_OrthoORNLPhysics.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c625a9914e9c6341bb129829a22c4dca" ext=".xml">materials/SrAlO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">microN/microDiffractionMedia/Picture7.png</file>
-	<file version="1.4" time="2013-11-07T18:00:29" md5="98adf44aaae7a27ee03007068f6bb67d" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
+	<file version="1.4" time="2013-11-08T09:23:03" md5="98adf44aaae7a27ee03007068f6bb67d" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
 	<file version="2.58" time="2013-10-28T11:28:49" md5="6df145e1f165469cc4d953537fec762a" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="9ade17870257633d501725982dca9c17" ext=".mtl">materials/LaMnO3.mtl</file>
@@ -168,15 +160,7 @@
 	<file version="3.17" time="2013-11-07T09:26:46" md5="09614866182c46c65303178e591b4e74" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" ext=".png">microN/microDiffractionMedia/Picture5.png</file>
-<<<<<<< HEAD
 	<file version="0.03" time="2013-11-07T09:29:57" md5="d4bae30c469490f8af1304d136b5af33" ext=".ipf">General/JZT-analysis.ipf</file>
-=======
-<<<<<<< HEAD
-	<file version="0.03" time="2013-11-07T09:29:57" md5="d4bae30c469490f8af1304d136b5af33" ext=".ipf">General/JZT-analysis.ipf</file>
-=======
-	<file version="0.03" time="2013-11-07T09:28:11" md5="c51618a8f4ce77a9f999592e66349409" ext=".ipf">General/JZT-analysis.ipf</file>
->>>>>>> 1b270b955407dbf9899d2df62b02a08481c2c791
->>>>>>> 45bbcf9285c842350228cead73bae05ade24e578
 	<file version="nan" time="2013-10-28T11:28:48" md5="c5c91bd92aeea678b4ea3f1c63118e71" ext=".xml">materials/Ti-7Altry.xml</file>
 	<file version="2.5" time="2013-10-28T11:28:49" md5="6ceb98c82afc72c9362048c8cfc162f2" ext=".ipf">microN/ArrayOf3dOrientsN_LongLong.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="07e4a381d4c6cf69d70435bf38d87283" ext=".xml">materials/Au.xml</file>
@@ -267,5 +251,5 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2ec249f8184a5a75261f7b0a2669a133" ext=".xml">materials/VO2/VO2_M3_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3df8cafd26d6b3032d126e3b8449d646" ext=".xml">materials/BaFeAs_RT.xml</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="b8794323aebf3d77873652342889a983" ext=".txt">Readme.txt</file>
+	<file version="nan" time="2013-11-08T09:23:04" md5="479087742cb543791c750a2718d9618b" ext=".txt">Readme.txt</file>
 </VersionStatus>
