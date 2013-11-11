@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.17
+#pragma version = 3.18
 #pragma hide = 1
 
 Menu "Graph"
@@ -42,6 +42,7 @@ End
 //		FWHM of fitted peaks: GaussianFWHM(W_coef), LorentzianFWHM(W_coef)
 //		Area of fitted peaks: LorentzianIntegral(W_coef), GaussianIntegral(W_coef), Gaussian2DIntegral(W_coef)
 //		computeCOM(), compute the Center of Mass
+//		PowerIntegerScale(), rescale a waves values by ^n or ^(1/n), preserves sign for non-complex values
 //		cpuFrequency(), systemUserName(), getEnvironment(), returns system info
 //		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
@@ -1980,6 +1981,48 @@ ThreadSafe Function computeCOM(ywave,xwave)		// computes center of mass,  xwave 
 		com = sum(yy)/syy
 	endif
 	return com
+End
+
+
+
+Function/Wave PowerIntegerScale(image,power)	// scale the values of image by ^(power) AND for real values preserve the sign
+	Wave image					// assumed to be an image, but works for waves of dimension of 1,2, & 3
+	Variable power				// must be > 0, uses integer power or integer roots
+
+	String wname, scaling
+	Variable ipower
+	if (numtype(power) || WaveType(image,1)!=1)
+		return $""				// really bad input, power must be a number & image a numeric wave
+	elseif (power>1)
+		ipower = round(power)
+		power = ipower
+		wname = GetWavesDataFolder(image,2)+"_pow"+num2istr(ipower)
+		sprintf scaling, "^%d",ipower
+	elseif (power<1 && power>0)
+		ipower = round(1/power)
+		power = 1/ipower
+		wname = GetWavesDataFolder(image,2)+"_root"+num2istr(ipower)
+		sprintf scaling, "^(1/%d)",ipower
+	else
+		return $""				// power must be > 0
+	endif
+	if (numtype(ipower+power) || WaveType(image,1)!=1)
+		return $""
+	endif
+
+	Variable type=WaveType(image)
+	Variable itype = (type & 0x06) ? type : 0x02	// if a float or complex then the same type, otherwise single precision outout
+	Make/N=(2)/Y=(itype)/O $wname/WAVE=imagePow
+	if (type & 0x01)			// for complex images
+		MatrixOp/O/C imagePow = powC(abs(image),power)	// don't try to fix sign for complex values
+	else
+		MatrixOp/O imagePow = powR(abs(image),power) * (2.0* greater(image,0.0) - 1.0)
+	endif
+	Redimension/Y=(itype) imagePow						// otherwise the MatrixOp always retrurn double
+	CopyScales image, imagePow
+	SetScale d 0,0,WaveUnits(imagePow,-1)+scaling, imagePow
+	Note/K imagePow, ReplaceStringByKey("valueScaling",note(image),scaling,"=")
+	return imagePow 
 End
 
 

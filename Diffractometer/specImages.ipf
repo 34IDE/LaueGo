@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.45
+#pragma version = 0.47
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -10,6 +10,8 @@
 #include "Masking", version>=1.01
 
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
+//Static StrConstant degreeSign = "\\F'Symbol'°\\]0"
+Static StrConstant degreeSign = "¡"
 
 // #define USE_EXTRA_PILATUS_SPEC_FILE			// put this in your procedure file to use the funky file extra with extra Pilatus info
 
@@ -1110,7 +1112,7 @@ Static Function/T GraphDiffractometerImage(image)
 			aName = StringFromList(i,DiffractometerAxisNames)
 			angle = NumberByKey(aName,wnote,"=")				// first check wavenote for angle
 			angle = numtype(angle) ? specInfo(scanNum,aName) : angle	// angle is not in wavenote, so check specInfo()
-			sprintf str1, "%s = %.3fÂ°",aName,angle
+			sprintf str1, "%s = %.3f%s",aName,angle,degreeSign
 			str += SelectString(i>0,"",", ")+str1					// accumulate the "name=angle, "
 		endfor
 		title += "\r\\Zr070"+str+"\\M"
@@ -1191,25 +1193,29 @@ Static Function getQofImageHook(s)									// Shift-mouseDown=follow mouse and s
 	GetWindow $win psize
 	Variable vert = limit((s.mouseLoc.v-V_top)/(V_bottom-V_top),0,1)	// fractional position on graph
 	Variable horiz = limit((s.mouseLoc.h-V_left)/(V_right-V_left),0,1)
-	Variable theta, px,py											// pixel position at the mouse-click
-	GetAxis/W=$win/Q bottom
-	if (V_flag)
-		return 1
+	Variable theta, px,py												// pixel position at the mouse-click
+	String info = ImageInfo(win,NameOfWave(image),0)
+	Wave xaxis = $(StringByKey("XWAVEDF",info)+StringByKey("XWAVE",info))
+	Wave yaxis = $(StringByKey("YWAVEDF",info)+StringByKey("YWAVE",info))
+	px = AxisValFromPixel(win,StringByKey("XAXIS",info),s.mouseLoc.h)
+	py = AxisValFromPixel(win,StringByKey("YAXIS",info),s.mouseLoc.v)
+	if (WaveExists(xaxis))
+		px = BinarySearchInterp(xaxis,px)							// convert x-axis value to point in xaxis
+	else
+		px = (px-DimOffset(image,0)) / DimDelta(image,0)		// from image scaling, get x pixel
 	endif
-	px = (V_max-V_min)*horiz + V_min
-	GetAxis/W=$win/Q left
-	if (V_flag)
-		return 1
+	if (WaveExists(yaxis))
+		py = BinarySearchInterp(yaxis,py)							// convert y-axis value to point in yaxis
+	else
+		py = (py-DimOffset(image,1)) / DimDelta(image,1)		// from image scaling, get y pixel
 	endif
-	py = (V_min-V_max)*vert + V_max
-
 	Make/N=3/D/FREE qvec=NaN
-	theta = diffractometer#QofPixel(d,keV,px,py,A,qvec)			// returns Q of pixel in SAMPLE (not xtal or beam line) frame
+	theta = diffractometer#QofPixel(d,keV,px,py,A,qvec)		// returns Q of pixel in SAMPLE (not xtal or beam line) frame
 
 	STRUCT sampleStructure sa	
 	String str = ParseFilePath(1,GetWavesDataFolder(image,1),":",1,0)+"sampleStructStr"
-	String strStruct=StrVarOrDefault(str,"")						// fill the sample structure with values in spec scan directory
-	if (strlen(strStruct)>0)										// need this to get hkl
+	String strStruct=StrVarOrDefault(str,"")					// fill the sample structure with values in spec scan directory
+	if (strlen(strStruct)>0)											// need this to get hkl
 		StructGet/S/B=2 sa, strStruct								// found structure information, load into s
 		Wave hkl = HKLofPixel(sa,d,keV,px,py,A)					// returns hkl of pixel in beam CRYSTAL frame, (not sample frame, not BL coords)
 	else
@@ -1223,23 +1229,23 @@ Static Function getQofImageHook(s)									// Shift-mouseDown=follow mouse and s
 		sprintf str,"\r\f01hkl\f00 = [%.3f, %.3f, %.3f]",hkl[0],hkl[1],hkl[2]
 		tagStr += str
 	endif
-	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f\\F'Symbol'âˆž\\]0",px,py,2*theta*180/PI
+	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f%s",px,py,2*theta*180/PI,degreeSign
 	tagStr += str
 
 	px = limit(px,0,DimSize(image,0)-1)							// needed in case (px,py) is outside the image
 	py = limit(py,0,DimSize(image,1)-1)
 	Variable index = round(px) + DimSize(image,0)*round(py)		// convert px,py back to index into image, for positioning text box
 	GetAxis/W=$win/Q bottom
-	horiz = (px-V_min)/ (V_max-V_min)							// determine anchor for text box
+	horiz = (px-V_min)/ (V_max-V_min)								// determine anchor for text box
 	GetAxis/W=$win/Q left
 	vert = (py-V_max)/(V_min-V_max)
 	Variable x0 = horiz<0.5 ? 5 : -5,  y0 = vert<0.5 ? -5 : 5
 	String anchor = SelectString(horiz<0.5,"R","L")+ SelectString(vert<0.5,"B","T")
 	Tag/C/N=indexedPeakInfo/W=$win/A=$anchor/F=2/L=2/X=(x0)/Y=(y0)/P=1 $imageNameStr,index,tagStr
 	s.doSetCursor= 1
-	s.cursorCode = 21												// point marker
+	s.cursorCode = 21														// point marker
 	DoUpdate
-	return 1														// 1 means do not send back to Igor for more processing
+	return 1																	// 1 means do not send back to Igor for more processing
 End
 
 //  ============================ End of spec Image Plotting =============================  //
