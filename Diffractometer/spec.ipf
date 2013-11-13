@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.29
+#pragma version = 2.30
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
 
@@ -610,8 +610,11 @@ Function DisplaySpecScan(scanNum,overlay)
 		SetAxis/A/E=1 left
 	endif
 	Variable i = exists("specGraphGenericStyle")
-	if (i==5 || i==6)								// if macro or userfunc exists, fix up plot
+	if (i==5)											// a macro, fix up plot
 		Execute "specGraphGenericStyle()"
+	elseif (i==6)										// a userfunc exists, fix up plot
+		FUNCREF styleFuncTemplate styleFunc = $"specGraphGenericStyle"
+		styleFunc()
 	elseif (exists("JonsStyle_")==5)				// if macro exists, fix up plot
 		Execute "JonsStyle_()"
 	endif
@@ -626,6 +629,9 @@ Function DisplaySpecScan(scanNum,overlay)
 
 	NVAR lastScan=root:Packages:spec:lastScan
 	lastScan = scanNum
+End
+Function styleFuncTemplate()
+	Variable i
 End
 Function addMoreAnnotation2PlotTemplate(i)
 	Variable i

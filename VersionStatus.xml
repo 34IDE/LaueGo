@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, November 11, 2013" time="09:39:07 AM CST" isoTime="2013-11-11T09:39:07"></written>
+	<written date="Wednesday, November 13, 2013" time="12:39:57 PM CST" isoTime="2013-11-13T12:39:57"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>248</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -25,7 +25,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="3137d5743b8846f6d6373513d29a92a7" ext=".xml">materials/NdGaO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="45092064aa2f391fcad76837b1322c01" ext=".xml">materials/LaMnO3_Ortho.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.29" time="2013-10-28T11:28:48" md5="47528d0e7a945267e69552d9e2c1ee29" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.3" time="2013-11-13T12:26:32" md5="e89943ef5fe7da52fb9c99377f3a82b4" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c017c7408f271d5d935d61a458904881" ext=".xml">materials/Ni3Al.xml</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" ext=".ipf">General/absorption.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="89037fe313f31195b4aced86d4e09779" ext=".xml">materials/Sn-sg141-best.xml</file>
@@ -157,7 +157,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="4a4a324cb89e7e1c4ea5c05069471c39" ext=".xml">materials/Sn-sg141.xml</file>
 	<file version="2.1" time="2013-10-28T11:28:48" md5="8045ddabfcd42c2930212b860a1294de" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a3dd1379a82d5afb5a5d0fec54d0a6a5" ext=".xml">materials/ald09.xml</file>
-	<file version="3.18" time="2013-11-10T14:22:24" md5="46d2321c817fe4331d090138188b481e" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.18" time="2013-11-11T09:44:41" md5="46d2321c817fe4331d090138188b481e" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" ext=".png">microN/microDiffractionMedia/Picture5.png</file>
 	<file version="0.03" time="2013-11-07T09:29:57" md5="d4bae30c469490f8af1304d136b5af33" ext=".ipf">General/JZT-analysis.ipf</file>
@@ -240,7 +240,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="083fdcdaeb7838ef3ba3a6e907a1d64b" ext=".xml">materials/LuMnO3_Hexagonal.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8318859207bfbd615cd77d47bd5cf7aa" ext="">micro/Euler</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b39d6f3d791a796992959083b9f9cfb8" ext=".xml">materials/AlNi.xml</file>
-	<file version="0.47" time="2013-11-11T09:35:04" md5="53150a0b269e41f885d512344f228c9c" ext=".ipf">Diffractometer/specImages.ipf</file>
+	<file version="0.47" time="2013-11-11T09:44:41" md5="53150a0b269e41f885d512344f228c9c" ext=".ipf">Diffractometer/specImages.ipf</file>
 	<file version="2.64" time="2013-10-28T11:28:48" md5="dedf085f7593a4cfbbb93e65d53cbc70" ext=".ipf">micro/Indexing.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e72b942d553b1804022d8c145407362d" ext=".xml">materials/YZrO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="f7cbe5ad6d73260131a8d08f2a847f0d" ext=".png">microN/microDiffractionMedia/Picture2.png</file>
