@@ -1,6 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
 #pragma version = 2.30
+//#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
 
@@ -287,6 +288,7 @@ Function Display_any_spec_Scan(scanNum,fileName,path,overlay)
 			tempF__list_ = ""
 		endif
 		tempF__list_ += prefixChooseScans(specScansList(fileName,path,"eVscan"))
+		tempF__list_ += prefixChooseScans(specScansList(fileName,path,"ascan  herixE"))
 		String tempG__list_ = prefixChooseScans(specScansList(fileName,path,"shootCCD"))
 
 		// and other
@@ -3193,6 +3195,10 @@ Function List_spec_Scans(fileName,path,scanType)
 	fileName = S_fileName
 
 	String scanList=specScansList(fileName,"",scanType)
+	if (StringMatch(scanType,"Escan"))				// add other names of energy scan
+		scanList += specScansList(fileName,"","eVscan")
+		scanList += specScansList(fileName,"","ascan  herixE")
+	endif
 	String line
 	SVAR DefaultFile=root:Packages:spec:specDefaultFile
 
