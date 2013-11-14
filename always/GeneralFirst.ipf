@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.04
+#pragma version = 3.05
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -102,7 +102,7 @@ Function/T JZTgeneral_CheckForUserPackages(dirPath)
 		return ""
 	endif
 	String fname,menuList="",required
-	Variable i=0
+	Variable i=0, dirLast
 	do
 		fname = IndexedFile($pathName,i,".ipf")
 		if (strlen(fname)==0)
@@ -122,17 +122,18 @@ Function/T JZTgeneral_CheckForUserPackages(dirPath)
 	//	check subdirectories, but exclude those labeled as 'always', 'old', or 'subroutine*'
 	String dirName="", dirList="", addMenus
 	for (i=0,dirName=IndexedDir($pathName,0,1); strlen(dirName); i+=1, dirName=IndexedDir($pathName,i,1))
-		if (strsearch(dirName,"subroutine",0,2)>=0)
+		dirLast = strlen(dirName)-1
+		if (strsearch(dirName,":.",0,2)>0)										// contains a folder starting with "."
 			continue
-		elseif (strsearch(dirName,":old",0,2)>=0)
+		elseif (strsearch(dirName,"subroutine",0,2)>=0)					// contains "subroutine"
 			continue
-		elseif (strsearch(dirName," old",0,2)>=0)
+		elseif (strsearch(dirName,":old",dirLast,3)==dirLast-3)		// ends in ":old"
 			continue
-		elseif (strsearch(dirName,"(old",0,2)>=0)
+		elseif (strsearch(dirName," old",dirLast,3)==dirLast-3)		// ends in " old"
 			continue
-		elseif (StringMatch(dirName,"old"))
+		elseif (strsearch(dirName,"(old",0,2)>=0)							// contains "(old"
 			continue
-		elseif (StringMatch(dirName,"always"))
+		elseif (strsearch(dirName,":always",dirLast,3)==dirLast-6)	// ends in ":always"
 			continue
 		endif
 		addMenus = JZTgeneral_CheckForUserPackages(dirName)	// check inside this sub-directory recursively
