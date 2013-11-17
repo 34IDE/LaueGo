@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.38
+#pragma version = 4.39
 #include "LatticeSym", version>=3.55
 #include "microGeometryN", version>=1.16
 #include "Masking", version>1.00
@@ -118,7 +118,7 @@ Static Constant hc = 1.239841857			// keV-nm
 Static Constant SMALLEST1 = 1.2e-16
 
 
-Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2])
+Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,printIt])
 	Wave FullPeakList0					// contains the result of a peak fitting
 	Variable keVmaxCalc				// 17, maximum energy to calculate (keV)
 	Variable keVmaxTest				// 26, maximum energy to test (keV)  [-t]
@@ -128,6 +128,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 	Variable maxSpots					// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1					// contains the result of a peak fitting
 	Wave FullPeakList2					// contains the result of a peak fitting
+	Variable printIt						// forces print out
 	maxSpots = ParamIsDefault(maxSpots) ? -1 : maxSpots
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
 	if (ParamIsDefault(FullPeakList1))
@@ -136,6 +137,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 	if (ParamIsDefault(FullPeakList2))
 		Wave FullPeakList2=$""
 	endif
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : !(!printIt)
 
 	if (NumVarOrDefault("root:Packages:geometry:PanelValues:dirty",0))	// geo waiting
 		Variable/G root:Packages:geometry:PanelValues:dirty=0
@@ -247,7 +249,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 		badNums += numtype(hp+kp+lp) + !(cone>1 && cone<180)
 		badNums += (abs(hp)+abs(kp)+abs(lp))==0
 		sscanf hkl,"%d, %d, %d", hp,kp,lp
-		printf "IndexAndDisplay(%s,%g,%g,%g, %d,%d,%d,%g",peakListStr0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone
+		printf "¥IndexAndDisplay(%s,%g,%g,%g, %d,%d,%d,%g",peakListStr0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone
 		if (maxSpots>0)
 			printf ",maxSpots=%g",maxSpots
 		endif
@@ -256,6 +258,9 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 		endif
 		if (strlen(peakListStr2))
 			printf ", FullPeakList2=%s",peakListStr2
+		endif
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
 		endif
 		printf ")\r"
 		if (badWave || badNums)
@@ -278,6 +283,9 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2))
 	endif
 	if (!WaveExists(FullPeakIndexed))
+		if (printIt)
+			print "\tNothing indexed"
+		endif
 		return 1
 	endif
 	String wnote = note(FullPeakIndexed)
@@ -287,7 +295,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 	Variable executionTime = NumberByKey("executionTime",wnote,"=")
 	Variable rms_error = NumberByKey("rms_error0",wnote,"=")
 
-	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
+	if (printIt)
 		String timeStr = SelectString(executionTime>=60,num2str(executionTime)+" sec", Secs2Time(executionTime,5,1)+" ("+num2str(executionTime)+" sec)")
 		printf "from Euler, found %d patterns, indexed %d out of %d spots  with rms=%g¡ in %s",NpatternsFound,Nindexed,NiData, rms_error,timeStr
 		printf ",   "+SurfaceNormalString(FullPeakIndexed)+"\r"
@@ -7472,12 +7480,7 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 			printf "total length = %d x %d  = %d points\r", xdim,ydim,xdim*ydim
 			print "number type is  '"+IgorFileTypeString(NumberByKey("NUMTYPE",WaveInfo(image,0)))+"'"
 			print "Created a 2-d wave    '"+GetWavesDataFolder(image,2)+"'"
-			DoAlert 1, "Display this image"
-			if (V_Flag==1)
-//				Graph_imageMake(image,1)
-//				NewImageGraph(image,1)
-				NewImageGraphLocal(image)
-			endif
+			NewImageGraphLocal(image)
 		endif
 	elseif (stringmatch(ctrlName,"buttonViewImage") && strlen(WaveListClass("spe*;rawImage*;HDF*","*","DIMS:2")))
 		NewImageGraphLocal($"")
@@ -7519,7 +7522,7 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 //		SVAR pkList=pkList
 //		setFittedPeaksFromList($"",NaN,pkList)
 	elseif (stringmatch(ctrlName,"buttonIndex") && strlen(WaveListClass("FittedPeakList","*","DIMS:2,MAXCOLS:11,MINCOLS:11")))
-		IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN)
+		IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN,printit=1)
 	elseif (stringmatch(ctrlName,"buttonStrainRefine"))
 #ifdef USE_ENERGY_STRAIN_REFINE			//#if (Exists("TotalStrainRefine")==6)
 		TotalStrainRefine(NaN,"")
