@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, November 14, 2013" time="11:57:24 AM CST" isoTime="2013-11-14T11:57:24"></written>
+	<written date="Sunday, November 17, 2013" time="02:31:38 AM CST" isoTime="2013-11-17T02:31:38"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>248</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -13,7 +13,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="d67051f31ea831fde2618fb39602d5c8" ext=".xml">materials/ErMnO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="14b01f4e14579d002360271d4a1180e0" ext=".xml">materials/Autunite.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f4f0bce170e0dc90385410658b87f9a" ext=".mtl">materials/CaF2.mtl</file>
-	<file version="1.47" time="2013-10-28T11:28:49" md5="127d26b840d8314e710b8197fdfed125" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
+	<file version="1.48" time="2013-11-17T02:31:10" md5="002f5c64c38869010bfc6ee8d54ca3a3" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dc5047d3d42586757ff6c441f3d732f4" ext=".xml">materials/KTaO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="114f6557708bbfa68bda2cace0e30983" ext=".xml">materials/NiAl.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5e44b2ecadb849a8fb98a0ccc921d7da" ext=".xml">materials/YBCO3.xml</file>
@@ -54,7 +54,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.1" time="2013-10-28T11:28:48" md5="344e35247c773b2c8ad6062c0fe8f1ec" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
-	<file version="4.38" time="2013-10-28T11:28:49" md5="e9edc812271aca7704ab538f30a46c69" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.39" time="2013-11-16T20:15:23" md5="3dab92c2a5b6acc279411da733ee4721" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.63" time="2013-10-28T11:28:49" md5="cc8c844d3a5f7f9117463c00a9075880" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="29cafe5148d2f8c838aa0fa682b4da52" ext=".xml">materials/ZnS Wurtzite.xml</file>
