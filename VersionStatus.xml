@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, November 18, 2013" time="06:17:50 PM CST" isoTime="2013-11-18T18:17:50"></written>
+	<written date="Monday, November 18, 2013" time="07:28:42 PM CST" isoTime="2013-11-18T19:28:42"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>248</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -31,7 +31,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="89037fe313f31195b4aced86d4e09779" ext=".xml">materials/Sn-sg141-best.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="67c99e48e06f29ab903d379d5cd9e8df" ext=".xml">materials/Er.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a41867870f3717daea30770dcb0a8666" ext=".xml">materials/ald37.xml</file>
-	<file version="0.02" time="2013-11-18T15:54:39" md5="4dbf9f89985e7e8093bd377dd754ac5d" ext=".ipf">General/BurtFiles.ipf</file>
+	<file version="0.02" time="2013-11-18T18:21:32" md5="4dbf9f89985e7e8093bd377dd754ac5d" ext=".ipf">General/BurtFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d2cecdf854958ec7e2e6f5b58341ef18" ext=".xml">materials/PZT-Rhomb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8f514e77e27d6af2814f4abb383f9466" ext=".xml">materials/Mo.xml</file>
 	<file version="1.3" time="2013-10-28T11:28:48" md5="2787d0bea6ded454ef5ec7180125a190" ext=".ipf">General/FWHM.ipf</file>
@@ -54,7 +54,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.1" time="2013-10-28T11:28:48" md5="344e35247c773b2c8ad6062c0fe8f1ec" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
-	<file version="4.4" time="2013-11-18T15:51:41" md5="40b4de4516a8277a9515d7de35c9ec12" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.4" time="2013-11-18T18:21:32" md5="40b4de4516a8277a9515d7de35c9ec12" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.63" time="2013-10-28T11:28:49" md5="cc8c844d3a5f7f9117463c00a9075880" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="29cafe5148d2f8c838aa0fa682b4da52" ext=".xml">materials/ZnS Wurtzite.xml</file>
@@ -151,13 +151,13 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="4600c4022689de127291ae80e57517f7" ext=".xml">materials/PbMnNbO.xml</file>
 	<file version="0.26" time="2013-10-28T11:28:48" md5="474c6f7b9cbf675fa84808c3dd474948" ext=".ipf">General/HDF5images.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a0c2da844748f6158bfdbcb9bc5a4517" ext=".mtl">materials/MnO.mtl</file>
-	<file version="1.6" time="2013-11-18T18:16:39" md5="12ae137031a3727992e22660bbd634d7" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="1.6" time="2013-11-18T18:21:32" md5="12ae137031a3727992e22660bbd634d7" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d045d4620e0d7a69e96a406dc3c3005c" ext=".xml">materials/HEA2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a74dd9cbe5ed0ed98dbb73da2efe64b7" ext=".xml">materials/LaMnO3_OrthoPhysics.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4a4a324cb89e7e1c4ea5c05069471c39" ext=".xml">materials/Sn-sg141.xml</file>
 	<file version="2.1" time="2013-10-28T11:28:48" md5="8045ddabfcd42c2930212b860a1294de" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a3dd1379a82d5afb5a5d0fec54d0a6a5" ext=".xml">materials/ald09.xml</file>
-	<file version="3.19" time="2013-11-18T18:13:53" md5="6e48bba7522c128e732db15e7a0ad0ea" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.19" time="2013-11-18T18:21:32" md5="6e48bba7522c128e732db15e7a0ad0ea" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" ext=".png">microN/microDiffractionMedia/Picture5.png</file>
 	<file version="0.03" time="2013-11-07T09:29:57" md5="d4bae30c469490f8af1304d136b5af33" ext=".ipf">General/JZT-analysis.ipf</file>
@@ -185,7 +185,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="fde12c23ffdfde57b393c6256dbe67f0" ext=".xml">geometrys/geoN_2013-01-31_15-10-07.xml</file>
 	<file version="0.2" time="2013-10-28T11:28:48" md5="79c2728edf04c72dbe0b30229f142f72" ext=".ipf">Lattice/AtomView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="21c8c1a4e96121064f92dbfa36ec916e" ext=".xml">geometrys/geoN_2013-03-23_14-27-53.xml</file>
-	<file version="1.09" time="2013-11-18T18:15:56" md5="007e8c23f2ab939c6c117515b2ed4a6d" ext=".ipf">General/mdaFiles.ipf</file>
+	<file version="1.09" time="2013-11-18T18:21:32" md5="007e8c23f2ab939c6c117515b2ed4a6d" ext=".ipf">General/mdaFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2eb6f57c7f1123538243824f8a1e0407" ext=".xml">materials/FeO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="" ext=".app">Check Version Consistency.app</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7fd56632214ddaf61f5143df4e74464c" ext=".png">microN/microDiffractionMedia/Picture8.png</file>
@@ -251,5 +251,5 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2ec249f8184a5a75261f7b0a2669a133" ext=".xml">materials/VO2/VO2_M3_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3df8cafd26d6b3032d126e3b8449d646" ext=".xml">materials/BaFeAs_RT.xml</file>
-	<file version="nan" time="2013-11-08T09:23:04" md5="479087742cb543791c750a2718d9618b" ext=".txt">Readme.txt</file>
+	<file version="nan" time="2013-11-18T18:21:32" md5="e2189aacae6be3f50f7aaa26fe0adc1f" ext=".txt">Readme.txt</file>
 </VersionStatus>
