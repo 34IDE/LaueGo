@@ -18,6 +18,4 @@ The following applies to both MS Windows and Mac computers. "[MyDocuments]" refe
 
 5.	(First-time installation only) Find files "HDF5 Help.ihf" and "HDF5.xop" under path "C:\Program Files (x86)\WaveMetrics\Igor Pro Folder\More Extensions\File Loaders" on a PC, or "Applications\IgorPro 6.x Folder\More Extensions\File Loaders" on a Mac. Create shortcuts to both files inside "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\Igor Extensions".
 
-6.	(Mac only) (First-time installation only) Find files "HFSAndPosix Help.ihf" and "HFSAndPosix.xop" inside "Applications\IgorPro 6.x Folder\More Extensions\Utilities"; create shortcuts to both files inside "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\Igor Extensions"
-
-7.	Done. You only need to repeat step 2 and 3 the next time you update your microdiffraction package.
+6.	Done. You only need to repeat step 2 and 3 the next time you update your microdiffraction package.
