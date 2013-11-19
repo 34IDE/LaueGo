@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.39
+#pragma version = 4.40
 #include "LatticeSym", version>=3.55
 #include "microGeometryN", version>=1.16
 #include "Masking", version>1.00
@@ -1866,9 +1866,9 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	PathInfo home
 	if (V_flag)									// the path "home" exists, use it
 		mpath = S_path
-		#if !stringmatch(igorInfo(2),"Windows")	// Windows version of runEulerCommand()
-		upath = HFSToPosix("",S_path,1,1)
-		#endif
+		if (stringmatch(igorInfo(2),"Macintosh"))
+			upath = ParseFilePath(5,S_path,"/",0,0)	// Convert HFS>POSIX only on Mac, not Windows
+		endif
 	endif
 	NewPath/O/Q/Z EulerCalcFolder, mpath		// need a new path name since "home" may not exist
 	if (V_flag)
@@ -1894,9 +1894,9 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	name = StrVarOrDefault("root:Packages:micro:indexingExecutableMac",name)	// over ride default if indexingExecutableMac is set
 	GetFileFolderInfo/Q/Z EulerPath+name
 	EulerPath += SelectString(V_Flag==0 && V_isFile,"Euler",name)	// use just plane Euler if Euler_ppc or Euler_i386 does not exist
-	#if !stringmatch(igorInfo(2),"Windows")			// Windows version of runEulerCommand()
-	EulerPath = HFSToPosix("",EulerPath,1,1)							// convert from Mac to unix style paths
-	#endif
+	if (stringmatch(igorInfo(2),"Macintosh"))			// on Mac, convert EulerPath from HFS to Posix
+		EulerPath = ParseFilePath(5,EulerPath,"/",0,0)
+	endif
 	if (strlen(EulerPath)<1)
 		DoAlert 0, "cannot find the executable '"+name+"'"
 		return ""
@@ -2699,19 +2699,18 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 		return ""
 	endif
 	String imageFileMac=imageFile
-#if !stringmatch(igorInfo(2),"Windows") // RX
-	imageFile = HFSToPosix("",imageFile,1,1) 
-#endif	 // RX
 	Variable isMac = stringmatch(igorInfo(2),"Macintosh")
 	Variable isWin = stringmatch(igorInfo(2), "Windows")
-
+	if (isMac) // RX, JZT
+		imageFile = ParseFilePath(5,imageFile,"/",0,0)	// on Mac only convert HFS to POSIX
+	endif	
 	// first write the command file to drive peaksearch program
 	PathInfo home
 	if (V_flag)									// the path "home" exists, use it
 		mpath = S_path
-	#if !stringmatch(igorInfo(2),"Windows") // RX
-		upath = HFSToPosix("",S_path,1,1)
-	#endif // RX
+		if (isMac)		// RX, JZT
+			upath = ParseFilePath(5,S_path,"/",0,0)
+		endif
 	endif
 	NewPath/O/Q/Z PeakSearchCalcFolder, mpath	// need a new path name since "home" may not exist
 	if (V_flag)
@@ -2735,9 +2734,9 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 	name = StrVarOrDefault("root:Packages:micro:PeakFit:PeakSearchExecutableMac",name)// over ride default if PeakSearchExecutableMac is set
 	GetFileFolderInfo/Q/Z PeakSearchPath+name
 	PeakSearchPath += SelectString(V_Flag==0 && V_isFile,"peaksearch",name)	// use just plane peaksearch if peaksearch_ppc or peaksearch_i386 does not exist
-#if !stringmatch(igorInfo(2),"Windows") // RX
-	PeakSearchPath = HFSToPosix("",PeakSearchPath,1,1)							// convert from Mac to unix style paths
-#endif // RX
+	if (isMac)												// RX, JZT,  only on Mac, convert paths from HFS to POSIX
+		PeakSearchPath = ParseFilePath(5,PeakSearchPath,"/",0,0)
+	endif
 	if (strlen(PeakSearchPath)<1)
 		DoAlert 0, "cannot find the executable '"+name+"'"
 		return ""
@@ -2745,7 +2744,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 
 	String maskFileName=""
 	SVAR maskHashLast = root:Packages:micro:PeakFit:maskHashLast
-	if (WaveExists(mask))							// a mask file was passed, write it to disk, (and do not delete it afterwards)
+	if (WaveExists(mask))								// a mask file was passed, write it to disk, (and do not delete it afterwards)
 		if (Exists("Write1HDF5imageFile")!=6)
 			DoAlert 0,"External peak fitting works ONLY with hdf5 images"
 			return ""
@@ -2755,13 +2754,13 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 		if (V_Flag==0 && V_isFile && !V_isAliasShortcut && (modDate(mask)-V_modificationDate)<1)
 			maskHash = Hash(S_Path+S_fileType+num2istr(V_modificationDate),1)
 		endif
-		if (cmpstr(maskHash,maskHashLast,1))										// they differ, write the mask to disk
-		#if (Exists("Write1HDF5imageFile")==6)										// only works for HDF5 files
+		if (cmpstr(maskHash,maskHashLast,1))			// they differ, write the mask to disk
+		#if (Exists("Write1HDF5imageFile")==6)		// only works for HDF5 files
 			maskFileName = Write1HDF5imageFile(mask,mpath+"generic_mask.h5")	// name of file to hold mask
 		#endif
-		#if !stringmatch(igorInfo(2),"Windows") // RX
-			maskFileName = HFSToPosix("",maskFileName,1,1)
-		#endif // RX
+			if (isMac) 											// RX, JZT		only on Mac, need POSIX paths
+				maskFileName = ParseFilePath(5,maskFileName,"/",0,0)	
+			endif
 			if (strlen(maskFileName)<1)
 				DoAlert 0, "Unable to write mask image file to disk"
 				return ""		
@@ -2769,7 +2768,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 			GetFileFolderInfo/P=PeakSearchCalcFolder/Q/Z=1 "generic_mask.h5"
 			maskHashLast = Hash(S_Path+S_fileType+num2istr(V_modificationDate),1)	// update last hash
 		else
-			maskFileName = upath+"generic_mask.h5"										// just use existing file
+			maskFileName = upath+"generic_mask.h5"	// just use existing file
 		endif
 	endif
 	String cmd,params

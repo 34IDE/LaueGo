@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.08
+#pragma version = 1.09
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -68,14 +68,14 @@ Static Function/T LoadMDAfile(inFile0)
 		Open/D=1/F=mdaFilters/M="Pick an mda file"/R f
 		inFile0 = S_fileName
 	endif
-	if (strlen(inFile0)<1)
-		return ""
+	String PosixFileIn=""
+	if (isFile("home",inFile0))
+		PathInfo home
+		PosixFileIn = ParseFilePath(5,S_path+inFile0,"/",0,0)
+	elseif (isFile("",inFile0))
+		PosixFileIn = ParseFilePath(5,inFile0,"/",0,0)
 	endif
-	PathInfo home
-	String path = SelectString(V_flag,"","home")
-
-	String inFile = HFSToPosix(path,inFile0,1,1)
-	if (strlen(inFile)<1)
+	if (strlen(PosixFileIn)<1)
 		return ""
 	endif
 
@@ -84,14 +84,14 @@ Static Function/T LoadMDAfile(inFile0)
 	outFile = SpecialDirPath("Temporary",0,1,1)+Hash(str,1)
 	//	outFile = "/Users/tischler/Desktop/mda2Igor/test.txt"
 	String pythonScript = ParseFilePath(1, FunctionPath("LoadMDAfile"), ":", 1, 0)+"mdaAscii2Igor.py"
-	pythonScript = HFSToPosix("",pythonScript,1,1)
+	pythonScript = ParseFilePath(5,pythonScript,"/",0,0)
 	if (strlen(pythonScript)<1)
 		DoAlert 0,"Cannot find 'mdaAscii2Igor.py'"
 		return ""
 	endif
 
 	String cmd
-	sprintf cmd "do shell script \"\\\"%s\\\" \\\"%s\\\" \\\"%s\\\"\"",pythonScript,inFile,outFile
+	sprintf cmd "do shell script \"\\\"%s\\\" \\\"%s\\\" \\\"%s\\\"\"",pythonScript,PosixFileIn,outFile
 	ExecuteScriptText cmd
 	Variable err=0
 	err = strsearch(S_value,"Traceback (most recent call last)",0)>=0
@@ -114,7 +114,7 @@ Static Function/T LoadMDAfile(inFile0)
 	if (i1<0 || i2<0)
 		return ""
 	endif
-	String mdaFile = PosixToHFS("",S_value[i1,i2],1,1)
+	String mdaFile = Posix2HFS(S_value[i1,i2])
 	if (strlen(mdaFile)<1)
 		return ""
 	endif
@@ -147,6 +147,21 @@ Static Function/T LoadMDAfile(inFile0)
 		DisplayMDAresult($"")
 	endif
 	return S_waveNames
+End
+
+Static Function isFile(path,name)		// returns TRUE if path & name is a file
+	String path			// optional path name, e.g. "home"
+	String name			// partial or full file name
+
+	if (strlen(path))
+		PathInfo $path
+		if (V_flag==0)
+			return 0
+		endif
+		name = S_path+name	// add the path to name
+	endif
+	GetFileFolderInfo/Q/Z=1 name
+	return V_isFile && (V_Flag==0)
 End
 #endif
 
