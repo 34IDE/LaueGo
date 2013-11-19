@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, November 18, 2013" time="07:28:42 PM CST" isoTime="2013-11-18T19:28:42"></written>
+	<written date="Monday, November 18, 2013" time="07:44:27 PM CST" isoTime="2013-11-18T19:44:27"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>248</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -251,5 +251,5 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2ec249f8184a5a75261f7b0a2669a133" ext=".xml">materials/VO2/VO2_M3_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3df8cafd26d6b3032d126e3b8449d646" ext=".xml">materials/BaFeAs_RT.xml</file>
-	<file version="nan" time="2013-11-18T18:21:32" md5="e2189aacae6be3f50f7aaa26fe0adc1f" ext=".txt">Readme.txt</file>
+	<file version="nan" time="2013-11-18T19:42:30" md5="24761aa8b6f31ac0cdb72133eb1dbf30" ext=".txt">Readme.txt</file>
 </VersionStatus>
