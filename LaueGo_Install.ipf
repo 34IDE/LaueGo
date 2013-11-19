@@ -2,7 +2,7 @@
 #pragma ModuleName=LaueGoInstall
 #pragma version = 0.02
 // #pragma hide = 1
-Constant Testing = 0
+Constant LaueGo_Install_Test = 0
 
 
 strConstant xopList = "HDF5.xop;HDF5 Help.ihf;"		// a list of xop's to install
@@ -16,7 +16,7 @@ End
 
 Function LaueGo_Install()
 	DoWindow/H/F			// bring history window to front so you can watch it.
-	if (Testing)
+	if (LaueGo_Install_Test)
 		DoAlert 0, "This is operating in Testing mode"
 	endif
 	if (Append2Log("",1))
@@ -92,7 +92,7 @@ Function LaueGo_Install()
 
 	if (existing)
 		//	move LaueGo folder to somewere else
-		if (!Testing)
+		if (!LaueGo_Install_Test)
 			MoveFolder/I=0/M="old LaueGo folder"/S="Destination for old LaueGo folder"/Z=1 LaueGoFullPath as oldFolderDestination
 			if (V_flag)
 				str = "The old LaueGo folder was not moved"
@@ -107,7 +107,7 @@ Function LaueGo_Install()
 
 	// move new LaueGo to "User Procedures"
 	//	put new LaueGo folder into LaueGoFullPath
-	if (!Testing)
+	if (!LaueGo_Install_Test)
 		MoveFolder/I=0/M="new LaueGo folder"/S="Official destination for new LaueGo folder"/Z=1  newFullPath as LaueGoFullPath
 		if (V_flag)
 			str = "The new LaueGo folder was not moved"
