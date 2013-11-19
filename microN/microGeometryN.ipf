@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.59
+#pragma version = 1.60
 #include  "LatticeSym", version>=3.54
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -5009,19 +5009,6 @@ End
 // ======================================= Start of Init =======================================
 
 Function Init_microGeo()
-	if (exists("HFSToPosix")<3 && stringmatch(igorInfo(2),"Macintosh"))
-		DoAlert 0,"HFSToPosix does not exist.  To index anything you must first install 'HFSAndPosix.xop' and re-start Igor.  Follow instructions printed in history"
-		print "=============================================================================="
-		print "\r		To install: 	HFSAndPosix.xop\r\r"
-		print "Navigate to your Igor application folder, it is probably   'Macintosh HD:Applications:Igor Pro Folder:'."
-		print "Open the folder 'More Extensions' in your 'Igor Pro Folder', and then open 'Utilities' folder."
-		print " inside Utilities, there should be a file named HFSAndPosix.xop."
-		print "Make an alias of this xop, and move the alias to your Desktop, or some place you can find it later."
-		print "Navigate to your 'Igor Extensions' folder, it is probably 'Macintosh HD:Applications:Igor Pro Folder:Igor Extensions:'."
-		print "Drag the alis you just created 'HFSAndPosix.xop alias' into your 'Igor Extensions' folder'."
-		print "Finally re-start Igor."
-		print "=============================================================================="
-	endif
 	if (NumVarOrDefault("root:Packages:geometry:geoInited",0))
 		return 0
 	endif

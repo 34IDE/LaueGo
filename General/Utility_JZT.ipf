@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.18
+#pragma version = 3.19
 #pragma hide = 1
 
 Menu "Graph"
@@ -43,6 +43,7 @@ End
 //		Area of fitted peaks: LorentzianIntegral(W_coef), GaussianIntegral(W_coef), Gaussian2DIntegral(W_coef)
 //		computeCOM(), compute the Center of Mass
 //		PowerIntegerScale(), rescale a waves values by ^n or ^(1/n), preserves sign for non-complex values
+//		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		cpuFrequency(), systemUserName(), getEnvironment(), returns system info
 //		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
@@ -2025,6 +2026,27 @@ Function/Wave PowerIntegerScale(image,power)	// scale the values of image by ^(p
 	return imagePow 
 End
 
+
+
+Function/T Posix2HFS(posixName,[printIt])	// This is a replacement for PosixToHFS()
+	// Since we can replace HFSToPosix() with ParseFilePath(), we no longer need HFSAndPosix.xop
+	String posixName
+	Variable printIt									// normally returns "" on error, but this causes more printout
+	printIt = ParamIsDefault(printIt) ? (strlen(GetRTStackInfo(2))==0) : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
+	String cmd
+	sprintf cmd, "(POSIX file \"%s\") as Unicode text",posixName
+	ExecuteScriptText/Z cmd
+	if (V_flag)
+		if (printIt)
+			printf "failure in Posix2HFS(\"%s\")\t\tcmd = '%s'\r",posixName,cmd
+			print S_value
+		endif
+		return ""										// there is no valid file path
+	endif
+	return S_value[1,strlen(S_value)-2]		// strip off leading & trailing double-quotes
+End
 
 
 Function cpuFrequency()		// return the cpu frequency (Hz)

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.20
-#pragma version = 0.01
+#pragma version = 0.02
 #pragma ModuleName=BurtFiles
 
 Menu "Load Waves"
@@ -176,7 +176,7 @@ Static Function/WAVE LoadPVfrom34IDBurtFiles(PVname,start,[period,final])
 	endif
 
 	String pythonScript = ParseFilePath(1, FunctionPath("BurtFiles#LoadPVfrom34IDBurtFiles"), ":", 1, 0)+"burt_tool.py"
-	pythonScript = HFSToPosix("",pythonScript,1,1)
+	pythonScript = ParseFilePath(5,pythonScript,"/",0,0)
 	if (strlen(pythonScript)<1)
 		DoAlert 0,"Cannot find 'burt_tool.py'"
 		return $""
