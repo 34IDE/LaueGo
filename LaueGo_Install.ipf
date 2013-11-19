@@ -2,7 +2,7 @@
 #pragma ModuleName=LaueGoInstall
 #pragma version = 0.02
 // #pragma hide = 1
-Constant Testing = 1
+Constant Testing = 0
 
 
 strConstant xopList = "HDF5.xop;HDF5 Help.ihf;"		// a list of xop's to install
