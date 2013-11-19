@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, November 18, 2013" time="07:44:27 PM CST" isoTime="2013-11-18T19:44:27"></written>
+	<written date="Tuesday, November 19, 2013" time="12:06:35 PM CST" isoTime="2013-11-19T12:06:35"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>248</fileCount>
+	<fileCount>249</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
@@ -114,6 +114,7 @@
 	<file version="3.2" time="2013-10-28T11:28:48" md5="c3ec209d863503d9aeccfba331972cee" ext=".ipf">General/IonChamber.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="05b3c9e787ace21577e0392f365e42bc" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4ffec31f91a4981d8404966e7ca17de0" ext=".mtl">materials/BePS-200.mtl</file>
+	<file version="0.02" time="2013-11-19T12:03:24" md5="55b6973345f9c48abe3fb8c93d8780fe" ext=".ipf">LaueGo_Install.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2e7a06042ee382cfc47da4eddf030a77" ext=".xml">materials/Al.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e14984054d4661c474487323b7044a1a" ext=".xml">geometrys/geoN_2013-07-03_16-01-03.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5e559c63a0766602a2be0800d2153366" ext=".xml">materials/VO2/VO2_rutile.xml</file>
