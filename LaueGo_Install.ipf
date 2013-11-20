@@ -1,11 +1,13 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.02
+#pragma version = 0.03
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
+Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
+Static strConstant JZTArchiveURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/LaueGo.zip"
+Static Constant minimumArchiveLen = 16777216	// 16MB (16*1024*1024)
 
-
-strConstant xopList = "HDF5.xop;HDF5 Help.ihf;"		// a list of xop's to install
+strConstant xopList = "HDF5.xop;HDF5 Help.ihf;"		// a list of xop's to install, this can be overidden
 //Static strConstant = xopList = "HDF5.xop;HDF5 Help.ihf;HFSAndPosix.xop;HFSAndPosix Help.ihf;"
 
 
@@ -48,16 +50,19 @@ Function LaueGo_Install()
 		endif
 	endif
 
-	// download LaueGo and put it on Desktop, not yet implemented
-
 	// identify the new LaueGo folder
-	NewPath/M="Find NEW LaueGo folder"/O/Q/Z NewLaueGo
-	if (V_flag)
-		return 1
+	DoAlert/T="find NEW LaueGo" 2, "Download newest version from web?"
+	String newFullPath="", name
+	if (V_flag==1)										// download LaueGo.zip, expand it, and put it on Desktop
+		newFullPath = FetchLaueGoArchive("")
+	else													// ask user to identify and existing (presumably new) LaueGo folder to use
+		NewPath/M="Find NEW LaueGo folder"/O/Q/Z NewLaueGo
+		if (V_flag)
+			return 1
+		endif
+		PathInfo NewLaueGo
+		newFullPath=S_path[0,strlen(S_path)-2]
 	endif
-	PathInfo NewLaueGo
-	String newFullPath=S_path[0,strlen(S_path)-2], name
-
 	if (StringMatch(LaueGoFullPath,newFullPath))
 		str = "The New LaueGo folder is the same as the existing LaueGo folder!"
 		Append2Log(str,0)
@@ -229,6 +234,111 @@ Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new experiment
 
 	return empty
 End
+
+
+
+Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip file to the Desktop
+	String urlStr
+
+	String str
+	String destinationZip = SpecialDirPath("Desktop",0,0,0)+"LaueGo.zip"
+	String DesktopFldr = SpecialDirPath("Desktop",0,0,0)
+	String destinationFldr = DesktopFldr+"LaueGo"
+	if (FileFolderExists(destinationZip,file=1))
+		str = "the file 'LaueGo.zip' already exists on the desktop\rCannot overwrite existing zip file.\rRemove LaueGo.zip from Desktop and try again."
+		Append2Log(str,0)
+		DoAlert 0, str
+		return ""
+	endif
+	if (FileFolderExists(destinationFldr))
+		str = "the folder 'LaueGo' already exists on the Desktop\rCannot overwrite existing folder.\rTry changing name of existing folder and try again."
+		Append2Log(str,0)
+		DoAlert 0, str
+		return ""
+	endif
+
+	if (strlen(	urlStr)<1)
+		Prompt urlStr, "URL to use for Downloading LaueGo", popup, "APS;gitHub"
+		DoPrompt "Download Site",urlStr
+		if (V_flag)
+			return ""
+		endif
+		urlStr = SelectString(StringMatch(urlStr,"gitHub"),urlStr,gitHubArchiveURL)
+		urlStr = SelectString(StringMatch(urlStr,"APS"),urlStr,JZTArchiveURL)
+	endif
+	if (strlen(urlStr)<1)
+		str = "Could not get the URL to the LaueGo.zip file.\rTry again."
+		Append2Log(str,0)
+		DoAlert 0, str
+		return ""
+	endif
+
+	sprintf str, "Downloading LaueGo from \"%s\"\r",urlStr
+	Append2Log(str,0)
+	if (StringMatch(urlStr,gitHubArchiveURL))
+		str = "gitHub, must use a web browser to download the zip archive.\r"
+		str += "On the Web Page, Push the 'Download ZIP' button (on the right)\rThen Follow instructions in Igor History"
+		Append2Log(str,0)
+		DoAlert 0, str
+		BrowseURL/Z "http://github.com/34IDE/LaueGo/"
+		if (V_flag)
+			str = "Could NOT get gitHub zip archive using Web Browser"
+			Append2Log(str,0)
+			return ""
+		endif
+		str = "\r\rYou must now:\r1) find the downloaded file called \"LaueGo-master.zip\"\r2) un-zip it (double click on it)\r3) rename the folder \"LaueGo-master\" to \"LaueGo\"\r"
+		str += "You will then have to re-start the install and this time do NOT choose to download, but just select this new \"LaueGo\" folder"
+		Append2Log(str,0)
+		return ""
+	endif
+
+	String response = FetchURL(urlStr)
+	if (strlen(response)< minimumArchiveLen)
+		sprintf str, "\rDownloaded zip archive is too short, length = %d\rProbably a download error.\rTry again.",strlen(response)
+		Append2Log(str,0)
+		DoAlert 0, str
+		return ""
+	endif
+	Variable f
+	Open/M="Save the LaueGo.zip file"/T=".zip"/Z=1f as destinationZip
+	FBinWrite f, response
+	Close f
+
+	String cmd=""
+	sprintf str, "set zipPath to quoted form of POSIX path of (\"%s\" as alias)\n",destinationZip
+	cmd += str
+	sprintf str, "set outPath to quoted form of POSIX path of (\"%s\" as alias)\n",DesktopFldr
+	cmd += str
+	cmd += "tell application \"System Events\"\n"
+	cmd += "do shell script \"unzip \" & zipPath & \" -d \" & outPath\n"
+	cmd += "end tell\n"
+	sprintf str, "set LGfolder to \"%s\" as alias\n",destinationFldr
+	cmd += str
+	sprintf str, "	tell application \"Finder\" to set label index of LGfolder to 6"	// 6=Green
+	cmd += str
+	//	print ReplaceString("\n",cmd,"\r")
+	ExecuteScriptText/Z cmd
+	if (V_flag)
+		sprintf str, "failure in unzipping \"%s\"\rcmd = \r'%s'\r\r",destinationZip,ReplaceString("\n",cmd,"\r")
+		Append2Log(str,0)
+		Append2Log(S_value+"\r\r",0)				// there is no valid file path
+	endif
+	DeleteFile /Z destinationZip					// done unzipping, delete the zip file
+	if (V_flag)
+		sprintf str, "Could NOT delete the zip file  \"%s\"\r\tProceeding..."
+		Append2Log(str,0)
+	endif
+
+	if (FileFolderExists(destinationFldr,folder=1))
+		sprintf str, "Done Downloading, the new folder   \"%s\"",destinationFldr
+		Append2Log(str,0)
+	else
+		sprintf str, "ERROR --Done Downloading, but NO NEW FOLDER!!   \"%s\"",destinationFldr
+		Append2Log(str,0)
+	endif
+	return destinationFldr
+End
+
 
 
 // ============================================================================================= //
