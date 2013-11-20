@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 0.15
+#pragma version = 0.16
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -17,6 +17,7 @@ Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a 
 //	GetGizmoObjects()				returns list of objects of type "type", from top gizmo or named gizmo
 //	GizmoListScatterWaves()		return list of all scatter plots, except 'scatterMarker0, scatterMarker1, ...
 //	GizmoListIsoSurfaceWaves()	return list of all iso surface waves
+//	GizmoListSurfaceWaves([gizmo])	return list of all Surface plots on gizmo
 
 //Questionable:
 
@@ -78,7 +79,8 @@ Static Function/WAVE FindMakeCubeCornerWaves([GizmoName])		// finds (or makes) t
 
 	String cornerList=WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
 	String gizmoScatterList=GizmoListScatterWaves(gizmo=GizmoName)
-	String gizmoSurfaceList=GizmoListIsoSurfaceWaves(gizmo=GizmoName)		// get list of all iso surface waves
+	String gizmoIsoSurfaceList=GizmoListIsoSurfaceWaves(gizmo=GizmoName)		// get list of all iso surface waves
+	String gizmoSurfaceList=GizmoListSurfaceWaves(gizmo=GizmoName)		// get list of all surface waves
 	String gizmoListAll = gizmoScatterList+gizmoSurfaceList
 
 	String str, list3Dobjects=""
@@ -1087,6 +1089,48 @@ Function/T GizmoListIsoSurfaceWaves([gizmo])		// get list of all iso surface wav
 			continue
 		endif
 		keyList = ReplaceStringByKey(wname,keyList,scatterName,"=")
+	endfor
+	KillWaves/Z TW_DisplayList, TW_gizmoObjectList
+	KIllStrings/Z S_DisplayList, S_gizmoObjectList
+	return keyList
+End
+
+
+Function/T GizmoListSurfaceWaves([gizmo])		// get list of all Surface plots on gizmo
+	String gizmo									// optional name of gizmo
+	String Nswitch = ""
+	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
+	if (strlen(gizmo))
+		if (WinType(gizmo)!=13)
+			return ""
+		endif
+		Nswitch = "/N="+gizmo
+	endif
+
+	Execute "ModifyGizmo"+Nswitch+" stopRotation"
+	Execute "GetGizmo"+Nswitch+" displayList"		// list of all displayed objects
+	Execute "GetGizmo"+Nswitch+" objectList"		// find name of wave with marker position
+	Wave/T TW_DisplayList=TW_DisplayList, TW_gizmoObjectList=TW_gizmoObjectList
+
+	String keyList=""
+	String str, wname, list, surfaceName
+	Variable i,i0,i1
+	for (i=0;i<numpnts(TW_gizmoObjectList);i+=1)
+		str = TW_gizmoObjectList[i]
+
+		i0 = strsearch(str,"AppendToGizmo ",0)
+		if (i0<0 || i0>1)							// only process AppendToGizmo commands
+			continue
+		endif
+		list = str[i0+strlen("AppendToGizmo "),Inf]
+
+		surfaceName = StringByKey("name",list,"=",",")
+
+		wname = StringByKey("Surface",list,"=",",")
+		if (strlen(wname)<1)
+			continue
+		endif
+		keyList = ReplaceStringByKey(wname,keyList,surfaceName,"=")
 	endfor
 	KillWaves/Z TW_DisplayList, TW_gizmoObjectList
 	KIllStrings/Z S_DisplayList, S_gizmoObjectList

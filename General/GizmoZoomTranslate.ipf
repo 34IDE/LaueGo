@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.40
+#pragma version = 1.41
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GZoomTrans
 #include "GizmoUtility", version>=0.08
@@ -1022,18 +1022,20 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 			printf "   Æ(hkl) = (%.3g, %.3g, %.3g),  |Æ(hkl)| = %.3g (rlu)\r",dh, dk, dl,sqrt(dh^2+dk^2+dl^2)
 		endif
 
-		Make/N=9/D/FREE rl0, rl1						// consider printing the rotation between two reicprocal lattices
-		rl1 = info.M[MarkerNum].recip[p]
-		rl0 = info.M[num2].recip[p]
-		Redimension/N=(3,3) rl0, rl1
-		list =  Compare2ReciprocalLatticesList(rl0,rl1)
-		Variable angle=NumberByKey("axisRotationAngle",list,"=")
-		Wave scatter=$(info.M[MarkerNum].wName)
-		if (angle>0)
-			printf "   rotation is about the axis {XYZ} = %s  by  %.3g¡\r",StringByKey("axisDirectionXYZ",list,"="),angle
-			printf "   in both crystals, the axis is an hkl={%s},    which is %.2f¡ away from the hkl={%s}\r",StringByKey("axisHKL",list,"="),NumberByKey("axisHKLdeviation",list,"="),StringByKey("axisHKL0",list,"=")
-		elseif (WaveDims(scatter)==1 && angle==0)		// this only makes sense for 1D, 3D waves will always give zero
-			printf "   the reciprocal lattices are identical\r"
+		if (exists("InitLatticeSymPackage")==6)
+			Make/N=9/D/FREE rl0, rl1						// consider printing the rotation between two reicprocal lattices
+			rl1 = info.M[MarkerNum].recip[p]
+			rl0 = info.M[num2].recip[p]
+			Redimension/N=(3,3) rl0, rl1
+			list =  Compare2ReciprocalLatticesList(rl0,rl1)
+			Variable angle=NumberByKey("axisRotationAngle",list,"=")
+			Wave scatter=$(info.M[MarkerNum].wName)
+			if (angle>0)
+				printf "   rotation is about the axis {XYZ} = %s  by  %.3g¡\r",StringByKey("axisDirectionXYZ",list,"="),angle
+				printf "   in both crystals, the axis is an hkl={%s},    which is %.2f¡ away from the hkl={%s}\r",StringByKey("axisHKL",list,"="),NumberByKey("axisHKLdeviation",list,"="),StringByKey("axisHKL0",list,"=")
+			elseif (WaveDims(scatter)==1 && angle==0)		// this only makes sense for 1D, 3D waves will always give zero
+				printf "   the reciprocal lattices are identical\r"
+			endif
 		endif
 	endif
 	return 0
@@ -1869,6 +1871,7 @@ Static Function PrintGizmoMarkerInfoStruct(info)
 	return 0
 End
 
+#if exists("InitLatticeSymPackage")==6
 Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	// provide key=value list comparing two reciprocal lattices
 	Wave rl0,rl1									// two 3x3 reciprocal lattices
 
@@ -1920,6 +1923,12 @@ Static Function axisOfMatrix(rot,axis)				// returns total rotation angle, and s
 	normalize(axis)
 	return acos(cosine)*180/PI					// rotation angle in degrees
 End
+#else
+Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	
+	Wave rl0,rl1
+	return ""
+End
+#endif
 
 // ************************** End of Marker ***************************
 // ****************************************************************
