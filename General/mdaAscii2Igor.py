@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#version 1.03
+#version 1.05
 
 from xdrlib import *
 import sys
@@ -488,9 +488,12 @@ def mdaAscii1d_IGOR(d,outFile=None):
 	if len(xunit)>0:
 		fo.write(('X SetScale/I d 0,0,"%s", %s\n' % (xunit,wName)),)
 
+	try:	timeStr = mdaTime2ISOtime(d[1].time)
+	except:	timeStr = ''
 	noteStr = ('pv=%s;' % d[1].p[0].name)
 	if len(xdesc)>0: noteStr += ('desc=%s;' % xunit)
 	if len(xPV)>0: noteStr += ('xPV=%s;' % xPV)
+	if len(timeStr) > 0: noteStr += ('file_time=%s;' % timeStr)
 	fo.write(('X Note/K %s, "%s"\n' % (wName,noteStr)),)
 	fo.write('\n')
 
@@ -516,11 +519,39 @@ def mdaAscii1d_IGOR(d,outFile=None):
 		if len(d[1].d[i].desc)>0: noteStr += ('desc=%s;' % d[1].d[i].desc)
 		if len(xdesc)>0: noteStr += ('xLabel=%s;' % xdesc)
 		if len(xPV)>0: noteStr += ('xPV=%s;' % xPV)
+		if len(timeStr) > 0: noteStr += ('file_time=%s;' % timeStr)
 		fo.write(('X Note/K %s, "%s"\n' % (wName,noteStr)),)
 		fo.write('\n')
 	fo.close()
 	return outFile 
 
+
+def mdaTime2ISOtime(mdaTime):
+	""" convert the time format passed in by mda to an ISO8601 format
+	also, round to nearest second """
+	if not (type(mdaTime) is str): return ''
+	elif len(mdaTime)<1: return ''
+
+	mdaTime = mdaTime.upper()
+	mdaTime = mdaTime.replace(',',' ')
+	mdaTime = mdaTime.replace('  ',' ')
+	mda = mdaTime.split(' ')
+
+	months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+	mon = months.index(mda[0]) + 1
+	day = int(mda[1])
+	year = int(mda[2])
+
+	hms = mda[3].split(':')
+	hr = int(hms[0])
+	mn = int(hms[1])
+	try:
+		sec = int(round(float(hms[2])))
+	except:	
+		sec = int(0)
+
+	isoStr =  '%04d-%-2d-%02dT%02d:%02d:%02d' % (year,mon,day,hr,mn,sec)
+	return isoStr
 
 
 

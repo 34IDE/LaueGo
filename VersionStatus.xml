@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, November 21, 2013" time="12:55:30 PM CST" isoTime="2013-11-21T12:55:30"></written>
+	<written date="Thursday, November 21, 2013" time="02:13:46 PM CST" isoTime="2013-11-21T14:13:46"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>249</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -38,7 +38,7 @@
 	<file version="2.01" time="2013-10-28T11:28:48" md5="40c0b918da175b88e70c76c9264fd6d9" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" ext="">micro/indexAll_ppc</file>
 	<file version="1" time="2013-10-28T11:28:48" md5="892f3eeaf62fe0f56834c490e0b3df51" ext=".ipf">Grains/CutUpGrains.ipf</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="398023289622afee39d583587d9d9cb8" ext=".py">General/mdaAscii2Igor.py</file>
+	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" ext=".py">General/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8392fea4c2aeef593efea0621b100407" ext=".xml">materials/Cu3Pd-sg221.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="90e62f1037b69b18203d47cd05ee2b78" ext=".xml">materials/Al2O3r.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5d77e527acd902b462684afb230ef077" ext=".xml">materials/cu225.xml</file>
@@ -186,7 +186,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="fde12c23ffdfde57b393c6256dbe67f0" ext=".xml">geometrys/geoN_2013-01-31_15-10-07.xml</file>
 	<file version="0.2" time="2013-10-28T11:28:48" md5="79c2728edf04c72dbe0b30229f142f72" ext=".ipf">Lattice/AtomView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="21c8c1a4e96121064f92dbfa36ec916e" ext=".xml">geometrys/geoN_2013-03-23_14-27-53.xml</file>
-	<file version="1.09" time="2013-11-18T18:21:32" md5="007e8c23f2ab939c6c117515b2ed4a6d" ext=".ipf">General/mdaFiles.ipf</file>
+	<file version="1.1" time="2013-11-21T14:10:24" md5="263f6df8e03c488503b3f13132e97769" ext=".ipf">General/mdaFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2eb6f57c7f1123538243824f8a1e0407" ext=".xml">materials/FeO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="" ext=".app">Check Version Consistency.app</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7fd56632214ddaf61f5143df4e74464c" ext=".png">microN/microDiffractionMedia/Picture8.png</file>
