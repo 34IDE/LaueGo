@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, November 20, 2013" time="01:25:25 PM CST" isoTime="2013-11-20T13:25:25"></written>
+	<written date="Wednesday, November 20, 2013" time="05:59:02 PM CST" isoTime="2013-11-20T17:59:02"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>249</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -77,7 +77,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="d0b2c5f4610b804c7ab6e81e02c78d3e" ext=".xml">materials/VO2/VO2_M1_1970Longo.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="575fcf1c9c54b3d893d37c904de6813d" ext=".xml">materials/Pu-delta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="358bf9627f9b0221dc1822f4a3356981" ext=".xml">materials/spec.xml</file>
-	<file version="0.15" time="2013-10-28T11:50:18" md5="7b168978ccb12057ac00e6738f58eba6" ext=".ipf">General/GizmoUtility.ipf</file>
+	<file version="0.16" time="2013-11-20T17:55:17" md5="b742d57c169f03cf0d4ebd1b5bd4f3b6" ext=".ipf">General/GizmoUtility.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="cb2a8bf0eddd33154f98e4a5c628e77d" ext=".xml">materials/Fe.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="41f22bdd051094e103403c08886fb3bf" ext=".xml">geometrys/geoN_2011-10-20_21-35-02.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e5699813fac29802ceecd9818ec0e998" ext=".xml">materials/UO2.xml</file>
@@ -86,7 +86,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="f9205ebcdb3875f765a8c01568c12988" ext=".xml">materials/LaMnO3_OrthoORNLPhysics.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c625a9914e9c6341bb129829a22c4dca" ext=".xml">materials/SrAlO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">microN/microDiffractionMedia/Picture7.png</file>
-	<file version="1.4" time="2013-11-08T09:23:03" md5="98adf44aaae7a27ee03007068f6bb67d" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
+	<file version="1.41" time="2013-11-20T17:14:38" md5="71813d4c70e642009789809887b82e63" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
 	<file version="2.58" time="2013-10-28T11:28:49" md5="6df145e1f165469cc4d953537fec762a" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="9ade17870257633d501725982dca9c17" ext=".mtl">materials/LaMnO3.mtl</file>
@@ -114,7 +114,7 @@
 	<file version="3.2" time="2013-10-28T11:28:48" md5="c3ec209d863503d9aeccfba331972cee" ext=".ipf">General/IonChamber.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="05b3c9e787ace21577e0392f365e42bc" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4ffec31f91a4981d8404966e7ca17de0" ext=".mtl">materials/BePS-200.mtl</file>
-	<file version="0.03" time="2013-11-20T13:24:35" md5="ff7ebc2783f859f77df84bbe3442c9ca" ext=".ipf">LaueGo_Install.ipf</file>
+	<file version="0.03" time="2013-11-20T13:28:31" md5="ff7ebc2783f859f77df84bbe3442c9ca" ext=".ipf">LaueGo_Install.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2e7a06042ee382cfc47da4eddf030a77" ext=".xml">materials/Al.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e14984054d4661c474487323b7044a1a" ext=".xml">geometrys/geoN_2013-07-03_16-01-03.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5e559c63a0766602a2be0800d2153366" ext=".xml">materials/VO2/VO2_rutile.xml</file>
@@ -252,5 +252,5 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2ec249f8184a5a75261f7b0a2669a133" ext=".xml">materials/VO2/VO2_M3_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3df8cafd26d6b3032d126e3b8449d646" ext=".xml">materials/BaFeAs_RT.xml</file>
-	<file version="nan" time="2013-11-18T19:42:30" md5="24761aa8b6f31ac0cdb72133eb1dbf30" ext=".txt">Readme.txt</file>
+	<file version="nan" time="2013-11-20T13:28:31" md5="b5fb0756b9aab281f669dde1dfb594d3" ext=".txt">Readme.txt</file>
 </VersionStatus>
