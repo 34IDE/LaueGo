@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.48
+#pragma version = 1.49
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -482,7 +482,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		printf ", skipZeros=%g",skipZeros
 	endif
 	if (strlen(moreFunc))
-		printf ", moreFunc=%s",moreFunc
+		printf ", moreFunc=\"%s\"",moreFunc
 	endif
 	printf ")\r"
 
@@ -643,75 +643,102 @@ End
 Function FillMovieMorePixelsIntens(image)	// fills pixel intensities along a movie
 	Wave image
 
-	Variable hw=NumVarOrDefault(":MovieFullPeakListHW",0)
+	Variable hw=NumVarOrDefault(":MoviePixelsIntensHW",0)
+	hw = numtype(hw) || hw<0 ? 0 : round(hw)
 	String wnote=note(image)
-	Variable ii=NumberByKey("movieIndex",wnote,"="), iLen=NumberByKey("movieLength",wnote,"="), depth
-	Wave FullPeakList=$StrVarOrDefault(":MovieFullPeakListName","")
-	if (DimSize(FullPeakList,0)>0 && DimSize(FullPeakList,1)>=2)
-		Variable Npixels=DimSize(FullPeakList,0)
-		Wave MoviePixelIntensities=MoviePixelIntensities
-		if (ii==0)
-			hw = numtype(hw) || hw<0 ? 0 : round(hw)
-			Prompt hw,"HW of area around each listed pixel to save"
-			DoPrompt "HW around pixel",hw
-			if (V_flag)
-				hw = 0
-				DoAlert 0, "Setting HW=0 (just the point), and prodeeding"
-			endif
-			hw = numtype(hw) || hw<0 ? 0 : round(hw)
-			Variable/G :MovieFullPeakListHW = hw		// must be saved in a global
-
-			if (!WaveExists(MoviePixelIntensities))
-				Make/N=(iLen,Npixels)/O MoviePixelIntensities=NaN
-			else
-				Redimension/N=(iLen,Npixels) MoviePixelIntensities
-			endif
-			SetScale/P x 0,1,"", MoviePixelIntensities
-			String pixelStr="",str
-			Variable i, px,py
-			for (i=0;i<Npixels;i+=1)
-				px = FullPeakList[i][0]
-				py = FullPeakList[i][1]
-				sprintf str, "%g:%g,",round(px),round(py)
-				pixelStr += str
-			endfor
-
-			depth = NumberByKey("depth",wnote,"=")
-			if (numtype(depth)==0)
-				wnote = ReplaceNumberByKey("firstDepth",wnote,depth,"=")
-			endif
-			wnote = ReplaceStringByKey("PixelPositions",wnote,pixelStr,"=")
-			wnote = ReplaceNumberByKey("MovieFullPeakListHW",wnote,hw,"=")
-			wnote = ReplaceStringByKey("waveClass",wnote,"PixelIntensities","=")
-			Note/K MoviePixelIntensities, wnote
-			printf "Creating wave \"%s\" containing intensity around pixels (±%g) listed in \"%s\"\r",NameOfWave(MoviePixelIntensities),hw,NameOfWave(FullPeakList)
-		else
-			Variable x0 = NumberByKey("firstDepth",note(MoviePixelIntensities),"=")
-			depth = NumberByKey("depth",wnote,"=")
-			if (numtype(x0+depth))
-				SetScale/P x 0,1,"", MoviePixelIntensities				// no depth scaling
-			else
-				SetScale/I x x0,depth,"µm", MoviePixelIntensities	// can set depth scaling
-			endif
-		endif
-
-		hw = numtype(hw) || hw<0 ? 0 : round(hw)
-		if (hw>0)
-			Variable m,Nx=DimSize(image,0), Ny=DimSize(image,1), xlo,xhi,ylo,yhi
-			for (m=0;m<Npixels;m+=1)
-				px = round(FullPeakList[m][0])
-				py = round(FullPeakList[m][1])
-				xlo = limit(px-hw,0,Nx-1)
-				xhi = limit(px+hw,0,Nx-1)
-				ylo = limit(py-hw,0,Ny-1)
-				yhi = limit(py+hw,0,Ny-1)
-				ImageStats/M=1/G={xlo,xhi, ylo,yhi} image
-				MoviePixelIntensities[ii][m] = V_avg
-			endfor
-		else
-			MoviePixelIntensities[ii][] = image[FullPeakList[q][0]][FullPeakList[q][1]]
+	Variable ii=NumberByKey("movieIndex",wnote,"="), iLen=NumberByKey("movieLength",wnote,"="), depth, Npixels
+	Wave PeakList=$StrVarOrDefault(":MoviePixelsIntensPeakListName","")
+	Wave MoviePixelIntensities=MoviePixelIntensities
+	if (ii>0)											// NOT first frame in movie
+		if (!WaveExists(PeakList) || !WaveExists(MoviePixelIntensities))
+			return 1										// cannot find waves, not doing anything
+		elseif (DimSize(PeakList,0)<1 || DimSize(PeakList,1)<2)
+			return 1										// PeakList is invalid
 		endif
 	endif
+
+	if (ii==0)											// first time through, ask for PeakList & make MoviePixelIntensities
+		String PeakListName=NameOfWave(PeakList)
+		String wlist=WaveList("*",";","DIMS:2,MAXCOLS:15,MINCOLS:2")
+		Prompt PeakListName,"Wave with list of peaks to track",popup, wlist
+		Prompt hw,"HW of area around each listed peak to save"
+		if (ItemsInList(wlist)<1 && WaveExists(PeakList))
+			DoPrompt "Record Peak Intensities", hw
+		else
+			DoPrompt "Record Peak Intensities", PeakListName,hw
+		endif
+		if (V_flag)
+			DoAlert 0, "Will not be recording pixel intensitites in this movie"
+			return 1
+		endif
+		hw = numtype(hw) || hw<0 ? 0 : round(hw)
+		Wave PeakList = $PeakListName
+		if (!WaveExists(PeakList))
+			DoAlert 0, "Will not be recording pixel intensitites in this movie"
+			return 1
+		endif
+		Variable/G :MoviePixelsIntensHW = hw		// must be saved in a global
+		String/G :MoviePixelsIntensPeakListName = NameOfWave(PeakList)
+		Npixels = DimSize(PeakList,0)
+		Wave MoviePixelIntensities=MoviePixelIntensities
+
+		if (!WaveExists(MoviePixelIntensities))
+			Make/N=(iLen,Npixels)/O MoviePixelIntensities=NaN
+		else
+			Redimension/N=(iLen,Npixels) MoviePixelIntensities
+		endif
+		SetScale/P x 0,1,"", MoviePixelIntensities
+
+		String pixelStr="",str						// need to save pixelStr in wave note for plotting
+		Variable i, px,py
+		for (i=0;i<Npixels;i+=1)
+			px = PeakList[i][0]
+			py = PeakList[i][1]
+			sprintf str, "%g:%g,",round(px),round(py)
+			pixelStr += str
+		endfor
+
+		depth = NumberByKey("depth",wnote,"=")
+		if (numtype(depth)==0)
+			wnote = ReplaceNumberByKey("firstDepth",wnote,depth,"=")
+		endif
+		wnote = ReplaceStringByKey("PixelPositions",wnote,pixelStr,"=")
+		wnote = ReplaceNumberByKey("MoviePixelsIntensHW",wnote,hw,"=")
+		wnote = ReplaceStringByKey("waveClass",wnote,"PixelIntensities","=")
+		Note/K MoviePixelIntensities, wnote
+		printf "Creating wave \"%s\" containing intensity around pixels (±%g) listed in \"%s\"\r",NameOfWave(MoviePixelIntensities),hw,NameOfWave(PeakList)
+	else
+		Npixels = DimSize(PeakList,0)
+		Variable x0 = NumberByKey("firstDepth",note(MoviePixelIntensities),"=")
+		depth = NumberByKey("depth",wnote,"=")
+		if (numtype(x0+depth))
+			SetScale/P x 0,1,"", MoviePixelIntensities				// no depth scaling
+		else
+			SetScale/I x x0,depth,"µm", MoviePixelIntensities	// can set depth scaling
+		endif
+	endif
+	if (!WaveExists(PeakList) || !WaveExists(MoviePixelIntensities))
+		return 1										// cannot find waves, not doing anything
+	elseif (DimSize(PeakList,0)<1 || DimSize(PeakList,1)<2)
+		return 1										// PeakList is invalid
+	endif
+
+	if (hw>0)
+		Variable m,Nx=DimSize(image,0), Ny=DimSize(image,1), xlo,xhi,ylo,yhi
+		for (m=0;m<Npixels;m+=1)
+			px = round(PeakList[m][0])
+			py = round(PeakList[m][1])
+			xlo = limit(px-hw,0,Nx-1)
+			xhi = limit(px+hw,0,Nx-1)
+			ylo = limit(py-hw,0,Ny-1)
+			yhi = limit(py+hw,0,Ny-1)
+			ImageStats/M=1/G={xlo,xhi, ylo,yhi} image
+			MoviePixelIntensities[ii][m] = V_avg
+		endfor
+	else
+		MoviePixelIntensities[ii][] = image[PeakList[q][0]][PeakList[q][1]]
+	endif
+	return 0
 End
 
 // ****************************  Start of Fill Movie More Stuff ****************************
