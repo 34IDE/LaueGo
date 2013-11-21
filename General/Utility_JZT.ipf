@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.19
+#pragma version = 3.20
 #pragma hide = 1
 
 Menu "Graph"
@@ -2284,7 +2284,7 @@ Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input
 		elseif(V_flag==2)
 			second = 0							// no seconds given, assume 0
 		endif
-		Variable add12=strsearch(timeStr,"p",0) && (hour<12)
+		Variable add12=(strsearch(timeStr,"p",0)>0) && (hour<12)
 		hour += add12 ? 12 : 0
 		outStr += "T"+Secs2Time(hour*3600+minute*60+second,3)
 	endif
