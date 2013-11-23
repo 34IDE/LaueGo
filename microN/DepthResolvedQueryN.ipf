@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.49
+#pragma version = 1.51
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -387,7 +387,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	String range						// range of files to use
 	Variable surface					// depth of surface relative to depthSi(µm), used to calculate boost
 	Variable absorpLength			// absorption length (µm)
-	String type							// type of movie, images of a wire scan, sequenial images, first white image of each wire scan
+	String type							// type of movie, images of a wire scan, sequenial images, first image of each wire scan
 	Variable makeSum
 	String movieName					// name to use for movie (optional)
 	Variable flatten					// flag, TRUE make flat movie for Windows
@@ -398,7 +398,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	flatten = ParamIsDefault(flatten) ? 0 : (numtype(flatten)==0 && flatten != 0)
 	skipZeros = ParamIsDefault(skipZeros) ? 1 : (numtype(skipZeros)==0 && skipZeros != 0)
 	moreFunc = SelectString(ParamIsDefault(moreFunc),moreFunc,"")
-	String typeList="single wire scan;sequential images;first white image of each wirescan;first white image of each flyScan"
+	String typeList="single wire scan;sequential images;first image of each wirescan;first white image of each flyScan"
 	Variable useLog=0
 
 	String gName = FindMovieGraph()						// name of suitable graph with imageOnMovie
@@ -410,7 +410,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		Prompt makeSum,"Also make a sum image",popup,"No Sum;Make Sum Too"
 		Prompt flatten,"Flatten movie for windows",popup,"Regular;Flatten for Windows"
 		Prompt skipZeros,"Flatten movie for windows",popup,"Show All Images;Skip Empty Images"
-		Prompt moreFunc,"Name of Function to run at each step",popup,"-none-;"+FunctionList("FillMovieMore*",";","NPARAMS:1,KIND:2")
+		Prompt moreFunc,"Name of Function to run at each step",popup,"-none-;"+FunctionList("FillMovieMore*",";","NPARAMS:2,KIND:2")
 		flatten += 1
 		skipZeros += 1
 		DoPrompt "movie type",type,makeSum,flatten,skipZeros,moreFunc
@@ -424,7 +424,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	endif
 	itype = WhichListItem(type, typeList)
 
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	GetFileFolderInfo/P=$pathName/Q/Z filePrefix+num2istr(str2num(range))+imageExtension
 	if (!V_isFile)
 		GetFileFolderInfo/P=$pathName/Q filePrefix+num2istr(str2num(range))+imageExtension
@@ -442,16 +442,19 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	filePrefix = filePrefix[0,i]
 	String fileRoot = path+filePrefix
 
-	if (ItemsInRange(range)<1)									// find the range here
+	Variable epoch=DateTime
+	if (strlen(range)<1)											// find the range here
 		if (itype <=1 && itype>=0 || itype==3)				// for itype == 0 or 1 or 3
 			range = get_FilesIndexRange(pathName,filePrefix)
-		elseif (itype ==2 )											// first white image of each wirescan, itype==2
+		elseif (itype ==2 )											// first image of each wirescan, itype==2
 			range = get_FirstWhiteFilesIndexRange(pathName,filePrefix)
 		else
 			Abort "in FillMovieOfOneScan() itype = "+num2str(itype)
 		endif
 	endif
-	if (ItemsInRange(range)<1)
+	Variable totalTime = DateTime-epoch						// time to figure out which scan numbers to use
+	Variable Nimages = ItemsInRange(range)					// number of images to put in movie
+	if (Nimages<1)
 		return 1
 	endif
 	if ((numtype(surface)==2 || !(absorpLength>0)) && itype==0)
@@ -465,8 +468,12 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	endif
 	if (exists(moreFunc)==6)										// hook for a user supplied function to do some more
 		FUNCREF MoreInFillMovieProto func=$moreFunc
+		if (exists(moreFunc+"_Init")==6)						// an optional init file associated with moreFunc
+			FUNCREF MoreInFillMovieInitProto funcInit=$(moreFunc+"_Init")
+		endif
 	else
 		FUNCREF MoreInFillMovieProto func=MoreInFillMovieProto
+		FUNCREF MoreInFillMovieInitProto funcInit=MoreInFillMovieInitProto
 	endif
 	printf "FillMovieOfOneScan(\"%s\",\"%s\",\"%s\",%g,%g,\"%s\"",pathName,filePrefix,range[0,100],surface,absorpLength,type
 	if (!ParamIsDefault(makeSum) || makeSum)
@@ -485,17 +492,24 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		printf ", moreFunc=\"%s\"",moreFunc
 	endif
 	printf ")\r"
-
-	String cmd="NewMovie/P=home"
-	cmd += SelectString(flatten,"","/L")
-	cmd += SelectString(strlen(movieName),""," as "+movieName)
-	Execute cmd
-
-	printf "running in data folder  '%s'\r",GetDataFolder(1)
+	printf "running in data folder  '%s',    %g images in range\r",GetDataFolder(1),Nimages
+	String inputs=""
+	inputs = ReplaceStringByKey("pathName",inputs,pathName,"=")
+	inputs = ReplaceStringByKey("filePrefix",inputs,filePrefix,"=")
+	inputs = ReplaceStringByKey("range",inputs,range,"=")
+	inputs = ReplaceStringByKey("fileRoot",inputs,fileRoot,"=")
+	inputs = ReplaceStringByKey("imageExtension",inputs,imageExtension,"=")
+	inputs = ReplaceNumberByKey("surface",inputs,surface,"=")
+	inputs = ReplaceNumberByKey("absorpLength",inputs,absorpLength,"=")
+	inputs = ReplaceNumberByKey("itype",inputs,itype,"=")
+	inputs = ReplaceStringByKey("movieName",inputs,movieName,"=")
+	inputs = ReplaceNumberByKey("flatten",inputs,flatten,"=")
+	inputs = ReplaceNumberByKey("skipZeros",inputs,skipZeros,"=")
+	
+	epoch = DateTime
 	Variable boost														// boost factor from absorption
-	Variable depthSi,integral, epoch=DateTime
-	Variable X1,H1,keV
-	Variable X10,H10,keV0
+	Variable depthSi,integral
+	Variable X1,H1,keV, X10,H10,keV0
 	Wave imageOnMovie=imageOnMovie
 	String wnote = note(imageOnMovie)
 	Variable i0=0, i1=-1, j0=0, j1=-1
@@ -509,14 +523,31 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		j1 = j0 + DimSize(imageOnMovie,1) - 1
 		printf "using a sub-region of the images [%d, %d] [%d, %d]\r",i0,i1,j0,j1
 	endif
+	inputs = ReplaceNumberByKey("i0",inputs,i0,"=")
+	inputs = ReplaceNumberByKey("j0",inputs,j0,"=")
+	inputs = ReplaceNumberByKey("i1",inputs,i1,"=")
+	inputs = ReplaceNumberByKey("j1",inputs,j1,"=")
 
-	Make/N=(ItemsInRange(range))/O MovieIntegral=NaN		// holds the integral for each frame of the movie
+	Make/N=(Nimages)/O MovieIntegral=NaN						// holds the integral for each frame of the movie
 	Variable ii
 
 	String str,textStr, fname,imageName
 	sprintf fname, "%s%d%s",fileRoot,str2num(range),imageExtension
 	Variable Nslices = NumberByKey("Nslices",ReadGenericHeader(fname),"=")
 	Nslices = Nslices>=2 ? Nslices : 0
+	inputs = ReplaceNumberByKey("Nslices",inputs,Nslices,"=")
+	totalTime += DateTime-epoch
+	String moreFuncInitStr = funcInit(inputs)
+	if (StringMatch(moreFuncInitStr,"**Quit**"))
+		return 1
+	endif
+
+	epoch = DateTime
+	String cmd="NewMovie/P=home"
+	cmd += SelectString(flatten,"","/L")
+	cmd += SelectString(strlen(movieName),""," as "+movieName)
+	Execute cmd															// start the movie
+
 	for (i=str2num(range),ii=0; !numtype(i); i=NextInRange(range,i),ii+=1)
 		if (itype==3)
 			sprintf fname, "%s%d%s",fileRoot,i,imageExtension
@@ -568,9 +599,9 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 			imageOnMovieSum += imageOnMovie
 		endif
 		wnote = ReplaceNumberByKey("boost",wnote,boost,"=")
-		wnote = ReplaceNumberByKey("movieIndex",wnote,ii,"=")
-		wnote = ReplaceNumberByKey("movieFileIndex",wnote,i,"=")
-		wnote = ReplaceNumberByKey("movieLength",wnote,ItemsInRange(range),"=")
+		wnote = ReplaceNumberByKey("movieIndex",wnote,ii,"=")		// movie frame index
+		wnote = ReplaceNumberByKey("movieFileIndex",wnote,i,"=")	// index from range
+		wnote = ReplaceNumberByKey("movieLength",wnote,Nimages,"=")
 		Note/K imageOnMovie, wnote
 
 		KillWaves/Z image												// done with image
@@ -600,7 +631,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 			textStr += SelectString(strlen(textStr),"","\r") + "\\Zr070" + str
 		endif
 		TextBox/C/N=textFileName textStr						// "filesname\r\\Zr070file path"
-		func(imageOnMovie)
+		func(imageOnMovie,moreFuncInitStr)
 		imageOnMovie *= boost
 		if (useLog)
 			imageOnMovie = 5000*log(imageOnMovie)				// need 5000 because image is integer
@@ -609,20 +640,27 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		AddMovieFrame
 	endfor
 	CloseMovie
-	print "done, total execution time is  ",Secs2Time(DateTime-epoch,5,0)
+	totalTime += DateTime-epoch
+	print "done, total execution time is  ",Secs2Time(totalTime,5,0)
 	return 0
 End
 
-Function MoreInFillMovieProto(image)
+Function MoreInFillMovieProto(image,initStr)
 	Wave image
+	String initStr					// a generic mechanism to pass specialized info from MoreInFillMovieInitProto() to here
+End
+Function/T MoreInFillMovieInitProto(list)
+	String list
+	return ""
 End
 //Function MoreInFillMovieProto(image,[index])
 //	Wave image
 //	Variable index
 //End
 //		// This is an example:
-//Function FillMovieMoreTest(image)
+//Function FillMovieMoreTest(image,initStr)
 //	Wave image
+//	String initStr			// this is not used
 //	FitPeaksWithSeedFill(image,1.2,70,50,20,maxNu=15)
 //	ReDrawBoxes("")
 //	Wave FullPeakList=FullPeakList
@@ -640,8 +678,9 @@ End
 
 
 
-Function FillMovieMorePixelsIntens(image)	// fills pixel intensities along a movie
+Function FillMovieMorePixelsIntens(image,initStr)	// fills pixel intensities along a movie
 	Wave image
+	String initStr				// string with extra info from FillMovieMorePixelsIntens_Init
 
 	Variable hw=NumVarOrDefault(":MoviePixelsIntensHW",0)
 	hw = numtype(hw) || hw<0 ? 0 : round(hw)
@@ -740,6 +779,10 @@ Function FillMovieMorePixelsIntens(image)	// fills pixel intensities along a mov
 	endif
 	return 0
 End
+Function/T FillMovieMorePixelsIntens_Init()
+	return ""
+End
+
 
 // ****************************  Start of Fill Movie More Stuff ****************************
 Function RescaleMoviePixelIntensities(MoviePixelIntensities,[printIt])
@@ -855,8 +898,9 @@ End
 
 
 
-Function FillMovieMoreCrosses(image)	// finds pixel intensities along a movie
+Function FillMovieMoreCrosses(image,initStr)	// finds pixel intensities along a movie
 	Wave image
+	String initStr												// not used in this function
 
 	Variable width=-1
 
@@ -865,7 +909,7 @@ Function FillMovieMoreCrosses(image)	// finds pixel intensities along a movie
 		FixUpHolesInPeak(image)
 	#endif
 	width = width<0 ? round(min(DimSize(image,0),DimSize(image,1)) * 0.15) : width
-	if (!FindAndFitGaussianCenter(image,width))			// include a box ±width/2 around the peak
+	if (!FindAndFitGaussianCenter(image,width))	// include a box ±width/2 around the peak
 		Wave W_coef=W_coef
 		DrawMarker(W_coef[2],W_coef[4],width,width,"cross")
 	endif
@@ -1019,7 +1063,7 @@ Static Function/T get_FirstWhiteFilesIndexRange(pathName,namePart)
 	String wnote, fileRoot=S_path+namePart
 	Variable X1,H1,keV,H2
 	Variable X1o,H1o,keVo,H2o
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	wnote=ReadGenericHeader(fileRoot+num2istr(nw[0])+imageExtension)		// wave note to add to file read in
 	if (!strlen(wnote))
 		DoAlert 0,"file '"+name+"' does not have a complete header"
@@ -1031,9 +1075,14 @@ Static Function/T get_FirstWhiteFilesIndexRange(pathName,namePart)
 	H2o=NumberByKey("H2", wnote,"=")
 	keVo=NumberByKey("keV", wnote,"=")
 	list = num2istr(nw[0])+";"					// first one is always first one of a scan
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="finding first image of each wire scan")
 	for (m=1;m<N;m+=1)
+		if (mod(m,100)==0)
+			if (ProgressPanelUpdate(progressWin,m/N*100))
+				break											//   and break out of loop
+			endif
+		endif
 		name= fileRoot+num2istr(nw[m])+imageExtension
-//		wnote=WinViewReadHeader(name)			// wave note to add to file read in
 		wnote=ReadGenericHeader(name)			// wave note to add to file read in
 		if (!strlen(wnote))
 			DoAlert 0,"file '"+name+"' does not have a complete header"
@@ -1052,6 +1101,8 @@ Static Function/T get_FirstWhiteFilesIndexRange(pathName,namePart)
 			list += num2istr(nw[m])+";"
 		endif
 	endfor
+	printf "time to find files = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	DoWindow/K $progressWin
 	String range = compressRange(list,";")
 	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EWscanButtonProc"))
 		print "range	",ItemsInRange(range),"		",range
@@ -1117,7 +1168,7 @@ Static Function/T directory(pathName)
 	PathInfo $pathName	
 
 	String list=""
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	if (stringmatch(IgorInfo(2),"Macintosh"))	// this section for Mac
 		PathInfo $pathName
 		String script = "get POSIX path of file \"" + S_path + "\""
@@ -1251,7 +1302,7 @@ Function/T IntensityVsDepth(pathName,filePrefix,positions,depths,i0,i1,j0,j1)
 	String fname,imageName
 	Variable pos,ipos, j,depth, N=0
 
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	pos = strlen(positions) ? str2num(positions) :  Inf
 	for (ipos=0; numtype(pos)<2; pos=NextInRange(positions,pos))
 		if (numtype(pos))
@@ -1365,8 +1416,8 @@ Static Function/T GetFileRootAndDoubleRange(pathName,filePrefix,positions,depths
 	String path = S_path
 	if (strlen(filePrefix)<1 || !V_flag || strlen(S_path)<1)	// un-assigned path, or no file prefix
 		Variable refNum
-		SVAR filters=root:Packages:imageDisplay:ImageFileFilters
-		Open/F=filters/D/M="pick any one of the images"/R refNum
+		String ImageFileFilters=StrVarOrDefault("root:Packages:imageDisplay:ImageFileFilters","Image Files:.*;")
+		Open/F=ImageFileFilters/D/M="pick any one of the images"/R refNum
 		if (strlen(S_fileName)<1)
 			DoAlert 0,"no file specified"
 			return ""
@@ -1486,7 +1537,7 @@ Function SumInManyROIs(pathName,namePart,range,mask,[dark])
 	endif
 
 	Variable Nimage = max(ItemsInRange(range),1),  i=str2num(range)
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	sprintf name,"%s%d%s",fileRoot,i,imageExtension
 	Wave image = $(LoadGenericImageFile(name))
 	if (!WaveExists(image))
@@ -1587,7 +1638,7 @@ Static Function/T requestFileRoot(pathName,suffixes)
 		killMe = 1
 	endif
 	String message="pick any reconstructed image file in range,  using datafolder = "+GetDataFolder(0)
-	SVAR ImageFileFilters=root:Packages:imageDisplay:ImageFileFilters
+	String ImageFileFilters=StrVarOrDefault("root:Packages:imageDisplay:ImageFileFilters","Image Files:.*;")
 	Variable refNum
 	Open/F=ImageFileFilters/D/M=message/P=$pathName/R refNum
 	if (killMe)
@@ -1934,7 +1985,7 @@ Function AllParams2Waves(range)
 	String fileRoot = "Macintosh HD:Users:tischler:dev:reconstructXcode_Mar07:FakeData:raw:W_"
 
 	String fname, wnote
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	sprintf fname,"%s%d%s",fileRoot,str2num(range),imageExtension		// open first image
 //	wnote=WinViewReadHeader(fname)
 	wnote=ReadGenericHeader(fname)
@@ -2010,8 +2061,8 @@ Function/T ImageMetaData2Waves(path,imageRoot,range,keyList,[mask,dark])	// retu
 	Wave mask
 	Wave dark												// an optional background wave
 
-	SVAR ImageFileFilters=root:Packages:imageDisplay:ImageFileFilters
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
+	String ImageFileFilters=StrVarOrDefault("root:Packages:imageDisplay:ImageFileFilters","Image Files:.*;")
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	String fName=imageRoot+num2str(str2num(range))+imageExtension
 	Variable f=0, printIt=0
 	GetFileFolderInfo/P=$path/Q/Z fName
