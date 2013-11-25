@@ -9,6 +9,7 @@ old/
 new/
 Old VersionStatus/
 “Check Version Consistency.app/”
+main.scpt
 
 #################
 ## Eclipse
@@ -225,7 +226,3 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
-
-*.scpt
-
-*.scpt
