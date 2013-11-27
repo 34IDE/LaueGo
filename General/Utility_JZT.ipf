@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.20
+#pragma version = 3.21
 #pragma hide = 1
 
 Menu "Graph"
@@ -50,6 +50,8 @@ End
 //		GenericWaveNoteInfo(), returns wave note info
 //		StopAllTimers(), stops all the Igor timers
 //		dateStr2ISO8601Str(), convert a date to an ISO 8601 format
+//		ISOtime2niceStr(iso), convert ISO8601 string to a nice format for graph annotations
+//		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
 //		str2vec(), convert a string to a vector
 //		RomanNumeral(j) converts a number to a Roman Numeral string
 //	7	Old legacy or deprecated functions
@@ -2306,6 +2308,51 @@ Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input
 	outStr += zoneStr
 
 	return outStr
+End
+
+
+Function ISOtime2IgorEpoch(iso)	// convert ISO8601 string to an Igor Epoch (error returns NaN)
+	String iso							// format     2013-10-02T01:22:35  (the seconds are optional)
+
+	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
+	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
+	Variable N=V_flag
+
+	if (N<3 || numtype(year+month+day))
+		return NaN
+	endif
+	Variable epoch=date2secs(year, month, day )
+	if (N>=5)
+		epoch += hr*3600
+		epoch += mn*60
+		se = (N>=6) ? se : 0
+		epoch += se
+	endif
+	return epoch
+End
+
+
+Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for graph annotations
+	String iso							// format     2013-10-02T01:22:35  (the seconds are optional)
+
+	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
+	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
+	Variable N = V_flag
+
+	if (N<3 || numtype(year+month+day))
+		return ""
+	endif
+	Variable epoch = date2secs(year, month, day )
+	String out = Secs2Date(epoch,2)
+	if (N>=5)
+		epoch += hr*3600
+		epoch += mn*60
+		se = (N>=6) ? se : 0
+		epoch += se
+		Variable fmt = (N>=6) ? 1 : 0
+		out += SelectString(numtype(epoch),"  "+Secs2Time(epoch,fmt),"")
+	endif
+	return out
 End
 
 

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.10
+#pragma version = 1.11
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -384,26 +384,28 @@ Static Function/T DisplayMDAresult1D(line)
 End
 
 
-Function/T ISOtime2niceStr(iso)
-	String iso
-	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
-	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
-	Variable N = V_flag
-
-	if (N<3 || numtype(year+month+day))
-		return ""
-	endif
-	Variable epoch = date2secs(year, month, day )
-	String out = Secs2Date(epoch,2)
-	if (N>=5)
-		epoch += hr*3600
-		epoch += mn*60
-		se = (N>=6) ? se : 0
-		epoch += se
-		Variable fmt = (N>=6) ? 1 : 0
-		out += SelectString(numtype(epoch),"  "+Secs2Time(epoch,fmt),"")
-	endif
-	return out
-End
+// moved to Utility_JZT.ipf
+//
+//Function/T ISOtime2niceStr(iso)
+//	String iso
+//	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
+//	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
+//	Variable N = V_flag
+//
+//	if (N<3 || numtype(year+month+day))
+//		return ""
+//	endif
+//	Variable epoch = date2secs(year, month, day )
+//	String out = Secs2Date(epoch,2)
+//	if (N>=5)
+//		epoch += hr*3600
+//		epoch += mn*60
+//		se = (N>=6) ? se : 0
+//		epoch += se
+//		Variable fmt = (N>=6) ? 1 : 0
+//		out += SelectString(numtype(epoch),"  "+Secs2Time(epoch,fmt),"")
+//	endif
+//	return out
+//End
 
 
