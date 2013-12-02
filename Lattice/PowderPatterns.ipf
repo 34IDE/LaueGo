@@ -48,19 +48,19 @@ Static Function PowderPatternPopMenuProc(pa) : PopupMenuControl
 	endif
 
 	if (strsearch(pa.popStr,"Calculate Powder Lines",0,2)>=0)
-		printf "â€¢CalcPowderLines(NaN)\r"
+		printf "¥CalcPowderLines(NaN)\r"
 		CalcPowderLines(NaN)
 	elseif (strsearch(pa.popStr,"Make Powder Pattern from Lines",0,2)>=0)
-		printf "â€¢PowderPatternFromLines($\"\",NaN)\r"
+		printf "¥PowderPatternFromLines($\"\",NaN)\r"
 		PowderPatternFromLines($"",NaN)
 	elseif (strsearch(pa.popStr,"Graph of Powder Pattern",0,2)>=0)
-		printf "â€¢GraphPowderPattern($\"\")\r"
+		printf "¥GraphPowderPattern($\"\")\r"
 		print GraphPowderPattern($"")
 	elseif (strsearch(pa.popStr,"Graph of Powder Lines",0,2)>=0)
-		printf "â€¢GraphPowderLines($\"\")\r"
+		printf "¥GraphPowderLines($\"\")\r"
 		print GraphPowderLines($"")
 	elseif (strsearch(pa.popStr,"Table of Powder Lines",0,2)>=0)
-		printf "â€¢TablePowderLines($\"\")\r"
+		printf "¥TablePowderLines($\"\")\r"
 		print TablePowderLines($"")
 	endif
 	return 0
