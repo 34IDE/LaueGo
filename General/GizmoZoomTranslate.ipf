@@ -568,7 +568,7 @@ Function MakeGizmoScatterMarkerPanel() : Panel			// Create the Cut Plane Panel. 
 //	CheckBox OnPointCheckBox,fSize=12,value=0, proc=GZoomTrans#OnPointCheckProc
 	CheckBox OnPointCheckBox,fSize=12,value=0
 	Button MarkerInfoButton,pos={76,143},size={25,30},proc=GZoomTrans#GizmoMarkerInfoButtonProc
-	Button MarkerInfoButton,fSize=24,fStyle=1,font="Hoefler Text",title="i"
+	Button MarkerInfoButton,fSize=24,fStyle=1,font="Bookman Old Style",title="i" // font "Hoefler Text" doesn't exist on Windows
 //	Button MarkerInfoButton,pos={80,143},size={20,30},proc=GZoomTrans#GizmoMarkerInfoButtonProc
 //	Button MarkerInfoButton,fSize=24,title="?"
 	Button FitPeakButton,pos={110,138},size={35,40},proc=GZoomTrans#GizmoScatterMarkerButtonProc,title="Fit\rpeak"
