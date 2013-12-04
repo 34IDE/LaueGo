@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, December 02, 2013" time="02:31:42 PM CST" isoTime="2013-12-02T14:31:42"></written>
+	<written date="Wednesday, December 04, 2013" time="01:50:58 PM CST" isoTime="2013-12-04T13:50:58"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>250</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -87,12 +87,12 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="f9205ebcdb3875f765a8c01568c12988" ext=".xml">materials/LaMnO3_OrthoORNLPhysics.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c625a9914e9c6341bb129829a22c4dca" ext=".xml">materials/SrAlO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">microN/microDiffractionMedia/Picture7.png</file>
-	<file version="1.41" time="2013-11-20T17:14:38" md5="71813d4c70e642009789809887b82e63" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
+	<file version="1.41" time="2013-12-04T12:36:38" md5="ad808ed4d92a695bfed83c77c8ab84bf" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
 	<file version="2.58" time="2013-10-28T11:28:49" md5="6df145e1f165469cc4d953537fec762a" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="9ade17870257633d501725982dca9c17" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
-	<file version="4.11" time="2013-10-28T11:28:48" md5="3955fdb0c39ce92b0f6d872547f8fc60" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.12" time="2013-12-02T17:12:55" md5="db726c8247852190c2cf453d9b585691" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b9fe430376660d4f30e40f8f04789109" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="6cb23957d309efbc4e66bbd674b4640b" ext=".xml">geometrys/geoN_2012-11-26_16-29-15.xml</file>
@@ -222,7 +222,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="cf56d23310bb3bae2281c067724df726" ext=".xml">materials/CdTe.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="da547a154a0bf7cb6933b634b2be148f" ext=".xml">materials/MgO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3f91d8375573dd3a452d43bedfbd0a5c" ext=".xml">materials/WC.xml</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="555ca0c0302558a68e744ae2292151d1" ext=".xml">materials/Cu.xml</file>
+	<file version="nan" time="2013-12-04T12:37:42" md5="5bef5723ca70af900c50b2ab5bf57c7b" ext=".xml">materials/Cu.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5ae26392b0640ae81af784af29f3596d" ext=".rtf">materials/structure xml desctiption.rtf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d161fa515d6a0b14e697dcaca094103f" ext=".mtl">materials/BeIF-1.mtl</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="cae8ea679e32f9f5efa0e2dc9f5985c9" ext=".ipf">micro/DoAll.ipf</file>
@@ -253,5 +253,5 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2ec249f8184a5a75261f7b0a2669a133" ext=".xml">materials/VO2/VO2_M3_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3df8cafd26d6b3032d126e3b8449d646" ext=".xml">materials/BaFeAs_RT.xml</file>
-	<file version="nan" time="2013-11-20T13:28:31" md5="b5fb0756b9aab281f669dde1dfb594d3" ext=".txt">Readme.txt</file>
+	<file version="nan" time="2013-12-04T12:36:38" md5="c0e90c97d095751f24c354d4061756c3" ext=".txt">Readme.txt</file>
 </VersionStatus>
