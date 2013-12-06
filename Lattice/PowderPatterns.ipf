@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.11
+#pragma version = 0.12
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -153,7 +153,7 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	wnote = ReplaceStringByKey("PowderLines",wnote,GetWavesDataFolder(lines,2),"=")
 	wnote = ReplaceStringByKey("leftLabel",wnote,leftLabel,"=")
 	Variable dQ = Qwidth/(N-1)
-	String xUnits = SelectString(theta,"1/nm","Â°")
+	String xUnits = SelectString(theta,"1/nm","¡")
 
 	// first calculate in Q whether we want Q or theta
 	Variable m,in, a = 4*ln(2)/(fwhmQ*fwhmQ)	// gaussian = exp(-a*x^2) in Q (not theta)
@@ -249,7 +249,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	keV = keV<=0 || numtype(keV) ? NaN : keV
 	Variable lambda = hc_keVnm/keV
 	if (lambda>0)
-		Qmax = min(Qmax,4*PI/lambda)				// with keV, Q is limited to theta=90Â°
+		Qmax = min(Qmax,4*PI/lambda)				// with keV, Q is limited to theta=90¡
 	endif
 	Variable/G root:Packages:Lattices:Powder:defaultQmax=Qmax
 	Variable/G root:Packages:Lattices:Powder:defaultKeV=keV
@@ -519,12 +519,12 @@ Function GraphPowderPattern(ww)
 		ix = 4
 	elseif (StringMatch(WaveUnits(ww,0),"1/nm"))
 		ix = 0
-	elseif (StringMatch(WaveUnits(ww,0),"Â°"))
+	elseif (StringMatch(WaveUnits(ww,0),"¡"))
 		ix = 4
 	endif
 
 	if (strlen(WaveUnits(ww,-1))==0)
-		bottomLabel = SelectString(ix,"Q  (\\Enm\\S-1\\M)","\\Zr150\\F'Symbol'qâˆž\\F]0 \\E\\M")
+		bottomLabel = SelectString(ix,"Q  (\\Enm\\S-1\\M)","\\Zr150\\F'Symbol'q°\\F]0 \\E\\M")
 	else
 		bottomLabel = SelectString(ix,"Q  (\\U)","\\Zr150\\F'Symbol'q\\F]0\\U\\M")
 	endif
@@ -599,7 +599,7 @@ Function GraphPowderLines(ww,[theta])
 	Variable iy=numtype(ww[0][6]) ? 5 : 6
 	Variable ix = (theta && numtype(ww[0][4])==0) ? 4 : 0
 	String leftLabel = SelectString(iy==6,"| F |\\S2\\M","Intensity")
-	String bottomLabel = SelectString(ix,"Q  (nm\\S-1\\M)","\\Zr150\\F'Symbol'qâˆž\\F]0\\M")
+	String bottomLabel = SelectString(ix,"Q  (nm\\S-1\\M)","\\Zr150\\F'Symbol'q°\\F]0\\M")
 
 	String wnote = note(ww)
 	Variable keV = NumberByKey("keV",wnote,"=")
@@ -662,7 +662,7 @@ Static Function ShowPowderLinesWindowHook(s)
 		sprintf str, "\\Zr075\rQ = %g nm\\S-1\M\\Zr075",Qval
 		tagStr += str
 		if (theta>0)
-			sprintf str, "\rtheta = %gÂ°",theta
+			sprintf str, "\rtheta = %g¡",theta
 			tagStr += str
 		endif
 		sprintf str, "\rmult = %g",mult
