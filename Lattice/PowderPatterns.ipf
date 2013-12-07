@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.12
+#pragma version = 0.13
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -328,7 +328,12 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	Redimension/N=(NlinesMax+1,-1) lines			// add point at end to stop next loop
 	lines[NlinesMax][0] = NaN							// ensures that following do-while loop will end
 
-	String wname = CleanupName(desc,0)+"_"+num2istr(Qmax)+"nm"
+	String str = "_"+num2istr(Qmax)+"nm"
+	String wname = CleanupName(desc,0)
+	wname = ReplaceString("__",wname,"_")
+	wname = ReplaceString("__",wname,"_")
+	wname = ReplaceString("__",wname,"_")
+	wname = wname[0,31-strlen(str)-1] + str
 	Make/N=(NlinesMax,N_POWDER_LINES_COLUMNS)/D/O $wname/WAVE=lineShort = NaN
 	// columns are:
 	//	0	Q (1/nm)
@@ -342,7 +347,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	SetDimLabel 1,0,Q_nm,lineShort ;	SetDimLabel 1,1,h,lineShort ;		SetDimLabel 1,2,k,lineShort ;			SetDimLabel 1,3,l,lineShort
 	SetDimLabel 1,4,theta,lineShort ;	SetDimLabel 1,5,F2,lineShort ;		SetDimLabel 1,6,Intensity,lineShort ;	SetDimLabel 1,7,mult,lineShort
 
-	String str = wname+"_hklStr"
+	str = wname[0,31-7-1]+"_hklStr"
 	Make/N=(NlinesMax)/T/O $str/WAVE=hklStr = ""
 	Note/K hklStr, "waveClass=HKLlabelsPowderLines;LinesWave="+GetWavesDataFolder(lineShort,2)+";"
 	wNote = ReplaceStringByKey("hklStrWave",wNote,str,"=")
