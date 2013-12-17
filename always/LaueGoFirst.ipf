@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma ModuleName = LaueGoFirst
 #include "Utility_JZT", version>=3.16
 #pragma hide = 1
@@ -233,9 +233,9 @@ Static Function setMICRO_GEOMETRY_VERSION_PATH([preset])
 	if (type==0)
 		insert = "INSERTINCLUDE  \"microGeometry\", version>=2.61"
 	elseif (type&2)
-		insert = "INSERTINCLUDE  \"microGeometryN\", version>=1.32"
+		insert = "INSERTINCLUDE  \"microGeometryN\", version>=1.61"
 	elseif (type&5)
-		insert = "INSERTINCLUDE  \"microGeometryN\", version>=1.32"
+		insert = "INSERTINCLUDE  \"microGeometryN\", version>=1.61"
 	else
 		return -1
 	endif

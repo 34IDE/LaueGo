@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.51
+#pragma version = 1.52
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -1104,7 +1104,7 @@ Static Function/T get_FirstWhiteFilesIndexRange(pathName,namePart)
 	printf "time to find files = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
 	DoWindow/K $progressWin
 	String range = compressRange(list,";")
-	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EWscanButtonProc"))
+	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc"))
 		print "range	",ItemsInRange(range),"		",range
 	endif
 	KillWaves/Z fileList_get_FilesIndexRange, nw_get_FilesIndexRange
@@ -1155,7 +1155,7 @@ Static Function/T get_FilesIndexRange(pathName,namePart)
 		endif
 	endfor
 	String range = compressRange(list,";")
-	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EWscanButtonProc"))
+	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc"))
 		print "range	",ItemsInRange(range),"		",range
 	endif
 	KillWaves/Z fileList_get_FilesIndexRange, nw_get_FilesIndexRange

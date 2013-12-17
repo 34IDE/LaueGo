@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.40
+#pragma version = 4.41
 #include "LatticeSym", version>=3.55
 #include "microGeometryN", version>=1.16
 #include "Masking", version>1.00
@@ -171,9 +171,9 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 		keVmaxTest = numtype(keVmaxTest) ? NumVarOrDefault("root:Packages:micro:Index:keVmaxTest",NaN) : keVmaxTest
 		keVmaxTest = numtype(keVmaxTest) ? min(3*keVmaxCalc,50) : keVmaxTest
 		angleTolerance = (angleTolerance>=0.01 && angleTolerance<10) ? angleTolerance : NumVarOrDefault("root:Packages:micro:Index:angleTolerance",(is4500S ? 0.5 : 0.1))
-		hp = numtype(hp) ? 0 : NumVarOrDefault("root:Packages:micro:Index:hp",0)
-		kp = numtype(kp) ? 0 : NumVarOrDefault("root:Packages:micro:Index:kp",0)
-		lp = numtype(lp) ? 2 : NumVarOrDefault("root:Packages:micro:Index:lp",2)
+		hp = numtype(hp) ? NumVarOrDefault("root:Packages:micro:Index:hp",0) : hp
+		kp = numtype(kp) ? NumVarOrDefault("root:Packages:micro:Index:kp",0) : kp
+		lp = numtype(lp) ? NumVarOrDefault("root:Packages:micro:Index:lp",2) : lp
 		cone = (cone>1 && cone<180) ? cone : NumVarOrDefault("root:Packages:micro:Index:cone",( is4500S ? 179 : 72 ))
 		String hkl
 		sprintf hkl,"%d, %d, %d",hp,kp,lp

@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.60
-#include  "LatticeSym", version>=3.54
+#pragma version = 1.61
+#include  "LatticeSym", version>=4.13
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 
@@ -148,7 +148,7 @@ Static Function microGeneralTabProc(tca) : TabControl		// changes the panel for 
 		KillWindow $win
 	endif
 
-	String fillFunctionList = SelectString(stringmatch(tca.ctrlName,"tabMicroA"),"Detail;LaueSim;Calibration","Index;EWscan;Arrays3d;Geometry;Lattice")
+	String fillFunctionList = SelectString(stringmatch(tca.ctrlName,"tabMicroA"),"Detail;LaueSim;Calibration","Index;Escan;Arrays3d;Geometry;Lattice")
 	String funcName = "Fill"+StringFromList(tab,fillFunctionList)+"ParametersPanel"
 	if (exists(funcName)!=6)
 		funcName = "microGeo#Load"+funcName[4,Inf]
@@ -221,18 +221,18 @@ Static Function/T LoadIndexParametersPanel(strStruct,hostWin,left,top)
 	return "#IndexPanel"
 End
 //
-Static Function/T LoadEWscanParametersPanel(strStruct,hostWin,left,top)
+Static Function/T LoadEscanParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
 	String hostWin										// name of home window
 	Variable left, top									// offsets from the left and top
 
-	SetWindow kwTopWin,userdata(EWscanPanelName)=hostWin+"#EWscanPanel"
+	SetWindow kwTopWin,userdata(EscanPanelName)=hostWin+"#EscanPanel"
 	NewPanel/K=1/W=(left,top,left+221,top+365)/HOST=$hostWin
 	ModifyPanel frameStyle=0, frameInset=0
-	RenameWindow #,EwscanPanel
-	Button buttonInitEWscan,pos={33,31},size={150,50},title="Init E-W scan\rpackage",proc=microGeo#LoadPackageButtonProc
-	Button buttonInitEWscan,help={"Load Package for processing E-W scans"}
-	return "#EWscanPanel"
+	RenameWindow #,EscanPanel
+	Button buttonInitEscan,pos={33,31},size={150,50},title="Init Energy scan\rpackage",proc=microGeo#LoadPackageButtonProc
+	Button buttonInitEscan,help={"Load Package for processing Energy scans"}
+	return "#EscanPanel"
 End
 //
 Static Function/T LoadArrays3dParametersPanel(strStruct,hostWin,left,top)
@@ -321,7 +321,7 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 //		tab = 4
 //		ctrlName = "tabMicroA"
 	if (stringmatch(ba.ctrlName,"buttonInitIndex"))
-		Execute/P "INSERTINCLUDE  \"IndexingN\", version>=4.15"
+		Execute/P "INSERTINCLUDE  \"IndexingN\", version>=4.41"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P/Q "InitIndexingPackage()"
 		tab = 0
@@ -333,28 +333,28 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 		Execute/P/Q "initSymmetryOperations()"
 		tab = 0
 		ctrlName = "tabMicroA"
-	elseif (stringmatch(ba.ctrlName,"buttonInitEWscan"))
-		Execute/P "INSERTINCLUDE  \"EnergyWireScansN\", version>=1.09"
+	elseif (stringmatch(ba.ctrlName,"buttonInitEscan"))
+		Execute/P "INSERTINCLUDE  \"EnergyScansN\", version>=2.00"
 		Execute/P "COMPILEPROCEDURES "
-		Execute/P/Q "initEnergyWireScans()"
+		Execute/P/Q "initEnergyScans()"
 		tab = 1
 		ctrlName = "tabMicroA"
 	elseif (stringmatch(ba.ctrlName,"buttonInitArrays3d"))
-		Execute/P "INSERTINCLUDE  \"ArrayOf3dOrientsN\", version>=2.56"
+		Execute/P "INSERTINCLUDE  \"ArrayOf3dOrientsN\", version>=2.58"
 		tab = 2
 		ctrlName = "tabMicroA"
 	elseif (stringmatch(ba.ctrlName,"buttonInitDetail"))
-		Execute/P "INSERTINCLUDE  \"DepthResolvedQueryN\", version>=1.39"
+		Execute/P "INSERTINCLUDE  \"DepthResolvedQueryN\", version>=1.52"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P/Q "initDepthResolve()"
 		tab = 0
 		ctrlName = "tabMicroB"
 	elseif (stringmatch(ba.ctrlName,"buttonInitLaueSim"))
-		Execute/P "INSERTINCLUDE  \"LaueSimulation\", version>=1.08"
+		Execute/P "INSERTINCLUDE  \"LaueSimulation\", version>=1.09"
 		tab = 1
 		ctrlName = "tabMicroB"
 	elseif (stringmatch(ba.ctrlName,"buttonInitCalibration"))
-		Execute/P "INSERTINCLUDE  \"DetectorCalibration\", version>=0.74"
+		Execute/P "INSERTINCLUDE  \"DetectorCalibration\", version>=0.79"
 		tab = 2
 		ctrlName = "tabMicroB"
 	else
