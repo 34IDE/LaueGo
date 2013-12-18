@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.61
+#pragma version = 1.62
 #include  "LatticeSym", version>=4.13
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -148,7 +148,14 @@ Static Function microGeneralTabProc(tca) : TabControl		// changes the panel for 
 		KillWindow $win
 	endif
 
-	String fillFunctionList = SelectString(stringmatch(tca.ctrlName,"tabMicroA"),"Detail;LaueSim;Calibration","Index;Escan;Arrays3d;Geometry;Lattice")
+	String tabList
+	if (exists("initEnergyWireScans")==6)
+		tabList = "Index;EWscan;Arrays3d;Geometry;Lattice"
+	else
+		tabList = "Index;Escan;Arrays3d;Geometry;Lattice"
+	endif
+	String fillFunctionList = SelectString(stringmatch(tca.ctrlName,"tabMicroA"),"Detail;LaueSim;Calibration",tabList)
+
 	String funcName = "Fill"+StringFromList(tab,fillFunctionList)+"ParametersPanel"
 	if (exists(funcName)!=6)
 		funcName = "microGeo#Load"+funcName[4,Inf]
@@ -221,6 +228,23 @@ Static Function/T LoadIndexParametersPanel(strStruct,hostWin,left,top)
 	return "#IndexPanel"
 End
 //
+
+
+// OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD  OLD
+Static Function/T LoadEWscanParametersPanel(strStruct,hostWin,left,top)
+	String strStruct									// optional passed value of xtal structure, this is used if passed
+	String hostWin										// name of home window
+	Variable left, top									// offsets from the left and top
+
+	SetWindow kwTopWin,userdata(EWscanPanelName)=hostWin+"#EWscanPanel"
+	NewPanel/K=1/W=(left,top,left+221,top+365)/HOST=$hostWin
+	ModifyPanel frameStyle=0, frameInset=0
+	RenameWindow #,EwscanPanel
+	Button buttonInitEWscan,pos={33,31},size={150,50},title="Init E-W scan\rpackage",proc=microGeo#LoadPackageButtonProc
+	Button buttonInitEWscan,help={"Load Package for processing E-W scans"}
+	return "#EWscanPanel"
+End
+// NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW  NEW
 Static Function/T LoadEscanParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
 	String hostWin										// name of home window
@@ -234,6 +258,8 @@ Static Function/T LoadEscanParametersPanel(strStruct,hostWin,left,top)
 	Button buttonInitEscan,help={"Load Package for processing Energy scans"}
 	return "#EscanPanel"
 End
+
+
 //
 Static Function/T LoadArrays3dParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
@@ -313,13 +339,6 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 	String ctrlName
 	Variable tab
 
-//	No longer needed
-//	if (stringmatch(ba.ctrlName,"buttonInitLattice"))
-//		Execute/P "INSERTINCLUDE  \"LatticeSym\", version>=3.54"
-//		Execute/P "COMPILEPROCEDURES "
-//		Execute/P/Q "InitLatticeSymPackage()"
-//		tab = 4
-//		ctrlName = "tabMicroA"
 	if (stringmatch(ba.ctrlName,"buttonInitIndex"))
 		Execute/P "INSERTINCLUDE  \"IndexingN\", version>=4.41"
 		Execute/P "COMPILEPROCEDURES "
@@ -333,12 +352,22 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 		Execute/P/Q "initSymmetryOperations()"
 		tab = 0
 		ctrlName = "tabMicroA"
-	elseif (stringmatch(ba.ctrlName,"buttonInitEscan"))
-		Execute/P "INSERTINCLUDE  \"EnergyScansN\", version>=2.00"
+
+
+	elseif (stringmatch(ba.ctrlName,"buttonInitEWscan"))	// OLD  OLD  OLD  OLD  OLD
+		Execute/P "INSERTINCLUDE  \"EnergyWireScansN\", version>=1.31"
+		Execute/P "COMPILEPROCEDURES "
+		Execute/P/Q "initEnergyWireScans()"
+		tab = 1
+		ctrlName = "tabMicroA"
+	elseif (stringmatch(ba.ctrlName,"buttonInitEscan"))		// NEW  NEW  NEW  NEW  NEW
+		Execute/P "INSERTINCLUDE  \"EnergyScansN\", version>=2.01"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P/Q "initEnergyScans()"
 		tab = 1
 		ctrlName = "tabMicroA"
+
+
 	elseif (stringmatch(ba.ctrlName,"buttonInitArrays3d"))
 		Execute/P "INSERTINCLUDE  \"ArrayOf3dOrientsN\", version>=2.58"
 		tab = 2
