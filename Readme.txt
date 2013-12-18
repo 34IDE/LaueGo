@@ -10,7 +10,7 @@ The following applies to both MS Windows and Mac computers. "[MyDocuments]" refe
 
 1.	If you've just freshly installed Igor Pro, run it at least once. This will create a "Wavemetrics" folder inside "[MyDocuments]".
 
-2.	Download and unzip this package from https://github.com/34IDE/LaueGo/archive/master.zip 
+2.	Download and unzip the LaueGo package from 34ID-E website.
 
 3.	Copy all unzipped files and subfolders into "[MyDocuments]\WaveMetrics\Igor Pro 6 User Files\User Procedures" (or any subfolder in it); if an old version of LaueGo exist in this folder, backup and replace it.
 
