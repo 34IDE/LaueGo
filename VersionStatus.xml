@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, December 18, 2013" time="11:55:54 AM CST" isoTime="2013-12-18T11:55:54"></written>
+	<written date="Thursday, January 02, 2014" time="02:31:55 PM CST" isoTime="2014-01-02T14:31:55"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>251</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -25,7 +25,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="3137d5743b8846f6d6373513d29a92a7" ext=".xml">materials/NdGaO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="45092064aa2f391fcad76837b1322c01" ext=".xml">materials/LaMnO3_Ortho.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.3" time="2013-11-13T14:36:04" md5="6f2401680c16ee0e885999c1abba91e7" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.31" time="2014-01-02T14:31:34" md5="d3a18b86a40acf1c9be1d2ea22d6d70d" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c017c7408f271d5d935d61a458904881" ext=".xml">materials/Ni3Al.xml</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" ext=".ipf">General/absorption.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="89037fe313f31195b4aced86d4e09779" ext=".xml">materials/Sn-sg141-best.xml</file>
@@ -140,7 +140,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="1aa8d2e96729af4d6c1a957de08c2ace" ext=".xml">materials/Tungsten.xml</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="3d42007f329b3eea8073aeaaf49652ff" ext=".ipf">materials/materialsLocate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b7fd7eac1e1765a884c1b42e7951bcdb" ext=".xml">materials/FeSiO3.xml</file>
-	<file version="2.01" time="2013-12-18T11:13:43" md5="639600cff96a364901b6f4e0ec6846ef" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.04" time="2014-01-02T14:29:29" md5="52a27fef145796d46be758be50aa47b2" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" ext="">micro/Euler_i386</file>
 	<file version="0.13" time="2013-12-06T23:22:19" md5="9d81fadd43d5d62c5255073c4b486b6c" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7f757ea8b8080ab2c920dcc79559e095" ext=".exe">microN/euler.exe</file>
@@ -211,7 +211,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="f4d804ac3d4f00babd1c74ba6b8ab493" ext=".xml">materials/BaKFeAs_RT.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d576c009d52da5d8b836570c387f6eb9" ext=".xml">materials/Mg2SiO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="ca031a1c8133fc9f52a01a7439b2952c" ext=".xml">materials/permalloy.xml</file>
-	<file version="2.02" time="2013-12-17T16:14:51" md5="a88dbe96580f6f3008d2f605d50ecc78" ext=".ipf">always/LaueGoFirst.ipf</file>
+	<file version="2.03" time="2014-01-02T14:31:34" md5="b0ecaff1fe95985563c63f651899bde9" ext=".ipf">always/LaueGoFirst.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5da6e3e5cbb9d1fe9be3d72a61213469" ext=".txt">General/Physical Constants.txt</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7fab74f203c96142ed06f2bd7cf50ed0" ext=".ipf">always/always first.ipf</file>
 	<file version="1.76" time="2013-10-28T11:28:48" md5="e495c6aefc35af6d5c7ad40c005e12ed" ext=".ipf">General/Elements.ipf</file>
@@ -227,7 +227,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="5ae26392b0640ae81af784af29f3596d" ext=".rtf">materials/structure xml desctiption.rtf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d161fa515d6a0b14e697dcaca094103f" ext=".mtl">materials/BeIF-1.mtl</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="cae8ea679e32f9f5efa0e2dc9f5985c9" ext=".ipf">micro/DoAll.ipf</file>
-	<file version="1.91" time="2013-10-28T11:28:48" md5="ad20198f9664057f289f09992d8d14d1" ext=".ipf">General/ImageDisplayScaling.ipf</file>
+	<file version="1.92" time="2014-01-02T14:29:29" md5="f31282fc760380a974a659cf2f52add6" ext=".ipf">General/ImageDisplayScaling.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="caf99e0ebf4dcbb09bdfe018dd492320" ext=".ifn">microN/microDiffraction.ifn</file>
 	<file version="2.04" time="2013-10-28T11:28:48" md5="7937e08585179b84a3ca9d1d53c2eca7" ext=".ipf">General/ColorNames.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="52db038f84da7d58e9fac596af4ec0ac" ext=".xml">materials/YMnO3_Katsufuji.xml</file>
@@ -254,5 +254,5 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2ec249f8184a5a75261f7b0a2669a133" ext=".xml">materials/VO2/VO2_M3_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3df8cafd26d6b3032d126e3b8449d646" ext=".xml">materials/BaFeAs_RT.xml</file>
-	<file version="nan" time="2013-11-20T16:00:24" md5="b5fb0756b9aab281f669dde1dfb594d3" ext=".txt">Readme.txt</file>
+	<file version="nan" time="2013-12-18T17:09:49" md5="e7d0f9602acd2d7c83b5d1afbed73e30" ext=".txt">Readme.txt</file>
 </VersionStatus>
