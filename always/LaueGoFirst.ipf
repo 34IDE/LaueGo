@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma ModuleName = LaueGoFirst
 #include "Utility_JZT", version>=3.16
 #pragma hide = 1
@@ -266,8 +266,8 @@ End
 
 
 
-//  ============================================================================  //
-//  ========================== Start of Window Copy/Paste Info ==========================  //
+//  ====================================================================================  //
+//  ========================== Start of Window Copy/Paste Info =========================  //
 
 Static Function/T MenuItemIfWindowTypes(item,flags)
 	String item
@@ -583,11 +583,12 @@ Function SquareUpGizmo(gName)
 	MoveWindow/W=$gName left, top, left+height, top+height
 End
 
-//  =========================== End of Window Copy/Paste Info ===========================  //
-//  ============================================================================  //
+//  ========================== End of Window Copy/Paste Info ===========================  //
+//  ====================================================================================  //
 
 
-//  ============================================================================  //
+
+//  ====================================================================================  //
 //  ============================== Start of Square Pixels ==============================  //
 
 Function SetAspectToSquarePixels(gName)
@@ -640,13 +641,13 @@ Function SetAspectToSquarePixels(gName)
 	return aspect
 End
 
-//  =============================== End of Square Pixels ==============================  //
-//  ============================================================================  //
+//  =============================== End of Square Pixels ===============================  //
+//  ====================================================================================  //
 
 
 
-//  ============================================================================  //
-//  ============================== Start of Wave Printing =============================  //
+//  ====================================================================================  //
+//  ============================== Start of Wave Printing ==============================  //
 
 ThreadSafe Function printWave(w,[name,brief])		// print a wave (vector or matrix) to history
 	Wave w
@@ -844,10 +845,89 @@ ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector t
 	return out
 End
 
-//  =============================== End of Wave Printing ==============================  //
-//  ============================================================================  //
+//  =============================== End of Wave Printing ===============================  //
+//  ====================================================================================  //
 
 
+
+//  ====================================================================================  //
+//  =========================== Start of Generic Graph Style ===========================  //
+
+Proc Generic_Graph_Style() : GraphStyle
+	Silent 1
+//	LaueGoFirst#DoGenericGraphStyle("")
+	GenericGraphStyle("")
+EndMacro
+//
+Function GenericGraphStyle(gName)
+	String gName					// graph name, usually "", for top graph
+	if (ItemsInList(WinList("*",";","WIN:1"))<1)
+		return 1
+	elseif (exists("GenericGraphStyleLocal")==5)
+		Execute "GenericGraphStyleLocal(\""+gName+"\")"		// in case users GenericGraphStyleLocal("") is a Macro
+	else
+		FUNCREF GenericGraphStyleTemplate styleFunc=$"GenericGraphStyleLocal"
+		styleFunc(gName)											// defaults to GenericGraphStyleTemplate(gName)
+	endif
+	return 0
+End
+//
+//	This can be overridden by making a Function named  GenericGraphStyleLocal(gName)
+//
+Function GenericGraphStyleTemplate(gName)				// default generic graph style funciton
+	String gName					// graph name, usually ""
+		//	if (NumberByKey("IGORVERS",IgorInfo(0))>=5.01)
+		//	//	ModifyGraph gfRelSize=4
+		//	//		ModifyGraph/W=$gName gfMult=130
+		//	//		ModifyGraph/W=$gName gfMult=110		// just remove all of the gfMult, use the Igor defaults
+		//	else
+		//		ModifyGraph/W=$gName gfSize=18
+		//	endif
+	ModifyGraph/Z/W=$gName tick=2, minor=1, standoff=1
+	ModifyGraph/W=$gName lowTrip=0.001
+	if (strlen(AxisInfo(gName, "top"))<1)
+		ModifyGraph/W=$gName/Z mirror(bottom)=1
+	endif  
+  	if (strlen(AxisInfo(gName, "right"))<1)
+		ModifyGraph/W=$gName/Z mirror(left)=1
+	endif
+
+	// find the top wave on graph, and try to label the axes
+	String wList = ImageNameList(gName,";")		// first assum an image
+	if (strlen(wList))
+		Wave w=ImageNameToWaveRef(gName,StringFromList(0,wList) )
+	else														// next try a line plot
+		wList = TraceNameList(gName,";",1)
+		Wave w=TraceNameToWaveRef(gName,StringFromList(0,wList))
+	endif
+	if (WaveExists(w))
+		String wnote=note(w)
+		String left = StringByKey("GraphAxisLabelVert", wnote ,"=" )
+		String bot = StringByKey("GraphAxisLabelHoriz", wnote ,"=" )
+		String infoStr=ImageInfo(gName,NameOfWave(w),0)
+		if (strlen(infoStr)<1)
+			infoStr = TraceInfo(gName,NameOfWave(w),0)
+		endif
+		String leftName = StringByKey("YAXIS",infoStr)
+		String botName = StringByKey("XAXIS",infoStr)
+		Variable setHoriz = strlen(AxisLabelFromGraph(gName,w,botName))==0	// do not re-set if alreay labeled
+		Variable setVert = strlen(AxisLabelFromGraph(gName,w,leftName))==0
+		if (strlen(left) && setVert && strlen(leftName))
+			Label $leftName left
+		endif
+		if (strlen(bot) && setHoriz && strlen(botName))
+			Label $botName bot
+		endif
+	endif
+End
+
+//  ============================ End of Generic Graph Style ============================  //
+//  ====================================================================================  //
+
+
+
+//  ====================================================================================  //
+//  =============================== Start of LaueGo Init ===============================  //
 
 Static Function InitLaueGoFirst()
 	if (JZTalwaysFirst_Version<JZTalwaysFirst_Version_Min)
@@ -859,3 +939,6 @@ Static Function InitLaueGoFirst()
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpSize,\"Square Up Gizmo\", \"SquareUpGizmo(\\\"\\\")\"}"
 	endif
 End
+
+//  ================================ End of LaueGo Init ================================  //
+//  ====================================================================================  //

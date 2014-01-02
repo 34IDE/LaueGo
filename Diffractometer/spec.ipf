@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.30
+#pragma version = 2.31
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -92,6 +92,8 @@ Static strConstant specFileFilters = "spec Files (*.spc):.spc;text Files (*.txt)
 // Feb 26, 2013, changed LoadRangeOfSpecScans() so it does not try to load already loaded scans
 //
 // Oct 18, 2013, changed DisplayRangeOfSpecScans() so that overlay = "new+append" works right
+//
+// Dec 30, 2013, added SpecGenericGraphStyle(), this will call user function SpecGenericGraphStyleLocal() or the SpecGenericGraphStyleTemplate()
 
 Menu "Data"
 	"-"
@@ -611,20 +613,13 @@ Function DisplaySpecScan(scanNum,overlay)
 	if (scanDim==1)
 		SetAxis/A/E=1 left
 	endif
-	Variable i = exists("specGraphGenericStyle")
-	if (i==5)											// a macro, fix up plot
-		Execute "specGraphGenericStyle()"
-	elseif (i==6)										// a userfunc exists, fix up plot
-		FUNCREF styleFuncTemplate styleFunc = $"specGraphGenericStyle"
-		styleFunc()
-	elseif (exists("JonsStyle_")==5)				// if macro exists, fix up plot
-		Execute "JonsStyle_()"
-	endif
+
+	SpecGenericGraphStyle()
+
 	Textbox/F=0/S=3/A=LT/B=1 text2write
-	i = exists("addMoreAnnotation2specPlot")
-	if (i==5)
+	if (exists("addMoreAnnotation2specPlot")==5)
 		Execute "addMoreAnnotation2specPlot("+num2istr(scanNum)+")"
-	elseif (i==6)
+	else
 		FUNCREF addMoreAnnotation2PlotTemplate func = $"addMoreAnnotation2specPlot"
 		func(scanNum)
 	endif
@@ -632,11 +627,83 @@ Function DisplaySpecScan(scanNum,overlay)
 	NVAR lastScan=root:Packages:spec:lastScan
 	lastScan = scanNum
 End
-Function styleFuncTemplate()
-	Variable i
-End
+//
 Function addMoreAnnotation2PlotTemplate(i)
 	Variable i
+End
+//
+Proc spec_GenericGraphStyle() : GraphStyle
+	Silent 1
+	GenericSpecStyle()
+EndMacro
+Function SpecGenericGraphStyle()
+	if (ItemsInList(WinList("*",";","WIN:1"))==0)
+		return 1
+	elseif (exists("SpecGenericGraphStyleLocal")==5)	// a Macro or Proc
+		Execute "SpecGenericGraphStyleLocal()"
+	else
+		FUNCREF SpecGenericGraphStyleTemplate styleFunc = $"SpecGenericGraphStyleLocal"
+		styleFunc()
+	endif
+End
+//
+// If you have a function named SpecGenericGraphStyleLocal(), it will be used instead of SpecGenericGraphStyleTemplate() 
+//
+Function SpecGenericGraphStyleTemplate() : GraphStyle
+	if (NumberByKey("IGORVERS",IgorInfo(0))>=5.01)
+		ModifyGraph gfMult=115
+	endif
+	ModifyGraph/Z tick=2, minor=1, standoff=0
+	ModifyGraph lowTrip=0.001
+
+	Wave xwave = XWaveRefFromTrace("",StringFromList(0,TraceNameList("",";",1)))
+	if (WaveExists(xwave) && xwave[0]*xwave[Inf]<0)
+		ModifyGraph zero(bottom)=2		// if it spans zero, put in zero line
+	endif
+
+	if (strlen(AxisInfo("", "top"))<1)
+		ModifyGraph/Z mirror(bottom)=1
+	endif  
+  	if (strlen(AxisInfo("", "right"))<1)
+		ModifyGraph/Z mirror(left)=1
+	endif
+
+	String list = ImageNameList("",";")
+	if (ItemsInList(list)>0)				// there is an image on the plot
+		Variable i
+		String item=StringFromList(0,list)
+		for (i=0;strlen(item)>0;i+=1,item=StringFromList(i,list))
+			ModifyImage $item ctab= {*,*,Terrain256,1}
+		endfor
+	endif
+
+	// find the top wave on graph, and try to label the axes
+	String wList = ImageNameList("",";")		// first assum an image
+	if (strlen(wList))
+		Wave w=ImageNameToWaveRef("",StringFromList(0,wList) )
+	else												// next try a line plot
+		wList = TraceNameList("",";",1)
+		Wave w=TraceNameToWaveRef("",StringFromList(0,wList))
+	endif
+	if (WaveExists(w))
+		String wnote=note(w)
+		String left = StringByKey("GraphAxisLabelVert", wnote ,"=" )			// get default labels from wave note
+		String bot = StringByKey("GraphAxisLabelHoriz", wnote ,"=" )
+		String infoStr=ImageInfo("",NameOfWave(w),0)							// used to get axis names actually used
+		if (strlen(infoStr)<1)
+			infoStr = TraceInfo("",NameOfWave(w),0)
+		endif
+		String leftName = StringByKey("YAXIS",infoStr)							// get axis name from infoStr
+		String botName = StringByKey("XAXIS",infoStr)
+		Variable setHoriz = strlen(AxisLabelFromGraph("",w,botName))==0	// do not re-set if alreay labeled
+		Variable setVert = strlen(AxisLabelFromGraph("",w,leftName))==0
+		if (strlen(left) && setVert && strlen(leftName))
+			Label $leftName left
+		endif
+		if (strlen(bot) && setHoriz && strlen(botName))
+			Label $botName bot
+		endif
+	endif
 End
 
 
