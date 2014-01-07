@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.21
+#pragma version = 3.22
 #pragma hide = 1
 
 Menu "Graph"
@@ -52,7 +52,8 @@ End
 //		dateStr2ISO8601Str(), convert a date to an ISO 8601 format
 //		ISOtime2niceStr(iso), convert ISO8601 string to a nice format for graph annotations
 //		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
-//		str2vec(), convert a string to a vector
+//		vec2str(), convert a vector to a string
+//		str2vec(), convert a string to a free vector
 //		RomanNumeral(j) converts a number to a Roman Numeral string
 //	7	Old legacy or deprecated functions
 
@@ -2356,15 +2357,85 @@ Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for g
 End
 
 
-Function/WAVE str2vec(str,[sep])				// returns a free vector based on the string
+ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector to s string suitable for printing, does not include name
+	Wave w										// 1d wave to print
+	Variable places								// number of places, for default, use negative or NaN
+	Variable maxPrint							// maximum number of elements to print, defaults to 20
+	Variable bare								// if bare is TRUE, then suppress the "{}" in the output
+	String sep									// optional separator, default is ",  "   a comma and 2 spaces
+
+	maxPrint = ParamIsDefault(maxPrint) ? 20 : maxPrint
+	maxPrint = maxPrint>0 ? maxPrint : 20
+	places = ParamIsDefault(places) ? -1 : places
+	bare = ParamIsDefault(bare) ? 0 : !(!bare)
+	sep = SelectString(ParamIsDefault(sep),sep,",  ")
+
+	if (!WaveExists(w))
+		return SelectString(bare,"{}","")
+	endif
+
+	Wave/T tw=$GetWavesDataFolder(w,2)
+	Wave/C cw=$GetWavesDataFolder(w,2)
+	Variable waveIsComplex = WaveType(w) %& 0x01
+	Variable numeric = (WaveType(w)!=0)
+
+	String fmt
+	if (waveIsComplex)
+		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
+		sprintf fmt,"(%%.%dg, %%.%dg)",places,places
+	elseif (numeric)
+		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
+		sprintf fmt,"%%.%dg",places
+	elseif (places>0)								// must be string, and a maximum length given
+		sprintf fmt, "\"%d%%s\"",places
+	else												// string with no preferred length
+		fmt = "\"%%s\""
+	endif
+
+	Variable i=0, n
+	n = numpnts(w)
+	maxPrint = min(n,maxPrint)
+	String str, out=SelectString(bare,"{","")
+
+	do
+		if (waveIsComplex)						// a complex wave
+			sprintf str,fmt, real(cw[i]),imag(cw[i])
+		elseif (numeric && (!waveIsComplex))	// a simple number wave
+			sprintf str,fmt, w[i]
+		elseif (!numeric)						// a text wave
+			sprintf str,"\"%s\"", tw[i]
+		endif
+		out += str
+		if (i<(n-1))
+			sprintf str,sep
+			out += str
+		endif
+		i += 1
+	while (i<maxPrint)
+	if (n>maxPrint)
+		sprintf str,"...}\ronly printed %d of %d values\r",maxPrint,n
+		out += str
+	else
+		out += SelectString(bare,"}","")
+	endif
+	return out
+End
+
+
+ThreadSafe Function/WAVE str2vec(str,[sep])// returns a free vector based on the string
 	String str
-	String sep		// optional separator, if not included will figure it out
+	String sep											// optional separator, if not included will figure it out
 	sep = SelectString(ParamIsDefault(sep),sep,"")
 
 	if (strlen(str)<1)
 		return $""
 	elseif (strlen(sep)>1)							// sep can only be 1 character long
 		return $""
+	endif
+
+	Variable i0=strsearch(str,"{",0), i1=strsearch(str,"}",0)
+	if (i1>(i0+1) && i0>=0)						// vec is in {...} form, remove leading "{" and trailing "}"
+		str = str[i0+1,i1-1]
 	endif
 
 	if (strlen(sep)==0)								// determine the separator and set it so semi-colon
@@ -2390,7 +2461,7 @@ Function/WAVE str2vec(str,[sep])				// returns a free vector based on the string
 	return ww
 End
 //
-//	Function test_str2vec(str,[sep])		// try test_str2vec("1  3 2",sep="  ")
+//	Function test_str2vec(str,[sep])			// try test_str2vec("1  3 2",sep="  ")
 //		String str
 //		String sep
 //	

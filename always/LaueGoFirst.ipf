@@ -1,7 +1,7 @@
 #pragma rtGlobals= 2
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma ModuleName = LaueGoFirst
-#include "Utility_JZT", version>=3.16
+#include "Utility_JZT", version>=3.22
 #pragma hide = 1
 Static Constant JZTalwaysFirst_Version_Min=2.4	// minimum required vesion of "always first.ipf"
 
@@ -781,69 +781,70 @@ ThreadSafe Static Function/T printmatOneListComplex(m,row,[name,brief])// print 
 	return line
 End
 //
-ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector to s string suitable for printing, does not include name
-	Wave w										// 1d wave to print
-	Variable places								// number of places, for default, use negative or NaN
-	Variable maxPrint							// maximum number of elements to print, defaults to 20
-	Variable bare								// if bare is TRUE, then suppress the "{}" in the output
-	String sep									// optional separator, default is ",  "   a comma and 2 spaces
-
-	maxPrint = ParamIsDefault(maxPrint) ? 20 : maxPrint
-	maxPrint = maxPrint>0 ? maxPrint : 20
-	places = ParamIsDefault(places) ? -1 : places
-	bare = ParamIsDefault(bare) ? 0 : !(!bare)
-	sep = SelectString(ParamIsDefault(sep),sep,",  ")
-
-	if (!WaveExists(w))
-		return SelectString(bare,"{}","")
-	endif
-
-	Wave/T tw=$GetWavesDataFolder(w,2)
-	Wave/C cw=$GetWavesDataFolder(w,2)
-	Variable waveIsComplex = WaveType(w) %& 0x01
-	Variable numeric = (WaveType(w)!=0)
-
-	String fmt
-	if (waveIsComplex)
-		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
-		sprintf fmt,"(%%.%dg, %%.%dg)",places,places
-	elseif (numeric)
-		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
-		sprintf fmt,"%%.%dg",places
-	elseif (places>0)								// must be string, and a maximum length given
-		sprintf fmt, "\"%d%%s\"",places
-	else												// string with no preferred length
-		fmt = "\"%%s\""
-	endif
-
-	Variable i=0, n
-	n = numpnts(w)
-	maxPrint = min(n,maxPrint)
-	String str, out=SelectString(bare,"{","")
-
-	do
-		if (waveIsComplex)						// a complex wave
-			sprintf str,fmt, real(cw[i]),imag(cw[i])
-		elseif (numeric && (!waveIsComplex))	// a simple number wave
-			sprintf str,fmt, w[i]
-		elseif (!numeric)						// a text wave
-			sprintf str,"\"%s\"", tw[i]
-		endif
-		out += str
-		if (i<(n-1))
-			sprintf str,sep
-			out += str
-		endif
-		i += 1
-	while (i<maxPrint)
-	if (n>maxPrint)
-		sprintf str,"...}\ronly printed %d of %d values\r",maxPrint,n
-		out += str
-	else
-		out += SelectString(bare,"}","")
-	endif
-	return out
-End
+//		moved to Utility_JZT.ipf
+//ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector to s string suitable for printing, does not include name
+//	Wave w										// 1d wave to print
+//	Variable places								// number of places, for default, use negative or NaN
+//	Variable maxPrint							// maximum number of elements to print, defaults to 20
+//	Variable bare								// if bare is TRUE, then suppress the "{}" in the output
+//	String sep									// optional separator, default is ",  "   a comma and 2 spaces
+//
+//	maxPrint = ParamIsDefault(maxPrint) ? 20 : maxPrint
+//	maxPrint = maxPrint>0 ? maxPrint : 20
+//	places = ParamIsDefault(places) ? -1 : places
+//	bare = ParamIsDefault(bare) ? 0 : !(!bare)
+//	sep = SelectString(ParamIsDefault(sep),sep,",  ")
+//
+//	if (!WaveExists(w))
+//		return SelectString(bare,"{}","")
+//	endif
+//
+//	Wave/T tw=$GetWavesDataFolder(w,2)
+//	Wave/C cw=$GetWavesDataFolder(w,2)
+//	Variable waveIsComplex = WaveType(w) %& 0x01
+//	Variable numeric = (WaveType(w)!=0)
+//
+//	String fmt
+//	if (waveIsComplex)
+//		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
+//		sprintf fmt,"(%%.%dg, %%.%dg)",places,places
+//	elseif (numeric)
+//		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
+//		sprintf fmt,"%%.%dg",places
+//	elseif (places>0)								// must be string, and a maximum length given
+//		sprintf fmt, "\"%d%%s\"",places
+//	else												// string with no preferred length
+//		fmt = "\"%%s\""
+//	endif
+//
+//	Variable i=0, n
+//	n = numpnts(w)
+//	maxPrint = min(n,maxPrint)
+//	String str, out=SelectString(bare,"{","")
+//
+//	do
+//		if (waveIsComplex)						// a complex wave
+//			sprintf str,fmt, real(cw[i]),imag(cw[i])
+//		elseif (numeric && (!waveIsComplex))	// a simple number wave
+//			sprintf str,fmt, w[i]
+//		elseif (!numeric)						// a text wave
+//			sprintf str,"\"%s\"", tw[i]
+//		endif
+//		out += str
+//		if (i<(n-1))
+//			sprintf str,sep
+//			out += str
+//		endif
+//		i += 1
+//	while (i<maxPrint)
+//	if (n>maxPrint)
+//		sprintf str,"...}\ronly printed %d of %d values\r",maxPrint,n
+//		out += str
+//	else
+//		out += SelectString(bare,"}","")
+//	endif
+//	return out
+//End
 
 //  =============================== End of Wave Printing ===============================  //
 //  ====================================================================================  //
