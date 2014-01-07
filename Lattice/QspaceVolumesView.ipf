@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.07
+#pragma version = 1.08
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -8,7 +8,7 @@
 Menu "Qspace"
 	MenuItemIfWaveClassExists("Gizmo of Qspace ...","Qspace3D*","DIMS:3"), MakeGizmoQspace3D($"")
 	MenuItemIfWaveClassExists("ReScale by Qn ...","Qspace3D","DIMS:3"), RescaleQspace3DbyQn($"",NaN)
-	MenuItemIfWaveClassExists("Make a Radial Line for Gizmo ...","GizmoCorners","DIMS:2,MAXCOLS:3,MINCOLS:3"), MakeRadialLne($"")
+	MenuItemIfWaveClassExists("Make a Radial Line for Gizmo ...","GizmoCorners","DIMS:2,MAXCOLS:3,MINCOLS:3"), MakeRadialLine($"")
 	SubMenu "Utility"
 		"  Make a Test 3D Qspace",QspaceVolumesView#MakeTestQspaceVolume()
 	End
@@ -1148,27 +1148,42 @@ End
 //  ============================================================================  //
 //  =========================== Start of Gizmo Enhancements ============================  //
 
-Function/WAVE MakeRadialLne(corners)
-	Wave corners
+Function/WAVE MakeRadialLine(corners,[point,printIt])
+	Wave corners							// corners of the volume, used to set ends of line
+	String point							// string with a 3-vector that is a point on the radial line
+	Variable printIt
+	point = SelectString(ParamIsDefault(point),point,"")
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2)) < 1) : !(!printIt)
 
-	Variable printIt=(strlen(GetRTStackInfo(2)) < 1)
+	Variable ask=!WaveExists(corners)
+	Variable pointOK=1
+	if (!ParamIsDefault(point))		// if a default, assume the center of volume
+		Wave vcTemp = str2vec(point)
+		pointOK = numpnts(vcTemp)==3
+		ask = ask || !pointOK
+	endif
+
 	String name=""
-	if (!WaveExists(corners))
+	if (ask)
 		String clist=WaveListClass("GizmoCorners","*","DIMS:2,MAXCOLS:3,MINCOLS:3")
-		if (ItemsInList(clist)==1)
-			Wave corners=$StringFromList(0,clist)		// only one choice, take it
-		elseif (ItemsInList(clist)>1)					// multiple choices, ask user
+		if (ItemsInList(clist)==1 && pointOK)
+			Wave corners=$StringFromList(0,clist)	// only one choice, take it
+		elseif (ItemsInList(clist)>=1)				// multiple choices, ask user
 			Prompt name,"Wave with Corners of Gizmo",popup,clist
-			DoPrompt "Corners Wave",name
+			Prompt point,"point on radial line, use \"\" for default"
+			DoPrompt "Corners Wave",name, point
 			if (V_flag)
 				print "Could not find the corners wave for input, nothing done"
 				return $""
 			endif
 			Wave corners=$name
+			Wave vcTemp = str2vec(point)
+			pointOK = numpnts(vcTemp)==3
 		else
-			return $""											// cannot find corners wave, give up
+			return $""						// cannot find corners wave, give up
 		endif
-		printIt = 1												// force printing, since no input wave was provided
+		printIt = 1							// force printing, since no input wave was provided
 	endif
 	if (!WaveExists(corners))
 		return $""
@@ -1181,9 +1196,13 @@ Function/WAVE MakeRadialLne(corners)
 	lo[1] = WaveMin(v) ;	hi[1] = WaveMax(v)
 	v = corners[p][2]
 	lo[2] = WaveMin(v) ;	hi[2] = WaveMax(v)
-	MatrixOP/FREE vc = (lo+hi)/2	// center
+	if (numpnts(vcTemp)==3)
+		Wave vc = vcTemp
+	else
+		MatrixOP/FREE vc = (lo+hi)/2	// center
+	endif
 	if (norm(vc)==0)
-		return $""						// center is origin, cannot draw a line from origin to origin
+		return $""							// center is origin, cannot draw a line from origin to origin
 	endif
 
 	name=CleanupName(NameOfWave(corners)+"_radialLine",0)
@@ -1194,10 +1213,10 @@ Function/WAVE MakeRadialLne(corners)
 		printf "Created a radial line named  '%s'  in folder  '%s'\r",NameOfWave(line),GetWavesDataFolder(line,1)
 		print "To add this to a Gizmo, add a new Path with this wave as the source"
 	endif
-	line [1][] = vc[q]				// one end of line lies at center of Gizmo
+	line [1][] = vc[q]					// one end of line lies at center of Gizmo
 	if (lo[0]<=0 && hi[0]<=0 && lo[1]<=0 && hi[1]<=0 && lo[2]<=0 && hi[2]<=0)
 		line[0][] = 0
-		return line						// origin is inside box, so do not truncate line
+		return line							// origin is inside box, so do not truncate line
 	endif
 
 	// radial line is all points v, s.t.   v = p*vc,   where p is a real number
