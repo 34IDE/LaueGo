@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, January 07, 2014" time="12:27:03 PM CST" isoTime="2014-01-07T12:27:03"></written>
+	<written date="Wednesday, January 08, 2014" time="04:12:39 PM CST" isoTime="2014-01-08T16:12:39"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>251</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -211,7 +211,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="f4d804ac3d4f00babd1c74ba6b8ab493" ext=".xml">materials/BaKFeAs_RT.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d576c009d52da5d8b836570c387f6eb9" ext=".xml">materials/Mg2SiO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="ca031a1c8133fc9f52a01a7439b2952c" ext=".xml">materials/permalloy.xml</file>
-	<file version="2.04" time="2014-01-07T11:52:42" md5="3866a8436346b99203e0f0b926179ae2" ext=".ipf">always/LaueGoFirst.ipf</file>
+	<file version="2.05" time="2014-01-08T16:11:36" md5="c88c452e21a3ea6d8726819ddf724ed9" ext=".ipf">always/LaueGoFirst.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5da6e3e5cbb9d1fe9be3d72a61213469" ext=".txt">General/Physical Constants.txt</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7fab74f203c96142ed06f2bd7cf50ed0" ext=".ipf">always/always first.ipf</file>
 	<file version="1.76" time="2013-10-28T11:28:48" md5="e495c6aefc35af6d5c7ad40c005e12ed" ext=".ipf">General/Elements.ipf</file>

@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma ModuleName = LaueGoFirst
 #include "Utility_JZT", version>=3.22
 #pragma hide = 1
@@ -135,6 +135,7 @@ Menu "Edit"
 	SubMenu LaueGoFirst#MenuItemIfScrapValidWindowInfo("  Paste Window","type")
 		LaueGoFirst#MenuItemIfScrapValidWindowInfo("Paste Window Size","left"), /Q, LaueGoFirst#PutSizeWindow("")
 		LaueGoFirst#MenuItemIfScrapValidWindowInfo("Paste Graph Axis Ranges","axis_left_min"), /Q, LaueGoFirst#PutScrapGraphAxis("")
+		LaueGoFirst#MenuItemIfScrapValidWindowInfo("  Paste Both Window Size & Axis Ranges","left,axis_left_min"), /Q, LaueGoFirst#PutSizeWindow("");LaueGoFirst#PutScrapGraphAxis("")
 		"-"
 		LaueGoFirst#MenuItemIfScrapValidWindowInfo("Paste Gizmo Quaternion","quaternion"), /Q, LaueGoFirst#PutGizmoQuaternion("")
 	End
@@ -279,19 +280,23 @@ Static Function/T MenuItemIfWindowTypes(item,flags)
 	return item
 End
 //
-Static Function/T MenuItemIfScrapValidWindowInfo(item,requiredKey)
+Static Function/T MenuItemIfScrapValidWindowInfo(item,requiredKeys)
 	String item
-	String requiredKey
+	String requiredKeys					// comma separated list of required keys (all must be there)
 	String scrap=GetScrapText()
 	String type=StringByKey("type",scrap)
 	if (!stringmatch(type,"*WindowInfo"))
 		return "("+item					// Clipboard does not contain right kind of text
 	endif
 
-	if (strlen(requiredKey))
-		if (strlen(StringByKey(requiredKey,scrap))<1)
-			return "("+item					// the required key is missing
-		endif
+	Variable i, Nkey=ItemsInList(requiredKeys,",")
+	if (Nkey>0)
+		for (i=0;i<ItemsInList(requiredKeys,",");i+=1)
+			String key = StringFromList(i,requiredKeys,",")
+			if (strlen(StringByKey(key,scrap))<1)
+				return "("+item					// the required keys are missing
+			endif
+		endfor
 	endif
 
 	Variable flag = NumberByKey("flag",scrap)
