@@ -8,8 +8,8 @@ old/
 /new/*
 new/
 Old VersionStatus/
-“Check Version Consistency.app/”
-main.scpt
+#  “Check Version Consistency.app/”
+#  main.scpt
 
 #################
 ## Eclipse
