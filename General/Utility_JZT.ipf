@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.22
+#pragma version = 3.23
 #pragma hide = 1
 
 Menu "Graph"
@@ -202,15 +202,30 @@ End
 Proc Add_Corner_Labels_To_Graph() : GraphStyle
 	AddCornerLabelsToGraph()
 EndMacro
-Function AddCornerLabelsToGraph()
-	GetWindow kwTopWin , psize
-	Variable pBottom=V_bottom
-	Variable pheight = V_bottom-V_top
-	GetWindow kwTopWin , gsize
-	Variable gBottom=V_bottom
-	Variable bottom = -floor(100*(gBottom-pBottom)/pheight)
-	Textbox/C/N=stamp0/F=0/A=RB/X=0.2/Y=(bottom)/E=2 "\\Z04\\{\"%s %s\",date(), time()}"
-	Textbox/C/N=stamp1/F=0/A=LB/X=0.2/Y=(bottom)/E=2 "\\Z04\\{\"%s\",JZTutil#CornerStampWindow()}"
+Function AddCornerLabelsToGraph([outside,size])
+	Variable outside
+	Variable size					// font size
+	outside = ParamIsDefault(outside)||numtype(outside) ? 0 : !(!outside)
+	Variable defSize = outside ? 4 : 6
+	size = ParamIsDefault(size) ? defSize : size
+	size = size==limit(size,4,48) ? size : defSize
+	if (strlen(WinList("*",";","WIN:1"))<1)
+		return 1
+	endif
+	Variable bottom=0
+	if (outside)
+		GetWindow kwTopWin , psize
+		Variable pBottom=V_bottom
+		Variable pheight = V_bottom-V_top
+		GetWindow kwTopWin , gsize
+		Variable gBottom=V_bottom
+		bottom = -floor(100*(gBottom-pBottom)/pheight)
+	endif
+	String str
+	sprintf str,"%02d",size
+	Textbox/C/N=stamp0/F=0/A=RB/X=0.2/Y=(bottom)/E=2 "\\Z"+str+"\\{\"%s %s\",date(), time()}"
+	Textbox/C/N=stamp1/F=0/A=LB/X=0.2/Y=(bottom)/E=2 "\\Z"+str+"\\{\"%s\",JZTutil#CornerStampWindow()}"
+	return 0
 End
 
 //  =============================== End of Corner Labels ==============================  //
