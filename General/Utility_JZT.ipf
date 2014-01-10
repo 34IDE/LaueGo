@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.23
+#pragma version = 3.24
 #pragma hide = 1
 
 Menu "Graph"
@@ -70,14 +70,17 @@ End
 //	String list = WaveListClass(classes,"*",options)
 //	return SelectString(strlen(list),"(","")+item
 //End
-Function/S MenuItemIfWaveClassExists(item,classes,optionsStr,[invisible])
+Function/S MenuItemIfWaveClassExists(item,classes,optionsStr,[invisible,all])
 	String item						// string that you want to appear in menu
 	String classes					// semi-colon separated list of wave classes, can use "*" in classes
 	String optionsStr				// options that are found in WaveList function optionsStr
-	Variable invisible				// controls menu item when conditions not met: true -> menu item absent, false or absent -> menu item grayed out
+	Variable invisible			// controls menu item when conditions not met: true -> menu item absent, false or absent -> menu item grayed out
+	Variable all					// when all is TRUE, then all of the classes in waveClassList must be present, not just one
 	invisible = ParamIsDefault(invisible) ? 0 : invisible
 	invisible = numtype(invisible) ? 0 : invisible
-	String list = WaveListClass(classes,"*",optionsStr)
+	all = ParamIsDefault(all) ? 0 : !(!all)
+	all = numtype(all) ? 0 : all
+	String list = WaveListClass(classes,"*",optionsStr,all=all)
 	if (invisible)
 		return SelectString(strlen(list),"",item)
 	endif
