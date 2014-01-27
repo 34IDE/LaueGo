@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.41
+#pragma version = 4.42
 #include "LatticeSym", version>=3.55
 #include "microGeometryN", version>=1.16
 #include "Masking", version>1.00
@@ -7551,7 +7551,8 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonIndexRefineStrain1") && strlen(WaveListClass("Random3dArraysGm","*","")))
 		DeviatoricStrainRefineXML(-1,NaN,"",printit=1)
 	elseif (stringmatch(ctrlName,"buttonIndexLoadXML"))
-		Load3dRecipLatticesFileXML("",Inf,NaN)
+//		Load3dRecipLatticesFileXML("",Inf,NaN)
+		Load3dRecipLatticesFileXML("")
 	elseif (stringmatch(ctrlName,"buttonIndexLoadOneXML") && strlen(WaveListClass("Random3dArrays","*","")))
 		LoadPixelsFromXML(-1)
 	elseif (stringmatch(ctrlName,"buttonIndexColorHexagon"))

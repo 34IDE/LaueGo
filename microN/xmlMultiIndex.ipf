@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.63
+#pragma version=1.64
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -24,7 +24,9 @@ Menu "Rotations"
 	MenuItemIfWaveClassExists("Histogram a 3D Array","Interpolated3dArrays",""),multiIndex#HistogramOf3dArray($"")
 	MenuItemIfWaveClassExists("  Re-Plot Histogram of 3D Array","HistogramFrom3d",""),multiIndex#DisplayHistogramFrom3d($"")
 	" (  --------"
-	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("",1,NaN)
+//	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
+	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("") ; print " " ; ProcessLoadedXMLfile(Inf,NaN)
+	multiIndex#MenuItemIfValidRawDataExists("Re-Process Loaded XML"), ProcessLoadedXMLfile(Inf,NaN)
 	MenuItemIfWaveClassExists("  Load Pixels from one step in XML file","Random3dArrays",""),/Q,LoadPixelsFromXML(-1)
 	MenuItemIfWaveClassExists("Make Gizmo of 3D xml data","Random3dArrays",""),MakeGizmo_xmlData($"")
 	MenuItemIfWaveClassExists("Make another RGBA for a Gizmo","Random3dArraysXYZ",""),MakeGizmoRGBAforXYZ($"",$"","",NaN,NaN)
@@ -33,12 +35,17 @@ Menu "Rotations"
 	"-"
 EndMacro
 Menu "Data"
-	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("",Inf,NaN)
+	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
 End
 Menu "Load Waves"
-	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("",Inf,NaN)
+	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
 End
 
+Static Function/T MenuItemIfValidRawDataExists(item)
+	String item
+	Variable valid=ValidRawXMLdataAvailable()
+	return SelectString(valid,"(","")+item
+End
 
 
 // *****************************************************************************************
@@ -2910,7 +2917,681 @@ End
 // *****************************************************************************************
 // **********************************  Start of Read XML ***********************************
 
-Function/T Load3dRecipLatticesFileXML(FullFileName,maxAngle,refType,[iref,Xoff,Yoff,Zoff])
+// after running Load3dRecipLatticesFileXML(), process the loaded waves for viewing
+Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolume])
+	Variable maxAngle
+	Variable refType						// method used for reference orientation, 0=std, 1=average, 2=iref
+	Variable iref							// if >= 0, then use this point number as the reference orientation
+	Variable Xoff,Yoff,Zoff			// optional offsets
+	Variable centerVolume				// if true, center the volume on x,y,z
+	refType = limit(refType,0,2)==refType ? refType : -1
+	iref = ParamIsDefault(iref) ? -1 : iref
+	iref = numtype(iref) ? -1 : iref
+	refType = iref>=0 && refType<0 ? 2 : refType	// if iref is given, then reftype must be 2 if it is not specified
+	Xoff = ParamIsDefault(Xoff) ? 0 : Xoff
+	Xoff = numtype(Xoff) ? 0 : Xoff
+	Yoff = ParamIsDefault(Yoff) ? 0 : Yoff
+	Yoff = numtype(Yoff) ? 0 : Yoff
+	Zoff = ParamIsDefault(Zoff) ? 0 : Zoff
+	Zoff = numtype(Zoff) ? 0 : Zoff
+	centerVolume = ParamIsDefault(centerVolume) ? NaN : centerVolume
+	centerVolume = numtype(centerVolume) ? 0 : !(!centerVolume)	// default is False
+
+	String rawFldr = GetDataFolder(1)+"raw:"
+	if (!ValidRawXMLdataAvailable())
+		DoAlert 0, "raw folder \""+rawFldr+"\" not found, first read in the xml file, or it does not have data in it"
+		return ""
+	endif
+	Wave Xsample = $(rawFldr+"Xsample")
+	Wave Ysample = $(rawFldr+"Ysample")
+	Wave Zsample = $(rawFldr+"Zsample")
+	Wave depthRaw = $(rawFldr+"depth")
+	Wave totalSumRaw = $(rawFldr+"totalSum")
+	Wave sumAboveThresholdRaw = $(rawFldr+"sumAboveThreshold")
+	Wave numAboveThresholdRaw = $(rawFldr+"numAboveThreshold")
+	Wave NindexedRaw = $(rawFldr+"Nindexed")
+	Wave rmsIndexedRaw = $(rawFldr+"rmsIndexed")
+	Wave gmRaw = $(rawFldr+"gm")
+	Wave std = $(rawFldr+"stdLattice")
+	Wave/T imageNamesRaw = $(rawFldr+"imageNames")
+	Variable Nraw=DimSize(Xsample,0)			// number of points read in (raw points)
+	Variable useSymmetry=NumVarOrDefault(rawFldr+"useSymmetry",0)
+
+	if (!(maxAngle>0) || refType<0 || (refType==2 && !(iref>=0)))
+		maxAngle = !(maxAngle>0) ? Inf : maxAngle
+		Prompt maxAngle, "reject all points with rotation angle greater than this (degree)"
+		Prompt refType,"method for picking reference orientation",popup,"Standard;Average;Choose one point (iref)"
+		Prompt iref,"point number to use for reference orientation (optional)"
+		Prompt Xoff, "X-axis offset, beamline coords (µm)"
+		Prompt Yoff, "Y-axis offset, beamline coords (µm)"
+		Prompt Zoff, "Z-axis offset, beamline coords (µm)"
+		Prompt centerVolume, "Recenter Volume in (X,Y,Z)", popup, "Absolute Positions;Recenter to (XYZ)=(000)"
+		centerVolume += 1
+		refType +=1
+		DoPrompt "max Rotation & reference",maxAngle,Xoff,refType,Yoff,iref,Zoff, centerVolume
+		if (V_flag)
+			return ""
+		endif
+		refType -=1
+		centerVolume -=1
+	endif
+	printf "ProcessLoadedXMLfile(%g, %g",maxAngle,refType
+	if (refType==2)
+		printf ", iref=%g",iref
+	endif
+	if (!(Xoff==0 && Yoff==0 && Zoff==0))
+		printf ", Xoff=%g, Yoff=%g, Zoff=%g",Xoff,Yoff,Zoff
+	endif
+	if (centerVolume || !ParamIsDefault(centerVolume))
+		printf ", centerVolume=%g",centerVolume
+	endif
+	printf ")\r"
+	if (!(maxAngle>0))
+		DoAlert 0, "ERROR in ProcessLoadedXMLfile(), maxAngle = "+num2str(maxAngle)
+		return ""
+	elseif (limit(refType,0,2)!=refType)
+		DoAlert 0, "ERROR in ProcessLoadedXMLfile(), refType = "+num2str(refType)
+		return ""
+	elseif (refType==2 && !(iref>=0))
+		DoAlert 0, "ERROR in ProcessLoadedXMLfile(), refType==2 and iref = "+num2str(iref)
+		return ""
+	endif
+	if (numtype(Xoff+Yoff+Zoff))
+		String str = "ERROR in ProcessLoadedXMLfile()"
+		str += SelectString(numtype(Xoff),"",", Xoff="+num2str(Xoff))
+		str += SelectString(numtype(Yoff),"",", Yoff="+num2str(Yoff))
+		str += SelectString(numtype(Zoff),"",", Zoff="+num2str(Zoff))
+		str += " is bad"
+		DoAlert 0, str
+		return ""
+	endif
+
+	String noteStr = note(Xsample)
+	noteStr = ReplaceNumberByKey("maxAngle",noteStr,maxAngle,"=")
+	noteStr = ReplaceNumberByKey("Xoff",noteStr,Xoff,"=")
+	noteStr = ReplaceNumberByKey("Yoff",noteStr,Yoff,"=")
+	noteStr = ReplaceNumberByKey("Zoff",noteStr,Zoff,"=")
+	noteStr = ReplaceNumberByKey("Hoff",noteStr,YZ2H(Yoff,Zoff)	,"=")
+	noteStr = ReplaceNumberByKey("Foff",noteStr,YZ2F(Yoff,Zoff),"=")
+	noteStr = ReplaceNumberByKey("X0",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("Y0",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("Z0",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("H0",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("F0",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("dX",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("dY",noteStr,-0.707107,"=")	// an inward pointing vector (matches F direction, not -F)
+	noteStr = ReplaceNumberByKey("dZ",noteStr,0.707107,"=")
+	noteStr = ReplaceNumberByKey("dH",noteStr,0,"=")
+	noteStr = ReplaceNumberByKey("dF",noteStr,-1,"=")
+
+	Make/N=(Nraw)/O depth, XX, HH, FF, YY, ZZ
+	Make/N=(Nraw)/O totalSum, sumAboveThreshold, numAboveThreshold, Nindexed, rmsIndexed
+	Make/N=(3,3,Nraw)/O gm
+	Make/N=(Nraw)/T/O imageNames
+	Make/N=(Nraw)/O RX, RH, RF, RZ, RY, totalAngles
+	Make/N=(Nraw)/O IndexBackTrack = -1
+	SetScale d 0,0,"µm", depth, XX, HH, FF, YY, ZZ
+	SetScale d 0,0,"¡", totalAngles
+
+	// transform to voxel coordinate in sample, not sample position
+	XX = -(Xsample - Xoff)
+	YY = -(Ysample - Yoff)
+	ZZ = -(Zsample - Zoff) + depth + (numtype(depthRaw) ? 0 : depthRaw)
+	depth = depthRaw
+	HH = YZ2H(YY,ZZ)
+	FF = YZ2F(YY,ZZ)
+
+	if (centerVolume)											// shift so that average center of volume is zero
+		Variable X0, Y0, Z0, H0, F0						// average center values
+		WaveStats/M=1/Q XX;		X0 = V_avg;		XX -= X0
+		WaveStats/M=1/Q YY;		Y0 = V_avg;		HH -= Y0
+		WaveStats/M=1/Q ZZ;		Z0 = V_avg;		FF -= Z0
+		H0 = YZ2H(Y0,Z0)
+		F0 = YZ2F(Y0,Z0)
+		printf "re-set origin of data to XYZ={%g, %g, %g},  XHF={%g, %g, %g},   so now {0,0,0} is center\r",X0,Y0,Z0,X0,H0,F0
+		noteStr = ReplaceNumberByKey("X0",noteStr,X0,"=")
+		noteStr = ReplaceNumberByKey("Y0",noteStr,Y0,"=")
+		noteStr = ReplaceNumberByKey("Z0",noteStr,Z0,"=")
+		noteStr = ReplaceNumberByKey("H0",noteStr,H0,"=")
+		noteStr = ReplaceNumberByKey("F0",noteStr,F0,"=")
+		XX -= X0
+		YY -= Y0
+		ZZ -= Z0
+		HH -= H0
+		FF -= F0
+	endif
+
+	// set rl0 to the reference orientation, how this is done will depend upon 'refType'
+	Variable i, angle
+	Make/N=(3,3)/D/FREE rl0, gmi, mat3, id33=p==q
+	Make/N=3/D/FREE vec3
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="starting")	// display a progress bar
+	if (refType==2 && (iref>=0 && iref<Nraw))		// a specific point was chosen as the reference
+		gmi = gmRaw[p][q][iref]
+		if (useSymmetry)										// symmetry reduce this structure
+			angle = symReducedRecipLattice(std,id33,gmi,mat3)
+		else
+			MatrixOp/O/FREE mat3 = gmi x Inv(std)		// gmi = mat3 x std
+		endif
+		MatrixOp/O/FREE rl0 = mat3 x std				// reference reciprocal lattice
+
+	elseif (refType==1)										// find central orientation by averaging
+		Make/N=3/D/FREE vecCenter=0
+		MatrixOp/O/FREE stdInv = Inv(std)
+		for (i=0;i<Nraw;i+=1)
+			if (mod(i,400) == 0)
+				if (ProgressPanelUpdate(progressWin,i/Nraw*100,status="looking for reference, number "+num2istr(i)))	// update progress bar
+					break											//   and break out of loop
+				endif
+			endif
+			gmi = gmRaw[p][q][i]
+			if (useSymmetry)									// symmetry reduce this structure
+				angle = symReducedRecipLattice(std,id33,gmi,mat3)
+			else
+				MatrixOp/O/FREE mat3 = gmi x stdInv	// gmi = mat3 x std
+			endif
+			angle = axisOfMatrix(mat3,vec3)				// returned angle (degrees)
+			vec3 *= angle
+			vecCenter += vec3
+		endfor
+		printf "and finding reference,  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+		vecCenter /= Nraw										// the central rotation vector
+		angle = norm(vecCenter)
+		rotationMatAboutAxis(vecCenter,angle,mat3)	// mat3 rotates std to the central orientation (the new reference)
+		MatrixOp/O/FREE rl0 = mat3 x std				// reference reciprocal lattice
+
+	elseif (refType==0)										// use standard orientation for reference orientation
+		rl0 = std
+		mat3 = p==q
+
+	else
+		str = "invalid combination refType="+num2str(refType)+",  and iref="+num2str(iref)
+		DoAlert 0, str
+		print str
+		DoWindow/K $progressWin
+		return ""
+	endif
+	sprintf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",rl0[0][0],rl0[1][0],rl0[2][0],rl0[0][1],rl0[1][1],rl0[2][1],rl0[0][2],rl0[1][2],rl0[2][2]
+	noteStr = ReplaceStringByKey("recipRef",noteStr,str,"=")// save reference reicp lattice, as column vectors
+	print "using a reference reciprocal lattice of: ",StringFromList(refType,"Standard Orientation;Average Orientation;Orientation from point ")+SelectString(refType==2,"",num2str(iref))
+	printf "%.2f\t%.2f\t%.2f (1/nm)\r",rl0[0][0],rl0[0][1],rl0[0][2]
+	printf "%.2f\t%.2f\t%.2f\r",rl0[1][0],rl0[1][1],rl0[1][2]
+	printf "%.2f\t%.2f\t%.2f\r",rl0[2][0],rl0[2][1],rl0[2][2]
+	if (refType==2 && (iref>=0 && iref<Nraw))		// a valid reference point
+		printf "from iref=%d, at position (%g, %g, %g)\r",iref,XX[iref],HH[iref],FF[iref]
+	endif
+
+	Make/FREE/N=3/D hkl = {0,1,-1}
+	MatrixOP/O/FREE hkl = Inv(rl0) x hkl
+	Variable maxH = max(-WaveMin(hkl),WaveMax(hkl))
+	hkl = round(hkl*24/maxH)
+	Variable h=hkl[0], k=hkl[1], l=hkl[2]
+	lowestOrderHKL(h,k,l)
+	hkl = {h,k,l}
+	printf "hkl of surface normal (reference) = %s\r",vec2str(hkl)
+
+	// use current reference orientation (rl0) to compute all Rodriques vectors
+	Make/N=(3,3)/D/FREE rot33
+	Variable N=0, mref=NaN									// use this for rejecting rotations greater than maxAngle
+	for (i=0;i<Nraw;i+=1)									// using rl0, find the Rodriques vectors
+		if (mod(i,400) == 0)
+			if (ProgressPanelUpdate(progressWin,i/Nraw*100,status="setting rotation, number "+num2istr(i)))	// update progress bar
+				break												//   and break out of loop
+			endif
+		endif
+		gmi = gmRaw[p][q][i]
+		if (useSymmetry)										// symmetry reduce this structure
+			angle = symReducedRecipLattice(std,mat3,gmi,rot33)	// angle between go and gm,  gmi = rot33 x rl0 = rot33 x (mat3 x std)
+		else
+			MatrixOp/O/FREE rot33 = gmi x Inv(rl0)	// gmi = rot33 x rl0
+		endif
+		angle = axisOfMatrix(rot33,vec3)				// returned angle (degrees)
+		if (numtype(angle) && i==0)
+			str = "Cannot find axis of rotation matrix, Probably the lattice parameters in Igor do not match those in the xml file.\r  Check the 'Xtal' tab"
+			DoAlert 0, str
+			print str
+			DoWindow/K $progressWin
+			return ""
+		endif
+		vec3 *= tan(angle*PI/180/2)						// this is now the Rodriques vector
+		if (angle<=maxAngle)								// keep this one
+			depth[N] = depth[i]
+			XX[N] = XX[i]
+			YY[N] = YY[i]
+			ZZ[N] = ZZ[i]
+			HH[N] = HH[i]
+			FF[N] = FF[i]
+			totalSum[N] = totalSumRaw[i]
+			sumAboveThreshold[N] = sumAboveThresholdRaw[i]
+			numAboveThreshold[N] = numAboveThresholdRaw[i]
+			Nindexed[N] = NindexedRaw[i]
+			rmsIndexed[N] = rmsIndexedRaw[i]
+			gm[][][N] = gmRaw[p][q][i]
+			imageNames[N] = imageNamesRaw[i]
+			RX[N] = vec3[0]
+			RY[N] = vec3[1]
+			RZ[N] = vec3[2]
+			totalAngles[N] = angle
+			IndexBackTrack[N] = i
+			if (i==iref)
+				mref = N
+			endif
+			N += 1
+		endif
+	endfor
+	printf "total  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	DoWindow/K $progressWin
+	Redimension/N=(N) depth,XX,YY,ZZ,HH,FF,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
+	Redimension/N=(N) RX,RY,RZ, RH,RF, totalAngles
+	Redimension/N=(N) imageNames
+	Redimension/N=(-1,-1,N) gm
+	if (refType==2 && (iref>=0 && iref<N))			// a valid reference point
+		printf "requested iref=%d,  this corresponds to point %d\r",iref,mref
+		noteStr = ReplaceNumberByKey("iref",noteStr,iref,"=")
+		noteStr = ReplaceNumberByKey("mref",noteStr,mref,"=")
+	endif
+
+	// to go from (XYZ) -> (XHF) is a +45¡ rotation about the X-axis
+	Make/N=(3,3)/D/FREE rotFrame=(p==q)				// rotates about X-axis (rotates vector not frame) to get from beam-line coordinates to (XHF)
+	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
+	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
+	rotFrame[1][1] = cosTheta								// this matrix rotates direction of vector by +45¡ (this is changed below)
+	rotFrame[2][2] = cosTheta
+	rotFrame[1][2] = -sinTheta
+	rotFrame[2][1] = sinTheta
+	MatrixOp/O/FREE rotFrame = Inv(rotFrame)		// rotFrame now rotates the description of a vector from (XYZ) frame to (XHF) frame
+	Make/N=(N,3)/D/FREE Rxyz
+	Rxyz[][0] = RX[p]
+	Rxyz[][1] = RY[p]
+	Rxyz[][2] = RZ[p]
+	MatrixOP/FREE/O Rxhf = (rotFrame x Rxyz^t)^t	// rotate from beam line frame to XHF frame (outward surface normal is Z)
+	RH = Rxhf[p][1]
+	RF = Rxhf[p][2]
+	WaveClear Rxyz, Rxhf
+
+	WaveStats/M=1/Q totalAngles
+	Variable maxAngleFound = V_max
+	printf "rotation angles range from:   %.3g¡ at %d  to  %.3g¡ at %d\r",V_min,V_minloc,V_max,V_maxloc
+	printf "remaining in Igor data folder  '%s'\r",GetDataFolder(1)
+
+	Variable Xlo=WaveMin(XX), Xhi=WaveMax(XX)
+	Variable Ylo=WaveMin(YY), Yhi=WaveMax(YY)
+	Variable Zlo=WaveMin(ZZ), Zhi=WaveMax(ZZ)
+	Variable Hlo=WaveMin(HH), Hhi=WaveMax(HH)
+	Variable Flo=WaveMin(FF), Fhi=WaveMax(FF)
+	print "  Range of sample in Sample Coordinates"
+	printf "X = [%g, %g] µm\r",Xlo,Xhi
+	printf "Y = [%g, %g] µm\r",Ylo,Yhi
+	printf "Z = [%g, %g] µm\r",Zlo,Zhi
+	printf "H = [%g, %g] µm\r",Hlo,Hhi
+	printf "F = [%g, %g] µm\r",Flo,Fhi
+	noteStr = ReplaceNumberByKey("Xlo",noteStr,Xlo,"=")
+	noteStr = ReplaceNumberByKey("Xhi",noteStr,Xhi,"=")
+	noteStr = ReplaceNumberByKey("Ylo",noteStr,Ylo,"=")
+	noteStr = ReplaceNumberByKey("Yhi",noteStr,Yhi,"=")
+	noteStr = ReplaceNumberByKey("Zlo",noteStr,Zlo,"=")
+	noteStr = ReplaceNumberByKey("Zhi",noteStr,Zhi,"=")
+	noteStr = ReplaceNumberByKey("Hlo",noteStr,Hlo,"=")
+	noteStr = ReplaceNumberByKey("Hhi",noteStr,Hhi,"=")
+	noteStr = ReplaceNumberByKey("Flo",noteStr,Flo,"=")
+	noteStr = ReplaceNumberByKey("Fhi",noteStr,Fhi,"=")
+
+	Note/K XX,noteStr
+	Note/K YY,noteStr
+	Note/K ZZ,noteStr
+	Note/K HH,noteStr
+	Note/K FF,noteStr
+	Note/K depth,noteStr
+	Note/K RX,noteStr
+	Note/K RY,noteStr
+	Note/K RZ,noteStr
+	Note/K RH,noteStr
+	Note/K RF,noteStr
+	Note/K totalSum,noteStr
+	Note/K sumAboveThreshold,noteStr
+	Note/K numAboveThreshold,noteStr
+	Note/K Nindexed,noteStr
+	Note/K rmsIndexed,noteStr
+	Note/K totalAngles,noteStr
+	Note/K imageNames,noteStr
+	Note/K gm,ReplaceStringByKey("waveClass", noteStr, "Random3dArraysGm","=")
+
+	Wave rotrgb=$makeRGBJZT(RX,RH,RF,maxAngleFound)		// rgb suitable for a 2-D plot
+	Variable threeD=0
+	WaveStats/Q/M=1 XX
+	threeD += (V_max-V_min) > 0.1
+	WaveStats/Q/M=1 HH
+	threeD += (V_max-V_min) > 0.1
+	WaveStats/Q/M=1 FF
+	threeD += (V_max-V_min) > 0.1
+	threeD = (threeD==3)
+	if (threeD)
+		Make/N=(N,3)/O xyz
+		SetScale d 0,0,WaveUnits(XX,-1), xyz
+		xyz[][0] = XX[p]
+		xyz[][1] = HH[p]
+		xyz[][2] = FF[p]
+		MakeGizmocubeCorners(xyz)
+		Make/N=(N,4)/O rgba
+		Make/N=(N)/O/FREE brite
+		Variable hi=WaveMax(totalsum)/4
+		brite = sqrt(limit(totalsum/hi,0.09,1))
+		// brite = sqrt(limit(totalsum/100e3,0.09,1))
+		rgba[][0,2] = rotrgb[p][q]/65535
+		rgba[][3] = brite[p]
+		Note/K xyz,ReplaceStringByKey("waveClass",noteStr,"Random3dArraysXYZ","=")
+
+		String note2= ReplaceStringByKey("waveClass",noteStr,"Random3dArraysRGBA","=")
+		note2= ReplaceStringByKey("source",noteStr,"RxRyRz","=")
+		String title=StringByKey("title",note(RX),"=")
+		title = "RxRyRz"+SelectString(strlen(title),"",", ")+title
+		note2= ReplaceStringByKey("title",noteStr,title,"=")
+		Note/K rgba,note2
+	endif
+	return noteStr
+End
+
+
+
+Function/T Load3dRecipLatticesFileXML(FullFileName)
+	String FullFileName
+
+	Variable f
+	Open/R/Z=2/M="pick the XML file"/F=XMLfilters f as FullFileName
+	FullFileName = S_fileName
+	if (V_flag)
+		return ""
+	endif
+	printf "Load3dRecipLatticesFileXML(\"%s\")\r",FullFileName
+
+	String pathSep
+	if (stringmatch(IgorInfo(2),"Macintosh"))
+		pathSep = ":"
+	elseif (stringmatch(IgorInfo(2),"Windows"))
+		pathSep = "\\"
+	else
+		Abort "This is neither Mac nor Win, what is this computer?"
+	endif
+
+	GetFileFolderInfo/Q/Z=1 FullFileName
+	if (!V_isFile)
+		return ""
+	endif
+	String noteStr = ReplaceStringByKey("waveClass","","Random3dArrays","=")
+	noteStr = ReplaceStringByKey("xmlFileFull",noteStr,FullFileName,"=")	// add full file name to note string
+	noteStr = ReplaceStringByKey("localFile",noteStr,ParseFilePath(0,FullFileName,":",1,0),"=")	// add file name to note string
+	String fldrSav= GetDataFolder(1)
+	String fldrName = ParseFilePath(3,FullFileName, pathSep, 0, 0)
+	fldrName = CleanupName(fldrName, 0)
+	if (stringmatch(fldrName,"raw"))
+		fldrName = UniqueName(fldrName,11,0)
+	endif
+	if (CheckName(fldrName,11))
+		DoAlert 2, "This data folder already exists, delete the folder and re-load the data?"
+		if (V_flag==1)
+			KillDataFolder $fldrName
+		elseif (V_flag==2)
+			fldrName = UniqueName(fldrName,11,0)
+		else
+			SetDataFolder fldrSav
+			return ""
+		endif
+	endif
+
+	if (StringMatch(GetDataFolder(0),fldrName))
+		DoAlert 2,"In folder:\r  \""+fldrName+"\",\rreload and overwrite data from xml file?"
+		if (V_flag!=1)
+			return ""
+		endif
+	else
+		NewDataFolder/O/S $fldrName
+	endif
+
+	fldrName = GetDataFolder(1)
+	NewDataFolder/O/S raw
+	noteStr = ReplaceStringByKey("fldrName",noteStr,fldrName,"=")
+
+	STRUCT crystalStructure xtal
+	if (LatticeParametersFromXML(FullFileName,xtal))				// fill the lattice from first occurance in xml file
+		if (FillCrystalStructDefault(xtal))		// if no lattice in xml file, use current values
+			DoAlert 0, "no crystal structure found"
+			return ""
+		endif
+	endif
+	LatticeSym#ForceLatticeToStructure(xtal)	// mostly calling this to call reMakeAtomXYZs(xtal)
+	initSymmetryOperations()							// initialize all symmetry operations
+	Variable/G useSymmetry=strlen(LatticeSym#MakeSymmetryOps(xtal))>0	// make a wave with the symmetry operation
+	Make/N=(3,3)/O/D stdLattice						// reciprocal lattice in standard orientation (used for sym reduction)
+	stdLattice[0][0] = xtal.as0 ;	stdLattice[0][1] = xtal.bs0 ;	stdLattice[0][2] = xtal.cs0
+	stdLattice[1][0] = xtal.as1 ;	stdLattice[1][1] = xtal.bs1 ;	stdLattice[1][2] = xtal.cs1
+	stdLattice[2][0] = xtal.as2 ;	stdLattice[2][1] = xtal.bs2 ;	stdLattice[2][2] = xtal.cs2
+
+	Variable Nalloc=1000
+	Make/N=(Nalloc)/O depth, Zsample,Ysample,Xsample
+	Make/N=(Nalloc)/O sumAboveThreshold, totalSum		// total sum of pixels, and sum of pixels over threshold
+	Make/N=(Nalloc)/O numAboveThreshold			// number of pixels that exceed threshold (by any amount)
+	Make/N=(Nalloc)/O Nindexed						// number of spots indexed in first pattern
+	Make/N=(Nalloc)/O rmsIndexed						// rms error indexing each pattern (degree)
+	Make/N=(3,3,Nalloc)/D/O gm
+	SetScale d 0,0,"µm", Xsample,Ysample,Zsample,depth
+	Make/N=(Nalloc)/O/T imageNames
+
+	Variable Yn,Zn
+	String pattern, patternKeyVals
+	String svec
+	Variable as0,as1,as2, bs0,bs1,bs2, cs0,cs1,cs2
+	Variable first = 1									// flags first time through
+	Variable value, i
+	String step
+	Variable i0,i1											// mark start and end of current   <step ></step>
+	Variable i0start=0									// where to start searching for "<step "
+	Variable N=0											// counts number of points read in
+	Variable bytesRead									// keeps track of how many bytes read in (should not exceed fileLen)
+	Variable size=200*1024								// size of a typical read
+	Variable N0												// number of spots indexed in first pattern
+	Variable rms											// rms error indexing a pattern
+
+	// start reading here
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="starting")	// display a progress bar
+	Open/R/Z=1 f as FullFileName
+	FStatus f
+	Variable fileLen = V_logEOF						// length of file in bytes
+	size = min(size,fileLen)
+	String buf = PadString("",size,0x20)			// a buffer for working space (of length size bytes)
+	String bufRead, str									// a buffer for reading more from the file (read up to this much each time)
+	FBinRead f, buf										// initial read
+	bytesRead = strlen(buf)
+	do
+		// read in data from xml file
+		if (mod(N,400) == 0)
+			if (ProgressPanelUpdate(progressWin,bytesRead/fileLen*100,status="reading number "+num2istr(N)))	// update progress bar
+				break											//   and break out of loop
+			endif
+		endif
+		i0 = strsearch(buf,"<step ",i0start,2)
+		if (i0<0)
+			size = min(size,fileLen-bytesRead)		// number of bytes to read
+			bufRead = PadString("",size,0x20)
+			FBinRead f, bufRead							// could not find start of step, read more
+			bytesRead += strlen(bufRead)
+			buf = buf[i0,Inf] + bufRead
+			i0 = strsearch(buf,"<step ",i0start,2)		// search again for start of step tag
+			if (i0<0)
+				break											// give up, all done
+			endif
+		endif
+		i1 = strsearch(buf,"</step>",i0,2)
+		if (i1<0)
+			size = min(size,fileLen-bytesRead)		// number of bytes to read
+			bufRead = PadString("",size,0x20)
+			FBinRead f, bufRead							// could not find end of step, read more
+			bytesRead += strlen(bufRead)
+			buf = buf[i0,Inf] + bufRead
+			i0 = 0
+			i1 = strsearch(buf,"</step>",i0,2)		// search again for end of step tag
+			if (i1<0)
+				break											// give up, all done
+			endif
+		endif
+		i1 += 6
+
+		// this step is bracketed by [i0,i1], process it:
+		step = buf[i0,i1]
+		i0start = i1 + 1									// where to start searching for next start tag
+
+		if (first)
+			first = 0
+			noteStr = ReplaceStringByKey("title",noteStr,xmlTagContents("title",step),"=")
+			noteStr = ReplaceStringByKey("sampleName",noteStr,xmlTagContents("sampleName",step),"=")
+			noteStr = ReplaceStringByKey("userName",noteStr,xmlTagContents("userName",step),"=")
+			noteStr = ReplaceNumberByKey("scanNum",noteStr,str2num(xmlTagContents("scanNum",step)),"=")
+			noteStr = ReplaceStringByKey("date",noteStr,xmlTagContents("date",step),"=")
+			value = str2num(xmlTagContents("hutchTemperature",step))
+			if (value != 0)
+				noteStr = ReplaceNumberByKey("hutchTemperature",noteStr,value,"=")
+			endif
+			value = str2num(xmlTagContents("beamBad",step))
+			if (value)
+				noteStr = ReplaceNumberByKey("beamBad",noteStr,value,"=")
+			endif
+			str = xmlTagContents("CCDshutter",step)
+			if (!stringmatch(str,"out"))
+				noteStr = ReplaceStringByKey("CCDshutter",noteStr,"in","=")
+			endif
+			str = xmlTagContents("monoMode",step)
+			noteStr = ReplaceStringByKey("monoMode",noteStr,str,"=")
+			if (stringmatch(str,"monochromatic"))
+				noteStr = ReplaceNumberByKey("energy",noteStr,str2num(xmlTagContents("energy",step)),"=")
+			endif
+		endif
+		patternKeyVals = multiIndex#xmlTagKeyVals("pattern",step)
+		N0 = NumberByKey("Nindexed", patternKeyVals,"=")
+		rms = NumberByKey("rms_error", patternKeyVals,"=")
+		if (NumberByKey("num", patternKeyVals,"=")!=0 || N0<NindexedMIN)
+			//if (strlen(patternKeyVals))
+			//	print xmlTagContents("inputImage",step)
+			//	print patternKeyVals
+			//endif
+			continue											// skip this image, it was not adequately indexed
+		endif
+		pattern = xmlTagContents("pattern",step)
+		svec = xmlTagContents("astar",pattern)
+		sscanf svec,"%g %g %g",as0,as1,as2
+		svec = xmlTagContents("bstar",pattern)
+		sscanf svec,"%g %g %g",bs0,bs1,bs2
+		svec = xmlTagContents("cstar",pattern)
+		sscanf svec,"%g %g %g",cs0,cs1,cs2
+
+		if (N>=Nalloc)										// need longer arrays
+			Nalloc += 1000
+			Redimension/N=(Nalloc) Xsample,Ysample,Zsample,depth
+			Redimension/N=(Nalloc) totalSum, sumAboveThreshold, numAboveThreshold
+			Redimension/N=(Nalloc) Nindexed
+			Redimension/N=(Nalloc) rmsIndexed
+			Redimension/N=(Nalloc) imageNames
+			Redimension/N=(3,3,Nalloc) gm
+		endif
+		depth[N] = str2num(xmlTagContents("depth",step))
+		Xsample[N] = str2num(xmlTagContents("Xsample",step))
+		Ysample[N] = str2num(xmlTagContents("Ysample",step))
+		Zsample[N] = str2num(xmlTagContents("Zsample",step))
+		Nindexed[N] = N0
+		rmsIndexed[N] = rms
+		totalSum[N] = str2num(xmlTagContents("totalSum",step))
+		sumAboveThreshold[N] = str2num(xmlTagContents("sumAboveThreshold",step))
+		numAboveThreshold[N] = str2num(xmlTagContents("numAboveThreshold",step))
+		imageNames[N] = xmlTagContents("inputImage",step)
+		gm[0][0][N] = as0;		gm[0][1][N] = bs0;	gm[0][2][N] = cs0	// save measured reciprocal lattice for this point
+		gm[1][0][N] = as1;		gm[1][1][N] = bs1;	gm[1][2][N] = cs1
+		gm[2][0][N] = as2;		gm[2][1][N] = bs2;	gm[2][2][N] = cs2
+		N += 1
+	while(1)
+	Close f
+	printf "  execution time for reading = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	DoWindow/K $progressWin
+
+	Redimension/N=(-1,-1,N) gm						// trim to actual length
+	Redimension/N=(N) depth,Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
+	Redimension/N=(N) imageNames
+	SetDataFolder $fldrName
+	printf "remaining in Igor data folder  '%s'\r",fldrName
+	// done reading
+
+	Duplicate/FREE Ysample, Hsample, Fsample
+	Hsample = YZ2H(Ysample[p],Zsample[p])			// H =  Y*sin(angle) + Z*cos(angle))	Yn and Zn are sample system from the file
+	Fsample = YZ2F(Ysample[p],Zsample[p])			// F = -Y*cos(angle) + Z*sin(angle)
+	Variable Xlo=WaveMin(Xsample), Xhi=WaveMax(Xsample)
+	Variable Ylo=WaveMin(Ysample), Yhi=WaveMax(Ysample)
+	Variable Zlo=WaveMin(Zsample), Zhi=WaveMax(Zsample)
+	Variable Hlo=WaveMin(Hsample), Hhi=WaveMax(Hsample)
+	Variable Flo=WaveMin(Fsample), Fhi=WaveMax(Fsample)
+	printf "read in %d steps\r",N
+	print "   Positioner ranges:"
+	printf "Xsample = [%g, %g] µm\r",Xlo,Xhi
+	printf "Ysample = [%g, %g] µm\r",Ylo,Yhi
+	printf "Zsample = [%g, %g] µm\r",Zlo,Zhi
+	printf "Hsample = [%g, %g] µm\r",Hlo,Hhi
+	printf "Fsample = [%g, %g] µm\r",Flo,Fhi
+
+	Note/K Xsample,noteStr
+	Note/K Ysample,noteStr
+	Note/K Zsample,noteStr
+	Note/K depth,noteStr
+	Note/K totalSum,noteStr
+	Note/K sumAboveThreshold,noteStr
+	Note/K numAboveThreshold,noteStr
+	Note/K Nindexed,noteStr
+	Note/K rmsIndexed,noteStr
+	Note/K imageNames,noteStr
+	Note/K gm,ReplaceStringByKey("waveClass", noteStr, "Random3dArraysGm","=")
+
+	return noteStr
+End
+
+
+Static Function ValidRawXMLdataAvailable()
+	Variable valid = DataFolderExists(":raw")
+	if (!valid)
+		return 0
+	endif
+	valid = valid && Exists(":raw:stdLattice")==1
+	valid = valid && Exists(":raw:Xsample")==1
+	valid = valid && Exists(":raw:Ysample")==1
+	valid = valid && Exists(":raw:Zsample")==1
+	valid = valid && Exists(":raw:depth")==1
+	valid = valid && Exists(":raw:totalSum")==1
+	valid = valid && Exists(":raw:sumAboveThreshold")==1
+	valid = valid && Exists(":raw:numAboveThreshold")==1
+	valid = valid && Exists(":raw:Nindexed")==1
+	valid = valid && Exists(":raw:rmsIndexed")==1
+	valid = valid && Exists(":raw:gm")==1
+	valid = valid && Exists(":raw:imageNames")==1
+	valid = valid && Exists(":raw:useSymmetry")==2
+	if (!valid)
+		return 0
+	endif
+
+	Wave Xsample = $":raw:Xsample"
+	valid = valid && DimSize(Xsample,0)>1
+	return valid
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Function/T Load3dRecipLatticesFileXML_OLD(FullFileName,maxAngle,refType,[iref,Xoff,Yoff,Zoff])
 	String FullFileName
 	Variable maxAngle
 	Variable refType						// method used for reference orientation, 0=std, 1=average, 2=iref
