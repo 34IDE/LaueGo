@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.65
+#pragma version=1.66
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -2918,12 +2918,13 @@ End
 // **********************************  Start of Read XML ***********************************
 
 // after running Load3dRecipLatticesFileXML(), process the loaded waves for viewing
-Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolume])
+Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolume,printIt])
 	Variable maxAngle
 	Variable refType						// method used for reference orientation, 0=std, 1=average, 2=iref
 	Variable iref							// if >= 0, then use this point number as the reference orientation
 	Variable Xoff,Yoff,Zoff			// optional offsets
 	Variable centerVolume				// if true, center the volume on x,y,z
+	Variable printIt
 	refType = limit(refType,0,2)==refType ? refType : -1
 	iref = ParamIsDefault(iref) ? -1 : iref
 	iref = numtype(iref) ? -1 : iref
@@ -2936,6 +2937,8 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Zoff = numtype(Zoff) ? 0 : Zoff
 	centerVolume = ParamIsDefault(centerVolume) ? NaN : centerVolume
 	centerVolume = numtype(centerVolume) ? 0 : !(!centerVolume)	// default is False
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	String rawFldr = GetDataFolder(1)+"raw:"
 	if (!ValidRawXMLdataAvailable())
@@ -2974,18 +2977,21 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		endif
 		refType -=1
 		centerVolume -=1
+		printIt = 1
 	endif
-	printf "ProcessLoadedXMLfile(%g, %g",maxAngle,refType
-	if (refType==2)
-		printf ", iref=%g",iref
+	if (printIt)
+		printf "ProcessLoadedXMLfile(%g, %g",maxAngle,refType
+		if (refType==2)
+			printf ", iref=%g",iref
+		endif
+		if (!(Xoff==0 && Yoff==0 && Zoff==0))
+			printf ", Xoff=%g, Yoff=%g, Zoff=%g",Xoff,Yoff,Zoff
+		endif
+		if (centerVolume || !ParamIsDefault(centerVolume))
+			printf ", centerVolume=%g",centerVolume
+		endif
+		printf ")\r"
 	endif
-	if (!(Xoff==0 && Yoff==0 && Zoff==0))
-		printf ", Xoff=%g, Yoff=%g, Zoff=%g",Xoff,Yoff,Zoff
-	endif
-	if (centerVolume || !ParamIsDefault(centerVolume))
-		printf ", centerVolume=%g",centerVolume
-	endif
-	printf ")\r"
 	if (!(maxAngle>0))
 		DoAlert 0, "ERROR in ProcessLoadedXMLfile(), maxAngle = "+num2str(maxAngle)
 		return ""
@@ -3048,7 +3054,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		WaveStats/M=1/Q ZZ;		Z0 = V_avg;		FF -= Z0
 		H0 = YZ2H(Y0,Z0)
 		F0 = YZ2F(Y0,Z0)
-		printf "re-set origin of data to XYZ={%g, %g, %g},  XHF={%g, %g, %g},   so now {0,0,0} is center\r",X0,Y0,Z0,X0,H0,F0
+		if (printIt)
+			printf "re-set origin of data to XYZ={%g, %g, %g},  XHF={%g, %g, %g},   so now {0,0,0} is center\r",X0,Y0,Z0,X0,H0,F0
+		endif
 		noteStr = ReplaceNumberByKey("X0",noteStr,X0,"=")
 		noteStr = ReplaceNumberByKey("Y0",noteStr,Y0,"=")
 		noteStr = ReplaceNumberByKey("Z0",noteStr,Z0,"=")
@@ -3094,7 +3102,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 			vec3 *= angle
 			vecCenter += vec3
 		endfor
-		printf "and finding reference,  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+		if (printIt)
+			printf "and finding reference,  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+		endif
 		vecCenter /= Nraw										// the central rotation vector
 		angle = norm(vecCenter)
 		rotationMatAboutAxis(vecCenter,angle,mat3)	// mat3 rotates std to the central orientation (the new reference)
@@ -3113,22 +3123,24 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	endif
 	sprintf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",rl0[0][0],rl0[1][0],rl0[2][0],rl0[0][1],rl0[1][1],rl0[2][1],rl0[0][2],rl0[1][2],rl0[2][2]
 	noteStr = ReplaceStringByKey("recipRef",noteStr,str,"=")// save reference reicp lattice, as column vectors
-	print "using a reference reciprocal lattice of: ",StringFromList(refType,"Standard Orientation;Average Orientation;Orientation from point ")+SelectString(refType==2,"",num2str(iref))
-	printf "%.2f\t%.2f\t%.2f (1/nm)\r",rl0[0][0],rl0[0][1],rl0[0][2]
-	printf "%.2f\t%.2f\t%.2f\r",rl0[1][0],rl0[1][1],rl0[1][2]
-	printf "%.2f\t%.2f\t%.2f\r",rl0[2][0],rl0[2][1],rl0[2][2]
-	if (refType==2 && (iref>=0 && iref<Nraw))		// a valid reference point
-		printf "from iref=%d, at position (%g, %g, %g)\r",iref,XX[iref],HH[iref],FF[iref]
-	endif
+	if (printIt)
+		print "using a reference reciprocal lattice of: ",StringFromList(refType,"Standard Orientation;Average Orientation;Orientation from point ")+SelectString(refType==2,"",num2str(iref))
+		printf "%.2f\t%.2f\t%.2f (1/nm)\r",rl0[0][0],rl0[0][1],rl0[0][2]
+		printf "%.2f\t%.2f\t%.2f\r",rl0[1][0],rl0[1][1],rl0[1][2]
+		printf "%.2f\t%.2f\t%.2f\r",rl0[2][0],rl0[2][1],rl0[2][2]
+		if (refType==2 && (iref>=0 && iref<Nraw))		// a valid reference point
+			printf "from iref=%d, at position (%g, %g, %g)\r",iref,XX[iref],HH[iref],FF[iref]
+		endif
 
-	Make/FREE/N=3/D hkl = {0,1,-1}
-	MatrixOP/O/FREE hkl = Inv(rl0) x hkl
-	Variable maxH = max(-WaveMin(hkl),WaveMax(hkl))
-	hkl = round(hkl*24/maxH)
-	Variable h=hkl[0], k=hkl[1], l=hkl[2]
-	lowestOrderHKL(h,k,l)
-	hkl = {h,k,l}
-	printf "hkl of surface normal (reference) = %s\r",vec2str(hkl)
+		Make/FREE/N=3/D hkl = {0,1,-1}
+		MatrixOP/O/FREE hkl = Inv(rl0) x hkl
+		Variable maxH = max(-WaveMin(hkl),WaveMax(hkl))
+		hkl = round(hkl*24/maxH)
+		Variable h=hkl[0], k=hkl[1], l=hkl[2]
+		lowestOrderHKL(h,k,l)
+		hkl = {h,k,l}
+		printf "hkl of surface normal (reference) = %s\r",vec2str(hkl)
+	endif
 
 	// use current reference orientation (rl0) to compute all Rodriques vectors
 	Make/N=(3,3)/D/FREE rot33
@@ -3179,14 +3191,18 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 			N += 1
 		endif
 	endfor
-	printf "total  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	if (printIt)
+		printf "total  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	endif
 	DoWindow/K $progressWin
 	Redimension/N=(N) depth,XX,YY,ZZ,HH,FF,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
 	Redimension/N=(N) RX,RY,RZ, RH,RF, totalAngles
 	Redimension/N=(N) imageNames
 	Redimension/N=(-1,-1,N) gm
 	if (refType==2 && (iref>=0 && iref<N))			// a valid reference point
-		printf "requested iref=%d,  this corresponds to point %d\r",iref,mref
+		if (printIt)
+			printf "requested iref=%d,  this corresponds to point %d\r",iref,mref
+		endif
 		noteStr = ReplaceNumberByKey("iref",noteStr,iref,"=")
 		noteStr = ReplaceNumberByKey("mref",noteStr,mref,"=")
 	endif
@@ -3211,20 +3227,24 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 
 	WaveStats/M=1/Q totalAngles
 	Variable maxAngleFound = V_max
-	printf "rotation angles range from:   %.3g¡ at %d  to  %.3g¡ at %d\r",V_min,V_minloc,V_max,V_maxloc
-	printf "remaining in Igor data folder  '%s'\r",GetDataFolder(1)
+	if (printIt)
+		printf "rotation angles range from:   %.3g¡ at %d  to  %.3g¡ at %d\r",V_min,V_minloc,V_max,V_maxloc
+		printf "remaining in Igor data folder  '%s'\r",GetDataFolder(1)
+	endif
 
 	Variable Xlo=WaveMin(XX), Xhi=WaveMax(XX)
 	Variable Ylo=WaveMin(YY), Yhi=WaveMax(YY)
 	Variable Zlo=WaveMin(ZZ), Zhi=WaveMax(ZZ)
 	Variable Hlo=WaveMin(HH), Hhi=WaveMax(HH)
 	Variable Flo=WaveMin(FF), Fhi=WaveMax(FF)
-	print "  Range of sample in Sample Coordinates"
-	printf "X = [%g, %g] µm\r",Xlo,Xhi
-	printf "Y = [%g, %g] µm\r",Ylo,Yhi
-	printf "Z = [%g, %g] µm\r",Zlo,Zhi
-	printf "H = [%g, %g] µm\r",Hlo,Hhi
-	printf "F = [%g, %g] µm\r",Flo,Fhi
+	if (printIt)
+		print "  Range of sample in Sample Coordinates"
+		printf "X = [%g, %g] µm\r",Xlo,Xhi
+		printf "Y = [%g, %g] µm\r",Ylo,Yhi
+		printf "Z = [%g, %g] µm\r",Zlo,Zhi
+		printf "H = [%g, %g] µm\r",Hlo,Hhi
+		printf "F = [%g, %g] µm\r",Flo,Fhi
+	endif
 	noteStr = ReplaceNumberByKey("Xlo",noteStr,Xlo,"=")
 	noteStr = ReplaceNumberByKey("Xhi",noteStr,Xhi,"=")
 	noteStr = ReplaceNumberByKey("Ylo",noteStr,Ylo,"=")
@@ -3293,16 +3313,22 @@ End
 
 
 
-Function/T Load3dRecipLatticesFileXML(FullFileName)
+Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	String FullFileName
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	Variable f
 	Open/R/Z=2/M="pick the XML file"/F=XMLfilters f as FullFileName
+	printIt = StringMatch(FullFileName,S_fileName) ? printIt : 1
 	FullFileName = S_fileName
 	if (V_flag)
 		return ""
 	endif
-	printf "Load3dRecipLatticesFileXML(\"%s\")\r",FullFileName
+	if (printIt)
+		printf "Load3dRecipLatticesFileXML(\"%s\")\r",FullFileName
+	endif
 
 	String pathSep
 	if (stringmatch(IgorInfo(2),"Macintosh"))
@@ -3507,7 +3533,9 @@ Function/T Load3dRecipLatticesFileXML(FullFileName)
 		N += 1
 	while(1)
 	Close f
-	printf "  execution time for reading = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	if (printIt)
+		printf "  execution time for reading = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	endif
 	DoWindow/K $progressWin
 
 	Redimension/N=(-1,-1,N) gm						// trim to actual length
@@ -3525,13 +3553,15 @@ Function/T Load3dRecipLatticesFileXML(FullFileName)
 	Variable Zlo=WaveMin(Zsample), Zhi=WaveMax(Zsample)
 	Variable Hlo=WaveMin(Hsample), Hhi=WaveMax(Hsample)
 	Variable Flo=WaveMin(Fsample), Fhi=WaveMax(Fsample)
-	printf "read in %d steps\r",N
-	print "   Positioner ranges:"
-	printf "Xsample = [%g, %g] µm\r",Xlo,Xhi
-	printf "Ysample = [%g, %g] µm\r",Ylo,Yhi
-	printf "Zsample = [%g, %g] µm\r",Zlo,Zhi
-	printf "Hsample = [%g, %g] µm\r",Hlo,Hhi
-	printf "Fsample = [%g, %g] µm\r",Flo,Fhi
+	if (printIt)
+		printf "read in %d steps\r",N
+		print "   Positioner ranges:"
+		printf "Xsample = [%g, %g] µm\r",Xlo,Xhi
+		printf "Ysample = [%g, %g] µm\r",Ylo,Yhi
+		printf "Zsample = [%g, %g] µm\r",Zlo,Zhi
+		printf "Hsample = [%g, %g] µm\r",Hlo,Hhi
+		printf "Fsample = [%g, %g] µm\r",Flo,Fhi
+	endif
 
 	Note/K Xsample,noteStr
 	Note/K Ysample,noteStr
