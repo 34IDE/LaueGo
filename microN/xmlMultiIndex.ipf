@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.64
+#pragma version=1.65
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -3024,11 +3024,11 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	noteStr = ReplaceNumberByKey("dH",noteStr,0,"=")
 	noteStr = ReplaceNumberByKey("dF",noteStr,-1,"=")
 
-	Make/N=(Nraw)/O depth, XX, HH, FF, YY, ZZ
-	Make/N=(Nraw)/O totalSum, sumAboveThreshold, numAboveThreshold, Nindexed, rmsIndexed
+	Make/N=(Nraw)/O depth, ZZ,YY, FF, HH, XX
+	Make/N=(Nraw)/O rmsIndexed, numAboveThreshold, sumAboveThreshold, totalSum, Nindexed
 	Make/N=(3,3,Nraw)/O gm
 	Make/N=(Nraw)/T/O imageNames
-	Make/N=(Nraw)/O RX, RH, RF, RZ, RY, totalAngles
+	Make/N=(Nraw)/O totalAngles, RZ, RY, RF, RH, RX
 	Make/N=(Nraw)/O IndexBackTrack = -1
 	SetScale d 0,0,"µm", depth, XX, HH, FF, YY, ZZ
 	SetScale d 0,0,"¡", totalAngles
@@ -3079,7 +3079,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		Make/N=3/D/FREE vecCenter=0
 		MatrixOp/O/FREE stdInv = Inv(std)
 		for (i=0;i<Nraw;i+=1)
-			if (mod(i,400) == 0)
+			if (mod(i,1000) == 0)
 				if (ProgressPanelUpdate(progressWin,i/Nraw*100,status="looking for reference, number "+num2istr(i)))	// update progress bar
 					break											//   and break out of loop
 				endif
@@ -3134,7 +3134,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Make/N=(3,3)/D/FREE rot33
 	Variable N=0, mref=NaN									// use this for rejecting rotations greater than maxAngle
 	for (i=0;i<Nraw;i+=1)									// using rl0, find the Rodriques vectors
-		if (mod(i,400) == 0)
+		if (mod(i,1000) == 0)
 			if (ProgressPanelUpdate(progressWin,i/Nraw*100,status="setting rotation, number "+num2istr(i)))	// update progress bar
 				break												//   and break out of loop
 			endif
@@ -3403,7 +3403,7 @@ Function/T Load3dRecipLatticesFileXML(FullFileName)
 	bytesRead = strlen(buf)
 	do
 		// read in data from xml file
-		if (mod(N,400) == 0)
+		if (mod(N,1000) == 0)
 			if (ProgressPanelUpdate(progressWin,bytesRead/fileLen*100,status="reading number "+num2istr(N)))	// update progress bar
 				break											//   and break out of loop
 			endif

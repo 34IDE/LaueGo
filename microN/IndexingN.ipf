@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.42
+#pragma version = 4.43
 #include "LatticeSym", version>=3.55
 #include "microGeometryN", version>=1.16
 #include "Masking", version>1.00
@@ -7224,10 +7224,11 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 		SetDrawEnv linethick= 1
 		DrawLine 0,65+offset,221,65+offset
 
-		Button buttonIndexLoadXML,pos={1,70+offset},size={140,20},proc=IndexButtonProc,title="Load 3d XML"
-		Button buttonIndexLoadXML,help={"index lots of images"}
+		PopupMenu popupIndexLoadXML,pos={1,70+offset},size={140,20},fSize=14,proc=Indexing#IndexXMLPopUpMenuProc,title="Load 3d XML"
+		PopupMenu popupIndexLoadXML,help={"Load & Prepare for Display an XML output file"}
+		PopupMenu popupIndexLoadXML,mode=0,value= #"\"Load 3D XML file;Process/Reprocess Loaded XML;\""
 		Button buttonIndexLoadOneXML,pos={150,70+offset},size={70,20},proc=IndexButtonProc,title="One Step"
-		Button buttonIndexLoadOneXML,help={"index lots of images"}
+		Button buttonIndexLoadOneXML,help={"Load One <step> from an XML file"}
 
 		Button buttonIndexGizmoXML,pos={1,95+offset},size={140,20},proc=IndexButtonProc,title="Gizmo of 3d XML"
 		Button buttonIndexGizmoXML,help={"index lots of images"}
@@ -7413,7 +7414,9 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 	PopupMenu popupTables,win=$win,disable= d
 
 	if (exists("Load3dRecipLatticesFileXML")==6)
-		Button buttonIndexLoadXML,win=$win,disable= 0
+		FUNCREF ValidRawXMLdataAvailableProto fvalid = $"multiIndex#ValidRawXMLdataAvailable"
+		String mstr="\"Load 3D XML file;"+SelectString(fvalid(),"","Process/Reprocess Loaded XML;")+"\""
+		PopupMenu popupIndexLoadXML,win=$win,disable=0,value=#mstr
 		Button buttonIndexColorHexagon,win=$win,disable= 0
 
 		d = strlen(WaveListClass("Random3dArraysGm","*",""))<1 ? 2 : 0
@@ -7426,6 +7429,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 
 		d = strlen(WaveListClass("Random3dArrays","*",""))<1 ? 2 : 0
 		Button buttonIndexLoadOneXML,win=$win,disable= d
+		d = strlen(WaveListClass("Random3dArraysXYZ","*",""))<1 ? 2 : 0
 		Button buttonIndexGizmoXML,win=$win,disable= d	
 
 		d = strlen(WaveListClass("Interpolated3dArrays","*",""))<1 ? 2 : 0
@@ -7453,6 +7457,9 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 		d = strlen(WaveListClass("indexationResultList*","*","TEXT:1"))<1 ? 2 : 0
 		Button buttonIndexingListTable,win=$win,disable= d
 	endif
+End
+Function ValidRawXMLdataAvailableProto()
+	return 0
 End
 
 
@@ -7550,9 +7557,6 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		DeviatoricStrainRefineXML_ALL("","")
 	elseif (stringmatch(ctrlName,"buttonIndexRefineStrain1") && strlen(WaveListClass("Random3dArraysGm","*","")))
 		DeviatoricStrainRefineXML(-1,NaN,"",printit=1)
-	elseif (stringmatch(ctrlName,"buttonIndexLoadXML"))
-//		Load3dRecipLatticesFileXML("",Inf,NaN)
-		Load3dRecipLatticesFileXML("")
 	elseif (stringmatch(ctrlName,"buttonIndexLoadOneXML") && strlen(WaveListClass("Random3dArrays","*","")))
 		LoadPixelsFromXML(-1)
 	elseif (stringmatch(ctrlName,"buttonIndexColorHexagon"))
@@ -7637,6 +7641,20 @@ Function TablesPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 	elseif (stringmatch(popStr,"Measured Energies*"))
 		MakeMeasured_hkl_EnergiesWave(NaN,"")
 	endif
+End
+//
+Static Function IndexXMLPopUpMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
+	String ctrlName
+	Variable popNum
+	String popStr
+#if (Exists("Load3dRecipLatticesFileXML")==6)
+	if (stringmatch(popStr,"Load 3D XML file"))
+		Load3dRecipLatticesFileXML("")
+	elseif (stringmatch(popStr,"Process/Reprocess Loaded XML"))
+		ProcessLoadedXMLfile(Inf,NaN)
+	endif
+#endif
+	Indexing#EnableDisableIndexControls(GetUserData("microPanel","","IndexPanelName"))
 End
 
 Static Function/S NewImageGraphLocal(image)
