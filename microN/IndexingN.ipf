@@ -1,11 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.43
-#include "LatticeSym", version>=3.55
-#include "microGeometryN", version>=1.16
-#include "Masking", version>1.00
-#include "ImageDisplayScaling", version>=1.81
+#pragma version = 4.44
+#include "LatticeSym", version>=4.13
+#include "microGeometryN", version>=1.62
+#include "Masking", version>1.01
+#include "ImageDisplayScaling", version>=1.92
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&2)
 #include "tiff"
 //#else
@@ -7008,7 +7008,7 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType])
 	endif
 	if (exists("MakeStereo")!=6)
 		print "Loading Stereographic package"
-		Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.7";Execute/P "COMPILEPROCEDURES "
+		Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.83";Execute/P "COMPILEPROCEDURES "
 		return 1
 	endif
 	Variable printIt=0
