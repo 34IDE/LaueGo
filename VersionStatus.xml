@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, January 28, 2014" time="12:08:10 PM CST" isoTime="2014-01-28T12:08:10"></written>
+	<written date="Tuesday, January 28, 2014" time="12:29:59 PM CST" isoTime="2014-01-28T12:29:59"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>251</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -54,7 +54,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.1" time="2013-10-28T11:28:48" md5="344e35247c773b2c8ad6062c0fe8f1ec" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
-	<file version="4.44" time="2014-01-28T12:08:00" md5="c378ed19e2d075ea1d7bd6be51087791" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.45" time="2014-01-28T12:27:40" md5="4ee74cac874045bbbf72a859edad8562" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.66" time="2014-01-28T11:53:19" md5="f92cdc35d2ac4de181d7de891d4c9d95" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="29cafe5148d2f8c838aa0fa682b4da52" ext=".xml">materials/ZnS Wurtzite.xml</file>
@@ -131,7 +131,7 @@
 	<file version="1.6" time="2013-10-28T11:28:48" md5="0cc71424bcbaa8603b51fef8f0643db3" ext=".ipf">General/epics.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="65963c90d8b1a79187ab47a53778e222" ext=".xml">materials/Ta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
-	<file version="2.27" time="2013-10-28T11:28:49" md5="f74c08bb915c0881aa362b68731003a2" ext=".ipf">microN/indexLotsN.ipf</file>
+	<file version="2.28" time="2014-01-28T12:28:56" md5="316c35ddb0b7a1143f3b66bd9fb61d80" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="302bdca49e31e68d95cc2b98a1177552" ext=".ipf">General/WinView.ipf</file>
 	<file version="2.17" time="2013-10-28T11:28:49" md5="943bd23067647c83f99d989b53f102c8" ext=".ipf">micro/indexLots.ipf</file>
 	<file version="1.08" time="2014-01-07T12:24:47" md5="b654123e368cb86a47808db0b169bf23" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>

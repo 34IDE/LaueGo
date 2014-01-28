@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.44
+#pragma version = 4.45
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -7226,7 +7226,7 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 
 		PopupMenu popupIndexLoadXML,pos={1,70+offset},size={140,20},fSize=14,proc=Indexing#IndexXMLPopUpMenuProc,title="Load 3d XML"
 		PopupMenu popupIndexLoadXML,help={"Load & Prepare for Display an XML output file"}
-		PopupMenu popupIndexLoadXML,mode=0,value= #"\"Load 3D XML file;Process/Reprocess Loaded XML;\""
+		PopupMenu popupIndexLoadXML,mode=0,value= #"\"Load 3D XML file;Reprocess Loaded XML;\""
 		Button buttonIndexLoadOneXML,pos={150,70+offset},size={70,20},proc=IndexButtonProc,title="One Step"
 		Button buttonIndexLoadOneXML,help={"Load One <step> from an XML file"}
 
@@ -7415,7 +7415,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 
 	if (exists("Load3dRecipLatticesFileXML")==6)
 		FUNCREF ValidRawXMLdataAvailableProto fvalid = $"multiIndex#ValidRawXMLdataAvailable"
-		String mstr="\"Load 3D XML file;"+SelectString(fvalid(),"","Process/Reprocess Loaded XML;")+"\""
+		String mstr="\"Load 3D XML file;"+SelectString(fvalid(),"","Reprocess Loaded XML;")+"\""
 		PopupMenu popupIndexLoadXML,win=$win,disable=0,value=#mstr
 		Button buttonIndexColorHexagon,win=$win,disable= 0
 
@@ -7650,7 +7650,7 @@ Static Function IndexXMLPopUpMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 #if (Exists("Load3dRecipLatticesFileXML")==6)
 	if (stringmatch(popStr,"Load 3D XML file"))
 		Load3dRecipLatticesFileXML("")
-	elseif (stringmatch(popStr,"Process/Reprocess Loaded XML"))
+	elseif (stringmatch(popStr,"Reprocess Loaded XML"))
 		ProcessLoadedXMLfile(Inf,NaN)
 	endif
 #endif

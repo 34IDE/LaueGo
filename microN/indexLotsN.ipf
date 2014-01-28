@@ -1,10 +1,10 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.27
-#include  "ArrayOf3dOrientsN", version>=2.56
-#include "DepthResolvedQueryN", version>=1.35
-#include  "IndexingN", version>=4.00
-#include "xmlMultiIndex", version>=1.44
+#pragma version = 2.28
+#include  "ArrayOf3dOrientsN", version>=2.58
+#include "DepthResolvedQueryN", version>=1.52
+#include "IndexingN", version>=4.45
+#include "xmlMultiIndex", version>=1.66
 
 Static StrConstant strainConstraints="110111"
 
