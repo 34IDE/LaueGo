@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.66
+#pragma version=1.67
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -2957,10 +2957,14 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Wave gmRaw = $(rawFldr+"gm")
 	Wave std = $(rawFldr+"stdLattice")
 	Wave/T imageNamesRaw = $(rawFldr+"imageNames")
-	Variable Nraw=DimSize(Xsample,0)			// number of points read in (raw points)
+	Variable Nraw=DimSize(Xsample,0)					// number of points read in (raw points)
 	Variable useSymmetry=NumVarOrDefault(rawFldr+"useSymmetry",0)
 
 	if (!(maxAngle>0) || refType<0 || (refType==2 && !(iref>=0)))
+		if (iref<0 && strlen(WinList("*",";","WIN:1"))>0)
+			iref = NumberByKey("POINT",CsrInfo(A))	// set iref to cursor A as a default
+			iref = iref>=0 ? iref : -1
+		endif
 		maxAngle = !(maxAngle>0) ? Inf : maxAngle
 		Prompt maxAngle, "reject all points with rotation angle greater than this (degree)"
 		Prompt refType,"method for picking reference orientation",popup,"Standard;Average;Choose one point (iref)"
@@ -3011,6 +3015,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		DoAlert 0, str
 		return ""
 	endif
+	iref = refType==2 ? iref : -1						// if not using iref set it to -1
 
 	String noteStr = note(Xsample)
 	noteStr = ReplaceNumberByKey("maxAngle",noteStr,maxAngle,"=")
