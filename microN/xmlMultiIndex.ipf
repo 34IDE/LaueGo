@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.68
+#pragma version=1.69
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -31,7 +31,8 @@ Menu "Rotations"
 	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
 	MenuItemIfWaveClassExists("Make Gizmo of 3D xml data","Random3dArrays",""),MakeGizmo_xmlData($"")
 	MenuItemIfWaveClassExists("Make another RGBA for a Gizmo","Random3dArraysXYZ",""),MakeGizmoRGBAforXYZ($"",$"","",NaN,NaN)
-	MenuItemIfWaveClassExists("Add Hand Indexed Point to an XML","IndexedPeakList",""),AppendCurrenIndexResult2XML($"","")
+	multiIndex#MenuItemIfValidRawDataExists("Add Hand Indexed Point to Loaded XML in raw",class="IndexedPeakList"), AppendIndexResult2LoadedRaw($"")
+	MenuItemIfWaveClassExists("Add Hand Indexed Point to an XML","IndexedPeakList",""),AppendIndexResult2XML($"","")
 	MenuItemIfWaveClassExists("Rotation Between Two Points","Random3dArrays",""),RotationBetweenTwoPoints(NaN,NaN)
 	"-"
 EndMacro
@@ -42,9 +43,13 @@ Menu "Load Waves"
 	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
 End
 
-Static Function/T MenuItemIfValidRawDataExists(item)
+Static Function/T MenuItemIfValidRawDataExists(item,[class])
 	String item
+	String class
 	Variable valid=ValidRawXMLdataAvailable()
+	if (!ParamIsDefault(class))					// class was passed, so test it
+		valid = valid && ItemsInList(WaveListClass(class,"*",""))
+	endif
 	return SelectString(valid,"(","")+item
 End
 
@@ -2794,17 +2799,22 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	dF = dF<minRange ? 0 : dF
 	ddepth = ddepth<1 ? 0 : ddepth
 
+	Variable marker=16							// 16 is square, 18 is diamond
 	Variable yRev=0, xRev=0					// flags whether to revers axis
 	Wave Xw=$"", Yw=$""							// waves to use for X & Y axes
 	if (dX==0 && ddepth>0 && dH>0 && dF>0)	// a wire scan with X-constant, and sample scanned in H
 		Wave Xw=HH, Yw=FF
 		yRev = 1
+		marker = 18
 	elseif (dX==0 && ddepth>0)				// wire scan at constant X, ???
 		Wave Xw=ZZ, Yw=YY
+		marker = 18
 	elseif (dY==0 && ddepth>0)				// slice into the sample with moving X, Sample-Y constant
 		Wave Xw=XX, Yw=depth
+		marker = 16
 	elseif (ddepth==0)
 		Wave Xw=XX, Yw=HH							// no wire scan, just scanned sample surface
+		marker = 16
 	endif
 	if (!WaveExists(Xw) || !WaveExists(Yw))
 		String str="Could not figure out suitable X and Y axes"
@@ -2859,7 +2869,7 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	endif
 
 	Display /W=(205,61,754,395) Yw vs Xw
-	ModifyGraph mode=3, marker=16, tick=2, mirror=1, minor=1, lowTrip=0.001
+	ModifyGraph mode=3, marker=marker, tick=2, mirror=1, minor=1, lowTrip=0.001
 	if (isRGB)
 		ModifyGraph zColor($Yname)={Zw,0,0,directRGB}
 	else
@@ -4846,6 +4856,88 @@ End
 // *****************************************************************************************
 // *************************  Start Add Hand Indexed Point to XML **************************
 
+Function/T AppendIndexResult2LoadedRaw(wIndex)
+	Wave wIndex
+
+	String rawFldr = GetDataFolder(1)+"raw:"
+	if (!multiIndex#ValidRawXMLdataAvailable())
+		DoAlert 0, "raw folder \""+rawFldr+"\" not found, first read in the xml file, or it does not have data in it"
+		return ""
+	endif
+
+	if (!WaveExists(wIndex))
+		String list = reverseList(WaveListClass("IndexedPeakList*","*",""))
+		Variable i = ItemsInLIst(list)
+		if (i<1)
+			DoAlert 0, "No waves of this type in current folder,\rNothing Done"
+			return ""
+		elseif (i==1)
+			Wave wIndex = $StringFromList(0,list)
+		else
+			String wName = StringFromList(i-1,list)
+			Prompt wName, "Wave with list of indexed peaks",popup,list
+			DoPrompt "FullPeakIndexed",wName
+			if (V_flag)
+				return ""
+			endif
+			Wave wIndex = $wName
+		endif
+		if (!WaveExists(wIndex))
+			DoAlert 0, "No waves of name "+wName
+			return ""
+		endif
+	endif
+	if (!WaveExists(wIndex))
+		DoAlert 0, "Could NOT find FullPeakIndexed wave,\rNothing Done"
+		return ""
+	endif
+
+	String wnote=note(wIndex)
+	Wave recip = str2recip(StringByKey("recip_lattice0",wnote,"="))
+	if (!WaveExists(recip))
+		DoAlert 0, "Could NOT find valid recip_lattice0 in FullPeakIndexed wave,\rNothing Done"
+		return ""
+	endif
+
+	Wave Xsample = $(rawFldr+"Xsample")
+	Wave Ysample = $(rawFldr+"Ysample")
+	Wave Zsample = $(rawFldr+"Zsample")
+	Wave depth = $(rawFldr+"depth")
+	Wave totalSum = $(rawFldr+"totalSum")
+	Wave sumAboveThreshold = $(rawFldr+"sumAboveThreshold")
+	Wave numAboveThreshold = $(rawFldr+"numAboveThreshold")
+	Wave Nindexed = $(rawFldr+"Nindexed")
+	Wave rmsIndexed = $(rawFldr+"rmsIndexed")
+	Wave gm = $(rawFldr+"gm")
+	Wave/T imageNames = $(rawFldr+"imageNames")
+	Variable N=DimSize(Xsample,0)					// number of points read in (raw points)
+
+	Redimension/N=(-1,-1,N+1) gm						// extend lengths by 1
+	Redimension/N=(N+1) imageNames
+	Redimension/N=(N+1) Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
+	if (WaveExists(depth))
+		Redimension/N=(N+1) depth
+	endif
+
+	Xsample[N] = NumberByKey("X1",wnote,"=")
+	Ysample[N] = NumberByKey("Y1",wnote,"=")
+	Zsample[N] = NumberByKey("Z1",wnote,"=")
+	if (WaveExists(depth))
+		depth[N] = NumberByKey("depth",wnote,"=")
+	endif
+	totalSum[N] = NumberByKey("totalIntensity",wnote,"=")
+	sumAboveThreshold[N] = NumberByKey("totalPeakIntensity",wnote,"=")
+	numAboveThreshold[N] = NumberByKey("NumPixelsAboveThreshold",wnote,"=")
+	Nindexed[N] = NumberByKey("Nindexed",wnote,"=")
+	rmsIndexed[N] = NumberByKey("rms_error0",wnote,"=")
+	imageNames[N] = StringByKey("file_name",wnote,"=")
+	gm[][][N] = recip[p][q]
+
+	return GetWavesDataFolder(wIndex,2)
+End
+
+
+
 Static Constant STRUCTURE_N_DETECTORS_MAX=3
 Static Constant STRUCTURE_N_PEAKS_MAX=200
 Static Constant STRUCTURE_N_PATTERNS_MAX=10
@@ -4956,7 +5048,7 @@ EndStructure
 		EndStructure
 
 
-Function/T AppendCurrenIndexResult2XML(wIndex,fileName,[overwrite])
+Function/T AppendIndexResult2XML(wIndex,fileName,[overwrite])
 	Wave wIndex
 	String fileName
 	Variable overwrite						// 1=overwrite existing (or new), 0=append to existing

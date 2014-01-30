@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, January 29, 2014" time="04:13:01 PM CST" isoTime="2014-01-29T16:13:01"></written>
+	<written date="Wednesday, January 29, 2014" time="07:44:43 PM CST" isoTime="2014-01-29T19:44:43"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>251</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -55,7 +55,7 @@
 	<file version="2.1" time="2013-10-28T11:28:48" md5="344e35247c773b2c8ad6062c0fe8f1ec" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
 	<file version="4.46" time="2014-01-29T12:03:44" md5="54972b774244d11ac8b78f13315245b3" ext=".ipf">microN/IndexingN.ipf</file>
-	<file version="1.68" time="2014-01-29T16:12:24" md5="f925b4f9ee8926a4ed97031640a7d60e" ext=".ipf">microN/xmlMultiIndex.ipf</file>
+	<file version="1.69" time="2014-01-29T19:33:35" md5="698125fb49ee09678ede0ad4d2d43f3a" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="29cafe5148d2f8c838aa0fa682b4da52" ext=".xml">materials/ZnS Wurtzite.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c2f5a5af8cc4245eea7b44efed7243d3" ext=".xml">materials/LaSrMnO3_Rhom.xml</file>
