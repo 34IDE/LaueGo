@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.46
+#pragma version = 4.47
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -6999,13 +6999,16 @@ End
 // =========================================================================
 //	Start of Stereographic projection
 
-Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType])
-	Wave FullPeakIndexed								// provides the reciprocal lattice
+Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetectors])
+	Wave FullPeakIndexed							// provides the reciprocal lattice
 	Variable pattern									// in case more than one, default is 0
 	String centerType									// choice for center of stereographic projections, "Surface Normal" or "Detector Center"
+	Variable showDetectors							// flag, show detector outlines on seterographic projection
 	if (ParamIsDefault(centerType))
 		centerType = ""
 	endif
+	showDetectors = ParamIsDefault(showDetectors) ? NaN : showDetectors
+	showDetectors = numtype(showDetectors) ? 1 : !(!showDetectors)
 	if (exists("MakeStereo")!=6)
 		print "Loading Stereographic package"
 		Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.83";Execute/P "COMPILEPROCEDURES "
@@ -7042,7 +7045,7 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType])
 	endif
 	printIt = printIt || ((ItemsInList(GetRTStackInfo(0))<2) || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 
-	Make/N=3/O/D/FREE hkl, vec
+	Make/N=3/O/D/FREE vec
 	Make/N=(3,3)/O/D/FREE RL
 	Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	String wnote = note(FullPeakIndexed)
@@ -7053,7 +7056,7 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType])
 
 	// find (hkl) at center of detector and make that the center of the stereographic pattern
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))					//fill the geometry structure with current default values
+	if (FillGeometryStructDefault(geo))				//fill the geometry structure with current default values
 		DoAlert 0,"Unable to load geometry"
 		return 1
 	endif
@@ -7072,47 +7075,100 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType])
 	endif
 	if (numtype(sufNormal))
 		Prompt centerType,"Choose Center of Stereographic Projection",popup,"Surface Normal;Detector Center"
-		DoPrompt "Center",centerType
+		Prompt showDetectors,"Show Detector Outlines",popup,"No Outlines;Show Detector Outlines"
+		showDetectors += 1
+		DoPrompt "Center",centerType,showDetectors
 		if (V_flag)
 			return 1
 		endif
+		showDetectors -= 1
 		sufNormal = stringmatch(centerType"Surface*")
 	endif
 
-	vec = NaN												// q-vector to center of stereographic projection
-	if (!sufNormal)
+	String outlines=""										// string with detector outlines
+	if (showDetectors)										// make detector outlines, store in a string named outlines
+		// format of outlines is detctorOutline0;detctorOutline1;detctorOutline2;
+		// detctorOutline0 = "r=65535:g=43688:b=32768:hkl0=-0.2 0.5 -0.8:hkl1=-0.3 0.7 -0.5:hkl2=0.3 0.8 -0.5:hkl3=0.2 0.5 -0.8:;
+		// each of the hkli are a normalized hkl vector
+		String str, color
+		Make/N=3/FREE rgb
+		Variable i, Nx,Ny
+		for (i=0;i<MAX_Ndetectors;i+=1)
+			if (geo.d[i].used)								// this detector is used, display it
+				Nx = geo.d[i].Nx
+				Ny = geo.d[i].Ny
+				color = detectorID2color(geo.d[i].detectorID)
+				if (stringmatch(color,"Orange"))
+					rgb = {65535, 43688, 32768}			// Orange
+				elseif (stringmatch(color,"Yellow"))
+					rgb = {65535, 65535, 0}			// Yellow
+				elseif (stringmatch(color,"Purple"))
+					rgb = {65535, 30000, 65535}		// Purple
+				else
+					rgb = {20000, 20000, 20000}		// Gray
+				endif
+				str = ReplaceStringByKey("rgb","",vec2str(rgb,bare=1,sep=" "),"=",":")
+
+				if (!(pixel2q(geo.d[i],0,0, vec,depth=depth)))
+					continue
+				endif
+				MatrixOp/O/FREE hkl = Normalize(Inv(RL) x vec)	// go from q in Ideal beam line to hkl (but wrong length)
+				str = ReplaceStringByKey("hkl0",str,vec2str(hkl,bare=1,sep=" "),"=",":")
+
+				if (!(pixel2q(geo.d[i],Nx-1,0, vec,depth=depth)))
+					continue
+				endif
+				MatrixOp/O/FREE hkl = Normalize(Inv(RL) x vec)
+				str = ReplaceStringByKey("hkl1",str,vec2str(hkl,bare=1,sep=" "),"=",":")
+
+				if (!(pixel2q(geo.d[i],Nx-1,Ny-1, vec,depth=depth)))
+					continue
+				endif
+				MatrixOp/O/FREE hkl = Normalize(Inv(RL) x vec)
+				str = ReplaceStringByKey("hkl2",str,vec2str(hkl,bare=1,sep=" "),"=",":")
+
+				if (!(pixel2q(geo.d[i],0,Ny-1, vec,depth=depth)))
+					continue
+				endif
+				MatrixOp/O/FREE hkl = Normalize(Inv(RL) x vec)
+				str = ReplaceStringByKey("hkl3",str,vec2str(hkl,bare=1,sep=" "),"=",":")
+				outlines += str+";"
+			endif
+		endfor
+	endif
+
+	vec = NaN													// q-vector at center of stereographic projection
+	if (!sufNormal)											// use center of detector for central hkl
 		pixel2q(geo.d[0],(startx+endx)/2,(starty+endy)/2, vec,depth=depth)
 	endif
-	if (numtype(norm(vec)))								// default if other way failed
+	if (numtype(norm(vec)))								// default if other way failed, use hkl of surface normal
 		Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 		Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
-		vec = {0, cosTheta, -sinTheta}						// vec = {0,1,-1}
+		vec = {0, cosTheta, -sinTheta}					// vec = {0,1,-1}
 		sufNormal = 1
 	endif
 
-	MatrixOp/O/FREE hkl = Inv(RL) x vec					// go from q in Ideal beam line to hkl (but wrong length)
-	normalize(hkl)
+	MatrixOp/O/FREE hkl = Normalize(Inv(RL) x vec)// go from q in Ideal beam line to hkl (but wrong length)
 	hkl = round(hkl*10000)/1000
 	hkl = hkl==0 ? 0 : hkl
 	Variable h=hkl[0], k=hkl[1], l=hkl[2]
 	lowestOrderHKL(h,k,l)									// remove common factors
-	vec = {1,0,0}											// now get azimuthal orientation
-	MatrixOp/O/FREE hkl = Inv(RL) x vec
-	normalize(hkl)
-	hkl = round(hkl*10000)/1000
+	vec = {1,0,0}												// now get azimuthal orientation
+	MatrixOp/O/FREE hklAz = Normalize(Inv(RL) x vec)
+	hklAz = round(hklAz*10000)/1000
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 			printf "¥"
 		endif
 		printf "StereoOfIndexedPattern(%s,%d)\r",NameOfWave(FullPeakIndexed),pattern
-		printf "Making Stereographic projection with pole at (%g, %g, %g),  and  x toward (%g, %g, %g)",h,k,l,round(hkl[0]*1000)/100, round(hkl[1]*1000)/100, round(hkl[2]*1000)/100
+		printf "Making Stereographic projection with pole at (%g, %g, %g),  and  x toward (%g, %g, %g)",h,k,l,round(hklAz[0]*1000)/100, round(hklAz[1]*1000)/100, round(hklAz[2]*1000)/100
 		printf ",  centered on "+SelectString(sufNormal,"surface normal","detector")+"\r"
 	endif
 	FUNCREF MakeStereoProto func = $"MakeStereo"
-	func(h,k,l,  NaN,9, 0,hklPerp=hkl)		// MakeStereo(h,k,l,  NaN,9, 0,hklPerp=hkl)
+	func(h,k,l,  NaN,9, 0,hklPerp=hklAz,outlines=outlines)	// MakeStereo(h,k,l,  NaN,9, 0,hklPerp=hklAz)
 	return 0
 End
-Function MakeStereoProto(Hz,Kz,Lz,hklmax,fntSize,phi,[Qmax,hklPerp, WulffStepIn,WulffPhiIn,markers])
+Function MakeStereoProto(Hz,Kz,Lz,hklmax,fntSize,phi,[Qmax,hklPerp, WulffStepIn,WulffPhiIn,markers,outlines])
 	Variable Hz,Kz,Lz			// hkl of the pole
 	Variable hklmax
 	Variable fntSize
@@ -7121,6 +7177,7 @@ Function MakeStereoProto(Hz,Kz,Lz,hklmax,fntSize,phi,[Qmax,hklPerp, WulffStepIn,
 	Wave hklPerp				// optional hkl giving the perpendicular direction long=0
 	Variable WulffStepIn, WulffPhiIn	// for Wulff Net, use WulffStep=0 for no Wulff Net
 	Variable markers			// flag, show markers for each hkl
+	String outlines			// string with outlines of detectors to display
 End
 
 //	End of Stereographic projection
