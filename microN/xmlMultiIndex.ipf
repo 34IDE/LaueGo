@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.69
+#pragma version=1.70
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -30,7 +30,7 @@ Menu "Rotations"
 	MenuItemIfWaveClassExists("  Load Pixels from one step in XML file","Random3dArrays",""),/Q,LoadPixelsFromXML(-1)
 	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
 	MenuItemIfWaveClassExists("Make Gizmo of 3D xml data","Random3dArrays",""),MakeGizmo_xmlData($"")
-	MenuItemIfWaveClassExists("Make another RGBA for a Gizmo","Random3dArraysXYZ",""),MakeGizmoRGBAforXYZ($"",$"","",NaN,NaN)
+	MenuItemIfWaveClassExists("Make another RGBA [2D or 3D]","Random3dArraysXYZ,Random3dArrays",""),Make2D_3D_RGBA($"",$"","",NaN,NaN)
 	multiIndex#MenuItemIfValidRawDataExists("Add Hand Indexed Point to Loaded XML in raw",class="IndexedPeakList"), AppendIndexResult2LoadedRaw($"")
 	MenuItemIfWaveClassExists("Add Hand Indexed Point to an XML","IndexedPeakList",""),AppendIndexResult2XML($"","")
 	MenuItemIfWaveClassExists("Rotation Between Two Points","Random3dArrays",""),RotationBetweenTwoPoints(NaN,NaN)
@@ -929,7 +929,7 @@ Function MakeColorTriangle([N,gray])			// show the color triangle that you can c
 			endif
 			MatrixOP/FREE/O abc = Inv(poles) x hkl
 			if (abc[0]>=0)
-				Wave rgb = multiIndex#CubicTriangleColors(hkl,rgbMax=65535)
+				Wave rgb = CubicTriangleColors(hkl,rgbMax=65535)
 				ColorTriangleStereoCubic[i][j][] = rgb[r]
 			endif
 		endfor
@@ -2408,7 +2408,278 @@ Static Function/T getTitleFromNote(list)
 End
 
 
+// Make new RGB(A) suitable for either a 2D or 3D(Gizmo)
+//		This function replaces MakeGizmoRGBAforXYZ()
+Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,printIt])
+	Wave wxyz				// list of xyz values, need this to know how many xyz triplets to search for in values
+	Wave values
+	String cTab				// name of color table
+	Variable lo,hi			// scaling range
+	Wave intensity			// wave with intensity, only used when values use a color wave
+	Variable intensPowerScale	// exponent for intensity scaling, acutal = intensity^intensPowerScale
+	Variable printIt
+	if (ParamIsDefault(intensity))
+		Wave intensity=$""	// no intensity specified
+	endif
+	intensPowerScale = ParamIsDefault(intensPowerScale) ? 1 : intensPowerScale
+	intensPowerScale = numtype(intensPowerScale) ? 1 : intensPowerScale
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
 
+	String options="DIMS:2,MINCOLS:3,MAXCOLS:3,TEXT:0"
+	String xyzList=WaveListClass("Random3dArraysXYZ","*",options)
+	options = "DIMS:1,MINROWS:2,TEXT:0"
+	xyzList += WaveListClass("Random3dArrays","XX",options)// this allows for 2D too
+
+	if (!WaveExists(wxyz) && ItemsInLIst(xyzList)<1)			// no xyz waves
+		DoAlert 0,"No xyz waves in this data folder"
+		return $""
+	elseif (!WaveExists(wxyz) && ItemsInLIst(xyzList)==1)	// just one xyz wave, use it
+		Wave wxyz=$StringFromList(0,xyzList)
+	endif
+
+	if (!WaveExists(wxyz))
+		String sxyz
+		Prompt sxyz,"xyz wave", popup, xyzList
+		DoPrompt "xyz wave", sxyz
+		if (V_flag)
+			return $""
+		endif
+		Wave wxyz=$sxyz
+		printIt = 1
+	endif
+	if (!WaveExists(wxyz))
+		return $""
+	endif
+	Variable N=DimSize(wxyz,0)
+	if (N<1)
+		return $""
+	endif
+	String fldr = GetWavesDataFolder(wxyz,1)				// folder where we are working
+
+	sprintf options,"DIMS:1,MINROWS:%d,MAXROWS:%d,TEXT:0",N,N
+	String valueList=WaveListClass("Random3dArrays","*",options,fldr=fldr)
+	valueList = ReplaceString(fldr,valueList,"")
+	valueList = RemoveFromList("XX;YY;ZZ;HH;FF;depth;gm", valueList)	// positions are not suitable for RGBs
+	if (!WaveExists(values) && ItemsInLIst(valueList)<1)				// no value waves
+		DoAlert 0,"No value waves in this data folder"
+		return $""
+	elseif (!WaveExists(values) && ItemsInLIst(valueList)==1)			// just one value wave, use it with no prompting
+		Wave values=$(fldr+StringFromList(0,valueList))
+	endif
+
+	// add ability to do full RxRyRz too
+	Wave RX=$(fldr+"RX"), RH=$(fldr+"RH"), RF=$(fldr+"RF")				// these may not exist
+	if (WhichListItem("RX",valueList)>=0 && WhichListItem("RH",valueList)>=0 && WhichListItem("RF",valueList)>=0)
+		valueList = AddListItem("RxRyRz",valueList)
+	endif
+
+	Variable Rxyz=0,InvPoleCubic=0
+	String svalues=""
+	if (!WaveExists(values))
+		STRUCT crystalStructure xtal
+		if (!FillCrystalStructDefault(xtal))					// get xtal
+			if (xtal.SpaceGroup >= 195)							//	CUBIC
+				valueList = AddListItem("Inverse Pole Figure (CUBIC)",valueList,";",Inf)
+			endif
+		endif
+		Prompt svalues,"value wave", popup, valueList
+		DoPrompt "Values for xyz", svalues
+		if (V_flag)
+			return $""
+		endif
+		Rxyz = stringmatch(svalues,"RxRyRz")
+		InvPoleCubic = stringmatch(svalues,"Inverse Pole Figure (CUBIC)")
+		Wave values=$(fldr+svalues)
+		printIt = 1
+	endif
+	if (Rxyz)
+		svalues = "RxRyRz"
+		Wave intensity=$""				// cannot specify intensity with RxRyRz, it already uses full 3D rgb space
+	elseif (InvPoleCubic)
+		svalues = "InvPoleCubic"
+	else
+		svalues = NameOfWave(values)
+	endif
+
+	String intensityList=RemoveFromList(svalues,valueList), Sintensity=NameOfWave(intensity)
+	intensityList = RemoveFromList("RxRyRz;RX;RH;RF;RY;RZ;Inverse Pole Figure (CUBIC);",intensityList)
+	intensityList = "_none_;"+intensityList
+	if (InvPoleCubic)						// do not need lo or hi for InvPoleCubic, but need a surface normal
+		lo = 0
+		hi = 0
+		String normStr="0,1,-1"
+		Prompt normStr, "Inverse Pole Figure Surface Normal (Beam Line Coords)"
+		Prompt Sintensity,"Intensity Wave",popup,intensityList
+		Prompt intensPowerScale, "Exponent for scaling intensity (only when an intensity is chosen)"
+		DoPrompt "Surface Normal", normStr,Sintensity, intensPowerScale
+		if (V_flag)
+			return $""
+		endif
+		Wave InvPoleNormal=str2vec(normStr)
+		if (!WaveExists(InvPoleNormal))
+			return $""
+		elseif (DimSize(InvPoleNormal,0)!=3 || WaveDims(InvPoleNormal)!=1 || norm(InvPoleNormal)<=0)
+			return $""
+		endif
+		normStr = hkl2str(InvPoleNormal[0],InvPoleNormal[1],InvPoleNormal[2])
+		cTab = "InvPole"
+		Wave intensity = $(fldr+Sintensity)
+	elseif (numtype(lo+hi) && Rxyz)		// prompt for RxRyRz
+		hi = max(WaveMax(Rx),WaveMax(Rh))
+		hi = max(hi,WaveMax(Rh))
+		lo = min(WaveMin(Rx),WaveMin(Rh))
+		lo = min(lo,WaveMin(Rh))
+		hi = max(hi,abs(lo))
+		hi = !(hi>0) ? 0.1 : 2*atan(hi)*180/PI	// Rodriques = tan(theta/2)
+		Prompt hi,"maximum rotation, for saturated color (degree)"
+		DoPrompt "Max Angle (degre)",hi
+		if (V_flag)
+			return $""
+		endif
+		lo = -hi							// leave hi in degrees
+		cTab = "RxRyRz"
+		printIt = 1
+	elseif (numtype(lo+hi))			// prompt for a single value
+		String colorList = CTabList(), colorDefault
+		lo = roundSignificant(WaveMin(values),2)
+		hi = roundSignificant(WaveMax(values),2)
+		if (lo*hi < 0)
+			hi = max(abs(hi),abs(lo))
+			lo = -hi
+			colorDefault = "RedWhiteBlue"
+		else
+			colorDefault = "SeaLandAndFire"
+			if (hi>0)
+				lo = 0
+			elseif (lo<0)
+				lo = -hi
+				hi =0
+			endif
+		endif
+		cTab = SelectString(WhichListItem(cTab,colorList)<0,cTab,colorDefault)
+		Prompt lo,"low value for color scale"
+		Prompt hi,"high value for color scale"
+		Prompt cTab,"Color Table",popup,colorList
+		Prompt Sintensity,"Intensity Wave",popup,intensityList
+		Prompt intensPowerScale, "Exponent for scaling intensity (only when an intensity is chosen)"
+		DoPrompt "Color Scaling",lo,hi,cTab, Sintensity, intensPowerScale
+		if (V_flag)
+			return $""
+		endif
+		printIt = 1
+		Wave intensity = $(fldr+Sintensity)
+	endif
+	if (printIt)
+		sxyz = SelectString(WaveExists(wxyz),"$\"\"",NameOfWave(wxyz))
+		String sss = SelectString(WaveExists(values),"$\"\"",NameOfWave(values))
+		printf "Make2DorGizmoRGBA(%s, %s, \"%s\", %g, %g",sxyz,sss,cTab,lo,hi
+		if (WaveExists(intensity))
+			printf ", intensity=%s",NameOfWave(intensity)
+		endif
+		if (numtype(intensPowerScale)==0 && intensPowerScale!=1)
+			printf ", intensPowerScale=%g",intensPowerScale
+		endif
+		printf ")"
+		if (Rxyz)
+			printf "		// using {RX,RH,RF}"
+		endif
+		if (InvPoleCubic)
+			printf "		// Inverse Pole Figure Colors (CUBIC), with surf normal {%s}",normStr
+		endif
+		printf "\r"
+	endif
+	Variable dim = WaveDims(wxyz)<2 ? 2 : 3			// 3D data gets RGBA, 2D only gets RGB (no Alpha channel)
+	String ending = SelectString(dim==3,"RGBA","RGB")
+
+	if (!Rxyz && !InvPoleCubic)
+		if (WhichListItem(cTab,CTabList())<0)
+			DoAlert 0, "The requested color table '"+cTab+"' does not exist"
+			return $""
+		endif
+		ColorTab2Wave $cTab
+		Wave M_colors=M_colors
+		Variable Nc=DimSize(M_colors,0)
+
+		Duplicate/FREE M_colors, colors					// colors range = [0,65535]
+		KillWaves/Z M_colors
+	endif
+
+	Make/N=(N,dim+1)/O $(fldr+svalues+"_"+ending) /WAVE=rgba
+	if (printIt)
+		printf "made %s  '%s'  for '%s' using %s over range [%g, %g]%s\r",ending,NameOfWave(rgba),NameOfWave(wxyz),cTab,lo,hi,SelectString(Rxyz,"","¡")
+	endif
+
+	if (InvPoleCubic)
+		Wave gm = $(GetWavesDataFolder(wxyz,1)+"gm")
+		if (!WaveExists(gm))
+			print "ERROR -- Cannot Find gm Wave"
+			return $""
+		endif
+		Make/N=(3,3)/D/FREE recip
+		Variable i
+		for (i=0;i<N;i+=1)
+			recip = gm[p][q][i]
+			MatrixOP/FREE/O hkl = Inv(recip) x InvPoleNormal
+			Wave rgbai=CubicTriangleColors(hkl)// returns rgb, hkl is hkl of surface normal
+			rgba[i][0,2] = rgbai[q]
+		endfor
+	elseif (Rxyz)
+		Wave rotrgb=$makeRGBJZT(RX,RH,RF,hi)	// hi is in degrees
+		rgba[][0,2] = rotrgb[p][q]
+		KillWaves/Z rotrgb
+	else
+		Variable m, ic									// using M_colors
+		for (m=0;m<N;m+=1)
+			ic = (values[m]-lo) / (hi-lo)  * (Nc-1)
+			ic = limit(round(ic),0,Nc-1)
+			rgba[m][0,2] = colors[ic][q]
+		endfor
+	endif
+
+	if (WaveExists(intensity))					// make intens wave scaled [0,1]
+		Duplicate/FREE intensity, intens
+		intens = abs(intens)
+		lo = WaveMin(intens)
+		intens -= lo
+		hi = WaveMax(intens)
+		intens /= hi
+		if (numtype(lo+hi) || hi<=0)
+			WaveClear intens
+		elseif (intensPowerScale!=1 && numtype(intensPowerScale)==0)
+			intens = intens^intensPowerScale
+		endif
+	endif
+
+	if (dim==2)
+		if (WaveExists(intens))
+			rgba *= intens[p]
+		endif
+		rgba = limit(rgba,0,65535)
+		Redimension/W/U rgba
+	elseif (dim==3)
+		rgba /= 65535									// colors appropriate for a Gizmo are in [0,1]
+		if (WaveExists(intens))
+			rgba[][3] = intens[p]
+		endif
+		rgba = limit(rgba,0,1)
+	endif
+
+	String sampleName=StringBykey("sampleName",note(wxyz),"="), userName=StringBykey("userName",note(wxyz),"=")
+	String wNote="waveClass=Random3dArraysRGBA"
+	wNote=ReplaceStringByKey("fldrName",wNote,GetDataFolder(1),"=")
+	if (strlen(sampleName))
+		wNote=ReplaceStringByKey("sampleName",wNote,sampleName,"=")
+	endif
+	if (strlen(userName))
+		wNote=ReplaceStringByKey("userName",wNote,userName,"=")
+	endif
+	wNote=ReplaceStringByKey("source",wNote,svalues,"=")
+	Note/K rgba, wNote
+	return rgba
+End
+//
+// Use of this function is DEPRECATED, use Make2D_3D_RGBA() instead
 Function/WAVE MakeGizmoRGBAforXYZ(wxyz,values,cTab,lo,hi)
 	Wave wxyz				// list of xyz values, need this to know how many xyz triplets to search for in values
 	Wave values
@@ -3853,7 +4124,7 @@ Function/T Load3dRecipLatticesFileXML_OLD(FullFileName,maxAngle,refType,[iref,Xo
 		endif
 		refType -=1
 	endif
-	printf "¥Load3dRecipLatticesFileXML(\"%s\",%g,%g",FullFileName,maxAngle,refType
+	printf "¥Load3dRecipLatticesFileXML_OLD(\"%s\",%g,%g",FullFileName,maxAngle,refType
 	if (refType==2)
 		printf ", iref=%g",iref
 	endif
@@ -3862,17 +4133,17 @@ Function/T Load3dRecipLatticesFileXML_OLD(FullFileName,maxAngle,refType,[iref,Xo
 	endif
 	printf ")\r"
 	if (!(maxAngle>0))
-		DoAlert 0, "ERROR in Load3dRecipLatticesFileXML(), maxAngle = "+num2str(maxAngle)
+		DoAlert 0, "ERROR in Load3dRecipLatticesFileXML_OLD(), maxAngle = "+num2str(maxAngle)
 		return ""
 	elseif (limit(refType,0,2)!=refType)
-		DoAlert 0, "ERROR in Load3dRecipLatticesFileXML(), refType = "+num2str(refType)
+		DoAlert 0, "ERROR in Load3dRecipLatticesFileXML_OLD(), refType = "+num2str(refType)
 		return ""
 	elseif (refType==2 && !(iref>=0))
-		DoAlert 0, "ERROR in Load3dRecipLatticesFileXML(), refType==2 and iref = "+num2str(iref)
+		DoAlert 0, "ERROR in Load3dRecipLatticesFileXML_OLD(), refType==2 and iref = "+num2str(iref)
 		return ""
 	endif
 	if (numtype(Xoff+Yoff+Zoff))
-		String str = "ERROR in Load3dRecipLatticesFileXML()"
+		String str = "ERROR in Load3dRecipLatticesFileXML_OLD()"
 		str += SelectString(numtype(Xoff),"",", Xoff="+num2str(Xoff))
 		str += SelectString(numtype(Yoff),"",", Yoff="+num2str(Yoff))
 		str += SelectString(numtype(Zoff),"",", Zoff="+num2str(Zoff))

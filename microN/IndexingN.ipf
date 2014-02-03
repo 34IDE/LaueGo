@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.47
+#pragma version = 4.48
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -7287,22 +7287,22 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 		Button buttonIndexLoadOneXML,pos={150,70+offset},size={70,20},proc=IndexButtonProc,title="One Step"
 		Button buttonIndexLoadOneXML,help={"Load One <step> from an XML file"}
 
-		Button buttonIndexGizmoXML,pos={1,95+offset},size={140,20},proc=IndexButtonProc,title="Gizmo of 3d XML"
+//		Button buttonIndex2D3DXMLrgba,pos={1,95+offset},size={219,20},proc=IndexButtonProc,title="New 2D/3D RGBA"
+		Button buttonIndex2D3DXMLrgba,pos={1,95+offset},size={140,20},proc=IndexButtonProc,title="New 2D/3D RGBA"
+		Button buttonIndex2D3DXMLrgba,help={"calculate a new RGBA wave for use with Gizmo"}
+
+		Button buttonIndexGizmoXML,pos={1,120+offset},size={140,20},proc=IndexButtonProc,title="Gizmo of 3d XML"
 		Button buttonIndexGizmoXML,help={"index lots of images"}
-		Button buttonIndexColorHexagon,pos={150,95+offset},size={70,20},proc=IndexButtonProc,title="Color Hex"
+		Button buttonIndexColorHexagon,pos={150,120+offset},size={70,20},proc=IndexButtonProc,title="Color Hex"
 		Button buttonIndexColorHexagon,help={"index lots of images"}
 
-		Button buttonIndexHistogram,pos={1,120+offset},size={140,20},proc=IndexButtonProc,title="Histogram 3D array"
+		Button buttonIndexHistogram,pos={1,145+offset},size={140,20},proc=IndexButtonProc,title="Histogram 3D array"
 		Button buttonIndexHistogram,help={"Create a histogram of an interpolated 3D array"}
-		Button buttonIndexHistogramPlot,pos={150,120+offset},size={70,20},proc=IndexButtonProc,title="Re-Plot"
+		Button buttonIndexHistogramPlot,pos={150,145+offset},size={70,20},proc=IndexButtonProc,title="Re-Plot"
 		Button buttonIndexHistogramPlot,help={"Re-Plot the histogram of an interpolated 3D array"}
-
-		Button buttonIndexGizmoXMLrgba,pos={1,145+offset},size={219,20},proc=IndexButtonProc,title="Calc a New RGBA for a Gizmo"
-		Button buttonIndexGizmoXMLrgba,help={"calculate a new RGBA wave for use with Gizmo"}
 
 		Button buttonIndexRotation,pos={1,170+offset},size={190,20},proc=IndexButtonProc,title="Rotation between 2 Points"
 		Button buttonIndexRotation,help={"index lots of images"}
-
 
 		offset += 125 + 30 + 25
 	endif
@@ -7497,7 +7497,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 
 //		d = strlen(WaveListClass("Interpolated3dArraysXYZ","*",""))<1 ? 2 : 0
 		d = strlen(WaveListClass("Random3dArrays*","*",""))<1 ? 2 : 0
-		Button buttonIndexGizmoXMLrgba,win=$win,disable= d
+		Button buttonIndex2D3DXMLrgba,win=$win,disable= d
 
 		d = strlen(WaveListClass("Random3dArrays","*",""))<1 ? 2 : 0
 		Button buttonIndexRotation,win=$win,disable= d
@@ -7625,8 +7625,8 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		multiIndex#HistogramOf3dArray($"")
 	elseif (stringmatch(ctrlName,"buttonIndexHistogramPlot") && strlen(WaveListClass("HistogramFrom3d","*","")))
 		multiIndex#DisplayHistogramFrom3d($"")
-	elseif (stringmatch(ctrlName,"buttonIndexGizmoXMLrgba") && strlen(WaveListClass("Random3dArraysXYZ","*","")))
-		MakeGizmoRGBAforXYZ($"",$"","",NaN,NaN)
+	elseif (stringmatch(ctrlName,"buttonIndex2D3DXMLrgba") && strlen(WaveListClass("Random3dArraysXYZ,Random3dArrays","*","")))
+		Make2D_3D_RGBA($"",$"","",NaN,NaN)
 	elseif (stringmatch(ctrlName,"buttonIndexRotation") && strlen(WaveListClass("Random3dArrays","*","")))
 		RotationBetweenTwoPoints(NaN,NaN)
 #endif
@@ -7708,6 +7708,7 @@ Static Function IndexXMLPopUpMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 #if (Exists("Load3dRecipLatticesFileXML")==6)
 	if (stringmatch(popStr,"Load 3D XML file"))
 		Load3dRecipLatticesFileXML("")
+		ProcessLoadedXMLfile(Inf,NaN)
 	elseif (stringmatch(popStr,"Process Loaded XML"))
 		ProcessLoadedXMLfile(Inf,NaN)
 	endif
