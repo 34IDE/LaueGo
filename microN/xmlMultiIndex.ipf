@@ -2580,6 +2580,9 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		if (numtype(intensPowerScale)==0 && intensPowerScale!=1)
 			printf ", intensPowerScale=%g",intensPowerScale
 		endif
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
 		printf ")"
 		if (Rxyz)
 			printf "		// using {RX,RH,RF}"
@@ -2599,8 +2602,6 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		endif
 		ColorTab2Wave $cTab
 		Wave M_colors=M_colors
-		Variable Nc=DimSize(M_colors,0)
-
 		Duplicate/FREE M_colors, colors			// colors range = [0,65535]
 		KillWaves/Z M_colors
 	endif
@@ -2629,7 +2630,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		rgba[][0,2] = rotrgb[p][q]
 		KillWaves/Z rotrgb
 	else													// calcualte colors from a color table from values
-		Variable m, ic									// using M_colors
+		Variable m,ic,Nc=DimSize(colors,0)	// using M_colors
 		for (m=0;m<N;m+=1)
 			ic = (values[m]-lo) / (hi-lo)  * (Nc-1)
 			ic = limit(round(ic),0,Nc-1)
@@ -3509,7 +3510,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	// transform to voxel coordinate in sample, not sample position
 	XX = -(Xsample - Xoff)
 	YY = -(Ysample - Yoff)
-	ZZ = -(Zsample - Zoff) + depth + (numtype(depthRaw) ? 0 : depthRaw)
+	ZZ = -(Zsample - Zoff) + (numtype(depthRaw) ? 0 : depthRaw)
 	depth = depthRaw
 	HH = YZ2H(YY,ZZ)
 	FF = YZ2F(YY,ZZ)

@@ -7290,6 +7290,8 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 //		Button buttonIndex2D3DXMLrgba,pos={1,95+offset},size={219,20},proc=IndexButtonProc,title="New 2D/3D RGBA"
 		Button buttonIndex2D3DXMLrgba,pos={1,95+offset},size={140,20},proc=IndexButtonProc,title="New 2D/3D RGBA"
 		Button buttonIndex2D3DXMLrgba,help={"calculate a new RGBA wave for use with Gizmo"}
+		Button buttonIndex2Dplot,pos={150,95+offset},size={70,20},proc=IndexButtonProc,title="2D Plot"
+		Button buttonIndex2Dplot,help={"Put up a 2D plot of loaded XML data"}
 
 		Button buttonIndexGizmoXML,pos={1,120+offset},size={140,20},proc=IndexButtonProc,title="Gizmo of 3d XML"
 		Button buttonIndexGizmoXML,help={"index lots of images"}
@@ -7490,14 +7492,17 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 		d = strlen(WaveListClass("Random3dArraysXYZ","*",""))<1 ? 2 : 0
 		Button buttonIndexGizmoXML,win=$win,disable= d	
 
+//		d = strlen(WaveListClass("Interpolated3dArraysXYZ","*",""))<1 ? 2 : 0
+		d = strlen(WaveListClass("Random3dArrays*","*",""))<1 ? 2 : 0
+		Button buttonIndex2D3DXMLrgba,win=$win,disable= d
+		d = strlen(WaveListClass("Random3dArrays","*",""))<1 ? 2 : 0
+		Button buttonIndex2Dplot,win=$win,disable= d
+//	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
+
 		d = strlen(WaveListClass("Interpolated3dArrays","*",""))<1 ? 2 : 0
 		Button buttonIndexHistogram,win=$win,disable= d
 		d = strlen(WaveListClass("HistogramFrom3d","*",""))<1 ? 2 : 0
 		Button buttonIndexHistogramPlot,win=$win,disable= d
-
-//		d = strlen(WaveListClass("Interpolated3dArraysXYZ","*",""))<1 ? 2 : 0
-		d = strlen(WaveListClass("Random3dArrays*","*",""))<1 ? 2 : 0
-		Button buttonIndex2D3DXMLrgba,win=$win,disable= d
 
 		d = strlen(WaveListClass("Random3dArrays","*",""))<1 ? 2 : 0
 		Button buttonIndexRotation,win=$win,disable= d
@@ -7617,6 +7622,10 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		DeviatoricStrainRefineXML(-1,NaN,"",printit=1)
 	elseif (stringmatch(ctrlName,"buttonIndexLoadOneXML") && strlen(WaveListClass("Random3dArrays","*","")))
 		LoadPixelsFromXML(-1)
+	elseif (stringmatch(ctrlName,"buttonIndex2D3DXMLrgba") && strlen(WaveListClass("Random3dArraysXYZ,Random3dArrays","*","")))
+		Make2D_3D_RGBA($"",$"","",NaN,NaN)
+	elseif (stringmatch(ctrlName,"buttonIndex2Dplot") && strlen(WaveListClass("Random3dArraysXYZ,Random3dArrays","*","")))
+		Make2Dplot_xmlData("")
 	elseif (stringmatch(ctrlName,"buttonIndexColorHexagon"))
 		MakColorHexagon()
 	elseif (stringmatch(ctrlName,"buttonIndexGizmoXML") && strlen(WaveListClass("Random3dArrays","*","")))
@@ -7625,8 +7634,6 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		multiIndex#HistogramOf3dArray($"")
 	elseif (stringmatch(ctrlName,"buttonIndexHistogramPlot") && strlen(WaveListClass("HistogramFrom3d","*","")))
 		multiIndex#DisplayHistogramFrom3d($"")
-	elseif (stringmatch(ctrlName,"buttonIndex2D3DXMLrgba") && strlen(WaveListClass("Random3dArraysXYZ,Random3dArrays","*","")))
-		Make2D_3D_RGBA($"",$"","",NaN,NaN)
 	elseif (stringmatch(ctrlName,"buttonIndexRotation") && strlen(WaveListClass("Random3dArrays","*","")))
 		RotationBetweenTwoPoints(NaN,NaN)
 #endif
