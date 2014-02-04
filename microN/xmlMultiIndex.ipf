@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.70
+#pragma version=1.71
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -2419,7 +2419,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 	Variable intensPowerScale	// exponent for intensity scaling, acutal = intensity^intensPowerScale
 	Variable printIt
 	if (ParamIsDefault(intensity))
-		Wave intensity=$""	// no intensity specified
+		Wave intensity=$""		// no intensity specified
 	endif
 	intensPowerScale = ParamIsDefault(intensPowerScale) ? 1 : intensPowerScale
 	intensPowerScale = numtype(intensPowerScale) ? 1 : intensPowerScale
@@ -2461,15 +2461,15 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 	String valueList=WaveListClass("Random3dArrays","*",options,fldr=fldr)
 	valueList = ReplaceString(fldr,valueList,"")
 	valueList = RemoveFromList("XX;YY;ZZ;HH;FF;depth;gm", valueList)	// positions are not suitable for RGBs
-	if (!WaveExists(values) && ItemsInLIst(valueList)<1)				// no value waves
+	if (!WaveExists(values) && ItemsInLIst(valueList)<1)					// no value waves
 		DoAlert 0,"No value waves in this data folder"
 		return $""
-	elseif (!WaveExists(values) && ItemsInLIst(valueList)==1)			// just one value wave, use it with no prompting
+	elseif (!WaveExists(values) && ItemsInLIst(valueList)==1)				// just one value wave, use it with no prompting
 		Wave values=$(fldr+StringFromList(0,valueList))
 	endif
 
 	// add ability to do full RxRyRz too
-	Wave RX=$(fldr+"RX"), RH=$(fldr+"RH"), RF=$(fldr+"RF")				// these may not exist
+	Wave RX=$(fldr+"RX"), RH=$(fldr+"RH"), RF=$(fldr+"RF")					// these may not exist
 	if (WhichListItem("RX",valueList)>=0 && WhichListItem("RH",valueList)>=0 && WhichListItem("RF",valueList)>=0)
 		valueList = AddListItem("RxRyRz",valueList)
 	endif
@@ -2525,7 +2525,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		normStr = hkl2str(InvPoleNormal[0],InvPoleNormal[1],InvPoleNormal[2])
 		cTab = "InvPole"
 		Wave intensity = $(fldr+Sintensity)
-	elseif (numtype(lo+hi) && Rxyz)		// prompt for RxRyRz
+	elseif (numtype(lo+hi) && Rxyz)	// prompt for RxRyRz
 		hi = max(WaveMax(Rx),WaveMax(Rh))
 		hi = max(hi,WaveMax(Rh))
 		lo = min(WaveMin(Rx),WaveMin(Rh))
@@ -2537,7 +2537,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		if (V_flag)
 			return $""
 		endif
-		lo = -hi							// leave hi in degrees
+		lo = -hi								// leave hi in degrees
 		cTab = "RxRyRz"
 		printIt = 1
 	elseif (numtype(lo+hi))			// prompt for a single value
@@ -2573,7 +2573,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 	if (printIt)
 		sxyz = SelectString(WaveExists(wxyz),"$\"\"",NameOfWave(wxyz))
 		String sss = SelectString(WaveExists(values),"$\"\"",NameOfWave(values))
-		printf "Make2DorGizmoRGBA(%s, %s, \"%s\", %g, %g",sxyz,sss,cTab,lo,hi
+		printf "Make2D_3D_RGBA(%s, %s, \"%s\", %g, %g",sxyz,sss,cTab,lo,hi
 		if (WaveExists(intensity))
 			printf ", intensity=%s",NameOfWave(intensity)
 		endif
@@ -2589,8 +2589,8 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		endif
 		printf "\r"
 	endif
-	Variable dim = WaveDims(wxyz)<2 ? 2 : 3			// 3D data gets RGBA, 2D only gets RGB (no Alpha channel)
-	String ending = SelectString(dim==3,"RGBA","RGB")
+	Variable dim = WaveDims(wxyz)<2 ? 2 : 3	// 3D data gets RGBA, 2D only gets RGB (no Alpha channel)
+	String ending = SelectString(dim==3,"RGB","RGBA")
 
 	if (!Rxyz && !InvPoleCubic)
 		if (WhichListItem(cTab,CTabList())<0)
@@ -2601,7 +2601,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		Wave M_colors=M_colors
 		Variable Nc=DimSize(M_colors,0)
 
-		Duplicate/FREE M_colors, colors					// colors range = [0,65535]
+		Duplicate/FREE M_colors, colors			// colors range = [0,65535]
 		KillWaves/Z M_colors
 	endif
 
@@ -2610,7 +2610,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		printf "made %s  '%s'  for '%s' using %s over range [%g, %g]%s\r",ending,NameOfWave(rgba),NameOfWave(wxyz),cTab,lo,hi,SelectString(Rxyz,"","¡")
 	endif
 
-	if (InvPoleCubic)
+	if (InvPoleCubic)									// calculate colors for a inverse Pole Figure (Cubic ONLY)
 		Wave gm = $(GetWavesDataFolder(wxyz,1)+"gm")
 		if (!WaveExists(gm))
 			print "ERROR -- Cannot Find gm Wave"
@@ -2624,11 +2624,11 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 			Wave rgbai=CubicTriangleColors(hkl)// returns rgb, hkl is hkl of surface normal
 			rgba[i][0,2] = rgbai[q]
 		endfor
-	elseif (Rxyz)
+	elseif (Rxyz)										// calculate colors for a RX,RH,RF
 		Wave rotrgb=$makeRGBJZT(RX,RH,RF,hi)	// hi is in degrees
 		rgba[][0,2] = rotrgb[p][q]
 		KillWaves/Z rotrgb
-	else
+	else													// calcualte colors from a color table from values
 		Variable m, ic									// using M_colors
 		for (m=0;m<N;m+=1)
 			ic = (values[m]-lo) / (hi-lo)  * (Nc-1)
@@ -2636,37 +2636,39 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 			rgba[m][0,2] = colors[ic][q]
 		endfor
 	endif
+	// rgba contains colors in the range [0,65535], 3 columns for 2D, 4 columns for 3D
 
 	if (WaveExists(intensity))					// make intens wave scaled [0,1]
 		Duplicate/FREE intensity, intens
-		intens = abs(intens)
+		intens = abs(intens)						// intensity is from zero
 		lo = WaveMin(intens)
 		intens -= lo
 		hi = WaveMax(intens)
 		intens /= hi
-		if (numtype(lo+hi) || hi<=0)
+		if (numtype(lo+hi) || hi<=0)				// bad values, the WaveClear will inhibit further use of intens
 			WaveClear intens
 		elseif (intensPowerScale!=1 && numtype(intensPowerScale)==0)
-			intens = intens^intensPowerScale
+			intens = intens^intensPowerScale	// scale intensity by power of intensPowerScale, leaves range of intens=[0,1]
 		endif
 	endif
 
-	if (dim==2)
+	if (dim==2)											// for dim==2 data, actuall not 3D
 		if (WaveExists(intens))
 			rgba *= intens[p]
 		endif
-		rgba = limit(rgba,0,65535)
+		rgba = limit(rgba,0,65535)				// Graphs want colors in range [0,65535]
 		Redimension/W/U rgba
 	elseif (dim==3)
 		rgba /= 65535									// colors appropriate for a Gizmo are in [0,1]
 		if (WaveExists(intens))
-			rgba[][3] = intens[p]
+			rgba[][3] = intens[p]					// use intens to set the alpha channel for Gizmos
 		endif
-		rgba = limit(rgba,0,1)
+		rgba = limit(rgba,0,1)						// Gizmos want colors in range [0,1]
 	endif
 
+	// set the wave note
 	String sampleName=StringBykey("sampleName",note(wxyz),"="), userName=StringBykey("userName",note(wxyz),"=")
-	String wNote="waveClass=Random3dArraysRGBA"
+	String wNote="waveClass=Random3dArrays"+ending+";"
 	wNote=ReplaceStringByKey("fldrName",wNote,GetDataFolder(1),"=")
 	if (strlen(sampleName))
 		wNote=ReplaceStringByKey("sampleName",wNote,sampleName,"=")
