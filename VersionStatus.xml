@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, February 11, 2014" time="01:36:41 PM CST" isoTime="2014-02-11T13:36:41"></written>
+	<written date="Tuesday, February 11, 2014" time="01:57:52 PM CST" isoTime="2014-02-11T13:57:52"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>253</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -92,7 +92,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="9ade17870257633d501725982dca9c17" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
-	<file version="4.14" time="2014-02-11T13:34:28" md5="cabf5ab991a681895981972848bb7aeb" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.14" time="2014-02-11T13:57:23" md5="6ed32c9323be14f07e69d2b4f85181d0" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b9fe430376660d4f30e40f8f04789109" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="6cb23957d309efbc4e66bbd674b4640b" ext=".xml">geometrys/geoN_2012-11-26_16-29-15.xml</file>
