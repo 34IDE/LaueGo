@@ -2875,7 +2875,7 @@ Static Function/T directory(pathName)
 			list = IndexedFile($pathName,-1,"."+imageExtension)
 		endif
 	else											// this sectio for Windows
-		list = IndexedFile($pathName,-1,"."+imageExtension)	// list = IndexedFile($pathName,-1,"????")
+		list = IndexedFile($pathName,-1,imageExtension)	// list = IndexedFile($pathName,-1,"????")
 	endif
 	return list
 End
