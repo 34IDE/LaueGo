@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.06
+#pragma version = 2.08
 
 // add the following line to your "Procedure" window to get the old Q-distribution panel & functions
 //	#define EWSCAN_OLD_WAY
@@ -394,15 +394,17 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				range2 = StringFromList(1,str)
 			endif
 		endif
-		Prompt range1,"range1 of image file numbers to use"
-		Prompt range2,"range2 of image file numbers to use"
+		String range1Prompt = SelectString(strlen(range1)>253,range1,"(range 1 is too long)")
+		String range2Prompt = SelectString(strlen(range2)>253,range2,"(range 2 is too long)")
+		Prompt range1Prompt,"range1 of image file numbers to use"
+		Prompt range2Prompt,"range2 of image file numbers to use"
 		I0normalize = numtype(I0normalize) ? 1 : I0normalize
 		I0normalize += 1
 		Prompt I0normalize,"Normalize the Q-hists",popup,"Do NOT Normalize to Io or exposure;Normalize to Io & exposure"
 		if (Nranges>1)
-			DoPrompt "range(s)",range1,range2, I0normalize
+			DoPrompt "range(s)",range1Prompt,range2Prompt, I0normalize
 		else
-			DoPrompt "range(s)",range1, I0normalize
+			DoPrompt "range(s)",range1Prompt, I0normalize
 		endif
 		if (V_flag)
 			return 1
@@ -410,6 +412,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		endif
 		I0normalize -= 1
 		printIt = 1
+		range1 = SelectString(StringMatch(range1Prompt,"(range 1 is too long)"),range1Prompt,range1)
+		range2 = SelectString(StringMatch(range2Prompt,"(range 2 is too long)"),range2Prompt,range2)
 	endif
 
 	if (printIt)
@@ -3159,12 +3163,16 @@ Function MakePseudoWhiteImages(pathName,namePart,[range1,range2])
 		range2=StringFromList(1,str)
 	endif
 	if (ParamIsDefault(range1) || ParamIsDefault(range2) || strlen(range1)==0)
-		Prompt range1,"range of energies, file numbers  (primary)"
-		Prompt range2,"range of depths (or other motion), file numbers  (secondary)"
-		DoPrompt "ranges", range1,range2
+		String range1Prompt = SelectString(strlen(range1)>253,range1,"(range 1 is too long)")
+		String range2Prompt = SelectString(strlen(range2)>253,range2,"(range 2 is too long)")
+		Prompt range1Prompt,"range of energies, file numbers  (primary)"
+		Prompt range2Prompt,"range of depths (or other motion), file numbers  (secondary)"
+		DoPrompt "ranges", range1Prompt,range2Prompt
 		if (V_flag)
 			return 1
 		endif
+		range1 = SelectString(StringMatch(range1Prompt,"(range 1 is too long)"),range1Prompt,range1)
+		range2 = SelectString(StringMatch(range2Prompt,"(range 2 is too long)"),range2Prompt,range2)
 	endif
 	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc"))
 		printf "MakePseudoWhiteImages(\"%s\",\"%s\",range1=\"%s\",range2=\"%s\")\r",pathName,namePart,range1,range2
