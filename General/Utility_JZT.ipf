@@ -368,14 +368,16 @@ End
 // i.e.  you took data in scans 1-30, but scans 17, and 25 were no good.  So the valid range is "1-16,18-24,26-30"
 //  or perhaps you want to combine scans "3,7,9"  The following routines handle those situations in a simple fashion.
 
+// Feb.2014 -- You can now specify a step size in a string range, "1-5:2" is the same as "1,3,5", "1-9:3" is equal to "1,4,7".
+
 ThreadSafe Function NextInRange(range,last)	// given a string like "2-5,7,9-12,50" get the next number in this compound range
 									// the range is assumed to be monotonic, it returns NaN if no more values
 	String range					// list defining the range
 	Variable last					// last number obtained from this range, use -Inf to get start of range, it returns the next
 
 	// find first item in the list that should use next
-	String item
-	Variable m,i,j
+	String item,item0,item1
+	Variable m,i,j,step,ret
 	Variable first						// first value in an item
 	do
 		item = StringFromList(j,range,",")
@@ -395,14 +397,34 @@ ThreadSafe Function NextInRange(range,last)	// given a string like "2-5,7,9-12,5
 		while (char2num(item[m])<=32)
 		item = item[m,strlen(item)-1]
 
-		i = strsearch(item,"-",1)		// location of first '-' after the first character
+		//check if a step size is specified
+		item1=StringFromList(1,item,":")
+		item0 = StringFromList(0,item,":") // now item0 may be a "2-5" type range or a single number
+		if(strlen(item1)==0)
+			step = 1
+		else
+			step = str2num(item1)
+		endif
+
+		i = strsearch(item0,"-",1)		// location of first '-' after the first character
 		if (i<0)							// only a single number, not a dash type range, keep looking
 			j += 1
 			continue
 		endif
 		// check to see if last was in the range of item, but not the last value
-		if (last>=str2num(item) && last<str2num(item[i+1,Inf]))
-			return last+1
+		if (last>=str2num(item0) && last<str2num(item0[i+1,Inf]))
+			if(step ==1)
+				return last+1
+			else	// a little more math if step > 1
+				if(mod(last - first, step) ==0) // an exact member of the sequence
+					ret = last + step
+				else
+					ret = first + ceil((last - first)/step)*step
+				endif
+				if(ret <= str2num(item0[i+1,Inf]) ) // return only if the result is no greater than the end of the range, e.g. in the case of NextInRange("2-7:2",6)
+					return ret
+				endif
+			endif
 		endif
 		j += 1
 	while(strlen(item)>0)
@@ -423,7 +445,6 @@ End
 //	print ""
 //End
 
-
 ThreadSafe Function PointInRange(i,range)	// return the ith number in range, first number is i==0
 	Variable i								// index to number in range
 	String range							// a string range
@@ -440,13 +461,13 @@ ThreadSafe Function PointInRange(i,range)	// return the ith number in range, fir
 	return m
 End
 
-
 ThreadSafe Function ItemsInRange(range)	// given a string like "2-5,7,9-12,50" get the total number of values in the range
 	String range				// list defining the range
 								// the range is assumed to be monotonic, it returns NaN on error
 	String item							// each of the comma sepated items
+	String item0, item1
 	Variable len=0						// the result, number of values represented
-	Variable m,i,j,N=ItemsInList(range,",")
+	Variable m,i,j,step,N=ItemsInList(range,",")
 
 	for (j=0;j<N;j+=1)				// loop over each item
 		item = StringFromList(j,range,",")
@@ -457,11 +478,19 @@ ThreadSafe Function ItemsInRange(range)	// given a string like "2-5,7,9-12,50" g
 		while (char2num(item[m])<=32)
 		item = item[m,strlen(item)-1]
 
-		i = strsearch(item,"-",1)		// location of first '-' after the first character
+		item1 = StringFromList(1,item,":")	// stepsize, if specified with ":"
+		item0 = StringFromList(0,item,":")	// start-end of range is specified before ":"
+		if(strlen(item1) == 0)
+			step = 1
+		else
+			step = str2num(item1)
+		endif
+
+		i = strsearch(item0,"-",1)		// location of first '-' after the first character
 		if (i<0)							// only a single number, not a dash type range, keep looking
 			len += 1
-		else								// item is a dash type
-			len += str2num(item[i+1,Inf])-str2num(item)+1
+		else							// item0 is a dash type 
+			len += ceil((str2num(item0[i+1,Inf])-str2num(item0)+1)/step)
 		endif
 	endfor
 	return len
@@ -477,9 +506,11 @@ End
 //	return str2num(range)
 //End
 //
+
 ThreadSafe Function lastInRange(range)		// returns the last number in the range, lastInRange("3,5,9-20") returns 20
 	String range
-	Variable i,last
+	Variable i,last,first,step
+	String item0, item1
 
 	i = strsearch(range,",",Inf,1)
 	if (i>=0)									// remove previous comma separated items
@@ -488,13 +519,22 @@ ThreadSafe Function lastInRange(range)		// returns the last number in the range,
 	range = ReplaceString(" ",range,"")		// spaces do not count
 	range = ReplaceString("\t",range,"")	// tabs do not count
 
-	i = strsearch(range,"-",Inf,1)
-	if (char2num(range[i-1])==45)		// a double dash, we have a minus sign
+	item1 = StringFromList(1,range,":")	// stepsize, if specified with ":"
+	item0 = StringFromList(0,range,":")	// start-end of range is specified before ":"
+	if(strlen(item1)==0)
+		step = 1
+	else
+		step = str2num(item1)
+	endif
+
+	i = strsearch(item0,"-",Inf,1)
+	if (char2num(item0[i-1])==45)		// a double dash, we have a minus sign
 		i -= 1
 	endif
 	i += i>0 ? 1 : 0							// increment i to skip over dash unless there is no dash in string, i<0 means no dash present
-	last = str2num(range[i,Inf])
-	return last
+	last = str2num(item0[i,Inf])
+	first = str2num(item0)
+	return floor((last-first)/step)*step+first
 End
 
 ThreadSafe Function isInRange(range,m)// returns TRUE if m is a number in range
@@ -503,6 +543,9 @@ ThreadSafe Function isInRange(range,m)// returns TRUE if m is a number in range
 
 	String item							// each of the comma sepated items
 	Variable i,j,N=ItemsInList(range,",")
+	String item0, item1
+	Variable step
+	
 	for (j=0;j<N;j+=1)					// loop over each comma separated item
 		item = StringFromList(j,range,",")
 		item = TrimLeadingWhiteSpace(item)
@@ -512,8 +555,16 @@ ThreadSafe Function isInRange(range,m)// returns TRUE if m is a number in range
 				return 1					// this number is m
 			endif
 		else								// item is a dash type
-			if (m>=str2num(item) && m<=str2num(item[i+1,Inf]))
-				return 1					//  m is in this continuous range
+			item1 = StringFromList(1,item,":")	// stepsize, if specified with ":"
+			item0 = StringFromList(0,item,":")	// everything else before ":"
+			if(strlen(item1) == 0)
+				step = 1
+			else
+				step = str2num(item1)
+			endif
+
+			if (m>=str2num(item0) && m<=str2num(item0[i+1,Inf]))  //  m is in this continuous range
+				return (mod((m - str2num(item0)), step)== 0)  // true only if (m - first) can be divided by step
 			endif
 		endif
 	endfor
@@ -536,7 +587,8 @@ ThreadSafe Function/S expandRange(range,sep)	// expand a string like "2-5,7,9-12
 	if (N<1)
 		return ""
 	endif
-	Variable j=0
+	Variable j=0, step
+	String item1,item0
 	do
 		str = StringFromList(j, range, ",")
 		Variable m=-1				// remove any leading white space
@@ -545,15 +597,23 @@ ThreadSafe Function/S expandRange(range,sep)	// expand a string like "2-5,7,9-12
 		while (char2num(str[m])<=32)
 		str = str[m,strlen(str)-1]
 
-		// now check str to see if it is a range like "20-23"
-		i1 = str2num(str)
-		i = strsearch(str,"-",strlen(num2str(i1)))		// position of "-" after first number
+		// now check str to see if it is a range like "20-23" or "20-30:5"
+		item1 = StringFromList(1,str,":")	// stepsize, if specified with ":"
+		item0 = StringFromList(0,str,":")	// start-end of range is specified before ":"
+		if(strlen(item1) == 0)
+			step = 1
+		else
+			step = str2num(item1)
+		endif
+		
+		i1 = str2num(item0)                        // i1 is the start of the range
+		i = strsearch(item0,"-",strlen(num2str(i1)))		// position of "-" after first number
 		if (i>0)
-			i2 = str2num(str[i+1,inf])
+			i2 = str2num(item0[i+1,inf])  // i2 is the specified end of the range
 			i = i1
 			do
 				out += num2str(i)+sep
-				i += 1
+				i += step
 			while (i<=i2)
 		else
 			out += num2str(i1)+sep
@@ -562,7 +622,7 @@ ThreadSafe Function/S expandRange(range,sep)	// expand a string like "2-5,7,9-12
 	while (j<N)
 
 	i = strlen(out)-1
-	if (char2num(out[i])==char2num(sep))
+	if (char2num(out[i])==char2num(sep))  // remove the trailing sep character
 		out = out[0,i-1]
 	endif
 	return out
@@ -575,34 +635,73 @@ ThreadSafe Function/S compressRange(range,sep) 	// take a range like "1;2;3;4;5;
 
 	String comp=""						// the compressed string
 	String num
-	Variable j,first,last,i=0
+	Variable j,first,last,i=0,aa,bb,cc,step,in_subrange,write_subrange,writeend
 	Variable N=ItemsInList(range,sep)
 	if (N<1)
 		return ""
 	endif
 	range = SortList(range,sep,2)				// make list monotonic
-	last = str2num(StringFromList(0,range,sep))-2	// ensure that first item is at the start
-	for (i=0;i<N;i+=1)
-		j = str2num(StringFromList(i,range,sep))
-		num = num2str(j)
-		if (numtype(j))
-			return ""
-		elseif ((j-last)==1)					// keep counting
-			last = j
-		elseif ((j-last)!=1)					// new sub-range
-			if (i==0)							// special for first point
-				comp = num
-			elseif (first==last)					// just add a single number range
-				comp += ","+num
-			else									// close out previous range, and add single number
-				comp += "-"+num2str(last)+","+num
+	
+
+	if(N<3)  	// make no change if list has 1 or 2 elements
+		comp = range
+	else	// if list has more than 3 elements
+		in_subrange = 0
+		write_subrange = 0
+		writeend = 0
+		last = str2num(StringFromList(0,range,sep)) - 2
+		for(i=2;i<N;i+=1)
+			aa = str2num(StringFromList(i-2,range,sep))
+			bb = str2num(StringFromList(i-1,range,sep))
+			cc = str2num(StringFromList(i,range,sep))
+			if((cc-bb) == (bb-aa) && aa>last) // if the 3 consecutive numbers are equally spaced, and aa is not part of previous subrange
+				if(!in_subrange)  // no existing subrange, then start a new one
+					first = aa
+					step = bb-aa
+					in_subrange = 1
+				endif
+				last = cc
+				if(i==(N-1)) // if hit the last number while still in a subrange, then close out the subrange
+					write_subrange = 1
+				endif
+			else  // if the3 are not equally spaced
+				if(in_subrange) // already started a subrange, then close it out
+					in_subrange = 0
+				elseif(aa==last) // no active subrange, but aa is the end of previous subrange, then write down the subrange
+					write_subrange = 1
+				else  // no active or recent subrange at all, then write down single item aa
+					comp += ","+num2str(aa) 
+				endif
+				if(i == (N-1)) // if hitting the last number, then write down single elements cc or bb&cc
+					if(bb == last)  // if bb is the end of the recently-closed subrange
+						writeend = 1
+						write_subrange = 1
+					else    // if no active or recent subrange
+						writeend = 2
+					endif
+				endif
 			endif
-			last = j
-			first = j
-		endif
-	endfor
-	if (first!=last)
-		comp += "-"+num2str(last)
+			if(write_subrange)
+				if(step ==1)
+					comp += ","+num2str(first)+"-"+num2str(last)
+				else
+					comp += ","+num2str(first)+"-"+num2str(last)+":"+num2str(step)
+				endif
+				write_subrange = 0
+			endif
+			switch(writeend)
+				case 1:
+					comp += ","+num2str(cc) 
+					break
+				case 2:
+					comp += ","+num2str(bb) + ","+num2str(cc) 
+			endswitch
+		endfor
+	endif
+	
+	//remove the leading ","
+	if(strlen(comp)>0)
+		comp = comp[1,Inf]
 	endif
 	return comp
 End
@@ -624,6 +723,7 @@ End
 //	printf "'%s' ---> '%s'\r",range, compressRange(range,";")
 //End
 
+////// not used ////////////// not yet compatible with "1-9:3" format /////////////
 ThreadSafe Function/T compactRange(in) // take a range and return the most compact way of describing that range, e.g.  "1,2,3,4,6" -> "1-4,6"
 	String in							// list defining the starting range, in is assumed to be monotonic
 	String out=""						// list defining the minimalized output range
