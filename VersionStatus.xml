@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, February 19, 2014" time="06:00:24 PM CST" isoTime="2014-02-19T18:00:24"></written>
+	<written date="Thursday, February 20, 2014" time="10:25:55 AM CST" isoTime="2014-02-20T10:25:55"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>255</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -151,7 +151,7 @@
 	<file version="1.3" time="2013-10-28T11:28:48" md5="26758b5d246bc6c19d810b764915abb4" ext=".ipf">Grains/GizmoGrains.ipf</file>
 	<file version="2.21" time="2013-10-28T11:28:48" md5="66e2524c2d0db57ae9c0ee58521514f8" ext=".ipf">General/Xray.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="821b95546d7b4967ec94233609f3bd65" ext=".xml">materials/Cu3Pd-sg194.xml</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="094eaaf8da6707f364284c391e0f138b" ext=".xml">materials/PbTiO3.xml</file>
+	<file version="nan" time="2014-02-20T09:41:12" md5="6b4cf0d152db7a266db3fec8f8fa821e" ext=".xml">materials/PbTiO3.xml</file>
 	<file version="1" time="2013-10-28T11:28:48" md5="2c6e8d607203b6f33a328d508651f713" ext=".ipf">Lattice/PoleFigure.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4600c4022689de127291ae80e57517f7" ext=".xml">materials/PbMnNbO.xml</file>
 	<file version="0.26" time="2013-10-28T11:28:48" md5="474c6f7b9cbf675fa84808c3dd474948" ext=".ipf">General/HDF5images.ipf</file>
