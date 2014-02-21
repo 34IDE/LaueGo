@@ -192,6 +192,9 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
+# GoodSync 
+_gsdata_/
+
 # Mac crap
 .DS_Store
 
