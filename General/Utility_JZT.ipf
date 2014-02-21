@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.26
+#pragma version = 3.27
 #pragma hide = 1
 
 Menu "Graph"
@@ -368,8 +368,40 @@ End
 // i.e.  you took data in scans 1-30, but scans 17, and 25 were no good.  So the valid range is "1-16,18-24,26-30"
 //  or perhaps you want to combine scans "3,7,9"  The following routines handle those situations in a simple fashion.
 
+ThreadSafe Function isValidRange(range)	// returns 1 if range is a valid string range
+	String range								// note, "1-Inf" is a valid sub range, but "-Inf-6" is not
+
+	range = ReplaceString(" ",range,"")
+	String subRange
+	Variable i, m, N=ItemsInList(range,","), first,last, step,prev=-Inf
+	for (i=0;i<N;i+=1)						// check each item for validity
+		subRange = StringFromList(i,range,",")
+		first = str2num(subRange)
+		if (numtype(first))					// this sub range is not even numeric or is Inf
+			return 0
+		elseif (first<=prev)				// start of this sub range is not after previous one
+			return 0
+		endif
+
+		m = strsearch(subRange,"-",1)	// occurance of first "-", after first character
+		if (m<0)									// a single number, a simple sub range
+			prev = first
+			continue
+		endif
+		last = str2num(subRange[m+1,Inf])
+		step = str2num(StringFromList(1,subRange,":"))
+		step = numtype(step)==2 ? 1 : step	// no step found, default to 1
+
+		if (!(last>=first) || step<=0)	// must have first<=last and positive non-zero step
+			return 0
+		endif
+		prev = floor((last-first)/step)*step+first	// last number in this sub range
+	endfor
+	return 1
+End
+
 ThreadSafe Function NextInRange(range,last)	// given a string like "2-5,7,9-12,50" get the next number in this compound range
-									// the range is assumed to be monotonic, it returns NaN if no more values
+										// the range is assumed to be monotonic, it returns NaN if no more values
 	String range					// list defining the range
 	Variable last					// last number obtained from this range, use -Inf to get start of range, it returns the next
 
