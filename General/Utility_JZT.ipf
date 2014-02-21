@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.25
+#pragma version = 3.26
 #pragma hide = 1
 
 Menu "Graph"
@@ -398,10 +398,10 @@ ThreadSafe Function NextInRange(range,last)	// given a string like "2-5,7,9-12,5
 		//check if a step size is specified
 		item1=StringFromList(1,item,":")
 		item0 = StringFromList(0,item,":") // now item0 may be a "2-5" type range or a single number
-		if(strlen(item1)==0)
-			step = 1
-		else
-			step = str2num(item1)
+		step = str2num(item1)
+		step = numtype(step)==2 ? 1 : step
+		if (!(step>0))								// step must be > 0
+			return NaN
 		endif
 
 		i = strsearch(item0,"-",1)		// location of first '-' after the first character
@@ -478,10 +478,10 @@ ThreadSafe Function ItemsInRange(range)	// given a string like "2-5,7,9-12,50" g
 
 		item1 = StringFromList(1,item,":")	// stepsize, if specified with ":"
 		item0 = StringFromList(0,item,":")	// start-end of range is specified before ":"
-		if(strlen(item1) == 0)
-			step = 1
-		else
-			step = str2num(item1)
+		step = str2num(item1)
+		step = numtype(step)==2 ? 1 : step
+		if (!(step>0))								// step must be > 0
+			return NaN
 		endif
 
 		i = strsearch(item0,"-",1)		// location of first '-' after the first character
@@ -519,10 +519,10 @@ ThreadSafe Function lastInRange(range)		// returns the last number in the range,
 
 	item1 = StringFromList(1,range,":")	// stepsize, if specified with ":"
 	item0 = StringFromList(0,range,":")	// start-end of range is specified before ":"
-	if(strlen(item1)==0)
-		step = 1
-	else
-		step = str2num(item1)
+	step = str2num(item1)
+	step = numtype(step)==2 ? 1 : step
+	if (!(step>0))									// step must be > 0
+		return NaN
 	endif
 
 	i = strsearch(item0,"-",Inf,1)
@@ -555,10 +555,10 @@ ThreadSafe Function isInRange(range,m)// returns TRUE if m is a number in range
 		else								// item is a dash type
 			item1 = StringFromList(1,item,":")	// stepsize, if specified with ":"
 			item0 = StringFromList(0,item,":")	// everything else before ":"
-			if(strlen(item1) == 0)
-				step = 1
-			else
-				step = str2num(item1)
+			step = str2num(item1)
+			step = numtype(step)==2 ? 1 : step
+			if (!(step>0))								// step must be > 0
+				return 0
 			endif
 
 			if (m>=str2num(item0) && m<=str2num(item0[i+1,Inf]))  //  m is in this continuous range
@@ -598,10 +598,10 @@ ThreadSafe Function/S expandRange(range,sep)	// expand a string like "2-5,7,9-12
 		// now check str to see if it is a range like "20-23" or "20-30:5"
 		item1 = StringFromList(1,str,":")	// stepsize, if specified with ":"
 		item0 = StringFromList(0,str,":")	// start-end of range is specified before ":"
-		if(strlen(item1) == 0)
-			step = 1
-		else
-			step = str2num(item1)
+		step = str2num(item1)
+		step = numtype(step)==2 ? 1 : step
+		if (!(step>0))								// step must be > 0
+			return ""
 		endif
 		
 		i1 = str2num(item0)                        // i1 is the start of the range
