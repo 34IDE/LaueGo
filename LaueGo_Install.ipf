@@ -1,13 +1,13 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.03
+#pragma version = 0.04
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
 Static strConstant JZTArchiveURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/LaueGo.zip"
 Static Constant minimumArchiveLen = 16777216	// 16MB (16*1024*1024)
 
-strConstant xopList = "HDF5.xop;HDF5 Help.ihf;"		// a list of xop's to install, this can be overidden
+strConstant xopList = "HDF5.xop;HDF5 Help.ihf;MultiPeakFit.xop;MultiPeakFit Help.ihf;"	// list of xop's to install, this can be overidden
 //Static strConstant = xopList = "HDF5.xop;HDF5 Help.ihf;HFSAndPosix.xop;HFSAndPosix Help.ihf;"
 
 
@@ -26,8 +26,8 @@ Function LaueGo_Install()
 		return 1
 	endif
 
-	Variable empty = ExperimentEmpty()
-	String str = "***"+SelectString(empty,"This Expermiment appears to NOT be empty","This is considered to be an EMPTY Experiment")
+	Variable isEmpty = ExperimentEmpty()
+	String str = "***"+SelectString(isEmpty,"This Expermiment appears to NOT be empty","This is considered to be an EMPTY Experiment")
 	Append2Log(str,0)
 	String UserPath = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:"
 
@@ -36,6 +36,7 @@ Function LaueGo_Install()
 		return 1
 	endif
 	String LaueGoFullPath = UserPath+"LaueGo"		// official location of the LaueGo folder
+	String LocalPackagesFullPath = UserPath+"LocalPackages"
 
 	Variable existing = LaueGoInstall#FileFolderExists(LaueGoFullPath,folder=1)
 	String oldFolderDestination=""
@@ -123,6 +124,24 @@ Function LaueGo_Install()
 	endif
 	Append2Log("Succesfully moved the new LaueGo folder to 'User Procedures'",0)
 
+	// Create LocalPackages folder if needed
+	if (LaueGoInstall#FileFolderExists(LocalPackagesFullPath,folder=1)==0)
+		NewPath /C/O/Q/Z local_temp_path, LocalPackagesFullPath
+		if (V_flag)
+			str = "Could not create the 'LocalPackages' folder named \""+LocalPackagesFullPath+"\", the new LaueGo folder was not moved"
+			DoAlert 0, str
+			Append2Log(str,0)
+			return 1
+		else
+			Append2Log("Created LocalPackages folder \""+LocalPackagesFullPath+"\"",0)
+			if (writeLocalPackagesAboutFile(LocalPackagesFullPath)	)
+				Append2Log("Minor Error -- Failed to write \"About LocalPackages Folder.txt\" into the LocalPackages folder",0)
+			else
+				Append2Log("wrote \"About LocalPackages Folder.txt\" into the LocalPackages folder",0)
+			endif
+		endif
+	endif
+
 	// install the alias to "always first.ipf"
 	String alwaysFirstSource=LaueGoFullPath+":always:always first.ipf"
 	String alwaysFirstDestination = SpecialDirPath("Igor Pro User Files",0,0,0)+"Igor Procedures:always first.ipf"
@@ -157,7 +176,7 @@ Function LaueGo_Install()
 	Append2Log("finished",0)
 	Append2Log("********************************************************************************",0)
 
-	if (empty)
+	if (isEmpty)
 		DoAlert 1, "Done with Installing LaueGo, you need to re-start Igor\rQuit (without saving) Now?"
 		if (V_flag==1)
 			Execute/P "Quit/N"
@@ -235,6 +254,35 @@ Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new experiment
 	return empty
 End
 
+
+Static Function writeLocalPackagesAboutFile(LocalPackagesFullPath)	// returns 0=success, 1=error
+	String LocalPackagesFullPath
+
+	String AboutTextBody = "About LocalPackages Folder.txt\r\r"			// text to insert in the file
+	AboutTextBody += "Put any Igor packages in this folder (or a sub-folder)that you want available for loading.  They will automatically be available for including by going to the Igor MenuBar   \"File:Add Local User Package-->\"\r"
+	AboutTextBody += "It ignores all files in the following sub-folders:\r"
+	AboutTextBody += "	if the folder name starts with a \".\"			// system folders\r"
+	AboutTextBody += "	if the folder name contains the word \"subroutine\"	// hides subroutines\r"
+	AboutTextBody += "	if the folder name ends in \"always\"			// always things\r"
+	AboutTextBody += "	if the folder name is \"old\"				// old thingsÉ\r"
+	AboutTextBody += "	if the folder name ends in \" old\"\r"
+	AboutTextBody += "	if the folder name contains \"(old\"\r\r"
+	AboutTextBody += "If in the first 50 lines of the ipf file there is a line such as:\r\r"
+	AboutTextBody += "#requiredPackages \"HDF5images;microGeometryN;\"\r\r"
+	AboutTextBody += "then this ipf file will only appear in the menu if all of the ipf files in the list are already loaded.  In this example, the ipf file will only appear in the \"File:Add Local User Package-->\" menu if the ipf files HDF5images and microGeometryN have both been previously loaded.\r\r"
+	AboutTextBody += "Also, if there is a line like:\r\r"
+	AboutTextBody += "#initFunctionName \"Init_xyzPackage()\"\r\r"
+	AboutTextBody += "Then the function Init_xyzPackage() will be run after the ipf file is loaded.  Actually, everything in the double quotes is passed to an Execute command.\r"
+
+	Variable f
+	Open/Z f as LocalPackagesFullPath+":About LocalPackages Folder.txt"
+	if (V_flag)
+		return V_flag
+	endif
+	FBinWrite f, AboutTextBody
+	Close f
+	return 0
+End
 
 
 Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip file to the Desktop
