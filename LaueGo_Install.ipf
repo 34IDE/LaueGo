@@ -36,7 +36,6 @@ Function LaueGo_Install()
 		return 1
 	endif
 	String LaueGoFullPath = UserPath+"LaueGo"		// official location of the LaueGo folder
-	String LocalPackagesFullPath = UserPath+"LocalPackages"
 
 	Variable existing = LaueGoInstall#FileFolderExists(LaueGoFullPath,folder=1)
 	String oldFolderDestination=""
@@ -124,22 +123,8 @@ Function LaueGo_Install()
 	endif
 	Append2Log("Succesfully moved the new LaueGo folder to 'User Procedures'",0)
 
-	// Create LocalPackages folder if needed
-	if (LaueGoInstall#FileFolderExists(LocalPackagesFullPath,folder=1)==0)
-		NewPath /C/O/Q/Z local_temp_path, LocalPackagesFullPath
-		if (V_flag)
-			str = "Could not create the 'LocalPackages' folder named \""+LocalPackagesFullPath+"\", the new LaueGo folder was not moved"
-			DoAlert 0, str
-			Append2Log(str,0)
-			return 1
-		else
-			Append2Log("Created LocalPackages folder \""+LocalPackagesFullPath+"\"",0)
-			if (writeLocalPackagesAboutFile(LocalPackagesFullPath)	)
-				Append2Log("Minor Error -- Failed to write \"About LocalPackages Folder.txt\" into the LocalPackages folder",0)
-			else
-				Append2Log("wrote \"About LocalPackages Folder.txt\" into the LocalPackages folder",0)
-			endif
-		endif
+	if (AddLocalPackagesFolder(UserPath))		// Create LocalPackages folder (if needed)
+		return 1
 	endif
 
 	// install the alias to "always first.ipf"
@@ -255,10 +240,15 @@ Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new experiment
 End
 
 
-Static Function writeLocalPackagesAboutFile(LocalPackagesFullPath)	// returns 0=success, 1=error
-	String LocalPackagesFullPath
+Static Function AddLocalPackagesFolder(UserPath)	// Create LocalPackages folder if needed, returns 0=success, 1=error
+	String UserPath
 
-	String AboutTextBody = "About LocalPackages Folder.txt\r\r"			// text to insert in the file
+	String FullPath = UserPath+"LocalPackages"
+	if (FileFolderExists(FullPath,folder=1))			// LocalPackages already exists, return no error
+		return 0
+	endif
+
+	String AboutTextBody = "About LocalPackages Folder.txt\r\r"	// text to insert in the file
 	AboutTextBody += "Put any Igor packages in this folder (or a sub-folder)that you want available for loading.  They will automatically be available for including by going to the Igor MenuBar   \"File:Add Local User Package-->\"\r"
 	AboutTextBody += "It ignores all files in the following sub-folders:\r"
 	AboutTextBody += "	if the folder name starts with a \".\"			// system folders\r"
@@ -274,15 +264,29 @@ Static Function writeLocalPackagesAboutFile(LocalPackagesFullPath)	// returns 0=
 	AboutTextBody += "#initFunctionName \"Init_xyzPackage()\"\r\r"
 	AboutTextBody += "Then the function Init_xyzPackage() will be run after the ipf file is loaded.  Actually, everything in the double quotes is passed to an Execute command.\r"
 
-	Variable f
-	Open/Z f as LocalPackagesFullPath+":About LocalPackages Folder.txt"
+	String LPpath=UniqueName("localPackages",12,0), str
+	NewPath /C/O/Q/Z $LPpath, FullPath		// create the LocalPackages folder
+	KillPath/Z $LPpath
 	if (V_flag)
-		return V_flag
+		str = "Could not create the 'LocalPackages' folder named \""+FullPath+"\", the new LaueGo folder was not moved"
+		DoAlert 0, str
+		Append2Log(str,0)
+		return 1
 	endif
-	FBinWrite f, AboutTextBody
-	Close f
+	Append2Log("Created LocalPackages folder \""+FullPath+"\"",0)
+
+	Variable f															// add the "About LocalPackages Folder.txt" file
+	Open/Z f as FullPath+":About LocalPackages Folder.txt"
+	if (V_flag)
+		Append2Log("Minor Error -- Failed to write \"About LocalPackages Folder.txt\" into the LocalPackages folder",0)
+	else
+		FBinWrite f, AboutTextBody
+		Close f
+		Append2Log("wrote \"About LocalPackages Folder.txt\" into the LocalPackages folder",0)
+	endif
 	return 0
 End
+
 
 
 Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip file to the Desktop
@@ -554,7 +558,7 @@ Static Function/T FindFileInDirPath(start,name)		// returns full path searching 
 	return FullPath
 End
 //
-Static Function FileFolderExists(name,[path,file,folder])
+Static Function FileFolderExists(name,[path,file,folder])	// returns 1=exists, 0=does not exist
 	String name					// partial or full file name or folder name
 	String path					// optional path name, e.g. "home"
 	Variable file,folder	// flags, if both set or both unset, it checks for either
