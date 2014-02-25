@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.71
+#pragma version=1.72
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -2622,7 +2622,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		for (i=0;i<N;i+=1)
 			recip = gm[p][q][i]
 			MatrixOP/FREE/O hkl = Inv(recip) x InvPoleNormal
-			Wave rgbai=CubicTriangleColors(hkl)// returns rgb, hkl is hkl of surface normal
+			Wave rgbai=CubicTriangleColors(hkl,rgbMax=65535)// returns rgb, hkl is hkl of surface normal
 			rgba[i][0,2] = rgbai[q]
 		endfor
 	elseif (Rxyz)										// calculate colors for a RX,RH,RF
@@ -3072,6 +3072,7 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	dH = dH<minRange ? 0 : dH
 	dF = dF<minRange ? 0 : dF
 	ddepth = ddepth<1 ? 0 : ddepth
+	ddepth = numtype(ddepth) ? 0 : ddepth
 
 	Variable marker=16							// 16 is square, 18 is diamond
 	Variable yRev=0, xRev=0					// flags whether to revers axis
@@ -3412,6 +3413,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Wave Ysample = $(rawFldr+"Ysample")
 	Wave Zsample = $(rawFldr+"Zsample")
 	Wave depthRaw = $(rawFldr+"depth")
+	Variable haveDepth = WaveExists(depthRaw)
 	Wave totalSumRaw = $(rawFldr+"totalSum")
 	Wave sumAboveThresholdRaw = $(rawFldr+"sumAboveThreshold")
 	Wave numAboveThresholdRaw = $(rawFldr+"numAboveThreshold")
@@ -3499,19 +3501,29 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	noteStr = ReplaceNumberByKey("dF",noteStr,-1,"=")
 
 	Make/N=(Nraw)/O depth, ZZ,YY, FF, HH, XX
+	if (haveDepth)
+		Make/N=(Nraw)/O depth
+	endif
 	Make/N=(Nraw)/O rmsIndexed, numAboveThreshold, sumAboveThreshold, totalSum, Nindexed
 	Make/N=(3,3,Nraw)/O gm
 	Make/N=(Nraw)/T/O imageNames
 	Make/N=(Nraw)/O totalAngles, RZ, RY, RF, RH, RX
 	Make/N=(Nraw)/O IndexBackTrack = -1
-	SetScale d 0,0,"µm", depth, XX, HH, FF, YY, ZZ
+	SetScale d 0,0,"µm", XX, HH, FF, YY, ZZ
+	if (haveDepth)
+		SetScale d 0,0,"µm", depth
+	endif
 	SetScale d 0,0,"¡", totalAngles
 
 	// transform to voxel coordinate in sample, not sample position
 	XX = -(Xsample - Xoff)
 	YY = -(Ysample - Yoff)
-	ZZ = -(Zsample - Zoff) + (numtype(depthRaw) ? 0 : depthRaw)
-	depth = depthRaw
+	if (haveDepth)
+		ZZ = -(Zsample - Zoff) + (numtype(depthRaw) ? 0 : depthRaw)
+		depth = depthRaw
+	else
+		ZZ = -(Zsample - Zoff)
+	endif
 	HH = YZ2H(YY,ZZ)
 	FF = YZ2F(YY,ZZ)
 
@@ -3635,7 +3647,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		endif
 		vec3 *= tan(angle*PI/180/2)						// this is now the Rodriques vector
 		if (angle<=maxAngle)								// keep this one
-			depth[N] = depth[i]
+			if (haveDepth)
+				depth[N] = depth[i]
+			endif
 			XX[N] = XX[i]
 			YY[N] = YY[i]
 			ZZ[N] = ZZ[i]
@@ -3663,7 +3677,10 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		printf "total  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
 	endif
 	DoWindow/K $progressWin
-	Redimension/N=(N) depth,XX,YY,ZZ,HH,FF,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
+	Redimension/N=(N) XX,YY,ZZ,HH,FF,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
+	if (haveDepth)
+		Redimension/N=(N) depth
+	endif
 	Redimension/N=(N) RX,RY,RZ, RH,RF, totalAngles
 	Redimension/N=(N) imageNames
 	Redimension/N=(-1,-1,N) gm
@@ -3729,7 +3746,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Note/K ZZ,noteStr
 	Note/K HH,noteStr
 	Note/K FF,noteStr
-	Note/K depth,noteStr
+	if (haveDepth)
+		Note/K depth,noteStr
+	endif
 	Note/K RX,noteStr
 	Note/K RY,noteStr
 	Note/K RZ,noteStr
@@ -4042,7 +4061,10 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	Note/K rmsIndexed,noteStr
 	Note/K imageNames,noteStr
 	Note/K gm,ReplaceStringByKey("waveClass", noteStr, "Random3dArraysGm","=")
-
+	WaveStats/M=1/Q depth
+	if (V_npnts==0)										// no depths present (probably not a wire scan)
+		KillWaves/Z depth
+	endif
 	return noteStr
 End
 
@@ -4056,7 +4078,6 @@ Static Function ValidRawXMLdataAvailable()
 	valid = valid && Exists(":raw:Xsample")==1
 	valid = valid && Exists(":raw:Ysample")==1
 	valid = valid && Exists(":raw:Zsample")==1
-	valid = valid && Exists(":raw:depth")==1
 	valid = valid && Exists(":raw:totalSum")==1
 	valid = valid && Exists(":raw:sumAboveThreshold")==1
 	valid = valid && Exists(":raw:numAboveThreshold")==1
