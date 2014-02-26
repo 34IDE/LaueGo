@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.27
+#pragma version = 3.28
 #pragma hide = 1
 
 Menu "Graph"
@@ -21,16 +21,17 @@ End
 //	4	String ranges, deals with "1,4,5-20",  for handling a non-consecutive range of integers, This one is good
 //	5	Progress panels
 //	6	Generic XML support
-//	7	Contains lots of utility stuff
-//		returns file type (using the $filetype) in my old standard files (trying to start only using xml)
-//		keyInList() & MergeKeywordLists(), "key=value" list utilities
-//		WaveListClass() & WaveInClass(), used for handling the "waveClass=ccccc;" in wave notes
-//		  also AddClassToWaveNote(), ExcludeWavesInClass()
+//	7	WaveListClass() & WaveInClass(), used for handling the "waveClass=ccccc;" in wave notes
+//		  also AddClassToWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
+//		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
+//	8	Contains lots of utility stuff
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
-//		AxisLabelFromGraph(), gets the axis label
-//		FindGraphsWithWave() & FindGizmoWithWave(), finds an existing graph or gizmo with a particular wave
+//		keyInList() & MergeKeywordLists(), "key=value" list utilities
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
-//		IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
+//		AxisLabelFromGraph(), gets the axis label
+//		FindGraphsWithWave() & FindGizmoWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
+//		getListOfTypesInFile(), returns file type (using the $filetype) in my old standard files (trying to start only using xml)
+//		DrawMarker(), draw a marker
 //		xy2saturatedColors(), computes saturated colors for and RGB wheel on an xy graph
 //		reverseList(), reverses a list, handy for prompt,popups
 //		monotonic(a), checks if a wave is monotonic
@@ -55,21 +56,14 @@ End
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
 //		RomanNumeral(j) converts a number to a Roman Numeral string
-//	7	Old legacy or deprecated functions
+//	9	Old legacy or deprecated functions
 
 
 
-//  ============================================================================  //
+//  ======================================================================================  //
 //  =========================== Start of Option Menu Functions ===========================  //
 
 // generic, used for lots of Menus
-//Function/S MenuItemIfWaveClassExists(item,classes,options)
-//	String item
-//	String classes
-//	String options
-//	String list = WaveListClass(classes,"*",options)
-//	return SelectString(strlen(list),"(","")+item
-//End
 Function/S MenuItemIfWaveClassExists(item,classes,optionsStr,[invisible,all])
 	String item						// string that you want to appear in menu
 	String classes					// semi-colon separated list of wave classes, can use "*" in classes
@@ -154,12 +148,12 @@ Function/S MenuItemIfWavesExists(item,matchStr,optionsStr,[invisible])
 	return SelectString(strlen(list),"(","")+item
 End
 
-//  =========================== End of Option Menu Functions ============================  //
-//  ============================================================================  //
+//  ============================ End of Option Menu Functions ============================  //
+//  ======================================================================================  //
 
 
-//  ============================================================================  //
-//  ============================== Start of Corner Labels ==============================  //
+//  ======================================================================================  //
+//  ============================== Start of Corner Labels ================================  //
 
 // Puts text on the lower right corner showing when the layout was made, and on the lower left showing where it came from
 Proc Layout_Corner_Labels_Style_()		// This is needed to make it show up in the "Layout Macros" menu
@@ -231,11 +225,11 @@ Function AddCornerLabelsToGraph([outside,size])
 	return 0
 End
 
-//  =============================== End of Corner Labels ==============================  //
-//  ============================================================================  //
+//  ================================ End of Corner Labels ================================  //
+//  ======================================================================================  //
 
 
-//  ============================================================================  //
+//  ======================================================================================  //
 //  ========================== Start of Multiple Graphs on Page ==========================  //
 
 // Put up multigraph layouts.  Each time you call this, it adds another graph to the layout
@@ -358,11 +352,11 @@ End
 //End
 
 //  =========================== End of Multiple Graphs on Page ===========================  //
-//  ============================================================================  //
+//  ======================================================================================  //
 
 
-//  ============================================================================  //
-//  ============================== Start of String Ranges ==============================  //
+//  ======================================================================================  //
+//  =============================== Start of String Ranges ===============================  //
 
 // This section is for dealing with random or usually non contiguous sequence of integers
 // i.e.  you took data in scans 1-30, but scans 17, and 25 were no good.  So the valid range is "1-16,18-24,26-30"
@@ -795,12 +789,12 @@ ThreadSafe Function/T compactRange(in) // take a range and return the most compa
 	return out
 End
 
-//  =============================== End of String Ranges ==============================  //
-//  ============================================================================  //
+//  ================================ End of String Ranges ================================  //
+//  ======================================================================================  //
 
 
-//	===================================================================================
-//	================================= Start of Progress Panel =================================
+//  ======================================================================================  //
+//	 =============================== Start of Progress Panel =============================== //
 
 Function/T ProgressPanelStart(percentName,[stop,showTime,status,wname,part,total])	// display a progress bar
 //	if the user does a "DoUpdate/W=$wname", then V_flag will be set to 2 if the stop button was pushed
@@ -1077,12 +1071,12 @@ End
 //	Sleep/S 1
 //	DoWindow/K $progressWin
 //End
-//	================================== End of Progress Panel =================================
-//	===================================================================================
+//  =============================== End of Progress Panel ================================  //
+//  ======================================================================================  //
 
 
-//  ============================================================================  //
-//  ============================== Start of Generic XML ===============================  //
+//  ======================================================================================  //
+//  ================================ Start of Generic XML ================================  //
 //
 //	XML support	 (occurance optionally allows selecting the the occuranceth instance of xmltag), note vectors usually delimited by a space
 //
@@ -1250,104 +1244,12 @@ ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance)	// returns the in
 	return i0
 End
 
-//  =============================== End of Generic XML ===============================  //
-//  ============================================================================  //
+//  ================================= End of Generic XML =================================  //
+//  ======================================================================================  //
 
 
-//  ============================================================================  //
-//  ========================= Start of some general utility functions ========================  //
-
-// make a function getFiletype that goes to a file and determines it's filetype
-Function/T getListOfTypesInFile(fname,path)
-	String fname									// full path name to file with tagged geometry values
-	String path									// name of Igor path
-
-	Variable refNum
-	Open/M="file containing tagged values"/P=$path/R/Z=2 refNum as fname
-	if (strlen(S_fileName)<1 || !refNum)
-		return ""
-	endif
-	String line
-	FReadLine refNum, line
-	Close refNum
-	if (!stringmatch(line[0],"$"))				// if it does not start with a '$' then forget it.
-		return ""
-	endif
-
-	Variable i
-	i = strlen(line)
-	i -= char2num(line[i-1])<32 ? 1 : 0
-	i -= char2num(line[i-2])<32 ? 1 : 0
-	line = line[0,i-1]							// trim off any c/r or new lines
-	i = strsearch(line,"//",0)					// remove comment
-	if (i>0)
-		line = line[0,i-1]
-	endif
-	line = ReplaceString("\t",line," ")			// change all tabs to spaces
-	line += " "										// ensure a space terminator
-
-	if (strsearch(line,"$filetype ",0)!=0)		// does not starts with $filetype, pass back the tag
-		i = strsearch(line," ",0)
-		return line[1,i-1]
-	endif
-	line = line[9,Inf]								// strip off the $filetype tag
-
-	// now get the value
-	for (i=0;i<strlen(line) && char2num(line[i])<=32;i+=1)
-	endfor
-	line = line[i,Inf]								// trim off leading spaces
-
-	for (i=strlen(line)-1;i>=0 && char2num(line[i])<=32;i-=1)
-	endfor
-	line = line[0,i]
-
-	line = ReplaceString(",",line,";")			// change all commas, and spaces to semi-colons
-	line = ReplaceString(" ",line,";")
-	return line
-End
-
-
-ThreadSafe Function keyInList(key,keyWordList,keySepStr,listSepStr)	// returns true if key=value pair is in the keyWordList
-	String key						// string with key
-	String keyWordList			// list of keyword=value pairs
-	String keySepStr				// separates key and value, defaults to colon
-	String listSepStr				// separates key value pairs, defaults to semicolon
-	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)	// default to colon
-	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
-
-	String find=key+keySepStr								// find this
-	if (strsearch(keyWordList,find,0)==0)				// check if it is at the start
-		return 1												// found key=value is first pair
-	endif
-	if ( strsearch(keyWordList,listSepStr+find,0)>0)		// check if key is after first key=value pair
-		return 1												// found key=value is a later pair
-	endif
-	return 0													// no key=value found
-End
-
-
-//	Merges two key=value lists, if priority=0, then list0 has priority, if priority=1 then list1
-ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepStr)
-	String list0,list1
-	Variable priority				// 0 or 1
-	String keySepStr				// separates key and value, defaults to colon
-	String listSepStr				// separates key value pairs, defaults to semicolon
-	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)	// default to colon
-	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
-	String item, key,value
-	Variable i,N=ItemsInList(list1)
-	for (i=0;i<N;i+=1)				// for each keyword=value pair in list1
-		item = StringFromList(i,list1,listSepStr)
-		key = StringFromList(0,item,keySepStr)
-		value = StringFromList(1,item,keySepStr)
-		if (keyInList(key,list0,keySepStr,listSepStr) && priority==0)
-			continue				// skip because key already in list0, and list0 has priority
-		endif
-		list0 = ReplaceStringByKey(key,list0,value,keySepStr,listSepStr)
-	endfor
-	return list0
-End
-
+//  ======================================================================================  //
+//  ============================ Start WaveClass in Wave Note ============================  //
 
 // return a list of waves in current folder having a "waveClass" that is a member of the list waveClassList
 // The waveClassList, is a semicolon separated list, and the members can have wildcards. e.g. "speImage*"
@@ -1388,92 +1290,6 @@ Function/T WaveListClass(waveClassList,search,options,[all,win,fldr])
 		endif
 		if (displayed && WaveInClass($name,waveClassList,all=all))
 			out += name+";"
-		endif
-	endfor
-	return out
-End
-//Function/T WaveListClass(waveClassList,search,options,[all])
-//	String waveClassList				// a list of acceptable wave classes (semicolon separated)
-//	String search						// same as first argument in WaveList()
-//	String options						// same as last argument in WaveList()
-//	Variable all						// when all is TRUE, then all of the classes in waveClassList must be present, not just one
-//	all = ParamIsDefault(all) ? 0 : !(!all)
-//	all = numtype(all) ? 0 : all
-//
-//	String in = WaveList(search,";",options), out=""
-//	String name
-//	Variable m
-//	for (m=0, name=StringFromList(0,in); strlen(name); m+=1,name=StringFromList(m,in))
-//		if (WaveInClass($name,waveClassList,all=all))
-//			out += name+";"
-//		endif
-//	endfor
-//	return out
-//End
-//Function/T WaveListClass(waveClassList,search,options)
-//	String waveClassList				// a list of acceptable wave classes (semicolon separated)
-//	String search						// same as first argument in WaveList()
-//	String options						// same as last argument in WaveList()
-//
-//	String in = WaveList(search,";",options), out=""
-//	String name
-//	Variable m
-//	for (m=0, name=StringFromList(0,in); strlen(name); m+=1,name=StringFromList(m,in))
-//		if (WaveInClass($name,waveClassList))
-//			out += name+";"
-//		endif
-//	endfor
-//	return out
-//End
-
-
-Function/T WavesWithMatchingKeyVals(inList,keyVals)
-	String inList						// a list of input waves (semicolon separated)
-	String keyVals						// key value pairs that must match for acceptance (optional)
-
-	if (strlen(inList)<1)				// nothing
-		return ""
-	elseif (strlen(keyVals)<1)		// nothing to do
-		return inList
-	endif
-
-	String out=""
-	String name, item, key,val
-	Variable m, i
-	for (m=0, name=StringFromList(0,inList); strlen(name); m+=1,name=StringFromList(m,inList))
-		Wave ww=$name
-		if (WaveExists(ww))
-			for (i=0;i<ItemsInlist(keyVals);i+=1)
-				item = StringFromList(i,keyVals)
-				key = StringFromList(0,item,"=")
-				val = StringFromList(1,item,"=")
-				if (StringMatch(StringByKey(key,note(ww),"="), val))
-					out += name+";"
-				endif
-			endfor
-		endif
-	endfor
-	return out
-End
-
-
-Function/T OnlyWavesThatAreDisplayed(inList,[not])
-	String inList						// a list of input waves (semicolon separated)
-	Variable not						// if TRUE, then only return wave from inList that are NOT displayed
-	not = ParamIsDefault(not) ? 0 : !(!not)
-
-	if (strlen(inList)<1)				// nothing
-		return ""
-	endif
-	String out=""
-	String name, item
-	Variable m, i, use
-	for (m=0, name=StringFromList(0,inList); strlen(name); m+=1,name=StringFromList(m,inList))
-		Wave ww=$name
-		if (WaveExists(ww))
-			use = strlen(FindGraphsWithWave(ww)) > 0
-			use = not ? !use : use
-			out += SelectString(use,"",name+";")
 		endif
 	endfor
 	return out
@@ -1534,28 +1350,6 @@ ThreadSafe Function WaveInClass(ww,waveClassList,[all])
 	endfor
 	return 0
 End
-//// returns true if any one of the classes of ww matches one of the classes in waveClassList
-//// note that the items in waveClassList can have wild cards
-//ThreadSafe Function WaveInClass(ww,waveClassList)
-//	Wave ww						// Wave to check
-//	String waveClassList			// a list of acceptable wave classes (semicolon separated)
-//	if (!WaveExists(ww) || strlen(waveClassList)<1)
-//		return 0
-//	endif
-//	String class = StringByKey("waveClass",note(ww),"=")	// class list stored in wave note (comma separated)
-//	String wavClass, matchClass
-//	Variable m, i
-//	for (m=0;m<ItemsInList(waveClassList);m+=1)			// check each item in waveClassList
-//		matchClass = StringFromList(m,waveClassList)
-//		for (i=0;i<ItemsInList(class,",");i+=1)
-//			wavClass = StringFromLIst(i,class,",")				// class item from the wave
-//			if (stringmatch(wavClass, matchClass))			// note that matchClass can have wild cards
-//				return 1
-//			endif
-//		endfor
-//	endfor
-//	return 0
-//End
 
 
 // Adds a class to a waveClass
@@ -1599,6 +1393,106 @@ ThreadSafe Function/T ExcludeWavesInClass(inList,excludeClassList)
 	return out
 End
 
+//  ============================= End WaveClass in Wave Note =============================  //
+//  ======================================================================================  //
+
+
+//  ======================================================================================  //
+//  ====================== Start of some general utility functions =======================  //
+
+Function/T WavesWithMatchingKeyVals(inList,keyVals)
+	String inList						// a list of input waves (semicolon separated)
+	String keyVals						// key value pairs that must match for acceptance (optional)
+
+	if (strlen(inList)<1)				// nothing
+		return ""
+	elseif (strlen(keyVals)<1)		// nothing to do
+		return inList
+	endif
+
+	String out=""
+	String name, item, key,val
+	Variable m, i
+	for (m=0, name=StringFromList(0,inList); strlen(name); m+=1,name=StringFromList(m,inList))
+		Wave ww=$name
+		if (WaveExists(ww))
+			for (i=0;i<ItemsInlist(keyVals);i+=1)
+				item = StringFromList(i,keyVals)
+				key = StringFromList(0,item,"=")
+				val = StringFromList(1,item,"=")
+				if (StringMatch(StringByKey(key,note(ww),"="), val))
+					out += name+";"
+				endif
+			endfor
+		endif
+	endfor
+	return out
+End
+
+
+Function/T OnlyWavesThatAreDisplayed(inList,[not])
+	String inList						// a list of input waves (semicolon separated)
+	Variable not						// if TRUE, then only return wave from inList that are NOT displayed
+	not = ParamIsDefault(not) ? 0 : !(!not)
+
+	if (strlen(inList)<1)				// nothing
+		return ""
+	endif
+	String out=""
+	String name, item
+	Variable m, i, use
+	for (m=0, name=StringFromList(0,inList); strlen(name); m+=1,name=StringFromList(m,inList))
+		Wave ww=$name
+		if (WaveExists(ww))
+			use = strlen(FindGraphsWithWave(ww)) > 0
+			use = not ? !use : use
+			out += SelectString(use,"",name+";")
+		endif
+	endfor
+	return out
+End
+
+
+ThreadSafe Function keyInList(key,keyWordList,keySepStr,listSepStr)	// returns true if key=value pair is in the keyWordList
+	String key						// string with key
+	String keyWordList			// list of keyword=value pairs
+	String keySepStr				// separates key and value, defaults to colon
+	String listSepStr				// separates key value pairs, defaults to semicolon
+	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)	// default to colon
+	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
+
+	String find=key+keySepStr								// find this
+	if (strsearch(keyWordList,find,0)==0)				// check if it is at the start
+		return 1												// found key=value is first pair
+	endif
+	if ( strsearch(keyWordList,listSepStr+find,0)>0)		// check if key is after first key=value pair
+		return 1												// found key=value is a later pair
+	endif
+	return 0													// no key=value found
+End
+
+
+//	Merges two key=value lists, if priority=0, then list0 has priority, if priority=1 then list1
+ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepStr)
+	String list0,list1
+	Variable priority				// 0 or 1
+	String keySepStr				// separates key and value, defaults to colon
+	String listSepStr				// separates key value pairs, defaults to semicolon
+	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)	// default to colon
+	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
+	String item, key,value
+	Variable i,N=ItemsInList(list1)
+	for (i=0;i<N;i+=1)				// for each keyword=value pair in list1
+		item = StringFromList(i,list1,listSepStr)
+		key = StringFromList(0,item,keySepStr)
+		value = StringFromList(1,item,keySepStr)
+		if (keyInList(key,list0,keySepStr,listSepStr) && priority==0)
+			continue				// skip because key already in list0, and list0 has priority
+		endif
+		list0 = ReplaceStringByKey(key,list0,value,keySepStr,listSepStr)
+	endfor
+	return list0
+End
 
 
 Function/T AxisLabelFromGraph(gName,w,axis)	// returns specified axis label for the top graph containing the wave
@@ -1738,6 +1632,55 @@ Function/T FindTablesWithWave(w)	// find the table windows which contains the sp
 	return out
 End
 
+
+// make a function getFiletype that goes to a file and determines it's filetype, this applies to old $tag type files
+Function/T getListOfTypesInFile(fname,path)
+	String fname									// full path name to file with tagged geometry values
+	String path									// name of Igor path
+
+	Variable refNum
+	Open/M="file containing tagged values"/P=$path/R/Z=2 refNum as fname
+	if (strlen(S_fileName)<1 || !refNum)
+		return ""
+	endif
+	String line
+	FReadLine refNum, line
+	Close refNum
+	if (!stringmatch(line[0],"$"))				// if it does not start with a '$' then forget it.
+		return ""
+	endif
+
+	Variable i
+	i = strlen(line)
+	i -= char2num(line[i-1])<32 ? 1 : 0
+	i -= char2num(line[i-2])<32 ? 1 : 0
+	line = line[0,i-1]							// trim off any c/r or new lines
+	i = strsearch(line,"//",0)					// remove comment
+	if (i>0)
+		line = line[0,i-1]
+	endif
+	line = ReplaceString("\t",line," ")			// change all tabs to spaces
+	line += " "										// ensure a space terminator
+
+	if (strsearch(line,"$filetype ",0)!=0)		// does not starts with $filetype, pass back the tag
+		i = strsearch(line," ",0)
+		return line[1,i-1]
+	endif
+	line = line[9,Inf]								// strip off the $filetype tag
+
+	// now get the value
+	for (i=0;i<strlen(line) && char2num(line[i])<=32;i+=1)
+	endfor
+	line = line[i,Inf]								// trim off leading spaces
+
+	for (i=strlen(line)-1;i>=0 && char2num(line[i])<=32;i-=1)
+	endfor
+	line = line[0,i]
+
+	line = ReplaceString(",",line,";")			// change all commas, and spaces to semi-colons
+	line = ReplaceString(" ",line,";")
+	return line
+End
 
 
 Function DrawMarker(x0,y0,dx,dy,style,[color,thick,dash,win,layer])
@@ -1941,24 +1884,30 @@ End
 
 
 
-ThreadSafe Function monotonic(a)
+ThreadSafe Function monotonic(a,[printIt])
 	// determines whether values of a particular wave are monotonic increasing (if any NaN, returns false)
 	Wave a		// the wave
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? 0 : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
 
 	if (!WaveExists(a))
-//		Abort "ERROR -- monotonic(), wave not found"
-		print "ERROR -- monotonic(), wave not found"
+		if (printIt)
+			print "ERROR -- monotonic(), wave not found"
+		endif
 		return NaN
 	elseif (numpnts(a)<=0)
-//		Abort "ERROR -- monotonic(), wave is empty"
-		print "ERROR -- monotonic(), wave is empty"
+		if (printIt)
+			print "ERROR -- monotonic(), wave is empty"
+		endif
 		return NaN
 	elseif (WaveDims(a)>1)
-//		Abort "ERROR -- monotonic(), wave is not 1D"
-		print "ERROR -- monotonic(), wave is not 1D"
+		if (printIt)
+			print "ERROR -- monotonic(), wave is not 1D"
+		endif
 		return NaN
 	endif
-	MatrixOP/O delta = a - rotateRows(a,1)
+	MatrixOP/FREE delta = a - rotateRows(a,1)
 	delta[0] = 0
 	WaveStats/M=1/Q delta
 	return !(V_min<0 || V_numNans)
@@ -2793,12 +2742,12 @@ Function RomanNumeral2Int(str)	// convert a Roman Numeral string to an integer
 	return j
 End
 
-//  ========================= End of some general utility functions =========================  //
-//  ============================================================================  //
+//  ======================= End of some general utility functions ========================  //
+//  ======================================================================================  //
 
 
-//  ============================================================================  //
-//  ========================== Start of legacy deprecated functions =========================  //
+//  ======================================================================================  //
+//  ======================== Start of legacy deprecated functions ========================  //
 
 Function/S CornerStamp1_()		// ONLY for backwards compatibility, DEPRECATED, use JZTutil#CornerStampWindow()
 	PathInfo home
@@ -2884,7 +2833,6 @@ End
 // returns 1 if the  calling function was invoked from a  menu item or command line (otherwise 0)
 Function topOfStack()
 	return strlen(GetRTStackInfo(2))<1
-//	return (ItemsInList(GetRTStackInfo(0))<3)
 End
 
 //Function abc()
@@ -2896,5 +2844,5 @@ End
 //	print S_value[0,72]
 //End
 
-//  ========================== End of legacy deprecated functions ==========================  //
-//  ============================================================================  //
+//  ========================= End of legacy deprecated functions =========================  //
+//  ======================================================================================  //
