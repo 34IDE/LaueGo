@@ -1,12 +1,9 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.08
+#pragma version = 2.10
 
-// add the following line to your "Procedure" window to get the old Q-distribution panel & functions
-//	#define EWSCAN_OLD_WAY
-
-
-// version 2.00 bings all of the Q-distributions in to one single routine whether depth or positioner
+// version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
+// version 2.10 cleans out a lot of the old stuff left over from pre 2.00
 
 #include "ImageDisplayScaling", version>=1.81
 #if (Exists("HDF5OpenFile")==4)
@@ -51,64 +48,6 @@ Static Constant DEFAULT_I0_SCALING = 1e5
 //	for a Lorentzian,   fwhm = 2*sqrt(K3)
 
 
-#ifdef OLD_WAY
-Menu LaueGoMainMenuName, dynamic
-	Submenu "Energy Scans"
-		"New Energy scan...",NewEnergyScan("","",NaN)
-		help={"Create a new data folder for an energy-wire scan, and prompt user for title and d0"}
-		"run:  Fill E vs Depth",Fill_EvsDepth("imagePath","")
-		help={"read the depth sorted images, and make a 2-d plot of energy vs depth, this command is not used much"}
-		"run:  Fill Q vs Depth",Fill_QvsDepth_OLD(NaN,"imagePath","","","",$"")
-		help={"read the depth sorted images, and make a 2-d plot of Q vs depth"}
-
-
-		     MenuItemIfWaveExists("    compute & fit Q at 1 depth","Q_Depth"),fitQat1depth(NaN,":")
-		help={"you should not need this, this is usually done by changing the line on the Q-depth plot"}
-		"Make Pseudo White Images",MakePseudoWhiteImages("","")
-		      help={"read all the depth sorted images and make the pseudo white beam plot"}
-		     MenuItemIfWaveExists("    Make movie of Energy Sums vs depth","imageEsum"),MakeEsumMovie()
-		      help={"take the pseudo white data already read in and make the depth movie"}
-		     MenuItemIfWaveExists("    Re-Plot Energy Sums vs depth","imageEsum"),MakeEsumPlot()
-		      help={"take the pseudo white data already read in and re-plot it"}
-		"run:  Fill Q at Various Positions",Fill_Q_PositionsOLD(NaN,"imagePath","","",$"")
-	      help={"read all energy scans (with no wire) and at many positions, and make a 2-d plot of Q at various positions"}
-		MenuItemIfWaveClassExists("  Re-Fit All Q parameters","Qhistogram;QdistAtPositions","MINCOLS:1,MAXCHUNKS:1"),reFitAllQdistributions($"")
-		"-"
-		"run:  Fill 3D Q-space at One Position",Fill1_3DQspace(0,"imagePath","","")
-		"  Make 3D Q-space Gizmo", MakeGizmoQspace3d($"")
-		"-"
-		MenuItemIfWaveClassExists("Make Mask","rawImage*,speImage*;ImageSummed*","DIMS:2"),MakeMask($"")
-		      help={"make a mask from an image (often the pseudo white image)"}
-		MarqueeMaskMenuItem("    Clear the Mask"),ClearMask()
-		      help={"clear the current mask (usually accessed by clicking in marquee)"}
-		"-"
-		MenuItemIfWaveExists("Graph Intensity on [keV x Depth]","keV_Depth"),MakeGraph_keV_Depth()
-		help={"re-plot the energy-depth info read in using Fill_EvsDepth()"}
-		MenuItemIfWaveExists("Graph Intensity on [Q x Depth]","Q_Depth"),MakeGraph_Q_Depth()
-		help={"re-plot the Q-depth info read in using Fill_QvsDepth_OLD()"}
-		MenuItemIfWaveExists("re-plot x-y positions [to locate Q distns]","Q_Positions_RGB"),MakeGraph_Q_Positions(Q_Positions_RGB)
-		     MenuItemIfWaveExists("    Graph 1 Q histogram","Qhist"),MakeGraph_Qhist($"")
-		     help={"re-plot the single slice from the Q-depth surface"}
-
-		MenuItemIfGraphNamesExist("Layout [Q x Depth] & Q-histogram","QdistAtPositions*;*_Q_Depth;*_Qhist"),MakeLayoutQ_depth_hist("")
-		"Re-scale Q wave to strain",reScaleQwaveToStrain($"",NaN)
-		help={"make a nice layout for printing showing the Q-depth surface plot and the plot of a cut through it"}
-		"-"
-		"d[hkl] --> d0,     use xtal values",EnergyScans#update_d0()
-		help={"reset the d0 used to compute strains using d(nm) from 'Xtal' panel"}
-		// "Find moving axes from hdf5 files in a folder",WhatsMovingInFolder("")
-		// help={"identify which axes were scanned by looking at all of the hdf5 files"}
-	End
-//	help={"the commands associated with the Energy Scans package"}
-
-	Submenu "Set Igor Data Folder"
-		DataFolderListForMenus(),/Q, SetDataFolderFromMenu1()		// set to an-other data folder
-	End
-	help={"used to move between top level folders, also writes a note to history"}
-	"Find moving axes from image files in a folder",WhatsMovingInFolder("")
-	help={"identify which axes were scanned by looking at all of the image files"}
-End
-#else
 Menu LaueGoMainMenuName, dynamic
 	Submenu "Energy Scans"
 		"New Energy scan...",NewEnergyScan("","",NaN)
@@ -116,12 +55,12 @@ Menu LaueGoMainMenuName, dynamic
 		"run:  Fill Q-Distribution",Fill_Q_Positions(NaN,"imagePath","","","",$"",printIt=1)
 		help={"read the E-scanned images which were optionaly also scanned over positioner(s) or depth sorted, and make a N-d plot of Q vs position"}
 			MenuItemIfWaveClassExists("  Re-Plot Q-distribution [re-fit params too]","Qhistogram;QdistAtPositions","MINCOLS:1,MAXCHUNKS:1"),MakeOtherQhistWaves($"")
+			MenuItemIfWaveClassExists("  ReCalc an RGB for a Q-distribution","Q_Positions",""),MakeRGBforQdistribution($"",$"")
 			MenuItemIfWaveExists("  Graph 1 Q histogram","Qhist"),MakeGraph_Qhist($"")
 			help={"re-plot the single slice from the Q-depth surface"}
 		MenuItemIfWaveClassExists("Q-Distribution of One Loaded image","rawImage*","DIMS:2"), Fill_Q_1image(NaN,$"")
 		help={"just show the Q-distribution from a single image that is alerady loaded"}
 		MenuItemIfGraphNamesExist("Layout [Q x Position] + Q-histogram","*_Q"),MakeLayoutQ_Positions_hist("")
-
 		"-"
 		"Make Pseudo White Images",MakePseudoWhiteImages("","")
 		      help={"read all the depth sorted images and make the pseudo white beam plot"}
@@ -144,6 +83,7 @@ Menu LaueGoMainMenuName, dynamic
 		"Re-scale Q wave to strain",reScaleQwaveToStrain($"",NaN)
 		help={"make a nice layout for printing showing the Q-position surface plot and the plot of a cut through it"}
 		"-"
+		"Select Lineshape Function...", EnergyScans#Escan_SelectLineShapeFunction("")
 		"d[hkl] --> d0,     use xtal values",EnergyScans#update_d0()
 		help={"reset the d0 used to compute strains using d(nm) from 'Xtal' panel"}
 	End
@@ -156,7 +96,6 @@ Menu LaueGoMainMenuName, dynamic
 	"Find moving axes from image files in a folder",WhatsMovingInFolder("")
 	help={"identify which axes were scanned by looking at all of the image files"}
 End
-#endif
 
 // ===============================================================================================================
 // ===============================================================================================================
@@ -283,16 +222,16 @@ End
 //	which would occur when there was a wire scan in the process.
 //	and it is assumed that the sample is thin so that the yc in geo is correct for all images.
 Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm,dark,I0normalize,printIt])	// does not assume depth in image
-	Variable d0			// d-spacing of the strain=0 material (nm)
-	String pathName	// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
-	String nameFmt		// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
-	String range1		// range of first number in file name (likely energy)
-	String range2		// (OPTIONAL) range of second numbers file name (likely depth)
-	Wave mask			// optional mask to limit the pixels that get processed (use pixel when mask true)
-	Variable depth		// depth measured from origin, needed if images are not the result of a reconstruction (micron), default=0
-	Variable maskNorm	// use pixels outside of mask to normalize whole image (suppresses pedestal)
-	Wave dark			// an optional background wave
-	Variable I0normalize // a Flag, if True then normalize data (default is True)
+	Variable d0				// d-spacing of the strain=0 material (nm)
+	String pathName		// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
+	String nameFmt			// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
+	String range1			// range of first number in file name (likely energy)
+	String range2			// (OPTIONAL) range of second numbers file name (likely depth)
+	Wave mask				// optional mask to limit the pixels that get processed (use pixel when mask true)
+	Variable depth			// depth measured from origin, needed if images are not the result of a reconstruction (micron), default=0
+	Variable maskNorm		// use pixels outside of mask to normalize whole image (suppresses pedestal)
+	Wave dark				// an optional background wave
+	Variable I0normalize// a Flag, if True then normalize data (default is True)
 	Variable printIt
 	depth = ParamIsDefault(depth) ? NaN : depth
 	maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
@@ -302,10 +241,11 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	printIt = ParamIsDefault(printIt) ? Nan : printIt
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
-	if (!((d0>0)) && exists("d0")!=2)						// there is no d0, check with the user
+	if (!((d0>0)) && exists("d0")!=2)					// there is no d0, check with the user
 		DoAlert 2, "There is no d0, so you cannot get strain, just Q.  Do you want to set d0?"
-		if (V_flag==1)										// chose "Yes"
+		if (V_flag==1)											// chose "Yes"
 			Variable dnm = NumVarOrDefault("d0",NaN)
+			dnm = numtype(dnm) ? NumVarOrDefault("root:Packages:Lattices:PanelValues:dspace_nm",NaN) : dnm
 			Prompt dnm, "referencing d-spacing (nm)"
 			DoPrompt "d0",dnm
 			if (V_flag)
@@ -313,25 +253,26 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			endif
 			Variable/G $(GetDataFolder(1)+"d0")=dnm
 			d0 = dnm
-		elseif (V_flag==3)								// chose "Cancel"
-			return 1											// quitting
+		elseif (V_flag==3)									// chose "Cancel"
+			return 1												// quitting
 		endif
 	endif
-	if (!((d0>0)))											// invalid d0, check for a local value
+	if (!((d0>0)))												// invalid d0, check for a local value
 		d0 = NumVarOrDefault("d0",NaN)
+		d0 = numtype(d0) ? NumVarOrDefault("root:Packages:Lattices:PanelValues:dspace_nm",NaN) : d0
 	endif
 
 	String str
 	PathInfo $pathName
-	if (!V_flag || strlen(nameFmt)<1)				// path does not exist or no nameFmt, ask user
+	if (!V_flag || strlen(nameFmt)<1)					// path does not exist or no nameFmt, ask user
 		String pathPart
-		str = requestFileRootFmt(pathName,2)		// look for at most 2 ranges
+		str = requestFileRootFmt(pathName,2)			// look for at most 2 ranges
 		pathPart = StringFromList(0,str)
 		nameFmt = StringFromList(1,str)
 		if (strlen(pathPart)<1 || strlen(nameFmt)<1)
-			return 1											// invalid inputs
+			return 1												// invalid inputs
 		endif
-		if (!stringmatch(pathPart,S_path))			// path was changed
+		if (!stringmatch(pathPart,S_path))				// path was changed
 			if (stringmatch(pathName,"imagePath") || strsearch(pathName,":",0))
 				NewPath/O/M="path to reconstructed image files" imagePath pathPart	// for imagePath, automatically reassign
 			else
@@ -342,13 +283,13 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	PathInfo $pathName
 	if (strlen(S_path)<1 || strlen(nameFmt)<1)
-		return 1												// invalid inputs
+		return 1													// invalid inputs
 	endif
 	if (printIt)
 		printf "using data from files starting with '%s'\r",S_path+nameFmt
 	endif
 
-	Variable Nranges = calcNranges(nameFmt)		// number of ranges needed
+	Variable Nranges = calcNranges(nameFmt)			// number of ranges needed
 	String list = WaveListClass("imageMask","*","DIMS:2,BYTE:1")	// setup to use optional mask
 	String maskName = ""
 	if (WaveExists(mask))
@@ -364,7 +305,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		endif
 		maskNorm = maskNorm==2
 		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
-		Wave mask = $maskName							// do not check if wave exists, that a valid option
+		Wave mask = $maskName								// do not check if wave exists, that a valid option
 		printIt = 1
 	endif
 	maskName = SelectString(WaveExists(mask),"$\"\"",maskName)
@@ -387,7 +328,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable ask = (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))	// range is empty, need to ask
 	ask = ask || numtype(I0normalize)
 	if (ask) 	// if range1 is empty, get the full range from the directory
-		if (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))	// range is empty, need to ask
+		if (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))					// range is empty, need to ask
 			str = getNranges(pathName,nameFmt,printIt=1)
 			range1 = StringFromList(0,str)
 			if (Nranges>1)
@@ -434,7 +375,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	if (WaveExists(mask))
 		if (sum(mask)==0)
 			DoAlert 0, "You picked a mask that is all zero, stopping"
-			DoWindow/K $progressWin					// done with status window
+			DoWindow/K $progressWin						// done with status window
 			return 1
 		endif
 	endif
@@ -443,7 +384,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable N1N2=(N1<1 ? 1:N1) * (N2<1 ? 1:N2)	// total number of images
 	if (N1<1 || (Nranges>1 && N2<1))
 		DoAlert 0, "range is empty"
-		DoWindow/K $progressWin						// done with status window
+		DoWindow/K $progressWin							// done with status window
 		return 1
 	endif
 	if (N1>0)
@@ -453,16 +394,16 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		printf "range2  %g  %s\r",N2,range2[0,300]
 	endif
 
-	String fileFullFmt									// complete path up to and including the underscore
+	String fileFullFmt										// complete path up to and including the underscore
 	PathInfo $pathName
-	if (V_flag)												// if path exists, reset pathName to the explicit path, otherwise assume it is the explicit path
+	if (V_flag)													// if path exists, reset pathName to the explicit path, otherwise assume it is the explicit path
 		fileFullFmt = S_path
 	elseif (strsearch(pathName,":",Inf,1) == strlen(pathName)-1)
-		fileFullFmt = pathName+":"					// ensure terminating colon
+		fileFullFmt = pathName+":"						// ensure terminating colon
 	endif
 	fileFullFmt += nameFmt
 
-	Variable microSec0 = stopMSTimer(-2)			// used for timing, number of µsec
+	Variable microSec0 = stopMSTimer(-2)				// used for timing, number of µsec
 	Variable microSec = microSec0
 	STRUCT microGeometry geo
 	FillGeometryStructDefault(geo)
@@ -507,7 +448,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	Variable Q0=2*PI/d0										// Q of unstrained material (1/nm)
 	range2 = SelectString(ItemsInRange(range2),"-1",range2)
-
 
 	// read header from each of the images, and store it to figure out what was done.
 	// hold the positions and energies
@@ -557,7 +497,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	FindScalingFromVec(depth_FillQvsPositions,0.1,off,ddep,Nz)	//  "    "    "   "     "   "    "     "   "  depths
 	Variable depth0 = WaveMin(depth_FillQvsPositions)
 
-	// correct the scan ranges as necessary
+	// let the user correct the scan ranges as necessary
 	dkeV = abs(dkeV)
 	dx = abs(dx)
 	dy = abs(dy)
@@ -662,14 +602,14 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	// determine scanned & un-scanned coordinates
 	Make/N=4/FREE Nm={Nx,Ny,Nz,-1}, Idims={0,1,2,3}
 	Sort/R Nm, Nm, Idims
-	Nm = Nm<=1 ? 0 : Nm										// make unscanned dimensions 0, not 1
+	Nm = Nm<=1 ? 0 : Nm												// make unscanned dimensions 0, not 1
 
 	// info on scanned coordinates
 	Make/N=3/T/FREE LablesWAV={"Xsample", "Hsample", "Depth"}, TagsWAV={"X1", "H1", "Depth"}, UnitsWAV={"µm", "µm", "µm"}
 	Make/N=3/D/FREE offsetsWAV={X0, H0, depth0}, deltasWAV={dx, dy, ddep}
 	Make/N=4/T/FREE DimTags="",LabelNames="", LabelUnits=""
 	Make/N=4/D/FREE del, dim0
-	Variable nDim												// number of dimensions in Q_Positions [1-4]
+	Variable nDim														// number of dimensions in Q_Positions [1-4]
 	for (nDim=0; nDim<3 && Nm[nDim]>0; nDim+=1)
 		DimTags[nDim] = TagsWAV[Idims[nDim]]
 		LabelNames[nDim] = LablesWAV[Idims[nDim]]
@@ -677,7 +617,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		dim0[nDim] = offsetsWAV[Idims[nDim]]
 		del[nDim] = deltasWAV[Idims[nDim]]
 	endfor
-	Nm[nDim] = NQ												// last one is always Q
+	Nm[nDim] = NQ														// last one is always Q
 	DimTags[nDim] = "Q"
 	LabelNames[nDim] = "Q"
 	LabelUnits[nDim] = "1/nm"
@@ -685,11 +625,11 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	del[nDim] = abs((Qmax-Qmin)/NQ)
 	nDim += 1 
 
-	Make/N=(Nm[0],Nm[1],Nm[2],Nm[3])/O/D Q_Positions				// array to save Q scans as function of position (X, H, depth)
+	Make/N=(Nm[0],Nm[1],Nm[2],Nm[3])/O/D Q_Positions		// array to save Q scans as function of position (X, H, depth)
 	Make/N=(Nm[0],Nm[1],Nm[2],Nm[3])/FREE/D Q_PositionsNorm=0	// holds number of pixels contributing to each element in Q_Positions[], use to normalize
 	Q_Positions = 0
-	Make/N=(NQ)/O/D Qhist									// array to hold Q's from one image
-	Make/N=(NQ)/FREE/D QhistNorm							// number of pixels used for each Qhist, use to normalize
+	Make/N=(NQ)/FREE/D Qhist										// array to hold Q's from one image
+	Make/N=(NQ)/FREE/D QhistNorm									// number of pixels used for each Qhist, use to normalize
 	SetScale/P x dim0[0],del[0],LabelUnits[0], Q_Positions,Q_PositionsNorm
 	SetScale/P y dim0[1],del[1],LabelUnits[1], Q_Positions,Q_PositionsNorm
 	SetScale/P z dim0[2],del[2],LabelUnits[2], Q_Positions,Q_PositionsNorm
@@ -701,10 +641,10 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	// done with the setup part, now actually compute something
 
-	if (useDistortion)										// if using the distortion, precompute for all images  here
+	if (useDistortion)												// if using the distortion, precompute for all images  here
 		Abort "Fill_Q_Positions(), filling the distortion map needs serious fixing"
 		Wave DistortionMap = GetDistortionMap(startx,starty, groupx,groupy, Ni,Nj)	// if using the distortion, precompute for all images here
-	endif																// distortion map now ready
+	endif																	// distortion map now ready
 
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
 	Wave sinTheta = $(MakeSinThetaArray(name,geo,depth=depth))	// make an array the same size as an image, but filled with sin(theta) for this energy
@@ -712,10 +652,10 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Make/N=(Ni*Nj)/I/FREE indexWaveQ
 	indexWaveQ = p
 	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
-	Sort sinTheta, sinTheta,indexWaveQ						// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
+	Sort sinTheta, sinTheta,indexWaveQ							// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
 
 	print "starting bulk of processing"
-	microSec = stopMSTimer(-2)								// timing bulk of processing
+	microSec = stopMSTimer(-2)									// timing bulk of processing
 	Variable sec3=0,timer3
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N1N2)+" images",resetClock=1)	// update progress bar
 	// for all the N1N2 files (go over range), compute Qhist for each image
@@ -724,20 +664,20 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2),ipnt+=1)					// loop over range2
 			if (mod(ipnt,100)==0)
 				if (ProgressPanelUpdate(progressWin,ipnt/N1N2*100))// update progress bar
-					break												//   and break out of loop
+					break													//   and break out of loop
 				endif
 			endif
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)	// image name to process
 
 			// accumulate the Q histogram for one image into Qhist
-			Qhist = 0												// needed because FillQhist1imageFile() accumulates into Qhist
+			Qhist = 0													// needed because FillQhist1imageFile() accumulates into Qhist
 			QhistNorm = 0
 			// fill Qhist from one file
 			wnote = FillQhist1imageFile(name,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,dark=dark,maskNorm=maskNorm,i0normalize=i0normalize)
 			timer3=startMSTimer
 			if (NumberByKey("V_min", wnote,"=")==0  && NumberByKey("V_max", wnote,"=")==0)
 				sec3 += stopMSTimer(timer3)/1e6
-				continue												// no intensity here, so continue
+				continue													// no intensity here, so continue
 			endif
 			i = round((NumberByKey(DimTags[0], wnote,"=")-dim0[0])/del[0]) ;	i = numtype(i) ? 0 : i
 			j = round((NumberByKey(DimTags[1], wnote,"=")-dim0[1])/del[1]) ;	j = numtype(j) ? 0 : j
@@ -761,14 +701,30 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	if (useDistortion)
 		Note/K DistortionMap, "use=0"
 	endif
-	Q_Positions /= Q_PositionsNorm							// do the normalization
+	Q_Positions /= Q_PositionsNorm								// do the normalization
 	Q_Positions = numtype(Q_Positions) ? NaN : Q_Positions
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt)
 		printf "\r  processing all %d images took %s	(%.3g µs/pixel)\r",N1N2,Secs2Time(seconds,5,1),1e6*seconds/(N1N2*Npixels)
 		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
 	endif
-	microSec = stopMSTimer(-2)								// timing final stuff
+
+	FindValue/TEXT="Depth"/TXOP=4/Z DimTags
+	if (V_value>=0)													// if Depth is an axis (meaning it varies), remove it from note
+		wnote = RemoveByKey("Depth",wnote,"=")
+	endif
+	wnote = RemoveByKey("X2",wnote,"=")						// do not need any wire position information
+	wnote = RemoveByKey("Y2",wnote,"=")
+	wnote = RemoveByKey("Z2",wnote,"=")
+	wnote = RemoveByKey("H2",wnote,"=")
+	wnote = RemoveByKey("F2",wnote,"=")
+	wnote = RemoveByKey("wirebaseX",wnote,"=")
+	wnote = RemoveByKey("wirebaseY",wnote,"=")
+	wnote = RemoveByKey("wirebaseZ",wnote,"=")
+	wnote = RemoveByKey("AerotechH",wnote,"=")
+	wnote = RemoveByKey("V_min",wnote,"=")					// the V_min & V_max are left over from the Qhist fitting
+	wnote = RemoveByKey("V_max",wnote,"=")
+	microSec = stopMSTimer(-2)									// timing final stuff
 
 	if (WaveExists(mask))
 		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
@@ -780,16 +736,21 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	wnote = ReplaceNumberByKey("I0normalize",wnote,I0normalize,"=")
 	String title = StrVarOrDefault("title","")
 	if (strlen(title))
-		title = ReplaceString("=",title,"_")									// in the wave note the string cannot have "=" or ";"
+		title = ReplaceString("=",title,"_")					// in the wave note the string cannot have "=" or ";"
 		title = ReplaceString(";",title,"_")
 		wnote = ReplaceStringByKey("title",wnote,title,"=")
 	endif
 	Note/K Q_Positions, wnote
-	CompressEmptyDimensions(Q_Positions,1)									// remove empty dimensions from Q_Positions wave (1's & 0's are empty)
-	MakeOtherQhistWaves(Q_Positions,printIt=printIt)						// make waves for plotting and put up plot(s)
+	CompressEmptyDimensions(Q_Positions,1)					// remove empty dimensions from Q_Positions wave (1's & 0's are empty)
+	if (WaveDims(Q_Positions)==1)
+		Note/K Q_Positions, ReplaceStringByKey("waveClass",note(Q_Positions),"Qhistogram","=")
+		MakeGraph_Qhist(Q_Positions)								// just a single Q-distribution, plot it
+	else
+		MakeOtherQhistWaves(Q_Positions,printIt=printIt)	// make waves for plotting and put up plot(s)
+	endif
 
 	// done with processing, clean up
-	DoWindow/K $progressWin														// done with status window
+	DoWindow/K $progressWin										// done with status window
 	KillWaves/Z sinTheta
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt)
@@ -805,19 +766,20 @@ End
 
 
 
-Function MakeOtherQhistWaves(Q_Positions,[printIt])	// make waves for plotting and put up plot(s)
+Function MakeOtherQhistWaves(Q_Positions,[printIt,Qlo,Qhi])	// make waves for plotting and put up plot(s)
 	Wave Q_Positions
 	Variable printIt
+	Variable Qlo, Qhi
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+	Qlo = ParamIsDefault(Qlo) ? NaN : Qlo
+	Qhi = ParamIsDefault(Qhi) ? NaN : Qhi
 
 	if (!WaveExists(Q_Positions))
-		String qName, wlist=WaveListClass("QdistAtPositions,Qhistogram","*","MINCOLS:1")
-		if (ItemsInList(wlist)<1)
-			return 1
-		elseif (ItemsInList(wlist)==1)
+		String qName, wlist=WaveListClass("QdistAtPositions","*","MINCOLS:1")+WaveListClass("Qhistogram","*","")
+		if (ItemsInList(wlist)==1)
 			Wave Q_Positions=$StringFromList(0,wlist)
-		else
+		elseif (ItemsInList(wlist)>1)
 			Prompt qName,"Q_Positions wave",popup,wlist
 			DoPrompt "Q_Positions",qName
 			if (V_flag)
@@ -825,165 +787,62 @@ Function MakeOtherQhistWaves(Q_Positions,[printIt])	// make waves for plotting a
 			endif
 			Wave Q_Positions=$qName
 		endif
+		printIt = 1
 	endif
 	if (!WaveExists(Q_Positions))
 		return 1
 	endif
-
-	Variable nDim = WaveDims(Q_Positions)					// number of dimensions
-	String wnote = note(Q_Positions)
-	Variable Q0 = NumberByKey("Q0",wnote,"=")
-	Q0 = Q0>0 ? Q0 : 0
-	Variable I0normalize = NumberByKey("I0normalize",wnote,"=")
-	I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
-
-	Make/N=(4)/D/FREE Nm
-	Nm = DimSize(Q_Positions,p)
-	Make/N=4/T/FREE DimTags
-	String str=StringByKey("DimTags",wnote,"=")
-	DimTags = StringFromList(p,str,",")
-	// all information accumulated, make auxiallary waves suitable for display
-
-	Nm[nDim-1] = 0					// dimension index for the Q, the last one, zero out the Q dimension
-	// create the waves for displaying
-	Make/N=(Nm[0],Nm[1],Nm[2])/O Q_Positions_dQ=NaN		// holds the image to plot, delta peak position (1/Nm)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O Q_Positions_Qwidth=NaN	// holds the image to plot, with of Q peak (1/nm)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O Q_Positions_Intens=NaN	// holds the image to plot, max intensity
-	Nm[nDim-1] = 0
-
-	Variable Nx=Nm[0], Ny=Nm[1], Nz=Nm[2]
-	String list
-	Variable quiet=0													// first time through, not quiet
-	Variable i,j,k
-	for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)							// execute z-loop at least once
-		for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)						// execute y-loop at least once
-			for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)					// execute x-loop at least once
-				Wave Qhist = QhistFromQpositions(Q_Positions,i,j,k)		// from a Q_positions type array, re-make Qhist, and fit it
-				list = fitOneQhist(Qhist,quiet=quiet)
-				quiet = 1
-				Q_Positions_dQ[i][j][k] = NumberByKey("Qcenter",list,"=")-Q0	// delta Q
-				Q_Positions_Qwidth[i][j][k] = NumberByKey("Qfwhm",list,"=")		// Q width
-				Q_Positions_Intens[i][j][k] = WaveMax(Qhist)							// max intensity
-			endfor
-		endfor
-	endfor
-	WaveStats/M=1/Q Q_Positions_dQ
-	Variable Qrange = max(abs(V_min),abs(V_max))		// used to scale the color of _Qpk waves, a symmetric Q range
-	Variable ImaxPnt = V_maxloc
-	Variable XofMax=NaN, HofMax=NaN, DepthofMax=NaN
-	Make/N=3/D/FREE maxLocs={V_maxRowLoc,V_maxColLoc,V_maxLayerLoc}
-	Make/N=3/T/FREE prefix={"X","Y","Z","W"}
-	for (i=0;i<(nDim-1);i+=1)
-		if (StringMatch(DimTags[i],"X1"))
-			XofMax = maxLocs[i]
-			wnote = ReplaceStringByKey("label"+prefix[i],wnote,"X","=")
-		elseif (StringMatch(DimTags[i],"H1"))
-			HofMax = maxLocs[i]
-			wnote = ReplaceStringByKey("label"+prefix[i],wnote,"H","=")
-		elseif (StringMatch(DimTags[i],"Depth"))
-			DepthofMax = maxLocs[i]
-			wnote = ReplaceStringByKey("label"+prefix[i],wnote,"Depth","=")
-		endif
-	endfor
-	wnote = ReplaceStringByKey("label"+prefix[nDim-1],wnote,"Q","=")
-	CopyScales/I Q_Positions, Q_Positions_dQ,Q_Positions_Intens
-	SetScale d -Qrange,Qrange,"1/nm", Q_Positions_dQ
-	WaveStats/M=1/Q Q_Positions_Intens
-	Variable maxIntens = V_max
-
-	if (nDim>2)														// want to make the RGB wave
-		Nm[nDim-1] = 3												// for RGB
-		Make/N=(Nm[0],Nm[1],Nm[2],Nm[3])/O/W/U Q_Positions_RGB=0	// holds the RGB image to plot
-		Nm[nDim-1] = 0
-		CopyScales/I Q_Positions, Q_Positions_RGB
-
-		// set the RGB wave based on dQ and Intensity
-		Variable cMax = 65535
-		Q_Positions_RGB = 0
-		Variable red,green,blue, maxc, intens
-		for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)					// execute z-loop at least once
-			for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)				// execute y-loop at least once
-				for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)			// execute x-loop at least once
-					blue = (Q_Positions_dQ[i][j][k] + Qrange)/(2*Qrange)		// set the hue
-					red = 1-blue
-					green= min(red,blue)
-					maxC = max(max(red,green),blue)							// max RGB value
-					intens = Q_Positions_Intens[i][j][k]					// intensity of this point
-					red = cMax * red/maxC * intens/maxIntens			// set to saturated values scaled down by intensity
-					green = cMax * green/maxC * intens/maxIntens
-					blue = cMax * blue/maxC * intens/maxIntens
-					if (nDim==4)
-						Q_Positions_RGB[i][j][k][0] = limit(red,0,cMax)		// red
-						Q_Positions_RGB[i][j][k][1] = limit(green,0,cMax)	// green
-						Q_Positions_RGB[i][j][k][2] = limit(blue,0,cMax)		// blue
-					elseif (nDim==3)
-						Q_Positions_RGB[i][j][0] = limit(red,0,cMax)
-						Q_Positions_RGB[i][j][1] = limit(green,0,cMax)
-						Q_Positions_RGB[i][j][2] = limit(blue,0,cMax)
-					elseif (nDim==2)
-						Q_Positions_RGB[i][0] = limit(red,0,cMax)
-						Q_Positions_RGB[i][1] = limit(green,0,cMax)
-						Q_Positions_RGB[i][2] = limit(blue,0,cMax)
-					elseif (nDim==1)
-						Q_Positions_RGB[0] = limit(red,0,cMax)
-						Q_Positions_RGB[1] = limit(green,0,cMax)
-						Q_Positions_RGB[2] = limit(blue,0,cMax)
-					endif
-				endfor
-			endfor
-		endfor
-	endif
-
-	wnote = ReplaceStringByKey("waveClass",wnote,"Q_Positions","=")
-	wnote = ReplaceStringByKey("sourceWave",wnote,GetWavesDataFolder(Q_Positions,2),"=")
-	Note/K Q_Positions_Intens, wnote
-	wnote = ReplaceNumberByKey("minColor",wnote,-Qrange,"=")			// max and min values, used for the color scaling
-	wnote = ReplaceNumberByKey("maxColor",wnote,Qrange,"=")
-	wnote = ReplaceNumberByKey("ImaxPnt",wnote,ImaxPnt,"=")
-	wnote = ReplaceNumberByKey("XofMax",wnote,XofMax,"=")				// X with the max point (µm)
-	wnote = ReplaceNumberByKey("HofMax",wnote,HofMax,"=")				// H with the max point (µm)
-	str = SelectString(I0normalize,"Intensity","Intensity / I\\B0\\M")
-	wnote = ReplaceStringByKey("labelValue",wnote,str,"=")
-	Note/K Q_Positions, ReplaceStringByKey("waveClass",wnote,"QdistAtPositions","=")
-	Note/K Q_Positions_Intens, wnote
-	Note/K Q_Positions_dQ, wnote
-	if (nDim>2)																			// made an RGB wave
-		Note/K Q_Positions_RGB, wnote
-	endif
-
-	// put up or refresh the plot of Qhist
-	WaveStats/M=1/Q Q_Positions
-	Variable imax, jmax, kmax
-	if (abs(V_max)>abs(V_min))
-		imax = (V_maxRowLoc-DimOffset(Q_Positions_dQ,0))/DimDelta(Q_Positions_dQ,0)
-		jmax = (V_maxColLoc-DimOffset(Q_Positions_dQ,1))/DimDelta(Q_Positions_dQ,1)
-		kmax = (V_maxLayerLoc-DimOffset(Q_Positions_dQ,2))/DimDelta(Q_Positions_dQ,2)
-	else
-		imax = (V_minRowLoc-DimOffset(Q_Positions_dQ,0))/DimDelta(Q_Positions_dQ,0)
-		jmax = (V_minColLoc-DimOffset(Q_Positions_dQ,1))/DimDelta(Q_Positions_dQ,1)
-		kmax = (V_minLayerLoc-DimOffset(Q_Positions_dQ,2))/DimDelta(Q_Positions_dQ,2)
-	endif
-	Wave Qhist = QhistFromQpositions(Q_Positions,imax,jmax,kmax)	// re-make Qhist, and fit it
-	list = fitOneQhist(Qhist)
 	if (printIt)
-		// list = note(Qhist)
+		printf "MakeOtherQhistWaves(%s",NameOfWave(Q_Positions)
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
+		printf ")\r"
+	endif
+
+	if (WaveDims(Q_Positions)==1)
+		Note/K Q_Positions, ReplaceStringByKey("waveClass",note(Q_Positions),"Qhistogram","=")
+		Wave Qhist = Q_Positions
+	else
+		if (ParamIsDefault(Qlo) && ParamIsDefault(Qhi))
+			Wave RGB=reFitAllQdistributions(Q_Positions)		// re-fit all of the Q-distributions, and make waves for plotting
+		else
+			Wave RGB=reFitAllQdistributions(Q_Positions,Qlo=Qlo,Qhi=Qhi)
+		endif
+
+		// put up or refresh the plot of Qhist
+		WaveStats/M=1/Q Q_Positions
+		Variable imax, jmax, kmax
+		if (abs(V_max)>abs(V_min))
+			imax = (V_maxRowLoc-DimOffset(Q_Positions,0))/DimDelta(Q_Positions,0)
+			jmax = (V_maxColLoc-DimOffset(Q_Positions,1))/DimDelta(Q_Positions,1)
+			kmax = (V_maxLayerLoc-DimOffset(Q_Positions,2))/DimDelta(Q_Positions,2)
+		else
+			imax = (V_minRowLoc-DimOffset(Q_Positions,0))/DimDelta(Q_Positions,0)
+			jmax = (V_minColLoc-DimOffset(Q_Positions,1))/DimDelta(Q_Positions,1)
+			kmax = (V_minLayerLoc-DimOffset(Q_Positions,2))/DimDelta(Q_Positions,2)
+		endif
+		Wave Qhist = QhistFromQpositions(Q_Positions,imax,jmax,kmax)	// re-make Qhist, and fit it
+	endif
+	if (printIt)
+		String list = fitOneQhist(Qhist,quiet=0,printIt=0)
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", list,"="),NumberByKey("Qfwhm", list,"=")
-		Variable strain = NumberByKey("strain", list,"=")
-		if (numtype(strain)==0)
-			printf ",   ÆQ = %.3f,   strain = %.1e",NumberByKey("ÆQ", list,"="),strain
+		Variable strainPeak = NumberByKey("strain", list,"=")
+		if (numtype(strainPeak)==0)
+			printf ",   ÆQ = %.3f,   strain = %.1e",NumberByKey("ÆQ", list,"="),strainPeak
 		endif
 		printf "\r"
 		String win = MakeGraph_Qhist(Qhist)
-		i = MoveWinToTopRight(win,-1,-1)
+		Variable i = MoveWinToTopRight(win,-1,-1)
 
-		win = MakeGraph_Q_NPositioners(Q_Positions,Q_Positions_RGB,imax,jmax,kmax)
+		win = MakeGraph_Q_NPositioners(Q_Positions,RGB,imax,jmax,kmax)
 		MoveWinToTopRight(win,-1,i-2)
 	endif
 	return 0
 End
 //
 Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// display a Q_Positions[][][][] array, THREE positioners + Q
-	Wave Q_positions									// usually Q_Positions_RGB
+	Wave Q_positions									// usually Q_Positions
 	Wave image											// usually Q_Positions_RGB, RGB wave associated with Q_Positions
 	Variable i0,j0	,k0								// default position of cursor
 	if (!WaveExists(Q_positions))
@@ -991,7 +850,7 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 		return ""
 	endif
 	Variable dim = WaveDims(Q_positions)-1	// number of positioners
-	if (dim>1 && !WaveExists(image))
+	if (dim>1 && !WaveExists(image))			// not just one simple Energy-Wirescan, so need an image
 		DoAlert 0,"no 'Q_Positions' image wave"
 		return ""
 	endif
@@ -1002,14 +861,14 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 	String graphName=CleanupName("Graph_"+GetWavesDataFolder(Q_Positions,0)+"_Q",0)
 	graphName = ReplaceString("__",graphName,"_")
 	String wnote=note(Q_positions)
-	Variable Q0=NumberByKey("Q0",wnote,"=")
+	Variable Q0=getCurrentQ0(wnote)
 	String labelX=StringByKey("labelX",wnote,"="), labelY=StringByKey("labelY",wnote,"="), labelZ=StringByKey("labelZ",wnote,"=")
 	labelX += SelectString(strlen(labelX),"",FixUnitsInLabel(WaveUnits(Q_positions,0)))
 	labelY += SelectString(strlen(labelY),"",FixUnitsInLabel(WaveUnits(Q_positions,1)))
 	labelZ += SelectString(strlen(labelZ),"",FixUnitsInLabel(WaveUnits(Q_positions,2)))
 	String title=StringByKey("title",wnote,"=")	// first try to get title from wave note
 	if (strlen(title)<1)
-		title = StrVarOrDefault("title","")			// nothing in wavenote, try the title global string
+		title = StrVarOrDefault("title","")	// nothing in wavenote, try the title global string
 	endif
 	title = SelectString(strlen(title),"",title+"\r\\Zr067")
 	title += GetWavesDataFolder(Q_positions,1)
@@ -1022,8 +881,8 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 	elseif (exists(graphName)==5)	
 		Execute graphName+"()"						// a recreation macro exists, run it
 
-	elseif (dim==1)
-		Display/W=(292,67,728,479)/K=1	// nothing exists, create the graph
+	elseif (dim==1)									// a single Energy-Wirescan
+		Display/W=(292,67,728,479)/K=1			// nothing exists, create the graph
 		DoWindow/C $graphName
 		AppendImage Q_Positions
 		ModifyImage Q_Positions ctab= {*,*,Terrain,1}
@@ -1042,7 +901,7 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 		endif
 		SetWindow kwTopWin hook(QfromCursor)=EnergyScans#QfromCursorHook	// this forces a re-calculation of Qhist when cursor A is moved
 
-	elseif (dim==2)
+	elseif (dim==2)									// Energy-Wirescans at multiple positions
 		Display/W=(292,67,728,479)/K=1			// nothing exists, create the graph
 		DoWindow/C $graphName
 		AppendImage image								// likely an RGB image
@@ -1203,7 +1062,7 @@ Function/WAVE Q_SumAllPositions(Qwav)			// sum over all the positions in a Q vs 
 	endif
 	TextBox/A=RT/C/N=text0/F=0 str
 
-	Variable Q0 = NumberByKey("Q0",wnote,"=")
+	Variable Q0=getCurrentQ0(wnote)
 	if (Q0>0)
 		SetDrawLayer UserFront
 		SetDrawEnv xcoord= bottom,ycoord= prel,dash= 1
@@ -1249,6 +1108,290 @@ Function MakeLayoutQ_Positions_hist(prefix)
 	endif
 	TextBox/N=stamp0/F=0/A=RB/X=0.17/Y=0.14 "\\Z06\\{\"%s %s\",date(), time()}"
 	TextBox/N=stamp1/F=0/A=LB/X=0.17/Y=0.14 "\\Z06\\{\"%s\",CornerStamp1_()}:"+gName
+End
+
+
+// This is normally only called by MakeOtherQhistWaves()
+Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all of the Q-distributions, and make waves for plotting
+	Wave Q_Positions
+	Variable Qlo, Qhi				// scales color of _dQ wave, or if no _dQ, scales _Qc
+	Qlo = ParamIsDefault(Qlo) ? NaN : Qlo
+	Qlo = numtype(Qlo) ? NaN : Qlo
+	Qhi = ParamIsDefault(Qhi) ? NaN : Qhi
+	Qhi = numtype(Qhi) ? NaN : Qhi
+	if (!WaveExists(Q_Positions))
+		return $""
+	endif
+
+	Variable nDim = WaveDims(Q_Positions)						// number of dimensions
+	String wnote = note(Q_Positions)
+	Variable Q0=getCurrentQ0(wnote)
+	Q0 = Q0>0 ? Q0 : 0
+	Variable I0normalize = NumberByKey("I0normalize",wnote,"=")
+	I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
+
+	Make/N=(4)/D/FREE Nm
+	Nm = DimSize(Q_Positions,p)
+	Make/N=4/T/FREE DimTags
+	String str=StringByKey("DimTags",wnote,"=")
+	DimTags = StringFromList(p,str,",")
+	// all information accumulated, make auxiallary waves suitable for display
+
+	Nm[nDim-1] = 0					// dimension index for the Q, the last one, zero out the Q dimension
+	// create the waves for displaying
+	String name=NameOfWave(Q_Positions)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qwidth")/WAVE=Qwidth =NaN	// holds the image to plot, width of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Intens")/WAVE=Intens =NaN	// holds the image to plot, max intensity
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qcenter")/WAVE=Qc =NaN		// holds the image to plot, center of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QpkArea")/WAVE=QpkArea =NaN	// holds the image to plot, center of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QcenterErr")/WAVE=QcErr =NaN// errors
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QwidthErr")/WAVE=QwidthErr =NaN
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qbkg")/WAVE=Qbkg =NaN
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QbkgErr")/WAVE=QbkgErr =NaN
+	if (numtype(Q0)==0)
+		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_dQ")/WAVE=dQ =NaN			// holds the image to plot, delta peak position (1/nm)
+		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strain")/WAVE=strain =NaN		// strain is available
+		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strainErr")/WAVE=strainErr =NaN
+	endif
+	Nm[nDim-1] = 0
+	Variable Nx=Nm[0], Ny=Nm[1], Nz=Nm[2]
+	String list
+	Variable quiet=0												// first time through, not quiet
+	Variable i,j,k, center
+	for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)						// execute z-loop at least once
+		for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)					// execute y-loop at least once
+			for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)				// execute x-loop at least once
+				Wave Qhist = QhistFromQpositions(Q_Positions,i,j,k)		// from a Q_positions type array, re-make Qhist, and fit it
+				list = fitOneQhist(Qhist,quiet=quiet,printIt=0)
+				quiet = 1
+				center = NumberByKey("Qcenter",list,"=")
+				Qc[i][j][k] = center											// Q of peak
+				Qwidth[i][j][k] = NumberByKey("Qfwhm",list,"=")		// Q width
+				Intens[i][j][k] = WaveMax(Qhist)							// max intensity
+				QpkArea[i][j][k] = NumberByKey("QpkArea",list,"=")	// area peak
+				Qbkg[i][j][k] = NumberByKey("QpkBkg",list,"=")		// bkg of the Lorentzian
+				QwidthErr[i][j][k] = NumberByKey("fwhmErr",list,"=")// the errors
+				QcErr[i][j][k] = NumberByKey("QcErr",list,"=")
+				QbkgErr[i][j][k] = NumberByKey("QpkBkgErr",list,"=")
+			endfor
+		endfor
+	endfor
+	CopyScales/I Q_Positions, Intens, Qc,QcErr, Qwidth,QwidthErr, QpkArea, Qbkg, QbkgErr
+	if (numtype(Q0)==0)
+		dQ = Qc-Q0													// delta Q
+		strain = -dQ/Q0
+		strainErr = QcErr/Q0
+		CopyScales/I Q_Positions, dQ, strain, strainErr
+		WaveStats/M=1/Q Qc
+		if (Qhi<=Qlo || numtype(Qlo+Qhi))					// figure out ÆQrange if valid number not passed
+			Qhi = max(abs(V_min),abs(V_max))				// used to scale the color of _dQ waves, a symmetric Q range
+			Qlo = -Qhi
+		endif
+		SetScale d Qlo,Qhi,"1/nm", dQ
+	else
+		WaveStats/M=1/Q Qc
+		Qlo = V_min													// RGB scaling uses Qc, set range of color scale
+		Qhi = V_max
+		SetScale d Qlo,Qhi,"1/nm", Qc
+	endif
+
+	WaveStats/M=1/Q Intens
+	Variable ImaxPnt=V_maxloc, maxIntens=V_max
+	Variable XofMax=NaN, HofMax=NaN, DepthofMax=NaN
+	Make/N=3/D/FREE maxLocs={V_maxRowLoc,V_maxColLoc,V_maxLayerLoc}
+	Make/N=3/T/FREE prefix={"X","Y","Z","W"}
+	for (i=0;i<(nDim-1);i+=1)
+		if (StringMatch(DimTags[i],"X1"))
+			XofMax = maxLocs[i]
+			wnote = ReplaceStringByKey("label"+prefix[i],wnote,"X","=")
+		elseif (StringMatch(DimTags[i],"H1"))
+			HofMax = maxLocs[i]
+			wnote = ReplaceStringByKey("label"+prefix[i],wnote,"H","=")
+		elseif (StringMatch(DimTags[i],"Depth"))
+			DepthofMax = maxLocs[i]
+			wnote = ReplaceStringByKey("label"+prefix[i],wnote,"Depth","=")
+		endif
+	endfor
+	wnote = ReplaceStringByKey("label"+prefix[nDim-1],wnote,"Q","=")
+
+	wnote = ReplaceStringByKey("waveClass",wnote,"Q_Positions","=")
+	wnote = ReplaceStringByKey("sourceWave",wnote,GetWavesDataFolder(Q_Positions,2),"=")
+	wnote = ReplaceNumberByKey("ImaxPnt",wnote,ImaxPnt,"=")
+	wnote = ReplaceNumberByKey("maxIntens",wnote,maxIntens,"=")
+	wnote = ReplaceNumberByKey("XofMax",wnote,XofMax,"=")		// X of the max point (µm)
+	wnote = ReplaceNumberByKey("HofMax",wnote,HofMax,"=")		// H of the max point (µm)
+	if (numtype(DepthofMax)==0)
+		wnote = ReplaceNumberByKey("DepthofMax",wnote,DepthofMax,"=") // depth of the max point (µm)
+	endif
+	str = SelectString(I0normalize,"Intensity","Intensity / I\\B0\\M")
+	wnote = ReplaceStringByKey("labelValue",wnote,str,"=")
+	Note/K Q_Positions, ReplaceStringByKey("waveClass",wnote,"QdistAtPositions","=")
+	Note/K Intens, wnote
+	Note/K Qc, wnote
+	Note/K Qwidth, wnote
+	Note/K QpkArea, wnote
+	Note/K Qbkg, wnote
+	Note/K QcErr, wnote
+	Note/K QwidthErr, wnote
+	Note/K QbkgErr, wnote
+	if (numtype(Q0)==0)
+		Note/K dQ, wnote
+		Note/K strain, wnote
+		Note/K strainErr, wnote
+		Wave RGB=MakeRGBforQdistribution(dQ,Intens,Qlo=Qlo,Qhi=Qhi,printIt=1)	// recalc the RGB for fancy plots
+	else
+		Wave RGB=MakeRGBforQdistribution(Qc,Intens,Qlo=Qlo,Qhi=Qhi,printIt=1)
+	endif
+	return RGB
+End
+//
+Static Function getCurrentQ0(wnote)		// get current Q0 (1/nm), first try from global Variable d0, then wave note
+	String wnote
+
+	Variable d0=NumVarOrDefault("d0",NaN), Q0
+	d0 = d0<=0 || numtype(d0) ? NumVarOrDefault("root:Packages:Lattices:PanelValues:dspace_nm",NaN) : d0
+	Q0 = 2*PI/d0
+	if (Q0<=0 || numtype(Q0))
+		Q0 = NumberByKey("Q0",wnote,"=")
+		if (Q0<=0 || numtype(Q0))
+			Q0 = 2*PI/NumberByKey("d0",wnote,"=")
+		endif
+	endif
+	Q0 = numtype(Q0) || Q0<=0 ? NaN : Q0
+	return Q0
+End
+
+
+
+Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi,power,printIt])				// this is for user input
+	Wave dQ, IntensIN
+	Variable Qlo,Qhi				// used to scale the color of _Qc wave, uses a symmetric Q range
+	Variable power					// power for scaling intensity, e.g. using IntensIN^power
+	Variable printIt
+	Qlo = ParamIsDefault(Qlo) ? NaN : Qlo
+	Qlo = numtype(Qlo) ? NaN : Qlo
+	Qhi = ParamIsDefault(Qhi) ? NaN : Qhi
+	Qhi = numtype(Qhi) ? NaN : Qhi
+	power = ParamIsDefault(power) ? 1 : power
+	power = numtype(power) ? 1 : power
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
+	String wlist=WaveListClass("Q_positions","*","")
+	if (!WaveExists(dQ) || !WaveExists(IntensIN))
+		String sdQ=NameOfWave(dQ), sIntens=NameOfWave(IntensIN)
+		sdQ = SelectString(strlen(sdQ),"Q_Positions_dQ",sdQ)
+		sIntens = SelectString(strlen(sIntens),"Q_Positions_Intens",sIntens)
+		Prompt sdQ,"dQ wave (for color)",popup,wlist
+		Prompt sIntens,"Intensity wave (for blackness)",popup,wlist+";-none-"
+		Prompt Qlo, "Lower scaling range of Q (use NaN for default)"
+		Prompt Qhi, "High scaling range of Q (use NaN for default)"
+		Prompt power, "power for scaling intensity (Intens^power)"
+		DoPrompt "Waves for RGB", sdQ,sIntens,Qlo,Qhi,power
+		if (V_flag)
+			return $""
+		endif
+		Wave dQ=$sdQ, IntensIN=$sIntens
+		printIt = 1
+	endif
+	if (!WaveExists(dQ))										//	if (!WaveExists(dQ) || !WaveExists(IntensIN))
+		return $""
+	endif
+	Variable nDim=WaveDims(dQ)								// number of dimensions
+	if (nDim<1 || nDim>=4)										// want to make the RGB wave
+		return $""
+	elseif (Qhi<=Qlo || numtype(Qlo+Qhi))					// figure out Qrange if valid numbers not passed
+		WaveStats/M=1/Q dQ
+		if (StringMatch(NameOfWave(dQ),"*_dQ"))			// for dQ, prefer symmetric range
+			Qhi = max(abs(V_min),abs(V_max))				// used to scale the color of _dQ waves
+			Qlo = -Qhi												// need a symmetric Q range
+		else
+			Qhi = V_max												// an asymmetric Q range
+			Qlo = V_min
+		endif
+	endif
+	power = numtype(power) ? 1 : power
+	if (printIt)
+		if (WaveExists(IntensIN))
+			sIntens = NameOfWave(IntensIN)
+		else
+			sIntens = "$\"\""
+		endif
+		printf "MakeRGBforQdistribution(%s, %s, Qlo=%g, Qhi=%g",NameOfWave(dQ),sIntens,Qlo, Qhi
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
+		if (power!=1)
+			printf ", power=%g",power
+		endif
+		printf ")\r"
+	endif
+
+	Make/N=(4)/D/FREE Nm
+	Nm = DimSize(dQ,p)
+	Nm[nDim] = 3													// dimension index for the RGB, the last one, zero out the Q dimension
+	String name = NameOfWave($StringByKey("sourceWave",note(dQ),"="))
+	Make/N=(Nm[0],Nm[1],Nm[2],Nm[3])/O/W/U $(name+"_RGB")/WAVE=RGB =0	// holds the image to plot, color
+	Nm[nDim] = 0
+	Variable cMax=65535, useIntensity=WaveExists(IntensIN)
+	if (useIntensity)
+		Duplicate/FREE IntensIN, Intens
+		Intens = abs(IntensIN)^power							// scaled intensity to use
+		WaveStats/M=1/Q Intens
+		Variable maxIntens=V_max, minIntens=V_min
+	endif
+	// set the RGB wave based on dQ and Intensity
+	//	minIntens = 0
+	Variable i,j,k, Nx=Nm[0], Ny=Nm[1], Nz=Nm[2]
+	Variable red,green,blue, maxc, iScaling=1
+	for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)						// execute z-loop at least once
+		for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)					// execute y-loop at least once
+			for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)				// execute x-loop at least once
+				blue = (dQ[i][j][k] - Qlo)/(Qhi-Qlo)		// set the hue, was blue = (dQ[i][j][k] + Qrange)/(2*Qrange)
+				red = 1-blue
+				green= min(red,blue)
+				maxC = max(max(red,green),blue)				// max RGB value
+				if (useIntensity)
+					iScaling = (Intens[i][j][k]-minIntens)/maxIntens// intensity scaling of this point
+				endif
+				red = cMax * red/maxC * iScaling			// set to saturated values scaled down by iScaling
+				green = cMax * green/maxC * iScaling
+				blue = cMax * blue/maxC * iScaling
+				if (nDim==3)
+					RGB[i][j][k][0] = limit(red,0,cMax)	// red
+					RGB[i][j][k][1] = limit(green,0,cMax)	// green
+					RGB[i][j][k][2] = limit(blue,0,cMax)	// blue
+				elseif (nDim==2)
+					RGB[i][j][0] = limit(red,0,cMax)
+					RGB[i][j][1] = limit(green,0,cMax)
+					RGB[i][j][2] = limit(blue,0,cMax)
+				elseif (nDim==1)
+					RGB[i][0] = limit(red,0,cMax)
+					RGB[i][1] = limit(green,0,cMax)
+					RGB[i][2] = limit(blue,0,cMax)
+				endif
+			endfor
+		endfor
+	endfor
+
+	String wnote=note(dQ)
+	String class=StringByKey("waveClass",wnote,"=")
+	class = ReplaceString("Q_Positions",class,"Q_Positions_RGB")
+	wnote = ReplaceStringByKey("waveClass",wnote,class,"=")
+	wnote = AddClassToWaveNote(wnote,"RGB")
+	wnote = ReplaceStringByKey("HueFromWave",wnote,NameOfWave(dQ),"=")
+	if (useIntensity)
+		wnote = ReplaceStringByKey("IntensFromWave",wnote,NameOfWave(IntensIN),"=")
+		wnote = ReplaceNumberByKey("IntensityScalPower",wnote,power,"=")
+	endif
+	wnote = ReplaceNumberByKey("minColor",wnote,Qlo,"=")	// max and min values, used for the color scaling
+	wnote = ReplaceNumberByKey("maxColor",wnote,Qhi,"=")
+	Note/K RGB, wnote
+	CopyScales/I dQ, RGB
+	if (printIt && WaveExists(RGB))
+		printf "Created new RGB wave  '%s'\r",NameOfWave(RGB)
+	endif
+	return RGB
 End
 
 
@@ -1664,12 +1807,16 @@ Function/WAVE QhistFromQpositions(source,i,j,k)		// from a Q_posiitions type arr
 End
 
 
-Function/T fitOneQhist(Qhist, [quiet,lo,hi,d0])
+Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 	Wave Qhist						// a 1-d Q distribution
 	Variable quiet					// only fit, NO fit_Qhist wave and NO ouput, NO graph updating (goes much faster too)
+	Variable printIt				// controls print out of peak information to history
 	Variable lo,hi					// range of Qhist to use for fitting (you can pass -Inf,Inf for whole range
 	Variable d0						// unstrained d-spacing (nm)
-	quiet = ParamIsDefault(quiet) ? 0 : !(!quiet)
+	quiet = ParamIsDefault(quiet) ? NaN : quiet
+	quiet = numtype(0) ? 0 : !(!quiet)			// default is NOT quiet
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(0) ? 0 : !(!printIt)	// default is NO print out
 	lo = ParamIsDefault(lo) ? NaN : lo
 	hi = ParamIsDefault(hi) ? NaN : hi
 	if (!WaveExists(Qhist))
@@ -1702,20 +1849,61 @@ Function/T fitOneQhist(Qhist, [quiet,lo,hi,d0])
 	Variable fwhm=NaN, Qc=NaN, QpkArea=NaN
 	Variable fwhmErr=NaN, QcErr=NaN
 	Variable bkg=NaN, bkgErr=NaN
+	Variable VoigtShape=NaN, VoigtShapeErr=NaN
+	Variable sl2 = sqrt(ln(2))
 	if (numtype(lo+hi)==0 && (hi-lo)>4)		// for a valid range, fit the peak
-		if (quiet)
-			CurveFit/Q/N lor Qhist[lo,hi]
-		else
-			CurveFit/Q lor Qhist[lo,hi]/D 
+		Variable fitLineShape=NumVarOrDefault("root:Packages:micro:Escan:fitLineShape",0)	// 0=Lorentz, 1=Gauss, 2=Voigt
+		if (fitLineShape==0)							// Lorentzian
+			CurveFit/Q/N=(quiet) lor Qhist[lo,hi]/AD=(!quiet)
+		elseif (fitLineShape==1)						// Gaussian
+			CurveFit/Q/N=(quiet) gauss Qhist[lo,hi]/AD=(!quiet)
+		elseif (fitLineShape==2)						// Voigt
+			CurveFit/Q/N gauss Qhist[lo,hi]			// this is just done to get the starting point
+			if (!V_FitError)
+				Wave W_coef=W_coef
+				Redimension/N=5 W_coef					// reset to fit one Voigt function
+				W_coef[2] = 1/K3							// width parameter
+				W_coef[3] = K2								// center of peak
+				W_coef[4] = 0.02							// start the fit near a Gaussian (easy and works OK)
+				FuncFit/Q/N=(quiet) VoigtFit W_coef Qhist[lo,hi]/AD=(!quiet)
+			endif
 		endif
 		if (!V_FitError)
-			fwhm = 2*sqrt(K3)							// for Lorentzian
-			Qc = K2
-			QpkArea = K1*2*PI/fwhm
-			Wave W_sigma=W_sigma
-			fwhmErr = 2*abs(W_sigma[3])/2
-			QcErr = abs(W_sigma[2])
-			bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+			if (fitLineShape==0)
+				fwhm = 2*sqrt(K3)							// for Lorentzian
+				Qc = K2
+				QpkArea = K1*2*PI/fwhm
+				Wave W_sigma=W_sigma
+				fwhmErr = 2*abs(W_sigma[3])/2
+				QcErr = abs(W_sigma[2])
+				bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+			elseif (fitLineShape==1)
+				fwhm = 2*K3*sl2							// for Gaussian
+				Qc = K2
+				QpkArea = K1 * abs(K3)*sqrt(PI)
+				Wave W_sigma=W_sigma
+				fwhmErr = 2*W_sigma[3]*sl2
+				QcErr = abs(W_sigma[2])
+				bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+			elseif (fitLineShape==2)
+				Variable c2=W_coef[2], c4=W_coef[4]
+				Variable hwg=sl2/c2
+				Variable hwl=c4/c2 
+				fwhm = 2* (hwl/2 + sqrt( hwl^2/4 + hwg^2) )	// for Voigt
+				Qc = W_coef[3]
+				QpkArea = W_coef[1]*sqrt(PI)/c2
+				VoigtShape = c4
+				Wave W_sigma=W_sigma
+				Variable denomRoot = sqrt( c4^2/(4*c2^2) + ln(2)/c2^2 )
+				Variable e4 = 1/abs(2*c2) + abs(c4)/ ( 4*c2^2 * denomRoot)		// d(hw)/d(c4)
+				Variable e2 = -1/c2^3 * ( c4^2/2 + 2*ln(2) )
+				e2 /= 2*denomRoot
+				e2 -= c4/(2*c2^2)
+				fwhmErr = 2 * (abs(e4*W_sigma[4]) + abs(e2*W_sigma[2]) )
+				QcErr = abs(W_sigma[3])
+				bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+				VoigtShapeErr = W_sigma[4]
+			endif
 		endif
 	endif
 
@@ -1734,9 +1922,21 @@ Function/T fitOneQhist(Qhist, [quiet,lo,hi,d0])
 	wnote = ReplaceNumberByKey("fwhmErr",wnote,fwhmErr,"=")
 	list = ReplaceNumberByKey("QpkBkg",list,bkg,"=")
 	list = ReplaceNumberByKey("QpkBkgErr",list,bkgErr,"=")
+	list = ReplaceNumberByKey("chisq",list,V_chisq,"=")
 
-	if (!quiet && (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc")))
-		printf "at peak, Q = %.5f±%.5f(1/nm),   fwhm = %.2g±%.2g(1/nm),   fwhm/Q = %.1e,   area = %.1e,      chisq=%.3g\r",Qc,QcErr,fwhm, fwhmErr,fwhm/Qc,QpkArea,V_chisq
+	String caller=StringFromList(0,GetRTStackInfo(0))
+//	Variable printIt = !quiet && (stringmatch(caller,"EscanButtonProc") || stringmatch(caller,"refitQhistogramButtonProc"))
+//	Variable printIt = !quiet && (stringmatch(caller,"EscanButtonProc"))
+	if (printIt)
+		printf "at peak, Q = %s(1/nm),   fwhm = %s(1/nm),   area = %.3g",ValErrStr(Qc,QcErr),ValErrStr(fwhm,fwhmErr),QpkArea
+		if (fitLineShape==0)
+			printf ",  Lorentzian shape"
+		elseif (fitLineShape==1)
+			printf ",  Gaussian shape"
+		elseif (fitLineShape==2)
+			printf ",  Voigt shape = %s",ValErrStr(VoigtShape,VoigtShapeErr)
+		endif
+		printf ",      chisq=%.3g\r",V_chisq
 	endif
 	if (numtype(d0)==0 && d0>0)
 		Variable Q0 = 2*PI/d0							// Q of unstrained material (1/nm)
@@ -1746,8 +1946,8 @@ Function/T fitOneQhist(Qhist, [quiet,lo,hi,d0])
 		list = ReplaceNumberByKey("Q0",list,Q0,"=")
 		list = ReplaceNumberByKey("strain",list,strain,"=")
 		list = ReplaceNumberByKey("strainErr",list,strainErr,"=")
-		if (!quiet && (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc")))
-			printf "   d0 = %g (nm),   Q0 = %g (1/nm),   strain = %.1e± %.1e\r",d0,Q0,strain,strainErr
+		if (printIt)
+			printf "   d0 = %g (nm),   Q0 = %g (1/nm),   strain = %s\r",d0,Q0,ValErrStr(strain,strainErr)
 		endif
 		list = ReplaceNumberByKey("ÆQ",list,Qc-Q0,"=")
 		wnote = ReplaceNumberByKey("ÆQ",wnote,Qc-Q0,"=")
@@ -1776,6 +1976,45 @@ Function/T fitOneQhist(Qhist, [quiet,lo,hi,d0])
 End
 
 
+Static Function Escan_SelectLineShapeFunction(shape)
+	String shape					// can only be "gauss" or "lorentzian", otherwise user is prompted
+
+	Variable fitLineShapeOld=NumVarOrDefault("root:Packages:micro:Escan:fitLineShape",0)
+	Variable fitLineShape=fitLineShapeOld
+	String fList="Lorentzian;Gaussian;Voigt"
+
+	if (StringMatch(shape,"gauss*"))
+		fitLineShape = 1
+	elseif (StringMatch(shape,"lor*"))
+		fitLineShape = 0
+	elseif (StringMatch(shape,"voigt*"))
+		fitLineShape = 0
+	else
+		fitLineShape += 1
+		Prompt fitLineShape,"Line Shape Fitting Function",popup,fList
+		DoPrompt "Line Shape",fitLineShape
+		if (V_flag)
+			return NaN
+		endif
+		fitLineShape -= 1
+	endif
+
+	NewDataFolder/O root:Packages
+	NewDataFolder/O root:Packages:micro
+	NewDataFolder/O root:Packages:micro:Escan
+	Variable/G root:Packages:micro:Escan:fitLineShape = fitLineShape
+
+	printf "\r\r\r"
+	if (fitLineShape==fitLineShapeOld)
+		printf "Line Shape Function UNCHANGED, still %s\r",StringFromList(fitLineShape,fList)
+	else
+		printf "Line Shape Function CHANGED from '%s' --> '%s'\r",StringFromList(fitLineShapeOld,fList),StringFromList(fitLineShape,fList)
+	endif
+	printf "\r\r\r"
+	return fitLineShape 
+End
+
+
 Static Function QfromCursorHook(s)		// updates the Q distribution plot by the cursor on a Q_positions image
 	STRUCT WMWinHookStruct &s
 	if (s.eventCode!=7 || !stringmatch(s.cursorName,"A"))	// only trap cursor A moved events
@@ -1793,7 +2032,7 @@ Static Function QfromCursorHook(s)		// updates the Q distribution plot by the cu
 		return 0
 	endif
 	Wave Qhist = QhistFromQpositions(source,s.pointNumber,s.yPointNumber,NaN)
-	fitOneQhist(Qhist)
+	fitOneQhist(Qhist,quiet=0,printIt=0)
 	return 1										// a one stops other hooks from processing too
 End
 //
@@ -1808,17 +2047,29 @@ End
 // ===============================================================================================================
 // ========================================= Start of Single Qhist Plot  =========================================
 
-Function/S MakeGraph_Qhist(Qhist)	// display a Qhist[] wave
+Function/S MakeGraph_Qhist(Qhist,[printIt])	// display a Qhist[] wave
 	Wave Qhist
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
 	if (!WaveExists(Qhist))
 		String QhistName = StringFromLIst(0,WaveListClass("Qhistogram","*","DIMS:1"))
 		if (strlen(QhistName))
 			Wave Qhist = $QhistName
 		endif
+		printIt = 1
 	endif
 	if (!WaveExists(Qhist))
 		DoAlert 0, "no 'Qhist' wave exists in this data folder"
 		return ""
+	endif
+	if (printIt)
+		printf "MakeGraph_Qhist(%s",NameOfWave(Qhist)
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
+		printf ")\r"
 	endif
 	String graphName=CleanupName("Graph_"+GetDataFolder(0)+"_Qhist",0)
 	if (strlen(WinList(graphName,"","WIN:1")))
@@ -1837,8 +2088,8 @@ Function/S MakeGraph_Qhist(Qhist)	// display a Qhist[] wave
 		AppendToGraph $fitName
 		ModifyGraph lSize($NameOfWave($fitName))=2
 	endif
-	ModifyGraph tick=2, mirror=1, minor=1, lowTrip=0.001, standoff=0
-	ModifyGraph mode(Qhist)=4, marker(Qhist)=19, lStyle(Qhist)=1, rgb(Qhist)=(16385,16388,65535), msize(Qhist)=2, hbFill(Qhist)=4
+	ModifyGraph tick=2, mirror=1, minor=1, lowTrip=0.001, standoff=0, zero(left)=3
+	ModifyGraph mode[0]=4, marker[0]=19, lStyle[0]=1, rgb[0]=(16385,16388,65535), msize[0]=2, hbFill[0]=4
 	ModifyGraph axOffset(left)=-3.85714,axOffset(bottom)=-0.461538
 	String labelValue = StringByKey("labelValue",wnote,"=")
 	labelValue = SelectString(strlen(labelValue),"Intensity",labelValue)	// default label for Y-axis is "Intensity"
@@ -1882,7 +2133,7 @@ Function/S MakeGraph_Qhist(Qhist)	// display a Qhist[] wave
 		DrawLine Q0,0,Q0,1
 	endif
 
-	Variable single = strlen(singleImage) ? 1 : NaN
+	Variable single = strlen(singleImage) || single ? 1 : NaN
 	if (numtype(single))
 		Wave sourceWave=$StringByKey("sourceWave",wnote,"=")
 		if (WaveExists(sourceWave))
@@ -1891,6 +2142,8 @@ Function/S MakeGraph_Qhist(Qhist)	// display a Qhist[] wave
 				Nmax = max(Nmax,DimSize(sourceWave,i))
 			endfor
 			single = numpnts(sourceWave) == Nmax
+		else
+			single = 1
 		endif
 	endif
 	if (single)
@@ -1917,7 +2170,7 @@ Static Function refitQhistogramButtonProc(ba) : ButtonControl
 		endif
 	endfor
 	if (WaveExists(Qhist))
-		fitOneQhist(Qhist)
+		fitOneQhist(Qhist,quiet=0,printIt=1)
 	endif
 	return 0
 End
@@ -2321,7 +2574,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	// done with the setup part, now actually compute something
 	Variable i, j
 	if (useDistortion)													// if using the distortion, precompute for all images  here
-		Abort "Fill_Q_PositionsOLD(), filling the distortion map needs serious fixing"
+		Abort "Fill_Q_Positions(), filling the distortion map needs serious fixing"
 		// check if distiortion map already exists
 		Variable distortionOK=0
 		if(exists("root:Packages:geometry:tempCachedDistortionMap")==1)	// wave exists, so check its size and location
@@ -2403,7 +2656,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 		printf "  processing image took %s	(%.3g µs/pixel)\r",Secs2Time(seconds,5,1),1e6*seconds/Npixels
 	endif
 
-	String QfitInfo = fitOneQhist(Qhist,d0=d0)
+	String QfitInfo = fitOneQhist(Qhist,d0=d0,quiet=1,printit=1)
 	wnote = MergeKeywordLists(wnote,QfitInfo,0,"=",";")
 
 	String title = StrVarOrDefault("title","")
@@ -2878,7 +3131,7 @@ Static Function/T directory(pathName)
 			print " the 'ls' command failed, you may want to add anther mount point to the directory() function to speed things up"
 			list = IndexedFile($pathName,-1,"."+imageExtension)
 		endif
-	else											// this sectio for Windows
+	else											// this section for Windows
 		list = IndexedFile($pathName,-1,imageExtension)	// list = IndexedFile($pathName,-1,"????")
 	endif
 	return list
@@ -3637,7 +3890,7 @@ End
 
 
 
-//	#ifdef OLD_WAY
+#ifdef OLD_WAY
 // ===============================================================================================================
 // ===============================================================================================================
 // ============================================== Start of OLD OLD ===============================================
@@ -5106,7 +5359,7 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 				Q_Positions_dQ[i][j] = V_maxloc-Q0		// set delta Q from position of max (no fitting)
 			else
 				Wave Qhist = QhistFromQpositions(Q_Positions,i,j,NaN)		// from a Q_posiitions type array, re-make Qhist, and fit it
-				list = fitOneQhist(Qhist,quiet=1)
+				list = fitOneQhist(Qhist,quiet=1,printit=0)
 				Q_Positions_dQ[i][j] = NumberByKey("Qcenter",list,"=")-Q0	// delta Q
 				Q_Positions_Qwidth[i][j] = NumberByKey("Qfwhm",list,"=")	// Q width
 				WaveStats/Q/M=1 Qhist
@@ -5164,7 +5417,7 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 	Note/K Q_Positions_dQ, wnote
 	Note/K Q_Positions_RGB, wnote
 	Wave Qhist = QhistFromQpositions(Q_Positions,imax,jmax,NaN)	// from a Q_posiitions type array, re-make Qhist, and fit it
-	fitOneQhist(Qhist)
+	fitOneQhist(Qhist,quiet=1,printIt=0)
 
 	if (numtype(Q0)==0 && Q0>0)
 		wnote = ReplaceNumberByKey("Q0",wnote,Q0,"=")
@@ -5198,7 +5451,7 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 
 	// put up or refresh the plot of Qhist
 	Wave Qhist = QhistFromQpositions(Q_Positions,imax,jmax,NaN)	// re-make Qhist, and fit it
-	list = fitOneQhist(Qhist)
+	list = fitOneQhist(Qhist,quiet=0,printIt=0)
 	if (topStack)
 		// list = note(Qhist)
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", list,"="),NumberByKey("Qfwhm", list,"=")
@@ -5297,24 +5550,41 @@ End
 
 
 
-Function reFitAllQdistributions(fullQarray)
+// DEPRECATED		DEPRECATED		DEPRECATED		DEPRECATED		DEPRECATED		DEPRECATED
+//	Part of the old way, use MakeOtherQhistWaves() instead
+Function reFitAllQdistributions_OLD(fullQarray,[printIt])
 	Wave fullQarray
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? 0 : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
 
-	String wname
-//	String list = WaveListClass("Qhistogram;QdistAtPositions","*","MINCOLS:2,MAXCHUNKS:1")
-	String list = WaveListClass("Qhistogram;QdistAtPositions","*","MINCOLS:1,MAXCHUNKS:1")
-	if (ItemsInList(list)==1)
-		Wave fullQarray = $StringFromList(0,list)
-	endif
-	if (!WaveInClass(fullQarray,"Qhistogram;QdistAtPositions"))
-		Prompt wname,"array of Q vs Depth (or Position)",popup,list
-		DoPrompt "Q vs Depth (or Position) to reFit",wname
-		if (V_flag)
-			return 1
+	String wname, list=""
+	if (!WaveExists(fullQarray))
+		list = WaveListClass("Qhistogram;QdistAtPositions","*","MINCOLS:1,MAXCHUNKS:1")
+		if (ItemsInList(list)==1)
+			Wave fullQarray = $StringFromList(0,list)
+		elseif (ItemsInList(list)>1)
+			Prompt wname,"array of Q vs Depth (or Position)",popup,list
+			DoPrompt "Q vs Depth (or Position) to reFit",wname
+			if (V_flag)
+				return 1
+			endif
+			Wave fullQarray = $wname
 		endif
-		Wave fullQarray = $wname
+		printIt = 1
+	endif
+	if (!WaveExists(fullQarray))
+		return 1
 	endif
 	wname=NameOfWave(fullQarray)
+	if (printIt)
+		printf "reFitAllQdistributions_OLD(%s",wname
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
+		printf ")\r"
+	endif
+
 	if (!WaveInClass(fullQarray,"Qhistogram;QdistAtPositions" ) || WaveDims(fullQarray)<2)
 		DoAlert 0,"cannot fit depths in "+wname+", it is not a 2 or 3D Q-histogram"
 		return 1
@@ -5339,12 +5609,12 @@ Function reFitAllQdistributions(fullQarray)
 	Q0 = !(Q0>0) ? 0 : Q0
 	Wave dQold = $(name+"_dQ")
 	String wnote=note(dQold)
-	Make/N=(Nx,Ny)/O $(name+"_dQ")/WAVE=dQ =NaN			// holds the image to plot, delta peak position (1/nm)
-	Make/N=(Nx,Ny)/O $(name+"_Qwidth")/WAVE=Qwidth =NaN	// holds the image to plot, width of Q peak (1/nm)
-	Make/N=(Nx,Ny)/O $(name+"_Intens")/WAVE=Intens =NaN	// holds the image to plot, max intensity
-	Make/N=(Nx,Ny)/O $(name+"_Qcenter")/WAVE=Qc =NaN		// holds the image to plot, center of Q peak (1/nm)
-	Make/N=(Nx,Ny)/O $(name+"_QpkArea")/WAVE=QpkArea =NaN// holds the image to plot, center of Q peak (1/nm)
-	Make/N=(Nx,Ny,3)/O/W/U $(name+"_RGB")/WAVE=RGB =0	// holds the image to plot, color
+	Make/N=(Nx,Ny)/O $(name+"_dQ")/WAVE=dQ =NaN				// holds the image to plot, delta peak position (1/nm)
+	Make/N=(Nx,Ny)/O $(name+"_Qwidth")/WAVE=Qwidth =NaN		// holds the image to plot, width of Q peak (1/nm)
+	Make/N=(Nx,Ny)/O $(name+"_Intens")/WAVE=Intens =NaN		// holds the image to plot, max intensity
+	Make/N=(Nx,Ny)/O $(name+"_Qcenter")/WAVE=Qc =NaN			// holds the image to plot, center of Q peak (1/nm)
+	Make/N=(Nx,Ny)/O $(name+"_QpkArea")/WAVE=QpkArea =NaN	// holds the image to plot, center of Q peak (1/nm)
+	Make/N=(Nx,Ny,3)/O/W/U $(name+"_RGB")/WAVE=RGB =0		// holds the image to plot, color
 	Make/N=(Nx,Ny)/O $(name+"_QcenterErr")/WAVE=QcErr =NaN// errors
 	Make/N=(Nx,Ny)/O $(name+"_QwidthErr")/WAVE=QwidthErr =NaN
 	Make/N=(Nx,Ny)/O $(name+"_Qbkg")/WAVE=Qbkg =NaN
@@ -5373,15 +5643,15 @@ Function reFitAllQdistributions(fullQarray)
 					Wave Qhist = $""
 					Wave Qhist = QhistFromQpositions(fullQarray,i,j,k)
 				endif
-				list = fitOneQhist(Qhist,quiet=1)
+				list = fitOneQhist(Qhist,quiet=1,printIt=0)
 				center = NumberByKey("Qcenter",list,"=")
-				Qc[i][j] = center									// delta Q
-				dQ[i][j] = center-Q0								// delta Q
-				Qwidth[i][j] = NumberByKey("Qfwhm",list,"=")	// Q width
+				Qc[i][j] = center												// delta Q
+				dQ[i][j] = center-Q0										// delta Q
+				Qwidth[i][j] = NumberByKey("Qfwhm",list,"=")		// Q width
 				QpkArea[i][j] = NumberByKey("QpkArea",list,"=")	// Q width
-				Intens[i][j] = WaveMax(Qhist)						// max intensity
+				Intens[i][j] = WaveMax(Qhist)							// max intensity
 				Qbkg[i][j] = NumberByKey("QpkBkg",list,"=")		// bkg of the Lorentzian
-				QwidthErr[i][j] = NumberByKey("fwhmErr",list,"=")	// errors
+				QwidthErr[i][j] = NumberByKey("fwhmErr",list,"=")// errors
 				QcErr[i][j] = NumberByKey("QcErr",list,"=")
 				QbkgErr[i][j] = NumberByKey("QpkBkgErr",list,"=")
 			endfor
@@ -5422,17 +5692,17 @@ Function reFitAllQdistributions(fullQarray)
 	Variable red,green,blue, maxc, intensij
 	for (j=0;j<Ny;j+=1)
 		for (i=0;i<Nx;i+=1)
-			blue = (dQ[i][j] + Qrange)/(2*Qrange)					// set the hue
+			blue = (dQ[i][j] + Qrange)/(2*Qrange)				// set the hue
 			red = 1-blue
 			green= min(red,blue)
 			maxC = max(max(red,green),blue)						// max RGB value
-			intensij = Intens[i][j]									// intensity of this point
-			red = cMax * red/maxC * intensij/maxIntens			// set to saturated values scaled down by intensity
+			intensij = Intens[i][j]								// intensity of this point
+			red = cMax * red/maxC * intensij/maxIntens		// set to saturated values scaled down by intensity
 			green = cMax * green/maxC * intensij/maxIntens
 			blue = cMax * blue/maxC * intensij/maxIntens
-			RGB[i][j][0] = limit(red,0,cMax)						// red
+			RGB[i][j][0] = limit(red,0,cMax)					// red
 			RGB[i][j][1] = limit(green,0,cMax)					// green
-			RGB[i][j][2] = limit(blue,0,cMax)						// blue
+			RGB[i][j][2] = limit(blue,0,cMax)					// blue
 		endfor
 	endfor
 	return 0
@@ -5462,7 +5732,7 @@ End
 // =============================================== End of OLD OLD ================================================
 // ===============================================================================================================
 // ===============================================================================================================
-//	#endif
+#endif
 
 
 
@@ -6325,230 +6595,6 @@ End
 //
 //	return "#EscanPanel"
 //End
-#ifdef OLD_WAY
-Function/T FillEscanParametersPanel(strStruct,hostWin,left,top)
-	String strStruct									// optional passed value of xtal structure, this is used if passed
-	String hostWin										// name of home window
-	Variable left, top									// offsets from the left and top
-
-	NewDataFolder/O root:Packages:micro				// ensure that the needed data folders exist
-	NewDataFolder/O root:Packages:micro:Escan
-
-	Variable/G root:Packages:micro:Escan:d0			// d-spacing of unstrained material (nm)
-	String/G root:Packages:micro:Escan:fldr			// new folder name, it will be at the top level
-	String/G root:Packages:micro:Escan:title		// a title to be used on plots
-
-	SetWindow kwTopWin,userdata(EscanPanelName)=hostWin+"#EscanPanel"
-//	NewPanel/K=1/W=(left,top,left+221,top+465)/HOST=$hostWin
-//	NewPanel/K=1/W=(left,top,left+221,top+475)/HOST=$hostWin
-//	NewPanel/K=1/W=(left,top,left+221,top+530)/HOST=$hostWin
-	NewPanel/K=1/W=(left,top,left+221,top+553)/HOST=$hostWin
-	ModifyPanel frameStyle=0, frameInset=0
-	RenameWindow #,EscanPanel
-
-	Button buttonNewEscan,pos={13,5},size={195,20},proc=EscanButtonProc,title="Set Up New Energy scan..."
-	Button buttonNewEscan,help={"Create a new data folder for an energy scan, and prompt user for title and d0"}
-	Button buttonNewEscan,userdata(active)="0"
-
-	SetVariable setvarTitle,pos={13,30},size={190,18},title="title",fSize=12,value= root:Packages:micro:Escan:title
-	SetVariable setvarTitle,help={"title for the plots"},font="Lucida Grande",noedit=1,frame=0
-	SetVariable setvard0,pos={45,50},size={128,18},title="d0 (nm)",noedit=1,frame=0
-	SetVariable setvard0,fSize=12,format="%.7f",limits={0,inf,0},value= root:Packages:micro:Escan:d0
-	SetVariable setvard0,help={"referene d-spacing (nm)"},font="Lucida Grande"
-	SetVariable setvarfldr,pos={40,70},size={162,18},title="folder name",font="Lucida Grande",fSize=12,noedit=1,frame=0
-	SetVariable setvarfldr,help={"name of the igor data folder to make"},value= root:Packages:micro:Escan:fldr
-
-	Button buttonFillQvsDepth,pos={13,100},size={195,20},proc=EscanButtonProc,title="Make Q-Depth Surface"
-	Button buttonFillQvsDepth,help={"read the depth sorted images, and make a 2-d plot of Q vs depth"}
-	Button buttonFitQAt1Depth,pos={53,123},size={155,20},proc=EscanButtonProc,title="Display & fit Q at 1 depth",fSize=9
-	Button buttonFitQAt1Depth,help={"you should not need this, this is usually done by changing the line on the Q-depth plot"}
-	Button buttonRePlotQDepth,pos={53,146},size={155,20},proc=EscanButtonProc,title="Re-Plot Q-Depth Surface",fSize=9
-	Button buttonRePlotQDepth,help={"re-plot the Q-depth info read in using Fill_QvsDepth_OLD()"}
-	Button buttonlayoutQDepth,pos={53,169},size={155,20},proc=EscanButtonProc,title="Make Layout of Q-Depth",fSize=9
-	Button buttonlayoutQDepth,help={"make a nice layout for printing showing the Q-depth surface plot and the plot of a cut through it"}
-
-	Button buttonFillEvsDepth,pos={13,200},size={195,20},proc=EscanButtonProc,title="Make E-Depth Surface"
-	Button buttonFillEvsDepth,help={"read the depth sorted images, and make a 2-d plot of energy vs depth, this command is not used much"}
-	Button buttonRePlotEDepthSurf,pos={53,223},size={155,20},disable=2,proc=EscanButtonProc,title="Re-Plot E-Depth Surface"
-	Button buttonRePlotEDepthSurf,help={"re-plot the energy-depth info read in using Fill_EvsDepth()"},fSize=9
-
-	Button buttonPseudoWhite,pos={13,250},size={195,20},proc=EscanButtonProc,title="Make Pseudo White Image"
-	Button buttonPseudoWhite,help={"read all the depth sorted images and make the pseudo white beam plot"}
-	Button buttonRePlotEsumDepth,pos={53,273},size={155,20},disable=2,proc=EscanButtonProc,title="Re-Plot Energy Sums vs Depth"
-	Button buttonRePlotEsumDepth,help={"take the pseudo white data already read in and re-plot it"},fSize=9
-	Button buttonMovieEsumsDepth,pos={53,296},size={155,20},disable=2,proc=EscanButtonProc,title="Movie of Energy Sums vs Depth"
-	Button buttonMovieEsumsDepth,help={"take the pseudo white data already read in and make the depth movie"},fSize=9
-
-	Button buttonMakeMask,pos={13,325},size={195,20},proc=EscanButtonProc,title="Make a Mask"
-	Button buttonMakeMask,help={"make a mask from an image (often the pseudo white image)"}
-	Button buttonClearMask,pos={53,348},size={155,20},disable=2,proc=EscanButtonProc,title="Clear the Mask"
-	Button buttonClearMask,help={"clear the current mask (usually accessed by clicking in marquee)"},fSize=9
-
-	Button buttonFillQNoDepth,pos={13,379},size={195,20},proc=EscanButtonProc,title="Make Q dist'n at one Depth"
-	Button buttonFillQNoDepth,help={"read raw images at many positions (but all from one depth and mult. energies) and get Q disributions"}
-	Button buttonPlotQpositionsRGBNoDepth,pos={53,402},size={155,20},disable=2,proc=EscanButtonProc,title="Display positions of Q dist'n",fSize=10
-	Button buttonPlotQpositionsRGBNoDepth,help={"make RGB plot of postions used to get Q distributions (no depths)"}
-	Button buttonReFitAllQparameters,pos={53,425},size={155,20},disable=2,proc=EscanButtonProc,title="Re-Fit All Q parameters",fSize=10
-	Button buttonReFitAllQparameters,help={"Refit the parameters of all Q distributions (no depths)"}
-	Button buttonFillQ1image,pos={13,448},size={195,20},proc=EscanButtonProc,title="Make Q dist'n of 1 image"
-	Button buttonFillQ1image,help={"make the Q distribution from a single loaded image"}
-
-	Button buttonTransferd0,pos={13,478},size={195,20},disable=2,proc=EscanButtonProc,title="d(hkl) --> d0     (xtal values)",fSize=10
-	Button buttonTransferd0,help={"reset the d0 used to compute strains using d(nm) from 'Xtal' panel"}
-
-	Button buttonFill3DQspace,pos={13,508},size={195,20},disable=0,proc=EscanButtonProc,title="Fill a 3D Q-space",fSize=12
-	Button buttonFill3DQspace,help={"Read In the Energy scan data & create a 3D Q-space"}
-	Button buttonGizmoOf3DQspace,pos={53,530},size={155,20},disable=2,proc=EscanButtonProc,title="make 3D Q-space Gizmo",fSize=10
-	Button buttonGizmoOf3DQspace,help={"show a Gizmo from a previously loaded 3D Q-space"}
-
-	EnableDisableEscanControls(hostWin+"#EscanPanel")
-	return "#EscanPanel"
-End
-//
-Function EscanButtonProc(ctrlName) : ButtonControl
-	String ctrlName
-
-	String win = GetUserData("","","EscanPanelName")
-	if (stringmatch(ctrlName,"buttonNewEscan"))
-		Variable active = str2num(GetUserData(win,"buttonNewEscan","active"))
-		NVAR d0=root:Packages:micro:Escan:d0
-		if (!active)										// let user enter values and make new data folder
-			SetVariable setvarTitle,win=$win,noedit=0,frame=1,disable=0
-			SetVariable setvard0,win=$win,noedit=0,frame=1,disable=0
-			SetVariable setvarfldr,win=$win,noedit=0,frame=1,disable=0
-			Button buttonNewEscan,win=$win,title="Enter Values, then click here",fColor=(65535,65534,49151),userdata(active)="1"
-			d0 = !(d0>0) ? NumVarOrDefault("root:Packages:Lattices:PanelValues:dspace_nm",d0) : d0
-		else												// get values and create the new folder
-			SVAR fldr=root:Packages:micro:Escan:fldr
-			SVAR title=root:Packages:micro:Escan:title
-			if (DataFolderExists("root:"+fldr))
-				DoAlert 0, "the data folder 'root:"+fldr+"' alreay exists, try another name"
-				return 1
-			elseif (CheckName(fldr,11))
-				DoAlert 0, "the data folder 'root:"+fldr+"' is not a legal folder name, try another name"
-				return 1
-			endif
-			SetVariable setvarTitle,win=$win,noedit=1,frame=0,disable=2
-			SetVariable setvard0,win=$win,noedit=1,frame=0,disable=2
-			SetVariable setvarfldr,win=$win,noedit=1,frame=0,disable=2
-			Button buttonNewEscan,win=$win,title="Set Up New Energy scan...",fColor=(0,0,0),userdata(active)="0"
-			if (NewEnergyScan(fldr,title,d0))		// set up a folder for a new Energy Scan
-				DoAlert 0,"New folder not made"
-				fldr = ""
-			endif
-		endif
-	elseif (stringmatch(ctrlName,"buttonFillQvsDepth"))
-		printf "¥Fill Q vs Depth array\r"
-		Fill_QvsDepth_OLD(NaN,"imagePath","","","",$"")
-//	elseif (stringmatch(ctrlName,"buttonFitQAt1Depth") && WaveExists(Q_Depth))
-	elseif (stringmatch(ctrlName,"buttonFitQAt1Depth"))
-		printf "¥MakeGraph_Qhist($\"\")\r"
-		MakeGraph_Qhist($"")
-	elseif (stringmatch(ctrlName,"buttonRePlotQDepth") && WaveExists(Q_Depth))
-		printf "¥MakeGraph_Q_Depth()\r"
-		MakeGraph_Q_Depth()
-	elseif (stringmatch(ctrlName,"buttonlayoutQDepth") && strlen(WinList("*_Q_Depth",";","WIN:1")) && strlen(WinList("*_Qhist",";","WIN:1")))
-		MakeLayoutQ_depth_hist("")
-	elseif (stringmatch(ctrlName,"buttonFillEvsDepth"))
-		printf "¥Fill_EvsDepth(\"imagePath\",\"\")\r"
-		Fill_EvsDepth("imagePath","")
-	elseif (stringmatch(ctrlName,"buttonRePlotEDepthSurf") && WaveExists(keV_Depth))
-		printf "¥MakeGraph_keV_Depth()\r"
-		MakeGraph_keV_Depth()
-	elseif (stringmatch(ctrlName,"buttonPseudoWhite"))
-		printf "¥MakePseudoWhiteImages(\"\",\"\")\r"
-		MakePseudoWhiteImages("","")
-	elseif (stringmatch(ctrlName,"buttonRePlotEsumDepth") && WaveExists(imageEsum))
-		printf "¥MakeEsumPlot()\r"
-		MakeEsumPlot()
-	elseif (stringmatch(ctrlName,"buttonMovieEsumsDepth") && WaveExists(imageEsum))
-		printf "¥MakeEsumMovie()\r"
-		MakeEsumMovie()
-	elseif (stringmatch(ctrlName,"buttonMakeMask") && strlen(WaveListClass("rawImage*;ImageSummed*","*","DIMS:2")))
-		printf "¥MakeMask($\"\")\r"
-		MakeMask($"")
-	elseif (stringmatch(ctrlName,"buttonClearMask") && MaskToClearExists())
-		ClearMask()
-	elseif (stringmatch(ctrlName,"buttonFillQNoDepth"))
-		printf "¥Fill_Q_PositionsOLD(NaN,\"imagePath\",\"\",\"\",$\"\")\r"
-		Fill_Q_PositionsOLD(NaN,"imagePath","","",$"")
-	elseif (stringmatch(ctrlName,"buttonPlotQpositionsRGBNoDepth"))
-		printf "¥MakeGraph_Q_Positions(Q_Positions_RGB)\r"
-		MakeGraph_Q_Positions(Q_Positions_RGB)
-	elseif (stringmatch(ctrlName,"buttonReFitAllQparameters"))
-		printf "¥reFitAllQdistributions($\"\")\r"
-		reFitAllQdistributions($"")
-	elseif (stringmatch(ctrlName,"buttonFillQ1image"))
-		printf "¥Fill_Q_1image(NaN,$\"\")\r"
-		Fill_Q_1image(NaN,$"")
-	elseif (stringmatch(ctrlName,"buttonTransferd0"))
-		update_d0()
-	elseif (stringmatch(ctrlName,"buttonFill3DQspace"))
-		Fill1_3DQspace(0,"imagePath","","")
-	elseif (stringmatch(ctrlName,"buttonGizmoOf3DQspace"))
-		MakeGizmoQspace3d($"")
-	endif
-	EnableDisableEscanControls(GetUserData("microPanel","","EscanPanelName"))
-End
-//
-Static Function EnableDisableEscanControls(win)			// here to enable/disable
-	String win												// window (or sub window) to use
-	Variable d
-
-	Button buttonNewEscan,win=$win,disable=0			// always OK to make a new data folder
-	Button buttonFillQvsDepth,win=$win,disable=0			// always OK to load a Q-Depth surface
-	Button buttonFillEvsDepth,win=$win,disable=0			// always OK to load a Energy-Depth surface
-	Button buttonPseudoWhite,win=$win,disable=0			// always OK to make a Pseudo White Image
-
-	d = WaveExists(Q_Depth)||WaveExists(Qhist) ? 0 : 2	// only if Q_Depth exists
-	Button buttonFitQAt1Depth,win=$win,disable= d
-
-	d = WaveExists(imageEsum) ? 0 : 2						// only if imageEsum exists
-	Button buttonRePlotEsumDepth,win=$win,disable= d
-	Button buttonMovieEsumsDepth,win=$win,disable= d
-
-	d = strlen(WaveListClass("rawImage*;ImageSummed*","*","DIMS:2")) ? 0 : 2
-	Button buttonMakeMask,win=$win,disable=d			// OK to make mask if an imge is around
-	d = MaskToClearExists() ? 0 : 2
-	Button buttonClearMask,win=$win,disable= d
-
-	d = WaveExists(Q_Depth) ? 0 : 2						// only if Q_Depth exists
-	Button buttonRePlotQDepth,win=$win,disable= d
-
-	d = WaveExists(keV_Depth) ? 0 : 2						// only if keV_Depth exists
-	Button buttonRePlotEDepthSurf,win=$win,disable= d
-
-	d = WaveExists(Q_Positions_RGB) ? 0 : 2				// only if Q_Positions_RGB exists
-	Button buttonPlotQpositionsRGBNoDepth,win=$win,disable= d
-
-//	d = d || ItemsInList(WaveListClass("Qhistogram","*","DIMS:2")) ? 0 : 2
-	d = ItemsInLIst(WaveListClass("Qhistogram;QdistAtPositions","*","MINCOLS:1,MAXCHUNKS:1")) ? 0 : 2
-	Button buttonReFitAllQparameters,win=$win,disable= d
-
-	d = (strlen(WinList("*_Q_Depth",";","WIN:1")) && strlen(WinList("*_Qhist",";","WIN:1"))) ? 0 : 2
-	Button buttonlayoutQDepth,win=$win,disable= d
-
-	d = exists("d0")==2 ? 0 : 2								// only if a local d0 exists
-	Button buttonTransferd0,win=$win,disable= d
-
-	d = ItemsInList(WaveListClass("GizmoXYZ;Qspace3D","*","DIMS:3"))>0 ? 0 : 2
-	Button buttonGizmoOf3DQspace,win=$win,disable= d
-
-	if (!str2num(GetUserData(win,"buttonNewEscan","active")))	// new Escan NOT active, set to current folder values
-		NVAR d0=root:Packages:micro:Escan:d0
-		SVAR title=root:Packages:micro:Escan:title, fldr=root:Packages:micro:Escan:fldr
-		String fldrLocal = GetDataFolder(0)
-		if (stringmatch(GetDataFolder(1),"root:"+fldrLocal+":"))
-			NVAR d0Local = :d0
-			SVAR titleLocal = :title
-			if (SVAR_Exists(titleLocal) || NVAR_Exists(d0Local))
-				d0 = d0Local
-				title = titleLocal
-			endif
-		endif
-	endif
-End
-#else
 Function/T FillEscanParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
 	String hostWin										// name of home window
@@ -6563,7 +6609,8 @@ Function/T FillEscanParametersPanel(strStruct,hostWin,left,top)
 	String/G root:Packages:micro:Escan:title		// a title to be used on plots
 
 	SetWindow kwTopWin,userdata(EscanPanelName)=hostWin+"#EscanPanel"
-	NewPanel/K=1/W=(left,top,left+221,top+430)/HOST=$hostWin
+//	NewPanel/K=1/W=(left,top,left+221,top+430)/HOST=$hostWin
+	NewPanel/K=1/W=(left,top,left+221,top+452)/HOST=$hostWin
 	ModifyPanel frameStyle=0, frameInset=0
 	RenameWindow #,EscanPanel
 
@@ -6583,14 +6630,16 @@ Function/T FillEscanParametersPanel(strStruct,hostWin,left,top)
 	start = 100
 	Button buttonFillQ_Distn,pos={13,start},size={195,20},proc=EnergyScans#EscanButtonProc,title="Fill Q-Distribution"
 	Button buttonFillQ_Distn,help={"read images containing an Energy scan and make Q-distribution(s)"}
-	Button buttonRePlotQDistn,pos={53,start+small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Re-Plot Q-Distribution",fSize=9
+	Button buttonRePlotQDistn,pos={53,start+1*small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Plot Q-Distribution (re-fit too)",fSize=9
 	Button buttonRePlotQDistn,help={"re-plot the Q-distribution at all positions or depths"}
-	Button buttonFitSingleQdistn,pos={53,start+2*small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Display & fit Q at 1 depth",fSize=9
+	Button buttonRGBforQDistn,pos={53,start+2*small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Recalc RGB for Q-Distribution",fSize=9
+	Button buttonRGBforQDistn,help={"Recalculate RGB for the Q-distribution at all positions or depths"}
+	Button buttonFitSingleQdistn,pos={53,start+3*small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Display & fit Q at 1 depth",fSize=9
 	Button buttonFitSingleQdistn,help={"you should not need this, this is usually done by changing the line on the Q-depth plot"}
-	Button buttonlayoutQDistn,pos={53,start+3*small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Make Layout of Q-Distribution",fSize=9
+	Button buttonlayoutQDistn,pos={53,start+4*small},size={155,20},proc=EnergyScans#EscanButtonProc,title="Make Layout of Q-Distribution",fSize=9
 	Button buttonlayoutQDistn,help={"make a nice layout for printing showing the Q-distribution surface plot and the plot of a cut through it"}
 
-	start = start+3*small + big
+	start = start+4*small + big
 	Button buttonFillQ1image,pos={13,start},size={195,20},proc=EnergyScans#EscanButtonProc,title="Fill Q dist'n of 1 image"
 	Button buttonFillQ1image,help={"make the Q distribution from a single loaded image"}
 	Button buttonTransferd0,pos={13,start+big},size={195,20},disable=2,proc=EnergyScans#EscanButtonProc,title="d(hkl) --> d0     (xtal values)",fSize=10
@@ -6656,11 +6705,14 @@ Static Function EscanButtonProc(ctrlName) : ButtonControl
 		printf "¥Fill_Q_Positions(NaN,\"imagePath\",\"\",\"\",\"\",$\"\")\r"
 		Fill_Q_Positions(NaN,"imagePath","","","",$"",printIt=1)
 	elseif (stringmatch(ctrlName,"buttonFitSingleQdistn"))
-		printf "¥MakeGraph_Qhist($\"\")\r"
+//		printf "¥MakeGraph_Qhist($\"\")\r"
 		MakeGraph_Qhist($"")
-	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions,Qhistogram","*","MINCOLS:1")))
-		printf "¥MakeOtherQhistWaves($\"\")\r"
-		MakeOtherQhistWaves($"",printIt=1)
+	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions","*","MINCOLS:1")))
+//	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions,Qhistogram","*","MINCOLS:1")))
+//	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions,Qhistogram","*","")))
+		MakeOtherQhistWaves($"")
+	elseif (stringmatch(ctrlName,"buttonRGBforQDistn") && strlen(WaveListClass("Q_Positions,Qhistogram","*","")))
+		MakeRGBforQdistribution($"",$"")
 	elseif (stringmatch(ctrlName,"buttonlayoutQDistn") && strlen(WinList("Graph*_Q",";","WIN:1")))
 		printf "¥MakeLayoutQ_Positions_hist(\"\")\r"
 		MakeLayoutQ_Positions_hist("")
@@ -6711,8 +6763,11 @@ Static Function EnableDisableEscanControls(win)			// here to enable/disable
 	d = MaskToClearExists() ? 0 : 2
 	Button buttonClearMask,win=$win,disable= d
 
-	d = strlen(WaveListClass("QdistAtPositions,Qhistogram","*","MINCOLS:1")) ? 0 : 2
+	d = strlen(WaveListClass("QdistAtPositions","*","MINCOLS:1")) ? 0 : 2
 	Button buttonRePlotQDistn,win=$win,disable= d
+
+	d = strlen(WaveListClass("Q_Positions","*","")) ? 0 : 2
+	Button buttonRGBforQDistn,win=$win,disable= d
 
 	d = strlen(WinList("Graph*_Q",";","WIN:1")) ? 0 : 2
 	Button buttonlayoutQDistn,win=$win,disable= d
@@ -6740,7 +6795,6 @@ Static Function EnableDisableEscanControls(win)			// here to enable/disable
 		endif
 	endif
 End
-#endif
 
 //
 Static Function MaskToClearExists()
