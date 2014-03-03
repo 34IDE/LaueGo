@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.48
+#pragma version = 4.49
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -7730,9 +7730,12 @@ Static Function/S NewImageGraphLocal(image)
 	if (!WaveExists(image))
 		return ""
 	endif
+	String wnote=note(image)					// get start & group in case image is binned
+	Variable startx=NumberByKey("startx",wnote,"="), starty=NumberByKey("starty",wnote,"=")
+	Variable groupx=NumberByKey("groupx",wnote,"="), groupy=NumberByKey("groupy",wnote,"=")
 
 	STRUCT microGeometry g
-	FillGeometryStructDefault(g)					//fill the geometry structure with current values
+	FillGeometryStructDefault(g)				//fill the geometry structure with current values
 	Variable dnum = detectorNumFromID(StringByKey("detectorID",note(image),"="))
 	if (dnum<0)
 		return result
@@ -7746,6 +7749,10 @@ Static Function/S NewImageGraphLocal(image)
 		XYZ2pixel(g.d[dnum],xyz,px,py)
 	endif
 	if (px==limit(px,0,Nx-1) && py==limit(py,0,Ny-1))
+		if (numtype(startx+starty+groupx+groupy)==0 && (groupx>1 || groupy>1))	// binned image
+			px = round(( px-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
+			py = round(( py-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
+		endif
 		DrawMarker(px,py,round(Nx/10),round(Ny/10),"cross gap",dash=2,layer="UserAxes")
 	endif
 	return result
