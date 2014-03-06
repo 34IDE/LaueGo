@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, March 04, 2014" time="01:23:40 PM CST" isoTime="2014-03-04T13:23:40"></written>
+	<written date="Thursday, March 06, 2014" time="04:35:55 PM CST" isoTime="2014-03-06T16:35:55"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>256</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -232,7 +232,7 @@
 	<file version="1.6" time="2013-10-28T11:28:48" md5="0cc71424bcbaa8603b51fef8f0643db3" ext=".ipf">APS/epics.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d161fa515d6a0b14e697dcaca094103f" ext=".mtl">materials/BeIF-1.mtl</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="cae8ea679e32f9f5efa0e2dc9f5985c9" ext=".ipf">micro/DoAll.ipf</file>
-	<file version="1.92" time="2014-01-02T14:29:29" md5="f31282fc760380a974a659cf2f52add6" ext=".ipf">General/ImageDisplayScaling.ipf</file>
+	<file version="1.94" time="2014-03-06T16:34:33" md5="b8160cdc9c1b618bc3fceb00f3d5c3c1" ext=".ipf">General/ImageDisplayScaling.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="caf99e0ebf4dcbb09bdfe018dd492320" ext=".ifn">microN/microDiffraction.ifn</file>
 	<file version="2.04" time="2013-10-28T11:28:48" md5="7937e08585179b84a3ca9d1d53c2eca7" ext=".ipf">General/ColorNames.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="52db038f84da7d58e9fac596af4ec0ac" ext=".xml">materials/YMnO3_Katsufuji.xml</file>
