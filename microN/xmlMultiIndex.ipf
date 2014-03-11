@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.72
+#pragma version=1.73
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -10,6 +10,7 @@
 
 Static Constant NindexedMIN = 4
 Static StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"
+Static Constant hc = 1.239841857		// keV-nm
 
 
 Menu "Rotations"
@@ -31,6 +32,7 @@ Menu "Rotations"
 	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
 	MenuItemIfWaveClassExists("Make Gizmo of 3D xml data","Random3dArrays",""),MakeGizmo_xmlData($"")
 	MenuItemIfWaveClassExists("Make another RGBA [2D or 3D]","Random3dArraysXYZ,Random3dArrays",""),Make2D_3D_RGBA($"",$"","",NaN,NaN)
+	MenuItemIfWaveClassExists("Simulated a Laue Pattern from gm...","Random3dArraysGm*",""),SimulatedLauePatternFromGM($"",NaN,NaN)
 	multiIndex#MenuItemIfValidRawDataExists("Add Hand Indexed Point to Loaded XML in raw",class="IndexedPeakList"), AppendIndexResult2LoadedRaw($"")
 	MenuItemIfWaveClassExists("Add Hand Indexed Point to an XML","IndexedPeakList",""),AppendIndexResult2XML($"","")
 	MenuItemIfWaveClassExists("Rotation Between Two Points","Random3dArrays",""),RotationBetweenTwoPoints(NaN,NaN)
@@ -3207,6 +3209,353 @@ End
 
 
 
+Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx,endy,groupx,groupy,printIt])
+	// return the image constructed from the list of recips in gm
+	Wave gm								// wave containing all of the known reciprocal lattices to use
+	Variable Elo,Ehi					// energy range (keV)
+	Variable detector					// detector number [0,MAX_Ndetectors-1]
+	Variable startx,endx,groupx	// used to define the ROI
+	Variable starty,endy,groupy
+	Variable printIt
+	detector = ParamIsDefault(detector) ? NaN : detector
+	detector = detector==round(limit(detector,0,MAX_Ndetectors-1)) ? detector : NaN
+	startx = ParamIsDefault(startx) ? NaN : round(startx)
+	endx = ParamIsDefault(endx) ? NaN : round(endx)
+	groupx = ParamIsDefault(groupx) ? NaN : round(groupx)
+	starty = ParamIsDefault(starty) ? NaN : round(starty)
+	endy = ParamIsDefault(endy) ? NaN : round(endy)
+	groupy = ParamIsDefault(groupy) ? NaN : round(groupy)
+	printIt = ParamIsDefault(printIt) ? 0 : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
+	STRUCT microGeometry geo
+	if (FillGeometryStructDefault(geo))					//fill the geometry structure with current default values
+		DoAlert 0,"Unable to load geometry"
+		return $""
+	endif
+
+	String dList = "", color
+	Variable Ndetectors, i, idet
+	for (i=0,Ndetectors=0; i<MAX_Ndetectors; i+=1)
+		if (geo.d[i].used)
+			Ndetectors += 1
+			detector = numtype(detector) ? i : detector
+			color = detectorID2color(geo.d[i].detectorID)
+			dList += num2istr(i)+SelectString(strlen(color),";"," ("+color+");")
+		endif
+	endfor
+	if (Ndetectors<1)										// nothing there
+		return $""
+	elseif (Ndetectors>1 && ParamIsDefault(detector))		// force a choice of which detector to use
+		detector = NaN
+	endif
+
+	Variable Nx0=geo.d[0].Nx, Ny0=geo.d[0].Ny
+	startx	= numtype(startx)	|| startx<0		?		0		: startx	// set default values for ROI
+	starty	= numtype(starty)	|| starty<0		?		0		: starty
+	endx		= numtype(endx)	|| endx<startx	?	(Nx0)-1	: endx
+	endy		= numtype(endy)	|| endy<starty	?	(Ny0)-1 : endy
+	groupx	= numtype(groupx)	|| groupx<1		?		1		: groupx
+	groupy	= numtype(groupy)	|| groupy<1		?		1		: groupy
+
+	if (!WaveExists(gm) || Elo<0 || Ehi<=Elo || numtype(detector))
+		String gmList=reverseList(WaveListClass("Random3dArraysGm*","*",""))
+		if (!WaveExists(gm))
+			if (ItemsInList(gmList)==0)
+				return $""
+			elseif (ItemsInList(gmList)==1)
+				Wave gm = $StringFromList(0,gmList)
+			else
+				String sgm
+				Prompt sgm,"gm wave, list of recip's", popup,gmList
+			endif
+		endif
+		Elo = (numtype(Elo) || Elo<0) ? 6 : Elo
+		Ehi = (numtype(Ehi) || Ehi<=Elo) ? max(25,15+Elo) : Ehi
+		Prompt Elo,"low energy cutoff (keV)"
+		Prompt Ehi,"high energy cutoff (keV)"
+		if (WaveExists(gm))
+			DoPrompt "energy range",Elo,Ehi
+		else
+			DoPrompt "gm wave & energy",sgm,Elo,Ehi
+			Wave gm = $sgm
+		endif
+		if (V_flag || !WaveExists(gm))
+			return $""
+		endif
+
+		// prompt for the ROI & binning
+		Prompt startx,"X start of ROI [0, "+num2istr(Nx0-1)+"]"
+		Prompt starty,"X start of ROI [0, "+num2istr(Ny0-1)+"]"
+		Prompt endx,"X end of ROI [0, "+num2istr(Nx0-1)+"]"
+		Prompt endy,"Y end of ROI [0, "+num2istr(Ny0-1)+"]"
+		Prompt groupx,"binning in X direction"
+		Prompt groupy,"binning in Y direction"
+		String detectorName=StringFromList(detector,dList)
+		Prompt detectorName,"Detector",popup,dList
+		DoPrompt "ROI (full chip un-binned pixels)",startx,starty,endx,endy,groupx,groupy,detectorName
+		if (V_flag)
+			return $""
+		endif
+		detector = str2num(detectorName)
+		endx = min(geo.d[detector].Nx-1,endx)
+		endy = min(geo.d[detector].Ny-1,endy)
+		printIt = 1
+	endif
+
+	STRUCT detectorGeometry ds
+	CopyDetectorGeometry(ds,geo.d[detector])
+	color = detectorID2color(ds.detectorID)
+	if (printIt)
+		printf "SimulatedLauePatternFromGM(%s, %g,%g", NameOfWave(gm),Elo,Ehi
+		if (!ParamIsDefault(detector) || !(detector==0))
+			printf ", detector=%g",detector
+		endif
+		if (!ParamIsDefault(startx) || !(startx==0))
+			printf ", startx=%g",startx
+		endif
+		if (!ParamIsDefault(starty) || !(starty==0))
+			printf ", starty=%g",starty
+		endif
+		if (!ParamIsDefault(endx) || !(endx==(Nx0-1)))
+			printf ", endx=%g",endx
+		endif
+		if (!ParamIsDefault(endy) || !(endy==(Ny0-1)))
+			printf ", endy=%g",endy
+		endif
+		if (!ParamIsDefault(groupx) || !(groupx==1))
+			printf ", groupx=%g",groupx
+		endif
+		if (!ParamIsDefault(groupy) || !(groupy==1))
+			printf ", groupy=%g",groupy
+		endif
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
+		if (strlen(color))
+			printf ")		// simulating the %s detector\r",detectorID2color(ds.detectorID)
+		else
+			printf ")\r"
+		endif
+	endif
+	Variable N=DimSize(gm,2)					// number of measured reciprocal lattices
+	Nx0 = endx-startx+1
+	Ny0 = endy-starty+1
+	startx = round(startx)	;	endx = round(endx)	;	groupx = round(groupx)
+	starty = round(starty)	;	endy = round(endy)	;	groupy = round(groupy)
+	if (N<1 || startx<0 || starty<0 || startx>=endx || starty>=endy || groupx<1 || groupy<1 || endx>=Nx0 || endy>=Ny0)
+		return $""									// invalid parameters
+	endif
+
+	Make/N=3/D/FREE qCenter, q0,q1,q2,q3	// qCenter is q at center of detector, q0,q1,q2,q3 are the three corners
+	Variable theta = pixel2q(ds,0,0,q0)	// find range of theta, and also qHat of the center pixel on detector
+	Variable thetaLo=theta, thetaHi=theta
+	theta = pixel2q(ds,Nx0-1,0,q1)
+	thetaLo = min(theta,thetaLo)
+	thetaHi = max(theta,thetaHi)
+	theta = pixel2q(ds,0,Ny0-1,q2)
+	thetaLo = min(theta,thetaLo)
+	thetaHi = max(theta,thetaHi)
+	theta = pixel2q(ds,Nx0-1,Ny0-1,q3)
+	thetaLo = min(theta,thetaLo)
+	thetaHi = max(theta,thetaHi)
+	qCenter = q0 + q1 + q2 + q3
+	normalize(qCenter)							// q^ for the middle of the detector
+	Variable dotMin								// the smallest dot product to consider
+	dotMin = MatrixDot(qCenter,q0)
+	dotMin = min(MatrixDot(qCenter,q1),dotMin)
+	dotMin = min(MatrixDot(qCenter,q2),dotMin)
+	dotMin = min(MatrixDot(qCenter,q3),dotMin)
+
+	Variable Qi=4*PI*sin(thetaLo)*Elo/hc	// find the Q range on the detector
+	Variable Qlo=Qi, Qhi=Qi
+	Qi = 4*PI*sin(thetaLo)*Ehi/hc
+	Qlo = min(Qi,Qlo)
+	Qhi = max(Qi,Qhi)
+	Qi = 4*PI*sin(thetaHi)*Elo/hc
+	Qlo = min(Qi,Qlo)
+	Qhi = max(Qi,Qhi)
+	Qi = 4*PI*sin(thetaHi)*Ehi/hc
+	Qlo = min(Qi,Qlo)
+	Qhi = max(Qi,Qhi)
+
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with current values
+		DoAlert 0, "no crystal structure found, continuing..."
+		xtal.SpaceGroup = -1					// flags as an invalid xtal, will not calculate Fstruct
+		Make/N=(3,3)/FREE/D recip0			// a single reciprocal lattice used to get 
+		recip0 = gm[p][q][0]					// this one used to compute |Q| from hkl
+	else
+		Wave recip0 = recipFrom_xtal(xtal)
+	endif
+
+	Make/N=3/D/FREE hkl
+	// find range of h,k,l
+	hkl = {1,0,0}
+	MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+	Variable hMax = floor(Qhi / qmag[0])
+	hkl = {0,1,0}
+	MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+	Variable kMax = floor(Qhi / qmag[0])
+	hkl = {0,0,1}
+	MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+	Variable lMax = floor(Qhi / qmag[0])
+	if (printIt)
+		printf "  Q range = [%g, %g],   %g reciprocal lattices,   max hkl = (%g, %g, %g)\r",Qlo,Qhi,N,hMax,kMax,lMax
+	endif
+
+	Variable Nx=ceil(Nx0/groupx), Ny=ceil(Ny0/groupx)
+	String imageName="SimulatedLaueImage"+color
+	Make/N=(Nx,Ny)/I/U/O $imageName/Wave=image =0
+	if (printIt)
+		printf "  Created a new image \"%s\" (%g, %g)",imageName,Nx,Ny
+		String str1="", str2=""
+		if (startx>0 || starty>0 || endx<(Nx0-1) || endy<(Ny0-1))
+			sprintf str1, ",   ROI = X[%g, %g] Y[%g, %g] ",startx,endx,starty,endy
+		endif 
+		if (groupx!=1 || groupy!=1)
+			sprintf str2, ",   binned (%g x %g)",groupx,groupy
+		endif 
+		printf "%s%s\r",str1, str2
+	endif
+
+	// count number of hkl's to try, need NhklTry to properly use the Progress Bar
+	Variable h,k,l, NhklTry=0
+	for (l=0; l<=lMax; l=LatticeSym#incrementIndex(l))
+		hkl = {0,0,l}
+		MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+		if (qmag[0]>Qhi && l<0)
+			break
+		endif
+		for (k=0; k<=kMax; k=LatticeSym#incrementIndex(k))
+			hkl = {0,k,l}
+			MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+			if (qmag[0]>Qhi && l<0)
+				break
+			endif
+			for (h=0; h<=hMax; h=LatticeSym#incrementIndex(h))
+				hkl[0] = h
+				MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+				if (qmag[0]>Qhi && l<0)
+					break
+				endif
+				if (cabs(Fstruct(xtal,h,k,l)) <= 0.02)			// ignore structure factors less than 0.02 electrons
+					continue													// if xtal is invalid, then this never happens
+				endif
+				NhklTry += 1												// hkl is acceptable, increment NhklTry
+			endfor
+		endfor
+	endfor
+
+	// now loop for real, for each hkl, compute it's location on image for all of the gm
+	Make/N=(3,N)/FREE qvecs
+	Make/N=3/D/FREE qvec
+	Variable/C pz
+	Variable j, px,py, Ncnt=0, Nhkl=0, keepGoing=1
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1)
+	for (l=0; l<=lMax && keepGoing; l=LatticeSym#incrementIndex(l))
+		hkl = {0,0,l}
+		MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+		if (qmag[0]>Qhi && l<0)
+			break
+		endif
+		for (k=0; k<=kMax && keepGoing; k=LatticeSym#incrementIndex(k))
+			hkl = {0,k,l}
+			MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+			if (qmag[0]>Qhi && l<0)
+				break
+			endif
+			for (h=0; h<=hMax && keepGoing; h=LatticeSym#incrementIndex(h))
+				hkl[0] = h
+				MatrixOP/FREE/O qmag = sqrt(sum(magSqr(recip0 x hkl)))
+				if (qmag[0]>Qhi && l<0)
+					break
+				endif
+				if (cabs(Fstruct(xtal,h,k,l)) <= 0.02)			// ignore structure factors less than 0.02 electrons
+					continue													// if xtal is invalid, then this never happens
+				endif
+				if (mod(Ncnt,10)==0)
+					if (ProgressPanelUpdate(progressWin,Ncnt/NhklTry*100))
+						keepGoing = 0
+						break
+					endif
+				endif
+				Ncnt += 1
+
+				// found a probably good hkl, calc where it goes all gm
+				MatrixOP/O/FREE qvecs1 = gm x hkl)					// qvectors for this hkl from all gm
+				qvecs = qvecs1[p][0][q]								// remove the extra col left in by MatrixOP
+				MatrixOP/O/FREE qMags = sqrt(sumCols(magSqr(qvecs)))	// magnitude of qvector for each of the qvecs
+				Redimension/N=(N) qMags								// (1,N) to (N)
+				MatrixOP/O/FREE use = greater(qMags,Qlo) && greater(Qhi,qMags)	// use=1 for Qlo < qMags < Qhi
+				if (sum(use)<1)											// check if anything to use
+					continue
+				endif
+				MatrixOP/O/FREE qvecsHat = NormalizeCols(qvecs)// normalized qvectors for this hkl
+				MatrixOP/O/FREE use = use && greater(qvecsHat^t x qCenter,dotMin)	// process the ones with use[]==1
+				if (sum(use)<1)											// check again if anything to use
+					continue
+				endif
+				Nhkl += 1													// this hkl looks good, probably some intensity from it
+				for (j=0;j<N;j+=1)
+					if (use[j])
+						qvec = qvecsHat[p][j]							// a single usable qvector
+						pz = q2pixel(ds,qvec)							// find the pixel position
+						px = round(( real(pz)-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
+						py = round(( imag(pz)-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
+						if (px>=0 && px<Nx && py>=0 && py<Ny)		// pixel on detector
+							image[px][py] += 1							// increment some intensity on the image
+						endif
+					endif
+				endfor	// loop j
+
+			endfor		// loop h
+		endfor			// loop k
+	endfor				// loop l
+	Duplicate/FREE image, pixelCount
+	MatrixOP/FREE pixelCount = sum(greater(image,0))			// number of non-zero pixels
+	if (!keepGoing)
+		print "****************************************************************************"
+		print "*** SimulatedLauePatternFromGM() was stopped early, result is incomplete ***"
+		print "****************************************************************************"
+	endif
+	if (printIt)
+		printf "  There is Intensity in %d pixels, and total intensity = %d,  from %d hkl's\r",pixelCount[0], sum(image), Nhkl
+		printf "  execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+	endif
+	DoWindow/K $progressWin
+
+	SetScale/P x,0,1,"pixel",image
+	SetScale/P y,0,1,"pixel",image
+	String wnote=note(gm)
+	wnote = ReplaceStringByKey("waveClass",wnote,"rawImage,calc","=")
+	wnote = ReplaceNumberByKey("Elo",wnote,Elo,"=")
+	wnote = ReplaceNumberByKey("Ehi",wnote,Ehi,"=")
+	wnote = ReplaceNumberByKey("Qlo",wnote,Qlo,"=")
+	wnote = ReplaceNumberByKey("Qhi",wnote,Qhi,"=")
+	wnote = ReplaceNumberByKey("Nhkl",wnote,Nhkl,"=")
+	wnote = ReplaceNumberByKey("thetaLo",wnote,thetaLo,"=")
+	wnote = ReplaceNumberByKey("thetaHi",wnote,thetaHi,"=")
+	wnote = ReplaceStringByKey("detectorID",wnote,ds.detectorID,"=")
+	wnote = ReplaceNumberByKey("detectorNum",wnote,detector,"=")
+	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")
+	wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
+	wnote = ReplaceNumberByKey("endx",wnote,endx,"=")
+	wnote = ReplaceNumberByKey("endy",wnote,endy,"=")
+	wnote = ReplaceNumberByKey("groupx",wnote,groupx,"=")
+	wnote = ReplaceNumberByKey("groupy",wnote,groupy,"=")
+	wnote = ReplaceNumberByKey("xDimDet",wnote,Nx0,"=")
+	wnote = ReplaceNumberByKey("yDimDet",wnote,Ny0,"=")
+	wnote = ReplaceNumberByKey("xdim",wnote,Nx,"=")
+	wnote = ReplaceNumberByKey("ydim",wnote,Ny,"=")
+	Note/K image, wnote
+
+	Indexing#NewImageGraphLocal(image,withButtons=0)
+	return image
+End
+
+
+
 Function RotationBetweenTwoPoints(i1,i2)
 	Variable i1,i2
 	if (!(i1>=0))
@@ -4800,8 +5149,8 @@ End
 
 
 
-// ****************************  Start of XML Reading Utilities ****************************
 // *****************************************************************************************
+// ****************************  Start of XML Reading Utilities ****************************
 
 Function LoadPixelsFromXML(m)	// for the point m in imageNames[m], load in the fitted pixels from the xml file
 	Variable m						// point number in list
