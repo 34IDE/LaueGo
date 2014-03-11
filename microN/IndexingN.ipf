@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.50
+#pragma version = 4.51
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -719,7 +719,8 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 		px = FullPeakIndexed[i][9][pattern]
 		py = FullPeakIndexed[i][10][pattern]
 		if (!numtype(px+py))
-			DrawMarker(px,py,wid,wid,"X",color="55000,5000,0")
+			Variable fwx=wid*DimSize(image,0)/2048, fwy=wid*DimSize(image,1)/2048
+			DrawMarker(px,py,fwx,fwy,"X",color="55000,5000,0")
 			DrawhklTags(i,FullPeakIndexed[i][3][pattern],FullPeakIndexed[i][4][pattern],FullPeakIndexed[i][5][pattern],px,py,wid,0,tsize)
 		endif
 	endfor
