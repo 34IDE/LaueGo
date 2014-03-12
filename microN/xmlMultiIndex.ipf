@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.73
+#pragma version=1.74
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -3379,14 +3379,21 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 	Qlo = min(Qi,Qlo)
 	Qhi = max(Qi,Qhi)
 
+	String wnote=note(gm)
+	Wave recip0 = str2recip(StringByKey("recipRef",wnote,"="))	
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with current values
 		DoAlert 0, "no crystal structure found, continuing..."
 		xtal.SpaceGroup = -1					// flags as an invalid xtal, will not calculate Fstruct
-		Make/N=(3,3)/FREE/D recip0			// a single reciprocal lattice used to get 
-		recip0 = gm[p][q][0]					// this one used to compute |Q| from hkl
-	else
-		Wave recip0 = recipFrom_xtal(xtal)
+	endif
+	if (!WaveExists(recip0))
+		if (xtal.SpaceGroup > 0)
+			Wave recip0 = recipFrom_xtal(xtal)
+		else
+			Make/N=(3,3)/FREE/D recipTemp	// a single reciprocal lattice used to hold first gm matrix 
+			Wave recip0=recipTemp
+			recip0 = gm[p][q][0]				// this one used to compute |Q| from hkl
+		endif
 	endif
 
 	Make/N=3/D/FREE hkl
@@ -3527,7 +3534,6 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 
 	SetScale/P x,0,1,"pixel",image
 	SetScale/P y,0,1,"pixel",image
-	String wnote=note(gm)
 	wnote = ReplaceStringByKey("waveClass",wnote,"rawImage,calc","=")
 	wnote = ReplaceNumberByKey("Elo",wnote,Elo,"=")
 	wnote = ReplaceNumberByKey("Ehi",wnote,Ehi,"=")

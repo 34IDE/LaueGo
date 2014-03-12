@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.51
+#pragma version = 4.52
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -427,7 +427,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 		dNum = !(dNum==limit(round(dNum),0,2)) ? 1 : dNum
 		if (!WaveExists(peakList))
 //			Wave peakList = $StringByKey("FullPeakList",GetUserData(win,"","FitPeaks"),"=")
-			Wave peakList = $FindPeakListForImage(image)
+			Wave peakList = FindPeakListForImage(image)
 		endif
 		if (WaveExists(peakList))
 			peakListName = NameOfWave(peakList)
@@ -607,7 +607,7 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	Variable i, badWave = !WaveExists(FullPeakIndexed)
 	if (badWave)							// try getting FullPeakIndexed from the top image
 		Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
-		Wave FullPeakIndexed = $FindIndexListForImage(image)
+		Wave FullPeakIndexed = FindIndexListForImage(image)
 		badWave = !WaveExists(FullPeakIndexed)
 	endif
 	if (!badWave)
@@ -839,14 +839,14 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	if (!(s.eventMod&10 && (s.eventCode==4 || s.eventCode==3)) || s.keycode)		// eventMod==2 is shift key, 8 is command, 1 is mouse, and no regular key held down
 		Tag/K/N=indexedPeakInfo/W=$win
 		s.doSetCursor= 0
-		s.cursorCode = 0					// for nothing
+		s.cursorCode = 0				// for nothing
 		return 0							// shift key not down, ignore
 	endif
 
 	Variable useIndex = s.eventMod&2		// eventMod==2 is shift key,  use info from indexed peaks
 	Variable useFitted = s.eventMod&8		// eventMod==8 is command key, use info from fitted peaks
 	Variable useStrain = useIndex && useFitted
-	useFitted = useFitted && !useStrain		// both means use strain
+	useFitted = useFitted && !useStrain	// both means use strain
 	Variable useMouse = s.eventMod==9		// evendMod==8+1, is command & mouse down, use mouse position
 	if (useMouse)
 		useIndex = 0
@@ -905,7 +905,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	endif
 	my = (V_min-V_max)*vert + V_max
 
-	String tagStr="", wnote, str
+	String tagStr="", wnote="", str
 	Variable h,k,l, angleErr,keV=NaN,SpaceGroup
 	Variable dist2, m
 	Variable px,py
@@ -924,6 +924,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 	if (useFitted || useMouse)				// examining fitted peaks (or mouse position)
 		Wave FullPeakList=$(StringByKey("FullPeakList",GetUserData("","","FitPeaks"),"="))
+		if (!WaveExists(FullPeakList))
+			Wave FullPeakList=FindPeakListForImage(image)
+		endif
 		if (!WaveExists(FullPeakList) && useFitted)
 			return 0
 		endif
@@ -933,8 +936,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			Variable dmiss=Inf, imiss = -1
 			if (useMissing)
 				N=DimSize(missing,0)
-				for (i=0;i<N;i+=1)			// search through all fitted peaks
-					px = missing[i][3]		// FullPeakList contains binned pixels (of fitted peaks)
+				for (i=0;i<N;i+=1)		// search through all fitted peaks
+					px = missing[i][3]	// FullPeakList contains binned pixels (of fitted peaks)
 					py = missing[i][4]
 					if ((px-mx)^2+(py-my)^2 < dmiss)
 						imiss = i
@@ -943,10 +946,10 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				endfor
 			endif
 			dist2=Inf
-			m=-1							// find the indexed peak closest to the mouse-click
+			m=-1								// find the indexed peak closest to the mouse-click
 			N=DimSize(FullPeakList,0)
-			for (i=0;i<N;i+=1)				// search through all fitted peaks
-				px = FullPeakList[i][0]		// FullPeakList contains binned pixels (of fitted peaks)
+			for (i=0;i<N;i+=1)			// search through all fitted peaks
+				px = FullPeakList[i][0]// FullPeakList contains binned pixels (of fitted peaks)
 				py = FullPeakList[i][1]
 				if ((px-mx)^2+(py-my)^2 < dist2)
 					m = i
@@ -954,17 +957,17 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				endif
 			endfor
 			if (numtype(dist2) && numtype(dmiss))
-				return 1					// no fitted or missing peak found
+				return 1						// no fitted or missing peak found
 			endif
 
 			if (dmiss<dist2)				// use missing peak
 				useFitted = 0			
-				px = missing[imiss][3]		// missing peaks, already binned
+				px = missing[imiss][3]	// missing peaks, already binned
 				py = missing[imiss][4]
 				keV = missing[imiss][5]
 			else
 				useMissing = 0
-				px = FullPeakList[m][0]	// binned peaks
+				px = FullPeakList[m][0]// binned peaks
 				py = FullPeakList[m][1]
 				fwx=FullPeakList[m][4]
 				fwy=FullPeakList[m][5]
@@ -1033,23 +1036,17 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			if (numtype(keV))
 				sprintf str,"\r\[0\\Zr075q\X0\y+20^\y-20\BBL\\M\\Zr075 = {%.3f, %.3f, %.3f}\M\\Zr090",qBL[0],qBL[1],qBL[2]
 			else
-				Qmag = keV>0 ? 4*PI*sin(theta)*keV/hc : 1		// 4*PI*sin(theta)/lambda = 4*PI*sin(theta)*E/hc
+				Qmag = keV>0 ? 4*PI*sin(theta)*keV/hc : 1	// 4*PI*sin(theta)/lambda = 4*PI*sin(theta)*E/hc
 				sprintf str,"\r\[0\\Zr075\\f01q\f00\BBL\\M\\Zr075 = {%.3f, %.3f, %.3f},  |q| = %.4f\M\\Zr090",qBL[0]*Qmag,qBL[1]*Qmag,qBL[2]*Qmag, Qmag
 			endif
 			tagStr += str
 		endif
 
-		if (WaveExists(FullPeakIndexed) && !useMissing)			// an indexation exists, so try to add some hkl info too
+		if (WaveExists(FullPeakIndexed) && !useMissing)	// an indexation exists, so try to add some hkl info too
 			wnote = note(FullPeakIndexed)
-			str = StringByKey("recip_lattice"+num2istr(ip),wnote,"=")
-			Variable r00,r10,r20,r01,r11,r21,r02,r12,r22
-			sscanf str, "{{%g, %g, %g}{ %g, %g, %g}{%g, %g,%g}}",r00,r10,r20,r01,r11,r21,r02,r12,r22
-			if (V_flag==9)
-				Make/N=3/O/D/FREE recip
-				recip[0][0]= {r00,r10,r20}
-				recip[0][1]= {r01,r11,r21}
-				recip[0][2]= {r02,r12,r22}
-				MatrixOp/O/FREE hkl = Inv(recip) x qBL			// go from q in Ideal beam line to hkl (but wrong length)
+			Wave recip = str2recip(StringByKey("recip_lattice"+num2istr(ip),wnote,"="))
+			if (WaveExists(recip))
+				MatrixOp/O/FREE hkl = Inv(recip) x qBL		// go from q in Ideal beam line to hkl (but wrong length)
 				sprintf str, "hkl = (%.3f, %.3f, %.3f)",hkl[0]*24,hkl[1]*24,hkl[2]*24
 				tagStr += "\r"+str
 				Make/N=3/O/D/FREE hkli=hkl						// try to make a nice integral hkl
@@ -1059,8 +1056,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				sprintf str, "hkl = (%g %g %g),  %.4f keV",hkli[0],hkli[1],hkli[2],keV
 				tagStr += "\r"+str
 				if (useFitted)
-					MatrixOp/O/FREE hkl = recip x hkli				// go from integral hkl to Q in BL
-					Variable dtheta = angleVec2Vec(hkl,qBL)		// angle between fitted peak and indexed peak
+					MatrixOp/O/FREE hkl = recip x hkli			// go from integral hkl to Q in BL
+					Variable dtheta = angleVec2Vec(hkl,qBL)	// angle between fitted peak and indexed peak
 					if (useDistortion)
 						sprintf str,"\r\\F'Symbol'Dq\\F]0 = %.4f\\F'Symbol'°\\F]0,   distort=%.2f px",dtheta,cabs(pz)
 					else
@@ -1069,16 +1066,34 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 					tagStr += str
 				endif
 			endif
+		else																// test for recip in image wave note
+			wnote = note(image)
+			Wave recip = str2recip(StringByKey("recip_lattice"+num2istr(ip),wnote,"="))
+			if (!WaveExists(recip))
+				Wave recip = str2recip(StringByKey("recipRef",wnote,"="))	
+			endif
+			if (WaveExists(recip) && WaveExists(qBL))
+				MatrixOp/O/FREE hkl = Inv(recip) x qBL		// go from q in Ideal beam line to hkl (but wrong length)
+				sprintf str, "hkl = (%.3f, %.3f, %.3f)",hkl[0]*24,hkl[1]*24,hkl[2]*24
+				tagStr += "\r"+str
+				Make/N=3/O/D/FREE hkli=hkl						// try to make a nice integral hkl
+				CloseAllowedhkl(hkli)
+				MatrixOp/O/FREE xyz = recip x hkli
+				keV = hc*norm(xyz)/(4*PI*sin(theta))
+				sprintf str, "hkl = (%g %g %g),  %.4f keV",hkli[0],hkli[1],hkli[2],keV
+				tagStr += "\r"+str
+			endif
 		endif
-	elseif (useIndex)												// examining indexed peaks
+
+	elseif (useIndex)													// examining indexed peaks
 		if (!WaveExists(FullPeakIndexed))
 			return 1
 		endif
 		dist2=Inf
-		m=-1														// find the indexed peak closest to the mouse-click
+		m=-1																// find the indexed peak closest to the mouse-click
 		N=DimSize(FullPeakIndexed,0)
 		for (i=0;i<N;i+=1)											// search through all indexed peaks
-			px = FullPeakIndexed[i][9][ip]							// binned pixels
+			px = FullPeakIndexed[i][9][ip]						// binned pixels
 			py = FullPeakIndexed[i][10][ip]
 			if ((px-mx)^2+(py-my)^2 < dist2)
 				m = i
@@ -1086,7 +1101,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			endif
 		endfor
 		if (m<0)
-			return 1												// no indexed peak found
+			return 1														// no indexed peak found
 		endif
 		h=FullPeakIndexed[m][3][ip]
 		k=FullPeakIndexed[m][4][ip]
@@ -1104,17 +1119,15 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		tagStr = "\\Zr090Indexed peak position\r" + str
 		tagStr += SelectString(numtype(SpaceGroup),"\r"+getSymString(SpaceGroup)+"    Space Group #"+num2istr(SpaceGroup),"")
 
-
-
 	elseif (useStrain)												// examining strain refined peaks
 		if (!WaveExists(PeaksForStrain))
 			return 1
 		endif
 		dist2=Inf
-		m=-1														// find the indexed peak closest to the mouse-click
+		m=-1																// find the indexed peak closest to the mouse-click
 		N=DimSize(PeaksForStrain,0)
 		for (i=0;i<N;i+=1)											// search through all indexed peaks
-			px = PeaksForStrain[i][11]								// binned pixels
+			px = PeaksForStrain[i][11]							// binned pixels
 			py = PeaksForStrain[i][12]
 			if ((px-mx)^2+(py-my)^2 < dist2)
 				m = i
@@ -1122,7 +1135,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			endif
 		endfor
 		if (m<0)
-			return 1												// no indexed peak found
+			return 1														// no indexed peak found
 		endif
 		h=PeaksForStrain[m][0]
 		k=PeaksForStrain[m][1]
@@ -1139,9 +1152,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\rÆ=%.2g%s\rhkl=(%d %d %d),   #%d",px,py, keV,angleErr,angleErrUnit,h,k,l,m
 		tagStr = "\\Zr090Strained peak position\r" + str
 	endif
-	px = limit(px,0,DimSize(image,0)-1)							// needed in case (px,py) is outside the image
+	px = limit(px,0,DimSize(image,0)-1)						// needed in case (px,py) is outside the image
 	py = limit(py,0,DimSize(image,1)-1)
-	Variable index = round(px) + DimSize(image,0)*round(py)		// convert px,py back to index into image
+	Variable index = round(px) + DimSize(image,0)*round(py)	// convert px,py back to index into image
 	GetAxis/W=$win/Q bottom
 	horiz = (px-V_min)/ (V_max-V_min)
 	GetAxis/W=$win/Q left
@@ -1150,7 +1163,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	String anchor = SelectString(horiz<0.5,"R","L")+ SelectString(vert<0.5,"B","T")
 	Tag/C/N=indexedPeakInfo/W=$win/A=$anchor/F=2/L=2/X=(x0)/Y=(y0)/P=1 $imageName,index,tagStr
 	DoUpdate
-	return 1														// 1 means do not send back to Igor for more processing
+	return 1																// 1 means do not send back to Igor for more processing
 End
 
 
@@ -1162,7 +1175,7 @@ Function ButtonBoxesProc(B_Struct) : ButtonControl
 	Wave peakList = $StringByKey("FullPeakList",GetUserData(B_Struct.win,"","FitPeaks"),"=")
 	if (!WaveExists(peakList))						// not in user data, search for one
 		Wave image = ImageNameToWaveRef(B_Struct.win,StringFromList(0,ImageNameList(B_Struct.win,";")))
-		Wave peakList = $FindPeakListForImage(image)
+		Wave peakList = FindPeakListForImage(image)
 	endif
 	if (!WaveExists(peakList))						// give up
 		DoAlert 0,"Could not find FullPeakList for the image on this Graph"
@@ -1572,42 +1585,69 @@ End
 
 
 
-
-Function/T FindPeakListForImage(image)
+Function/WAVE FindPeakListForImage(image)	// returns wave ref of FullPeakList for an image
 	Wave image
-	if (!WaveExists(image))
-		return ""
-	endif
-	String fullName = GetWavesDataFolder(image,2)
-
-	String wlist = WaveListClass("FittedPeakList*","*","MINCOLS:1")
-	Variable i
-	for (i=0;i<ItemsInList(wlist);i+=1)
-		Wave peakList = $StringFromList(i,wlist)
-		if (stringmatch(fullName,StringByKey("fittedIgorImage", note(peakList),"=")))
-			return GetWavesDataFolder(peakList,2)
+	String wList=WaveListClass("FittedPeakList*","*","MINCOLS:1")
+	Variable i, N=ItemsInList(wList)
+	for (i=0;i<N;i+=1)
+		Wave peakList = $StringFromList(i,wList)
+		Wave iTest = $StringByKey("fittedIgorImage",note(peakList),"=")
+		if (WaveRefsEqual(image,iTest))
+			return peakList
 		endif
 	endfor
-	return ""
+	return $""
 End
 
-Function/T FindIndexListForImage(image)
+Function/WAVE FindIndexListForImage(image)	// returns wave ref of FullPeakIndex for an image
 	Wave image
-	if (!WaveExists(image))
-		return ""
-	endif
-	String fullName = GetWavesDataFolder(image,2)
-
-	String wlist = WaveListClass("IndexedPeakList*","*","MAXCOLS:12")
-	Variable i
-	for (i=0;i<ItemsInList(wlist);i+=1)
-		Wave indexList = $StringFromList(i,wlist)
-		if (stringmatch(fullName,StringByKey("fittedIgorImage", note(indexList),"=")))
-			return GetWavesDataFolder(indexList,2)
+	String wList=WaveListClass("IndexedPeakList*","*","MAXCOLS:12")
+	Variable i, N=ItemsInList(wList)
+	for (i=0;i<N;i+=1)
+		Wave indexList = $StringFromList(i,wList)
+		Wave iTest = $StringByKey("fittedIgorImage",note(indexList),"=")
+		if (WaveRefsEqual(image,iTest))
+			return indexList
 		endif
 	endfor
-	return ""
+	return $""
 End
+//
+//Function/WAVE FindPeakListForImage(image)
+//	Wave image
+//	if (!WaveExists(image))
+//		return ""
+//	endif
+//	String fullName = GetWavesDataFolder(image,2)
+//
+//	String wlist = WaveListClass("FittedPeakList*","*","MINCOLS:1")
+//	Variable i
+//	for (i=0;i<ItemsInList(wlist);i+=1)
+//		Wave peakList = $StringFromList(i,wlist)
+//		if (stringmatch(fullName,StringByKey("fittedIgorImage", note(peakList),"=")))
+//			return GetWavesDataFolder(peakList,2)
+//		endif
+//	endfor
+//	return ""
+//End
+//
+//Function/T FindIndexListForImage(image)
+//	Wave image
+//	if (!WaveExists(image))
+//		return ""
+//	endif
+//	String fullName = GetWavesDataFolder(image,2)
+//
+//	String wlist = WaveListClass("IndexedPeakList*","*","MAXCOLS:12")
+//	Variable i
+//	for (i=0;i<ItemsInList(wlist);i+=1)
+//		Wave indexList = $StringFromList(i,wlist)
+//		if (stringmatch(fullName,StringByKey("fittedIgorImage", note(indexList),"=")))
+//			return GetWavesDataFolder(indexList,2)
+//		endif
+//	endfor
+//	return ""
+//End
 
 
 // make an empty FittedPeakList for the image.  This is particularly useful when selecting "AddGaussianToPeakList"
@@ -1619,7 +1659,7 @@ Function/WAVE MakeEmptyPeakListForImage(image,[ask,keyVals])
 	if (!WaveExists(image))
 		return $""
 	endif
-	String peakListName=FindPeakListForImage(image)
+	String peakListName=GetWavesDataFolder(FindPeakListForImage(image),2)
 	if (Exists(peakListName)==1)
 		DoAlert 0, "FullPeakList already exists, will use it."
 		return $peakListName
@@ -2381,7 +2421,7 @@ Function/T MakeMaskThreshold(image,threshold,[dilate])
 		return ""
 	endif
 	if (!(threshold>0))
-		Wave peakList = $FindPeakListForImage(image)
+		Wave peakList = FindPeakListForImage(image)
 		if (!WaveExists(peakList))
 			DoAlert 0,"MakeMaskThreshold(), could not find peakList & threshold is invalid."
 			return ""
@@ -2478,15 +2518,15 @@ End
 //	-K mask_file_name (use pixels with mask==0)
 Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[mask,whoami,peakShape,smoothing,thresholdRatio,maxNum])
 	Wave image						// the image from the file
-	Variable minPeakWidth			// minimum width for an acceptable peak (pixels)
+	Variable minPeakWidth		// minimum width for an acceptable peak (pixels)
 	Variable boxSize				// maximum width for an acceptable peak (pixels)
 	Variable maxRfactor			// max R-factor
-	Variable threshAboveAvg		// threshold above average value,  use 25
+	Variable threshAboveAvg	// threshold above average value,  use 25
 	Wave mask						// starting mask for the fit (this mask is unchanged by this routine)
 	Variable whoami				// if passed, then just return the name of this routine
 	String peakShape				// Lorentzian (default), or Gaussian
-	Variable smoothing				// if TRUE, do a smoothing operation before peak search
-	Variable thresholdRatio			// set threshold to (ratio*[std dev] + avg) if threshold passed as NaN (optional)
+	Variable smoothing			// if TRUE, do a smoothing operation before peak search
+	Variable thresholdRatio	// set threshold to (ratio*[std dev] + avg) if threshold passed as NaN (optional)
 	Variable maxNum				// maximum number of peaks to fit (defaults to unlimited)
 	if (!ParamIsDefault(whoami))
 		return GetRTStackInfo(1)
@@ -2635,9 +2675,9 @@ Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAbov
 	endif
 	Variable Nu = DimSize(FullPeakList,0)
 
-	CheckDisplayed image
-	if (V_flag)
-		SetWindow kwTopWin userdata(FitPeaks) = "FullPeakList="+GetWavesDataFolder(FullPeakList,2)
+	String win = StringFromList(0,FindGraphsWithWave(image))
+	if (strlen(win))
+		SetWindow $win userdata(FitPeaks) = "FullPeakList="+GetWavesDataFolder(FullPeakList,2)
 	endif
 	if (printIt)
 		threshAboveAvg = threshAboveAvg>0 ? threshAboveAvg : NumberBykey("threshAboveAvg",note(FullPeakList),"=")
