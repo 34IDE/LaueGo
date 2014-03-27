@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.62
+#pragma version = 1.63
 #include  "LatticeSym", version>=4.13
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -965,22 +965,14 @@ Static Function/C peakCorrect(d,px,py)				// returns cmplx(dx,dy), the change
 	STRUCT detectorGeometry, &d
 	Variable &px,&py								// un-binned full frame zero based pixel location on input, changed to distorttion corrected value at end
 
-//	Wave xymap=$""								// distortion map
-	Wave xymap = root:Packages:geometry:xymap	// distortion map
-
-	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT) && WaveExists(xymap)
-	if (!useDistortion)								// do not distort
-		return cmplx(0,0)
+	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
+	useDistortion = useDistortion && Exists("root:Packages:geometry:xymap")==1
+	if (useDistortion)
+		Wave xymap = root:Packages:geometry:xymap	// distortion map
+		return peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
+	else
+		return cmplx(0,0)										// no distortion
 	endif
-
-
-
-	return peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
-
-
-
-//	// NO Distortion yet
-//	return cmplx(0,0)
 End
 //Function/C peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
 //
@@ -1193,9 +1185,10 @@ Function GeometryUpdateCalc(g)						// update all internally calculated things i
 	endfor
 	g.Ndetectors = N
 
-	Wave xymap=root:Packages:geometry:xymap
-	resetCenterDistortionMap(xymap,(g.d[0].Nx)/2,(g.d[0].Ny)/2)	// update distortion map so that correction at (xc,yc) goes to zero
-//	resetCenterDistortionMap(xymap,geo.xcent,geo.ycent)	// update distortion map so that correction at (xc,yc) goes to zero
+	if (Exists("root:Packages:geometry:xymap")==1)
+		Wave xymap=root:Packages:geometry:xymap
+		resetCenterDistortionMap(xymap,(g.d[0].Nx)/2,(g.d[0].Ny)/2)	// update distortion map so that correction at (xc,yc) goes to zero
+	endif
 
 	WireUpdateCalc(g.wire)							// update all internally calculated things in the wire structure
 End
@@ -5125,6 +5118,9 @@ End
 //End
 
 Function MakeDistortionMap()
+	if (Exists("root:Packages:geometry:xymap")!=1)
+		return 1
+	endif
 	Variable N=20
 	Make/N=(N,N)/O totalDistortion
 	Make/N=(N,N)/O/C xyDistortion
@@ -5169,6 +5165,7 @@ Function MakeDistortionMap()
 		endfor
 	endfor
 	KillWaves/Z xyDistortion
+	return 0
 End
 //
 //	xymap,Nx,Ny,cornerX0,cornerY0,cornerX1,cornerY1

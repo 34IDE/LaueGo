@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Masking
-#pragma version = 1.01
+#pragma version = 1.02
 
 
 Menu "GraphMarquee",dynamic
@@ -34,11 +34,8 @@ OverRide Function/S MarqueeMaskMenuItem(item,[csr])
 	String imageName = StringFromList(0,ImageNameList("",";"))
 	if (strlen(imageName)<1)
 		disable = 2
-	endif
-	Wave image = ImageNameToWaveRef("",imageName)
-	if (!WaveExists(image))
-		disable = 2
 	else
+		Wave image = ImageNameToWaveRef("",imageName)
 		class = StringByKey("waveClass", note(image),"=")
 		disable = stringmatch(class,"image&Mask") ? 0 : 1		// not an editable mask
 	endif
