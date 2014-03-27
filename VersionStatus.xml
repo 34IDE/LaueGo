@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, March 12, 2014" time="12:28:12 PM CDT" isoTime="2014-03-12T12:28:12"></written>
+	<written date="Thursday, March 27, 2014" time="04:32:27 PM CDT" isoTime="2014-03-27T16:32:27"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>256</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -134,7 +134,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
 	<file version="2.28" time="2014-01-28T12:28:56" md5="316c35ddb0b7a1143f3b66bd9fb61d80" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="302bdca49e31e68d95cc2b98a1177552" ext=".ipf">General/WinView.ipf</file>
-	<file version="1.62" time="2013-12-18T11:53:29" md5="a222e0fed6a93651236ded86df575f38" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="1.63" time="2014-03-27T15:55:19" md5="41a4b41193c34b2d4218eb517de9be52" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.08" time="2014-01-07T12:24:47" md5="b654123e368cb86a47808db0b169bf23" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bb6ba6241034143a7da9c01eabf2d869" ext=".xml">materials/VO2/VO2_M1_1992Rogers.xml</file>
 	<file version="2.44" time="2013-10-28T11:28:48" md5="1c614e0918482796177c841b92287e46" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
@@ -182,7 +182,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" ext="">micro/Euler_Debug_ppc</file>
 	<file version="0.9947" time="2013-10-28T11:28:48" md5="15a9d4be8182b6824fa228e0326909b5" ext=".ipf">micro/EnergyWireScans.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bb2a689b7334c1a698aeec3f952cd0ed" ext=".xml">materials/Ti-7Al.xml</file>
-	<file version="1.01" time="2013-10-28T11:28:48" md5="2e5d0542e31ab1e72773120d56825498" ext=".ipf">General/Masking.ipf</file>
+	<file version="1.02" time="2014-03-27T16:13:13" md5="93b69d14d1bc2c6c4a6f6944251e1a72" ext=".ipf">General/Masking.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c9d8ec204c982c306268074db375a578" ext=".xml">materials/VO2/VO2_M2_1977Ghedira.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="fdb7ce7b40230dfecefe1bb0b5a93d95" ext=".png">microN/microDiffractionMedia/Picture6.png</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3d6e94ca7500a45167aefd8cbb3e84e4" ext=".xml">materials/IN740.xml</file>
