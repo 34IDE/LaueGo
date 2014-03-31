@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.52
+#pragma version = 1.53
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -27,7 +27,7 @@ Menu LaueGoMainMenuName
 		"Make Movie of one type of Scan ",MovieOfOneScan()
 		help={"movie of 1 wire scan, some sequential images, or first white image of each wire scan"}
 		"Load recontruction 'summary' file", LoadIntegralFile("")
-		"  Re-Display intensity from summary",DisplayReconstructionIntegral($"")
+		"  Re-Display intensity from summary",DisplayReconstructionIntegral($"",$"")
 		"Sum a ROI in many Images",SumInManyROIs("","","",$"")
 		"Make Waves With Metadata from Image Range",ImageMetaData2Waves("","","","")	
 		"-"
@@ -250,7 +250,7 @@ Static Function EnableDisableDetailControls(win)				// here to enable/disable
 	Button buttonSumImages,win=$win,disable=0
 	Button buttonMetaDataImages,win=$win,disable=0
 	Button buttonFlyExtract,win=$win,disable=0 		//rxadd
-	d = strlen(WaveListClass("intensityVsDepth","*","DIMS:1"))<1 ? 2 : 0
+	d = strlen(WaveListClass("intensityVsDepth,intensityRecon","*","DIMS:1"))<1 ? 2 : 0
 	Button buttonRePlotSummary,win=$win,disable= d
 End
 //
@@ -271,7 +271,7 @@ Static Function DetailButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonLoadSummary"))
 		LoadIntegralFile("")
 	elseif (stringmatch(ctrlName,"buttonRePlotSummary"))
-		DisplayReconstructionIntegral($"")
+		DisplayReconstructionIntegral($"",$"")
 	elseif (stringmatch(ctrlName,"buttonSumImages"))
 		SumInManyROIs("","","",$"")
 	elseif (stringmatch(ctrlName,"buttonMetaDataImages"))
@@ -1806,16 +1806,24 @@ Function/T LoadIntegralFile(fName)
 		endfor
 		listOfWaves = RemoveFromList(NameOfWave(wXaxis),listOfWaves)
 		KillWaves/Z wXaxis
+		Wave wy = $StringFromList(0, listOfWaves)
+		Wave wx = $""
+	else
+		Wave wy = $StringFromList(1, listOfWaves)
+		Wave wx = $StringFromList(0, listOfWaves)
 	endif
 
-	Wave ww = $StringFromList(0, listOfWaves)
-	if (stringmatch(WaveUnits(ww,0),"µm") && strsearch(NameOfWave(ww),"Intensity",0,2)==0)
-		Note/K ww,ReplaceStringByKey("waveClass",note(ww),"intensityVsDepth","=")
+	if (stringmatch(WaveUnits(wy,0),"µm") && strsearch(NameOfWave(wy),"Intensity",0,2)==0)
+		Note/K wy,ReplaceStringByKey("waveClass",note(wy),"intensityVsDepth","=")
+	elseif ((stringmatch(WaveUnits(wx,-1),"µm") || stringmatch(WaveUnits(wx,-1),"micron")) && strsearch(NameOfWave(wy),"Intensity",0,2)==0)
+		String wnote = ReplaceStringByKey("waveClass",note(wy),"intensityRecon","=")
+		wnote = ReplaceStringByKey("Xwave",wnote,GetWavesDataFolder(wx,2),"=")
+		Note/K wy, wnote
 	endif
-	if (printIt && strlen(FindGraphsWithWave(ww))<1)
+	if (printIt && strlen(FindGraphsWithWave(wy))<1)
 		DoAlert 1, "Display the integral for this reconstruction?"
 		if (V_flag==1)
-			DisplayReconstructionIntegral(ww)
+			DisplayReconstructionIntegral(wy,wx)
 		endif
 	endif
 	return listOfWaves
@@ -1858,11 +1866,7 @@ End
 Static Function uniformlySpaced(ww)		// returns true if values of ww are uniformly spaced
 	Wave ww
 
-	String wName = UniqueName("uniformTest",1,0)
-	Make/N=(numpnts(ww)-1)/B $wName
-	Wave wtest = $wName
 	Variable thresh, diff = ww[1]-ww[0]
-
 	switch(WaveType(ww) & 0x3F)
 		case 0x00:					// not available for text
 		case 0x01:					// not available for complex
@@ -1881,9 +1885,9 @@ Static Function uniformlySpaced(ww)		// returns true if values of ww are uniform
 		default:						// should never reach this
 			return 0
 	endswitch
+	Make/N=(numpnts(ww)-2)/B/FREE wtest
 	wtest = abs((ww[p+1]-ww[p])-diff) > thresh
 	Variable uniform = sum(wtest)<1
-	KillWaves/Z wtest
 	return uniform
 End
 //
@@ -1897,10 +1901,10 @@ Function flattenIntegral(integWave)
 	integWave -= p*slope + b
 End
 
-Function DisplayReconstructionIntegral(ww)
-	Wave ww
-	if (!WaveExists(ww))
-		String list = WaveListClass("IntensityVsDepth","*","DIMS:1")
+Function DisplayReconstructionIntegral(wy,wx)
+	Wave wy,wx
+	if (!WaveExists(wy))
+		String list = WaveListClass("IntensityVsDepth,intensityRecon","*","DIMS:1")
 		String wName = StringFromList(0,list)
 		if (ItemsInList(list)<1)
 			DoAlert 0, "No intensity vs depth profiles available, try:\r'IntensityVsDepth()' or 'LoadIntegralFile()'"
@@ -1912,26 +1916,34 @@ Function DisplayReconstructionIntegral(ww)
 				return 1
 			endif
 		endif
-		Wave ww = $wName
+		Wave wy = $wName
 	endif
 
-	if (!WaveExists(ww))
+	if (!WaveExists(wy))
 		return 1
 	endif
-	String win = StringFromList(0,FindGraphsWithWave(ww))		// wave already plotted, bring to front
+	String win = StringFromList(0,FindGraphsWithWave(wy))		// wave already plotted, bring to front
  	if (strlen(win))
 		DoWindow/F $win
 		return 0
  	endif
 
-	WaveStats/Q/M=1 ww
+	String wnote=note(wy)
+	if (!WaveExists(wx))
+		Wave wx = $StringByKey("Xwave",wnote,"=")
+	endif
 
-	Display /W=(3,365,472,622) ww
+	if (WaveExists(wx))
+		Display /W=(3,365,472,622) wy vs wx
+	else
+		Display /W=(3,365,472,622) wy
+	endif
 	ModifyGraph gfMult=130, lSize=2, rgb=(0,5871,57708)
 	ModifyGraph tick=2, zero(bottom)=2, mirror=1, minor=1, lowTrip=0.001, standoff=0
 	ModifyGraph axOffset(left)=-0.857143,axOffset(bottom)=-0.538462
 	Label left "Integral  (\\U)"
 	Label bottom "Depth  (\\U)"
+	WaveStats/Q/M=1 wy
 	if (V_min<0)
 		SetAxis/A/N=1 left
 		ModifyGraph zero(left)=2
@@ -1939,8 +1951,7 @@ Function DisplayReconstructionIntegral(ww)
 		SetAxis/A/E=1 left
 	endif
 
-	String str, wnote = note(ww)
-	String text="\\Z09"
+	String str, text="\\Z09"
 	Variable i,  j0,j1,percent
 	str = StringByKey("ws_infile",wnote,"=")
 	i = strlen(ParseFilePath(1, str, "/", 1, 2))
@@ -1969,7 +1980,7 @@ Function DisplayReconstructionIntegral(ww)
 	sprintf str,"\rusing images [%d, %d],  %g%% of pixels",j0,j1,percent
 	text += str
 	TextBox/C/N=label0/F=0/X=3/Y=6 text
-	Cursor/P A $NameOfWave(ww) 0
+	Cursor/P A $NameOfWave(wy) 0
 	ShowInfo
 	return 0
 End

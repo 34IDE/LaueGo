@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.18
+#pragma version = 4.20
 #include "Utility_JZT" version>=3.03
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -89,6 +89,8 @@
 // with version 4.17, changed MinimalChemFormula(), it better removes common factors
 // with version 4.18, fixed an ERROR in Fstruct, it now properly checks for valid xtal.SpaceGroup
 //		also added recipFrom_xtal(), a little utility that make a free recip matrix from xtal
+// with version 4.19, small change in reMakeAtomXYZs(), avoids error when debug on "NVAR SVAR WAVE Checking" is on
+// with version 4.20, the xtl file is now carried along in the crystalStructure structure
 
 // Rhombohedral Transformation:
 //
@@ -142,6 +144,7 @@ Static Constant STRUCTURE_ATOMS_MAX=50	// max number of atom types in a material
 //Strconstant CommonPredefinedStructures = "FCC:255;BCC:229;Diamond:227;Perovskite:221;Cubic:195;Hexagonal:194;Wurtzite (B4):186;Sapphire:167;"
 Strconstant CommonPredefinedStructures = "FCC:255;BCC:229;Diamond:227;Perovskite:221;Cubic:195;Wurtzite (B4):186;Sapphire:167;"
 Static Constant HASHID_LEN = 66				// length of string to hold hashID in crystalStructure
+Static Constant MAX_FILE_LEN = 400			// max length of a file name to store
 
 Static Constant amu_eV = 931.494061e6		// energy of one amu (eV),  these 4 numbers only used by Debye-Waller calculation
 Static Constant hbar = 6.58211928e-16		// eV - sec
@@ -176,6 +179,7 @@ Structure crystalStructure		// structure definition for a crystal lattice
 	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
 	double Unconventional10,Unconventional11,Unconventional12
 	double Unconventional20,Unconventional21,Unconventional22
+	char sourceFile[MAX_FILE_LEN]	// name of source file
 	char hashID[HASHID_LEN]	// hash function for this strucutre (needs to hold at least 64 chars), This MUST be the LAST item
 EndStructure
 //
@@ -845,6 +849,9 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 		Variable aRhom = sqrt(3*(xtal.a)^2 + (xtal.c)^2)/3
 		Variable alphaRhom = 2*asin(1.5/sqrt(3+(xtal.c/xtal.a)^2)) * 180/PI
 		printf "   Rhombohedral constants, aRhom = %.8g nm,   alpha(Rhom) = %.8g¡\r",aRhom,alphaRhom
+	endif
+	if (strlen(xtal.sourceFile)>1)
+		printf "xtal read from file: \"%s\"\r",xtal.sourceFile
 	endif
 
 	if (N<1)
@@ -1775,6 +1782,7 @@ Function setLattice()
 		return 1
 	endif
 	xtal.Unconventional00 = NaN
+	xtal.sourceFile = ""
 	CleanOutCrystalStructure(xtal)
 	UpdateCrystalStructureDefaults(xtal)
 	return 0
@@ -1914,6 +1922,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	xtal.alpha = alpha	;	xtal.beta = bet	;	xtal.gam = gam
 	xtal.SpaceGroup=SpaceGroup
 	xtal.Unconventional00=NaN
+	xtal.sourceFile = ""
 	ForceLatticeToStructure(xtal)
 	return 0
 End
@@ -1943,7 +1952,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Variable/G root:Packages:Lattices:PanelValues:bet
 	Variable/G root:Packages:Lattices:PanelValues:gam
 	Variable/G root:Packages:Lattices:PanelValues:alphaT
-	Variable/G root:Packages:Lattices:PanelValues:dirty
+	Variable/G root:Packages:Lattices:PanelValues:dirty		// =1 (xtal.sourceFile bad too),  =2 (values changed, but xtal.sourceFile is OK)
 	Variable/G root:Packages:Lattices:PanelValues:T_C
 	NVAR SpaceGroup=root:Packages:Lattices:PanelValues:SpaceGroup
 	SVAR desc=root:Packages:Lattices:PanelValues:desc
@@ -1970,9 +1979,9 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	if (strlen(strStruct))								// start using the passed values
 		StructGet/S/B=2 xtal, strStruct				// found passed structure information, load into xtal
 		CleanOutCrystalStructure(xtal)
-		dirty = 1
+		dirty = 2											// xtal.sourceFile should be OK
 		crystalStructStr = strStruct
-	elseif(new)											// no old values present, use usual defaults
+	elseif(new)												// no old values present, use usual defaults
 		FillCrystalStructDefault(xtal)
 		a=xtal.a  ;  b=xtal.b  ;  c=xtal.c
 		alpha=xtal.alpha  ;  bet=xtal.beta  ;  gam=xtal.gam
@@ -1981,7 +1990,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 		desc=xtal.desc
 		T_C = xtal.Temperature
 		T_C = numtype(T_C) || T_C<-273.14 ? 22.5 : T_C
-		T_C = (xtal.haveDebyeT) ? T_C : NaN			// if no Debye Temperatuers, no temperature needed
+		T_C = (xtal.haveDebyeT) ? T_C : NaN		// if no Debye Temperatuers, no temperature needed
 		dirty = 0
 //		StructPut/S xtal, strStruct
 		StructPut/S xtal, crystalStructStr
@@ -2199,7 +2208,7 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 		case "set_gamma":
 		case "setDesc":
 		case "T_C":
-			dirty = 1
+			dirty = 1								// a big change, xtal.sourceFile no longer valid
 			break
 	endswitch
 
@@ -2208,7 +2217,7 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 		NVAR dspace_nm=root:Packages:Lattices:PanelValues:dspace_nm
 		NVAR Fr=root:Packages:Lattices:PanelValues:Fr, Fi=root:Packages:Lattices:PanelValues:Fi
 		NVAR T_C=root:Packages:Lattices:PanelValues:T_C
-		STRUCT crystalStructure xtal		// returns 0 if something set, 1 is nothing done
+		STRUCT crystalStructure xtal			// returns 0 if something set, 1 is nothing done
 		FillCrystalStructDefault(xtal)		//fill the crystal structure with 'current' values
 		dspace_nm = dSpacing(xtal,h,k,l)
 //		Variable/C Fc = Fstruct(xtal,h,k,l,T_K=(xtal.Temperature)+273.15)
@@ -2331,6 +2340,9 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		xtal.alphaT = alphaT
 		xtal.Temperature = T_C
 		xtal.desc = desc[0,99]								// desc is limited to 100 chars
+		if (dirty==1)											// dirty==1, means xtal.sourceFile is bad
+			xtal.sourceFile = ""
+		endif
 		ForceLatticeToStructure(xtal)
 		UpdateCrystalStructureDefaults(xtal)
 		dirty = 0
@@ -2344,17 +2356,17 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 			return 0
 		endif
 		SpaceGroup = SG
-		dirty = 1
+		dirty = 1												// source file no longer valid
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
 		LatticePanelParamProc(sva)
 	elseif (stringmatch(ctrlName,"buttonEditAtomPositions"))
-		if (EditAtomPositions(xtal)>=0)				// xtal has been MODIFIED
+		if (EditAtomPositions(xtal)>=0)					// xtal has been MODIFIED
 			if (ForceLatticeToStructure(xtal))			// sets everything including remaking atom0,atom1,...
 				return NaN
 			endif
 			xtal.hashID = xtalHashID(xtal)
 			StructPut/S xtal, crystalStructStr			// update the local copy
-			dirty = 1
+			dirty = 2											// source file still mostly OK
 			UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
 			LatticePanelParamProc(sva)
 		endif
@@ -2369,7 +2381,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		alphaT = xtal.alphaT
 		T_C = xtal.Temperature
 		T_C = (xtal.haveDebyeT && numtype(T_C)) ? 22.5 : T_C
-		dirty = 1
+		dirty = 2														// yes, it is dirty, but xtal.sourceFile is valid
 		StructPut/S xtal, crystalStructStr
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
 		LatticePanelParamProc(sva)
@@ -2455,6 +2467,13 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 		a*= 10  ;  b*= 10  ;  c*= 10
 	endif
 	alphaT = str2num(StringByKey("latticeAlphaT",list,"="))
+
+	String fullFile = StringByKey("keyStrFileName",list,"=")
+	Variable i0,i1
+	i1 = strlen(fullFile)-1						// possibly trim file length to fit, keep last part of fullFile
+	i0 = max(0,i1-MAX_FILE_LEN)
+	fullFile = fullFile[i0,i1]
+	xtal.sourceFile = fullFile
 
 	xtal.hashID = ""
 	xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
@@ -3040,6 +3059,7 @@ Static Function readFileXML(xtal,fileName,[path])
 	if (strlen(S_fileName)<1 || V_flag)
 		return 1
 	endif
+	String fullFile = S_fileName
 
 	FStatus f
 	String buf=PadString("",V_logEOF,0x20)
@@ -3058,8 +3078,13 @@ Static Function readFileXML(xtal,fileName,[path])
 		return 1
 	endif
 	i1 -= 1												// ends just before </cif>
-
 	String cif = buf[i0,i1]
+
+	i1 = strlen(fullFile)-1						// possibly trim file length to fit, keep last part of fullFile
+	i0 = max(0,i1-MAX_FILE_LEN)
+	fullFile = fullFile[i0,i1]
+	xtal.sourceFile = fullFile
+
 	xtal.hashID = ""
 	String str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
@@ -3784,6 +3809,7 @@ Static Function readFileCIF(xtal,fileName,[path])
 	if (strlen(S_fileName)<1 || V_flag)
 		return 1
 	endif
+	String fullFile = S_fileName
 
 	FStatus f
 	String buf=PadString("",V_logEOF,0x20)
@@ -3821,6 +3847,13 @@ Static Function readFileCIF(xtal,fileName,[path])
 	endif
 
 	Variable err = CIF_interpret(xtal,buf,desc=desc)
+	if (!err)
+		Variable i0,i1
+		i1 = strlen(fullFile)-1				// possibly trim file length to fit, keep last part of fullFile
+		i0 = max(0,i1-MAX_FILE_LEN)
+		fullFile = fullFile[i0,i1]
+		xtal.sourceFile = fullFile
+	endif
 	return err
 End
 
@@ -3947,7 +3980,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	xtal.Temperature = NaN
 	xtal.Nbonds	 = 0
 	xtal.Unconventional00 = NaN
-
+	xtal.sourceFile = ""
 	ForceLatticeToStructure(xtal)
 //	xtal.hashID = xtalHashID(xtal)
 	return 0
@@ -4317,22 +4350,20 @@ End
 
 Function reMakeAtomXYZs(xtal)
 	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
-	Wave ww = root:Packages:Lattices:atom0
-	if (WaveExists(ww) && strlen(xtal.hashID))	// if first atom has correct hash, assume the rest are OK too
-		if (stringmatch(StringByKey("ID",note(ww),"="),xtal.hashID))
-			return 0								// waves have correct hash, so return
+	if (Exists("root:Packages:Lattices:atom0")==1)
+		Wave ww = root:Packages:Lattices:atom0
+		if (WaveExists(ww) && strlen(xtal.hashID))	// if first atom has correct hash, assume the rest are OK too
+			if (stringmatch(StringByKey("ID",note(ww),"="),xtal.hashID))
+				return 0									// waves have correct hash, so return
+			endif
 		endif
 	endif
 	if (strlen(xtal.hashID)<1)
 		xtal.hashID = xtalHashID(xtal)			// re-set hash function to identify associated waves
-//		String strStruct
-//		xtal.hashID = ""							// re-set hash function to identify associated waves
-//		StructPut/S xtal, strStruct
-//		xtal.hashID = hash(strStruct,1)
 	endif
 	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
 	Variable m
-	for (m=0;m<xtal.N;m+=1)					// loop over each atom type
+	for (m=0;m<xtal.N;m+=1)						// loop over each atom type
 		name="root:Packages:Lattices:atom"+num2istr(m)
 		Make/N=3/O/D $name
 		Wave ww = $name
@@ -4345,29 +4376,6 @@ Function reMakeAtomXYZs(xtal)
 	endfor
 	return 0
 End
-//Function reMakeAtomXYZs(xtal)
-//	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
-//	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
-//	Variable m, OK
-//	for (m=0;m<xtal.N;m+=1)					// loop over each atom type
-//		name="root:Packages:Lattices:atom"+num2istr(m)
-//		Wave ww = $name
-//		OK = 0
-//		if (WaveExists(ww))
-//			OK = stringmatch(StringByKey("ID",note(ww),"="),xtal.hashID)
-//		endif
-//		if (!OK)									// cached arrays do not match the hashID in crystalStructure
-//			Make/N=3/O/D $name
-//			Wave ww = $name
-//			positionsOfOneAtomType(xtal.SpaceGroup,xtal.atom[m].x,xtal.atom[m].y,xtal.atom[m].z,ww)
-//			wnote = ReplaceStringByKey("atomType",wnote,xtal.atom[m].name,"=")
-//			wnote = ReplaceNumberByKey("Zatom",wnote,xtal.atom[m].Zatom,"=")
-//			wnote = ReplaceNumberByKey("occupy",wnote,xtal.atom[m].occ,"=")
-//			Note/K ww, wnote
-//		endif
-//	endfor
-//End
-//
 //Function testFstruct(h,k,l)
 //	Variable h,k,l
 //	STRUCT crystalStructure xtal				// this sruct is filled  by this routine
@@ -4384,7 +4392,7 @@ End
 Static Function positionsOfOneAtomType(SpaceGroup,xx,yy,zz,xyz)
 	Variable SpaceGroup	//Space Group number, from International Tables
 	Variable xx,yy,zz		// fractional coords of this kind of atom
-	Wave xyz				// list of all equiv posiitions for this atom in fractional coords
+	Wave xyz					// list of all equiv posiitions for this atom in fractional coords
 
 	SetSymOpsForSpaceGroup(SpaceGroup)			// ensure existance of symmetry op mats and vecs
 	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup))
@@ -5255,6 +5263,10 @@ Function copy_xtal(target,source)						// copy a crystalStructure source to targ
 	target.Unconventional20 = source.Unconventional20
 	target.Unconventional21 = source.Unconventional21
 	target.Unconventional22 = source.Unconventional22
+
+	String fullFile = source.sourceFile
+	fullFile = fullFile[0,MAX_FILE_LEN-1]
+	target.sourceFile = fullFile
 End
 //
 Static Function copy_atomType(target,source)		// copy a atomTypeStructure source to target
