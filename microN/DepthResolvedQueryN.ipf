@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.53
+#pragma version = 1.54
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -891,7 +891,7 @@ Function GraphMoviePixelIntensities(MoviePixelIntensities)
 		istyle = mod(floor(m/7),2) ? 11 : 0		// cycle between 11 & 0 every 7 traces
 		ModifyGraph rgb[m]=(colorCycle[i7][0],colorCycle[i7][1],colorCycle[i7][2]), lsize[m]=lSizes[i7], lstyle[m]=istyle
 	endfor
-	Legend/C/N=text0/J/S=3/X=3.84/Y=2.76 Ltext
+	Legend/C/N=text0/J/S=3/B=1/X=3.84/Y=2.76 Ltext
 	return 0
 End
 // *****************************  End of Fill Movie More Stuff *****************************

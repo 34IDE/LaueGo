@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.26
+#pragma version = 0.27
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -400,7 +400,7 @@ Function/T ReadHDF5header(fName)
 	endif
 
 	String wnote="", str, model=""
-	Variable f, value, Y1=NaN,Z1=NaN, Y2=NaN,Z2=NaN
+	Variable f, value
 
 	wnote = ReplaceStringByKey("waveClass",wnote,"rawImage","=")
 	wnote = ReplaceStringByKey("imageFileName",wnote,ParseFilePath(0,fName,":",1,0),"=")
@@ -419,44 +419,52 @@ Function/T ReadHDF5header(fName)
 		wnote= ReplaceNumberByKey("Nslices",wnote,round(Nslices),"=")
 	endif
 
-	// wire positions
-	HDF5ListGroup/Z f , "/entry1/wire"
-	String wireFolder = SelectString(V_flag,"entry1/wire/","entry1/")
-	str = getStrVecHDF5dataNum(f,wireFolder+"wireX",places=2,Nww=Nslices)
+	str = getStrVecHDF5dataNum(f,"entry1/depth",places=2,Nww=Nslices)
 	if (strlen(str))
-		wnote= ReplaceStringByKey("X2",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,wireFolder+"wireY",places=2,Nww=Nslices)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("Y2",wnote,str,"=")
-		Wave y2wave = $getWaveHDF5dataNum(f,wireFolder+"wireY",Nww=Nslices)
-	endif
-	str = getStrVecHDF5dataNum(f,wireFolder+"wireZ",places=2,Nww=Nslices)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("Z2",wnote,str,"=")
-		Wave z2wave = $getWaveHDF5dataNum(f,wireFolder+"wireZ",Nww=Nslices)
-	endif
-	value = get1HDF5dataNum(f,wireFolder+"wirebaseX")
-	if (numtype(value)==0)
-		value = round(value*1000)/1000			// only three places for wirebase
-		wnote= ReplaceNumberByKey("wirebaseX",wnote,value,"=")
-	endif
-	value = get1HDF5dataNum(f,wireFolder+"wirebaseY")
-	if (numtype(value)==0)
-		value = round(value*1000)/1000
-		wnote= ReplaceNumberByKey("wirebaseY",wnote,value,"=")
-	endif
-	value = get1HDF5dataNum(f,wireFolder+"wirebaseZ")
-	if (numtype(value)==0)
-		value = round(value*1000)/1000
-		wnote= ReplaceNumberByKey("wirebaseZ",wnote,value,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,wireFolder+"AerotechH",places=3,Nww=Nslices)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("AerotechH",wnote,str,"=")
-		// Wave Aerotechwave = $getWaveHDF5dataNum(f,wireFolder+"wireY")
+		wnote= ReplaceStringByKey("depth",wnote,str,"=")
 	endif
 
+	Variable reconstructed = Nslices==1 && numtype(str2num(str))==0		// a single reconstructed image from flyScan, 1 image + depth
+	if (reconstructed)
+		// wire positions
+		HDF5ListGroup/Z f , "/entry1/wire"
+		String wireFolder = SelectString(V_flag,"entry1/wire/","entry1/")
+
+		str = getStrVecHDF5dataNum(f,wireFolder+"wireX",places=2,Nww=Nslices)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("X2",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,wireFolder+"wireY",places=2,Nww=Nslices)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("Y2",wnote,str,"=")
+			Wave y2wave = $getWaveHDF5dataNum(f,wireFolder+"wireY",Nww=Nslices)
+		endif
+		str = getStrVecHDF5dataNum(f,wireFolder+"wireZ",places=2,Nww=Nslices)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("Z2",wnote,str,"=")
+			Wave z2wave = $getWaveHDF5dataNum(f,wireFolder+"wireZ",Nww=Nslices)
+		endif
+		value = get1HDF5dataNum(f,wireFolder+"wirebaseX")
+		if (numtype(value)==0)
+			value = round(value*1000)/1000			// only three places for wirebase
+			wnote= ReplaceNumberByKey("wirebaseX",wnote,value,"=")
+		endif
+		value = get1HDF5dataNum(f,wireFolder+"wirebaseY")
+		if (numtype(value)==0)
+			value = round(value*1000)/1000
+			wnote= ReplaceNumberByKey("wirebaseY",wnote,value,"=")
+		endif
+		value = get1HDF5dataNum(f,wireFolder+"wirebaseZ")
+		if (numtype(value)==0)
+			value = round(value*1000)/1000
+			wnote= ReplaceNumberByKey("wirebaseZ",wnote,value,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,wireFolder+"AerotechH",places=3,Nww=Nslices)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("AerotechH",wnote,str,"=")
+			// Wave Aerotechwave = $getWaveHDF5dataNum(f,wireFolder+"wireY")
+		endif
+	endif
 
 	// sample positions
 	str = getStrVecHDF5dataNum(f,"entry1/sample/sampleX",places=2,Nww=Nslices)
@@ -592,11 +600,7 @@ Function/T ReadHDF5header(fName)
 		wnote= ReplaceStringByKey("ScalerCountTime",wnote,str,"=")
 	endif
 
-	// depth, energy, exposure, scanNum, sampleDistance, detectorGain
-	str = getStrVecHDF5dataNum(f,"entry1/depth",places=2,Nww=Nslices)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("depth",wnote,str,"=")
-	endif
+	// energy, exposure, scanNum, sampleDistance, detectorGain
 	str = getStrVecHDF5dataNum(f,"entry1/sample/incident_energy",places=4,Nww=Nslices)
 	if (strlen(str))
 		wnote= ReplaceStringByKey("keV",wnote,str,"=")
@@ -684,20 +688,22 @@ Function/T ReadHDF5header(fName)
 
 #if (Exists("YZ2H")==6)
 	// optionally add H&F from Y&Z
-	if (numtype(Y1+Z1)==0)
-		wnote = ReplaceNumberByKey("H1",wnote,1e-3*round(YZ2H(Y1,Z1)*1e3),"=")
-		wnote = ReplaceNumberByKey("F1",wnote,1e-3*round(YZ2F(Y1,Z1)*1e3),"=")
-	elseif (WaveExists(y1wave) && WaveExists(z1wave))
+	//	if (numtype(Y1+Z1)==0)
+	//		wnote = ReplaceNumberByKey("H1",wnote,1e-3*round(YZ2H(Y1,Z1)*1e3),"=")
+	//		wnote = ReplaceNumberByKey("F1",wnote,1e-3*round(YZ2F(Y1,Z1)*1e3),"=")
+	//	elseif (WaveExists(y1wave) && WaveExists(z1wave))
+	if (WaveExists(y1wave) && WaveExists(z1wave))			// add sample positions H1 & F1 if Y1 & Z1 exist
 		Duplicate/FREE y1wave,f1wave,h1wave
 		h1wave = YZ2H(y1wave[p],z1wave[p])
 		f1wave = YZ2F(y1wave[p],z1wave[p])
 		wnote = ReplaceStringByKey("H1",wnote,vec2str(h1wave,places=3),"=")
 		wnote = ReplaceStringByKey("F1",wnote,vec2str(f1wave,places=3),"=")
 	endif
-	if (numtype(Y2+Z2)==0)
-		wnote = ReplaceNumberByKey("H2",wnote,1e-3*round(YZ2H(Y2,Z2)*1e3),"=")
-		wnote = ReplaceNumberByKey("F2",wnote,1e-3*round(YZ2F(Y2,Z2)*1e3),"=")
-	elseif (WaveExists(y2wave) && WaveExists(z2wave))
+	//	if (numtype(Y2+Z2)==0)
+	//		wnote = ReplaceNumberByKey("H2",wnote,1e-3*round(YZ2H(Y2,Z2)*1e3),"=")
+	//		wnote = ReplaceNumberByKey("F2",wnote,1e-3*round(YZ2F(Y2,Z2)*1e3),"=")
+	//	elseif (WaveExists(y2wave) && WaveExists(z2wave))
+	if (WaveExists(y2wave) && WaveExists(z2wave))			// add wire positions H2 & F2 if Y2 & Z2 exist
 		Duplicate/FREE y2wave,f2wave,h2wave
 		h2wave = YZ2H(y2wave[p],z2wave[p])
 		f2wave = YZ2F(y2wave[p],z2wave[p])
