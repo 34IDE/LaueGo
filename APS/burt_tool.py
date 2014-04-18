@@ -11,7 +11,7 @@ fraction = (12, 27, 42, 57)
 #
 # /net/ord/share1/burt/2005/12/07/01-42-00.gz
 # /net/sec33.xor.aps.anl.gov/export/sector33_34/burt/2009/03/05/11-27-01.gz
-burt_path = '/net/sec33.xor.aps.anl.gov/export/sector33_34/burt'
+burt_path = '/net/s33dserv.xray.aps.anl.gov/export/sector33_34/burt'
 
 
 def main(pv, start_date, period=1.0, end_date=-1):
