@@ -1,35 +1,35 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.79
-#include "microGeometryN", version>=1.28
+#pragma version = 0.80
+#include "microGeometryN", version>=1.63
+#include "ImageDisplayScaling", version>=1.97
 
-
-#include "ImageDisplayScaling"
 Static Constant hc = 1.239841857					// keV-nm
-
 // #define OLD_ORIENTATION_METHOD
 
+//#define OptimizeWireAxis				// if defined, optimize wire.axis[], otherwise  wire.R[]
+//		for Optimization of Wire Geometry from a wire scan, see section  "=== Start of Wire Calibration Fit ==="
 
 Menu LaueGoMainMenuName
 	SubMenu "Optimize - Calibrate"
 		MenuItemIfWaveClassExists("Enter Measured Energies for Calibration","IndexedPeakList*",""),EnterMeasuredEnergies("")
 		MenuItemIfWaveClassExists("Set Calibration Input Data for Optimize","IndexedPeakList*",""),MakeCalibData(NaN)
 		MenuItemIfWaveClassExists("Optimize All 3 Detector Geometrys","DetectorCalibrationList*",""),OptimizeAll($"",$"",$"")
-//		"Set Calibration Input Data for Optimize",MakeCalibData(NaN)
-//		"Optimize All 3 Detector Geometrys",OptimizeAll($"",$"",$"")
 		"-"
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on 1 Detector","DetectorCalibrationList*",""),GraphCalibrationDetector($"")
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on All Detectors","DetectorCalibrationList*",""),GraphAllCalibrationDetector()
 		MenuItemIfWaveClassExists("  Table of Calibration Data","DetectorCalibrationList*",""),TableCalibrationData($"")
-//		"  Graph Calibration Spots on 1 Detector",GraphCalibrationDetector($"")
-//		"  Graph Calibration Spots on All Detectors",GraphAllCalibrationDetector()
-//		"  Table of Calibration Data",TableCalibrationData($"")
 		"Write Detector values to EPICS...",WriteDetectorGeo2EPICS(NaN)
 		"-"
 		"(testing"
 		"  Make Fake Calibration Data",MakeFakeCalibration3Detectors(NaN)
 		"  test many Optimizations",testManyOptimize(NaN,NaN)
 		"  test first of many Optimizations",testOneOptimize(NaN)
+		"-"
+		"(Optimize Geometry from WireScan Peak TurnOffs"
+		MenuItemIfWaveClassExists("  Make Table of Turn Offs","PixelIntensities*","DIMS:2"), MakeWireFittingTable($"")
+		MenuItemIfWaveClassExists("  Optimize Wire Geometry","PixelTurnOffs","DIMS:2"), OptimizeWireGeometry($"",NaN)
+		MenuItemIfWaveClassExists("  Show Table of Wire Scan Turn Offs","PixelTurnOffs","DIMS:2"), TableOfPixelTurnOffs($"")
 		"-"
 		"Calculate Wire Origin",calcWireOrigin(NaN,NaN,NaN,NaN,NaN)
 		"For Detector in Direct Beam, find P from pixel",findPxPyFromPixel(NaN,NaN,NaN)
@@ -1989,3 +1989,349 @@ End
 
 // ================================= End of Calibration set panel ==================================
 //=======================================================================================
+
+
+
+
+// ==============================================================================================
+// =============================== Start of Wire Calibration Fit ================================
+
+
+Function/WAVE MakeWireFittingTable(PixelIntensities,[printIt])
+	Wave PixelIntensities
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
+	if (!WaveExists(PixelIntensities))
+		String wList = reverseList(WaveListClass("PixelIntensities*","*","DIMS:2"))
+		if (ItemsInList(wList)<2)
+			Wave PixelIntensities = $StringFromList(0,wList)
+		else
+			String wName
+			Prompt wName,"Pixel Intensity Wave",popup,wList
+			DoPrompt "Pixel Intensities",wName
+			if (V_flag)
+				return $""
+			endif
+			Wave PixelIntensities = $wName
+		endif
+		printIt = 1
+	endif
+	if (printIt)
+		printf "MakeWireFittingTable(%s",NameOfWave(PixelIntensities)
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=1"
+		endif
+		printf ")\r"
+	endif
+	if (!WaveExists(PixelIntensities))
+		return $""
+	endif
+
+	String wnote=note(PixelIntensities)
+	Variable NpIN=DimSize(PixelIntensities,1), i
+	String pxList=StringByKey("PixelPositions",wnote,"="), str
+	String X2list=StringByKey("X2",wnote,"="), Y2list=StringByKey("Y2",wnote,"="), Z2list=StringByKey("Z2",wnote,"=")
+	Variable detNum=detectorNumFromID(StringByKey("detectorID",wnote,"="))
+
+	Make/N=(NpIN)/FREE/D iTurnOffs=NaN
+	Variable N=DimSize(PixelIntensities,0), i0,i1, NpGood=0
+	Make/N=(N)/D/FREE vals
+	for (i=0;i<NpIN;i+=1)
+		vals = PixelIntensities[p][i]
+		iTurnOffs[i] = FitWireIntensityProfile(vals)
+		if (numtype(iTurnOffs[i]))
+			print " *** Could NOT find level for point",i
+		else
+			NpGood += 1									// increment good ones
+		endif
+ 	endfor
+	Make/N=(NpGood,8)/D/O PixelTurnOffs=NaN	// px,py,x,y,z
+	wnote = RemoveByKey("X2",wnote,"=")
+	wnote = RemoveByKey("Y2",wnote,"=")
+	wnote = RemoveByKey("Z2",wnote,"=")
+	wnote = ReplaceStringByKey("waveClass",wnote,"PixelTurnOffs","=")
+	wnote = ReplaceNumberByKey("detNum",wnote,detNum,"=")
+	Note/K PixelTurnOffs, wnote
+	SetDimLabel 1,0,px0,PixelTurnOffs		;	SetDimLabel 1,1,py0,PixelTurnOffs
+	SetDimLabel 1,2,wireX,PixelTurnOffs	;	SetDimLabel 1,3,wireY,PixelTurnOffs
+	SetDimLabel 1,4,wireZ,PixelTurnOffs	;	SetDimLabel 1,5,ip,PixelTurnOffs
+	SetDimLabel 1,6,depth0,PixelTurnOffs	;	SetDimLabel 1,7,depth1,PixelTurnOffs
+
+	Variable m, ip
+	for (i=0,m=0; i<NpIN; i+=1)
+		ip = iTurnOffs[i]
+		if (numtype(ip))
+			continue
+		endif
+		str = StringFromList(i,pxList,",")
+		PixelTurnOffs[m][0] = str2num(StringFromList(0,str,":"))
+		PixelTurnOffs[m][1] = str2num(StringFromList(1,str,":"))
+		PixelTurnOffs[m][2] = str2num(StringFromList(ip,X2list,","))
+		PixelTurnOffs[m][3] = str2num(StringFromList(ip,Y2list,","))
+		PixelTurnOffs[m][4] = str2num(StringFromList(ip,Z2list,","))
+		PixelTurnOffs[m][5] = iTurnOffs[i]
+		m += 1
+	endfor
+
+	Wave depths = CalcDepthsFromPixelTurnOffs(PixelTurnOffs,$"")
+	PixelTurnOffs[][6] = depths[p]			// save initial depths
+	PixelTurnOffs[][7] = NaN
+	//	Duplicate/O depths, depthsView
+	WaveStats/Q depths
+	printf " at start,  <depth> = %g,   range = [%g, %g],   std. dev = %g\r",V_avg,V_min,V_max,V_sdev
+	return PixelTurnOffs
+End
+//
+Static Function FitWireIntensityProfile(wy)
+	// used by MakeWireFittingTable() to find where wire clips spot
+	Wave wy
+	Variable hw=50
+	if (!WaveExists(wy))
+		return NaN
+	endif
+
+	SetScale/P x,0,1,"" wy
+	Variable N=DimSize(wy,0)
+	Variable i0=2, i1=N-2
+	WaveStats/M=1/Q/R=[i0,i1] wy
+	i1 = V_minloc
+	WaveStats/M=1/Q/R=[i0,i1] wy
+	FindLevel/B=3/EDGE=2/P/Q/R=[i0,i1] wy, (V_min+V_max)/2
+	V_LevelX = round(V_LevelX)
+
+	i0 = limit(V_LevelX-hw,2,V_LevelX)
+	i1 = limit(V_LevelX+hw,i0+5,N-1)
+	//	print i0,"  ",i1
+	if (i1-i0 < 10)
+		return NaN
+	endif
+	Variable V_fitOptions=4, V_FitError=0
+	CurveFit/Q/NTHR=0 Sigmoid wy[i0,i1]
+	if (V_FitError)
+		return NaN
+	endif
+	Wave W_coef=W_coef, W_sigma=W_sigma
+	Variable mid=W_coef[2], rate=W_coef[3]
+	KillWaves/Z W_coef, W_sigma
+	//	print "rate = ",rate,"  mid =",mid
+
+	return rate<5 ? mid : NaN		// if rate>5, then step is too broad
+	return mid
+End
+
+
+
+Function/WAVE OptimizeWireGeometry(PixelTurnOffs,Nfit,[printIt])
+	Wave PixelTurnOffs
+	Variable Nfit
+	Variable printIt
+	Nfit = numtype(Nfit) ? NaN : round(Nfit)
+	Nfit = Nfit==limit(Nfit,1,4) ? Nfit : NaN
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
+#ifdef OptimizeWireAxis
+	String fitList="wire.origin(Y);wire.origin(Y,Z);wire.origin(Y,Z), wire.axis(Z);wire.origin(Y,Z), wire.axis(Y,Z);"
+#else
+	String fitList="wire.origin(Y);wire.origin(Y,Z);wire.origin(Y,Z), wire.R(Z);wire.origin(Y,Z), wire.R(Y,Z);"
+#endif
+	if (!WaveExists(PixelTurnOffs) || numtype(Nfit))
+		String wList = reverseList(WaveListClass("PixelTurnOffs","*","DIMS:2"))
+		if (ItemsInList(wList)<2 && numtype(Nfit)==0)
+			Wave PixelTurnOffs = $StringFromList(0,wList)
+		else
+			Nfit = numtype(Nfit) ? 4 : Nfit
+			String wName, fitStr
+			Prompt wName,"Pixel Turn Off Wave",popup,wList
+			Prompt Nfit, "What to Optimize", popup,fitList
+			DoPrompt "Pixel Turn Offs",wName, Nfit
+			if (V_flag)
+				return $""
+			endif
+			Wave PixelTurnOffs = $wName
+		endif
+		printIt = 1
+	endif
+	if (!WaveExists(PixelTurnOffs))
+		return $""
+	endif
+	if (printIt)
+		printf "OptimizeWireGeometry(%s,%g",NameOfWave(PixelTurnOffs),Nfit
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=1"
+		endif
+		printf ")\t\t// Optimizing {%s}\r",StringFromList(Nfit-1,fitList)
+	endif
+	if (!(Nfit==limit(Nfit,1,4)))
+		return $""
+	endif
+
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)
+	Make/N=4/D/FREE xWave, typXWave={1,1,0.001,0.001}
+	xWave[0] = g.wire.origin[1]
+	xWave[1] = g.wire.origin[2]
+#ifdef OptimizeWireAxis
+	xWave[2] = g.wire.axis[1]
+	xWave[3] = g.wire.axis[2]
+#else
+	xWave[2] = g.wire.R[1]
+	xWave[3] = g.wire.R[2]
+#endif
+	Redimension/N=(Nfit) xWave,typXWave
+
+	Wave depths = CalcDepthsFromPixelTurnOffs(PixelTurnOffs,xWave)
+	WaveStats/Q depths
+	Variable errStart=V_sdev
+	printf "Before Optimize:  <depth> = %g,   range = [%g, %g],  Æ=%g\t\txWave = %s\r",V_avg,V_min,V_max,errStart,vec2str(xWave)
+	String wnote=note(PixelTurnOffs)
+	wnote = ReplaceStringByKey("OptimizeXvalues0",wnote,vec2str(xWave),"=")
+	wnote = ReplaceNumberByKey("OptimizeXvaluesErr0",wnote,errStart,"=")
+
+	Optimize/Q/A=0/R=typXWave/X=xWave/Y=0.1 detectorCalibration#depthError,PixelTurnOffs
+	if (V_flag)
+		printf "\r\tERROR -- V_flag = %g,  V_OptTermCode = %g,  V_OptNumIters=%g,  V_OptNumFunctionCalls=%g\r",V_flag,V_OptTermCode,V_OptNumIters,V_OptNumFunctionCalls
+		return $""
+	endif
+	Variable errEnd = V_min
+
+	Wave depths = CalcDepthsFromPixelTurnOffs(PixelTurnOffs,xWave)
+	PixelTurnOffs[][7] = depths[p]			// save final depths
+	WaveStats/Q depths
+	printf "After Optimize:  <depth> = %g,   range = [%g, %g],  Æ=%g\t\txWave = %s\r",V_avg,V_min,V_max,errEnd,vec2str(xWave)
+	//	Wave W_OptGradient=W_OptGradient
+	//	print "\tGradient =",vec2str(W_OptGradient)
+	KillWaves/Z W_OptGradient
+
+	print " "
+	printf "\t\twire.origin(Y) changed from  %g  ->  %g\r",g.wire.origin[1], xWave[0]
+	if (Nfit>1)
+		printf "\t\twire.origin(Z) changed from  %g  ->  %g\r",g.wire.origin[2], xWave[1]
+	endif
+#ifdef OptimizeWireAxis
+	if (Nfit>2)
+		printf "\t\twire.axis(Y) changed from  %g  ->  %g\r",g.wire.axis[1], xWave[2]
+	endif
+	if (Nfit>3)
+		printf "\t\twire.axis(Z) changed from  %g  ->  %g\r",g.wire.axis[2], xWave[3]
+	endif
+#else
+	if (Nfit>2)
+		printf "\t\twire.R(Y) changed from  %g  ->  %g\r",g.wire.R[1], xWave[2]
+	endif
+	if (Nfit>3)
+		printf "\t\twire.R(Z) changed from  %g  ->  %g\r",g.wire.R[2], xWave[3]
+	endif
+#endif
+	printf "\terror changed from  %g  ->  %g\r",errStart, errEnd
+
+	wnote = ReplaceStringByKey("OptimizeXvalues1",wnote,vec2str(xWave),"=")
+	wnote = ReplaceNumberByKey("OptimizeXvaluesErr1",wnote,errEnd,"=")
+	Note/K PixelTurnOffs, wnote
+	return xWave
+End
+//
+Static Function depthError(PixelTurnOffs,xw)		// function called by Optimize
+	Wave PixelTurnOffs
+	Wave xw			// things that get adjusted
+
+	Wave depths = CalcDepthsFromPixelTurnOffs(PixelTurnOffs,xw)
+	WaveStats/Q depths
+	return V_sdev
+End
+//
+Static Function/WAVE CalcDepthsFromPixelTurnOffs(PixelTurnOffs,xw)
+	Wave PixelTurnOffs
+	Wave xw			// things that get adjusted
+
+	Variable detNum=NumberByKey("detNum",note(PixelTurnOffs),"=")
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)
+
+	if (WaveExists(xw))
+		Variable Nfit=DimSize(xw,0)
+		g.wire.origin[1] = xw[0]		// wire Origin Y
+		g.wire.origin[2] = xw[1]		// wire Origin Z
+
+#ifdef OptimizeWireAxis
+		if (Nfit>2)
+			g.wire.axis[1] = xw[2]		// wire axis[Y]
+			if (Nfit>3)
+				g.wire.axis[2] = xw[3]	// wire axis[Y]
+			endif
+		endif
+#else
+		if (Nfit>2)
+			g.wire.R[1] = xw[2]			// wire stage Ry
+			if (Nfit>3)
+				g.wire.R[2] = xw[3]		// wire stage Rz
+			endif
+		endif
+#endif
+		GeometryUpdateCalc(g)
+	endif
+
+	Variable px,py,i, Np=DimSize(PixelTurnOffs,0)
+	Make/N=3/D/FREE wxyz, dxyz
+	Make/N=(Np)/FREE/D depths
+	for (i=0;i<Np;i+=1)
+		wxyz = PixelTurnOffs[i][2+p]
+		px = PixelTurnOffs[i][0]
+		py = PixelTurnOffs[i][1]
+		pixel2XYZ(g.d[detNum],px,py,dxyz)
+		depths[i] = PixelxyzWire2depth(g,dxyz,wxyz,1)
+	endfor
+	return depths
+End
+
+
+
+Function/WAVE TableOfPixelTurnOffs(PixelTurnOffs,[printIt])
+	Wave PixelTurnOffs
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
+
+	if (!WaveExists(PixelTurnOffs))
+		String wList = reverseList(WaveListClass("PixelTurnOffs","*","DIMS:2"))
+		if (ItemsInList(wList)<2)
+			Wave PixelTurnOffs = $StringFromList(0,wList)
+		else
+			String wName
+			Prompt wName,"Pixel Turn Off Wave",popup,wList
+			DoPrompt "Pixel Turn Offs",wName
+			if (V_flag)
+				return $""
+			endif
+			Wave PixelTurnOffs = $wName
+		endif
+		printIt = 1
+	endif
+	if (!WaveExists(PixelTurnOffs))
+		return $""
+	endif
+	if (printIt)
+		printf "TableOfPixelTurnOffs(%s",NameOfWave(PixelTurnOffs)
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=1"
+		endif
+		printf ")\r"
+	endif
+
+	String win=StringFromList(0,FindTablesWithWave(PixelTurnOffs))
+	if (strlen(win))
+		DoWindow/F $win
+	else
+		Variable left=166, top=60, height, N=DimSize(PixelTurnOffs,0)
+		height = limit(16*(N+0.5) + 69, 106, 600)
+		Edit/W=(left,top,left+740-8,top+height)/K=1 PixelTurnOffs.ld
+		ModifyTable format(Point)=1,width(Point)=30,width(PixelTurnOffs.l)=28
+	endif
+	return PixelTurnOffs
+End
+
+
+// ================================ End of Wire Calibration Fit =================================
+// ==============================================================================================

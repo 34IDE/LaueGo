@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.20
+#pragma version = 4.21
 #include "Utility_JZT" version>=3.03
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -91,6 +91,7 @@
 //		also added recipFrom_xtal(), a little utility that make a free recip matrix from xtal
 // with version 4.19, small change in reMakeAtomXYZs(), avoids error when debug on "NVAR SVAR WAVE Checking" is on
 // with version 4.20, the xtl file is now carried along in the crystalStructure structure
+// with version 4.21, added directFrom_xtal(), which is a lot like recipFrom_xtal()
 
 // Rhombohedral Transformation:
 //
@@ -5098,6 +5099,22 @@ Function/WAVE recipFrom_xtal(xtal)				// returns a FREE wave with reciprocal lat
 		RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}	// try again
 		RL[0][1] = {xtal.bs0,xtal.bs1,xtal.bs2}
 		RL[0][2] = {xtal.cs0,xtal.cs1,xtal.cs2}
+	endif
+	return RL
+End
+
+
+Function/WAVE directFrom_xtal(xtal)			// returns a FREE wave with real lattice
+	STRUCT crystalStructure &xtal
+	Make/N=(3,3)/D/FREE RL
+	RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}		// the reciprocal lattice
+	RL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
+	RL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
+	if (numtype(sum(RL)) || WaveMax(RL)==0)	// bad numbers in RL
+		setDirectRecip(xtal)						// re-make the a0, a1, ...
+		RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}	// try again
+		RL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
+		RL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
 	endif
 	return RL
 End

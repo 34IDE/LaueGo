@@ -425,7 +425,7 @@ Function/T ReadHDF5header(fName)
 	endif
 
 	Variable reconstructed = Nslices==1 && numtype(str2num(str))==0		// a single reconstructed image from flyScan, 1 image + depth
-	if (reconstructed)
+	if (!reconstructed)
 		// wire positions
 		HDF5ListGroup/Z f , "/entry1/wire"
 		String wireFolder = SelectString(V_flag,"entry1/wire/","entry1/")
