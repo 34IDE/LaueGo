@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, April 21, 2014" time="02:29:40 PM CDT" isoTime="2014-04-21T14:29:40"></written>
+	<written date="Monday, April 21, 2014" time="02:58:10 PM CDT" isoTime="2014-04-21T14:58:10"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>257</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -21,7 +21,7 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="09a9d9875c6ca566b3d96c5396f4fa52" ext=".png">microN/microDiffractionMedia/Picture9.png</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5e2a97088ce6f58fd338ac08b68782d2" ext=".xml">materials/YMnO3_vanAken.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b501f5a7e0bdc6aac8ecbc280da0d2a3" ext=".xml">materials/Rh.xml</file>
-	<file version="0.8" time="2014-04-20T00:54:18" md5="01e1baed2d91caedfcbe4e463f81a7c9" ext=".ipf">microN/DetectorCalibration.ipf</file>
+	<file version="0.81" time="2014-04-21T14:57:35" md5="268fb762df19c310bfaa0d03e13b11e9" ext=".ipf">microN/DetectorCalibration.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="3137d5743b8846f6d6373513d29a92a7" ext=".xml">materials/NdGaO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="45092064aa2f391fcad76837b1322c01" ext=".xml">materials/LaMnO3_Ortho.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
