@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.28
+#pragma version = 2.29
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -222,7 +222,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 	Variable lo=Inf,hi=-Inf
 	String wnote, fname,imageName
 	Variable Nimages = max(1,ItemsInRange(positions))*max(1,ItemsInRange(depths))
-	Variable i=1, j, N=0, indexed=0, err,once, stopped=0
+	Variable i=1, j, N=0, indexed=0, once, stopped=0
 	for (i=str2num(positions),once=1; (!numtype(i) || once) && !stopped; i=NextInRange(positions,i))
 		once = 0
 		if (numtype(i))
@@ -287,9 +287,8 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			str = ReplaceNumberByKey("totalIntensity",str,NumberByKey("totalIntensity",wnote,"="),"=")
 
 			if (DimSize(FullPeakList,0)>=minNpeaks)							// enough peaks found, try to index
-				err = IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance, h,k,l,cone)	// IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone)
-				if (!err)
-					Wave FullPeakIndexed=FullPeakIndexed						// result of indexing from IndexAndDisplay()
+				Wave FullPeakIndexed=IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance, h,k,l,cone)	// IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone)
+				if (WaveExists(FullPeakIndexed))
 					wnote = note(FullPeakIndexed)
 					NpatternsFound = NumberByKey("NpatternsFound",wnote,"=")
 			 		if (NpatternsFound>0)										// a valid indexation, save the information
