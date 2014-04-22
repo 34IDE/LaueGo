@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.52
+#pragma version = 4.54
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -118,7 +118,7 @@ Static Constant hc = 1.239841857			// keV-nm
 Static Constant SMALLEST1 = 1.2e-16
 
 
-Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,printIt])
+Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,printIt])
 	Wave FullPeakList0					// contains the result of a peak fitting
 	Variable keVmaxCalc				// 17, maximum energy to calculate (keV)
 	Variable keVmaxTest				// 26, maximum energy to test (keV)  [-t]
@@ -143,7 +143,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 		Variable/G root:Packages:geometry:PanelValues:dirty=0
 		DoAlert 0,"You have made changes in the geometry panel, deal with them first"
 		MakeGeometryParametersPanel("")
-		return 1
+		return $""
 	endif
 	Variable is4500S=NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,0)&2
 	Variable badWave = !WaveExists(FullPeakList0) && !WaveExists(FullPeakList1) && !WaveExists(FullPeakList2)
@@ -214,7 +214,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 			DoPrompt/Help="3D-Xray Diffraction[Indexing]" "index",peakListStr0,keVmaxCalc,hkl,keVmaxTest,cone,angleTolerance
 		endif
 		if (V_flag)
-			return 1
+			return $""
 		endif
 		peakListStr0 = SelectString(strsearch(peakListStr0,"-none-",0,2)>=0,peakListStr0,"")
 		peakListStr1 = SelectString(strsearch(peakListStr1,"-none-",0,2)>=0,peakListStr1,"")
@@ -240,7 +240,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 			Prompt maxSpots, "max number to try to index, out of "+num2istr(N0+N1+N2)+", -1 uses default of 250"
 			DoPrompt "Number of Spots", maxSpots
 			if (V_flag)
-				return 1
+				return $""
 			endif
 			maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : NumVarOrDefault("root:Packages:micro:Index:maxSpots",-1)
 		endif
@@ -265,7 +265,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 		printf ")\r"
 		if (badWave || badNums)
 			DoAlert 0, "Invalid inputs sent to IndexAndDisplay()"
-			return 1
+			return $""
 		endif
 	endif
 	NewDataFolder/O root:Packages
@@ -278,15 +278,15 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 	String/G root:Packages:micro:Index:FullPeakList0=NameOfWave(FullPeakList0), root:Packages:micro:Index:FullPeakList1=NameOfWave(FullPeakList1), root:Packages:micro:Index:FullPeakList2=NameOfWave(FullPeakList2)
 
 	if (maxSpots>2)
-		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,maxSpots=maxSpots,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2))
+		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,maxSpots=maxSpots,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,quiet=!printIt))
 	else
-		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2))
+		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,quiet=!printIt))
 	endif
 	if (!WaveExists(FullPeakIndexed))
 		if (printIt)
 			print "\tNothing indexed"
 		endif
-		return 1
+		return $""
 	endif
 	String wnote = note(FullPeakIndexed)
 	Variable NpatternsFound = NumberByKey("NpatternsFound",wnote,"=")
@@ -316,7 +316,7 @@ Function IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,k
 			DisplayResultOfIndexing(FullPeakIndexed,NaN)
 		endif
 	endif
-	return 0
+	return FullPeakIndexed
 End
 //
 Static Function rotationBetweenRecipLattices(RL0,RL,hkl,[ints])		// returns the hkl, and angle
@@ -1853,7 +1853,7 @@ End
 
 
 // using the result from FitPeaks() run Euler, and read in the results from the index file
-Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2])
+Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,quiet])
 	Wave FullPeakList
 	Variable keVmaxCalc				// 17, maximum energy to calculate (keV)
 	Variable keVmaxTest				// 26, maximum energy to test (keV)  [-t]
@@ -1863,6 +1863,7 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	Variable maxSpots					// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1
 	Wave FullPeakList2
+	Variable quiet
 	maxSpots = ParamIsDefault(maxSpots) ? -1 : maxSpots
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
 	if (ParamIsDefault(FullPeakList1))
@@ -1871,6 +1872,8 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	if (ParamIsDefault(FullPeakList2))
 		Wave FullPeakList2=$""
 	endif
+	quiet = ParamIsDefault(quiet) ? NaN : quiet
+	quiet = numtype(quiet) ? 0 : !(!quiet)
 
 	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
@@ -1951,7 +1954,7 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 		else
 			sprintf cmd "do shell script \"cd \\\"%s\\\" ; \\\"%s\\\" -k %g -t %g -a %g -h %d %d %d -c %g -f %s -q\"",upath,EulerPath,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,peakFile
 		endif
-		ExecuteScriptText cmd
+		ExecuteScriptText/Z cmd
 		result = S_value
 	elseif (isWin)		// create a .BAT file to run Euler
 		variable BatchFileRN
@@ -1994,7 +1997,9 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	err = strsearch(result,"writing output to file '",0)<0
 	if (err)
 		if (!NumVarOrDefault("root:Packages:micro:Index:SKIP_EULER_ERRORS",0))
-			DoAlert 0, "failure in runEulerCommand()"
+			if (!quiet)
+				DoAlert 0, "failure in runEulerCommand()"
+			endif
 			print "\r\r"
 			print cmd
 			print "\r\r"
