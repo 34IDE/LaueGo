@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.29
+#pragma version = 2.30
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -24,7 +24,9 @@ Static StrConstant strainConstraints="110111"
 //
 //	Aug 31, 2009, added the include of xmlMultiIndex
 //
-//	Dec 1, 2009, re-did SymmetryOps, to use symmetry from Space Group, should work for everything
+//	Dec 1,  2009, re-did SymmetryOps, to use symmetry from Space Group, should work for everything
+//
+//	Apr 22, 2014, changed IndexLots to be more modern, also now can write an xml file like the cluster.
 
 
 Menu "Rotations"
@@ -86,41 +88,51 @@ End
 //RotationMatrix
 //0.0460287 0.00615766 -0.0332325		 -0.0103891 0.0560083 -0.00401165		 0.0321618 0.00927953 0.0462652
 
+//	¥IndexLots("reconPath","Inconel-718_","1-2","13-15", 140, 0,0,2,72,17,0.1,0, minPeakWidth=1.13,maxPeakWidth=18,keVmaxTest=30,FitPeaksFunc=FitPeaksWithExternal,saveXML=1,printIt=1)
 
 
 
 
-Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,cone,keVmaxCalc,angleTolerance,doStrain,[minPeakWidth,maxPeakWidth,minSep,keVmaxTest,maxNum,FitPeaksFunc])
+//Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,cone,keVmaxCalc,angleTolerance,doStrain,[minPeakWidth,maxPeakWidth,minSep,keVmaxTest,maxNum,FitPeaksFunc])
+Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,cone,keVmaxCalc,angleTolerance,doStrain,[minPeakWidth,maxPeakWidth,minSep,keVmaxTest,maxNum,FitPeaksFunc,saveXML,printIt])
 	String pathName					// name of path to use
 	String filePrefix					// first part of file name, e.g. "WH_"
-	String positions, depths				// string ranges (non-existant file names are jsut skipped), if positions=="", then just use one index
-	Variable threshAboveAvg			// threshold above average value in FitPeaksStepWise (try 10 or 20 are good numbers)
+	String positions, depths		// string ranges (non-existant file names are jsut skipped), if positions=="", then just use one index
+	Variable threshAboveAvg		// threshold above average value in FitPeaksStepWise (try 10 or 20 are good numbers)
 	Variable h,k,l						// hkl near center (approx)
 	Variable cone						// cone angle to the central hkl
 	Variable keVmaxCalc				// 14, maximum energy to calculate (keV)
-	Variable angleTolerance				// 0.25, angular tolerance (deg)
+	Variable angleTolerance		// 0.25, angular tolerance (deg)
 	Variable doStrain					// flag, true=also compute the strain (=1 use BL, =2 useXHF, =3 use Sample coordinates)
 
-	Variable minPeakWidth				// min fwhm for a peak (in either x or y) =1.2
-	Variable maxPeakWidth				// max fwhm for a peak (in either x or y) =35
+	Variable minPeakWidth			// min fwhm for a peak (in either x or y) =1.2
+	Variable maxPeakWidth			// max fwhm for a peak (in either x or y) =35
 	Variable minSep					// min separation between two peaks =50
 	Variable keVmaxTest				// max energy to check for the final pass in the indexation, =50
 	Variable maxNum					// maximum number of peaks to find, normally goes to completion
-	FUNCREF FitPeaksProto FitPeaksFunc
+	FUNCREF FitPeaksProtoE FitPeaksFunc
+	Variable saveXML					// flag to save the xml file, default is True
+	Variable printIt
+
 	minPeakWidth = ParamIsDefault(minPeakWidth) ? 1.2 : minPeakWidth
 	maxPeakWidth = ParamIsDefault(maxPeakWidth) ? 35 : maxPeakWidth
 	minSep = ParamIsDefault(minSep) ? 50 : minSep
 	keVmaxTest = ParamIsDefault(keVmaxTest) ? 50 : keVmaxTest
 	maxNum = ParamIsDefault(maxNum) ? Inf : maxNum
+	saveXML = ParamIsDefault(saveXML) ? NaN : saveXML
+	saveXML = numtype(saveXML) ? 1 : !(!saveXML)
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? 0 : !(!printIt)
 	if (ParamIsDefault(FitPeaksFunc))
-		FUNCREF FitPeaksProto FitPeaksFunc=FitPeaksWithSeedFill
+//		FUNCREF FitPeaksProto FitPeaksFunc=FitPeaksWithSeedFill
+		FUNCREF FitPeaksProtoE FitPeaksFunc=FitPeaksWithExternal
 	endif
 	String funcName = FitPeaksFunc($"",NaN,NaN,NaN,NaN,whoami=1)		// get name of FitPeaksFunc
 	if (strlen(funcName)<1)
 		Abort "Illegal FitPeaksFunc passed to IndexLots"
 	endif
 
-	Variable minNpeaks=5			// minimum # of peaks successfully indexed
+	Variable minNpeaks=5					// minimum # of peaks successfully indexed
 
 	String list = depthResolve#GetFileRootAndDoubleRange(pathName,filePrefix,positions,depths)
 	if (strlen(list)<1)
@@ -132,7 +144,6 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 	depths = StringByKey("depths",list,"=")
 	String fileRoot = StringByKey("fileRoot",list,"=")
 
-	Variable printIt = 0
 	if (!(threshAboveAvg>0) || numtype(h+k+l) || !(cone>0) || !(keVmaxCalc>0) || !(angleTolerance>0) || !(doStrain>=0) || !(doStrain<=3))
 		threshAboveAvg = !(threshAboveAvg>0) ? 20 : threshAboveAvg
 		h = numtype(h) ? 0 : h
@@ -164,13 +175,38 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 		if (V_flag!=3)
 			h = NaN ; k=NaN ; l=NaN
 		endif
-		FUNCREF FitPeaksProto FitPeaksFunc=$funcName
-		funcName = FitPeaksFunc($"",NaN,NaN,NaN,NaN,whoami=1)		// get name of FitPeaksFunc
+		FUNCREF FitPeaksProtoE FitPeaksFunc=$funcName
+		funcName = FitPeaksFunc($"",NaN,NaN,NaN,NaN,whoami=1)	// get name of FitPeaksFunc
 		printIt = 1
 	endif
 
 	if (NumberByKey("printIt",list,"=") || printIt)
-		printf "¥IndexLots(\"%s\",\"%s\",\"%s\",\"%s\", %g, %g,%g,%g, %g, %g, %g, %d)\r",pathName,filePrefix,positions,depths,threshAboveAvg,h,k,l,cone,keVmaxCalc,angleTolerance,doStrain
+		printf " ¥IndexLots(\"%s\",\"%s\",\"%s\",\"%s\", %g, %g,%g,%g, %g, %g, %g, %d",pathName,filePrefix,positions,depths,threshAboveAvg,h,k,l,cone,keVmaxCalc,angleTolerance,doStrain
+		if (!ParamIsDefault(minPeakWidth))
+			printf ", minPeakWidth=%g" minPeakWidth
+		endif
+		if (!ParamIsDefault(maxPeakWidth))
+			printf ", maxPeakWidth=%g" maxPeakWidth
+		endif
+		if (!ParamIsDefault(minSep))
+			printf ", minSep=%g" minSep
+		endif
+		if (!ParamIsDefault(keVmaxTest))
+			printf ", keVmaxTest=%g" keVmaxTest
+		endif
+		if (!ParamIsDefault(maxNum))
+			printf ", maxNum=%g" maxNum
+		endif
+		if (!ParamIsDefault(FitPeaksFunc))
+			printf ", FitPeaksFunc=%s" funcName
+		endif
+		if (!ParamIsDefault(saveXML))
+			printf ", saveXML=%g" saveXML
+		endif
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g" printIt
+		endif
+		printf ")\r"
 	endif	
 	if (!(threshAboveAvg>0) || numtype(h+k+l) || !(cone>0) || !(keVmaxCalc>0) || !(angleTolerance>0) || !(doStrain>=0) || !(doStrain<=3))
 		DoAlert 0,"invalid values"
@@ -180,7 +216,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 	// FitPeaksStepWise(image,1.2,35,50,10)	// FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg)
 	printf "equiv \t\t%s(image,%g,%g,%g,%g)\r",funcName,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg
 	printf "equiv \t\tIndexAndDisplay(FullPeakList,%g,%g,%g, %g,%g,%g,%g)\r",keVmaxCalc,keVmaxTest,angleTolerance, h,k,l,cone
-	Variable epoch = DateTime, sec
+	Variable epoch = DateTime, seconds
 	printf "running in data folder  '%s'\r",GetDataFolder(1)
 
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Starting")	// display a progress bar
@@ -220,7 +256,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 	Variable depth,NpatternsFound
 	Variable X1,Y1,Z1
 	Variable lo=Inf,hi=-Inf
-	String wnote, fname,imageName
+	String wnote, fname,imageName, xmlStr="", xmlFileName=""
 	Variable Nimages = max(1,ItemsInRange(positions))*max(1,ItemsInRange(depths))
 	Variable i=1, j, N=0, indexed=0, once, stopped=0
 	for (i=str2num(positions),once=1; (!numtype(i) || once) && !stopped; i=NextInRange(positions,i))
@@ -231,7 +267,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			sprintf fname, "%s%d_%d%s",fileRoot,i,str2num(depths),imageExtension
 		endif
 		GetFileFolderInfo/P=$pathName/Q/Z fname
-		if (V_flag)																// file not found, skip this position
+		if (V_flag)																	// file not found, skip this position
 			continue
 		endif
 
@@ -247,33 +283,33 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			endif
 			Wave image = $imageName
 			imageName = NameOfWave(image)
-			sec = DateTime-epoch
-			sprintf str,"%s    %.2f sec/image",imageName,(sec/N)
+			seconds = DateTime-epoch
+			sprintf str,"%s    %.2f sec/image",imageName,(seconds/N)
 			if (ProgressPanelUpdate(progressWin,100*N/Nimages,status=str))// update progress bar
 				stopped = 1
-				break															//   and break out of loop
+				break																	//   and break out of loop
 			endif
 			N += 1
 
 			wnote = note(image)
-	 		depth = NumberByKey("depth", wnote,"=")							// values read from image file
+	 		depth = NumberByKey("depth", wnote,"=")						// values read from image file
 			if (numtype(depth))
-	 			depth = NumberByKey("depthSi", wnote,"=")					// old style name
+	 			depth = NumberByKey("depthSi", wnote,"=")				// old style name
 			endif
 			X1 = NumberByKey("X1", wnote,"=")								// PM500 positions
 			Y1 = NumberByKey("Y1", wnote,"=")
 			Z1 = NumberByKey("Z1", wnote,"=")
-			if (abs(sum(image))<2)											// image is empty (try to process when negative)
-				KillWaves/Z image, FullPeakIndexed
+			if (abs(sum(image))<2)												// image is empty (try to process when negative)
+				KillWaves/Z image
 				continue
 			endif
 
 			Wave FullPeakList = $FitPeaksFunc(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,maxNum=maxNum)
 			if (!WaveExists(FullPeakList))
-				KillWaves/Z image, FullPeakIndexed
+				KillWaves/Z image
 				continue
 			endif
-			KillWaves/Z image, FullPeakIndexed
+			KillWaves/Z image
 			wnote = note(FullPeakList)
 			str = ""
 			str = ReplaceStringByKey("image",str,imageName,"=")
@@ -286,8 +322,8 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			str = ReplaceNumberByKey("totalPeakIntensity",str,NumberByKey("totalPeakIntensity",wnote,"="),"=")
 			str = ReplaceNumberByKey("totalIntensity",str,NumberByKey("totalIntensity",wnote,"="),"=")
 
-			if (DimSize(FullPeakList,0)>=minNpeaks)							// enough peaks found, try to index
-				Wave FullPeakIndexed=IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance, h,k,l,cone)	// IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone)
+			if (DimSize(FullPeakList,0)>=minNpeaks)						// enough peaks found, try to index
+				Wave FullPeakIndexed=IndexAndDisplay(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance, h,k,l,cone,printIt=0)
 				if (WaveExists(FullPeakIndexed))
 					wnote = note(FullPeakIndexed)
 					NpatternsFound = NumberByKey("NpatternsFound",wnote,"=")
@@ -325,13 +361,18 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			endif
 			if (doStrain && Npoints==0)										// make sure something is there for the first one
 				if (!keyInList("exx",str,"=",";"))
-					str = ReplaceNumberByKey("exx",str,NaN,"=")			// somethiing must be here for first one, needed in Write3dOrientsFile()
+					str = ReplaceNumberByKey("exx",str,NaN,"=")		// somethiing must be here for first one, needed in Write3dOrientsFile()
 					str = ReplaceNumberByKey("a",str,NaN,"=")
 				endif
 			endif
 
-			if (DimSize(IndexingList,0)<=Npoints)								// wave is not long enough
-				Save/T/O/P=home indexinglist as "indexinglist.itx"			// in case things die
+			if (saveXML)
+				xmlStr = CreateXmlStepStr(FullPeakList,FullPeakIndexed)
+				xmlFileName = Add2XmlFile("reconPath",xmlFileName,xmlStr)
+			endif
+
+			if (DimSize(IndexingList,0)<=Npoints)							// wave is not long enough
+				Save/T/O/P=home indexinglist as "indexinglist.itx"	// in case things die
 				Redimension/N=(DimSize(IndexingList,0)+50) IndexingList	// increase size
 			endif
 			lo = min(j,lo)															// just save max range of depth indicies
@@ -340,22 +381,41 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			Npoints += 1
 		endfor
 	endfor
-	Redimension/N=(Npoints) IndexingList										// set to final size
+	Redimension/N=(Npoints) IndexingList									// set to final size
 	if (stopped)
 		printf "\r***   STOPPED by User   ***\r\r"
 	endif
-//	printf "Successfully indexed %d of the %d images processed.\r",indexed,Npoints
 	printf "Successfully indexed %d of the %d images processed.\r",indexed,N
 
-	sec = DateTime-epoch
+	seconds = DateTime-epoch
 	printf "maximum depth range from indexinglist is [%d, %d]\r",lo,hi
-	print "done, total execution time is  ",Secs2Time(sec,5,0)
-
+	print "done, total execution time is  ",Secs2Time(seconds,5,0)
+	if (strlen(xmlFileName))
+		printf "saved the xml file to  \"%s\"\r",xmlFileName
+	else
+		printf "NO xml file saved"
+	endif
 	DoWindow/K $progressWin
-	if (sec>10*60)																// if execution took more than 10 min, automatically save
+	if (seconds>10*60)															// if execution took more than 10 min, automatically save
 		print "This took more than 10min, so save the experiment"
 		SaveExperiment
 	endif
+End
+//
+Function/S FitPeaksProtoE(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[mask,whoami,peakShape,smoothing,thresholdRatio,maxNum])
+	Wave image						// the image from the file
+	Variable minPeakWidth		// minimum width for an acceptable peak (pixels)
+	Variable boxSize				// maximum width for an acceptable peak (pixels)
+	Variable maxRfactor			// max R-factor
+	Variable threshAboveAvg	// threshold above average value,  use 25
+	Wave mask						// starting mask for the fit (this mask is unchanged by this routine)
+	Variable whoami				// if passed, then just return the name of this routine
+	String peakShape				// Lorentzian (default), or Gaussian
+	Variable smoothing			// if TRUE, do a smoothing operation before peak search
+	Variable thresholdRatio	// set threshold to (ratio*[std dev] + avg) if threshold passed as NaN (optional)
+	Variable maxNum				// maximum number of peaks to fit (defaults to unlimited)
+
+	return ""
 End
 
 
@@ -1239,3 +1299,283 @@ End
 //		list = ReplaceNumberByKey("printIt",list,printIt,"=")
 //		return list
 //	End
+
+
+
+
+
+
+Function/T Add2XmlFile(path,fname,xmlStr)
+	String path
+	String fname
+	String xmlStr
+
+	if (strlen(xmlStr)<1)
+		return ""
+	endif
+
+	String buf
+	Variable f
+	GetFileFolderInfo/P=$path/Q/Z=1 fname
+	if (!V_isfile || V_isFolder)
+		Open/D/M="New XML file for output"/P=$path/T=".xml"/Z=2 f as fname
+		if (V_flag)
+			return ""
+		endif
+		fname = S_fileName
+	endif
+
+	Open/A/P=$path/Z=1 f as fname
+	if (strlen(S_fileName)<1)
+		return ""
+	endif
+
+	FStatus f
+	if (V_logEOF<10)
+		buf = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n\n<AllSteps>\n\n"
+		FSetPos f, 0
+		FBinWrite f, buf
+	else
+		FSetPos f, V_logEOF-12
+	endif
+	FBinWrite f, xmlStr
+	buf = "\n</AllSteps>\n"
+	FBinWrite f, buf
+	Close f
+	return S_fileName
+End
+//
+Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
+	Wave FullPeakList,FullPeakIndexed
+	if (!WaveExists(FullPeakList))
+		return ""
+	endif
+	Variable Npeaks=DimSize(FullPeakList,0), val
+	if (Npeaks<1)
+		return ""
+	endif
+	String pnote=note(FullPeakList), str
+
+	String xml="<step xmlns=\"http://sector34.xray.aps.anl.gov/34ide:indexResult\">\n"
+
+	xml += addXMLstrFromTagVals("title",pnote,"",1)
+	xml += addXMLstrFromTagVals("sampleName",pnote,"",1)
+	xml += addXMLstrFromTagVals("userName",pnote,"",1)
+	xml += addXMLstrFromTagVals("beamLine",pnote,"beamline",1)
+	xml += addXMLstrFromTagVals("scanNum",pnote,"",1)
+	xml += addXMLstrFromTagVals("file_time",pnote,"date",1)
+	xml += addXMLstrFromTagVals("BeamBad",pnote,"beamBad",1)
+	xml += addXMLstrFromTagVals("CCDshutter",pnote,"",1)
+	xml += addXMLstrFromTagVals("LightOn",pnote,"lightOn",1)
+	xml += addXMLstrFromTagVals("MonoMode",pnote,"monoMode",1)
+
+	Variable X1=NumberByKey("X1",pnote,"="), Y1=NumberByKey("Y1",pnote,"="), Z1=NumberByKey("Z1",pnote,"=")
+	if (numtype(X1+Y1+Z1)==0)
+		xml += "\t<Xsample>"+num2str(X1)+"</Xsample>\n"
+		xml += "\t<Ysample>"+num2str(Y1)+"</Ysample>\n"
+		xml += "\t<Zsample>"+num2str(Z1)+"</Zsample>\n"
+	endif
+
+	xml += addXMLnumFromTagVals("depth",pnote,"",1,9)
+	xml += addXMLnumFromTagVals("keV",pnote,"energy",1,7)
+	xml += addXMLnumFromTagVals("HutchTemperature",pnote,"hutchTemperature",1,4)
+	xml += addXMLnumFromTagVals("sampleDistance",pnote,"",1,9)
+
+	xml += "\t<detector>\n"			// do the detector
+	xml += addXMLstrFromTagVals("imageFileName",pnote,"inputImage",2)
+	xml += addXMLstrFromTagVals("detectorID",pnote,"",2)
+	xml += addXMLnumFromTagVals("exposure",pnote,"",2,9)
+	xml += addXMLnumFromTagVals("xDimDet",pnote,"Nx",2,9)
+	xml += addXMLnumFromTagVals("yDimDet",pnote,"Ny",2,9)
+
+	xml += addXMLnumFromTagVals("totalIntensity",pnote,"totalSum",2,9)
+	xml += addXMLnumFromTagVals("totalPeakIntensity",pnote,"sumAboveThreshold",2,9)
+	xml += addXMLnumFromTagVals("NumPixelsAboveThreshold",pnote,"numAboveThreshold",2,9)
+
+	Variable startx=NumberByKey("startx",pnote,"="), endx=NumberByKey("endx",pnote,"="), groupx=NumberByKey("groupx",pnote,"=")
+	Variable starty=NumberByKey("starty",pnote,"="), endy=NumberByKey("endy",pnote,"="), groupy=NumberByKey("groupy",pnote,"=")
+	if (numtype(startx+endx+groupx + starty+endy+groupy)==0)
+		sprintf str "\t\t<ROI startx=\"%d\" endx=\"%d\" groupx=\"%d\" starty=\"%d\" endy=\"%d\" groupy=\"%d\"></ROI>",startx,endx,groupx , starty,endy,groupy
+		xml += str + "\n"
+	endif
+
+	str = "<peaksXY"
+	val = NumberByKey("minPeakWidth",pnote,"=")
+	str += SelectString(numtype(val), " minwidth=\""+num2str(val)+"\"", "")
+	val = NumberByKey("threshAboveAvg",pnote,"=")
+	str += SelectString(numtype(val), " threshold=\""+num2str(val)+"\"", "")
+	val = NumberByKey("maxRfactor",pnote,"=")
+	str += SelectString(numtype(val), " maxRfactor=\""+num2str(val)+"\"", "")
+	val = NumberByKey("maxPeakWidth",pnote,"=")
+	str += SelectString(numtype(val), " maxwidth=\""+num2str(val)+"\"", "")
+	val = NumberByKey("boxsize",pnote,"=")
+	str += SelectString(numtype(val), " boxsize=\""+num2str(val)+"\"", "")
+	str += " Npeaks=\""+num2str(Npeaks)+"\">"
+	xml += "\t\t"+str+"\n"
+
+	Make/N=(Npeaks)/FREE ww
+	ww = FullPeakList[p][0]
+	sprintf str,"<Xpixel>%s</Xpixel>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	ww = FullPeakList[p][1]
+	sprintf str,"<Ypixel>%s</Ypixel>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	ww = FullPeakList[p][10]
+	sprintf str,"<Integral>%s</Integral>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	ww = FullPeakList[p][4]
+	ww /= 2										// change FWHM to HWHM
+	sprintf str,"<hwhmX unit=\"pixel\">%s</hwhmX>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	ww = FullPeakList[p][5]
+	ww /= 2										// change FWHM to HWHM
+	sprintf str,"<hwhmY unit=\"pixel\">%s</hwhmX>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	ww = FullPeakList[p][8]
+	sprintf str,"<tilt unit=\"degree\">%s</tilt>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	ww = FullPeakList[p][9]
+	sprintf str,"<chisq>%s</chisq>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	xml += "\t\t\t"+str+"\n"
+
+	xml += "\t\t</peaksXY>\n"
+	xml += "\t</detector>\n"
+
+	// do the indexed result
+	if (WaveExists(FullPeakIndexed))
+		String inote=note(FullPeakIndexed), hklPrefer, mStr, unit, runit=""
+		Variable Npattern,m
+		unit = StringByKey("lengthUnit",inote,"=")
+		if (strlen(unit))
+			runit = " unit=\"1/"+unit+"\""
+			unit = " unit=\""+unit+"\""
+		endif
+
+		str = "\t<indexing"
+		val = NumberByKey("Nindexed",inote,"=")
+		str += SelectString(numtype(val), " Nindexed=\""+num2str(val)+"\"", "")
+		str += " Npeaks=\""+num2str(Npeaks)+"\">"
+
+		Npattern = NumberByKey("NpatternsFound",inote,"=")
+		str += SelectString(numtype(Npattern), " Npatterns=\""+num2str(Npattern)+"\"", "")
+
+		val = NumberByKey("keVmaxCalc",inote,"=")
+		str += SelectString(numtype(val), " keVmaxCalc=\""+num2str(val)+"\"", "")
+
+		val = NumberByKey("keVmaxTest",inote,"=")
+		str += SelectString(numtype(val), " keVmaxTest=\""+num2str(val)+"\"", "")
+
+		val = NumberByKey("angleTolerance",inote,"=")
+		str += SelectString(numtype(val), " angleTolerance=\""+num2str(val)+"\"", "")
+
+		val = NumberByKey("cone",inote,"=")
+		str += SelectString(numtype(val), " cone=\""+num2str(val)+"\"", "")
+
+		hklPrefer = StringByKey("hklPrefer",inote,"=")
+		hklPrefer = ReplaceString(",",hklPrefer," ")
+		hklPrefer = ReplaceString("  ",hklPrefer," ")
+		hklPrefer = ReplaceString("}",hklPrefer,"")
+		hklPrefer = ReplaceString("{",hklPrefer,"")
+		str += SelectString(strlen(hklPrefer), " hklPrefer=\""+hklPrefer+"\"", "")
+		str += ">\n"
+		str += "\t\t<!-- Result of indexing. -->\n"
+		xml += str
+
+		Variable NindexedMax = DimSize(FullPeakIndexed,0)
+		Make/N=(NindexedMax)/D/FREE wi
+		Make/N=3/D/FREE abc
+		Variable Nindexed
+		for (m=0;m<Npattern;m+=1)
+			Redimension/N=(NindexedMax) wi
+			wi = FullPeakIndexed[p][0][m]
+			WaveStats/Q/M=1 wi
+			Nindexed = V_npnts
+			Redimension/N=(Nindexed) wi
+			mStr = num2istr(m)
+			str = "\t\t<pattern \"num=\""+mStr+"\""
+			val = NumberByKey("rms_error"+mStr,inote,"=")
+			str += SelectString(numtype(val), " rms_error=\""+num2str(val)+"\"", "")
+			val = NumberByKey("goodness"+mStr,inote,"=")
+			str += SelectString(numtype(val), " goodness=\""+num2str(val)+"\"", "")
+			val = NumberByKey("goodness"+mStr,inote,"=")
+			str += SelectString(numtype(val), " Nindexed=\""+num2str(Nindexed)+"\"", "")
+			xml += str + ">\n"
+
+			str = StringByKey("recip_lattice"+mStr,inote,"=")
+			Wave w33 = matString2mat33(str)
+			xml += "\t\t\t<recip_lattice"+runit+">\n"
+			abc = w33[p][0]
+			xml += "\t\t\t\t<astar>"+vec2str(abc,places=9,bare=1,sep=" ")+"</astar>\n"
+			abc = w33[p][1]
+			xml += "\t\t\t\t<bstar>"+vec2str(abc,places=9,bare=1,sep=" ")+"</bstar>\n"
+			abc = w33[p][2]
+			xml += "\t\t\t\t<cstar>"+vec2str(abc,places=9,bare=1,sep=" ")+"</cstar>\n"
+			xml += "\t\t\t</recip_lattice>\n"
+
+			xml += "\t\t\t<hkl_s>\n"
+			wi = FullPeakIndexed[p][3][m]
+			xml += "\t\t\t\t<h>"+vec2str(wi,places=9,bare=1,sep=" ")+"</h>\n"
+			wi = FullPeakIndexed[p][4][m]
+			xml += "\t\t\t\t<k>"+vec2str(wi,places=9,bare=1,sep=" ")+"</k>\n"
+			wi = FullPeakIndexed[p][5][m]
+			xml += "\t\t\t\t<k>"+vec2str(wi,places=9,bare=1,sep=" ")+"</l>\n"
+			xml += "\t\t\t</hkl_s>\n"
+		endfor
+		xml += "\t\t</pattern>\n"
+
+		xml += "\t\t<xtl>\n"
+		xml += addXMLstrFromTagVals("structureDesc",inote,"",3)
+		xml += addXMLnumFromTagVals("SpaceGroup",inote,"",3,3)
+		Wave wlat = str2vec(StringByKey("latticeParameters",inote,"="))
+		xml += "\t\t\t<latticeParameters"+unit+">"+vec2str(wlat,places=9,bare=1,sep=" ")+"</latticeParameters>\n"
+		xml += "\t\t</xtl>\n"
+
+	xml += "\t</indexing>\n"
+	endif
+
+	xml += "</step>\n"
+	//	print ReplaceString("\n",xml,"\r")
+	return xml
+End
+//
+Static Function/T addXMLnumFromTagVals(key,wnote,XMLname,Ntabs,places)
+	String key, wnote
+	String XMLname
+	Variable Ntabs		// number of leading tabs
+	Variable places
+
+	Ntabs = numtype(Ntabs) ? 0 : Ntabs
+	Ntabs = limit(round(Ntabs),0,20)
+	places = numtype(places) || places<1 ? 5 : places
+	places = limit(round(places),1,16)
+	XMLname = SelectString(strlen(XMLname),key,XMLname)
+	Variable val = NUmberByKey(key,wnote,"=")
+	if (numtype(val)==0)
+		String str, fmt
+		fmt = "<%s>%."+num2istr(places)+"g</%s>\n"
+		sprintf str,fmt,XMLname,val,XMLname
+		return PadString("",Ntabs,0x09)+str
+	endif
+	return ""
+End
+//
+Static Function/T addXMLstrFromTagVals(key,wnote,XMLname,Ntabs)
+	String key, wnote
+	String XMLname
+	Variable Ntabs		// number of leading tabs
+
+	Ntabs = numtype(Ntabs) ? 0 : Ntabs
+	Ntabs = limit(round(Ntabs),0,20)
+	XMLname = SelectString(strlen(XMLname),key,XMLname)
+	String str = StringByKey(key,wnote,"=")
+	if (strlen(str))
+		return PadString("",Ntabs,0x09)+"<"+XMLname+">"+str+"</"+XMLname+">\n"
+	endif
+	return ""
+End
