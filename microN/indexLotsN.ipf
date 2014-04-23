@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.30
+#pragma version = 2.31
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -1524,7 +1524,7 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 			wi = FullPeakIndexed[p][4][m]
 			xml += "\t\t\t\t<k>"+vec2str(wi,places=9,bare=1,sep=" ")+"</k>\n"
 			wi = FullPeakIndexed[p][5][m]
-			xml += "\t\t\t\t<k>"+vec2str(wi,places=9,bare=1,sep=" ")+"</l>\n"
+			xml += "\t\t\t\t<l>"+vec2str(wi,places=9,bare=1,sep=" ")+"</l>\n"
 			xml += "\t\t\t</hkl_s>\n"
 		endfor
 		xml += "\t\t</pattern>\n"
