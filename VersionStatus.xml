@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, April 24, 2014" time="12:01:23 PM CDT" isoTime="2014-04-24T12:01:23"></written>
+	<written date="Thursday, April 24, 2014" time="01:59:09 PM CDT" isoTime="2014-04-24T13:59:09"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>258</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -134,7 +134,7 @@
 	<file version="nan" time="2014-03-04T11:53:09" md5="0f132a6036fdba380ef9ead592fbe3d7" ext=".txt">geometrys/geometry description.txt</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="65963c90d8b1a79187ab47a53778e222" ext=".xml">materials/Ta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
-	<file version="2.32" time="2014-04-24T11:52:53" md5="fc56f17f57f586f452da5d67c37b8ece" ext=".ipf">microN/indexLotsN.ipf</file>
+	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="302bdca49e31e68d95cc2b98a1177552" ext=".ipf">General/WinView.ipf</file>
 	<file version="1.63" time="2014-03-27T15:55:19" md5="41a4b41193c34b2d4218eb517de9be52" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.08" time="2014-01-07T12:24:47" md5="b654123e368cb86a47808db0b169bf23" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
@@ -187,7 +187,7 @@
 	<file version="1.02" time="2014-03-27T16:13:13" md5="93b69d14d1bc2c6c4a6f6944251e1a72" ext=".ipf">General/Masking.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c9d8ec204c982c306268074db375a578" ext=".xml">materials/VO2/VO2_M2_1977Ghedira.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="fdb7ce7b40230dfecefe1bb0b5a93d95" ext=".png">microN/microDiffractionMedia/Picture6.png</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="3d6e94ca7500a45167aefd8cbb3e84e4" ext=".xml">materials/IN740.xml</file>
+	<file version="nan" time="2014-04-24T13:00:23" md5="0902b938308b3695f59381de7f1744e4" ext=".xml">materials/IN740.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c36f768e1dd6e5e7d4b021551e1caab8" ext=".mtl">materials/SRM1834.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="0cdcf5545b7f8c18d20467886c2ad22f" ext=".mtl">materials/LiF.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="314f26a24853e57f27d2994885f4d613" ext=".xml">materials/LaAlO3_PseudoCubic.xml</file>

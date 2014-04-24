@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.32
+#pragma version = 2.33
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -1433,7 +1433,7 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 
 	ww = FullPeakList[p][5]
 	ww /= 2										// change FWHM to HWHM
-	sprintf str,"<hwhmY unit=\"pixel\">%s</hwhmX>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+	sprintf str,"<hwhmY unit=\"pixel\">%s</hwhmY>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
 	xml += "\t\t\t"+str+"\n"
 
 	ww = FullPeakList[p][8]
@@ -1500,7 +1500,7 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 			Nindexed = V_npnts
 			Redimension/N=(Nindexed) wi
 			mStr = num2istr(m)
-			str = "\t\t<pattern \"num=\""+mStr+"\""
+			str = "\t\t<pattern num=\""+mStr+"\""
 			val = NumberByKey("rms_error"+mStr,inote,"=")
 			str += SelectString(numtype(val), " rms_error=\""+num2str(val)+"\"", "")
 			val = NumberByKey("goodness"+mStr,inote,"=")
@@ -1528,11 +1528,19 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 			wi = FullPeakIndexed[p][5][m]
 			xml += "\t\t\t\t<l>"+vec2str(wi,places=9,bare=1,sep=" ")+"</l>\n"
 			xml += "\t\t\t</hkl_s>\n"
+			xml += "\t\t</pattern>\n"
 		endfor
-		xml += "\t\t</pattern>\n"
 
 		xml += "\t\t<xtl>\n"
 		xml += addXMLstrFromTagVals("structureDesc",inote,"",3)
+
+		STRUCT crystalStructure xtal
+		FillCrystalStructDefault(xtal)
+		str = xtal.sourceFile
+		if (strlen(str))
+			xml += "\t\t\t<xtlFile>" + str + "</xtlFile>\n"
+		endif
+	
 		xml += addXMLnumFromTagVals("SpaceGroup",inote,"",3,3)
 		Wave wlat = str2vec(StringByKey("latticeParameters",inote,"="))
 		xml += "\t\t\t<latticeParameters"+unit+">"+vec2str(wlat,places=9,bare=1,sep=" ")+"</latticeParameters>\n"
