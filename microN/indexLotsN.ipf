@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.31
+#pragma version = 2.32
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -1377,14 +1377,14 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 	endif
 
 	xml += addXMLnumFromTagVals("depth",pnote,"",1,9)
-	xml += addXMLnumFromTagVals("keV",pnote,"energy",1,7)
+	xml += addXMLnumFromTagVals("keV",pnote,"energy",1,7,unit="keV")
 	xml += addXMLnumFromTagVals("HutchTemperature",pnote,"hutchTemperature",1,4)
 	xml += addXMLnumFromTagVals("sampleDistance",pnote,"",1,9)
 
 	xml += "\t<detector>\n"			// do the detector
 	xml += addXMLstrFromTagVals("imageFileName",pnote,"inputImage",2)
 	xml += addXMLstrFromTagVals("detectorID",pnote,"",2)
-	xml += addXMLnumFromTagVals("exposure",pnote,"",2,9)
+	xml += addXMLnumFromTagVals("exposure",pnote,"",2,9,unit="sec")
 	xml += addXMLnumFromTagVals("xDimDet",pnote,"Nx",2,9)
 	xml += addXMLnumFromTagVals("yDimDet",pnote,"Ny",2,9)
 
@@ -1460,7 +1460,7 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 		str = "\t<indexing"
 		val = NumberByKey("Nindexed",inote,"=")
 		str += SelectString(numtype(val), " Nindexed=\""+num2str(val)+"\"", "")
-		str += " Npeaks=\""+num2str(Npeaks)+"\">"
+		str += " Npeaks=\""+num2str(Npeaks)+"\""
 
 		Npattern = NumberByKey("NpatternsFound",inote,"=")
 		str += SelectString(numtype(Npattern), " Npatterns=\""+num2str(Npattern)+"\"", "")
@@ -1482,7 +1482,9 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 		hklPrefer = ReplaceString("  ",hklPrefer," ")
 		hklPrefer = ReplaceString("}",hklPrefer,"")
 		hklPrefer = ReplaceString("{",hklPrefer,"")
-		str += SelectString(strlen(hklPrefer), " hklPrefer=\""+hklPrefer+"\"", "")
+		hklPrefer = ReplaceString("\"",hklPrefer,"")
+		hklPrefer = ReplaceString("'",hklPrefer,"")
+		str += SelectString(strlen(hklPrefer), "", " hklPrefer=\""+hklPrefer+"\"")
 		str += ">\n"
 		str += "\t\t<!-- Result of indexing. -->\n"
 		xml += str
@@ -1544,11 +1546,13 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 	return xml
 End
 //
-Static Function/T addXMLnumFromTagVals(key,wnote,XMLname,Ntabs,places)
+Static Function/T addXMLnumFromTagVals(key,wnote,XMLname,Ntabs,places,[unit])
 	String key, wnote
 	String XMLname
 	Variable Ntabs		// number of leading tabs
 	Variable places
+	String unit
+	unit = SelectString(ParamIsDefault(unit),unit,"")
 
 	Ntabs = numtype(Ntabs) ? 0 : Ntabs
 	Ntabs = limit(round(Ntabs),0,20)
@@ -1558,24 +1562,35 @@ Static Function/T addXMLnumFromTagVals(key,wnote,XMLname,Ntabs,places)
 	Variable val = NUmberByKey(key,wnote,"=")
 	if (numtype(val)==0)
 		String str, fmt
-		fmt = "<%s>%."+num2istr(places)+"g</%s>\n"
-		sprintf str,fmt,XMLname,val,XMLname
+		if (strlen(unit))
+			fmt = "<%s unit=\"%s\">%."+num2istr(places)+"g</%s>\n"
+			sprintf str,fmt,XMLname,unit,val,XMLname
+		else
+			fmt = "<%s>%."+num2istr(places)+"g</%s>\n"
+			sprintf str,fmt,XMLname,val,XMLname
+		endif
 		return PadString("",Ntabs,0x09)+str
 	endif
 	return ""
 End
 //
-Static Function/T addXMLstrFromTagVals(key,wnote,XMLname,Ntabs)
+Static Function/T addXMLstrFromTagVals(key,wnote,XMLname,Ntabs,[unit])
 	String key, wnote
 	String XMLname
 	Variable Ntabs		// number of leading tabs
+	String unit
+	unit = SelectString(ParamIsDefault(unit),unit,"")
 
 	Ntabs = numtype(Ntabs) ? 0 : Ntabs
 	Ntabs = limit(round(Ntabs),0,20)
 	XMLname = SelectString(strlen(XMLname),key,XMLname)
 	String str = StringByKey(key,wnote,"=")
 	if (strlen(str))
-		return PadString("",Ntabs,0x09)+"<"+XMLname+">"+str+"</"+XMLname+">\n"
+		if (strlen(unit))
+			return PadString("",Ntabs,0x09)+"<"+XMLname+" unit=\""+unit+"\">"+str+"</"+XMLname+">\n"
+		else
+			return PadString("",Ntabs,0x09)+"<"+XMLname+">"+str+"</"+XMLname+">\n"
+		endif
 	endif
 	return ""
 End

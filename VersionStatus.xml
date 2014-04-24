@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, April 22, 2014" time="10:53:18 AM CDT" isoTime="2014-04-22T10:53:18"></written>
+	<written date="Thursday, April 24, 2014" time="12:01:23 PM CDT" isoTime="2014-04-24T12:01:23"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>258</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -134,7 +134,7 @@
 	<file version="nan" time="2014-03-04T11:53:09" md5="0f132a6036fdba380ef9ead592fbe3d7" ext=".txt">geometrys/geometry description.txt</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="65963c90d8b1a79187ab47a53778e222" ext=".xml">materials/Ta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
-	<file version="2.3" time="2014-04-22T10:49:57" md5="9663b64b6f1e296d3e92c9b792a53fe7" ext=".ipf">microN/indexLotsN.ipf</file>
+	<file version="2.32" time="2014-04-24T11:52:53" md5="fc56f17f57f586f452da5d67c37b8ece" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="302bdca49e31e68d95cc2b98a1177552" ext=".ipf">General/WinView.ipf</file>
 	<file version="1.63" time="2014-03-27T15:55:19" md5="41a4b41193c34b2d4218eb517de9be52" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.08" time="2014-01-07T12:24:47" md5="b654123e368cb86a47808db0b169bf23" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
@@ -157,7 +157,7 @@
 	<file version="nan" time="2014-02-20T09:41:12" md5="6b4cf0d152db7a266db3fec8f8fa821e" ext=".xml">materials/PbTiO3.xml</file>
 	<file version="1" time="2014-03-12T12:14:23" md5="23ff760c23ac1fa7cf3ce10108aaa6b5" ext=".ipf">Lattice/PoleFigure.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4600c4022689de127291ae80e57517f7" ext=".xml">materials/PbMnNbO.xml</file>
-	<file version="0.27" time="2014-04-18T22:46:08" md5="a82b9ab7f6865781ee35bd7a434704d4" ext=".ipf">General/HDF5images.ipf</file>
+	<file version="0.29" time="2014-04-24T11:24:59" md5="bbb5d619b9c725b1ea6a451a01c1059e" ext=".ipf">General/HDF5images.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a0c2da844748f6158bfdbcb9bc5a4517" ext=".mtl">materials/MnO.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d045d4620e0d7a69e96a406dc3c3005c" ext=".xml">materials/HEA2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a74dd9cbe5ed0ed98dbb73da2efe64b7" ext=".xml">materials/LaMnO3_OrthoPhysics.xml</file>

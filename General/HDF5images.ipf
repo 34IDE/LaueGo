@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.27
+#pragma version = 0.29
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -644,7 +644,10 @@ Function/T ReadHDF5header(fName)
 
 	value = get1HDF5dataNum(f,"entry1/microDiffraction/CCDshutter")
 	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("CCDshutter",wnote,value,"=")
+		str = num2str(value)							// should be 0 or 1
+		str = SelectString(value==0,str,"in")		// 0 means in
+		str = SelectString(value==1,str,"out")	// 1 means out
+		wnote= ReplaceStringByKey("CCDshutter",wnote,str,"=")
 	endif
 
 	value = get1HDF5dataNum(f,"entry1/microDiffraction/HutchTemperature")
