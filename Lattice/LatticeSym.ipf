@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.21
+#pragma version = 4.22
 #include "Utility_JZT" version>=3.03
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -2650,8 +2650,11 @@ ThreadSafe Static Function/T Z2symbol(Z)	// returns chemical symbol from atomic 
 End
 
 
-Static Function/T MinimalChemFormula(xtal)
+Static Function/T MinimalChemFormula(xtal,[maximal])
 	STRUCT crystalStructure &xtal
+	Variable maximal
+	maximal = ParamIsDefault(maximal) ? 0 : maximal
+	maximal = numtype(maximal) ? 0 : !(!maximal)
 	Variable N = xtal.N
 	if (N < 1)
 		return ""
@@ -2698,21 +2701,23 @@ Static Function/T MinimalChemFormula(xtal)
 			m += 1
 		endif
 	endfor
-
 	N = m
 	Redimension/N=(N) symbs0, nums0
-	WaveStats/Q/M=1 nums0
-	Variable small=V_min
-	if (V_min==V_max)				// all nums0 are the same, so use 1
-		nums0 = 1
-	elseif (small >= 2)			// try to remove common factors
-		for (j=small;j>=2;j-=1)
-			MatrixOP/FREE/O remain = nums0 / j
-			remain = mod(remain,1)
-			if (sum(remain)==0)
-				nums0 /= j
-			endif
-		endfor
+
+	if (!maximal)						// if !maximal, then remove common factors
+		WaveStats/Q/M=1 nums0
+		Variable small=V_min
+		if (V_min==V_max)				// all nums0 are the same, so use 1
+			nums0 = 1
+		elseif (small >= 2)			// try to remove common factors
+			for (j=small;j>=2;j-=1)
+				MatrixOP/FREE/O remain = nums0 / j
+				remain = mod(remain,1)
+				if (sum(remain)==0)
+					nums0 /= j
+				endif
+			endfor
+		endif
 	endif
 
 	String formula="", str
