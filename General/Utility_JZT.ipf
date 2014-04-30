@@ -1,8 +1,8 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.28
-#pragma hide = 1
+#pragma version = 3.29
+// #pragma hide = 1
 
 Menu "Graph"
 	"Append Multiple Graphs to a Layout",AppendGraph2LayoutN(NaN,"","")
@@ -2640,7 +2640,8 @@ End
 Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String
 	Variable j
 	j = round(j)
-	if (j<1 || j>3999 || numtype(j))
+	//	if (j<1 || j>3999 || numtype(j))
+	if (j<1 || numtype(j))
 		return ""
 	elseif (j>=1000)
 		return "M"+RomanNumeral(j-1000)
