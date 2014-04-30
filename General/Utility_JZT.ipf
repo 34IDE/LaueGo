@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.29
+#pragma version = 3.30
 // #pragma hide = 1
 
 Menu "Graph"
@@ -55,7 +55,11 @@ End
 //		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
-//		RomanNumeral(j) converts a number to a Roman Numeral string
+//		cmplx2str(zz,[places,mag]), convert complex number to a printable string
+//		str2cmplx(str), 	this is like str2num, but for complex
+//		ReplaceCharacters(chars,inStr,replacement), replace any occurance of a character in chars with replacement
+//		SIprefix2factor(prefix), get the factor for an SI prefix
+//		RomanNumeral(j) converts a number to a Roman Numeral string, NO upper limit, so watch out for string length
 //	9	Old legacy or deprecated functions
 
 
@@ -2578,6 +2582,61 @@ End
 //	End
 
 
+ThreadSafe Function/T cmplx2str(zz,[places,pow])		// convert complex number to a printable string
+	Variable/C zz
+	Variable places
+	Variable pow						// optional parameter for magnitude, adds |zz|^pow
+	places = ParamIsDefault(places) ? NaN : places
+	places = round(places)
+	pow = ParamIsDefault(pow) ? 0 : pow
+	pow = numtype(pow) ? 0 : pow
+
+	Variable powValue=NaN
+	String str, fmt1="%g", fmt="(%g, %g)", powStr=""
+	if (places == limit(places,0,20))
+		fmt1 = "%."+num2istr(places)+"g"
+	endif
+	if (pow)
+		powStr = SelectString(pow==1, "^"+num2str(pow), "")
+		powValue = sqrt(magsqr(zz))^pow
+		sprintf fmt,"|(%s, %s)|%%s = %s",fmt1,fmt1,fmt1
+		sprintf str,fmt,real(zz),imag(zz),powStr,powValue
+	else
+		sprintf fmt,"(%s, %s)",fmt1,fmt1
+		sprintf str,fmt,real(zz),imag(zz)
+	endif
+
+	return str
+End
+
+
+ThreadSafe Function/C str2cmplx(str)	// this is like str2num, but for complex
+	String str
+
+	str = ReplaceCharacters("()[]{}",str,"")
+	str = ReplaceCharacters(",;:",str," ")
+	Variable rr,ii
+	sscanf str,"%g %g",rr,ii
+	if (V_flag==2)
+		return cmplx(rr,ii)
+	endif
+	return cmplx(NaN,NaN)					// fail
+End
+
+
+ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
+	String chars			// replace any occurance of a character in chars with replacement
+	String inStr
+	String replacement
+
+	Variable i, N=strlen(chars)
+	for (i=0;i<N;i+=1)
+		inStr = ReplaceString(chars[i],inStr,replacement)	
+	endfor
+	return inStr
+End
+
+
 Function SIprefix2factor(prefix)
 	String prefix
 
@@ -2637,7 +2696,7 @@ Function SIprefix2factor(prefix)
 End
 
 
-Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String
+Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
 	Variable j
 	j = round(j)
 	//	if (j<1 || j>3999 || numtype(j))
