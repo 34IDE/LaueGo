@@ -18,6 +18,7 @@ End
 
 
 Function FWHM_Coefs([type,printIt])
+	// uses W_coef to return FWHM, and probably print other statistics
 	String type						// user can pass type, or it is read from wave note
 	Variable printIt
 	type = SelectString(ParamIsDefault(type), type, "")
@@ -75,8 +76,11 @@ End
 
 
 Function FindSimplePeakParameters(yw,xw,[W_coef,printIt])
-	Wave yw,xw
-	Wave/D W_coef
+	// a user command to get Simple peak stats from yw (or yw vs xw), and probably print them
+	// it also creates the W_coef & W_sigma waves containing {bkg, amplitude, x0, FWHM, net, COM}
+	// returns 0 if all went OK, 1 on an error
+	Wave yw,xw			// yw vs xw, or just yw using scaling
+	Wave/D W_coef		// wave to hold the results, one will be created if not present
 	Variable printIt
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
@@ -127,7 +131,8 @@ Function FindSimplePeakParameters(yw,xw,[W_coef,printIt])
 End
 //
 ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw vs xw, put results into W_coef
-	// y = Simple peak,  K0=bkg, K1=amplitude, K2=x0, K3=FWHM, K4=net, K5=COM
+	// calculate the peak stats for peak in yw, or yw vs xw, and returns result as FREEE wave
+	// Wc = {bkg, amplitude, x0, FWHM, net, COM}   Simple peak stats
 	Wave yw,xw
 	if (!WaveExists(yw))
 		return $""
@@ -194,6 +199,7 @@ End
 
 
 
+// Generic description of a peak
 Structure PeakShapeStructure
 	int32 N					// number of values in coef[] & sigma[]
 	double coef[MAX_PEAK_COEFS]	// original coefs from W_coef, only up to MAX_PEAK_COEFS values
@@ -212,6 +218,7 @@ Structure PeakShapeStructure
 EndStructure
 //
 ThreadSafe Function copyPeakShapeStructure(f,i)
+	// copy PeakShapeStructure i into f
 	STRUCT PeakShapeStructure &f, &i
 	f.N = i.N
 	f.x0 = i.x0 ;			f.dx0 = i.dx0
@@ -232,6 +239,7 @@ ThreadSafe Function copyPeakShapeStructure(f,i)
 End
 //
 ThreadSafe Function initPeakShapeStructure(pk)
+	// initialze PeakShapeStructure to default/empty values
 	STRUCT PeakShapeStructure &pk
 	pk.N = 0
 	pk.x0 = NaN ;		pk.dx0 = NaN
@@ -252,6 +260,7 @@ ThreadSafe Function initPeakShapeStructure(pk)
 End
 //
 ThreadSafe Function/T PeakShapeStruct2str(pk,[short])
+	// return a string suitable for printing or display of a PeakShapeStructure
 	STRUCT PeakShapeStructure &pk
 	Variable short
 	short = ParamIsDefault(short) ? NaN : short
@@ -300,6 +309,7 @@ ThreadSafe Function/T PeakShapeStruct2str(pk,[short])
 End
 //
 ThreadSafe Function GenericPeakShapeStruct(pk,wcoef,wsigma,[type])
+	// given a W_coef (and maybe W_sigma or type), fill the PeakShapeStructure
 	STRUCT PeakShapeStructure &pk
 	Wave wcoef, wsigma
 	String type											// user can pass type, or it is read from wave note
@@ -323,6 +333,7 @@ ThreadSafe Function GenericPeakShapeStruct(pk,wcoef,wsigma,[type])
 End
 //
 ThreadSafe Static Function Simple2PeakShapeStruct(pk,wcoef,wsigma)
+	// for a Simple peak result in wcoef (and optionally wsigma), fill in PeakShapeStructure
 	// y = Simple peak,  K0=bkg, K1=amplitude, K2=x0, K3=FWHM
 	STRUCT PeakShapeStructure &pk
 	Wave wcoef, wsigma
@@ -375,6 +386,7 @@ ThreadSafe Static Function Simple2PeakShapeStruct(pk,wcoef,wsigma)
 End
 //
 ThreadSafe Static Function Gaussian2PeakShapeStruct(pk,wcoef,wsigma)
+	// for a Gaussian peak fit (given by wcoef & wsigma), fill in PeakShapeStructure
 	// y = K0+K1*exp(-((x-K2)/K3)^2)
 	STRUCT PeakShapeStructure &pk
 	Wave wcoef, wsigma
@@ -411,6 +423,7 @@ ThreadSafe Static Function Gaussian2PeakShapeStruct(pk,wcoef,wsigma)
 End
 //
 ThreadSafe Static Function Lorentzian2PeakShapeStruct(pk,wcoef,wsigma)
+	// for a Lorentzian peak fit (given by wcoef & wsigma), fill in PeakShapeStructure
 	// y = K0+K1/((x-K2)^2+K3)
 	STRUCT PeakShapeStructure &pk
 	Wave wcoef, wsigma
