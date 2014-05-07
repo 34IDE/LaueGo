@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, May 07, 2014" time="12:54:11 PM CDT" isoTime="2014-05-07T12:54:11"></written>
+	<written date="Wednesday, May 07, 2014" time="05:07:42 PM CDT" isoTime="2014-05-07T17:07:42"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>258</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -34,7 +34,7 @@
 	<file version="0.04" time="2013-10-28T11:28:49" md5="2596730c5c9139e078980e8f00e36fd2" ext=".ipf">microN/FlyImageExtract.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d2cecdf854958ec7e2e6f5b58341ef18" ext=".xml">materials/PZT-Rhomb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8f514e77e27d6af2814f4abb383f9466" ext=".xml">materials/Mo.xml</file>
-	<file version="2" time="2014-05-07T12:53:10" md5="eecc2d4afa8a5f5c18b2de100d063eef" ext=".ipf">General/FWHM.ipf</file>
+	<file version="2.01" time="2014-05-07T17:02:16" md5="a0cc74af302b6247d5ce51f7026fa21b" ext=".ipf">General/FWHM.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="40c0b918da175b88e70c76c9264fd6d9" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" ext="">micro/indexAll_ppc</file>
 	<file version="1.01" time="2014-04-30T10:28:09" md5="34d3fc84b9db4ef2adbae7fcca0a36ec" ext=".ipf">Grains/CutUpGrains.ipf</file>
