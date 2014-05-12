@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, May 07, 2014" time="05:07:42 PM CDT" isoTime="2014-05-07T17:07:42"></written>
+	<written date="Monday, May 12, 2014" time="11:29:53 AM CDT" isoTime="2014-05-12T11:29:53"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>258</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -44,7 +44,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="5d77e527acd902b462684afb230ef077" ext=".xml">materials/cu225.xml</file>
 	<file version="1.11" time="2013-11-27T13:00:02" md5="295406f0234817e7f9b02a99a95682c2" ext=".ipf">APS/mdaFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="efd18f087ca114249ac513fc0d08caa2" ext=".xml">materials/LaMnO3_OrthoORNL.xml</file>
-	<file version="2.03" time="2014-04-30T10:16:24" md5="916a5e17b35f279ac050bf5a61906f5e" ext=".ipf">General/PhysicalConstants.ipf</file>
+	<file version="2.04" time="2014-05-12T11:29:37" md5="a09e5301911f941cd35dc88759f9a291" ext=".ipf">General/PhysicalConstants.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4f9d1ef62a587ddc29a3b61fce96b7cd" ext=".xml">materials/SrLaGaO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="0f371a92479dd3587d334a17f1e73d69" ext=".xml">materials/UO2F2.xml</file>
 	<file version="1.9" time="2014-04-29T18:11:15" md5="d4d83bd75f91b8e7164c200bf4a5d788" ext=".ipf">General/CromerLiberman.ipf</file>
