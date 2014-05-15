@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.05
+#pragma version = 3.06
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -134,6 +134,8 @@ Function/T JZTgeneral_CheckForUserPackages(dirPath)
 		elseif (strsearch(dirName,"(old",0,2)>=0)							// contains "(old"
 			continue
 		elseif (strsearch(dirName,":always",dirLast,3)==dirLast-6)	// ends in ":always"
+			continue
+		elseif (strsearch(dirName,"(no copy)",dirLast,3)==dirLast-6)	// contains "(no copy)"
 			continue
 		endif
 		addMenus = JZTgeneral_CheckForUserPackages(dirName)	// check inside this sub-directory recursively
