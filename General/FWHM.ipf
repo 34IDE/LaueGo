@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -145,36 +145,35 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw v
 		xunits = WaveUnits(yw,0)
 	endif
 
-	Variable FWHM=NaN, center=NaN, bkg, amp, N=DimSize(yw,0), net, COM
+	Variable level, pStart, p1,p2						// points values of the half widths
+	Variable dx=DimDelta(yw,0), xoff=DimOffset(yw,0), N=DimSize(yw,0)
+	Variable bkg, amp, center, FWHM, net, COM		// peak parameters to find
+	COM = computeCOM(yw,xw)								// computes center of mass
 	bkg = ( yw[0] + yw[N-1] ) / 2
-	amp = WaveMax(yw)-bkg
-	COM = computeCOM(yw,xw)			// computes center of mass
-	Variable p1,p2							// points values of the half widths
 	WaveStats/Q yw
-	if (WaveExists(xw))
-		Make/N=2/FREE/D wtemp
-		FindLevels /D=wtemp /N=6 /P/Q yw, ((V_max+V_min)/2)
-		if (V_LevelsFound<2)
-			return $""						// no peak
-		endif
-		Variable pm = x2pnt(yw,V_maxloc)	// point of the max
-		p1 = BinarySearch(wtemp, pm)
-		p2 = wtemp[p1+1]
-		p1 = wtemp[p1]
+	level = ((V_max+V_min)/2)								// level of the half-width
+	if (abs(V_max-bkg) < abs(V_min-bkg))				//a negative peak
+		amp = V_min-bkg
+		pStart = round((V_minloc-xoff)/dx)				// pStart in points (lowest point)
+	else															// a positive peak
+		amp = V_max-bkg
+		pStart = round((V_maxloc-xoff)/dx)				// pStart in points (highest point)
+	endif
+	p1 = FindLevelFromPoint(yw,level,pStart,-1)// find left side
+	p2 = FindLevelFromPoint(yw,level,pStart,1)	// find right side
+
+	if (numtype(p1+p2))
+		return $""
+	elseif (WaveExists(xw))
 		FWHM = abs(xw[p2]-xw[p1])
 		center=(xw[p2]+xw[p1])/2
 		net = areaXY(xw,yw) - (xw[N-1]-xw[0])*bkg
 	else
-		Make/N=2/FREE/D wtemp
-		FindLevels /D=wtemp /N=6 /Q yw, ((V_max+V_min)/2)
-		if (V_LevelsFound<2)
-			return $""						// no peak
-		endif
-		p1 = BinarySearch(wtemp, V_maxloc)
-		center=(wtemp[p1+1]+wtemp[p1])/2
-		FWHM = abs(wtemp[p1+1]-wtemp[p1])
-		net = area(yw) - bkg*(N-1)*DimDelta(yw,0)
+		FWHM = abs((p2-p1)*dx)
+		center = dx*(p2+p1)/2 + xoff
+		net = area(yw) - bkg*(N-1)*dx
 	endif
+
 	Make/N=6/D/FREE Wc={bkg, amp, center, FWHM, net, COM}
 	SetScale/P x 0,1, xunits, Wc
 	SetScale d 0,0, yunits, Wc
@@ -193,6 +192,64 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw v
 	endif
 	Note/K Wc, wnote
 	return Wc
+End
+//
+ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction)
+	// returns point where wy[point] crosses level
+	// it searches for the crossing from p0 going in the indicated direction from p0
+	// if wy[p0] > level,  then it assumes a positive peak
+	// if wy[p0] < level,  then it assumes a negative peak (a dip)
+	// if wy[p0] == level, then it returns p0
+	Wave wy					// wave with values, assumed to be 1D
+	Variable level			// value in wy[] to find
+	Variable p0				// point at start of search
+	Variable direction	// (+ is >0), (- is <=0) direction
+
+	if (!WaveExists(wy) || numtype(level+p0+direction) || p0<0)
+		return NaN
+	endif
+	Variable i,N=DimSize(wy,0), point=NaN, dip=0
+	p0 = round(p0)
+	if (N<p0)								// starting point out of range
+		return NaN
+	elseif (wy[p0]==level)				// we are there already, no need to hunt
+		return p0
+	elseif (wy[p0]<level)				// assume a dip, not a positive peak
+		dip = 1
+	endif
+
+	WaveStats/Q/M=1 wy
+	if (!(level==limit(level,V_min,V_max)))
+		return NaN							// level is not in range of wy
+	endif
+
+	if (dip)
+		if (direction>0)					// + direction
+			for (i=p0; i<N && wy[i]<level; i+=1)
+			endfor
+		else									// - direction
+			for (i=p0; i>=0 && wy[i]<level; i-=1)
+			endfor
+		endif
+	else
+		if (direction>0)					// + direction
+			for (i=p0; i<N && wy[i]>level; i+=1)
+			endfor
+		else									// - direction
+			for (i=p0; i>=0 && wy[i]>level; i-=1)
+			endfor
+		endif
+	endif
+
+	if (!(i==limit(i,0,N-1)))			// check if i is a valid point in wave
+		point = NaN
+	elseif (i==p0 || wy[i]==level)	// no need to interpolate, this is the answer
+		point = i
+	else										// wy[i]<level, level<wy[i+1]
+		i -= direction>0 ? 1 : 0
+		point = (level-wy[i])/(wy[i+1]-wy[i]) + i
+	endif
+	return point
 End
 
 
