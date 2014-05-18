@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -152,15 +152,16 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw v
 	bkg = ( yw[0] + yw[N-1] ) / 2
 	WaveStats/Q yw
 	level = ((V_max+V_min)/2)								// level of the half-width
-	if (abs(V_max-bkg) < abs(V_min-bkg))				//a negative peak
+	Variable dip=abs(V_max-bkg) < abs(V_min-bkg)	//a negative peak, a dip
+	if (dip)														//a negative peak
 		amp = V_min-bkg
 		pStart = round((V_minloc-xoff)/dx)				// pStart in points (lowest point)
 	else															// a positive peak
 		amp = V_max-bkg
 		pStart = round((V_maxloc-xoff)/dx)				// pStart in points (highest point)
 	endif
-	p1 = FindLevelFromPoint(yw,level,pStart,-1)// find left side
-	p2 = FindLevelFromPoint(yw,level,pStart,1)	// find right side
+	p1 = FindLevelFromPoint(yw,level,pStart,-1,dip)	// find left side
+	p2 = FindLevelFromPoint(yw,level,pStart,1,dip)	// find right side
 
 	if (numtype(p1+p2))
 		return $""
@@ -194,7 +195,7 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw v
 	return Wc
 End
 //
-ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction)
+ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip)
 	// returns point where wy[point] crosses level
 	// it searches for the crossing from p0 going in the indicated direction from p0
 	// if wy[p0] > level,  then it assumes a positive peak
@@ -204,26 +205,27 @@ ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction)
 	Variable level			// value in wy[] to find
 	Variable p0				// point at start of search
 	Variable direction	// (+ is >0), (- is <=0) direction
+	Variable dip			// true for a dip, a positive peak is false
+								// if numtype(dip) is true, then auto-detect dips
 
 	if (!WaveExists(wy) || numtype(level+p0+direction) || p0<0)
 		return NaN
 	endif
-	Variable i,N=DimSize(wy,0), point=NaN, dip=0
+	Variable i,N=DimSize(wy,0), point=NaN
 	p0 = round(p0)
 	if (N<p0)								// starting point out of range
 		return NaN
 	elseif (wy[p0]==level)				// we are there already, no need to hunt
 		return p0
-	elseif (wy[p0]<level)				// assume a dip, not a positive peak
-		dip = 1
 	endif
+	dip = numtype(dip) ? wy[p0]<level : dip	// set dip
 
 	WaveStats/Q/M=1 wy
 	if (!(level==limit(level,V_min,V_max)))
 		return NaN							// level is not in range of wy
 	endif
 
-	if (dip)
+	if (dip)									// negative peak
 		if (direction>0)					// + direction
 			for (i=p0; i<N && wy[i]<level; i+=1)
 			endfor
@@ -231,7 +233,7 @@ ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction)
 			for (i=p0; i>=0 && wy[i]<level; i-=1)
 			endfor
 		endif
-	else
+	else										// positive peak
 		if (direction>0)					// + direction
 			for (i=p0; i<N && wy[i]>level; i+=1)
 			endfor
