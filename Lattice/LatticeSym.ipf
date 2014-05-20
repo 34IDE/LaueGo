@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.22
-#include "Utility_JZT" version>=3.03
+#pragma version = 4.23
+#include "Utility_JZT" version>=3.30
 #include "MaterialsLocate"								// used to find the path to the materials files
 
 
@@ -92,6 +92,7 @@
 // with version 4.19, small change in reMakeAtomXYZs(), avoids error when debug on "NVAR SVAR WAVE Checking" is on
 // with version 4.20, the xtl file is now carried along in the crystalStructure structure
 // with version 4.21, added directFrom_xtal(), which is a lot like recipFrom_xtal()
+// with version 4.23, added str2hkl(hklStr,h,k,l)
 
 // Rhombohedral Transformation:
 //
@@ -5161,6 +5162,52 @@ ThreadSafe Function/S hkl2str(h,k,l)	// format h,k,l into a string of acceptable
 	endif
 	return hkl
 End
+
+
+ThreadSafe Function str2hkl(hklStr,h,k,l)
+	// returns the hkl values from a string, pretty forgiving about format in string
+	// moved to here from Dynamical.ipf versions ²1.14
+	String hklStr
+	Variable &h,&k,&l
+
+	h = NaN ;	k = NaN ;	l = NaN
+	hklStr = ReplaceString("+",hklStr," ")
+	hklStr = ReplaceString("-",hklStr," -")
+	hklStr = TrimFrontBackWhiteSpace(hklStr)
+
+	Wave w3 = str2vec(hklStr)
+	Variable N=numpnts(w3)
+	if (N==1)
+		hklStr[1] = ";"
+		hklStr[3] = ";"
+		Wave w3 = str2vec(hklStr)
+		N=numpnts(w3)
+	elseif (N==2)
+		String str=hklStr
+		str[1] = " "							// split at the start
+		Wave w3 = str2vec(str)
+		if (numpnts(w3)==2)
+			str=hklStr
+			str[strlen(hklStr)-1] = " "	// split at the end
+			Wave w3 = str2vec(str)
+		endif
+		N=numpnts(w3)
+	endif
+
+	if (N>2 && numtype(sum(w3,0,2))==0)
+		h = w3[0]
+		k = w3[1]
+		l = w3[2]
+		return 0
+	endif
+	return 1
+End
+//	Function test(str)
+//		String str
+//		Variable h,k,l
+//		Variable err = str2hkl(str,h,k,l)
+//		printf "'%s' --> (%g, %g, %g)%s\r",str,h,k,l,SelectString(err,"","   ****** ERROR *****")
+//	End
 
 
 ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
