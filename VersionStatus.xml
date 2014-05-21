@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, May 15, 2014" time="05:06:55 PM CDT" isoTime="2014-05-15T17:06:55"></written>
+	<written date="Wednesday, May 21, 2014" time="08:24:28 AM CDT" isoTime="2014-05-21T08:24:28"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>258</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -34,7 +34,7 @@
 	<file version="0.04" time="2013-10-28T11:28:49" md5="2596730c5c9139e078980e8f00e36fd2" ext=".ipf">microN/FlyImageExtract.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d2cecdf854958ec7e2e6f5b58341ef18" ext=".xml">materials/PZT-Rhomb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8f514e77e27d6af2814f4abb383f9466" ext=".xml">materials/Mo.xml</file>
-	<file version="2.01" time="2014-05-07T17:02:16" md5="a0cc74af302b6247d5ce51f7026fa21b" ext=".ipf">General/FWHM.ipf</file>
+	<file version="2.03" time="2014-05-19T08:19:15" md5="10965a3ecac6cfb905141686772f64bf" ext=".ipf">General/FWHM.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="40c0b918da175b88e70c76c9264fd6d9" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" ext="">micro/indexAll_ppc</file>
 	<file version="1.01" time="2014-04-30T10:28:09" md5="34d3fc84b9db4ef2adbae7fcca0a36ec" ext=".ipf">Grains/CutUpGrains.ipf</file>
@@ -95,7 +95,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="9ade17870257633d501725982dca9c17" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
-	<file version="4.22" time="2014-04-25T16:27:32" md5="116efbc1c628b488b2e2328f75d2995c" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.23" time="2014-05-20T08:07:25" md5="933d18cffe419d86964e245f71a51c42" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b9fe430376660d4f30e40f8f04789109" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
