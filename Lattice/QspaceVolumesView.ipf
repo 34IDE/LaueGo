@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.08
+#pragma version = 1.09
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -288,7 +288,7 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		DoAlert 0, "Cannot find 3D Qspace Wave"
 		return 1
 	endif
-	String gizName=FindGizmoWithWave(Qspace3D)		// Qspace3D already on a Gizmo, just bring it to front
+	String gizName=StringFromlist(0,FindGizmosWithWave(Qspace3D))	// Qspace3D already on a Gizmo, just bring it to front
 	if (strlen(gizName)>0)
 		DoWindow/F $gizName
 		return 0

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.09
+#pragma version = 1.10
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.20
@@ -161,7 +161,7 @@ Function/T MakeSimulatedLauePattern(h0,k0,l0,Elo,Ehi,[Nmax,detector])
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],0,geo.d[detector].Ny -1,$""))
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],geo.d[detector].Nx -1,0,$""))
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],geo.d[detector].Nx -1,geo.d[detector].Ny -1,$""))
-	Wave ki = root:Packages:geometry:pixel2q_ki		//	should be ki={0,0,1}, this is defined by pixel2q()
+	Make/N=3/D/FREE ki={0,0,1}								//	this is a convention
 
 	Variable dmin = hc/(2*Ehi*sin(thetaMax))
 	Variable hmax = ceil(xtal.a / dmin)

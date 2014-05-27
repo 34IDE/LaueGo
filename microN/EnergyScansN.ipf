@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.10
+#pragma version = 2.11
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6236,7 +6236,7 @@ Function Fill1_3DQspace(recipSource,pathName,namePart,range,[depth,mask,dark,doC
 			beep
 		endif
 
-		String wName=FindGizmoWithWave(Qspace3d)
+		String wName=StringFromlist(0,FindGizmosWithWave(Qspace3d))
 		if (strlen(wName)==0)
 			MakeGizmoQspace3d(Qspace3D)
 		endif

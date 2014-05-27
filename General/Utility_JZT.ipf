@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.30
+#pragma version = 3.31
 // #pragma hide = 1
 
 Menu "Graph"
@@ -29,7 +29,7 @@ End
 //		keyInList() & MergeKeywordLists(), "key=value" list utilities
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
-//		FindGraphsWithWave() & FindGizmoWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
+//		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
 //		getListOfTypesInFile(), returns file type (using the $filetype) in my old standard files (trying to start only using xml)
 //		DrawMarker(), draw a marker
 //		xy2saturatedColors(), computes saturated colors for and RGB wheel on an xy graph
@@ -1578,14 +1578,14 @@ Function/S FindGraphsWithWave(w)	// find the graph window which contains the spe
 End
 
 
-Function/T FindGizmoWithWave(w)	// find the Gizmo which contains the specified wave
+Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specified wave
 	Wave w
 	if (!WaveExists(w) || exists("NewGizmo")!=4)
 		return ""
 	endif
 
 	Execute "GetGizmo/Z gizmoNameList"
-	String gName, objetAll, gList=StrVarOrDefault("S_GizmoNames","")
+	String gName, objetAll, gList=StrVarOrDefault("S_GizmoNames",""), list=""
 	Variable i, N=ItemsInList(gList)
 	for (i=0;i<N;i+=1)
 		gName=StringFromList(i,gList)				// check each gizmo that is displayed
@@ -1598,12 +1598,12 @@ Function/T FindGizmoWithWave(w)	// find the Gizmo which contains the specified w
 		objetAll = ReplaceString("\r",objetAll,";")
 		objetAll = ReplaceString("\n",objetAll,";")
 		if (strsearch(objetAll,";"+GetWavesDataFolder(w,2)+";",0,2)>=0)
-			break
+			list += gName+";"
 		endif
 	endfor
 	KillStrings/Z S_GizmoNames, S_gizmoObjectList
 	KillWaves/Z TW_gizmoObjectList
-	return SelectString(i<N,"",gName)
+	return list
 End
 
 

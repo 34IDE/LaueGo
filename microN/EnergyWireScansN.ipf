@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyWireScans
-#pragma version = 1.31
+#pragma version = 1.32
 #define EWSCAN_OLD_WAY
 
 #include "ImageDisplayScaling", version>=1.81
@@ -4708,7 +4708,7 @@ Function Fill1_3DQspace(recipSource,pathName,namePart,range,[depth,mask,dark,doC
 		beep
 	endif
 
-	String wName=FindGizmoWithWave(Qspace3d)
+	String wName=StringFromList(0,FindGizmosWithWave(Qspace3d))
 	if (strlen(wName)==0)
 		MakeGizmoQspace3d(Qspace3D)
 	endif

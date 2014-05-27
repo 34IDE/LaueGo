@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.63
+#pragma version = 1.64
 #include  "LatticeSym", version>=4.13
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -18,6 +18,8 @@ StrConstant defaultGeoTagName="geoN"			// default start of name for geometry fil
 Static StrConstant GeoWebServer = "sector34.xray.aps.anl.gov/34ide"
 
 
+// with version 1.64, made many more ThreadSafe, deleted a lot of obsolete funcs, and cleaned up formatting. Change many predefined waves to FREE
+
 // All my calculations assume that an image has zero based pixels, both in the image, and in specifying the ROI
 //
 // to convert from a ROI pixel (zero based) to full unbinned chip use:
@@ -26,7 +28,7 @@ Static StrConstant GeoWebServer = "sector34.xray.aps.anl.gov/34ide"
 //	py = starty + py*groupy + (groupy-1)/2	// groupx=1 is un-binned
 
 
-//=======================================================================================
+// ============================================================================================
 // ====================================== Start of Menus ======================================
 
 Menu "Help"
@@ -66,13 +68,13 @@ Function MICRO_VERSION_N_Func()
 	return 0
 End
 
-// ====================================== End of Menus =======================================
-//=======================================================================================
+// ======================================= End of Menus =======================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// =================================== Start of micro Panel ====================================
+// ============================================================================================
+// =================================== Start of micro Panel ===================================
 
 Function MakeMicroPanel(tab)							// makes the main microPanel
 	Variable tab
@@ -197,22 +199,6 @@ Static Function microPanelHook(s)
 #endif
 	return 0
 End
-//
-// This is no longer necessary
-//
-//Static Function/T LoadLatticeParametersPanel(strStruct,hostWin,left,top)
-//	String strStruct									// optional passed value of xtal structure, this is used if passed
-//	String hostWin										// name of home window
-//	Variable left, top									// offsets from the left and top
-//
-//	SetWindow kwTopWin,userdata(LatticePanelName)=hostWin+"#LatticePanel"
-//	NewPanel/K=1/W=(left,top,left+221,top+365)/HOST=$hostWin
-//	ModifyPanel frameStyle=0, frameInset=0
-//	RenameWindow #,LatticePanel
-//	Button buttonInitLattice,pos={33,31},size={150,50},title="Init Lattice\rpackage",proc=microGeo#LoadPackageButtonProc
-//	Button buttonInitLattice,help={"Load lattice symmetry procedures"}
-//	return "#LatticePanel"
-//End
 //
 Static Function/T LoadIndexParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
@@ -367,7 +353,6 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 		tab = 1
 		ctrlName = "tabMicroA"
 
-
 	elseif (stringmatch(ba.ctrlName,"buttonInitArrays3d"))
 		Execute/P "INSERTINCLUDE  \"ArrayOf3dOrientsN\", version>=2.58"
 		tab = 2
@@ -455,11 +440,11 @@ End
 
 
 // ==================================== End of micro Panel ====================================
-//=======================================================================================
+// ============================================================================================
 
 
 
-//=======================================================================================
+// ============================================================================================
 // ====================================== Start of Tests=======================================
 
 Function testBasics(pxIn,pyIn)
@@ -494,23 +479,23 @@ Function testBasics(pxIn,pyIn)
 		pixel2XYZ(g.d[i],pxIn,pyIn,xyz)			// convert pixel position to the beam line coordinate system
 		printf "	pixel = (%g, %g) -->  XYZ=(%g, %g, %g)(µm)\r",pxIn,pyIn,xyz[0],xyz[1],xyz[2]
 
-		xyz *= 1.5									// extend point so that it does not lie on detector, I will find the intersection
-		XYZ2pixel(g.d[i],xyz,px,py)					// find pixel position where vector xyz will intercept detector
+		xyz *= 1.5										// extend point so that it does not lie on detector, I will find the intersection
+		XYZ2pixel(g.d[i],xyz,px,py)				// find pixel position where vector xyz will intercept detector
 		printf "		Inverting:   --> pixel=(%g, %g),  Æpixel=(%.2g, %.2g)\r",px,py,px-pxIn,py-pyIn
 	endfor
 	KillWaves/Z xyz
 End
 
-// ======================================= End of Tests=======================================
-//=======================================================================================
+// ======================================= End of Tests========================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// ===================================== Start of Geometry =====================================
+// ============================================================================================
+// ==================================== Start of Geometry =====================================
 
-Structure microGeometry							// structure definition
-	int16	Ndetectors									// number of detectors in use, must be <= MAX_Ndetectors
+Structure microGeometry								// structure definition
+	int16	Ndetectors										// number of detectors in use, must be <= MAX_Ndetectors
 	STRUCT detectorGeometry d[MAX_Ndetectors]	// geometry parameters for each detector
 	STRUCT wireGeometry wire
 	STRUCT sampleGeometry s
@@ -523,12 +508,12 @@ EndStructure
 // Size of detector is measured to the outer edge of the outer most pixels.  So conversion from position to pixel for the x direction is:
 //		x' = ( pixel - (Nx-1)/2 )*pitch,   where sizeX = Nx*pitch.  This puts the coordinate of pixel (i,j) at the center of the pixel.
 //
-Structure detectorGeometry			// structure definition for a detector
-	int16 used						// TRUE=detector used, FALSE=detector un-used
-	int32 Nx, Ny					// # of un-binned pixels in full detector
+Structure detectorGeometry		// structure definition for a detector
+	int16 used							// TRUE=detector used, FALSE=detector un-used
+	int32 Nx, Ny						// # of un-binned pixels in full detector
 	double sizeX,sizeY				// outside size of detector (sizeX = Nx*pitchX), measured to outer edge of outer pixels (micron)
-	double R[3]						// rotation vector (length is angle in radians)
-	double P[3]						// translation vector (micron)
+	double R[3]							// rotation vector (length is angle in radians)
+	double P[3]							// translation vector (micron)
 
 	uchar timeMeasured[100]		// when this geometry was calculated
 	uchar geoNote[100]				// note
@@ -540,43 +525,43 @@ Structure detectorGeometry			// structure definition for a detector
 	double rho20, rho21, rho22
 EndStructure
 //
-Structure wireGeometry			// structure definition
-	double origin[3]				// raw PM500 coordinates that would put wire center at Origin, (the Si position), (micron)
-	double dia						// diameter of wire (micron)
-	int16 knife						// true if wire on a knife edge, false for free-standing wire
+Structure wireGeometry		// structure definition
+	double origin[3]			// raw PM500 coordinates that would put wire center at Origin, (the Si position), (micron)
+	double dia					// diameter of wire (micron)
+	int16 knife					// true if wire on a knife edge, false for free-standing wire
 	double F						// F of the wire for the wire scan in raw PM500 units (not very important) (micron)
-	double axis[3]					// unit vector in direction of wire afis in positioner frame, e.g. (0,0,1) is along positioner x-axis
-	double axisR[3]					// vector axis rotated by R, now direction of wire in beam line frame (calculated internally)
-	double R[3]						// rotation vector for the wire positioner (length is angle in radians)
+	double axis[3]				// unit vector in direction of wire afis in positioner frame, e.g. (0,0,1) is along positioner x-axis
+	double axisR[3]			// vector axis rotated by R, now direction of wire in beam line frame (calculated internally)
+	double R[3]					// rotation vector for the wire positioner (length is angle in radians)
 	double Rmag					// magnitude of | R[3] |, in degrees (computed internally)
-	double R00, R01, R02			// rotation matrix from R[3] internally calculated
+	double R00, R01, R02	// rotation matrix from R[3] internally calculated
 	double R10, R11, R12
 	double R20, R21, R22
 EndStructure
 //
 Structure sampleGeometry
-	double O[3]						// raw PM500 coordinates where sample is at origin, (the Si position), (micron)
-	double R[3]						// rotation vector for the sample positioner (length is angle in radians)
+	double O[3]					// raw PM500 coordinates where sample is at origin, (the Si position), (micron)
+	double R[3]					// rotation vector for the sample positioner (length is angle in radians)
 	double Rmag					// magnitude of | Rs[3] |, in degrees (computed internally)
-	double R00, R01, R02			// rotation matrix from R[3] internally calculated
+	double R00, R01, R02	// rotation matrix from R[3] internally calculated
 	double R10, R11, R12
 	double R20, R21, R22
 EndStructure
 
 
 
-Function DetectorGeometryLocate()					// This only used by FunctionPath("DetectorGeometryLocate")
+Function DetectorGeometryLocate()		// This only used by FunctionPath("DetectorGeometryLocate")
 	return 0										//   to find the path to this file
 End
 
 
-Function PrintCurrentGeometry()					// prints the current default geometry to the history
+Function PrintCurrentGeometry()			// prints the current default geometry to the history
 	STRUCT microGeometry g
-	FillGeometryStructDefault(g)					//fill the geometry structure with current values
+	FillGeometryStructDefault(g)			//fill the geometry structure with current values
 	printGeometry(g)
 End
 //
-Function printGeometry(g)							// print the details for passed geometry to the history window
+Function printGeometry(g)					// print the details for passed geometry to the history window
 	STRUCT microGeometry &g
 	printf "current geomery parameters  (using %d detectors)\r",g.Ndetectors
 	if (!SampleBad(g.s))
@@ -599,7 +584,7 @@ Function printGeometry(g)							// print the details for passed geometry to the 
 	endfor
 
 	if (WireBad(g.wire))
-		printf "Wire UN-Defined *****\r"			// info about the wire
+		printf "Wire UN-Defined *****\r"		// info about the wire
 	else
 		printf "Wire:\r"								// info about the wire
 		printf "	Origin = {%.2f, %.2f, %.2f}	// raw PM500 coordinates to put wire at Origin (Si position) (µm)\r",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
@@ -657,7 +642,7 @@ Function printDetector(d)							// print the details for passed detector geometr
 	return 0
 End
 //
-Static Function/C chiRange(d)					// chi is rotation about the z-axis
+ThreadSafe Static Function/C chiRange(d)	// chi is rotation about the z-axis
 	STRUCT detectorGeometry &d
 	Variable chi,chiMin=+inf, chiMax=-inf
 	Variable px,py
@@ -690,7 +675,7 @@ Static Function/C chiRange(d)					// chi is rotation about the z-axis
 	return cmplx(chiMin,chiMax)
 End
 //
-Static Function/C tthRange(d)					// tth is the usual 2-theta
+ThreadSafe Static Function/C tthRange(d)	// tth is the usual 2-theta
 	STRUCT detectorGeometry &d
 	Variable tth,tthMin=+inf, tthMax=-inf
 	Variable px,py
@@ -722,19 +707,19 @@ Static Function/C tthRange(d)					// tth is the usual 2-theta
 	return cmplx(tthMin,tthMax)
 End
 
-Function CopymicroGeometry(f,i)					// copy a microGeometry structure
+ThreadSafe Function CopymicroGeometry(f,i)	// copy a microGeometry structure
 	STRUCT microGeometry &f, &i					// f is the destination, i is source
 	CopySampleGeometry(f.s,i.s)					// copy Sample geometry
 	f.Ndetectors = i.Ndetectors
 	Variable m
-	for (m=0;m<MAX_Ndetectors;m+=1)			// copy the detectors, even copy un-used detectors
+	for (m=0;m<MAX_Ndetectors;m+=1)				// copy the detectors, even copy un-used detectors
 		CopyDetectorGeometry(f.d[m],i.d[m])
 	endfor
 	CopyWireGeometry(f.wire,i.wire)				// copy the wire
 End
 //
-Function CopyDetectorGeometry(f,i)					// copy a detector structure
-	STRUCT detectorGeometry &f, &i					// f is the destination, i is source
+ThreadSafe Function CopyDetectorGeometry(f,i)	// copy a detector structure
+	STRUCT detectorGeometry &f, &i				// f is the destination, i is source
 	f.used = i.used
 	f.Nx = i.Nx;			f.Ny = i.Ny
 	f.sizeX = i.sizeX;		f.sizeY = i.sizeY
@@ -749,7 +734,7 @@ Function CopyDetectorGeometry(f,i)					// copy a detector structure
 	f.rho20=i.rho20;		f.rho21=i.rho21;		f.rho22=i.rho22
 End
 //
-Function CopyWireGeometry(f,i)					// copy a wire geometry structure, set f = i
+ThreadSafe Function CopyWireGeometry(f,i)	// copy a wire geometry structure, set f = i
 	STRUCT wireGeometry &f, &i					// f is the destination, i is source
 	f.origin[0]=i.origin[0];	f.origin[1]=i.origin[1];	f.origin[2]=i.origin[2];
 	f.F = i.F
@@ -763,7 +748,7 @@ Function CopyWireGeometry(f,i)					// copy a wire geometry structure, set f = i
 	f.R10=i.R10;				f.R11=i.R11;				f.R12=i.R12
 	f.R20=i.R20;				f.R21=i.R21;				f.R22=i.R22
 End
-Function CopySampleGeometry(f,i)					// copy a Sample geometry structure, set f = i
+ThreadSafe Function CopySampleGeometry(f,i)// copy a Sample geometry structure, set f = i
 	STRUCT sampleGeometry &f, &i					// f is the destination, i is source
 	f.O[0] = i.O[0];		f.O[1] = i.O[1];		f.O[2] = i.O[2]
 	f.R[0] = i.R[0];		f.R[1] = i.R[1];		f.R[2] = i.R[2]
@@ -773,7 +758,7 @@ Function CopySampleGeometry(f,i)					// copy a Sample geometry structure, set f 
 	f.R20=i.R20;			f.R21=i.R21;			f.R22=i.R22
 End
 
-Function MicroGeometryBad(g)						// check for a valid or Invalid structure
+ThreadSafe Function MicroGeometryBad(g)		// check for a valid or Invalid structure
 	STRUCT microGeometry &g						// f is the destination, i is source
 	Variable bad = SampleBad(g.s)
 	Variable N = limit(round(g.Ndetectors),1,3)	// Ndetectors must be 1, 2, or 3
@@ -790,34 +775,34 @@ Function MicroGeometryBad(g)						// check for a valid or Invalid structure
 	return (bad>0)
 End
 //
-Static Function DetectorBad(d)
+ThreadSafe Static Function DetectorBad(d)
 	STRUCT detectorGeometry &d
 	if (!(d.used))
 		return 1
 	endif
 	Variable bad = (numtype(d.Nx + d.Nx + d.sizeX + d.sizeY + d.R[0] + d.R[1] + d.R[2] + d.P[0] + d.P[1] + d.P[2])>0)
-	bad += (d.Nx<1 || d.Nx>5000)													// detector cannot have more than 5000 pixels along one edge
+	bad += (d.Nx<1 || d.Nx>5000)						// detector cannot have more than 5000 pixels along one edge
 	bad += (d.Ny<1 || d.Ny>5000)
-	bad += (d.sizeX<1e3 || d.sizeX>1e6)												// detector cannot be larger than 1m
+	bad += (d.sizeX<1e3 || d.sizeX>1e6)											// detector cannot be larger than 1m
 	bad += (d.sizeY<1e3 || d.sizeY>1e6)
-	bad += (abs(d.R[0])>2*PI || abs(d.R[1])>2*PI || abs(d.R[2])>2*PI)		// rotation cannot be more than 2¹
-	bad += (abs(d.P[0])>2e6 || abs(d.P[0])>2e6 || abs(d.P[0])>2e6)			// P cannot be more than 2m in any direction
+	bad += (abs(d.R[0])>2*PI || abs(d.R[1])>2*PI || abs(d.R[2])>2*PI)	// rotation cannot be more than 2¹
+	bad += (abs(d.P[0])>2e6 || abs(d.P[0])>2e6 || abs(d.P[0])>2e6)		// P cannot be more than 2m in any direction
 	return (bad>0)
 End
 //
-Static Function WireBad(w)
+ThreadSafe Static Function WireBad(w)
 	STRUCT wireGeometry &w
 	Variable sxyz = abs(w.origin[0])+abs(w.origin[1])+abs(w.origin[2])
 	Variable bad = numtype(sxyz) || abs(sxyz)>50e3
 	bad += (w.dia<5 || w.dia>5100)
-	bad += !(w.knife==0 || w.knife==1)			// knife must be 0 or 1
+	bad += !(w.knife==0 || w.knife==1)		// knife must be 0 or 1
 	bad += (abs(w.axis[0])+abs(w.axis[1])+abs(w.axis[2])) > 2
 //	bad += (numtype(w.R[0] + w.R[1] + w.R[2])>0)
 //	bad += ( abs(w.R[0])>6.3 || abs(w.R[1])>6.3 || abs(w.R[2])>6.3 )
 	return (bad>0)
 End
 //
-Static Function SampleBad(s)
+ThreadSafe Static Function SampleBad(s)
 	STRUCT sampleGeometry &s					// sample strucure
 	Variable sxyz = abs(s.O[0])+abs(s.O[1])+abs(s.O[2])
 	Variable bad = numtype(sxyz) || abs(sxyz)>50e3
@@ -829,26 +814,23 @@ End
 
 
 // convert qvector to pixel position
-Function/C q2pixel(d,qvec,[depth])					// returns pixel position as a complex number cmplx(px,py)
+ThreadSafe Function/C q2pixel(d,qvec,[depth])	// returns pixel position as a complex number cmplx(px,py)
 	STRUCT detectorGeometry &d
 	Wave qvec										// qvec need not be normalized
 	Variable depth									// sample depth measured along the beam
 	depth = ParamIsDefault(depth) ? 0 : depth		// default is 0, the origin
 
-	Variable px,py									// final pixel position, full chip unbinned 0 based pixels
-	Wave qhat=root:Packages:geometry:q2pixel_qhat, ki=root:Packages:geometry:q2pixel_ki
-	Wave kout=root:Packages:geometry:q2pixel_kout
-	qhat = qvec
+	Make/N=3/D/FREE kout, qhat=qvec, ki={0,0,1}	// ki = geo.ki[p],  incident beam direction
 	normalize(qhat)
 
-	ki = {0,0,1}									// ki = geo.ki[p],  incident beam direction
 	//	normalize(ki)
-	Variable qLen = -2*MatrixDot(qhat,ki)			// length of qhat, note (q^ dot -ki) always positive
+	Variable qLen = -2*MatrixDot(qhat,ki)	// length of qhat, note (q^ dot -ki) always positive
 	if (qLen<0)										// this occurs for theta<0, (we do not want to reflect from the back side)
 		return cmplx(NaN,NaN)
 	endif
-	kout = qhat*qLen + ki							// kf - ki = q
+	kout = qhat*qLen + ki						// kf - ki = q
 
+	Variable px,py									// final pixel position, full chip unbinned 0 based pixels
 	if (ParamIsDefault(depth))
 		XYZ2pixel(d,kout,px,py)
 	else
@@ -861,17 +843,15 @@ End
 
 
 // convert px,py positions on detector into Q vector, assumes ki={0,0,1}
-Function pixel2q(d,px,py,qhat,[depth])				// returns theta (rad)
+ThreadSafe Function pixel2q(d,px,py,qhat,[depth])	// returns theta (rad)
 	STRUCT detectorGeometry &d
 	Variable px,py									// pixel position, 0 based, first pixel is (0,0), NOT (1,1)
 	Wave qhat										// q-vector in beam line coords (optional)
 	Variable depth									// sample depth measured along the beam
 
-	Wave ki=root:Packages:geometry:pixel2q_ki, kout=root:Packages:geometry:pixel2q_kout
-	ki = {0,0,1}									//	ki = geo.ki[p],  incident beam direction
-
-	pixel2XYZ(d,px,py,kout)						// kout is in direction of pixel in beam line coords
-	if (!ParamIsDefault(depth))					// a depth was passed, offset the sample position by depth*ki[]
+	Make/N=3/D/FREE kout ,ki={0,0,1}		//	ki = geo.ki[p],  incident beam direction
+	pixel2XYZ(d,px,py,kout)					// kout is in direction of pixel in beam line coords
+	if (!ParamIsDefault(depth))				// a depth was passed, offset the sample position by depth*ki[]
 		kout -= depth*ki							// koutDepth = d*ki + koutZero
 	endif
 	normalize(kout)
@@ -885,15 +865,15 @@ Function pixel2q(d,px,py,qhat,[depth])				// returns theta (rad)
 End
 
 
-Function pixel2XYZ(d,px,py,xyz)					// convert pixel position to the beam line coordinate system
+ThreadSafe Function pixel2XYZ(d,px,py,xyz)	// convert pixel position to the beam line coordinate system
 	STRUCT detectorGeometry, &d
-	Variable px,py									// pixel position on detector (full chip & zero based)
-	Wave xyz											// 3-vector to receive the result, position in beam line coords (micron)
+	Variable px,py						// pixel position on detector (full chip & zero based)
+	Wave xyz								// 3-vector to receive the result, position in beam line coords (micron)
 
 	peakCorrect(d,px,py)							// convert pixel on detector to an undistorted distance in pixels (takes zero based pixels)
 
 	Variable xp,yp, zp								// x' and y' (requiring z'=0), detector starts centered on origin and perpendicular to z-axis
-	xp = (px - 0.5*(d.Nx-1)) * d.sizeX/d.Nx		// (x' y' z'), position on detector
+	xp = (px - 0.5*(d.Nx-1)) * d.sizeX/d.Nx	// (x' y' z'), position on detector
 	yp = (py - 0.5*(d.Ny-1)) * d.sizeY/d.Ny
 
 	xp += d.P[0]										// translate by P
@@ -906,19 +886,20 @@ Function pixel2XYZ(d,px,py,xyz)					// convert pixel position to the beam line c
 End
 
 
-Function/C XYZ2pixel(d,xyz,px,py,[depth])			// find pixel position (px,py) where vector xyz will intercept detector
+ThreadSafe Function/C XYZ2pixel(d,xyz,px,py,[depth])	// find pixel position (px,py) where vector xyz will intercept detector
 	STRUCT detectorGeometry, &d
-	Wave xyz										// 3-vector, a point in beam line coords giving the direction of ray (micron)
-	Variable &px,&py								// pixel position on detector where ray xyz intercepts detector (full chip & zero based)
-	Variable depth									// sample depth measured along the beam
+	Wave xyz							// 3-vector, a point in beam line coords giving the direction of ray (micron)
+	Variable &px,&py				// pixel position on detector where ray xyz intercepts detector (full chip & zero based)
+	Variable depth					// sample depth measured along the beam
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth	// default is 0, the origin
 
 	Variable xp,yp,zp
-	Variable x=xyz[0], y=xyz[1], z=xyz[2]			// remember (xyz) = rho x [ (x' y' z') + P ]
+	Variable x=xyz[0], y=xyz[1], z=xyz[2]					// remember (xyz) = rho x [ (x' y' z') + P ]
 	xp = d.rho00*x + d.rho10*y + d.rho20*z -d.P[0]	// so   xyz' = rho x xyz - P
 	yp = d.rho01*x + d.rho11*y + d.rho21*z -d.P[1]	// this is now the coordinate of the pixel transformed into detector (i.e. prime) space
 	zp = d.rho02*x + d.rho12*y + d.rho22*z -d.P[2]
 
-	//	Variable xp0, yp0, zp0						// coordinate of origin transformed into prime space (the detector reference coordinates)
+	//	Variable xp0, yp0, zp0					// coordinate of origin transformed into prime space (the detector reference coordinates)
 	//	xp0 = -d.P[0]								// coordinate of origin in prime space,  0 = rho x [ {x'y'z'} + P ]  -->   {x''y'z'} = -P
 	//	yp0 = -d.P[1]
 	//	zp0 = -d.P[2]	
@@ -928,19 +909,19 @@ Function/C XYZ2pixel(d,xyz,px,py,[depth])			// find pixel position (px,py) where
 	// I have NOT trapped (z'-z0')==0, this should only occur when detector surface contains the origin.
 	// Note this line runs backwards from what is normally used. Going from r to r0, this makes t closer to 0 than 1, and so should improve accuracy
 
-	Variable dxp, dyp, dzp							// Ær', subtract origin from (xp,yp,zp), this is direction of -kf
+	Variable dxp, dyp, dzp						// Ær', subtract origin from (xp,yp,zp), this is direction of -kf
 	dxp = -d.P[0] - xp
 	dyp = -d.P[1] - yp
 	dzp = -d.P[2] -  zp
 
-	if (!ParamIsDefault(depth))					// a depth was passed, so modify (xp,yp,zp) to shift the origin by depth (shifts r')
+	if (depth!=0)									// a non-zero depth, so modify (xp,yp,zp) to shift the origin by depth (shifts r')
 		xp += d.rho20*depth						// remember:   xyz' = ( rho x xyz ) - P
 		yp += d.rho21*depth						// shifted (xp,yp,zp) by depth*ki, all in prime space
 		zp += d.rho22*depth						// This assumes that ki = {0,0,1}
 	endif
 
 	// find t,  where the line intercepts the detector
-	Variable t = -zp/dzp							// for t==0, the point (x'y'z') already lies on the plane
+	Variable t = -zp/dzp						// for t==0, the point (x'y'z') already lies on the plane
 	if (t>1)											// ray pointing backwards through other side of origin, so going away from detector
 		px = NaN
 		py = NaN
@@ -948,7 +929,7 @@ Function/C XYZ2pixel(d,xyz,px,py,[depth])			// find pixel position (px,py) where
 		x = xp + t*dxp
 		y = yp + t*dyp
 //		z = zp + t*dzp								// z should be zero, that was the whole point! So this line not needed.
-		px = x/d.sizeX*d.Nx + 0.5*(d.Nx-1)		// convert (xy0) in prime space to pixels
+		px = x/d.sizeX*d.Nx + 0.5*(d.Nx-1)	// convert (xy0) in prime space to pixels
 		py = y/d.sizeY*d.Ny + 0.5*(d.Ny-1)
 	endif
 
@@ -961,58 +942,57 @@ End
 
 //	Distortion corection, take a pixel position from detector and returns an ideal pixel position
 // This assumes a zero based coordinate on input, origin is (0,0), not (1,1)
-Static Function/C peakCorrect(d,px,py)				// returns cmplx(dx,dy), the change
+ThreadSafe Static Function/C peakCorrect(d,px,py)// returns cmplx(dx,dy), the change
 	STRUCT detectorGeometry, &d
-	Variable &px,&py								// un-binned full frame zero based pixel location on input, changed to distorttion corrected value at end
+	Variable &px,&py					// un-binned full frame zero based pixel location on input, changed to distorttion corrected value at end
 
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
-	useDistortion = useDistortion && Exists("root:Packages:geometry:xymap")==1
+	Wave xymap=root:Packages:geometry:xymap			// distortion map
+	useDistortion = useDistortion && WaveExists(xymap)
 	if (useDistortion)
-		Wave xymap = root:Packages:geometry:xymap	// distortion map
 		return peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
 	else
 		return cmplx(0,0)										// no distortion
 	endif
 End
-//Function/C peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
 //
-//correct the peak positon from measured to actual, Wenge Yang 5/19/2003
+// Correct the peak positon from measured to actual, Wenge Yang 5/19/2003
 // This assumes a zero based coordinate on input, origin is (0,0), not (1,1)
-Function/C peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
-	Wave xymap								// distortion map
-	Variable &px,&py							// un-binned full frame pixel location on input, changed to distorted value at end
+ThreadSafe Static Function/C peakcorrection2(xymap,px,py)	// returns cmplx(dx,dy)
+	Wave xymap				// distortion map
+	Variable &px,&py		// un-binned full frame pixel location on input, changed to distorted value at end
 
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
 	if (!useDistortion || !WaveExists(xymap))	// do not distort
 		return cmplx(0,0)
 	endif
-	Variable dx, dy								// the calculated corrections
+	Variable dx, dy							// the calculated corrections
 	// here we start the calculation of distortion correction just like Wenge
-	px += 1									// convert origin from (0,0) to (1,1)
+	px += 1										// convert origin from (0,0) to (1,1)
 	py += 1
 
-
 	// This section added to speed up the distortion correction when correcting every pixel, not just a few fitted peaks
-	if (exists("root:Packages:geometry:tempCachedDistortionMap")==1)	// this section is when using precomputed distortion calculations
-		Wave distortionMap = root:Packages:geometry:tempCachedDistortionMap
+	Wave distortionMap=root:Packages:geometry:tempCachedDistortionMap
+	if (WaveExists(distortionMap))		// this section is when using precomputed distortion calculations
 		if (NumberByKey("use",note(distortionMap),"="))
 			if (WaveDims(distortionMap)!=3 || DimSize(distortionMap,2)!=2)
-				Abort "peakcorrection2(), The wave root:Packages:geometry:tempCachedDistortionMap, has an illegal size"
+				print "peakcorrection2(), The wave root:Packages:geometry:tempCachedDistortionMap, has an illegal size"
+				return cmplx(0,0)
 			endif
 			Variable i,j, Ni = DimSize(distortionMap,0), Nj = DimSize(distortionMap,1)
 			i = (px - DimOffset(distortionMap,0)) / DimDelta(distortionMap,0)
 			j = (py - DimOffset(distortionMap,1)) / DimDelta(distortionMap,1)
 			if (i<0 || j<0 || i>=Ni || j>=Nj)
-				Abort "peakcorrection2(), 'root:Packages:geometry:tempCachedDistortionMap' has a scaling that does not fit input pixels"
+				print "peakcorrection2(), 'root:Packages:geometry:tempCachedDistortionMap' has a scaling that does not fit input pixels"
+				return cmplx(0,0)
 			endif
 			dx = distortionMap[i][j][0]
 			dy = distortionMap[i][j][1]
-			px += dx - 1							// add correction and convert origin from (1,1) to (0,0)
+			px += dx - 1						// add correction and convert origin from (1,1) to (0,0)
 			py += dy - 1
 			return cmplx(dx,dy)
 		endif
 	endif
-
 
 	Variable nx=DimSize(xymap,0)-1, ny=DimSize(xymap,1)-1
 	String noteStr = note(xymap)
@@ -1056,7 +1036,7 @@ Function/C peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
 
 //	printf "px=%g,  py=%g,  xymap[xcent=%d][ycent=%d][0]=%g,  xymap[%d][%d][2]=%g\r",px, py,xcent,ycent,xymap[xcent][ycent][0],xcent,ycent,xymap[xcent][ycent][1]
 
-	dx=0  ;  dy=0								// initialize the correction
+	dx=0  ;  dy=0									// initialize the correction
 	if (px <= cornerxy[0] || px >= cornerxy[2] || py < cornerxy[1] || py >= cornerxy[3])
 		dx = xymap[xcent][ycent][2]			// outside measured range, use default
 		dy = xymap[xcent][ycent][3]
@@ -1122,9 +1102,9 @@ Function/C peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
 	endif
 
 	Variable dx0=NumberByKey("dxCenter",noteStr,"="), dy0=NumberByKey("dyCenter",noteStr,"=")
-	dx -= numtype(dx0) ? 0 : dx0										// offset to make (dx,dy) zero at (xc,yc)
+	dx -= numtype(dx0) ? 0 : dx0				// offset to make (dx,dy) zero at (xc,yc)
 	dy -= numtype(dy0) ? 0 : dy0
-	px += dx - 1															// add correction and convert origin from (1,1) to (0,0)
+	px += dx - 1									// add correction and convert origin from (1,1) to (0,0)
 	py += dy - 1
 
 	KillWaves/Z cornerxy
@@ -1132,11 +1112,11 @@ Function/C peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
 End
 
 
-Static Function/C peakUncorrect(d,px,py)			// go from true peak to the measured peak position (put distortion back in), just invert peakCorrect()
+ThreadSafe Static Function/C peakUncorrect(d,px,py)		// go from true peak to the measured peak position (put distortion back in), just invert peakCorrect()
 	STRUCT detectorGeometry, &d
-	Variable &px,&py								// un-binned full frame 0 based pixel with distortion correction, changed to un-distorted value at end
+	Variable &px,&py			// un-binned full frame 0 based pixel with distortion correction, changed to un-distorted value at end
 
-	Wave xymap=$""								// distortion map
+	Wave xymap=$""										// distortion map
 
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT) && WaveExists(xymap)
 	if (!useDistortion)								// do not distort
@@ -1148,7 +1128,7 @@ Static Function/C peakUncorrect(d,px,py)			// go from true peak to the measured 
 	Variable pxd=px, pyd=py						// save the starting point (the required distorted position)
 	Variable/C dz
 	Variable i=0,err = Inf
-	for (i=0; i<maxIter && err>tol; i+=1)			// end when it changes by less than tol or after maxIter iterations
+	for (i=0; i<maxIter && err>tol; i+=1)		// end when it changes by less than tol or after maxIter iterations
 		dz = peakCorrect(d,px,py)					// returns changed px,py
 		err = abs(px-pxd)+abs(py-pyd)
 		px = pxd - real(dz)
@@ -1159,7 +1139,7 @@ End
 
 
 
-Function GeometryUpdateCalc(g)						// update all internally calculated things in the structure
+Function GeometryUpdateCalc(g)	// update all internally calculated things in the structure
 	STRUCT microGeometry &g
 
 	Init_microGeo()
@@ -1179,7 +1159,7 @@ Function GeometryUpdateCalc(g)						// update all internally calculated things i
 	Variable i, N=0
 	for (i=0;i<MAX_Ndetectors;i+=1)
 		if (g.d[i].used)
-			DetectorUpdateCalc(g.d[i])				// update all internally calculated things in the detector structures
+			DetectorUpdateCalc(g.d[i])			// update all internally calculated things in the detector structures
 			N += 1
 		endif
 	endfor
@@ -1193,17 +1173,17 @@ Function GeometryUpdateCalc(g)						// update all internally calculated things i
 	WireUpdateCalc(g.wire)							// update all internally calculated things in the wire structure
 End
 //
-Static Function resetCenterDistortionMap(xymap,xc,yc)		// set distortion correction of xc & yc into note of xymap, used so correction to (xc,yc) is zero
+ThreadSafe Static Function resetCenterDistortionMap(xymap,xc,yc)	// set distortion correction of xc & yc into note of xymap, used so correction to (xc,yc) is zero
 	Wave xymap											// distortion map
-	Variable xc,yc											// values that should get zero distortion correction, should be geo.xcent,geo.ycent
-	if (!WaveExists(xymap))								// wave does not exist, do nothing
+	Variable xc,yc										// values that should get zero distortion correction, should be geo.xcent,geo.ycent
+	if (!WaveExists(xymap))						// wave does not exist, do nothing
 		return 1
 	endif
 
 	String wnote = note(xymap)
 	wnote = ReplaceNumberByKey("dxCenter",wnote,0,"=")	// set correction to zero
 	wnote = ReplaceNumberByKey("dyCenter",wnote,0,"=")
-	Note/K xymap, wnote									// re-set value in wave note
+	Note/K xymap, wnote								// re-set value in wave note
 	if (numtype(xc+yc))
 		return 1											// invalid (xc,yc) passed so leave corrections at zero
 	endif
@@ -1212,10 +1192,10 @@ Static Function resetCenterDistortionMap(xymap,xc,yc)		// set distortion correct
 	Variable/C dp = peakcorrection2(xymap,px,py)					// returns cmplx(dx,dy), px,py are changed
 	wnote = ReplaceNumberByKey("dxCenter",wnote,real(dp),"=")	// add this to corrected to get proper value
 	wnote = ReplaceNumberByKey("dyCenter",wnote,imag(dp),"=")
-	Note/K xymap, wnote									// store values in wave note
+	Note/K xymap, wnote								// store values in wave note
 End
 //
-Function DetectorUpdateCalc(d)						// update all internally calculated things in the detector structure
+ThreadSafe Function DetectorUpdateCalc(d)	// update all internally calculated things in the detector structure
 	STRUCT detectorGeometry &d
 	if (!(d.used))
 		return 1
@@ -1244,13 +1224,13 @@ Function DetectorUpdateCalc(d)						// update all internally calculated things i
 	return 0
 End
 //
-Static Function SampleUpdateCalc(sa)				// update all internally calculated things in the structure
+ThreadSafe Static Function SampleUpdateCalc(sa)	// update all internally calculated things in the structure
 	STRUCT sampleGeometry &sa
 
-	Variable Rx, Ry, Rz								// used to make the rotation matrix rho from vector R
+	Variable Rx, Ry, Rz									// used to make the rotation matrix rho from vector R
 	Variable theta, c, s, c1
 	Rx=sa.R[0];	Ry=sa.R[1];	Rz=sa.R[2]
-	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)			// angle in radians
+	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)					// angle in radians
 
 	if (numtype(theta) || theta==0)					// rotation of sample stage
 		sa.R[0] = 0;	sa.R[1] = 0;	sa.R[2] = 0;
@@ -1270,7 +1250,7 @@ Static Function SampleUpdateCalc(sa)				// update all internally calculated thin
 	endif
 End
 //
-Static Function WireUpdateCalc(w)
+ThreadSafe Static Function WireUpdateCalc(w)
 	STRUCT wireGeometry &w
 
 	// normalize wire.axis
@@ -1463,25 +1443,16 @@ Function UpdateDefaultGeometryStruct(g,[local])			// Update the default location
 	endif
 	return 0
 End
-//Function UpdateDefaultGeometryStruct(g)					// Update the default location with values in g
-//	STRUCT microGeometry &g								// returns 0 if something set, 0 is nothing done
-//
-//	String/G root:Packages:geometry:geoStructStr=""		// use default location
-//	SVAR geoStructStr = root:Packages:geometry:geoStructStr
-//	GeometryUpdateCalc(g)
-//	StructPut/S/B=2 g, geoStructStr
-//	return 0
-//End
-//
-Function FillGeometryStructDefault(g)						//fill the geometry structure with test values
-	STRUCT microGeometry &g								// returns 0 if something set, 0 is nothing done
+
+Function FillGeometryStructDefault(g)		//fill the geometry structure with test values
+	STRUCT microGeometry &g							// returns 0 if something set, 0 is nothing done
 
 	String strStruct=StrVarOrDefault(":geoStructStr","")	// set to values in current directory
 	if (strlen(strStruct)<1)
 		strStruct=StrVarOrDefault("root:Packages:geometry:geoStructStr","")	// try the default values
 	endif
 	if (strlen(strStruct)>1)
-		StructGet/S/B=2 g, strStruct						// found structure information, load into g
+		StructGet/S/B=2 g, strStruct					// found structure information, load into g
 	else
 		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,g
 		if (V_flag)
@@ -1509,7 +1480,7 @@ Function detectorNumFromID(ID)							// returns detector number {0,1,2} or -1 fo
 	FillGeometryStructDefault(g)
 	Variable i
 	for (i=0;i<MAX_Ndetectors;i+=1)						// search each of the g.d[i].detectorID and return at the first match
-		if (strsearch(g.d[i].detectorID,ID,0)==0)			// does g.d[i].detectorID start with the passed ID?
+		if (strsearch(g.d[i].detectorID,ID,0)==0)	// does g.d[i].detectorID start with the passed ID?
 			return i
 		endif
 	endfor
@@ -1519,14 +1490,14 @@ End
 
 
 Function WriteGeoToFile(fileName,path,g,fileNote,type)
-	String fileName						// full path name to the file
+	String fileName					// full path name to the file
 	String path							// name of an Igor path to use
-	STRUCT microGeometry &g			// the structure to fill from the file
-	String fileNote						// a note about this file
+	STRUCT microGeometry &g		// the structure to fill from the file
+	String fileNote					// a note about this file
 	Variable type						// 0=key file,  1=xml file
 
 	if ( !(type==0 || type==1) )
-		type = 1						// currently default to old style "$key value" files
+		type = 1							// currently default to old style "$key value" files
 		Prompt type, "type of geometry file",popup,"key file (old);xml file (new)"
 		DoPrompt "geometry file",type
 		if (V_flag)
@@ -1595,9 +1566,9 @@ End
 
 
 Function ReadGeoFromfile(fileName,path,g)
-	String fileName							// full path name to the file
+	String fileName						// full path name to the file
 	String path								// name of an Igor path to use
-	STRUCT microGeometry &g				// the structure to fill from the file
+	STRUCT microGeometry &g			// the structure to fill from the file
 
 	Variable f
 	#if (NumberByKey("IGORVERS", IgorInfo(0))<6.1)
@@ -1691,105 +1662,13 @@ Static Function/T Geo2KeyValueStr(g,fileNote)
 	endif
 	return out
 End
-//
-//// write the geometry structure to a keyword file
-//Static Function WriteGeoToKeyFile(fileName,path,g,fileNote)
-//	String fileName						// full path name to the file
-//	String path							// name of an Igor path to use
-//	STRUCT microGeometry &g			// the structure to fill from the file
-//	String fileNote						// a note about this file
-//
-//	GeometryUpdateCalc(g)				// calculate other values
-//	Variable f								// file id
-//	if (strlen(path)<1 || strlen(fileName)<1)
-//		Open/D/C="R*ch"/M="new geometry parameters file"/T="TEXT" f as fileName
-//		fileName = S_fileName
-//	endif
-//	Open/C="R*ch"/M="new geometry parameters file"/P=$path/T="TEXT"/Z f as fileName
-//	fileName = S_fileName
-////	Open/C="R*ch"/M="new geometry parameters file"/P=$path/T="TEXT"/Z=2 f as fileName
-//	if (V_flag)
-//		DoAlert 0, "nothing written to file"
-//		return 1
-//	endif
-//	if( (strlen(path)+strlen(fileNote))==0 )
-//		Prompt fileNote, "add a descriptive note to this file?"
-//		DoPrompt "descriptive note",fileNote
-//		if (V_flag)
-//			fileNote=""
-//		endif
-//	endif
-//	fprintf f,"$filetype		geometryFileN\n"
-//	fprintf f, "$dateWritten	%s\n", date()
-//	fprintf f, "$timeWritten	%s (%g)\n", Secs2Time(DateTime,3,1),date2secs(-1,-1,-1)/3600
-//	fprintf f, "$EPOCH			%.0f					// seconds from midnight January 1, 1904\n",DateTime
-//	if (strlen(fileNote))
-//		fprintf f,"$fileNote		%s\n",ReplaceString("\r",fileNote,"\\r")
-//	endif
-//
-//	if (!SampleBad(g.s))
-//		fprintf f,"\n// Sample\n"
-//		fprintf f,"$SampleOrigin	{%.2f,%.2f,%.2f}			// sample origin in raw PM500 units (micron)\n",g.s.O[0],g.s.O[1],g.s.O[2]
-//		fprintf f,"$SampleRot		{%.8f,%.8f,%.8f}	// sample positioner rotation vector (length is angle in radians)\n",g.s.R[0],g.s.R[1],g.s.R[2]
-//	endif
-//
-//	fprintf f,"\n// Detectors\n"
-//	fprintf f,"$Ndetectors		%d							// number of detectors in use, must be <= MAX_Ndetectors\n",g.Ndetectors
-//	Variable i
-//	String pre
-//	for (i=0;i<MAX_Ndetectors;i+=1)
-//		if (!(g.d[i].used))
-//			continue
-//		endif
-//		sprintf pre,"d%d_",i
-//		fprintf f,"\n"
-//		fprintf f,"$%sNx			%d						// number of un-binned pixels in full detector\n",pre,g.d[i].Nx
-//		fprintf f,"$%sNy			%d\n",pre,g.d[i].Ny
-//		fprintf f,"$%ssizeX		%.3f						// size of CCD (mm)\n",pre,(g.d[i].sizeX)/1000
-//		fprintf f,"$%ssizeY		%.3f\n",pre,(g.d[i].sizeY/1000)
-//		fprintf f,"$%sR			{%.8f,%.8f,%.8f}	// rotation vector (length is angle in radians)\n",pre,g.d[i].R[0],g.d[i].R[1],g.d[i].R[2]
-//		fprintf f,"$%sP			{%.3f,%.3f,%.3f}		// translation vector (mm)\n",pre,(g.d[i].P[0]/1000),(g.d[i].P[1]/1000),(g.d[i].P[2]/1000)
-//		if (strlen(g.d[i].timeMeasured))
-//			fprintf f,"$%stimeMeasured	%s	// when this geometry was calculated\n",pre,g.d[i].timeMeasured
-//		endif
-//		if (strlen(g.d[i].geoNote))
-//			fprintf f,"$%sgeoNote	%s\n",pre,g.d[i].geoNote
-//		endif
-//		if (strlen(g.d[i].detectorID))
-//			fprintf f,"$%sdetectorID	%s			// unique detector ID\n",pre,g.d[i].detectorID
-//		endif
-//		if (strlen(g.d[i].distortionMapFile))
-//			fprintf f,"$%sdistortionMapFile	%s			// name of file with distortion map\n",pre,g.d[i].distortionMapFile
-//		endif
-//	endfor
-//
-//	if (!WireBad(g.wire))
-//		fprintf f,"\n// Wire\n"
-//		fprintf f,"$wireDia		%.2f						// diameter of wire (micron)\n",g.wire.dia
-//		fprintf f,"$wireKnife		%g							// true if wire on a knife edge, false for free-standing wire\n",g.wire.knife
-//		fprintf f,"$wireOrigin		{%.2f,%.2f,%.2f}			// wire origin in raw PM500 frame (micron)\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
-//		if (g.wire.Rmag>0)
-//			fprintf f,"$wireRot		{%.8f,%.8f,%.8f}	// wire positioner rotation vector (length is angle in radians)\n",g.wire.R[0],g.wire.R[1],g.wire.R[2]
-//		endif
-//		fprintf f,"$wireAxis		{%.6f,%.6f,%.6f}	// unit vector along wire axis, usually close to (1,0,0)\n",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]
-//		if (!numtype(g.wire.F))
-//			fprintf f,"$wireF			%.2f						// F of wire for a constant F wire scan (raw PM500 units)\n",g.wire.F
-//		endif
-//	endif
-//	Close f
-//	String str
-//	sprintf str, "finished wrting geometry to file '%s'",fileName
-//	print str
-//	DoAlert 0,str
-//	return 0
-//End
 
 
 // read in the geometry structure from a keyword file
 Static Function ReadGeoFromKeyFile(fileName,path,g)
-	String fileName							// full path name to the file
+	String fileName						// full path name to the file
 	String path								// name of an Igor path to use
-	STRUCT microGeometry &g				// the structure to fill from the file
+	STRUCT microGeometry &g			// the structure to fill from the file
 
 	String list = keyStrFromFile(fileName,"geometryFileN",path)// read in all of the tagged values into a keyword list
 	Variable err = GeoFromKeyValueList(list,g)
@@ -1806,7 +1685,7 @@ End
 //
 Static Function GeoFromKeyValueList(list,g)
 	String list								// "key=value" list
-	STRUCT microGeometry &g				// the structure to fill from the file
+	STRUCT microGeometry &g			// the structure to fill from the file
 
 	if (strlen(list)<1)
 		return 1
@@ -1903,9 +1782,9 @@ End
 //End
 //
 Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged values from a file into a keyword list
-	String fname											// full path name to file with tagged geometry values
-	String ftype											// the required file identifier, included as a tag (ftype is optional)
-	String path											// name of Igor path
+	String fname						// full path name to file with tagged geometry values
+	String ftype						// the required file identifier, included as a tag (ftype is optional)
+	String path							// name of Igor path
 
 	Variable refNum
 	Open/M="file containing tagged values"/P=$path/R/Z=2 refNum as fname
@@ -1918,13 +1797,13 @@ Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged 
 	if (strlen(ftype))									// an ftype is present, so check the file
 		Variable OK=0
 		FReadLine refNum, line
-		line[strlen(line)-1,Inf] = " "					// change the trailing term char to a space
-		if (strsearch(line,"$filetype",0)==0)			// starts with "$filetype"
+		line[strlen(line)-1,Inf] = " "				// change the trailing term char to a space
+		if (strsearch(line,"$filetype",0)==0)		// starts with "$filetype"
 			OK = char2num(line[9])<=32				// $filetype ends with whitespace
-			i = strsearch(line,"//",0)					// search for comment identifier
-			i = (i<0) ? strlen(line) : i					// points to start of comment id (or end of string)
+			i = strsearch(line,"//",0)				// search for comment identifier
+			i = (i<0) ? strlen(line) : i				// points to start of comment id (or end of string)
 			line = line[0,i-1]							// trim off comment
-			line = ReplaceString("\t",line,";")			// change all tabs, commas, and spaces to semi-colons
+			line = ReplaceString("\t",line,";")	// change all tabs, commas, and spaces to semi-colons
 			line = ReplaceString(",",line,";")
 			line = ReplaceString(" ",line,";")
 			OK = OK && WhichListItem(ftype,line)>=0
@@ -1944,7 +1823,7 @@ Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged 
 	do
 		FReadLine refNum, line
 		if (char2num(line)==dollar)					// if it starts with a $, probable tag so process it
-			i = strsearch(line,"//",0)					// strip off comments
+			i = strsearch(line,"//",0)				// strip off comments
 			if (i>=0)
 				line = line[0,i-1]
 			endif
@@ -1956,7 +1835,7 @@ Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged 
 			endif
 
 			// check if tag is already in list, only take the first instance of a tag, not the last
-			if (keyInList(tagName,list,"=",""))			// check if this key is already in list
+			if (keyInList(tagName,list,"=",""))	// check if this key is already in list
 				continue
 			endif
 
@@ -1969,7 +1848,7 @@ Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged 
 			value = ReplaceString(";",value[0,i],":")
 			list = ReplaceStringByKey(tagName,list,value,"=")
 		endif
-	while (strlen(line))									// go until EOF
+	while (strlen(line))								// go until EOF
 	Close refNum
 	return list
 End
@@ -2061,105 +1940,11 @@ Static Function/T Geo2xmlStr(g,fileNote)
 	out += "</geoN>\n"
 	return out
 End
-//// write the geometry structure to a keyword file
-//Static Function WriteGeoToXMLfile(fileName,path,g,fileNote)
-//	String fileName						// full path name to the file
-//	String path							// name of an Igor path to use
-//	STRUCT microGeometry &g			// the structure to fill from the file
-//	String fileNote						// a note about this file
 //
-//	GeometryUpdateCalc(g)				// calculate other values
-//	Variable f								// file id
-//	if (strlen(path)<1 || strlen(fileName)<1)
-//		Open/D/C="R*ch"/M="new geometry parameters file"/T=".xml" f as fileName
-//		fileName = S_fileName
-//	endif
-//	Open/C="R*ch"/M="new geometry parameters file"/P=$path/T=".xml"/Z f as fileName
-//	fileName = S_fileName
-//	if (V_flag)
-//		DoAlert 0, "nothing written to file"
-//		return 1
-//	endif
-//	if( (strlen(path)+strlen(fileNote))==0 )
-//		Prompt fileNote, "add a descriptive note to this file?"
-//		DoPrompt "descriptive note",fileNote
-//		if (V_flag)
-//			fileNote=""
-//		endif
-//	endif
-//
-//	fprintf f, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n\n"
-//	fprintf f, "<geoN xmlns=\"http://sector34.xray.aps.anl.gov/34ide/geoN\">\n"
-//	fprintf f, "	<dateWritten>%s</dateWritten>\n", date()
-//	fprintf f, "	<timeWritten>%s (%g)</timeWritten>\n", Secs2Time(DateTime,3,1),date2secs(-1,-1,-1)/3600
-//	fprintf f, "	<EPOCH start=\"midnight Jan 1, 1904\" unit=\"sec\">%.0f</EPOCH>\n", DateTime
-//	if (strlen(fileNote))
-//		fprintf f, "	<fileNote>%s</fileNote>\n",ReplaceString("\r",fileNote,"\\r")
-//	endif
-//
-//	if (!SampleBad(g.s))
-//		fprintf f, "\n	<Sample>\n"
-//		fprintf f, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>	<!-- sample origin in raw PM500 units (micron) -->\n",g.s.O[0],g.s.O[1],g.s.O[2]
-//		fprintf f, "		<R unit=\"radian\">%.9g %.9g %.9g</R>\n",g.s.R[0],g.s.R[1],g.s.R[2]
-//		fprintf f, "	</Sample>\n"
-//	endif
-//
-//	fprintf f, "\n	<Detectors Ndetectors=\"%g\">			<!-- Ndetectors, number of detectors in use, must be <= MAX_Ndetectors -->\n",g.Ndetectors
-//	Variable i, comment=1
-//	String pre
-//	for (i=0;i<MAX_Ndetectors;i+=1)
-//		if (!(g.d[i].used))
-//			continue
-//		endif
-//		fprintf f, "		<Detector N=\"%d\">\n",i
-//		fprintf f, "			<Npixels>%d %d</Npixels>%s\n",g.d[i].Nx,g.d[i].Ny,SelectString(comment,"","		<!-- Nx,Ny is number of un-binned pixels in full detector -->")
-//		fprintf f, "			<size unit=\"mm\">%.7g %.7g</size>%s\n",(g.d[i].sizeX)/1000,(g.d[i].sizeY)/1000,SelectString(comment,"","	<!-- sizeX,sizeY otuside size of full detector -->")
-//		fprintf f, "			<R unit=\"radian\">%.9g %.9g %.9g</R>%s\n",g.d[i].R[0],g.d[i].R[1],g.d[i].R[2],SelectString(comment,"","		<!-- Rotation and translation vector -->")
-//		fprintf f, "			<P unit=\"mm\">%.3f %.3f %.3f</P>\n",(g.d[i].P[0]/1000),(g.d[i].P[1]/1000),(g.d[i].P[2]/1000)
-//		if (strlen(g.d[i].timeMeasured))
-//			fprintf f, "			<timeMeasured>%s</timeMeasured>%s\n",g.d[i].timeMeasured,SelectString(comment,"","	<!-- when this geometry was calculated -->")
-//		endif
-//		if (strlen(g.d[i].geoNote))
-//			fprintf f, "			<note>%s</note>\n",g.d[i].geoNote
-//		endif
-//		if (strlen(g.d[i].detectorID))
-//			fprintf f, "			<ID>%s</ID>%s\n",g.d[i].detectorID,SelectString(comment,"","				<!-- unique detector ID -->")
-//		endif
-//		if (strlen(g.d[i].distortionMapFile))
-//			fprintf f, "			<distortionMap>%s</distortionMap>%s\n",g.d[i].distortionMapFile,SelectString(comment,"","				<!-- file with distortion map -->")
-//		endif
-//		comment = 0
-//		fprintf f, "		</Detector>\n"
-//	endfor
-//	fprintf f, "	</Detectors>\n"
-//
-//	if (!WireBad(g.wire))
-//		fprintf f, "\n	<Wire>\n"
-//		fprintf f,"		<dia unit=\"micron\">%.5g</dia>\n",g.wire.dia
-//		fprintf f, "		<Knife>%g</Knife>				<!-- true if wire on a knife edge, false for free-standing wire -->\n",g.wire.knife
-//		fprintf f, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>		<!-- wire origin in raw PM500 frame (micron) -->\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
-//		if (g.wire.Rmag>0)
-//			fprintf f,"		<R unit=\"radian\">%.9g %.9g %.9g</R>\n",g.wire.R[0],g.wire.R[1],g.wire.R[2]
-//		endif
-//		fprintf f, "		<Axis>%.8g %.8g %.8g</Axis>		<!-- unit vector along wire axis, usually close to (1,0,0) -->\n",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]
-//		if (!numtype(g.wire.F))
-//			fprintf f, "		<F unit=\"micron\">%.8g</F>		<!-- F of wire for a constant F wire scan (raw PM500 units) -->\n",g.wire.F
-//		endif
-//		fprintf f, "	</Wire>\n"
-//	endif
-//	fprintf f, "</geoN>\n"
-//	Close f
-//	String str
-//	sprintf str, "wrote geometry to file '%s'",fileName
-//	print str
-//	DoAlert 0,str
-//	return 0
-//End
-
 Static Function ReadGeoFromXMLfile(fileName,path,g)
-	String fileName							// full path name to the file
+	String fileName						// full path name to the file
 	String path								// name of an Igor path to use
-	STRUCT microGeometry &g				// the structure to fill from the file
+	STRUCT microGeometry &g			// the structure to fill from the file
 
 	Variable f
 	Open/M="geoN xml file"/P=$path/R/T=".xml"/Z=2 f as fileName
@@ -2185,7 +1970,7 @@ Static Function/S xmlContents(buf)
 	if (i0<0)
 		return ""
 	endif
-	i0 = strsearch(buf,"?>",0)					// find end of header tag
+	i0 = strsearch(buf,"?>",0)						// find end of header tag
 	if (i0<0)
 		return ""
 	endif
@@ -2195,8 +1980,8 @@ Static Function/S xmlContents(buf)
 End
 //
 Static Function GeoFromXML(buf,g)
-	String buf								// contents of the <geoN> xml
-	STRUCT microGeometry &g				// the structure to fill from the file
+	String buf							// contents of the <geoN> xml
+	STRUCT microGeometry &g		// the structure to fill from the file
 
 	buf = XMLremoveComments(buf)			// remove all of the comments
 
@@ -2326,7 +2111,7 @@ Function SetDefaultGeo2Reference()							// set default geometry to the referenc
 	STRUCT microGeometry g
 	GeoReferenceOrientation(g)								// set geometry to reference values
 
-	String/G root:Packages:geometry:geoStructStr=""		// use default location
+	String/G root:Packages:geometry:geoStructStr=""	// use default location
 	SVAR geoStructStr = root:Packages:geometry:geoStructStr
 	StructPut/S/B=2 g, geoStructStr
 	if (exists("root:Packages:geometry:PanelValues:Ndetectors")==2 && exists("root:Packages:geometry:PanelValues:knife")==2)
@@ -2339,18 +2124,18 @@ Function SetDefaultGeo2Reference()							// set default geometry to the referenc
 	endif
 End
 
-Function GeoReferenceOrientation(g[,simple])				// sets g to the reference orientation (sort of an ideal set of values)
+Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientation (sort of an ideal set of values)
 	STRUCT microGeometry &g
-	Variable simple											// true means all positioners are square to beam,  false means beam tilted by mirros 6mrad
-	g.Ndetectors = 3											// defining 3 detectors
+	Variable simple					// true means all positioners are square to beam,  false means beam tilted by mirros 6mrad
+	g.Ndetectors = 3					// defining 3 detectors
 	simple = ParamIsDefault(simple) ? 0 : simple
 
 	// define Detector 0, located 500mm directly above sample (Orange)
 	g.d[0].used = 1
-	g.d[0].Nx = 2048 ;			g.d[0].Ny = 2048			// number of un-binned pixels in whole detector
+	g.d[0].Nx = 2048 ;			g.d[0].Ny = 2048				// number of un-binned pixels in whole detector
 	g.d[0].sizeX = 409.6e3;		g.d[0].sizeY = 409.6e3	// outside size of detector (micron)
 	Variable Rval = -2/3*PI/sqrt(3)
-	g.d[0].R[0]=Rval;			g.d[0].R[1]=Rval;		g.d[0].R[2]=Rval			// angle of detector, theta = -120¡ about (111)
+	g.d[0].R[0]=Rval;			g.d[0].R[1]=Rval;		g.d[0].R[2]=Rval		// angle of detector, theta = -120¡ about (111)
 	g.d[0].P[0]=25e3;			g.d[0].P[1]=0;			g.d[0].P[2]=510e3		// offset to detector (micron)
 	g.d[0].timeMeasured = "Dec 4, 2008, 3:33pm"
 	g.d[0].geoNote = "reference orientation"
@@ -2359,12 +2144,11 @@ Function GeoReferenceOrientation(g[,simple])				// sets g to the reference orien
 
 	// define Detector 1, located ~400mm from sample, out along +X direction and up from horizontal by 45¡ (Yellow)
 	g.d[1].used = 1
-	g.d[1].Nx = 1024 ;			g.d[1].Ny = 1024			// number of un-binned pixels in whole detector
+	g.d[1].Nx = 1024 ;			g.d[1].Ny = 1024				// number of un-binned pixels in whole detector
 	g.d[1].sizeX = 204.8e3;		g.d[1].sizeY = 204.8e3	// outside size of detector (micron)
-	g.d[1].R[0] = -1.77549569095761											// angle of detector
+	g.d[1].R[0] = -1.77549569095761								// angle of detector
 	g.d[1].R[1] = -0.735434395129632
 	g.d[1].R[2] = -1.74815646188668
-//	g.d[1].P[0]=-187e3;		g.d[1].P[1]=0;			g.d[1].P[2]=400e3	// offset to detector (micron)
 	g.d[1].P[0]=-144e3;		g.d[1].P[1]=-1e3;		g.d[1].P[2]=410e3	// offset to detector (micron)
 	g.d[1].timeMeasured = "Dec 5, 2008, 11:00am"
 	g.d[1].geoNote = "reference orientation"
@@ -2373,12 +2157,12 @@ Function GeoReferenceOrientation(g[,simple])				// sets g to the reference orien
 
 	// define Detector 2, located ~400mm from sample, out along -X direction and up from horizontal by 45¡ (Purple)
 	g.d[2].used = 1
-	g.d[2].Nx = 1024 ;			g.d[2].Ny = 1024			// number of un-binned pixels in whole detector
+	g.d[2].Nx = 1024 ;			g.d[2].Ny = 1024				// number of un-binned pixels in whole detector
 	g.d[2].sizeX = 204.8e3;		g.d[2].sizeY = 204.8e3	// outside size of detector (micron)
- 	g.d[2].R[0] = -0.619944391960603		 			// angle of detector
+ 	g.d[2].R[0] = -0.619944391960603		 					// angle of detector
  	g.d[2].R[1] = -1.49667815898843
  	g.d[2].R[2] = -0.610398437087624
-	g.d[2].P[0]=-187e3;		g.d[2].P[1]=0;			g.d[2].P[2]=400e3	// offset to detector (micron)
+	g.d[2].P[0]=-187e3;		g.d[2].P[1]=0;			g.d[2].P[2]=400e3		// offset to detector (micron)
 	g.d[2].timeMeasured = "Dec 5, 2008, 11:00am"
 	g.d[2].geoNote = "reference orientation"
 	g.d[2].detectorID = "PE0820 763-1850"
@@ -2387,10 +2171,10 @@ Function GeoReferenceOrientation(g[,simple])				// sets g to the reference orien
 	// define Wire
 	g.wire.origin[0] = 0;			g.wire.origin[1] = 0;		g.wire.origin[2] = 0
 	g.wire.dia = 52.
-	g.wire.knife = 1											// true if wire on  a knife edge, false for free-standing wire
+	g.wire.knife = 1													// true if wire on  a knife edge, false for free-standing wire
 	g.wire.axis[0] = 1;			g.wire.axis[1] = 0;		g.wire.axis[2] = 0
 	g.wire.R[0] = -0.006;		g.wire.R[1] = 0.006;		g.wire.R[2] = -1.8e-5	// 6mrad in X and Y (from the mirrors)
-	g.wire.F = 3200											// this should be ~200µm above sample surface
+	g.wire.F = 3200													// this should be ~200µm above sample surface
 
 	// define Sample
 	g.s.O[0] = 0;					g.s.O[1] = 0;				g.s.O[2] = 0				// sample origin (micron)
@@ -2438,36 +2222,36 @@ End
 //		KillWaves/Z y90,z45
 //	endif
 
-// ====================================== End of Geometry =====================================
-//=======================================================================================
+// ===================================== End of Geometry ======================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// ======================================= Start of XHF ======================================
+// ============================================================================================
+// ======================================= Start of XHF =======================================
 
 // Beam line corodinate system (X=out door, Y=up, Z=downstream), theta is the angle between Z and H
 // definition of of angle: H wire scan is horiz at angle=0,   at angle=0,  F=-Y, H=+Z
 
-Function YZ2F(y,z)		// F = -Y*cos(angle) + Z*sin(angle)
+ThreadSafe Function YZ2F(y,z)	// F = -Y*cos(angle) + Z*sin(angle)
 	Variable Y,Z
 	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
 	return -Y*cosTheta + Z*sinTheta
 End
-Function YZ2H(Y,Z)		// H =  Y*sin(angle) + Z*cos(angle)
+ThreadSafe Function YZ2H(Y,Z)	// H =  Y*sin(angle) + Z*cos(angle)
 	Variable Y,Z
 	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
 	return Y*sinTheta + Z*cosTheta
 End
-Function HF2Y(H,F)	// Y =  H*sin(angle) - F*cos(angle)
+ThreadSafe Function HF2Y(H,F)	// Y =  H*sin(angle) - F*cos(angle)
 	Variable H,F
 	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
 	return H*sinTheta - F*cosTheta
 End
-Function HF2Z(H,F)	// Z =  H*cos(angle) + F*sin(angle)
+ThreadSafe Function HF2Z(H,F)	// Z =  H*cos(angle) + F*sin(angle)
 	Variable H,F
 	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
@@ -2476,7 +2260,7 @@ End
 
 
 //	This is only called by GenericWaveNoteInfo() in Utility_JZT.ipf
-Function/T MoreWaveNoteInfo(ww,list)		// additions to the list, only called by GenericWaveNoteInfo() in Utility_JZT.ipf
+ThreadSafe Function/T MoreWaveNoteInfo(ww,list)		// additions to the list, only called by GenericWaveNoteInfo() in Utility_JZT.ipf
 	Wave ww
 	String list
 	if (!WaveExists(ww))
@@ -2513,25 +2297,25 @@ Function/T MoreWaveNoteInfo(ww,list)		// additions to the list, only called by G
 	return list
 End
 
-// ======================================== End of XHF ======================================
-//=======================================================================================
+// ======================================== End of XHF ========================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// =========================== Start of Sample & Wire Positioner Correction ===========================
+// ============================================================================================
+// ======================= Start of Sample & Wire Positioner Correction =======================
 
 // Sample Position
-Function PM500X1toBeamLineX1(s,XYZ1)		// change from Sample PM500 numbers to Beam Line coords
+ThreadSafe Function PM500X1toBeamLineX1(s,XYZ1)	// change from Sample PM500 numbers to Beam Line coords
 	STRUCT sampleGeometry &s
-	Wave XYZ1									// a 3-vector, PM500 coords on input, change to BeamLine on output
+	Wave XYZ1								// a 3-vector, PM500 coords on input, change to BeamLine on output
 
 	Variable X1, Y1, Z1
-	X1 = X1correctedKeyence(XYZ1[0])			// first correct of errors in the encoder
+	X1 = X1correctedKeyence(XYZ1[0])				// first correct of errors in the encoder
 	Y1 = Y1correctedKeyence(XYZ1[1])
 	Z1 = Z1correctedKeyence(XYZ1[2])
 
-	X1 -= X1correctedKeyence(s.O[0])			// translate to origin, subtract off sample origin
+	X1 -= X1correctedKeyence(s.O[0])				// translate to origin, subtract off sample origin
 	Y1 -= Y1correctedKeyence(s.O[1])	
 	Z1 -= Z1correctedKeyence(s.O[2])	
 
@@ -2542,16 +2326,16 @@ End
 
 
 // Wire Position
-Function PM500X2toBeamLineX2(w,XYZ2)		// change Wire position from raw PM500 numbers to Beam Line coords
+ThreadSafe Function PM500X2toBeamLineX2(w,XYZ2)	// change Wire position from raw PM500 numbers to Beam Line coords
 	STRUCT wireGeometry &w
-	Wave XYZ2									// a 3-vector, PM500 coords on input, change to BeamLine on output
+	Wave XYZ2								// a 3-vector, PM500 coords on input, change to BeamLine on output
 
 	Variable X2, Y2, Z2
-	X2 = X2correctedKeyence(XYZ2[0])			// first correct of errors in the encoder
+	X2 = X2correctedKeyence(XYZ2[0])				// first correct of errors in the encoder
 	Y2 = Y2correctedKeyence(XYZ2[1])
 	Z2 = Z2correctedKeyence(XYZ2[2])
 
-	X2 -= w.origin[0]							// translate to origin (distance of wire from origin)
+	X2 -= w.origin[0]										// translate to origin (distance of wire from origin)
 	Y2 -= w.origin[1]
 	Z2 -= w.origin[2]
 
@@ -2560,7 +2344,7 @@ Function PM500X2toBeamLineX2(w,XYZ2)		// change Wire position from raw PM500 num
 	XYZ2[2] = w.R20*X2 + w.R21*Y2 + w.R22*Z2
 End
 
-// ==================================== Keyence Correction =====================================
+// ==================================== Keyence Correction ====================================
 
 //	Make/O root:Packages:micro:X1correctionWave={0.31,0.32,0.2,0.09,-0.1,-0.3,-0.44,-0.47,-0.42,-0.37,-0.32,-0.19,-0.12,-0.07,0.01,0.17,0.35,0.52,0.67,0.73,0.69,0.53,0.32,0.13,-0.01,-0.13,-0.18,-0.18,-0.18,-0.16,-0.26,-0.25,-0.29,-0.38,-0.41,-0.38,-0.33,-0.18,0.01,0.23,0.42}
 //	Make/O root:Packages:micro:Y1correctionWave={0.37,0.38,0.35,0.26,0.1,-0.06,-0.22,-0.31,-0.36,-0.35,-0.62,-0.51,-0.39,-0.28,-0.19,-0.03,0.11,0.25,0.34,0.38,0.38,0.34,0.28,0.17,0.04,-0.09,-0.22,-0.33,-0.4,-0.41,-0.39,-0.36,-0.28,-0.19,-0.08,0.06,0.2,0.3,0.4,0.54,0.66}
@@ -2568,68 +2352,68 @@ End
 //	SetScale/P x 0,1,"µm", root:Packages:micro:X1correctionWave,root:Packages:micro:Y1correctionWave,root:Packages:micro:Z1correctionWave
 //	SetScale d 0,0,"µm", root:Packages:micro:X1correctionWave,root:Packages:micro:Y1correctionWave,root:Packages:micro:Z1correctionWave
 //
-Static Function X1correctedKeyence(X1)		// takes PM500 X1 and returns the "real" X1
+ThreadSafe Static Function X1correctedKeyence(X1)		// takes PM500 X1 and returns the "real" X1
 	Variable X1									// input the PM500 X1 reading
 	Wave deltaW=root:Packages:micro:X1correctionWave
 	Variable zWidth = DimDelta(deltaW,0)*(numpnts(deltaW)-1)	// width of the correction wave (µm)
 	Variable dX1
 	dX1 = mod(X1,zWidth)
 	dX1 = dX1 < 0 ? dX1+zWidth : dX1
-	return deltaW(dX1)+X1						// return corrected X1, this should be the true X1 value
+	return deltaW(dX1)+X1					// return corrected X1, this should be the true X1 value
 End
 //
-Static Function Y1correctedKeyence(Y1)		// takes PM500 Y1 and returns the "real" Y1
+ThreadSafe Static Function Y1correctedKeyence(Y1)		// takes PM500 Y1 and returns the "real" Y1
 	Variable Y1									// input the PM500 Y1 reading
 	Wave deltaW=root:Packages:micro:Y1correctionWave
 	Variable zWidth = DimDelta(deltaW,0)*(numpnts(deltaW)-1)	// width of the correction wave (µm)
 	Variable dY1
 	dY1 = mod(Y1,zWidth)
 	dY1 = dY1 < 0 ? dY1+zWidth : dY1
-	return deltaW(dY1)+Y1						// return corrected Y1, this should be the true Y1 value
+	return deltaW(dY1)+Y1					// return corrected Y1, this should be the true Y1 value
 End
 //
-Static Function Z1correctedKeyence(Z1)		// takes PM500 Z1 and returns the "real" Z1
+ThreadSafe Static Function Z1correctedKeyence(Z1)		// takes PM500 Z1 and returns the "real" Z1
 	Variable Z1									// input the PM500 Z1 reading
 	Wave deltaW=root:Packages:micro:Z1correctionWave
 	Variable zWidth = DimDelta(deltaW,0)*(numpnts(deltaW)-1)	// width of the correction wave (µm)
 	Variable dZ1
 	dZ1 = mod(Z1,zWidth)
 	dZ1 = dZ1 < 0 ? dZ1+zWidth : dZ1
-	return deltaW(dZ1)+Z1						// return corrected Z1, this should be the true Z1 value
+	return deltaW(dZ1)+Z1					// return corrected Z1, this should be the true Z1 value
 End
 
 
-Static Function X2correctedKeyence(X2)		// takes PM500 X2 and returns the "real" X2	****	DUMMY	DUMMY	DUMMY	****
+ThreadSafe Static Function X2correctedKeyence(X2)		// takes PM500 X2 and returns the "real" X2	****	DUMMY	DUMMY	DUMMY	****
 	Variable X2									// input the PM500 X2 reading
-	return X2										// return corrected X2, this should be the true X2 value
+	return X2									// return corrected X2, this should be the true X2 value
 End
-Static Function Y2correctedKeyence(Y2)		// takes PM500 Y2 and returns the "real" Y2	****	DUMMY	DUMMY	DUMMY	****
+ThreadSafe Static Function Y2correctedKeyence(Y2)		// takes PM500 Y2 and returns the "real" Y2	****	DUMMY	DUMMY	DUMMY	****
 	Variable Y2									// input the PM500 Y2 reading
-	return Y2										// return corrected Y2, this should be the true Y2 value
+	return Y2									// return corrected Y2, this should be the true Y2 value
 End
-Static Function Z2correctedKeyence(Z2)		// takes PM500 Z2 and returns the "real" Z2	****	DUMMY	DUMMY	DUMMY	****
+ThreadSafe Static Function Z2correctedKeyence(Z2)		// takes PM500 Z2 and returns the "real" Z2	****	DUMMY	DUMMY	DUMMY	****
 	Variable Z2									// input the PM500 Z2 reading
-	return Z2										// return corrected Z2, this should be the true Z2 value
+	return Z2									// return corrected Z2, this should be the true Z2 value
 End
 
-// ============================ End of Sample & Wire Positioner Correction ===========================
-//=======================================================================================
+// ======================== End of Sample & Wire Positioner Correction ========================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// ===================================== Start of Distortion ====================================
+// ============================================================================================
+// =================================== Start of Distortion ====================================
 
 Function setUseDistortion(use)
 	Variable use
 	Init_microGeo()
 	NVAR useDistortion=root:Packages:geometry:useDistortion
-	Variable before = useDistortion							// value on entry
-	if (numtype(use)==0)									//  valid input, set the global
+	Variable before = useDistortion					// value on entry
+	if (numtype(use)==0)								//  valid input, set the global
 		useDistortion = use
 	else														// need to prompt user
 		Prompt use, "Use Distortion Correction?", popup, "NO Distortion Correction;Use Distortion Correction"
-		use = useDistortion+1								// default value
+		use = useDistortion+1							// default value
 		DoPrompt/Help="3D-Xray Diffraction[Distortion Correction]" "Distortion Correction", use
 		if (!V_flag)
 			useDistortion = use - 1
@@ -2648,189 +2432,37 @@ Function setUseDistortion(use)
 	return useDistortion
 End
 
-
-////	xymap,Nx,Ny,cornerX0,cornerY0,cornerX1,cornerY1
-//Function/S loadCCDCorrectionTable(mName)
-//	String mName						// name for xymap file
-//	String CCDxyMapfile = "CCD_distorMay03_corr.dat"
-//	mName = SelectString(strlen(mName)>0,"xymap",CleanupName(mName,0))
-//
-//	if (ItemsInList(GetRTStackInfo(0))<2)
-//		print "Loading the correction table ..."
-//	endif
-//	Variable refNum
-//	Open/M="distortion table"/P=home/R/T="TEXT"/Z=2 refNum as CCDxyMapfile
-//	if (V_flag)
-//		return ""
-//	endif
-//	String line
-//	FReadLine refNum, line
-//
-//	Variable Nx,Ny,cornerX0,cornerY0,cornerX1,cornerY1
-//	sscanf line, "%d %d %d %d %d %d",Nx,Ny,cornerX0,cornerY0,cornerX1,cornerY1
-//	if (V_flag!=6)
-//		Close refNum
-//		return ""
-//	endif
-//
-//	String noteStr=""
-//	noteStr = ReplaceNumberByKey("cornerX0",noteStr,cornerX0,"=")
-//	noteStr = ReplaceNumberByKey("cornerY0",noteStr,cornerY0,"=")
-//	noteStr = ReplaceNumberByKey("cornerX1",noteStr,cornerX1,"=")
-//	noteStr = ReplaceNumberByKey("cornerY1",noteStr,cornerY1,"=")
-//	noteStr = ReplaceStringByKey("CCDname",noteStr,"White2084x2084","=")
-//
-//	Make/N=(Nx,Ny,4)/O $mName
-//	Wave xymap = $mName
-//	Note/K xymap
-//	Note xymap, noteStr
-//
-//	Variable i,j,x1,y1,x2,y2
-//	for (j=0;j<Ny;j+=1)
-//		for (i=0;i<Ny;i+=1)
-//			FReadLine refNum, line
-//			sscanf line, "%g %g %g %g",x1,y1,x2,y2
-//			if (V_flag!=4)
-//				Close refNum
-//				return ""
-//			endif
-//			xymap[i][j][0] = x1
-//			xymap[i][j][1] = y1
-//			xymap[i][j][2] = x2
-//			xymap[i][j][3] = y2
-//		endfor
-//	endfor
-//	Close refNum
-//	return GetWavesDataFolder(xymap,2)
-//End
-////
-//Function LoadStandardDistortion()
-//	String str= FunctionPath("LoadStandardDistortion")
-//	if (strlen(str)<2)
-//		return 1
-//	endif
-//	String fileName = ParseFilePath(1, str, ":", 1, 0)+"xymap.itx"
-//	LoadWave/O/T fileName
-//	if (V_flag!=1)
-//		DoAlert 0, "Unable to load xymap.itx"
-//		return 1
-//	elseif (!stringmatch(StringFromList(0,S_waveNames),"xymap"))
-//		DoAlert 0,"Loaded something other than xyamp, see history"
-//		return 1
-//	endif
-//
-//	// move to root:Packages:geometry if not already there
-//	if (stringmatch(GetDataFolder(1),"root:Packages:geometry:"))
-//		return 0
-//	endif
-//	Duplicate/O xymap root:Packages:geometry:xymap
-//	KillWaves xymap
-//	printf "¥¥loaded standard distortion from '%s' into file root:Packages:geometry:xymap\r",fileName
-//	return 0
-//End
-
-
-//Function MakeDistortionMap()
-//	Variable N=20
-//	Make/N=(N,N)/O totalDistortion
-//	Make/N=(N,N)/O/C xyDistortion
-//	SetScale/I x 0,2083,"pixels", totalDistortion
-//	SetScale/I y 0,2083,"pixels", totalDistortion
-//	SetScale d 0,0,"pixels", totalDistortion
-//	Variable x0=DimOffset(totalDistortion,0), dx=DimDelta(totalDistortion,0)
-//	Variable y0=DimOffset(totalDistortion,1), dy=DimDelta(totalDistortion,1)
-//
-//	Wave xymap=root:Packages:geometry:xymap
-//	Variable px,py, i,j
-//	for (j=0;j<N;j+=1)
-//		py = y0 + j*dy
-//		for (i=0;i<N;i+=1)
-//			px = x0 + i*dx
-//			xyDistortion[i][j] = peakcorrection2(xymap,px,py)		// returns cmplx(dx,dy)
-//		endfor
-//	endfor
-//	totalDistortion = cabs(xyDistortion[p][q])
-//
-//	if (strlen(WinList("GraphDistortionMap", "","WIN:1"))>1)
-//		DoWindow/F GraphDistortionMap
-//		SetDrawLayer /K UserFront	
-//	else
-//		Display/K=1/W=(168,55,798,615)
-//		DoWindow/C GraphDistortionMap
-//		AppendImage totalDistortion
-//		ModifyImage totalDistortion ctab= {0,7.1,Terrain,1}
-//		ModifyGraph margin(right)=72,width={Aspect,1},mirror=2
-//		ModifyGraph lblMargin(left)=7,lblMargin(bottom)=5,axOffset(left)=-2.57143,lblLatPos(left)=-44,lblLatPos(bottom)=47
-//		SetAxis/A/R left
-//		ColorScale/N=text0/F=0/S=3/A=RC/X=-13.63/Y=0.40 image=totalDistortion
-//	endif
-//	xyDistortion *= 20							// scale up to make lines longer
-//	for (j=0;j<N;j+=1)
-//		py = y0 + j*dy
-//		for (i=0;i<N;i+=1)
-//			px = x0 + i*dx
-//			SetDrawLayer UserFront
-//			SetDrawEnv xcoord=bottom,ycoord=left,arrow=1, arrowlen=7.0,arrowfat=0.3	// draw the arrow
-//			DrawLine px,py,px+real(xyDistortion[i][j]),py+imag(xyDistortion[i][j])
-//		endfor
-//	endfor
-//	KillWaves/Z xyDistortion
-//End
-
-
-//Static Function resetCenterDistortionMap(xymap,xc,yc)	// set distortion correction of xc & yc into note of xymap, used so correction to (xc,yc) is zero
-//	Wave xymap												// distortion map
-//	Variable xc,yc												// values that should get zero distortion correction, should be geo.xcent,geo.ycent
-//	if (!WaveExists(xymap))								// wave does not exist, do nothing
-//		return 1
-//	endif
-//
-//	String wnote = note(xymap)
-//	wnote = ReplaceNumberByKey("dxCenter",wnote,0,"=")			// set correction to zero
-//	wnote = ReplaceNumberByKey("dyCenter",wnote,0,"=")
-//	Note/K xymap, wnote													// re-set value in wave note
-//	if (numtype(xc+yc))
-//		return 1															// invalid (xc,yc) passed so leave corrections at zero
-//	endif
-//
-//	Variable px=xc-1, py=yc-1
-//	Variable/C dp = peakcorrection2(xymap,px,py)					// returns cmplx(dx,dy), px,py are changed
-//	wnote = ReplaceNumberByKey("dxCenter",wnote,real(dp),"=")	// add this to corrected to get proper value
-//	wnote = ReplaceNumberByKey("dyCenter",wnote,imag(dp),"=")
-//	Note/K xymap, wnote													// store values in wave note
-//End
-
-// ===================================== End of Distortion =====================================
-//=======================================================================================
+// ==================================== End of Distortion =====================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-//==================================== Start of Wire & Depth ===================================
+// ============================================================================================
+// ================================== Start of Wire & Depth ===================================
 
 // Given the three points, P=pixel, S=source, W=wire:
 // The next three routines do calculations for the unknown point when the other two are known
 
 
 // Given a ray starting from depth (on the beam), and ending at the point xyzPixel (probably at a pixel), finds the wire H to put wire
-Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire that is tangent to line from depth on beam to pixel on detector (in beam line coords)
-	STRUCT microGeometry &g			// g.wire.F provides the F
-	Variable depth							// distance along incident beam from origin (the Si positino) (µm)
+ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire that is tangent to line from depth on beam to pixel on detector (in beam line coords)
+	STRUCT microGeometry &g		// g.wire.F provides the F
+	Variable depth						// distance along incident beam from origin (the Si positino) (µm)
 	Wave xyzPixel						// location of pixel in beam line coordinates
-	Variable edge							// 1=leading edge (usual),  0=trailing edge
+	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
-	Wave Rvec = root:Packages:geometry:depth_Rvec	// rotation vector that puts axis of wire along {1,0,0}
-	Wave rho = root:Packages:geometry:depth_rhoX		// rotate to frame where wire axis is along x-axis
-	Wave pixel = root:Packages:geometry:depth_pixel	// position of pixel in rotated coords
-	Wave S = root:Packages:geometry:depth_S			// position of source in rotated coords
-	Wave sigma = root:Packages:geometry:depth_sigma	// normalized vector pointing from Pixel to Source (rotated coords)
-	Wave delta = root:Packages:geometry:depth_delta	// scanned direction of wire motion in rotated coords
-	Wave a = root:Packages:geometry:depth_a			// direction of wire axis in rotated coords
-	Wave nhat = root:Packages:geometry:depth_nhat	// normal to plane
-	Wave wo = root:Packages:geometry:depth_wo		// point on the plane of the wire center (beam line coords)
-	Wave C = root:Packages:geometry:depth_C			// constant term in linear equation (beam line coords)
-	Wave rhoW = root:Packages:geometry:depth_rhoW	// rotation of wire PM500
-	Wave mat = root:Packages:geometry:depth_mat		// matrix sent to linear solver
+	Make/N=3/D/FREE Rvec								// rotation vector that puts axis of wire along {1,0,0}
+	Make/N=(3,3)/D/FREE rho							// rotate to frame where wire axis is along x-axis
+	Make/N=3/D/FREE pixel								// position of pixel in rotated coords
+	Make/N=3/D/FREE Sw									// position of source in rotated coords
+	Make/N=3/D/FREE delta								// scanned direction of wire motion in rotated coords
+	Make/N=3/D/FREE sigma								// normalized vector pointing from Pixel to Source (rotated coords)
+	Make/N=3/D/FREE a										// direction of wire axis in rotated coords
+	Make/N=3/D/FREE nhat								// normal to plane
+	Make/N=3/D/FREE wo									// point on the plane of the wire center (beam line coords)
+	Make/N=3/D/FREE C										// constant term in linear equation (beam line coords)
+	Make/N=(3,3)/D/FREE rhoW							// rotation of wire PM500
+	Make/N=(3,3)/D/FREE mat							// matrix sent to linear solver
 
 	Variable R=(g.wire.dia)/2							// wire radius
 	Variable dF = g.wire.F - YZ2F(g.wire.origin[1],g.wire.origin[2])
@@ -2838,8 +2470,8 @@ Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire that is tange
 	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
 
-	Rvec = {0,g.wire.axisR[2], -g.wire.axisR[1]}		// cross product,   axisR x {1,0,0}
-	Variable theta = asin(normalize(Rvec))				// length of Rvec = sin(theta)
+	Rvec = {0,g.wire.axisR[2], -g.wire.axisR[1]}	// cross product,   axisR x {1,0,0}
+	Variable theta = asin(normalize(Rvec))		// length of Rvec = sin(theta)
 	Rvec *= theta
 	rotationMatFromAxis(Rvec,NaN,rho)				// rotation matrix makes wire axis lie along {1,0,0}
 
@@ -2847,31 +2479,31 @@ Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire that is tange
 	rhoW[1][0]=g.wire.R10;	rhoW[1][1]=g.wire.R11;	rhoW[1][2]=g.wire.R12
 	rhoW[2][0]=g.wire.R20;	rhoW[2][1]=g.wire.R21;	rhoW[2][2]=g.wire.R22
 
-	MatrixOp/O pixel = rho x xyzPixel					// rotate pxiel to new coordinate system
+	MatrixOp/O pixel = rho x xyzPixel				// rotate pxiel to new coordinate system
 
-//	S = { kix/kiz, kiy/kiz, 1 }							// source point for the ray (in beam line coords)
-//	S *= depth
-	S = {kix,kiy,kiz}										// source point for the ray (in beam line coords)
-	normalize(S)
-	S *= depth
-	MatrixOp/O S = rho x S
+//	Sw = { kix/kiz, kiy/kiz, 1 }						// source point for the ray (in beam line coords)
+//	Sw *= depth
+	Sw = {kix,kiy,kiz}									// source point for the ray (in beam line coords)
+	normalize(Sw)
+	Sw *= depth
+	MatrixOp/O Sw = rho x Sw
 
-	sigma = S - pixel										// direction of ray from Pixel to Source in rotated frame
+	sigma = Sw - pixel									// direction of ray from Pixel to Source in rotated frame
 	normalize(sigma)
 	nhat = {0, sigma[2], -sigma[1]}					// perpendicular to sigma, pointing in +Z direction (rotated frame)
 	normalize(nhat)
 
-	delta[0] = {0, sinTheta, cosTheta}					// direction of wire motion (PM500 coords)
-	MatrixOp/O delta = rho x rhoW x delta				// delta = wire.Rij x {0, sinTheta, cosTheta},   rotate delta to beam line coords, then to rotated frame
+	delta[0] = {0, sinTheta, cosTheta}				// direction of wire motion (PM500 coords)
+	MatrixOp/O delta = rho x rhoW x delta			// delta = wire.Rij x {0, sinTheta, cosTheta},   rotate delta to beam line coords, then to rotated frame
 
 	a = g.wire.axis[p]
-	MatrixOp/O a = rho x rhoW x a						// a = rho x wire.Rij x wire.axis,   should be {1,0,0}
+	MatrixOp/O a = rho x rhoW x a					// a = rho x wire.Rij x wire.axis,   should be {1,0,0}
 
-	wo = {0, -dF*cosTheta, dF*sintheta}				// off set to plane with center of wire at dF from origin
+	wo = {0, -dF*cosTheta, dF*sintheta}			// off set to plane with center of wire at dF from origin
 	MatrixOp/O wo = rho x rhoW x wo
 
-	edge = edge ? -1 : +1									// use - for leading edge, + for trailing edge
-	C = S + edge*R*nhat - wo
+	edge = edge ? -1 : +1								// use - for leading edge, + for trailing edge
+	C = Sw + edge*R*nhat - wo
 
 	mat[][0] = sigma[p]									// Solve the equation: (S-P)*t + delta*u + axisR*v = C
 	mat[][1] = delta[p]
@@ -2882,43 +2514,43 @@ Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire that is tange
 	if (V_flag)
 		return NaN
 	endif
-	return C[1]											// the H in PM500 coords
+	return C[1]												// the H in PM500 coords
 End
 
 
 // Returns depth (starting point) of ray with one end point xyzPixel (probably a pixel location) that is tangent
 // to leading edge of the wire and intersects the incident beam.  The returned depth is relative to the Si position (µm)
 // depth is the measured along the incident beam from the origin (the Si position), not just the Z value
-Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
-	STRUCT microGeometry &g			// g.wire.F provides the F
+ThreadSafe Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
+	STRUCT microGeometry &g		// g.wire.F provides the F
 	Wave xyzPixel						// location of pixel in beam line coordinates, origin at Si (µm)
 	Wave Xw								// center of wire in raw PM500 coordinates (µm)
-	Variable edge							// 1=leading edge (usual),  0=trailing edge
+	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
-	Wave Rvec = root:Packages:geometry:depth_Rvec	// rotation vector that puts axis of wire along {1,0,0}
-	Wave rho = root:Packages:geometry:depth_rhoX		// rotate to frame where wire axis is along x-axis
-	Wave pixel = root:Packages:geometry:depth_pixel	// position of pixel (beam line coords)
-	Wave wc = root:Packages:geometry:depth_wc		// position of wire center
-	Wave ki = root:Packages:geometry:depth_ki			// incident beam direction (in rotated by rho)
-	Wave S = root:Packages:geometry:depth_S			// position of source rotated (beam line coords)
+	Make/N=3/D/FREE Rvec								// rotation vector that puts axis of wire along {1,0,0}
+	Make/N=(3,3)/D/FREE rho							// rotate to frame where wire axis is along x-axis
+	Make/N=3/D/FREE pixel								// position of pixel (beam line coords)
+	Make/N=3/D/FREE wc									// position of wire center
+	Make/N=3/D/FREE ki									// incident beam direction (in rotated by rho)
+	Make/N=3/D/FREE Sw									// position of source rotated (beam line coords)
 
-	Rvec = {0,g.wire.axisR[2], -g.wire.axisR[1]}		// cross product,   axisR x {,0,0}
-	Variable theta = asin(normalize(Rvec))				// length of Rvec = sin(theta)
+	Rvec = {0,g.wire.axisR[2], -g.wire.axisR[1]}	// cross product,   axisR x {,0,0}
+	Variable theta = asin(normalize(Rvec))		// length of Rvec = sin(theta)
 	Rvec *= theta
 	rotationMatFromAxis(Rvec,NaN,rho)				// rotation matrix makes wire axis lie along {1,0,0}
 
 	wc = Xw
 	PM500X2toBeamLineX2(g.wire,wc)					// transform Xw into Beam Line coords (subtract origin & rotate)
 	MatrixOp/O wc = rho x wc							// rotate wire center to new coordinate
-	MatrixOp/O pixel = rho x xyzPixel					// rotate pxiel to new coordinate system
+	MatrixOp/O pixel = rho x xyzPixel				// rotate pxiel to new coordinate system
 	ki = {0,0,1}											// ki must be normalized
-	MatrixOp/O ki = rho x ki								// ki in rotated frame
+	MatrixOp/O ki = rho x ki							// ki in rotated frame
 
 	Variable R=(g.wire.dia)/2							// wire radius
 	Variable vy,vz, v										// v is vector from pixel to the wire center
 	vy = wc[1] - pixel[1]
 	vz = wc[2] - pixel[2]
-	v = sqrt(vy*vy + vz*vz)								// length of vector (0,vy,vz) = wc[]-pixle[]
+	v = sqrt(vy*vy + vz*vz)							// length of vector (0,vy,vz) = wc[]-pixle[]
 
 	Variable phi0 = atan2(vz,vy)						// angle from yhat to V (V is vector from pixel to wire center)
 	Variable dphi = asin(R/v)							// angle between lines to wire center and tangent point of wire (from detector pixel)
@@ -2927,27 +2559,27 @@ Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
 	// line from pixel to tangent point is:   z = y*tan(phio±dphi) + b
 	Variable b = pixel[2] - pixel[1]*tanphi
 
-	// line of incident beam is:   y = kiy/kiz * z		Thiis line goes through origin, so intercept is 0
+	// line of incident beam is:   y = kiy/kiz * z		This line goes through origin, so intercept is 0
 	// find intersection of this line and line from pixel to tangent point
-	S[2] = b / (1-tanphi*ki[1]/ki[2])					// intersection of two lines at this z value
-	S[1] = ki[1]/ki[2] * S[2]							// corresponding y of point on incident beam
-	S[0] = ki[0]/ki[2] * S[2]							// corresponding z of point on incident beam
+	Sw[2] = b / (1-tanphi*ki[1]/ki[2])				// intersection of two lines at this z value
+	Sw[1] = ki[1]/ki[2] * Sw[2]						// corresponding y of point on incident beam
+	Sw[0] = ki[0]/ki[2] * Sw[2]						// corresponding z of point on incident beam
 
-	return MatrixDot(ki,S)								// depth measured along incident beam (remember that ki is normalized)
-//	MatrixOp/O S = rho^t x S								// rotate back to beam line frame
-//	return S[2]
+	return MatrixDot(ki,Sw)							// depth measured along incident beam (remember that ki is normalized)
+//	MatrixOp/O Sw = rho^t x Sw						// rotate back to beam line frame
+//	return Sw[2]
 End
 
 // set mat to be a rotation matrix about axis with angle
-Static Function rotationMatFromAxis(axis,angle,mat)
-	Wave axis				// axis about which to rotate (or possibly Rodriques vector)
-	Variable angle			// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
+ThreadSafe Static Function rotationMatFromAxis(axis,angle,mat)
+	Wave axis			// axis about which to rotate (or possibly Rodriques vector)
+	Variable angle		// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
 	Wave mat				// desired rotation matrix
 
 	Variable len = norm(axis)
 	angle = numtype(angle) ? len : angle*PI/180	// the rotation angle (rad)
 
-	if (angle==0)									// zero angle rotation is just the identity matrix
+	if (angle==0)												// zero angle rotation is just the identity matrix
 		mat = (p==q)
 		return 0
 	endif
@@ -2956,9 +2588,8 @@ Static Function rotationMatFromAxis(axis,angle,mat)
 	Variable cosa=cos(angle), sina=sin(angle)
 	Variable c1 = 1-cosa
 	if (DimSize(mat,0)!=3 && DimSize(mat,1)!=3)
-		Abort "in rotationMatFromAxis(), mat must be (3,3)"
-//		DoAlert 0, "in rotationMatFromAxis(), mat must be (3,3)"
-//		return 1
+		print "ERROR -- rotationMatFromAxis(), mat must be (3,3)"
+		return 1
 	endif
 	// from		http://mathworld.wolfram.com/RodriguesRotationFormula.html (I double checked this too.)
 	mat[0][0] = cosa+nx*nx*c1;			mat[0][1] =nx*ny*c1-nz*sina;			mat[0][2] = nx*nz*c1+ny*sina;
@@ -3179,29 +2810,29 @@ End
 //EndMacro
 
 
-//===================================== OLD   OLD   OLD   OLD ===================================
+// =================================== OLD   OLD   OLD   OLD ==================================
 
 // for a ray coming from depth, and tangent to wire, where will it hit detector, returns detector(y,z) position as complex value
 Function/C depthWire2pixelXYZ(g,depth,Xw,xyzMin,xyzMax,edge)
 	STRUCT microGeometry &g
-	Variable depth										// depth along incident beam, relative to the Si position (µm)
+	Variable depth									// depth along incident beam, relative to the Si position (µm)
 	Wave Xw											// wire (x,y,z) beam line coordinates in wire units (µm)
-	Wave xyzMin,xyzMax								// two points on the detector (assumed to be ends) relative to Si
-	Variable edge										// 1=leading edge (usual),  0=trailing edge
+	Wave xyzMin,xyzMax							// two points on the detector (assumed to be ends) relative to Si
+	Variable edge									// 1=leading edge (usual),  0=trailing edge
 	Variable testing = (WhichListItem("TestdepthWire2pixelXYZ", GetRTStackInfo(0))>=0)
 
 DoAlert 0,"called depthWire2pixelXYZ(),  this is probably wrong, has not been checked"
 	Variable R = (g.wire.dia)/2						// radius of wire (µm)
-	Variable kiy=0, kiz=1							// direction of incident beam in beam line coords (do not need kix)
-	Variable sz = depth, sy = kiy/kiz * depth		// source position, relative to the Si position (beam line coords)
+	Variable kiy=0, kiz=1								// direction of incident beam in beam line coords (do not need kix)
+	Variable sz = depth, sy = kiy/kiz * depth	// source position, relative to the Si position (beam line coords)
 
-	Variable vy,vz,v									// (vy,vz) vector from source (at depth) to center of wire
+	Variable vy,vz,v										// (vy,vz) vector from source (at depth) to center of wire
 	vy = (Xw[1] - g.wire.origin[1]) - sy
 	vz = (Xw[2] - g.wire.origin[2]) - sz
 	v = sqrt(vy*vy + vz*vz)							// length of v
 
-	Variable phi0 = atan2(vy,vz)					// angle from positive z to tangent ray measured from z toward y
-	Variable dphi =asin(R/v)						// angle between v and ray at tangent point (always positive)
+	Variable phi0 = atan2(vy,vz)						// angle from positive z to tangent ray measured from z toward y
+	Variable dphi =asin(R/v)							// angle between v and ray at tangent point (always positive)
 	Variable phi = phi0 + (edge ? -dphi : dphi)
 	Variable cotPhi = 1/tan(phi)
 
@@ -3212,9 +2843,9 @@ DoAlert 0,"called depthWire2pixelXYZ(),  this is probably wrong, has not been ch
 	Variable m = (xyzMax[1]-xyzMin[1])/(xyzMax[2]-xyzMin[2])
 	Variable beta1 = xyzMin[1] - m*xyzMin[2]
 
-	Variable detY, detZ								// y, z parts of the pixel location relative to Si (beam line coords)
+	Variable detY, detZ									// y, z parts of the pixel location relative to Si (beam line coords)
 	detY = (m*b + beta1) / (1-m*cotPhi)			// y value of intersection
-	detZ = detY*cotPhi + b							// from line P to S,   z = y*cot(phi) + b
+	detZ = detY*cotPhi + b								// from line P to S,   z = y*cot(phi) + b
 
 	if (testing)
 		Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
@@ -3235,14 +2866,13 @@ End
 // the returned depth is relative to the Si position (µm)
 Function pixel2depth(g,dm,px,py,Xw,edge)
 	STRUCT microGeometry &g
-	Variable dm										// detector number {0,1,2}
-	Variable px,py									// uncorrected unbinned pixel position (pixels) (zero based)
-	Wave Xw											// wire (x,y,z) beam line coordinates in wire units (µm)
-	Variable edge										// 1=leading edge (usual),  0=trailing edge
-	Variable depth=NaN								// computed depth relative to the Si position (µm)
+	Variable dm									// detector number {0,1,2}
+	Variable px,py								// uncorrected unbinned pixel position (pixels) (zero based)
+	Wave Xw										// wire (x,y,z) beam line coordinates in wire units (µm)
+	Variable edge								// 1=leading edge (usual),  0=trailing edge
+	Variable depth=NaN						// computed depth relative to the Si position (µm)
 
-//	Wave xyzDetector=root:Packages:geometry:pixel2depth_xyzDetector
-	pixel2XYZ(g.d[dm],px,py,xyzDetector)			// returns xyz of pixel on detector (µm) relative to the Si position
+	pixel2XYZ(g.d[dm],px,py,xyzDetector)		// returns xyz of pixel on detector (µm) relative to the Si position
 //	depth = pixelXYZ2depth(g,xyzDetector[1],xyzDetector[2],Xw,edge)
 	return depth										// relative to the Si position (µm)
 End
@@ -3296,7 +2926,6 @@ Static Function PanelH_SetVarProc(sva) : SetVariableControl
 		case 3: // Live update
 			Variable whoChanged=NumberByKey(sva.ctrlName,"setvar_px:1;setvar_depth:2;setvar_Hwire:4")
 			whoChanged = numtype(whoChanged) ? 0 : whoChanged
-//print "ctrlName =",sva.ctrlName,"    whoChanged = ",whoChanged
 			calcHofWire(sva.win,whoChanged)
 	endswitch
 	return 0
@@ -3372,24 +3001,24 @@ Static Function calcHofWire(win,whoChanged)
 End
 
 // this routine works, but it is not really ready for prime time, and it is not that fast either
-Static Function WireDepth2Pixel(g,dnum,py,Xw,depth,edge)	// find px, given the wire, depth, & py
-	STRUCT microGeometry &g			// g.wire.F provides the F
+ThreadSafe Static Function WireDepth2Pixel(g,dnum,py,Xw,depth,edge)	// find px, given the wire, depth, & py
+	STRUCT microGeometry &g		// g.wire.F provides the F
 	Variable dnum						// detector number, {0, 1, 2}
 	Variable py							// y pixel position on detector
-	Wave Xw							// center of wire in raw PM500 coordinates (µm)
+	Wave Xw								// center of wire in raw PM500 coordinates (µm)
 	Variable depth						// distance along incident beam from origin (the Si positino) (µm)
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
 	Make/N=3/D/FREE xyz=NaN
 	Variable px = g.d[dnum].Nx / 2		// start with px = d.Nx/2, center of image
-	Variable dpx=g.d[dnum].Nx/10		// px step, start with 1/10 of full image
+	Variable dpx=g.d[dnum].Nx/10			// px step, start with 1/10 of full image
 	Variable dtest,dlast=Inf				// temporary depth
-	Variable dstep=30					// depth step, start with 30µm
+	Variable dstep=30							// depth step, start with 30µm
 
 	Variable counter=0
 	do
-		pixel2XYZ(g.d[dnum],px,py,xyz)		// convert pixel position to the beam line coordinate system
-		dtest = PixelxyzWire2depth(g,xyz,Xw,edge)// returns depth for this loop
+		pixel2XYZ(g.d[dnum],px,py,xyz)	// convert pixel position to the beam line coordinate system
+		dtest = PixelxyzWire2depth(g,xyz,Xw,edge)	// returns depth for this loop
 		if (abs(dtest-depth)<0.001)
 			break
 		elseif (abs(depth-dtest)<abs(depth-dlast))	// getting better, continue doing this
@@ -3405,16 +3034,16 @@ Static Function WireDepth2Pixel(g,dnum,py,Xw,depth,edge)	// find px, given the w
 	return px
 End
 
-//===================================== End of Wire & Depth ===================================
-//=======================================================================================
+// =================================== End of Wire & Depth ====================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-//==================================== Start of Utility Items ===================================
+// ============================================================================================
+// ================================== Start of Utility Items ==================================
 
-Static Function/S MakeUnique3Vector(preset)		// make a new 3-vector, and optionally set it to preset[]
-	Wave preset										// optional wave, if none call with $""
+Static Function/S MakeUnique3Vector(preset)	// make a new 3-vector, and optionally set it to preset[]
+	Wave preset												// optional wave, if none call with $""
 	String wName = UniqueName("vec3_",1,0)
 	Make/N=3/D $wName
 	Wave vec=$wName
@@ -3427,7 +3056,7 @@ End
 // Used to make temporary internal waves, a typical use would be:    Wave xxx=$MakeUnique3Vector($"")
 // You will probably want to KillWaves/Z xxx, at the end of the routine.
 Static Function/S MakeUnique3x3Mat(preset)		// make a new 3x3 matrix, and optionally set it to preset[]
-	Wave preset										// optional wave, if none call with $""
+	Wave preset												// optional wave, if none call with $""
 	String wName = UniqueName("mat3x3_",1,0)
 	Make/N=(3,3)/D $wName
 	Wave mat=$wName
@@ -3437,7 +3066,7 @@ Static Function/S MakeUnique3x3Mat(preset)		// make a new 3x3 matrix, and option
 	return GetWavesDataFolder(mat,2)				// return full path for assingment to a wave
 End
 
-Static Function/S keyStrFromBuffer(buf)			// read in all of the tagged values from a file into a keyword list
+ThreadSafe Static Function/S keyStrFromBuffer(buf)	// read in all of the tagged values from a file into a keyword list
 	String buf
 
 	buf = ReplaceString("\r",buf,"\n")
@@ -3451,12 +3080,12 @@ Static Function/S keyStrFromBuffer(buf)			// read in all of the tagged values fr
 	do
 		i1 = strsearch(buf, "\n",i0)
 		line = buf[i0,i1-1]
-		if (char2num(line)==dollar)				// if it starts with a $, probable tag so process it
-			i = strsearch(line,"//",0)				// strip off comments
+		if (char2num(line)==dollar)						// if it starts with a $, probable tag so process it
+			i = strsearch(line,"//",0)					// strip off comments
 			if (i>=0)
 				line = line[0,i-1]
 			endif
-			for (i=0;char2num(line[i+1])>32;i+=1)	// find end of tag, it ends with a space or lower
+			for (i=0;char2num(line[i+1])>32;i+=1)		// find end of tag, it ends with a space or lower
 			endfor
 			tagName = line[1,i]
 			if (strlen(tagName)<1)
@@ -3470,7 +3099,7 @@ Static Function/S keyStrFromBuffer(buf)			// read in all of the tagged values fr
 
 			for (i=i+1;char2num(line[i])<=32;i+=1)	// find first non-white space
 			endfor
-			value = line[i,Inf]						// value associated with tagName
+			value = line[i,Inf]								// value associated with tagName
 
 			for (i=strlen(value)-1;char2num(value[i])<=32 && i>0;i-=1)	// strip off trailing whitespace
 			endfor
@@ -3482,49 +3111,49 @@ Static Function/S keyStrFromBuffer(buf)			// read in all of the tagged values fr
 	return list
 End
 
-// ===================================== End of Utility Items ===================================
-//=======================================================================================
+// =================================== End of Utility Items ===================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// ==================================== Start of Math Items ====================================
+// ============================================================================================
+// =================================== Start of Math Items ====================================
 
-Function angleVec2Vec(a,b)						// return the angle between two vectors (degree)
+ThreadSafe Function angleVec2Vec(a,b)		// return the angle between two vectors (degree)
 	Wave a,b
 	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
-	dot = limit(dot,-1,1)							// ensure that the acos will exist
+	dot = limit(dot,-1,1)						// ensure that the acos will exist
 	return acos(dot)*180/PI
 End
 
 
-Function rotationAngleOfMat(rot)				// returns the total rotation angle of a matrix 'rot'
-	Wave rot										// the rotation matrix
-	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
-	Variable cosine = (trace-1)/2				// cosine of the rotation angle
+ThreadSafe Function rotationAngleOfMat(rot)	// returns the total rotation angle of a matrix 'rot'
+	Wave rot											// the rotation matrix
+	Variable trace = MatrixTrace(rot)		// trace = 1 + 2*cos(theta)
+	Variable cosine = (trace-1)/2			// cosine of the rotation angle
 	cosine = (cosine>1) ? (2-cosine) : cosine
-	return acos(cosine)*180/PI					// rotation angle in degrees
+	return acos(cosine)*180/PI				// rotation angle in degrees
 End
 
 
 // compute angle and axis of a rotation matrix
 // Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
 //		changed "axis[0] = rr[1][2] - rr[2][1]"   -->   "axis[0] = rr[2][1] - rr[1][2]"
-Function axisOfMatrix(rot,axis)
+ThreadSafe Function axisOfMatrix(rot,axis)
 	// returns total rotation angle, and sets axis to the axis of the total rotation
 	Wave rot										// rotation matrix
-	Wave axis										// axis of the rotation (angle is returned)
+	Wave axis									// axis of the rotation (angle is returned)
 
 	Variable sumd = notRotationMatrix(rot)	// accept positive sumd that are less than 1e-4
 	if (sumd<0 || sumd>1e-4)
-		DoAlert 0, "'"+NameOfWave(rot)+"' is not a rotation matrix in axisOfMatrix()"
+		printf "'%s' is not a rotation matrix in axisOfMatrix()\r", NameOfWave(rot)
 		axis = NaN
 		return NaN
-	elseif (0<sumd)								// close enough to a roation matix, but tidy it up first
+	elseif (0<sumd)									// close enough to a roation matix, but tidy it up first
 		Make/N=(3,3)/O/D axisMat__
 		axisMat__ = rot
 		if (SquareUpMatrix(axisMat__))
-			DoAlert 0, "cannot square up '"+NameOfWave(rot)+"' in axisOfMatrix()"
+			printf "cannot square up '%s' in axisOfMatrix()\r", NameOfWave(rot)
 			axis = NaN
 			return NaN
 		endif
@@ -3535,13 +3164,13 @@ Function axisOfMatrix(rot,axis)
 
 	Variable cosine = (MatrixTrace(rr)-1)/2	// trace = 1 + 2*cos(theta)
 	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180¡ rotation,
+	if (cosine<= -1)									// special for 180¡ rotation,
 		axis[0] = sqrt((rr[0][0]+1)/2)
 		axis[1] = sqrt((rr[1][1]+1)/2)
-		axis[2] = sqrt((rr[2][2]+1)/2)		// always assume z positive
+		axis[2] = sqrt((rr[2][2]+1)/2)			// always assume z positive
 		axis[0] = (rr[0][2]+rr[2][0])<0 ? -axis[0] : axis[0]
 		axis[1] = (rr[1][2]+rr[2][1])<0 ? -axis[1] : axis[1]
-	else											// rotaion < 180¡, usual formula works
+	else													// rotaion < 180¡, usual formula works
 		axis[0] = rr[2][1] - rr[1][2]
 		axis[1] = rr[0][2] - rr[2][0]
 		axis[2] = rr[1][0] - rr[0][1]
@@ -3551,38 +3180,36 @@ Function axisOfMatrix(rot,axis)
 	KillWaves /Z axisMat__
 	return acos(cosine)*180/PI					// rotation angle in degrees
 End
-//	else											// rotaion < 180¡, usual formula works
+//	else													// rotaion < 180¡, usual formula works
 //		axis[0] = rr[1][2] - rr[2][1]
 //		axis[1] = rr[2][0] - rr[0][2]
 //		axis[2] = rr[0][1] - rr[1][0]
 //	endif
 
 
-Function AngleBetweenRotationVectors(R1,R2)	// returns rotation between orientations defined by Rodriques vectors (degrees)
-	Wave R1,R2									// two Rodriques vectors
+ThreadSafe Function AngleBetweenRotationVectors(R1,R2)	// returns rotation between orientations defined by Rodriques vectors (degrees)
+	Wave R1,R2											// two Rodriques vectors
 
-	Make/N=(3,3)/O/D mat1_JZT, mat2_JZT
-	Wave mat1=mat1_JZT, mat2=mat2_JZT
+	Make/N=(3,3)/FREE/D mat1, mat2
 	rotationMatAboutAxis(R1,NaN,mat1)
 	rotationMatAboutAxis(R2,NaN,mat2)
-	MatrixOp/O temp_angle_11_JZT = Trace(mat2 x mat1^t)
-	Variable cosine = (temp_angle_11_JZT[0][0]-1) / 2
-	cosine = min(max(-1,cosine),1)			// ensure cosine in range [-1,1]
+	MatrixOp/FREE angle_11 = Trace(mat2 x mat1^t)
+	Variable cosine = (angle_11[0][0]-1) / 2
+	cosine = min(max(-1,cosine),1)				// ensure cosine in range [-1,1]
 	return acos(cosine)*180/PI
-//	KillWaves/Z temp_angle_11_JZT, mat1_JZT, mat2_JZT
 End
 
 
 // set mat to be a rotation matrix about axis with angle
 ThreadSafe Function rotationMatAboutAxis(axis,angle,mat)
-	Wave axis				// axis about which to rotate (or possibly Rodriques vector)
-	Variable angle			// angle to rotate (degrees), assumes axis is true Rodriques vector if angle invalid
+	Wave axis			// axis about which to rotate (or possibly Rodriques vector)
+	Variable angle		// angle to rotate (degrees), assumes axis is true Rodriques vector if angle invalid
 	Wave mat				// desired rotation matrix
 
 	Variable len = norm(axis)
 	angle = numtype(angle) ? 2*atan(len) : angle*PI/180	// the rotation angle (rad)
 
-	if (angle==0)									// zero angle rotation is just the identity matrix
+	if (angle==0)														// zero angle rotation is just the identity matrix
 		mat = (p==q)
 		return 0
 	endif
@@ -3625,13 +3252,13 @@ ThreadSafe Function/WAVE getRLfrom3DWave(scatter,point)
 		Wave RL=$""
 	elseif (WaveDims(scatter)==2 && DimSize(scatter,1)==3 && numtype(point)==0)	// a list of triplets
 		String path=GetWavesDataFolder(scatter,1)
-		Wave RX = $(path+"RX"), RY = $(path+"RY"), RZ = $(path+"RZ")				// Use Rx,Ry,Rz,   NOT gm
+		Wave RX = $(path+"RX"), RY = $(path+"RY"), RZ = $(path+"RZ")					// Use Rx,Ry,Rz,   NOT gm
 		if (WaveExists(RX) && WaveExists(RY) && WaveExists(RZ))
 			Make/N=3/D/FREE 	Rvec = {RX[point], RY[point], RZ[point]}
 			Make/N=(3,3)/D/FREE rot
 			rotationMatAboutAxis(Rvec,NaN,rot)			// rotation of reference recip to this point
 			Wave RL = matString2mat33(StringByKey("recipRef",note(RX),"="))	// starts as reference recip
-			MatrixOP/FREE/O RL = rot x RL					// RL is now the reciprocal lattice for this point
+			MatrixOP/FREE/O RL = rot x RL				// RL is now the reciprocal lattice for this point
 		endif
 	elseif (WaveDims(scatter)==3)						// a 3D volume (probably k-space)
 		String recip_lattice0=StringByKey("recip_lattice0",note(scatter),"=")
@@ -3643,26 +3270,26 @@ ThreadSafe Function/WAVE getRLfrom3DWave(scatter,point)
 End
 
 
-Function notRotationMatrix(mat)				// false if mat is a rotation matrix, i.e. mat^T = mat^-1
+ThreadSafe Function notRotationMatrix(mat,[printIt])	// false if mat is a rotation matrix, i.e. mat^T = mat^-1
 	Wave mat
-	String wName = UniqueName("rot",1,0)
-	MatrixOp/O $wName = Abs(( mat x mat^t ) - Identity(3))
-	Wave diff = $wName
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? 0 : !(!printIt)
+
+	MatrixOp/FREE diff = Abs(( mat x mat^t ) - Identity(3))
 	Variable sumd = sum(diff)
 	// printWave(diff)
 	// print "sum(diff) = ",sumd
-	KillWaves/Z $wName
 
 //	Variable returnVal, thresh=2e-10
 	Variable returnVal, thresh=2e-5
 	if (sumd>thresh)
-		returnVal = sumd							// not a rotation matrix
+		returnVal = sumd						// not a rotation matrix
 	elseif (MatrixDet(mat)<0)
 		returnVal = -1							// an improper rotation matrix
 	else
-		returnVal = 0								// yes it is a rotation matrix
+		returnVal = 0							// yes it is a rotation matrix
 	endif
-	if (ItemsInList(GetRTStackInfo(0))<2)
+	if (printIt)
 		printf "'%s'  is %s matrix\r",NameOfWave(mat),SelectString(returnVal ,"an improper rotation","a rotation","NOT a rotation")
 		if (sumd>=thresh && sumd<1e-4)
 			printf "	but, it is almost a rotation matrix, sum(|diff|) = %g\r",sumd
@@ -3673,20 +3300,17 @@ End
 
 
 // fix up a matrix so that it is exactly a rotation matrix, not just close to one
-Function SquareUpMatrix(mat)
+ThreadSafe Function SquareUpMatrix(mat)
 	Wave mat
 
-	Wave vec0=$MakeUnique3Vector($"")
-	Wave vec1=$MakeUnique3Vector($"")
-	Wave vec2=$MakeUnique3Vector($"")
-	Variable err
+	Make/N=3/FREE/D vec0, vec1, vec2
 	vec0 = mat[p][0]
 	vec1 = mat[p][1]
 	vec2 = mat[p][2]
 	Variable norm0=norm(vec0), norm1=norm(vec1), norm2=norm(vec2)
 
 	// Start with the longest vector, and assume it is correct
-	if (norm0>=norm1 && norm0>=norm2)	// X is longest
+	if (norm0>=norm1 && norm0>=norm2)		// X is longest
 		Cross vec0,vec1							// Z = X x Y
 		Wave W_Cross=W_Cross
 		vec2 = W_Cross
@@ -3698,7 +3322,7 @@ Function SquareUpMatrix(mat)
 		vec0 = W_Cross
 		Cross vec0,vec1							// Z = X x Y
 		vec2 = W_Cross
-	else											// Z is longest
+	else												// Z is longest
 		Cross vec2,vec0							// Y = Z x X
 		Wave W_Cross=W_Cross
 		vec1 = W_Cross
@@ -3706,6 +3330,7 @@ Function SquareUpMatrix(mat)
 		vec0 = W_Cross
 	endif
 
+	Variable err
 	err = normalize(vec0)
 	err += normalize(vec1)
 	err += normalize(vec2)
@@ -3713,15 +3338,15 @@ Function SquareUpMatrix(mat)
 	mat[][1] = vec1[p]
 	mat[][2] = vec2[p]
 
-	err = ( notRotationMatrix(mat) != 0 )		// 0 is a rotation matrix
-	KillWaves/Z vec0,vec1,vec2,W_Cross
+	err = ( notRotationMatrix(mat) != 0 )	// 0 is a rotation matrix
+	KillWaves/Z W_Cross
 	return numtype(err)
 End
 
 
-Function EulerMatrix(alpha,bet,gam)			// Make the rotation matrix M_Euler from Euler angles (degree)
-	Variable alpha,bet,gam						// Euler angles, passed as degrees
-	alpha *= PI/180								// need radians internally
+ThreadSafe Function EulerMatrix(alpha,bet,gam)	// Make the rotation matrix M_Euler from Euler angles (degree)
+	Variable alpha,bet,gam			// Euler angles, passed as degrees
+	alpha *= PI/180					// need radians internally
 	bet *= PI/180
 	gam *= PI/180
 	Make/N=(3,3)/O/D M_Euler
@@ -3744,27 +3369,27 @@ Function EulerMatrix(alpha,bet,gam)			// Make the rotation matrix M_Euler from E
 End
 
 
-Function rotationAboutX(theta,rot)				// make a rotation matrix about X axis
-	Variable theta									// rotation angle (radian)
-	Wave rot										// a 3x3 matrix
+ThreadSafe Function rotationAboutX(theta,rot)	// make a rotation matrix about X axis
+	Variable theta						// rotation angle (radian)
+	Wave rot								// a 3x3 matrix
 	Variable c=cos(theta), s=sin(theta)
 	rot[0][0] = 1;		rot[0][1] = 0;		rot[0][2] = 0
 	rot[1][0] = 0;		rot[1][1] = c;		rot[1][2] = -s
 	rot[2][0] = 0;		rot[2][1] = s;		rot[2][2] = c
 End
 //
-Function rotationAboutY(theta,rot)				// make a rotation matrix about Y axis
-	Variable theta									// rotation angle (radian)
-	Wave rot										// a 3x3 matrix
+ThreadSafe Function rotationAboutY(theta,rot)	// make a rotation matrix about Y axis
+	Variable theta						// rotation angle (radian)
+	Wave rot								// a 3x3 matrix
 	Variable c=cos(theta), s=sin(theta)
 	rot[0][0] = c;			rot[0][1] = 0;		rot[0][2] = s
 	rot[1][0] = 0;		rot[1][1] = 1;		rot[1][2] = 0
 	rot[2][0] = -s;		rot[2][1] = 0;		rot[2][2] = c
 End
 //
-Function rotationAboutZ(theta,rot)				// make a rotation matrix about Z axis
-	Variable theta									// rotation angle (radian)
-	Wave rot										// a 3x3 matrix
+ThreadSafe Function rotationAboutZ(theta,rot)	// make a rotation matrix about Z axis
+	Variable theta						// rotation angle (radian)
+	Wave rot								// a 3x3 matrix
 	Variable c=cos(theta), s=sin(theta)
 	rot[0][0] = c;			rot[0][1] = -s;		rot[0][2] = 0
 	rot[1][0] = s;			rot[1][1] = c;			rot[1][2] = 0
@@ -3772,16 +3397,16 @@ Function rotationAboutZ(theta,rot)				// make a rotation matrix about Z axis
 End
 
 // ==================================== End of Math Items =====================================
-//=======================================================================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// ================================ Start of Geometry Sub-Panel =================================
+// ============================================================================================
+// =============================== Start of Geometry Sub-Panel ================================
 
 Function MakeGeometryParametersPanel(strStruct)
-	String strStruct													// optional passed value of geo structure, this is used if passed
-	if (strlen(WinList("GeometrySet",";","WIN:64")))			// window alreay exits, bring it to front
+	String strStruct												// optional passed value of geo structure, this is used if passed
+	if (strlen(WinList("GeometrySet",";","WIN:64")))	// window alreay exits, bring it to front
 		DoWindow/F GeometrySet
 		return 0
 	endif
@@ -3792,19 +3417,19 @@ Function MakeGeometryParametersPanel(strStruct)
 End
 //
 Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)
-	String strStruct													// optional passed value of geo structure, this is used if passed
+	String strStruct												// optional passed value of geo structure, this is used if passed
 	String hostWin													// name of home window
-	Variable left, top													// offsets from the left and top
+	Variable left, top											// offsets from the left and top
 
 	Init_microGeo()
-	NewDataFolder/O root:Packages:geometry:PanelValues			// ensure that the needed data folders exist
+	NewDataFolder/O root:Packages:geometry:PanelValues	// ensure that the needed data folders exist
 
 	STRUCT microGeometry g
 	if (strlen(strStruct)>0)
-		StructGet/S/B=2 g, strStruct								// found structure information, load into geo
+		StructGet/S/B=2 g, strStruct							// found structure information, load into geo
 		Variable/G root:Packages:geometry:PanelValues:dirty=1	// for passed structure
 	else
-		FillGeometryStructDefault(g)								//fill the geometry structure with current values
+		FillGeometryStructDefault(g)							//fill the geometry structure with current values
 		Variable/G root:Packages:geometry:PanelValues:dirty=0
 	endif
 
@@ -4126,35 +3751,6 @@ Function GeoPanelVarChangedProc(sva) : SetVariableControl
 	return 0
 End
 //
-//Function SetDetectorColorProc(sva) : SetVariableControl
-//	STRUCT WMSetVariableAction &sva
-//	if (sva.eventCode!=2)			// only process "Enter key"
-//		return 0
-//	endif
-//
-//	SetDrawLayer/W=microPanel#geoPanel/K ProgBack
-//	strswitch(ReplaceString(",",sva.sval,""))
-//		case "PE1621 723-3335":				// Orange
-//			SetVariable $(sva.ctrlName) win=$(sva.win), labelBack=(65535,43688,32768)
-//			SetDrawEnv/W=microPanel#geoPanel linethick=8, linefgc= (65535,43688,32768)
-//			DrawLine/W=microPanel#geoPanel 1,30,1,230
-//			break
-//		case "PE0820 763-1807":				// Yellow
-//			SetVariable $(sva.ctrlName) win=$(sva.win), labelBack=(65535,65535,0)
-//			SetDrawEnv/W=microPanel#geoPanel linethick=8, linefgc= (65535,65535,0)
-//			DrawLine/W=microPanel#geoPanel 1,30,1,230
-//			break
-//		case "PE0820 763-1850":				// Purple
-//			SetVariable $(sva.ctrlName) win=$(sva.win), labelBack=(65535,30000,65535)
-//			SetDrawEnv/W=microPanel#geoPanel linethick=8, linefgc= (65535,30000,65535)
-//			DrawLine/W=microPanel#geoPanel 1,30,1,230
-//			break
-//		default:
-//			SetVariable $(sva.ctrlName) win=$(sva.win), labelBack=0
-//	endswitch
-//	return 0
-//End
-//
 Function SetDetectorColorProc(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
 	if (sva.eventCode!=2)			// only process "Enter key"
@@ -4356,9 +3952,6 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 			endif
 			FUNCREF fileTime2EpochProto func=$("fileTime2Epoch"+SelectString(exists("fileTime2Epoch")==6,"Proto",""))
 			epoch = func(StringByKey("file_time",note(image),"="))
-//			#if (exists("fileTime2Epoch")==6)
-//				epoch = fileTime2Epoch(StringByKey("file_time",note(image),"="))
-//			#endif
 		else
 			Variable fnum
 			String GrandImageFileFilter="HDF Files (*.h5, *.hdf5, *.hdf):.h5,.hdf5,.hdf,;SPE Files (*.SPE):.SPE;TIFF Files (*.tif,*.tiff):.tif,.tiff;All Files:.*;"
@@ -4394,7 +3987,6 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 		GeoPanelDetectorDisable(B_Struct.win)
 		return 0
 	elseif (stringmatch(ctrlName,"buttonFillFromFile"))
-		// if (ReadGeoFromKeyFile("","home",g))
 		if (ReadGeoFromfile("","home",g))				// fill g with values from file
 			return 1
 		endif
@@ -4618,7 +4210,7 @@ Static Function SetGeometryStructToPanelGlobals(g)		// set structure to the valu
 	return 0
 End
 
-//=======================================================================================
+// ============================================================================================
 
 // With an Igor epoch, retrieve the geo data form the web server
 Function GeoFromWeb(epoch,gIn)
@@ -4729,10 +4321,6 @@ Function GeoFromEPICS(gIn)	//fill the geometry structure from EPICS (uses caget)
 			item = item[n,Inf]
 		endif
 		item = ReplaceString(".RVAL=",item,"=")
-//		Variable len = strlen(item)
-//		if (strsearch(item[len-5,len-1],".RVAL",0)==0)		// remove trailing ".RVAL"
-//			item = item[0,len-6]
-//		endif
 		pvList += item+";"
 	endfor
 
@@ -4748,9 +4336,6 @@ Function GeoFromEPICS(gIn)	//fill the geometry structure from EPICS (uses caget)
 	g.s.O[0] = NumberByKey("SampleOriginX",pvList,"=")
 	g.s.O[1] = NumberByKey("SampleOriginY",pvList,"=")
 	g.s.O[2] = NumberByKey("SampleOriginZ",pvList,"=")
-//	if (numtype(g.s.O[0] + g.s.O[1] + g.s.O[2]))
-//		g.s.O[0] = 0;	g.s.O[1] = 0;	g.s.O[2] = 0
-//	endif
 
 	g.Ndetectors = round(NumberByKey("Ndetectors",pvList,"="))
 	for (i=0;i<MAX_Ndetectors;i+=1)
@@ -5022,13 +4607,13 @@ Function/S protoEPICS_putStr(pv,str)							// proto function for EPICS_put_PV_st
 	return "ERROR -- EPICS not available, nothing changed"
 End
 
-// ================================= End of Geometry Sub-Panel ==================================
-//=======================================================================================
+// ================================ End of Geometry Sub-Panel =================================
+// ============================================================================================
 
 
 
-//=======================================================================================
-// ======================================= Start of Init =======================================
+// ============================================================================================
+// ====================================== Start of Init =======================================
 
 Function Init_microGeo()
 	if (NumVarOrDefault("root:Packages:geometry:geoInited",0))
@@ -5043,24 +4628,8 @@ endif
 	NewDataFolder/O root:Packages						// ensure Packages exists
 	NewDataFolder/O root:Packages:geometry			// ensure geometry exists
 	NewDataFolder/O root:Packages:micro				// ensure micro exists
-	Variable/G root:Packages:geometry:geoInited=0		// flag that initialization was called successsfully
+	Variable/G root:Packages:geometry:geoInited=0	// flag that initialization was called successsfully
 	NVAR geoInited=root:Packages:geometry:geoInited
-
-	Make/N=3/O/D root:Packages:geometry:pixel2q_ki, root:Packages:geometry:pixel2q_kout
-	Make/N=3/O/D root:Packages:geometry:q2pixel_qhat,root:Packages:geometry:q2pixel_ki
-	Make/N=3/O/D root:Packages:geometry:q2pixel_kout
-
-//	Make/N=3/O/D root:Packages:geometry:pixel2depth_xyzDetector
-//	Make/N=3/O/D root:Packages:geometry:GeoUpdate_ki
-
-	Make/N=3/O/D root:Packages:geometry:depth_S, root:Packages:geometry:depth_delta
-	Make/N=3/O/D root:Packages:geometry:depth_a, root:Packages:geometry:depth_nhat
-	Make/N=3/O/D root:Packages:geometry:depth_wo, root:Packages:geometry:depth_C
-	Make/N=3/O/D root:Packages:geometry:depth_sigma
-	Make/N=(3,3)/O/D root:Packages:geometry:depth_rhoW, root:Packages:geometry:depth_mat
-	Make/N=3/O/D root:Packages:geometry:depth_Rvec, root:Packages:geometry:depth_ki
-	Make/N=3/O/D root:Packages:geometry:depth_pixel, root:Packages:geometry:depth_wc
-	Make/N=(3,3)/O/D root:Packages:geometry:depth_rhoX
 
 	Make/O root:Packages:micro:X1correctionWave={0.31,0.32,0.2,0.09,-0.1,-0.3,-0.44,-0.47,-0.42,-0.37,-0.32,-0.19,-0.12,-0.07,0.01,0.17,0.35,0.52,0.67,0.73,0.69,0.53,0.32,0.13,-0.01,-0.13,-0.18,-0.18,-0.18,-0.16,-0.26,-0.25,-0.29,-0.38,-0.41,-0.38,-0.33,-0.18,0.01,0.23,0.42}
 	Make/O root:Packages:micro:Y1correctionWave={0.37,0.38,0.35,0.26,0.1,-0.06,-0.22,-0.31,-0.36,-0.35,-0.62,-0.51,-0.39,-0.28,-0.19,-0.03,0.11,0.25,0.34,0.38,0.38,0.34,0.28,0.17,0.04,-0.09,-0.22,-0.33,-0.4,-0.41,-0.39,-0.36,-0.28,-0.19,-0.08,0.06,0.2,0.3,0.4,0.54,0.66}
@@ -5105,17 +4674,6 @@ Function LoadStandardDistortion()
 	printf "¥¥loaded standard distortion from '%s' into file root:Packages:geometry:xymap\r",fileName
 	return 0
 End
-//Function LoadStandardDistortion()
-//	String str= FunctionPath("LoadStandardDistortion")
-//	if (strlen(str)<2)
-//		return 1
-//	endif
-//	String fileName = ParseFilePath(1, str, ":", 1, 0)+"xymap.itx"
-//
-//	DoAlert 0, "Distortion not yet implemented"
-//	printf "¥¥ Distortion not yet implemented\r"
-//	return 1
-//End
 
 Function MakeDistortionMap()
 	if (Exists("root:Packages:geometry:xymap")!=1)
@@ -5223,5 +4781,5 @@ Function/S loadCCDCorrectionTable(mName)
 	return GetWavesDataFolder(xymap,2)
 End
 
-// ======================================== End of Init =======================================
-//=======================================================================================
+// ======================================= End of Init ========================================
+// ============================================================================================
