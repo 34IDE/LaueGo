@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -75,13 +75,16 @@ Function FWHM_Coefs([type,printIt])
 End
 
 
-Function FindSimplePeakParameters(yw,xw,[W_coef,printIt])
+Function FindSimplePeakParameters(yw,xw,[W_coef,useBkg,printIt])
 	// a user command to get Simple peak stats from yw (or yw vs xw), and probably print them
 	// it also creates the W_coef & W_sigma waves containing {bkg, amplitude, x0, FWHM, net, COM}
 	// returns 0 if all went OK, 1 on an error
 	Wave yw,xw			// yw vs xw, or just yw using scaling
 	Wave/D W_coef		// wave to hold the results, one will be created if not present
+	Variable useBkg											// if true, find a background, if false NO Background
 	Variable printIt
+	useBkg = ParamIsDefault(useBkg) ? NaN : useBkg
+	useBkg = numtype(useBkg) ? 1 : !(!useBkg)		// generic default is to use the background
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
@@ -89,10 +92,12 @@ Function FindSimplePeakParameters(yw,xw,[W_coef,printIt])
 		String yName,xName
 		Prompt yName, "input wave", popup, WaveList("*",";","DIMS:1")
 		Prompt xName, "input Xwave", popup, "-calculated-;"+WaveList("*",";","DIMS:1")
-		DoPrompt "wave(s) defining peak", yName,xName
+		Prompt useBkg, "background", popup, "find the background;no background"
+		DoPrompt "wave(s) defining peak", yName,xName,useBkg
 		if (V_flag)
 			return 1
 		endif
+		useBkg = useBkg==1
 		Wave yw=$yName, xw=$xName
 		printIt = 1
 	endif
@@ -109,7 +114,7 @@ Function FindSimplePeakParameters(yw,xw,[W_coef,printIt])
 		return 1
 	endif
 
-	Wave Wc = CalcSimplePeakParameters(yw,xw)
+	Wave Wc = CalcSimplePeakParameters(yw,xw,useBkg)
 	Variable Np=DimSize(Wc,0)
 	if (WaveExists(W_coef))
 		Redimension/N=(Np)/D W_coef
@@ -130,10 +135,12 @@ Function FindSimplePeakParameters(yw,xw,[W_coef,printIt])
 	return 0
 End
 //
-ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw vs xw, put results into W_coef
+ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg)	// look at peak in yw vs xw, put results into W_coef
 	// calculate the peak stats for peak in yw, or yw vs xw, and returns result as FREEE wave
 	// Wc = {bkg, amplitude, x0, FWHM, net, COM}   Simple peak stats
 	Wave yw,xw
+	Variable useBkg											// if true, find a background, if false NO Background
+	useBkg = numtype(useBkg) ? 1 : !(!useBkg)		// generic default is to use the background
 	if (!WaveExists(yw))
 		return $""
 	endif
@@ -149,7 +156,7 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw)	// look at peak in yw v
 	Variable dx=DimDelta(yw,0), xoff=DimOffset(yw,0), N=DimSize(yw,0)
 	Variable bkg, amp, center, FWHM, net, COM		// peak parameters to find
 	COM = computeCOM(yw,xw)								// computes center of mass
-	bkg = ( yw[0] + yw[N-1] ) / 2
+	bkg = useBkg ? ( yw[0] + yw[N-1] ) / 2 : 0
 	WaveStats/Q yw
 	level = ((V_max+V_min)/2)								// level of the half-width
 	Variable dip=abs(V_max-bkg) < abs(V_min-bkg)	//a negative peak, a dip
@@ -568,7 +575,7 @@ End
 
 Function FWHM_peak(ww)
 	Wave ww
-	Wave Wc = CalcSimplePeakParameters(ww,$"")	// look at pea in yw vs xw, put results into W_coef
+	Wave Wc = CalcSimplePeakParameters(ww,$"",0)	// look at pea in yw vs xw, put results into W_coef
 	if (!WaveExists(Wc))
 		return NaN
 	endif
@@ -599,7 +606,7 @@ Function FWHM_peakXY(wy,wx)
 	if (!WaveExists(wx))
 		return NaN
 	endif
-	Wave Wc = CalcSimplePeakParameters(wy,wx)	// look at pea in yw vs xw, put results into W_coef
+	Wave Wc = CalcSimplePeakParameters(wy,wx,0)	// look at pea in yw vs xw, put results into W_coef
 	if (!WaveExists(Wc))
 		return NaN
 	endif
