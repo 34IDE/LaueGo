@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.31
+#pragma version = 3.32
 // #pragma hide = 1
 
 Menu "Graph"
@@ -26,7 +26,7 @@ End
 //		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
 //	8	Contains lots of utility stuff
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
-//		keyInList() & MergeKeywordLists(), "key=value" list utilities
+//		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
 //		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
@@ -53,6 +53,7 @@ End
 //		dateStr2ISO8601Str(), convert a date to an ISO 8601 format
 //		ISOtime2niceStr(iso), convert ISO8601 string to a nice format for graph annotations
 //		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
+//		epoch2ISOtime(seconds), convert an Igor epoch (in seconds) to an ISO8601 format string
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
@@ -1499,6 +1500,29 @@ ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepSt
 End
 
 
+//	returns a list containing only the keys from keyVals, keySepStr defaults to ":", listSepStr to ";"
+ThreadSafe Function/S keysInList(keyVals,keySepStr,listSepStr)
+	String keyVals					// a key=val; list
+	String keySepStr
+	String listSepStr
+	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)
+	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)
+
+	Variable i0,i, N=	ItemsInList(keyVals,listSepStr)
+	String key, out=""
+	for (i=0;i<N;i+=1)
+		key = StringFromList(i,keyVals,listSepStr)
+		i0 = strsearch(key,keySepStr,0)
+		if (i0==-1)
+			out += key+listSepStr
+		elseif(i0>0)
+			out += key[0,i0-1]+listSepStr
+		endif
+	endfor
+	return out
+End
+
+
 Function/T AxisLabelFromGraph(gName,w,axis)	// returns specified axis label for the top graph containing the wave
 	String gName										// name of graph, use "" for the top graph
 	Wave w											// if w does not exist, use the first wave (image or trace) in the graph gName
@@ -2464,10 +2488,28 @@ Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for g
 	return out
 End
 
+Function/T epoch2ISOtime(epoch)			// convert an Igor epoch (in seconds) to an ISO8601 format
+	Variable epoch
+
+	Variable s = mod(epoch,60)			// number of seconds
+	Variable frac=roundSignificant(mod(epoch,1),5)// fractional seconds
+	Variable places=placesOfPrecision(frac)			// places of precision in frac
+
+	String out=Secs2Date(epoch,-2)+"T"					// date part with "T"
+	if (s==0 && frac==0)
+		out += Secs2Time(epoch,2)							// no seconds, just hr:min
+	elseif (frac==0)
+		out += Secs2Time(epoch,3)							// seconds, but no fracitonal seconds
+	else
+		out += Secs2Time(epoch,3,places)				// fractional seconds
+	endif
+	return out
+End
+
 
 ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector to s string suitable for printing, does not include name
 	Wave w										// 1d wave to print
-	Variable places								// number of places, for default, use negative or NaN
+	Variable places							// number of places, for default, use negative or NaN
 	Variable maxPrint							// maximum number of elements to print, defaults to 20
 	Variable bare								// if bare is TRUE, then suppress the "{}" in the output
 	String sep									// optional separator, default is ",  "   a comma and 2 spaces
