@@ -1,13 +1,15 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.22
-#include "Elements", version>=1.4
-#include "CromerLiberman", version>=1.6
+#pragma version = 2.23
+#include "Elements", version>=1.76
+#include "CromerLiberman", version>=1.9
 
 //	Sept 14, 2005
 //		also changed Get_MuFormula() and MuOverRhoFormula() so they will not prompt if called by another function
 //	Apr 30, 2014
 //		added the USE_OBSOLETE, added some comments, changed line termination to CR -> LF
+//	June 4, 2014
+//		updated a few things
 
 
 //	#define USE_OBSOLETE		// use this define to use the obsolete functions later in this procedure
