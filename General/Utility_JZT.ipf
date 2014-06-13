@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.32
+#pragma version = 3.33
 // #pragma hide = 1
 
 Menu "Graph"
@@ -11,7 +11,8 @@ Menu "Layout"
 	"Append Multiple Graphs to a Layout",AppendGraph2LayoutN(NaN,"","")
 End
 Menu "Data"
-	"Generic Wave Note Info",/Q,GenericWaveNoteInfo($"","")
+//	"Generic Wave Note Info",/Q,GenericWaveNoteInfo($"","")
+	"Generic Wave Note Info", GenericWaveNoteInfo($"","")
 End
 
 // Sections:
