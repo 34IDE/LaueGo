@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.33
+#pragma version = 3.34
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1832,7 +1832,7 @@ End
 
 
 // make saturated color RGB from point (dx,dy) on circle of radius rmax. RGB scaled to rgbMax
-Function xy2saturatedColors(dx,dy,rmax,rgbMax,rgb)
+ThreadSafe Function xy2saturatedColors(dx,dy,rmax,rgbMax,rgb)
 	Variable dx,dy												// x,y location on the pole figure
 	Variable rmax												// max radius (default is 1)
 	Variable rgbMax											// scale for RGB values, usually 1 or 65535
@@ -2393,10 +2393,10 @@ Function StopAllTimers()
 End
 
 
-Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input date string and converts to ISO8601 format
+ThreadSafe Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input date string and converts to ISO8601 format
 	String dateStr								// something like "4/2/2010" or "2010-4-2"
 	String timeStr
-	Variable zoneHr, zoneMin					// the time zone in hours or minutes, OPTIONAL, (you can also use hour=6.5)
+	Variable zoneHr, zoneMin				// the time zone in hours or minutes, OPTIONAL, (you can also use hour=6.5)
 	timeStr = SelectString(ParamIsDefault(timeStr),timeStr,"")
 
 	Variable d1,d2,d3, dateSec
@@ -2412,7 +2412,7 @@ Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input
 		sprintf outStr,"%04d-%02d-%02d",d3,d1,d2
 	endif
 
-	if (strlen(timeStr))						// time was also passed
+	if (strlen(timeStr))					// time was also passed
 		Variable hour,minute,second
 		sscanf timeStr,"%d:%d:%d",hour,minute,second
 		if (V_flag<2)							// invalid time of day
@@ -2428,11 +2428,11 @@ Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input
 	hour = ParamIsDefault(zoneHr) ? 0 : zonehr	// decode the the time zone
 	minute = round(ParamIsDefault(zoneMin) ? 0 : zoneMin)
 	second = hour*3600 + 60*minute
-	if (abs(second)>24*3600)					// time zone > 24h????
+	if (abs(second)>24*3600)				// time zone > 24h????
 		return ""
 	endif
 	if ((!ParamIsDefault(zoneHr) || !ParamIsDefault(zoneMin)) && numtype(second)==0)	// have a time zone
-		if (mod(second/3600,1))				// have minutes
+		if (mod(second/3600,1))			// have minutes
 			zoneStr = Secs2Time(abs(second),2)
 			zoneStr = SelectString(second<0,"+","-")+zoneStr
 		else
@@ -2445,8 +2445,8 @@ Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input
 End
 
 
-Function ISOtime2IgorEpoch(iso)	// convert ISO8601 string to an Igor Epoch (error returns NaN)
-	String iso							// format     2013-10-02T01:22:35  (the seconds are optional)
+ThreadSafe Function ISOtime2IgorEpoch(iso)	// convert ISO8601 string to an Igor Epoch (error returns NaN)
+	String iso									// format     2013-10-02T01:22:35  (the seconds are optional)
 
 	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
 	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
@@ -2466,8 +2466,8 @@ Function ISOtime2IgorEpoch(iso)	// convert ISO8601 string to an Igor Epoch (erro
 End
 
 
-Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for graph annotations
-	String iso							// format     2013-10-02T01:22:35  (the seconds are optional)
+ThreadSafe Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for graph annotations
+	String iso									// format     2013-10-02T01:22:35  (the seconds are optional)
 
 	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
 	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
@@ -2489,10 +2489,10 @@ Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for g
 	return out
 End
 
-Function/T epoch2ISOtime(epoch)			// convert an Igor epoch (in seconds) to an ISO8601 format
+ThreadSafe Function/T epoch2ISOtime(epoch)			// convert an Igor epoch (in seconds) to an ISO8601 format
 	Variable epoch
 
-	Variable s = mod(epoch,60)			// number of seconds
+	Variable s = mod(epoch,60)							// number of seconds
 	Variable frac=roundSignificant(mod(epoch,1),5)// fractional seconds
 	Variable places=placesOfPrecision(frac)			// places of precision in frac
 
@@ -2680,66 +2680,66 @@ ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
 End
 
 
-Function SIprefix2factor(prefix)
+ThreadSafe Function SIprefix2factor(prefix)
 	String prefix
+	// return the product of the prefixes, e.g. "mp" returns 1e-15
+	// white space (anything <= a space) is ignored.
+	// for bad prefix values, (e.g. "v" or "3") returns NaN
+	// Note, internally I use "o" instead of "µ" since the NumberByKey() routine does not work with a key="µ"
+	// also note that all prefixes are case sensitive except for "H" and "K", which can be either upper or lower.
+	//		deci	= "d" = 0.1
+	//		centi	= "c" = 0.01
+	//		milli	= "m" = 1e-3
+	//		micro	= "µ" = 1e-6
+	//		nano	= "n" = 1e-9
+	//		pico	= "p" = 1e-12
+	//		femto	= "f" = 1e-15
+	//		atto	= "a" = 1e-18
+	//		zepto	= "z" = 1e-21
+	//		yocto	= "y" = 1e-24
+	//
+	//		hecto	= "H" = 100  (or "h")
+	//		kilo	= "K" = 1e3  (or "k")
+	//		Mega	= "M" = 1e6
+	//		Giga	= "G" = 1e9
+	//		Tera	= "T" = 1e12
+	//		Peta	= "P" = 1e15
+	//		Exa	= "E" = 1e18
+	//		Zeta	= "Z" = 1e21
+	//		Yotta	= "Y" = 1e24
 
-	Variable i, value=1
+	if (strsearch(prefix,"o",0)>=0)				// need to check for "o", which is also invalid
+		return NaN
+	endif
+	prefix = ReplaceString("µ",prefix,"o")	// NumberByKey() routine does not work with a key="µ", so use internally use "o" instead
+
+	String keyVals="d:0.1;c:0.01;m:1e-3;o:1e-6;n:1e-9;p:1e-12;f:1e-15;a:1e-18;z:1e-21;y:1e-24;"
+	keyVals += "h:100;H:100;k:1e3;K:1e3;M:1e6;G:1e9;T:1e12;P:1e15;E:1e18;Z:1e21;Y:1e24;"
+
+	Variable i, value
 	String ch
-	for (i=0;i<strlen(prefix);i+=1)
+	for (i=0,value=1; i<strlen(prefix); i+=1)
 		ch = prefix[i]
-
-		if (strlen(prefix)==0)								// no prefix
-			value *= 1
-		elseif (strsearch(ch,"d",0)==0)			// deci
-			value *= 1e-1
-		elseif (strsearch(ch,"c",0)==0)			// centi
-			value *= 1e-2
-		elseif (strsearch(ch,"m",0)==0)			// milli
-			value *= 1e-3
-		elseif (strsearch(ch,"µ",0)==0)			// micro
-			value *= 1e-6
-		elseif (strsearch(ch,"n",0)==0)			// nano
-			value *= 1e-9
-		elseif (strsearch(ch,"p",0)==0)			// pico
-			value *= 1e-12
-		elseif (strsearch(ch,"f",0)==0)			// femto
-			value *= 1e-15
-		elseif (strsearch(ch,"a",0)==0)			// atto
-			value *= 1e-18
-		elseif (strsearch(ch,"z",0)==0)			// zepto
-			value *= 1e-21
-		elseif (strsearch(ch,"y",0)==0)			// yocto
-			value *= 1e-24
-
-		elseif (strsearch(ch,"h",0,2)==0)		// hecto (h or H) is acceptable)
-			value *= 100
-		elseif (strsearch(ch,"k",0,2)==0)		// kilo (k or K is acceptable)
-			value *= 1e3
-		elseif (strsearch(ch,"M",0)==0)			// Mega
-			value *= 1e6
-		elseif (strsearch(ch,"G",0)==0)			// Giga
-			value *= 1e9
-		elseif (strsearch(ch,"T",0)==0)			// Tera
-			value *= 1e12
-		elseif (strsearch(ch,"P",0)==0)			// Peta
-			value *= 1e15
-		elseif (strsearch(ch,"E",0)==0)			// Exa
-			value *= 1e18
-		elseif (strsearch(ch,"Z",0)==0)			// Zeta
-			value *= 1e21
-		elseif (strsearch(ch,"Y",0)==0)			// Yotta
-			value *= 1e24
-
-		else												// unknown prefix char
-			value = NaN
+		if (char2num(ch)>32)
+			value *= NumberByKey(ch,keyVals,":",";",1)
 		endif
 	endfor
-
 	return value
 End
+//	Function test_SIprefix2factor()
+//		String chars=" dcmµnpfazyHhKkMGTPEZYv"
+//		Variable i
+//		for (i=0;i<strlen(chars);i+=1)
+//			printf " '%s'  %g\r",chars[i],SIprefix2factor(chars[i])
+//		endfor
+//		print " "
+//		print "following should be 1's"
+//		printf "%g, %g, %g, %g, %g, ", SIprefix2factor("cH"), SIprefix2factor("mk"), SIprefix2factor("µM"), SIprefix2factor("nG"), SIprefix2factor("pT")
+//		printf "%g, %g, %g, %g\r", SIprefix2factor("fP"), SIprefix2factor("aE"), SIprefix2factor("zZ"), SIprefix2factor("yY")
+//	End
 
 
-Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
+ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
 	Variable j
 	j = round(j)
 	//	if (j<1 || j>3999 || numtype(j))
@@ -2775,7 +2775,7 @@ Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO up
 	return ""
 End
 
-Function RomanNumeral2Int(str)	// convert a Roman Numeral string to an integer
+ThreadSafe Function RomanNumeral2Int(str)	// convert a Roman Numeral string to an integer
 	String str
 	if (strlen(str)<1)
 		return NaN
