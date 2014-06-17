@@ -423,6 +423,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		makeSum = makeSum==2
 		flatten = flatten==2
 		skipZeros = skipZeros==2
+		NoMovie = NoMovie == 2
 		moreFunc = SelectString(StringMatch(moreFunc,"-none-"),moreFunc,"")
 	endif
 	itype = WhichListItem(type, typeList)
