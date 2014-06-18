@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 1.76
+#pragma version = 1.77
 #pragma ModuleName=elements
 #include "MaterialsLocate"								// used to find the path to the materials files
 Constant MIN_LINE_SEPARATION_FRACTION = 0.15	// you can over ride this in your main procedure window.
@@ -50,6 +50,9 @@ Constant ELEMENT_Zmax = 116
 //
 //	Jun 25, 2013		1.75
 //		added FindBestElementFromEmissionLine(), to identify the element from a line
+//
+//	Jun 218, 2014		1.77
+//		modified FindBestElementFromEmissionLine(), added an excitation energy
 
 Menu "Analysis"
       Submenu "Element"
@@ -147,6 +150,9 @@ Function element2Z(symb)		// returns Z for an atomic symbol (NOT case sensitive)
 	symb[0,0] = UpperStr(symb[0,0])		// ensure first char is upper case
 	symb[1,1] = LowerStr(symb[1,1])		// and second character is lower
 	Variable iz = WhichListItem(symb,ELEMENT_Symbols)+1
+	if (!(iz>0))
+		iz = str2num(symb)
+	endif
 	return ((iz>0) ? iz : NaN)
 End
 
@@ -760,9 +766,10 @@ Function BindingEnergy(symb,edgeType)
 		return NaN
 	endif
 
-	Variable z=element2Z(symb)
+	Variable Z=element2Z(symb)
 	Wave/T edgeStrings=root:Packages:Elements:edgeStrings
-	Variable eV = NumberByKey(edgeType, edgeStrings[z])
+	Variable eV = NumberByKey(edgeType, edgeStrings[Z])
+	eV = numtype(Z) ? NaN : eV
 	if (topLevel)
 		printf "the %s(%s) edge is at %g eV\r",symb,edgeType,eV
 	endif
@@ -925,8 +932,33 @@ Function EmissionEnergies(symb,edgeType)		// display or return a single emission
 End
 
 
+// returns the edge name for a given emission line
+Function/T emissionEdgeName(emissionLine)
+	String emissionLine
+	//	emission					edge
+	//	Kxxx						K		Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3
+	//	Lb4, Lb3, Lg2,Lg3		L1
+	//	Lb1, Lg1 				L2
+	//	L1, La1, La2, Lb2		L3
+	//	Max						M5
+	//	Mbx						M4
+	String Lkeys="Lb4:L1;Lb3:L1;Lg2:L1;Lg3:L1;Lb1:L2;Lg1:L2;L1:L3;La1:L3;La2:L3;Lb2:L3"
+
+	emissionLine = emissionLine[0,2]			// only need first 3 characters
+	if (StringMatch(emissionLine,"K*"))
+		return "K"
+	elseif (StringMatch(emissionLine,"Ma*"))
+		return "M5"
+	elseif (StringMatch(emissionLine,"Mb*"))
+		return "M4"
+	endif
+	return StringByKey(emissionLine,Lkeys)
+End
+
 Static Function/T emissionLineList(Z)			// get list of lines to fit
 	Variable Z
+	// retruns a ";" separated list, each element is of form "eV:strength:name"
+	// where the strength is relative to 100, and name is the name of the emission line
 
 	Variable minSep = NumVarOrDefault("root:Packages:Elements:defaultPeakFWHM",0)*MIN_LINE_SEPARATION_FRACTION
 	STRUCT EmissionLineStruct em
@@ -948,21 +980,21 @@ Static Function/T emissionLineList(Z)			// get list of lines to fit
 	Sort eV0, eV0,rel0,name0
 	String name,names=""
 	Variable i, eV, eVi,deV,relsum=0, eVsum=0, m=0, Nsum=0
-	for (i=N-1; i>=0; i-=1)				// combine nearby lines into one line
+	for (i=N-1; i>=0; i-=1)		// combine nearby lines into one line
 		eVi = eV0[i]
-		if (Nsum==0)						// a new point
+		if (Nsum==0)					// a new point
 			eV = eVi
 			eVsum = eVi
 			relsum = rel0[i]
 			name = name0[i]
 			Nsum = 1
-		elseif ((eV-eVi)<minSep)		// too close, accumulate
+		elseif ((eV-eVi)<minSep)	// too close, accumulate
 			name += "+"+name0[i]
 			eVsum += eVi
 			relsum += rel0[i]
 			Nsum += 1
 		else								// a big gap, save last point & reset next one			
-			eVs[m] = eVsum / Nsum		// average energy
+			eVs[m] = eVsum / Nsum	// average energy
 			rels[m] = relsum
 			names += name+";"
 			m += 1
@@ -974,14 +1006,14 @@ Static Function/T emissionLineList(Z)			// get list of lines to fit
 			Nsum = 1
 		endif
 	endfor
-	eVs[m] = eVsum / Nsum				// save the last point
+	eVs[m] = eVsum / Nsum			// save the last point
 	rels[m] = relsum
 	names += name+";"
 	N = m+1
 	Redimension/N=(N) eVs,rels
 	Reverse eVs,rels
 	names = reverseList(names)
-	String out=""							// form the string
+	String out=""						// form the string
 	for (i=0;i<N;i+=1)
 		out += num2str(eVs[i])+":"+num2str(rels[i])+":"+StringFromList(i,names)+";"
 	endfor
@@ -1144,21 +1176,23 @@ End
 //  ============================================================================  //
 //  ========================== Start of Find Element From Line ===========================  //
 
-Function/T FindBestElementFromEmissionLine(eV,acceptableLines,[dE])		// searches for the right element
+Function/T FindBestElementFromEmissionLine(eV,acceptableLines,[dE,excitation])	// searches for the right element
 	Variable eV
-	String acceptableLines		// acceptable lines, check all if "",  examples: "Ka*;Kb*", or "K*", "", "Lb1",  or "*L*"
+	String acceptableLines	// acceptable lines, check all if "",  examples: "Ka*;Kb*", or "K*", "", "Lb1",  or "*L*"
 	Variable dE					// resolution, find strongest line within eV±dE, for dE=0, just use closest line
+	Variable excitation		// excitation energy (eV), defaults to Inf
 	dE = ParamIsDefault(dE) || numtype(dE) || dE<0? 0 : dE
+	excitation = ParamIsDefault(excitation) || !(excitation>0) ? Inf : excitation
 
 	String list, line, item, lineMin=""
 	Variable dEmin=Inf,eMin,Zmin, strengthBest=-Inf
 	Variable iline, Z, eni, strength, deltaE, better
-	for (Z=1;Z<=92;Z+=1)									// for each element
+	for (Z=1;Z<=92;Z+=1)											// for each element
 		list = emissionLineList(Z)
-		for (iline=0;iline<ItemsInList(list);iline+=1)		// for each line in an element
-			item = StringFromList(iline,list)				// a single line for element Z
-			eni = str2num(StringFromList(0,item,":"))	// energy of this line
-			line = StringFromList(2,item,":")				// name of this line
+		for (iline=0;iline<ItemsInList(list);iline+=1)	// for each line in an element
+			item = StringFromList(iline,list)					// a single line for element Z
+			eni = str2num(StringFromList(0,item,":"))		// energy of this line
+			line = StringFromList(2,item,":")					// name of this line
 			strength = str2num(StringFromList(1,item,":"))
 			if (!acceptableLine(acceptableLines,line))		// if line is not of desired type, continue
 				continue
@@ -1167,6 +1201,9 @@ Function/T FindBestElementFromEmissionLine(eV,acceptableLines,[dE])		// searches
 			deltaE = abs(eni-eV)
 			better = (deltaE<dE && strength>strengthBest)	// eni is close enough, look for best line, dE>0
 			better = better || (dE==0 && deltaE<dEmin)		// find closest line, no width specified
+			if (numtype(excitation)==0)							// check that we can excite this line
+				better = BindingEnergy(num2str(Z),emissionEdgeName(line)) >= excitation ? better : 0
+			endif
 			if (better)
 				dEmin = deltaE
 				eMin = eni
