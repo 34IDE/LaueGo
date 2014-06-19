@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.11
+#pragma version = 2.12
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -324,7 +324,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		endif
 	endif
 
-	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range(s) to scan")	// display a progress bar
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range(s) to scan, does not update.")	// display a progress bar
 	Variable ask = (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))	// range is empty, need to ask
 	ask = ask || numtype(I0normalize)
 	if (ask) 	// if range1 is empty, get the full range from the directory
@@ -335,8 +335,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				range2 = StringFromList(1,str)
 			endif
 		endif
-		String range1Prompt = SelectString(strlen(range1)>253,range1,"(range 1 is too long)")
-		String range2Prompt = SelectString(strlen(range2)>253,range2,"(range 2 is too long)")
+		String range1Prompt = SelectString(strlen(range1)>253,range1,"(range 1 is too long to show)")
+		String range2Prompt = SelectString(strlen(range2)>253,range2,"(range 2 is too long to show)")
 		Prompt range1Prompt,"range1 of image file numbers to use"
 		Prompt range2Prompt,"range2 of image file numbers to use"
 		I0normalize = numtype(I0normalize) ? 1 : I0normalize
@@ -353,8 +353,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		endif
 		I0normalize -= 1
 		printIt = 1
-		range1 = SelectString(StringMatch(range1Prompt,"(range 1 is too long)"),range1Prompt,range1)
-		range2 = SelectString(StringMatch(range2Prompt,"(range 2 is too long)"),range2Prompt,range2)
+		range1 = SelectString(StringMatch(range1Prompt,"(range 1 is too long to show)"),range1Prompt,range1)
+		range2 = SelectString(StringMatch(range2Prompt,"(range 2 is too long to show)"),range2Prompt,range2)
 	endif
 
 	if (printIt)
@@ -403,8 +403,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	fileFullFmt += nameFmt
 
-	Variable microSec0 = stopMSTimer(-2)				// used for timing, number of µsec
-	Variable microSec = microSec0
 	STRUCT microGeometry geo
 	FillGeometryStructDefault(geo)
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
@@ -418,7 +416,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 
 	// open the first file in the range, to get info about the images
-	ProgressPanelUpdate(progressWin,0,status="setting up")
 	String name = fullNameFromFmt(fileFullFmt,str2num(range1),str2num(range2),NaN)
 	Wave image = $(LoadGenericImageFile(name))		// load first image in range
 	if (!WaveExists(image))
@@ -458,11 +455,13 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		printf "about to examine %d images\r",N1N2
 	endif
 	// for all the N1*N2 files (go over range), store the energies, X position, H position, and indicies
+	Variable microSec0 = stopMSTimer(-2)				// used for timing, number of µsec
+	Variable microSec = microSec0
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N1N2)+" image headers",resetClock=1)
 	Variable i,m1,m2
 	for (m1=str2num(range1), i=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range1
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2))		// loop over range2
-			if (mod(i,20)==0)
+			if (mod(i,50)==0)
 				if (ProgressPanelUpdate(progressWin,i/N1N2*100))		// update progress bar
 					DoWindow/K $progressWin									// done with status window
 					print "User abort"
@@ -1588,29 +1587,38 @@ Static Function/T getNranges(pathName,nameFmt,[printIt])
 		return ""
 	endif
 
-	String dlist=directory(pathName), name
+	String dlist=directory(pathName), name, subStr
+	Variable p0,p1	, iN							// pointers into dlist, iN is number of Items in subStr
+	Variable dlen = strlen(dlist)
 	Variable i,m,N=ItemsInList(dlist), i0,i1,i2
 	Make/N=(N,Nranges)/U/I/FREE ns
-	for (i=0,m=0;i<N;i+=1)
-		name = StringFromList(i,dlist)
-		if (Nranges==3)
-			sscanf name,nameFmt, i0,i1,i2
-		elseif (Nranges==2)
-			sscanf name,nameFmt, i0,i1
-		else
-			sscanf name,nameFmt, i0
-		endif
-		if (V_flag==Nranges)
-			switch(Nranges)
-				case 3:
-					ns[m][2] = i2
-				case 2:
-					ns[m][1] = i1
-				case 1:
-					ns[m][0] = i0
-			endswitch
-			m += 1								// increment pointer into fileList[]
-		endif
+	for (p0=0,m=0; p0<dlen; p0=p1+1)		// need to break up dlist into chunks because of StringFromList()
+		p1 = p0 + 10000							// work in chunks of 10000
+		p1 = strsearch(dlist,";",p1)
+		p1 = p1<0 ? dlen-1 : p1
+		subStr = dlist[p0,p1]
+		iN = ItemsInList(subStr)
+		for (i=0; i<iN; i+=1)					// fill this chunk
+			name = StringFromList(i,subStr)	// StringFromList() is REALLY slow for big lists
+			if (Nranges==3)
+				sscanf name,nameFmt, i0,i1,i2
+			elseif (Nranges==2)
+				sscanf name,nameFmt, i0,i1
+			else
+				sscanf name,nameFmt, i0
+			endif
+			if (V_flag==Nranges)
+				switch(Nranges)
+					case 3:
+						ns[m][2] = i2
+					case 2:
+						ns[m][1] = i1
+					case 1:
+						ns[m][0] = i0
+				endswitch
+				m += 1								// increment pointer into fileList[]
+			endif
+		endfor
 	endfor
 	N = m
 	Redimension/N=(N,-1) ns				// trim to correct length
@@ -1641,6 +1649,74 @@ Static Function/T getNranges(pathName,nameFmt,[printIt])
 	endif
 	return rangeOut
 End
+//Static Function/T getNranges(pathName,nameFmt,[printIt])
+//	String pathName	// probably 'imagePath'
+//	String nameFmt		// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
+//	Variable printIt
+//	printIt = ParamIsDefault(printIt) ? NaN : printIt
+//	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))<1 : !(!printIt)
+//
+//	Variable Nranges = calcNranges(nameFmt)	// number of ranges needed
+//	if (Nranges>3)
+//		print "ERROR -- getNranges(), only know how to deal with up to 3 ranges"
+//		return ""
+//	elseif (Nranges<1)
+//		return ""
+//	endif
+//
+//	String dlist=directory(pathName), name
+//	Variable i,m,N=ItemsInList(dlist), i0,i1,i2
+//	Make/N=(N,Nranges)/U/I/FREE ns
+//	for (i=0,m=0;i<N;i+=1)
+//		name = StringFromList(i,dlist)
+//		if (Nranges==3)
+//			sscanf name,nameFmt, i0,i1,i2
+//		elseif (Nranges==2)
+//			sscanf name,nameFmt, i0,i1
+//		else
+//			sscanf name,nameFmt, i0
+//		endif
+//		if (V_flag==Nranges)
+//			switch(Nranges)
+//				case 3:
+//					ns[m][2] = i2
+//				case 2:
+//					ns[m][1] = i1
+//				case 1:
+//					ns[m][0] = i0
+//			endswitch
+//			m += 1								// increment pointer into fileList[]
+//		endif
+//	endfor
+//	N = m
+//	Redimension/N=(N,-1) ns				// trim to correct length
+//
+//	Make/N=(N)/U/I/FREE ni
+//	String rangeOut="", list
+//	Variable k,ii
+//	for (i=0;i<Nranges;i+=1)				// for each of the ranges
+//		list = ""
+//		ni = ns[p][i]
+//		Sort ni, ni								// sort each of the columns independently
+//		for (m=0,k=NaN; m<N; m+=1)		// make a list of all of the ith number in this column (with no repeats)
+//			ii = ni[m]
+//			if (ii!=k && ii<4.2e+9)
+//				list += num2istr(ii)+";"	// list of unique numbers in this column
+//				k = ii
+//			endif
+//		endfor
+//		rangeOut += compressRange(list,";")+";"
+//	endfor
+//
+//	if (printIt)
+//		String range
+//		for (i=0;i<Nranges;i+=1)
+//			range = StringFromList(i,rangeOut)
+//			printf "range%d	 %d 		 %s\r",i+1,ItemsInRange(range),range
+//		endfor
+//	endif
+//	return rangeOut
+//End
 //
 //	Function test_getNranges()
 //		//	Slat HD:Users:tischler:EnergyScansBetter:data:;EW1_%d_%d.h5
