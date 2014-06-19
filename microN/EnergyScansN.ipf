@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.12
+#pragma version = 2.13
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -324,12 +324,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		endif
 	endif
 
-	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range(s) to scan, does not update.")	// display a progress bar
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range(s) to scan")	// display a progress bar
 	Variable ask = (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))	// range is empty, need to ask
 	ask = ask || numtype(I0normalize)
 	if (ask) 	// if range1 is empty, get the full range from the directory
 		if (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))					// range is empty, need to ask
-			str = getNranges(pathName,nameFmt,printIt=1)
+			str = getNranges(pathName,nameFmt, progressWin=progressWin, printIt=1)
 			range1 = StringFromList(0,str)
 			if (Nranges>1)
 				range2 = StringFromList(1,str)
@@ -348,8 +348,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			DoPrompt "range(s)",range1Prompt, I0normalize
 		endif
 		if (V_flag)
-			return 1
 			DoWindow/K $progressWin
+			return 1
 		endif
 		I0normalize -= 1
 		printIt = 1
@@ -435,11 +435,11 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	starty = NumberByKey("starty", wnote,"=");	endy = NumberByKey("endy", wnote,"=");	groupy = NumberByKey("groupy", wnote,"=")
 	if (numtype(startx+endx+starty+endy+groupx+groupy))
 		DoAlert 0,"could not get ROI from wave note of image '"+name+"'"
-			DoWindow/K $progressWin						// done with status window
+		DoWindow/K $progressWin							// done with status window
 		return 1
 	elseif (numtype(keV))
 		DoAlert 0,"invalid keV in image '"+name+"'"
-			DoWindow/K $progressWin						// done with status window
+		DoWindow/K $progressWin							// done with status window
 		return 1
 	endif
 
@@ -452,7 +452,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Make/N=(N1N2)/FREE/U/I m1_Fill_QHistAt1Depth=0, m2_Fill_QHistAt1Depth=0
 	Variable seconds
 	if (printIt)
-		printf "about to examine %d images\r",N1N2
+		printf "about to examine %d image headers...\r",N1N2
 	endif
 	// for all the N1*N2 files (go over range), store the energies, X position, H position, and indicies
 	Variable microSec0 = stopMSTimer(-2)				// used for timing, number of µsec
@@ -653,7 +653,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
 	Sort sinTheta, sinTheta,indexWaveQ							// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
 
-	print "starting bulk of processing"
+	print "starting the actual Q histogramming..."
 	microSec = stopMSTimer(-2)									// timing bulk of processing
 	Variable sec3=0,timer3
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N1N2)+" images",resetClock=1)	// update progress bar
@@ -1572,10 +1572,12 @@ Static Function findTrailingIndex(name)
 End
 
 
-Static Function/T getNranges(pathName,nameFmt,[printIt])
-	String pathName	// probably 'imagePath'
-	String nameFmt		// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
+Static Function/T getNranges(pathName,nameFmt,[progressWin,printIt])
+	String pathName		// probably 'imagePath'
+	String nameFmt			// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
+	String progressWin	// if present, then update progress window.
 	Variable printIt
+	progressWin = SelectString(ParamIsDefault(progressWin),progressWin,"")
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))<1 : !(!printIt)
 
@@ -1586,19 +1588,25 @@ Static Function/T getNranges(pathName,nameFmt,[printIt])
 	elseif (Nranges<1)
 		return ""
 	endif
+	progressWin = SelectString(ItemsInList(WinList(progressWin,";","WIN:64")),"",progressWin)
 
 	String dlist=directory(pathName), name, subStr
 	Variable p0,p1	, iN							// pointers into dlist, iN is number of Items in subStr
 	Variable dlen = strlen(dlist)
-	Variable i,m,N=ItemsInList(dlist), i0,i1,i2
+	Variable im,i,m,N=ItemsInList(dlist), i0,i1,i2
 	Make/N=(N,Nranges)/U/I/FREE ns
-	for (p0=0,m=0; p0<dlen; p0=p1+1)		// need to break up dlist into chunks because of StringFromList()
+	for (p0=0,m=0,im=0; p0<dlen; p0=p1+1)	// need to break up dlist into chunks because of StringFromList()
+		if (mod(im,50)==0 && strlen(progressWin))	// every 50 chunks
+			if (ProgressPanelUpdate(progressWin,im/N*100))
+				return ""							//   and break out of loop, and return nothing
+			endif
+		endif
 		p1 = p0 + 10000							// work in chunks of 10000
 		p1 = strsearch(dlist,";",p1)
 		p1 = p1<0 ? dlen-1 : p1
 		subStr = dlist[p0,p1]
 		iN = ItemsInList(subStr)
-		for (i=0; i<iN; i+=1)					// fill this chunk
+		for (i=0; i<iN; i+=1,im+=1)			// fill this chunk
 			name = StringFromList(i,subStr)	// StringFromList() is REALLY slow for big lists
 			if (Nranges==3)
 				sscanf name,nameFmt, i0,i1,i2
@@ -1620,6 +1628,9 @@ Static Function/T getNranges(pathName,nameFmt,[printIt])
 			endif
 		endfor
 	endfor
+	if (strlen(progressWin))					// set 1to 100%
+		ProgressPanelUpdate(progressWin,100)
+	endif
 	N = m
 	Redimension/N=(N,-1) ns				// trim to correct length
 
@@ -1649,80 +1660,16 @@ Static Function/T getNranges(pathName,nameFmt,[printIt])
 	endif
 	return rangeOut
 End
-//Static Function/T getNranges(pathName,nameFmt,[printIt])
-//	String pathName	// probably 'imagePath'
-//	String nameFmt		// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
-//	Variable printIt
-//	printIt = ParamIsDefault(printIt) ? NaN : printIt
-//	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))<1 : !(!printIt)
-//
-//	Variable Nranges = calcNranges(nameFmt)	// number of ranges needed
-//	if (Nranges>3)
-//		print "ERROR -- getNranges(), only know how to deal with up to 3 ranges"
-//		return ""
-//	elseif (Nranges<1)
-//		return ""
-//	endif
-//
-//	String dlist=directory(pathName), name
-//	Variable i,m,N=ItemsInList(dlist), i0,i1,i2
-//	Make/N=(N,Nranges)/U/I/FREE ns
-//	for (i=0,m=0;i<N;i+=1)
-//		name = StringFromList(i,dlist)
-//		if (Nranges==3)
-//			sscanf name,nameFmt, i0,i1,i2
-//		elseif (Nranges==2)
-//			sscanf name,nameFmt, i0,i1
-//		else
-//			sscanf name,nameFmt, i0
-//		endif
-//		if (V_flag==Nranges)
-//			switch(Nranges)
-//				case 3:
-//					ns[m][2] = i2
-//				case 2:
-//					ns[m][1] = i1
-//				case 1:
-//					ns[m][0] = i0
-//			endswitch
-//			m += 1								// increment pointer into fileList[]
-//		endif
-//	endfor
-//	N = m
-//	Redimension/N=(N,-1) ns				// trim to correct length
-//
-//	Make/N=(N)/U/I/FREE ni
-//	String rangeOut="", list
-//	Variable k,ii
-//	for (i=0;i<Nranges;i+=1)				// for each of the ranges
-//		list = ""
-//		ni = ns[p][i]
-//		Sort ni, ni								// sort each of the columns independently
-//		for (m=0,k=NaN; m<N; m+=1)		// make a list of all of the ith number in this column (with no repeats)
-//			ii = ni[m]
-//			if (ii!=k && ii<4.2e+9)
-//				list += num2istr(ii)+";"	// list of unique numbers in this column
-//				k = ii
-//			endif
-//		endfor
-//		rangeOut += compressRange(list,";")+";"
-//	endfor
-//
-//	if (printIt)
-//		String range
-//		for (i=0;i<Nranges;i+=1)
-//			range = StringFromList(i,rangeOut)
-//			printf "range%d	 %d 		 %s\r",i+1,ItemsInRange(range),range
-//		endfor
-//	endif
-//	return rangeOut
-//End
-//
-//	Function test_getNranges()
-//		//	Slat HD:Users:tischler:EnergyScansBetter:data:;EW1_%d_%d.h5
-//		String out = getNranges("imagePath","EW1_%d_%d.h5",printIt=1)
-//		print " "
-//		print out
+//	Function test()
+//		String nameFmt = "FS-slice3-EW008_%d_%d.h5"
+//		String pathName = "imagePath"
+//	
+//		String progressWin=""
+//		progressWin = ProgressPanelStart("",stop=1,showTime=1)
+//		Variable msStart = stopMSTimer(-2)
+//		print EnergyScans#getNranges(pathName,nameFmt, progressWin=progressWin, printIt=1)
+//		print (stopMSTimer(-2)-msStart)*1e-6," seconds"
+//		DoWindow/K $progressWin
 //	End
 
 
