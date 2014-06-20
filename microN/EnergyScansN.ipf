@@ -1,19 +1,20 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.13
+#pragma version = 2.14
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
+// version 2.14 speed up Fill_Q_Positions(), by only reading part of image headers
 
-#include "ImageDisplayScaling", version>=1.81
+#include "ImageDisplayScaling", version>=1.98
 #if (Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.207
+#include "HDF5images", version>=0.30
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
-#include "WinView", version>=1.96
+#include "WinView", version>=2.03
 #endif
-#include "Masking", version>1.00
-#include "GizmoZoomTranslate", version>=1.07
+#include "Masking", version>1.02
+#include "GizmoZoomTranslate", version>=1.41
 #include "QspaceVolumesView"
 
 Static Constant hc = 1.239841857				// hc (keV-nm)
@@ -450,12 +451,14 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	// hold the positions and energies
 	Make/N=(N1N2)/FREE/D X_FillQvsPositions=NaN, H_FillQvsPositions=NaN, depth_FillQvsPositions=NaN, keV_FillQvsPositions=NaN
 	Make/N=(N1N2)/FREE/U/I m1_Fill_QHistAt1Depth=0, m2_Fill_QHistAt1Depth=0
+//	Make/N=(N1N2)/FREE/D keV_all=NaN, I0_all=NaN						// energy & I0Normalization for EVERY image
+//	Variable iall=0
 	Variable seconds
 	if (printIt)
-		printf "about to examine %d image headers...\r",N1N2
+		printf "about to examine %d image headers...   ",N1N2
 	endif
 	// for all the N1*N2 files (go over range), store the energies, X position, H position, and indicies
-	Variable microSec0 = stopMSTimer(-2)				// used for timing, number of 탎ec
+	Variable microSec0 = stopMSTimer(-2)									// used for timing, number of 탎ec
 	Variable microSec = microSec0
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N1N2)+" image headers",resetClock=1)
 	Variable i,m1,m2
@@ -469,23 +472,31 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				endif
 			endif
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)
-			wnote=ReadGenericHeader(name)									// wave note to add to file read in
+			wnote=ReadGenericHeader(name,extras="EscanOnly:1")		// short wave note to add to file read in
+
+//			keV_all[iall] = NumberByKey("keV", wnote,"=")				// save keV and I0 for FillQhist1imageFile()
+//			if (I0normalize)
+//				I0_all = I0normalizationFromNote(wnote)					// normalization by intenstiy & exposure time
+//			endif
+//			iall += 1
+
 			if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
 				continue
 			endif
-			X_FillQvsPositions[i] = NumberByKey("X1", wnote,"=")	// list of X positions
-			H_FillQvsPositions[i] = NumberByKey("H1", wnote,"=")	// list of H positions
-			depth_FillQvsPositions[i] = NumberByKey("depth", wnote,"=")	// list of depths
-			keV_FillQvsPositions[i] = NumberByKey("keV", wnote,"=")	// list of energies
+			X_FillQvsPositions[i] = NumberByKey("X1",wnote,"=")		// list of X positions
+			H_FillQvsPositions[i] = NumberByKey("H1",wnote,"=")		// list of H positions
+			depth_FillQvsPositions[i] = NumberByKey("depth",wnote,"=")	// list of depths
+			keV_FillQvsPositions[i] = NumberByKey("keV",wnote,"=")	// list of energies
 			m1_Fill_QHistAt1Depth[i] = m1									// file id number for each image
 			m2_Fill_QHistAt1Depth[i] = m2									// file id number for each image
 			i += 1
 		endfor
 	endfor
 	seconds = (stopMSTimer(-2)-microSec)/1e6
-	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
-		printf "first pass to examine all headers took %s\r",Secs2Time(seconds,5,3)
+	if (printIt)
+		printf "took %s\r",Secs2Time(seconds,5,3)
 	endif
+//	Redimension/N=(iall) keV_all, I0_all
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
 
 	microSec = stopMSTimer(-2)												// for timeing bulk of processing
@@ -560,6 +571,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Qmin = 4*PI*sin(thetaLo)*keV/hc								// min Q (1/nm)
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVhi],m2_Fill_QHistAt1Depth[ikeVhi],NaN)
 	Wave image = $(LoadGenericImageFile(name))				// load image
+	String wnoteFull = note(image)								// a full typical wave note
 	thetaHi = imag(thetaRange(geo,image,maskIN=mask,depth=depth0))	// max theta on this image
 	KillWaves/Z image
 	keV = keV_FillQvsPositions[ikeVhi]
@@ -635,7 +647,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	SetScale/P t dim0[3],del[3],LabelUnits[3], Q_Positions,Q_PositionsNorm
 	SetScale/I x Qmin,Qmax,"1/nm", Qhist
 	seconds = (stopMSTimer(-2)-microSec)/1e6
-	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
+	if (printIt && seconds>0.2)
 		printf "setting up arrays took %s\r",Secs2Time(seconds,5,3)
 	endif
 	// done with the setup part, now actually compute something
@@ -653,7 +665,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
 	Sort sinTheta, sinTheta,indexWaveQ							// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
 
-	print "starting the actual Q histogramming..."
+	if (printIt)
+		printf "starting the actual Q histogramming of %d images...   ",N1N2
+	endif
 	microSec = stopMSTimer(-2)									// timing bulk of processing
 	Variable sec3=0,timer3
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N1N2)+" images",resetClock=1)	// update progress bar
@@ -672,7 +686,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			Qhist = 0													// needed because FillQhist1imageFile() accumulates into Qhist
 			QhistNorm = 0
 			// fill Qhist from one file
-			wnote = FillQhist1imageFile(name,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,dark=dark,maskNorm=maskNorm,i0normalize=i0normalize)
+			wnote = FillQhist1imageFile(name,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
 			timer3=startMSTimer
 			if (NumberByKey("V_min", wnote,"=")==0  && NumberByKey("V_max", wnote,"=")==0)
 				sec3 += stopMSTimer(timer3)/1e6
@@ -704,11 +718,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Q_Positions = numtype(Q_Positions) ? NaN : Q_Positions
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt)
-		printf "\r  processing all %d images took %s	(%.3g 탎/pixel)\r",N1N2,Secs2Time(seconds,5,1),1e6*seconds/(N1N2*Npixels)
+		printf "took %s	(%.3g 탎/pixel)\r",Secs2Time(seconds,5,1),1e6*seconds/(N1N2*Npixels)
 		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
 	endif
 
 	FindValue/TEXT="Depth"/TXOP=4/Z DimTags
+	wnote = wnoteFull													// start with a full typical wave note
 	if (V_value>=0)													// if Depth is an axis (meaning it varies), remove it from note
 		wnote = RemoveByKey("Depth",wnote,"=")
 	endif
@@ -743,9 +758,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	CompressEmptyDimensions(Q_Positions,1)					// remove empty dimensions from Q_Positions wave (1's & 0's are empty)
 	if (WaveDims(Q_Positions)==1)
 		Note/K Q_Positions, ReplaceStringByKey("waveClass",note(Q_Positions),"Qhistogram","=")
-		MakeGraph_Qhist(Q_Positions)								// just a single Q-distribution, plot it
-	else
-		MakeOtherQhistWaves(Q_Positions,printIt=printIt)	// make waves for plotting and put up plot(s)
 	endif
 
 	// done with processing, clean up
@@ -756,8 +768,17 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		printf "  final stuff took %s\r",Secs2Time(seconds,5,2)
 	endif
 	seconds = (stopMSTimer(-2)-microSec0)/1e6
-	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
+	if (printIt && seconds>2.0)
 		printf "entire process took %s\r",Secs2Time(seconds,5,3)
+	endif
+
+	if (printIt)
+		print " "
+	endif
+	if (WaveDims(Q_Positions)==1)
+		MakeGraph_Qhist(Q_Positions)								// just a single Q-distribution, plot it
+	else
+		MakeOtherQhistWaves(Q_Positions,printIt=printIt)	// make waves for plotting and put up plot(s)
 	endif
 	beep
 	return 0
@@ -1400,66 +1421,53 @@ Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNo
 	Wave sinTheta										// array of sin(theta)'s that is same size as the image to be loaded	
 	Wave indexWaveQ									// index sorted wave of sinTheta
 	Wave Qhist
-	Wave QhistNorm									// array that contains number of pixels contributing to each bin in Qhist
+	Wave QhistNorm										// array that contains number of pixels contributing to each bin in Qhist
 	Wave mask											// optional mask, only use pixels that are true, ONLY 0 or 1 (do not use 255)
 	Variable maskNorm									// use pixels outside of mask to normalize whole image (suppresses pedestal)
 	Wave dark											// an optional background wave
-	Variable I0normalize								// a Flag, if True then normalize data (default is True)
+	Variable I0normalize							// a Flag, if True then normalize data (default is True)
 	maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
 	maskNorm = numtype(maskNorm) ? 0 : !(!maskNorm)
 	I0normalize = ParamIsDefault(I0normalize) ? 0 : I0normalize	// default to old way (un-normalized)
 	I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
 
-	Variable timer = startMSTimer						// start timer for initial processing
-	Wave image = $(LoadGenericImageFile(fullName))	// load image
+	Variable timer = startMSTimer				// start timer for initial processing
+	Wave image = $(LoadGenericImageFile(fullName, extras="EscanOnly:1"))	// load image
 	if (!WaveExists(image))
 		printf "could not load image named '%s'\r",fullName
-		timer = stopMSTimer(timer)					// stop timer
+		timer = stopMSTimer(timer)				// stop timer
 		return ""
 	endif
 	if (WaveExists(dark))
-		if (WaveType(image) & 0x58)					// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
+		if (WaveType(image) & 0x58)				// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
 			Redimension/I image
 		endif
 		MatrixOP/O image = image - dark
 	endif
 	String wnote = note(image)
 	Variable keV = NumberByKey("keV", wnote,"=")
-	keV = NumberByKey("keV", wnote,"=")
 	if (numtype(keV))
 		DoAlert 0,"invalid keV in image '"+fullName+"'"
-		timer = stopMSTimer(timer)					// stop timer
+		timer = stopMSTimer(timer)				// stop timer
 		return ""
 	endif
 	ImageStats/M=1/Q image							// check for empty images, skip them
 	if (V_min==0 && V_max==0)
-		timer = stopMSTimer(timer)					// stop timer
+		timer = stopMSTimer(timer)				// stop timer
 		wnote = ReplaceNumberByKey("V_min",wnote,V_min,"=")	// flag that this is empty
 		wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
 		KillWaves/Z image
 		return wnote									// image is empty, do not waste time adding zeros
 	endif
 
+	Variable inorm=NaN
 	if (I0normalize)									// normalize by intenstiy & exposure time
-		Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling, inorm=1
-		I0gainBase = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_GAIN",DEFAULT_I0_GAIN)
-		I0cnts = NumberByKey("I0",wnote,"=")
-		I0gain = NumberByKey("I0gain",wnote,"=")
-		I0gain = numtype(I0gain) ? I0gainBase : I0gain
-		ScalerCountTime = NumberByKey("ScalerCountTime",wnote,"=")
-		exposure = NumberByKey("exposure",wnote,"=")
-		I0scaling = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_SCALING",DEFAULT_I0_SCALING)
-		if (numtype(I0cnts+I0gain+ScalerCountTime)==0 && I0cnts>0 && I0gain>0 && ScalerCountTime>0)
-			inorm *= (ScalerCountTime/I0cnts) * (I0gainBase/I0gain)
-		endif
-		inorm /= (numtype(exposure)==0 && exposure>0) ? exposure : 1
-		inorm *= (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
-		I0normalize = (numtype(inorm)==0) && (inorm>0)
+		inorm = I0normalizationFromNote(wnote)
 	endif
 
 	NVAR secExtra=secExtra, secExtra1=secExtra1
 	if (NVAR_Exists(secExtra))
-		Variable timeExtra = startMSTimer				// start timer for intermediate processing
+		Variable timeExtra = startMSTimer		// start timer for intermediate processing
 	endif
 	Variable i, j, Ni=DimSize(image,0), Nj=DimSize(image,1)
 	Variable k											// index into Qhist for each pixel
@@ -1468,24 +1476,24 @@ Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNo
 	Variable dQ = DimDelta(Qhist,0)
 	Variable factor = 4*PI*keV/hc
 	MatrixOp/O kQimage = (factor*sinTheta-Qmin)/dQ	// this method is 4.5 x faster
-	MatrixOp/O kQimage = round(kQimage)				// this is now the index into Qhist for each point
+	MatrixOp/O kQimage = round(kQimage)		// this is now the index into Qhist for each point
 	if (WaveExists(mask))
 		Variable avgDarkPixel = 0
 		if (maskNorm)
-			ImageStats/M=1/R=mask image				// note, mask is 1 where we want, so it is correct for the ROI!
+			ImageStats/M=1/R=mask image			// note, mask is 1 where we want, so it is correct for the ROI!
 			avgDarkPixel = V_avg
 		endif
-		MatrixOp/O image = (image-avgDarkPixel)*mask// mask values needs to be 1 or 0
+		MatrixOp/O image = (image-avgDarkPixel)*mask	// mask values needs to be 1 or 0
 	endif
 	Variable N=numpnts(image)
-	Redimension/N=(N) image,kQimage					// unwrap for faster processing
+	Redimension/N=(N) image,kQimage				// unwrap for faster processing
 	SetScale/P x 0,1,"", image, kQimage
 
 	if (NVAR_Exists(secExtra1))
-		Variable timeExtra1 = startMSTimer			// start timer for intermediate processing
+		Variable timeExtra1 = startMSTimer		// start timer for intermediate processing
 	endif
-	IndexSort indexWaveQ, image						// sinTheta was already sorted, so kQimage is already sorted
-//	MatrixOp/O image = waveMap2(image,indexWaveQ,N)// this is slightly faster
+	IndexSort indexWaveQ, image					// sinTheta was already sorted, so kQimage is already sorted
+	//	MatrixOp/O image = waveMap2(image,indexWaveQ,N)	// this is only slightly faster
 
 	if (NVAR_Exists(secExtra1))
 		secExtra1 += stopMSTimer(timeExtra1)/1e6
@@ -1500,27 +1508,47 @@ Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNo
 	k = kQimage[i0]
 
 	for (;k<NQ;)										// for each bin in Qhist
-		i1 = BinarySearch(kQimage,k)					// this returns the last index with a value of k
+		i1 = BinarySearch(kQimage,k)				// this returns the last index with a value of k
 		if (i1<i0)
 			break
 		endif
 		Qhist[k] = sum(image,i0,i1)
-		QhistNorm[k] += i1-i0+1						// number of pixels used for this Q bin
+		QhistNorm[k] += i1-i0+1					// number of pixels used for this Q bin
 		i0 = I1 + 1										// reset start point of region
 		k = kQimage[i0]
 	endfor
 	if (NVAR_Exists(secExtra))
 		secExtra += stopMSTimer(timeExtra)/1e6
 	endif
-	if (I0normalize)
+	if (numtype(inorm)==0)
 		Qhist *= inorm									// apply the normalization
 	endif
-	Variable seconds = stopMSTimer(timer)/1e6		// stop timer here
+	Variable seconds = stopMSTimer(timer)/1e6	// stop timer here
 	if (ItemsInList(GetRTStackInfo(0))<3 && seconds>2.0)
 		printf "	processing image '%s' took %s\r",NameOfWave(image),Secs2Time(seconds,5,2)
 	endif
 	KIllWaves/Z image, kQimage
 	return wnote
+End
+
+Static Function I0normalizationFromNote(wnote)	// normalization by intenstiy & exposure time
+	String wnote
+
+	Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling, inorm=1
+	I0gainBase = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_GAIN",DEFAULT_I0_GAIN)
+	I0cnts = NumberByKey("I0",wnote,"=")
+	I0gain = NumberByKey("I0gain",wnote,"=")
+	I0gain = numtype(I0gain) ? I0gainBase : I0gain
+	ScalerCountTime = NumberByKey("ScalerCountTime",wnote,"=")
+	exposure = NumberByKey("exposure",wnote,"=")
+	I0scaling = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_SCALING",DEFAULT_I0_SCALING)
+	if (numtype(I0cnts+I0gain+ScalerCountTime)==0 && I0cnts>0 && I0gain>0 && ScalerCountTime>0)
+		inorm *= (ScalerCountTime/I0cnts) * (I0gainBase/I0gain)
+	endif
+	inorm /= (numtype(exposure)==0 && exposure>0) ? exposure : 1
+	inorm *= (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
+	inorm = (numtype(inorm)==0) && (inorm>0) ? inorm : NaN	// returns NaN for bad inorm
+	return inorm
 End
 
 

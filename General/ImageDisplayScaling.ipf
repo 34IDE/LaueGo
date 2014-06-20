@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.97
+#pragma version = 1.98
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -181,10 +181,10 @@ End
 //	I would like to use this structure, but it is easier to use a key:value string for extras
 //
 //Structure extraLoadImageStruct
-//	double	quiet					// for quiet=1, if any problems just return,			only in Pilatus tiff files
-//	double	multiple				// load multiple images, NOT YET WORKING,			only in Pilatus tiff files
-//	double	slice					// slice (only used for mult-image, i.e. 3D arrays),	only in HDF5 files
-//	WAVE	dark					// optional darkImage to subtract,					only in HDF5 files
+//	double	quiet				// for quiet=1, if any problems just return,		only in Pilatus tiff files
+//	double	multiple			// load multiple images, NOT YET WORKING,			only in Pilatus tiff files
+//	double	slice				// slice (only used for mult-image, i.e. 3D arrays),only in HDF5 files
+//	WAVE	dark				// optional darkImage to subtract,					only in HDF5 files
 //EndStructure
 
 
@@ -307,8 +307,10 @@ End
 
 
 
-Function/T ReadGenericHeader(fName)
+Function/T ReadGenericHeader(fName,[extras])
 	String fName					// fully qualified name of file to open (will not prompt)
+	String extras					// optional switches
+	extras = SelectString(ParamIsDefault(extras),extras,"")
 	GetFileFolderInfo/Q /Z=1 fName							// check if file exists
 	if (!V_isFile || V_Flag)									// file not there
 		return ""
@@ -329,9 +331,12 @@ Function/T ReadGenericHeader(fName)
 	if (strlen(funcName))
 		String/G root:Packages:imageDisplay:imageExtension="."+extension
 		FUNCREF ReadGenericHeader func = $funcName
-		str = func(fName)
+		if (strlen(extras))
+			str = func(fName,extras=extras)
+		else
+			str = func(fName)
+		endif
 	endif
-
 	return str
 End
 

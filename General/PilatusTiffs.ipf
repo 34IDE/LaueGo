@@ -1,11 +1,13 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.10
+#pragma version = 2.11
 #pragma IgorVersion = 6.22					// actually needs 6.12 or greater, but using "= 6.12:" does not work
+#include "ImageDisplayScaling", version>=1.98
 #pragma ModuleName=pilatus
 // #initFunctionName "Init_PilatusImagesPackage()"
 //  with version 2.00, It starts to use Christian's newer method, the old "*.pilatuslog" files are gone.
 //  with version 2.02, uses only extras string to pass quiet & multiple
 //	with version 2.04, changed how I deal with sitution where LoadPilatusTiffImage() but image already exists
+//	with version 2.11, added optional extras string to PilatusTiffReadHeader()
 
 strConstant PilatusfileFilters = "TIFF Files (*.tif, *.tiff):.tif,.tiff;All Files:.*;"
 // #define UseOLDpilatuslogFiles		// Put this line in your main "Procedure Window" to enable the old way
@@ -90,7 +92,12 @@ Function/T LoadPilatusTiffImage(fullName[,extras])
 		return ""
 	endif
 
-	String wnote=PilatusTiffReadHeader(fullName)			// get info from inside the TIFF file, does not load an image
+	String wnote=""
+	if (strlen(extras))
+		wnote = PilatusTiffReadHeader(fullName,extras=extras)	// get info from inside the TIFF file, does not load an image
+	else
+		wnote = PilatusTiffReadHeader(fullName)
+	endif
 	if (scanNum>0)
 		wnote = ReplaceNumberByKey("scanNum",wnote,scanNum,"=")
 	endif
@@ -178,8 +185,10 @@ End
 //	String extras
 //	extras = SelectString(ParamIsDefault(extras),extras,"")		// not used here (yet)
 //
-Function/T PilatusTiffReadHeader(tiffFileName)			// get info from inside the TIFF file, does not load an image
+Function/T PilatusTiffReadHeader(tiffFileName,[extras])		// get info from inside the TIFF file, does not load an image
 	String tiffFileName
+	String extras					// optional switches (only supports EscanOnly in this routine)
+	extras = SelectString(ParamIsDefault(extras),extras,"")
 
 	DFREF dfrSave = GetDataFolderDFR()
 	DFREF dfr = NewFreeDataFolder()

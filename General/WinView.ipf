@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma ModuleName=WinViewProc
-#include "ImageDisplayScaling", version>=1.81
+#include "ImageDisplayScaling", version>=1.98
 //
 // Routines for reading in and looking at Princeton Instruments CCD, by Jon Tischler, Oak Ridge National Lab
 // TischlerJZ@ornl.gov
@@ -115,6 +115,9 @@
 //
 //	version 2.02(changed Apr 30, 2014)
 //		changed line terminations, CR -> LF
+//
+//	version 2.03(changed Jun 20, 2014)
+//		added optional extras argument to WinViewReadHeader()
 
 StrConstant IMAGE_FILE_EXT = ".SPE"
 
@@ -981,7 +984,12 @@ Function/T WinViewReadROI(fileName,i0,i1,j0,j1,[extras])
 	String extras											// not used here for anything yet
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 
-	String wnote=WinViewReadHeader(fileName)			// wave note to add to file read in
+	String wnote=""
+	if (strlen(extras))							// wave note to add to file read in
+		wnote = WinViewReadHeader(fileName,extras=extras)
+	else	
+		wnote = WinViewReadHeader(fileName)
+	endif
 	if (!strlen(wnote))
 		return ""
 	endif
@@ -1042,8 +1050,10 @@ End
 //	return wnote
 //End
 //
-Function/T WinViewReadHeader(fileName)
+Function/T WinViewReadHeader(fileName,[extras])
 	String fileName					// fully qualified name of file to open (will not prompt)
+	String extras					// optional switches (only supports EscanOnly in this routine)
+	extras = SelectString(ParamIsDefault(extras),extras,"")
 
 	Variable fid												// file id (file is assumed already opened)
 	Open /Z/M=".spe file"/R/T="????" fid as fileName		// this acutally opens file

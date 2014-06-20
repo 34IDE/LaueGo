@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.15
+#pragma version = 1.16
 #pragma ModuleName=TiffProc
-#include "ImageDisplayScaling", version>=1.71
+#include "ImageDisplayScaling", version>=1.98
 
 //
 // Routines for reading in and looking at TIFF files. Eliot Specht, ORNL, based on WinView.ipf code by Jon Tischler, Oak Ridge National Lab
@@ -31,6 +31,7 @@
 //End
 
 // Nov  15, 2010,  with version 1.13, added the extras string to the file loaders
+// Jun  20, 2014,  with version 1.16, added the extras string to TiffReadHeader()
 
 Static Constant TAG_IMAGEWIDTH=256, TAG_IMAGELENGTH=257, TAG_BITSPERSAMPLE=258
 Static Constant TAG_MODEL=272, TAG_XRESOLUTION=282, TAG_YRESOLUTION=283, TAG_DATETIME=306
@@ -247,7 +248,12 @@ Function/T TiffLoadROI(fileName,i0,i1,j0,j1,[extras])
 	String extras											// not doing anything here yet
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 
-	String wnote=TiffReadHeader(fileName)
+	String wnote=""
+	if (strlen(extras))
+		wnote = TiffReadHeader(fileName, extras=extras)
+	else
+		wnote = TiffReadHeader(fileName)
+	endif
 	if (strlen(wnote)<1)
 		return ""
 	endif
@@ -297,8 +303,10 @@ Function/T TiffLoadROI(fileName,i0,i1,j0,j1,[extras])
 End
 
 
-Function/T TiffReadHeader(fName)
+Function/T TiffReadHeader(fName,[extras])
 	String fName					// fully qualified name of file to open (will not prompt)
+	String extras					// optional switches (only supports EscanOnly in this routine)
+	extras = SelectString(ParamIsDefault(extras),extras,"")
 	if (strlen(fName)<1)
 		return ""
 	endif

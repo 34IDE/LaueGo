@@ -1,12 +1,13 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.29
+#pragma version = 0.30
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
 // Dec 12, 2009, version 0.208		Added support for wire being in its own folder
-// Oct    8, 2012, version 0.213		Changed the way slices were dealt with
-// Nov 15, 2012, version 0.23			Changed load commands so that dark and slice are passed as "slice:1;dark:fullNameofWave;" in extras 
-// Nov 29, 2012, version 0.24			added HDFSaveImage()
+// Oct 8, 2012, version 0.213		Changed the way slices were dealt with
+// Nov 15, 2012, version 0.23		Changed load commands so that dark and slice are passed as "slice:1;dark:fullNameofWave;" in extras 
+// Nov 29, 2012, version 0.24		added HDFSaveImage()
+//	Jun 19, 2014, version 0.30		added optional string extras to argument of ReadHDF5header()
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -52,15 +53,17 @@ End
 
 
 Function/S LoadHDF5imageFile(fName,[extras])
-	String fName												// fully qualified name of file to open
+	String fName													// fully qualified name of file to open
 	String extras
 	extras = SelectString(ParamIsDefault(extras),extras,"")
-	Wave dark = $StringByKey("dark",extras)					// optional darkImage to subtract
-	Variable slice=NumberByKey("slice",extras)				// slice (only used for mult-image, i.e. 3D arrays)
+	Wave dark = $StringByKey("dark",extras)				// optional darkImage to subtract
+	Variable slice=NumberByKey("slice",extras)			// slice (only used for mult-image, i.e. 3D arrays)
+	Variable noHeader=NumberByKey("noHeader",extras)
+	noHeader = numtype(noHeader) ? 0 : !(!noHeader)	// do not read the header, just the image
 
 	Variable f, askSlice=(numtype(slice)>0)
 	if (strlen(ParseFilePath(3,fName,":",0,0))<1)		// call dialog if no file name passed
-		Open /D/M="HDF5 file"/R/F=HDFfileFilters f	// use /D to get full path name
+		Open /D/M="HDF5 file"/R/F=HDFfileFilters f		// use /D to get full path name
 		fName = S_filename
 		askSlice = 1
 		// if had to ask for image, also ask about dark
@@ -74,17 +77,17 @@ Function/S LoadHDF5imageFile(fName,[extras])
 			Wave dark = $ReplaceString("_none_",darkName,"")
 		endif
 	endif
-	if (strlen(fName)<1)				// no file name, quit
+	if (strlen(fName)<1)			// no file name, quit
 		return ""
 	endif
 
 	STRUCT HDF5DataInfo di			// Defined in HDF5 Browser.ipf.
-	InitHDF5DataInfo(di)				// Initialize structure.
+	InitHDF5DataInfo(di)			// Initialize structure.
 	HDF5OpenFile/R f as fName
 	HDF5DatasetInfo(f,"/entry1/data/data",0,di)
 	HDF5CloseFile f
 	Variable nx,ny,Nslices, ndims=di.ndims
-	if (ndims!=3 && ndims!=2)			// must be dim 2 or 3
+	if (ndims!=3 && ndims!=2)		// must be dim 2 or 3
 		return ""
 	endif
 	if (ndims==2)
@@ -119,16 +122,21 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		endif
 	endif
 
-	String wnote = ReadHDF5header(fName)
+	String wnote=""
+	if (!noHeader && strlen(extras))
+		wnote = ReadHDF5header(fName,extras=extras)
+	elseif (!noHeader)
+		wnote = ReadHDF5header(fName)
+	endif
 	HDF5OpenFile/R/Z f as fName
 	if (V_Flag)
 		return ""
 	endif
 
 	Make/FREE/N=(3,4) slab=0
-	slab[0][0]= {slice,0,0}			// start
-	slab[][1]= 1					// stride
-	slab[][2]= 1					// count
+	slab[0][0]= {slice,0,0}		// start
+	slab[][1]= 1						// stride
+	slab[][2]= 1						// count
 	if (ndims==2)
 		slab[0][3]= {ny,nx,0}		// block
 		slab[2][] = 0
@@ -156,14 +164,14 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		print "V_Flag=",V_Flag
 		return ""
 	endif
+	HDF5CloseFile f
 
 	Wave image = $StringFromLIst(0,S_waveNames)
 	Redimension/N=(nx*ny) image
 	Redimension/N=(ny,nx) image
 	MatrixOp/O image = image^t		// WHY !!!!!!
-	HDF5CloseFile f
 
-	if (Ndims==3 && slice>=0)							// extract position of an individual slice (if we are extracting one slice)
+	if (!noHeader && Ndims==3 && slice>=0)			// extract position of an individual slice (if we are extracting one slice)
 		wnote = ReplaceNumberByKey("slice",wnote,slice,"=")
 		str = StringFromList(slice,StringByKey("X2", wnote,"="),",")
 		if (strlen(str))
@@ -196,7 +204,7 @@ Function/S LoadHDF5imageFile(fName,[extras])
 	endif
 
 	Variable i0=0,j0=0										// start of sub-region (binned pixels)
-	if (i0!=0 || j0!=0)										// sub-region of image does not start at (0,0)
+	if (!noHeader && (i0!=0 || j0!=0))					// sub-region of image does not start at (0,0)
 		Variable xdim=DimSize(image,0), ydim=DimSize(image,1)
 		Variable startx, endx, groupx, starty, endy, groupy
 		startx	= NumberByKey("startx",wnote,"=")
@@ -205,7 +213,7 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		starty	= NumberByKey("starty",wnote,"=")
 		endy	= NumberByKey("endy",wnote,"=")
 		groupy	= NumberByKey("groupy",wnote,"=")
-		startx += i0*groupx								// re-set to match the sub-regiion read
+		startx += i0*groupx									// re-set to match the sub-regiion read
 		starty += j0*groupy
 		endx = xdim*groupx+startx-1
 		endy = ydim*groupy+starty-1
@@ -223,7 +231,9 @@ Function/S LoadHDF5imageFile(fName,[extras])
 	if (WaveExists(dark))
 		Redimension/I image
 		image -= dark
-		wnote = ReplaceStringByKey("bkg",wnote,NameOfWave(dark),"=")
+		if (!noHeader)
+			wnote = ReplaceStringByKey("bkg",wnote,NameOfWave(dark),"=")
+		endif
 	endif
 	Note/K image,wnote
 
@@ -392,12 +402,17 @@ End
 
 
 
-Function/T ReadHDF5header(fName)
+Function/T ReadHDF5header(fName,[extras])
 	String fName					// fully qualified name of file to open (will not prompt)
+	String extras					// optional switches (only supports EscanOnly in this routine)
+	extras = SelectString(ParamIsDefault(extras),extras,"")
 
 	if (strlen(fName)<1)
 		return ""
 	endif
+
+	Variable EscanOnly=NumberByKey("EscanOnly",extras)
+	EscanOnly = numtype(EscanOnly) ? 0 : !(!EscanOnly)	// only read "X1;Y1;Z1;depth;keV;startx;endx;groupx;starty;endy;groupy;I0;I0gain;ScalerCountTime;exposure;
 
 	String wnote="", str, model=""
 	Variable f, value
@@ -412,7 +427,7 @@ Function/T ReadHDF5header(fName)
 	endif
 
 	STRUCT HDF5DataInfo di			// Defined in HDF5 Browser.ipf.
-	InitHDF5DataInfo(di)				// Initialize structure.
+	InitHDF5DataInfo(di)			// Initialize structure.
 	HDF5DatasetInfo(f,"/entry1/data/data",0,di)
 	Variable Nslices = (di.ndims == 3) ? di.dims[0] : 0	// 0 means 2-d data
 	if (Nslices)
@@ -425,11 +440,10 @@ Function/T ReadHDF5header(fName)
 	endif
 
 	Variable reconstructed = Nslices==1 && numtype(str2num(str))==0		// a single reconstructed image from flyScan, 1 image + depth
-	if (!reconstructed)
+	if (!reconstructed && !EscanOnly)
 		// wire positions
 		HDF5ListGroup/Z f , "/entry1/wire"
 		String wireFolder = SelectString(V_flag,"entry1/wire/","entry1/")
-
 		str = getStrVecHDF5dataNum(f,wireFolder+"wireX",places=2,Nww=Nslices)
 		if (strlen(str))
 			wnote= ReplaceStringByKey("X2",wnote,str,"=")
@@ -483,15 +497,7 @@ Function/T ReadHDF5header(fName)
 	endif
 
 	// detector pixels & ROI
-	Variable startx,endx,groupx, xdim
-	value = get1HDF5dataNum(f,"entry1/detector/Nx")
-	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("xDimDet",wnote,round(value),"=")
-	endif
-	value = get1HDF5dataNum(f,"entry1/detector/Ny")
-	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("yDimDet",wnote,round(value),"=")
-	endif
+	Variable startx,endx,groupx,xdim
 	startx = get1HDF5dataNum(f,"entry1/detector/startx")
 	if (numtype(startx)==0)
 		wnote= ReplaceNumberByKey("startx",wnote,round(startx),"=")
@@ -507,6 +513,12 @@ Function/T ReadHDF5header(fName)
 	xdim = (endx-startx+1)/groupx
 	if (numtype(xdim)==0)
 		wnote= ReplaceNumberByKey("xdim",wnote,round(xdim),"=")
+	endif
+	if (!EscanOnly)
+		value = get1HDF5dataNum(f,"entry1/detector/Nx")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("xDimDet",wnote,round(value),"=")
+		endif
 	endif
 
 	Variable starty,endy,groupy, ydim
@@ -526,40 +538,48 @@ Function/T ReadHDF5header(fName)
 	if (numtype(ydim)==0)
 		wnote= ReplaceNumberByKey("ydim",wnote,round(ydim),"=")
 	endif
+	if (!EscanOnly)
+		value = get1HDF5dataNum(f,"entry1/detector/Ny")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("yDimDet",wnote,round(value),"=")
+		endif
+	endif
 
-	// strings: detectorID, Model, beamLine, title, userName, sampleName, file_name, file_time
-	str = get1HDF5dataStr(f,"entry1/detector/ID")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("detectorID",wnote,str,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/detector/model")
-	if (strlen(str))
-		model = str
-		wnote= ReplaceStringByKey("detectorModel",wnote,model,"=")
-	endif
-	str = get1HDF5dataStr(f,"Facility/facility_beamline")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("beamLine",wnote,str,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/title")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("title",wnote,str,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/user/name")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("userName",wnote,str,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/sample/name")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("sampleName",wnote,str,"=")
-	endif
-	str = get1HDF5AttrStr(f,"/","file_name")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("file_name",wnote,str,"=")
-	endif
-	str = get1HDF5AttrStr(f,"/","file_time")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("file_time",wnote,str,"=")
+	if (!EscanOnly)
+		// strings: detectorID, Model, beamLine, title, userName, sampleName, file_name, file_time
+		str = get1HDF5dataStr(f,"entry1/detector/ID")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("detectorID",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/detector/model")
+		if (strlen(str))
+			model = str
+			wnote= ReplaceStringByKey("detectorModel",wnote,model,"=")
+		endif
+		str = get1HDF5dataStr(f,"Facility/facility_beamline")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("beamLine",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/title")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("title",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/user/name")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("userName",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/sample/name")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("sampleName",wnote,str,"=")
+		endif
+		str = get1HDF5AttrStr(f,"/","file_name")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("file_name",wnote,str,"=")
+		endif
+		str = get1HDF5AttrStr(f,"/","file_time")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("file_time",wnote,str,"=")
+		endif
 	endif
 
 	// monitor  I0, I_start, I_final, I0_calc, I_final_calc, I_start_calc, ScalerClockFreq, ScalerClock_calc, ScalerCountTime
@@ -567,37 +587,40 @@ Function/T ReadHDF5header(fName)
 	if (strlen(str))
 		wnote= ReplaceStringByKey("I0",wnote,str,"=")
 	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/I_start",Nww=Nslices,places=0)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("Istart",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/I_final",Nww=Nslices,places=0)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("Ifinal",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/I0_calc",Nww=Nslices,places=5)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("I0_calc",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/I_final_calc",Nww=Nslices,places=5)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("Ifinal_calc",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/I_start_calc",Nww=Nslices,places=0)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("Istart_calc",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/ScalerClockFreq",Nww=Nslices,places=0)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("ScalerClockFreq",wnote,str,"=")
-	endif
-	str = getStrVecHDF5dataNum(f,"entry1/monitor/ScalerClock_calc",Nww=Nslices,places=5)
-	if (strlen(str))
-		wnote= ReplaceStringByKey("ScalerClock_calc",wnote,str,"=")
-	endif
 	str = getStrVecHDF5dataNum(f,"entry1/monitor/ScalerCountTime",Nww=Nslices,places=5)
 	if (strlen(str))
 		wnote= ReplaceStringByKey("ScalerCountTime",wnote,str,"=")
+	endif
+
+	if (!EscanOnly)
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/I_start",Nww=Nslices,places=0)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("Istart",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/I_final",Nww=Nslices,places=0)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("Ifinal",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/I0_calc",Nww=Nslices,places=5)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("I0_calc",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/I_final_calc",Nww=Nslices,places=5)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("Ifinal_calc",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/I_start_calc",Nww=Nslices,places=0)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("Istart_calc",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/ScalerClockFreq",Nww=Nslices,places=0)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("ScalerClockFreq",wnote,str,"=")
+		endif
+		str = getStrVecHDF5dataNum(f,"entry1/monitor/ScalerClock_calc",Nww=Nslices,places=5)
+		if (strlen(str))
+			wnote= ReplaceStringByKey("ScalerClock_calc",wnote,str,"=")
+		endif
 	endif
 
 	// energy, exposure, scanNum, sampleDistance, detectorGain
@@ -618,73 +641,80 @@ Function/T ReadHDF5header(fName)
 //		endif
 		wnote= ReplaceNumberByKey("exposure",wnote,value,"=")
 	endif
-	value = get1HDF5dataNum(f,"entry1/detector/gain")
-	if (numtype(value)==0)
-		str = num2str(value)
-		if (value == limit(round(value),0,5))		// special for the silly Perkin Elmer detectors
-			str = StringFromList(value,"0.25;0.5;1;2;4;8;")+"pF"
+
+	if (!EscanOnly)
+		value = get1HDF5dataNum(f,"entry1/detector/gain")
+		if (numtype(value)==0)
+			str = num2str(value)
+			if (value == limit(round(value),0,5))		// special for the silly Perkin Elmer detectors
+				str = StringFromList(value,"0.25;0.5;1;2;4;8;")+"pF"
+			endif
+			wnote= ReplaceStringByKey("detectorGain",wnote,str,"=")
 		endif
-		wnote= ReplaceStringByKey("detectorGain",wnote,str,"=")
-	endif
-	value = get1HDF5dataNum(f,"entry1/scanNum")
-	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("scanNum",wnote,value,"=")
-	endif
-	value = get1HDF5dataNum(f,"entry1/sample/distance")
-	if (numtype(value)==0)
-		value = 1e-2 *round(value*1e5)	// convert from mm to µm
-		wnote= ReplaceNumberByKey("sampleDistance",wnote,value,"=")
-	endif
-
-	// BeamBad, CCDshutter, HutchTemperature, LightOn, MonoMode
-	value = get1HDF5dataNum(f,"entry1/microDiffraction/BeamBad")
-	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("BeamBad",wnote,value,"=")
+		value = get1HDF5dataNum(f,"entry1/scanNum")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("scanNum",wnote,value,"=")
+		endif
+		value = get1HDF5dataNum(f,"entry1/sample/distance")
+		if (numtype(value)==0)
+			value = 1e-2 *round(value*1e5)	// convert from mm to µm
+			wnote= ReplaceNumberByKey("sampleDistance",wnote,value,"=")
+		endif
 	endif
 
-	value = get1HDF5dataNum(f,"entry1/microDiffraction/CCDshutter")
-	if (numtype(value)==0)
-		str = num2str(value)							// should be 0 or 1
-		str = SelectString(value==0,str,"in")		// 0 means in
-		str = SelectString(value==1,str,"out")	// 1 means out
-		wnote= ReplaceStringByKey("CCDshutter",wnote,str,"=")
+	if (!EscanOnly)
+		// BeamBad, CCDshutter, HutchTemperature, LightOn, MonoMode
+		value = get1HDF5dataNum(f,"entry1/microDiffraction/BeamBad")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("BeamBad",wnote,value,"=")
+		endif
+
+		value = get1HDF5dataNum(f,"entry1/microDiffraction/CCDshutter")
+		if (numtype(value)==0)
+			str = num2str(value)							// should be 0 or 1
+			str = SelectString(value==0,str,"in")		// 0 means in
+			str = SelectString(value==1,str,"out")	// 1 means out
+			wnote= ReplaceStringByKey("CCDshutter",wnote,str,"=")
+		endif
+
+		value = get1HDF5dataNum(f,"entry1/microDiffraction/HutchTemperature")
+		if (numtype(value)==0)
+			value = round(value*100)/100
+			wnote= ReplaceNumberByKey("HutchTemperature",wnote,value,"=")
+		endif
+
+		value = get1HDF5dataNum(f,"entry1/microDiffraction/LightOn")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("LightOn",wnote,value,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/microDiffraction/MonoMode")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("MonoMode",wnote,str,"=")
+		endif
+
+		value = get1HDF5dataNum(f,"entry1/microDiffraction/source/current")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("ringCurrent",wnote,value,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/microDiffraction/source/gap")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("undulatorGap",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/microDiffraction/source/taper")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("undulatorTaper",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/microDiffraction/source/top_up")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("topUp",wnote,str,"=")
+		endif
 	endif
 
-	value = get1HDF5dataNum(f,"entry1/microDiffraction/HutchTemperature")
-	if (numtype(value)==0)
-		value = round(value*100)/100
-		wnote= ReplaceNumberByKey("HutchTemperature",wnote,value,"=")
-	endif
-
-	value = get1HDF5dataNum(f,"entry1/microDiffraction/LightOn")
-	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("LightOn",wnote,value,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/microDiffraction/MonoMode")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("MonoMode",wnote,str,"=")
-	endif
-
-	value = get1HDF5dataNum(f,"entry1/microDiffraction/source/current")
-	if (numtype(value)==0)
-		wnote= ReplaceNumberByKey("ringCurrent",wnote,value,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/microDiffraction/source/gap")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("undulatorGap",wnote,str,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/microDiffraction/source/taper")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("undulatorTaper",wnote,str,"=")
-	endif
-	str = get1HDF5dataStr(f,"entry1/microDiffraction/source/top_up")
-	if (strlen(str))
-		wnote= ReplaceStringByKey("topUp",wnote,str,"=")
-	endif
-
-	if (exists("ReadHDF5headerMore")==6)
-		FUNCREF ReadHDF5headerMoreProto  func=$"ReadHDF5headerMore"
-		wnote = func(f,wnote)
+	if (!EscanOnly)
+		if (exists("ReadHDF5headerMore")==6)
+			FUNCREF ReadHDF5headerMoreProto  func=$"ReadHDF5headerMore"
+			wnote = func(f,wnote)
+		endif
 	endif
 
 	HDF5CloseFile f
