@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.35
+#pragma version = 3.36
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2534,21 +2534,24 @@ ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector t
 		return SelectString(bare,"{}","")
 	endif
 
-	Wave/T tw=$GetWavesDataFolder(w,2)
-	Wave/C cw=$GetWavesDataFolder(w,2)
+//	Wave/T tw=$GetWavesDataFolder(w,2)
+//	Wave/C cw=$GetWavesDataFolder(w,2)
 	Variable waveIsComplex = WaveType(w) %& 0x01
 	Variable numeric = (WaveType(w)!=0)
 
 	String fmt
 	if (waveIsComplex)
+		Wave/C cw=w
 		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
 		sprintf fmt,"(%%.%dg, %%.%dg)",places,places
 	elseif (numeric)
 		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
 		sprintf fmt,"%%.%dg",places
-	elseif (places>0)								// must be string, and a maximum length given
+	elseif (places>0)										// must be text, and a maximum length given
+		Wave/T tw=w
 		sprintf fmt, "\"%d%%s\"",places
-	else												// string with no preferred length
+	else														// must be text with no preferred length
+		Wave/T tw=w
 		fmt = "\"%%s\""
 	endif
 
@@ -2562,7 +2565,7 @@ ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector t
 			sprintf str,fmt, real(cw[i]),imag(cw[i])
 		elseif (numeric && (!waveIsComplex))	// a simple number wave
 			sprintf str,fmt, w[i]
-		elseif (!numeric)						// a text wave
+		elseif (!numeric)							// a text wave
 			sprintf str,"\"%s\"", tw[i]
 		endif
 		out += str
