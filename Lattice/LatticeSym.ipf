@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.23
+#pragma version = 4.24
 #include "Utility_JZT" version>=3.30
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -93,6 +93,8 @@
 // with version 4.20, the xtl file is now carried along in the crystalStructure structure
 // with version 4.21, added directFrom_xtal(), which is a lot like recipFrom_xtal()
 // with version 4.23, added str2hkl(hklStr,h,k,l)
+// with version 4.24, moved ConvertUnits2meters(), ConvertTemperatureUnits() , and placesOfPrecision() to Utility_JZT.ipf
+//		also added NearestAllowedHKL(xtal,hkl)
 
 // Rhombohedral Transformation:
 //
@@ -1601,7 +1603,7 @@ Function/T findClosestHKL(dIN,[tolerance,usingQ])
 	return list
 End
 //
-Static Function incrementIndex(i)						// this is used for looping symmetrically over + and - indicies (see findClosestHKL for example)
+ThreadSafe Static Function incrementIndex(i)	// this is used for looping symmetrically over + and - indicies (see findClosestHKL for example)
 	Variable i
 	if (i==0)			// for i==0, increment
 		return 1
@@ -3261,151 +3263,6 @@ Static Function readFileXML(xtal,fileName,[path])
 	xtal.Nbonds = Nbond
 	ForceLatticeToStructure(xtal)
 	return 0
-End
-//
-Static Function ConvertUnits2meters(unit,[defaultLen])	// conversion factor from unit to meters, no default
-	String unit
-	Variable defaultLen
-	defaultLen = ParamIsDefault(defaultLen) ? NaN : defaultLen
-
-	unit = ReplaceString(" ",unit,"")			// no spaces
-
-	// check for powers  "^N"
-	Variable ipow=strsearch(unit,"^",0), power=1
-	if (ipow>=0)								// found a power
-		power = str2num(unit[ipow+1,Inf])	// number after "^"
-		unit = unit[0,ipow-1]					// string before "^"
-	endif
-
-	if (stringmatch(unit,"*s"))				// and no trailing 's'
-		unit = unit[0,strlen(unit)-2]
-	endif
-	unit = ReplaceString("√Ö",unit,"Å")		// a funny encodeing of Angstrom symbol
-	// first handle the special cases of Angstrom or micron
-	if (stringmatch(unit,"Ang*") || stringmatch(unit,"Å*"))	// Angstroms
-		return 1e-10^power
-	elseif (stringmatch(unit,"micrometer") || stringmatch(unit,"micron"))	
-		return 1e-6 ^ power
-	endif
-
-	String prefix
-	Variable value=NaN, i = max(0,strlen(unit)-1)
-	if (strsearch(unit,"m",i)==i)				// ends in 'm', means meters
-		value = 1
-		prefix = unit[0,strlen(unit)-2]
-	elseif(stringmatch(unit,"*in") || stringmatch(unit,"*inch"))	 // a few english units just for fun
-		value = 25.4e-3
-		i = stringmatch(unit,"*inch") ? 5 : 3
-		prefix = unit[0,strlen(unit)-i]
-	elseif(stringmatch(unit,"*ft") || stringmatch(unit,"*foot") || stringmatch(unit,"*feet"))
-		value = 12*25.4e-3
-		i = stringmatch(unit,"*foot") ? 5 : 3
-		i = stringmatch(unit,"*feet") ? 5 : i
-		prefix = unit[0,strlen(unit)-i]
-	elseif(stringmatch(unit,"*mi") || stringmatch(unit,"*mile"))
-		value = 5280*12*25.4e-3
-		i = stringmatch(unit,"*mile") ? 5 : 3
-		prefix = unit[0,strlen(unit)-i]
-	elseif(stringmatch(unit,"*yd") || stringmatch(unit,"*yard"))
-		value = 3*12*25.4e-3
-		i = stringmatch(unit,"*yard") ? 5 : 3
-		prefix = unit[0,strlen(unit)-i]
-	elseif(stringmatch(unit,"*mil"))			// 0.001 inch
-		value = 25.4e-6
-		prefix = unit[0,strlen(unit)-4]
-	elseif(stringmatch(unit,"*pc") || stringmatch(unit,"*parsec"))
-		value = 3.08568025e16
-		i = stringmatch(unit,"*parsec") ? 7 : 3
-		prefix = unit[0,strlen(unit)-i]
-	elseif(stringmatch(unit,"*ly") || stringmatch(unit,"*lightYear"))
-		value = 9.4605284e15
-		i = stringmatch(unit,"*lightYear") ? 10 : 3
-		prefix = unit[0,strlen(unit)-i]
-	else
-		return defaultLen						// cannot find base value
-	endif
-
-	value *= SIprefix2factor(prefix)
-	return value ^ power
-End
-//
-Static Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Temperature in units of (unitOut)
-	String unitIn, unitOut							// input and output units, NO defaults allowed
-	Variable Tin									// input temperature in units of (unitIn)
-
-	unitIn = ReplaceString("Kelvin",unitIn,"K")	// use single letter abreviations
-	unitOut = ReplaceString("Kelvin",unitOut,"K")
-	unitIn = ReplaceString("Celsius",unitIn,"C")
-	unitOut = ReplaceString("Celsius",unitOut,"C")
-
-	unitIn = ReplaceString(" ",unitIn,"")			// no spaces
-	unitIn = ReplaceString("°",unitIn,"")			// no degree signs
-	if (stringmatch(unitIn,"*s"))					// and no trailing 's'
-		unitIn = unitIn[0,strlen(unitIn)-2]
-	endif
-
-	unitOut = ReplaceString(" ",unitOut,"")			// no spaces
-	unitOut = ReplaceString("°",unitOut,"")			// no degree signs
-	if (stringmatch(unitOut,"*s"))					// and no trailing 's'
-		unitOut = unitOut[0,strlen(unitOut)-2]
-	endif
-
-	if (strlen(unitIn)<1 || strlen(unitOut)<1)
-		return NaN
-	endif
-
-	Variable Tout, Kelvin, factor, n
-	if (strlen(unitIn)>1)
-		n = strlen(unitIn)
-		Tin *= SIprefix2factor(unitIn[0,n-2])
-		unitIn = unitIn[n-1]					// the last character
-	endif
-	strswitch(unitIn)							// first convert Tin to Kelvin
-		case "F":
-			Kelvin = (Tin - 32) * 5/9 + 273.15
-			break
-		case "R":
-			Kelvin = Tin * 5/9
-			break
-		case "C":
-			Kelvin = Tin + 273.15
-			break
-		case "K":
-			Kelvin = Tin
-			break
-		default:
-			return NaN
-		endswitch
-
-	if (strlen(unitOut)>1)
-		n = strlen(unitOut)
-		factor = SIprefix2factor(unitOut[0,n-2])
-		unitOut = unitOut[n-1]					// the last character
-	else
-		factor = 1
-	endif
-	if (WhichListItem(unitOut,"K;C;F;R;",";",0,1)<0)
-		return NaN
-	endif
-	strswitch(unitOut)							// convert Kelvin to Tout
-		case "F":
-			Tout = (Kelvin-273.15)*9/5 + 32
-			break
-		case "R":
-			Tout = Kelvin * 9/5
-			break
-		case "C":
-			Tout = Kelvin - 273.15
-			break
-		case "K":
-			Tout = Kelvin
-			break
-		default:
-			return NaN
-		endswitch
-	Tout /= factor
-
-	return Tout
 End
 
 
@@ -5094,14 +4951,67 @@ Function lowestAllowedHKL(h,k,l)
 End
 
 
-Function/WAVE recipFrom_xtal(xtal)				// returns a FREE wave with reciprocal lattice
+Function NearestAllowedHKL(xtal,hkl,[dhklMax])
+	// find the hkl of the allowed reflection that is closest to the given hkl
+	STRUCT crystalStructure &xtal
+	Wave hkl				// wave with input hkl, returned as nearest allowed hkl
+	Variable dhklMax	// distance in hkl to search around hkl input
+	dhklMax = ParamIsDefault(dhklMax) || numtype(dhklMax) || dhklMax<1 ? 1 : dhklMax
+
+	Variable N=(2*dhklMax+1)^3			// number of hkl's to check
+	Variable h0=round(hkl[0]), k0=round(hkl[1]), l0=round(hkl[2])
+	Make/N=(N,3)/FREE/I hklTest
+	Variable i, m, dh,dk,dl
+	for (dl=0; dl<=dhklMax; dl=incrementIndex(dl))
+		for (dk=0; dk<=dhklMax; dk=incrementIndex(dk))
+			for (dh=0; dh<=dhklMax; dh=incrementIndex(dh), m+=1)
+				hklTest[m][0] = dh+h0		// list of possibel nearest allowed hkl's
+				hklTest[m][1] = dk+k0
+				hklTest[m][2] = dl+l0
+			endfor
+		endfor
+	endfor
+	Wave recip = recipFrom_xtal(xtal)	// reciprocal lattice vectors
+	MatrixOp/FREE qIn = recip x hkl		// q of input hkl
+	MatrixOp/FREE dqs = sumRows(magSqr((recip x (hklTest)^t)^t - RowRepeat(qIn,N)))
+	Make/N=(N)/FREE/I indexW
+	MakeIndex dqs, indexW					// indexW contains hkl's ordered by closeness to hkl
+
+	// find first allowed reflection checking in the order given by indexW
+	for (i=0;i<N;i+=1)
+		m = indexW[i]
+		if (allowedHKL(hklTest[m][0],hklTest[m][1],hklTest[m][2],xtal))
+			hkl = hklTest[m][p]				// found an allowed reflection, the answer
+			return 0
+		endif
+	endfor
+	dhklMax += 2								// increase search range and try again
+	return NearestAllowedHKL(xtal,hkl,dhklMax=dhklMax)
+End
+//	Function test()
+//		STRUCT crystalStructure xtal
+//		FillCrystalStructDefault(xtal)
+//	
+//		Make/N=3/D/FREE hkl={0,0,1.45}
+//		printf "starting at hkl = %s\r",vec2str(hkl)
+//		Variable err = NearestAllowedHKL(xtal,hkl)
+//		if (err)
+//			print "ERROR"
+//		else
+//			printf "nearest allowed hkl = %s\r",vec2str(hkl)
+//		endif
+//		return 0
+//	End
+
+
+Function/WAVE recipFrom_xtal(xtal)		// returns a FREE wave with reciprocal lattice
 	STRUCT crystalStructure &xtal
 	Make/N=(3,3)/D/FREE RL
-	RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}	// the reciprocal lattice
+	RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}		// the reciprocal lattice
 	RL[0][1] = {xtal.bs0,xtal.bs1,xtal.bs2}
 	RL[0][2] = {xtal.cs0,xtal.cs1,xtal.cs2}
-	if (numtype(sum(RL)) || WaveMax(RL)==0)	// bad numbers in RL
-		setDirectRecip(xtal)						// re-make the as0, as1, ...
+	if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+		setDirectRecip(xtal)							// re-make the as0, as1, ...
 		RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}	// try again
 		RL[0][1] = {xtal.bs0,xtal.bs1,xtal.bs2}
 		RL[0][2] = {xtal.cs0,xtal.cs1,xtal.cs2}
@@ -5254,18 +5164,6 @@ End
 //	return str
 //End
 
-
-ThreadSafe Static Function placesOfPrecision(a)		// number of significant figures in a number
-	Variable a
-	a = roundSignificant(abs(a),17)
-	Variable i
-	for (i=1;i<18;i+=1)
-		if (abs(a-roundSignificant(a,i))/a<1e-15)
-			break
-		endif
-	endfor
-	return i
-End
 
 
 Function copy_xtal(target,source)						// copy a crystalStructure source to target

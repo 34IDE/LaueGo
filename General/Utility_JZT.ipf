@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.36
+#pragma version = 3.37
 // #pragma hide = 1
 
 Menu "Graph"
@@ -59,9 +59,15 @@ End
 //		str2vec(), convert a string to a free vector
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
 //		str2cmplx(str), 	this is like str2num, but for complex
-//		ReplaceCharacters(chars,inStr,replacement), replace any occurance of a character in chars with replacement
-//		SIprefix2factor(prefix), get the factor for an SI prefix
+//		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
+//		ChangeStrEnding(oldEnd, inStr, newEnd)  if inStr ends in oldEnd, replace oldEnd with newEnd
+//		SIprefix2factor(prefix)  get the factor for an SI prefix
+//		ConvertUnits2meters(unit,[defaultLen])  returns conversion factor from unit to meters
+//		ConvertTemperatureUnits(Tin,unitIn,unitOut)  returns Temperature in units of (unitOut)
+//		ConvertNumWithUnitsLength(in,outUnit,[rnd,space])  can convert "2in" to "0.0508 m"
+//		SplitNumAndUnits(in)  take string such as "-9.3e2 mi" --> "-9.3e2;mi",  or "2 nm^-1" --> "2;nm^-1"
 //		RomanNumeral(j) converts a number to a Roman Numeral string, NO upper limit, so watch out for string length
+//		RomanNumeral2Int(str) convert a Roman Numeral string to an integer
 //	9	Old legacy or deprecated functions
 
 
@@ -2680,14 +2686,29 @@ End
 
 
 ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
-	String chars			// replace any occurance of a character in chars with replacement
-	String inStr
-	String replacement
+	// replace all occurances of a character in chars[] with replacement
+	String chars			// look for each of the characters in chars
+	String inStr			// input string
+	String replacement	// replace every occurance of chars[i] with this
 
 	Variable i, N=strlen(chars)
 	for (i=0;i<N;i+=1)
 		inStr = ReplaceString(chars[i],inStr,replacement)	
 	endfor
+	return inStr
+End
+
+
+ThreadSafe Function/T ChangeStrEnding(oldEnd, inStr, newEnd)
+	// if inStr ends in oldEnd, replace oldEnd with newEnd
+	// if oldEnd =="", always add newEnd
+	// if newEnd=="", removes oldEnd
+	String oldEnd					// existing ending to replace
+	String inStr					// given string
+	String newEnd					// replace oldEnd with this
+	if (StringMatch(inStr,"*"+oldEnd))
+		inStr = RemoveEnding(inStr,oldEnd)+newEnd
+	endif
 	return inStr
 End
 
@@ -2751,6 +2772,289 @@ End
 //	End
 
 
+ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
+	// returns conversion factor from unit to meters
+	String unit
+	Variable defaultLen
+	defaultLen = ParamIsDefault(defaultLen) ? NaN : defaultLen
+
+	unit = ReplaceString(" ",unit,"")			// no spaces
+
+	// check for powers  "^N"
+	Variable ipow=strsearch(unit,"^",0), power=1
+	if (ipow>=0)										// found a power
+		power = str2num(unit[ipow+1,Inf])		// number after "^"
+		unit = unit[0,ipow-1]						// string before "^"
+	endif
+
+	// fix spellings
+	unit = ChangeStrEnding("metre",unit,"meter")	// British spelling
+	unit = ChangeStrEnding("feet",unit,"foot")
+	unit = ChangeStrEnding("inches",unit,"inch")
+	unit = ChangeStrEnding("fermi",unit,"fm")
+	unit = ChangeStrEnding("Ã…",unit,"")		// funny encoding of Angstrom symbol
+	unit = ChangeStrEnding("Ang",unit,"")	// lots of ways to write Angstrom
+	unit = ChangeStrEnding("Angstrom",unit,"")
+	unit = ChangeStrEnding("micrometer",unit,"µm")
+	unit = ChangeStrEnding("micron",unit,"µm")
+	unit = ChangeStrEnding("micro",unit,"µ")
+	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
+
+	String prefix
+	Variable value=NaN, i = max(0,strlen(unit)-1)
+	if (strsearch(unit,"m",i)==i)				// ends in 'm', means meters
+		value = 1
+		prefix = unit[0,strlen(unit)-2]
+	elseif(StringMatch(unit,"*"))	 			// the Angstrom
+		value = 1e-10
+		prefix = unit[0,strlen(unit)-2]
+	elseif(StringMatch(unit,"*CuXunit") || StringMatch(unit,"*CuXU"))	// the Cu X-unit
+		value = 1.00207697e-13 
+		i = StringMatch(unit,"*CuXU") ? 5 : 8
+		prefix = unit[0,strlen(unit)-8]
+	elseif(StringMatch(unit,"*MoXunit") || StringMatch(unit,"*MoXU")) // the Mo X-unit
+		value = 1.00209952e-13 
+		i = StringMatch(unit,"*MoXU") ? 5 : 8
+		prefix = unit[0,strlen(unit)-8]
+	elseif(StringMatch(unit,"*Xunit") || StringMatch(unit,"*XU"))		// the X-unit (just average of Mo & Cu)
+		value = 1.002088e-13
+		i = StringMatch(unit,"*XU") ? 3 : 6
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*pc") || StringMatch(unit,"*parsec"))
+		value = 3.08568025e16
+		i = StringMatch(unit,"*parsec") ? 7 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*ly") || StringMatch(unit,"*lightYear"))
+		value = 9.4605284e15
+		i = StringMatch(unit,"*lightYear") ? 10 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*au") || StringMatch(unit,"*astronomicalunit"))
+		value = 149597870700
+		i = StringMatch(unit,"*au") ? 3 : 17
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*a0") || StringMatch(unit,"*ao") || StringMatch(unit,"*BohrRadiu"))
+		value = 0.52917721092e-10
+		i = StringMatch(unit,"*BohrRadiu") ? 10 : 3		// the "s" got trimmed off!
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*Plank") || StringMatch(unit,"*PlanckLength"))
+		value = 1.616199e-35
+		i = StringMatch(unit,"*Plank") ? 6 : 13
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*in") || StringMatch(unit,"*inch"))	 	// a few english units just for fun
+		value = 25.4e-3
+		i = StringMatch(unit,"*inch") ? 5 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*ft") || StringMatch(unit,"*foot") || StringMatch(unit,"*feet"))
+		value = 12*25.4e-3
+		i = StringMatch(unit,"*ft") ? 3 : 5
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*nauticalmile"))
+		value = 1852
+		prefix = unit[0,strlen(unit)-13]
+	elseif(StringMatch(unit,"*mi") || StringMatch(unit,"*mile"))
+		value = 5280*12*25.4e-3
+		i = StringMatch(unit,"*mile") ? 5 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*yd") || StringMatch(unit,"*yard"))
+		value = 3*12*25.4e-3
+		i = StringMatch(unit,"*yard") ? 5 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*mil"))			// 0.001 inch
+		value = 25.4e-6
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*fathom"))		// 6 feet
+		value = 6*12*25.4e-3
+		prefix = unit[0,strlen(unit)-7]
+	elseif(StringMatch(unit,"*chain"))			// 66 feet
+		value = 66*12*25.4e-3
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*rod"))			// 16.5 feet
+		value = 16.5*12*25.4e-3
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*league"))		// 3 miles
+		value = 3*5280*12*25.4e-3
+		prefix = unit[0,strlen(unit)-7]
+	elseif(StringMatch(unit,"*furlong"))		// 660 feet
+		value = 660*12*25.4e-3
+		prefix = unit[0,strlen(unit)-8]
+	elseif(StringMatch(unit,"*cubit"))			// a rough number
+		value = 0.525
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*point"))			// 1/72 inch
+		value = 25.4e-3 / 72
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*pica"))			// 1/72 foot
+		value = 12*25.4e-3 / 72
+		prefix = unit[0,strlen(unit)-5]
+	elseif(StringMatch(unit,"*Li"))				// Chinese mile is 500m
+		value = 500
+		prefix = unit[0,strlen(unit)-3]
+	else
+		return defaultLen								// cannot find base value
+	endif
+
+	value *= SIprefix2factor(prefix)
+	return (power==1) ? value : (value ^ power)
+End
+
+
+Function/T ConvertNumWithUnitsLength(in,outUnit,[rnd,space])
+	// converts string like "2in" to "0.0508 m"
+	// ConvertNumWithUnitsLength("2 in","cm") --> "5.08 cm"
+	// if you know the units and just want to conver a number, use ConvertUnits2meters()
+	String in				// input string e.g. "2 in" or "1nm^-2"...
+	String outUnit			// desired final unit, e.g. "cm" or "Angstrom^-2"
+	Variable rnd			// if rnd True, use same number of places in final as input (default=False)
+	Variable space			// flag, if True put space between number and unit (default=True)
+	rnd = ParamIsDefault(rnd) ? NaN : rnd
+	rnd = numtype(rnd) ? 0 : !(!rnd)
+	space = ParamIsDefault(space) ? 1 : !(!space)
+
+	String list = SplitNumAndUnits(in)
+	Variable val = str2num(StringFromList(0,list))
+	String inUnit = StringFromList(1,list)
+	if (strlen(inUnit)<1 || numtype(val))
+		return ""
+	endif
+	String powIn,powOut				// check that units have same power
+	Variable i = strsearch(inUnit,"^",strlen(inUnit)-1,1)
+	i = i<0 ? Inf : i
+	powIn = inUnit[i,Inf]
+	i = strsearch(outUnit,"^",strlen(outUnit)-1,1)
+	i = i<0 ? Inf : i
+	powOut = outUnit[i,Inf]
+	if (cmpstr(powIn, powOut))
+		return ""
+	endif
+
+	Variable places = rnd ? placesOfPrecision(val)+1 : 16
+	places = limit(places,1,16)
+	val *= ConvertUnits2meters(inUnit)/ConvertUnits2meters(outUnit)
+
+	String out, sspace=SelectString(space,""," ")
+	String fmt="%."+num2istr(places)+"g"+sspace+"%s"
+	sprintf out, fmt,val,outUnit
+	return out
+End
+
+
+Function/T SplitNumAndUnits(in)
+	// take string such as "-9.3e2mi" --> "-9.3e2;mi",  or "2 nm^-1" --> "2;nm^-1"
+	// this is useful with ConvertNumWithUnitsLength() above
+	String in
+
+	in = ReplaceString(" ",in,"")
+	in = ReplaceString("\t",in,"")
+	Variable i,N=strlen(in)
+	i = strsearch(in,"^",N-1,1)-1
+	i = i<0 ? N-1 : i
+	for ( ;i>=0;i-=1)
+		if (strsearch("01234567890.,",in[i],0)>=0)
+			i += 1
+			break
+		endif
+	endfor
+	String unit = in[i,N-1]
+	String num = in[0,i-1]
+	num = RemoveEnding(num,".")
+	num = RemoveEnding(num,",")
+	return num+";"+unit
+End
+
+
+ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Temperature in units of (unitOut)
+	// ConvertTemperatureUnits(400,"K","F") --> "260.33"
+	// work for Celsius, Kelvin, Fahrenheit, Rankine, & Plank units
+	// for Plank Temperature, see: http://en.wikipedia.org/wiki/Planck_temperature
+	String unitIn, unitOut			// input and output units, NO defaults allowed
+	Variable Tin						// input temperature in units of (unitIn)
+
+	unitIn = ReplaceString("Temperature",unitIn,"")
+	unitOut = ReplaceString("Temperature",unitOut,"")
+	unitIn = ReplaceString("Temp",unitIn,"")
+	unitOut = ReplaceString("Temp",unitOut,"")
+
+	unitIn = ReplaceString("Kelvin",unitIn,"K")// use single letter abreviations
+	unitOut = ReplaceString("Kelvin",unitOut,"K")
+	unitIn = ReplaceString("Celsius",unitIn,"C")
+	unitOut = ReplaceString("Celsius",unitOut,"C")
+	unitIn = ReplaceString("Fahrenheit",unitIn,"F")
+	unitOut = ReplaceString("Fahrenheit",unitOut,"F")
+	unitIn = ReplaceString("Rankine",unitIn,"R")
+	unitOut = ReplaceString("Rankine",unitOut,"R")
+	unitIn = ReplaceString("Plank",unitIn,"P")// Plank Temperature
+	unitOut = ReplaceString("Plank",unitOut,"P")
+
+	unitIn = ReplaceString(" ",unitIn,"")			// no spaces
+	unitIn = ReplaceString("¡",unitIn,"")			// no degree signs
+	unitIn = RemoveEnding(unitIn,"s")				// and no trailing 's'
+
+	unitOut = ReplaceString(" ",unitOut,"")		// no spaces
+	unitOut = ReplaceString("¡",unitOut,"")		// no degree signs
+	unitOut = RemoveEnding(unitOut,"s")			// and no trailing 's'
+
+	if (strlen(unitIn)<1 || strlen(unitOut)<1)
+		return NaN
+	endif
+
+	Variable T_Plank = 1.416833e32					// Plank Temperature (K)
+	Variable Tout, Kelvin, n
+	if (strlen(unitIn)>1)
+		n = strlen(unitIn)
+		Tin *= SIprefix2factor(unitIn[0,n-2])
+		unitIn = unitIn[n-1]							// the last character
+	endif
+	strswitch(unitIn)										// first convert Tin to Kelvin
+		case "F":
+			Kelvin = (Tin - 32) * 5/9 + 273.15
+			break
+		case "R":
+			Kelvin = Tin * 5/9
+			break
+		case "C":
+			Kelvin = Tin + 273.15
+			break
+		case "K":
+			Kelvin = Tin
+			break
+		case "P":
+			Kelvin = Tin / T_Plank
+			break
+		default:
+			return NaN
+		endswitch
+
+	Variable factor=1
+	if (strlen(unitOut)>1)
+		n = strlen(unitOut)
+		factor = SIprefix2factor(unitOut[0,n-2])
+		unitOut = unitOut[n-1]							// the last character
+	endif
+	strswitch(unitOut)									// convert Kelvin to unitOut
+		case "F":
+			Tout = (Kelvin-273.15)*9/5 + 32
+			break
+		case "R":
+			Tout = Kelvin * 9/5
+			break
+		case "C":
+			Tout = Kelvin - 273.15
+			break
+		case "K":
+			Tout = Kelvin
+			break
+		case "P":
+			Tout = Kelvin / T_Plank
+			break
+		default:
+			return NaN
+		endswitch
+	Tout /= factor
+
+	return Tout
+End
+
+
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
 	Variable j
 	j = round(j)
@@ -2786,6 +3090,7 @@ ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral St
 	endif
 	return ""
 End
+
 
 ThreadSafe Function RomanNumeral2Int(str)	// convert a Roman Numeral string to an integer
 	String str
