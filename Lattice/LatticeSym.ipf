@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.24
+#pragma version = 4.25
 #include "Utility_JZT" version>=3.30
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -95,6 +95,7 @@
 // with version 4.23, added str2hkl(hklStr,h,k,l)
 // with version 4.24, moved ConvertUnits2meters(), ConvertTemperatureUnits() , and placesOfPrecision() to Utility_JZT.ipf
 //		also added NearestAllowedHKL(xtal,hkl)
+// with version 4.25, added equivalentHKLs(xtal,hkl0,[noNeg]), get list of hkl's symmetry equivalent to hkl0
 
 // Rhombohedral Transformation:
 //
@@ -4313,6 +4314,52 @@ Function allowedHKL(h,k,l,xtal)
 	STRUCT crystalStructure &xtal
 	Variable/C Fc = Fstruct(xtal,h,k,l)
 	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
+End
+
+
+ThreadSafe Function/WAVE equivalentHKLs(xtal,hkl0,[noNeg])
+	// returns a wave of all the hkls that are symmetry equivalent to hkl0
+	// e.g. hl0=(100) returns { (100), (010), (001), (-100), (0 -1 00, (0 0 -1) }, 6 hkl's
+	// and with noNeg=1, returns { (100), (010), (0 0 -1) }, 3 hkl's
+
+	STRUCT crystalStructure &xtal			// convert the hkls to q vectors
+	Wave hkl0										// given hkl
+	Variable noNeg									// flag, if true, then do not include (-1,-1,-1) for (111)
+	noNeg = ParamIsDefault(noNeg) || numtype(noNeg) ? 0 : !(!noNeg)
+
+	if (numtype(sum(hkl0))!=0)
+		return $""
+	elseif (norm(hkl0)<=0)
+		Make/N=3/D/FREE hkls={0,0,0}
+		return hkls
+	endif
+
+	Wave SymmetryOp = $"root:Packages:Lattices:SymOps:SymmetryOps"+num2istr(xtal.SpaceGroup)
+	if (!WaveExists(SymmetryOp))
+		Wave SymmetryOp = $LatticeSym#MakeSymmetryOps(xtal)	// wave with all the symmetry operation
+	endif
+
+	Variable Nproper=NumberByKey("Nproper",note(SymmetryOp),"=")
+	Make/N=(3,3)/D/FREE rot
+	Make/N=(Nproper,3)/D/FREE hklEquiv=NaN	// holds all the symmetry equivalent hkl
+	Variable isym,NsymOps, diffMin
+	for (isym=0, NsymOps=0; isym<Nproper; isym+=1)
+		rot = SymmetryOp[isym][p][q]
+		MatrixOp/FREE/O hkl = rot x hkl0	// possible hkl to add to hklEquiv
+		MatrixOp/FREE/O diffs = sumRows(magsqr(hklEquiv - RowRepeat(hkl,Nproper)))
+		diffMin = WaveMin(diffs)
+		if (noNeg)									// try again with -hkl
+			MatrixOp/FREE/O diffs = sumRows(magsqr(hklEquiv - RowRepeat(-hkl,Nproper)))
+			diffMin = min(diffMin,WaveMin(diffs))
+		endif
+		if (diffMin>0.1 || NsymOps<1)		// no match in hklEquiv, add this hkl to list
+			hklEquiv[NsymOps][] = hkl[q]
+			NsymOps += 1
+		endif
+	endfor
+
+	Redimension/N=(NsymOps,3) hklEquiv
+	return hklEquiv
 End
 
 
