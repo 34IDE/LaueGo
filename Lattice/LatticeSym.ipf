@@ -4327,12 +4327,13 @@ ThreadSafe Function/WAVE equivalentHKLs(xtal,hkl0,[noNeg])
 	Variable noNeg									// flag, if true, then do not include (-1,-1,-1) for (111)
 	noNeg = ParamIsDefault(noNeg) || numtype(noNeg) ? 0 : !(!noNeg)
 
-	if (numtype(sum(hkl0))!=0)
+	if (numtype(sum(hkl0))!=0)				// bad values
 		return $""
-	elseif (norm(hkl0)<=0)
+	elseif (norm(hkl0)<=0)						// hkl0 == 0
 		Make/N=3/D/FREE hkls={0,0,0}
 		return hkls
 	endif
+	Variable thresh = norm(hkl0)/1e4		// error that triggers a difference
 
 	Wave SymmetryOp = $"root:Packages:Lattices:SymOps:SymmetryOps"+num2istr(xtal.SpaceGroup)
 	if (!WaveExists(SymmetryOp))
@@ -4352,7 +4353,7 @@ ThreadSafe Function/WAVE equivalentHKLs(xtal,hkl0,[noNeg])
 			MatrixOp/FREE/O diffs = sumRows(magsqr(hklEquiv - RowRepeat(-hkl,Nproper)))
 			diffMin = min(diffMin,WaveMin(diffs))
 		endif
-		if (diffMin>0.1 || NsymOps<1)		// no match in hklEquiv, add this hkl to list
+		if (diffMin>thresh || NsymOps<1)	// no match in hklEquiv, add this hkl to list
 			hklEquiv[NsymOps][] = hkl[q]
 			NsymOps += 1
 		endif
@@ -4361,6 +4362,21 @@ ThreadSafe Function/WAVE equivalentHKLs(xtal,hkl0,[noNeg])
 	Redimension/N=(NsymOps,3) hklEquiv
 	return hklEquiv
 End
+//	Function test_equivalentHKLs(hklStr)
+//		String hklStr
+//		Wave hkl0 = str2vec(hklStr)
+//	
+//		STRUCT crystalStructure xtal
+//		if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
+//			DoAlert 0, "ERROR RadialCorrelationFrom3D()\rno lattice structure found"
+//			return 1
+//		endif
+//	//	normalize(hkl0)
+//		Wave qhats = equivalentHKLs(xtal,hkl0,noNeg=1)// list of desired directions dims of qhats=(N,3)
+//		Variable Nqs = DimSize(qhats,0)
+//		print "from hkl0 = ",vec2str(hkl0),"   Nqs = ",Nqs
+//		printWave(qhats,name="",brief=1)
+//	End
 
 
 ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry operation
