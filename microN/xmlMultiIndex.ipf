@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.74
+#pragma version=1.75
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -2632,7 +2632,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		rgba[][0,2] = rotrgb[p][q]
 		KillWaves/Z rotrgb
 	else													// calcualte colors from a color table from values
-		Variable m,ic,Nc=DimSize(colors,0)	// using M_colors
+		Variable m,ic,Nc=DimSize(colors,0)		// using M_colors
 		for (m=0;m<N;m+=1)
 			ic = (values[m]-lo) / (hi-lo)  * (Nc-1)
 			ic = limit(round(ic),0,Nc-1)
@@ -2665,6 +2665,11 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		rgba /= 65535									// colors appropriate for a Gizmo are in [0,1]
 		if (WaveExists(intens))
 			rgba[][3] = intens[p]					// use intens to set the alpha channel for Gizmos
+		else
+			Variable alpha=1							// value for a constant alpha channel
+			alpha = N>1e3 ? 0.5 : alpha			// for bigger N, reduce alpha
+			alpha = N>4e4 ? 0.3 : alpha
+			rgba[][3] = alpha							// no intensity, set alpha, a constant for all points
 		endif
 		rgba = limit(rgba,0,1)						// Gizmos want colors in range [0,1]
 	endif
