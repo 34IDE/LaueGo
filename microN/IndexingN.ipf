@@ -2852,6 +2852,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 			printf "Failed to open %s for writing", FullBatchFileName
 			return ""
 		endif
+		fprintf BatchFileRN, "%s:\r\n", ParseFilePath(0,mpath,":",0,0)   // drive letter + ":"
 		fprintf BatchFileRN, "cd \"%s\"\r\n", MacToWindows(mpath)
 		fprintf BatchFileRN, "\"%s\" %s \"%s\" \"%s\"\r\n", WinPeakSearchPath,params,WinimageFilePath,peakFile
 		close BatchFileRN
