@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.56
+#pragma version = 1.57
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -416,6 +416,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		Prompt NoMovie,"Do NOT make the movie",popup,"Make the Movie;NO Movie"
 		flatten += 1
 		skipZeros += 1
+		NoMovie += 1
 		DoPrompt "movie type",type,makeSum,flatten,skipZeros,moreFunc,NoMovie
 		if (V_flag)
 			return 1
