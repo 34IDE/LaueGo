@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, July 10, 2014" time="06:19:28 PM CDT" isoTime="2014-07-10T18:19:28"></written>
+	<written date="Saturday, July 12, 2014" time="08:02:00 PM CDT" isoTime="2014-07-12T20:02:00"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>259</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -136,7 +136,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
-	<file version="1.64" time="2014-05-27T09:55:52" md5="46df34d85a51e022d741fbd695fdc085" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="1.65" time="2014-07-12T20:01:03" md5="1dcd8a220609fe6d15f7d6ba63f48046" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.09" time="2014-05-27T09:55:52" md5="a6bbe0b19c2425844854a6bcfcd1bc73" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bb6ba6241034143a7da9c01eabf2d869" ext=".xml">materials/VO2/VO2_M1_1992Rogers.xml</file>
 	<file version="2.45" time="2014-04-30T10:31:42" md5="f9c25255fa9412fb4782ddec82726247" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>

@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.64
-#include  "LatticeSym", version>=4.13
+#pragma version = 1.65
+#include  "LatticeSym", version>=4.25
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 
@@ -36,7 +36,7 @@ Menu "Help"
 End
 Menu LaueGoMainMenuName, dynamic
 //	"-"
-	"ÐÐ> LueGo Panel", /Q, MakeMicroPanel(-1)
+	"ÐÐ> LaueGo Panel", /Q, MakeMicroPanel(-1)
 	"LaueGo Help",DisplayHelpTopic/K=1  "LaueGo"
 //	"-"
 	"Hwire calculator",PanelHwireMake() 
