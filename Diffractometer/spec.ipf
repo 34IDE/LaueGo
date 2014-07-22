@@ -1,12 +1,12 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.31
+#pragma version = 2.32
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
 
 Constant Epoch_spec_Igor = 2082844800	// add this number to spec EPOCH to get Igor EPOCH, i.e. print Secs2Date(EPOCH+Epoch_spec_Igor,1)
-Static strConstant specFileFilters = "spec Files (*.spc):.spc;text Files (*.txt):.txt;All Files:.*;"
+Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text Files (*.txt):.txt;All Files:.*;"
 
 
 // written by Jon Tischler.
@@ -94,6 +94,8 @@ Static strConstant specFileFilters = "spec Files (*.spc):.spc;text Files (*.txt)
 // Oct 18, 2013, changed DisplayRangeOfSpecScans() so that overlay = "new+append" works right
 //
 // Dec 30, 2013, added SpecGenericGraphStyle(), this will call user function SpecGenericGraphStyleLocal() or the SpecGenericGraphStyleTemplate()
+//
+// July 21, 2014, changed specFileFilters, not can use ".spc" or ".spec"
 
 Menu "Data"
 	"-"
