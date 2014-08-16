@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.65
+#pragma version = 1.66
 #include  "LatticeSym", version>=4.25
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -644,65 +644,41 @@ End
 //
 ThreadSafe Static Function/C chiRange(d)	// chi is rotation about the z-axis
 	STRUCT detectorGeometry &d
-	Variable chi,chiMin=+inf, chiMax=-inf
-	Variable px,py
-	Make/N=3/D/FREE xyz
-
-	px = 0;			py = 0
-	pixel2XYZ(d,px,py,xyz)					// convert pixel position to the beam line coordinate system
-	chi = atan2(xyz[0],xyz[1]) * 180/PI
-	chiMin = min(chiMin,chi)
-	chiMax = max(chiMax,chi)
-
-	px = 0;			py = d.Ny-1
-	pixel2XYZ(d,px,py,xyz)
-	chi = atan2(xyz[0],xyz[1]) * 180/PI
-	chiMin = min(chiMin,chi)
-	chiMax = max(chiMax,chi)
-
-	px = d.Nx-1;	py = 0
-	pixel2XYZ(d,px,py,xyz)
-	chi = atan2(xyz[0],xyz[1]) * 180/PI
-	chiMin = min(chiMin,chi)
-	chiMax = max(chiMax,chi)
-
-	px = d.Nx-1;	py = d.Ny-1
-	pixel2XYZ(d,px,py,xyz)
-	chi = atan2(xyz[0],xyz[1]) * 180/PI
-	chiMin = min(chiMin,chi)
-	chiMax = max(chiMax,chi)
-
+	Make/N=3/D/FREE xyz, perp, ki={0,0,1}
+	normalize(ki)
+	Make/N=8/D/FREE pxw={0,0.5,1, 0,1, 0,0.5,1}, pyw={0,0,0, 0.5,0.5, 1,1,1}
+	pxw *= d.Nx-1								// {pxw,pyw} are 8 points around edge of detector
+	pyw *= d.Ny-1
+	Variable i, chi,chiMin=+inf, chiMax=-inf
+	for (i=0;i<8;i+=1)						// check 8 points around edge of detector
+		pixel2XYZ(d,pxw[i],pyw[i],xyz)	// convert pixel position to the beam line coordinate system
+		perp = xyz - ki*MatrixDot(xyz,ki)	// remove forward part of xyz
+		chi = atan2(perp[0],perp[1]) * 180/PI
+		chiMin = min(chiMin,chi)
+		chiMax = max(chiMax,chi)
+	endfor
 	return cmplx(chiMin,chiMax)
 End
 //
 ThreadSafe Static Function/C tthRange(d)	// tth is the usual 2-theta
 	STRUCT detectorGeometry &d
-	Variable tth,tthMin=+inf, tthMax=-inf
-	Variable px,py
-	Make/N=3/D/FREE xyz
+	Make/N=3/D/FREE xyz, ki={0,0,1}
+	Make/N=8/D/FREE pxw={0,0.5,1, 0,1, 0,0.5,1}, pyw={0,0,0, 0.5,0.5, 1,1,1}
+	pxw *= d.Nx-1								// {pxw,pyw} are 8 points around edge of detector
+	pyw *= d.Ny-1
+	Variable i, tth,tthMin=+inf, tthMax=-inf
+	for (i=0;i<8;i+=1)						// check 8 points around edge of detector
+		pixel2XYZ(d,pxw[i],pyw[i],xyz)	// convert pixel position to the beam line coordinate system
+		tth = angleVec2Vec(xyz,ki)
+		tthMin = min(tthMin,tth)
+		tthMax = max(tthMax,tth)
+	endfor
 
-	px = 0;			py = 0
-	pixel2XYZ(d,px,py,xyz)					// convert pixel position to the beam line coordinate system
-	tth = acos(xyz[2]/norm(xyz)) * 180/PI
-	tthMin = min(tthMin,tth)
-	tthMax = max(tthMax,tth)
-
-	px = 0;			py = d.Ny-1
-	pixel2XYZ(d,px,py,xyz)
-	tth = acos(xyz[2]/norm(xyz)) * 180/PI
-	tthMax = max(tthMax,tth)
-
-	px = d.Nx-1;	py = 0
-	pixel2XYZ(d,px,py,xyz)
-	tth = acos(xyz[2]/norm(xyz)) * 180/PI
-	tthMin = min(tthMin,tth)
-	tthMax = max(tthMax,tth)
-
-	px = d.Nx-1;	py = d.Ny-1
-	pixel2XYZ(d,px,py,xyz)
-	tth = acos(xyz[2]/norm(xyz)) * 180/PI
-	tthMin = min(tthMin,tth)
-	tthMax = max(tthMax,tth)
+	Variable px0,py0
+	XYZ2pixel(d,ki,px0,py0)				// check to see if detector includes direct beam
+	if (px0==limit(px0,0,d.Nx-1) && py0==limit(py0,0,d.Ny-1))
+		tthMin = 0
+	endif
 
 	return cmplx(tthMin,tthMax)
 End
