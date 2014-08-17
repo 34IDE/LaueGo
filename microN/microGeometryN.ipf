@@ -1449,14 +1449,21 @@ Function detectorNumFromID(ID)							// returns detector number {0,1,2} or -1 fo
 	endif
 
 	ID = ReplaceString(",", ID, "")
-	ID = ReplaceString("_", ID, "-")
-	ID = ReplaceString("  ", ID, " ")
+	ID = ReplaceString("_", ID, "")
+	ID = ReplaceString("-", ID, "")
+	ID = ReplaceString(" ", ID, "")
+	String IDi
 
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
 	Variable i
 	for (i=0;i<MAX_Ndetectors;i+=1)						// search each of the g.d[i].detectorID and return at the first match
-		if (strsearch(g.d[i].detectorID,ID,0)==0)	// does g.d[i].detectorID start with the passed ID?
+		IDi = g.d[i].detectorID
+		IDi = ReplaceString(",", IDi, "")
+		IDi = ReplaceString("_", IDi, "")
+		IDi = ReplaceString("-", IDi, "")
+		IDi = ReplaceString(" ", IDi, "")
+		if (strsearch(IDi,ID,0)==0)						// does g.d[i].detectorID start with the passed ID?
 			return i
 		endif
 	endfor

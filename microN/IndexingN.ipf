@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.54
+#pragma version = 4.55
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -69,6 +69,8 @@ Menu LaueGoMainMenuName
 	   help={"if the top window is an images showing the hkl's, this makes a layout with reflections for printing"}
 	   MenuItemIfWaveClassExists("  calc energy of [hkl]","IndexedPeakList*",""),EnergyOfhkl($"",NaN,NaN,NaN,NaN)
 	   help={"calculate the energy of an hkl using the current indexing"}
+		MenuItemIfWaveClassExists("  predict cone angle for detector","speImage;rawImage*","DIMS:2"),EstimateConeAngle(NaN)
+	   help={"if you know the hkl at the center of the detector, this calculates the cone angle to fill the detector"}
 	   MenuItemIfWaveClassExists("  Rotation between two indexations...","IndexedPeakList*",""),RotationBetweenTwoIndexations($"",NaN,$"",NaN)
 	   help={"calculate the rotation between two different indexation results, useful when indexing finds multiple patterns"}
 	//	SubMenu("Tables")
@@ -235,6 +237,9 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 				badWave = badWave && (DimSize(FullPeakList2,0)<1 || DimSize(FullPeakList2,1)!=11)
 				N2 = DimSize(FullPeakList2,0)
 			endif
+		endif
+		if (!(cone>1 && cone<180) && WaveExists(FullPeakList0))
+			cone = EstimateConeAngle(NaN,image=FullPeakList0)	// user requested auto-guess of cone angle
 		endif
 		if (ParamIsDefault(maxSpots) && (N0+N1+N2)>250)		// more than 250 spots in FullPeakLIst
 			Prompt maxSpots, "max number to try to index, out of "+num2istr(N0+N1+N2)+", -1 uses default of 250"
@@ -5186,6 +5191,73 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l)
 	return keV
 End
 
+
+
+Function EstimateConeAngle(dnum, [image, printIt])
+	Variable dnum
+	Wave image									// used to get dnum if it is not specified
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)			//fill the geometry structure with current values
+
+	if (dnum==limit(round(dnum),0,MAX_Ndetectors))	// test for a valid dnum
+		dnum = g.d[dnum].used ? dnum : NaN
+	else
+		dnum = NaN
+	endif
+
+	if (numtype(dnum))						// I need to find dnum, try from the image ID
+		if (!WaveExists(image))
+			Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
+		endif
+		dNum = WaveExists(image) ? detectorNumFromID(StringByKey("detectorID",note(image),"=")) : NaN
+	endif
+
+	if (dnum==limit(round(dnum),0,MAX_Ndetectors))	// test for a valid dnum
+		dnum = g.d[dnum].used ? dnum : NaN
+	else
+		dnum = NaN
+	endif
+
+	if (numtype(dnum))						// invalid dnum
+		if (printIt)
+			printf "Could not determine cone angle\r"
+		endif
+		return NaN
+	endif
+
+	Variable cone=EstimateConeAngleFromDet(g.d[dnum])
+	if (printIt)
+		printf "cone angle to fill detector %g is probably %g¡\r",dnum,cone
+	endif
+	return cone
+End
+
+
+ThreadSafe Static Function EstimateConeAngleFromDet(d)
+	// Returns cone angle (deg) that will fill this detector.
+	// This routine assumes that you know the hkl at detector center
+	STRUCT detectorGeometry &d			// detector parameters
+
+	Make/N=8/D/FREE pxw={0,0.5,1, 0,1, 0,0.5,1}, pyw={0,0,0, 0.5,0.5, 1,1,1}
+	pxw *= d.Nx-1								// {pxw,pyw} are 8 points around edge of detector
+	pyw *= d.Ny-1
+	Make/N=3/D/FREE qf,q0
+	pixel2q(d,(d.Nx-1)/2,(d.Ny-1)/2,q0)// q^ that produces ray to detector center
+	if (norm(q0)==0)
+		q0 = {0,1,0}
+	endif
+
+	Variable i, cone
+	for (cone=0,i=0; i<8; i+=1)			// check 8 points around edge of detector
+		pixel2q(d,pxw[i],pyw[i],qf)		// q^ that produces ray to point on detector
+		cone = max(cone, angleVec2Vec(q0,qf))
+	endfor
+	return cone
+End
 
 
 
