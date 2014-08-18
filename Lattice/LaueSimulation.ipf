@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.10
+#pragma version = 1.11
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.20
@@ -179,6 +179,8 @@ Function/T MakeSimulatedLauePattern(h0,k0,l0,Elo,Ehi,[Nmax,detector])
 				hkl = {h,k,l}
 				if (parallel_hkl_exists(h,k,l,Nspots,PeakIndexed))	// already got this reflection
 					continue
+				elseif (h==0 && k==0 && l==0)
+					continue
 				endif
 
 				MatrixOp/O/FREE qhat = recip x hkl			// make the qhat to test
@@ -191,7 +193,7 @@ Function/T MakeSimulatedLauePattern(h0,k0,l0,Elo,Ehi,[Nmax,detector])
 				endif
 				sintheta = -MatrixDot(ki,qhat)
 				keV = Qlen*hc/(4*PI*sintheta)
-				if (keV!=limit(keV,Elo,Ehi))
+				if (keV!=limit(keV,Elo,Ehi) && keV<Inf)
 					continue
 				endif
 				if (!allowedHKL(h,k,l,xtal))
