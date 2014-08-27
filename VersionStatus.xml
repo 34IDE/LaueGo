@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, July 24, 2014" time="02:57:27 PM CDT" isoTime="2014-07-24T14:57:27"></written>
+	<written date="Wednesday, August 27, 2014" time="05:32:51 PM CDT" isoTime="2014-08-27T17:32:51"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>259</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -54,7 +54,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.11" time="2014-04-30T10:34:47" md5="ac190b7444d9f6ce3425257b5bcfa831" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
-	<file version="4.54" time="2014-07-10T13:14:41" md5="6a4ca12b4c4bc41a14d640b7b35cae0d" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.55" time="2014-08-18T14:01:35" md5="4c84311859070532fc1b4f729d9cb99f" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.75" time="2014-06-25T14:38:36" md5="562d14e281c8075ab29cbcb33a4e9189" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
@@ -136,7 +136,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
-	<file version="1.65" time="2014-07-12T20:01:03" md5="1dcd8a220609fe6d15f7d6ba63f48046" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="1.66" time="2014-08-18T14:01:35" md5="1928c2d23e165b968ae448c54bfbd486" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.09" time="2014-05-27T09:55:52" md5="a6bbe0b19c2425844854a6bcfcd1bc73" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bb6ba6241034143a7da9c01eabf2d869" ext=".xml">materials/VO2/VO2_M1_1992Rogers.xml</file>
 	<file version="2.45" time="2014-04-30T10:31:42" md5="f9c25255fa9412fb4782ddec82726247" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
@@ -222,7 +222,7 @@
 	<file version="1.77" time="2014-06-18T16:53:27" md5="0fe961f07510216bf9f8eff5b6a8bc36" ext=".ipf">General/Elements.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="f32795db1dc1c31411d7c33b21865108" ext=".xml">materials/LaAlO3_Rhom.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7281e5483efea8dd559e3c07b8b627d4" ext=".xml">materials/ni-steel.xml</file>
-	<file version="1.1" time="2014-05-27T09:55:52" md5="db6b7dfb8129454fe3ec02025a1094ce" ext=".ipf">Lattice/LaueSimulation.ipf</file>
+	<file version="1.11" time="2014-08-18T14:07:00" md5="dbff75d9903e8703ca51b83bb46902c0" ext=".ipf">Lattice/LaueSimulation.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="28c4f80254da4d5c60862cd626d68e97" ext=".mtl">materials/CoO.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7610aeee47dd713ce7e87f6a71e956c9" ext=".xml">materials/BaTiO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="cf56d23310bb3bae2281c067724df726" ext=".xml">materials/CdTe.xml</file>
