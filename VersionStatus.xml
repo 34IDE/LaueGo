@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, September 08, 2014" time="02:57:21 PM CDT" isoTime="2014-09-08T14:57:21"></written>
+	<written date="Monday, September 08, 2014" time="03:08:35 PM CDT" isoTime="2014-09-08T15:08:35"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>263</fileCount>
+	<fileCount>262</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
@@ -115,7 +115,7 @@
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" ext=".ipf">micro/monoCalibrate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4db7d860a567fcf9047e74ffb6bdaacc" ext=".xml">geometrys/geoN_2012-06-13_17-40-22.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd344d5361f0c84a1605e918d51dce54" ext=".xml">materials/Sn-sg225.xml</file>
-	<file version="3.09" time="2014-09-08T14:56:04" md5="a39650ec34853569b5c0ab93ded682de" ext=".ipf">always/GeneralFirst.ipf</file>
+	<file version="3.1" time="2014-09-08T15:07:50" md5="f5eaa7ca74ffac6f91cf6e5ab7401655" ext=".ipf">always/GeneralFirst.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="6bcac22bfb97414500a8cee93c81ca52" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="05b3c9e787ace21577e0392f365e42bc" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4ffec31f91a4981d8404966e7ca17de0" ext=".mtl">materials/BePS-200.mtl</file>
@@ -256,7 +256,6 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="b39d6f3d791a796992959083b9f9cfb8" ext=".xml">materials/AlNi.xml</file>
 	<file version="0.47" time="2013-11-11T09:44:41" md5="53150a0b269e41f885d512344f228c9c" ext=".ipf">Diffractometer/specImages.ipf</file>
 	<file version="2.65" time="2014-04-30T10:33:19" md5="0d36b946489f85e23d564c4a763fa0e2" ext=".ipf">micro/Indexing.ipf</file>
-	<file version="3.08" time="2014-09-08T13:19:10" md5="e8c62f52718518edb9593344d7b709eb" ext=".ipf">always/GeneralFirst_3.08.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e72b942d553b1804022d8c145407362d" ext=".xml">materials/YZrO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="f7cbe5ad6d73260131a8d08f2a847f0d" ext=".png">microN/microDiffractionMedia/Picture2.png</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="66101fdd55333c5b5a5949b0a3cdab2e" ext=".xml">materials/GaAs.xml</file>

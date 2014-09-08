@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.09
+#pragma version = 3.10
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -31,6 +31,7 @@ Menu "Analysis"
 			help = {"Provide support of putting 'Cursors' on a Gizmo"}
 			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=1.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GizmoMovies#InitGizmoMovies()"
 			help = {"Provide support of making movies of a Gizmo"}
+			"  Load All of the above Gizmo Utiliites",JZTgeneral#LoadAllGizmoUtilities()
 		End
 		"Image Display Range", Execute/P "INSERTINCLUDE \"ImageDisplayScaling\"" ; 	Execute/P "COMPILEPROCEDURES "
 		help = {"Load procedures that set range of color table based on a Marquee region"}
@@ -85,6 +86,28 @@ End
 Menu "Misc"
 	"StopAllTimers",StopAllTimers()
 End
+
+
+
+Static Function LoadAllGizmoUtilities()
+	Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00"
+	Execute/P "COMPILEPROCEDURES "
+	Execute/P "GZoomTrans#InitGizmoZoomTranslate()"
+
+	Execute/P "INSERTINCLUDE \"GizmoClip\", version>=2.00"
+	Execute/P "COMPILEPROCEDURES "
+	Execute/P "GClipPlanes#InitGizmoClipPlanes()"
+
+	Execute/P "INSERTINCLUDE \"GizmoMarkers\", version>=2.00"
+	Execute/P "COMPILEPROCEDURES "
+	Execute/P "GMarkers#InitGizmoMarkers()"
+
+	Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=1.00"
+	Execute/P "COMPILEPROCEDURES "
+	Execute/P "GizmoMovies#InitGizmoMovies()"
+End
+
+
 
 
 
