@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.37
+#pragma version = 3.38
 // #pragma hide = 1
 
 Menu "Graph"
@@ -136,14 +136,6 @@ Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
 	return "("+item						// top graph does not contain a wave of desired class
 End
 
-Function/S MenuItemIfWaveExists(item,wname)
-	String item
-	String wname
-
-	Variable there = Exists(wname)==1
-	return SelectString(there,"(","")+item
-End
-
 // This is really useful with an  Execute/P ... command
 // e.g.  MenuItemIfWindowAbsent("Include ABC Support","ABC.ipf"), Execute/P "INSERTINCLUDE  \"ABC\"";Execute/P "COMPILEPROCEDURES "
 Function/S MenuItemIfWindowAbsent(item,win)		// Shows menu item if win NOT present
@@ -152,6 +144,15 @@ Function/S MenuItemIfWindowAbsent(item,win)		// Shows menu item if win NOT prese
 
 	GetWindow/Z $win, hide
 	return SelectString(V_flag,"(","")+item
+End
+
+// only show menu item when a single specific wave exists
+Function/S MenuItemIfWaveExists(item,wname)
+	String item
+	String wname
+
+	Variable there = Exists(wname)==1
+	return SelectString(there,"(","")+item
 End
 
 // useful when just looking for a type of wave, no class information
@@ -167,6 +168,17 @@ Function/S MenuItemIfWavesExists(item,matchStr,optionsStr,[invisible])
 		return SelectString(strlen(list),"",item)
 	endif
 	return SelectString(strlen(list),"(","")+item
+End
+
+// useful when working with a specific window, particularly with a Panel
+Function/S MenuItemIfWinExists(item,win,optionsStr)
+	String item								// menu item text
+	String win								// win name (can contain a wild card)
+	String optionsStr						// optionsStr from WinList()
+	if (strlen(WinList(win,"",optionsStr))<1)
+		return "("+item					// win not found, so disable menu item
+	endif
+	return item
 End
 
 //  ============================ End of Option Menu Functions ============================  //
