@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 0.16
+#pragma version = 2.00
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -27,8 +27,8 @@ Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a 
 
 
 
-//  ============================================================================  //
-//  ============================ Start of Make Gizmo Cubical ============================  //
+//  ======================================================================================  //
+//  ============================ Start of Make Gizmo Cubical =============================  //
 
 //	ActivateCornerCubeOnGizmo(), Show corner cubes on Gizmo, returns true if error displaying corner cubes
 //	DeActivateCornerCubeOnGizmo(), de-activeate corner cubes on gizmo, does not delete the scatter object, just don't display it
@@ -302,12 +302,12 @@ Function/WAVE MakeGizmocubeCorners(xyz)
 	return corners
 End
 
-//  ============================ End of Make Gizmo Cubical =============================  //
-//  ============================================================================  //
+//  ============================= End of Make Gizmo Cubical ==============================  //
+//  ======================================================================================  //
 
 
 
-//  ============================================================================  //
+//  ======================================================================================  //
 //  =========================== Start of Add to orModify Gizmo ===========================  //
 
 // Add the title to a gizmo. Returns name of item to include in the display list
@@ -929,13 +929,14 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 	return err
 End
 
-//  =========================== End of Add to orModify Gizmo ============================  //
-//  ============================================================================  //
+//  ============================ End of Add to orModify Gizmo ============================  //
+//  ======================================================================================  //
 
 
 
-//  ============================================================================  //
-//  ====================== Start of Examining things Displayed in a Gizmo =====================  //
+
+//  ======================================================================================  //
+//  =================== Start of Examining things Displayed in a Gizmo ===================  //
 
 Function isGizmoObjectDisplayed(object,[gizmo])		// returns -1 if object no found on displayList, if found return place in displayList
 	String object						// name of a gizmo object
@@ -1169,13 +1170,13 @@ Function/T GetGizmoBoxDisplayed(gizName)		// returns list with XYZ range of gizm
 	return out
 End
 
-//  ====================== End of Examining things Displayed in a Gizmo ======================  //
-//  ============================================================================  //
+//  ======================================================================================  //
+//  ==================== End of Examining things Displayed in a Gizmo ====================  //
 
 
 
-//  ============================================================================  //
-//  ======================= Start of QUESTIONABLE items for this file =======================  //
+//  ======================================================================================  //
+//  ====================== Start of QUESTIONABLE items for this file =====================  //
 
 // Will add a parametric XYZ wave to the gizmo with its associated RGBA wave, this is a pretty generic routine
 // returns name of object for parametricXYZ
@@ -1295,5 +1296,29 @@ Static Function/T GizmosWithWave(scatter)
 	return wGizmo
 End
 
-//  ======================= End of QUESTIONABLE items for this file ========================  //
-//  ============================================================================  //
+//  ======================= End of QUESTIONABLE items for this file ======================  //
+//  ======================================================================================  //
+
+
+
+
+Static Function InitGizmoUtilityGeneral()
+	Execute/Q/Z "GizmoMenu AppendItem={JZT0,\"-\", \"\"}"
+	Execute/Q/Z "GizmoMenu AppendItem={JZT1,\"Put Cube Corners on Gizmo\", \"ActivateCornerCubeOnGizmo()\"}"
+	Execute/Q/Z "GizmoMenu AppendItem={JZT2,\"De-Activate Cube Corners on Gizmo\", \"DeActivateCornerCubeOnGizmo()\"}"
+	Execute/Q/Z "GizmoMenu AppendItem={JZT3,\"-\", \"\"}"
+	if (strlen(WinList("microGeometryN.ipf", ";","WIN:128")))
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr0,\"Gizmo X-H plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0,0,0,1}\"}"	// X-H
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr1,\"Gizmo X-F plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707106781186547,0,0,0.707106781186547}\"}"	// X-F
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr2,\"Gizmo H-F plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}\"}"	// H-F
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr3,\"Gizmo Beamline\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={-0.270598,0.653282,-0.270598,0.653281}\"}"	// ModifyGizmo euler={0,-90,45}
+	else
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr0,\"Gizmo X-Y plane [along beam]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.0,0.0,0.0,1.0}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr1,\"Gizmo Y-Z plane [side view]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr2,\"Gizmo X-Z plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707107,0.0,0.0,0.707107}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr3,\"Gizmo X-Z plane [top view]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={-0.707107,0.0,0.0,0.707107}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr4,\"Gizmo 111 vertical [0-11 to right]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.060003,-0.540625,-0.455768,0.704556}\"}"
+		//	ModifyGizmo euler = {45, acos(1/sqrt(3))*180/PI, 90}
+	endif
+	Execute/Q/Z "GizmoMenu AppendItem={JZT4,\"-\", \"\"}"
+End

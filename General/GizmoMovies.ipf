@@ -1,12 +1,30 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 1.00
+#pragma version = 2.00
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
 Static StrConstant MovieStepTypes = " ;Begin;Quaternion;Rotate;Clip;ClipReset;Add_Static"
 Static StrConstant directionTypes = "+X;-X;+Y;-Y;+Z;-Z"
 Static StrConstant GizmoMovieClipPlaneGroupName = "gizmoClipPlaneGroupMovie"
+
+
+
+Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
+	Variable refNum, kind
+	String file,pathName,type,creator
+	if ((kind==1) || (kind==2))		// an experiment (packed or unpacked)
+		GizmoMovies#InitGizmoMovies()
+	endif
+	return 0
+End
+Static Function IgorStartOrNewHook(IgorApplicationNameStr)
+	String IgorApplicationNameStr
+	GizmoMovies#InitGizmoMovies()
+	return 0
+End
+
+
 
 
 Menu "Gizmo-Movie"
@@ -994,3 +1012,7 @@ End
 //  =========================== End of TESTING Movie Of Gizmo ============================  //
 //  ======================================================================================  //
 
+Static Function InitGizmoMovies()
+	GizmoUtil#InitGizmoUtilityGeneral()
+	Execute/Q/Z "GizmoMenu AppendItem={JZTmov0,\"Movie Steps Panel...\", \"MakeMovieStepsPanel()\"}"
+End

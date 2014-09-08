@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.08
+#pragma version = 3.09
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -23,9 +23,13 @@ Menu "Analysis"
 		"BURT Files",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load Burt files (from APS)."}
 		Submenu "Gizmo"
-			"Gizmo Markers & Zoom", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=1.36" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "InitGizmoZoomTranslate()"
-			help = {"Provide support of Zooming Gizmos and putting a 'Cursor' on a Gizmo"}
-			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=1.00" ; 	Execute/P "COMPILEPROCEDURES "
+			"Gizmo Zoom & Translate", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GZoomTrans#InitGizmoZoomTranslate()"
+			help = {"Provide support of Zooming and translating Gizmos"}
+			"Gizmo Clip Planes", Execute/P "INSERTINCLUDE \"GizmoClip\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GClipPlanes#InitGizmoClipPlanes()"
+			help = {"Provide support of adding clip planes to a Gizmo"}
+			"Gizmo Markers", Execute/P "INSERTINCLUDE \"GizmoMarkers\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GMarkers#InitGizmoMarkers()"
+			help = {"Provide support of putting 'Cursors' on a Gizmo"}
+			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=1.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GizmoMovies#InitGizmoMovies()"
 			help = {"Provide support of making movies of a Gizmo"}
 		End
 		"Image Display Range", Execute/P "INSERTINCLUDE \"ImageDisplayScaling\"" ; 	Execute/P "COMPILEPROCEDURES "
