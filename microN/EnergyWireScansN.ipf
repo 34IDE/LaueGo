@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyWireScans
-#pragma version = 1.32
+#pragma version = 1.33
 #define EWSCAN_OLD_WAY
 
 #include "ImageDisplayScaling", version>=1.81
@@ -11,7 +11,10 @@
 #include "WinView", version>=1.96
 #endif
 #include "Masking", version>1.00
-#include "GizmoZoomTranslate", version>=1.07
+// #include "GizmoZoomTranslate", version>=1.07
+#include "GizmoZoomTranslate", version>=2.00
+#include "GizmoClip", version>=2.0
+#include "GizmoMarkers", version>=2.0
 #include "QspaceVolumesView"
 
 Static Constant hc = 1.239841857				// hc (keV-nm)

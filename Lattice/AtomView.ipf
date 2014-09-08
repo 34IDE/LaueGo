@@ -1,9 +1,12 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.22
+#pragma version = 0.23
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.72
-#include "GizmoZoomTranslate", version>=1.37
+//	#include "GizmoZoomTranslate", version>=1.37
+#include "GizmoZoomTranslate", version>=2.00
+#include "GizmoClip", version>=2.0
+#include "GizmoMarkers", version>=2.0
 #include "LatticeSym", version>=3.78
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"

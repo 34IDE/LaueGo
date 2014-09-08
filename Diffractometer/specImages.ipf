@@ -1,12 +1,15 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.47
+#pragma version = 0.48
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
 #include "ImageDisplayScaling", version >=1.86
 #include "QspaceVolumesView", version >=1.02
-#include "GizmoZoomTranslate", version>=1.35
+// #include "GizmoZoomTranslate", version>=1.35
+#include "GizmoZoomTranslate", version>=2.00
+#include "GizmoClip", version>=2.0
+#include "GizmoMarkers", version>=2.0
 #include "Masking", version>=1.01
 
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)

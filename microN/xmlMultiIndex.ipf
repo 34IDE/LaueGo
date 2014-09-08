@@ -1,12 +1,15 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.75
+#pragma version=1.76
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
 #include "ArrayOf3dOrientsN", version>=2.41
 #include "IndexLotsN", version>=2.18
-#include "GizmoZoomTranslate"
+// #include "GizmoZoomTranslate"
+#include "GizmoZoomTranslate", version>=2.00
+#include "GizmoClip", version>=2.0
+#include "GizmoMarkers", version>=2.0
 
 Static Constant NindexedMIN = 4
 Static StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"
