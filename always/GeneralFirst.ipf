@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.07
+#pragma version = 3.08
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -22,10 +22,12 @@ Menu "Analysis"
 		help = {"Load mda files (from APS)."}
 		"BURT Files",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load Burt files (from APS)."}
-		"Gizmo Markers & Zoom", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=1.36" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "InitGizmoZoomTranslate()"
-		help = {"Provide support of Zooming Gizmos and putting a 'Cursor' on a Gizmo"}
-//		"Color Names", Execute/P "INSERTINCLUDE \"ColorNames\"" ; 	Execute/P "COMPILEPROCEDURES "
-//		help = {"Load procedures that will provide names for RGBA colors"}
+		Submenu "Gizmo"
+			"Gizmo Markers & Zoom", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=1.36" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "InitGizmoZoomTranslate()"
+			help = {"Provide support of Zooming Gizmos and putting a 'Cursor' on a Gizmo"}
+			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=1.00" ; 	Execute/P "COMPILEPROCEDURES "
+			help = {"Provide support of making movies of a Gizmo"}
+		End
 		"Image Display Range", Execute/P "INSERTINCLUDE \"ImageDisplayScaling\"" ; 	Execute/P "COMPILEPROCEDURES "
 		help = {"Load procedures that set range of color table based on a Marquee region"}
 
