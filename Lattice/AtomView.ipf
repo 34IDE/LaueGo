@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.23
+#pragma version = 0.24
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.72
@@ -1231,7 +1231,7 @@ End
 Function Init_AtomViewLattice()
 	InitLatticeSymPackage()
 	ElementDataInitPackage()
-	InitGizmoZoomTranslate()
+	GZoomTrans#InitGizmoZoomTranslate()
 	return 0
 End
 

@@ -96,6 +96,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Dec 30, 2013, added SpecGenericGraphStyle(), this will call user function SpecGenericGraphStyleLocal() or the SpecGenericGraphStyleTemplate()
 //
 // July 21, 2014, changed specFileFilters, not can use ".spc" or ".spec"
+//
+// Sept 10, 2014, changed SetValuesIntoList(), added an argument to give the separator between values (for names always single space)
 
 Menu "Data"
 	"-"
@@ -1102,7 +1104,7 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 	line1 = FindDataLineType(fileVar,"#Q ",1)
 	if (strlen(line1)>2)
 		line1 = line1[strlen("#Q "),inf]
-		SetValuesIntoList("H  K  L",line1,"specValues")
+		SetValuesIntoList("H  K  L",line1,"specValues"," ")	// single space separator
 	endif
 	FSetPos fileVar, FilePos					// reset file position to start of scan
 
@@ -1112,7 +1114,7 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 		line2 = "a_lat  b_lat  c_lat  alpha_lat  beta_lat  gamma_lat"
 		line2 += "  a_recip  b_recip  c_recip  alpha_recip  beta_recip  gamma_recip"
 		line2 += "  H0  K0  L0  H1  K1  L1"
-		SetValuesIntoList(line2,line1,"specValues")
+		SetValuesIntoList(line2,line1,"specValues"," ")	// single space separator
 	endif
 	FSetPos fileVar, FilePos					// reset file position to start of scan
 
@@ -1148,7 +1150,7 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 		line1 = FindDataLineType(fileVar,hunt,1)
 		if (strlen(line1)>2)
 			line1 = line1[strlen(hunt),inf]
-			SetValuesIntoList(angleNames[i],line1,"specMotors")
+			SetValuesIntoList(angleNames[i],line1,"specMotors"," ")	// single space separator
 		endif
 		i += 1
 	while(i<NangleNames)
@@ -1164,7 +1166,7 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 			if ((epoch<963300000) && (i==39))	// used to fix old bug
 				line1 = line1[1,inf]
 			endif
-			SetValuesIntoList(EPICSnames[i],line1,"EPICS_PVs")
+			SetValuesIntoList(EPICSnames[i],line1,"EPICS_PVs","  ")	// double space separator
 		endif
 		i += 1
 	while(i<NEPICSnames)
@@ -2115,19 +2117,21 @@ Function AssignOneLine(line,point,ncols,list)
 End
 
 
-Function SetValuesIntoList(names,values,destination)
+Function SetValuesIntoList(names,values,destination,ValSeparator)
 	// given a list of names and a list of values, append as key=value to string
 	String names,values,destination
+	String ValSeparator											// value separator usually "  " or " "
 
 	String/G $destination
 	SVAR dest=$destination
 
 	names = ZapControlCodes(names)
-	names = ReduceSpaceRunsInString(names,2)
+	names = ReplaceString(";",names,"_")					// will use ";" later, change to "_"
+	names = ReplaceString("  ",names,";")					// double space is separator for names
 	names = TrimLeadingWhiteSpace(names)
-	names = ChangePartsOfString(names,"  ",";")		// double space is name separator
 	values = ZapControlCodes(values)
-	values = ChangePartsOfString(values," ",";")
+	values = ReplaceString(";",values,"_")				// will use ";" later, change to "_"
+	values = ReplaceString(ValSeparator,values,";")	// separator for values #P and #V differ
 	String vname
 	Variable val
 	Variable i = 0
@@ -2256,6 +2260,9 @@ End
 
 
 Function/T ReduceSpaceRunsInString(str,minRun)
+	// change all runs of more than minRun spaces to only minRun spaces
+	//	e.g. if minRun=2, then all runs of 3 or 4 spaces will be changed to only 2 spaces
+	//			if minRun=1, then there will only be single spaces in the string
 	String str
 	Variable minRun
 
