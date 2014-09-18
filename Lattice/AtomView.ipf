@@ -1,13 +1,13 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.24
+#pragma version = 0.25
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
-#include "Elements", version>=1.72
+#include "Elements", version>=1.77
 //	#include "GizmoZoomTranslate", version>=1.37
 #include "GizmoZoomTranslate", version>=2.00
-#include "GizmoClip", version>=2.0
-#include "GizmoMarkers", version>=2.0
-#include "LatticeSym", version>=3.78
+#include "GizmoClip", version>=2.00
+#include "GizmoMarkers", version>=2.00
+#include "LatticeSym", version>=4.26
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"
 
@@ -28,8 +28,9 @@ Menu "Analysis"
 	SubMenu "Lattice"
 		"-"
 		"Make Cells of Atoms...",MakeCellsOfLattice(NaN,NaN,NaN)
-		"Gizmo of Atoms",MakeAtomViewGizmo($"")
-		"Atom Type at Cursor",print AtomView#ShowAtomViewInfo(1)
+		MenuItemFolderWithClassExists("Print Bond Info","atomViewBonds","DIMS:2,MINCOLS:3,MAXCOLS:3"),AllUniqueBonds("")
+		MenuItemFolderWithClassExists("Gizmo of Atoms","atomViewXYZ","DIMS:2,MINCOLS:3,MAXCOLS:3"),MakeAtomViewGizmo($"")
+		MenuItemFolderWithClassExists("Atom Type at Cursor","atomViewBonds","DIMS:2,MINCOLS:3,MAXCOLS:3"),print AtomView#ShowAtomViewInfo(1)
 	End
 End
 
@@ -59,6 +60,9 @@ Static Function AtomViewPopMenuProc(pa) : PopupMenuControl		// used in the Latti
 	if (strsearch(pa.popStr,"Make Cells of Atoms",0,2)>=0)
 		//	printf "¥MakeCellsOfLattice(NaN,NaN,NaN)\r"
 		MakeCellsOfLattice(NaN,NaN,NaN)
+	elseif (strsearch(pa.popStr,"Bond Info",0,2)>=0)
+		printf "¥MakeAtomViewGizmo($\"\")\r"
+		AllUniqueBonds("", printIt=1)
 	elseif (strsearch(pa.popStr,"Gizmo of Atoms",0,2)>=0)
 		printf "¥MakeAtomViewGizmo($\"\")\r"
 		MakeAtomViewGizmo($"")
@@ -757,6 +761,123 @@ End
 
 
 
+//  ============================================================================  //
+//  ======================== Start Get Info About Bonds ========================  //
+
+Function/T AllUniqueBonds(fldrName,[printIt])
+	// returns all the unique bonds found in this AtomView, 
+	// structure of result is:
+	//	Nbonds,bmin,bmax,;len1,id1,id1;len2,id2,id2;...
+	String fldrName
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : !(!printIt)
+
+	String dflist=FoldersWithWaveClass(fldrName,"atomViewBonds","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+	if (ItemsInList(dflist))
+		if (ItemsInList(dflist)<1)
+			return ""
+		elseif (ItemsInList(dflist)==1)
+			fldrName = StringFromList(0,dflist)
+			printIt = 1
+		else
+			Prompt fldrName,"Atom View Folder with Waves", popup, reverseList(dflist)
+			DoPrompt "Atom View?", fldrName
+			if (V_flag)
+				return ""
+			endif
+			printIt =1
+		endif
+	endif
+	fldrName += SelectString(StringMatch(fldrName,"*:"),":","")	// ensure fldrName ends with ":"
+	fldrName = SelectString(strsearch(fldrName,"root:",0) && strsearch(fldrName,":",0),"",":")+fldrName	// add leading ":" unless "root:..."
+	if (printIt)
+		printf "AllUniqueBonds(\"%s\")\r",fldrName
+	endif
+	if (ItemsInList(FoldersWithWaveClass(fldrName,"atomViewBonds","*","")))
+		return ""
+	endif
+
+	String key=ParseFilePath(0,fldrName,":",1,0)
+	Variable i=strsearch(key,"_AtomView",-Inf)
+	key = SelectString(i>1,key,key[0,i-1])
+	String prefix = fldrName+key
+
+	Wave bonds = $(prefix+"_Bonds")
+	Wave bondSource = $(prefix+"_Bonds_Source")
+	Wave/T type = $(prefix+"_Type")
+	if (!WaveExists(bonds) || !WaveExists(bondSource) || !WaveExists(type))
+		return ""
+	endif
+
+	Make/N=3/D/FREE diff
+	Variable N=DimSize(bonds,0), m, blen
+	Variable Nbonds=floor(N/3) + 1
+	if (Nbonds<0 || Nbonds>1e9 || numtype(Nbonds))
+		return ""
+	endif
+	Make/N=(Nbonds)/D/FREE bondLens=NaN
+	Make/N=(Nbonds)/T/FREE bondTypes0="", bondTypes1=""
+	for (i=0;i<N;i+=3)
+		diff = bonds[i+1][p] - bonds[i][p]
+		blen = norm(diff)
+		m = i/3
+		bondLens[m] = blen
+		bondTypes0[m] = type[bondSource[i]]
+		bondTypes1[m] = type[bondSource[i+1]]
+	endfor
+
+	Variable Ndups=0
+	for (m=0;m<Nbonds;m+=1)					// remove duplicates
+		for (i=m+1;i<Nbonds;i+=1)
+			if (abs(bondLens[m]-bondLens[i])>1e-6)
+				continue
+			elseif (!StringMatch(bondTypes0[i],bondTypes0[m]))
+				continue
+			elseif (!StringMatch(bondTypes1[i],bondTypes1[m]))
+				continue
+			endif
+			Ndups += numtype(bondLens[i]) ? 0 : 1
+			bondLens[i] = NaN
+			bondTypes0[i] = ""
+			bondTypes1[i] = ""
+		endfor
+	endfor
+	Make/N=(Nbonds)/FREE index
+	MakeIndex bondLens, index
+	IndexSort index, bondLens, bondTypes0, bondTypes1
+
+	WaveStats/Q/M=1 bondLens
+	Nbonds = V_npnts
+	Variable bmin=V_min, bmax=V_max
+	if (Nbonds<0 || Nbonds>1e9 || numtype(Nbonds))
+		return ""
+	endif
+	Redimension/N=(Nbonds), bondLens, bondTypes0, bondTypes1
+	if (printIt)
+		printf "in \"%s\"\r",fldrName
+		for (m=0;m<Nbonds;m+=1)
+			printf "  bond [%s, %s] = %.4f nm\r",bondTypes0[m],bondTypes1[m],bondLens[m]
+		endfor
+		printf "range of bond lengths = [%g, %g]nm\r",bmin,bmax
+	endif
+
+	String str, out=""
+	sprintf out, "%d,%g,%g;", Nbonds,bmin,bmax
+	for (m=0;m<Nbonds;m+=1)
+		sprintf str, "%g,%s,%s;", bondLens[m], bondTypes0[m],bondTypes1[m]
+		out += str
+	endfor
+
+
+	return out
+End
+
+//  ========================= End Get Info About Bonds =========================  //
+//  ============================================================================  //
+
+
+
 //  ============================= Start Make Gizmo =============================  //
 //  ============================================================================  //
 
@@ -785,28 +906,25 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 				return ""
 			endif
 		else									// maybe check a folder?
-			ilist = CountObjects(":",4)
-			list = ""
-			for (i=0;i<ilist;i+=1)
-				name = GetIndexedObjName(":", 4,i)
-				if (stringmatch(name,"*_AtomView"))
-					list += name+";"
-				endif
-			endfor
-			ilist = ItemsInList(list)
-			if (iList==1)					// only one appropriate folder, use it
-				name = StringFromList(0,list)
-				name = ":"+name+":"+ReplaceString("_AtomView",name,"_XYZ")
-			elseif (iList>1)
-				Prompt name,"Folder with Atom Positions",popup,list
-				DoPrompt "Atom Positions",name
+			String fldrName
+			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			if (ItemsInList(list)<1)
+				return ""
+			elseif (ItemsInList(list)==1)
+				fldrName = StringFromList(0,list)
+			else
+				Prompt fldrName,"Atom View Folder with Waves", popup, reverseList(list)
+				DoPrompt "Atom View?", fldrName
 				if (V_flag)
 					return ""
 				endif
-				name = ":"+name+":"+ReplaceString("_AtomView",name,"_XYZ")
-			else
-				name = ""				// nothing appropriate found
 			endif
+			fldrName += SelectString(StringMatch(fldrName,"*:"),":","")	// ensure fldrName ends with ":"
+			fldrName = SelectString(strsearch(fldrName,"root:",0) && strsearch(fldrName,":",0),"",":")+fldrName	// add leading ":" unless "root:..."
+			String key=ParseFilePath(0,fldrName,":",1,0)
+			i = strsearch(key,"_AtomView",-Inf)
+			key = SelectString(i>1,key,key[0,i-1])		// remove trailing "_AtomView"
+			name = fldrName+key+"_XYZ"						// add the "_XYZ"
 		endif
 		Wave xyz = $name
 	endif

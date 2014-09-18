@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.38
+#pragma version = 3.39
 // #pragma hide = 1
 
 Menu "Graph"
@@ -135,6 +135,30 @@ Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
 	endfor
 	return "("+item						// top graph does not contain a wave of desired class
 End
+
+
+// This is for when we want to check if any folder under the current folder contains wave with a certain class
+Function/S MenuItemFolderWithClassExists(item,classes,optionsStr,[invisible,all])
+	String item						// string that you want to appear in menu
+	String classes					// semi-colon separated list of wave classes, can use "*" in classes
+	String optionsStr				// options that are found in WaveList function optionsStr
+	Variable invisible			// controls menu item when conditions not met: true -> menu item absent, false or absent -> menu item grayed out
+	Variable all					// when all is TRUE, then all of the classes in waveClassList must be present, not just one
+	invisible = ParamIsDefault(invisible) ? 0 : invisible
+	invisible = numtype(invisible) ? 0 : invisible
+	all = ParamIsDefault(all) ? 0 : !(!all)
+	all = numtype(all) ? 0 : all
+
+	String list = WaveListClass(classes,"*",optionsStr,all=all)	// check current folder
+	if (strlen(list)<1)
+		list = FoldersWithWaveClass("",classes,"*",optionsStr,all=all)
+	endif
+	if (invisible)
+		return SelectString(strlen(list),"",item)
+	endif
+	return SelectString(strlen(list),"(","")+item
+End
+
 
 // This is really useful with an  Execute/P ... command
 // e.g.  MenuItemIfWindowAbsent("Include ABC Support","ABC.ipf"), Execute/P "INSERTINCLUDE  \"ABC\"";Execute/P "COMPILEPROCEDURES "
@@ -1304,6 +1328,7 @@ Function/T WaveListClass(waveClassList,search,options,[all,win,fldr])
 	fldr = SelectString(ParamIsDefault(fldr),fldr,"")
 	if (strlen(fldr))
 		fldr += SelectString(StringMatch(fldr,"*:"),":","")	// ensure fldr ends with ":"
+		fldr = SelectString(strsearch(fldr,"root:",0) && strsearch(fldr,":",0),"",":")+fldr	// add leading ":" unless "root:..."
 		if (!DataFolderExists(fldr))	// if requested folder does not exist, just return
 			return ""
 		endif
@@ -1424,6 +1449,34 @@ ThreadSafe Function/T ExcludeWavesInClass(inList,excludeClassList)
 		endif
 	endfor
 	return out
+End
+
+
+// returns list of folders containing waves with waveClassList
+Function/T FoldersWithWaveClass(fldrPath,waveClassList,search,options,[all,win])
+	String fldrPath					// folder in which to look, defaults to current folder
+	String waveClassList			// a list of acceptable wave classes (semicolon separated)
+	String search						// same as first argument in WaveList()
+	String options						// same as last argument in WaveList()
+	Variable all						// when all is TRUE, then all of the classes in waveClassList must be present, not just one
+	String win							// when present, only provide waves also displayed in win
+	String fldr							// name of data folder to check, default is current folder
+	all = ParamIsDefault(all) ? 0 : !(!all)
+	all = numtype(all) ? 0 : all
+	win = SelectString(ParamIsDefault(win),win,"")
+	fldrPath = SelectString(strlen(fldrPath),":",fldrPath)
+
+	DFREF DFR = $fldrPath
+	Variable Nlist = CountObjectsDFR(DFR,4)
+	String name, flist, list=""
+	Variable i
+	for (i=0;i<Nlist;i+=1)		// check each folder in fldrPath
+		name = GetIndexedObjNameDFR(DFR,4,i)
+		if (ItemsInList(WaveListClass(waveClassList,search,options,all=all,win=win,fldr=name)))
+			list += name+";"
+		endif
+	endfor
+	return list
 End
 
 //  ============================= End WaveClass in Wave Note =============================  //

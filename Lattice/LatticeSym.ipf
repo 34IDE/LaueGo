@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.25
-#include "Utility_JZT" version>=3.30
+#pragma version = 4.26
+#include "Utility_JZT" version>=3.39
 #include "MaterialsLocate"								// used to find the path to the materials files
 
 
@@ -96,6 +96,7 @@
 // with version 4.24, moved ConvertUnits2meters(), ConvertTemperatureUnits() , and placesOfPrecision() to Utility_JZT.ipf
 //		also added NearestAllowedHKL(xtal,hkl)
 // with version 4.25, added equivalentHKLs(xtal,hkl0,[noNeg]), get list of hkl's symmetry equivalent to hkl0
+// with version 4.26, added bond info to the AtomView menu
 
 // Rhombohedral Transformation:
 //
@@ -2046,7 +2047,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Button buttonAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
 	PopupMenu popupAtomView,pos={35,383},size={150,20},proc=AtomView#AtomViewPopMenuProc,title="Atom View...",disable= 1
 	PopupMenu popupAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
-	PopupMenu popupAtomView,fSize=14,mode=0,value= #"\"Make Cells of Atoms...;  Gizmo of Atoms;  Atom Type at Cursor\""
+	PopupMenu popupAtomView,fSize=14,mode=0,value= #"\"Make Cells of Atoms...;  Bond Info;  Gizmo of Atoms;    Atom Type at Cursor\""
 	Button buttonPowderPattern,pos={35,408},size={150,20},proc=LatticePanelButtonProc,title="Add Powder Patterns..."
 	Button buttonPowderPattern,help={"Provides supprort creating a powder pattern simulation for this lattice"}
 	PopupMenu popupPowderPattern,pos={35,408},size={150,20},proc=powder#PowderPatternPopMenuProc,title="Powder Pattern...",disable= 1
