@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.00
+#pragma version = 2.01
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -48,7 +48,7 @@ Static Structure GizmoMarkerInfoStruct1
 EndStructure
 
 
-Function MakeGizmoScatterMarkerPanel() : Panel			// Create the Cut Plane Panel.  Doesn't create duplicate panels.
+Function MakeGizmoScatterMarkerPanel() : Panel	// Create the Cut Plane Panel.  Doesn't create duplicate panels.
 	if (ItemsInList(WinList("GizmoScatterMarkerPanel",";","WIN:64")))
 		DoWindow/F GizmoScatterMarkerPanel				// If Marker Panel exists, just bring it to front and quit
 		return 0
@@ -222,19 +222,19 @@ Static Function GizmoScatterMarkerSetVarProc(sva) : SetVariableControl
 		endif
 	endif
 
-	if (stringmatch(sva.ctrlName,"xyzStep"))	// xyzStep changed, use its value to set step sizes
+	if (stringmatch(sva.ctrlName,"xyzStep"))			// xyzStep changed, use its value to set step sizes
 		ControlInfo/W=$(sva.win) xyzStep
 		Variable step = ((numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
-		if (numtype(step)==0)					// a valid step was given, use it
+		if (numtype(step)==0)									// a valid step was given, use it
 			SetVariable Xabsolute, limits={xLo,xHi,step}
 			SetVariable Yabsolute, limits={yLo,yHi,step}
 			SetVariable Zabsolute, limits={zLo,zHi,step}
-		elseif (numtype(step) && WaveDims(scatter)==3)	// step is bad, but know 3D scaling
+		elseif (numtype(step) && WaveDims(scatter)==3)// step is bad, but know 3D scaling
 			SetVariable Xabsolute, limits={xLo,xHi,dx}
 			SetVariable Yabsolute, limits={yLo,yHi,dy}
 			SetVariable Zabsolute, limits={zLo,zHi,dz}
 		else
-			step = 1							// give up, use a deault step of 1
+			step = 1													// give up, use a deault step of 1
 			SetVariable Xabsolute, limits={xLo,xHi,step}
 			SetVariable Yabsolute, limits={yLo,yHi,step}
 			SetVariable Zabsolute, limits={zLo,zHi,step}
@@ -268,7 +268,7 @@ Static Function GizmoScatterMarkerSetVarProc(sva) : SetVariableControl
 	if (V_Value && numtype(point))
 		point = GizmoScatterMarkerGetNearPoint(marker[MarkerNum][0],marker[MarkerNum][1],marker[MarkerNum][2])
 	endif
-	if (numtype(point)==0 || V_Value)				// given a point, or told to stay on points
+	if (numtype(point)==0 || V_Value)								// given a point, or told to stay on points
 		Variable N
 		if (WaveDims(scatter)==2 && DimSize(scatter,1)==3)	// triplets
 			N = DimSize(scatter,0)
@@ -329,10 +329,10 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 		return 0
 	endif
 
-	if (stringmatch(ba.ctrlName,"FitPeakButton"))		// fit a 3D Gaussian peak at the marker position
-		ControlInfo/W=$(ba.win) waveSelectPopup
-		Wave scatter=$S_Value
-		if (WaveDims(scatter)==3)					// this only works for 3D waves (NO triplit xyz)
+	ControlInfo/W=$(ba.win) waveSelectPopup
+	Wave scatter=$S_Value
+	if (stringmatch(ba.ctrlName,"FitPeakButton"))	// fit a 3D Gaussian peak at the marker position
+		if (WaveDims(scatter)==3)							// this only works for 3D waves (NO triplit xyz)
 			Make/N=3/D/FREE fitXYZ
 			fitXYZ = marker[MarkerNum][p]
 			FitPeakAt3Dmarker(scatter,fitXYZ,NaN,printIt=1)
@@ -343,7 +343,7 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 		title = StringByKey("title", S_recreation,"=",",")
 		title = ReplaceString("\"",title,"")
 		if (stringmatch(title,"add marker*"))			// determine desired action
-			GizmoAddScatterMarker()
+			GizmoAddScatterMarker(scatter=scatter)
 		elseif (stringmatch(title,"remove marker*"))
 			GizmoRemoveScatterMarkers()
 		endif
@@ -433,7 +433,7 @@ Static Function GizmoMarkerShowHideButtonProc(ba) : ButtonControl
 	endif
 
 	Wave gizmoScatter=$(path+"gizmoScatterMarkerArray")
-	if (WaveExists(gizmoScatter))					// start new markers at center if its position is NaN
+	if (WaveExists(gizmoScatter))				// start new markers at center if its position is NaN
 		if (numtype(gizmoScatter[MarkerNum][0]+gizmoScatter[MarkerNum][1]+gizmoScatter[MarkerNum][2]))
 			Wave center=centerOf3Ddata(scatter)
 			if (WaveExists(center))				// put up new marker at center of volume
@@ -580,7 +580,7 @@ Static Function GizmoScatterMarkerUpdateHook(s)		// update all values on Marker 
 End
 //
 Static Function GizmoMarkerPanelUpdate()
-	if (strlen(WinList("*","","WIN:4096"))<1)		// if no gizmos, disable everything
+	if (strlen(WinList("*","","WIN:4096"))<1)	// if no gizmos, disable everything
 		PopupMenu waveSelectPopup,disable=2
 		SetVariable xyzStep,disable=2
 		Button FitPeakButton,disable=1
@@ -597,7 +597,7 @@ Static Function GizmoMarkerPanelUpdate()
 		updatePanelHKL($"",NaN,NaN,NaN)
 		SetVariable MarkerSizeSetVar,disable=2
 		PopupMenu MarkerNumberPopup,disable=2
-		Button FitPeakButton,disable=2		// only show this button when marking a 3D wave
+		Button FitPeakButton,disable=2				// only show this button when marking a 3D wave
 		return 0
 	endif
 
@@ -618,9 +618,9 @@ Static Function GizmoMarkerPanelUpdate()
 	info.win = "GizmoScatterMarkerPanel"
 	Variable Ndisplay = GizmoMarkerInfo(info)	// get info and number displayed
 	Variable MarkerNum = info.MarkerNum
-	Variable dval = displayed ? 0 : 2	// 0=show, 2=disable
+	Variable dval = displayed ? 0 : 2				// 0=show, 2=disable
 	dval = info.M[MarkerNum].used ? dval : 2
-	dval = Ndisplay ? dval : 2					// always disabled when none displayed
+	dval = Ndisplay ? dval : 2						// always disabled when none displayed
 
 	Button MarkerInfoButton,disable=dval
 	SetVariable xyzStep,disable=dval
@@ -636,7 +636,7 @@ Static Function GizmoMarkerPanelUpdate()
 	Button ShowHideMarkerButton ,disable=(displayed ? 0 : 2)
 	Button ShowHideMarkerButton, title=SelectString(info.M[MarkerNum].used,"Show","Hide")
 	if (Ndisplay<1)
-		return 0								// nothing more to do
+		return 0												// nothing more to do
 	endif
 
 	Wave marker=$GizmoGetScatterMarkerWave()
@@ -714,7 +714,7 @@ Static Function updatePanelXYZlimits(scatter)
 		SetVariable Yabsolute, limits={yLo,yHi,dy}
 		SetVariable Zabsolute, limits={zLo,zHi,dz}
 	else
-		step = 1							// give up, use a deault step of 1
+		step = 1									// give up, use a deault step of 1
 		SetVariable Xabsolute, limits={xLo,xHi,step}
 		SetVariable Yabsolute, limits={yLo,yHi,step}
 		SetVariable Zabsolute, limits={zLo,zHi,step}
@@ -769,7 +769,8 @@ Static Function updatePanelHKL(scatter,qx,qy,qz)
 End
 
 
-Static Function/T GizmoAddScatterMarker([rgba,alpha])		// adds marker to gizmo if needed, will also create the marker wave if needed
+Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to gizmo if needed, will also create the marker wave if needed
+	Wave scatter				// scatter wave that associated with the marker
 	String rgba					// red, green, blue, or "" is black, or you can give your own rgba as "1,1,0,0.5"
 	Variable alpha
 	rgba = SelectString(ParamIsDefault(rgba),rgba,"")
@@ -777,16 +778,21 @@ Static Function/T GizmoAddScatterMarker([rgba,alpha])		// adds marker to gizmo i
 
 	Execute "ModifyGizmo stopRotation"
 	String wname=GizmoGetScatterMarkerWave()
-	if (strlen(wname)<1)							// not in object list, add it
-		Wave gizmoScatterMarkerArray=gizmoScatterMarkerArray, gizmoScatterMarkerArrayRGBA=gizmoScatterMarkerArrayRGBA
-		Wave gizmoScatterMarkerArraySize=gizmoScatterMarkerArraySize, gizmoScatterMarkerArraySize0=gizmoScatterMarkerArraySize0
+	if (strlen(wname)<1)								// scatterMarker wave is not in object list, add it
+		if (!WaveExists(scatter))						// need this to know where the scatterMarker waves are located
+			return ""
+		endif
+		String path=GetWavesDataFolder(scatter,1)// path to the scatter marker waves
+		Wave gizmoScatterMarkerArray=$(path+"gizmoScatterMarkerArray"), gizmoScatterMarkerArrayRGBA=$(path+"gizmoScatterMarkerArrayRGBA")
+		Wave gizmoScatterMarkerArraySize=$(path+"gizmoScatterMarkerArraySize"), gizmoScatterMarkerArraySize0=$(path+"gizmoScatterMarkerArraySize0")
 		if (!WaveExists(gizmoScatterMarkerArray))// old for compatibility
-			Wave gizmoScatterMarkerArray=gizmoScatterMarker
+			Wave gizmoScatterMarkerArray=$(path+"gizmoScatterMarker")
 		endif
 		if (!WaveExists(gizmoScatterMarkerArray))
-			Make/N=(8,3)/O gizmoScatterMarkerArray=NaN, gizmoScatterMarkerArraySize=NaN
-			Make/N=(8)/O gizmoScatterMarkerArraySize0=0.5
-			Make/N=(8,4)/O gizmoScatterMarkerArrayRGBA
+			Make/N=(8,3)/O $(path+"gizmoScatterMarkerArray")/WAVE=gizmoScatterMarkerArray =NaN
+			Make/N=(8,3)/O $(path+"gizmoScatterMarkerArraySize")/WAVE=gizmoScatterMarkerArraySize =NaN
+			Make/N=(8)/O $(path+"gizmoScatterMarkerArraySize0")/WAVE=gizmoScatterMarkerArraySize0 =0.5
+			Make/N=(8,4)/O $(path+"gizmoScatterMarkerArrayRGBA")/WAVE=gizmoScatterMarkerArrayRGBA =NaN
 			gizmoScatterMarkerArraySize[][0] = 0.5
 			Note/K gizmoScatterMarkerArray,"waveClass=gizmoScatterMarkerXYZ"
 			Note/K gizmoScatterMarkerArraySize,"waveClass=gizmoScatterMarkerSize"
@@ -831,13 +837,15 @@ Static Function/T GizmoAddScatterMarker([rgba,alpha])		// adds marker to gizmo i
 	endif
 
 	Execute "GetGizmo displayItemExists=scatterMarkerArray"
-	if (!NumVarOrDefault("V_Flag",1))				// object not in display list, add it before other objects
-		Execute "GetGizmo displayList"				// list of all displayed objects
+	if (!NumVarOrDefault("V_Flag",1))		// object not in display list, add it before other objects
+		Execute "GetGizmo displayList"		// list of all displayed objects
 		Wave/T TW_DisplayList=TW_DisplayList
 		Variable i,N=DimSize(TW_DisplayList,0)
 		for (i=N-1;i>=0;i-=1)
 			if (strsearch(TW_DisplayList[i],"ModifyGizmo setDisplayList="+num2istr(i)+", object",0)<0)
-				i += 1
+				do
+					i += 1							// put marker after the "light" objects
+				while(i<N && strsearch(TW_DisplayList[i],", object=light",0,2)>0)
 				break
 			endif
 		endfor
@@ -876,7 +884,7 @@ Static Function/T GizmoGetScatterMarkerWave()	// gets name of wave with position
 		return ""
 	endif
 
-	Execute "GetGizmo objectList"					// find name of wave with marker position
+	Execute "GetGizmo objectList"			// find name of wave with marker position
 	String str
 	Wave/T TW_gizmoObjectList
 	Variable i,i0,i1
@@ -914,7 +922,7 @@ Static Function GizmoScatterMarkerGetNearPoint(mx,my,mz)
 		WaveStats/M=1/Q delta
 		return V_minloc
 
-	elseif (WaveDims(scatter)==3)							// a scaled 3d wave
+	elseif (WaveDims(scatter)==3)								// a scaled 3d wave
 		Variable ix,iy,iz
 		Variable Nx=DimSize(scatter,0), Ny=DimSize(scatter,1), Nz=DimSize(scatter,2)
 		ix = round( (mx-DimOffset(scatter,0)) / DimDelta(scatter,0) )
@@ -936,7 +944,7 @@ Static Function/WAVE centerOf3Ddata(ww)	// finds center of data, works for tripl
 		return $""
 	endif
 
-	if (WaveDims(ww)==2 && DimSize(ww,1)==3 && DimSize(ww,0)>0)		// triplets
+	if (WaveDims(ww)==2 && DimSize(ww,1)==3 && DimSize(ww,0)>0)	// triplets
 		MatrixOP/FREE center = sumCols(ww)/numRows(ww)
 		Redimension/N=3 center
 	elseif (WaveDims(ww)==3 && numpnts(ww)>0)							// 3D array
@@ -953,8 +961,8 @@ End
 
 Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	Wave space3D
-	Wave Qc					// center of sub-volume to fit
-	Variable QxHW,QyHW,QzHW	// half widths dQz, dQy, dQz for the sub volume
+	Wave Qc								// center of sub-volume to fit
+	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
 	Variable printIt
 
 	printIt = ParamIsDefault(printIt) ? 0 : !(!printIt)
@@ -971,7 +979,7 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		endif
 	endif
 	String spaceList = WaveListClass("GizmoXYZ;Qspace3D*","*","DIMS:3")
-	if (!WaveExists(space3D))				// no space3D passed
+	if (!WaveExists(space3D))					// no space3D passed
 		if (ItemsInList(spaceList)==1)		// only 1 choice, use it
 			Wave space3D = $StringFromList(0,spaceList)
 		elseif (ItemsInList(spaceList)<1)	// no acceptable choices, quit
@@ -979,8 +987,8 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		endif
 	endif
 	String QcList=WaveList("*",";","DIMS:2,MAXROWS:1,MINROWS:1,MAXCOLS:3,MINCOLS:3" )+WaveList("*",";","DIMS:1,MAXROWS:3,MINROWS:3" )
-	if (!WaveExists(Qc))					// no Qc passed
-		if (ItemsInList(QcList)==1)		// only 1 choice, use it
+	if (!WaveExists(Qc))						// no Qc passed
+		if (ItemsInList(QcList)==1)			// only 1 choice, use it
 			Wave Qc = $StringFromList(0,QcList)
 		elseif (ItemsInList(QcList)<1)		// no acceptable choices, quit
 			return 1
@@ -1071,8 +1079,8 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		Make/N=3/D/FREE Qo=W_coef[2*p + 2]
 		Make/N=3/T/FREE units=WaveUnits(space3D,p)
 		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
-		units = SelectString(strlen(units[p]),""," ("+units[p]+")")					// add () when something present
-		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")// is it Q?
+		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
+		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
 		Wave W_sigma=W_sigma, W_coef=W_coef
 		printf "Gaussian Fit has offset = %s,  amp = %s\r",ValErrStr(W_coef[0],W_sigma[0],sp=1),ValErrStr(W_coef[1],W_sigma[1],sp=1)
 		printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(Qo[0],W_sigma[2],sp=1),units[0],ValErrStr(W_coef[3],W_sigma[3],sp=1),units[0]
@@ -1096,9 +1104,9 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 #if exists("diffractometer#sample2crystal")
 		STRUCT sampleStructure sa	
 		String str = ParseFilePath(1,GetWavesDataFolder(space3D,1),":",1,0)+"sampleStructStr"
-		String strStruct=StrVarOrDefault(str,"")					// fill the sample structure with values in spec scan directory
+		String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
 		StructGet/S/B=2 sa, strStruct								// found structure information, load into s
-		Wave hkl = diffractometer#sample2crystal(sa,Qo)			// rotate qvec from sample-location frame into crystal based frame, the hkl
+		Wave hkl = diffractometer#sample2crystal(sa,Qo)		// rotate qvec from sample-location frame into crystal based frame, the hkl
 #endif
 		if (!WaveExists(hkl))
 			FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
@@ -1156,7 +1164,7 @@ Static Function GizmoMarkerInfo(info)		// returns number of markers displayed
 	ControlInfo/W=$win MarkerNumberPopup
 	info.MarkerNum = V_Value-1
 
-	Variable Ndisplay=0, i		// i must lie in range [0,7]
+	Variable Ndisplay=0, i				// i must lie in range [0,7]
 	for (i=0;i<NUMBER_OF_GIZMO_MARKERS;i+=1)
 		Ndisplay += (GizmoMarkerInfo1(info.M[i],win,i)==0)
 	endfor
@@ -1166,7 +1174,7 @@ End
 Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	STRUCT GizmoMarkerInfoStruct1 &M
 	String win
-	Variable MarkerNum	// must lie in range [0,7]
+	Variable MarkerNum					// must lie in range [0,7]
 	MarkerNum = round(MarkerNum)
 	Init_GizmoMarkerInfoStruct1(M)	// set all values for unsued
 
@@ -1241,7 +1249,7 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
 	Wave RL = getRl(scatter,point)
 	if (WaveDims(scatter)==3 && WaveExists(RL) && WhichListItem(WaveUnits(scatter,0),Q_UNITS_LIST)>=0)
-		Make/N=3/D/FREE Qc={x0,y0,z0}			// This is probably Q-space, so try for an hkl
+		Make/N=3/D/FREE Qc={x0,y0,z0}		// This is probably Q-space, so try for an hkl
 		MatrixOP/FREE hkl = Inv(RL) x Qc
 		M.h = hkl[0];		M.k = hkl[1];		M.l = hkl[2]
 	endif
@@ -1326,23 +1334,23 @@ End
 
 #if exists("InitLatticeSymPackage")==6
 Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	// provide key=value list comparing two reciprocal lattices
-	Wave rl0,rl1									// two 3x3 reciprocal lattices
+	Wave rl0,rl1											// two 3x3 reciprocal lattices
 
-	if (numtype(sum(rl0)+sum(rl1)))			// invalid reciprocal lattices
+	if (numtype(sum(rl0)+sum(rl1)))					// invalid reciprocal lattices
 		return 	""
-	elseif (EqualWaves(rl0,rl1,1))				// identical reciprocal lattices
+	elseif (EqualWaves(rl0,rl1,1))					// identical reciprocal lattices
 		return 	"axisRotationAngle=0;axisHKLdeviation=0"
 	endif
 
 	MatrixOP/FREE rot01 = rl1 x Inv(rl0)			// rotation matrix from 0 to 1
 	Make/N=3/D/FREE axis
-	Variable angle = axisOfMatrix(rot01,axis)		// total rotation angle between point0 and point1 (degrees)
+	Variable angle = axisOfMatrix(rot01,axis)	// total rotation angle between point0 and point1 (degrees)
 
 	MatrixOP/FREE hkl = Normalize(Inv(rl0) x axis)
 	Variable h=round(24*hkl[0]), k=round(24*hkl[1]), l=round(24*hkl[2])
 	lowestOrderHKL(h,k,l)
 	Make/FREE hkl0 = {h,k,l}
-	MatrixOP/FREE axis0 = Normalize(rl0 x hkl0)	// axis of hkl0
+	MatrixOP/FREE axis0 = Normalize(rl0 x hkl0)// axis of hkl0
 	Variable dot = limit(MatrixDot(axis,axis0),-1,1)// ensure that the acos will exist
 	Variable axisAnlge = acos(dot)*180/PI
 
@@ -1355,26 +1363,26 @@ Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	// provide key=value l
 	return list
 End
 //
-Static Function axisOfMatrix(rot,axis)				// returns total rotation angle, and sets axis to the axis of the total rotation
-	Wave rot										// rotation matrix
-	Wave axis										// axis of the rotation (angle is returned)
+Static Function axisOfMatrix(rot,axis)			// returns total rotation angle, and sets axis to the axis of the total rotation
+	Wave rot													// rotation matrix
+	Wave axis												// axis of the rotation (angle is returned)
 
-	Variable cosine = (MatrixTrace(rot)-1)/2		// trace = 1 + 2*cos(theta)
+	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
 	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180¡ rotation,
+	if (cosine<= -1)										// special for 180¡ rotation,
 		axis[0] = sqrt((rot[0][0]+1)/2)
 		axis[1] = sqrt((rot[1][1]+1)/2)
-		axis[2] = sqrt((rot[2][2]+1)/2)			// always assume z positive
+		axis[2] = sqrt((rot[2][2]+1)/2)				// always assume z positive
 		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
 		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-	else												// rotation < 180¡, usual formula works
+	else														// rotation < 180¡, usual formula works
 		axis[0] = rot[2][1] - rot[1][2]
 		axis[1] = rot[0][2] - rot[2][0]
 		axis[2] = rot[1][0] - rot[0][1]
 		axis /= 2
 	endif
 	normalize(axis)
-	return acos(cosine)*180/PI					// rotation angle in degrees
+	return acos(cosine)*180/PI						// rotation angle in degrees
 End
 #else
 Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	

@@ -1349,7 +1349,9 @@ End
 Function Init_AtomViewLattice()
 	InitLatticeSymPackage()
 	ElementDataInitPackage()
+	GMarkers#InitGizmoMarkers()
 	GZoomTrans#InitGizmoZoomTranslate()
+	GClipPlanes#InitGizmoClipPlanes()
 	return 0
 End
 
