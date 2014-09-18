@@ -78,7 +78,7 @@ Function MakeGizmoScatterMarkerPanel() : Panel			// Create the Cut Plane Panel. 
 	SetVariable Yabsolute,proc=GMarkers#GizmoScatterMarkerSetVarProc,value= _NUM:NaN
 	SetVariable Zabsolute,pos={20,86},size={101,19},bodyWidth=90,title="Z",fSize=12
 	SetVariable Zabsolute,proc=GMarkers#GizmoScatterMarkerSetVarProc,value= _NUM:NaN
-	SetVariable xyzStep,pos={19,108},size={103,19},bodyWidth=70,proc=GMarkers#GizmoScatterMarkerSetVarProc,title="âˆ†xyz"
+	SetVariable xyzStep,pos={19,108},size={103,19},bodyWidth=70,proc=GMarkers#GizmoScatterMarkerSetVarProc,title="Æxyz"
 	SetVariable xyzStep,fSize=12,limits={0,inf,1},value= _NUM:1
 
 	CheckBox OnPointCheckBox,pos={6,141},size={61,32},title="stay on\rpoints"
@@ -460,7 +460,7 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 	endif
 	Variable MarkerNum=info.MarkerNum
 	if (ba.eventMod & (2|8) || !(info.M[MarkerNum].used))	// print all info when (Shift or Comamnd Key), or for an unsued marker
-		print "â€¢PrintGizmoMarkerInfoAll()"
+		print "¥PrintGizmoMarkerInfoAll()"
 		PrintGizmoMarkerInfoStruct(info)
 		return 0
 	endif
@@ -471,7 +471,7 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 	String MarkerName=info.M[MarkerNum].MarkerName
 
 	if (strlen(GetRTStackInfo(2))<1)
-		print "â€¢GizmoMarkerInfoPrint()"
+		print "¥GizmoMarkerInfoPrint()"
 	endif
 	printf "for marker%d,  '%s' on wave '%s'\r",MarkerNum,MarkerName,wName
 
@@ -530,13 +530,13 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 			printf "   distance = {%g (%s), %g (%s), %g (%s)}%s,  |distance|=%g\t\t",distance[0],xUnit,distance[1],yUnit,distance[2],zUnit,norm(distance)
 		endif
 		if (numtype(ix+iy+iz + info.M[num2].ix + info.M[num2].iy + info.M[num2].iz)==0)
-			printf "   âˆ†(ijk) = [%g, %g, %g],   âˆ†point = %g\r",(ix - info.M[num2].ix), (ix - info.M[num2].iy), (iz - info.M[num2].iz), (point - info.M[num2].point)
+			printf "   Æ(ijk) = [%g, %g, %g],   Æpoint = %g\r",(ix - info.M[num2].ix), (ix - info.M[num2].iy), (iz - info.M[num2].iz), (point - info.M[num2].point)
 		else
-			printf "   âˆ†point = %g\r",(point - info.M[num2].point)
+			printf "   Æpoint = %g\r",(point - info.M[num2].point)
 		endif
 		if (numtype(h+k+l + info.M[num2].h + info.M[num2].k + info.M[num2].l)==0)
 			Variable dh = h - info.M[num2].h, dk = k - info.M[num2].k, dl = l - info.M[num2].l
-			printf "   âˆ†(hkl) = (%.3g, %.3g, %.3g),  |âˆ†(hkl)| = %.3g (rlu)\r",dh, dk, dl,sqrt(dh^2+dk^2+dl^2)
+			printf "   Æ(hkl) = (%.3g, %.3g, %.3g),  |Æ(hkl)| = %.3g (rlu)\r",dh, dk, dl,sqrt(dh^2+dk^2+dl^2)
 		endif
 
 		if (exists("InitLatticeSymPackage")==6)
@@ -548,8 +548,8 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 			Variable angle=NumberByKey("axisRotationAngle",list,"=")
 			Wave scatter=$(info.M[MarkerNum].wName)
 			if (angle>0)
-				printf "   rotation is about the axis {XYZ} = %s  by  %.3gÂ°\r",StringByKey("axisDirectionXYZ",list,"="),angle
-				printf "   in both crystals, the axis is an hkl={%s},    which is %.2fÂ° away from the hkl={%s}\r",StringByKey("axisHKL",list,"="),NumberByKey("axisHKLdeviation",list,"="),StringByKey("axisHKL0",list,"=")
+				printf "   rotation is about the axis {XYZ} = %s  by  %.3g¡\r",StringByKey("axisDirectionXYZ",list,"="),angle
+				printf "   in both crystals, the axis is an hkl={%s},    which is %.2f¡ away from the hkl={%s}\r",StringByKey("axisHKL",list,"="),NumberByKey("axisHKLdeviation",list,"="),StringByKey("axisHKL0",list,"=")
 			elseif (WaveDims(scatter)==1 && angle==0)		// this only makes sense for 1D, 3D waves will always give zero
 				printf "   the reciprocal lattices are identical\r"
 			endif
@@ -1361,13 +1361,13 @@ Static Function axisOfMatrix(rot,axis)				// returns total rotation angle, and s
 
 	Variable cosine = (MatrixTrace(rot)-1)/2		// trace = 1 + 2*cos(theta)
 	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180Â° rotation,
+	if (cosine<= -1)								// special for 180¡ rotation,
 		axis[0] = sqrt((rot[0][0]+1)/2)
 		axis[1] = sqrt((rot[1][1]+1)/2)
 		axis[2] = sqrt((rot[2][2]+1)/2)			// always assume z positive
 		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
 		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-	else												// rotation < 180Â°, usual formula works
+	else												// rotation < 180¡, usual formula works
 		axis[0] = rot[2][1] - rot[1][2]
 		axis[1] = rot[0][2] - rot[2][0]
 		axis[2] = rot[1][0] - rot[0][1]
