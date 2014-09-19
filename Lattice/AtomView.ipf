@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.25
+#pragma version = 0.26
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -302,7 +302,8 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	endif
 	if (!WaveExists(bonds))
 		if (!(blen>0))				// find max length to use for bonds
-			blen = FindMinSeparation(xyz)*1.01
+			// blen = FindMinSeparation(xyz)*1.01
+			blen = FindMinSeparation(xyz)*1.05
 		endif
 		Wave bonds = MakeBondList_blen(prefix,xyz,blen=blen)
 	endif
