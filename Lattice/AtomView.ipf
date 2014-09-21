@@ -14,6 +14,8 @@
 // These Constant values can be OverRidden by adding the line in your Main Procedure window.  Don't change this file.
 Constant AtomView_GrayBkg = 0.75	// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
 Constant AtomView_BondLineWidth = 5	// Can OverRide with :OverRide Constant AtomView_BondLineWidth=3
+StrConstant AtomView_CellOutLineColor = "0.733333,0.733333,0.733333,1"
+StrConstant AtomView_BondColor = "0.4,0.4,0.4,1"
 Constant AtomView_UseCovalent = 1	// Can OverRide with :OverRide Constant AtomView_UseCovalent=1
 												// turn this flag on to use covalent radius instead of atomic radius.
 Constant AtomView_SphereQuality = 50	// Can OverRide with :OverRide Constant AtomView_SphereQuality=100
@@ -164,7 +166,7 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		if (V_flag)
 			return $""
 		endif
-		printf "¥MakeCellsOfLattice(%g, %g, %g",Na,Nb,Nc
+		printf "¥MakeCellsOfLattice(%g,%g,%g",Na,Nb,Nc
 		if (numtype(blen)==0 || !ParamIsDefault(blen))
 			printf ", blen=%g",blen
 		endif
@@ -309,9 +311,10 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	endif
 
 	Wave cell = MakeCellOutline(prefix,xtal,Na=Na,Nb=Nb,Nc=Nc)
-	if ((Na>1 || Nb >1 || Nc>1) && WaveExists(cell))
-		Wave cell0 = MakeCellOutline(prefix,xtal,name=NameOfWave(cell)+"0")
-	endif
+	Wave cell0 = MakeCellOutline(prefix,xtal,name=NameOfWave(cell)+"0")
+//	if ((Na>1 || Nb >1 || Nc>1) && WaveExists(cell))
+//		Wave cell0 = MakeCellOutline(prefix,xtal,name=NameOfWave(cell)+"0")
+//	endif
 	Wave corners = MakeGizmocubeCorners(xyz)
 
 	SetDataFolder fldrSav
@@ -353,9 +356,9 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	endif
 	if (WaveExists(cell))
 		wNote = ReplaceStringByKey("cellOutlineWave",wNote,GetWavesDataFolder(cell,2),"=")
-		if (WaveExists(cell0))
-			wNote = ReplaceStringByKey("cellOutlineWave0",wNote,GetWavesDataFolder(cell0,2),"=")
-		endif
+	endif
+	if (WaveExists(cell0))
+		wNote = ReplaceStringByKey("cellOutlineWave0",wNote,GetWavesDataFolder(cell0,2),"=")
 	endif
 	Note/K xyz, wNote
 
@@ -1062,9 +1065,8 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColorType,1}"
 		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ lineWidthType,1}"
 		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ lineWidth,"+num2str(lineWidth)+"}"
-//		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,0,0,0,1}"
-		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,0.4,0.4,0.4,1}"
-			Execute "ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}"
+		Execute "ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,"+AtomView_BondColor+"}"
+		Execute "ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}"
 		Execute "AppendToGizmo attribute specular={0.1,0.1,0.1,1,1032},name=specularBond0"
 	endif
 
@@ -1074,16 +1076,15 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColorType,1}"
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ lineWidthType,1}"
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ lineWidth,0.5}"
-		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColor,0.733333,0.733333,0.733333,1}"
-		if (WaveExists(cell0))
-			objectList += "cellOutline0;"
-			Execute "AppendToGizmo Path="+GetWavesDataFolder(cell0,2)+",name=cellOutline0"
-			Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColorType,1}"
-			Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidthType,1}"
-			// Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidth,0.5}"
-			Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidth,"+num2str(AtomView_BondLineWidth)+"}"
-			Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColor,0.733333,0.733333,0.733333,1}"
-		endif
+		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColor,"+AtomView_CellOutLineColor+"}"
+	endif
+	if (WaveExists(cell0))
+		objectList += "cellOutline0;"
+		Execute "AppendToGizmo Path="+GetWavesDataFolder(cell0,2)+",name=cellOutline0"
+		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColorType,1}"
+		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidthType,1}"
+		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidth,"+num2str(AtomView_BondLineWidth)+"}"
+		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColor,"+AtomView_CellOutLineColor+"}"
 	endif
 
 	if (WaveExists(corners))
