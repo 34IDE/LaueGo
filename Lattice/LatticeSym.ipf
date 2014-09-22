@@ -1,9 +1,10 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.26
+#pragma version = 4.27
 #include "Utility_JZT" version>=3.39
 #include "MaterialsLocate"								// used to find the path to the materials files
 
+Static strConstant NEW_LINE="\n"						//	was NL="\r"
 
 //	remember to execute    InitLatticeSymPackage()
 //
@@ -97,6 +98,8 @@
 //		also added NearestAllowedHKL(xtal,hkl)
 // with version 4.25, added equivalentHKLs(xtal,hkl0,[noNeg]), get list of hkl's symmetry equivalent to hkl0
 // with version 4.26, added bond info to the AtomView menu
+// with version 4.27, when writing files, use "\n" instead of "\r" for line termination. 
+//		also changed crystalStructure2xml() and convertOneXTL2XML() to take a new line argument.
 
 // Rhombohedral Transformation:
 //
@@ -2896,7 +2899,7 @@ End
 
 
 //  ========================================================================= //
-//  ======================== Start of reading/writing xml files ========================  //
+//  ================== Start of reading/writing xml files ==================  //
 
 Function writeCrystalStructure2xmlFile(path,fname)	// writes the current xtal to an xml file
 	String path									// path to write to
@@ -2905,12 +2908,12 @@ Function writeCrystalStructure2xmlFile(path,fname)	// writes the current xtal to
 	STRUCT crystalStructure xtal				// this sructure is written in this routine
 	FillCrystalStructDefault(xtal)
 	ForceLatticeToStructure(xtal)
-	String cif =  crystalStructure2xml(xtal)	// convert xtal to cif
+	String cif =  crystalStructure2xml(xtal,NEW_LINE)	// convert xtal to cif
 
 	Variable f
 	Open/C="R*ch"/F="XML Files (*.xml):.xml;"/M="file to write"/P=$path/Z=2 f as fname
 	if (V_flag==0)
-		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NL+NL
+		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NEW_LINE+NEW_LINE
 		FBinWrite f, cif
 		Close f
 	endif
@@ -3268,8 +3271,9 @@ Static Function readFileXML(xtal,fileName,[path])
 End
 
 
-Static Function/T crystalStructure2xml(xtal)	// convert contents of xtal structure to xml sting (suitable for a file)
+Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal structure to xml sting (suitable for a file)
 	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
+	String NL											// new line string (probably "\r" or "\n"
 
 	String cif="<cif>"+NL
 	String str, unit=" unit=\"nm\""
@@ -3366,7 +3370,7 @@ Static Function/T crystalStructure2xml(xtal)	// convert contents of xtal structu
 	return cif
 End
 
-//  ======================== End of reading/writing xml files =========================  //
+//  =================== End of reading/writing xml files ===================  //
 //  ========================================================================= //
 
 
@@ -3374,8 +3378,6 @@ End
 // =========================================================================
 // =========================================================================
 //	Start of xtl --> xml conversion
-
-Static strConstant NL="\r"
 
 // convert one xtl file to a newer xml file, also moves *.xtl file to folder "materials/old_xtl_files"
 Function ConverXTLfile2XMLfile(xtlName)
@@ -3409,7 +3411,7 @@ Function ConverXTLfile2XMLfile(xtlName)
 	endif
 	printf "xtlName = '%s'\r",xtlName
 
-	String cif = convertOneXTL2XML(xtlName)
+	String cif = convertOneXTL2XML(xtlName,NEW_LINE)
 	if (strlen(cif)<1)
 		DoAlert 0,"Unable to properly interpret file '"+xtlName+"'"
 		return 1
@@ -3419,7 +3421,7 @@ Function ConverXTLfile2XMLfile(xtlName)
 	String xmlName = ParseFilePath(1,xtlName,":",1,0)+ParseFilePath(3,xtlName,":",0,0)+".xml"
 	Open/C="R*ch"/T="TEXT"/Z f as xmlName
 	if (V_flag==0)
-		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NL+NL
+		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NEW_LINE+NEW_LINE
 		FBinWrite f, cif
 		Close f
 		Variable err = 0
@@ -3439,8 +3441,9 @@ Function ConverXTLfile2XMLfile(xtlName)
 	return 0
 End
 //
-Static Function/T convertOneXTL2XML(xtl)		// read in the xtl file, returns string with contents for xml file
+Static Function/T convertOneXTL2XML(xtl,NL)	// read in the xtl file, returns string with contents for xml file
 	String xtl
+	String NL											// new line string (probably "\r" or "\n"
 
 	String keyVals = keyStrFromFile(xtl,"CrystalStructure","home")
 	if (strlen(keyVals)<1)
