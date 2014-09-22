@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.04
+#pragma version = 0.05
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
@@ -134,9 +134,9 @@ Function LaueGo_Install()
 		Append2Log("The alias to \":always:always first.ipf\" is already in \"Igor Procedures\", no action taken",0)
 	else
 		Append2Log("  about to create the alias",0)
-		sprintf str, "  alwaysFirstSource =",alwaysFirstSource
+		sprintf str, "  alwaysFirstSource   \"%s\"",alwaysFirstSource
 		Append2Log(str,0)
-		sprintf str,"  always first destination   ",alwaysFirstDestination
+		sprintf str,"  always first destination   \"%s\"",alwaysFirstDestination
 		Append2Log(str,0)
 		CreateAliasShortcut/I=0/O/Z=1 alwaysFirstSource as alwaysFirstDestination
 		if (V_flag)
@@ -215,26 +215,35 @@ Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new experiment
 	empty = empty && StringMatch(IgorInfo(1),"Untitled")
 	empty = empty && ItemsInList(FunctionList("*",";","WIN:Procedure"))<1
 	empty = empty && ItemsInList(MacroList("*",";","WIN:Procedure"))<1
-	empty = empty && ItemsInList(WaveList("*",";",""))<1
 
-	String dirList = DataFolderDir(-1 )
+	String dirList = DataFolderDir(-1,$"root:")
 	String Variables = StringByKey("VARIABLES",dirList)
 	Variables = RemoveFromList("Gizmo_Error",Variables,",")
 	String Strings = StringByKey("STRINGS",dirList)
 	Strings = RemoveFromList("LogFileName",Strings,",")
+	String Waves= StringByKey("WAVES",dirList)
+	String Folders= StringByKey("FOLDERS",dirList)
 	empty = empty && strlen(StringByKey("FOLDERS",dirList))<1
 	empty = empty && strlen(StringByKey("WAVES",dirList))<1
-	empty = empty && strlen(Variables)<1
-	empty = empty && strlen(Strings)<1
+	empty = empty && strlen(Variables)<1		// no pre-existing variables
+	empty = empty && strlen(Strings)<1			// no pre-existing strings
+	empty = empty && strlen(Waves)<1			// no pre-existing waves
+	empty = empty && strlen(Folders)<1			// no pre-existing data folders
 
-	String wins=WinList("*",";","WIN:4311"), str=FunctionPath("LaueGo_Install")
+	String wins=WinList("*",";","WIN:4304"), str=FunctionPath("LaueGo_Install")		// 4304 = 4096 + 128 + 64 + 16
 	str = ParseFilePath(0,str,":",1,0)
 	wins = RemoveFromList(str,wins)
 	wins = RemoveFromList("Procedure",wins)
-	empty = empty && ItemsInList(wins)<1
+	empty = empty && ItemsInList(wins)<1		// no pre-existing windows
 
 	String MainProcedure = ProcedureText("",0,"Procedure")	// contents of main Procedure window
+	Variable i=-1, returns=-1
+	do
+		i = strsearch(MainProcedure,"\r",i+1)
+		returns += 1
+	while(i>=0)
 	empty = empty && strsearch(MainProcedure,"#include",0)<0
+	empty = empty && returns<2
 
 	return empty
 End
