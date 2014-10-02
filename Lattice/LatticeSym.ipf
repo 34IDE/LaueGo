@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.27
+#pragma version = 4.28
 #include "Utility_JZT" version>=3.39
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -156,34 +156,34 @@ Static Constant HASHID_LEN = 66				// length of string to hold hashID in crystal
 Static Constant MAX_FILE_LEN = 400			// max length of a file name to store
 
 Static Constant amu_eV = 931.494061e6		// energy of one amu (eV),  these 4 numbers only used by Debye-Waller calculation
-Static Constant hbar = 6.58211928e-16		// eV - sec
-Static Constant kB = 8.6173324e-5				// eV / K
-Static Constant c = 299792458					// speed of light (m/sec)
+Static Constant hbar = 6.58211928e-16		// reduced Plank constant (eV - sec)
+Static Constant kB = 8.6173324e-5			// Boltzman constant (eV / K)
+Static Constant c = 299792458				// speed of light (m/sec)
 
 // =========================================================================
 // =========================================================================
 //	Start of Structure definitions
 
-Structure crystalStructure		// structure definition for a crystal lattice
-	char desc[100]				// name or decription of this crystal
-	double a,b,c					// latticde constants, length (nm)
+Structure crystalStructure	// structure definition for a crystal lattice
+	char desc[100]					// name or decription of this crystal
+	double a,b,c					// lattice constants, length (nm)
 	double alpha,beta,gam		// angles (degree)
-	int16 SpaceGroup			// Space Group number from international tables, allowed range is [1, 230]
-	double  a0,  b0,  c0			// direct lattice from constants { a[], b[], c[] }
+	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
+	double  a0,  b0,  c0		// direct lattice from constants { a[], b[], c[] }
 	double  a1,  b1,  c1
 	double  a2,  b2,  c2
-	double  as0,  bs0,  cs0		// reciprocal lattice { a*[], b*[], c*[] }
-	double  as1,  bs1,  cs1		// a*,b*,c* already have the 2PI in them
+	double  as0,  bs0,  cs0	// reciprocal lattice { a*[], b*[], c*[] }
+	double  as1,  bs1,  cs1	// a*,b*,c* already have the 2PI in them
 	double  as2,  bs2,  cs2
-	double Vc					// volume of cell, triple product of (a[]xb[]).c
-	double density				// calculated density (g/cm^3)
+	double Vc						// volume of cell, triple product of (a[]xb[]).c
+	double density					// calculated density (g/cm^3)
 	double Temperature			// Temperature (C)
 	double	alphaT				// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
-	int16 N						// number of atoms described here
+	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
-	int16 Vibrate				// True if DebyeT, Biso, Uiso, or Uij available for some atom
-	int16 haveDebyeT			// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
-	int16 Nbonds				// number of bonds described here
+	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
+	int16 haveDebyeT				// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
+	int16 Nbonds					// number of bonds described here
 	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
 	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
 	double Unconventional10,Unconventional11,Unconventional12
@@ -194,12 +194,12 @@ EndStructure
 //
 Structure atomTypeStructure	// defines one type of atom in a crystal structure
 	char name[60]				// label for this atom, usually starts with atomic symbol
-	int16 Zatom				// Z of the atom
-	double x					// fractional coord along x lattice vector
+	int16 Zatom					// Z of the atom
+	double x						// fractional coord along x lattice vector
 	double y
 	double z
 	double occ					// occupancy
-	char WyckoffSymbol[2]		// a single letter, e.g. 'a', also called the Wyckoff letter
+	char WyckoffSymbol[2]	// a single letter, e.g. 'a', also called the Wyckoff letter
 	int16 valence				// valence of atom, must be an integer
 	int16 mult					// multiplicity
 	double DebyeT				// Debye Temperature (K),  for DebyeT, B, Uiso, & U_ij, use only one method
