@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 2.65
+#pragma version = 2.66
 #define MICRO_VERSION_ORIGINAL
 #include  "LatticeSym", version>=3.54
 Constant FIRST_PIXEL=1							// use for one-based pixels (old Winview way)

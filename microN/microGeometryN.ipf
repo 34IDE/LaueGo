@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.66
+#pragma version = 1.67
 #include  "LatticeSym", version>=4.25
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
