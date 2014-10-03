@@ -3102,21 +3102,22 @@ End
 // ============================================================================================
 // =================================== Start of Math Items ====================================
 
-ThreadSafe Function angleVec2Vec(a,b)		// return the angle between two vectors (degree)
-	Wave a,b
-	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
-	dot = limit(dot,-1,1)						// ensure that the acos will exist
-	return acos(dot)*180/PI
-End
-
-
-ThreadSafe Function rotationAngleOfMat(rot)	// returns the total rotation angle of a matrix 'rot'
-	Wave rot											// the rotation matrix
-	Variable trace = MatrixTrace(rot)		// trace = 1 + 2*cos(theta)
-	Variable cosine = (trace-1)/2			// cosine of the rotation angle
-	cosine = (cosine>1) ? (2-cosine) : cosine
-	return acos(cosine)*180/PI				// rotation angle in degrees
-End
+// these two were moved to Utility_JZT.ipf Oct 3, 2014
+//ThreadSafe Function angleVec2Vec(a,b)		// return the angle between two vectors (degree)
+//	Wave a,b
+//	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
+//	dot = limit(dot,-1,1)						// ensure that the acos will exist
+//	return acos(dot)*180/PI
+//End
+//
+//
+//ThreadSafe Function rotationAngleOfMat(rot)	// returns the total rotation angle of a matrix 'rot'
+//	Wave rot											// the rotation matrix
+//	Variable trace = MatrixTrace(rot)		// trace = 1 + 2*cos(theta)
+//	Variable cosine = (trace-1)/2			// cosine of the rotation angle
+//	cosine = (cosine>1) ? (2-cosine) : cosine
+//	return acos(cosine)*180/PI				// rotation angle in degrees
+//End
 
 
 // compute angle and axis of a rotation matrix

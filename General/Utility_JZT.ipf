@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.39
+#pragma version = 3.40
 // #pragma hide = 1
 
 Menu "Graph"
@@ -37,6 +37,8 @@ End
 //		reverseList(), reverses a list, handy for prompt,popups
 //		monotonic(a), checks if a wave is monotonic
 //		isdigit(c) & isletter(c), handy utilities
+//		angleVec2Vec(a,b)		finds angle between two vectors (degree)
+//		rotationAngleOfMat(rot)  finds the total rotation angle of a matrix 'rot'
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -2030,6 +2032,24 @@ End
 //		i += 1
 //	while (i<n)
 //	return 1
+
+
+
+ThreadSafe Function angleVec2Vec(a,b)		// return the angle between two vectors (degree)
+	Wave a,b
+	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
+	dot = limit(dot,-1,1)						// ensure that the acos will exist
+	return acos(dot)*180/PI
+End
+
+
+ThreadSafe Function rotationAngleOfMat(rot)	// returns the total rotation angle of a matrix 'rot'
+	Wave rot											// the rotation matrix
+	Variable trace = MatrixTrace(rot)		// trace = 1 + 2*cos(theta)
+	Variable cosine = (trace-1)/2			// cosine of the rotation angle
+	cosine = (cosine>1) ? (2-cosine) : cosine
+	return acos(cosine)*180/PI				// rotation angle in degrees
+End
 
 
 ThreadSafe Function isdigit(c)				// returns 1 if c is a digit, 0-9 (otherwise returns 0)

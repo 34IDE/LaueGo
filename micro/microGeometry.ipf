@@ -2778,26 +2778,26 @@ Static Function/S MakeUnique3x3Mat(preset)		// make a new 3x3 matrix, and option
 	return GetWavesDataFolder(mat,2)		// return full path for assingment to a wave
 End
 
-Function angleVec2Vec(a,b)			// return the angle between two vectors (degree)
-	Wave a,b
-	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
-	dot = limit(dot,-1,1)			// ensure that the acos will exist
-	return acos(dot)*180/PI
-End
+// moved to Utility_JZT,ipf,  Oct 3, 2013
+//Function angleVec2Vec(a,b)			// return the angle between two vectors (degree)
+//	Wave a,b
+//	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
+//	dot = limit(dot,-1,1)			// ensure that the acos will exist
+//	return acos(dot)*180/PI
+//End
+//
+// moved to Utility_JZT,ipf,  Oct 3, 2013
+//Function rotationAngleOfMat(rot)				// returns the total rotation angle of a matrix 'rot'
+//	Wave rot									// the rotation matrix
+//	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
+//	Variable cosine = (trace-1)/2				// cosine of the rotation angle
+//	cosine = (cosine>1) ? (2-cosine) : cosine
+//	return acos(cosine)*180/PI				// rotation angle in degrees
+//End
 
 
 //=======================================================================================
 // ================================== Start of Grain Math Items ==================================
-
-
-Function rotationAngleOfMat(rot)				// returns the total rotation angle of a matrix 'rot'
-	Wave rot									// the rotation matrix
-	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
-	Variable cosine = (trace-1)/2				// cosine of the rotation angle
-	cosine = (cosine>1) ? (2-cosine) : cosine
-	return acos(cosine)*180/PI				// rotation angle in degrees
-End
-
 
 // compute angle and axis of a rotation matrix
 // Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
