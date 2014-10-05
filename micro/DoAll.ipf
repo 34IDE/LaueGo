@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=DoAll
-#pragma version = 0.01
+#pragma version = 0.02
 
 //Static Constant pxPrimary=NaN, pyPrimary=NaN, ycPrimary = NaN		// needed by DoAll(),  actually DoAllSingleSpotInfo(), and also by FillMovieMore()
 //Static Constant hPrimary=NaN, kPrimary=NaN, lPrimary=NaN			// following 3 lines only needed when using two spos
@@ -1478,7 +1478,7 @@ Static Function DoAllProper()				// calculates rotation angles using proper pixe
 			Rfrom2spots(Qhkl0,xyz0,Qhkl1,xyz1,rhoMeas)		// compute rhoRef, rotation that takes standard orientation to the reference orientation
 
 			MatrixOp/O rhoMeas = rhoMeas x Inv(rhoRef)
-			angle = axisOfMatrix(rhoMeas,Rodriques)				// construct the Rodriques vector
+			angle = axisOfMatrix(rhoMeas,Rodriques,squareUp=1)		// construct the Rodriques vector
 			totalAngles[i] = angle
 			angle = tan(angle/2 * PI/180)							// normalize Rodriques so that length is tan(theta/2)
 			Rodriques *= angle

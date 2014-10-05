@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.67
+#pragma version = 1.68
 #include  "LatticeSym", version>=4.25
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -3120,55 +3120,56 @@ End
 //End
 
 
-// compute angle and axis of a rotation matrix
-// Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
-//		changed "axis[0] = rr[1][2] - rr[2][1]"   -->   "axis[0] = rr[2][1] - rr[1][2]"
-ThreadSafe Function axisOfMatrix(rot,axis)
-	// returns total rotation angle, and sets axis to the axis of the total rotation
-	Wave rot										// rotation matrix
-	Wave axis									// axis of the rotation (angle is returned)
-
-	Variable sumd = notRotationMatrix(rot)	// accept positive sumd that are less than 1e-4
-	if (sumd<0 || sumd>1e-4)
-		printf "'%s' is not a rotation matrix in axisOfMatrix()\r", NameOfWave(rot)
-		axis = NaN
-		return NaN
-	elseif (0<sumd)									// close enough to a roation matix, but tidy it up first
-		Make/N=(3,3)/O/D axisMat__
-		axisMat__ = rot
-		if (SquareUpMatrix(axisMat__))
-			printf "cannot square up '%s' in axisOfMatrix()\r", NameOfWave(rot)
-			axis = NaN
-			return NaN
-		endif
-		Wave rr = axisMat__
-	else
-		Wave rr = rot
-	endif
-
-	Variable cosine = (MatrixTrace(rr)-1)/2	// trace = 1 + 2*cos(theta)
-	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)									// special for 180¡ rotation,
-		axis[0] = sqrt((rr[0][0]+1)/2)
-		axis[1] = sqrt((rr[1][1]+1)/2)
-		axis[2] = sqrt((rr[2][2]+1)/2)			// always assume z positive
-		axis[0] = (rr[0][2]+rr[2][0])<0 ? -axis[0] : axis[0]
-		axis[1] = (rr[1][2]+rr[2][1])<0 ? -axis[1] : axis[1]
-	else													// rotaion < 180¡, usual formula works
-		axis[0] = rr[2][1] - rr[1][2]
-		axis[1] = rr[0][2] - rr[2][0]
-		axis[2] = rr[1][0] - rr[0][1]
-		axis /= 2
-	endif
-	normalize(axis)
-	KillWaves /Z axisMat__
-	return acos(cosine)*180/PI					// rotation angle in degrees
-End
-//	else													// rotaion < 180¡, usual formula works
-//		axis[0] = rr[1][2] - rr[2][1]
-//		axis[1] = rr[2][0] - rr[0][2]
-//		axis[2] = rr[0][1] - rr[1][0]
-//	endif
+// moved to Utility_JZT.ipf, Oct 5, 2014
+//	// compute angle and axis of a rotation matrix
+//	// Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
+//	//		changed "axis[0] = rr[1][2] - rr[2][1]"   -->   "axis[0] = rr[2][1] - rr[1][2]"
+//	ThreadSafe Function axisOfMatrix(rot,axis)
+//		// returns total rotation angle, and sets axis to the axis of the total rotation
+//		Wave rot										// rotation matrix
+//		Wave axis									// axis of the rotation (angle is returned)
+//
+//		Variable sumd = notRotationMatrix(rot)	// accept positive sumd that are less than 1e-4
+//		if (sumd<0 || sumd>1e-4)
+//			printf "'%s' is not a rotation matrix in axisOfMatrix()\r", NameOfWave(rot)
+//			axis = NaN
+//			return NaN
+//		elseif (0<sumd)									// close enough to a roation matix, but tidy it up first
+//			Make/N=(3,3)/O/D axisMat__
+//			axisMat__ = rot
+//			if (SquareUpMatrix(axisMat__))
+//				printf "cannot square up '%s' in axisOfMatrix()\r", NameOfWave(rot)
+//				axis = NaN
+//				return NaN
+//			endif
+//			Wave rr = axisMat__
+//		else
+//			Wave rr = rot
+//		endif
+//
+//		Variable cosine = (MatrixTrace(rr)-1)/2	// trace = 1 + 2*cos(theta)
+//		cosine = limit(cosine,-1,1)
+//		if (cosine<= -1)									// special for 180¡ rotation,
+//			axis[0] = sqrt((rr[0][0]+1)/2)
+//			axis[1] = sqrt((rr[1][1]+1)/2)
+//			axis[2] = sqrt((rr[2][2]+1)/2)			// always assume z positive
+//			axis[0] = (rr[0][2]+rr[2][0])<0 ? -axis[0] : axis[0]
+//			axis[1] = (rr[1][2]+rr[2][1])<0 ? -axis[1] : axis[1]
+//		else													// rotaion < 180¡, usual formula works
+//			axis[0] = rr[2][1] - rr[1][2]
+//			axis[1] = rr[0][2] - rr[2][0]
+//			axis[2] = rr[1][0] - rr[0][1]
+//			axis /= 2
+//		endif
+//		normalize(axis)
+//		KillWaves /Z axisMat__
+//		return acos(cosine)*180/PI					// rotation angle in degrees
+//	End
+//	//	else													// rotaion < 180¡, usual formula works
+//	//		axis[0] = rr[1][2] - rr[2][1]
+//	//		axis[1] = rr[2][0] - rr[0][2]
+//	//		axis[2] = rr[0][1] - rr[1][0]
+//	//	endif
 
 
 ThreadSafe Function AngleBetweenRotationVectors(R1,R2)	// returns rotation between orientations defined by Rodriques vectors (degrees)
@@ -3283,49 +3284,50 @@ ThreadSafe Function notRotationMatrix(mat,[printIt])	// false if mat is a rotati
 End
 
 
+// moved to Utility_JZT.ipf, Oct 5, 2014
 // fix up a matrix so that it is exactly a rotation matrix, not just close to one
-ThreadSafe Function SquareUpMatrix(mat)
-	Wave mat
-
-	Make/N=3/FREE/D vec0, vec1, vec2
-	vec0 = mat[p][0]
-	vec1 = mat[p][1]
-	vec2 = mat[p][2]
-	Variable norm0=norm(vec0), norm1=norm(vec1), norm2=norm(vec2)
-
-	// Start with the longest vector, and assume it is correct
-	if (norm0>=norm1 && norm0>=norm2)		// X is longest
-		Cross vec0,vec1							// Z = X x Y
-		Wave W_Cross=W_Cross
-		vec2 = W_Cross
-		Cross vec2,vec0							// Y = Z x X
-		vec1 = W_Cross
-	elseif (norm1>=norm0 && norm1>=norm2)// Y is longest
-		Cross vec1,vec2							// X = Y x Z
-		Wave W_Cross=W_Cross
-		vec0 = W_Cross
-		Cross vec0,vec1							// Z = X x Y
-		vec2 = W_Cross
-	else												// Z is longest
-		Cross vec2,vec0							// Y = Z x X
-		Wave W_Cross=W_Cross
-		vec1 = W_Cross
-		Cross vec1,vec2							// X = Y x Z
-		vec0 = W_Cross
-	endif
-
-	Variable err
-	err = normalize(vec0)
-	err += normalize(vec1)
-	err += normalize(vec2)
-	mat[][0] = vec0[p]
-	mat[][1] = vec1[p]
-	mat[][2] = vec2[p]
-
-	err = ( notRotationMatrix(mat) != 0 )	// 0 is a rotation matrix
-	KillWaves/Z W_Cross
-	return numtype(err)
-End
+//ThreadSafe Function SquareUpMatrix(mat)
+//	Wave mat
+//
+//	Make/N=3/FREE/D vec0, vec1, vec2
+//	vec0 = mat[p][0]
+//	vec1 = mat[p][1]
+//	vec2 = mat[p][2]
+//	Variable norm0=norm(vec0), norm1=norm(vec1), norm2=norm(vec2)
+//
+//	// Start with the longest vector, and assume it is correct
+//	if (norm0>=norm1 && norm0>=norm2)		// X is longest
+//		Cross vec0,vec1							// Z = X x Y
+//		Wave W_Cross=W_Cross
+//		vec2 = W_Cross
+//		Cross vec2,vec0							// Y = Z x X
+//		vec1 = W_Cross
+//	elseif (norm1>=norm0 && norm1>=norm2)// Y is longest
+//		Cross vec1,vec2							// X = Y x Z
+//		Wave W_Cross=W_Cross
+//		vec0 = W_Cross
+//		Cross vec0,vec1							// Z = X x Y
+//		vec2 = W_Cross
+//	else												// Z is longest
+//		Cross vec2,vec0							// Y = Z x X
+//		Wave W_Cross=W_Cross
+//		vec1 = W_Cross
+//		Cross vec1,vec2							// X = Y x Z
+//		vec0 = W_Cross
+//	endif
+//
+//	Variable err
+//	err = normalize(vec0)
+//	err += normalize(vec1)
+//	err += normalize(vec2)
+//	mat[][0] = vec0[p]
+//	mat[][1] = vec1[p]
+//	mat[][2] = vec2[p]
+//
+//	err = ( notRotationMatrix(mat) != 0 )	// 0 is a rotation matrix
+//	KillWaves/Z W_Cross
+//	return numtype(err)
+//End
 
 
 ThreadSafe Function EulerMatrix(alpha,bet,gam)	// Make the rotation matrix M_Euler from Euler angles (degree)

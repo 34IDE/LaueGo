@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -1361,28 +1361,6 @@ Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	// provide key=value l
 	list = ReplaceStringByKey("axisHKL0",list,hkl2str(h,k,l),"=")
 	list = ReplaceNumberByKey("axisHKLdeviation",list,axisAnlge,"=")
 	return list
-End
-//
-Static Function axisOfMatrix(rot,axis)			// returns total rotation angle, and sets axis to the axis of the total rotation
-	Wave rot													// rotation matrix
-	Wave axis												// axis of the rotation (angle is returned)
-
-	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
-	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)										// special for 180¡ rotation,
-		axis[0] = sqrt((rot[0][0]+1)/2)
-		axis[1] = sqrt((rot[1][1]+1)/2)
-		axis[2] = sqrt((rot[2][2]+1)/2)				// always assume z positive
-		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
-		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-	else														// rotation < 180¡, usual formula works
-		axis[0] = rot[2][1] - rot[1][2]
-		axis[1] = rot[0][2] - rot[2][0]
-		axis[2] = rot[1][0] - rot[0][1]
-		axis /= 2
-	endif
-	normalize(axis)
-	return acos(cosine)*180/PI						// rotation angle in degrees
 End
 #else
 Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	

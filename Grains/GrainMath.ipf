@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.41
+#pragma version = 1.42
 // #include "vector-math"	// was needed for normalize()
 Constant debugN = 0
 
@@ -1369,7 +1369,7 @@ Function/S BoundaryStats(grains,i1,i2,radius)// calc all information about a bou
 	Make/N=(3,3)/O/D BASi							// BASi, total rotation matrix from A to B, cubic reduced
 	symReducedRotation(mat1,mat2,BASi)				// BASi = (B Inv(A) S^i) = (mat2 Inv(mat1) S^i),   A=mat1, B=mat2
 
-	axisOfMatrix(BASi,axisOfMat)						// make the axis of the rotation matrix BASi (grain2 coordinates)
+	axisOfMatrix(BASi,axisOfMat,squareUp=1)				// make the axis of the rotation matrix BASi (grain2 coordinates)
 	Make/N=3/O/D hklAxis								// hkl of total rotation matrix axis, in terms of grains1
 	hklAxis = -axisOfMat								// change from grain2 to grain1 (for the axis they are just opposite)
 	integerDirectionExact(hklAxis,maxhkl)				// hkl of rotation axis in terms of grain1
@@ -1380,10 +1380,10 @@ Function/S BoundaryStats(grains,i1,i2,radius)// calc all information about a bou
 	out=ReplaceStringByKey("hklAxis",out,str,"=")
 	sprintf str, "%g,%g,%g",axisOfMat[0],axisOfMat[1],axisOfMat[2]
 	out=ReplaceStringByKey("axisOfMat",out,str,"=")
-//	axisOfMatrix(BASi,hklAxis)						// make the axis of the rotation matrix BASi (sample coords, xyz)
+//	axisOfMatrix(BASi,hklAxis,squareUp=1)				// make the axis of the rotation matrix BASi (sample coords, xyz)
 ///	hklAxis *= -1										// change from grain2 to grain1
 //	integerDirectionApprox(hklAxis,maxhkl)			// hkl of rotation axis in terms of grain1
-//	axisOfMatrix(BASi,axisOfMat)						// make the axis of the rotation matrix BASi (sample coords, xyz)
+//	axisOfMatrix(BASi,axisOfMat,squareUp=1)			// make the axis of the rotation matrix BASi (sample coords, xyz)
 //	TransformSample2Beamline(axisOfMat)				// transform axisOfMat from sample (xyz) -> beamline (XYZ)
 	Variable twist=naN,tilt=NaN, angleBetweenAxes=NaN// twist and tilt angles for the boundary (degree)
 	if (normalize(normal12)>0.1)						// if normal12 is valid, then proceed to calculate the hkl1 & hkl2
@@ -1680,7 +1680,7 @@ End
 //		integerDirectionApprox(hkl2,maxhkl)
 //		Make/N=3/O/D axisOfMat						// get the axis of the rotation
 //		MatrixOp/O rot = Inv(mat1) x mat2				// rot is the total rotation matrix
-//		Variable angle = axisOfMatrix(rot,axisOfMat)	// compute axis and angle
+//		Variable angle = axisOfMatrix(rot,axisOfMat,squareUp=1)	// compute axis and angle
 //		// xyz -> XYZ,  	convert from sample (xyz) to beamline coords (XYZ), and again (xyz) == (X -H -F)
 //		Variable ysample = axisOfMat[1], zsample = axisOfMat[2]
 //		axisOfMat[1] = (-ysample+zsample)/sqrt(2)
@@ -3532,52 +3532,10 @@ EndMacro
 // ==============  this section are matrix math routines from the old PoleFigure.ipf   ===============
 
 
-Function rotationAngleOfMat(rot)				// returns the total rotation angle of a matrix 'rot'
-	Wave rot									// the rotation matrix
-	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
-	Variable cosine = (trace-1)/2				// cosine of the rotation angle
-	cosine = (cosine>1) ? (2-cosine) : cosine
-	return acos(cosine)*180/PI				// rotation angle in degrees
-End
 Function rotationCosineOfMat(rot)				// returns cos(total rotation angle of matrix) for matrix 'rot'
 	Wave rot
 	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
 	return (trace-1)/2						// cosine of the rotation angle
-End
-Function axisOfMatrix(rot,axis)				// compute angle and axis of a rotation matrix
-	// returns total rotation angle, and sets axis to the axis of the total rotation
-	Wave rot									// rotation matrix
-	Wave axis									// axis of the rotation (angle is returned)
-
-	Make/N=(3,3)/O/D axisMat__
-	axis = rot[p][0]
-	normalize(axis)
-	axisMat__[][0] = axis[p]
-
-	axis = rot[p][1]
-	normalize(axis)
-	axisMat__[][1] = axis[p]
-
-	axis = rot[p][2]
-	normalize(axis)
-	axisMat__[][2] = axis[p]
-
-	Variable cosine = (MatrixTrace(axisMat__)-1)/2	// trace = 1 + 2*cos(theta)
-	cosine = max(-1,min(cosine,1))
-	if (cosine<= -1)							// special for 180¡ rotation,
-		axis[0] = sqrt((axisMat__[0][0]+1)/2)
-		axis[1] = sqrt((axisMat__[1][1]+1)/2)
-		axis[2] = sqrt((axisMat__[2][2]+1)/2)	// always assume z positive
-		axis[0] = (axisMat__[0][2]+axisMat__[2][0])<0 ? -axis[0] : axis[0]
-		axis[1] = (axisMat__[1][2]+axisMat__[2][1])<0 ? -axis[1] : axis[1]
-	else											// rotaion < 180¡, usual formula works
-		axis[0] = axisMat__[1][2] - axisMat__[2][1]
-		axis[1] = axisMat__[2][0] - axisMat__[0][2]
-		axis[2] = axisMat__[0][1] - axisMat__[1][0]
-	endif
-	normalize(axis)
-	KillWaves /Z axisMat__
-	return acos(cosine)*180/PI						// rotation angle in degrees
 End
 
 
@@ -4076,7 +4034,7 @@ Static Function printSymmetryMatrix(i)
 	op = symOps[i][p][q]
 	Make/N=3/O/D temp_axis_
 	Wave axis = temp_axis_
-	Variable angle = axisOfMatrix(op,axis)
+	Variable angle = axisOfMatrix(op,axis,squareUp=1)
 	integerDirectionApprox(axis,12)
 
 	Variable det = MatrixDet(op)

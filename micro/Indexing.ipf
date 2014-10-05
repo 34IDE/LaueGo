@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.0
-#pragma version = 2.65
+#pragma version = 2.66
 #include "microGeometry", version>=2.53
 #include "WinView", version>=1.92
 #include "LatticeSym", version>=3.39
@@ -3145,7 +3145,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords])
 	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, RL0=RL0_latticeMismatch, rho=rho_latticeMismatch
 	RLfromLatticeConstants(LC,DL,RL0)					// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)					// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
-	Variable angle = axisOfMatrix(rho,axis)				// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
+	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif

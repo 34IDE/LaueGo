@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.58		// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.59		// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -264,6 +264,9 @@ Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
 //
 // July 3, 2013,  version 2.57
 //	in SurfacePlotStyle(), fixed situation where the global "root:Packages:imageDisplay:imageExtension" might not have been created
+//
+// Oct 5, 2014,  version 2.51
+//	Added the squareUp=1 parameter to axisOfMatrix()
 
 // modified read3dRecipLatticesFile() to deal with multiple reference matricies
 // and added SetMatrixFromString() to help with this task.
@@ -4949,7 +4952,7 @@ Function/T read3dRecipLatticesFile(FullFileName,maxAngle)
 			iref = WaveExists(irefMat) ? irefMat[i] : 0
 			refMatTemp = refMat[p][q][iref]			// for multiple refMat's, choose the correct refMat from  irefMat[]
 			MatrixOp/O rho = mat3 x Inv(refMatTemp)	// rho x g0 = gm, the rotation matrix from ref to measured
-			angle = axisOfMatrix(rho,vec3)				// returned angle (degrees)
+			angle = axisOfMatrix(rho,vec3,squareUp=1)	// returned angle (degrees)
 			if (numtype(angle))						// unable to find rotation axis
 				printf "skip bad point (%d) found at XYZ= (%g, %g, %g)\r",i,XX[i],YY[i],ZZ[i]
 				continue

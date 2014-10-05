@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.46
+#pragma version = 0.47
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -2577,34 +2577,6 @@ Static Function/C PvectorFromPixels(px0,py0)
 		printf "new P =   \"%.10g,  %.10g,  %.10g\"\r",P0,P1,d.P[2]
 	endif
 	return cmplx(P0,P1)
-End
-
-
-// compute angle and axis of a rotation matrix
-// Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
-//		changed "axis[0] = rot[1][2] - rot[2][1]"   -->   "axis[0] = rot[2][1] - rot[1][2]"
-Static Function axisOfMatrix(rot,axis)
-	// returns total rotation angle, and sets axis to the axis of the total rotation
-	Wave rot										// rotation matrix
-	Wave axis										// axis of the rotation (angle is returned)
-
-	Variable cosine = (MatrixTrace(rot)-1)/2		// trace = 1 + 2*cos(theta)
-	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180° rotation,
-		axis[0] = sqrt((rot[0][0]+1)/2)
-		axis[1] = sqrt((rot[1][1]+1)/2)
-		axis[2] = sqrt((rot[2][2]+1)/2)			// always assume z positive
-		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
-		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-	else												// rotaion < 180°, usual formula works
-		axis[0] = rot[2][1] - rot[1][2]
-		axis[1] = rot[0][2] - rot[2][0]
-		axis[2] = rot[1][0] - rot[0][1]
-		axis /= 2
-	endif
-	normalize(axis)
-	KillWaves /Z axisMat__
-	return acos(cosine)*180/PI					// rotation angle in degrees
 End
 
 //  ============================================================================  //

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.76
+#pragma version=1.77
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -3941,7 +3941,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 			else
 				MatrixOp/O/FREE mat3 = gmi x stdInv	// gmi = mat3 x std
 			endif
-			angle = axisOfMatrix(mat3,vec3)				// returned angle (degrees)
+			angle = axisOfMatrix(mat3,vec3,squareUp=1)		// returned angle (degrees)
 			vec3 *= angle
 			vecCenter += vec3
 		endfor
@@ -4000,7 +4000,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		else
 			MatrixOp/O/FREE rot33 = gmi x Inv(rl0)	// gmi = rot33 x rl0
 		endif
-		angle = axisOfMatrix(rot33,vec3)				// returned angle (degrees)
+		angle = axisOfMatrix(rot33,vec3,squareUp=1)		// returned angle (degrees)
 		if (numtype(angle) && i==0)
 			str = "Cannot find axis of rotation matrix, Probably the lattice parameters in Igor do not match those in the xml file.\r  Check the 'Xtal' tab"
 			DoAlert 0, str
@@ -4831,7 +4831,7 @@ Function/T Load3dRecipLatticesFileXML_OLD(FullFileName,maxAngle,refType,[iref,Xo
 			else
 				MatrixOp/O mat3 = gmi x stdInv				// gmi = mat3 x std
 			endif
-			angle = axisOfMatrix(mat3,vec3)				// returned angle (degrees)
+			angle = axisOfMatrix(mat3,vec3,squareUp=1)		// returned angle (degrees)
 			vec3 *= angle
 			vecCenter += vec3
 		endfor
@@ -4898,7 +4898,7 @@ Function/T Load3dRecipLatticesFileXML_OLD(FullFileName,maxAngle,refType,[iref,Xo
 		else
 			MatrixOp/O rot33 = gmi x Inv(rl0)				// gmi = rot33 x rl0
 		endif
-		angle = axisOfMatrix(rot33,vec3)					// returned angle (degrees)
+		angle = axisOfMatrix(rot33,vec3,squareUp=1)			// returned angle (degrees)
 		if (numtype(angle) && i==0)
 			str = "Cannot find axis of rotation matrix, Probably the lattice parameters in Igor do not match those in the xml file.\r  Check the 'Xtal' tab"
 			DoAlert 0, str
@@ -5015,47 +5015,6 @@ Function/T Load3dRecipLatticesFileXML_OLD(FullFileName,maxAngle,refType,[iref,Xo
 	endif
 	return noteStr
 End
-//Static Function axisOfMatrix(rot,axis)
-//	// returns total rotation angle, and sets axis to the axis of the total rotation
-//	Wave rot										// rotation matrix
-//	Wave axis										// axis of the rotation (angle is returned)
-//
-//	Variable sumd = notRotationMatrix(rot)	// accept positive sumd that are less than 1e-4
-//	if (sumd<0 || sumd>1e-4)
-//		DoAlert 0, "'"+NameOfWave(rot)+"' is not a rotation matrix in axisOfMatrix(), did you set the correct lattice?"
-//		axis = NaN
-//		return NaN
-//	elseif (0<sumd)								// close enough to a roation matix, but tidy it up first
-//		Make/N=(3,3)/O/D axisMat__
-//		axisMat__ = rot
-//		if (SquareUpMatrix(axisMat__))
-//			DoAlert 0, "cannot square up '"+NameOfWave(rot)+"' in axisOfMatrix(), did you set the correct lattice?"
-//			axis = NaN
-//			return NaN
-//		endif
-//		Wave rr = axisMat__
-//	else
-//		Wave rr = rot
-//	endif
-//
-//	Variable cosine = (MatrixTrace(rr)-1)/2	// trace = 1 + 2*cos(theta)
-//	cosine = limit(cosine,-1,1)
-//	if (cosine<= -1)								// special for 180¡ rotation,
-//		axis[0] = sqrt((rr[0][0]+1)/2)
-//		axis[1] = sqrt((rr[1][1]+1)/2)
-//		axis[2] = sqrt((rr[2][2]+1)/2)		// always assume z positive
-//		axis[0] = (rr[0][2]+rr[2][0])<0 ? -axis[0] : axis[0]
-//		axis[1] = (rr[1][2]+rr[2][1])<0 ? -axis[1] : axis[1]
-//	else											// rotaion < 180¡, usual formula works
-//		axis[0] = rr[2][1] - rr[1][2]
-//		axis[1] = rr[0][2] - rr[2][0]
-//		axis[2] = rr[1][0] - rr[0][1]
-//		axis /= 2
-//	endif
-//	normalize(axis)
-//	KillWaves /Z axisMat__
-//	return acos(cosine)*180/PI					// rotation angle in degrees
-//End
 //
 Function/T makeRGBJZT(RX,RH,RF,maxAngle)
 	Wave RX,RH,RF

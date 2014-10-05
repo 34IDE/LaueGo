@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #include "vector-math"
-#pragma version = 1.00
+#pragma version = 1.01
 
 // add the following to the "resizeHookFunc" so that things appear square even without width={Aspect,1}
 //	GetWindow kwTopWin psize
@@ -713,86 +713,88 @@ Function MakeRotationAnglesSigned(h,k,l)
 	WaveStats/Q rotAngles
 	printf "range of rotation angles is [%g¡,%g¡],  with %d bad points\r",V_min,V_max,V_numNaNs
 End
-Function rotationAngleOfMat(rot)				// returns the total rotation angle of a matrix 'rot'
-	Wave rot									// the rotation matrix
-	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
-	Variable cosine = (trace-1)/2				// cosine of the rotation angle
-	cosine = (cosine>1) ? (2-cosine) : cosine
-	return acos(cosine)*180/PI				// rotation angle in degrees
-End
+//Function rotationAngleOfMat(rot)				// returns the total rotation angle of a matrix 'rot'
+//	Wave rot									// the rotation matrix
+//	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
+//	Variable cosine = (trace-1)/2				// cosine of the rotation angle
+//	cosine = (cosine>1) ? (2-cosine) : cosine
+//	return acos(cosine)*180/PI				// rotation angle in degrees
+//End
 Function rotationCosineOfMat(rot)				// returns cos(total rotation angle of matrix) for matrix 'rot'
 	Wave rot
 	Variable trace = MatrixTrace(rot)			// trace = 1 + 2*cos(theta)
 	return (trace-1)/2						// cosine of the rotation angle
 End
-Function axisOfMatrix(rot,axis)				// compute angle and axis of a rotation matrix
-	// returns total rotation angle, and sets axis to the axis of the total rotation
-	Wave rot									// rotation matrix
-	Wave axis									// axis of the rotation (angle is returned)
 
-DoAlert 0,"check definition of routine 'rotationMatAboutAxis()'"
-	Make/N=(3,3)/O axisMat__
-	axis = rot[p][0]
-	normalize(axis)
-	axisMat__[][0] = axis[p]
+// use version in Utility_JZT.ipf
+//Function axisOfMatrix(rot,axis)				// compute angle and axis of a rotation matrix
+//	// returns total rotation angle, and sets axis to the axis of the total rotation
+//	Wave rot									// rotation matrix
+//	Wave axis									// axis of the rotation (angle is returned)
+//
+//DoAlert 0,"check definition of routine 'rotationMatAboutAxis()'"
+//	Make/N=(3,3)/O axisMat__
+//	axis = rot[p][0]
+//	normalize(axis)
+//	axisMat__[][0] = axis[p]
+//
+//	axis = rot[p][1]
+//	normalize(axis)
+//	axisMat__[][1] = axis[p]
+//
+//	axis = rot[p][2]
+//	normalize(axis)
+//	axisMat__[][2] = axis[p]
+//
+//	axis[0] = axisMat__[1][2] - axisMat__[2][1]
+//	axis[1] = axisMat__[2][0] - axisMat__[0][2]
+//	axis[2] = axisMat__[0][1] - axisMat__[1][0]
+//	normalize(axis)
+//	Variable trace = MatrixTrace(axisMat__)			// trace = 1 + 2*cos(theta)
+//	KillWaves /Z axisMat__
+//	return acos((trace-1)/2)*180/PI					// rotation angle in degrees
+//End
 
-	axis = rot[p][1]
-	normalize(axis)
-	axisMat__[][1] = axis[p]
 
-	axis = rot[p][2]
-	normalize(axis)
-	axisMat__[][2] = axis[p]
-
-	axis[0] = axisMat__[1][2] - axisMat__[2][1]
-	axis[1] = axisMat__[2][0] - axisMat__[0][2]
-	axis[2] = axisMat__[0][1] - axisMat__[1][0]
-	normalize(axis)
-	Variable trace = MatrixTrace(axisMat__)			// trace = 1 + 2*cos(theta)
-	KillWaves /Z axisMat__
-	return acos((trace-1)/2)*180/PI					// rotation angle in degrees
-End
-
-
-Function rotationMatAboutAxis(axis,angle,mat)
-	Wave axis				// axis about which to rotate
-	Variable angle			// angle to rotate (passed as degrees, but convert to radians)
-	Wave mat				// desired rotation matrix
-	angle *= PI/180
-
-	Make/N=3/O/D xhat_rotate__, yhat_rotate__, zhat_rotate__
-	Wave xhat=xhat_rotate__
-	Wave zhat=zhat_rotate__
-
-	zhat = axis
-	if (normalize(zhat) <=0)
-		KillWaves/Z xhat_rotate__, W_Cross, zhat_rotate__
-		return 1			// error, cannot rotate about a zero length axis
-	endif
-
-	Variable i
-	i = ( abs(zhat[0])<= abs(zhat[1]) ) ? 0 : 1
-	i = ( abs(zhat[2])< abs(zhat[i]) ) ? 2 : i
-	xhat = zhat
-	xhat[i] = 2							// choose x-z plane
-	normalize(xhat)
-	Variable dotxz = MatrixDot(xhat,zhat)
-	xhat -= dotxz*zhat					// xhat is now perpendicular to zhat
-	normalize(xhat)					// xhat is now normalized vector perp to zhat
-	Cross zhat,xhat						//	was: cross(zhat,xhat,yhat)
-	Wave yhat=W_Cross
-	normalize(yhat)					// yhat is now normalized vector perp to zhat and xhat
-//	xhat, yhat, zhat is now an orthonormal system with zhat || to axis
-
-//	now rotate around zhat in the xhat -> yhat direction, an angle of angle
-	Variable cosa = cos(angle)
-	Variable sina = sin(angle)
-	Redimension/N=(3,3) mat
-	for(i=0;i<3;i+=1)
-		mat[][i] = (xhat[i]*cosa+yhat[i]*sina)*xhat[p] + (-xhat[i]*sina + yhat[i]*cosa)*yhat[p] + zhat[i]*zhat[p]
-	endfor
-	KillWaves/Z xhat_rotate__, W_Cross, zhat_rotate__
-End
+//Function rotationMatAboutAxis(axis,angle,mat)
+//	Wave axis				// axis about which to rotate
+//	Variable angle			// angle to rotate (passed as degrees, but convert to radians)
+//	Wave mat				// desired rotation matrix
+//	angle *= PI/180
+//
+//	Make/N=3/O/D xhat_rotate__, yhat_rotate__, zhat_rotate__
+//	Wave xhat=xhat_rotate__
+//	Wave zhat=zhat_rotate__
+//
+//	zhat = axis
+//	if (normalize(zhat) <=0)
+//		KillWaves/Z xhat_rotate__, W_Cross, zhat_rotate__
+//		return 1			// error, cannot rotate about a zero length axis
+//	endif
+//
+//	Variable i
+//	i = ( abs(zhat[0])<= abs(zhat[1]) ) ? 0 : 1
+//	i = ( abs(zhat[2])< abs(zhat[i]) ) ? 2 : i
+//	xhat = zhat
+//	xhat[i] = 2							// choose x-z plane
+//	normalize(xhat)
+//	Variable dotxz = MatrixDot(xhat,zhat)
+//	xhat -= dotxz*zhat					// xhat is now perpendicular to zhat
+//	normalize(xhat)					// xhat is now normalized vector perp to zhat
+//	Cross zhat,xhat						//	was: cross(zhat,xhat,yhat)
+//	Wave yhat=W_Cross
+//	normalize(yhat)					// yhat is now normalized vector perp to zhat and xhat
+////	xhat, yhat, zhat is now an orthonormal system with zhat || to axis
+//
+////	now rotate around zhat in the xhat -> yhat direction, an angle of angle
+//	Variable cosa = cos(angle)
+//	Variable sina = sin(angle)
+//	Redimension/N=(3,3) mat
+//	for(i=0;i<3;i+=1)
+//		mat[][i] = (xhat[i]*cosa+yhat[i]*sina)*xhat[p] + (-xhat[i]*sina + yhat[i]*cosa)*yhat[p] + zhat[i]*zhat[p]
+//	endfor
+//	KillWaves/Z xhat_rotate__, W_Cross, zhat_rotate__
+//End
 
 
 Function rotation(mat,axis,angle)		// rotate mat about x, y, or z by angle

@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.55
+#pragma version = 4.56
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -332,7 +332,7 @@ Static Function rotationBetweenRecipLattices(RL0,RL,hkl,[ints])		// returns the 
 
 	MatrixOP/FREE/O rot = RL x Inv(RL0)
 	Make/N=3/D/FREE axis
-	Variable angle = axisOfMatrix(rot,axis)	// angle (degree)
+	Variable angle = axisOfMatrix(rot,axis,squareUp=1)	// angle (degree)
 	MatrixOP/O hkl = Inv(RL0) x axis
 
 	Make/N=3/D/FREE mv, remain
@@ -5313,7 +5313,7 @@ Function RotationBetweenTwoIndexations(windex0,pattern0,windex1,pattern1,[printI
 
 	MatrixOP/FREE rot01 = recip1 x Inv(recip0)	// rotation matrix from 0 to 1
 	Make/N=3/D/FREE axis
-	Variable angle = axisOfMatrix(rot01,axis)		// total rotation angle between point0 and point1 (degrees)
+	Variable angle = axisOfMatrix(rot01,axis,squareUp=1)	// total rotation angle between point0 and point1 (degrees)
 	if (printIt)
 		MatrixOP/FREE hkl = Normalize(Inv(recip0) x axis)
 		Variable h=round(24*hkl[0]), k=round(24*hkl[1]), l=round(24*hkl[2])
@@ -5758,7 +5758,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	RLfromLatticeConstants(LC,DL,RL0)						// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)						// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
 	Make/N=3/O/D/FREE axis
-	Variable angle = axisOfMatrix(rho,axis)						// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
+	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif
@@ -6303,7 +6303,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, RL0=RL0_latticeMismatch, rho=rho_latticeMismatch
 	RLfromLatticeConstants(LC,DL,RL0)					// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)					// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
-	Variable angle = axisOfMatrix(rho,axis)					// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
+	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif

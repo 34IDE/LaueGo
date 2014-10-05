@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.81
+#pragma version = 0.82
 #include "microGeometryN", version>=1.63
 #include "ImageDisplayScaling", version>=1.97
 
@@ -519,7 +519,7 @@ Static Function/T findSampleAxis(windex,[perfect])		// find the axis of the samp
 	rotMat[0][0]=r00;	rotMat[0][1]=r01;	rotMat[0][2]=r02
 	rotMat[1][0]=r10;	rotMat[1][1]=r11;	rotMat[1][2]=r12
 	rotMat[2][0]=r20;	rotMat[2][1]=r21;	rotMat[2][2]=r22
-	Variable angle = axisOfMatrix(rotMat,axis)				// get axis from rotation matrix
+	Variable angle = axisOfMatrix(rotMat,axis,squareUp=1)	// get axis from rotation matrix
 	KillWaves/Z rotMat
 	axis *= angle*PI/180									// re-scale axis to length in radians
 	return GetWavesDataFolder(axis,2)

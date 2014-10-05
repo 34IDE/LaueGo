@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.40
+#pragma version = 3.41
 // #pragma hide = 1
 
 Menu "Graph"
@@ -39,6 +39,8 @@ End
 //		isdigit(c) & isletter(c), handy utilities
 //		angleVec2Vec(a,b)		finds angle between two vectors (degree)
 //		rotationAngleOfMat(rot)  finds the total rotation angle of a matrix 'rot'
+//		axisOfMatrix(mat,axis,[squareUp]), find axis and angle from the rotation matrix mat
+//		SquareUpMatrix(rot), turns rot from almost a rotation matrix to a true rotation matrix
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -2063,6 +2065,73 @@ ThreadSafe Function isletter(c)				// returns 1 if c is an upper or lower case l
 	String c
 	Variable i=char2num(c)
 	return (65<=i && i<=90) || (97<=i && i<=122)
+End
+
+
+// compute angle and axis of a rotation matrix
+// Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
+//		changed "axis[0] = rot[1][2] - rot[2][1]"   -->   "axis[0] = rot[2][1] - rot[1][2]"
+ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
+	// returns total rotation angle (deg), and sets axis to the axis of the total rotation
+	Wave mat									// should be a rotation matrix
+	Wave axis								// axis of the rotation (angle is returned)
+	Variable squareUp						// optionally square up mat (default is NOT square up)
+	squareUp = ParamIsDefault(squareUp) ? NaN : squareUp
+	squareUp = numtype(squareUp) ? 0 : !(!squareUp)
+
+	Make/N=(3,3)/FREE/D rot=mat
+	if (squareUp)
+		if (SquareUpMatrix(rot))
+			axis = NaN						// default for error
+			return NaN
+		endif
+	else
+		MatrixOp/FREE sumd = sum(Abs((mat x mat^t) - Identity(3)))
+		if (sumd<0 || sumd>1e-4)		// not close enough to a rotation mat, an error
+			axis = NaN						// default for error
+			return NaN
+		endif
+	endif
+
+	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
+	cosine = limit(cosine,-1,1)
+	if (cosine<= -1)							// special for 180¡ rotation,
+		axis[0] = sqrt((rot[0][0]+1)/2)
+		axis[1] = sqrt((rot[1][1]+1)/2)
+		axis[2] = sqrt((rot[2][2]+1)/2)			// always assume z positive
+		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
+		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
+	else										// rotaion < 180¡, usual formula works
+		axis[0] = rot[2][1] - rot[1][2]
+		axis[1] = rot[0][2] - rot[2][0]
+		axis[2] = rot[1][0] - rot[0][1]
+		axis /= 2
+	endif
+	normalize(axis)
+	return acos(cosine)*180/PI					// rotation angle in degrees
+End
+
+
+// Oct 5, 2014, used new proper method for changing rot to an exact rotation matrix
+ThreadSafe Function SquareUpMatrix(rot)
+	// see http://en.wikipedia.org/wiki/Kabsch_algorithm
+	Wave rot
+	MatrixSVD/U=0/V=0/Z rot
+	if (V_flag)
+		return 1
+	endif
+	Wave M_V=M_U			// 3x3 column-orthonormal matrix
+	Wave M_WT=M_VT			// transpose of NxN orthonormal matrix
+
+	// A = M_V x W_S x M_WT		// from wikipedia
+	MatrixOp/FREE deter = Det(M_WT^t x M_V^t)
+	Make/N=(3,3)/FREE/D Idet=(p==q)
+	Idet[2][2] = sign(deter[0])
+
+	MatrixOp/FREE rr = (M_WT^t x Idet x M_V^t)^t
+	rot = rr
+	KillWaves/Z W_W, M_U, M_VT
+	return 0
 End
 
 
