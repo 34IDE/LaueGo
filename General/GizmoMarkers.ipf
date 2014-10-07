@@ -1423,23 +1423,30 @@ Function AddGizmoMovieFrame_Markers(gm,data)
 	String data								// string with data
 	// data keys are:
 	//		num			marker number [0,7]
+	//		color			you can also use black, red, ... to identify marker
 	//		action		"on" or "off"  on shows marker, off hides marker
 	//							also, you can just use "show", "hide", "on", or "off" in place of action
 	//		xyz			move marker to position given by "x y z"
 	//		point			move marker to point number
+	//		Nframes		add Nframes to the movie, if Nframes<1 or not present, then NO frames are added
+	//
 	// you can only work on one marker at a time
 	//	structure of data		"num=1,action=on"  or  "num=1,action=off"  or  "num=1,xyz=2.2 -3.7 22"
-	//			or  "num=1,point=135,Nframes=1"  or  "#=1,show"
-	//
-	//		NOTE, this routine does NOT add any frames to the movie
+	//			or  "num=1,point=135,Nframes=1"  or  "#=1,show"  or  "red,show"
 
-	if (!GMarkers#GizmoScatterMarkerDisplayed())		// no markers, cannot do anything
+	if (!GMarkers#GizmoScatterMarkerDisplayed())	// no markers, cannot do anything
 		return 1
 	endif
+	String str
 
-	Variable MarkerNum=NumberByKey("num",data,"=",",")		// marker number [0,7]
-	MarkerNum = round(MarkerNum)
-	MarkerNum = MarkerNum==limit(MarkerNum,0,7) ? MarkerNum : 0	// default to 0
+	Variable MarkerNum=NumberByKey("num",data,"=",",")				// marker number [0,7]
+	if (numtype(MarkerNum))
+		String colors="black;red;green;blue;magenta;cyan;yellow;white"
+		Make/N=8/I/FREE iwave=WhichListItem(StringFromList(p,colors),data,",")
+		WaveStats/Q/M=1 iwave
+		MarkerNum = V_maxloc
+	endif
+	MarkerNum = MarkerNum==limit(MarkerNum,0,7) ? round(MarkerNum) : 0	// default to 0
 
 	Variable show=-1
 	String action=StringByKey("action",data,"=",",")
@@ -1458,7 +1465,7 @@ Function AddGizmoMovieFrame_Markers(gm,data)
 
 	Variable point=NumberByKey("point",data,"=",",")
 	if (numtype(point))						// point is bad, check xyz
-		String str=StringByKey("xyz",data,"=",",")
+		str=StringByKey("xyz",data,"=",",")
 		str = ReplaceString("\t",str," ")
 		str = ReplaceString("  ",str," ")
 		Make/N=3/D/FREE xyzw
@@ -1467,24 +1474,37 @@ Function AddGizmoMovieFrame_Markers(gm,data)
 			WaveClear xyzw
 		endif
 	endif
-	Variable Nframes=NumberByKey("Nframes",data,"=",",")		// add some frames
+	Variable Nframes=NumberByKey("Nframes",data,"=",",")	// add some frames
 	Nframes = Nframes>0 ? round(Nframes) : 0
 
+	if (point>=0 || WaveExists(xyzw))	// need wave scatter
+		STRUCT GizmoMarkerInfoStruct infoLocal
+		infoLocal.win = "GizmoScatterMarkerPanel"
+		GizmoMarkerInfo(infoLocal)
+		Wave scatter = $(infoLocal.M[MarkerNum].wName)
+		if (!WaveExists(scatter))			// cannot find scatter wave
+			point = NaN
+			WaveClear xyzw
+		endif
+	endif
+
+	// move the marker
 	if (point>=0)								// move marker to point number
 		moveGizmoMarkerToPoint(point,scatter,MarkerNum)
 	elseif (WaveExists(xyzw))				// or maybe move marker to xyz
 		moveGizmoMarkerToXYZ(xyzw[0],xyzw[1],xyzw[2],scatter,MarkerNum)
 	endif
 
+	// show/hide the marker
 	if (show>=0)								// show or hide the marker
 		ShowHideGizmoMarker(MarkerNum,show)
 	endif
 
-//	Sleep/B/S 3									// give the gizmo a chance to update
+	// Sleep/B/S 3								// give the gizmo a chance to update
+	// add some frames to the movie
 	if (Nframes>0)
 		GizmoMovies#AddGizmoFrames2Movie(gm,Nframes)
 	endif
-
 	return 0
 End
 

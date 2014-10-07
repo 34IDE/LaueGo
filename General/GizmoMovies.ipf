@@ -524,9 +524,9 @@ Function MakeMovieStepsPanel([N])
 	if (!WaveExists(MovieStepsList))
 		Wave/T MovieStepsList= DefaultMovieStepListWave()
 	endif
+	print "    Starting MovieStepsPanel with data in ",NameOfWave(MovieStepsList)
 	N = min(N,DimSize(MovieStepsList,0))
-
-	GizmoMovies#ResetMovieStepTypes()			// re-set list of step types
+	GizmoMovies#ResetMovieStepTypes()			// re-set list of step types for popup menus
 
 	Variable left=200, top=200, startControls=40
 	NewPanel/W=(left,top,left+490,top+1+startControls+25*N)/N=MovieStepsPanel/K=1
