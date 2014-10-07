@@ -1,10 +1,10 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.00
+#pragma version = 2.01
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
-Static StrConstant MovieStepTypes = " ;Begin;Quaternion;Rotate;Clip;ClipReset;Add_Static"
+Static StrConstant MovieStepTypesBase = " ;Begin;Quaternion;Rotate;Clip;ClipReset;Add_Static"
 Static StrConstant directionTypes = "+X;-X;+Y;-Y;+Z;-Z"
 Static StrConstant GizmoMovieClipPlaneGroupName = "gizmoClipPlaneGroupMovie"
 
@@ -192,9 +192,11 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 	SetAxis/A/R left
 
 	Variable clipVal, c0,c1,dc,  angle, total, da, Nstatic
-	String plane, axis
+	String plane, axis, key, value, extName
 	for (;istep<Nstep;istep+=1)
-		if (strsearch(movieSteps[istep],"Begin",0)==0)	//
+		key = StringFromList(0,movieSteps[istep],":")			// the key from istep
+		value = StringFromList(1,movieSteps[istep],":")		// the value from istep
+		if (strsearch(key,"Begin",0)==0)	//
 			MovieIsOpen = NumVarOrDefault("MovieIsOpenGlobal",0)
 			if (!MovieIsOpen)
 				DoWindow/F $(gm.graphName)							// bring graph with new picture to front
@@ -206,20 +208,20 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 				gm.m += 1
 			endif
 
-		elseif (strsearch(movieSteps[istep],"Quaternion",0)==0)
-			list = StringByKey("Quaternion",movieSteps[istep])
+		elseif (strsearch(key,"Quaternion",0)==0)
+			list = value
 			sprintf cmd, "ModifyGizmo/N=%s SETQUATERNION={%s}",gm.gizmoName,list
 			Execute cmd
 			AddGizmoFrames2Movie(gm,1)								// add 1 frame to Movie
 			ProgressPanelUpdate(progressWin,(gm.m)/(gm.NframesAll)*100)
 
-		elseif (strsearch(movieSteps[istep],"ClipReset",0)==0)// remove clip plane
+		elseif (strsearch(key,"ClipReset",0)==0)				// remove clip plane
 			RemoveGizmoMovieClipPlane(gm)
 			AddGizmoFrames2Movie(gm,1)
 			ProgressPanelUpdate(progressWin,(gm.m)/(gm.NframesAll)*100)
 
-		elseif (strsearch(movieSteps[istep],"Clip",0)==0)	// move the clip plane
-			list = StringByKey("Clip",movieSteps[istep])		//	"Clip:+X, 0, 60, 5"
+		elseif (strsearch(key,"Clip",0)==0)						// move the clip plane
+			list = value													//	"Clip:+X, 0, 60, 5"
 			plane = StringFromList(0,list,",")
 			c0 = str2num(StringFromList(1,list,","))
 			c1 = str2num(StringFromList(2,list,","))
@@ -245,8 +247,8 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 				endfor
 			endif
 
-		elseif (strsearch(movieSteps[istep],"Rotate",0)==0)	// rotate
-			list = StringByKey("Rotate",movieSteps[istep])	//	"Rotate:+Y, -60, 5"
+		elseif (strsearch(key,"Rotate",0)==0)						// rotate
+			list = value													//	"Rotate:+Y, -60, 5"
 			axis = StringFromList(0,list,",")
 			total = str2num(StringFromList(1,list,","))
 			da = abs(str2num(StringFromList(2,list,",")))
@@ -260,10 +262,18 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 				AddRotationMovieFrame(gm,da,rotAxis)
 			endfor
 
-		elseif (strsearch(movieSteps[istep],"Add_Static",0)==0)	// add some static frames
+		elseif (strsearch(key,"Add_Static",0)==0)				// add some static frames
 			Nstatic = NumberByKey("Add_Static",MovieSteps[istep])
 			Nstatic = Nstatic==limit(Nstatic,0,500) ? round(Nstatic) : 1
-			AddGizmoFrames2Movie(gm,Nstatic)								// add Nstatic frames
+			AddGizmoFrames2Movie(gm,Nstatic)						// add Nstatic frames
+
+		else																	// an external function movie step
+			extName = SelectString(strlen(key),"","AddGizmoMovieFrame_"+key)
+			list = FunctionInfo(extName)
+			if (StringMatch(StringByKey("TYPE",list),"UserDefined") && NumberByKey("N_PARAMS",list)==2 && NumberByKey("PARAM_0_TYPE",list)==4608 && NumberByKey("PARAM_1_TYPE",list)==8192)
+				FUNCREF AddGizmoMovieFrame_Proto func=$extName
+				func(gm,value)
+			endif
 		endif
 	endfor
 
@@ -279,6 +289,15 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 	RemoveGizmoMovieClipPlane(gm)										// clean up
 	return 0
 End
+
+
+Function AddGizmoMovieFrame_Proto(gm,data)
+	STRUCT gizmoMovieStruct &gm
+	String data								// string with data
+	return 0
+End
+
+
 
 
 Static Function AddGizmoFrames2Movie(gm,N)
@@ -507,6 +526,8 @@ Function MakeMovieStepsPanel([N])
 	endif
 	N = min(N,DimSize(MovieStepsList,0))
 
+	GizmoMovies#ResetMovieStepTypes()			// re-set list of step types
+
 	Variable left=200, top=200, startControls=40
 	NewPanel/W=(left,top,left+490,top+1+startControls+25*N)/N=MovieStepsPanel/K=1
 
@@ -530,7 +551,8 @@ Function MakeMovieStepsPanel([N])
 	ValDisplay NframesValdisp,limits={0,0,0},barmisc={0,1000}, value= _NUM:0
 
 	String name
-	String MovieTypesStr = "\""+MovieStepTypes+"\""
+	String MovieTypesStr = "\""+StrVarOrDefault("root:Packages:GizmoZoomMovies:MovieStepTypes",MovieStepTypesBase)+"\""
+
 	String DirectionTypesStr = "\""+directionTypes+"\""
 	for (i=0;i<N;i+=1)
 		top = i*25 + startControls
@@ -578,6 +600,10 @@ Function MakeMovieStepsPanel([N])
 		sprintf name,"MoviePop%d_Nstatic",i
 		SetVariable $name,pos={110,top},size={100,19},proc=GizmoMovies#MovieStepPanelSetVarProc
 		SetVariable $name,title="# of frames",disable=1,fSize=12,limits={0,inf,0},value= _NUM:1
+
+		sprintf name,"MoviePop%d_externalData",i
+		SetVariable $name,pos={110,top},size={370,19},value= _STR:"",proc=GizmoMovies#MovieStepPanelSetVarProc
+		SetVariable $name,disable=1,fSize=12,value= _STR:""
 	endfor
 	FillMovieStepsPanelFromWave(MovieStepsList)
 	SetWindow kwTopWin userdata(MovieSteps)="N:"+num2istr(N)
@@ -600,9 +626,10 @@ Static Function EnableHideInputFields(i,type)
 	String type						// {Quaternion,Rotate,Clip,ClipReset}
 
 	String name
-	Variable disable
+	Variable disable, foundOne=0
 
 	disable = !StringMatch(type,"Quaternion")
+	foundOne += !disable
 	sprintf name, "MoviePop%d_Qw", i
 	SetVariable $name,disable=disable
 	sprintf name, "MoviePop%d_Qx", i
@@ -613,6 +640,7 @@ Static Function EnableHideInputFields(i,type)
 	SetVariable $name,disable=disable
 
 	disable = !StringMatch(type,"Rotate")
+	foundOne += !disable
 	sprintf name, "MoviePop%d_axis", i
 	PopupMenu $name,disable=disable
 	sprintf name, "MoviePop%d_TotalAngle", i
@@ -621,6 +649,7 @@ Static Function EnableHideInputFields(i,type)
 	SetVariable $name,disable=disable
 
 	disable = !StringMatch(type,"Clip")
+	foundOne += !disable
 	sprintf name, "MoviePop%d_plane", i
 	PopupMenu $name,disable=disable
 	sprintf name, "MoviePop%d_StartClip", i
@@ -631,7 +660,12 @@ Static Function EnableHideInputFields(i,type)
 	SetVariable $name,disable=disable
 
 	disable = !StringMatch(type,"Add_Static")
+	foundOne += !disable
 	sprintf name, "MoviePop%d_Nstatic", i
+	SetVariable $name,disable=disable
+
+	sprintf name, "MoviePop%d_externalData", i
+	disable = WhichListItem(type,MovieStepTypesBase)>=0
 	SetVariable $name,disable=disable
 End
 //
@@ -733,7 +767,7 @@ Function FillMovieStepsPanelFromWave(ms,[printIt])
 		type = StringFromList(0,ms[i],":")
 		type = SelectString(strlen(type)," ",type)
 		sprintf name, "MoviePop%d", i
-		mode = WhichListItem(type,MovieStepTypes)+1
+		mode = WhichListItem(type,StrVarOrDefault("root:Packages:GizmoZoomMovies:MovieStepTypes",MovieStepTypesBase))+1
 		PopupMenu $name,mode=mode
 
 		list = StringByKey(type,ms[i])
@@ -770,6 +804,10 @@ Function FillMovieStepsPanelFromWave(ms,[printIt])
 		elseif (StringMatch(type,"Add_Static"))
 			cname = name+"_Nstatic"
 			SetVariable $cname,value= _NUM:str2num(StringFromList(0,list,","))
+
+		elseif (WhichListItem(type,MovieStepTypesBase)<0)
+			cname = name+"_externalData"					// for external, just load whole string
+			SetVariable $cname,value= _STR:list
 		endif
 		EnableHideInputFields(i,type)
 	endfor
@@ -878,6 +916,11 @@ Static Function/WAVE GatherMovieStepFromPanel()
 			cname = name+"_Nstatic"
 			ControlInfo/W=MovieStepsPanel $cname
 			steps[i] += num2str(V_Value)
+		elseif (exists("AddGizmoMovieFrame_"+S_Value)==6)	// an external function
+			steps[i] = S_Value+":"
+			cname = name+"_externalData"
+			ControlInfo/W=MovieStepsPanel $cname
+			steps[i] += S_Value
 		else
 			steps[i] = ""										// empty, so nothing
 		endif
@@ -928,6 +971,11 @@ Static Function NframesFromMovieStepListWave(steps,[all])
 			Variable Nstatic=NumberByKey("Add_Static",steps[i])
 			Nstatic = Nstatic==limit(Nstatic,0,500) ? round(Nstatic) : 1
 			Nframes += Nstatic
+		else								// try an external command
+			String data = StringFromList(1,steps[i],":")
+			Variable Nextern = NumberByKey("Nframes",data,"=",",")
+			Nextern = Nextern>0 && Nextern<500 ? round(Nextern) : 0
+			Nframes += Nextern
 		endif
 	endfor
 	return Nframes
@@ -1012,7 +1060,32 @@ End
 //  =========================== End of TESTING Movie Of Gizmo ============================  //
 //  ======================================================================================  //
 
+
+Static Function/T ResetMovieStepTypes()
+	// reset the Global string root:Packages:GizmoZoomMovies:MovieStepTypes
+	// check for all functions of the type "AddGizmoMovieFrame_*" containing two arguments (struct,string)
+	String/G root:Packages:GizmoZoomMovies:MovieStepTypes=MovieStepTypesBase
+	SVAR MovieStepTypes=root:Packages:GizmoZoomMovies:MovieStepTypes
+
+	String flist=FunctionList("AddGizmoMovieFrame_*",";","NPARAMS:2,KIND:2")
+	flist = RemoveFromList("AddGizmoMovieFrame_Proto",flist)		// remove the proto from the list
+	String name, ilist
+	Variable i,N=ItemsInList(flist)
+	for (i=0;i<N;i+=1)
+		name = StringFromList(i,flist)
+			ilist = FunctionInfo(name)
+			if (StringMatch(StringByKey("TYPE",ilist),"UserDefined") && NumberByKey("N_PARAMS",ilist)==2 && NumberByKey("PARAM_0_TYPE",ilist)==4608 && NumberByKey("PARAM_1_TYPE",ilist)==8192)
+				MovieStepTypes += ";"+ReplaceString("AddGizmoMovieFrame_",name,"")
+			endif
+	endfor
+	return MovieStepTypes
+End
+
 Static Function InitGizmoMovies()
 	GizmoUtil#InitGizmoUtilityGeneral()
 	Execute/Q/Z "GizmoMenu AppendItem={JZTmov0,\"Movie Steps Panel...\", \"MakeMovieStepsPanel()\"}"
+
+	NewDataFolder/O root:Packages
+	NewDataFolder/O root:Packages:GizmoZoomMovies
+	ResetMovieStepTypes()
 End

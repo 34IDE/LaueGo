@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -36,15 +36,15 @@ EndStructure
 //
 Static Structure GizmoMarkerInfoStruct1
 	int16 used
-	String MarkerName
-	String wName
-	String xUnit,yUnit,zUnit
-	double x0,y0,z0
-	double point
-	double intensity
-	double ix,iy,iz
-	double h,k,l
-	double recip[9]
+	String MarkerName					// something like 1 red
+	String wName						// name of wave that the marker is on
+	String xUnit,yUnit,zUnit		// units for xyz axes
+	double x0,y0,z0					// position in xyz
+	double point						// point number that marker is on
+	double intensity					// value of wName at point
+	double ix,iy,iz					// indecies into wName to point number
+	double h,k,l						// hkl corresponding to xyz (assuming recip is valid)
+	double recip[9]					// reciprocal lattice (if it exists)
 EndStructure
 
 
@@ -118,6 +118,36 @@ Function MakeGizmoScatterMarkerPanel() : Panel	// Create the Cut Plane Panel.  D
 	ValDisplay Lvaldisp,limits={0,0,0},barmisc={0,1000},value= _NUM:0
 
 	SetWindow kwTopWin,hook(update)=GMarkers#GizmoScatterMarkerUpdateHook
+	return 0
+End
+
+
+Function ShowHideGizmoMarker(MarkerNum,show,[info])			// show/hide a marker
+	Variable MarkerNum					// marker number to change [0,NUMBER_OF_GIZMO_MARKERS-1]
+	Variable show							// true=show, false=hide
+	STRUCT GizmoMarkerInfoStruct &info
+
+	MarkerNum = round(MarkerNum)
+	if (!(MarkerNum==limit(MarkerNum,0,NUMBER_OF_GIZMO_MARKERS-1)))
+		return 1
+	endif
+
+	if (ParamIsDefault(info))
+		STRUCT GizmoMarkerInfoStruct infoLocal
+		infoLocal.win = "GizmoScatterMarkerPanel"
+		GizmoMarkerInfo(infoLocal)
+		Wave scatter = $(infoLocal.M[MarkerNum].wName)
+	else
+		Wave scatter = $(info.M[MarkerNum].wName)
+	endif
+	if (!WaveExists(scatter))
+		return 1
+	endif
+
+	String path=GetWavesDataFolder(scatter,1)
+	Wave sizeW=$(path+"gizmoScatterMarkerArraySize"), sizeW0=$(path+"gizmoScatterMarkerArraySize0")
+	sizeW[MarkerNum][] = show ? sizeW0[MarkerNum] : NaN
+
 	return 0
 End
 
@@ -226,18 +256,18 @@ Static Function GizmoScatterMarkerSetVarProc(sva) : SetVariableControl
 		ControlInfo/W=$(sva.win) xyzStep
 		Variable step = ((numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
 		if (numtype(step)==0)									// a valid step was given, use it
-			SetVariable Xabsolute, limits={xLo,xHi,step}
-			SetVariable Yabsolute, limits={yLo,yHi,step}
-			SetVariable Zabsolute, limits={zLo,zHi,step}
+			SetVariable Xabsolute, limits={xLo,xHi,step}, win=$(sva.win)
+			SetVariable Yabsolute, limits={yLo,yHi,step}, win=$(sva.win)
+			SetVariable Zabsolute, limits={zLo,zHi,step}, win=$(sva.win)
 		elseif (numtype(step) && WaveDims(scatter)==3)// step is bad, but know 3D scaling
-			SetVariable Xabsolute, limits={xLo,xHi,dx}
-			SetVariable Yabsolute, limits={yLo,yHi,dy}
-			SetVariable Zabsolute, limits={zLo,zHi,dz}
+			SetVariable Xabsolute, limits={xLo,xHi,dx}, win=$(sva.win)
+			SetVariable Yabsolute, limits={yLo,yHi,dy}, win=$(sva.win)
+			SetVariable Zabsolute, limits={zLo,zHi,dz}, win=$(sva.win)
 		else
 			step = 1													// give up, use a deault step of 1
-			SetVariable Xabsolute, limits={xLo,xHi,step}
-			SetVariable Yabsolute, limits={yLo,yHi,step}
-			SetVariable Zabsolute, limits={zLo,zHi,step}
+			SetVariable Xabsolute, limits={xLo,xHi,step}, win=$(sva.win)
+			SetVariable Yabsolute, limits={yLo,yHi,step}, win=$(sva.win)
+			SetVariable Zabsolute, limits={zLo,zHi,step}, win=$(sva.win)
 		endif
 	endif
 
@@ -294,7 +324,7 @@ Static Function GizmoScatterMarkerSetVarProc(sva) : SetVariableControl
 		marker[MarkerNum][1] = my
 		marker[MarkerNum][2] = mz
 		if (i!=sva.dval)
-			SetVariable alongWave,value= _NUM:i
+			SetVariable alongWave,value= _NUM:i, win=$(sva.win)
 		endif
 	endif
 	GizmoMarkerPanelUpdate()
@@ -318,7 +348,7 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 
 	Variable anAdd=0
 	if (stringmatch(ba.ctrlName,"removeMarkerButton"))
-		ControlInfo removeMarkerButton
+		ControlInfo/W=$(ba.win) removeMarkerButton
 		String title = StringByKey("title", S_recreation,"=",",")
 		title = ReplaceString("\"",title,"")
 		if (stringmatch(title,"add marker*"))			// determine desired action
@@ -339,7 +369,7 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 		endif
 
 	elseif (stringmatch(ba.ctrlName,"removeMarkerButton"))
-		ControlInfo removeMarkerButton
+		ControlInfo/W=$(ba.win) removeMarkerButton
 		title = StringByKey("title", S_recreation,"=",",")
 		title = ReplaceString("\"",title,"")
 		if (stringmatch(title,"add marker*"))			// determine desired action
@@ -581,22 +611,22 @@ End
 //
 Static Function GizmoMarkerPanelUpdate()
 	if (strlen(WinList("*","","WIN:4096"))<1)	// if no gizmos, disable everything
-		PopupMenu waveSelectPopup,disable=2
-		SetVariable xyzStep,disable=2
-		Button FitPeakButton,disable=1
-		SetVariable alongWave,disable=2
-		Button removeMarkerButton,disable=2
-		CheckBox OnPointCheckBox,disable=2
-		SetVariable MarkerSizeSetVar,disable=2
-		Button ShowHideMarkerButton ,disable=2
-		SetVariable Xabsolute,disable=2
-		SetVariable Yabsolute,disable=2
-		SetVariable Zabsolute,disable=2
-		SetVariable alongWave,disable=2
-		Button MarkerInfoButton,disable=2
+		PopupMenu waveSelectPopup,disable=2, win=GizmoScatterMarkerPanel
+		SetVariable xyzStep,disable=2, win=GizmoScatterMarkerPanel
+		Button FitPeakButton,disable=1, win=GizmoScatterMarkerPanel
+		SetVariable alongWave,disable=2, win=GizmoScatterMarkerPanel
+		Button removeMarkerButton,disable=2, win=GizmoScatterMarkerPanel
+		CheckBox OnPointCheckBox,disable=2, win=GizmoScatterMarkerPanel
+		SetVariable MarkerSizeSetVar,disable=2, win=GizmoScatterMarkerPanel
+		Button ShowHideMarkerButton ,disable=2, win=GizmoScatterMarkerPanel
+		SetVariable Xabsolute,disable=2, win=GizmoScatterMarkerPanel
+		SetVariable Yabsolute,disable=2, win=GizmoScatterMarkerPanel
+		SetVariable Zabsolute,disable=2, win=GizmoScatterMarkerPanel
+		SetVariable alongWave,disable=2, win=GizmoScatterMarkerPanel
+		Button MarkerInfoButton,disable=2, win=GizmoScatterMarkerPanel
 		updatePanelHKL($"",NaN,NaN,NaN)
-		SetVariable MarkerSizeSetVar,disable=2
-		PopupMenu MarkerNumberPopup,disable=2
+		SetVariable MarkerSizeSetVar,disable=2, win=GizmoScatterMarkerPanel
+		PopupMenu MarkerNumberPopup,disable=2, win=GizmoScatterMarkerPanel
 		Button FitPeakButton,disable=2				// only show this button when marking a 3D wave
 		return 0
 	endif
@@ -623,16 +653,16 @@ Static Function GizmoMarkerPanelUpdate()
 	dval = Ndisplay ? dval : 2						// always disabled when none displayed
 
 	Button MarkerInfoButton,disable=dval
-	SetVariable xyzStep,disable=dval
+	SetVariable xyzStep,disable=dval, win=GizmoScatterMarkerPanel
 	Button FitPeakButton,disable=(dval? 1 : 0)
-	SetVariable alongWave,disable=dval
+	SetVariable alongWave,disable=dval, win=GizmoScatterMarkerPanel
 	if (displayed)
 		Button removeMarkerButton,disable=0, title="remove marker"
 	else
 		Button removeMarkerButton,disable=0, title="add marker"
 	endif
 	CheckBox OnPointCheckBox,disable=dval
-	SetVariable MarkerSizeSetVar,disable=dval
+	SetVariable MarkerSizeSetVar,disable=dval, win=GizmoScatterMarkerPanel
 	Button ShowHideMarkerButton ,disable=(displayed ? 0 : 2)
 	Button ShowHideMarkerButton, title=SelectString(info.M[MarkerNum].used,"Show","Hide")
 	if (Ndisplay<1)
@@ -646,13 +676,13 @@ Static Function GizmoMarkerPanelUpdate()
 		my = marker[MarkerNum][1]
 		mz = marker[MarkerNum][2]
 	endif
-	SetVariable Xabsolute,disable=dval,value= _NUM:mx
-	SetVariable Yabsolute,disable=dval,value= _NUM:my
-	SetVariable Zabsolute,disable=dval,value= _NUM:mz
+	SetVariable Xabsolute,disable=dval,value= _NUM:mx, win=GizmoScatterMarkerPanel
+	SetVariable Yabsolute,disable=dval,value= _NUM:my, win=GizmoScatterMarkerPanel
+	SetVariable Zabsolute,disable=dval,value= _NUM:mz, win=GizmoScatterMarkerPanel
 	Variable point = GizmoScatterMarkerGetNearPoint(mx,my,mz)
-	SetVariable alongWave,value= _NUM:point
+	SetVariable alongWave,value= _NUM:point, win=GizmoScatterMarkerPanel
 
-	ControlInfo waveSelectPopup
+	ControlInfo/W=GizmoScatterMarkerPanel waveSelectPopup
 	Wave scatter=$S_Value
 	updatePanelHKL(scatter,mx,my,mz)
 	if (dval==0)
@@ -662,7 +692,7 @@ Static Function GizmoMarkerPanelUpdate()
 	String path=GetWavesDataFolder(scatter,1)
 	Wave sizeW0=$(path+"gizmoScatterMarkerArraySize0")
 	Variable size=sizeW0[MarkerNum]
-	SetVariable MarkerSizeSetVar,value= _NUM:size
+	SetVariable MarkerSizeSetVar,value= _NUM:size, win=GizmoScatterMarkerPanel
 
 	PopupMenu MarkerNumberPopup,mode=(MarkerNum+1),disable=0
 	Wave RGBA=$(path+"gizmoScatterMarkerArrayRGBA")
@@ -703,21 +733,21 @@ Static Function updatePanelXYZlimits(scatter)
 		zHi = zLo + dz*(Nz-1)
 	endif
 
-	ControlInfo xyzStep
+	ControlInfo/W=GizmoScatterMarkerPanel xyzStep
 	Variable step = ((numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
 	if (numtype(step)==0)					// a valid step was given, use it
-		SetVariable Xabsolute, limits={xLo,xHi,step}
-		SetVariable Yabsolute, limits={yLo,yHi,step}
-		SetVariable Zabsolute, limits={zLo,zHi,step}
+		SetVariable Xabsolute, limits={xLo,xHi,step}, win=GizmoScatterMarkerPanel
+		SetVariable Yabsolute, limits={yLo,yHi,step}, win=GizmoScatterMarkerPanel
+		SetVariable Zabsolute, limits={zLo,zHi,step}, win=GizmoScatterMarkerPanel
 	elseif (numtype(step) && WaveDims(scatter)==3)	// step is bad, but know 3D scaling
-		SetVariable Xabsolute, limits={xLo,xHi,dx}
-		SetVariable Yabsolute, limits={yLo,yHi,dy}
-		SetVariable Zabsolute, limits={zLo,zHi,dz}
+		SetVariable Xabsolute, limits={xLo,xHi,dx}, win=GizmoScatterMarkerPanel
+		SetVariable Yabsolute, limits={yLo,yHi,dy}, win=GizmoScatterMarkerPanel
+		SetVariable Zabsolute, limits={zLo,zHi,dz}, win=GizmoScatterMarkerPanel
 	else
 		step = 1									// give up, use a deault step of 1
-		SetVariable Xabsolute, limits={xLo,xHi,step}
-		SetVariable Yabsolute, limits={yLo,yHi,step}
-		SetVariable Zabsolute, limits={zLo,zHi,step}
+		SetVariable Xabsolute, limits={xLo,xHi,step}, win=GizmoScatterMarkerPanel
+		SetVariable Yabsolute, limits={yLo,yHi,step}, win=GizmoScatterMarkerPanel
+		SetVariable Zabsolute, limits={zLo,zHi,step}, win=GizmoScatterMarkerPanel
 	endif
 End
 
@@ -908,8 +938,10 @@ Static Function GizmoScatterMarkerGetNearPoint(mx,my,mz)
 	if (numtype(mx+my+mz))
 		return NaN
 	endif
-
-	ControlInfo waveSelectPopup
+	ControlInfo/W=GizmoScatterMarkerPanel waveSelectPopup
+	if (V_flag!=3)
+		return NaN
+	endif
 	Wave scatter=$S_Value
 	if (!WaveExists(scatter))
 		return NaN
@@ -1174,7 +1206,7 @@ End
 Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	STRUCT GizmoMarkerInfoStruct1 &M
 	String win
-	Variable MarkerNum					// must lie in range [0,7]
+	Variable MarkerNum					// must lie in range [0, NUMBER_OF_GIZMO_MARKERS-1]
 	MarkerNum = round(MarkerNum)
 	Init_GizmoMarkerInfoStruct1(M)	// set all values for unsued
 
@@ -1194,11 +1226,7 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	Wave wSize=$(path+"gizmoScatterMarkerArraySize")
 	if (!WaveExists(wSize))
 		return 1
-	elseif (numtype(wSize[MarkerNum][0]+wSize[MarkerNum][1]+wSize[MarkerNum][2]))
-		return 1			// this marker is hidden
 	endif
-
-	M.used = 1				// yes it is used
 	M.wName = GetWavesDataFolder(scatter,2)
 	ControlInfo/W=$win MarkerNumberPopup
 	Variable i = strsearch(S_recreation, "value= #\"",0)
@@ -1206,10 +1234,18 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	i = strsearch(list, "\"",0)
 	list = list[0,i-2]
 	M.MarkerName = StringFromList(MarkerNum,list)
-
 	Variable point = NaN
+
 	Wave gizmoScatter=$(path+"gizmoScatterMarkerArray")
 	if (WaveExists(gizmoScatter))
+		Variable x0=gizmoScatter[MarkerNum][0], y0=gizmoScatter[MarkerNum][1], z0=gizmoScatter[MarkerNum][2]
+		M.used = numtype(wSize[MarkerNum][0]+wSize[MarkerNum][1]+wSize[MarkerNum][2]+x0+y0+z0)==0
+	else
+		M.used = 0
+		return 1
+	endif
+
+	if (M.used)
 		String xUnit="", yUnit="", zUnit=""
 		if (WaveDims(scatter)==3)
 			xUnit=WaveUnits(scatter,0)
@@ -1234,15 +1270,20 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 		endif
 		M.xUnit = xUnit;		M.yUnit = yUnit;		M.zUnit = zUnit
 
-		Variable x0=gizmoScatter[MarkerNum][0], y0=gizmoScatter[MarkerNum][1], z0=gizmoScatter[MarkerNum][2]
 		M.x0 = x0;		M.y0 = y0;		M.z0 = z0
 		point = GMarkers#GizmoScatterMarkerGetNearPoint(x0,y0,z0)
 		M.point = point
-		M.intensity = WaveDims(scatter)==3 ? scatter[point] : NaN
-		if (WaveDims(scatter)==3)
-			M.ix=round((x0-DimOffset(scatter,0))/DimDelta(scatter,0))
-			M.iy=round((y0-DimOffset(scatter,1))/DimDelta(scatter,1))
-			M.iz=round((z0-DimOffset(scatter,2))/DimDelta(scatter,2))
+		if (numtype(point))
+			M.used = 0
+			M.intensity = NaN
+			M.ix = NaN	;	M.iy = NaN	;	M.iz = NaN
+		else
+			M.intensity = WaveDims(scatter)==3 ? scatter[point] : NaN
+			if (WaveDims(scatter)==3)
+				M.ix=round((x0-DimOffset(scatter,0))/DimDelta(scatter,0))
+				M.iy=round((y0-DimOffset(scatter,1))/DimDelta(scatter,1))
+				M.iz=round((z0-DimOffset(scatter,2))/DimDelta(scatter,2))
+			endif
 		endif
 	endif
 
@@ -1373,11 +1414,97 @@ End
 //  =================================== End of Markers ===================================  //
 
 
+
+//  ======================================================================================  //
+//  =============================== Start of Movie Support ===============================  //
+
+Function AddGizmoMovieFrame_Markers(gm,data)
+	STRUCT gizmoMovieStruct &gm		// needed to actually add frames to the movie
+	String data								// string with data
+	// data keys are:
+	//		num			marker number [0,7]
+	//		action		"on" or "off"  on shows marker, off hides marker
+	//							also, you can just use "show", "hide", "on", or "off" in place of action
+	//		xyz			move marker to position given by "x y z"
+	//		point			move marker to point number
+	// you can only work on one marker at a time
+	//	structure of data		"num=1,action=on"  or  "num=1,action=off"  or  "num=1,xyz=2.2 -3.7 22"
+	//			or  "num=1,point=135,Nframes=1"  or  "#=1,show"
+	//
+	//		NOTE, this routine does NOT add any frames to the movie
+
+	if (!GMarkers#GizmoScatterMarkerDisplayed())		// no markers, cannot do anything
+		return 1
+	endif
+
+	Variable MarkerNum=NumberByKey("num",data,"=",",")		// marker number [0,7]
+	MarkerNum = round(MarkerNum)
+	MarkerNum = MarkerNum==limit(MarkerNum,0,7) ? MarkerNum : 0	// default to 0
+
+	Variable show=-1
+	String action=StringByKey("action",data,"=",",")
+	if (strlen(action))
+		if (WhichListItem(action,"on;show;true;1")>=0)
+			show = 1
+		elseif (WhichListItem(action,"off;hide;false;0")>=0)
+			show = 0
+		endif	
+	else
+		show = WhichListItem("hide",data,",")>=0 ? 0 : show
+		show = WhichListItem("off",data,",")>=0 ? 0 : show
+		show = WhichListItem("show",data,",")>=0 ? 1 : show
+		show = WhichListItem("on",data,",")>=0 ? 1 : show
+	endif
+
+	Variable point=NumberByKey("point",data,"=",",")
+	if (numtype(point))						// point is bad, check xyz
+		String str=StringByKey("xyz",data,"=",",")
+		str = ReplaceString("\t",str," ")
+		str = ReplaceString("  ",str," ")
+		Make/N=3/D/FREE xyzw
+		xyzw = str2num(StringFromList(p,str," "))
+		if (numtype(sum(xyzw)))			// xyzw is invalid
+			WaveClear xyzw
+		endif
+	endif
+	Variable Nframes=NumberByKey("Nframes",data,"=",",")		// add some frames
+	Nframes = Nframes>0 ? round(Nframes) : 0
+
+	if (point>=0)								// move marker to point number
+		moveGizmoMarkerToPoint(point,scatter,MarkerNum)
+	elseif (WaveExists(xyzw))				// or maybe move marker to xyz
+		moveGizmoMarkerToXYZ(xyzw[0],xyzw[1],xyzw[2],scatter,MarkerNum)
+	endif
+
+	if (show>=0)								// show or hide the marker
+		ShowHideGizmoMarker(MarkerNum,show)
+	endif
+
+//	Sleep/B/S 3									// give the gizmo a chance to update
+	if (Nframes>0)
+		GizmoMovies#AddGizmoFrames2Movie(gm,Nframes)
+	endif
+
+	return 0
+End
+
+//  ================================ End of Movie Support ================================  //
+//  ======================================================================================  //
+
+
+
+
+//  ======================================================================================  //
+//  =================================== Start of Init ====================================  //
+
 Static Function InitGizmoMarkers()
 	GizmoUtil#InitGizmoUtilityGeneral()
 	Execute/Q/Z "GizmoMenu AppendItem={JZTm0,\"Marker Panel\", \"MakeGizmoScatterMarkerPanel()\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZTm1,\"   Marker Info\", \"PrintGizmoMarkerInfoAll()\"}"
 End
+
+//  ==================================== End of Init =====================================  //
+//  ======================================================================================  //
 
 
 
