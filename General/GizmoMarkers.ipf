@@ -1418,6 +1418,7 @@ End
 //  ======================================================================================  //
 //  =============================== Start of Movie Support ===============================  //
 
+#if exists("AddGizmoMovieFrame_Proto")==6
 Function AddGizmoMovieFrame_Markers(gm,data)
 	STRUCT gizmoMovieStruct &gm		// needed to actually add frames to the movie
 	String data								// string with data
@@ -1507,6 +1508,7 @@ Function AddGizmoMovieFrame_Markers(gm,data)
 	endif
 	return 0
 End
+#endif
 
 //  ================================ End of Movie Support ================================  //
 //  ======================================================================================  //

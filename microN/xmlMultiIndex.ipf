@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.77
+#pragma version=1.78
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -1796,11 +1796,11 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	Variable m						// point number in list from xml file
 	Variable pattern				// pattern number, usually 0
 	String constrain				// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
-	Variable coords					// coordinate system to pass in return {Crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
-	String xmlFileFull				// full path name to xml file
-	Variable printIt					// force full print out of results
+	Variable coords				// coordinate system to pass in return {Crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
+	String xmlFileFull			// full path name to xml file
+	Variable printIt				// force full print out of results
 	xmlFileFull = SelectString(ParamIsDefault(xmlFileFull),xmlFileFull,"")
-	pattern = 0									// do not yet handle other patterns
+	pattern = 0						// do not yet handle other patterns
 
 	Wave/T imageNames=imageNames
 	if (!WaveExists(imageNames))
@@ -1825,12 +1825,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 		return ""
 	endif
 
-	String imageName = imageNames[m]
-	imageName = ParseFilePath(3, imageName, ":", 0, 0)	// if it is Mac
-	imageName = ParseFilePath(3,  imageName, "/", 0, 0)	// or Unix
-	imageName = ParseFilePath(3,  imageName, "\\", 0, 0)	// or Windows
 	Variable N = DimSize(imageNames,0)
-
 	if (numtype(m) || m<0 || m>=N)
 		m = 1
 		Prompt m,"point index from xml file [0,"+num2str(N)+"]"
@@ -1843,6 +1838,10 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 		return ""
 	endif
 
+	String imageName = imageNames[m]
+	imageName = ParseFilePath(3, imageName, ":", 0, 0)	// if it is Mac
+	imageName = ParseFilePath(3,  imageName, "/", 0, 0)	// or Unix
+	imageName = ParseFilePath(3,  imageName, "\\", 0, 0)	// or Windows
 	// get step containing imageName from file
 	Variable Nindex=DimSize(indexPos,0), index
 	for (index=0;index<Nindex;index+=1)
@@ -1869,6 +1868,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	String step = PadString("",i1-i0+1,0x20)			// a buffer to hold step (of length i1-i0+1 bytes)
 	FBinRead f, step										// initial read
 	Close f
+	// print ReplaceString("\n",step,"\r")
 
 	String svec = ReplaceString(" ",xmlTagContents("Xpixel",step),";")
 	Variable Nlen = ItemsInList(svec)
