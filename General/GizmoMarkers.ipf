@@ -1373,7 +1373,8 @@ Static Function PrintGizmoMarkerInfoStruct(info)
 	return 0
 End
 
-#if exists("InitLatticeSymPackage")==6
+#if strlen(WinList("LatticeSym.ipf","","WIN:128"))
+//#if exists("InitLatticeSymPackage")==6
 Static Function/T Compare2ReciprocalLatticesList(rl0,rl1)	// provide key=value list comparing two reciprocal lattices
 	Wave rl0,rl1											// two 3x3 reciprocal lattices
 
@@ -1418,7 +1419,8 @@ End
 //  ======================================================================================  //
 //  =============================== Start of Movie Support ===============================  //
 
-#if exists("AddGizmoMovieFrame_Proto")==6
+#if strlen(WinList("GizmoMovies.ipf","","WIN:128"))
+//#if exists("AddGizmoMovieFrame_Proto")==6
 Function AddGizmoMovieFrame_Markers(gm,data)
 	STRUCT gizmoMovieStruct &gm		// needed to actually add frames to the movie
 	String data								// string with data

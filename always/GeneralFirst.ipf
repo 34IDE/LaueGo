@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.10
+#pragma version = 3.11
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 //	#pragma IndependentModule=JZTgeneral
@@ -27,9 +27,9 @@ Menu "Analysis"
 			help = {"Provide support of Zooming and translating Gizmos"}
 			"Gizmo Clip Planes", Execute/P "INSERTINCLUDE \"GizmoClip\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GClipPlanes#InitGizmoClipPlanes()"
 			help = {"Provide support of adding clip planes to a Gizmo"}
-			"Gizmo Markers", Execute/P "INSERTINCLUDE \"GizmoMarkers\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GMarkers#InitGizmoMarkers()"
+			"Gizmo Markers", Execute/P "INSERTINCLUDE \"GizmoMarkers\", version>=2.03" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GMarkers#InitGizmoMarkers()"
 			help = {"Provide support of putting 'Cursors' on a Gizmo"}
-			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=1.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GizmoMovies#InitGizmoMovies()"
+			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=2.01" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GizmoMovies#InitGizmoMovies()"
 			help = {"Provide support of making movies of a Gizmo"}
 			"  Load All of the above Gizmo Utiliites",JZTgeneral#LoadAllGizmoUtilities()
 		End
