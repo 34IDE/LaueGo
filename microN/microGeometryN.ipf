@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.68
+#pragma version = 1.69
 #include  "LatticeSym", version>=4.25
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -332,7 +332,12 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 		tab = 0
 		ctrlName = "tabMicroA"
 	elseif (stringmatch(ba.ctrlName,"buttonInitIndexLots"))
+//		Execute/P "DELETEINCLUDE  \"IndexingN\""
+//		Execute/P "INSERTINCLUDE  \"IndexLotsN\", version>=2.27"
+//		Execute/P "COMPILEPROCEDURES "
+//		Execute/P/Q "initSymmetryOperations()"
 		Execute/P "DELETEINCLUDE  \"IndexingN\""
+		Execute/P "COMPILEPROCEDURES "
 		Execute/P "INSERTINCLUDE  \"IndexLotsN\", version>=2.27"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P/Q "initSymmetryOperations()"
