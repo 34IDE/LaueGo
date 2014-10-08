@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.01
+#pragma version = 2.02
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
@@ -551,7 +551,7 @@ Function MakeMovieStepsPanel([N])
 	ValDisplay NframesValdisp,limits={0,0,0},barmisc={0,1000}, value= _NUM:0
 
 	String name
-	String MovieTypesStr = "\""+StrVarOrDefault("root:Packages:GizmoZoomMovies:MovieStepTypes",MovieStepTypesBase)+"\""
+	String MovieTypesStr = "\""+StrVarOrDefault("root:Packages:GizmoMovies:MovieStepTypes",MovieStepTypesBase)+"\""
 
 	String DirectionTypesStr = "\""+directionTypes+"\""
 	for (i=0;i<N;i+=1)
@@ -767,7 +767,7 @@ Function FillMovieStepsPanelFromWave(ms,[printIt])
 		type = StringFromList(0,ms[i],":")
 		type = SelectString(strlen(type)," ",type)
 		sprintf name, "MoviePop%d", i
-		mode = WhichListItem(type,StrVarOrDefault("root:Packages:GizmoZoomMovies:MovieStepTypes",MovieStepTypesBase))+1
+		mode = WhichListItem(type,StrVarOrDefault("root:Packages:GizmoMovies:MovieStepTypes",MovieStepTypesBase))+1
 		PopupMenu $name,mode=mode
 
 		list = StringByKey(type,ms[i])
@@ -1062,10 +1062,10 @@ End
 
 
 Static Function/T ResetMovieStepTypes()
-	// reset the Global string root:Packages:GizmoZoomMovies:MovieStepTypes
+	// reset the Global string root:Packages:GizmoMovies:MovieStepTypes
 	// check for all functions of the type "AddGizmoMovieFrame_*" containing two arguments (struct,string)
-	String/G root:Packages:GizmoZoomMovies:MovieStepTypes=MovieStepTypesBase
-	SVAR MovieStepTypes=root:Packages:GizmoZoomMovies:MovieStepTypes
+	String/G root:Packages:GizmoMovies:MovieStepTypes=MovieStepTypesBase
+	SVAR MovieStepTypes=root:Packages:GizmoMovies:MovieStepTypes
 
 	String flist=FunctionList("AddGizmoMovieFrame_*",";","NPARAMS:2,KIND:2")
 	flist = RemoveFromList("AddGizmoMovieFrame_Proto",flist)		// remove the proto from the list
@@ -1086,6 +1086,6 @@ Static Function InitGizmoMovies()
 	Execute/Q/Z "GizmoMenu AppendItem={JZTmov0,\"Movie Steps Panel...\", \"MakeMovieStepsPanel()\"}"
 
 	NewDataFolder/O root:Packages
-	NewDataFolder/O root:Packages:GizmoZoomMovies
+	NewDataFolder/O root:Packages:GizmoMovies
 	ResetMovieStepTypes()
 End

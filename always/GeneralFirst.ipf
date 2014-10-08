@@ -29,7 +29,7 @@ Menu "Analysis"
 			help = {"Provide support of adding clip planes to a Gizmo"}
 			"Gizmo Markers", Execute/P "INSERTINCLUDE \"GizmoMarkers\", version>=2.03" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GMarkers#InitGizmoMarkers()"
 			help = {"Provide support of putting 'Cursors' on a Gizmo"}
-			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=2.01" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GizmoMovies#InitGizmoMovies()"
+			"Gizmo Movies", Execute/P "INSERTINCLUDE \"GizmoMovies\", version>=2.02" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GizmoMovies#InitGizmoMovies()"
 			help = {"Provide support of making movies of a Gizmo"}
 			"  Load All of the above Gizmo Utiliites",JZTgeneral#LoadAllGizmoUtilities()
 		End
