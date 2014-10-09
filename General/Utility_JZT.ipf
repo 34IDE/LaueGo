@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.41
+#pragma version = 3.42
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1804,7 +1804,7 @@ Function DrawMarker(x0,y0,dx,dy,style,[color,thick,dash,win,layer])
 	Variable dash
 	String win							// optional name of window
 	String layer						// Drawing layer to use.  Default is "UserFront"
-	if (numtype(x0++y0+dx+dy) || dx<=0 || dy<=0)
+	if (numtype(x0+y0+dx+dy) || dx<=0 || dy<=0)
 		return 1
 	endif
 	if (ParamIsDefault(color))
@@ -2087,7 +2087,7 @@ ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
 		endif
 	else
 		MatrixOp/FREE sumd = sum(Abs((mat x mat^t) - Identity(3)))
-		if (sumd<0 || sumd>1e-4)		// not close enough to a rotation mat, an error
+		if (sumd[0]<0 || sumd[0]>1e-4)		// not close enough to a rotation mat, an error
 			axis = NaN						// default for error
 			return NaN
 		endif

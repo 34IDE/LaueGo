@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.56
+#pragma version = 4.57
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -1882,7 +1882,7 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 
 	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
-	badNums += numtype(hp+kp++lp)
+	badNums += numtype(hp+kp+lp)
 	badNums += !(cone>1 && cone<180)
 	if (badNums)
 		DoAlert 0, "Invalid inputs sent to runEulerCommand()"

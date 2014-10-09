@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.78
+#pragma version=1.79
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=3.41
 //#include "DepthResolvedQueryN"
@@ -27,7 +27,7 @@ Menu "Rotations"
 	MenuItemIfWaveClassExists("  Strain Refine One Image","Random3dArraysGm",""),DeviatoricStrainRefineXML(-1,NaN,"",printit=1)
 	MenuItemIfWaveClassExists("Histogram a 3D Array","Interpolated3dArrays",""),multiIndex#HistogramOf3dArray($"")
 	MenuItemIfWaveClassExists("  Re-Plot Histogram of 3D Array","HistogramFrom3d",""),multiIndex#DisplayHistogramFrom3d($"")
-	" (  --------"
+	"(  --------"
 //	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
 	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("") ; print " " ; ProcessLoadedXMLfile(Inf,NaN)
 	multiIndex#MenuItemIfValidRawDataExists("Re-Process Loaded XML"), ProcessLoadedXMLfile(Inf,NaN)

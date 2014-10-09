@@ -833,7 +833,7 @@ End
 //		Execute "ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform"
 //	endif
 Static Function/T AddGizmoTitle(wTitle,groupName)
-	Wave/S wTitle
+	Wave/T wTitle
 	String groupName							// defaults to "groupTitle"
 	if (WaveType(wTitle,1)!=2)				// wTitle must be a text wave
 		return ""
