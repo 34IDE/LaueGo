@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.42
+#pragma version = 3.43
 // #pragma hide = 1
 
 Menu "Graph"
@@ -26,6 +26,7 @@ End
 //		  also AddClassToWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
 //		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
 //	8	Contains lots of utility stuff
+//		RecompileAllProcedures(), FORCE ALL procedures to recompile
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
 //		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
@@ -1489,6 +1490,15 @@ End
 
 //  ======================================================================================  //
 //  ====================== Start of some general utility functions =======================  //
+
+
+Proc RecompileAllProcedures()						// FORCE ALL procedures to recompile,  This must be a Proc or Macro (NOT Function)
+	SetIgorOption poundDefine=DOESNTMATTER		// mark all procedures as needing compile 
+	SetIgorOption poundUnDefine=DOESNTMATTER	// don't leave this defined.
+	Execute/P/Q/Z "COMPILEPROCEDURES "				// re-compile (all)
+	print "ran RecompileAllProcedures"
+End
+
 
 Function/T WavesWithMatchingKeyVals(inList,keyVals)
 	String inList						// a list of input waves (semicolon separated)
