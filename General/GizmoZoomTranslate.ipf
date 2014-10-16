@@ -38,11 +38,11 @@ Function MakeGizmoZoomTransPanel() : Panel
 	DrawText 7,19,"Zoom & Translate Gizmo"
 	SetVariable zoomVal,pos={18,25},size={101,19},bodyWidth=65,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="zoom"
 	SetVariable zoomVal,fSize=12,limits={1e-12,inf,0.1},value= _NUM:1
-	SetVariable xTranslate,pos={21,50},size={90,19},bodyWidth=70,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="âˆ†X"
+	SetVariable xTranslate,pos={21,50},size={90,19},bodyWidth=70,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="ÆX"
 	SetVariable xTranslate,fSize=12,value= _NUM:0
-	SetVariable yTranslate,pos={21,73},size={90,19},bodyWidth=70,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="âˆ†Y"
+	SetVariable yTranslate,pos={21,73},size={90,19},bodyWidth=70,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="ÆY"
 	SetVariable yTranslate,fSize=12,value= _NUM:0
-	SetVariable zTranslate,pos={21,95},size={90,19},bodyWidth=70,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="âˆ†Z"
+	SetVariable zTranslate,pos={21,95},size={90,19},bodyWidth=70,proc=GZoomTrans#GizmoZoomTranslateSetVarProc,title="ÆZ"
 	SetVariable zTranslate,fSize=12,value= _NUM:0
 	Button autoButton,pos={28,120},size={90,20},proc=GZoomTrans#GizmoZoomTransButtonProc,title="full scale"
 	Button cubifyButton,pos={28,143},size={90,20},proc=GZoomTrans#GizmoZoomTransButtonProc,title="cubify"

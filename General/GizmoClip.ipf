@@ -47,7 +47,7 @@ Function MakeGizmoClipPlanePanel() : Panel				// Creates the Clip Plane Panel, o
 	SetVariable clipValue,proc=GClipPlanes#GizmoClipPlaneSetVarProc,value= _NUM:NaN
 	PopupMenu popupXYZ title="clip plane",pos={10,48},size={102,20},proc=GClipPlanes#GizmoClipPlanePopMenuProc
 	PopupMenu popupXYZ ,mode=1,fSize=12, value=#"\"+X;-X;+Y;-Y;+Z;-Z\""
-	SetVariable xyzStep,pos={19,73},size={103,19},bodyWidth=70,proc=GClipPlanes#GizmoClipPlaneSetVarProc,title="âˆ†xyz"
+	SetVariable xyzStep,pos={19,73},size={103,19},bodyWidth=70,proc=GClipPlanes#GizmoClipPlaneSetVarProc,title="Æxyz"
 	SetVariable xyzStep,fSize=12,value= _NUM:1
 	Button removeClipPlaneButton,pos={3,104},size={130,21},proc=GClipPlanes#GizmoClipPlaneButtonProc,title="remove clip planes"
 	SetWindow kwTopWin,hook(update)=GClipPlanes#GizmoClipPlanelUpdateHook
