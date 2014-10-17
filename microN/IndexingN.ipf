@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.57
+#pragma version = 4.58
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -1210,7 +1210,13 @@ Function ButtonBoxesProc(B_Struct) : ButtonControl
 		wid = numtype(wid) ? -1 : wid
 		wid = max(wid,2*5)
 		SetDrawLayer UserFront
-		for (i=0;i<DimSize(peakList,0);i+=1)
+		Variable Npeaks=DimSize(peakList,0)
+		if (Npeaks>60)						// reduce size when there are lots of peaks
+			wid *= 0.5
+		elseif (Npeaks>40)
+			wid *= 0.75
+		endif
+		for (i=0;i<Npeaks;i+=1)
 			x0 = peakList[i][0]
 			y0 = peakList[i][1]
 			if (numtype(x0+y0)==0)

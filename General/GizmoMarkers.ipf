@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -302,13 +302,13 @@ Static Function GizmoScatterMarkerSetVarProc(sva) : SetVariableControl
 		Variable N
 		if (WaveDims(scatter)==2 && DimSize(scatter,1)==3)	// triplets
 			N = DimSize(scatter,0)
-			i = limit(point,0,N)
+			i = limit(point,0,N-1)
 			mx = scatter[i][0]
 			my = scatter[i][1]
 			mz = scatter[i][2]
 		else
 			N = numpnts(scatter)
-			i = limit(point,0,N)
+			i = limit(point,0,N-1)
 			Variable ix = mod(i,Nx)
 			Variable iy = mod(floor(i/Nx),Ny)
 			Variable iz = floor(i/(Nx*Ny))
