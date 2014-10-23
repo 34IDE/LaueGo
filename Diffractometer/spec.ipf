@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.32
+#pragma version = 2.34
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -98,6 +98,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // July 21, 2014, changed specFileFilters, not can use ".spc" or ".spec"
 //
 // Sept 10, 2014, changed SetValuesIntoList(), added an argument to give the separator between values (for names always single space)
+//
+// Oct 23, 2014, in specReadFromSline(), fixed name conflict, now Ho is the variable, will not conflict with wave H, ditto for Ko, Lo
 
 Menu "Data"
 	"-"
@@ -1124,9 +1126,9 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 	if (strlen(line1)>2 && SVAR_Exists(specValues))
 		line1 = line1[strlen("#G3 "),inf]
 		specValues = ReplaceStringByKey("UB", specValues, line1)
-		Variable H=NumberByKey("H",specValues), K=NumberByKey("K0",specValues), L=NumberByKey("L0",specValues)
-		if (numtype(H+K+L)==0 && (abs(H)+abs(K)+abs(L))>0)	// add the Q-vector in sample fram (1/nm) to specValues
-			String Qstr = QsampleFromString(H,K,L,line1)
+		Variable Ho=NumberByKey("H",specValues), Ko=NumberByKey("K0",specValues), Lo=NumberByKey("L0",specValues)
+		if (numtype(Ho+Ko+Lo)==0 && (abs(Ho)+abs(Ko)+abs(Lo))>0)	// add the Q-vector in sample fram (1/nm) to specValues
+			String Qstr = QsampleFromString(Ho,Ko,Lo,line1)
 			specValues = ReplaceStringByKey("Qsample_nm", specValues, Qstr)
 		endif
 	endif
