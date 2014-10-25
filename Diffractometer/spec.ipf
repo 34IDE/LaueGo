@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.34
+#pragma version = 2.35
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -100,6 +100,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Sept 10, 2014, changed SetValuesIntoList(), added an argument to give the separator between values (for names always single space)
 //
 // Oct 23, 2014, in specReadFromSline(), fixed name conflict, now Ho is the variable, will not conflict with wave H, ditto for Ko, Lo
+//
+// Oct 25, 2014, in specScansList() provide optional inclusion of data&time, in List_spec_Scans() show the date&time with spec command
 
 Menu "Data"
 	"-"
@@ -3272,10 +3274,10 @@ Function List_spec_Scans(fileName,path,scanType)
 	endif
 	fileName = S_fileName
 
-	String scanList=specScansList(fileName,"",scanType)
+	String scanList=specScansList(fileName,"",scanType,datesToo=1)
 	if (StringMatch(scanType,"Escan"))				// add other names of energy scan
-		scanList += specScansList(fileName,"","eVscan")
-		scanList += specScansList(fileName,"","ascan  herixE")
+		scanList += specScansList(fileName,"","eVscan",datesToo=1)
+		scanList += specScansList(fileName,"","ascan  herixE",datesToo=1)
 	endif
 	String line
 	SVAR DefaultFile=root:Packages:spec:specDefaultFile
@@ -3300,21 +3302,24 @@ Function List_spec_Scans(fileName,path,scanType)
 	Variable i=0
 	do
 		line = StringFromList(i, scanList)
-		printf "   %s\r",line
+		printf "   %s\t\t%s\r",StringFromList(1,line,","),StringFromList(0,line,",")
+//		printf "   %s\r",line
 		i += 1
 	while(strlen(line)>1)
 	return 0
 End
 
 
-Function/T specScansList(fileName,path,scanType)
+Function/T specScansList(fileName,path,scanType,[datesToo])
 	// return a list of all of the scans of a certain type from a spec data file
 	// scanType is the spec scan name, "all;ascan;hklscan;laserscan;" or a wild 
 	// carded version of one
 	String fileName		// =StrVarOrDefault("root:Packages:spec:specDefaultFile","")
 	String path			// =StrVarOrDefault("root:Packages:spec:specDefaultPath","home")
 	String scanType		// ="all"
-
+	Variable datesToo		// also include the date-time info, default is NO
+	datesToo = ParamIsDefault(datesToo) ? NaN : datesToo
+	datesToo = numtype(datesToo) ? 0 : !(!datesToo)
 	if (cmpstr("all",scanType)==0)
 		scanType="*"
 	else
@@ -3335,24 +3340,31 @@ Function/T specScansList(fileName,path,scanType)
 	String /G root:Packages:spec:specDefaultPath=path
 
 	// use saved list of scan positions, but check first
-	check_fileID(fileVar)							// possibly update specScanPositions if needed
+	check_fileID(fileVar)								// possibly update specScanPositions if needed
 	SVAR posList=root:Packages:spec:specScanPositions	// file positions of all scans
 
 	if (strlen(posList)<1)
 		return ""
 	endif
 
-	String scanList="", item,  line						// line of input from file
+	String scanList="", item, line, dateLine	// line of input from file
 	Variable i=0, scanNum,pos, N=ItemsInList(posList)
 	do
 		item = StringFromList(i,posList)
 		scanNum = str2num(StringFromList(0,item,":"))
 		pos = str2num(StringFromList(1,item,":"))
-		FSetPos fileVar, pos+3					// position just after '#S '
+		FSetPos fileVar, pos+3							// position just after '#S '
 		FReadLine fileVar, line
 		line = ZapControlCodes(line)
 		if (stringmatch(line,num2istr(scanNum)+scanType))
-			scanList += line+";"
+			if (datesToo)
+				dateLine = FindDataLineType(fileVar,"#D ",1)	// find the following #D line (date-time)
+				dateLine = dateLine[2,Inf]
+				dateLine = ZapControlCodes(dateLine)
+				scanList += line+","+dateLine+";"
+			else
+				scanList += line+";"
+			endif
 		endif
 		i += 1
 	while(i<N)

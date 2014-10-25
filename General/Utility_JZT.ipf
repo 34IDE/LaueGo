@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.43
+#pragma version = 3.44
 // #pragma hide = 1
 
 Menu "Graph"
@@ -323,7 +323,7 @@ Function/S AppendGraph2LayoutN(Nmax,orientation,gName)
 		endif
 		Nmax = Nmax<0 ? 12 : Nmax				// 12 is default for absurd inputs
 		Nmax = WhichListItem(num2istr(Nmax),Nlist)+1
-		Prompt gName, "Graph to add to layout",popup,WinList("*",";","WIN:1")
+		Prompt gName, "Graph to add to layout",popup,NOTonLayout(lname,WinList("*",";","WIN:1"))
 		Prompt Nmax,"number of graphs/layout",popup,Nlist
 		DoPrompt "Pick a Graph",gName,Nmax
 		if (V_flag)
@@ -338,12 +338,12 @@ Function/S AppendGraph2LayoutN(Nmax,orientation,gName)
 	endif
 
 	lname = StringFromList(0,WinList("Layout"+num2istr(Nmax)+"_*",";","WIN:4"))		// get layout to append to
-	if (strlen(LayoutInfo(lname, gName ))>1)
+	if (strlen(LayoutInfo(lname,gName))>1)
 		return lname								// graph is on layout, all done
 	endif
 	// check if this layout is full
 	Variable i,N,NL = NumberByKey("NUMOBJECTS", LayoutInfo(lname,"Layout"))
-	for (i=0,N=0;i<NL;i+=1)						// check each object in the layout
+	for (i=0,N=0;i<NL;i+=1)					// check each object in the layout
 		N += stringmatch(StringByKey("TYPE",LayoutInfo("", num2istr(i))),"Graph")	// increlement if obj is graph
 	endfor
 	if (N>=Nmax)									// this layout is full, force creation of a new one
@@ -391,6 +391,26 @@ Function/S AppendGraph2LayoutN(Nmax,orientation,gName)
 	endif
 	return lname
 End
+//
+Static Function/T NOTonLayout(lname,listIN)
+	String lname				// name of Layout
+	String listIN				// list of things to check, remove items that are on layout
+
+	if (strlen(lname)<1)	// no Layout, none of list are on it
+		return listIN
+	endif
+
+	String item, listOUT=""
+	Variable i, N=ItemsInList(listIN)
+	for (i=0;i<N;i+=1)
+		item = StringFromList(i,listIN)
+		if (strlen(LayoutInfo(lname,item))<1)
+			listOUT += item+";"
+		endif
+	endfor
+	return listOUT
+End
+//
 //Function xxx(Nmax)		// a test routine for AppendGraph2LayoutN()
 //	Variable Nmax
 //	Make/N=100/O y0,y1,y2,y3,y4,y5,y6,y7,y8,y9,y10,y11,y12
