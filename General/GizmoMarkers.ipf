@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -46,6 +46,60 @@ Static Structure GizmoMarkerInfoStruct1
 	double h,k,l						// hkl corresponding to xyz (assuming recip is valid)
 	double recip[9]					// reciprocal lattice (if it exists)
 EndStructure
+
+
+
+
+// provides external access to the marker information, provides key:value, for all the information
+Function/S GizmoMarkerInfo2keyVals()
+	STRUCT GizmoMarkerInfoStruct info
+	info.win = "GizmoScatterMarkerPanel"
+	if (GizmoMarkerInfo(info)<1)			// no markers dissplayed
+		return ""
+	endif
+
+	String out=""
+	out = ReplaceStringByKey("win",out,info.win)
+	out = ReplaceNumberByKey("ActiveMarkerNum",out,info.MarkerNum)
+
+	String str, sn
+	Variable i, h,k,l, intensity, ix,iy,iz, x0,y0,z0
+	for (i=0;i<NUMBER_OF_GIZMO_MARKERS;i+=1)
+		if (info.M[i].used)
+			sn = num2istr(i)
+			x0=info.M[i].x0 ; 	y0=info.M[i].y0 ;	 z0=info.M[i].z0
+			ix=info.M[i].ix;		iy=info.M[i].iy;		iz=info.M[i].iz
+
+			out = ReplaceStringByKey("name"+sn,out,info.M[i].MarkerName)
+			out = ReplaceStringByKey("wave"+sn,out,info.M[i].wName)
+
+			if (numtype(x0+y0+z0)==0)
+				sprintf str,"%g,%g,%g",x0,y0,z0
+				out = ReplaceStringByKey("xyz"+sn,out,str)
+	
+				if (numtype(ix+iy+iz)==0)
+					sprintf str,"%g,%g,%g",ix,iy,iz
+					out = ReplaceStringByKey("ixyz"+sn,out,str)
+				elseif (numtype(info.M[i].point)==0)
+					out = ReplaceNumberByKey("point"+sn,out,info.M[i].point)
+				endif
+	
+				intensity=info.M[i].intensity
+				if (numtype(intensity)==0)
+					out = ReplaceNumberByKey("intensity"+sn,out,intensity)
+				endif
+				h=info.M[i].h;	k=info.M[i].k;	l=info.M[i].l
+				if (numtype(h+k+l)==0)
+					sprintf str,"%g,%g,%g",h,k,l
+					out = ReplaceStringByKey("hkl"+sn,out,str)
+				endif
+			endif
+		endif
+	endfor
+	return out
+End
+
+
 
 
 Function MakeGizmoScatterMarkerPanel() : Panel	// Create the Cut Plane Panel.  Doesn't create duplicate panels.
