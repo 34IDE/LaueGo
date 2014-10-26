@@ -46,6 +46,7 @@ End
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
 //		normalize(a), normalizes a if it is a vector or square matrix
+//		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
 //		FWHM of fitted peaks: GaussianFWHM(W_coef), LorentzianFWHM(W_coef)
 //		Area of fitted peaks: LorentzianIntegral(W_coef), GaussianIntegral(W_coef), Gaussian2DIntegral(W_coef)
 //		computeCOM(), compute the Center of Mass
@@ -2245,6 +2246,33 @@ End
 //	a /= norm_a
 //	return norm_a
 //End
+
+
+
+// returns 1 if ww is only positive integers (or 0), tolerance to an int is tol
+//	This is useful for determining if ww are counts (only positive ints)
+ThreadSafe Function isPositiveInts(ww,[tol])
+	Wave ww
+	Variable tol							// tolerance for deciding if a number is an integer
+	tol = ParamIsDefault(tol) ? 0.0001 : tol
+	if (numtype(tol) || tol <0)
+		return 0
+	elseif (WaveType(ww,1) != 1)		// check if a numeric wave, NOT counts
+		return 0
+	elseif (WaveMin(ww)<0)				// found negatives, NOT counts
+		return 0
+	elseif (WaveType(ww) & 0x38)		// an integer type, IS counts
+		return 1
+	elseif (WaveType(ww) & 0x01)		// complex, NOT counts
+		return 0
+	endif
+
+	// so ww is a float type, check if all integers
+	MatrixOp/FREE tw = ReplaceNaNs(ww,0)	// ensure no NaN, (Inf is passed)
+	MatrixOp/FREE test = sum(greater(abs(round(tw)-tw),tol))
+	return test[0]<1					// if test[0] is 0, then all are ints
+End
+
 
 
 
