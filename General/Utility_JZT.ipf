@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.44
+#pragma version = 3.45
 // #pragma hide = 1
 
 Menu "Graph"
@@ -749,9 +749,11 @@ ThreadSafe Function/S compressRange(range,sep) 	// take a range like "1;2;3;4;5;
 	endif
 	range = SortList(range,sep,2)				// make list monotonic
 	
-
 	if(N<3)  	// make no change if list has 1 or 2 elements
-		comp = range
+		comp = ","+ReplaceString(sep,range,",")			// change all sep to ","
+		if (StringMatch(comp[strlen(comp)-1],",")>=0)	// remove a possible trailing ","
+			comp = comp[0,strlen(comp)-2]
+		endif
 	else	// if list has more than 3 elements
 		in_subrange = 0
 		write_subrange = 0
