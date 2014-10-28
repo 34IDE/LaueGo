@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.35
+#pragma version = 2.36
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -102,6 +102,9 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Oct 23, 2014, in specReadFromSline(), fixed name conflict, now Ho is the variable, will not conflict with wave H, ditto for Ko, Lo
 //
 // Oct 25, 2014, in specScansList() provide optional inclusion of data&time, in List_spec_Scans() show the date&time with spec command
+//
+// Oct 28, 2014, in DisplayRangeOfSpecScans() cleaned up overly (particularly the "new+append")
+//						in DisplaySpecScan(), returns NaN on failure, and scan number if successful
 
 Menu "Data"
 	"-"
@@ -140,7 +143,7 @@ End
 
 
 
-Function DisplayRangeOfSpecScans(range,fileName,path,overlay)
+Function DisplayRangeOfSpecScans(range,fileName,path,overlay,[printIt])
 	// Calls the correct routine to display many types of scans.
 	// It also will read in the data if necessary
 	// it returns number of scans processed, or 0 if failed
@@ -148,8 +151,10 @@ Function DisplayRangeOfSpecScans(range,fileName,path,overlay)
 	String fileName
 	String path
 	String overlay								// new; append; new+append
+	Variable printIt
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))<1 : !(!printIt)
 
-	Variable printIt=0
 	specInitPackage()						// create Packages:spec folder
 	overlay = LowerStr(overlay)
 	if (strlen(range)<1 || WhichListItem(overlay,"new;append;new+append")<0)
@@ -171,17 +176,16 @@ Function DisplayRangeOfSpecScans(range,fileName,path,overlay)
 		if (V_flag)							// cancelled
 			return 0
 		endif
-		if (stringmatch(overlay,"first one new, then append"))
-			overlay = "new+append"
-		endif
-		printIt=1
+		overlay = SelectString(StringMatch(overlay,"first one new*"),overlay,"new+append")
+		printIt = 1
+	endif
+	if (printIt)
+		printf "DisplayRangeOfSpecScans(\"%s\",\"%s\",\"%s\",\"%s\")\r",range,fileName,path,overlay
 	endif
 	if (strlen(range)<1)
+		print "no scan range given, nothing done"
 		DoAlert 0, "no scan range given, nothing done"
 		return 0
-	endif
-	if (ItemsInList(GetRTStackInfo(0))<2 && printIt)
-		printf "DisplayRangeOfSpecScans(\"%s\",\"%s\",\"%s\",\"%s\")\r",range,fileName,path,overlay
 	endif
 
 	range = expandRange(range)
@@ -220,29 +224,29 @@ Function DisplayRangeOfSpecScans(range,fileName,path,overlay)
 		// everything in range is in the file
 	endif
 
-	String overlay0=overlay, overlay_i			// overlay0 is first, overlay_i is all others
-	if (StringMatch(overlay,"new+append"))
-		overlay0 = "new"
-		overlay = "append"
-	elseif (strlen(WinList("*","","WIN:1"))==0 && stringmatch(overlay,"append"))
-		overlay0 = "new"
+	if (strlen(WinList("*","","WIN:1"))==0 && StringMatch(overlay,"append"))
+		overlay = "new+append"						// no plots available for appending, make one first
 	endif
-	Variable j0,j1
-	for (i=0;i<N;i+=1)							// now process each of the scans in the list
-		overlay_i = SelectString(i,overlay0,overlay)
-		sn = str2num(StringFromList(i,range))
+
+	Variable j0,j1, snum=NaN
+	for (i=0;i<N;i+=1)								// now process each of the scans in the list
+		sn = str2num(StringFromList(i,range))	// scan number
 		j0 = strsearch(scanList,";"+StringFromList(i,range)+" ",0 )+1
 		j1 = strsearch(scanList,";",j0)-1		// scanList[j0,j1] contains the name
 		if (strsearch(scanList[j0,j1],"laserscan",0 )>=0 && exists("Fix_LoadLaserScan"))// a laserscan, special
 			// use Execute in case Fix_LoadLaserScan does not exist, you cannot compile
 			String str
-			sprintf str, "Fix_LoadLaserScan(%d,\"%s\",\"%s\",\"%s\",0)" ,sn,fileName,path,overlay_i
-			Execute str							// Fix_LoadLaserScan(scanNum,fileName,path)
+			sprintf str, "Fix_LoadLaserScan(%d,\"%s\",\"%s\",\"%s\",0)" ,sn,fileName,path,overlay
+			Execute str									// Fix_LoadLaserScan(scanNum,fileName,path)
+			snum = sn
 		else
 			if (!cmpstr(Find_specDataFolder(sn),"bad dir"))	// data folder does not exist, read it
 				specRead(fileName,sn,path)
 			endif
-			DisplaySpecScan(sn,overlay_i)		// a default spec scan types
+			snum=DisplaySpecScan(sn,overlay)	// a default spec scan types, for "new+append" does a "new"
+		endif
+		if (snum>0)										// successfully displayed scan sn, change "new+append" -> "append"
+			overlay = SelectString(StringMatch(overlay,"new+append"),overlay,"append")
 		endif
 	endfor
 	return N
@@ -443,21 +447,22 @@ End
 
 
 
+// returns scan number if successfully displayed, NaN on failure
 Function DisplaySpecScan(scanNum,overlay)
 	Variable scanNum
 	String overlay											// ="new"
 	Variable interactive=0
 	specInitPackage()										// create Packages:spec folder
+
+	overlay = SelectString(StringMatch(overlay,"new*"),overlay,"new")	// "new+append" -> "new"
 	if (scanNum<1 || (cmpstr(overlay,"new") && cmpstr(overlay,"append")))
 		Prompt scanNum, "scan number"
 		Prompt overlay, "new plot", popup "new;append;"
 		scanNum = (scanNum>0) ? scanNum : NumVarOrDefault("root:Packages:spec:lastScan", 0)+1
-		if (cmpstr(overlay,"append"))
-			overlay="new"
-		endif
+		overlay = SelectString(StringMatch(overlay,"append"),"new","append")
 		DoPrompt "choose a scan", scanNum, overlay
 		if (V_flag)
-			return 0
+			return NaN
 		endif
 		interactive = 1
 	endif
@@ -520,7 +525,7 @@ Function DisplaySpecScan(scanNum,overlay)
 		if (ItemsInList(GetRTStackInfo(0))<2)
 			DoAlert 0, "DisplaySpecScan() only supports 1d and 2d scans, you picked "+num2istr(scanDim)
 			SetDataFolder fldrSav
-			return 1
+			return NaN
 		endif
 	endif
 	if (scanDim==1 && exists(yname)!=1 || scanDim==2 && exists(zname)!=1)
@@ -528,12 +533,12 @@ Function DisplaySpecScan(scanNum,overlay)
 			DoAlert 0, "unable to identify wave to display"
 		endif
 		SetDataFolder fldrSav
-		return 1
+		return NaN
 	endif
 	Wave yw = $yname
 
-	if (cmpstr("append",overlay)==0)			// only appending
-		if (scanDim==2)						// append 2d arrays as an image
+	if (cmpstr("append",overlay)==0)		// only appending
+		if (scanDim==2)							// append 2d arrays as an image
 			AppendImage $zname
 		elseif (exists(xname)!=1)
 			AppendToGraph $yname
@@ -544,7 +549,7 @@ Function DisplaySpecScan(scanNum,overlay)
 			ErrorBars $yname Y,wave=($yerrName,$yerrName)
 		endif
 		SetDataFolder fldrSav
-		return 0
+		return scanNum
 	endif
 
 	Variable oldPrefState
@@ -557,7 +562,7 @@ Function DisplaySpecScan(scanNum,overlay)
 	else
 		Display $yname vs $xname
 	endif
-	Preferences oldPrefState		// put prefs back, like a macro would
+	Preferences oldPrefState					// put prefs back, like a macro would
 	String gname="Graph_"+num2istr(scanNum)
 	if (!exists(gname) && strlen(WinList(gname,"",""))<1)
 		DoWindow/C $gname
@@ -634,6 +639,7 @@ Function DisplaySpecScan(scanNum,overlay)
 
 	NVAR lastScan=root:Packages:spec:lastScan
 	lastScan = scanNum
+	return scanNum
 End
 //
 Function addMoreAnnotation2PlotTemplate(i)
