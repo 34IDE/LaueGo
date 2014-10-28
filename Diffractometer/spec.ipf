@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.36
+#pragma version = 2.37
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -537,13 +537,16 @@ Function DisplaySpecScan(scanNum,overlay)
 	endif
 	Wave yw = $yname
 
+	FUNCREF ModifyTopTraceOnSpecPlotProto funcTrace = $"ModifyTopTraceOnSpecPlot"
 	if (cmpstr("append",overlay)==0)		// only appending
 		if (scanDim==2)							// append 2d arrays as an image
 			AppendImage $zname
 		elseif (exists(xname)!=1)
 			AppendToGraph $yname
+			funcTrace()
 		else
 			AppendToGraph $yname vs $xname
+			funcTrace()
 		endif
 		if (exists(yerrName)==1)
 			ErrorBars $yname Y,wave=($yerrName,$yerrName)
@@ -559,8 +562,10 @@ Function DisplaySpecScan(scanNum,overlay)
 		AppendImage $zname
 	elseif (exists(xname)!=1)
 		Display $yname
+		funcTrace()
 	else
 		Display $yname vs $xname
+		funcTrace()
 	endif
 	Preferences oldPrefState					// put prefs back, like a macro would
 	String gname="Graph_"+num2istr(scanNum)
@@ -664,11 +669,11 @@ End
 // If you have a function named SpecGenericGraphStyleLocal(), it will be used instead of SpecGenericGraphStyleTemplate() 
 //
 Function SpecGenericGraphStyleTemplate() : GraphStyle
-	if (NumberByKey("IGORVERS",IgorInfo(0))>=5.01)
+	Variable ivers=NumberByKey("IGORVERS",IgorInfo(0))
+	if (ivers>=5.01 && ivers<6.1)
 		ModifyGraph gfMult=115
 	endif
-	ModifyGraph/Z tick=2, minor=1, standoff=0
-	ModifyGraph lowTrip=0.001
+	ModifyGraph/Z tick=2, minor=1, standoff=0, lowTrip=0.001
 
 	Wave xwave = XWaveRefFromTrace("",StringFromList(0,TraceNameList("",";",1)))
 	if (WaveExists(xwave) && xwave[0]*xwave[Inf]<0)
@@ -721,6 +726,43 @@ Function SpecGenericGraphStyleTemplate() : GraphStyle
 End
 
 
+
+// modifys the top spec trace on the top graph
+Function ModifyTopTraceOnSpecPlotProto([gName])
+	String gName							// optional graph name, defaults to top
+	gName = SelectString(ParamIsDefault(gName),gName,"")
+
+	String traceList=TraceNameList(gName,";",1)// traces on top graph
+	Variable N=ItemsInList(traceList)
+	if (N<1)
+		return NaN
+	endif
+	Variable i, specScans, lastIsSpec=0
+	for (i=0;i<N;i+=1)
+		Wave ww=TraceNameToWaveRef(gName,StringFromList(i,traceList))
+		lastIsSpec = NumberByKey("SCAN_N",note(ww),"=")>0 ? 1 : 0
+		specScans += lastIsSpec
+	endfor
+	if (!lastIsSpec)
+		return NaN
+	endif
+	Variable trNum = N-1
+
+	Make/N=8/FREE markers={19,8,16,5,18,7,60,61}
+	Make/N=8/FREE lstyles={0,2,3,4,5,7,11,8}
+	Make/n=(8,3)/U/W/FREE rgb
+	rgb[0][0]= {0,0,65535,65535,0,0,65535,55000}
+	rgb[0][1]= {0,45000,0,0,55000,0,32764,55000}
+	rgb[0][2]= {65535,0,0,65535,55000,0,16385,0}
+	Variable j=mod(specScans-1,8)
+	if (numpnts(ww)>150)				// do not use markers for long scans
+		ModifyGraph/W=$gName/Z mode[trNum]=0, lstyle[trNum]=lstyles[j]
+	else
+		ModifyGraph/W=$gName/Z mode[trNum]=4, opaque[trNum]=1, marker[trNum]=markers[j], lstyle[trNum]=1
+	endif
+	ModifyGraph/W=$gName/Z rgb[trNum]=(rgb[j][0],rgb[j][1],rgb[j][2])	
+	return trNum
+End
 
 
 
