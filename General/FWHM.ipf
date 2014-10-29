@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -16,6 +16,208 @@ Menu "Analysis"
 End
 
 
+
+//  ======================================================================================  //
+//  ============================= Start of Fit a Peak Wave  ==============================  //
+
+Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,printIt,peakStruct])
+	Wave yw, xw				// y and x data to be fit, (xw is optional, otherwise y-data assumed scaled)
+	Wave yp, xp				// y and x values of the reference peak wave (xp is optional, but xp MUST be monotonic)
+	Variable fitW			// flag, True=fit width, False=width is fixed
+	Variable printIt
+	STRUCT PeakShapeStructure &peakStruct
+
+	fitW = ParamIsDefault(fitW) || numtype(fitW) ? 0 : fitW
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+
+	if (!WaveExists(yw))
+		print "ERROR -- Input data wave does not exist"
+		return $""
+	elseif (!WaveExists(yp))
+		print "ERROR -- Input peak wave does not exist"
+		return $""
+	endif
+
+	STRUCT PeakWaveFitStruct fs
+	Make/N=(fitW ? 4 : 3)/D/FREE cw
+	Wave sw = CalcSimplePeakParameters(yw,xw,1)	// {bkg, amplitude, x0, FWHM, net, COM}
+	Wave sp = CalcSimplePeakParameters(yp,xp,1)	// {bkg, amplitude, x0, FWHM, net, COM}
+
+	cw[0] = sw[0]							// background
+	cw[0] = abs(cw[0]) > 0 ? cw[0] : sw[1]/100
+	cw[1] = sw[1] / sp[1]				// starting amplitude
+	cw[2] = sw[2]							// starting xOffset
+	cw[2] = abs(cw[2]) > 0 ? cw[2] : sw[3]/10
+	if (abs(cw[1])==0)
+		print "ERROR -- Input data has no peak, it is flat"
+		return $""
+	endif
+
+	Wave fs.yPeak = yp
+	Wave fs.xPeak = xp
+	fs.X0 = NumberByKey("X0",note(yp),"=")
+	fs.X0 = numtype(fs.X0) ? sp[2] : fs.X0
+	if (fitW)
+		fs.FWHM0 = NumberByKey("FWHM",note(yp),"=")
+		fs.FWHM0 = numtype(fs.FWHM0) ? sp[3] : NaN
+		if (numtype(fs.FWHM0))
+			print "ERROR -- Unable to find FWHM of the peak wave"
+			return $""
+		endif
+		cw[3] = numtype(sw[3]) ? fs.FWHM0 : sw[3]
+	else
+		fs.FWHM0 = NaN
+	endif
+	Duplicate/FREE cw, cwStart
+
+	if (WaveExists(xp))
+		WaveStats/M=1/Q xp
+		fs.xLo = V_min
+		fs.xHi = V_max
+		fs.iLo = V_minRowLoc
+		fs.iHi = V_maxRowLoc
+	else
+		fs.iLo = 0
+		fs.iHi = numpnts(yp)-1
+		if (DimDelta(yp,0)<0)
+			Variable swap = fs.iLo
+			fs.iLo = fs.xHi
+			fs.iHi = swap
+		endif
+		fs.xLo = pnt2x(yp,fs.iLo)
+		fs.xHi = pnt2x(yp,fs.iHi)
+	endif
+
+	String S_Info=""
+	Variable V_FitError=0, V_FitQuitReason=0
+	if (ItemsInLIst(FindGraphsWithWave(yw)))
+		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw/X=xw/NWOK/D /STRC=fs
+	else
+		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw/X=xw/NWOK /STRC=fs
+	endif
+	Wave W_sigma
+
+	String wnote="waveClass:fitCoefsPeakWave;"
+	wnote = ReplaceNumberByKey("V_chisq",wnote,V_chisq,"=")
+	wnote = ReplaceNumberByKey("V_FitError",wnote,V_FitError,"=")
+	wnote = ReplaceNumberByKey("V_FitQuitReason",wnote,V_FitQuitReason,"=")
+	if (WaveExists(W_sigma))
+		wnote = ReplaceStringByKey("W_sigma",wnote,vec2str(W_sigma,sep=","),"=")
+	endif
+	wnote = MergeKeywordLists(wnote,S_Info,0,"=",";")
+	Note/K cw, wnote
+
+	STRUCT PeakShapeStructure pkLocal
+	initPeakShapeStructure(pkLocal)
+	pkLocal.N = numpnts(cw)
+	if (V_FitError==0)
+		Duplicate/O cw, W_coef
+		Variable i
+		for (i=0; i<pkLocal.N; i+=1)
+			pkLocal.coef[i] = cw[i]
+			pkLocal.sigma[i] = W_sigma[i]
+		endfor
+		pkLocal.x0 = cw[2]
+		pkLocal.dx0 = W_sigma[2]
+		if (fitW)
+			pkLocal.FWHM = cw[3]
+			pkLocal.dFWHM = W_sigma[3]
+		else
+			pkLocal.FWHM = sp[3]
+		endif
+		pkLocal.amp = cw[1]
+		pkLocal.damp = W_sigma[1]
+		pkLocal.bkg = cw[0]
+		pkLocal.dbkg = W_sigma[0]
+		pkLocal.type = "PeakWave"
+		pkLocal.COM = computeCOM(yw,xw)
+		pkLocal.net = sp[4]*cw[1]
+		pkLocal.dnet = sp[4]*W_sigma[1]
+		pkLocal.yunits = WaveUnits(yw,-1)
+		if (WaveExists(xw))
+			pkLocal.xunits = WaveUnits(xw,-1)
+		else
+			pkLocal.xunits = WaveUnits(yw,0)
+		endif
+	endif
+	if (!ParamIsDefault(peakStruct))			// copy to peakStruct if one was passed
+		copyPeakShapeStructure(peakStruct,pkLocal)
+	endif
+
+	if (printIt)
+		String inData, peakData
+		if (WaveExists(xw))
+			sprintf inData, "%s, %s",prettyWaveName(yw),prettyWaveName(xw)
+		else
+			inData = prettyWaveName(yw)
+		endif
+		if (WaveExists(xp))
+			sprintf peakData, "%s, %s",prettyWaveName(yp),prettyWaveName(xp)
+		else
+			peakData = prettyWaveName(yp)
+		endif
+		printf "Fit of data={%s}  to  peak={%s}\r",inData,peakData
+
+		printf "  Started with coefs = %s\r",vec2str(cwStart)
+		if (V_FitError)
+			printf "***** Fit Failed with V_FitError = %g,   and  V_FitQuitReason = %g\r",V_FitError,V_FitQuitReason
+		else
+			printf "  After fit (chiSq=%g),  W_coef = %s,  W_sigma = %s\r",V_chisq,vec2str(W_coef),vec2str(W_sigma)
+			print PeakShapeStruct2str(pkLocal)
+		endif
+	endif
+	return cw
+End
+//
+Static Structure PeakWaveFitStruct
+	Wave cw							// {bkg, amp, xOffset}  or  {bkg, amp, xOffset, fwhm}
+	Variable x
+	STRUCT WMFitInfoStruct fi	// optional WMFitInfoStruct
+	Wave yPeak
+	Wave xPeak						// optional, if not present, assume yPeak is scaled
+	Variable X0						// center of {yPeak,xPeak}, usually X0=0
+	Variable FWHM0					// FWHM of yPeak, as given (only used when fitting fwhm)
+	Variable xLo,iLo				// lowest x value and index into yp where it occurs
+	Variable xHi,iHi				// highest x value and index into yp where it occurs
+EndStructure
+//
+Static Function fitUsingPeakWaveFunc(s) : FitFunc		// the fitting function
+	Struct PeakWaveFitStruct &s
+	// cw = {bkg, amp, xOffset}  or  cw = {bkg, amp, xOffset, fwhm}
+	Variable yval, xval=s.x - s.cw[2] + s.X0
+	xval *= numpnts(s.cw)>3 ? s.FWHM0/s.cw[3] : 1
+	if (xval<=s.xLo)
+		yval = s.yPeak[s.iLo]
+	elseif (xval>=s.xHi)
+		yval = s.yPeak[s.iHi]
+	else
+		yval = WaveExists(s.xPeak) ? s.yPeak[BinarySearchInterp(s.xPeak,xval)] : s.yPeak(xval)
+	endif
+	return s.cw[0] + s.cw[1] * yval
+end
+//
+Static Function/S prettyWaveName(ww)
+	Wave ww
+
+	if (!WaveExists(ww))
+		return ""
+	elseif (WaveType(ww,2)==2)
+		return "FREE"
+	endif
+
+	String str0= GetWavesDataFolder(ww,2)
+	String str=ReplaceString("root:",str0,"",0,1)
+	return SelectString(strsearch(str,":",0)<0, str0, str)
+End
+
+//  ============================== End of Fit a Peak Wave  ===============================  //
+//  ======================================================================================  //
+
+
+
+
+//  ======================================================================================  //
+//  ================================ Start of basic FWHM  ================================  //
 
 Function FWHM_Coefs([type,printIt])
 	// uses W_coef to return FWHM, and probably print other statistics
@@ -261,9 +463,14 @@ ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip)
 	return point
 End
 
+//  ================================= End of basic FWHM  =================================  //
+//  ======================================================================================  //
 
 
 
+
+//  ============================ Start of PeakShapeStructure  ============================  //
+//  ======================================================================================  //
 
 // Generic description of a peak
 Structure PeakShapeStructure
@@ -329,8 +536,7 @@ ThreadSafe Function/T PeakShapeStruct2str(pk,[short])
 	// return a string suitable for printing or display of a PeakShapeStructure
 	STRUCT PeakShapeStructure &pk
 	Variable short
-	short = ParamIsDefault(short) ? NaN : short
-	short = numtype(short) ? 0 : !(!short)
+	short = ParamIsDefault(short) || numtype(short) ? 1 : !(!short)
 
 	String out,str, type=pk.type
 	type = SelectString(strlen(type),"Unknown",type)
@@ -355,16 +561,16 @@ ThreadSafe Function/T PeakShapeStruct2str(pk,[short])
 	String sNet=ValErrStr(pk.net,pk.dnet)+xyunits
 
 	if (short)
-		sprintf out, "%s:  FWHM=%s, Center=%s\rAmp=%s, Bkg=%s Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
-	else
 		sprintf out, "%s:  FWHM=%s, Center=%s, Amp=%s, Bkg=%s Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
+	else
+		sprintf out, "%s:  FWHM=%s, Center=%s\r    Amp=%s, Bkg=%s Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
 	endif
 	if (numtype(pk.COM)==0)
 		sprintf str,",  COM = %s", ValErrStr(pk.COM,pk.dCOM)
 		out += str
 	endif
 	if (numtype(pk.shape)==0)
-		sprintf str,"%sshape = %s", SelectString(short, ",  ","\r"),ValErrStr(pk.shape,pk.dshape)
+		sprintf str,"%sshape = %s", SelectString(short, "\r",",  "),ValErrStr(pk.shape,pk.dshape)
 		out += str
 	endif
 	if (numtype(pk.shape1)==0)
@@ -524,6 +730,11 @@ ThreadSafe Static Function Lorentzian2PeakShapeStruct(pk,wcoef,wsigma)
 	endif
 	return 0
 End
+
+//  ======================================================================================  //
+//  ============================= End of PeakShapeStructure  =============================  //
+
+
 
 
 // ==============================================================================================
