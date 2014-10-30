@@ -13,7 +13,7 @@ Menu "Analysis"
 	"-"
 	MenuItemIfWavesExists("Simple Peak Parameters of ...","*","DIMS:1,MINROWS:3"), FindSimplePeakParameters($"",$"")
 	MenuItemIfWavesExists("Peak Parameters [W_coef]","W_coef","DIMS:1,MINROWS:4"), FWHM_Coefs()
-	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to Resolution","peakWave;Resolution*","DIMS:1"), FitPeakOnGraph("")
+	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), FitPeakOnGraph("")
 End
 
 
