@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.45
+#pragma version = 3.46
 // #pragma hide = 1
 
 Menu "Graph"
@@ -47,6 +47,7 @@ End
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
 //		normalize(a), normalizes a if it is a vector or square matrix
 //		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
+//		GetCursorRangeFromGraph(), get the cursor range from a graph (return cmplx(NaN,NaN) on failure)
 //		FWHM of fitted peaks: GaussianFWHM(W_coef), LorentzianFWHM(W_coef)
 //		Area of fitted peaks: LorentzianIntegral(W_coef), GaussianIntegral(W_coef), Gaussian2DIntegral(W_coef)
 //		computeCOM(), compute the Center of Mass
@@ -2276,6 +2277,36 @@ ThreadSafe Function isPositiveInts(ww,[tol])
 End
 
 
+// return the cursor range from a graph as a cmplx(lo,hi) (cmplx(NaN,NaN) on failure)
+Function/C GetCursorRangeFromGraph(gName,Xvals)
+	String gName				// name of graph, use "" for top graph
+	Variable Xvals				// True=Xvalues, False=Point values
+
+	String infoA=CsrInfo(A,gName), infoB=CsrInfo(B,gName)
+	if (strlen(infoA)<1 || strlen(infoB)<1)
+		return cmplx(NaN,NaN)
+	endif
+
+	Variable lo,hi				// the output values
+
+	if (Xvals)
+		lo = hcsr(A,gName)
+		hi = hcsr(B,gName)
+	else
+		lo = pcsr(A,gName)
+		hi = pcsr(B,gName)
+	endif
+	if (numtype(lo+hi))
+		return cmplx(NaN,NaN)
+	endif
+
+	if (lo>hi)					// in case order is reversed
+		Variable swap=lo
+		lo = hi
+		hi = swap
+	endif
+	return cmplx(lo,hi)
+End
 
 
 // These next three functions convert Igor Peak fitting parameters to useful numbers

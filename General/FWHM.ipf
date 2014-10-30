@@ -13,6 +13,7 @@ Menu "Analysis"
 	"-"
 	MenuItemIfWavesExists("Simple Peak Parameters of ...","*","DIMS:1,MINROWS:3"), FindSimplePeakParameters($"",$"")
 	MenuItemIfWavesExists("Peak Parameters [W_coef]","W_coef","DIMS:1,MINROWS:4"), FWHM_Coefs()
+	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to Resolution","peakWave;Resolution*","DIMS:1"), FitPeakOnGraph("")
 End
 
 
@@ -20,14 +21,98 @@ End
 //  ======================================================================================  //
 //  ============================= Start of Fit a Peak Wave  ==============================  //
 
-Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,printIt,peakStruct])
+Function/S MenuItemIfFitPeakOnGraph(item,classes,optionsStr)
+	String item						// string that you want to appear in menu
+	String classes					// semi-colon separated list of wave classes, can use "*" in classes
+	String optionsStr				// options that are found in WaveList function optionsStr
+	Variable invisible			// controls menu item when conditions not met: true -> menu item absent, false or absent -> menu item grayed out
+	Variable all					// when all is TRUE, then all of the classes in waveClassList must be present, not just one
+	String list = WaveListClass(classes,"*",optionsStr,all=all)
+	if (strlen(list) && strlen(WinList("*",";","WIN:1")))
+		return item
+	endif
+	return "("+item
+End
+
+// This routine is used when fitting to data on a graph
+Function FitPeakOnGraph(gName)
+	String gName						// graph name, use "" for top graph
+	String pkList=WaveListClass("peakWave;Resolution*","*","DIMS:1")
+	if (ItemsInLIst(pkList)<1)
+		print "ERROR -- FitPeakOnGraph(), cannot find any peak waves"
+		return 1
+	endif
+
+	Variable fitWidth=1
+	String wListAll=TraceNameList(gName,";",1)
+	String yname, pname, wList=""
+	Variable Nall=ItemsInList(wListAll), N,i
+	for (i=0,N=0;i<Nall;i+=1)
+		yname = StringFromList(i,wListAll)
+		Wave ww = $yname
+		if (StringMatch(yname,"fit_*") || strsearch(note(ww),yname,0)==0)	// reject fit results
+			continue
+		endif
+		wList += yname+";"
+	endfor
+
+	Wave yPeak=$"", yData=$"", xw=$""
+	if (ItemsInLIst(pkList)==1)
+		pname = StringFromList(0,pkList)
+		Wave yPeak = $pname
+	endif
+
+	if (ItemsInList(wList)<1)				// no data
+		return 1
+	elseif (ItemsInList(wList)==1 && WaveExists(yPeak))	// nothing to ask
+		yname = StringFromList(0,wList)
+		Wave yData = $yname
+	else
+		Prompt fitWidth, "Fit width of reolution peak",popup,"Fixed Resolution Width;Resolution Width can Change"
+		Prompt pname,"Peak Resolution Wave", popup, pkList
+		Prompt yname,"Data Wave", popup, wList
+		fitWidth = fitWidth ? 2 : 1
+		DoPrompt "Data", yname,pname,fitWidth
+		if (V_flag)
+			return 1
+		endif
+		Wave yData = $yname
+		Wave yPeak = $pname
+		fitWidth = fitWidth==2
+	endif
+	if (!WaveExists(yPeak))
+		print "ERROR -- FitPeakOnGraph(), cannot find the peak wave"
+		return 1
+	elseif (!WaveExists(yData))
+		print "ERROR -- FitPeakOnGraph(), cannot find the data wave"
+		return 1
+	endif
+	Wave xData = XWaveRefFromTrace(gName,yname)
+	Wave xPeak = XWaveRefFromTrace(gName,pname)
+	Variable/C pz = GetCursorRangeFromGraph(gName,0)
+
+	if (numtype(pz)==0)
+		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1,pLo=real(pz),pHi=imag(pz))
+	else
+		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1)
+	endif
+
+	return 0
+End
+
+
+
+// This routine is used when fitting programactically
+Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,pLo,pHi,printIt,peakStruct])
 	Wave yw, xw				// y and x data to be fit, (xw is optional, otherwise y-data assumed scaled)
 	Wave yp, xp				// y and x values of the reference peak wave (xp is optional, but xp MUST be monotonic)
 	Variable fitW			// flag, True=fit width, False=width is fixed
+	Variable pLo,pHi		// optional point range to fit
 	Variable printIt
 	STRUCT PeakShapeStructure &peakStruct
-
 	fitW = ParamIsDefault(fitW) || numtype(fitW) ? 0 : fitW
+	pLo = ParamIsDefault(pLo) || numtype(pLo) ? -Inf : pLo
+	pHi = ParamIsDefault(pHi) || numtype(pHi) ? Inf : pHi
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	if (!WaveExists(yw))
@@ -59,7 +144,7 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,printIt,peakStruct])
 	fs.X0 = numtype(fs.X0) ? sp[2] : fs.X0
 	if (fitW)
 		fs.FWHM0 = NumberByKey("FWHM",note(yp),"=")
-		fs.FWHM0 = numtype(fs.FWHM0) ? sp[3] : NaN
+		fs.FWHM0 = numtype(fs.FWHM0) ? sp[3] : fs.FWHM0
 		if (numtype(fs.FWHM0))
 			print "ERROR -- Unable to find FWHM of the peak wave"
 			return $""
@@ -91,9 +176,9 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,printIt,peakStruct])
 	String S_Info=""
 	Variable V_FitError=0, V_FitQuitReason=0
 	if (ItemsInLIst(FindGraphsWithWave(yw)))
-		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw/X=xw/NWOK/D /STRC=fs
+		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw[pLo,pHi]/X=xw/NWOK/D /STRC=fs
 	else
-		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw/X=xw/NWOK /STRC=fs
+		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw[pLo,pHi]/X=xw/NWOK /STRC=fs
 	endif
 	Wave W_sigma
 
@@ -147,12 +232,12 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,printIt,peakStruct])
 	if (printIt)
 		String inData, peakData
 		if (WaveExists(xw))
-			sprintf inData, "%s, %s",prettyWaveName(yw),prettyWaveName(xw)
+			sprintf inData, "%s vs %s",prettyWaveName(yw),prettyWaveName(xw)
 		else
 			inData = prettyWaveName(yw)
 		endif
 		if (WaveExists(xp))
-			sprintf peakData, "%s, %s",prettyWaveName(yp),prettyWaveName(xp)
+			sprintf peakData, "%s vs %s",prettyWaveName(yp),prettyWaveName(xp)
 		else
 			peakData = prettyWaveName(yp)
 		endif
@@ -205,10 +290,48 @@ Static Function/S prettyWaveName(ww)
 		return "FREE"
 	endif
 
-	String str0= GetWavesDataFolder(ww,2)
-	String str=ReplaceString("root:",str0,"",0,1)
-	return SelectString(strsearch(str,":",0)<0, str0, str)
+	String strFull= GetWavesDataFolder(ww,2)
+	String strRoot=ReplaceString("root:",strFull,"",0,1)
+	String strLocal=ReplaceString(GetDataFolder(1),strFull,"",0,1)
+
+	if (strsearch(strRoot,":",0)<0)
+		return strRoot
+	elseif (strsearch(strLocal,":",0)<0)
+		return strLocal
+	endif
+	return strFull
 End
+//Static Function/S prettyWaveName(ww)
+//	Wave ww
+//
+//	if (!WaveExists(ww))
+//		return ""
+//	elseif (WaveType(ww,2)==2)
+//		return "FREE"
+//	endif
+//
+//	String str0= GetWavesDataFolder(ww,2)
+//	String str=ReplaceString("root:",str0,"",0,1)
+//	return SelectString(strsearch(str,":",0)<0, str0, str)
+//End
+
+//Function Make_yPeakTestData()
+//	Make/N=51/D/O yPeak
+//	SetScale/I x -2,2,"", yPeak
+//	yPeak = exp(-(x/0.5)^2)
+//	Variable ar = area(ypeak)
+//	ypeak /= ar
+//	String wnote="waveClass=peakWave;"
+//	wnote = ReplaceNumberByKey("FWHM",wnote,0.832554611157698,"=")
+//	wnote = ReplaceNumberByKey("X0",wnote,0,"=")
+//	Note/K yPeak, wnote
+//
+//	Make/N=500/O yData, xData
+//	SetScale/I x -20,20,"", xData
+//	xData = x
+//	SetScale/P x 0,1,"", yData, xData
+//	yData = 20*exp(-((xData[p]-4)/2)^2) + gnoise(2)
+//End
 
 //  ============================== End of Fit a Peak Wave  ===============================  //
 //  ======================================================================================  //
