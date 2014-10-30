@@ -1,1 +1,8 @@
-CuOdensity  ncomp  zed fract6.516   2     29  1.0  8   1.0
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Cupric Oxide" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<chemical_formula>CuO</chemical_formula>
+	<density unit="g/cm^3">6.516</density>
+	<part symbol="Cu" fraction="0.5"></part>
+	<part symbol="O" fraction="0.5"></part>
+</chemical_mixture>

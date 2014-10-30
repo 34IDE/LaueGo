@@ -1,1 +1,12 @@
-Be_IF_1_lowZdensity, ncomp, zed, fract, zed, fract1.85,6,4,0.99835,6,0.0003,8,0.00015,12,0.00006,13,0.0001,14,0.0001
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Be IF-1 low Z (Brush-Wellman)" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<chemical_formula>Be</chemical_formula>
+	<density unit="g/cm^3">1.85</density>
+	<part symbol="Be" fraction="0.99835"></part>
+	<part symbol="C" fraction="0.0003"></part>
+	<part symbol="O" fraction="0.00015"></part>
+	<part symbol="Mg" fraction="0.00006"></part>
+	<part symbol="Al" fraction="0.0001"></part>
+	<part symbol="Si" fraction="0.0001"></part>
+</chemical_mixture>

@@ -1,1 +1,9 @@
-CdWO4density, ncomp, zed, fract, zed, fract7.9,3,48,1,74,1,8,4
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Cadmium Tungstate" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<chemical_formula>CdWO4</chemical_formula>
+	<density unit="g/cm^3">7.9</density>
+	<part symbol="Cd" fraction="0.166667"></part>
+	<part symbol="W" fraction="0.166667"></part>
+	<part symbol="O" fraction="0.666667"></part>
+</chemical_mixture>

@@ -1,1 +1,8 @@
-WATERdensity, ncomp, zed, fract, zed, fract1.,2,1,0.6666,8,0.3333
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Water" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<chemical_formula>H2O</chemical_formula>
+	<density unit="g/cm^3">1.0</density>
+	<part symbol="H" fraction="0.333333"></part>
+	<part symbol="O" fraction="0.666667"></part>
+</chemical_mixture>

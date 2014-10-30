@@ -1,1 +1,34 @@
-<?xml version="1.0" encoding="UTF-8" ?><chemical_mixture name="Kapton" xmlns="http://sector34.xor.aps.anl.gov/34ide">	<density unit="g/cm^3">1.43</density>	<part symbol="C" fraction="0.564103"></part>	<part symbol="H" fraction="0.25641"></part>	<part symbol="N" fraction="0.0512821"></part>	<part symbol="O" fraction="0.128205"></part></chemical_mixture><!--   	You can specify the element with either the atomic symbol or Z. 		If the symbol is not specified, then it looks for Z.	Default fraction is 1 if fraction is not specified	The fraction is the atom fraction (number of atoms), NOT mass fraction	for a fully defined mixture, fraction_present=1, and you do not have to include it, 	BUT if your list only defines 90% of the sample, then add fraction_present="0.1"--><!--   Kapton formula = C22 H10 N2 O5,  its density is 1.43 (g/cm^3)	39 = 22+10+2+5http://sector7.xray.aps.anl.gov/~dufresne/UofM/techinfo/kapton.html-->
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Kapton" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<density unit="g/cm^3">1.43</density>
+	<part symbol="C" fraction="0.564103"></part>
+	<part symbol="H" fraction="0.25641"></part>
+	<part symbol="N" fraction="0.0512821"></part>
+	<part symbol="O" fraction="0.128205"></part>
+</chemical_mixture>
+
+
+<!--   
+	You can specify the element with either the atomic symbol or Z. 
+		If the symbol is not specified, then it looks for Z.
+	Default fraction is 1 if fraction is not specified
+
+	The fraction is the atom fraction (number of atoms), NOT mass fraction
+
+	for a fully defined mixture, fraction_present=1, and you do not have to include it, 
+	BUT if your list only defines 90% of the sample, then add fraction_present="0.1"
+-->
+
+
+
+
+<!--   
+Kapton formula = C22 H10 N2 O5,  its density is 1.43 (g/cm^3)
+	39 = 22+10+2+5
+http://sector7.xray.aps.anl.gov/~dufresne/UofM/techinfo/kapton.html
+-->
+
+
+
+

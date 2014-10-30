@@ -1,1 +1,14 @@
-<?xml version="1.0" encoding="UTF-8" ?><chemical_mixture name="air" xmlns="http://sector34.xor.aps.anl.gov/34ide">	<density unit="g/cm^3">1.205E-3</density>	<part symbol="N" fraction="0.78392"></part>	<part symbol="O" fraction="0.21106"></part>	<part symbol="Ar" fraction="0.00502"></part></chemical_mixture><!--AIRdensity  ncomp  zed fract1.205E-3   3     7  0.78392  8   0.21106   18    0.00502-->
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="air" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<density unit="g/cm^3">1.205E-3</density>
+	<part symbol="N" fraction="0.78392"></part>
+	<part symbol="O" fraction="0.21106"></part>
+	<part symbol="Ar" fraction="0.00502"></part>
+</chemical_mixture>
+
+<!--
+AIR
+density  ncomp  zed fract
+1.205E-3   3     7  0.78392  8   0.21106   18    0.00502
+-->

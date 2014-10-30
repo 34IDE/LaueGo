@@ -1,1 +1,8 @@
-LiFdensity  ncomp  zed fract2.63697,2,3,1.0,9,1.0
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Lithium Fluoride" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<chemical_formula>LiF</chemical_formula>
+	<density unit="g/cm^3">2.63697</density>
+	<part symbol="Li" fraction="0.5"></part>
+	<part symbol="F" fraction="0.5"></part>
+</chemical_mixture>

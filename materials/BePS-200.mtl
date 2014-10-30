@@ -1,1 +1,26 @@
-Be_PS_200density, ncomp, zed, fract, zed, fract1.85,20,4,0.986212,8,0.0075,13,0.001,6,0.0015,26,0.0013,12,0.0008,14,0.0006,5,0.000003,48,0.000002,20,0.0001,24,0.0001,27,0.00001,29,0.0001,82,0.00002,3,0.000003,25,0.00012,42,0.00002,28,0.0002,7,0.0004,47,0.00001
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Be PS-200 (Brush-Wellman)" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<chemical_formula>Be</chemical_formula>
+	<density unit="g/cm^3">1.85</density>
+	<part symbol="Be" fraction="0.986212"></part>
+	<part symbol="O" fraction="0.0075"></part>
+	<part symbol="Al" fraction="0.001"></part>
+	<part symbol="C" fraction="0.0015"></part>
+	<part symbol="Fe" fraction="0.0013"></part>
+	<part symbol="Mg" fraction="0.0008"></part>
+	<part symbol="Si" fraction="0.0006"></part>
+	<part symbol="B" fraction="0.000003"></part>
+	<part symbol="Cd" fraction="0.000002"></part>
+	<part symbol="Ca" fraction="00.0001"></part>
+	<part symbol="Cr" fraction="0.0001"></part>
+	<part symbol="Co" fraction="0.00001"></part>
+	<part symbol="Cu" fraction="0.0001"></part>
+	<part symbol="Pb" fraction="0.00002"></part>
+	<part symbol="Li" fraction="0.000003"></part>
+	<part symbol="Mn" fraction="0.00012"></part>
+	<part symbol="Mo" fraction="0.00002"></part>
+	<part symbol="Ni" fraction="0.0002"></part>
+	<part symbol="N" fraction="0.0004"></part>
+	<part symbol="Ag" fraction="0.00001"></part>
+</chemical_mixture>
