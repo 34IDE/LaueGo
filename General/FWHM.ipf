@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.05
+#pragma version = 2.06
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -13,7 +13,15 @@ Menu "Analysis"
 	"-"
 	MenuItemIfWavesExists("Simple Peak Parameters of ...","*","DIMS:1,MINROWS:3"), FindSimplePeakParameters($"",$"")
 	MenuItemIfWavesExists("Peak Parameters [W_coef]","W_coef","DIMS:1,MINROWS:4"), FWHM_Coefs()
-	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), FitPeakOnGraph("")
+	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
+End
+
+Menu "GraphMarquee"
+	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
+End
+
+Menu "TracePopup"
+	MenuItemIfWaveClassExists("Fit to a PeakWave","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakToTrace()
 End
 
 
@@ -34,52 +42,89 @@ Function/S MenuItemIfFitPeakOnGraph(item,classes,optionsStr)
 	return "("+item
 End
 
-// This routine is used when fitting to data on a graph
-Function FitPeakOnGraph(gName)
+
+// Fit data on a graph to a peak/resolution wave, usually accessed through the Marquee Menu
+Static Function FitPeakOnGraph(gName,[fitWidth])
 	String gName						// graph name, use "" for top graph
-	String pkList=WaveListClass("peakWave;Resolution*","*","DIMS:1")
+	Variable fitWidth					// True=allow width to change, False=Width is constant
+	fitWidth = ParamIsDefault(fitWidth) || numtype(fitWidth) ? 0 : !(!fitWidth)
+
+	Wave yPeak=$"", yData=$""
+	String pkList=WaveListClass("peakWave;Resolution*","*","DIMS:1"), pname
 	if (ItemsInLIst(pkList)<1)
 		print "ERROR -- FitPeakOnGraph(), cannot find any peak waves"
 		return 1
-	endif
-
-	Variable fitWidth=1
-	String wListAll=TraceNameList(gName,";",1)
-	String yname, pname, wList=""
-	Variable Nall=ItemsInList(wListAll), N,i
-	for (i=0,N=0;i<Nall;i+=1)
-		yname = StringFromList(i,wListAll)
-		Wave ww = $yname
-		if (StringMatch(yname,"fit_*") || strsearch(note(ww),yname,0)==0)	// reject fit results
-			continue
-		endif
-		wList += yname+";"
-	endfor
-
-	Wave yPeak=$"", yData=$"", xw=$""
-	if (ItemsInLIst(pkList)==1)
+	elseif (ItemsInLIst(pkList)==1)
 		pname = StringFromList(0,pkList)
 		Wave yPeak = $pname
 	endif
 
-	if (ItemsInList(wList)<1)				// no data
-		return 1
-	elseif (ItemsInList(wList)==1 && WaveExists(yPeak))	// nothing to ask
-		yname = StringFromList(0,wList)
+	String cinfo="", yname=""
+	Variable pLo=NaN, pHi=NaN, xLo=NaN, xHi=NaN
+	GetMarquee/K/W=$gName left, bottom
+	if (V_flag)
+		print "S_marqueeWin = ",S_marqueeWin
+		printf "left: %g; top: %g; right: %g; bottom: %g", V_left, V_top, V_right, V_bottom
+		xLo = V_left
+		xHi = V_right
+	endif
+	if (numtype(xLo+xHi))
+		cinfo = GetCursorRangeFromGraph(gName)
+		yname = StringByKey("yData",cinfo,"=")		// one possible way to get yData
 		Wave yData = $yname
-	else
+		pLo = NumberByKey("pLo",cinfo,"=")
+		pHi = NumberByKey("pHi",cinfo,"=")
+	endif
+
+	if (!WaveExists(yData))								// will need to ask for yData
+		String wListAll=TraceNameList(gName,";",1), wList=""
+		Variable Nall=ItemsInList(wListAll), N,i
+		for (i=0,N=0;i<Nall;i+=1)
+			yname = StringFromList(i,wListAll)
+			Wave ww = $yname
+			if (StringMatch(yname,"fit_*") || strsearch(note(ww),yname,0)==0)	// reject fit results
+				continue
+			endif
+			wList += yname+";"
+		endfor
+		yname = StringFromList(0,wList)
+		if (ItemsInList(wList)<1)
+			print "ERROR -- FitPeakOnGraph(), cannot find the y-data"
+			return 1
+		elseif (ItemsInList(wList)==1)
+			Wave yData = $yname
+			yname = StringFromList(0,wList)
+		endif
+	endif
+
+	Variable needPrompt=0
+	needPrompt += (WaveExists(yPeak) ? 0 : 1)
+	needPrompt += (WaveExists(yData) ? 0 : 2)
+	if (needPrompt)
 		Prompt fitWidth, "Fit width of reolution peak",popup,"Fixed Resolution Width;Resolution Width can Change"
 		Prompt pname,"Peak Resolution Wave", popup, pkList
 		Prompt yname,"Data Wave", popup, wList
 		fitWidth = fitWidth ? 2 : 1
-		DoPrompt "Data", yname,pname,fitWidth
+
+		if (needPrompt==1)
+			DoPrompt "Data", yname,fitWidth
+		elseif (needPrompt==2)
+			DoPrompt "Data", pname,fitWidth
+		elseif (needPrompt==3)
+			DoPrompt "Data", yname,pname,fitWidth
+		endif
 		if (V_flag)
 			return 1
 		endif
-		Wave yData = $yname
-		Wave yPeak = $pname
+
 		fitWidth = fitWidth==2
+		if (needPrompt & 1)
+			Wave yData = $yname
+		elseif (needPrompt & 2)
+			Wave yPeak = $pname
+		endif
 	endif
+
 	if (!WaveExists(yPeak))
 		print "ERROR -- FitPeakOnGraph(), cannot find the peak wave"
 		return 1
@@ -87,16 +132,85 @@ Function FitPeakOnGraph(gName)
 		print "ERROR -- FitPeakOnGraph(), cannot find the data wave"
 		return 1
 	endif
+
 	Wave xData = XWaveRefFromTrace(gName,yname)
 	Wave xPeak = XWaveRefFromTrace(gName,pname)
-	Variable/C pz = GetCursorRangeFromGraph(gName,0)
+	if (numtype(xLo+xHi)==0)				// have x range, need point range
+		if (WaveExists(xData))				// convert from x to point using xwave
+			plo = BinarySearch(xData,xLo)
+			phi = BinarySearch(xData,xHi)
+			plo = plo==-1 ? 0 : plo
+			phi = phi==-2 ? numpnts(yData)-1: phi
+		else										// convert from x to point using ywave scaling
+			plo = x2pnt(yData,xLo)
+			phi = x2pnt(yData,xHi)
+			plo = limit(plo,0,numpnts(yData)-1)
+			phi = limit(phi,0,numpnts(yData)-1)
+		endif
+		OrderValues(pLo,pHi)
+	endif
 
-	if (numtype(pz)==0)
-		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1,pLo=real(pz),pHi=imag(pz))
+	if (numtype(pLo+pHi)==0)
+		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1,pLo=pLo,pHi=pHi)
 	else
 		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1)
 	endif
+	return 0
+End
 
+// Fit data on a graph to a peak/resolution wave, access ONLY through Control-Click on wave (or right-click)
+Static Function FitPeakToTrace()
+	GetLastUserMenuInfo
+	String gName=S_graphName
+	String trName=S_traceName
+
+	Variable fitWidth=0				// True=allow width to change, False=Width is constant
+	Wave yData = TraceNameToWaveRef(gName,trName)
+	if (!WaveExists(yData))
+		print "ERROR -- FitPeakToTrace(), cannot find any y-data wave"
+		return 1
+	endif
+
+	Wave yPeak=$""
+	String pkList=WaveListClass("peakWave;Resolution*","*","DIMS:1"), pname
+	if (ItemsInLIst(pkList)<1)
+		print "ERROR -- FitPeakToTrace(), cannot find any peak waves"
+		return 1
+	elseif (ItemsInLIst(pkList)==1)
+		pname = StringFromList(0,pkList)
+		Wave yPeak = $pname
+	endif
+
+	String cinfo="", yname=""
+	Variable pLo=NaN, pHi=NaN
+	cinfo = GetCursorRangeFromGraph(gName)
+	pLo = NumberByKey("pLo",cinfo,"=")
+	pHi = NumberByKey("pHi",cinfo,"=")
+
+	if (!WaveExists(yPeak))
+		Prompt fitWidth, "Fit width of reolution peak",popup,"Fixed Resolution Width;Resolution Width can Change"
+		Prompt pname,"Peak Resolution Wave", popup, pkList
+		fitWidth = fitWidth ? 2 : 1
+		DoPrompt "Data", pname,fitWidth
+		if (V_flag)
+			return 1
+		endif
+		fitWidth = fitWidth==2
+		Wave yPeak = $pname
+	endif
+	if (!WaveExists(yPeak))
+		print "ERROR -- FitPeakToTrace(), cannot find the peak wave"
+		return 1
+	endif
+
+	Wave xData = XWaveRefFromTrace(gName,trName)
+	Wave xPeak = XWaveRefFromTrace(gName,pname)
+
+	if (numtype(pLo+pHi)==0)
+		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1,pLo=pLo,pHi=pHi)
+	else
+		FitPeakWave(yData,xData,yPeak,xPeak, fitW=fitWidth, printIt=1)
+	endif
 	return 0
 End
 
@@ -243,7 +357,14 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,pLo,pHi,printIt,peakStruct])
 		endif
 		printf "Fit of data={%s}  to  peak={%s}\r",inData,peakData
 
-		printf "  Started with coefs = %s\r",vec2str(cwStart)
+//		printf "  Started with coefs = %s\r",vec2str(cwStart)
+		printf "  Started with coefs = %s",vec2str(cwStart)
+		if (numtype(pLo+pHi)==0)
+			printf ",   Using point range [%g, %g]",pLo,pHi
+
+		endif
+		printf "\r"
+
 		if (V_FitError)
 			printf "***** Fit Failed with V_FitError = %g,   and  V_FitQuitReason = %g\r",V_FitError,V_FitQuitReason
 		else

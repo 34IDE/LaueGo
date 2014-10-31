@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<chemical_mixture name="Al 1100" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+	<density unit="g/cm^3">1.43</density>
+	<part symbol="Al" fraction="0.99"></part>
+	<part symbol="Cu" fraction="0.001"></part>
+	<part symbol="Mn" fraction="0.0005"></part>
+	<part symbol="Zn" fraction="0.001"></part>
+	<part symbol="Fe" fraction="0.005"></part>
+	<part symbol="Si" fraction="0.0025"></part>
+</chemical_mixture>
+
+
+<!--   
+	You can specify the element with either the atomic symbol or Z. 
+		If the symbol is not specified, then it looks for Z.
+	Default fraction is 1 if fraction is not specified
+
+	The fraction is the atom fraction (number of atoms), NOT mass fraction
+
+	for a fully defined mixture, fraction_present=1, and you do not have to include it, 
+	BUT if your list only defines 90% of the sample, then add fraction_present="0.1"
+-->
