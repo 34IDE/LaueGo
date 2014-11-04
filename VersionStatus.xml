@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, October 30, 2014" time="04:49:33 PM CDT" isoTime="2014-10-30T16:49:33"></written>
+	<written date="Tuesday, November 04, 2014" time="01:07:43 PM CST" isoTime="2014-11-04T13:07:43"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>263</fileCount>
+	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
@@ -35,7 +35,7 @@
 	<file version="0.04" time="2013-10-28T11:28:49" md5="2596730c5c9139e078980e8f00e36fd2" ext=".ipf">microN/FlyImageExtract.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d2cecdf854958ec7e2e6f5b58341ef18" ext=".xml">materials/PZT-Rhomb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8f514e77e27d6af2814f4abb383f9466" ext=".xml">materials/Mo.xml</file>
-	<file version="2.05" time="2014-10-30T16:48:34" md5="a4723605d086bbbf53bb41efb89d18b4" ext=".ipf">General/FWHM.ipf</file>
+	<file version="2.06" time="2014-10-31T15:03:20" md5="b793c406e80d5a75b89a2168830ae6cc" ext=".ipf">General/FWHM.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="40c0b918da175b88e70c76c9264fd6d9" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" ext="">micro/indexAll_ppc</file>
 	<file version="1.01" time="2014-04-30T10:28:09" md5="34d3fc84b9db4ef2adbae7fcca0a36ec" ext=".ipf">Grains/CutUpGrains.ipf</file>
@@ -73,6 +73,7 @@
 	<file version="1.16" time="2014-06-20T11:06:54" md5="d5ad3dad3c71ab3d8015b0aac2fb1910" ext=".ipf">General/Tiff.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b7fd7eac1e1765a884c1b42e7951bcdb" ext=".xml">materials/FeSiO3.xml</file>
 	<file version="1" time="2013-10-28T11:28:48" md5="52eca03f970932a711aa2c10fb7c9a19" ext=".ipf">General/Quaternion.ipf</file>
+	<file version="nan" time="2014-10-31T12:31:06" md5="66ece2760e7bb0453e0b9e68234f0413" ext=".mtl">materials/Al_1100.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e3038b050eef42269dc486e208476eef" ext=".xml">materials/CaF2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="460076a6b813cba53fcea4ccabf0d92b" ext=".xml">materials/AlRh.xml</file>
 	<file version="nan" time="2014-01-30T00:01:29" md5="96f3d71a9d9407c89cbce1d897754ebb" ext=".xml">materials/Austenite.xml</file>
@@ -137,7 +138,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
-	<file version="1.7" time="2014-10-10T18:07:23" md5="9ead24ef8e1cdc1b6a21384edd8aa03d" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="1.71" time="2014-11-04T10:31:50" md5="8733d8a7ea0dbb6c3fd33ac243a72f6f" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.1" time="2014-10-09T14:46:43" md5="35f4f4af884ec8576e2c048f80daf126" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="nan" time="2014-09-22T11:39:14" md5="a76623e0bb5bb5f392b53eab8e390243" ext=".xml">materials/VO2/VO2_M1_1992Rogers.xml</file>
 	<file version="2.46" time="2014-10-06T09:42:00" md5="5b85d9c071c467894ab121b5dbcd7ac1" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
@@ -166,7 +167,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="4a4a324cb89e7e1c4ea5c05069471c39" ext=".xml">materials/Sn-sg141.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a3dd1379a82d5afb5a5d0fec54d0a6a5" ext=".xml">materials/ald09.xml</file>
-	<file version="3.46" time="2014-10-30T10:00:17" md5="0193e519853516d62e3fe65d707e0c86" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.48" time="2014-11-04T13:05:56" md5="a126fd13ce4bd6ae954d607081d51902" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" ext=".png">microN/microDiffractionMedia/Picture5.png</file>
 	<file version="2.05" time="2014-10-27T15:25:23" md5="ef67a9187cdce509592465efec5dac10" ext=".ipf">General/GizmoMarkers.ipf</file>

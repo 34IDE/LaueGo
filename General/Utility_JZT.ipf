@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.47
+#pragma version = 3.48
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1521,7 +1521,7 @@ Proc RecompileAllProcedures()						// FORCE ALL procedures to recompile,  This m
 	SetIgorOption poundDefine=DOESNTMATTER		// mark all procedures as needing compile 
 	SetIgorOption poundUnDefine=DOESNTMATTER	// don't leave this defined.
 	Execute/P/Q/Z "COMPILEPROCEDURES "				// re-compile (all)
-	print "ran RecompileAllProcedures"
+	// print "ran RecompileAllProcedures"
 End
 
 
