@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, November 04, 2014" time="01:07:43 PM CST" isoTime="2014-11-04T13:07:43"></written>
+	<written date="Wednesday, November 05, 2014" time="04:12:40 PM CST" isoTime="2014-11-05T16:12:40"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -35,7 +35,7 @@
 	<file version="0.04" time="2013-10-28T11:28:49" md5="2596730c5c9139e078980e8f00e36fd2" ext=".ipf">microN/FlyImageExtract.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d2cecdf854958ec7e2e6f5b58341ef18" ext=".xml">materials/PZT-Rhomb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8f514e77e27d6af2814f4abb383f9466" ext=".xml">materials/Mo.xml</file>
-	<file version="2.06" time="2014-10-31T15:03:20" md5="b793c406e80d5a75b89a2168830ae6cc" ext=".ipf">General/FWHM.ipf</file>
+	<file version="2.07" time="2014-11-05T16:05:42" md5="c8f6523d0bd9596843da817925636af1" ext=".ipf">General/FWHM.ipf</file>
 	<file version="2.01" time="2013-10-28T11:28:48" md5="40c0b918da175b88e70c76c9264fd6d9" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" ext="">micro/indexAll_ppc</file>
 	<file version="1.01" time="2014-04-30T10:28:09" md5="34d3fc84b9db4ef2adbae7fcca0a36ec" ext=".ipf">Grains/CutUpGrains.ipf</file>
@@ -93,7 +93,7 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">microN/microDiffractionMedia/Picture7.png</file>
 	<file version="2" time="2014-10-16T14:43:37" md5="100f025b2f8a3833f7435e9922e5ab84" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
 	<file version="nan" time="2014-03-24T09:32:37" md5="2f5374536541de1708896e1bff29ca5e" ext=".xml">materials/Co.xml</file>
-	<file version="2.59" time="2014-10-06T09:42:00" md5="2326e2fd2139144e57a30b16c5c2c644" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
+	<file version="2.6" time="2014-11-05T15:03:15" md5="7fc38118446392c1ed99dfcff8c56d39" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>

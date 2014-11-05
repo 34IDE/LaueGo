@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.06
+#pragma version = 2.07
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -713,8 +713,8 @@ End
 
 
 
-//  ============================ Start of PeakShapeStructure  ============================  //
 //  ======================================================================================  //
+//  ============================ Start of PeakShapeStructure  ============================  //
 
 // Generic description of a peak
 Structure PeakShapeStructure
@@ -975,8 +975,48 @@ ThreadSafe Static Function Lorentzian2PeakShapeStruct(pk,wcoef,wsigma)
 	return 0
 End
 
-//  ======================================================================================  //
 //  ============================= End of PeakShapeStructure  =============================  //
+//  ======================================================================================  //
+
+
+
+
+//  ======================================================================================  //
+//  ============================ Start of Utility Functions  =============================  //
+
+// These next two are generically useful when I don't know whether I am getting an x-wave
+Function x2pntWyWx(yw,xw,xval)		// convert from x to point
+	Wave yw,xw
+	Variable xval
+
+	Variable pnt
+	if (WaveExists(xw))
+		pnt = BinarySearch(xw,xval)			// use x-wave
+		pnt = pnt==-1 ? 0 : pnt
+		pnt = pnt==-2 ? numpnts(yw)-1: pnt
+	else
+		pnt = x2pnt(yw,xval)					// use y-wave scaling
+		pnt = limit(pnt,0,numpnts(yw)-1)
+	endif
+	return pnt
+End
+//
+Function pnt2xWyWx(yw,xw,pnt)		// convert from point to x
+	Wave yw,xw
+	Variable pnt
+
+	pnt = limit(pnt,0,DimSize(xw,0)-1)
+	Variable xval
+	if (WaveExists(xw))
+		xval = xw[pnt]								// x-wave given
+	else
+		xval = pnt2x(yw,pnt)					// y-wave is assumed scaled
+	endif
+	return xval
+End
+
+//  ============================= End of Utility Functions  ==============================  //
+//  ======================================================================================  //
 
 
 

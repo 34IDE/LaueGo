@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.59		// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.60		// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -267,6 +267,9 @@ Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
 //
 // Oct 5, 2014,  version 2.51
 //	Added the squareUp=1 parameter to axisOfMatrix()
+//
+// Nov 4, 2014,  version 2.70
+//	look in more places when finding the cylindrical coordinate axis & center
 
 // modified read3dRecipLatticesFile() to deal with multiple reference matricies
 // and added SetMatrixFromString() to help with this task.
@@ -1266,7 +1269,7 @@ Function MakeGraphOfSlice()				// create the standard surface cut through the vo
 	ModifyContour sliceWave labelBkg=1
 	AppendImage sliceWave
 	ModifyImage sliceWave ctab= {*,*,$biPolarCtab,0}	// red is negative, white=0, blue is postive
-	ModifyGraph gfMult=130
+//	ModifyGraph gfMult=130
 	ModifyGraph gbRGB=(GRAY,GRAY,GRAY)				// set graph background to gray so that NaN will show through
 	ModifyGraph mirror=1,minor=1
 	ModifyGraph/Z lSize('sliceWave=0')=2
@@ -1338,7 +1341,8 @@ Function MakeGraphOfSliceOrients()			// create the standard surface cut through 
 	CutResolution = (CutResolution>0.0) ? CutResolution : 1.0
 	Variable/G $(fldr+"epsilonIsZero")		// ensure existance of epsilonIsZero
 
-	ModifyGraph gfMult=130, mirror=1,minor=1, zero=2
+//	ModifyGraph gfMult=130
+	ModifyGraph mirror=1,minor=1, zero=2
 	Label left StringByKey("YaxisName",noteStr,"=")+" (\\U)"
 	Label bottom StringByKey("XaxisName",noteStr,"=")+" (\\U)"
 	SetAxis/A left
@@ -2128,7 +2132,8 @@ Function SurfacePlotStyle(gName)
 	sprintf str, "%s [%s] _ [%s]%s",StringByKey("filePrefix", noteStr,"="),StringByKey("positions", noteStr,"="),StringByKey("depths", noteStr,"="),imageExtension
 	str = SelectString(strlen(str)>12,"",str+"\r")								// skip line if no positions, depths, or filePrefix
 	AppendText/W=$gName/N=titleText "\\Zr060"+str+IgorInfo(1)+"    "+StringByKey("fldrName", noteStr,"=")
-	ModifyGraph gfMult=130,zero=2,minor=1,mirror=1
+//	ModifyGraph gfMult=130
+	ModifyGraph zero=2,minor=1,mirror=1
 	Label left StringByKey("YaxisName",noteStr,"=")+" (\\U)"
 	Label bottom StringByKey("XaxisName",noteStr,"=")+" (\\U)"
 	DoUpdate
@@ -2445,7 +2450,7 @@ End
 //
 Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,epsilonIsZero)	// calculate a cut, result goes into sliceWave
 	Variable resolution			// resolution, grid spacing of output wave (µm)
-	Wave normalW				// surface normal of cut plane, (need not be of length 1)
+	Wave normalW					// surface normal of cut plane, (need not be of length 1)
 	String SliceNormal			// name of normal to the slice
 	Variable SliceValue			// intercept displaced along normal
 	String rotation				// specifys the desired rotation axis, can be one of "X;H;F;Y;Z;R_Cyl;Phi_Cyl;Axis_Cyl;Total"
@@ -2495,32 +2500,32 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	Variable aRotation=0									// flags, just a plain rotation
 	Variable i0,j0											// specifies a particular component
 	if (stringmatch(rotation,"GND"))
-		ctensor = 1										// need the curvature tensor
+		ctensor = 1											// need the curvature tensor
 		strain = 1											// needs alpha, so needs both kappa and epsilon
 		ddtensor = 1										// and needs the dislocation density tensor
 		i0 = -1
 		SliceWaveUnit = "dislocations / cm\\S2"
 	elseif (strsearch(rotation,"alpha(",0)==0)
-		ctensor = 1										// need the dislocation density tensor, so need curvature tensor
+		ctensor = 1											// need the dislocation density tensor, so need curvature tensor
 		strain = 1											// and needs epsilon
 		ddtensor = 1										// and needs the dislocation density tensor
-		if (xyComponent2ij(rotation,i0,j0))			// get i0,j0 index into alpha[i0][j0]
+		if (xyComponent2ij(rotation,i0,j0))		// get i0,j0 index into alpha[i0][j0]
 			return ""
 		endif
 		SliceWaveUnit = "radian / µm"
 	elseif (strsearch(rotation,"kappa(",0)==0)
-		ctensor = 1										// this cut will neede the lattice curvature tensor
+		ctensor = 1											// this cut will neede the lattice curvature tensor
 		if(xyComponent2ij(rotation,i0,j0))			// get i0,j0 index into kappa[i0][j0]
 			return ""
 		endif
 		SliceWaveUnit = "radian / µm"
 	elseif (strsearch(rotation,"dRd",0)==0 || stringmatch(rotation,"|gradR|"))
-		grad = 1											// this cut will need the gradient of the total rotation
+		grad = 1												// this cut will need the gradient of the total rotation
 		i0 = WhichListItem(rotation,"dRdX;dRdY;dRdZ;|gradR|")
 		if (i0<0)
 			return ""
 		endif
-		i0 = i0==3 ? -1 : i0								// use -1 to flag magnitude
+		i0 = i0==3 ? -1 : i0							// use -1 to flag magnitude
 		SliceWaveUnit = "radian / µm"
 	elseif(WhichListItem(rotation,"exx;eyy;ezz;exy;exz;eyz")>=0)
 		strain = 1											// need the strain tensor
@@ -2543,31 +2548,30 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 		if (!WaveExists(e3d))
 			return ""
 		endif
-	elseif (!stringmatch(rotation,"Total"))				// need to compute angle component
+	elseif (!stringmatch(rotation,"Total"))		// need to compute angle component
 		aRotation = 1
-		Wave rotationAxis = $MakeDirectionVector(rotation)// want rotation component about rotationAxis[]
-		calcAxis = numtype(rotationAxis[0])!=0		// axis of rotation is not constant, needs to be re-calculated for each point
+		Wave rotationAxis = $MakeDirectionVector(rotation)		// want rotation component about rotationAxis[]
+		calcAxis = numtype(rotationAxis[0])!=0	// axis of rotation is not constant, needs to be re-calculated for each point
 		SliceWaveUnit = "radian"
 	else
 		aRotation = 1
 		SliceWaveUnit = "radian"
 	endif
-	Wave normal=$MakeUnique3Vector(normalW)		// make a new 3-vector, and optionally set it to preset[]
+	Duplicate/FREE normalW, normal				// make a new 3-vector, and optionally set it to preset[]
 	normalize(normal)
 
 	String noteStr = note(Rvol)
 	Variable x0,h0,f0, dXaxis, dHaxis, dFaxis
-	x0 = NumVarOrDefault(":X0",NumberByKey("X0",noteStr,"=")) //origin to work from (especially important for cylindrical coordinates)
+	x0 = NumVarOrDefault(":X0",NumberByKey("X0",noteStr,"="))//origin to work from (especially important for cylindrical coordinates)
 	h0 = NumVarOrDefault(":H0",NumberByKey("H0",noteStr,"="))
 	f0 = NumVarOrDefault(":F0",NumberByKey("F0",noteStr,"="))
 	dXaxis = NumVarOrDefault(":dXaxis",NumberByKey("dX",noteStr,"=")) // direction of the axis for cylindrical coordinates
 	dHaxis = NumVarOrDefault(":dHaxis",NumberByKey("dH",noteStr,"="))
 	dFaxis = NumVarOrDefault(":dFaxis",NumberByKey("dF",noteStr,"="))
-	Wave axis=$MakeUnique3Vector($"")				// axis of cylindrical coords, needed to calculate rotationAxis[]
-	axis = {dXaxis,dHaxis,dFaxis}						// axis is assumed to go through xhf0[]
+	Make/N=3/D/FREE axis={dXaxis,dHaxis,dFaxis}// axis of cylindrical coords, needed to calculate rotationAxis[]
 	normalize(axis)
 
-	Variable xlo,xhi, hlo,hhi, flo, fhi					// extent of box in x,h,f
+	Variable xlo,xhi, hlo,hhi, flo, fhi			// extent of box in x,h,f
 	xlo = NumberByKey("Xlo",noteStr,"=")
 	xhi = NumberByKey("Xhi",noteStr,"=")
 	hlo = NumberByKey("Hlo",noteStr,"=")
@@ -2581,31 +2585,40 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	//	call these directions sx and sy, along the x and y in the slice
 	//
 	// get the sx and sy axes, the 3vectors giving x, y directions for the slice, and the center of the slice
-	Wave xhf0=$MakeUnique3Vector($"")				// origin
-	Wave hat=$MakeUnique3Vector($"")				// approximate direction of x-axis
-	Wave sx=$MakeUnique3Vector($"")					// direction of x-axis in surface
-	Wave sy=$MakeUnique3Vector($"")					// direction of y-axis in surface
-	Wave center=$MakeUnique3Vector($"")			// center of the surface
-	Wave xhf=$MakeUnique3Vector($"")				// a point on surface in XHF space
-	Wave Rod=$MakeUnique3Vector($"")				// direction of Rodriques vector
-	Wave rvec=$MakeUnique3Vector($"")				// vector from xhf0[] to point on slice
-	Wave rhat=$MakeUnique3Vector($"")				// like xhf, but axial part removed
+	Make/N=3/D/FREE sx,sy								// direction of x-axis & y-axis in surface
+	Make/N=3/D/FREE center								// center of the surface
+	Make/N=3/D/FREE xhf									// a point on surface in XHF space
+	Make/N=3/D/FREE Rod									// direction of Rodriques vector
+	Make/N=3/D/FREE rvec								// vector from xhf0[] to point on slice, used to get cylindrical coord
+	Make/N=3/D/FREE rhat								// like xhf, but axial part removed
 
-	xhf0 =  {x0,h0,f0}
-	center =xhf0[p] + SliceValue*normal[p]// center[] = {X0,H0,F0} + SliceValue*normal[], center of slice
+	Make/N=3/D/FREE xhf0 = {x0,h0,f0}				// origin in volume (not necessarily origin for cylindrical coords)
+	center = xhf0[p] + SliceValue*normal[p]		// center[] = {X0,H0,F0} + SliceValue*normal[], center of slice
 	if (abs(normal[0])<=abs(normal[1]))
-		hat = {1,0,0}										// use xhat to define sx
+		Make/N=3/D/FREE hat={1,0,0}					// use xhat to define sx, approximate direction of x-axis
 	else	
-		hat = {0,1,0}										// use yhat to define sx
+		Make/N=3/D/FREE hat={0,1,0}					// use yhat to define sx, approximate direction of x-axis
 	endif
 	Variable dot
 	dot = MatrixDot(normal,hat)
-	sx = hat[p] - dot*normal[p]							// sx is unit vector perpendicular to normal, toward hat direction
+	sx = hat[p] - dot*normal[p]						// sx is unit vector perpendicular to normal, toward hat direction
 	normalize(sx)
 	Cross normal, hat
 	Wave W_Cross=W_Cross
 	sy = W_Cross
 	normalize(sy)
+
+	// special for cylindrical coordinates, get cylindrical center and axis
+	if (numtype(sum(xhf0)) || (x0==0 && h0==0 && f0==0))			// either invalid or all zero, look for cylinder definition
+		Wave cylOrigin = str2vec(StrVarOrDefault("root:Packages:micro:Cylinder:center",""))
+		if (numpnts(cylOrigin)!=3)
+			Duplicate/FREE xhf0, cylOrigin
+		endif
+		Wave cylAxis = str2vec(StrVarOrDefault("root:Packages:micro:Cylinder:axis",""))
+		if (numpnts(cylAxis)!=3)
+			Duplicate/FREE axis, cylAxis
+		endif
+	endif
 
 	// next what is the range of the plane, what are its starting and stopping values along sx and sy
 	Variable sxlo, sxhi, sylo, syhi,snlo,snhi				// range of plane, used to set the scaling, use cube corners as limits (snlo,snhi refers to distance along normal)
@@ -2616,11 +2629,11 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	nsx = ceil((sxhi-sxlo)/resolution)+1				// number of points in sliceWave
 	nsy = ceil((syhi-sylo)/resolution)+1
 	if (ItemsInList(GetRTStackInfo(0))<2)
-		printf "¥SlicePlaneIn3d(resolution=%g, surfNorm={%.3g, %.3g, %.3g}, SliceValue=%g, rotationAxis='%s',epsilonIsZero=%d)\r",resolution,normalW[0],normalW[1],normalW[2],SliceValue,rotation,epsilonIsZero
+		printf "¥SlicePlaneIn3d(resolution=%g, surfNorm=%s, SliceValue=%g, rotationAxis='%s',epsilonIsZero=%d)\r",resolution,vec2str(normalW,places=3),SliceValue,rotation,epsilonIsZero
 		printf " the rotation axis = (%g, %g, %g)\r",rotationAxis[0],rotationAxis[1],rotationAxis[2]
 		printf "the range of slice is:     sx = [%g, %g] (%d pts),  sy=[%g, %g] (%d pts),  along normal = [%.4g, %.4g]\r",sxlo,sxhi,nsx,sylo,syhi,nsy,snlo,snhi
-		printf "normal={%.3g, %.3g, %.3g},     sx={%.3g, %.3g, %.3g},     sy={%.3g, %.3g, %.3g}\r",normal[0],normal[1],normal[2],sx[0],sx[1],sx[2],sy[0],sy[1],sy[2]
-		printf "xhf0={%.3g, %.3g, %.3g},     axis={%.3g, %.3g, %.3g}\r",xhf0[0],xhf0[1],xhf0[2],axis[0],axis[1],axis[2]
+		printf "normal=%s,     sx=%s,     sy=%s\r",vec2str(normal,places=3),vec2str(sx,places=3),vec2str(sy,places=3)
+		printf "xhf0=%s,     axis=%s\r",vec2str(xhf0,places=3),vec2str(axis,places=3)
 	endif
 	noteStr = ReplaceNumberByKey("nlo",noteStr,snlo,"=")
 	noteStr = ReplaceNumberByKey("nhi",noteStr,snhi,"=")
@@ -2676,33 +2689,33 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 
 			sliceWaveIntens[i][j] = peakIntensity
 			sliceOrientsD[i][j][] = Rod[r]
-			if (aRotation)												// looking for an angle, not a dislocation denstity tensor component
+			if (aRotation)													// looking for an angle, not a dislocation denstity tensor component
 				// compute the angle for this point and save it in sliceWave[i][j]
-				angle = 2*atan(normalize(Rod))					// Rodriques angle (radian), Rod is now normalized
-				if (calcAxis)											// need to recalculate rotationAxis[] each time
-					rvec = xhf - xhf0									// rvec is now direction of point relative to the origin of cylinder
-					dot = MatrixDot(axis,rvec)
-					rhat = rvec - dot*axis							// put rhat in the plane where z along axis is 0, only r & phi
+				angle = 2*atan(normalize(Rod))						// Rodriques angle (radian), Rod is now normalized
+				if (calcAxis)												// need to recalculate rotationAxis[] each time
+					rvec = xhf - cylOrigin								// rvec is now direction of point relative to the origin of cylinder
+					dot = MatrixDot(cylAxis,rvec)
+					rhat = rvec - dot*cylAxis							// put rhat in the plane where z along cylAxis is 0, only r & phi
 					normalize(rhat)
-					if (stringmatch(rotation,"R_Cyl"))				// rotation around axis sticking out radially from axis, r^ direction
+					if (stringmatch(rotation,"R_Cyl"))				// rotation around cylAxis sticking out radially from cylAxis, r^ direction
 						rotationAxis = rhat
-					elseif (stringmatch(rotation,"Phi_Cyl"))		// rotation around axis in phi^ direction, probably the biggest for an indent
-						Cross axis, rhat								// rotationAxis = axis x rHat - phi^
+					elseif (stringmatch(rotation,"Phi_Cyl"))	// rotation around cylAxis in phi^ direction, probably the biggest for an indent
+						Cross cylAxis, rhat								// rotationAxis = cylAxis x rHat - phi^
 						rotationAxis = W_Cross
-					elseif (stringmatch(rotation,"Axis_Cyl"))		// rotation around axis of cylinder, circulating direction
-						rotationAxis = axis
+					elseif (stringmatch(rotation,"Axis_Cyl"))	// rotation around cylAxis of cylinder, circulating direction
+						rotationAxis = cylAxis
 					else
 						Abort "SlicePlaneIn3d(), invalid rotation"	// should not be possible to reach this line
 					endif
 				endif
 
 				if (i==floor(nsx/2) && j==floor(nsy/2) && ItemsInList(GetRTStackInfo(0))<2)
-					printf "at center of sliceWave[%d][%d],      angle=%.3g¡   Rod={%.3g, %.3g, %.3g},      XHF={%.3g, %.3g, %.3g}",i,j,angle*180/PI,Rod[0],Rod[1],Rod[2],xhf[0],xhf[1],xhf[2]
+					printf "at center of sliceWave[%d][%d],      angle=%.3g¡   Rod=%s,      XHF=%s",i,j,angle*180/PI,vec2str(Rod,places=3),vec2str(xhf,places=3)
 					if (WaveExists(rotationAxis))
-						printf ",      rotAxis={%.3g, %.3g, %.3g}",rotationAxis[0],rotationAxis[1],rotationAxis[2]
+						printf ",      rotAxis=%s",vec2str(rotationAxis,places=3)
 					endif
 					if (calcAxis)
-						printf ",      rvec={%.4g, %.4g, %.4g},       rhat={%.4g, %.4g, %.4g}",rvec[0],rvec[1],rvec[2],rhat[0],rhat[1],rhat[2]
+						printf ",      rvec=%s,       rhat=%s",vec2str(rvec,places=4),vec2str(rhat,places=4)
 					endif
 					print ""
 				endif
@@ -2710,7 +2723,7 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 				dot = stringmatch(rotation,"Total") ? 1 : MatrixDot(rotationAxis,Rod)
 				sliceWave[i][j] = angle * dot									// amount of rotation about rotationAxis[]
 
-			elseif (ddtensor)													// GND or alpha component, need a dislocation density tensor component, or GND
+			elseif (ddtensor)															// GND or alpha component, need a dislocation density tensor component, or GND
 				Wave kappa = curvatureTensorFromRods3d(xhf[0],xhf[1],xhf[2],R3dX,R3dH,R3dF)
 				if (epsilonIsZero)
 					Wave alpha = dislocationTensorFromRods3d(xhf[0],xhf[1],xhf[2],$"",$"",$"",$"",$"",$"",kappa)
@@ -2720,14 +2733,14 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 				GND = NumberByKey("GND", note(alpha),"=")
 				sliceWave[i][j] = (i0<0 || j0<0) ? GND : alpha[i0][j0]	// component of alpha(i0,j0) or GND
 
-			elseif (ctensor)													// kappa, a lattice curvature tensor component
+			elseif (ctensor)															// kappa, a lattice curvature tensor component
 				Wave kappa = curvatureTensorFromRods3d(xhf[0],xhf[1],xhf[2],R3dX,R3dH,R3dF) // this GND assumes no strain
 				GND = NumberByKey("GND", note(kappa),"=")
 				sliceWave[i][j] = (i0<0 || j0<0) ? GND : kappa[i0][j0]	// component of kappa(i0,j0) or GND (GND, without strain part)
 			elseif (strain)
 				sliceWave[i][j] = Interp3d(e3d, xhf[0],xhf[1],xhf[2])
 
-			elseif (grad)														// need a part of the gradient of the total rotation angle
+			elseif (grad)																// need a part of the gradient of the total rotation angle
 				// calculate the gradient of the total rotation angle at the point (xx,hh,ff) from the 3d-Rodriques vectors
 				magGrad = GradtRotationAnglesFromRods3d(xhf[0],xhf[1],xhf[2],R3dX,R3dH,R3dF,gradR)
 				sliceWave[i][j] = (i0<0) ? magGrad : gradR[i0]			// d|R| / dx,    or dy, or dz   or | gradient (R) |
@@ -2736,8 +2749,7 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	endfor
 	RodriquesToRGB(sliceOrientsD,"sliceOrients")
 	sliceWave2RGB(sliceWave,sliceWaveIntens)
-	KillWaves/Z sliceOrientsD
-	KillWaves/Z rotationAxis,axis,normal,Rod,xhf0,xhf,center,sx,sy,hat,rhat,rvec,W_Cross
+	KillWaves/Z sliceOrientsD, rotationAxis, W_Cross
 	return GetWavesDataFolder(sliceWave,2)
 End
 //
