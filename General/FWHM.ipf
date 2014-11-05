@@ -13,11 +13,11 @@ Menu "Analysis"
 	"-"
 	MenuItemIfWavesExists("Simple Peak Parameters of ...","*","DIMS:1,MINROWS:3"), FindSimplePeakParameters($"",$"")
 	MenuItemIfWavesExists("Peak Parameters [W_coef]","W_coef","DIMS:1,MINROWS:4"), FWHM_Coefs()
-	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
+	fwhm#MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
 End
 
 Menu "GraphMarquee"
-	MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
+	fwhm#MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
 End
 
 Menu "TracePopup"
@@ -29,7 +29,7 @@ End
 //  ======================================================================================  //
 //  ============================= Start of Fit a Peak Wave  ==============================  //
 
-Function/S MenuItemIfFitPeakOnGraph(item,classes,optionsStr)
+Static Function/S MenuItemIfFitPeakOnGraph(item,classes,optionsStr)
 	String item						// string that you want to appear in menu
 	String classes					// semi-colon separated list of wave classes, can use "*" in classes
 	String optionsStr				// options that are found in WaveList function optionsStr
