@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.07
+#pragma version = 2.09
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -722,11 +722,12 @@ ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip,[p1])
 
 	Variable lo=p0, hi=p1
 	OrderValues(lo,hi)	
-	if (!(i==limit(i,lo,hi)))			// check if i is a valid point in wave
+	i = limit(i,lo,hi)
+	if (numtype(i))						// check if i is a valid point in wave
 		point = NaN
-	elseif (i==p0 || wy[i]==level)	// no need to interpolate, this is the answer
+	elseif (i==p0 || i==p1 || wy[i]==level)	// no need to interpolate, this is the answer
 		point = i
-	else										// wy[i]<level, level<wy[i+1]
+	else										// interpolate:  wy[i]<level, level<wy[i+1]
 		i -= direction>0 ? 1 : 0
 		point = (level-wy[i])/(wy[i+1]-wy[i]) + i
 	endif
