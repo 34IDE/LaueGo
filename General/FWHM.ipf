@@ -581,15 +581,20 @@ Function FindSimplePeakParameters(yw,xw,[W_coef,useBkg,printIt])
 	return 0
 End
 //
-ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg)	// look at peak in yw vs xw, put results into W_coef
+ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg,[pLo,pHi])	// look at peak in yw vs xw, put results into W_coef
 	// calculate the peak stats for peak in yw, or yw vs xw, and returns result as FREEE wave
 	// Wc = {bkg, amplitude, x0, FWHM, net, COM}   Simple peak stats
 	Wave yw,xw
 	Variable useBkg											// if true, find a background, if false NO Background
+	Variable pLo,pHi											// optional range to check
 	useBkg = numtype(useBkg) ? 1 : !(!useBkg)		// generic default is to use the background
 	if (!WaveExists(yw))
 		return $""
 	endif
+	Variable N=DimSize(yw,0)
+	pLo = ParamIsDefault(pLo) || numtype(pLo) ? 0 : pLo
+	pHi = ParamIsDefault(pHi) || numtype(pHi) ? N-1 : pHi
+	OrderValues(pLo,pHi)
 
 	String xunits, yunits=WaveUnits(yw,-1)
 	if (WaveExists(xw))
@@ -599,11 +604,13 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg)	// look at peak 
 	endif
 
 	Variable level, pStart, p1,p2						// points values of the half widths
-	Variable dx=DimDelta(yw,0), xoff=DimOffset(yw,0), N=DimSize(yw,0)
+	Variable dx=DimDelta(yw,0), xoff=DimOffset(yw,0)
 	Variable bkg, amp, center, FWHM, net, COM		// peak parameters to find
-	COM = computeCOM(yw,xw)								// computes center of mass
-	bkg = useBkg ? ( yw[0] + yw[N-1] ) / 2 : 0
-	WaveStats/Q yw
+	COM = computeCOM(yw,xw,pLo=pLo,pHi=pHi)			// computes center of mass
+//	bkg = useBkg ? ( yw[0] + yw[N-1] ) / 2 : 0
+//	WaveStats/Q yw
+	bkg = useBkg ? ( yw[pLo] + yw[pHi] ) / 2 : 0
+	WaveStats/Q/R=[pLo,pHi] yw
 	level = ((V_max+V_min)/2)								// level of the half-width
 	Variable dip=abs(V_max-bkg) < abs(V_min-bkg)	//a negative peak, a dip
 	if (dip)														//a negative peak
@@ -613,19 +620,24 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg)	// look at peak 
 		amp = V_max-bkg
 		pStart = round((V_maxloc-xoff)/dx)				// pStart in points (highest point)
 	endif
-	p1 = FindLevelFromPoint(yw,level,pStart,-1,dip)	// find left side
-	p2 = FindLevelFromPoint(yw,level,pStart,1,dip)	// find right side
+
+	p1 = FindLevelFromPoint(yw,level,pStart,-1,dip,p1=pLo)	// find left side
+	p2 = FindLevelFromPoint(yw,level,pStart,1,dip,p1=pHi)	// find right side
+	OrderValues(p1,p2)
+	Variable xLo=pnt2xWyWx(yw,xw,p1), xHi=pnt2xWyWx(yw,xw,p2)		// convert from point to x
 
 	if (numtype(p1+p2))
 		return $""
 	elseif (WaveExists(xw))
 		FWHM = abs(xw[p2]-xw[p1])
 		center=(xw[p2]+xw[p1])/2
-		net = areaXY(xw,yw) - (xw[N-1]-xw[0])*bkg
+//		net = areaXY(xw,yw) - (xw[N-1]-xw[0])*bkg
+		net = areaXY(xw,yw,xLo,xHi) - (xw[pHi]-xw[pLo])*bkg
 	else
 		FWHM = abs((p2-p1)*dx)
 		center = dx*(p2+p1)/2 + xoff
-		net = area(yw) - bkg*(N-1)*dx
+//		net = area(yw) - bkg*(N-1)*dx
+		net = area(yw,xLo,xHi) - bkg*(pHi-pLo)*dx
 	endif
 
 	Make/N=6/D/FREE Wc={bkg, amp, center, FWHM, net, COM}
@@ -644,11 +656,16 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg)	// look at peak 
 	if (strlen(yunits))
 		wnote = ReplaceStringByKey("yunits",wnote,yunits,"=")
 	endif
+	if (pLo>0 || pHi<(N-1))
+		String str
+		sprintf str,"%g,%g",pLo,pHi
+		wnote = ReplaceStringByKey("pointRange",wnote,str,"=")
+	endif
 	Note/K Wc, wnote
 	return Wc
 End
 //
-ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip)
+ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip,[p1])
 	// returns point where wy[point] crosses level
 	// it searches for the crossing from p0 going in the indicated direction from p0
 	// if wy[p0] > level,  then it assumes a positive peak
@@ -660,11 +677,18 @@ ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip)
 	Variable direction	// (+ is >0), (- is <=0) direction
 	Variable dip			// true for a dip, a positive peak is false
 								// if numtype(dip) is true, then auto-detect dips
+	Variable p1				// end of range to search, use range [p0,p1]
 
 	if (!WaveExists(wy) || numtype(level+p0+direction) || p0<0)
 		return NaN
 	endif
-	Variable i,N=DimSize(wy,0), point=NaN
+
+	Variable N=DimSize(wy,0)
+	if (ParamIsDefault(p1))
+		p1 = direction > 0 ? N-1 : 0
+	endif
+
+	Variable i, point=NaN
 	p0 = round(p0)
 	if (N<p0)								// starting point out of range
 		return NaN
@@ -680,23 +704,25 @@ ThreadSafe Static Function FindLevelFromPoint(wy,level,p0,direction,dip)
 
 	if (dip)									// negative peak
 		if (direction>0)					// + direction
-			for (i=p0; i<N && wy[i]<level; i+=1)
+			for (i=p0; i<=p1 && wy[i]<level; i+=1)
 			endfor
 		else									// - direction
-			for (i=p0; i>=0 && wy[i]<level; i-=1)
+			for (i=p0; i>=p1 && wy[i]<level; i-=1)
 			endfor
 		endif
 	else										// positive peak
 		if (direction>0)					// + direction
-			for (i=p0; i<N && wy[i]>level; i+=1)
+			for (i=p0; i<=p1 && wy[i]>level; i+=1)
 			endfor
 		else									// - direction
-			for (i=p0; i>=0 && wy[i]>level; i-=1)
+			for (i=p0; i>=p1 && wy[i]>level; i-=1)
 			endfor
 		endif
 	endif
 
-	if (!(i==limit(i,0,N-1)))			// check if i is a valid point in wave
+	Variable lo=p0, hi=p1
+	OrderValues(lo,hi)	
+	if (!(i==limit(i,lo,hi)))			// check if i is a valid point in wave
 		point = NaN
 	elseif (i==p0 || wy[i]==level)	// no need to interpolate, this is the answer
 		point = i
@@ -985,7 +1011,7 @@ End
 //  ============================ Start of Utility Functions  =============================  //
 
 // These next two are generically useful when I don't know whether I am getting an x-wave
-Function x2pntWyWx(yw,xw,xval)		// convert from x to point
+ThreadSafe Function x2pntWyWx(yw,xw,xval)// convert from x to point
 	Wave yw,xw
 	Variable xval
 
@@ -1001,7 +1027,7 @@ Function x2pntWyWx(yw,xw,xval)		// convert from x to point
 	return pnt
 End
 //
-Function pnt2xWyWx(yw,xw,pnt)		// convert from point to x
+ThreadSafe Function pnt2xWyWx(yw,xw,pnt)// convert from point to x
 	Wave yw,xw
 	Variable pnt
 

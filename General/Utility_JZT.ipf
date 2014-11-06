@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.48
+#pragma version = 3.49
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2360,7 +2360,7 @@ End
 ThreadSafe Function GaussianFWHM(W_coef)			// FWHM of a Gaussian Peak
 	// y = K0+K1*exp(-((x-K2)/K3)^2)
 	Wave W_coef
-	if (WaveType(W_coef,1)==1)						// W_coef exists, and it is numeric
+	if (WaveType(W_coef,1)==1)							// W_coef exists, and it is numeric
 		return 2*W_coef[3]*sqrt(ln(2))
 	endif
 	return NaN
@@ -2370,35 +2370,35 @@ End
 ThreadSafe Function LorentzianFWHM(W_coef)			// FWHM of a Lorentzian Peak
 	// y = K0+K1/((x-K2)^2+K3)
 	Wave W_coef
-	if (WaveType(W_coef,1)==1)						// W_coef exists, and it is numeric
+	if (WaveType(W_coef,1)==1)							// W_coef exists, and it is numeric
 		return 2*sqrt(W_coef[3])
 	endif
 	return NaN
 End
 
 
-ThreadSafe Function LorentzianIntegral(W_coef)		// peak integral from a Lorentzian fit
+ThreadSafe Function LorentzianIntegral(W_coef)	// peak integral from a Lorentzian fit
 	// y = K0+K1/((x-K2)^2+K3)
 	Wave W_coef
-	if (WaveType(W_coef,1)==1)						// W_coef exists, and it is numeric
+	if (WaveType(W_coef,1)==1)							// W_coef exists, and it is numeric
 		return PI*W_coef[1]/sqrt(W_coef[3])
 	endif
 	return NaN
 End
 
-ThreadSafe Function GaussianIntegral(W_coef)			// peak integral from a Gaussian fit
+ThreadSafe Function GaussianIntegral(W_coef)		// peak integral from a Gaussian fit
 	// y = K0+K1*exp(-((x-K2)/K3)^2)
 	Wave W_coef
-	if (WaveType(W_coef,1)==1)						// W_coef exists, and it is numeric
+	if (WaveType(W_coef,1)==1)							// W_coef exists, and it is numeric
 		return W_coef[1] * abs(W_coef[3]) * sqrt(PI)
 	endif
 	return NaN
 End
 
-ThreadSafe Function Gaussian2DIntegral(W_coef)		// peak integral from a 2D-Gaussian fit
+ThreadSafe Function Gaussian2DIntegral(W_coef)	// peak integral from a 2D-Gaussian fit
 	// z = K0+K1*exp((-1/(2*(1-K6^2)))*(((x-K2)/K3)^2 + ((y-K4)/K5)^2 - (2*K6*(x-K2)*(y-K4)/(K3*K5))))
 	Wave W_coef
-	if (WaveType(W_coef,1)==1)						// W_coef exists, and it is numeric
+	if (WaveType(W_coef,1)==1)							// W_coef exists, and it is numeric
 		Variable K1=W_coef[1], K3=W_coef[3], K6=W_coef[6], K5=W_coef[5]
 		return 2*PI * K1 * abs(K3*K5) * sqrt(1-K6^2)
 	endif
@@ -2407,13 +2407,25 @@ End
 
 
 
-ThreadSafe Function computeCOM(ywave,xwave)		// computes center of mass,  xwave is optional (use $"" if no xwave)
+ThreadSafe Function computeCOM(ywave,xwave,[pLo,pHi])	// computes center of mass,  xwave is optional (use $"" if no xwave)
 	Wave ywave,xwave
+	Variable pLo,pHi										// optional range to check
 	Variable com=NaN
 	if (WaveType(ywave,1)!=1)							// ywave must exist, and must be numeric
 		return NaN
 	endif
+	Variable N=DimSize(ywave,0)
+	pLo = ParamIsDefault(pLo) || numtype(pLo) ? 0 : pLo
+	pHi = ParamIsDefault(pHi) || numtype(pHi) ? N-1 : pHi
+
 	MatrixOP/FREE yy = ReplaceNaNs(ywave,0)
+
+	if (pLo>0)
+		yy[0,pLo-1] = 0
+	endif
+	if (pHi < (N-1))
+		yy[pHi,N-1] = 0
+	endif
 	if (WaveExists(xwave))
 		yy = numtype(xwave) ? 0 : yy
 		MatrixOP/FREE comW = sum(ReplaceNaNs(yy*xwave,0)) / sum(yy))
@@ -2425,6 +2437,26 @@ ThreadSafe Function computeCOM(ywave,xwave)		// computes center of mass,  xwave 
 		com = sum(yy)/syy
 	endif
 	return com
+End
+
+
+
+Function/S FitErrorString(FitError,FitQuitReason)
+	Variable FitError,FitQuitReason			// values of V_FitError  &  V_FitQuitReason
+
+	if (FitError==0 && FitQuitReason)
+		return ""
+	endif
+
+	String out=""
+	out += SelectString(FitError & 1,"","Unspecified Fit Error; ")
+	out += SelectString(FitError & 2,"","Singular matrix; ")
+	out += SelectString(FitError & 4,"","Out of memory; ")
+	out += SelectString(FitError & 8,"","Function returned NaN or INF; ")
+	out += SelectString(FitError & 16,"","Fit function requested stop; ")
+	out += SelectString(FitError & 32,"","Reentrant curve fitting; ")
+	out += StringFromList(FitQuitReason,"","the iteration limit was reached;the user stopped the fit;the limit of passes without decreasing chi-square was reached;")
+	return out
 End
 
 
