@@ -2444,7 +2444,7 @@ End
 Function/S FitErrorString(FitError,FitQuitReason)
 	Variable FitError,FitQuitReason			// values of V_FitError  &  V_FitQuitReason
 
-	if (FitError==0 && FitQuitReason)
+	if (FitError==0 && FitQuitReason==0)
 		return ""
 	endif
 
