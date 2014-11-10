@@ -4273,7 +4273,7 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyz)
 		Abort"Unable to get symmetry operations in positionsOfOneAtomType()"
 	endif
 
-	Variable xmin=0.05/(xtal.a), ymin=0.05/(xtal.b), zmin=0.05/(xtal.c)	// fractional values that give 0.05 Angstrom = 5 pm
+	Variable xmin=0.1/(xtal.a), ymin=0.1/(xtal.b), zmin=0.1/(xtal.c)	// fractional values that gives 10pm = 0.1Å
 	Make/N=(3,3)/D/FREE mat
 	Make/N=3/D/FREE bv, in={xx,yy,zz}
 	Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
