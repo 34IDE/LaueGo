@@ -100,6 +100,8 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 // with version 4.26, added bond info to the AtomView menu
 // with version 4.27, when writing files, use "\n" instead of "\r" for line termination. 
 //		also changed crystalStructure2xml() and convertOneXTL2XML() to take a new line argument.
+// with version 4.28, in positionsOfOneAtomType() duplicate atoms are now within 5pm (in x,y,&z) not just 1e-3
+//		also positionsOfOneAtomType() uses free waves rather than real temp waves
 
 // Rhombohedral Transformation:
 //
@@ -4236,7 +4238,7 @@ Function reMakeAtomXYZs(xtal)
 		name="root:Packages:Lattices:atom"+num2istr(m)
 		Make/N=3/O/D $name
 		Wave ww = $name
-		positionsOfOneAtomType(xtal.SpaceGroup,xtal.atom[m].x,xtal.atom[m].y,xtal.atom[m].z,ww)
+		positionsOfOneAtomType(xtal,xtal.atom[m].x,xtal.atom[m].y,xtal.atom[m].z,ww)
 		wnote = ReplaceStringByKey("atomType",wnote,xtal.atom[m].name,"=")
 		wnote = ReplaceNumberByKey("Zatom",wnote,xtal.atom[m].Zatom,"=")
 		wnote = ReplaceNumberByKey("occupy",wnote,xtal.atom[m].occ,"=")
@@ -4258,36 +4260,36 @@ End
 //	printf "F(%d %d %d) = %g %s i%g,      |F| = %g\r",h,k,l,real(Fc),SelectString(imag(Fc)<0,"+","-"),abs(imag(Fc)),sqrt(magsqr(Fc))
 //End
 //
-Static Function positionsOfOneAtomType(SpaceGroup,xx,yy,zz,xyz)
-	Variable SpaceGroup	//Space Group number, from International Tables
+Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyz)
+	STRUCT crystalStructure &xtal	// provides SpaceGroup, a,b,c
 	Variable xx,yy,zz		// fractional coords of this kind of atom
 	Wave xyz					// list of all equiv posiitions for this atom in fractional coords
 
+	Variable SpaceGroup=xtal.SpaceGroup
 	SetSymOpsForSpaceGroup(SpaceGroup)			// ensure existance of symmetry op mats and vecs
 	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup))
 	Wave bvecs = $("root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SpaceGroup))
 	if (!WaveExists(mats) || !WaveExists(bvecs))
 		Abort"Unable to get symmetry operations in positionsOfOneAtomType()"
 	endif
-	Make/N=(3,3)/O/D matTemp_					// temp utiliity waves
-	Make/N=3/O/D vecTemp_, vecTempIn_
-	Wave mat=matTemp_, bv=vecTemp_, in=vecTempIn_
+
+	Variable xmin=0.05/(xtal.a), ymin=0.05/(xtal.b), zmin=0.05/(xtal.c)	// fractional values that give 0.05 Angstrom = 5 pm
+	Make/N=(3,3)/D/FREE mat
+	Make/N=3/D/FREE bv, in={xx,yy,zz}
 	Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
 	Redimension/N=(Neq,3) xyz
-	in = {xx,yy,zz}
 	xyz = NaN
 	Variable dup, i,N
 	// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
 	for (m=0,N=0;m<Neq;m+=1)
 		mat = mats[m][p][q]
 		bv = bvecs[m][p]
-		MatrixOp/O rrTemp_ = mat x in + bv
-		Wave rr = rrTemp_
+		MatrixOp/FREE rr = mat x in + bv
 		rr += abs(floor(rr))						// translate back in to unit cell, so value in [0,1)
 		rr = mod(rr,1)
 		for (i=0,dup=0;i<N;i+=1)					// reject duplicates positions
-			if (abs(xyz[i][0]-rr[0])+abs(xyz[i][1]-rr[1])+abs(xyz[i][2]-rr[2])<1e-3)
-				dup = 1
+			dup = abs(xyz[i][0]-rr[0])<xmin && abs(xyz[i][1]-rr[1])<ymin && abs(xyz[i][2]-rr[2])<zmin	// a duplicate if x,y,z too close
+			if (dup)
 				break
 			endif
 		endfor
@@ -4301,14 +4303,13 @@ Static Function positionsOfOneAtomType(SpaceGroup,xx,yy,zz,xyz)
 
 	Wave Unconventional=root:Packages:Lattices:Unconventional
 	if (WaveExists(Unconventional))					// Unconventional exists, transform all the fractional coords
-		Wave vec = vecTemp_
+		Make/N=3/D/FREE vec
 		for (i=0;i<N;i+=1)
 			vec = xyz[i][p]
 			MatrixOp/O vec = Unconventional x vec
 			xyz[i][] = vec[q]
 		endfor
 	endif
-	KillWaves/Z matTemp_, vecTemp_, vecTempIn_, rrTemp_
 	return N
 End
 
