@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.60		// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.61	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -7,6 +7,10 @@
 //#include "microGeometry", version>=2.51
 
 Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
+
+
+// NOTE, SlicePlaneIn3d() is the routine that calculates the values on the slice plane,  i.e. the wave "sliceWave"
+
 
 //
 //
@@ -268,8 +272,11 @@ Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
 // Oct 5, 2014,  version 2.51
 //	Added the squareUp=1 parameter to axisOfMatrix()
 //
-// Nov 4, 2014,  version 2.70
+// Nov 4, 2014,  version 2.60
 //	look in more places when finding the cylindrical coordinate axis & center
+//
+// Nov 11, 2014,  version 2.61
+//	changed SlicePlaneIn3d() so that the phiZ slice works with cylindrical too.
 
 // modified read3dRecipLatticesFile() to deal with multiple reference matricies
 // and added SetMatrixFromString() to help with this task.
@@ -2593,6 +2600,22 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	Make/N=3/D/FREE rhat								// like xhf, but axial part removed
 
 	Make/N=3/D/FREE xhf0 = {x0,h0,f0}				// origin in volume (not necessarily origin for cylindrical coords)
+
+	// special for cylindrical coordinates, get cylindrical center and axis
+	if (numtype(sum(xhf0)) || (x0==0 && h0==0 && f0==0))	// either invalid or all zero, look for cylinder definition
+		Wave cylOrigin = str2vec(StrVarOrDefault("root:Packages:micro:Cylinder:center",""))
+		if (numpnts(cylOrigin)!=3)
+			Duplicate/FREE xhf0, cylOrigin			// failed, just use usual value
+		endif
+		Wave cylAxis = str2vec(StrVarOrDefault("root:Packages:micro:Cylinder:axis",""))
+		if (numpnts(cylAxis)!=3)
+			Duplicate/FREE axis, cylAxis				// failed, just use usual value
+		endif
+	endif
+
+	if (StringMatch(SliceNormal,"phiZ"))			// need to use cylindrical 
+		xhf0 = cylOrigin									// for cylindrical, move origin to cylinder axis
+	endif
 	center = xhf0[p] + SliceValue*normal[p]		// center[] = {X0,H0,F0} + SliceValue*normal[], center of slice
 	if (abs(normal[0])<=abs(normal[1]))
 		Make/N=3/D/FREE hat={1,0,0}					// use xhat to define sx, approximate direction of x-axis
@@ -2608,25 +2631,14 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	sy = W_Cross
 	normalize(sy)
 
-	// special for cylindrical coordinates, get cylindrical center and axis
-	if (numtype(sum(xhf0)) || (x0==0 && h0==0 && f0==0))			// either invalid or all zero, look for cylinder definition
-		Wave cylOrigin = str2vec(StrVarOrDefault("root:Packages:micro:Cylinder:center",""))
-		if (numpnts(cylOrigin)!=3)
-			Duplicate/FREE xhf0, cylOrigin
-		endif
-		Wave cylAxis = str2vec(StrVarOrDefault("root:Packages:micro:Cylinder:axis",""))
-		if (numpnts(cylAxis)!=3)
-			Duplicate/FREE axis, cylAxis
-		endif
-	endif
-
 	// next what is the range of the plane, what are its starting and stopping values along sx and sy
-	Variable sxlo, sxhi, sylo, syhi,snlo,snhi				// range of plane, used to set the scaling, use cube corners as limits (snlo,snhi refers to distance along normal)
+	Variable sxlo, sxhi, sylo, syhi,snlo,snhi	// range of plane, used to set the scaling, use cube corners as limits (snlo,snhi refers to distance along normal)
 	Variable nsx,nsy										// sliceWave[nsx][nsy]
 	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,sx,xhf0,sxlo,sxhi)		// determine max range along sx[] (relative to xhf0[])
 	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,sy,xhf0,sylo,syhi)		// determine max range along sx[] (relative to xhf0[])
-	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,normal,xhf0,snlo,snhi)// determine max range along normal[] (relative to xhf0[])
-	nsx = ceil((sxhi-sxlo)/resolution)+1				// number of points in sliceWave
+	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,normal,xhf0,snlo,snhi)	// determine max range along normal[] (relative to xhf0[])
+	snlo = StringMatch(SliceNormal,"phiZ") ? 0 : snlo					// radius must be >= 0	
+	nsx = ceil((sxhi-sxlo)/resolution)+1			// number of points in sliceWave
 	nsy = ceil((syhi-sylo)/resolution)+1
 	if (ItemsInList(GetRTStackInfo(0))<2)
 		printf "¥SlicePlaneIn3d(resolution=%g, surfNorm=%s, SliceValue=%g, rotationAxis='%s',epsilonIsZero=%d)\r",resolution,vec2str(normalW,places=3),SliceValue,rotation,epsilonIsZero

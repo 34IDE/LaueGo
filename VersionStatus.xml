@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, November 06, 2014" time="11:31:51 AM CST" isoTime="2014-11-06T11:31:51"></written>
+	<written date="Tuesday, November 11, 2014" time="02:54:36 PM CST" isoTime="2014-11-11T14:54:36"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -93,11 +93,11 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">microN/microDiffractionMedia/Picture7.png</file>
 	<file version="2" time="2014-10-16T14:43:37" md5="100f025b2f8a3833f7435e9922e5ab84" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
 	<file version="nan" time="2014-03-24T09:32:37" md5="2f5374536541de1708896e1bff29ca5e" ext=".xml">materials/Co.xml</file>
-	<file version="2.6" time="2014-11-05T15:03:15" md5="7fc38118446392c1ed99dfcff8c56d39" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
+	<file version="2.61" time="2014-11-11T12:41:53" md5="64eb8f761bc579fb6d47ad22a800abb9" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
-	<file version="4.28" time="2014-10-02T09:55:06" md5="aa20ac689f8957ee90c7143ef8353875" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.28" time="2014-11-10T13:05:44" md5="cf7991817c0e6df60018df80f9802308" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
