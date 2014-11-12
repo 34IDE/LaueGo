@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.61	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.62	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -2115,7 +2115,7 @@ Function SurfacePlotStyle(gName)
 	TextBox/W=$gName/C/N=titleText/A=LT/B=1/F=0 str
 	orientsText = "Orientation\r"+fldr
 	if (stringmatch(SliceNormal,"phiZ"))
-		sprintf str "Surface normal toward phi=%g",phi
+		sprintf str "Surface normal toward phi=%g¡",phi
 	else
 		sprintf str "Surface normal toward %s",SliceNormal
 	endif
@@ -2637,7 +2637,7 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,sx,xhf0,sxlo,sxhi)		// determine max range along sx[] (relative to xhf0[])
 	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,sy,xhf0,sylo,syhi)		// determine max range along sx[] (relative to xhf0[])
 	FindRangeForBox(xlo,xhi,hlo,hhi,flo,fhi,normal,xhf0,snlo,snhi)	// determine max range along normal[] (relative to xhf0[])
-	snlo = StringMatch(SliceNormal,"phiZ") ? 0 : snlo					// radius must be >= 0	
+//	snlo = StringMatch(SliceNormal,"phiZ") ? 0 : snlo					// radius must be >= 0	
 	nsx = ceil((sxhi-sxlo)/resolution)+1			// number of points in sliceWave
 	nsy = ceil((syhi-sylo)/resolution)+1
 	if (ItemsInList(GetRTStackInfo(0))<2)
