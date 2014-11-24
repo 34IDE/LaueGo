@@ -1365,9 +1365,9 @@ Static Function InitGizmoUtilityGeneral()
 		Execute/Q/Z "GizmoMenu AppendItem={JZTr2,\"Gizmo H-F plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}\"}"	// H-F
 		Execute/Q/Z "GizmoMenu AppendItem={JZTr3,\"Gizmo Beamline\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={-0.270598,0.653282,-0.270598,0.653281}\"}"	// ModifyGizmo euler={0,-90,45}
 	else
-		Execute/Q/Z "GizmoMenu AppendItem={JZTr0,\"Gizmo X-Y plane [along beam]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.0,0.0,0.0,1.0}\"}"
-		Execute/Q/Z "GizmoMenu AppendItem={JZTr1,\"Gizmo Y-Z plane [side view]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}\"}"
-		Execute/Q/Z "GizmoMenu AppendItem={JZTr2,\"Gizmo X-Z plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707107,0.0,0.0,0.707107}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr0,\"Gizmo X-Y plane [along beam, Z-axis]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.0,0.0,0.0,1.0}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr1,\"Gizmo Y-Z plane [side view, X-axis]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}\"}"
+		Execute/Q/Z "GizmoMenu AppendItem={JZTr2,\"Gizmo X-Z plane [-Y axis]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707107,0.0,0.0,0.707107}\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTr3,\"Gizmo X-Z plane [top view]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={-0.707107,0.0,0.0,0.707107}\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTr4,\"Gizmo 111 vertical [0-11 to right]\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.060003,-0.540625,-0.455768,0.704556}\"}"
 		//	ModifyGizmo euler = {45, acos(1/sqrt(3))*180/PI, 90}
