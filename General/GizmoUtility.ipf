@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.00
+#pragma version = 2.01
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -37,14 +37,21 @@ Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a 
 //	AddGizmoCornerCubesObject(), adds a scatter for corner cubes, returns name of scatter object (or existing scatter corner cubes object)
 //	getCornerCubeObjectNameOnGizmo(), returns name of corner cube object on the gizmo, returns "" if no corner cube displayed
 
-Function ActivateCornerCubeOnGizmo([GizmoName])			// Show corner cubes on Gizmo, returns true if error displaying corner cubes
+Function ActivateCornerCubeOnGizmo([GizmoName,forceCalc])			// Show corner cubes on Gizmo, returns true if error displaying corner cubes
 	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	Variable forceCalc		// force recalculation of corners
 	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
 
 	String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// if "", then add the corner cubes
-	if (strlen(objectName)==0)
-		Wave wCorners = FindMakeCubeCornerWaves(GizmoName=GizmoName)
+	if (strlen(objectName)<1)
+		Wave wCorners = FindMakeCubeCornerWaves(GizmoName=GizmoName, forceCalc=forceCalc)
 		objectName = AddGizmoCornerCubesObject(wCorners,GizmoName=GizmoName)
+
+	elseif (forceCalc)		// get name of corners wave and recalculate cube corners
+		Wave wCorners = GizmoObjectWave(objectName,"Scatter")
+		Wave ww = $(StringByKey("sourceWavePath",note(wCorners),"=")+StringByKey("sourceWave",note(wCorners),"="))
+		Wave wCorners = MakeGizmocubeCorners(ww)
 	endif
 	if (strlen(objectName)<1)
 		return 1
@@ -73,9 +80,11 @@ Function DeActivateCornerCubeOnGizmo([GizmoName])			// returns true if the gizmo
 End
 
 
-Static Function/WAVE FindMakeCubeCornerWaves([GizmoName])		// finds (or makes) the corner cube wave for a gizmo
+Static Function/WAVE FindMakeCubeCornerWaves([GizmoName,forceCalc])		// finds (or makes) the corner cube wave for a gizmo
 	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	Variable forceCalc		// force recalculation of corners
 	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
 
 	String cornerList=WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
 	String gizmoScatterList=GizmoListScatterWaves(gizmo=GizmoName)
@@ -90,7 +99,7 @@ Static Function/WAVE FindMakeCubeCornerWaves([GizmoName])		// finds (or makes) t
 		str = StringFromList(0,str,"=")
 		Wave ww=$str
 		if (WaveExists(ww))
-			if (!WaveInClass(ww,"GizmoCorners"))		// make list of scatter waves that are NOT cube corners
+			if (!WaveInClass(ww,"GizmoCorners;gizmoScatterMarkerXYZ"))		// make list of scatter waves that are NOT cube corners
 				list3Dobjects += str + ";"
 			endif
 		endif
@@ -128,6 +137,10 @@ Static Function/WAVE FindMakeCubeCornerWaves([GizmoName])		// finds (or makes) t
 			endif
 			Wave scat = $str
 		endif
+		Wave corners = MakeGizmocubeCorners(scat)
+
+	elseif (forceCalc)
+		Wave scat = $(StringByKey("sourceWavePath",note(corners),"=")+StringByKey("sourceWave",note(corners),"="))
 		Wave corners = MakeGizmocubeCorners(scat)
 	endif
 
@@ -298,6 +311,7 @@ Function/WAVE MakeGizmocubeCorners(xyz)
 	corners[7][0] = Xhi;	corners[7][1] = Yhi; 	corners[7][2] = Zhi
 	String wnote="waveClass=GizmoCorners;"
 	wnote = ReplaceStringByKey("sourceWave",wnote,NameOfWave(xyz),"=")
+	wnote = ReplaceStringByKey("sourceWavePath",wnote,GetWavesDataFolder(xyz,1),"=")
 	Note/K corners, wnote
 	return corners
 End
@@ -1170,8 +1184,46 @@ Function/T GetGizmoBoxDisplayed(gizName)		// returns list with XYZ range of gizm
 	return out
 End
 
-//  ======================================================================================  //
+
+Function/WAVE GizmoObjectWave(objectName,objType,[gizmo])
+	// get the wave associated with objectName
+	String objectName					// name of object, e.g. "scatter0", "CubeCornersScatter", ...
+	String objType						// object type, "Scatter", "Surface", "voxelgram", ...
+	String gizmo						// optional name of gizmo
+	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
+	if (strlen(gizmo))
+		if (WinType(gizmo)!=13)
+			return $""
+		endif
+	endif
+
+	// get all ojects
+	Execute "GetGizmo"+SelectString(strlen(gizmo),"","/N="+gizmo)+" objectList"
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+
+	Wave ww = $""
+	Variable i,i0,i1,N=DimSize(TW_gizmoObjectList,0)
+	String list, name
+	for (i=0;i<N;i+=1)
+		list = TrimFrontBackWhiteSpace(TW_gizmoObjectList[i])
+		if (strsearch(list,"AppendToGizmo ",0)!=0)
+			continue
+		endif
+		list = ReplaceString("AppendToGizmo ",list,"")
+		list = TrimFrontBackWhiteSpace(list)
+		name = StringByKey("name",list,"=",",")
+		if (StringMatch(name,objectName))
+			name = TrimFrontBackWhiteSpace(StringByKey(objType,list,"=",","))
+			Wave ww = $StringByKey(objType,list,"=",",")
+			break
+		endif
+	endfor
+	KillWaves/Z TW_gizmoObjectList
+	return ww
+End
+
 //  ==================== End of Examining things Displayed in a Gizmo ====================  //
+//  ======================================================================================  //
 
 
 
@@ -1304,7 +1356,7 @@ End
 
 Static Function InitGizmoUtilityGeneral()
 	Execute/Q/Z "GizmoMenu AppendItem={JZT0,\"-\", \"\"}"
-	Execute/Q/Z "GizmoMenu AppendItem={JZT1,\"Put Cube Corners on Gizmo\", \"ActivateCornerCubeOnGizmo()\"}"
+	Execute/Q/Z "GizmoMenu AppendItem={JZT1,\"Put Cube Corners on Gizmo\", \"ActivateCornerCubeOnGizmo(forceCalc=1)\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZT2,\"De-Activate Cube Corners on Gizmo\", \"DeActivateCornerCubeOnGizmo()\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZT3,\"-\", \"\"}"
 	if (strlen(WinList("microGeometryN.ipf", ";","WIN:128")))
