@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.28
+#pragma version = 4.29
 #include "Utility_JZT" version>=3.39
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -4306,7 +4306,7 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyz)
 		Make/N=3/D/FREE vec
 		for (i=0;i<N;i+=1)
 			vec = xyz[i][p]
-			MatrixOp/O vec = Unconventional x vec
+			MatrixOp/O/FREE vec = Unconventional x vec
 			xyz[i][] = vec[q]
 		endfor
 	endif
