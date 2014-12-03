@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.58
+#pragma version = 4.59
 #include "LatticeSym", version>=4.13
 #include "microGeometryN", version>=1.62
 #include "Masking", version>1.01
@@ -5647,6 +5647,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		return ""
 	endif
 	String indexWaveList = WaveListClass("IndexedPeakList*","*","")
+	String hklElist=WaveListClass("measuredEnergy*","*","")
 	if (!WaveExists(FullPeakIndexed))
 		if (ItemsInList(indexWaveList)<1)
 			return ""
@@ -5654,9 +5655,8 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 			Wave FullPeakIndexed = $StringFromList(0,indexWaveList)
 		endif
 	endif
-	if (!WaveExists(FullPeakIndexed))
-		String peaksName, indexName="",indexName1="",indexName2=""
-		String hklEname="", hklElist=WaveListClass("measuredEnergy*","*","")
+	if (!WaveExists(FullPeakIndexed) || !WaveExists(hklEmeasured) && strlen(hklElist))
+		String peaksName, indexName="",indexName1="",indexName2="", hklEname=""
 		//coords += 1				// change from 0 based to 1 based
 		//Prompt coords,"strain coordinates",popup,"Crystal;Beam Line;XHF;Sample (outward normal)"
 		Prompt indexName,"index list",popup,indexWaveList
@@ -5701,10 +5701,13 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	deviatoric = !(!deviatoric)
 	Variable aFit,bFit,cFit,alphaFit,betFit,gamFit=NaN
 	sscanf constrain, "%1d%1d%1d%1d%1d%1d",aFit,bFit,cFit,alphaFit,betFit,gamFit
-	if (V_flag!=6 || !((aFit+bFit+cFit+alphaFit+betFit+gamFit)>0) || str2num(constrain[0,2])>=111)
+	if (V_flag!=6 || !((aFit+bFit+cFit+alphaFit+betFit+gamFit)>0))
 		aFit = NaN												// flags bad input
 	endif
-	if (!(pattern>=0) || numtype(aFit))						// need to ask user
+	if (deviatoric && str2num(constrain[0,2])>=111)
+		aFit = NaN												// when deviatoric, cannot fit all three lengths
+	endif
+	if (!(pattern>=0) || numtype(aFit))				// need to ask user
 		pattern = limit(pattern,0,Npatterns-1)
 		if (StartStrainPanel(pattern,Npatterns,aFit,bFit,cFit,alphaFit,betFit,gamFit,deviatoric=deviatoric)<0)
 			return ""
@@ -5723,7 +5726,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	indexWaves[0] = FullPeakIndexed
 	indexWaves[1] = FullPeakIndexed1
 	indexWaves[2] = FullPeakIndexed2
-	Make/N=3/FREE Ns=NaN, dNums=NaN
+	Make/N=(MAX_Ndetectors)/FREE Ns=NaN, dNums=NaN
 	Ns=DimSize(indexWaves[p],0)
 	Ns = numtype(Ns) ? 0 : Ns
 	Variable N = sum(Ns)										// total number of indexed peaks to use for fit
@@ -5843,7 +5846,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Make/N=3/D/FREE qhat,qcalc, qmeas, hkl
 	Variable i,j, m, dNum
 	Variable d, sine, keV, qLen
-	for (idetector=0,m=0; idetector<3; idetector+=1)
+	for (idetector=0,m=0; idetector<MAX_Ndetectors; idetector+=1)
 		dNum = dNums[idetector]
 		Wave FullPeakIndexed = indexWaves[idetector]
 		Wave Qs = Qwaves[idetector]
@@ -6010,48 +6013,46 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Make/N=3/FREE/D fithat
 	Variable startx,groupx, starty,groupy, detNum, keVmeasured
 	Variable/C pz
-	for (idetector=0;idetector<3;idetector+=1)
-		for (i=0;i<N;i+=1)
-			qcalc = PeaksForStrain[i][p+6]						// strained peak directions
-			qmeas = PeaksForStrain[i][p+3]					// measured peak directions
-			MatrixOP/FREE/O delta = sqrt(sumSqr(qcalc-qmeas))
-			PeaksForStrain[i][13] = delta[0]
-			sine = -qcalc[2]/norm(qcalc)						// sin(Bragg angle)
-			d = dSpacingFromLatticeConstants(PeaksForStrain[i][0],PeaksForStrain[i][1],PeaksForStrain[i][2],LC[0],LC[1],LC[2],LC[3],LC[4],LC[5])
-			keV = hc/(2*d*sine)
-			PeaksForStrain[i][10] = keV						// calculated energy of strained reflection (at strained position, not fitted position)
+	for (i=0;i<N;i+=1)											// for each peak on the detector
+		qcalc = PeaksForStrain[i][p+6]						// strained peak directions
+		qmeas = PeaksForStrain[i][p+3]						// measured peak directions
+		MatrixOP/FREE/O delta = sqrt(sumSqr(qcalc-qmeas))
+		PeaksForStrain[i][13] = delta[0]
+		sine = -qcalc[2]/norm(qcalc)							// sin(Bragg angle)
+		d = dSpacingFromLatticeConstants(PeaksForStrain[i][0],PeaksForStrain[i][1],PeaksForStrain[i][2],LC[0],LC[1],LC[2],LC[3],LC[4],LC[5])
+		keV = hc/(2*d*sine)
+		PeaksForStrain[i][10] = keV							// calculated energy of strained reflection (at strained position, not fitted position)
 
-			if (strsearch(measuredType,"keV",0,2)==0)		// get the measured energy to calculate dE
-				keVmeasured = PeaksForStrain[i][15]
-			elseif (strsearch(measuredType,"d",0,2)==0)
-				d = PeaksForStrain[i][15]						// d (nm)
-				keVmeasured = hc / (2*d*sine)					// lambda = 2 d sin(theta)
-			elseif (strsearch(measuredType,"Q",0,2)==0)
-				qLen = PeaksForStrain[i][15]					// Q (1/nm)
-				keVmeasured = qLen*hc/(4*PI*sine)			// Q = 4¹ sin(theta)/lambda
-			else
-				keVmeasured = NaN								// unknown measuredType
-			endif
+		if (strsearch(measuredType,"keV",0,2)==0)		// get the measured energy to calculate dE
+			keVmeasured = PeaksForStrain[i][15]
+		elseif (strsearch(measuredType,"d",0,2)==0)
+			d = PeaksForStrain[i][15]							// d (nm)
+			keVmeasured = hc / (2*d*sine)					// lambda = 2 d sin(theta)
+		elseif (strsearch(measuredType,"Q",0,2)==0)
+			qLen = PeaksForStrain[i][15]						// Q (1/nm)
+			keVmeasured = qLen*hc/(4*PI*sine)				// Q = 4¹ sin(theta)/lambda
+		else
+			keVmeasured = NaN										// unknown measuredType
+		endif
 
-			PeaksForStrain[i][16] = (keV-keVmeasured)*1000// energy error
-			detNum = PeaksForStrain[i][14]
-			pz = q2pixel(geo.d[detNum],qcalc)
-			idetector = BinarySearch(dNums,detNum)
-			Wave FullPeakIndexed = indexWaves[idetector]
-			if (!WaveExists(FullPeakIndexed))
-				continue
-			endif
-			startx = NumberByKey("startx",note(FullPeakIndexed),"=")
-			groupx = NumberByKey("groupx",note(FullPeakIndexed),"=")
-			starty = NumberByKey("starty",note(FullPeakIndexed),"=")
-			groupy = NumberByKey("groupy",note(FullPeakIndexed),"=")
+		PeaksForStrain[i][16] = (keV-keVmeasured)*1000// energy error
+		detNum = PeaksForStrain[i][14]
+		pz = q2pixel(geo.d[detNum],qcalc)
+		idetector = BinarySearch(dNums,detNum)
+		Wave FullPeakIndexed = indexWaves[idetector]
+		if (WaveExists(FullPeakIndexed))
+			wnote = note(FullPeakIndexed)
+			startx = NumberByKey("startx",wnote,"=")
+			groupx = NumberByKey("groupx",wnote,"=")
+			starty = NumberByKey("starty",wnote,"=")
+			groupy = NumberByKey("groupy",wnote,"=")
 			startx = numtype(startx) ? FIRST_PIXEL : startx
 			groupx = numtype(groupx) ? 1 : groupx
 			starty = numtype(starty) ? FIRST_PIXEL : starty
 			groupy = numtype(groupy) ? 1 : groupy
 			PeaksForStrain[i][11] = (real(pz)-(startx-FIRST_PIXEL)-(groupx-1)/2)/groupx	// change to binned pixels
 			PeaksForStrain[i][12] = (imag(pz)-(starty-FIRST_PIXEL)-(groupy-1)/2)/groupy	// pixels are still zero based
-		endfor
+		endif
 	endfor
 
 	Variable a=LC[0], b=LC[1], c=LC[2], alpha=LC[3], bet=LC[4], gam=LC[5]
