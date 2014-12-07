@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.05
+#pragma version = 2.06
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -1045,7 +1045,7 @@ End
 
 
 
-Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
+Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	Wave space3D
 	Wave Qc								// center of sub-volume to fit
 	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
@@ -1056,12 +1056,12 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	QzHW = ParamIsDefault(QzHW) ? NaN : QzHW
 	if (WaveExists(space3D))
 		if (WaveDims(space3D)!=3)
-			return 1						// quit if really bad input passed
+			return ""					// quit if really bad input passed
 		endif
 	endif
 	if (WaveExists(Qc))
 		if (numpnts(Qc)!=3)
-			return 1						// quit if really bad input passed
+			return ""					// quit if really bad input passed
 		endif
 	endif
 	String spaceList = WaveListClass("GizmoXYZ;Qspace3D*","*","DIMS:3")
@@ -1069,7 +1069,7 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		if (ItemsInList(spaceList)==1)		// only 1 choice, use it
 			Wave space3D = $StringFromList(0,spaceList)
 		elseif (ItemsInList(spaceList)<1)	// no acceptable choices, quit
-			return 1
+			return ""
 		endif
 	endif
 	String QcList=WaveList("*",";","DIMS:2,MAXROWS:1,MINROWS:1,MAXCOLS:3,MINCOLS:3" )+WaveList("*",";","DIMS:1,MAXROWS:3,MINROWS:3" )
@@ -1077,7 +1077,7 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		if (ItemsInList(QcList)==1)			// only 1 choice, use it
 			Wave Qc = $StringFromList(0,QcList)
 		elseif (ItemsInList(QcList)<1)		// no acceptable choices, quit
-			return 1
+			return ""
 		endif
 	endif
 	if (numpnts(Qc)==3 && WaveType(Qc,2)==2)	// a free wave was passed, deal with it
@@ -1096,7 +1096,7 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		Prompt QzHW,"Z-HW in Volume to Use (NaN defaults to X-HW)"
 		DoPrompt "Fit 3D Peak",spaceName,QcName,QxHW,QyHW,QzHW
 		if (V_flag)
-			return 1
+			return ""
 		endif
 		printf "FitPeakAt3Dmarker(%s, %s, %g",spaceName,QcName,QxHW
 		if (QyHW>0)
@@ -1114,14 +1114,14 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	QyHW = QyHW>0 ? QyHW : QxHW
 	QzHW = QzHW>0 ? QzHW : QxHW
 	if (!WaveExists(space3D) || !WaveExists(Qc) || !(QxHW>0) || !(QyHW>0) || !(QzHW>0))
-		return 1
+		return ""
 	endif
 
 	Make/N=3/D/FREE Qhw={QxHW,QyHW,QzHW}	// half widths dQz, dQy, dQz for the sub volume
 	if (!WaveExists(space3D) || !WaveExists(Qc))
-		return 1
+		return ""
 	elseif (numtype(sum(Qhw)+sum(Qc)))
-		return 1
+		return ""
 	endif
 
 	Make/N=3/D/FREE Qlo, Qhi, iLo,iHi,Np
@@ -1141,7 +1141,7 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		printWave(Np,Name="Np")
 	endif
 	if (WaveMin(Np)<=0)
-		return 1
+		return ""
 	endif
 	Make/N=(Np[0],Np[1],Np[2])/FREE/D sub3D
 	sub3D = space3D[iLo[0]+p][iLo[1]+q][iLo[2]+r]
@@ -1160,14 +1160,14 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		W_coef[0] = maxVal==0 ? 1 : maxVal
 	endif
 	FuncFitMD/Q GMarkers#Gaussian3DFitFunc, W_coef, sub3D
+	Wave W_sigma=W_sigma
+	Make/N=3/T/FREE units=WaveUnits(space3D,p)
 
 	if (printIt)
 		Make/N=3/D/FREE Qo=W_coef[2*p + 2]
-		Make/N=3/T/FREE units=WaveUnits(space3D,p)
 		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
 		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
 		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
-		Wave W_sigma=W_sigma, W_coef=W_coef
 		printf "Gaussian Fit has offset = %s,  amp = %s\r",ValErrStr(W_coef[0],W_sigma[0],sp=1),ValErrStr(W_coef[1],W_sigma[1],sp=1)
 		printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(Qo[0],W_sigma[2],sp=1),units[0],ValErrStr(W_coef[3],W_sigma[3],sp=1),units[0]
 		printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[1],ValErrStr(Qo[1],W_sigma[4],sp=1),units[1],ValErrStr(W_coef[5],W_sigma[5],sp=1),units[1]
@@ -1205,7 +1205,40 @@ Function FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 			printf "hkl Center = %s\r",vec2str(hkl)
 		endif
 	endif
-	return 0
+
+	String keyVals=""
+	keyVals = ReplaceNumberByKey("offset",keyVals,W_coef[0],"=")
+	keyVals = ReplaceNumberByKey("offsetErr",keyVals,W_sigma[0],"=")
+	keyVals = ReplaceNumberByKey("amp",keyVals,W_coef[1],"=")
+	keyVals = ReplaceNumberByKey("ampErr",keyVals,W_sigma[1],"=")
+	keyVals = ReplaceNumberByKey("Xc",keyVals,W_coef[2],"=")
+	keyVals = ReplaceNumberByKey("XcErr",keyVals,W_sigma[2],"=")
+	keyVals = ReplaceNumberByKey("Yc",keyVals,W_coef[4],"=")
+	keyVals = ReplaceNumberByKey("YcErr",keyVals,W_sigma[4],"=")
+	keyVals = ReplaceNumberByKey("Zc",keyVals,W_coef[6],"=")
+	keyVals = ReplaceNumberByKey("ZcErr",keyVals,W_sigma[6],"=")
+	keyVals = ReplaceNumberByKey("FWX",keyVals,W_coef[3],"=")
+	keyVals = ReplaceNumberByKey("FWXErr",keyVals,W_sigma[3],"=")
+	keyVals = ReplaceNumberByKey("FWY",keyVals,W_coef[5],"=")
+	keyVals = ReplaceNumberByKey("FWYErr",keyVals,W_sigma[5],"=")
+	keyVals = ReplaceNumberByKey("FWZ",keyVals,W_coef[7],"=")
+	keyVals = ReplaceNumberByKey("FWZErr",keyVals,W_sigma[7],"=")
+	keyVals = ReplaceNumberByKey("chisq",keyVals,V_chisq,"=")
+	if (strlen(units[0]))
+		keyVals = ReplaceStringByKey("Xunit",keyVals,units[0],"=")
+	endif
+	if (strlen(units[1]))
+		keyVals = ReplaceStringByKey("Yunit",keyVals,units[1],"=")
+	endif
+	if (strlen(units[2]))
+		keyVals = ReplaceStringByKey("Zunit",keyVals,units[2],"=")
+	endif
+
+	if (WaveExists(hkl))
+		keyVals = ReplaceStringByKey("hklCenter",keyVals,vec2str(hkl,sep=","),"=")
+		printf "hkl Center = %s\r",vec2str(hkl)
+	endif
+	return keyVals
 End
 //
 Static Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc

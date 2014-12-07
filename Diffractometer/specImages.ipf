@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.49
+#pragma version = 0.50
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -226,9 +226,9 @@ End
 //	Make/N=3/D/FREE q01 = q1-q0				// find dQ
 //	Variable dQ = norm(q01)/(N-1)
 //print "dQ start = ",dQ
-//	dQ = max(dQ,max(max(v.dx,v.dy),v.dz)/MAX_Q_SPACE_DIM)
+//	dQ = max(dQ,max(max(v.xW,v.yW),v.zW)/MAX_Q_SPACE_DIM)
 //print "dQ after = ",dQ
-//	Variable Nx=ceil(v.dx / dQ)+1, Ny=ceil(v.dy / dQ)+1, Nz=ceil(v.dz / dQ)+1
+//	Variable Nx=ceil(v.xW / dQ)+1, Ny=ceil(v.yW / dQ)+1, Nz=ceil(v.zW / dQ)+1
 //
 //	Variable Nqtot = Nx*Ny*Nz
 //	Make/N=(Nx,Ny,Nz)/D/O $QspaceName=0
@@ -588,9 +588,9 @@ Function/WAVE MakeQspaceVolumeSpec(scanRange,[mask,Nthreads,doConvex])
 	Make/N=3/D/FREE q01 = q1-q0				// find dQ
 	Variable dQ = norm(q01)/(N-1)
 print "dQ start = ",dQ
-	dQ = max(dQ,max(max(v.dx,v.dy),v.dz)/MAX_Q_SPACE_DIM)
+	dQ = max(dQ,max(max(v.xW,v.yW),v.zW)/MAX_Q_SPACE_DIM)
 print "dQ after = ",dQ
-	Variable Nx=ceil(v.dx / dQ)+1, Ny=ceil(v.dy / dQ)+1, Nz=ceil(v.dz / dQ)+1
+	Variable Nx=ceil(v.xW / dQ)+1, Ny=ceil(v.yW / dQ)+1, Nz=ceil(v.zW / dQ)+1
 	Variable Nqtot = Nx*Ny*Nz
 
 	Variable bad = 0								// check for reasonable sized histogram

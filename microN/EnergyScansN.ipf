@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.16
+#pragma version = 2.17
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -17,7 +17,7 @@
 #include "GizmoZoomTranslate", version>=2.00
 #include "GizmoClip", version>=2.0
 #include "GizmoMarkers", version>=2.05
-#include "QspaceVolumesView",  version>=1.11
+#include "QspaceVolumesView",  version>=1.12
 #include "microGeometryN", version>=1.71
 
 Static Constant hc = 1.239841857				// hc (keV-nm)
@@ -5853,18 +5853,20 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doConvex,printIt])	// does not assume depth in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox,doConvex,printIt])	// does not assume depth in image
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
 	String range				// range of file indicies to use
-	Variable depth
+	Variable depth				// in case image does not contain depth
 	Wave mask					// optional mask to limit the pixels that get processed (use pixel when mask true)
 	Wave dark					// an optional background wave
+	STRUCT boundingVolume &Qbox
 	Variable doConvex			// if True, make the convex hull
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
-	depth = numtype(depth) ? 0 : depth
+	depth = numtype(depth) ? NaN : depth
+	Variable Qask = ParamIsDefault(Qbox)		// if Qbox not passed, then ask
 	doConvex = ParamIsDefault(doConvex) ? 0 : doConvex
 	doConvex = numtype(doConvex) ? 0 : !(!doConvex)
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
@@ -5875,13 +5877,13 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		recipSource += 1
 		DoPrompt "Reciprocal Lattice",recipSource
 		if (V_flag)
-			return 1
+			return $""
 		endif
 		recipSource -= 1
 		printIt = 1
 	endif
 	if (!(recipSource==0 || recipSource==1))
-		return 1
+		return $""
 	endif
 	String recipLattice=""
 	if (recipSource==0)
@@ -5894,7 +5896,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 			Prompt indexName,"Source for reciprocal lattice",popup,indexList
 			DoPrompt "Reciprocal Lattice",indexName
 			if (V_flag)
-				return 1
+				return $""
 			endif
 			Wave FullPeakIndexed=$indexName
 		endif
@@ -5914,7 +5916,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 				Prompt item,"reciprocal lattice",popup,recipList
 				DoPrompt "Reciprocal Lattice",item
 				if (V_flag)
-					return 1
+					return $""
 				endif
 			else
 				item = ""
@@ -5925,10 +5927,10 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		endif
 	elseif (recipSource==1)
 		DoAlert 0,"Not yet implemented use of measured reciprocal lattice"
-		return 1
+		return $""
 	else
 		DoAlert 0,"recipSource must be only 0 or 1"
-		return 1
+		return $""
 	endif
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:micro
@@ -5943,7 +5945,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		pathPart = StringFromList(0,str)
 		nameFmt = StringFromList(1,str)
 		if (strlen(pathPart)<1 || strlen(nameFmt)<1)
-			return 1											// invalid inputs
+			return $""										// invalid inputs
 		endif
 		if (!stringmatch(pathPart,S_path))			// path was changed
 			if (stringmatch(pathName,"imagePath"))
@@ -5956,7 +5958,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	endif
 	PathInfo $pathName
 	if (strlen(S_path)<1 || strlen(nameFmt)<1)
-		return 1												// invalid inputs
+		return $""											// invalid inputs
 	endif
 	if (printIt)
 		printf "using data from files starting with '%s'\r",S_path+nameFmt
@@ -5966,12 +5968,12 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	String maskName = ""
 	if (WaveExists(mask))
 		maskName = GetWavesDataFolder(mask,2)
-	elseif (strlen(list))
+	elseif (strlen(list) && ParamIsDefault(mask))
 		maskName = ""
 		Prompt maskName, "mask to use with image",popup,"_none_;"+list
 		DoPrompt "mask wave",maskName
 		if (V_flag)
-			return 1
+			return $""
 		endif
 		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
 		Wave mask = $maskName							// do not check if wave exists, that a valid option
@@ -5979,12 +5981,12 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	endif
 	maskName = SelectString(WaveExists(mask),"$\"\"",maskName)
 	String darkList = WaveListClass("imageDark;rawImageDark","*","")
-	if (!WaveExists(dark) && ItemsInList(darkList)>0)
+	if (!WaveExists(dark) && ItemsInList(darkList)>0 && ParamIsDefault(dark))
 		String darkName
 		Prompt darkName,"Background Image",popup,"_none_;"+darkList
 		DoPrompt "Background",darkName
 		if (V_flag)
-			return 1
+			return $""
 		endif
 		if (cmpstr(darkName,"_none_"))
 			Wave dark = $darkName
@@ -5999,7 +6001,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		Prompt range,"range of image file numbers to use"
 		DoPrompt "range",range
 		if (V_flag)
-			return 1
+			return $""
 		endif
 		if (ItemsInRange(range)<1)
 			if (printIt)
@@ -6034,13 +6036,13 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		if (sum(mask)==0)
 			DoAlert 0, "You picked a mask that is all zero, stopping"
 			DoWindow/K $progressWin					// done with status window
-			return 1
+			return $""
 		endif
 	endif
 	if (ItemsInRange(range)<1) 						// if range is empty, get the full range from the directory
 		DoAlert 0, "range is empty"
 			DoWindow/K $progressWin					// done with status window
-		return 1
+		return $""
 	endif
 
 	Variable timer0 = stopMSTimer(-2)/1e6			// starting time, used to time prooess (sec)
@@ -6061,7 +6063,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		printf "could not load very first image named '%s'\r",name
 		DoAlert 0,"could not load very first image"
 		DoWindow/K $progressWin									// done with status window
-		return 1
+		return $""
 	endif
 	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
 	Ni = DimSize(image,0)
@@ -6080,11 +6082,11 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	if (numtype(startx+endx+starty+endy+groupx+groupy))
 		DoAlert 0,"could not get ROI from wave note of image '"+name+"'"
 		DoWindow/K $progressWin									// done with status window
-		return 1
+		return $""
 	elseif (numtype(keV))
 		DoAlert 0,"invalid keV in image '"+name+"'"
 		DoWindow/K $progressWin									// done with status window
-		return 1
+		return $""
 	endif
 
 	// read header from each of the images, and store it to figure out what was done.
@@ -6099,7 +6101,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 			if (ProgressPanelUpdate(progressWin,i/N*100))	// update progress bar
 				DoWindow/K $progressWin							// done with status window
 				print "User abort"
-				return 1
+				return $""
 			endif
 		endif
 		sprintf name, fileRootFmt, m
@@ -6117,25 +6119,31 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		m_Fill_QHistAt1Depth[i] = m								// file id number for each image
 	endfor
 	Variable seconds = stopMSTimer(-2)/1e6 - timer0
-	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
+	if (printIt && seconds>0.2)
 		printf "first pass to examine headers took %s\r",Secs2Time(seconds,5,3)
 	endif
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
+	if (ParamIsDefault(depth) || numtype(depth))
+		depth = NumberByKey("depth",wnote,"=")				// no depth given, try from file
+	endif
 
 	Variable dkeV,NkeV, off=0
 	FindScalingFromVec(keV_FillQvsPositions,2e-4,off,dkeV,NkeV)		// get step size and number of points for the energy scan
 
-	// correct the scan ranges as necessary
-	Prompt depth,"depth to use (µm)"
-	Prompt NkeV,"# of points (NOT intervals) in E "
-	Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
-	doConvex += 1
-	DoPrompt "scan sizes",NkeV,depth,doConvex
-	if (V_flag)
-		return 1
+	if (printIt || strlen(GetRTStackInfo(2))==0)			// if called from command line, always do this
+		// correct the scan ranges as necessary
+		Prompt depth,"depth to use (µm)"
+		Prompt NkeV,"# of points (NOT intervals) in E "
+		Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
+		doConvex += 1
+		DoPrompt "scan sizes",NkeV,depth,doConvex
+		if (V_flag)
+			DoWindow/K $progressWin								// done with status window
+			return $""
+		endif
+		doConvex -= 1
 	endif
-	doConvex -= 1
-	depth = numtype(depth) ? 0 : depth
+	depth = numtype(depth) ? 0 : depth							// 0 is better than NaN
 
 	WaveStats/M=1/Q keV_FillQvsPositions
 	Variable ikeVlo=V_minloc, ikeVhi=V_maxloc				// save location of min and max energies
@@ -6150,7 +6158,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		DoWindow/K $progressWin									// done with status window
-		return 1
+		return $""
 	endif
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
@@ -6167,7 +6175,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	endif
 
 	seconds = stopMSTimer(-2)/1e6 - timer0
-	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
+	if (printIt && seconds>0.2)
 		printf "setting up arrays took %s\r",Secs2Time(seconds,5,3)
 	endif
 	// done with the setup part, now actually compute something
@@ -6204,7 +6212,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 				endfor
 			endfor
 			Rename root:Packages:geometry:tempCachedDistortionMapTemp, tempCachedDistortionMap
-			if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
+			if (printIt && seconds>0.2)
 				printf "creating local copy of distortion map took %s\r",Secs2Time(seconds,5,3)
 			endif
 		endif
@@ -6219,45 +6227,70 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 		Wave i0 = image												// save for use as "previous" image in undulator scans
 	endif
 
+	// make 3D volume to hold  the 3D q-histogram
+
 	// find range of Qx,Qy,Qz
 	wnote = note(Qvecs1keV)
 	Variable QxLo = NumberByKey("QxLo",wnote,"="), QxHi = NumberByKey("QxHi",wnote,"=")
 	Variable QyLo = NumberByKey("QyLo",wnote,"="), QyHi = NumberByKey("QyHi",wnote,"=")
 	Variable QzLo = NumberByKey("QzLo",wnote,"="), QzHi = NumberByKey("QzHi",wnote,"=")
-	printf "Q range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
-
-	// make 3D volume to hold  the 3D q-histogram
 	Variable NQx, NQy, NQz
-	dQ *= 4
-	NQx = floor((QxHi-QxLo)/dQ)
-	NQy = floor((QyHi-QyLo)/dQ)
-	NQz = floor((QzHi-QzLo)/dQ)
-	Variable NQ = NQx*NQy*NQz
-	print "NQ = ",NQx, NQy, NQz,"   NQ's = ",NQ
-	Make/N=3/D/FREE Qc={(QxLo+QxHi)/2, (QyLo+QyHi)/2, (QzLo+QzHi)/2}
-	Variable Ntot=NQx*NQy*NQz
-	if (Ntot>1e7)														// Q volume has too many voxels, coarsen so only 1e7 voxels
-		Variable factor = 215/(Ntot^0.333333)					// 215 is about 3rd root of 1e7
-		NQx = round(factor*NQx)
-		NQy = round(factor*NQy)
-		NQz = round(factor*NQz)
-		Ntot = NQx*NQy*NQz
+	if (printIt)
+		printf "Q data range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
+	endif
+	if (Qask)															// Qbox NOT passed, ask for Q range
+		printIt = 1
+		dQ *= 4
+		NQx = floor((QxHi-QxLo)/dQ)
+		NQy = floor((QyHi-QyLo)/dQ)
+		NQz = floor((QzHi-QzLo)/dQ)
+		Variable NQ = NQx*NQy*NQz
+		printf "NQ = {%g, %g, %g},   (NQx*NQy*NQz) = %g\r",NQ, NQx,NQy,NQz
+		Variable Ntot=NQx*NQy*NQz
+		if (Ntot>1e7)													// Q volume has too many voxels, coarsen so only 1e7 voxels
+			Variable factor = 215/(Ntot^0.333333)				// 215 is about 3rd root of 1e7
+			NQx = round(factor*NQx)
+			NQy = round(factor*NQy)
+			NQz = round(factor*NQz)
+			Ntot = NQx*NQy*NQz
+		endif
+
+		Prompt NQx,"no. of Qx points in 3D Q histogram"
+		Prompt NQy,"no. of Qy points in 3D Q histogram"
+		Prompt NQz,"no. of Qz points in 3D Q histogram"
+		DoPrompt "3D Q histogram size",NQx, NQy, NQz
+		if (V_flag)
+			DoWindow/K $progressWin								// done with status window
+			return $""
+		endif
+		NQx = round(NQx)
+		NQy = round(NQy)
+		NQz = round(NQz)
+	else																	// Qbox was passed, use Qbox values
+		if (QxLo > Qbox.xhi || QxHi < Qbox.xlo || QyLo > Qbox.yhi || QyHi < Qbox.ylo || QzLo > Qbox.zhi || QzHi < Qbox.zlo)
+			print "Requested Q-volume does not contain any data"
+			printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
+			print "Requested Qbox = ",boundingVolumeStruct2str(Qbox)
+			DoWindow/K $progressWin								// done with status window
+			return $""
+		endif
+		QxLo = Qbox.xlo ;		QxHi = Qbox.xhi
+		QyLo = Qbox.ylo ;		QyHi = Qbox.yhi
+		QzLo = Qbox.zlo ;		QzHi = Qbox.zhi
+		NQx = Qbox.Nx
+		NQy = Qbox.Ny
+		NQz = Qbox.Nz
+	endif
+	if (!(NQx>0 && NQy>0 && NQz>0))
+		DoWindow/K $progressWin									// done with status window
+		return $""
+	endif
+	if (printIt)
+		printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
+		printf "Make array Qspace3D[%g][%g][%g] to hold Q-space\r",NQx,NQy,NQz
 	endif
 
-	Prompt NQx,"no. of Qx points in 3D Q histogram"
-	Prompt NQy,"no. of Qy points in 3D Q histogram"
-	Prompt NQz,"no. of Qz points in 3D Q histogram"
-	DoPrompt "3D Q histogram size",NQx, NQy, NQz
-	if (V_flag)
-		return 1
-	endif
-	NQx = round(NQx)
-	NQy = round(NQy)
-	NQz = round(NQz)
-	if (!(NQx>0 && NQy>0 && NQz>0))
-		return 1
-	endif
-	printf "Make array Qspace3D[%g][%g][%g] to hold Q-space\r",NQx,NQy,NQz
+	Make/N=3/D/FREE Qc={(QxLo+QxHi)/2, (QyLo+QyHi)/2, (QzLo+QzHi)/2}
 	Make/N=(NQx, NQy, NQz)/O Qspace3D=0						// array to hold Q-space histogram
 	Make/N=(NQx, NQy, NQz)/FREE/I/U Qspace3DNorm=0		// used for normalizing Qspace3D
 	String Qunits = SelectString(recipSource,"1/nm","rlu")
@@ -6305,7 +6338,9 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 	Variable Ntotal = sum(Qspace3DNorm)
 	WaveClear Qspace3DNorm
 	TrimZerosOff3D(Qspace3D)										// trim off zeros on outside
-	printf "Processed %d pixels\r",Ntotal
+	if (printIt)
+		printf "Processed %d pixels\r",Ntotal
+	endif
 
 	if (useDistortion)
 		Note/K DistortionMap, "use=0"
@@ -6320,7 +6355,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 
 	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D","=")
 	wnote = ReplaceNumberByKey("depth",wnote,depth,"=")
-	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1),"=")
+	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1,sep=","),"=")
 	if (WaveExists(mask))
 		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
 	endif
@@ -6333,7 +6368,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 
 	if (allZero)
 		printf "'%s' is ALL zeros, nothing to display\r",NameOfWave(Qspace3D)
-	else
+	elseif (printIt)
 		MakeGizmocubeCorners(Qspace3D)
 		if (doConvex)
 			QspaceVolumesView#MakeConvexHullFrom3D(Qspace3D)
@@ -6345,7 +6380,7 @@ Function Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,doCo
 			MakeGizmoQspace3d(Qspace3D)
 		endif
 	endif
-	return 0
+	return Qspace3d
 End
 //
 ////	Process many images all at one position, same depth and same x-y (actually X-H) positions.

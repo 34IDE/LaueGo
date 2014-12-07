@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.11
+#pragma version = 1.12
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -18,8 +18,8 @@ End
 // This routine is for PLOTTING 3D Q-space arrays.   (It is NOT for creating the 3D arrays from measurements !!)
 
 
-//  ============================================================================  //
-//  =============================== Start of Re-Scaling ===============================  //
+//  ======================================================================================  //
+//  ================================ Start of Re-Scaling =================================  //
 
 Function/WAVE RescaleQspace3DbyQn(Qspace3D,n)
 	// do a Q^n scaling on this wave.  The Q comes from the x-y scaling
@@ -166,7 +166,7 @@ Function combineQspaceVolumes(Qspace1,Qspace2)
 	wnote = ReplaceStringByKey("qpeak",wnote,str,"=")
 	Variable dx=max(dx1,dx2), dy=max(dy1,dy2), dz=max(dz1,dz2)
 	Variable dQV = dx*dy*dz
-	Variable Nx=ceil(v.dx / dx)+1, Ny=ceil(v.dy / dy)+1, Nz=ceil(v.dz / dz)+1
+	Variable Nx=ceil(v.xW / dx)+1, Ny=ceil(v.yW / dy)+1, Nz=ceil(v.zW / dz)+1
 	Make/N=(Nx,Ny,Nz)/D/O QspaceCombined=0
 	SetScale/P x v.xlo,dx,"nm\S-1\M", QspaceCombined
 	SetScale/P y v.ylo,dy,"nm\S-1\M", QspaceCombined
@@ -236,13 +236,13 @@ print " "
 End
 #endif
 
-//  =============================== End of Re-Scaling ================================  //
-//  ============================================================================  //
+//  ================================= End of Re-Scaling ==================================  //
+//  ======================================================================================  //
 
 
 
-//  ============================================================================  //
-//  ============================== Start of Make the Gizmo =============================  //
+//  ======================================================================================  //
+//  =============================== Start of Make the Gizmo ==============================  //
 
 Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,isoValues,isoColors,volumeScaling])
 	Wave Qspace3D
@@ -1060,7 +1060,7 @@ Static Function MakeTestQspaceVolume()				// Make a test volume
 	v.zlo = 140 ;		v.zhi = 180
 	updateBoundingVolumeStruct(v)
 	print "Measured Q-Volume is: ",boundingVolumeStruct2str(v)
-	Variable dQ = (v.dx)/(Nx-1)
+	Variable dQ = (v.xW)/(Nx-1)
 	printf "dQ = %g 1/nm,   N = [%g, %g, %g],   %g points\r",dQ,Nx,Ny,Nz,Nqtot
 
 	Make/N=(Nx,Ny,Nz)/D/O Qspace3D=0
@@ -1071,7 +1071,7 @@ Static Function MakeTestQspaceVolume()				// Make a test volume
 	Variable xc = (v.xlo + v.xhi)/2
 	Variable yc = (v.ylo + v.yhi)/2
 	Variable zc = (v.zlo + v.zhi)/2
-	Variable wid = min(min(v.dx,v.dy),v.dz)/2
+	Variable wid = min(min(v.xW,v.yW),v.zW)/2
 	Qspace3D = exp(-((x-xc)^2 + (y-yc)^2 + (z-zc)^2)/wid)
 
 	String wnote = ReplaceStringByKey("waveClass","","Qspace3D","=")
@@ -1140,14 +1140,14 @@ Static Function MakeTestQspaceVolume()				// Make a test volume
 	return 0
 End
 
-//  ============================== End of Make the Gizmo ==============================  //
-//  ============================================================================  //
+//  =============================== End of Make the Gizmo ================================  //
+//  ======================================================================================  //
 
 
 
 
-//  ============================================================================  //
-//  =========================== Start of Gizmo Enhancements ============================  //
+//  ======================================================================================  //
+//  ============================ Start of Gizmo Enhancements =============================  //
 
 Function/WAVE MakeRadialLine(corners,[point,printIt])
 	Wave corners							// corners of the volume, used to set ends of line
@@ -1266,63 +1266,110 @@ End
 //	gLinePath[1][]= fhi*qvec[q]
 //End
 
-//  ============================ End of QGizmo Enhancements ===========================  //
-//  ============================================================================  //
+//  ============================= End of QGizmo Enhancements =============================  //
+//  ======================================================================================  //
 
 
 
-//  ============================================================================  //
+//  ======================================================================================  //
 //  ========================= Start of Bounding Volume Structure =========================  //
 
-Structure boundingVolume				// a generic bounding volume, probably in k-space
-	Variable xlo,xhi, ylo,yhi,zlo,zhi		// corners of a box
-	Variable dx,dy,dz					// box size is dx x dy x dz
-	Variable vol
+Structure boundingVolume			// a generic bounding volume, probably in k-space
+	double	xlo, xhi					// range of x, these 6 form the corners of a box
+	double	ylo, yhi					// range of y
+	double	zlo, zhi					// range of z
+	double	xW, yW, zW				// box size is xW x yW x zW
+	int16		Nx, Ny, Nz				// dimensions of the array
+	double	dx, dy, dz				// step size along box
+	double	vol						// volume of box = xW*yW*zW
 EndStructure
+//Structure boundingVolume				// a generic bounding volume, probably in k-space
+//	Variable xlo,xhi, ylo,yhi,zlo,zhi		// corners of a box
+//	Variable dx,dy,dz					// box size is dx x dy x dz
+//	Variable vol
+//EndStructure
 //
 //ThreadSafe Function initBoundingVolumeStruct(v)
 Function initBoundingVolumeStruct(v)
 	STRUCT boundingVolume &v
-	v.xlo = Inf  ;	v.ylo = Inf ;		v.zlo = Inf
+	v.xlo = Inf  ;	v.ylo = Inf ;	v.zlo = Inf
 	v.xhi = -Inf ;	v.yhi = -Inf ;	v.zhi = -Inf
+	v.Nx = 0     ;	v.Ny = 0 ;		v.Nz = 0			// default dimension
 	updateBoundingVolumeStruct(v)
 End
 //
 //ThreadSafe Function updateBoundingVolumeStruct(v)
 Function updateBoundingVolumeStruct(v)
 	STRUCT boundingVolume &v
-	v.dx = abs(v.xhi - v.xlo)
-	v.dy = abs(v.yhi - v.ylo)
-	v.dz =abs( v.zhi - v.zlo)
-	v.vol = v.dx * v.dy * v.dz
+	v.xW = abs(v.xhi - v.xlo)
+	v.yW = abs(v.yhi - v.ylo)
+	v.zW = abs(v.zhi - v.zlo)
+	v.vol = v.xW * v.yW * v.zW
+
+	if (v.Nx > 1)					// prefer to use Nx
+		v.dx = v.xW / (v.Nx - 1)
+	elseif (v.dx > 0)				// N not good, try to use dx
+		v.Nx = ceil(v.xW / v.dx) + 1
+	endif
+
+	if (v.Ny > 1)					// prefer to use Ny
+		v.dy = v.yW / (v.Ny - 1)
+	elseif (v.dy > 0)				// N not good, try to use dy
+		v.Ny = ceil(v.yW / v.dy) + 1
+	endif
+
+	if (v.Nz > 1)					// prefer to use Nz
+		v.dz = v.zW / (v.Nz - 1)
+	elseif (v.dz > 0)				// N not good, try to use dz
+		v.Nz = ceil(v.zW / v.dz) + 1
+	endif
+
+	v.dx = v.Nx>1 ? v.xW / (v.Nx - 1) : 0		// re-update the dx
+	v.dy = v.Ny>1 ? v.yW / (v.Ny - 1) : 0
+	v.dz = v.Nz>1 ? v.zW / (v.Nz - 1) : 0
 End
 //
 //ThreadSafe Function/S boundingVolumeStruct2str(v)
 Function/S boundingVolumeStruct2str(v)
 	STRUCT boundingVolume &v
 	String str
-	sprintf str,"Vol = X=[%g, %g] ÆX=%g,  Y=[%g, %g] ÆY=%g,  Z=[%g, %g] ÆZ=%g,  Vol=%g\r",v.xlo,v.xhi,v.dx, v.ylo,v.yhi,v.dy, v.zlo,v.zhi,v.dz,v.vol
+//	sprintf str,"Vol = X=[%g, %g] ÆX=%g,  Y=[%g, %g] ÆY=%g,  Z=[%g, %g] ÆZ=%g,  Vol=%g\r",v.xlo,v.xhi,v.xW, v.ylo,v.yhi,v.yW, v.zlo,v.zhi,v.zW,v.vol
+	sprintf str,"Vol = X=[%g, %g] Nx=%g,  Y=[%g, %g] Ny=%g,  Z=[%g, %g] Nz=%g,  Vol=%g\r",v.xlo,v.xhi,v.Nx, v.ylo,v.yhi,v.Ny, v.zlo,v.zhi,v.Nz,v.vol
 	return str
 End
 //
 //ThreadSafe Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
 Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
 	STRUCT boundingVolume &vin, &vout
-	vout.xlo = vin.xlo  ;	vout.ylo = vin.ylo ;		vout.zlo = vin.zlo
-	vout.xhi = vin.xhi ;	vout.yhi = vin.yhi ;		vout.zhi = vin.zhi
-	vout.dx =  vin.dx
-	vout.dy =  vin.dy
-	vout.dz = vin.dz
+	vout.xlo = vin.xlo ;	vout.ylo = vin.ylo ;	vout.zlo = vin.zlo
+	vout.xhi = vin.xhi ;	vout.yhi = vin.yhi ;	vout.zhi = vin.zhi
+	vout.xW = vin.xW   ;	vout.yW = vin.yW   ;	vout.zW = vin.zW
+	vout.Nx = vin.Nx   ;	vout.Ny = vin.Ny   ;	vout.Nz = vin.Nz
+	vout.dx = vin.dx   ;	vout.dy = vin.dy   ;	vout.dz = vin.dz
 	vout.vol = vin.vol
 End
 //
 //ThreadSafe Function extendBoundingVolumeStruct(v,vec)
 Function extendBoundingVolumeStruct(v,vec)
+	// extend v to include the vector vec, maintain the dx,dy,dz when doing this
 	STRUCT boundingVolume &v
 	Wave vec
-	v.xlo = min(v.xlo,vec[0]) ;		v.xhi = max(v.xhi,vec[0])
-	v.ylo = min(v.ylo,vec[1]) ;		v.yhi = max(v.yhi,vec[1])
-	v.zlo = min(v.zlo,vec[2]) ;		v.zhi = max(v.zhi,vec[2])
+
+	updateBoundingVolumeStruct(v)									// ensure that dx,dy,dz are calculated
+	Variable xlo = min(xlo,vec[0]), xhi = max(xhi,vec[0])	// new ranges
+	Variable ylo = min(ylo,vec[1]), yhi = max(yhi,vec[1])
+	Variable zlo = min(zlo,vec[2]), zhi = max(zhi,vec[2])
+	Variable Nx,Ny,Nz
+	Nx = ceil(abs(xhi-xlo) / v.dx) + 1							// new Nx,Ny,Nz
+	Ny = ceil(abs(yhi-ylo) / v.dy) + 1
+	Nz = ceil(abs(zhi-zlo) / v.dz) + 1
+	v.Nx = Nx>0 && numtype(Nx)==0 ? Nx : 0
+	v.Ny = Ny>0 && numtype(Ny)==0 ? Ny : 0
+	v.Nz = Nz>0 && numtype(Nz)==0 ? Nz : 0
+
+	v.xlo = xlo ;		v.xhi = xhi
+	v.ylo = ylo ;		v.yhi = yhi
+	v.zlo = zlo ;		v.zhi = zhi
 	updateBoundingVolumeStruct(v)
 End
 //
@@ -1339,12 +1386,27 @@ End
 //ThreadSafe Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
 Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
 	STRUCT boundingVolume &v1, &v2, &vall
-	vall.xlo = min(v1.xlo, v2.xlo) ;		vall.xhi = max(v1.xhi, v2.xhi)
-	vall.ylo = min(v1.ylo, v2.ylo) ;		vall.yhi = max(v1.yhi, v2.yhi)
-	vall.zlo = min(v1.zlo, v2.zlo) ;		vall.zhi = max(v1.zhi, v2.zhi)
+
+	updateBoundingVolumeStruct(v1)
+	updateBoundingVolumeStruct(v2)
+
+	Variable xlo=min(v1.xlo, v2.xlo), xhi=max(v1.xhi, v2.xhi)
+	Variable ylo=min(v1.ylo, v2.ylo), yhi=max(v1.yhi, v2.yhi)
+	Variable zlo=min(v1.zlo, v2.zlo), zhi=max(v1.zhi, v2.zhi)
+	Variable dx=max(v1.dx, v2.dx), dy=max(v1.dy, v2.dy), dz=max(v1.dz, v2.dz)
+	Variable Nx,Ny,Nz
+	Nx = ceil(abs(xhi-xlo) / dx) + 1						// new Nx,Ny,Nz
+	Ny = ceil(abs(yhi-ylo) / dy) + 1
+	Nz = ceil(abs(zhi-zlo) / dz) + 1
+	vall.Nx = Nx>0 && numtype(Nx)==0 ? Nx : 0
+	vall.Ny = Ny>0 && numtype(Ny)==0 ? Ny : 0
+	vall.Nz = Nz>0 && numtype(Nz)==0 ? Nz : 0
+	vall.xlo = xlo ;		vall.xhi = xhi
+	vall.ylo = ylo ;		vall.yhi = yhi
+	vall.zlo = zlo ;		vall.zhi = zhi
 	updateBoundingVolumeStruct(vall)
 End
 
 //  ========================== End of Bounding Volume Structure ==========================  //
-//  ============================================================================  //
+//  ======================================================================================  //
 
