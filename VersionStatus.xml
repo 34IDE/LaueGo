@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, November 11, 2014" time="02:54:36 PM CST" isoTime="2014-11-11T14:54:36"></written>
+	<written date="Sunday, December 07, 2014" time="12:34:58 PM CST" isoTime="2014-12-07T12:34:58"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -55,7 +55,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.11" time="2014-04-30T10:34:47" md5="ac190b7444d9f6ce3425257b5bcfa831" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
-	<file version="4.58" time="2014-10-17T13:12:06" md5="418889c63b3c002758eb03c5766de098" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.59" time="2014-12-03T16:59:01" md5="704537487b2029233db062fc92b0d87f" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.79" time="2014-10-09T14:44:35" md5="9ae5d8b0451e82223e08da2b746e66b4" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
@@ -82,7 +82,7 @@
 	<file version="nan" time="2014-01-29T22:22:56" md5="ddff254f809ff378be8429c3045a10a4" ext=".xml">materials/Ga.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="575fcf1c9c54b3d893d37c904de6813d" ext=".xml">materials/Pu-delta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="358bf9627f9b0221dc1822f4a3356981" ext=".xml">materials/spec.xml</file>
-	<file version="2" time="2014-09-08T14:35:27" md5="9cb2ca53b5ac574d91c683efb2e68161" ext=".ipf">General/GizmoUtility.ipf</file>
+	<file version="2.01" time="2014-11-26T10:44:39" md5="4bbe8944f458710d95ea3de78d63d6e1" ext=".ipf">General/GizmoUtility.ipf</file>
 	<file version="nan" time="2014-01-29T23:40:31" md5="6224f2206d0a62055992cffb827cd502" ext=".xml">materials/Fe.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="41f22bdd051094e103403c08886fb3bf" ext=".xml">geometrys/geoN_2011-10-20_21-35-02.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e5699813fac29802ceecd9818ec0e998" ext=".xml">materials/UO2.xml</file>
@@ -93,11 +93,11 @@
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">microN/microDiffractionMedia/Picture7.png</file>
 	<file version="2" time="2014-10-16T14:43:37" md5="100f025b2f8a3833f7435e9922e5ab84" ext=".ipf">General/GizmoZoomTranslate.ipf</file>
 	<file version="nan" time="2014-03-24T09:32:37" md5="2f5374536541de1708896e1bff29ca5e" ext=".xml">materials/Co.xml</file>
-	<file version="2.61" time="2014-11-11T12:41:53" md5="64eb8f761bc579fb6d47ad22a800abb9" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
+	<file version="2.62" time="2014-11-12T10:15:38" md5="6acba1079d913d4a93363d504965aeb7" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
-	<file version="4.28" time="2014-11-10T13:05:44" md5="cf7991817c0e6df60018df80f9802308" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.29" time="2014-12-01T17:07:13" md5="d1afaf52c42055fe9573c32ba8b2e08c" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
@@ -139,14 +139,14 @@
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
 	<file version="1.71" time="2014-11-04T10:31:50" md5="8733d8a7ea0dbb6c3fd33ac243a72f6f" ext=".ipf">microN/microGeometryN.ipf</file>
-	<file version="1.1" time="2014-10-09T14:46:43" md5="35f4f4af884ec8576e2c048f80daf126" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
+	<file version="1.11" time="2014-12-06T22:37:06" md5="abef74622878e6b475f9a4096483f69d" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="nan" time="2014-09-22T11:39:14" md5="a76623e0bb5bb5f392b53eab8e390243" ext=".xml">materials/VO2/VO2_M1_1992Rogers.xml</file>
 	<file version="2.46" time="2014-10-06T09:42:00" md5="5b85d9c071c467894ab121b5dbcd7ac1" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1aa8d2e96729af4d6c1a957de08c2ace" ext=".xml">materials/Tungsten.xml</file>
 	<file version="0.02" time="2014-04-30T10:26:18" md5="d185b56b1e92d1c5ed4f06a0b4162fda" ext=".ipf">materials/materialsLocate.ipf</file>
 	<file version="nan" time="2014-04-18T15:45:57" md5="1e9096ad0f5b70133beb1964cbe65037" ext=".py">APS/burt_tool.py</file>
 	<file version="2.02" time="2014-10-08T14:58:04" md5="7c0cc123b3547ae8b264c0326727b3b6" ext=".ipf">General/GizmoMovies.ipf</file>
-	<file version="2.15" time="2014-09-08T15:17:33" md5="6fe10fbb4e2c53ee8e19b4b7a7ae857a" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.16" time="2014-12-06T23:57:01" md5="ee8bd0f6a5a5012e340faafd7e86c117" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" ext="">micro/Euler_i386</file>
 	<file version="0.13" time="2013-12-06T23:22:19" md5="9d81fadd43d5d62c5255073c4b486b6c" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7f757ea8b8080ab2c920dcc79559e095" ext=".exe">microN/euler.exe</file>
@@ -167,7 +167,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="4a4a324cb89e7e1c4ea5c05069471c39" ext=".xml">materials/Sn-sg141.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a3dd1379a82d5afb5a5d0fec54d0a6a5" ext=".xml">materials/ald09.xml</file>
-	<file version="3.49" time="2014-11-06T11:30:58" md5="954ba60e5c6e2adfd96e09db9af4c10e" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.5" time="2014-12-06T22:31:04" md5="022e1db1fb3805176346eb50e1140f01" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" ext=".png">microN/microDiffractionMedia/Picture5.png</file>
 	<file version="2.05" time="2014-10-27T15:25:23" md5="ef67a9187cdce509592465efec5dac10" ext=".ipf">General/GizmoMarkers.ipf</file>
