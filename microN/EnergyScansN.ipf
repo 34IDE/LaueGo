@@ -14,11 +14,11 @@
 #include "WinView", version>=2.03
 #endif
 #include "Masking", version>1.02
-//	#include "GizmoZoomTranslate", version>=1.41
 #include "GizmoZoomTranslate", version>=2.00
 #include "GizmoClip", version>=2.0
-#include "GizmoMarkers", version>=2.0
-#include "QspaceVolumesView"
+#include "GizmoMarkers", version>=2.05
+#include "QspaceVolumesView",  version>=1.11
+#include "microGeometryN", version>=1.71
 
 Static Constant hc = 1.239841857				// hc (keV-nm)
 Static Constant secPerPixelFixed = 18.8e-6		// the fixed time is takes to process one pixel (sec) after any distortion
