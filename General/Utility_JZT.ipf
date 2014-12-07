@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.49
+#pragma version = 3.50
 // #pragma hide = 1
 
 Menu "Graph"
@@ -802,6 +802,8 @@ ThreadSafe Function/S compressRange(range,sep) 	// take a range like "1;2;3;4;5;
 			if(write_subrange)
 				if(step ==1)
 					comp += ","+num2str(first)+"-"+num2str(last)
+				elseif (step==0)
+					comp += ","+num2str(first)
 				else
 					comp += ","+num2str(first)+"-"+num2str(last)+":"+num2str(step)
 				endif
@@ -838,6 +840,8 @@ End
 //	range = "7;6;4;5;2;3"
 //	printf "'%s' ---> '%s'\r",range, compressRange(range,";")
 //	range = "-1;1;0;-3;2;-2"
+//	printf "'%s' ---> '%s'\r",range, compressRange(range,";")
+//	range = "1;1;1;10;10;10;20;21;22;"
 //	printf "'%s' ---> '%s'\r",range, compressRange(range,";")
 //End
 

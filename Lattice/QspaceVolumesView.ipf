@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.10
+#pragma version = 1.11
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -332,8 +332,9 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	if (strlen(file_time))
 		wTitle[1] += SelectString(strlen(wTitle[1]),"",", ")+file_time
 	endif
-//	wTitle[2] = file_name
-	wTitle[2] = ParseFilePath(1,file_name,":",1,0)
+	String sep = SelectString(strsearch(file_name,"/",0)>0, ":", "/")
+	wTitle[2] = ParseFilePath(0,file_name,sep,1,0)
+//	wTitle[2] = ParseFilePath(1,file_name,":",1,0)
 	if (numtype(X1+Y1+Z1)==0)
 		sprintf str, "XYZ = {%g, %g, %g}",X1,Y1,Z1
 		wTitle[3] = str
