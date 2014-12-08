@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.17
+#pragma version = 2.18
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6364,7 +6364,9 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 	Note/K Qspace3D, wnote
 	DoWindow/K $progressWin										// done with status window
-	beep
+	if (printIt)
+		beep
+	endif
 
 	if (allZero)
 		printf "'%s' is ALL zeros, nothing to display\r",NameOfWave(Qspace3D)
