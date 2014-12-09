@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.06
+#pragma version = 2.07
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -1163,8 +1163,24 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	Wave W_sigma=W_sigma
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
 
+	Make/N=3/D/FREE Qo=W_coef[2*p + 2]
+	Wave hkl=$""
+#if exists("diffractometer#sample2crystal")
+	STRUCT sampleStructure sa	
+	String str = ParseFilePath(1,GetWavesDataFolder(space3D,1),":",1,0)+"sampleStructStr"
+	String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
+	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
+	Wave hkl = diffractometer#sample2crystal(sa,Qo)		// rotate qvec from sample-location frame into crystal based frame, the hkl
+#endif
+	if (!WaveExists(hkl))
+		FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
+		Wave RL = getRl(space3D,NaN)
+		if (WaveExists(RL))
+			MatrixOP/FREE hkl = Inv(RL) x Qo
+		endif
+	endif
+
 	if (printIt)
-		Make/N=3/D/FREE Qo=W_coef[2*p + 2]
 		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
 		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
 		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
@@ -1185,24 +1201,8 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 			Variable N = k*Np[0]*Np[1] + j*Np[0] + i
 			printf "  Closest point to peak is the %s[%g, %g, %g] or [%d] = %g\r",NameOfWave(space3D),i,j,k,N,space3D[i][j][k]
 		endif
-
-		Wave hkl=$""
-#if exists("diffractometer#sample2crystal")
-		STRUCT sampleStructure sa	
-		String str = ParseFilePath(1,GetWavesDataFolder(space3D,1),":",1,0)+"sampleStructStr"
-		String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
-		StructGet/S/B=2 sa, strStruct								// found structure information, load into s
-		Wave hkl = diffractometer#sample2crystal(sa,Qo)		// rotate qvec from sample-location frame into crystal based frame, the hkl
-#endif
-		if (!WaveExists(hkl))
-			FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
-			Wave RL = getRl(space3D,NaN)
-			if (WaveExists(RL))
-				MatrixOP/FREE hkl = Inv(RL) x Qo
-			endif
-		endif
 		if (WaveExists(hkl))
-			printf "hkl Center = %s\r",vec2str(hkl)
+			printf "hkl Peak Center = %s\r",vec2str(hkl)
 		endif
 	endif
 
@@ -1233,10 +1233,8 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	if (strlen(units[2]))
 		keyVals = ReplaceStringByKey("Zunit",keyVals,units[2],"=")
 	endif
-
 	if (WaveExists(hkl))
-		keyVals = ReplaceStringByKey("hklCenter",keyVals,vec2str(hkl,sep=","),"=")
-		printf "hkl Center = %s\r",vec2str(hkl)
+		keyVals = ReplaceStringByKey("hklPeakCenter",keyVals,vec2str(hkl,sep=","),"=")
 	endif
 	return keyVals
 End

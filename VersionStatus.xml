@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, December 08, 2014" time="05:40:43 PM CST" isoTime="2014-12-08T17:40:43"></written>
+	<written date="Tuesday, December 09, 2014" time="10:33:23 AM CST" isoTime="2014-12-09T10:33:23"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -170,7 +170,7 @@
 	<file version="3.5" time="2014-12-06T22:31:04" md5="022e1db1fb3805176346eb50e1140f01" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" ext=".png">microN/microDiffractionMedia/Picture5.png</file>
-	<file version="2.06" time="2014-12-07T16:04:47" md5="56f616fc5f21320950d7ffd8b106bd67" ext=".ipf">General/GizmoMarkers.ipf</file>
+	<file version="2.07" time="2014-12-09T10:31:37" md5="adce34440a83aa290b3bca9ce9ecc523" ext=".ipf">General/GizmoMarkers.ipf</file>
 	<file version="0.03" time="2013-11-07T09:29:57" md5="d4bae30c469490f8af1304d136b5af33" ext=".ipf">General/JZT-analysis.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c5c91bd92aeea678b4ea3f1c63118e71" ext=".xml">materials/Ti-7Altry.xml</file>
 	<file version="2.51" time="2014-10-06T09:42:00" md5="e2c5016c449862bc56f9e1d0cc7bb64f" ext=".ipf">microN/ArrayOf3dOrientsN_LongLong.ipf</file>
