@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 2.05
+#pragma version = 2.06
 #pragma ModuleName = LaueGoFirst
 #include "Utility_JZT", version>=3.22
 #pragma hide = 1
@@ -25,6 +25,7 @@ End
 //ModifyBrowser echoCommands=0, command3="print browserLeadJZT,GetDataFolder(1),browserTailJZT"
 Menu "Analysis",dynamic
 	Submenu "Packages"
+		"-"
 		SubMenu "<B<ULaueGo [µ beam]"
 
 			// none
@@ -84,13 +85,6 @@ Menu "Analysis"
 	Submenu "Packages"
 		// "µ beam, Sector 34" SubMenu gets insterted below
 		"Stereographic Projections",Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.81";Execute/P "COMPILEPROCEDURES ";Execute/P "InitStereoGraphicPackage()"
-		SubMenu "EPICS"
-			"EPICS("
-			"PV I\O", Execute/P "INSERTINCLUDE \"epics\"" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "epicsInitPackage()"
-			help = {"Load procedures for talking to PVs via EPICS (only useful at APS)"}
-			"Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
-			help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
-		End
 	End
 End
 //
@@ -108,27 +102,10 @@ Function/T microMenuShowPreliminary(str)
 End
 
 
-Menu "Data"
-	Submenu "Packages"
-		"-"
-		"EPICS Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
-		help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
-		"3d-Grains with Gizmo",Execute/P "INSERTINCLUDE  \"GizmoGrains\", version>=1.3";Execute/P "COMPILEPROCEDURES ";Execute/P "initGrainGizmo()"
-		help = {"Load procedures looking at 3-d grain structures"}
-	End
-End
-Menu "Load Waves"
-	Submenu "Packages"
-	"-"
-	"EPICS Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
-	help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
-	End
-End
-
-
 Menu "Graph"
 	"Set Aspect Ratio to Get Square Pixels \ Range",SetAspectToSquarePixels("")
 End
+
 
 Menu "Edit"
 	LaueGoFirst#MenuItemIfWindowTypes("Copy Window Info",1+2+64+4096), /Q,  LaueGoFirst#GetWindowInfo2Scrap()
