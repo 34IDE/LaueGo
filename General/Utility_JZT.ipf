@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.50
+#pragma version = 3.51
 // #pragma hide = 1
 
 Menu "Graph"
@@ -68,6 +68,9 @@ End
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
 //		str2cmplx(str), 	this is like str2num, but for complex
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
+//		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
+//		SetAspectToSquarePixels(), Used to square up a graph window
+//		SquareUpGizmo(gName), Used to square up a graph gizmo
 //		ChangeStrEnding(oldEnd, inStr, newEnd)  if inStr ends in oldEnd, replace oldEnd with newEnd
 //		SIprefix2factor(prefix)  get the factor for an SI prefix
 //		ConvertUnits2meters(unit,[defaultLen])  returns conversion factor from unit to meters
@@ -3025,6 +3028,227 @@ ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
 	endfor
 	return inStr
 End
+
+
+//  ====================================================================================  //
+//  ============================== Start of Wave Printing ==============================  //
+ThreadSafe Function printWave(w,[name,brief])		// print a wave (vector or matrix) to history
+	Wave w
+	String name										// optional user supplied name to use
+	Variable brief										// print in briefer form
+	if (ParamIsDefault(name))
+		name = NameOfWave(w)
+	endif
+	brief = ParamIsDefault(brief) ? 0 : !(!brief)
+	if (!WaveExists(w))
+		print "in 'printWave', wave does not exist"
+		// DoAlert 0, "in 'printWave', wave does not exist"
+		return 1
+	endif
+
+	if (DimSize(w, 1)<=1)		// for vectors
+		printvec(w,name=name)
+	elseif (DimSize(w, 2)==0)	// for 2-d matrix
+		if (DimSize(w,0)<=1 || DimSize(w,1)<=1)
+			printvec(w,name=name)
+		else
+			return printmat(w,name=name,brief=brief)
+		endif
+	else
+		print "cannot yet handle dimensions 3 or 4"
+	endif
+	return 0
+End
+//
+ThreadSafe Static Function printvec(w,[name])		// print a vector to screen
+	Wave w
+	String name										// optional user supplied name to use
+	if (ParamIsDefault(name))
+		name = NameOfWave(w)
+	endif
+
+	if (strlen(name))
+		printf "%s = %s\r", name,vec2str(w)
+	else
+		printf "%s\r", vec2str(w)
+	endif
+End
+//
+ThreadSafe Static Function printmat(m,[name,brief,rowMax])
+	Wave m
+	String name										// optional user supplied name to use
+	Variable brief										// print in briefer form
+	Variable rowMax									// maximum number of rows to print
+	if (ParamIsDefault(name))
+		name = NameOfWave(m)
+	endif
+	rowMax = ParamIsDefault(rowMax) ? 50 : rowMax
+	rowMax = (rowMax>0) ? rowMax : 50
+	if (DimSize(m, 1)==0 || DimSize(m,2)!=0)	// for 2-d matrix only
+		print "Can only print 2-d matricies with printmat"
+		// DoAlert 0, "Can only print 2-d matricies with printmat"
+		return 1
+	endif
+
+	if (brief && strlen(name))
+		printf "%s:\r",name
+	endif
+	Variable Nrow=DimSize(m,0), row
+	Nrow = min(Nrow,rowMax)
+	for (row=0;row<Nrow;row+=1)
+		if (WaveType(m) %& 0x01)					// true for complex numbers
+			print printmatOneListComplex(m,row,name=name,brief=brief)
+		else
+			print printmatOneListReal(m,row,name=name,brief=brief)
+		endif
+	endfor
+	if (DimSize(m,0)>Nrow)
+		print "      ."
+		print "      ."
+		printf "      .\t\t printed only %d of the %d rows\r",Nrow,DimSize(m,1)
+	endif
+//	if (DimSize(mw,0)>Nrow || DimSize(mw,1)>Nrow)
+//		printf "Only printed part of the (%d x %d) matrix\r",DimSize(mw,0),DimSize(mw,1)
+//	endif
+	return 0
+End
+//
+ThreadSafe Static Function/T printmatOneListReal(m,row,[name,brief])// print one line for real (not complex) matricies
+	Wave m
+	Variable row										// row number (starts with 0)
+	String name										// optional user supplied name to use
+	Variable brief										// print in briefer form
+	if (ParamIsDefault(name))
+		name = NameOfWave(m)
+	endif
+
+	String line="", str
+	Variable j, Ncol=DimSize(m,1)
+	for (j=0;j<Ncol;j+=1)
+		if (strlen(line)>100)
+			line += "  ..."
+			break
+		elseif (brief)
+			sprintf str, "%g    ",m[row][j]
+		else
+			sprintf str, "%s[%d][%d] = %g;    ",name,row,j,m[row][j]
+		endif
+		line += str
+	endfor
+	line = line[0,strlen(line)-4-1]					// strip off trailing 4 spaces
+	return line
+End
+//
+ThreadSafe Static Function/T printmatOneListComplex(m,row,[name,brief])// print one line for complex (not real) matricies
+	Wave/C m
+	Variable row										// row number (starts with 0)
+	String name										// optional user supplied name to use
+	Variable brief										// print in briefer form
+	if (ParamIsDefault(name))
+		name = NameOfWave(m)
+	endif
+	String line="", str
+	Variable j, Ncol=DimSize(m,1)
+	for (j=0;j<Ncol;j+=1)
+		if (strlen(line)>100)
+			line += "  ..."
+			break
+		elseif (brief)
+			sprintf str, "(%g,%g)    ",real(m[row][j]),imag(m[row][j])
+		else
+			sprintf str, "%s[%d][%d] = (%g,%g);    ",name,row,j,real(m[row][j]),imag(m[row][j])
+		endif
+		line += str
+	endfor
+	line = line[0,strlen(line)-4-1]					// strip off trailing 4 spaces
+	return line
+End
+//  =============================== End of Wave Printing ===============================  //
+//  ====================================================================================  //
+
+
+//  ====================================================================================  //
+//  ============================== Start of Square Pixels ==============================  //
+Function SetAspectToSquarePixels(gName)
+	// Used to square up a graph window
+	String gName										// name of the graph, use "" for the top graph
+	Variable printIt = strlen(GetRTStackInfo(2))<=0
+	if (strlen(gName)<1)
+		gName = StringFromList(0,WinList("*",";","WIN:1"))
+	endif
+	if (WinType(gName)!=1)
+		if (printIt)
+			DoAlert 0, "ERROR, in SetAspectToSquarePixels(), '"+gName+"' is not an graph"
+		endif
+		return NaN										// if no image on graph, do not try to set aspect ratio
+	endif
+
+	GetAxis/W=$gName/Q bottom
+	if (V_flag)											// if no bottom, try top
+		GetAxis/W=$gName/Q top
+	endif
+	if (V_flag)
+		if (printIt)
+			DoAlert 0, "ERROR, SetAspectToSquarePixels(), unable to get size of vertical axis"
+		endif
+		return NaN
+	endif
+	Variable width = abs(V_max-V_min)
+
+	GetAxis/W=$gName/Q left
+	if (V_flag)											// if no left, try right
+		GetAxis/W=$gName/Q right
+	endif
+	if (V_flag)
+		if (printIt)
+			DoAlert 0, "ERROR, SetAspectToSquarePixels(), unable to get size of horizontal axis"
+		endif
+		return NaN
+	endif
+	Variable height = abs(V_max-V_min)
+
+	Variable aspect = height / width
+	//	printf "size ,  width = %g,  height = %g,   aspect = height/width = %g\r",width,height,aspect
+	if (numtype(aspect) || aspect<=0)
+		return NaN
+	elseif (aspect<1)
+		ModifyGraph/W=$gName height={Aspect,aspect}, width=0
+	elseif (aspect>=1)
+		ModifyGraph/W=$gName width={Aspect,1/aspect}, height=0
+	endif
+
+	return aspect
+End
+
+
+Function SquareUpGizmo(gName)
+	// Used to square up a graph gizmo
+	String gName
+	if(exists("NewGizmo")!=4)				// Do nothing if the Gizmo XOP is not available.
+		DoAlert 0, "Gizmo XOP must be installed"
+		return 1
+	elseif (strlen(gName)<1)
+		Execute "GetGizmo gizmoName"
+		gName=StrVarOrDefault("S_GizmoName","")
+		KillStrings/Z S_GizmoName
+	endif
+	if (strlen(gName)<1)
+		return 1
+	endif
+
+	Execute "GetGizmo winPixels"			// get window position & size
+	Variable left=NumVarOrDefault("V_left",NaN), right=NumVarOrDefault("V_right",NaN)
+	Variable top=NumVarOrDefault("V_top",NaN), bottom=NumVarOrDefault("V_bottom",NaN)
+	KillVariables/Z V_left, V_right, V_top, V_bottom
+	Variable height=bottom-top
+	// Variable width=right-left, height=bottom-top
+	// printf "[top=%g,  bottom=%g,  Æ=%g],   [left=%g,  right=%g,  Æ=%g]\r"top,bottom,height,  left,right,width
+	top = max(44,top)
+	MoveWindow/W=$gName left, top, left+height, top+height
+End
+
+//  =============================== End of Square Pixels ===============================  //
+//  ====================================================================================  //
 
 
 ThreadSafe Function/T ChangeStrEnding(oldEnd, inStr, newEnd)

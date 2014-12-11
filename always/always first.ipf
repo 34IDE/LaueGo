@@ -1,6 +1,7 @@
 #pragma rtGlobals= 2
-Constant JZTalwaysFirst_Version=2.5
-#include "GeneralFirst", version>=3.0
+Constant JZTalwaysFirst_Version=2.6
+#pragma version = 2.6
+#include "GeneralFirst", version>=3.12
 #include "LaueGoFirst", version>=2.06
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
