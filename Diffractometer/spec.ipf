@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.37
+#pragma version = 2.38
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -105,6 +105,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 //
 // Oct 28, 2014, in DisplayRangeOfSpecScans() cleaned up overly (particularly the "new+append")
 //						in DisplaySpecScan(), returns NaN on failure, and scan number if successful
+//
+// Dec 12, 2014, in FindDataStart() No longer limited to only searches first 100 lines for "#L " line
 
 Menu "Data"
 	"-"
@@ -1962,14 +1964,12 @@ Function/T FindDataStart(fileVar)
 	Variable foundStart=0
 	do
 		FReadLine fileVar, line
-		foundStart = strsearch(line, "#L", 0)==0
+		foundStart = strsearch(line,"#L",0)==0
 		i += 1
-	while ((!foundStart) && (i<100))
-
-	if (i>=100)
+	while (!foundStart && strlen(line) && strsearch(line,"#S ",0)!=0)
+	if (!foundStart)
 		print "start of data not found"
 	endif
-
 	return line
 End
 
