@@ -294,6 +294,9 @@ Static Function/T chooseConstant(buf,name)
 	String buf
 	String name
 
+	if (strsearch(name,"hc",0)==0 || strsearch(name,"h*c",0)==0)
+		name = "inverse meter-electron volt relationship"		// this is the "official" name of "hc"
+	endif
 	String line,allNamesList="",choice=""
 	Variable i1=0,i2
 	i2 = strsearch(buf,"\n",i1)
