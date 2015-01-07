@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, December 12, 2014" time="03:22:18 PM CST" isoTime="2014-12-12T15:22:18"></written>
+	<written date="Wednesday, January 07, 2015" time="10:12:07 AM CST" isoTime="2015-01-07T10:12:07"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -45,7 +45,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="5d77e527acd902b462684afb230ef077" ext=".xml">materials/cu225.xml</file>
 	<file version="1.11" time="2013-11-27T13:00:02" md5="295406f0234817e7f9b02a99a95682c2" ext=".ipf">APS/mdaFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="efd18f087ca114249ac513fc0d08caa2" ext=".xml">materials/LaMnO3_OrthoORNL.xml</file>
-	<file version="2.04" time="2014-05-12T11:29:37" md5="a09e5301911f941cd35dc88759f9a291" ext=".ipf">General/PhysicalConstants.ipf</file>
+	<file version="2.06" time="2015-01-07T10:10:43" md5="cf34b9e76f9c3445ee2188603aa93da5" ext=".ipf">General/PhysicalConstants.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4f9d1ef62a587ddc29a3b61fce96b7cd" ext=".xml">materials/SrLaGaO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="0f371a92479dd3587d334a17f1e73d69" ext=".xml">materials/UO2F2.xml</file>
 	<file version="1.9" time="2014-04-29T18:11:15" md5="d4d83bd75f91b8e7164c200bf4a5d788" ext=".ipf">General/CromerLiberman.ipf</file>
@@ -222,7 +222,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="ca031a1c8133fc9f52a01a7439b2952c" ext=".xml">materials/permalloy.xml</file>
 	<file version="nan" time="2014-02-12T12:16:35" md5="6a9232a89bd2ca917e35c070e9bfc5a1" ext=".xml">materials/Rene-41.xml</file>
 	<file version="2.06" time="2014-12-10T23:04:52" md5="dfacb642bddbdf50b2dc8e39c733a57d" ext=".ipf">always/LaueGoFirst.ipf</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="5da6e3e5cbb9d1fe9be3d72a61213469" ext=".txt">General/Physical Constants.txt</file>
+	<file version="nan" time="2015-01-07T10:03:43" md5="103df3bd8694209d9cee7d19833303d2" ext=".txt">General/Physical Constants.txt</file>
 	<file version="2.6" time="2014-12-10T23:07:34" md5="6ee4257ff2eb8f9f8904f537327cbcc1" ext=".ipf">always/always first.ipf</file>
 	<file version="1.77" time="2014-06-18T16:53:27" md5="0fe961f07510216bf9f8eff5b6a8bc36" ext=".ipf">General/Elements.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="f32795db1dc1c31411d7c33b21865108" ext=".xml">materials/LaAlO3_Rhom.xml</file>
