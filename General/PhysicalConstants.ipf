@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.06
+#pragma version = 2.07
 #pragma IgorVersion = 6.11
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
@@ -448,8 +448,8 @@ Function UpdateLocalCopyOfConstants()
 	if (i2<1000)					// too short to be right
 		return 1
 	endif
-
 	buf = "Downloaded  "+date()+"  "+time()+buf[i1,i2]	// buf now has the results to write
+	buf = ReplaceString("\r\n",buf,"\n")						// remove stupid Windows line terminations
 	DoAlert 1,"Update your local file of Physical Constants with values from Web?"
 	if (V_flag!=1)
 		return 1
