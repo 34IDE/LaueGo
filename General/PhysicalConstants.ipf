@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.07
+#pragma version = 2.08
 #pragma IgorVersion = 6.11
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
@@ -42,9 +42,10 @@ Constant aSi_A		= 5.4310205052			// lattice constant of Si at 22.5° (Å), 2010 CO
 
 Menu "Analysis"
 	SubMenu "Physical Constants"
-		"New Static Constant, Physical Constant...",PhysicalConstant_InsertStatic("*",web=0)
-		"<BGet a Physical Constant...",LookUpPhysicalConstant("*")
+		"New Static Constant, Physical Constant...",PhysicalConstant_InsertStatic("*")
+		"<BGet a Physical Constant...",GetPhysicalConstant("*")
 		"<I  update your local copy [Rarely needed]",UpdateLocalCopyOfConstants()
+		"  date of your local copy",DateOfLocalPhysicalConstants()
 	End
 End
 
@@ -59,6 +60,18 @@ Static Structure PhysicalConstantStructure
 	double err
 	char unit[PhysicalConstantMaxStr+1]
 	int16 exact
+EndStructure
+//
+Static Structure PhysicalConstantStructureAll
+	double updateEpoch				// Igor epoch when last updated
+	int16	N1
+	STRUCT PhysicalConstantStructure c1[100]
+	int16	N2
+	STRUCT PhysicalConstantStructure c2[100]
+	int16	N3
+	STRUCT PhysicalConstantStructure c3[100]
+	int16	N4
+	STRUCT PhysicalConstantStructure c4[100]			// c4 only needs 35 of these 100
 EndStructure
 //
 Static Function copyPhysicalConstantStructure(f,i)
@@ -80,23 +93,41 @@ Static Function initPhysicalConstantStructure(c)
 	c.unit	= ""
 	c.exact	= 0
 End
+//
+Static Function getStruct_i(cAll,i,ci)
+	STRUCT PhysicalConstantStructureAll &cAll
+	Variable i
+	STRUCT PhysicalConstantStructure &ci
+
+	Variable j = mod(i,100)
+	Variable m = floor(i/100)
+	if (m==0)
+		copyPhysicalConstantStructure(ci,cAll.c1[j])
+	elseif (m==1)
+		copyPhysicalConstantStructure(ci,cAll.c2[j])
+	elseif (m==2)
+		copyPhysicalConstantStructure(ci,cAll.c3[j])
+	elseif (m==3)
+		copyPhysicalConstantStructure(ci,cAll.c4[j])
+	else
+		initPhysicalConstantStructure(ci)
+	endif
+End
 
 
 
-Function PhysicalConstant_InsertStatic(name,[web,printIt])
+Function PhysicalConstant_InsertStatic(name,[printIt])
 	String name
 	Variable printIt
-	Variable web							// 1 try to use web first, 0 only use local
 	if (ParamIsDefault(printIt) || numtype(printIt))
 		printIt = strlen(GetRTStackInfo(2))==0
 	endif
 	printIt = !(!printIt)
-	web = ParamIsDefault(web) || numtype(web) ? 0 : !(!web)
 	if (strlen(name)<1)
 		return NaN
 	endif
 	STRUCT PhysicalConstantStructure c
-	LookUpPhysicalConstant(name,c=c,web=web,printIt=0)
+	GetPhysicalConstant(name,c=c,printIt=0)
 	if (!(c.valid))
 		return NaN
 	endif
@@ -181,25 +212,43 @@ Function SiLatticeConst(TempC)		// computes temperature dependent Si Lattice con
 End
 
 
+
+Function DateOfLocalPhysicalConstants([printIt])		// returns epoch of current copy of PhysicalConstants
+	Variable printIt
+	printIt = (ParamIsDefault(printIt) || numtype(printIt)) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	STRUCT PhysicalConstantStructureAll cAll
+	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
+	if (V_bytesRead != V_structSize || V_flag)
+		print "ERROR -- no current copy of Physical Constants found"
+		return NaN
+	endif
+	if (printIt)
+		printf "%s %s\r",date(), time()
+	endif
+	return cAll.updateEpoch
+End
+
+
+
 //Function test()
-//	LookUpPhysicalConstant("speed of light in vacuum",web=0,printIt=1)
-//	LookUpPhysicalConstant("speed of light*",web=0,printIt=1)
-//	LookUpPhysicalConstant("mag. constant",web=0,printIt=1)
-//	LookUpPhysicalConstant("molar mass constant",web=0,printIt=1)
-//	LookUpPhysicalConstant("electron-muon mass ratio",web=0,printIt=1)
-//	LookUpPhysicalConstant("{220}*",web=0,printIt=1)
-//	LookUpPhysicalConstant("Wien wavelength*",web=0,printIt=1)
-//	LookUpPhysicalConstant("Wien wavelength displacement law constant",web=0,printIt=1)
-//	LookUpPhysicalConstant("",web=0,printIt=1)
-//	LookUpPhysicalConstant("error",web=0,printIt=1)
-//	LookUpPhysicalConstant("\n",web=0,printIt=1)
+//	GetPhysicalConstant("speed of light in vacuum",printIt=1)
+//	GetPhysicalConstant("speed of light*",printIt=1)
+//	GetPhysicalConstant("mag. constant",printIt=1)
+//	GetPhysicalConstant("molar mass constant",printIt=1)
+//	GetPhysicalConstant("electron-muon mass ratio",printIt=1)
+//	GetPhysicalConstant("{220}*",printIt=1)
+//	GetPhysicalConstant("Wien wavelength*",printIt=1)
+//	GetPhysicalConstant("Wien wavelength displacement law constant",printIt=1)
+//	GetPhysicalConstant("",printIt=1)
+//	GetPhysicalConstant("error",printIt=1)
+//	GetPhysicalConstant("\n",printIt=1)
 //End
 //
-Function LookUpPhysicalConstant(name,[c,web,printIt])	// returns value of constant
+Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	String name
 	STRUCT PhysicalConstantStructure &c	// structure that is filled in this routine
 	Variable printIt
-	Variable web									// 1 try to use web first, 0 only use local
 	if (!ParamIsDefault(c))
 		initPhysicalConstantStructure(c)	// mainly set c.valid=0
 		c.name = name[0,PhysicalConstantMaxStr]
@@ -208,7 +257,6 @@ Function LookUpPhysicalConstant(name,[c,web,printIt])	// returns value of consta
 		printIt = strlen(GetRTStackInfo(2))==0
 	endif
 
-	web = ParamIsDefault(web) || numtype(web) ? 1 : !(!web)
 	if (strlen(name)<1)
 		if (printIt)
 			print "*** no name given"
@@ -216,65 +264,23 @@ Function LookUpPhysicalConstant(name,[c,web,printIt])	// returns value of consta
 		return NaN
 	endif
 
-	String buf=""
-	if (web)
-		String sValue = FetchURL(PhysicalConstantServer)
-		String errMsg = GetRTErrMessage()
-		if (GetRTError(1)==0)
-			Variable i1 = char2num(sValue[0])==char2num("\"") ? 1 : 0
-			Variable i2=strlen(sValue)-1
-			i2 = char2num(sValue[i2])==char2num("\"") ? i2-1 : i2
-			web = strsearch(sValue,"Fundamental Physical Constants",0)>=0
-			buf = SelectString(web,"",sValue[i1,i2])		// web version
+	STRUCT PhysicalConstantStructureAll cAll
+	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
+	if (V_bytesRead != V_structSize || V_flag)
+		DoAlert/T="Physical Constants" 1, "Update Physical Constants from NIST"
+		if (V_flag==1)
+			UpdateLocalCopyOfConstants()
+			LoadPackagePreferences "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
 		else
-			printf "Could not get information from web, '%s'\r",errMsg
-			web = 0
-			buf = ""
-		endif
-	endif
-	if (!web)												// not using web, use local version
-		Variable f=0
-		Open/R/Z=1 f as ParseFilePath(1,FunctionPath("LookUpPhysicalConstant"),":",1,0)+"Physical Constants.txt"
-		if (V_flag)
-			DoAlert 0,"ERROR -- Could not find file 'Physical Constants.txt'"
 			return NaN
 		endif
-		FStatus f
-		buf=PadString("",V_logEOF,0)
-		FBinRead f, buf
-		Close f
 	endif
-	if (strsearch(buf,"Fundamental Physical Constants",0)<0)
-		DoAlert 0,"ERROR -- 'Physical Constants.txt' file is INVALID"
-		return NaN
-	endif
-
-	buf = ReplaceString("\r\n",buf,"\n")
-	buf = ReplaceString("\n\r",buf,"\n")
-	buf = ReplaceString("\r",buf,"\n")
-	Variable i=strsearch(buf,"----------------------------------",0)
-	if (i<0)
-		DoAlert 0,"ERROR -- 'Physical Constants.txt' file is INVALID"
-		return NaN
-	endif
-	i = strsearch(buf,"\n",i+1)
-	if (i<0)
-		DoAlert 0,"ERROR -- 'Physical Constants.txt' file is INVALID"
-		return NaN
-	endif
-	buf = TrimFrontBackWhiteSpace(buf[i+1,Inf])
-	buf += "\n"				// ensure terminating <NL>
-
-	name = chooseConstant(buf,name)
-	if (strlen(name)<1)
-		if (printIt)
-			print "*** name = '"+name+"',  is INVALID"
-		endif
-		return NaN
-	endif
-
+	Variable ic = chooseConstant(cAll,name)
 	STRUCT PhysicalConstantStructure clocal
-	if (PhysicalConstantFromBuf(buf,name,clocal))
+	getStruct_i(cAll,ic,clocal)
+	name = clocal.name
+
+	if (strlen(name)<1 || !(clocal.valid))
 		if (printIt)
 			print "*** name = '"+name+"',  is INVALID"
 		endif
@@ -285,36 +291,35 @@ Function LookUpPhysicalConstant(name,[c,web,printIt])	// returns value of consta
 		copyPhysicalConstantStructure(c,clocal)
 	endif
 	if (printIt)
-		print formatPhysicalConstantStructure(clocal,always=1)+SelectString(web,"   from local file","   from web server")
+		print formatPhysicalConstantStructure(clocal,always=1)
 	endif
 	return clocal.value
 End
 //
-Static Function/T chooseConstant(buf,name)
-	String buf
+Static Function chooseConstant(cAll,name)
+	STRUCT PhysicalConstantStructureAll &cAll
 	String name
 
 	if (strsearch(name,"hc",0)==0 || strsearch(name,"h*c",0)==0)
 		name = "inverse meter-electron volt relationship"		// this is the "official" name of "hc"
 	endif
-	String line,allNamesList="",choice=""
-	Variable i1=0,i2
-	i2 = strsearch(buf,"\n",i1)
-	do
-		line = TrimFrontBackWhiteSpace(buf[i1,i1+54])
-		if (stringmatch(line,name))
-			if (strlen(line))
-				allNamesList += line+";"
+	String line, allNamesList="",choice=""
+
+	Variable N = cAll.N1 + cAll.N2 + cAll.N3 + cAll.N4
+	STRUCT PhysicalConstantStructure clocal
+	Variable i, ic=-1
+	for (i=0;i<N;i+=1)
+		getStruct_i(cAll,i,clocal)
+		if (stringmatch(clocal.name,name) && strlen(clocal.name))
+			if (clocal.valid)
+				allNamesList += clocal.name+";"
 			endif
 		endif
-		i1 = i2+1
-		i2 = strsearch(buf,"\n",i1)
-	while(i2>0)
-
-	Variable N=ItemsInList(allNamesList)
-	if (N<1)
+	endfor
+	Variable Nlist = ItemsInList(allNamesList)
+	if (Nlist<1)
 		choice = ""
-	elseif (N==1)
+	elseif (Nlist==1)
 		choice = StringFromList(0,allNamesList)
 	else
 		Prompt choice,"Physical Constant Name",popup,"_search_;"+allNamesList
@@ -327,84 +332,19 @@ Static Function/T chooseConstant(buf,name)
 		Prompt name,"enter search string, can use * and !"
 		DoPrompt "Search",name
 		if (V_flag)
-			return ""
+			return -1
 		endif
-		choice = chooseConstant(buf,name)
+		ic = chooseConstant(cAll,name)
 	endif
-	return choice
-End
-//
-Static Function PhysicalConstantFromBuf(buf,name,c)
-	// This routine is really stupid, but that is because the text file that I download from NIST is really stupid.  It has no rules,
-	//	and there is little about the file that is standard.  If you can find either a more standard text file or an xml file that would be better.
-	String buf					// buf must have a terminating <NL> = "\n"
-	String name
-	STRUCT PhysicalConstantStructure &c
 
-	initPhysicalConstantStructure(c)		// mainly sets c.valid=0
-	Variable i = strsearch(buf,"\nmolar mass constant ",0)
-	if (i<0)
-		return NaN
-	endif
-	String line=buf[i+1,i+300]
-	i = strsearch(line,"\n",0)-1
-	if (i<0)
-		return NaN
-	endif
-	line = line[0,i]
-
-	// assuming fixed format lengths for name, value, error, & units
-	Variable val0, err0, unit0		// point in line where each starts (name starts at 0)
-	val0 = nextNonSpace(line,strlen("molar mass constant "))
-	err0 = nextNonSpace(line,val0+6)
-	unit0 = nextNonSpace(line,err0+8)
-
-	String strVal, strErr, unit=""
-	Variable i1=0,i2
-	line = ""
-	i2 = strsearch(buf,"\n",i1)
-	do
-		if (stringmatch(TrimFrontBackWhiteSpace(buf[i1,i1+val0-1]),name))
-			line = TrimFrontBackWhiteSpace(buf[i1,i2])
+	for (i=0;i<N;i+=1)
+		getStruct_i(cAll,i,clocal)
+		if (stringmatch(clocal.name,choice) && strlen(clocal.name))
+			ic = i
 			break
 		endif
-		i1 = i2+1
-		i2 = strsearch(buf,"\n",i1)
-	while(i2>0)
-	if (strlen(line)==0)
-		c.name = name[0,PhysicalConstantMaxStr]
-		return 1													// name not found
-	endif
-
-	strVal = line[val0,err0-1]
-	strVal = ReplaceString("...",strVal,"")			// sometimes used with "exact" constants
-	strVal = ReplaceString(" ",strVal,"")				// no spaces allowed in value
-	c.value = str2num(strVal)
-
-	strErr = line[err0,unit0-1]
-	c.exact = stringmatch(strErr,"*(exact)*")
-	strErr = ReplaceString(" ",strErr,"")
-	c.err = str2num(strErr)
-
-	unit = TrimFrontBackWhiteSpace(line[unit0,Inf])
-	c.unit =  unit[0,PhysicalConstantMaxStr]
-
-	name = TrimFrontBackWhiteSpace(line[0,val0-1])
-	c.name = name[0,PhysicalConstantMaxStr]
-	c.valid = 1													// set valid to true
-	return 0
-End
-//
-Static Function nextNonSpace(str,start)
-	String str
-	Variable start
-	Variable i,N=strlen(str)
-	for (i=start;i<N;i+=1)
-		if (char2num(str[i])>32)
-			return i
-		endif
 	endfor
-	return i
+	return ic
 End
 //
 Static Function/T formatPhysicalConstantStructure(c,[always])
@@ -432,39 +372,155 @@ Static Function/T formatPhysicalConstantStructure(c,[always])
 End
 
 
-// creates (or overwrites) a text file containing all of the constants from PhysicalConstantServer
-// The text file is named "Physical Constants.txt" and will be in the same folder as this ipf file
+// creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServer
 Function UpdateLocalCopyOfConstants()
-	String buf = FetchURL(PhysicalConstantServer)
+	String buf = getFullASCIIfromWeb()		// return the ascii buffer with all of the constants info, must have a terminating <NL> = "\n"
+	if (strlen(buf)<200)
+		print buf
+		return 1
+	endif
+
+	STRUCT PhysicalConstantStructureAll cAll
+	Variable N = FillConstantsStucturesFromBuf(buf, cAll)
+	SavePackagePreferences/FLSH=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0 , cAll
+	printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServer
+//	String fileName = ParseFilePath(1,FunctionPath("UpdateLocalCopyOfConstants"),":",1,0)+"Physical Constants.txt"
+End
+//
+Static Function/T getFullASCIIfromWeb()		// return the ascii buffer with all of the constants info from web
+	String buf=""
+	String sValue = FetchURL(PhysicalConstantServer)
 	String errMsg = GetRTErrMessage()
 	if (GetRTError(1))
+		printf "ERROR -- Could not get information from web, '%s'\r",errMsg
+		return ""
+	endif
+
+	Variable i1 = char2num(sValue[0])==char2num("\"") ? 1 : 0
+	Variable i2=strlen(sValue)-1
+	i2 = char2num(sValue[i2])==char2num("\"") ? i2-1 : i2
+	if (strsearch(sValue,"Fundamental Physical Constants",0)<0)
 		printf "Could not get information from web, '%s'\r",errMsg
-		return 1
+		return ""
+	endif
+	buf = sValue[i1,i2]
+	if (strsearch(buf,"Fundamental Physical Constants",0)<0)
+		return "ERROR -- Downloaded 'allascii.txt' file is INVALID"
 	endif
 
-	Variable i1 = char2num(buf[0])==char2num("\"") ? 1 : 0
-	Variable i2=strlen(buf)-1
-	i2 = char2num(buf[i2])==char2num("\"") ? i2-1 : i2
-	if (i2<1000)					// too short to be right
-		return 1
+	buf = ReplaceString("\r\n",buf,"\n")
+	buf = ReplaceString("\n\r",buf,"\n")
+	buf = ReplaceString("\r",buf,"\n")
+	Variable i=strsearch(buf,"----------------------------------",0)
+	if (i<0)
+		return "ERROR -- 'allascii.txt' file is INVALID"
 	endif
-	buf = "Downloaded  "+date()+"  "+time()+buf[i1,i2]	// buf now has the results to write
-	buf = ReplaceString("\r\n",buf,"\n")						// remove stupid Windows line terminations
-	DoAlert 1,"Update your local file of Physical Constants with values from Web?"
-	if (V_flag!=1)
-		return 1
+	i = strsearch(buf,"\n",i+1)
+	if (i<0)
+		return "ERROR -- 'allascii.txt' file is INVALID"
+	endif
+	buf = TrimFrontBackWhiteSpace(buf[i+1,Inf])
+	buf += "\n"				// ensure terminating <NL>
+	return buf
+End
+//
+Static Function FillConstantsStucturesFromBuf(buf,cAll)
+	String buf
+	STRUCT PhysicalConstantStructureAll &cAll
+
+	Variable val0=NaN, err0=NaN, unit0=NaN
+	// This routine is really stupid, but that is because the text file that I download from NIST is really stupid.  It has no rules,
+	//	and there is little about the file that is standard.  If you can find either a more standard text file or an xml file that would be better.
+	Variable i = strsearch(buf,"\nmolar mass constant ",0)
+	if (i<0)
+		return 0
+	endif
+	String line=buf[i+1,i+300]
+	i = strsearch(line,"\n",0)-1
+	if (i<0)
+		return 0
+	endif
+	line = line[0,i]
+
+	// assuming fixed format lengths for name, value, error, & units
+	val0 = nextNonSpace(line,strlen("molar mass constant "))
+	err0 = nextNonSpace(line,val0+6)
+	unit0 = nextNonSpace(line,err0+8)
+	if (numtype(val0+err0+unit0))
+		return 0
 	endif
 
-	String fileName = ParseFilePath(1,FunctionPath("UpdateLocalCopyOfConstants"),":",1,0)+"Physical Constants.txt"
-	Variable f=0
-	Open/Z=1 f as fileName
-	if (V_flag)
-		DoAlert 0,"Could not find file 'Physical Constants.txt'"
-		return NaN
-	endif
-	FBinWrite f, buf
-	Close f
-	printf "Your local copy of 'Physical Constants.txt' has been updated from '%s'\r",PhysicalConstantServer
+	STRUCT PhysicalConstantStructure clocal
+	String strVal, strErr, unit, name
+	Variable N=ItemsInList(buf,"\n")
+	Variable nConstants=0, j,m
+	cAll.N1 = 0
+	cAll.N2 = 0
+	cAll.N3 = 0
+	cAll.N4 = 0
+	for (i=0;i<100;i+=1)
+		initPhysicalConstantStructure(call.c1[i])
+		initPhysicalConstantStructure(call.c2[i])
+		initPhysicalConstantStructure(call.c3[i])
+		initPhysicalConstantStructure(call.c4[i])
+	endfor
+
+	for (i=0,line="xxx"; i<N && strlen(line); i+=1)
+		line = TrimFrontBackWhiteSpace(StringFromList(i,buf,"\n"))
+		if (strlen(line)<2)
+			continue
+		endif
+
+		strVal = line[val0,err0-1]
+		strVal = ReplaceString("...",strVal,"")	// sometimes used with "exact" constants
+		strVal = ReplaceString(" ",strVal,"")		// no spaces allowed in value
+		clocal.value = str2num(strVal)
+
+		strErr = line[err0,unit0-1]
+		clocal.exact = stringmatch(strErr,"*(exact)*")
+		strErr = ReplaceString(" ",strErr,"")
+		clocal.err = str2num(strErr)
+
+		unit = TrimFrontBackWhiteSpace(line[unit0,Inf])
+		clocal.unit = unit[0,PhysicalConstantMaxStr]
+
+		name = TrimFrontBackWhiteSpace(line[0,val0-1])
+		clocal.name = name[0,PhysicalConstantMaxStr]
+		clocal.valid = 1									// set valid to true
+
+		j = mod(nConstants,100)
+		m = floor(nConstants/100)
+		nConstants += 1
+		if (m==0)
+			cAll.N1 += 1
+			copyPhysicalConstantStructure(cAll.c1[j],clocal)
+		elseif (m==1)
+			cAll.N2 += 1
+			copyPhysicalConstantStructure(cAll.c2[j],clocal)
+		elseif (m==2)
+			cAll.N3 += 1
+			copyPhysicalConstantStructure(cAll.c3[j],clocal)
+		elseif (m==3)
+			cAll.N4 += 1
+			copyPhysicalConstantStructure(cAll.c4[j],clocal)
+		else
+			break
+		endif
+	endfor
+	cAll.updateEpoch = DateTime
+	return nConstants
+End
+//
+Static Function nextNonSpace(str,start)
+	String str
+	Variable start
+	Variable i,N=strlen(str)
+	for (i=start;i<N;i+=1)
+		if (char2num(str[i])>32)
+			return i
+		endif
+	endfor
+	return i
 End
 
 
