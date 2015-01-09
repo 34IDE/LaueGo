@@ -74,7 +74,7 @@ Static Structure PhysicalConstantStructureAll
 	STRUCT PhysicalConstantStructure c4[100]			// c4 only needs 35 of these 100
 EndStructure
 //
-Static Function copyPhysicalConstantStructure(f,i)
+ThreadSafe Static Function copyPhysicalConstantStructure(f,i)
 	STRUCT PhysicalConstantStructure &f, &i
 	f.valid	= i.valid
 	f.name	= i.name
@@ -84,7 +84,7 @@ Static Function copyPhysicalConstantStructure(f,i)
 	f.exact	= i.exact
 End
 //
-Static Function initPhysicalConstantStructure(c)
+ThreadSafe Static Function initPhysicalConstantStructure(c)
 	STRUCT PhysicalConstantStructure &c
 	c.valid	= 0			// init to NOT valid
 	c.name	= ""
@@ -94,7 +94,7 @@ Static Function initPhysicalConstantStructure(c)
 	c.exact	= 0
 End
 //
-Static Function getStruct_i(cAll,i,ci)
+ThreadSafe Static Function getStruct_i(cAll,i,ci)	// copy constant i from cAll into ci
 	STRUCT PhysicalConstantStructureAll &cAll
 	Variable i
 	STRUCT PhysicalConstantStructure &ci
@@ -186,25 +186,25 @@ Function PhysicalConstant_InsertStatic(name,[printIt])
 		endif
 		printf "insert:\t\tStatic Constant %s = %.15g%s\r",outName,value,comment
 		return value
-	else
-		String cmd
-		sprintf cmd, "INSERTINCLUDE \"Static Constant %s = %.15g%s\"", outName,value,comment
-		DoAlert/T="Insert Constant\r" 1, "Insert line\r"+cmd
-		V_flag = 1
-		if (V_flag==1)
-			printf "from \"%s\"  =  %.13g  (%s)\r",c.name,c.value,c.unit
-			printf "insert:\t\tStatic Constant %s = %.13g%s\r",outName,value,comment
-			Execute/P cmd
-		else
-			print "nothing done"
-		endif
+//	else
+//		String cmd
+//		sprintf cmd, "INSERTINCLUDE \"Static Constant %s = %.15g%s\"", outName,value,comment
+//		DoAlert/T="Insert Constant\r" 1, "Insert line\r"+cmd
+//		V_flag = 1
+//		if (V_flag==1)
+//			printf "from \"%s\"  =  %.13g  (%s)\r",c.name,c.value,c.unit
+//			printf "insert:\t\tStatic Constant %s = %.13g%s\r",outName,value,comment
+//			Execute/P cmd
+//		else
+//			print "nothing done"
+//		endif
 	endif
 	return 0
 End
 
 
 
-Function SiLatticeConst(TempC)		// computes temperature dependent Si Lattice constant
+ThreadSafe Function SiLatticeConst(TempC)	// computes temperature dependent Si Lattice constant
 	Variable TempC							// temperature in degrees C
 	Variable alpha=2.56E-6				// coefficient of expansion (1/¡K)
 	Variable dT = TempC - 22.5
@@ -224,7 +224,7 @@ Function DateOfLocalPhysicalConstants([printIt])		// returns epoch of current co
 		return NaN
 	endif
 	if (printIt)
-		printf "%s %s\r",date(), time()
+		printf "%s,  %s\r",Secs2Date(cAll.updateEpoch,1), Secs2Time(cAll.updateEpoch,1)
 	endif
 	return cAll.updateEpoch
 End
@@ -238,11 +238,13 @@ End
 //	GetPhysicalConstant("molar mass constant",printIt=1)
 //	GetPhysicalConstant("electron-muon mass ratio",printIt=1)
 //	GetPhysicalConstant("{220}*",printIt=1)
+//	GetPhysicalConstant("*220*",printIt=1)
 //	GetPhysicalConstant("Wien wavelength*",printIt=1)
 //	GetPhysicalConstant("Wien wavelength displacement law constant",printIt=1)
 //	GetPhysicalConstant("",printIt=1)
 //	GetPhysicalConstant("error",printIt=1)
 //	GetPhysicalConstant("\n",printIt=1)
+//	GetPhysicalConstant("hc",printIt=1)
 //End
 //
 Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
@@ -267,7 +269,7 @@ Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	STRUCT PhysicalConstantStructureAll cAll
 	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
 	if (V_bytesRead != V_structSize || V_flag)
-		DoAlert/T="Physical Constants" 1, "Update Physical Constants from NIST"
+		DoAlert/T="Physical Constants" 1, "Update Physical Constants from NIST web site?"
 		if (V_flag==1)
 			UpdateLocalCopyOfConstants()
 			LoadPackagePreferences "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
@@ -302,6 +304,8 @@ Static Function chooseConstant(cAll,name)
 
 	if (strsearch(name,"hc",0)==0 || strsearch(name,"h*c",0)==0)
 		name = "inverse meter-electron volt relationship"		// this is the "official" name of "hc"
+	elseif (StringMatch(name,"c"))
+		name = "speed of light in vacuum"								// this is the "official" name of "c"
 	endif
 	String line, allNamesList="",choice=""
 
@@ -347,7 +351,7 @@ Static Function chooseConstant(cAll,name)
 	return ic
 End
 //
-Static Function/T formatPhysicalConstantStructure(c,[always])
+ThreadSafe Static Function/T formatPhysicalConstantStructure(c,[always])
 	STRUCT PhysicalConstantStructure &c
 	Variable always
 	always = ParamIsDefault(always) || numtype(always) ? 0 : !(!always)
@@ -372,7 +376,7 @@ Static Function/T formatPhysicalConstantStructure(c,[always])
 End
 
 
-// creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServer
+// Creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServer
 Function UpdateLocalCopyOfConstants()
 	String buf = getFullASCIIfromWeb()		// return the ascii buffer with all of the constants info, must have a terminating <NL> = "\n"
 	if (strlen(buf)<200)
@@ -381,7 +385,7 @@ Function UpdateLocalCopyOfConstants()
 	endif
 
 	STRUCT PhysicalConstantStructureAll cAll
-	Variable N = FillConstantsStucturesFromBuf(buf, cAll)
+	Variable N = FillConstantStucturesFromBuf(buf, cAll)
 	SavePackagePreferences/FLSH=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0 , cAll
 	printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServer
 //	String fileName = ParseFilePath(1,FunctionPath("UpdateLocalCopyOfConstants"),":",1,0)+"Physical Constants.txt"
@@ -424,7 +428,7 @@ Static Function/T getFullASCIIfromWeb()		// return the ascii buffer with all of 
 	return buf
 End
 //
-Static Function FillConstantsStucturesFromBuf(buf,cAll)
+ThreadSafe Static Function FillConstantStucturesFromBuf(buf,cAll)
 	String buf
 	STRUCT PhysicalConstantStructureAll &cAll
 
@@ -511,7 +515,7 @@ Static Function FillConstantsStucturesFromBuf(buf,cAll)
 	return nConstants
 End
 //
-Static Function nextNonSpace(str,start)
+ThreadSafe Static Function nextNonSpace(str,start)
 	String str
 	Variable start
 	Variable i,N=strlen(str)
