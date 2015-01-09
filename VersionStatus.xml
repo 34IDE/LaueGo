@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, January 07, 2015" time="04:55:33 PM CST" isoTime="2015-01-07T16:55:33"></written>
+	<written date="Friday, January 09, 2015" time="09:47:28 AM CST" isoTime="2015-01-09T09:47:28"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>264</fileCount>
+	<fileCount>263</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
@@ -45,7 +45,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="5d77e527acd902b462684afb230ef077" ext=".xml">materials/cu225.xml</file>
 	<file version="1.11" time="2013-11-27T13:00:02" md5="295406f0234817e7f9b02a99a95682c2" ext=".ipf">APS/mdaFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="efd18f087ca114249ac513fc0d08caa2" ext=".xml">materials/LaMnO3_OrthoORNL.xml</file>
-	<file version="2.07" time="2015-01-07T16:55:01" md5="dc02d5404c106c5f917b4c5e22f3a53d" ext=".ipf">General/PhysicalConstants.ipf</file>
+	<file version="2.08" time="2015-01-09T09:39:24" md5="524eaf3b69e6c977c562734c86aecca8" ext=".ipf">General/PhysicalConstants.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4f9d1ef62a587ddc29a3b61fce96b7cd" ext=".xml">materials/SrLaGaO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="0f371a92479dd3587d334a17f1e73d69" ext=".xml">materials/UO2F2.xml</file>
 	<file version="1.9" time="2014-04-29T18:11:15" md5="d4d83bd75f91b8e7164c200bf4a5d788" ext=".ipf">General/CromerLiberman.ipf</file>
@@ -222,7 +222,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="ca031a1c8133fc9f52a01a7439b2952c" ext=".xml">materials/permalloy.xml</file>
 	<file version="nan" time="2014-02-12T12:16:35" md5="6a9232a89bd2ca917e35c070e9bfc5a1" ext=".xml">materials/Rene-41.xml</file>
 	<file version="2.06" time="2014-12-10T23:04:52" md5="dfacb642bddbdf50b2dc8e39c733a57d" ext=".ipf">always/LaueGoFirst.ipf</file>
-	<file version="nan" time="2015-01-07T16:53:30" md5="d5651bdc4b5dd4beaf8ee544478e5471" ext=".txt">General/Physical Constants.txt</file>
+	<file version="nan" time="2014-01-29T23:27:22" md5="69ecb156abe2216db1f26bf8202a4a11" ext=".xml">materials/H2O2.xml</file>
 	<file version="2.6" time="2014-12-10T23:07:34" md5="6ee4257ff2eb8f9f8904f537327cbcc1" ext=".ipf">always/always first.ipf</file>
 	<file version="1.77" time="2014-06-18T16:53:27" md5="0fe961f07510216bf9f8eff5b6a8bc36" ext=".ipf">General/Elements.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="f32795db1dc1c31411d7c33b21865108" ext=".xml">materials/LaAlO3_Rhom.xml</file>
@@ -235,7 +235,6 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="3f91d8375573dd3a452d43bedfbd0a5c" ext=".xml">materials/WC.xml</file>
 	<file version="nan" time="2013-12-04T12:37:42" md5="5bef5723ca70af900c50b2ab5bf57c7b" ext=".xml">materials/Cu.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5ae26392b0640ae81af784af29f3596d" ext=".rtf">materials/structure xml desctiption.rtf</file>
-	<file version="nan" time="2014-01-29T23:27:22" md5="69ecb156abe2216db1f26bf8202a4a11" ext=".xml">materials/H2O2.xml</file>
 	<file version="1.7" time="2014-04-30T10:24:17" md5="ed03c9cd4579b0431e8c504bd8afe3a6" ext=".ipf">APS/epics.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:33" md5="0b9de18169c6ba230aaa56f50fe65d96" ext=".mtl">materials/BeIF-1.mtl</file>
 	<file version="0.02" time="2014-10-06T09:42:00" md5="9300c148c70aa60d9d9e6d1152a3036f" ext=".ipf">micro/DoAll.ipf</file>
