@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.10
+#pragma version = 2.09
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -870,8 +870,6 @@ ThreadSafe Function GenericPeakShapeStruct(pk,wcoef,wsigma,[type])
 		return Gaussian2PeakShapeStruct(pk,wcoef,wsigma)
 	elseif (stringmatch(type"Lorentz*"))
 		return Lorentzian2PeakShapeStruct(pk,wcoef,wsigma)
-	elseif (stringmatch(type"Voigt*"))
-		return Voigt2PeakShapeStruct(pk,wcoef,wsigma)
 	endif
 //	printf "ERROR -- in GenericPeakShapeStruct(...), Unable to identify type of Peak Fit from \"%s\"\r",NameOfWave(wcoef)
 	return 1
