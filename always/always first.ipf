@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
-Constant JZTalwaysFirst_Version=2.6
-#pragma version = 2.6
+// Constant JZTalwaysFirst_Version=2.7
+#pragma version = 2.7
 #include "GeneralFirst", version>=3.12
 #include "LaueGoFirst", version>=2.06
 #pragma ModuleName=JZTalwaysFirst
@@ -14,11 +14,13 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 		PathInfo $pathName				// expand the path name, "/Users/name/data/Copper" is better than "home'
 		pathName = SelectString(V_flag,pathName+":",S_path)
 		printf "\r%s  %s  restarting this file on '%s' from '%s%s'\r\r",date(),time(),getHostName(1),pathName,file
+		ExperimentModified 0			// mark this experiment as still unmodified
 	endif
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	printf "%s  %s  starting new Untitled Igor Experiment on '%s'\r\r",date(),time(),getHostName(1)
+	ExperimentModified 0				// mark this experiment as still unmodified
 	return 0
 	//	GetWindow kwCmdHist wsize
 	//	V_right = (V_right>900) ? V_right-100 : V_right

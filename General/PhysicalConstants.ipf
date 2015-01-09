@@ -1,9 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.09
+#pragma version = 2.10
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=3.51		// supplies:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), placesOfPrecision(a), roundSignificant(val,N)
-Static StrConstant PhysicalConstantServer="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
+Static StrConstant PhysicalConstantServerURL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
 //
@@ -54,11 +54,24 @@ Static StrConstant PhysicalConstantServer="http://physics.nist.gov/cuu/Constants
 
 Menu "Analysis"
 	SubMenu "Physical Constants"
-		"New Static Constant, Physical Constant...",PhysicalConstant_InsertStatic("*")
+		"New Static Constant, Physical Constant string",PhysicalConstant_InsertStatic("*")
 		"<BGet a Physical Constant...",GetPhysicalConstant("*")
+		"  Browse NIST web site...", PhysicalConstants#BrowseConstantWebSite()
 		"<I  update your local copy [Rarely needed]",PhysicalConstants#UpdateLocalCopyOfConstants()
-		"  date of your local copy",PhysicalConstants#DateOfLocalPhysicalConstants()
+		"  (constants updated:  "+PhysicalConstants#DateOfLastUpdate()
+		//	"  date of your local copy",PhysicalConstants#DateOfLocalPhysicalConstants()
 	End
+End
+Static Function/T DateOfLastUpdate()	// provides dynamic text for menu item
+	Variable epoch = DateOfLocalPhysicalConstants()
+	return Secs2Date(epoch,1)+",  "+Secs2Time(epoch,0)
+End
+
+
+// Browse the NIST cPhysical Constants web site"
+Static Function BrowseConstantWebSite()
+	String url = ReplaceString("Table/allascii.txt",PhysicalConstantServerURL,"")
+	BrowseURL url
 End
 
 
@@ -316,9 +329,9 @@ Static Function DateOfLocalPhysicalConstants([printIt])
 End
 
 
-// Creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServer
+// Creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServerURL
 Static Function UpdateLocalCopyOfConstants()
-	String buf = getFullASCIIfromWeb()		// ascii buffer with all of the constants info, must have a terminating <NL> = "\n"
+	String buf = getFullASCIIfromWeb()		// ascii buffer with all of the constants info, must have a terminating "\n"
 	if (strlen(buf)<200)
 		print buf
 		return 1
@@ -327,14 +340,14 @@ Static Function UpdateLocalCopyOfConstants()
 	STRUCT PhysicalConstantStructureAll cAll
 	Variable N = FillConstantStucturesFromBuf(buf, cAll)
 	SavePackagePreferences/FLSH=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0 , cAll
-	printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServer
+	printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServerURL
 //	String fileName = ParseFilePath(1,FunctionPath("UpdateLocalCopyOfConstants"),":",1,0)+"Physical Constants.txt"
 End
 //
 // Return the ascii buffer with all of the constants info from web (the NIST web server)
 Static Function/T getFullASCIIfromWeb()
 	String buf=""
-	String sValue = FetchURL(PhysicalConstantServer)
+	String sValue = FetchURL(PhysicalConstantServerURL)
 	String errMsg = GetRTErrMessage()
 	if (GetRTError(1))
 		printf "ERROR -- Could not get information from web, '%s'\r",errMsg
