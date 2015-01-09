@@ -1,121 +1,68 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.08
-#pragma IgorVersion = 6.11
-
-//	By Jon Tischler (ORNL)  Aug 12, 2010
-
+#pragma version = 2.09
+#pragma IgorVersion = 6.3
+#include "Utility_JZT", version>=3.51		// supplies:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), placesOfPrecision(a), roundSignificant(val,N)
 Static StrConstant PhysicalConstantServer="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
 
-// Note, this list of constants is note really needed, it is just a convienence for copying and pasting into other experiments.
+//	By Jon Tischler (ORNL)  Aug 12, 2010
 //
-// Set to 2010 CODATA values, Jan 7, 2015
-//  from	http://physics.nist.gov/cuu/Constants
-Constant c_ms		= 299792458				// speed of light (m/s) (exact)
-Constant eo_Fm		= 8.85418781762039e-12		// permitivity of vacuum (F/m),  = 1/(4*PI*1e-7)/(299792458)^2 (exact)
-Constant G_MKS		= 6.67384e-11			// Gravitational constant (m^3 1/kg 1/s)
-Constant h_Js		= 6.62606957e-34		// Planck constant (J s)
-Constant h_eVs		= 4.135667516e-15		// Plank constant (eV s)
-Constant e_C		= 1.602176565e-19		// Charge on electron (C)
-Constant alpha_fine = 7.2973525698e-3	// fine structure constant
-Constant aB_m		= 0.52917721092e-10	// Bohr radius (m)
-Constant Rydberg	= 13.60569253			// Rydberg (eV) ( = alpha^2*me*c/2/h * hc)
-Constant me_kg		= 9.10938291e-31		// mass of electron (kg)
-Constant me_keV	= 510.998928			// mass of electron (keV)
-Constant me_mp		= 5.4461702178e-4		// mass ratio m(electron)/m(proton)
-Constant mp_kg		= 1.672621777e-27		// mass of proton (kg)
-Constant mn_kg		= 1.674927351e-27		// mass of neutron (kg)
-Constant mn_eV		= 9.39565379e8			// mass of neutron (eV)
-Constant NA			= 6.02214129e+23		// Avagadro's number
-Constant kB_JK		= 1.3806488e-23		// Boltzman constant (J/K)
-Constant kB_eVK	= 8.6173324e-5			// Boltzman constant (eV/K)
-Constant J_eV		= 1.602176565e-19		// Joules/eV
-Constant atm_Pa	= 101325					// Number of Pa in one atm (exact)
-Constant hc_keVA	= 12.3984193			// h*c (keV-Å)
-Constant hc_keVnm = 1.23984193			// h*c (keV-nm)
-Constant re_m		= 2.8179403267e-15	// Thompson radius (m)
-Constant re_A		= 2.8179403267e-5		// Thompson radius (Å)
-Constant CuKa1		= 1.540593226			// wavelength of Cu Kalpha(1) (Å)
-Constant MoKa1		= 0.709317155			// wavelength of Mo Kalpha(1) (Å)
-Constant aSi_A		= 5.4310205052			// lattice constant of Si at 22.5° (Å), 2010 CODATA,  alpha=2.56E-6 (deg/K)
+// functions of interest to users are:
+//		GetPhysicalConstant(name,[c,printIt])
+//		PhysicalConstant_InsertStatic(name,[printIt])
+//
+//			rarely someone will want to use:
+//		DateOfLocalPhysicalConstants([printIt])
+//		UpdateLocalCopyOfConstants()
+//		SiLatticeConst(TempC)
+//
+//			very rarely someone will want to use:
+//		formatPhysicalConstantStructure(c,[always])
+
+
+//	This list of constants is not really needed, it is just a convienence for copying and pasting into other experiments.
+//	Set to 2010 CODATA values, Jan 7, 2015,   from  http://physics.nist.gov/cuu/Constants
+//
+//	Constant c_ms		= 299792458				// speed of light (m/s) (exact)
+//	Constant eo_Fm		= 8.85418781762039e-12		// permitivity of vacuum (F/m),  = 1/(4*PI*1e-7)/(299792458)^2 (exact)
+//	Constant G_MKS		= 6.67384e-11			// Gravitational constant (m^3 1/kg 1/s)
+//	Constant h_Js		= 6.62606957e-34		// Planck constant (J s)
+//	Constant h_eVs		= 4.135667516e-15		// Plank constant (eV s)
+//	Constant e_C		= 1.602176565e-19		// Charge on electron (C)
+//	Constant alpha_fine = 7.2973525698e-3	// fine structure constant
+//	Constant aB_m		= 0.52917721092e-10	// Bohr radius (m)
+//	Constant Rydberg	= 13.60569253			// Rydberg (eV) ( = alpha^2*me*c/2/h * hc)
+//	Constant me_kg		= 9.10938291e-31		// mass of electron (kg)
+//	Constant me_keV	= 510.998928			// mass of electron (keV)
+//	Constant me_mp		= 5.4461702178e-4		// mass ratio m(electron)/m(proton)
+//	Constant mp_kg		= 1.672621777e-27		// mass of proton (kg)
+//	Constant mn_kg		= 1.674927351e-27		// mass of neutron (kg)
+//	Constant mn_eV		= 9.39565379e8			// mass of neutron (eV)
+//	Constant NA			= 6.02214129e+23		// Avagadro's number
+//	Constant kB_JK		= 1.3806488e-23		// Boltzman constant (J/K)
+//	Constant kB_eVK	= 8.6173324e-5			// Boltzman constant (eV/K)
+//	Constant J_eV		= 1.602176565e-19		// Joules/eV
+//	Constant atm_Pa	= 101325					// Number of Pa in one atm (exact)
+//	Constant hc_keVA	= 12.3984193			// h*c (keV-Å)
+//	Constant hc_keVnm = 1.23984193			// h*c (keV-nm)
+//	Constant re_m		= 2.8179403267e-15	// Thompson radius (m)
+//	Constant re_A		= 2.8179403267e-5		// Thompson radius (Å)
+//	Constant CuKa1		= 1.540593226			// wavelength of Cu Kalpha(1) (Å)
+//	Constant MoKa1		= 0.709317155			// wavelength of Mo Kalpha(1) (Å)
+//	Constant aSi_A		= 5.4310205052			// lattice constant of Si at 22.5° (Å), 2010 CODATA,  alpha=2.56E-6 (deg/K)
 
 
 Menu "Analysis"
 	SubMenu "Physical Constants"
 		"New Static Constant, Physical Constant...",PhysicalConstant_InsertStatic("*")
 		"<BGet a Physical Constant...",GetPhysicalConstant("*")
-		"<I  update your local copy [Rarely needed]",UpdateLocalCopyOfConstants()
-		"  date of your local copy",DateOfLocalPhysicalConstants()
+		"<I  update your local copy [Rarely needed]",PhysicalConstants#UpdateLocalCopyOfConstants()
+		"  date of your local copy",PhysicalConstants#DateOfLocalPhysicalConstants()
 	End
 End
 
 
-
-Static Constant PhysicalConstantMaxStr=60
-
-Static Structure PhysicalConstantStructure
-	int16	valid
-	char name[PhysicalConstantMaxStr+1]
-	double value
-	double err
-	char unit[PhysicalConstantMaxStr+1]
-	int16 exact
-EndStructure
-//
-Static Structure PhysicalConstantStructureAll
-	double updateEpoch				// Igor epoch when last updated
-	int16	N1
-	STRUCT PhysicalConstantStructure c1[100]
-	int16	N2
-	STRUCT PhysicalConstantStructure c2[100]
-	int16	N3
-	STRUCT PhysicalConstantStructure c3[100]
-	int16	N4
-	STRUCT PhysicalConstantStructure c4[100]			// c4 only needs 35 of these 100
-EndStructure
-//
-ThreadSafe Static Function copyPhysicalConstantStructure(f,i)
-	STRUCT PhysicalConstantStructure &f, &i
-	f.valid	= i.valid
-	f.name	= i.name
-	f.value	= i.value
-	f.err		= i.err
-	f.unit	= i.unit
-	f.exact	= i.exact
-End
-//
-ThreadSafe Static Function initPhysicalConstantStructure(c)
-	STRUCT PhysicalConstantStructure &c
-	c.valid	= 0			// init to NOT valid
-	c.name	= ""
-	c.value	= NaN
-	c.err		= NaN
-	c.unit	= ""
-	c.exact	= 0
-End
-//
-ThreadSafe Static Function getStruct_i(cAll,i,ci)	// copy constant i from cAll into ci
-	STRUCT PhysicalConstantStructureAll &cAll
-	Variable i
-	STRUCT PhysicalConstantStructure &ci
-
-	Variable j = mod(i,100)
-	Variable m = floor(i/100)
-	if (m==0)
-		copyPhysicalConstantStructure(ci,cAll.c1[j])
-	elseif (m==1)
-		copyPhysicalConstantStructure(ci,cAll.c2[j])
-	elseif (m==2)
-		copyPhysicalConstantStructure(ci,cAll.c3[j])
-	elseif (m==3)
-		copyPhysicalConstantStructure(ci,cAll.c4[j])
-	else
-		initPhysicalConstantStructure(ci)
-	endif
-End
-
-
-
+// writes to history a string that you can copy/paste into your procedure.
 Function PhysicalConstant_InsertStatic(name,[printIt])
 	String name
 	Variable printIt
@@ -134,15 +81,16 @@ Function PhysicalConstant_InsertStatic(name,[printIt])
 	name = c.name
 	Variable value = c.value
 
+	// other names (and scalings) for commonly used constants
 	String conversions="inverse meter-electron volt relationship=hc_keVnm,1e6,h*c (keV-nm):hc_keVA,1e7,h*c (keV-Å);"
 	conversions += "classical electron radius=re_m,1,Thompson radius (m):re_nm,1e9,Thompson radius (nm):re_A,1e10,Thompson radius (Å);"
 	conversions += "speed of light in vacuum=c_ms,1,speed of light in vacuum (m s^-1):c_nms,1e9,speed of light in vacuum (nm s^-1);"
 	conversions += "{220} lattice spacing of silicon=aoSi022_m,1,Si {220} (m):aoSi022_nm,1e9,Si {220} (nm):aoSi022_A,1e10,Si {220} (Å);"
-	conversions += "electron mass energy equivalent in MeV="
-	conversions += "me_eV,1e6,electron mass energy equivalent (eV):"
-	conversions += "me_keV,1e3,electron mass energy equivalent (keV):"
-	conversions += "me_MeV,1,electron mass energy equivalent (MeV);"
 	conversions += "Avogadro constant=NA,1,Avogadro constant (1 mole);"
+	conversions += "electron mass energy equivalent in MeV="
+		conversions += "me_eV,1e6,electron mass energy equivalent (eV):"
+		conversions += "me_keV,1e3,electron mass energy equivalent (keV):"
+		conversions += "me_MeV,1,electron mass energy equivalent (MeV);"
 
 	String lists=StringByKey(name,conversions,"="), outName, comment
 	Variable N=ItemsInList(lists,":"),i
@@ -204,33 +152,6 @@ End
 
 
 
-ThreadSafe Function SiLatticeConst(TempC)	// computes temperature dependent Si Lattice constant
-	Variable TempC							// temperature in degrees C
-	Variable alpha=2.56E-6				// coefficient of expansion (1/°K)
-	Variable dT = TempC - 22.5
-	return aSi_A*(1+alpha*dT)
-End
-
-
-
-Function DateOfLocalPhysicalConstants([printIt])		// returns epoch of current copy of PhysicalConstants
-	Variable printIt
-	printIt = (ParamIsDefault(printIt) || numtype(printIt)) ? strlen(GetRTStackInfo(2))==0 : printIt
-
-	STRUCT PhysicalConstantStructureAll cAll
-	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
-	if (V_bytesRead != V_structSize || V_flag)
-		print "ERROR -- no current copy of Physical Constants found"
-		return NaN
-	endif
-	if (printIt)
-		printf "%s,  %s\r",Secs2Date(cAll.updateEpoch,1), Secs2Time(cAll.updateEpoch,1)
-	endif
-	return cAll.updateEpoch
-End
-
-
-
 //Function test()
 //	GetPhysicalConstant("speed of light in vacuum",printIt=1)
 //	GetPhysicalConstant("speed of light*",printIt=1)
@@ -253,7 +174,7 @@ Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	Variable printIt
 	if (!ParamIsDefault(c))
 		initPhysicalConstantStructure(c)	// mainly set c.valid=0
-		c.name = name[0,PhysicalConstantMaxStr]
+		c.name = name[0,PhysicalConstantMaxStrLen]
 	endif
 	if (ParamIsDefault(printIt) || numtype(printIt))
 		printIt = strlen(GetRTStackInfo(2))==0
@@ -270,15 +191,15 @@ Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
 	if (V_bytesRead != V_structSize || V_flag)
 		DoAlert/T="Physical Constants" 1, "Update Physical Constants from NIST web site?"
-		if (V_flag==1)
-			UpdateLocalCopyOfConstants()
+		if (V_flag==1)									// could not load from Preferences, goto web
+			UpdateLocalCopyOfConstants()			// get constants from NIST web site, and try again
 			LoadPackagePreferences "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
 		else
 			return NaN
 		endif
 	endif
-	Variable ic = chooseConstant(cAll,name)
-	STRUCT PhysicalConstantStructure clocal
+	Variable ic = chooseConstant(cAll,name)	// ask user which constant?
+	STRUCT PhysicalConstantStructure clocal	// store result into clocal
 	getStruct_i(cAll,ic,clocal)
 	name = clocal.name
 
@@ -290,7 +211,7 @@ Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	endif
 
 	if (!ParamIsDefault(c))
-		copyPhysicalConstantStructure(c,clocal)
+		copyPhysicalConstantStructure(c,clocal)	// struct c was supplied, so fill it
 	endif
 	if (printIt)
 		print formatPhysicalConstantStructure(clocal,always=1)
@@ -351,6 +272,7 @@ Static Function chooseConstant(cAll,name)
 	return ic
 End
 //
+// returns a nice string showing contents of c
 ThreadSafe Static Function/T formatPhysicalConstantStructure(c,[always])
 	STRUCT PhysicalConstantStructure &c
 	Variable always
@@ -376,9 +298,27 @@ ThreadSafe Static Function/T formatPhysicalConstantStructure(c,[always])
 End
 
 
+// returns epoch of current copy of PhysicalConstants, and optionally prints too
+Static Function DateOfLocalPhysicalConstants([printIt])
+	Variable printIt
+	printIt = (ParamIsDefault(printIt) || numtype(printIt)) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	STRUCT PhysicalConstantStructureAll cAll
+	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
+	if (V_bytesRead != V_structSize || V_flag)
+		print "ERROR -- no current copy of Physical Constants found"
+		return NaN
+	endif
+	if (printIt)
+		printf "Local copy of constants last updated from NIST web server on:  %s,  %s\r",Secs2Date(cAll.updateEpoch,1), Secs2Time(cAll.updateEpoch,1)
+	endif
+	return cAll.updateEpoch
+End
+
+
 // Creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServer
-Function UpdateLocalCopyOfConstants()
-	String buf = getFullASCIIfromWeb()		// return the ascii buffer with all of the constants info, must have a terminating <NL> = "\n"
+Static Function UpdateLocalCopyOfConstants()
+	String buf = getFullASCIIfromWeb()		// ascii buffer with all of the constants info, must have a terminating <NL> = "\n"
 	if (strlen(buf)<200)
 		print buf
 		return 1
@@ -391,7 +331,8 @@ Function UpdateLocalCopyOfConstants()
 //	String fileName = ParseFilePath(1,FunctionPath("UpdateLocalCopyOfConstants"),":",1,0)+"Physical Constants.txt"
 End
 //
-Static Function/T getFullASCIIfromWeb()		// return the ascii buffer with all of the constants info from web
+// Return the ascii buffer with all of the constants info from web (the NIST web server)
+Static Function/T getFullASCIIfromWeb()
 	String buf=""
 	String sValue = FetchURL(PhysicalConstantServer)
 	String errMsg = GetRTErrMessage()
@@ -428,7 +369,8 @@ Static Function/T getFullASCIIfromWeb()		// return the ascii buffer with all of 
 	return buf
 End
 //
-ThreadSafe Static Function FillConstantStucturesFromBuf(buf,cAll)
+// take ASCII result from web server and fill cAll
+Static Function FillConstantStucturesFromBuf(buf,cAll)
 	String buf
 	STRUCT PhysicalConstantStructureAll &cAll
 
@@ -486,10 +428,10 @@ ThreadSafe Static Function FillConstantStucturesFromBuf(buf,cAll)
 		clocal.err = str2num(strErr)
 
 		unit = TrimFrontBackWhiteSpace(line[unit0,Inf])
-		clocal.unit = unit[0,PhysicalConstantMaxStr]
+		clocal.unit = unit[0,PhysicalConstantMaxStrLen]
 
 		name = TrimFrontBackWhiteSpace(line[0,val0-1])
-		clocal.name = name[0,PhysicalConstantMaxStr]
+		clocal.name = name[0,PhysicalConstantMaxStrLen]
 		clocal.valid = 1									// set valid to true
 
 		j = mod(nConstants,100)
@@ -515,7 +457,7 @@ ThreadSafe Static Function FillConstantStucturesFromBuf(buf,cAll)
 	return nConstants
 End
 //
-ThreadSafe Static Function nextNonSpace(str,start)
+Static Function nextNonSpace(str,start)
 	String str
 	Variable start
 	Variable i,N=strlen(str)
@@ -528,55 +470,76 @@ ThreadSafe Static Function nextNonSpace(str,start)
 End
 
 
+// Returns Si Lattice constant (Å) at a particular temperature
+ThreadSafe Function SiLatticeConst(TempC)
+	Variable TempC							// temperature in degrees C
+	Variable alpha=2.56E-6				// coefficient of expansion (1/°K)
+	Variable dT = TempC - 22.5
+	return 5.4310205052*(1+alpha*dT)	// 5.4310205052 = aoSi at 22.5° (Å), 2010 CODATA
+End
 
-// The following 5 function here are duplicates copied from Utility_JZT.ipf
-//
-ThreadSafe Static Function/T TrimFrontBackWhiteSpace(str)
-	String str
-	str = TrimLeadingWhiteSpace(str)
-	str = TrimTrailingWhiteSpace(str)
-	return str
-End
-//
-ThreadSafe Static Function/T TrimLeadingWhiteSpace(str)
-	String str
-	Variable i, N=strlen(str)
-	for (i=0;char2num(str[i])<=32 && i<N;i+=1)	// find first non-white space
-	endfor
-	return str[i,Inf]
-End
-//
-ThreadSafe Static Function/T TrimTrailingWhiteSpace(str)
-	String str
-	Variable i
-	for (i=strlen(str)-1; char2num(str[i])<=32 && i>=0; i-=1)	// find last non-white space
-	endfor
-	return str[0,i]
-End
-//
-ThreadSafe Static Function placesOfPrecision(a)		// number of significant figures in a number (at most 16)
-	Variable a
-	a = roundSignificant(abs(a),17)
-	Variable i
-	for (i=1;i<18;i+=1)
-		if (abs(a-roundSignificant(a,i))/a<1e-15)
-			break
-		endif
-	endfor
-	return i
-End
-//
-// This routine is much faster than going through an [sprintf str,"%g",val] conversion
-ThreadSafe Static Function roundSignificant(val,N)	// round val to N significant figures
-	Variable val			// input value to round
-	Variable N			// number of significant figures
 
-	if (val==0 || numtype(val))
-		return val
+
+// PhysicalConstant structures
+Static Constant PhysicalConstantMaxStrLen=60
+Static Structure PhysicalConstantStructure
+	int16	valid
+	char name[PhysicalConstantMaxStrLen+1]
+	double value
+	double err
+	char unit[PhysicalConstantMaxStrLen+1]
+	int16 exact
+EndStructure
+//
+Static Structure PhysicalConstantStructureAll
+	double updateEpoch				// Igor epoch when last updated
+	int16	N1
+	STRUCT PhysicalConstantStructure c1[100]
+	int16	N2
+	STRUCT PhysicalConstantStructure c2[100]
+	int16	N3
+	STRUCT PhysicalConstantStructure c3[100]
+	int16	N4
+	STRUCT PhysicalConstantStructure c4[100]			// c4 only needs 35 of these 100
+EndStructure
+//
+ThreadSafe Static Function copyPhysicalConstantStructure(f,i)
+	STRUCT PhysicalConstantStructure &f, &i
+	f.valid	= i.valid
+	f.name	= i.name
+	f.value	= i.value
+	f.err		= i.err
+	f.unit	= i.unit
+	f.exact	= i.exact
+End
+//
+ThreadSafe Static Function initPhysicalConstantStructure(c)
+	STRUCT PhysicalConstantStructure &c
+	c.valid	= 0			// init to NOT valid
+	c.name	= ""
+	c.value	= NaN
+	c.err		= NaN
+	c.unit	= ""
+	c.exact	= 0
+End
+//
+// Copy constant structure i from cAll into ci
+ThreadSafe Static Function getStruct_i(cAll,i,ci)
+	STRUCT PhysicalConstantStructureAll &cAll
+	Variable i
+	STRUCT PhysicalConstantStructure &ci
+
+	Variable j = mod(i,100)		// index into c1, c2, c3, or c4
+	Variable m = floor(i/100)		// which group of 100 to choose
+	if (m==0)
+		copyPhysicalConstantStructure(ci,cAll.c1[j])
+	elseif (m==1)
+		copyPhysicalConstantStructure(ci,cAll.c2[j])
+	elseif (m==2)
+		copyPhysicalConstantStructure(ci,cAll.c3[j])
+	elseif (m==3)
+		copyPhysicalConstantStructure(ci,cAll.c4[j])
+	else
+		initPhysicalConstantStructure(ci)
 	endif
-	Variable is,tens
-	is = sign(val) 
-	val = abs(val)
-	tens = 10^(N-floor(log(val))-1)
-	return is*round(val*tens)/tens
 End
