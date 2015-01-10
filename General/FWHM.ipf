@@ -1,4 +1,4 @@
-#pragma rtGlobals=1		// Use modern global access method.
+#pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.11
 #pragma version = 2.10
 #pragma ModuleName=fwhm
@@ -832,20 +832,20 @@ ThreadSafe Function/T PeakShapeStruct2str(pk,[short])
 	String sNet=ValErrStr(pk.net,pk.dnet)+xyunits
 
 	if (short)
-		sprintf out, "%s:  FWHM=%s, Center=%s, Amp=%s, Bkg=%s Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
+		sprintf out, "%s:  FWHM=%s, Center=%s, Amp=%s, Bkg=%s, Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
 	else
-		sprintf out, "%s:  FWHM=%s, Center=%s\r    Amp=%s, Bkg=%s Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
+		sprintf out, "%s:  FWHM=%s, Center=%s\r    Amp=%s, Bkg=%s, Integral=%s",type,sFWHM,sCen,sAmp,sBkg,sNet
 	endif
 	if (numtype(pk.COM)==0)
-		sprintf str,",  COM = %s", ValErrStr(pk.COM,pk.dCOM)
+		sprintf str,", COM = %s", ValErrStr(pk.COM,pk.dCOM)
 		out += str
 	endif
 	if (numtype(pk.shape)==0)
-		sprintf str,"%sshape = %s", SelectString(short, "\r",",  "),ValErrStr(pk.shape,pk.dshape)
+		sprintf str,"%sshape = %s", SelectString(short, "\r",", "),ValErrStr(pk.shape,pk.dshape)
 		out += str
 	endif
 	if (numtype(pk.shape1)==0)
-		sprintf str,",  shape1 = %s", ValErrStr(pk.shape1,pk.dshape1)
+		sprintf str,", shape1 = %s", ValErrStr(pk.shape1,pk.dshape1)
 		out += str
 	endif
 	return out
@@ -998,8 +998,66 @@ ThreadSafe Static Function Lorentzian2PeakShapeStruct(pk,wcoef,wsigma)
 		pk.damp = pk.amp * sqrt((wsigma[1]/wcoef[1])^2 + (wsigma[3]/wcoef[3])^2)
 		pk.dx0 = wsigma[2]
 		pk.dbkg = wsigma[0]
-		pk.dFWHM = wsigma[3]
+		pk.dFWHM = 1/sqrt(wcoef[3]) * wsigma[3]
 		pk.dnet = pk.net * sqrt((wsigma[1]/wcoef[1])^2 + (wsigma[3]/wcoef[3]/2)^2)
+	endif
+	return 0
+End
+
+ThreadSafe Static Function Voigt2PeakShapeStruct(pk,wcoef,wsigma)
+	// for a Voigt peak fit (given by wcoef & wsigma), fill in PeakShapeStructure
+	// y = K0+K1/((x-K2)^2+K3)
+	//	for VoigtFit:		y = w[0]+w[1]*Voigt(w[2]*(x-w[3]),w[4])
+	// an explanation is in  TN026.ifn
+	//	net area					= w[1]*sqrt(pi)/w[2]
+	//	HWHM Gauss (hwG)		= sqrt(ln(2))/w[2]
+	//	HWHM Lorentz (hwL)	= w[4]/w[2] 
+	//	HWHM Voigt				= hwL/2 + sqrt( hwL^2/4 + hwG^2)
+	STRUCT PeakShapeStructure &pk
+	Wave wcoef, wsigma
+	if (WaveType(wcoef,1)!=1)						// wcoef exists, and it is numeric
+		return 1
+	elseif (DimSize(wcoef,0)<5)					// need at least 5 for a Voigt
+		return 1
+	endif
+	initPeakShapeStructure(pk)
+
+	Variable i,N=min(DimSize(wcoef,0),5)
+	Duplicate/FREE wcoef, wc
+	Redimension/N=(N) wc
+	if (WaveExists(wsigma))
+		Duplicate/FREE wsigma, ws
+		Redimension/N=(N) ws
+	endif
+	pk.N = N
+	for (i=0;i<N;i+=1)
+		pk.coef[i] = wc[i]
+		if (WaveExists(wsigma))
+			pk.sigma[i] = ws[i]
+		endif
+	endfor
+	Variable hwL = abs(wc[4]/wc[2])			// HWHM Lorentzian
+	Variable hwG = sqrt(ln(2))/abs(wc[2])	// HWHM Gaussian
+	Variable hwV = hwL/2 + sqrt(0.25*(hwL^2) + hwG^2)
+	pk.type = "Voigt"
+	pk.amp = wc[1]
+	pk.x0 = wc[3]
+	pk.bkg = wc[0]
+	pk.FWHM = 2 * hwV
+	pk.shape = wc[4]
+	pk.net = sqrt(PI)*wc[1]/abs(wc[2])
+	pk.xunits = WaveUnits(wc,0)
+	pk.yunits = WaveUnits(wc,-1)
+	if (WaveExists(ws))
+		Variable dhwG = abs(ws[2]/wc[2]) * hwG
+		Variable dhwL = sqrt((ws[4]/wc[4])^2 + (ws[4]/wc[4])^2) * hwL
+		Variable dhwV = dhwL/2 + 0.5/sqrt(0.25*(hwL^2) + hwG^2) * (hwl*dhwl/2 + 2*hwG*dhwG)
+		pk.damp = ws[1]
+		pk.dx0 = ws[3]
+		pk.dbkg = ws[0]
+		pk.dshape = ws[4]
+		pk.dFWHM = 2*dhwV
+		pk.dnet = sqrt((ws[1]/wc[1])^2 + (ws[2]/wc[2])^2) * pk.net
 	endif
 	return 0
 End
