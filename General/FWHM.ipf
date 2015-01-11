@@ -12,7 +12,7 @@ Static Constant MAX_PEAK_COEFS = 6
 Menu "Analysis"
 	"-"
 	MenuItemIfWavesExists("Simple Peak Parameters of ...","*","DIMS:1,MINROWS:3"), FindSimplePeakParameters($"",$"")
-	MenuItemIfWavesExists("Peak Parameters [W_coef]","W_coef","DIMS:1,MINROWS:4"), FWHM_Coefs()
+	fwhm#MenuItemIfCoefWaveExists("Peak Parameters [W_coef]"), FWHM_Coefs()
 	fwhm#MenuItemIfFitPeakOnGraph("Fit Displayed Peak to a Resolution","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakOnGraph("")
 End
 
@@ -24,6 +24,13 @@ Menu "TracePopup"
 	MenuItemIfWaveClassExists("Fit to a PeakWave","peakWave;Resolution*","DIMS:1"), fwhm#FitPeakToTrace()
 End
 
+
+Static Function/S MenuItemIfCoefWaveExists(item)
+	String item						// string that you want to appear in menu
+	String list = WaveListClass("peakFitCoefs*","*","DIMS:1")
+	list += SelectString(exists("W_coef"),"","W_coef;")		// W_coef is always acceptable
+	return SelectString(strlen(list),"(","")+item
+End
 
 
 //  ======================================================================================  //
@@ -356,12 +363,9 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,pLo,pHi,printIt,peakStruct])
 			peakData = prettyWaveName(yp)
 		endif
 		printf "Fit of data={%s}  to  peak={%s}\r",inData,peakData
-
-//		printf "  Started with coefs = %s\r",vec2str(cwStart)
 		printf "  Started with coefs = %s",vec2str(cwStart)
 		if (numtype(pLo+pHi)==0)
 			printf ",   Using point range [%g, %g]",pLo,pHi
-
 		endif
 		printf "\r"
 
@@ -422,19 +426,6 @@ Static Function/S prettyWaveName(ww)
 	endif
 	return strFull
 End
-//Static Function/S prettyWaveName(ww)
-//	Wave ww
-//
-//	if (!WaveExists(ww))
-//		return ""
-//	elseif (WaveType(ww,2)==2)
-//		return "FREE"
-//	endif
-//
-//	String str0= GetWavesDataFolder(ww,2)
-//	String str=ReplaceString("root:",str0,"",0,1)
-//	return SelectString(strsearch(str,":",0)<0, str0, str)
-//End
 
 //Function Make_yPeakTestData()
 //	Make/N=51/D/O yPeak
@@ -463,36 +454,74 @@ End
 //  ======================================================================================  //
 //  ================================ Start of basic FWHM  ================================  //
 
-Function FWHM_Coefs([type,printIt])
+// This routine is really only intended to be called from a menu.
+//		In a Function, use GenericPeakShapeStruct() and the PeakShapeStructure structure.
+Function FWHM_Coefs([type,coef,sigma,printIt])
 	// uses W_coef to return FWHM, and probably print other statistics
 	String type						// user can pass type, or it is read from wave note
+	Wave coef, sigma				// if not passed, ask for them
 	Variable printIt
 	type = SelectString(ParamIsDefault(type), type, "")
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? 1 : !(!printIt)
-
-	Wave W_coef=W_coef, W_sigma=W_sigma
-	if (!WaveExists(W_coef))
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0  : !(!printIt)
+	if (!WaveExists(coef))
+		String list = WaveListClass("peakFitCoefs","*","DIMS:1")
+		if (exists("W_coef")==1 && WhichListItem("W_coef",list)<0)
+			list += "W_coef;"		// add W_coef if it is available
+		endif
+		Wave sigma = $""
+		if (ItemsInList(list)<1)
+			return NaN
+		elseif (ItemsInList(list)==1)
+			Wave coef = $StringFromList(0,list)
+		else
+			String name
+			Prompt name, "coef wave", popup, list
+			DoPrompt "Pick W_coef wave", name
+			if (V_flag)
+				return NaN
+			endif
+			Wave coef = $name
+		endif
+		printIt = 1
+	endif
+	if (printIt)
+		String params=""
+		if (strlen(type))
+			params += "type=\""+type+"\", "
+		endif
+		if (WaveExists(coef))
+			params += "coef="+NameOfWave(coef)+", "
+		endif
+		if (WaveExists(sigma))
+			params += "sigma="+NameOfWave(sigma)+", "
+		endif
+		if (!ParamIsDefault(printIt))
+			params += "printIt="+num2str(printIt)+", "
+		endif
+		printf "FWHM_Coefs(%s)\r", RemoveEnding(params,", ")
+	endif
+	if (!WaveExists(coef))
 		return NaN
 	endif
-	Variable Nc=DimSize(W_coef,0)
-	if (DimSize(W_sigma,0)!=Nc)
-		Wave W_sigma=$""
+	Variable Nc=DimSize(coef,0)
+	Wave sigma = findMatchingSigmaWave(coef)
+	if (DimSize(sigma,0)!=Nc)
+		Wave sigma=$""
 	endif
 
-	String FitList=""
-	if (Nc==4)
-		FitList="Lorentzian;Gaussian;"
-	elseif (Nc==6)
-		FitList="Simple;"
-	elseif (Nc==5)
-		FitList="Voigt;PearsonVII;"
-	else
-		return NaN
-	endif
-
-	type = SelectString(strlen(type), StringByKey("type",note(W_coef),"="), type)
-	if (strlen(type)<1)
+	// Have the W_coef wave, next try to figure out the type.
+	type = SelectString(strlen(type), StringByKey("type",note(coef),"="), type)
+	if (strlen(type)<1)				// type not known, try to figure it out
+		String FitList=""
+		if (Nc==4)
+			FitList="Lorentzian;Gaussian;"
+		elseif (Nc==6)
+			FitList="Simple;"
+		elseif (Nc==5)
+			FitList="Voigt;PearsonVII;"
+		else
+			return NaN
+		endif
 		if (ItemsInList(FitList)<1)
 			return NaN
 		elseif (ItemsInList(FitList)==1)
@@ -508,7 +537,7 @@ Function FWHM_Coefs([type,printIt])
 	endif
 
 	STRUCT PeakShapeStructure pk
-	if (GenericPeakShapeStruct(pk,W_coef,W_sigma,type=type))
+	if (GenericPeakShapeStruct(pk,coef,sigma,type=type))
 		if (printIt)
 			printf "ERROR -- Unable to use W_coef of type \"%s\"\r",type
 		endif
@@ -519,14 +548,42 @@ Function FWHM_Coefs([type,printIt])
 	endif
 	return pk.FWHM
 End
+//
+Static Function/WAVE findMatchingSigmaWave(coef)		// return the sigma wave that goes with coef
+	Wave coef
+	if (!WaveExists(coef))
+		return $""
+	endif
+	if (WaveInClass(coef,"peakFitCoefs"))
+		Variable i, Nc=DimSize(coef,0)
+		String list = WaveListClass("peakFitSigmas","*","DIMS:1,MINROWS:"+num2istr(Nc))
+		String wnote=note(coef)
+		String yWave=StringByKey("yWave",wnote,"="), type=StringByKey("type",wnote,"=")
+		for (i=0;i<ItemsInList(list);i+=1)
+			Wave ws = $StringFromList(i,list)
+			if (!WaveExists(ws))
+				continue
+			elseif (!StringMatch(StringByKey("type",note(ws),"="),type))
+				continue
+			elseif (!StringMatch(StringByKey("yWave",note(ws),"="),yWave))
+				continue
+			endif
+			return ws
+		endfor
+	endif
+	if (StringMatch(NameOfWave(coef),"W_coef"))
+		return $"W_sigma"
+	endif
+	return $""
+End
 
 
-Function FindSimplePeakParameters(yw,xw,[W_coef,useBkg,printIt])
+Function FindSimplePeakParameters(yw,xw,[SimpleCoef,useBkg,printIt])
 	// a user command to get Simple peak stats from yw (or yw vs xw), and probably print them
-	// it also creates the W_coef & W_sigma waves containing {bkg, amplitude, x0, FWHM, net, COM}
+	// it also creates the SimpleCoef & W_sigma waves containing {bkg, amplitude, x0, FWHM, net, COM}
 	// returns 0 if all went OK, 1 on an error
 	Wave yw,xw			// yw vs xw, or just yw using scaling
-	Wave/D W_coef		// wave to hold the results, one will be created if not present
+	Wave/D SimpleCoef	// wave to hold the results, one will be created if not present
 	Variable useBkg											// if true, find a background, if false NO Background
 	Variable printIt
 	useBkg = ParamIsDefault(useBkg) ? NaN : useBkg
@@ -562,26 +619,27 @@ Function FindSimplePeakParameters(yw,xw,[W_coef,useBkg,printIt])
 
 	Wave Wc = CalcSimplePeakParameters(yw,xw,useBkg)
 	Variable Np=DimSize(Wc,0)
-	if (WaveExists(W_coef))
-		Redimension/N=(Np)/D W_coef
+	if (WaveExists(SimpleCoef))
+		Redimension/N=(Np)/D SimpleCoef
 	else
-		Make/N=(Np)/O/D W_coef=NaN
+		Make/N=(Np)/O/D SimpleCoef=NaN
 	endif
-	W_coef = Wc
-	CopyScales Wc, W_coef
-	Note/K W_coef, note(Wc)
-	Duplicate/O W_coef, W_sigma
-	W_sigma = NaN					// no known errors yet
+	SimpleCoef = Wc
+	CopyScales Wc, SimpleCoef
+	Note/K SimpleCoef, note(Wc)
+	Duplicate/O SimpleCoef, SimpleSigma
+	Note/K SimpleSigma, ReplaceStringByKey("waveClass",note(Wc),"peakFitSigmas","=")
+	SimpleSigma = NaN						// no known errors yet
 
 	if (printIt)
 		STRUCT PeakShapeStructure pk
-		Simple2PeakShapeStruct(pk,W_coef,$"")
+		Simple2PeakShapeStruct(pk,SimpleCoef,$"")
 		print PeakShapeStruct2str(pk)
 	endif
 	return 0
 End
 //
-ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg,[pLo,pHi])	// look at peak in yw vs xw, put results into W_coef
+ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg,[pLo,pHi])	// look at peak in yw vs xw, return results in Wc
 	// calculate the peak stats for peak in yw, or yw vs xw, and returns result as FREEE wave
 	// Wc = {bkg, amplitude, x0, FWHM, net, COM}   Simple peak stats
 	Wave yw,xw
@@ -1220,7 +1278,7 @@ Function PlainFWHMofWave(yName,xName)
 	String yName, xName
 
 	Make/N=5/D/FREE wC
-	if (FindSimplePeakParameters($yName,$xName,W_coef=wC))
+	if (FindSimplePeakParameters($yName,$xName,SimpleCoef=wC))
 		return NaN
 	endif
 	Variable/G V_FWHM=wC[3], V_center=wC[2]
