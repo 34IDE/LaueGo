@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.51
+#pragma version = 3.52
 // #pragma hide = 1
 
 Menu "Graph"
@@ -65,6 +65,8 @@ End
 //		epoch2ISOtime(seconds), convert an Igor epoch (in seconds) to an ISO8601 format string
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
+//		encodeMatAsStr(mat,[places]), convert mat to a string interpretable by decodeMatFromStr(), used for wave notes
+//		decodeMatFromStr(str), returns a FREE wave defined by str, inverse of encodeMatAsStr()
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
 //		str2cmplx(str), 	this is like str2num, but for complex
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
@@ -2972,6 +2974,56 @@ End
 //		endif
 //		printf "'%s' --> %s\r",str,vec2str(vec)
 //	End
+
+
+// The routines encodeMatAsStr() and decodeMatFromStr() are NOT intended for viewing by user, but for a wave note
+ThreadSafe Function/T encodeMatAsStr(mat,[places])		// write a string interpretable by decodeMatFromStr
+	Wave mat
+	Variable places		// defaults to 15 places of precisiont
+	places = ParamIsDefault(places) || !(places>0) ? 15 : places
+
+	Variable i, Nr=DimSize(mat,0), Nc=DimSize(mat,1)
+	Make/N=(Nr)/D/FREE vec
+	String str="{"
+	for (i=0;i<Nc;i+=1)
+		vec = mat[p][i]
+		str += vec2str(vec,places=places,sep=",")
+	endfor
+	str += "}"
+	return str
+End
+
+
+// This is also may be used as a replacement for str2recip() in LatticeSym.ipf
+ThreadSafe Function/WAVE decodeMatFromStr(strIn)	// returns a FREE wave defined by str
+	// strIn looks something like "{{1.3,0,0},{0,1.3,0},{0,0,1.3},{3.14,2,19.666}}"
+	//    or "{1.3,0,0}{0,1.3,0}{0,0,1.3}" is also OK
+	String strIn
+	strIn = ReplaceString(" ",strIn,"")		// remove all spaces
+	strIn = ReplaceString("\t",strIn,"")		//   and tabs
+	strIn = ReplaceString("},{",strIn,";")	// use ';' to separate the column vectors
+	strIn = ReplaceString("}{",strIn,";")		//   accept either "},{" or "}{"
+	strIn = ReplaceString("{",strIn,"")		// remove leading "{"
+	strIn = ReplaceString("}",strIn,"")		//   and remove and trailing "}"
+
+	String str=StringFromList(0,strIn)
+	Variable ic, Nr=ItemsInList(str,","), Nc=ItemsInList(strIn)	// number of rows, columns
+	if (!(Nr*Nc>0))
+			return $""									// Nr & Nc must both be non-zero
+	endif
+	Make/N=(Nr,Nc)/D/FREE mat=NaN				// mat is the result, fill it
+	for (ic=0;ic<Nc;ic+=1)
+		Wave vec = str2vec(StringFromList(ic,strIn))
+		if (!(numpnts(vec)==Nr))					// every vector should have length of Nr
+			return $""
+		endif
+		mat[][ic] = vec[p]
+	endfor
+	if (Nc==1)
+		Redimension/N=(Nr) mat
+	endif
+	return mat
+End
 
 
 ThreadSafe Function/T cmplx2str(zz,[places,pow])		// convert complex number to a printable string
