@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.52
+#pragma version = 3.53
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2126,33 +2126,37 @@ ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
 	Make/N=(3,3)/FREE/D rot=mat
 	if (squareUp)
 		if (SquareUpMatrix(rot))
-			axis = NaN						// default for error
+			axis = NaN								// default for error
 			return NaN
 		endif
 	else
 		MatrixOp/FREE sumd = sum(Abs((mat x mat^t) - Identity(3)))
 		if (sumd[0]<0 || sumd[0]>1e-4)		// not close enough to a rotation mat, an error
-			axis = NaN						// default for error
+			axis = NaN								// default for error
 			return NaN
 		endif
 	endif
 
 	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
 	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)							// special for 180¡ rotation,
+	if (cosine<= -1)								// special for 180¡ rotation,
 		axis[0] = sqrt((rot[0][0]+1)/2)
 		axis[1] = sqrt((rot[1][1]+1)/2)
-		axis[2] = sqrt((rot[2][2]+1)/2)			// always assume z positive
+		axis[2] = sqrt((rot[2][2]+1)/2)		// always assume z positive
 		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
 		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-	else										// rotaion < 180¡, usual formula works
+		if (numtype(sum(axis)))				// this is for very special cases such as diag = {1,-1,-1}
+			WaveStats/M=1/Q axis
+			axis = p==V_maxloc
+		endif
+	else												// rotaion < 180¡, usual formula works
 		axis[0] = rot[2][1] - rot[1][2]
 		axis[1] = rot[0][2] - rot[2][0]
 		axis[2] = rot[1][0] - rot[0][1]
 		axis /= 2
 	endif
 	normalize(axis)
-	return acos(cosine)*180/PI					// rotation angle in degrees
+	return acos(cosine)*180/PI				// rotation angle in degrees
 End
 
 
