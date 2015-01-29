@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.53
+#pragma version = 3.54
 // #pragma hide = 1
 
 Menu "Graph"
@@ -63,6 +63,7 @@ End
 //		ISOtime2niceStr(iso), convert ISO8601 string to a nice format for graph annotations
 //		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
 //		epoch2ISOtime(seconds), convert an Igor epoch (in seconds) to an ISO8601 format string
+//		AskForUserForDateTime(epoch), puts up a dialog to select a date & time, returns the epoch
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
 //		encodeMatAsStr(mat,[places]), convert mat to a string interpretable by decodeMatFromStr(), used for wave notes
@@ -2857,6 +2858,53 @@ ThreadSafe Function/T epoch2ISOtime(epoch)			// convert an Igor epoch (in second
 		out += Secs2Time(epoch,3,places)				// fractional seconds
 	endif
 	return out
+End
+
+
+Function AskForUserForDateTime(epoch)
+	// puts up a dialog to select a date & time, returns the epoch (NaN on error or Cancel)
+	// return NaN for invalid dates (e.g. Apr 31, or Feb 29 2005)
+	Variable epoch
+	epoch = (numtype(epoch) || epoch<=0) ? DateTime : epoch
+
+	Variable day,month,year
+	sscanf Secs2Date(epoch,-2), "%4d-%2d-%2d",year,month,day
+
+	Variable midnight = epoch-date2secs(year,month,day)		// seconds since midnight(year,month,day)
+	Variable hour=floor(midnight/3600), minute=floor(mod(midnight/60,60)), second=floor(mod(midnight,30))
+
+	Prompt day,"Date", popup, expandRange("1-31",";")
+	Prompt month,"Month", popup, "January;February;March;April;May;June;July;August;September;October;November;December"
+	Prompt year,"Year", popup, expandRange("1995-2025",";")
+	Prompt hour,"Hours [0-23]",popup,expandRange("0-23",";")
+	Prompt minute,"Minutes [0-59]",popup,expandRange("0-59",";")
+	Prompt second,"Seconds [0-59]",popup,expandRange("0-59",";")
+	year -= 1994
+	hour += 1
+	minute += 1
+	second += 1
+	DoPrompt "Date/Time",day,hour,month,minute,year,second
+	if (V_flag)
+		return NaN
+	endif
+	year += 1994
+	hour -= 1
+	minute -= 1
+	second -= 1
+
+	Variable err=0
+	switch(month)
+		case 2:			// February is special 28 days except leap year
+			err = err || (mod(year,4) && day>28)		// on non-leap year, Feb only to 28
+			err = err || (mod(year,4)==0 && day>29)	// on leap year, Feb goes to 29
+		case 4:			// April, these four months have 30 days
+		case 6:			// June
+		case 9:			// September
+		case 11:			// November
+			err = err || day>30
+	endswitch
+	epoch = err ? NaN : date2secs(year,month,day) + 3600*hour + 60*minute + second
+	return epoch
 End
 
 

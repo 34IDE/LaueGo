@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.71
-#include  "LatticeSym", version>=4.25
+#pragma version = 1.72
+#include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 
@@ -3951,10 +3951,7 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 			endif
 		endif
 		if (numtype(epoch))		// one last chance to find the time
-			DoAlert 1,"Use Current time"
-			if (V_flag==1)
-				epoch = DateTime
-			endif
+			epoch = AskForUserForDateTime(NaN)		// defaults to now (epoch = DateTime)
 		endif
 		if (numtype(epoch))
 			return 1
@@ -4212,6 +4209,9 @@ Function GeoFromWeb(epoch,gIn)
 	sprintf ddate "%04d-%02d-%02d",iy,im,id
 	ttime = Secs2Time(epoch,3)
 
+	if (ItemsInList(GetRTStackInfo(0))<3)					// print everything if run from command line
+		printf "About to get geometry information from web using date: %s,  %s\r",Secs2Date(epoch,2),Secs2Time(epoch,1)
+	endif
 	String url
 	sprintf url "http://%s/index.php?tag=geoN&date=%sT%s",GeoWebServer,ddate,ttime
 	//	printf "url = %s\r\r",url
@@ -4253,8 +4253,7 @@ Function GeoFromWeb(epoch,gIn)
 	else
 		GeometryUpdateCalc(g)									// calculate other values
 		CopymicroGeometry(gIn,g)								// new geometry is valid, so copy it in
-		if (ItemsInList(GetRTStackInfo(0))<3)					// print everything if run from command line
-			printf "Loaded geometry information from web using date: %s,  %s\r",Secs2Date(epoch,2),Secs2Time(epoch,1)
+//		if (ItemsInList(GetRTStackInfo(0))<3)					// print everything if run from command line
 //			if (strlen(list))
 //				printf "     this geometry created on   %s  %s\r",StringByKey("dateWritten",list,"="),StringByKey("timeWritten",list,"=")
 //				printf "     geometry file was set on  %s, %s\r",StringByKey("dateWritten",list,"="),StringByKey("timeWritten",list,"=")
@@ -4269,7 +4268,7 @@ Function GeoFromWeb(epoch,gIn)
 //					printf "     with detector note='%s'\r",str
 //				endif
 //			endif
-		endif
+//		endif
 	endif
 	return 0
 End
