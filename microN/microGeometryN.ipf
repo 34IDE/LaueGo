@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.72
+#pragma version = 1.73
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -26,6 +26,8 @@ Static StrConstant GeoWebServer = "sector34.xray.aps.anl.gov/34ide"
 //
 //	px = startx + px*groupx + (groupx-1)/2	// pixel is zero based here & startx is zero based
 //	py = starty + py*groupy + (groupy-1)/2	// groupx=1 is un-binned
+//
+//  kf^ = ki^ - 2*(ki^ . q^)*q^
 
 
 // ============================================================================================
