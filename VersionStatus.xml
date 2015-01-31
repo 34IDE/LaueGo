@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, January 30, 2015" time="12:10:42 PM CST" isoTime="2015-01-30T12:10:42"></written>
+	<written date="Friday, January 30, 2015" time="06:02:07 PM CST" isoTime="2015-01-30T18:02:07"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -137,7 +137,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="65963c90d8b1a79187ab47a53778e222" ext=".xml">materials/Ta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
-	<file version="nan" time="2015-01-28T17:06:45" md5="2bb1bd9006b5cc5fc62b3b0a50d084f3" ext="">microN/Euler4</file>
+	<file version="nan" time="2015-01-30T17:21:00" md5="a7e6f653514324a4eaae57c9334d61c1" ext="">microN/Euler4</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
 	<file version="1.73" time="2015-01-30T11:41:06" md5="5bc85af99f1a2a7d1aa78715a0b28b17" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.12" time="2014-12-07T14:25:31" md5="3e283a6c33aef15547b975df251fc202" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
