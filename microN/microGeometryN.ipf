@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.73
+#pragma version = 1.74
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -2244,6 +2244,27 @@ ThreadSafe Function HF2Z(H,F)	// Z =  H*cos(angle) + F*sin(angle)
 End
 
 
+// these two routines, do the same thing as the above 4 routine, but operate on a vector
+ThreadSafe Function XYZ2XHF(vec3)	// rotate vector (XYZ) to the vector (XHF)
+	Wave vec3								// 3-vector with XYZ on input, returns with XHF values
+	Variable Y=vec3[1], Z=vec3[2]
+	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
+	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
+	vec3[1] = Y*sinTheta + Z*cosTheta		// H value
+	vec3[2] = -Y*cosTheta + Z*sinTheta		// F value
+End
+
+
+ThreadSafe Function XHF2XYZ(vec3)	// rotate vector (XHF) to the vector (XYZ)
+	Wave vec3								// 3-vector with XHF on input, returns with XYZ values
+	Variable H=vec3[1], F=vec3[2]
+	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
+	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
+	vec3[1] = H*sinTheta - F*cosTheta	// Y value
+	vec3[2] = H*cosTheta + F*sinTheta	// Z value
+End
+
+
 //	This is only called by GenericWaveNoteInfo() in Utility_JZT.ipf
 ThreadSafe Function/T MoreWaveNoteInfo(ww,list)		// additions to the list, only called by GenericWaveNoteInfo() in Utility_JZT.ipf
 	Wave ww
@@ -3231,6 +3252,7 @@ ThreadSafe Function/WAVE matString2mat33(str)			// returns a FREE wave with (3x3
 End
 
 
+// I added the check for RH,RF to make this work for some old experiments that only made RX,RY,RZ
 ThreadSafe Function/WAVE getRLfrom3DWave(scatter,point)
 	Wave scatter
 	Variable point					// point number, only used when scatter is a list of triplets (not for 3d wave)
@@ -3240,14 +3262,23 @@ ThreadSafe Function/WAVE getRLfrom3DWave(scatter,point)
 	elseif (WaveDims(scatter)==2 && DimSize(scatter,1)==3 && numtype(point)==0)	// a list of triplets
 		String path=GetWavesDataFolder(scatter,1)
 		Wave RX = $(path+"RX"), RY = $(path+"RY"), RZ = $(path+"RZ")					// Use Rx,Ry,Rz,   NOT gm
+		Make/N=3/D/FREE Rvec=NaN
 		if (WaveExists(RX) && WaveExists(RY) && WaveExists(RZ))
-			Make/N=3/D/FREE 	Rvec = {RX[point], RY[point], RZ[point]}
-			Make/N=(3,3)/D/FREE rot
-			rotationMatAboutAxis(Rvec,NaN,rot)			// rotation of reference recip to this point
-			Wave RL = matString2mat33(StringByKey("recipRef",note(RX),"="))	// starts as reference recip
-			MatrixOP/FREE/O RL = rot x RL				// RL is now the reciprocal lattice for this point
+			Rvec = {RX[point], RY[point], RZ[point]}
+		else
+			Wave RH = $(path+"RH"), RF = $(path+"RF")	// cannot find RY & RZ, try with RH & RF
+			if (WaveExists(RX) && WaveExists(RH) && WaveExists(RF))
+				Rvec = {RX[point], RH[point], RF[point]}
+				XHF2XYZ(Rvec)										// rotate vector (XHF) to the vector (XYZ)
+			endif
 		endif
-	elseif (WaveDims(scatter)==3)						// a 3D volume (probably k-space)
+		if (numtype(sum(Rvec))==0)							// obtained a valid Rvec
+			Make/N=(3,3)/D/FREE rot
+			rotationMatAboutAxis(Rvec,NaN,rot)				// rotation of reference recip to this point
+			Wave RL = matString2mat33(StringByKey("recipRef",note(RX),"="))	// starts as reference recip
+			MatrixOP/FREE/O RL = rot x RL					// RL is now the reciprocal lattice for this point
+		endif
+	elseif (WaveDims(scatter)==3)							// a 3D volume (probably k-space)
 		String recip_lattice0=StringByKey("recip_lattice0",note(scatter),"=")
 		Wave RL = matString2mat33(recip_lattice0)
 	else
@@ -3255,6 +3286,30 @@ ThreadSafe Function/WAVE getRLfrom3DWave(scatter,point)
 	endif
 	return RL
 End
+//ThreadSafe Function/WAVE getRLfrom3DWave(scatter,point)
+//	Wave scatter
+//	Variable point					// point number, only used when scatter is a list of triplets (not for 3d wave)
+//
+//	if (!WaveExists(scatter))
+//		Wave RL=$""
+//	elseif (WaveDims(scatter)==2 && DimSize(scatter,1)==3 && numtype(point)==0)	// a list of triplets
+//		String path=GetWavesDataFolder(scatter,1)
+//		Wave RX = $(path+"RX"), RY = $(path+"RY"), RZ = $(path+"RZ")					// Use Rx,Ry,Rz,   NOT gm
+//		if (WaveExists(RX) && WaveExists(RY) && WaveExists(RZ))
+//			Make/N=3/D/FREE 	Rvec = {RX[point], RY[point], RZ[point]}
+//			Make/N=(3,3)/D/FREE rot
+//			rotationMatAboutAxis(Rvec,NaN,rot)			// rotation of reference recip to this point
+//			Wave RL = matString2mat33(StringByKey("recipRef",note(RX),"="))	// starts as reference recip
+//			MatrixOP/FREE/O RL = rot x RL				// RL is now the reciprocal lattice for this point
+//		endif
+//	elseif (WaveDims(scatter)==3)						// a 3D volume (probably k-space)
+//		String recip_lattice0=StringByKey("recip_lattice0",note(scatter),"=")
+//		Wave RL = matString2mat33(recip_lattice0)
+//	else
+//		Wave RL=$""
+//	endif
+//	return RL
+//End
 
 
 ThreadSafe Function notRotationMatrix(mat,[printIt])	// false if mat is a rotation matrix, i.e. mat^T = mat^-1
