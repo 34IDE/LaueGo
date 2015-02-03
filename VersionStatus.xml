@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, February 02, 2015" time="05:35:46 PM CST" isoTime="2015-02-02T17:35:46"></written>
+	<written date="Tuesday, February 03, 2015" time="10:35:35 AM CST" isoTime="2015-02-03T10:35:35"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>264</fileCount>
+	<fileCount>265</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
+	<file version="nan" time="2015-01-30T17:21:00" md5="a7e6f653514324a4eaae57c9334d61c1" ext="">microN/Euler4_0</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="ab995a02b022e8807254635bf2d06118" ext=".xml">materials/Be.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b83d955199cd0ab0f59c6efa0fc3c904" ext=".xml">materials/CeO2d.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7610aeee47dd713ce7e87f6a71e956c9" ext=".xml">materials/BaTiO3.xml</file>
@@ -137,7 +138,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="65963c90d8b1a79187ab47a53778e222" ext=".xml">materials/Ta.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dce445b51584e1e6acdfee3610c82a43" ext=".xml">materials/Al150.xml</file>
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
-	<file version="nan" time="2015-01-30T17:21:00" md5="a7e6f653514324a4eaae57c9334d61c1" ext="">microN/Euler4</file>
+	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" ext="">microN/Euler4</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
 	<file version="1.74" time="2015-02-02T17:27:11" md5="80b002cfb16da5cdf82843d0744e4439" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.12" time="2014-12-07T14:25:31" md5="3e283a6c33aef15547b975df251fc202" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
