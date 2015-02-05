@@ -132,7 +132,9 @@ Function/WAVE LoadPVfromBurt(PVname,start,[period,final])
 	else
 		Wave/T burt=LoadPVfrom34IDBurtFiles(PVname,start)
 	endif
-	DisplayBurtResult(burt)
+	if (WaveExists(burt))
+		DisplayBurtResult(burt)
+	endif
 	return burt
 End
 //
@@ -173,6 +175,10 @@ Static Function/WAVE LoadPVfrom34IDBurtFiles(PVname,start,[period,final])
 		endif
 		sprintf final,"%4d-%02d-%02d",year,month,day
 		period = numtype(period) ? 1 : period
+	endif
+	if (!(ISOtime2IgorEpoch(final)>ISOtime2IgorEpoch(start)))
+		DoAlert 0, "final date is before start date"
+		return $""
 	endif
 
 	String pythonScript = ParseFilePath(1, FunctionPath("BurtFiles#LoadPVfrom34IDBurtFiles"), ":", 1, 0)+"burt_tool.py"
