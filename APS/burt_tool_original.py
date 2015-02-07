@@ -12,11 +12,6 @@ burt_path = '/net/s33dserv.xray.aps.anl.gov/export/sector33_34/burt'
 
 
 def main(pv, start_date, period=1.0, end_date=-1):
-	pv = pv.strip()
-	if len(pv) < 1: 				# this is needed because of adding pvSearch
-		print "ERROR -- pv is empty"
-		exit(1)
-
     if end_date == -1:
         end_date = start_date
 
@@ -25,7 +20,6 @@ def main(pv, start_date, period=1.0, end_date=-1):
     current = start[:]
     current.append(0)
     current.append(0)
-	pvSearch = '"'+pv+' pv"'		# needed in case pv is the value of another string pv
 
     f_period = float(period)
     
@@ -37,8 +31,7 @@ def main(pv, start_date, period=1.0, end_date=-1):
             #                                                             year        month       day         hour        minute                second
             current_path = "%s/%i/%02i/%02i/%02i-%i-0%i.gz" % (burt_path, current[0], current[1], current[2], current[3], fraction[current[4]], lastDigit)
             if os.path.isfile(current_path):
-                # temp = os.popen("zgrep %s %s" % (pv, current_path))
-                temp = os.popen("zgrep %s %s" % (pvSearch, current_path))
+                temp = os.popen("zgrep %s %s" % (pv, current_path))
                 cmd_output = temp.readline()
                 temp.close
                 del temp
