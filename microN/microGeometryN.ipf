@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.74
+#pragma version = 1.75
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -4664,9 +4664,9 @@ Function Init_microGeo()
 
 	InitLatticeSymPackage()
 
-if (stringmatch(systemUserName(),"tischler"))
-	DoAlert 0,"Note to JZT:  need more consistency in wire.origin. it should be after keyence correction by before rotation"
-endif
+	if (strsearch(SpecialDirPath("Desktop",0,0,0),"tischler",0,2)>0)
+		DoAlert 0,"Note to JZT:  need more consistency in wire.origin. it should be after keyence correction by before rotation"
+	endif
 	NewDataFolder/O root:Packages						// ensure Packages exists
 	NewDataFolder/O root:Packages:geometry			// ensure geometry exists
 	NewDataFolder/O root:Packages:micro				// ensure micro exists

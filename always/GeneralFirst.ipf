@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.12
+#pragma version = 3.13
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.51
@@ -16,10 +16,13 @@ End
 
 Menu "Analysis"
 	Submenu "Packages"
+		"-"
 		"Physical Constants",Execute/P "INSERTINCLUDE  \"PhysicalConstants\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load Package of Physical Constants."}
 		"FWHM",Execute/P "INSERTINCLUDE  \"FWHM\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load commands for getting FWHM."}
+		"Image Display Range", Execute/P "INSERTINCLUDE \"ImageDisplayScaling\"" ; 	Execute/P "COMPILEPROCEDURES "
+		help = {"Load procedures that set range of color table based on a Marquee region"}
 		Submenu "Gizmo"
 			"Gizmo Zoom & Translate", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GZoomTrans#InitGizmoZoomTranslate()"
 			help = {"Provide support of Zooming and translating Gizmos"}
@@ -31,10 +34,8 @@ Menu "Analysis"
 			help = {"Provide support of making movies of a Gizmo"}
 			"  Load All of the above Gizmo Utiliites",JZTgeneral#LoadAllGizmoUtilities()
 		End
-		"Image Display Range", Execute/P "INSERTINCLUDE \"ImageDisplayScaling\"" ; 	Execute/P "COMPILEPROCEDURES "
-		help = {"Load procedures that set range of color table based on a Marquee region"}
 
-		SubMenu "X-ray"
+		SubMenu "Scattering..."
 			"X-ray Data",Execute/P "INSERTINCLUDE  \"Xray\", version>=2.21";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
 			help = {"Load procedures for providing X-ray data"}
 			"  Elements Data",Execute/P "INSERTINCLUDE  \"Elements\", version>=1.69";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
@@ -45,9 +46,10 @@ Menu "Analysis"
 			help = {"Load procedures for evaluating ion chamber output"}
 			"Lattices",Execute/P "INSERTINCLUDE  \"LatticeSym\", version>=3.77";Execute/P "COMPILEPROCEDURES ";Execute/P "InitLatticeSymPackage()"
 			help = {"Load lattice symmetry procedures"}
+			"-"
+			"Neutron Scattering Data",Execute/P "INSERTINCLUDE  \"Neutron\", version>=1.1";Execute/P "COMPILEPROCEDURES ";Execute/P "NeutronDataInitPackage()"
+			help = {"Load procedures for providing Neutron Scattering Data"}
 		End
-		"Neutron Scattering Data",Execute/P "INSERTINCLUDE  \"Neutron\", version>=1.1";Execute/P "COMPILEPROCEDURES ";Execute/P "NeutronDataInitPackage()"
-		help = {"Load procedures for providing Neutron Scattering Data"}
 		"-"
 	End
 End
@@ -107,6 +109,7 @@ Menu "Analysis"
 		help = {"Load procedures reading and looking at WinView images"}
 	End
 End
+
 Menu "Data"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
@@ -117,6 +120,7 @@ Menu "Data"
 		help = {"Load Burt files (from APS)."}
 	End
 End
+
 Menu "Load Waves"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
