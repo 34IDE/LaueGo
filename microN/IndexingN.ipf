@@ -1,24 +1,24 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.59
-#include "LatticeSym", version>=4.13
-#include "microGeometryN", version>=1.62
-#include "Masking", version>1.01
-#include "ImageDisplayScaling", version>=1.92
+#pragma version = 4.60
+#include "LatticeSym", version>=4.29
+#include "microGeometryN", version>=1.75
+#include "Masking", version>1.02
+#include "ImageDisplayScaling", version>=1.98
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&2)
 #include "tiff"
 //#else
 #endif
 //#if (Exists("HDF5OpenFile")==4)
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&1 && Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.26
+#include "HDF5images", version>=0.30
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
-#include "WinView", version>=1.96
+#include "WinView", version>=2.03
 //#else
 #endif
-Constant INDEXING_MAX_CALC = 40
+Constant INDEXING_MAX_CALC = 30
 Constant INDEXING_MAX_TEST = 51
 
 //	with version 2.50, I changed so that yc in the file header always superceedes yc in the geo panel
@@ -26,6 +26,7 @@ Constant INDEXING_MAX_TEST = 51
 //	with version 3.40, change strain refinement to use energy, it also now works in k-spcace, not angle space
 //	with version 4.00, add the ability to use both spe and hdf5 with the new geometry
 //	with version 4.18, changed default name of FullPeakList to something like FullPeakListOrange
+//	with version 4.60, changed how pick_keV_calc() works
 
 //	#define USE_ENERGY_STRAIN_REFINE		// paste this line (uncommented) in your Procedure Window to use newer strain refinement
 
@@ -121,16 +122,16 @@ Static Constant SMALLEST1 = 1.2e-16
 
 
 Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,printIt])
-	Wave FullPeakList0					// contains the result of a peak fitting
+	Wave FullPeakList0				// contains the result of a peak fitting
 	Variable keVmaxCalc				// 17, maximum energy to calculate (keV)
-	Variable keVmaxTest				// 26, maximum energy to test (keV)  [-t]
-	Variable angleTolerance				// 0.25, angular tolerance (deg)
+	Variable keVmaxTest				// 30, maximum energy to test (keV)  [-t]
+	Variable angleTolerance		// 0.25, angular tolerance (deg)
 	Variable hp,kp,lp					// preferred hkl
 	Variable cone						// angle from preferred hkl, (0 < cone < 180¡)
 	Variable maxSpots					// -n max num. of spots from data file to use, default is 250
-	Wave FullPeakList1					// contains the result of a peak fitting
-	Wave FullPeakList2					// contains the result of a peak fitting
-	Variable printIt						// forces print out
+	Wave FullPeakList1				// contains the result of a peak fitting
+	Wave FullPeakList2				// contains the result of a peak fitting
+	Variable printIt					// forces print out
 	maxSpots = ParamIsDefault(maxSpots) ? -1 : maxSpots
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
 	if (ParamIsDefault(FullPeakList1))
@@ -171,7 +172,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		keVmaxCalc = numtype(keVmaxCalc) ? pick_keV_calc() : keVmaxCalc
 		keVmaxTest = (keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST) ? keVmaxTest : NaN
 		keVmaxTest = numtype(keVmaxTest) ? NumVarOrDefault("root:Packages:micro:Index:keVmaxTest",NaN) : keVmaxTest
-		keVmaxTest = numtype(keVmaxTest) ? min(3*keVmaxCalc,50) : keVmaxTest
+		keVmaxTest = numtype(keVmaxTest) ? min(3*keVmaxCalc,30) : keVmaxTest
 		angleTolerance = (angleTolerance>=0.01 && angleTolerance<10) ? angleTolerance : NumVarOrDefault("root:Packages:micro:Index:angleTolerance",(is4500S ? 0.5 : 0.1))
 		hp = numtype(hp) ? NumVarOrDefault("root:Packages:micro:Index:hp",0) : hp
 		kp = numtype(kp) ? NumVarOrDefault("root:Packages:micro:Index:kp",0) : kp
@@ -355,7 +356,7 @@ Static Function rotationBetweenRecipLattices(RL0,RL,hkl,[ints])		// returns the 
 	endif
 	return angle
 End
-
+//
 Static Function/T SurfaceNormalString(FullPeakIndexed,[pattern])
 	Wave FullPeakIndexed
 	Variable pattern
@@ -394,16 +395,17 @@ Static Function/T SurfaceNormalString(FullPeakIndexed,[pattern])
 	endif
 	return str
 End
-
-Static Function pick_keV_calc()							// given xtal, return a good number for the keV calc to be used in Euler indexing program
+//
+Static Function pick_keV_calc()				// given xtal, return a good number for the keV calc to be used in Euler indexing program
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))
 		DoAlert 0, "no lattice structure found, did you forget to set it?"
 		Abort "in pick_keV_calc()"
 	endif
-	Variable factor = NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,0)&2 ? 3.0 : 9.931
-	Variable keV = sqrt(factor/xtal.Vc * PrimitiveCellFactor(xtal))
-	keV = round(keV*10)/10
+	//	Variable factor = NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,0)&2 ? 3.0 : 5.0
+	Variable factor = 5.0
+	Variable keV = factor * (PrimitiveCellFactor(xtal)/(xtal.Vc))^0.33333
+	keV = round(keV*10)/10						// round to 0.1 keV
 	return keV
 End
 
@@ -412,7 +414,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 	// modified to do all of the indexed patterns
 	Variable dNum										// this should probably only be called with dNum = 1 or 2
 	Wave peakList										// the FullPeakList wave
-	Wave/Z indexedList									// the FullPeakIndexed wave, only used to get the reciprocal lattice
+	Wave/Z indexedList								// the FullPeakIndexed wave, only used to get the reciprocal lattice
 
 	STRUCT microGeometry g
 	if (FillGeometryStructDefault(g))								//fill the geometry structure with current values
@@ -1299,7 +1301,7 @@ Function AddMissingReflections(FullPeakIndexed,[pattern,detector])	// calculate 
 	if (setXtalFromNote(indexNote,xtal))
 		if (FillCrystalStructDefault(xtal))
 			DoAlert 0, "no lattice structure found, did you forget to set it?"
-			Abort "in pick_keV_calc()"
+			Abort "in AddMissingReflections()"
 		endif
 	endif
 
