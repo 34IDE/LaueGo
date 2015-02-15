@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.38
+#pragma version = 2.39
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -107,6 +107,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 //						in DisplaySpecScan(), returns NaN on failure, and scan number if successful
 //
 // Dec 12, 2014, in FindDataStart() No longer limited to only searches first 100 lines for "#L " line
+//
+// Feb 14, 2015, spec_GenericGraphStyle() now calls SpecGenericGraphStyle() and NOT GenericSpecStyle() (which does not exist)
 
 Menu "Data"
 	"-"
@@ -603,10 +605,10 @@ Function DisplaySpecScan(scanNum,overlay)
 	Variable showXunits = -1
 	if (exists(xname)==1)
 		showXunits = (strlen(WaveUnits($xname,-1))>0) - 1
-		showXunits = cmpstr(WaveUnits($xname,-1),"Â°") ? showXunits : 1	// do not put () around degree sign
+		showXunits = cmpstr(WaveUnits($xname,-1),"¡") ? showXunits : 1	// do not put () around degree sign
 	endif
 	Variable showYunits = (strlen(WaveUnits($yname,-1))>0)			// 1 if units are present, otherwise 0
-	showYunits = cmpstr(WaveUnits($yname,-1),"Â°") ? showYunits : -1// do not put () around degree sign, only -1 for degree
+	showYunits = cmpstr(WaveUnits($yname,-1),"¡") ? showYunits : -1// do not put () around degree sign, only -1 for degree
 
 	SetDataFolder fldrSav
 
@@ -655,7 +657,8 @@ End
 //
 Proc spec_GenericGraphStyle() : GraphStyle
 	Silent 1
-	GenericSpecStyle()
+	//	GenericSpecStyle()
+	SpecGenericGraphStyle()
 EndMacro
 Function SpecGenericGraphStyle()
 	if (ItemsInList(WinList("*",";","WIN:1"))==0)
@@ -1732,13 +1735,13 @@ End
 //Function AddStandardWaveScaling(nameList)
 //	// Add standard units to spec waves.  This is just a guess (hopefully a good one)
 //	String nameList			// list of wave names, one for each column
-//	String unitList="delta_:Â°;phi_:Â°;mu_:Â°;nu_:Â°;kappa_:Â°;keta_:Â°;eta_:Â°;kphi_:Â°;chi_:Â°"
-//	unitList += ";Delta_:Â°"
-//	unitList += ";H:rlu;K:rlu;L:rlu;seconds:s;Epoch:s;Xburleigh:Âµm;Yburleigh:Âµm;Zburleigh:Âµm"
-//	unitList += ";Two_Theta:Â°;2theta:Â°;Theta:Â°;Chi:Â°;Phi:Â°;anal-2th:Â°;anal-th:Â°"
-//	unitList += ";tth:Â°;th:Â°;"
+//	String unitList="delta_:¡;phi_:¡;mu_:¡;nu_:¡;kappa_:¡;keta_:¡;eta_:¡;kphi_:¡;chi_:¡"
+//	unitList += ";Delta_:¡"
+//	unitList += ";H:rlu;K:rlu;L:rlu;seconds:s;Epoch:s;Xburleigh:µm;Yburleigh:µm;Zburleigh:µm"
+//	unitList += ";Two_Theta:¡;2theta:¡;Theta:¡;Chi:¡;Phi:¡;anal-2th:¡;anal-th:¡"
+//	unitList += ";tth:¡;th:¡;"
 //	if (stringmatch(IgorInfo(2),"Windows" ))
-//		unitList = ReplaceString("Â°",unitList,"deg")
+//		unitList = ReplaceString("¡",unitList,"deg")
 //	endif
 //	String name
 //	Variable i = 0
@@ -1754,14 +1757,14 @@ End
 Function/S StandardWaveScaling(name)
 	// Add standard units to spec waves.  This is just a guess (hopefully a good one)
 	String name					// wave name, one for each column
-	String unitList="delta_:Â°;phi_:Â°;mu_:Â°;nu_:Â°;kappa_:Â°;keta_:Â°;eta_:Â°;kphi_:Â°;chi_:Â°"
-	unitList += ";Delta_:Â°;Gamma_:Â°"
-	unitList += ";H:rlu;K:rlu;L:rlu;seconds:s;Epoch:s;Time_:s;Xburleigh:Âµm;Yburleigh:Âµm;Zburleigh:Âµm"
-	unitList += ";Two_Theta:Â°;2theta:Â°;Theta:Â°;Chi:Â°;Phi:Â°;anal-2th:Â°;anal-th:Â°"
-	unitList += ";tth:Â°;th:Â°;X2_theta:Â°;"
-	unitList +="Delta:Â°;Phi:Â°;Chi:Â°;Gamma:Â°;"
+	String unitList="delta_:¡;phi_:¡;mu_:¡;nu_:¡;kappa_:¡;keta_:¡;eta_:¡;kphi_:¡;chi_:¡"
+	unitList += ";Delta_:¡;Gamma_:¡"
+	unitList += ";H:rlu;K:rlu;L:rlu;seconds:s;Epoch:s;Time_:s;Xburleigh:µm;Yburleigh:µm;Zburleigh:µm"
+	unitList += ";Two_Theta:¡;2theta:¡;Theta:¡;Chi:¡;Phi:¡;anal-2th:¡;anal-th:¡"
+	unitList += ";tth:¡;th:¡;X2_theta:¡;"
+	unitList +="Delta:¡;Phi:¡;Chi:¡;Gamma:¡;"
 	if (stringmatch(IgorInfo(2),"Windows" ))
-		unitList = ReplaceString("Â°",unitList,"deg")
+		unitList = ReplaceString("¡",unitList,"deg")
 	endif
 	return StringByKey(name,unitList)
 End
@@ -3132,7 +3135,7 @@ Function/T QsampleFromSpec(h,k,l,scanNum)
 	endif
 	Variable Qlen = sqrt(Qx*Qx+Qy*Qy+Qz*QZ)
 	Variable angle = acos(limit(Qz/Qlen,-1,1))*180/PI
-	printf "(hkl)=(%g, %g, %g)  -->  Q=(%g, %g, %g), |Q|=%g (1/nm),   angle to surface normal = %gÂ°\r",h,k,l,Qx,Qy,Qz,Qlen,angle
+	printf "(hkl)=(%g, %g, %g)  -->  Q=(%g, %g, %g), |Q|=%g (1/nm),   angle to surface normal = %g¡\r",h,k,l,Qx,Qy,Qz,Qlen,angle
 	return Qstr
 End
 //
