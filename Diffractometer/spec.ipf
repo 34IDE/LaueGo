@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.39
+#pragma version = 2.40
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -3289,7 +3289,7 @@ Function List_spec_Scans(fileName,path,scanType)
 	String fileName, path, scanType
 
 	if (strlen(fileName)<1 || strlen(path)<1 || strlen(scanType)<1)
-		String types="all;ascan;a2scan;hklscan;tscan;laserscan;slewscan;Escan;other"
+		String types="all;ascan;a2scan;hklscan;tscan;laserscan;slewscan;Escan;timescan;other"
 		Prompt fileName, "name of file"
 		Prompt path, "path for raw data", popup, PathList("*", ";", "")
 		Prompt scanType, "type of spec scans to list", popup, types
