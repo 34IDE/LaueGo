@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.29
+#pragma version = 4.30
 #include "Utility_JZT" version>=3.39
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -102,6 +102,8 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 //		also changed crystalStructure2xml() and convertOneXTL2XML() to take a new line argument.
 // with version 4.28, in positionsOfOneAtomType() duplicate atoms are now within 5pm (in x,y,&z) not just 1e-3
 //		also positionsOfOneAtomType() uses free waves rather than real temp waves
+// with version 4.30, in str2recip(str), now handles both "}{" and "},{" type strings
+//		also added some helpful comments about convert recip <--> direct using MatrixOP
 
 // Rhombohedral Transformation:
 //
@@ -119,6 +121,13 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 //	a(Rhom) = sqrt(3*aH^2 + cH^2)/3
 //	sin(alpha(Rhom)/2) = 1.5/sqrt(3+(cH/aH)^2)
 //	These equations are implented in the routines:  Hex2Rhom(aH,cH)  &  Rhom2Hex(aR,alpha)
+//
+//
+// Although not used here, note that the following also works:
+//		MatrixOP recipLatice   = 2*PI * (Inv(directLattice))^t
+//		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
+//		Vc      = MatrixDet(directLattice)		// Volume of unit cell
+//		VcRecip = MatrixDet(recipLatice)		// Volume of reciprocal lattice cell
 
 
 Menu "Analysis"
@@ -1163,7 +1172,10 @@ End
 //
 Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors from a,b,c,..., also calculates Vc & density
 	STRUCT crystalStructure &xtal
-
+	// Although not used here, note that the following also works:
+	//		MatrixOP recipLatice = 2*PI * (Inv(directLattice))^t
+	//		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
+	//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
 	Variable a=xtal.a, b=xtal.b, c=xtal.c
 	Variable sa = sin((xtal.alpha)*PI/180), ca = cos((xtal.alpha)*PI/180)
 	Variable cb = cos((xtal.beta)*PI/180), cg = cos((xtal.gam)*PI/180)
@@ -1171,9 +1183,9 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	xtal.Vc = a*b*c * phi								// volume of unit cell
 	Variable pv = (2*PI) / (xtal.Vc)				// used for scaling
 	Variable a0,a1,a2,  b0,b1,b2,  c0,c1,c2		//components of the direct lattice vectors
-	a0=a*phi/sa	; a1=a*(cg-ca*cb)/sa	; a2=a*cb
-	b0=0			; b1=b*sa				; b2=b*ca
-	c0=0			; c1=0					; c2=c
+	a0=a*phi/sa		; a1=a*(cg-ca*cb)/sa	; a2=a*cb
+	b0=0				; b1=b*sa		; b2=b*ca
+	c0=0				; c1=0			; c2=c
 	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2
 	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
 	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
@@ -1196,18 +1208,16 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	endif
 
 	xtal.density = densityOfCrystalStructure(xtal)
-
 	if (xtal.N==0)								// no atom defined, make one dummy atom
 		xtal.N = 1
 		xtal.atom[0].x = 0
 		xtal.atom[0].y = 0
 		xtal.atom[0].z = 0
-		xtal.atom[0].Zatom = 1					// Z of the atom
+		xtal.atom[0].Zatom = 1				// Z of the atom
 		xtal.atom[0].name = "H1"
 		xtal.atom[0].occ = 1
 		xtal.atom[0].valence = 0
 	endif
-
 	return 0
 End
 
@@ -5072,7 +5082,7 @@ End
 //	End
 
 
-Function/WAVE recipFrom_xtal(xtal)		// returns a FREE wave with reciprocal lattice
+Function/WAVE recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal lattice
 	STRUCT crystalStructure &xtal
 	Make/N=(3,3)/D/FREE RL
 	RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}		// the reciprocal lattice
@@ -5088,15 +5098,15 @@ Function/WAVE recipFrom_xtal(xtal)		// returns a FREE wave with reciprocal latti
 End
 
 
-Function/WAVE directFrom_xtal(xtal)			// returns a FREE wave with real lattice
+Function/WAVE directFrom_xtal(xtal)				// returns a FREE wave with real lattice
 	STRUCT crystalStructure &xtal
 	Make/N=(3,3)/D/FREE RL
-	RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}		// the reciprocal lattice
+	RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}			// the reciprocal lattice
 	RL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
 	RL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
-	if (numtype(sum(RL)) || WaveMax(RL)==0)	// bad numbers in RL
-		setDirectRecip(xtal)						// re-make the a0, a1, ...
-		RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}	// try again
+	if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+		setDirectRecip(xtal)							// re-make the a0, a1, ...
+		RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}		// try again
 		RL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
 		RL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
 	endif
@@ -5104,9 +5114,10 @@ Function/WAVE directFrom_xtal(xtal)			// returns a FREE wave with real lattice
 End
 
 
-ThreadSafe Function/WAVE str2recip(str)			// returns a FREE wave with reciprocal lattice
+ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal lattice
 	String str
 	Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
+	str = ReplaceString("},{",str,"}{")		// sometimes string is like: "{{1,2,3},{4,5,6},{7,8,9}}"
 	sscanf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	if (V_flag==9)
 		Make/N=(3,3)/D/FREE RL
