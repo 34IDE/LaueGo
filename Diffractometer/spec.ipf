@@ -845,7 +845,7 @@ Function specRead(fileName,scanNum,path)
 		//		5=file reference is invalid
 		//
 		// For users who wish to include additional information from the data
-		// file in igor, create a macro named "extraSpecRead".  An example is
+		// file in igor, create a macro or funcion named "extraSpecRead".  An example is
 		// in "specMore.ipf"
 	String fileName
 	Variable scanNum
@@ -980,7 +980,7 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 		//		5=file reference is invalid
 		//
 		// For users who wish to include additional information from the data
-		// file in igor, create a macro named "extraSpecRead".  An example is
+		// file in igor, create a function named "extraSpecRead".  An example is
 		// in "specMore.ipf"
 	Variable fileVar			// file ref number
 	Variable FilePosScan	// position in file should be positioned at #S
@@ -1367,25 +1367,25 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 		SetLocalSampleStructFromSpec(scanNum)	// added for use with Diffractometer.ipf
 #endif
 	i = exists("extraSpecUserReadProcess")
-	if (i==5 || i==6)							// if macro or userfunc exists, do something to the data
+	if (i==5 || i==6)								// if macro or userfunc exists, do something to the data
 		Execute "extraSpecUserReadProcess()"
 	endif
-	i = exists("extraSpecReadProcess")			// if macro or userfunc exists, do something to the data
+	i = exists("extraSpecReadProcess")		// if macro or userfunc exists, do something to the data
 	if (i==5 || i==6)
 		if (exists("root:Packages:spec:extraProcess")!=2)
-			Variable extra_process
+			Variable extra_process=0			// default is false here, but true in specInitPackage()
 			Prompt extra_process,"do extra processing", popup, "false;true"
 			DoPrompt "",extra_process
 			Variable/G root:Packages:spec:extraProcess = extra_process - 1
 		endif
 		NVAR extraProcess=root:Packages:spec:extraProcess
 		sprintf str, "extraSpecReadProcess(%d)" ,extraProcess
-		Execute str								// extraSpecReadProcess(extraProcess)
+		Execute str									// extraSpecReadProcess(extraProcess)
 	endif
 	i = exists("User_MoreProcess")			// if macro, write more user specified lines
 	if (i==5)
 		sprintf str, "User_MoreProcess(%ld)" ,fileVar
-		Execute str								// User_MoreProcess(fileVar)
+		Execute str									// User_MoreProcess(fileVar)
 	elseif (i==6)
 		#if (exists("User_MoreProcess")==6)
 			User_MoreProcess(fileVar)
@@ -1395,8 +1395,8 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 	SetDataFolder fldrSav
 	NVAR lastScan=root:Packages:spec:lastScan
 	lastScan = scanNum
-	FSetPos fileVar, FilePosStart				// reset file position to original position
-	return 0										// return OK
+	FSetPos fileVar, FilePosStart			// reset file position to original position
+	return 0											// return OK
 End
 
 
@@ -3488,7 +3488,7 @@ Function specInitPackage()
 		Variable /G root:Packages:spec:lastScan=0		// init lastscan to 0
 	endif
 	if (exists("root:Packages:spec:extraProcess")!=2)
-		Variable /G root:Packages:spec:extraProcess=0	// init lastscan to 0
+		Variable /G root:Packages:spec:extraProcess=1	// default to true
 	endif
 	if (exists("root:Packages:spec:specDefaultFile")!=2)
 		// name of last spec data file read
