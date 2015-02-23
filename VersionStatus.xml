@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, February 17, 2015" time="04:32:30 PM CST" isoTime="2015-02-17T16:32:30"></written>
+	<written date="Monday, February 23, 2015" time="12:13:36 PM CST" isoTime="2015-02-23T12:13:36"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>265</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -27,7 +27,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="45092064aa2f391fcad76837b1322c01" ext=".xml">materials/LaMnO3_Ortho.xml</file>
 	<file version="2" time="2014-10-16T14:43:30" md5="23ebf3d94cb3ecab723f62007aeb50dc" ext=".ipf">General/GizmoClip.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.4" time="2015-02-17T14:54:10" md5="c7b6370757063c7a5e77978d9b862b92" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.41" time="2015-02-23T12:10:29" md5="e99e308608b0bcc85148bfc4d3ae3f27" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c017c7408f271d5d935d61a458904881" ext=".xml">materials/Ni3Al.xml</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" ext=".ipf">General/absorption.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="89037fe313f31195b4aced86d4e09779" ext=".xml">materials/Sn-sg141-best.xml</file>
@@ -98,7 +98,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" ext=".mtl">materials/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" ext=".png">microN/microDiffractionMedia/Picture0.png</file>
-	<file version="4.29" time="2014-12-01T17:07:13" md5="d1afaf52c42055fe9573c32ba8b2e08c" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.3" time="2015-02-23T12:10:29" md5="094a5092fbf623d90f93fc4c9ceb694d" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" ext="">micro/Euler_ppc</file>
