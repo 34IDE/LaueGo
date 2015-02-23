@@ -541,19 +541,24 @@ Function DisplaySpecScan(scanNum,overlay)
 	endif
 	Wave yw = $yname
 
+	String yTraceName=""
 	FUNCREF ModifyTopTraceOnSpecPlotProto funcTrace = $"ModifyTopTraceOnSpecPlot"
 	if (cmpstr("append",overlay)==0)		// only appending
 		if (scanDim==2)							// append 2d arrays as an image
 			AppendImage $zname
 		elseif (exists(xname)!=1)
 			AppendToGraph $yname
+			yTraceName = TraceNameList("",";",1)
+			yTraceName = StringFromList(ItemsInList(yTraceName)-1,yTraceName)
 			funcTrace()
 		else
 			AppendToGraph $yname vs $xname
+			yTraceName = TraceNameList("",";",1)
+			yTraceName = StringFromList(ItemsInList(yTraceName)-1,yTraceName)
 			funcTrace()
 		endif
-		if (exists(yerrName)==1)
-			ErrorBars $yname Y,wave=($yerrName,$yerrName)
+		if (exists(yerrName)==1 && strlen(yTraceName))
+			ErrorBars $yTraceName Y,wave=($yerrName,$yerrName)
 		endif
 		SetDataFolder fldrSav
 		return scanNum
@@ -566,9 +571,11 @@ Function DisplaySpecScan(scanNum,overlay)
 		AppendImage $zname
 	elseif (exists(xname)!=1)
 		Display $yname
+		yTraceName = yname
 		funcTrace()
 	else
 		Display $yname vs $xname
+		yTraceName = yname
 		funcTrace()
 	endif
 	Preferences oldPrefState					// put prefs back, like a macro would
@@ -577,7 +584,7 @@ Function DisplaySpecScan(scanNum,overlay)
 		DoWindow/C $gname
 	endif
 	if (exists(yerrName)==1)
-		ErrorBars $yname Y,wave=($yerrName,$yerrName)
+		ErrorBars $yTraceName Y,wave=($yerrName,$yerrName)
 	endif
 	String text2write = "\[0"					// just use the default size
 
@@ -612,7 +619,7 @@ Function DisplaySpecScan(scanNum,overlay)
 
 	SetDataFolder fldrSav
 
-	String yLabel = StringByKey("GraphAxisLabelVert",note(yw))
+	String yLabel = StringByKey("GraphAxisLabelVert",note(yw),"=")
 	if (strlen(yLabel)<1)					// yLabel is not in wave note, so make it
 		yLabel = yname
 		yLabel = WordToGreek(yLabel)		// substitute Igor greek for name of greek letter
@@ -621,7 +628,7 @@ Function DisplaySpecScan(scanNum,overlay)
 	endif
 	Label left yLabel + SelectString(showYunits,"\\U"," \\E","  (\\U)")	// -1->only unit, 0->just scaling, 1->units with parenthesis
 
-	String xLabel = StringByKey("GraphAxisLabelHoriz",note(yw))
+	String xLabel = StringByKey("GraphAxisLabelHoriz",note(yw),"=")
 	if (strlen(xLabel)<1)
 		xLabel = xname
 		if (cmpstr(xLabel,"ttheta")==0 || cmpstr(xLabel,"Two_Theta")==0 || cmpstr(xLabel,"2theta")==0 || cmpstr(xLabel,"X2_theta")==0 || cmpstr(xLabel,"tth")==0)
