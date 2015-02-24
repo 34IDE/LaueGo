@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.41
+#pragma version = 2.42
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -109,6 +109,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Dec 12, 2014, in FindDataStart() No longer limited to only searches first 100 lines for "#L " line
 //
 // Feb 14, 2015, spec_GenericGraphStyle() now calls SpecGenericGraphStyle() and NOT GenericSpecStyle() (which does not exist)
+//
+// Feb 24, 2015, DisplaySpecScan() will not append a wave to a graph if it is already there
 
 Menu "Data"
 	"-"
@@ -544,6 +546,17 @@ Function DisplaySpecScan(scanNum,overlay)
 	String yTraceName=""
 	FUNCREF ModifyTopTraceOnSpecPlotProto funcTrace = $"ModifyTopTraceOnSpecPlot"
 	if (cmpstr("append",overlay)==0)		// only appending
+		if (scanDim==2)
+			Wave zw = $zname
+			CheckDisplayed zw
+		else
+			CheckDisplayed yw
+		endif
+		if (V_flag)									// wave already displayed, do not re-append
+			SetDataFolder fldrSav
+			return scanNum
+		endif
+
 		if (scanDim==2)							// append 2d arrays as an image
 			AppendImage $zname
 		elseif (exists(xname)!=1)
