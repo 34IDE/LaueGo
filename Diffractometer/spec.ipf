@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.42
+#pragma version = 2.43
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -111,6 +111,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Feb 14, 2015, spec_GenericGraphStyle() now calls SpecGenericGraphStyle() and NOT GenericSpecStyle() (which does not exist)
 //
 // Feb 24, 2015, DisplaySpecScan() will not append a wave to a graph if it is already there
+//
+// Feb 24, 2015, added waveClass to the spec waves
 
 Menu "Data"
 	"-"
@@ -1034,13 +1036,13 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 	Wave/T angleNames=root:Packages:spec:angleNames
 	Wave/T EPICSnames=root:Packages:spec:EPICSnames
 	Variable epoch, TZ
-	String dataNote=""							// wave note for the scan data put into waves
+	String dataNote="waveClass=specWave;"		// wave note for the scan data put into waves
 	String wnote=check_fileID(fileVar)			// desired wavenote for identification purposes
 	epoch = NumberByKey("epoch",wnote,"=",";")	// the epoch is already in wnote
 	str = StringByKey("origFile",wnote,"=",";")// the original filename is already in wnote
 	if (strlen(str)>1)
 		str = ChangePartsOfString(str,"=","/") 	// ensure no "=" in file name
-		dataNote = "DATAFILE="+ str+";"		// add original file name to data wave note
+		dataNote = ReplaceStringByKey("DATAFILE",dataNote,"=")	// add original file name to data wave note
 	endif
 	if (numtype(epoch)==0)
 		dataNote += "EPOCH="+ num2istr(epoch)+";" // add epoch of data file to data wave note
