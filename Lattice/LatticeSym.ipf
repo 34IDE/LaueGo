@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.30
+#pragma version = 4.31
 #include "Utility_JZT" version>=3.39
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -104,6 +104,7 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 //		also positionsOfOneAtomType() uses free waves rather than real temp waves
 // with version 4.30, in str2recip(str), now handles both "}{" and "},{" type strings
 //		also added some helpful comments about convert recip <--> direct using MatrixOP
+// with version 4.31, added wave note info in directFrom_xtal(xtal) and in recipFrom_xtal(xtal)
 
 // Rhombohedral Transformation:
 //
@@ -5094,23 +5095,35 @@ Function/WAVE recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal la
 		RL[0][1] = {xtal.bs0,xtal.bs1,xtal.bs2}
 		RL[0][2] = {xtal.cs0,xtal.cs1,xtal.cs2}
 	endif
+	String wnote="waveClass=directLattice;"
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	String str
+	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
+	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
+	Note/K RL, wnote
 	return RL
 End
 
 
 Function/WAVE directFrom_xtal(xtal)				// returns a FREE wave with real lattice
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE RL
-	RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}			// the reciprocal lattice
-	RL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
-	RL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
-	if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+	Make/N=(3,3)/D/FREE DL
+	DL[0][0] = {xtal.a0,xtal.a1,xtal.a2}			// the reciprocal lattice
+	DL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
+	DL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
+	if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
 		setDirectRecip(xtal)							// re-make the a0, a1, ...
-		RL[0][0] = {xtal.a0,xtal.a1,xtal.a2}		// try again
-		RL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
-		RL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
+		DL[0][0] = {xtal.a0,xtal.a1,xtal.a2}		// try again
+		DL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
+		DL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
 	endif
-	return RL
+	String wnote="waveClass=directLattice;"
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	String str
+	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
+	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
+	Note/K DL, wnote
+	return DL
 End
 
 
