@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.19
+#pragma version = 2.18
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -454,7 +454,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	// hold the positions and energies
 	Make/N=(N1N2)/FREE/D X_FillQvsPositions=NaN, H_FillQvsPositions=NaN, depth_FillQvsPositions=NaN, keV_FillQvsPositions=NaN
 	Make/N=(N1N2)/FREE/U/I m1_Fill_QHistAt1Depth=0, m2_Fill_QHistAt1Depth=0
-	Make/N=(N1N2)/FREE/D Y_FillQvsPositions=NaN, Z_FillQvsPositions=NaN, F_FillQvsPositions=NaN
 //	Make/N=(N1N2)/FREE/D keV_all=NaN, I0_all=NaN						// energy & I0Normalization for EVERY image
 //	Variable iall=0
 	Variable seconds
@@ -483,6 +482,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 //				I0_all = I0normalizationFromNote(wnote)					// normalization by intenstiy & exposure time
 //			endif
 //			iall += 1
+
 			if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
 				continue
 			endif
@@ -492,9 +492,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			keV_FillQvsPositions[i] = NumberByKey("keV",wnote,"=")	// list of energies
 			m1_Fill_QHistAt1Depth[i] = m1									// file id number for each image
 			m2_Fill_QHistAt1Depth[i] = m2									// file id number for each image
-			Y_FillQvsPositions[i] = NumberByKey("Y1",wnote,"=")		// list of Y positions
-			Z_FillQvsPositions[i] = NumberByKey("Z1",wnote,"=")		// list of Z positions
-			F_FillQvsPositions[i] = NumberByKey("F1",wnote,"=")		// list of F positions
 			i += 1
 		endfor
 	endfor
@@ -652,25 +649,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	SetScale/P z dim0[2],del[2],LabelUnits[2], Q_Positions,Q_PositionsNorm
 	SetScale/P t dim0[3],del[3],LabelUnits[3], Q_Positions,Q_PositionsNorm
 	SetScale/I x Qmin,Qmax,"1/nm", Qhist
-
-	// get list of positions
-	Duplicate/FREE Nm, Ntemp
-	Ntemp[nDim] = 0									// not interested in the Q's
-	Ntemp = Nm[p]>=1 ? Nm[p] : 1
-	Variable Ncoords = Ntemp[0]*Ntemp[1]*Ntemp[2]*Ntemp[3]
-	WaveClear Ntemp
-	Make/N=(Ncoords,9)/O/D Q_Coordinates=NaN// array to coordinates of each Qscan {XX,YY,ZZ,HH,FF,depth,i,j,k}
-	SetDimLabel 1,0, X, Q_Coordinates			// first 6 are coordinates
-	SetDimLabel 1,1, Y, Q_Coordinates
-	SetDimLabel 1,2, Z, Q_Coordinates
-	SetDimLabel 1,3, H, Q_Coordinates
-	SetDimLabel 1,4, F, Q_Coordinates
-	SetDimLabel 1,5, depth, Q_Coordinates
-	SetDimLabel 1,6, i, Q_Coordinates			// last 3 are indicies into Q_Positions[i][j][k]
-	SetDimLabel 1,7, j, Q_Coordinates
-	SetDimLabel 1,8, k, Q_Coordinates
-	SetScale d 0,0,LabelUnits[0], Q_Coordinates
-
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt && seconds>0.2)
 		printf "setting up arrays took %s\r",Secs2Time(seconds,5,3)
@@ -698,7 +676,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N1N2)+" images",resetClock=1)	// update progress bar
 	// for all the N1N2 files (go over range), compute Qhist for each image
 	Variable ipnt, j, k
-	for (m1=str2num(range1),ipnt=0,Ncoords=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range, all the images
+	for (m1=str2num(range1),ipnt=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range, all the images
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2),ipnt+=1)					// loop over range2
 			if (mod(ipnt,100)==0)
 				if (ProgressPanelUpdate(progressWin,ipnt/N1N2*100))// update progress bar
@@ -720,18 +698,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			i = round((NumberByKey(DimTags[0], wnote,"=")-dim0[0])/del[0]) ;	i = numtype(i) ? 0 : i
 			j = round((NumberByKey(DimTags[1], wnote,"=")-dim0[1])/del[1]) ;	j = numtype(j) ? 0 : j
 			k = round((NumberByKey(DimTags[2], wnote,"=")-dim0[2])/del[2]) ;	k = numtype(k) ? 0 : k
-
-			Q_Coordinates[Ncoords][0] = X_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][1] = Y_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][2] = Z_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][3] = H_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][4] = F_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][5] = depth_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][6] = nDim>1 ? i : -1	// use -1 for unused dimensions
-			Q_Coordinates[Ncoords][7] = nDim>2 ? j : -1
-			Q_Coordinates[Ncoords][8] = nDim>3 ? k : -1
-			Ncoords += 1
-
 			if (nDim==1)
 				Q_Positions[] += Qhist[p]							// add Intensity from this image
 				Q_PositionsNorm[] += QhistNorm[p]				// accumulate number of pixels contibuting (not pixel intensity)
@@ -748,7 +714,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			sec3 += stopMSTimer(timer3)/1e6
 		endfor
 	endfor
-	Redimension/N=(Ncoords,-1) Q_Coordinates
 	if (useDistortion)
 		Note/K DistortionMap, "use=0"
 	endif
