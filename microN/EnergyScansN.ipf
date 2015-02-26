@@ -66,6 +66,8 @@ Menu LaueGoMainMenuName, dynamic
 		help={"just show the Q-distribution from a single image that is alerady loaded"}
 		MenuItemIfGraphNamesExist("Layout [Q x Position] + Q-histogram","*_Q"),MakeLayoutQ_Positions_hist("")
 		"-"
+			"Graph Random Points Q-dist", print EnergyScans#MakeGraph_Q_RandomPositions($"",NaN,NaN)
+		"-"
 		"Make Pseudo White Images",MakePseudoWhiteImages("","")
 		      help={"read all the depth sorted images and make the pseudo white beam plot"}
 		     MenuItemIfWaveExists("    Make movie of Energy Sums vs depth","imageEsum"),MakeEsumMovie()
@@ -494,7 +496,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			m2_Fill_QHistAt1Depth[i] = m2									// file id number for each image
 			Y_FillQvsPositions[i] = NumberByKey("Y1",wnote,"=")		// list of Y positions
 			Z_FillQvsPositions[i] = NumberByKey("Z1",wnote,"=")		// list of Z positions
-			F_FillQvsPositions[i] = NumberByKey("F1",wnote,"=")		// list of F positions
 			i += 1
 		endfor
 	endfor
@@ -506,20 +507,21 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
 
 	microSec = stopMSTimer(-2)												// for timeing bulk of processing
-	Variable dkeV,NkeV, dx,Nx, dy,Ny, ddep,Nz, off
-	FindScalingFromVec(keV_FillQvsPositions,2e-4,off,dkeV,NkeV)	// get step size and number of points for the Energy scan
-	FindScalingFromVec(X_FillQvsPositions,0.1,off,dx,Nx)			//  "    "    "   "     "   "    "     "   "  X scan
+	Variable dx,Nx, dy,Ny, ddep,Nz, off
+	FindScalingFromVec(X_FillQvsPositions,0.1,off,dx,Nx)			// get step size and number of points for the X scan
 	FindScalingFromVec(H_FillQvsPositions,0.1,off,dy,Ny)			//  "    "    "   "     "   "    "     "   "  H scan
 	FindScalingFromVec(depth_FillQvsPositions,0.1,off,ddep,Nz)	//  "    "    "   "     "   "    "     "   "  depths
 	Variable depth0 = WaveMin(depth_FillQvsPositions)
 
+		//Duplicate/O keV_FillQvsPositions, keV_FillQvsPositionsView
+		//Duplicate/O X_FillQvsPositions, X_FillQvsPositionsView
+		//Duplicate/O H_FillQvsPositions, H_FillQvsPositionsView
+		//Duplicate/O depth_FillQvsPositions, depth_FillQvsPositionsView
+
 	// let the user correct the scan ranges as necessary
-	dkeV = abs(dkeV)
 	dx = abs(dx)
 	dy = abs(dy)
 	ddep = abs(ddep)
-	Prompt dkeV,"energy step size (keV)"
-	Prompt NkeV,"# of points (NOT intervals) in E "
 	Prompt dx,"step size in sample X motion (micron)"
 	Prompt Nx,"# of points (NOT intervals) in Xsample"
 	Prompt dy,"step size in sample H motion (micron)"
@@ -528,12 +530,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Prompt Nz,"# of points (NOT intervals) in depth"
 	Prompt depth,"depth to assume (µm)"
 	if (Nz<=1 && numtype(depth0))
-		DoPrompt "scan sizes",dkeV,NkeV,dx,Nx,dy,Ny,depth
+		DoPrompt "scan sizes",dx,Nx,dy,Ny,depth
 		depth = numtype(depth) ? 0 : depth
 		Nz = 0
 		depth0 = depth
 	else
-		DoPrompt "scan sizes",dkeV,NkeV,dx,Nx,dy,Ny,ddep,Nz
+		DoPrompt "scan sizes",dx,Nx,dy,Ny,ddep,Nz
 		ddep = (ddep==0) ? 1 : ddep
 	endif
 	if (V_flag)
@@ -542,7 +544,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	dx = (dx==0) ? 1 : abs(dx)
 	dy = (dy==0) ? 1 : abs(dy)
 	ddep = (ddep==0) ? 1 : abs(ddep)
-	dkeV = abs(dkeV)
 	Nx = numtype(Nx) || Nx<=1 ? 0 : Nx
 	Ny = numtype(Ny) || Ny<=1 ? 0 : Ny
 	Nz = numtype(Nz) || Nz<=1 ? 0 : Nz
@@ -592,7 +593,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	NQ = round((Qmax-Qmin)/dQ) + 1								// number of Qs
 
 	if (printIt)
-		Variable deV = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
 		if (Nx>1)
 			printf "X range = [%.2f, %.2f] (µm), dX=%.2f,  %d points\r",X0, X0+(Nx-1)*dx, dx,Nx
 		else
@@ -608,7 +608,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		else
 			printf "only one depth value\r"
 		endif
-		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV\r", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],deV
+		printf "E range = [%g, %g] (keV)\r", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi]
 		printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
 		printf "theta range = [%g, %g]¡\r",thetaLo*180/PI,thetaHi*180/PI
 		if (d0>0)
@@ -657,26 +657,27 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Duplicate/FREE Nm, Ntemp
 	Ntemp[nDim] = 0									// not interested in the Q's
 	Ntemp = Nm[p]>=1 ? Nm[p] : 1
-	Variable Ncoords = Ntemp[0]*Ntemp[1]*Ntemp[2]*Ntemp[3]
+	Variable Ncoords = Ntemp[0]*Ntemp[1]*Ntemp[2]*Ntemp[3]	// this is actually more than will be neede, trim it later
 	WaveClear Ntemp
-	Make/N=(Ncoords,9)/O/D Q_Coordinates=NaN// array to coordinates of each Qscan {XX,YY,ZZ,HH,FF,depth,i,j,k}
-	SetDimLabel 1,0, X, Q_Coordinates			// first 6 are coordinates
-	SetDimLabel 1,1, Y, Q_Coordinates
-	SetDimLabel 1,2, Z, Q_Coordinates
-	SetDimLabel 1,3, H, Q_Coordinates
-	SetDimLabel 1,4, F, Q_Coordinates
-	SetDimLabel 1,5, depth, Q_Coordinates
-	SetDimLabel 1,6, i, Q_Coordinates			// last 3 are indicies into Q_Positions[i][j][k]
-	SetDimLabel 1,7, j, Q_Coordinates
-	SetDimLabel 1,8, k, Q_Coordinates
-	SetScale d 0,0,LabelUnits[0], Q_Coordinates
+	Make/N=(Ncoords,9)/D/FREE Q_CoordinatesBig=NaN// array to coordinates of each Qscan {XX,YY,ZZ,HH,FF,depth,i,j,k}
 
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt && seconds>0.2)
 		printf "setting up arrays took %s\r",Secs2Time(seconds,5,3)
 	endif
-	// done with the setup part, now actually compute something
 
+	// convert coordinates from positioner to sample for use by Q_Coordinates
+	Make/N=(i)/D/FREE xi,yi,zi, depthRaw
+	depthRaw = depth_FillQvsPositions[p]
+	depthRaw = numtype(depthRaw) ? 0 : depthRaw
+	xi = -X_FillQvsPositions[p]
+	yi = -Y_FillQvsPositions[p]
+	zi = -Z_FillQvsPositions[p] + depthRaw[p]
+	Z_FillQvsPositions = zi[p]
+	H_FillQvsPositions = YZ2H(yi[p],zi[p])
+	F_FillQvsPositions = YZ2F(yi[p],zi[p])
+
+	// done with the setup part, now actually compute something
 	if (useDistortion)												// if using the distortion, precompute for all images  here
 		Abort "Fill_Q_Positions(), filling the distortion map needs serious fixing"
 		Wave DistortionMap = GetDistortionMap(startx,starty, groupx,groupy, Ni,Nj)	// if using the distortion, precompute for all images here
@@ -721,17 +722,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			j = round((NumberByKey(DimTags[1], wnote,"=")-dim0[1])/del[1]) ;	j = numtype(j) ? 0 : j
 			k = round((NumberByKey(DimTags[2], wnote,"=")-dim0[2])/del[2]) ;	k = numtype(k) ? 0 : k
 
-			Q_Coordinates[Ncoords][0] = X_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][1] = Y_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][2] = Z_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][3] = H_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][4] = F_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][5] = depth_FillQvsPositions[ipnt]
-			Q_Coordinates[Ncoords][6] = nDim>1 ? i : -1	// use -1 for unused dimensions
-			Q_Coordinates[Ncoords][7] = nDim>2 ? j : -1
-			Q_Coordinates[Ncoords][8] = nDim>3 ? k : -1
-			Ncoords += 1
-
 			if (nDim==1)
 				Q_Positions[] += Qhist[p]							// add Intensity from this image
 				Q_PositionsNorm[] += QhistNorm[p]				// accumulate number of pixels contibuting (not pixel intensity)
@@ -746,9 +736,58 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				Q_PositionsNorm[i][j][k][] += QhistNorm[s]	// accumulate number of pixels contibuting (not pixel intensity)
 			endif
 			sec3 += stopMSTimer(timer3)/1e6
+
+			Q_CoordinatesBig[Ncoords][0] = X_FillQvsPositions[ipnt-1]	// 0  1  2  3  4   5
+			Q_CoordinatesBig[Ncoords][1] = Y_FillQvsPositions[ipnt-1]	//	XX,YY,ZZ,HH,FF,depth, i,j,k
+			Q_CoordinatesBig[Ncoords][2] = Z_FillQvsPositions[ipnt-1]	// note that ipnt has already been incremented
+			Q_CoordinatesBig[Ncoords][3] = H_FillQvsPositions[ipnt-1]
+			Q_CoordinatesBig[Ncoords][4] = F_FillQvsPositions[ipnt-1]
+			Q_CoordinatesBig[Ncoords][5] = depth_FillQvsPositions[ipnt-1]
+			Q_CoordinatesBig[Ncoords][6] = nDim>1 ? i : -1	// use -1 for unused dimensions
+			Q_CoordinatesBig[Ncoords][7] = nDim>2 ? j : -1
+			Q_CoordinatesBig[Ncoords][8] = nDim>3 ? k : -1
+			Ncoords += 1
+
 		endfor
 	endfor
+	Redimension/N=(Ncoords,-1) Q_CoordinatesBig
+
+	// remove all duplicates from Q_CoordinatesBig
+	Make/N=(Ncoords,9)/O/D Q_Coordinates=NaN// array to coordinates of each Qscan without duplicates {XX,YY,ZZ,HH,FF,depth,i,j,k}
+	Variable y0,z0
+	for (j=0,ipnt=0; j<Ncoords; j+=1)
+		x0 = Q_CoordinatesBig[j][0]
+		y0 = Q_CoordinatesBig[j][1]
+		z0 = Q_CoordinatesBig[j][2]
+		if (numtype(x0+y0+z0))
+			continue
+		endif
+
+		Q_Coordinates[ipnt][] = Q_CoordinatesBig[j][q]
+		ipnt += 1
+		for (i=j+1;i<Ncoords;i+=1)				 // remove any other points with these coordinates
+			if (abs(x0-Q_CoordinatesBig[i][0])+abs(y0-Q_CoordinatesBig[i][1])+abs(z0-Q_CoordinatesBig[i][2]) < 1e-9)	// the same
+				Q_CoordinatesBig[i][0] = NaN
+				Q_CoordinatesBig[i][1] = NaN
+				Q_CoordinatesBig[i][2] = NaN
+			endif
+		endfor
+	endfor
+	WaveClear Q_CoordinatesBig
+	Ncoords = ipnt
 	Redimension/N=(Ncoords,-1) Q_Coordinates
+
+	SetDimLabel 1,0, X, Q_Coordinates			// first 6 are coordinates
+	SetDimLabel 1,1, Y, Q_Coordinates
+	SetDimLabel 1,2, Z, Q_Coordinates
+	SetDimLabel 1,3, H, Q_Coordinates
+	SetDimLabel 1,4, F, Q_Coordinates
+	SetDimLabel 1,5, depth, Q_Coordinates
+	SetDimLabel 1,6, i, Q_Coordinates			// last 3 are indicies into Q_Positions[i][j][k]
+	SetDimLabel 1,7, j, Q_Coordinates
+	SetDimLabel 1,8, k, Q_Coordinates
+	SetScale d 0,0,LabelUnits[0], Q_Coordinates
+
 	if (useDistortion)
 		Note/K DistortionMap, "use=0"
 	endif
@@ -796,6 +835,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	CompressEmptyDimensions(Q_Positions,1)					// remove empty dimensions from Q_Positions wave (1's & 0's are empty)
 	if (WaveDims(Q_Positions)==1)
 		Note/K Q_Positions, ReplaceStringByKey("waveClass",note(Q_Positions),"Qhistogram","=")
+	endif
+	if (WaveDims(Q_Coordinates)==1)
+		Note/K Q_Coordinates, ReplaceStringByKey("waveClass",note(Q_Positions),"CoordinatesQdist","=")
 	endif
 
 	// done with processing, clean up
@@ -1169,6 +1211,132 @@ Function MakeLayoutQ_Positions_hist(prefix)
 End
 
 
+Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy)	// display a Q_Coordinates[][9] array, THREE positioners + Q
+	Wave Q_Coordinates								// usually Q_Coordinates
+	Variable ix,iy										// columns for x and y, in range [0,5]
+
+	if (!WaveExists(Q_Coordinates))
+		String Q_C_list=WaveListClass("CoordinatesQdist","*","DIMS:2,MINCOLS:9,MAXCOLS:9")
+		if (ItemsInLIst(Q_C_list)<1)
+			return ""
+		elseif (ItemsInLIst(Q_C_list)==1)
+			Wave Q_Coordinates = $StringFromList(0,Q_C_list)
+		else
+			String name
+			Prompt name,"Q_Coordinates", popup, Q_C_list
+			DoPrompt "Q_Coordinates", name
+			if (V_flag)
+				return ""
+			endif
+			Wave Q_Coordinates = $name
+		endif
+	endif
+	if (!WaveExists(Q_Coordinates))
+		DoAlert 0,"no 'Q_Coordinates' wave"
+		return ""
+	endif
+	Variable Ncoord=DimSize(Q_Coordinates,0)
+	// 0  1  2  3  4   5
+	//	XX,YY,ZZ,HH,FF,depth, i,j,k
+
+	String xName, yName, allAxes="X;Y;Z;H;F;depth"
+	if ( !(ix==limit(round(ix),0,5) && iy==limit(round(iy),0,5) && ix != iy) )
+		Make/N=(Ncoord)/FREE/D vec
+		String axes=""
+		vec = Q_Coordinates[p][0]
+		WaveStats/M=1/Q vec
+		axes += SelectString(V_max-V_min > 0.05, "", "X;")
+		vec = Q_Coordinates[p][1]
+		WaveStats/M=1/Q vec
+		axes += SelectString(V_max-V_min > 0.05, "", "Y;")
+		vec = Q_Coordinates[p][2]
+		WaveStats/M=1/Q vec
+		axes += SelectString(V_max-V_min > 0.05, "", "Z;")
+		vec = Q_Coordinates[p][3]
+		WaveStats/M=1/Q vec
+		axes += SelectString(V_max-V_min > 0.05, "", "H;")
+		vec = Q_Coordinates[p][4]
+		WaveStats/M=1/Q vec
+		axes += SelectString(V_max-V_min > 0.05, "", "F;")
+		vec = Q_Coordinates[p][5]
+		WaveStats/M=1/Q vec
+		axes += SelectString(V_max-V_min > 0.05, "", "depth;")
+
+		xName = StringFromList(0,axes)
+		xName = StringFromList(1,axes)
+		Prompt xName, "X-axis", popup, axes
+		Prompt yName, "Y-axis", popup, axes
+		DoPrompt "Axes", xName, yName
+		if (V_flag)
+			return ""
+		endif
+		ix = WhichListItem(xName,allAxes)
+		iy = WhichListItem(yName,allAxes)
+	endif
+	if ( !(ix==limit(round(ix),0,5) && iy==limit(round(iy),0,5) && ix != iy) )
+		return ""
+	endif
+	xName = StringFromList(ix,allAxes)
+	yName = StringFromList(iy,allAxes)
+	String graphName=CleanupName("Graph_"+GetWavesDataFolder(Q_Coordinates,0)+"_"+xName+yName,0)
+	graphName = ReplaceString("__",graphName,"_")
+
+	String wnote=note(Q_Coordinates)
+	Variable Q0=EnergyScans#getCurrentQ0(wnote)
+
+	String labelX = GetDimLabel(Q_Coordinates,1,ix)
+	String labelY = GetDimLabel(Q_Coordinates,1,iy)
+	labelX += SelectString(strlen(labelX),"",FixUnitsInLabel(WaveUnits(Q_Coordinates,-1)))
+	labelY += SelectString(strlen(labelY),"",FixUnitsInLabel(WaveUnits(Q_Coordinates,-1)))
+
+	String title=StringByKey("title",wnote,"=")	// first try to get title from wave note
+	if (strlen(title)<1)
+		title = StrVarOrDefault("title","")	// nothing in wavenote, try the title global string
+	endif
+	title = SelectString(strlen(title),"",title+"\r\\Zr067")
+	title += GetWavesDataFolder(Q_Coordinates,1)
+	if (strlen(StringByKey("dateExposed",wnote,"=")))
+		title += "\r"+StringByKey("dateExposed",wnote,"=")
+	endif
+
+	if (strlen(WinList(graphName,"","WIN:1")))	// graph
+		DoWindow/F $graphName						// graph is already up, so just bring it to front
+	elseif (exists(graphName)==5)	
+		Execute graphName+"()"						// a recreation macro exists, run it
+	else													// Energy-Wirescans at multiple positions
+		String list=WaveListClass("Q_Coordinates_RGB","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+		if (ItemsInLIst(list)<1)
+			Wave rgb = $""
+		elseif (ItemsInLIst(list)==1)
+			Wave rgb = $StringFromList(0,list)
+		else
+			Prompt name,"Q_Coordinates_RGB", popup, list
+			DoPrompt "RGB", name
+			if (V_flag)
+				return ""
+			endif
+			Wave rgb = $name
+		endif
+
+		Display/W=(292,67,728,479)/K=1			// nothing exists, create the graph
+		DoWindow/C $graphName
+		AppendToGraph Q_Coordinates[*][iy] vs Q_Coordinates[*][ix]
+		ModifyGraph mode=3, marker=18, tick=2, mirror=1, minor=1, lowTrip=0.001, standoff=1
+		name = NameOfWave(Q_Coordinates)
+		ModifyGraph zColor($name)={rgb,*,*,directRGB}
+		Label bottom labelX
+		Label left labelY
+		TextBox/C/N=text0/F=0 title
+		SetWindow kwTopWin, hook(QfromCursor)=EnergyScans#QfromCursorHook	// this forces a re-calculation of Qhist when cursor A is moved
+		SetAxis/A/R left
+		SetAxis/A/R bottom
+		Cursor/P/L=1/H=1 A Q_Coordinates round(Ncoord/2)
+		SetAspectToSquarePixels(graphName)
+	endif
+	return graphName
+End
+
+
 // This is normally only called by MakeOtherQhistWaves()
 Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all of the Q-distributions, and make waves for plotting
 	Wave Q_Positions
@@ -1388,7 +1556,8 @@ Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi,power,printIt])				//
 	Make/N=(4)/D/FREE Nm
 	Nm = DimSize(dQ,p)
 	Nm[nDim] = 3													// dimension index for the RGB, the last one, zero out the Q dimension
-	String name = NameOfWave($StringByKey("sourceWave",note(dQ),"="))
+	String sourceName = StringByKey("sourceWave",note(dQ),"=")
+	String name = NameOfWave($sourceName)
 	Make/N=(Nm[0],Nm[1],Nm[2],Nm[3])/O/W/U $(name+"_RGB")/WAVE=RGB =0	// holds the image to plot, color
 	Nm[nDim] = 0
 	Variable cMax=65535, useIntensity=WaveExists(IntensIN)
@@ -1449,6 +1618,25 @@ Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi,power,printIt])				//
 	if (printIt && WaveExists(RGB))
 		printf "Created new RGB wave  '%s'\r",NameOfWave(RGB)
 	endif
+
+	Wave Q_Coordinates = $StringFromList(0,WaveListClass("CoordinatesQdist","*","DIMS:2,MINCOLS:9,MAXCOLS:9"))
+	if (WaveExists(Q_Coordinates))
+		Variable Ncoords=DimSize(Q_Coordinates,0)
+		name = NameOfWave(Q_Coordinates)
+		Make/N=(Ncoords,3)/O/W/U $(name+"_RGB")/WAVE=Q_Coordinates_RGB =0	// holds the image to plot, color
+		print "  also creating ",NameOfWave(Q_Coordinates_RGB)
+		if (WaveDims(RGB)==4)
+			Q_Coordinates_RGB = RGB[Q_Coordinates[p][6]][Q_Coordinates[p][7]][Q_Coordinates[p][8]][q]
+		elseif (WaveDims(RGB)==3)
+			Q_Coordinates_RGB = RGB[Q_Coordinates[p][6]][Q_Coordinates[p][7]][q]
+		elseif (WaveDims(RGB)==2)
+			Q_Coordinates_RGB = RGB[Q_Coordinates[p][6]][q]
+		else
+			return RGB
+		endif
+		Note/K Q_Coordinates_RGB, ReplaceStringByKey("waveClass",note(RGB),"Q_Coordinates_RGB,RGB","=")
+	endif
+
 	return RGB
 End
 
@@ -2112,17 +2300,26 @@ Static Function QfromCursorHook(s)		// updates the Q distribution plot by the cu
 		return 0									// a zero lets other hooks process this event
 	endif
 
+	Variable i,j,k=NaN
 	String win=s.winName
-	Wave image = ImageNameToWaveRef(win,StringFromList(0,ImageNameList(win,";")))
-	if (!WaveExists(image))
-		return 0
+	Wave waveDisplayed = ImageNameToWaveRef(win,StringFromList(0,ImageNameList(win,";")))
+	if (WaveExists(waveDisplayed))
+		i = s.pointNumber
+		j = s.yPointNumber
+	else
+		Wave waveDisplayed = TraceNameToWaveRef(win, StringFromList(0,TraceNameList(win,";",1)))
+		if (!WaveExists(waveDisplayed))
+			return 0
+		endif
+		i = waveDisplayed[s.pointNumber][6]
+		j = waveDisplayed[s.pointNumber][7]
 	endif
-	String wnote = note(image)
+	String wnote = note(waveDisplayed)
 	Wave source = $StringByKey("sourceWave", wnote,"=")
 	if (!WaveExists(source))
 		return 0
 	endif
-	Wave Qhist = QhistFromQpositions(source,s.pointNumber,s.yPointNumber,NaN)
+	Wave Qhist = QhistFromQpositions(source,i,j,NaN)
 	fitOneQhist(Qhist,quiet=0,printIt=0)
 	return 1										// a one stops other hooks from processing too
 End
