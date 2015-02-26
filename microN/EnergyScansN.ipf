@@ -66,7 +66,7 @@ Menu LaueGoMainMenuName, dynamic
 		help={"just show the Q-distribution from a single image that is alerady loaded"}
 		MenuItemIfGraphNamesExist("Layout [Q x Position] + Q-histogram","*_Q"),MakeLayoutQ_Positions_hist("")
 		"-"
-			"Graph Random Points Q-dist", print EnergyScans#MakeGraph_Q_RandomPositions($"",NaN,NaN)
+			"Graph Random Points Q-dist", EnergyScans#MakeGraph_Q_RandomPositions($"",NaN,NaN)
 		"-"
 		"Make Pseudo White Images",MakePseudoWhiteImages("","")
 		      help={"read all the depth sorted images and make the pseudo white beam plot"}
@@ -456,7 +456,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	// hold the positions and energies
 	Make/N=(N1N2)/FREE/D X_FillQvsPositions=NaN, H_FillQvsPositions=NaN, depth_FillQvsPositions=NaN, keV_FillQvsPositions=NaN
 	Make/N=(N1N2)/FREE/U/I m1_Fill_QHistAt1Depth=0, m2_Fill_QHistAt1Depth=0
-	Make/N=(N1N2)/FREE/D Y_FillQvsPositions=NaN, Z_FillQvsPositions=NaN, F_FillQvsPositions=NaN
+	Make/N=(N1N2)/FREE/D Y_FillQvsPositions=NaN, Z_FillQvsPositions=NaN
 //	Make/N=(N1N2)/FREE/D keV_all=NaN, I0_all=NaN						// energy & I0Normalization for EVERY image
 //	Variable iall=0
 	Variable seconds
@@ -488,14 +488,14 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
 				continue
 			endif
-			X_FillQvsPositions[i] = NumberByKey("X1",wnote,"=")		// list of X positions
-			H_FillQvsPositions[i] = NumberByKey("H1",wnote,"=")		// list of H positions
+			X_FillQvsPositions[i] = NumberByKey("X1",wnote,"=")		// list of X positioner values
+			H_FillQvsPositions[i] = NumberByKey("H1",wnote,"=")		// list of H positioner values
 			depth_FillQvsPositions[i] = NumberByKey("depth",wnote,"=")	// list of depths
 			keV_FillQvsPositions[i] = NumberByKey("keV",wnote,"=")	// list of energies
 			m1_Fill_QHistAt1Depth[i] = m1									// file id number for each image
 			m2_Fill_QHistAt1Depth[i] = m2									// file id number for each image
-			Y_FillQvsPositions[i] = NumberByKey("Y1",wnote,"=")		// list of Y positions
-			Z_FillQvsPositions[i] = NumberByKey("Z1",wnote,"=")		// list of Z positions
+			Y_FillQvsPositions[i] = NumberByKey("Y1",wnote,"=")		// list of Y positioner values
+			Z_FillQvsPositions[i] = NumberByKey("Z1",wnote,"=")		// list of Z positioner values
 			i += 1
 		endfor
 	endfor
@@ -667,15 +667,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 
 	// convert coordinates from positioner to sample for use by Q_Coordinates
-	Make/N=(i)/D/FREE xi,yi,zi, depthRaw
+	Make/N=(i)/D/FREE xSample,ySample,zSample, depthRaw, HSample, FSample
 	depthRaw = depth_FillQvsPositions[p]
 	depthRaw = numtype(depthRaw) ? 0 : depthRaw
-	xi = -X_FillQvsPositions[p]
-	yi = -Y_FillQvsPositions[p]
-	zi = -Z_FillQvsPositions[p] + depthRaw[p]
-	Z_FillQvsPositions = zi[p]
-	H_FillQvsPositions = YZ2H(yi[p],zi[p])
-	F_FillQvsPositions = YZ2F(yi[p],zi[p])
+	xSample = -X_FillQvsPositions[p]
+	ySample = -Y_FillQvsPositions[p]
+	zSample = -Z_FillQvsPositions[p] + depthRaw[p]
+	HSample = YZ2H(ySample[p],zSample[p])
+	FSample = YZ2F(ySample[p],zSample[p])
+	WaveClear X_FillQvsPositions, Y_FillQvsPositions, Z_FillQvsPositions, H_FillQvsPositions, depthRaw
 
 	// done with the setup part, now actually compute something
 	if (useDistortion)												// if using the distortion, precompute for all images  here
@@ -737,11 +737,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			endif
 			sec3 += stopMSTimer(timer3)/1e6
 
-			Q_CoordinatesBig[Ncoords][0] = X_FillQvsPositions[ipnt-1]	// 0  1  2  3  4   5
-			Q_CoordinatesBig[Ncoords][1] = Y_FillQvsPositions[ipnt-1]	//	XX,YY,ZZ,HH,FF,depth, i,j,k
-			Q_CoordinatesBig[Ncoords][2] = Z_FillQvsPositions[ipnt-1]	// note that ipnt has already been incremented
-			Q_CoordinatesBig[Ncoords][3] = H_FillQvsPositions[ipnt-1]
-			Q_CoordinatesBig[Ncoords][4] = F_FillQvsPositions[ipnt-1]
+
+			Q_CoordinatesBig[Ncoords][0] = xSample[ipnt-1]				// 0  1  2  3  4   5
+			Q_CoordinatesBig[Ncoords][1] = ySample[ipnt-1]				//	XX,YY,ZZ,HH,FF,depth, i,j,k
+			Q_CoordinatesBig[Ncoords][2] = zSample[ipnt-1]				// note that ipnt has already been incremented
+			Q_CoordinatesBig[Ncoords][3] = HSample[ipnt-1]
+			Q_CoordinatesBig[Ncoords][4] = FSample[ipnt-1]
 			Q_CoordinatesBig[Ncoords][5] = depth_FillQvsPositions[ipnt-1]
 			Q_CoordinatesBig[Ncoords][6] = nDim>1 ? i : -1	// use -1 for unused dimensions
 			Q_CoordinatesBig[Ncoords][7] = nDim>2 ? j : -1
@@ -836,9 +837,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	if (WaveDims(Q_Positions)==1)
 		Note/K Q_Positions, ReplaceStringByKey("waveClass",note(Q_Positions),"Qhistogram","=")
 	endif
-	if (WaveDims(Q_Coordinates)==1)
-		Note/K Q_Coordinates, ReplaceStringByKey("waveClass",note(Q_Positions),"CoordinatesQdist","=")
-	endif
 
 	// done with processing, clean up
 	DoWindow/K $progressWin										// done with status window
@@ -859,6 +857,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		MakeGraph_Qhist(Q_Positions)								// just a single Q-distribution, plot it
 	else
 		MakeOtherQhistWaves(Q_Positions,printIt=printIt)	// make waves for plotting and put up plot(s)
+	endif
+	if (Ncoords>1)
+		Note/K Q_Coordinates, ReplaceStringByKey("waveClass",note(Q_Positions),"CoordinatesQdist","=")
 	endif
 	beep
 	return 0
@@ -989,7 +990,7 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 		ModifyGraph tick=2, mirror=1, minor=1, lowTrip=0.001, standoff=0, axOffset(left)=-1.5
 		Label bottom labelX
 		Label left labelY
-		TextBox/C/N=text0/F=0 title
+		TextBox/C/N=textTitle/F=0 title
 		Cursor/P/I/L=1/H=2 A Q_Positions i0,j0
 		ShowInfo
 //		Button SumQhistOverPositionsButton,pos={100,0},size={90,16},fSize=9,proc=EnergyScans#SumQhistOverPositionsButtonProc,title="Sum over Positions"
@@ -1015,7 +1016,7 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 		ModifyGraph tick=0, mirror=1, minor=1, lowTrip=0.001, standoff=0, axOffset(left)=-1.5
 		Label bottom labelX
 		Label left labelY
-		TextBox/C/N=text0/F=0 title
+		TextBox/C/N=textTitle/F=0 title
 		Cursor/P/I/L=1/H=1 A $NameOfWave(image) i0,j0
 		// ShowInfo
 //		ImageStats/M=1 Q_positions
@@ -1160,7 +1161,7 @@ Function/WAVE Q_SumAllPositions(Qwav)			// sum over all the positions in a Q vs 
 	if (strlen(StringByKey("dateExposed",wnote,"=")))
 		str += "\r"+StringByKey("dateExposed",wnote,"=")
 	endif
-	TextBox/A=RT/C/N=text0/F=0 str
+	TextBox/A=RT/C/N=textTitle/F=0 str
 
 	Variable Q0=getCurrentQ0(wnote)
 	if (Q0>0)
@@ -1211,9 +1212,11 @@ Function MakeLayoutQ_Positions_hist(prefix)
 End
 
 
-Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy)	// display a Q_Coordinates[][9] array, THREE positioners + Q
+Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy,[printIt])	// display a Q_Coordinates[][9] array, THREE positioners + Q
 	Wave Q_Coordinates								// usually Q_Coordinates
 	Variable ix,iy										// columns for x and y, in range [0,5]
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	if (!WaveExists(Q_Coordinates))
 		String Q_C_list=WaveListClass("CoordinatesQdist","*","DIMS:2,MINCOLS:9,MAXCOLS:9")
@@ -1229,6 +1232,7 @@ Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy)	// display a 
 				return ""
 			endif
 			Wave Q_Coordinates = $name
+			printIt = 1
 		endif
 	endif
 	if (!WaveExists(Q_Coordinates))
@@ -1272,6 +1276,7 @@ Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy)	// display a 
 		endif
 		ix = WhichListItem(xName,allAxes)
 		iy = WhichListItem(yName,allAxes)
+		printIt = 1
 	endif
 	if ( !(ix==limit(round(ix),0,5) && iy==limit(round(iy),0,5) && ix != iy) )
 		return ""
@@ -1280,6 +1285,14 @@ Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy)	// display a 
 	yName = StringFromList(iy,allAxes)
 	String graphName=CleanupName("Graph_"+GetWavesDataFolder(Q_Coordinates,0)+"_"+xName+yName,0)
 	graphName = ReplaceString("__",graphName,"_")
+
+	if (printIt)
+		printf "MakeGraph_Q_RandomPositions(%s, %g,%g",NameOfWave(Q_Coordinates),ix,iy
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g", printIt
+		endif
+		printf ")\t\t// creating %s\r",graphName
+	endif
 
 	String wnote=note(Q_Coordinates)
 	Variable Q0=EnergyScans#getCurrentQ0(wnote)
@@ -1326,11 +1339,13 @@ Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy)	// display a 
 		ModifyGraph zColor($name)={rgb,*,*,directRGB}
 		Label bottom labelX
 		Label left labelY
-		TextBox/C/N=text0/F=0 title
+		TextBox/C/N=textTitle/A=LT/X=2/Y=2/F=0 title
 		SetWindow kwTopWin, hook(QfromCursor)=EnergyScans#QfromCursorHook	// this forces a re-calculation of Qhist when cursor A is moved
-		SetAxis/A/R left
-		SetAxis/A/R bottom
+		SetAxis/A left
+		SetAxis/A bottom
 		Cursor/P/L=1/H=1 A Q_Coordinates round(Ncoord/2)
+		ShowInfo
+		DoUpdate/W=$graphName
 		SetAspectToSquarePixels(graphName)
 	endif
 	return graphName
@@ -2409,7 +2424,7 @@ Function/S MakeGraph_Qhist(Qhist,[printIt])	// display a Qhist[] wave
 		endif
 		str += "\r"+iso
 	endif
-	TextBox/A=RT/C/N=text0/F=0 str
+	TextBox/A=RT/C/N=textTitle/F=0 str
 
 	Variable Qc = NumberByKey("Qcenter",wnote,"="), fwhm = NumberByKey("Qfwhm",wnote,"=")
 	Variable dQ = NumberByKey("ÆQ",wnote,"="), strain = NumberByKey("strain",wnote,"=")
