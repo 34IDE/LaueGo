@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, February 26, 2015" time="02:00:27 PM CST" isoTime="2015-02-26T14:00:27"></written>
+	<written date="Thursday, February 26, 2015" time="05:01:05 PM CST" isoTime="2015-02-26T17:01:05"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>265</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -148,7 +148,7 @@
 	<file version="0.02" time="2014-04-30T10:26:18" md5="d185b56b1e92d1c5ed4f06a0b4162fda" ext=".ipf">materials/materialsLocate.ipf</file>
 	<file version="nan" time="2015-02-09T12:08:02" md5="85fd7be8aaa1f81010910c7f526fbde5" ext=".py">APS/burt_tool.py</file>
 	<file version="2.02" time="2014-10-08T14:58:04" md5="7c0cc123b3547ae8b264c0326727b3b6" ext=".ipf">General/GizmoMovies.ipf</file>
-	<file version="2.19" time="2015-02-26T13:53:42" md5="97891b8219b926c57c178457d2ba9302" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.2" time="2015-02-26T17:00:24" md5="88b1b193b2cfa4cc9478a0f50eb2c934" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" ext="">micro/Euler_i386</file>
 	<file version="0.13" time="2013-12-06T23:22:19" md5="9d81fadd43d5d62c5255073c4b486b6c" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7f757ea8b8080ab2c920dcc79559e095" ext=".exe">microN/euler.exe</file>

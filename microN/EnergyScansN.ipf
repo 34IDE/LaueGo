@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.19
+#pragma version = 2.20
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -850,6 +850,13 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		printf "entire process took %s\r",Secs2Time(seconds,5,3)
 	endif
 
+	if (Ncoords>1)
+		String cnote=note(Q_Positions)
+		cnote = ReplaceStringByKey("waveClass",cnote,"CoordinatesQdist","=")
+		cnote = ReplaceStringByKey("sourceWave",cnote,GetWavesDataFolder(Q_Positions,2),"=")
+		Note/K Q_Coordinates, cnote
+	endif
+
 	if (printIt)
 		print " "
 	endif
@@ -1212,10 +1219,14 @@ Function MakeLayoutQ_Positions_hist(prefix)
 End
 
 
-Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy,[printIt])	// display a Q_Coordinates[][9] array, THREE positioners + Q
+Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy,[rgb,printIt])	// display a Q_Coordinates[][9] array, THREE positioners + Q
 	Wave Q_Coordinates								// usually Q_Coordinates
 	Variable ix,iy										// columns for x and y, in range [0,5]
+	Wave rgb												// the three-column rgb wave
 	Variable printIt
+	if (ParamIsDefault(rgb))
+		Wave rgb = $""
+	endif
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	if (!WaveExists(Q_Coordinates))
@@ -1316,33 +1327,46 @@ Static Function/T MakeGraph_Q_RandomPositions(Q_Coordinates,ix,iy,[printIt])	// 
 		DoWindow/F $graphName						// graph is already up, so just bring it to front
 	elseif (exists(graphName)==5)	
 		Execute graphName+"()"						// a recreation macro exists, run it
-	else													// Energy-Wirescans at multiple positions
-		String list=WaveListClass("Q_Coordinates_RGB","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
-		if (ItemsInLIst(list)<1)
-			Wave rgb = $""
-		elseif (ItemsInLIst(list)==1)
-			Wave rgb = $StringFromList(0,list)
-		else
-			Prompt name,"Q_Coordinates_RGB", popup, list
-			DoPrompt "RGB", name
-			if (V_flag)
-				return ""
+	else													// Energy-Wirescans at multiple positions, find rgb if not passed
+		if (!WaveExists(rgb))						// find rgb if not passed
+			String list=WaveListClass("Q_Coordinates_RGB","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			if (ItemsInLIst(list)<1)
+				Wave rgb = $""
+			elseif (ItemsInLIst(list)==1)
+				Wave rgb = $StringFromList(0,list)
+			else
+				Prompt name,"Q_Coordinates_RGB wave", popup, list
+				DoPrompt "rgb", name
+				if (V_flag)
+					return ""
+				endif
+				Wave rgb = $name
 			endif
-			Wave rgb = $name
 		endif
-
+		if (!WaveExists(rgb))
+			print "    Unable to find three-column Q_Coordinates_RGB wave in ",GetWavesDataFolder(Q_Coordinates,1)
+			print "    You will have to make it to see anything useful, use the 'Recalc RGB for Q-Distribution' button"
+			print "    Use the 'Recalc RGB for Q-Distribution' button"
+			print " "
+		endif
 		Display/W=(292,67,728,479)/K=1			// nothing exists, create the graph
 		DoWindow/C $graphName
 		AppendToGraph Q_Coordinates[*][iy] vs Q_Coordinates[*][ix]
 		ModifyGraph mode=3, marker=18, tick=2, mirror=1, minor=1, lowTrip=0.001, standoff=1
-		name = NameOfWave(Q_Coordinates)
-		ModifyGraph zColor($name)={rgb,*,*,directRGB}
+		if (WaveExists(rgb))
+			name = NameOfWave(Q_Coordinates)
+			ModifyGraph zColor($name)={rgb,*,*,directRGB}
+		endif
 		Label bottom labelX
 		Label left labelY
-		TextBox/C/N=textTitle/A=LT/X=2/Y=2/F=0 title
+		TextBox/C/N=textTitle/A=RT/X=2/Y=2/F=0 title
 		SetWindow kwTopWin, hook(QfromCursor)=EnergyScans#QfromCursorHook	// this forces a re-calculation of Qhist when cursor A is moved
 		SetAxis/A left
-		SetAxis/A bottom
+		if (ix==2)
+			SetAxis/A/R bottom
+		else
+			SetAxis/A bottom
+		endif
 		Cursor/P/L=1/H=1 A Q_Coordinates round(Ncoord/2)
 		ShowInfo
 		DoUpdate/W=$graphName
