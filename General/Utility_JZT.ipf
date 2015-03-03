@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.55
+#pragma version = 3.56
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1872,14 +1872,15 @@ Function/T getListOfTypesInFile(fname,path)
 End
 
 
-Function DrawMarker(x0,y0,dx,dy,style,[color,thick,dash,win,layer])
+Function DrawMarker(x0,y0,dx,dy,style,[color,thick,dash,win,layer,grpName])
 	Variable x0,y0,dx,dy
 	String style
-	String color							// one of "red", "blue", "green", "yellow", "magenta", "cyan", or a triplet like "1,1,0" or "65535,0,0"
+	String color						// one of "red", "blue", "green", "yellow", "magenta", "cyan", or a triplet like "1,1,0" or "65535,0,0"
 	Variable thick						// line thickness, defaults to 0.50 (thin)
 	Variable dash
 	String win							// optional name of window
 	String layer						// Drawing layer to use.  Default is "UserFront"
+	String grpName						// name of group of draw commands
 	if (numtype(x0+y0+dx+dy) || dx<=0 || dy<=0)
 		return 1
 	endif
@@ -1948,7 +1949,22 @@ Function DrawMarker(x0,y0,dx,dy,style,[color,thick,dash,win,layer])
 
 	dy = abs(dy/2)		// change FW to HW
 	dx = abs(dx/2)
+
+	if (strlen(grpName))
+		grpName = CleanupName(grpName,0)
+		grpName = ReplaceString("__",grpName,"_")
+		if (char2num(grpName)==char2num("_"))
+			grpName = "M"+grpName
+		endif
+	else
+		init_UtiltyJZT()
+		NVAR markerIndex = root:Packages:UtilityJZT:markerIndex
+		grpName = "M"+num2istr(markerIndex)
+		markerIndex += 1
+	endif
+
 	SetDrawLayer/W=$win $layer
+	SetDrawEnv/W=$win gstart, gname=$grpName
 
 	Variable err = 0
 	if (stringmatch(style,"cross gap"))
@@ -1985,6 +2001,7 @@ Function DrawMarker(x0,y0,dx,dy,style,[color,thick,dash,win,layer])
 	else
 		err = 1
 	endif
+	SetDrawEnv/W=$win gstop
 	SetDrawLayer/W=$win UserFront
 	return err
 End
@@ -3854,6 +3871,21 @@ End
 
 //  ======================= End of some general utility functions ========================  //
 //  ======================================================================================  //
+
+
+Function init_UtiltyJZT()
+	if (DataFolderExists("root:Packages:UtilityJZT"))
+		return 0
+	endif
+	NewDataFolder/O root:Packages
+	NewDataFolder/O root:Packages:UtilityJZT
+
+	if (exists("root:Packages:UtilityJZT:markerIndex")!=2)
+		Variable/G root:Packages:UtilityJZT:markerIndex = 0
+	endif
+	return 0
+End
+
 
 
 //  ======================================================================================  //
