@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.31
-#include "Utility_JZT" version>=3.39
+#pragma version = 4.32
+#include "Utility_JZT" version>=3.55
 #include "MaterialsLocate"								// used to find the path to the materials files
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
@@ -105,6 +105,7 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 // with version 4.30, in str2recip(str), now handles both "}{" and "},{" type strings
 //		also added some helpful comments about convert recip <--> direct using MatrixOP
 // with version 4.31, added wave note info in directFrom_xtal(xtal) and in recipFrom_xtal(xtal)
+// with version 4.32, added direct2LatticeConstants(direct)
 
 // Rhombohedral Transformation:
 //
@@ -1220,6 +1221,20 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		xtal.atom[0].valence = 0
 	endif
 	return 0
+End
+
+Function/WAVE direct2LatticeConstants(direct)	// calculate lattice constants angles in degree
+	// take three direct lattice vectors and return lattice constants as a free wave[6]
+	Wave direct								// 3x3 matrix with direct lattice vectors, {a,b,c}
+	Make/N=3/D/FREE a=direct[p][0], b=direct[p][1], c=direct[p][2]
+	Make/N=6/D/FREE LatticeConstants=NaN
+	LatticeConstants[0] = norm(a)	// a
+	LatticeConstants[1] = norm(b)	// b
+	LatticeConstants[2] = norm(c)	// c
+	LatticeConstants[3] = acos(MatrixDot(b,c)/norm(b)/norm(c)) * 180/PI	// alpha
+	LatticeConstants[4] = acos(MatrixDot(a,c)/norm(a)/norm(c)) * 180/PI	// beta
+	LatticeConstants[5] = acos(MatrixDot(a,b)/norm(a)/norm(b)) * 180/PI	// gamma
+	return LatticeConstants
 End
 
 Static Function xtalVibrates(xtal)						// True if some Thermal vibration info present in xtal (for any atom)

@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.54
+#pragma version = 3.55
 // #pragma hide = 1
 
 Menu "Graph"
@@ -126,13 +126,21 @@ Function/S MenuItemIfAnyGraphExists(item)
 End
 
 // for menus, enable menu item when a particular wave class is present on the graphName
-Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
+Function/S MenuItemsWaveClassOnGraph(item,classes,graphName,[csr])
 	String item					// item name to return, or "(item" to disable
 	String classes					// list of classes to check for (semi-colon separated)
 	String graphName				// name of graph, use "" for top graph
+	String csr						// requires cursor csr, can be one of "A", "B", ..., "J"
+	csr = SelectString(ParamIsDefault(csr),csr,"")	// default to none
+
+	if (strlen(ImageNameList(graphName,";")+TraceNameList(graphName,";",3))<1)
+		return "("+item									// no images or graphs displayed
+	elseif (strlen(csr) && strlen(CsrInfo($csr,graphName))<1)
+		return "("+item									// cursor csr is NOT on graph
+	endif
 
 	Variable i
-	String list = imageNameList("",";")	// first check the images
+	String list = ImageNameList(graphName,";")	// first check the images
 	for (i=0;i<ItemsInList(list);i+=1)
 		Wave ww = ImageNameToWaveRef(graphName, StringFromList(i,list))
 		if (WaveInClass(ww,classes))
@@ -140,7 +148,7 @@ Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
 		endif
 	endfor
 
-	list = TraceNameList("",";",3)		// second check ordinary traces and contours
+	list = TraceNameList(graphName,";",3)		// second check ordinary traces and contours
 	for (i=0;i<ItemsInList(list);i+=1)
 		Wave ww = TraceNameToWaveRef(graphName, StringFromList(i,list))
 		if (WaveInClass(ww,classes))
@@ -149,6 +157,29 @@ Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
 	endfor
 	return "("+item						// top graph does not contain a wave of desired class
 End
+//Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
+//	String item					// item name to return, or "(item" to disable
+//	String classes					// list of classes to check for (semi-colon separated)
+//	String graphName				// name of graph, use "" for top graph
+//
+//	Variable i
+//	String list = imageNameList("",";")	// first check the images
+//	for (i=0;i<ItemsInList(list);i+=1)
+//		Wave ww = ImageNameToWaveRef(graphName, StringFromList(i,list))
+//		if (WaveInClass(ww,classes))
+//			return item
+//		endif
+//	endfor
+//
+//	list = TraceNameList("",";",3)		// second check ordinary traces and contours
+//	for (i=0;i<ItemsInList(list);i+=1)
+//		Wave ww = TraceNameToWaveRef(graphName, StringFromList(i,list))
+//		if (WaveInClass(ww,classes))
+//			return item
+//		endif
+//	endfor
+//	return "("+item						// top graph does not contain a wave of desired class
+//End
 
 
 // This is for when we want to check if any folder under the current folder contains wave with a certain class
@@ -3029,16 +3060,19 @@ End
 
 
 // The routines encodeMatAsStr() and decodeMatFromStr() are NOT intended for viewing by user, but for a wave note
-ThreadSafe Function/T encodeMatAsStr(mat,[places])		// write a string interpretable by decodeMatFromStr
+ThreadSafe Function/T encodeMatAsStr(mat,[places,vsep])	// write a string interpretable by decodeMatFromStr
 	Wave mat
 	Variable places		// defaults to 15 places of precisiont
+	String vsep				// optional separator between vectors, use "," for Igor readable strings (the default)
 	places = ParamIsDefault(places) || !(places>0) ? 15 : places
+	vsep = SelectString(ParamIsDefault(vsep),vsep,",")
 
 	Variable i, Nr=DimSize(mat,0), Nc=DimSize(mat,1)
 	Make/N=(Nr)/D/FREE vec
 	String str="{"
 	for (i=0;i<Nc;i+=1)
 		vec = mat[p][i]
+		str += SelectString(i,"",vsep)			// no separator before first vector
 		str += vec2str(vec,places=places,sep=",")
 	endfor
 	str += "}"
