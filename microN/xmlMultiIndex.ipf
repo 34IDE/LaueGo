@@ -1,15 +1,15 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.79
+#pragma version=1.80
 #include "microGeometryN", version>=1.15
-#include "LatticeSym", version>=3.41
+#include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
-#include "ArrayOf3dOrientsN", version>=2.41
-#include "IndexLotsN", version>=2.18
+#include "ArrayOf3dOrientsN", version>=2.62
+#include "IndexLotsN", version>=2.33
 // #include "GizmoZoomTranslate"
 #include "GizmoZoomTranslate", version>=2.00
 #include "GizmoClip", version>=2.0
-#include "GizmoMarkers", version>=2.0
+#include "GizmoMarkers", version>=2.07
 
 Static Constant NindexedMIN = 4
 Static StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"
@@ -2428,8 +2428,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 	endif
 	intensPowerScale = ParamIsDefault(intensPowerScale) ? 1 : intensPowerScale
 	intensPowerScale = numtype(intensPowerScale) ? 1 : intensPowerScale
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? 0 : !(!printIt)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	String options="DIMS:2,MINCOLS:3,MAXCOLS:3,TEXT:0"
 	String xyzList=WaveListClass("Random3dArraysXYZ","*",options)
@@ -2481,7 +2480,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 
 	Variable Rxyz=0,InvPoleCubic=0
 	String svalues=""
-	if (!WaveExists(values))
+	if ( !(WaveExists(values) || StringMatch(ctab,"RxRyRz")) )
 		STRUCT crystalStructure xtal
 		if (!FillCrystalStructDefault(xtal))					// get xtal
 			if (xtal.SpaceGroup >= 195)							//	CUBIC
@@ -2493,14 +2492,17 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		if (V_flag)
 			return $""
 		endif
-		Rxyz = stringmatch(svalues,"RxRyRz")
-		InvPoleCubic = stringmatch(svalues,"Inverse Pole Figure (CUBIC)")
+		Rxyz = StringMatch(svalues,"RxRyRz")
+		InvPoleCubic = StringMatch(svalues,"Inverse Pole Figure (CUBIC)")
 		Wave values=$(fldr+svalues)
 		printIt = 1
+	elseif (StringMatch(ctab,"RxRyRz"))
+		Rxyz = 1
+		Wave values=$""
 	endif
 	if (Rxyz)
 		svalues = "RxRyRz"
-		Wave intensity=$""				// cannot specify intensity with RxRyRz, it already uses full 3D rgb space
+		ctab = "RxRyRz"
 	elseif (InvPoleCubic)
 		svalues = "InvPoleCubic"
 	else
@@ -2510,13 +2512,14 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 	String intensityList=RemoveFromList(svalues,valueList), Sintensity=NameOfWave(intensity)
 	intensityList = RemoveFromList("RxRyRz;RX;RH;RF;RY;RZ;Inverse Pole Figure (CUBIC);",intensityList)
 	intensityList = "_none_;"+intensityList
+	Prompt Sintensity,"Intensity Wave",popup,intensityList
+	Prompt intensPowerScale, "Exponent for scaling intensity (only when an intensity is chosen)"
+
 	if (InvPoleCubic)						// do not need lo or hi for InvPoleCubic, but need a surface normal
 		lo = 0
 		hi = 0
 		String normStr="0,1,-1"
 		Prompt normStr, "Inverse Pole Figure Surface Normal (Beam Line Coords)"
-		Prompt Sintensity,"Intensity Wave",popup,intensityList
-		Prompt intensPowerScale, "Exponent for scaling intensity (only when an intensity is chosen)"
 		DoPrompt "Surface Normal", normStr,Sintensity, intensPowerScale
 		if (V_flag)
 			return $""
@@ -2529,7 +2532,6 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		endif
 		normStr = hkl2str(InvPoleNormal[0],InvPoleNormal[1],InvPoleNormal[2])
 		cTab = "InvPole"
-		Wave intensity = $(fldr+Sintensity)
 	elseif (numtype(lo+hi) && Rxyz)	// prompt for RxRyRz
 		hi = max(WaveMax(Rx),WaveMax(Rh))
 		hi = max(hi,WaveMax(Rh))
@@ -2538,7 +2540,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		hi = max(hi,abs(lo))
 		hi = !(hi>0) ? 0.1 : 2*atan(hi)*180/PI	// Rodriques = tan(theta/2)
 		Prompt hi,"maximum rotation, for saturated color (degree)"
-		DoPrompt "Max Angle (degre)",hi
+		DoPrompt "Max Angle (degre)",hi, Sintensity, intensPowerScale
 		if (V_flag)
 			return $""
 		endif
@@ -2566,15 +2568,14 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		Prompt lo,"low value for color scale"
 		Prompt hi,"high value for color scale"
 		Prompt cTab,"Color Table",popup,colorList
-		Prompt Sintensity,"Intensity Wave",popup,intensityList
-		Prompt intensPowerScale, "Exponent for scaling intensity (only when an intensity is chosen)"
 		DoPrompt "Color Scaling",lo,hi,cTab, Sintensity, intensPowerScale
 		if (V_flag)
 			return $""
 		endif
 		printIt = 1
-		Wave intensity = $(fldr+Sintensity)
 	endif
+	Wave intensity = $(fldr+Sintensity)
+
 	if (printIt)
 		sxyz = SelectString(WaveExists(wxyz),"$\"\"",NameOfWave(wxyz))
 		String sss = SelectString(WaveExists(values),"$\"\"",NameOfWave(values))
@@ -2648,6 +2649,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		Duplicate/FREE intensity, intens
 		intens = abs(intens)						// intensity is from zero
 		lo = WaveMin(intens)
+		lo -= StringMatch(NameOfWave(intensity),"Nindexed") ? 1 : 0	// for Nindexed, the lowest is still valid
 		intens -= lo
 		hi = WaveMax(intens)
 		intens /= hi
