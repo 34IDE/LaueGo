@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, March 05, 2015" time="08:31:29 PM CST" isoTime="2015-03-05T20:31:29"></written>
+	<written date="Tuesday, March 10, 2015" time="01:59:53 PM CDT" isoTime="2015-03-10T13:59:53"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>266</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -57,7 +57,7 @@
 	<file version="2.11" time="2014-04-30T10:34:47" md5="ac190b7444d9f6ce3425257b5bcfa831" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" ext=".xml">materials/Ge.xml</file>
 	<file version="4.6" time="2015-02-14T12:10:44" md5="11ea5c501d16e4c1cfd4260538d52303" ext=".ipf">microN/IndexingN.ipf</file>
-	<file version="1.8" time="2015-03-05T20:17:35" md5="fac142606e1231f4190ef4e478df9663" ext=".ipf">microN/xmlMultiIndex.ipf</file>
+	<file version="1.82" time="2015-03-10T13:58:20" md5="519f51165f730f7ec8c01d529607ee24" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="29cafe5148d2f8c838aa0fa682b4da52" ext=".xml">materials/ZnS Wurtzite.xml</file>
@@ -146,7 +146,7 @@
 	<file version="2.46" time="2014-10-06T09:42:00" md5="5b85d9c071c467894ab121b5dbcd7ac1" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1aa8d2e96729af4d6c1a957de08c2ace" ext=".xml">materials/Tungsten.xml</file>
 	<file version="0.02" time="2014-04-30T10:26:18" md5="d185b56b1e92d1c5ed4f06a0b4162fda" ext=".ipf">materials/materialsLocate.ipf</file>
-	<file version="nan" time="2015-02-09T12:08:02" md5="85fd7be8aaa1f81010910c7f526fbde5" ext=".py">APS/burt_tool.py</file>
+	<file version="nan" time="2015-03-07T20:16:43" md5="de5d175054f11d16b08a38843714d4a4" ext=".py">APS/burt_tool.py</file>
 	<file version="2.02" time="2014-10-08T14:58:04" md5="7c0cc123b3547ae8b264c0326727b3b6" ext=".ipf">General/GizmoMovies.ipf</file>
 	<file version="2.2" time="2015-02-26T17:00:24" md5="88b1b193b2cfa4cc9478a0f50eb2c934" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" ext="">micro/Euler_i386</file>
