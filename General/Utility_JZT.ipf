@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.56
+#pragma version = 3.57
 // #pragma hide = 1
 
 Menu "Graph"
@@ -42,6 +42,7 @@ End
 //		rotationAngleOfMat(rot)  finds the total rotation angle of a matrix 'rot'
 //		axisOfMatrix(mat,axis,[squareUp]), find axis and angle from the rotation matrix mat
 //		SquareUpMatrix(rot), turns rot from almost a rotation matrix to a true rotation matrix
+//		MedianOfWave(), returns median (or other percentile) of a wave, useful for picking scaling ranges
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -2230,6 +2231,89 @@ ThreadSafe Function SquareUpMatrix(rot)
 	KillWaves/Z W_W, M_U, M_VT
 	return 0
 End
+
+
+
+ThreadSafe Function MedianOfWave(wwIN,f,[x1,x2,p1,p2])
+	//	returns median (or other percentile) of a wave, useful for picking scaling ranges
+	Wave wwIN
+	Variable f							// fraction (e.g. percentile) in range [0,1]
+	Variable x1, x2					// range of interest (x-values) (cannot specify both x1 & p1)
+	Variable p1, p2					// range of interest (point-values)
+	if (!WaveExists(wwIN) || WaveDims(wwIN)!=1 || numtype(f) || f<0 || f>1)
+		return NaN
+	endif
+	Variable setLo = (ParamIsDefault(x1) ? 0 : 2) + (ParamIsDefault(p1) ? 0 : 1)
+	Variable setHi = (ParamIsDefault(x2) ? 0 : 2) + (ParamIsDefault(p2) ? 0 : 1)
+	if (setLo>2 || setHi>2)
+		return NaN								// cannot specify both x and point for an end
+	endif
+
+	Variable N=numpnts(wwIN), x0=DimOffset(wwIN,0), dx=DimDelta(wwIN,0)
+	Variable pLo=0, pHi=N-1				// init pLo,pHi to full range
+	pLo = setLo==1 ? p1 : pLo				// p1 given
+	pHi = setHi==1 ? p2 : pHi				// p2 given
+	pLo = setLo==2 ? (x1-x0)/dx : pLo	// x1 given
+	pHi = setHi==2 ? (x2-x0)/dx : pHi	// x2 given
+	if (numtype(pLo+pHi)==2)				// cannot deal with NaN's
+		return NaN
+	endif
+	pLo = limit(pLo,0,N-1)					// trim to allowed point range
+	pHi = limit(pHi,0,N-1)
+	Variable Nrange = (pHi-pLo+1)		// new number of points in range
+	if (Nrange < 1)							// nothing in range
+		return NaN
+	elseif (Nrange==1)
+		return wwIN[0]							// trivial result
+	endif
+
+	Duplicate/R=[pLo,pHi]/FREE wwIN, temp
+	Sort temp, temp							// Sort range of wwIN
+	WaveStats/M=1/Q temp
+	if (V_npnts<1)
+		return NaN
+	endif
+	return temp[(V_npnts-1) * f]			// note that V_npnts*f need not be an integer
+End
+//
+//Function test_MedianOfWave(bitFlag)
+//	Variable bitFlag
+//
+//	Variable p1, p2
+//	printf "\t0.5\t\t0\t\t\t1\t\t\t w\r"
+//
+//	if (bitFlag & 1)
+//		Make/FREE tw={7}
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s\r",MedianOfWave(tw,0.5),MedianOfWave(tw,0),MedianOfWave(tw,1),vec2str(tw)
+//	endif
+//	if (bitFlag & 2)
+//		Make/FREE tw={4.1,2.1}
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s\r",MedianOfWave(tw,0.5),MedianOfWave(tw,0),MedianOfWave(tw,1),vec2str(tw)
+//	endif
+//
+//	Make/FREE tw={1,2,3,4,5,0,6,7,8,9}
+//	if (bitFlag & 4)
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s\r",MedianOfWave(tw,0.5),MedianOfWave(tw,0),MedianOfWave(tw,1),vec2str(tw)
+//	endif
+//	if (bitFlag & 8)
+//		p1=1; p2=10
+//		Make/N=(min(p2,numpnts(tw)-1)-p1+1)/FREE tw12
+//		tw12 = tw[p+p1]
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw12), p1,p2
+//	endif
+//	if (bitFlag & 16)
+//		p1=2; p2=6
+//		Make/N=(min(p2,numpnts(tw)-1)-p1+1)/FREE tw12
+//		tw12 = tw[p+p1]
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw12), p1,p2
+//	endif
+//
+//	if (bitFlag & 32)
+//		p1=12; p2=6
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw), p1,p2
+//	endif
+//End
+
 
 
 // This routine is much faster than going through an [sprintf str,"%g",val] conversion

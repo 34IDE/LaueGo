@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.82
+#pragma version=1.83
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -525,8 +525,7 @@ Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
 	//	Wave iwave=sumAboveThreshold			// wave for intensity scaling
 	//	Wave iwave=Nindexed						// wave for intensity scaling
 	if (WaveExists(iwave))
-		// Variable hi=waveMax(iwave)
-		Variable hi=MedianOfWave(iwave,f=0.95)
+		Variable hi=MedianOfWave(iwave,0.95)
 		String name=GetWavesDataFolder(rotRGBpole,2)+"Intens"
 		Duplicate/O rotRGBpole, $name
 		Wave rgbi=$name
@@ -552,41 +551,12 @@ Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
 	return GetWavesDataFolder(poleXY,2)
 End
 //
-Static Function MedianOfWave(w, [x1, x2,f])					// Returns median value of wave w
-	Wave w
-	Variable x1, x2											// range of interest
-	Variable f
-	if (!WaveExists(w))
-		return NaN
-	endif
-	Variable N=numpnts(w)
-	Variable xlo=DimOffset(w,0),  xhi=DimOffset(w,0)+(N-1)*DimDelta(w,0)
-	x1 = ParamIsDefault(x1) ? xlo : x1
-	x2 = ParamIsDefault(x2) ? xhi : x2
-	x1 = x1<xlo ? xlo : x1
-	x2 = x2>xhi ? xhi : x2
-	f = ParamIsDefault(f) ? 0.5 : f
-	f = f>0 ? f : 0.5
-
-	Variable result
-	if (x1<x2 && numtype(x1+x2)==0)
-		Duplicate/R=(x1,x2)/FREE w, tempMedianWave	// Make a clone of wave
-	else
-		Duplicate/FREE w, tempMedianWave					// Make a clone of wave
-	endif
-	Sort tempMedianWave, tempMedianWave					// Sort clone
-	SetScale/P x 0,1,tempMedianWave
-	result = tempMedianWave((numpnts(tempMedianWave)-1)*f)
-	return result
-End
-
-
 Static Function radiusOnPoleFigure(x0,y0,rad)
 	Variable x0,y0				// origin on pole figure
 	Variable rad				// radius of circle around (x0,y0) (degree)
 
-//  this simple equation was the old way of doing it.  It looks wrong.
-//	Variable r = sqrt(1-(x0^2 + y0^2))*sin(rad*PI/180)	// radius on polefigure plot for saturated color
+	//  this simple equation was the old way of doing it.  It looks wrong.
+	//	Variable r = sqrt(1-(x0^2 + y0^2))*sin(rad*PI/180)	// radius on polefigure plot for saturated color
 	Variable r2d = sqrt(x0^2 + y0^2)				// distance from center of (0,0)
 	Variable phi=2*atan(1/r2d), dphi=rad*PI/180// azimuthal angle from pole to (x0,y0)
 	phi = dphi<phi ? phi-dphi : phi+dphi			// aximuthal angle from (x0,y0) to dphi away
@@ -2409,7 +2379,7 @@ Function/WAVE Make2D_3D_RGBA(wxyz,values,cTab,lo,hi,[intensity,intensPowerScale,
 		rr[NRX,N2-1] = RH[p-NRX]
 		rr[N2,N3-1] = RF[p-N2]
 		rr = 2*atan(abs(rr)) * 180/PI				// scale as |Rodriques| vectors
-		hi = getNiceMaxValue(rr)
+		hi = roundSignificant(MedianOfWave(rr,0.95),2)
 		Prompt hi,"maximum rotation, for saturated color (degree)"
 		DoPrompt "Max Angle (degre)",hi, Sintensity, intensPowerScale
 		if (V_flag)
@@ -4186,7 +4156,7 @@ Function/T makeRGBJZT(RX,RH,RF,maxAngle)
 		rr[N,N2-1] = RH[p-N]
 		rr[N2,N3-1] = RF[p-N2]
 		rr = 2*atan(abs(rr)) * 180/PI		// scale as |Rodriques| vectors
-		maxAngle = getNiceMaxValue(rr)
+		maxAngle = roundSignificant(MedianOfWave(rr,0.95),2)
 	endif
 	Make/N=(N,3)/U/W/O rotRGB=0
 
@@ -4237,22 +4207,6 @@ Function/T makeRGBJZT(RX,RH,RF,maxAngle)
 	Note/K rotRGB, noteStr
 	KillWaves/Z vec3
 	return GetWavesDataFolder(rotRGB,2)
-End
-//
-ThreadSafe Static Function getNiceMaxValue(wwIN,[thresh])
-	Wave wwIN
-	Variable thresh					// optional value in range (0,1)
-	thresh = ParamIsDefault(thresh) || numtype(thresh) || thresh<=0 || thresh>=1 ? 0.95 : thresh
-	if (numtype(thresh) || !WaveExists(wwIN))
-		return NaN
-	endif
-	Duplicate/FREE wwIN, ww
-	Sort ww, ww
-	WaveStats/M=1/Q ww
-	Variable N=V_npnts, i
-	i = ceil(thresh*N)
-	i = limit(i,0,N-1)
-	return roundSignificant(ww[i],2)
 End
 
 // ***********************************  End of Read XML ************************************
