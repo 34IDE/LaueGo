@@ -2290,25 +2290,29 @@ End
 //		Make/FREE tw={4.1,2.1}
 //		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s\r",MedianOfWave(tw,0.5),MedianOfWave(tw,0),MedianOfWave(tw,1),vec2str(tw)
 //	endif
-//
-//	Make/FREE tw={1,2,3,4,5,0,6,7,8,9}
 //	if (bitFlag & 4)
+//		Make/FREE tw={4.1,2.1,4}
 //		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s\r",MedianOfWave(tw,0.5),MedianOfWave(tw,0),MedianOfWave(tw,1),vec2str(tw)
 //	endif
+//
+//	Make/FREE tw={1,2,3,4,5,0,6,7,8,9}
 //	if (bitFlag & 8)
+//		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s\r",MedianOfWave(tw,0.5),MedianOfWave(tw,0),MedianOfWave(tw,1),vec2str(tw)
+//	endif
+//	if (bitFlag & 16)
 //		p1=1; p2=10
 //		Make/N=(min(p2,numpnts(tw)-1)-p1+1)/FREE tw12
 //		tw12 = tw[p+p1]
 //		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw12), p1,p2
 //	endif
-//	if (bitFlag & 16)
+//	if (bitFlag & 32)
 //		p1=2; p2=6
 //		Make/N=(min(p2,numpnts(tw)-1)-p1+1)/FREE tw12
 //		tw12 = tw[p+p1]
 //		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw12), p1,p2
 //	endif
 //
-//	if (bitFlag & 32)
+//	if (bitFlag & 64)
 //		p1=12; p2=6
 //		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw), p1,p2
 //	endif
