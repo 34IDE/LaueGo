@@ -2235,32 +2235,32 @@ End
 
 
 ThreadSafe Function MedianOfWave(wwIN,f,[x1,x2,p1,p2])
-	//	returns median (or other percentile) of a wave, useful for picking scaling ranges
+	//	return median (or other percentile) of a wave, useful for picking min/max range for a color scale
 	Wave wwIN
-	Variable f							// fraction (e.g. percentile) in range [0,1]
-	Variable x1, x2					// range of interest (x-values) (cannot specify both x1 & p1)
-	Variable p1, p2					// range of interest (point-values)
+	Variable f					// fraction (e.g. percentile) in range [0,1], use f=0.5 for usual median
+	Variable x1, x2			// range of interest (x-values) (cannot specify both x1 & p1)
+	Variable p1, p2			// range of interest (point-values)
 	if (!WaveExists(wwIN) || WaveDims(wwIN)!=1 || numtype(f) || f<0 || f>1)
 		return NaN
 	endif
 	Variable setLo = (ParamIsDefault(x1) ? 0 : 2) + (ParamIsDefault(p1) ? 0 : 1)
 	Variable setHi = (ParamIsDefault(x2) ? 0 : 2) + (ParamIsDefault(p2) ? 0 : 1)
 	if (setLo>2 || setHi>2)
-		return NaN								// cannot specify both x and point for an end
+		return NaN								// cannot specify both x and point for a range
 	endif
 
 	Variable N=numpnts(wwIN), x0=DimOffset(wwIN,0), dx=DimDelta(wwIN,0)
 	Variable pLo=0, pHi=N-1				// init pLo,pHi to full range
 	pLo = setLo==1 ? p1 : pLo				// p1 given
 	pHi = setHi==1 ? p2 : pHi				// p2 given
-	pLo = setLo==2 ? (x1-x0)/dx : pLo	// x1 given
-	pHi = setHi==2 ? (x2-x0)/dx : pHi	// x2 given
-	if (numtype(pLo+pHi)==2)				// cannot deal with NaN's
+	pLo = setLo==2 ? (x1-x0)/dx : pLo	// x1 given, convert to p1
+	pHi = setHi==2 ? (x2-x0)/dx : pHi	// x2 given, convert to p2
+	if (numtype(pLo+pHi)==2)				// cannot deal with NaN's, probably from bad input
 		return NaN
 	endif
-	pLo = limit(pLo,0,N-1)					// trim to allowed point range
-	pHi = limit(pHi,0,N-1)
-	Variable Nrange = (pHi-pLo+1)		// new number of points in range
+	pLo = limit(round(pLo),0,N-1)		// trim to allowed point range, and force to integer
+	pHi = limit(round(pHi),0,N-1)
+	Variable Nrange = (pHi-pLo+1)		// number of points in the sub-range
 	if (Nrange < 1)							// nothing in range
 		return NaN
 	elseif (Nrange==1)
@@ -2273,7 +2273,7 @@ ThreadSafe Function MedianOfWave(wwIN,f,[x1,x2,p1,p2])
 	if (V_npnts<1)
 		return NaN
 	endif
-	return temp[(V_npnts-1) * f]			// note that V_npnts*f need not be an integer
+	return temp[f*(V_npnts-1)]			// note that V_npnts*f need not be an integer
 End
 //
 //Function test_MedianOfWave(bitFlag)
