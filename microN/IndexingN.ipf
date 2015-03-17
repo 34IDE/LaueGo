@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.60
+#pragma version = 4.61
 #include "LatticeSym", version>=4.29
 #include "microGeometryN", version>=1.75
 #include "Masking", version>1.02
@@ -7363,8 +7363,13 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 	PopupMenu popuphklTags,fSize=14
 	PopupMenu popuphklTags,mode=0,value= #"\"Re-Draw hkl tags;Clear hkl tags off Graph;Add Missing Peaks;Remove Missing Peaks;Rotation Between Orientations...;\""
 
-	Button buttonReportIndex,pos={130,125},size={90,20},proc=IndexButtonProc,title="Report"
+//	Button buttonReportIndex,pos={130,125},size={90,20},proc=IndexButtonProc,title="Report"
+	Button buttonReportIndex,pos={136,125},size={84,20},proc=IndexButtonProc,title="Report"
 	Button buttonReportIndex,help={"if the top window is an images showing the hkl's, this makes a layout with reflections for printing"}
+
+	PopupMenu popupHelp,pos={96,125},size={40,20},proc=Indexing#HelpPopMenuProc,title="?"
+	PopupMenu popupHelp,help={"Show table of identified peak positions indexed peaks, or the peaks for strain refinement"}
+	PopupMenu popupHelp,mode=0,value= #"\"Modifier Keys;Fitting;Indexing;Tables;Strain Refine\""
 
 	Button buttonStrainRefine,pos={29,155},size={160,20},proc=IndexButtonProc,title="Strain Refine"
 	Button buttonStrainRefine,help={"after indexing, use this to refine the lattice and find the strain"}
@@ -7550,6 +7555,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 	Variable d
 
 	Button buttonLoadImage,win=$win,disable=0		// always OK to load an image
+	PopupMenu popupHelp,win=$win,disable=0			// and to get help
 
 	d = strlen(WaveListClass("tif*;spe*;rawImage*;HDF*","*","DIMS:2"))<1 ? 2 : 0
 	Button buttonViewImage,win=$win,disable= d
@@ -7598,7 +7604,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 	endif
 
 	d = strlen(WaveListClass("FittedPeakList;IndexedPeakList*","*",""))<1 ? 2 : 0
-	PopupMenu popupTables,win=$win,disable= d
+	PopupMenu popupTables,win=$win,disable=d
 
 	if (exists("Load3dRecipLatticesFileXML")==6)
 		FUNCREF ValidRawXMLdataAvailableProto fvalid = $"multiIndex#ValidRawXMLdataAvailable"
@@ -7833,6 +7839,23 @@ Function TablesPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 		TableMissingPeakList($"")
 	elseif (stringmatch(popStr,"Measured Energies*"))
 		MakeMeasured_hkl_EnergiesWave(NaN,"")
+	endif
+End
+//
+Static Function HelpPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
+	String ctrlName
+	Variable popNum
+	String popStr
+	if (stringmatch(popStr,"Modifier Keys"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Mousing around]"
+	elseif (stringmatch(popStr,"Fitting"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Peak Fitting]"
+	elseif (stringmatch(popStr,"Indexing"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Indexing]"
+	elseif (stringmatch(popStr,"Tables"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Display Tables...]"
+	elseif (stringmatch(popStr,"Strain Refine"))
+		DisplayHelpTopic/K=1/Z "Strain Refinement"
 	endif
 End
 //
