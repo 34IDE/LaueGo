@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.13
+#pragma version = 3.14
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.51
@@ -151,6 +151,13 @@ Static Function LoadAllGizmoUtilities()
 	Execute/P "GizmoMovies#InitGizmoMovies()"
 End
 
+Menu "Help"
+	"-"
+	"(LaueGo"
+	"  micro Diffraction", /Q, DisplayHelpTopic/K=1/Z "LaueGo"
+	"  Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+	End
+End
 
 
 //  ====================================================================================  //

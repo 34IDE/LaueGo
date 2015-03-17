@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.05
+#pragma version = 0.06
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
