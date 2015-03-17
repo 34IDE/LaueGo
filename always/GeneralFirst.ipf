@@ -151,13 +151,29 @@ Static Function LoadAllGizmoUtilities()
 	Execute/P "GizmoMovies#InitGizmoMovies()"
 End
 
+
 Menu "Help"
 	"-"
-	"(LaueGo"
-	"  micro Diffraction", /Q, DisplayHelpTopic/K=1/Z "LaueGo"
-	"  Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+	SubMenu "LaueGo"
+		"micro Diffraction", /Q, DisplayHelpTopic/K=1/Z "LaueGo"
+		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+		// "micro Diffraction", /Q, BrowseHelpFile("microDiffraction.html")
+		"Geometry File Description", /Q, JZTgeneral#BrowseHelpFile("geometry.html")
 	End
 End
+//
+Static Function BrowseHelpFile(html)
+	String html
+
+	String sss = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
+	sss = ParseFilePath(5,sss,"/",0,0)		// convert from Mac to POSIX
+	String urlStr = "file://"+sss+html		// complete the URL
+	BrowseURL/Z urlStr
+	if (V_flag)
+		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
+	endif
+End
+
 
 
 //  ====================================================================================  //

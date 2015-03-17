@@ -147,6 +147,11 @@ Function LaueGo_Install()
 		endif
 	endif
 
+	Append2Log("Create the Igor Help file Aliases",0)
+	if (InstallAliasesToHelpFiles(LaueGoFullPath))
+		Append2Log("ERROR -- failed to properly install Help File Aliases,  Continuing...",0)
+	endif
+
 	sprintf str, "ready to try and install the following xop's:  \"%s\"",xopList
 	Append2Log(str,0)
 	Variable count = InstallXOPsAsNeeded(xopList,0)
@@ -403,7 +408,7 @@ End
 
 
 // ============================================================================================= //
-// =================================== Start of xop aliases ==================================== //
+// =================================== Start of XOP Aliases ==================================== //
 
 //		InstallXOPsAsNeeded("HDF5.xop;HDF5 Help.ihf;",1)
 //		InstallXOPsAsNeeded("HDF5.xop;HDF5 Help.ihf;HFSAndPosix.xop;HFSAndPosix Help.ihf;",1)
@@ -597,6 +602,76 @@ Static Function FileFolderExists(name,[path,file,folder])	// returns 1=exists, 0
 	return found
 End
 
-// ==================================== End of xop aliases ===================================== //
+// ==================================== End of XOP Aliases ===================================== //
 // ============================================================================================= //
 
+
+
+// ============================================================================================= //
+// ================================ Start of Help File Aliases ================================= //
+
+// find *.ihf files in LaueGo:doc, and put aliases to them in "...:Igor Pro 6 User Files:Igor Help Files:"
+Function InstallAliasesToHelpFiles(LaueGoFullPath)
+	String LaueGoFullPath
+	// probably "MacComputer:Users:userName:Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures:LaueGo"
+
+	Variable n=strlen(LaueGoFullPath)
+	if (n<1)
+		Append2Log("ERROR -- InstallAliasesToHelpFiles, LaueGoFullPath is empty",0)
+		return 1
+	endif
+
+	// make path to source help files
+	String sourcePath = LaueGoFullPath + SelectString(char2num(LaueGoFullPath[n-1])==58, ":doc:", "doc:")
+	String sPath = UniqueName("docPathLaueGo",12,0)
+	NewPath/Q/O/Z $sPath, sourcePath
+	if (V_flag)
+		Append2Log("ERROR -- Unable to make Igor Help Aliases, could not make "+sPath+"  from:",0)
+		Append2Log("      "+sourcePath,0)
+		return 1
+	endif
+
+	// make path to destination help files
+	String destPath = SpecialDirPath("Igor Pro User Files",0,0,0)+"Igor Help Files:"
+	String dPath = UniqueName("UserHelpPath",12,0)
+	NewPath/Q/O/Z $dPath, destPath
+	if (V_flag)
+		Append2Log("ERROR -- Unable to make Igor Help Aliases, could not make "+dPath+"  from:",0)
+		Append2Log("      "+destPath,0)
+		return 1
+	endif
+
+	String list="", name, str
+	sprintf str, "Create Help file Aliases in  \"%s\"",destPath
+	Append2Log(str,0)
+	Variable i=0
+	do													// make list of aliases that are not already there
+		name = IndexedFile($sPath,i,".ihf")
+		if (LaueGoInstall#AliasAlreadyThere(sourcePath+name,destPath+name))
+			sprintf str, "  alias is already present for    \"%s\"",name
+			Append2Log(str,0)
+		elseif (strlen(name))
+			list += name+";"						// alias not there, add it to list
+		endif
+		i += 1
+	while (strlen(name))
+
+
+	for (i=0;i<ItemsInList(list);i+=1)		// make the aliases that are not already there
+		name = StringFromList(i,list)
+		sprintf str, "  Create alias for  \"%s\"   from    \"%s\"",name,sourcePath
+		Append2Log(str,0)
+		CreateAliasShortcut/I=0/O/Z=1 sourcePath+name as destPath+name
+		if (V_flag)
+			str = "CreateAliasShortcut failed to make alias to \""+name+"\""
+			DoAlert 0,str
+			Append2Log(str,0)
+			return 1
+		endif
+	endfor
+
+	return 0
+End
+
+// ================================= End of Help File Aliases ================================== //
+// ============================================================================================= //
