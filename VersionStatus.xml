@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, March 17, 2015" time="02:25:37 PM CDT" isoTime="2015-03-17T14:25:37"></written>
+	<written date="Tuesday, March 17, 2015" time="03:28:51 PM CDT" isoTime="2015-03-17T15:28:51"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>268</fileCount>
+	<fileCount>265</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
-	<file version="nan" time="2015-01-30T17:21:00" md5="a7e6f653514324a4eaae57c9334d61c1" ext="">microN/Euler4_0</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="ab995a02b022e8807254635bf2d06118" ext=".xml">materials/Be.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b83d955199cd0ab0f59c6efa0fc3c904" ext=".xml">materials/CeO2d.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7610aeee47dd713ce7e87f6a71e956c9" ext=".xml">materials/BaTiO3.xml</file>
@@ -67,7 +66,6 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" ext="">micro/Euler_Debug_ppc</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c2f5a5af8cc4245eea7b44efed7243d3" ext=".xml">materials/LaSrMnO3_Rhom.xml</file>
 	<file version="nan" time="2014-02-12T12:35:11" md5="21fe5d59b8ab82f4f8b759a39428a853" ext=".xml">materials/Rene-104.xml</file>
-	<file version="1.33" time="2014-09-08T15:20:36" md5="e3008e29ad482f76f02c8ec7c06a0ff1" ext=".ipf">microN/EnergyWireScansN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="46d8348f073a45cb4117fdde50740d84" ext=".xml">materials/Cr.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="89edf241338c6e8db2e8246a25a10037" ext=".xml">materials/ZnO.xml</file>
 	<file version="0.47" time="2014-10-16T15:00:09" md5="eb8897683a6f3fa37fb0895441750d11" ext=".ipf">Diffractometer/Diffractometer.ipf</file>
@@ -118,7 +116,7 @@
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" ext=".ipf">micro/monoCalibrate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4db7d860a567fcf9047e74ffb6bdaacc" ext=".xml">geometrys/geoN_2012-06-13_17-40-22.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">doc/microDiffractionMedia/Picture7.png</file>
-	<file version="3.14" time="2015-03-17T14:25:12" md5="6540abdc0c90a4411ad882469907ae3a" ext=".ipf">always/GeneralFirst.ipf</file>
+	<file version="3.14" time="2015-03-17T15:28:41" md5="017ea66d53ab7a4a130dd849e5b9150b" ext=".ipf">always/GeneralFirst.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="6bcac22bfb97414500a8cee93c81ca52" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2014-10-30T13:10:27" md5="f7fc043b1fccd1bc57a8c85bd7119a48" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2014-10-30T13:09:24" md5="859a758545e47d314c72723c59a5eaec" ext=".mtl">materials/BePS-200.mtl</file>
@@ -244,7 +242,6 @@
 	<file version="nan" time="2014-10-30T13:09:33" md5="0b9de18169c6ba230aaa56f50fe65d96" ext=".mtl">materials/BeIF-1.mtl</file>
 	<file version="0.02" time="2014-10-06T09:42:00" md5="9300c148c70aa60d9d9e6d1152a3036f" ext=".ipf">micro/DoAll.ipf</file>
 	<file version="1.98" time="2014-06-20T10:16:12" md5="4ee55708efbbba055e38559e0f1cb789" ext=".ipf">General/ImageDisplayScaling.ipf</file>
-	<file version="nan" time="2013-10-28T11:28:49" md5="2a7169af57f9dd8b852d97dae5808686" ext=".ifn">microN/microDiffraction.ifn</file>
 	<file version="2.04" time="2013-10-28T11:28:48" md5="7937e08585179b84a3ca9d1d53c2eca7" ext=".ipf">General/ColorNames.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="52db038f84da7d58e9fac596af4ec0ac" ext=".xml">materials/YMnO3_Katsufuji.xml</file>
 	<file version="nan" time="2014-09-22T11:40:39" md5="149f13c0bd0be7638571a54382890bcd" ext=".xml">materials/VO2/VO2_M2_1999Galy.xml</file>

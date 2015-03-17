@@ -159,11 +159,11 @@ Menu "Help"
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		// "micro Diffraction", /Q, BrowseHelpFile("microDiffraction.html")
 		"Geometry File Description", /Q, JZTgeneral#BrowseHelpFile("geometry.html")
-		"LaueGo Web Page", /Q, JZTgeneral#BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		SubMenu "Old"
-			"Geometry tag file", /Q, JZTgeneral#BrowseHelpFile("geoN_tag.html")
-			"Old GeometryN tag file", /Q, JZTgeneral#BrowseHelpFile("geo_tag OLD.html")
+			"GeometryN tag file", /Q, JZTgeneral#BrowseHelpFile("geoN_tag.html")
+			"Real Old Geometry tag file", /Q, JZTgeneral#BrowseHelpFile("geo_tag OLD.html")
 		End
+		"LaueGo Web Page", /Q, JZTgeneral#BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 	End
 End
 //
