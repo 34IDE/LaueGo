@@ -1,0 +1,80 @@
+<HTML>
+  <HEAD>
+    <TITLE>34ID-E Geometry New using ASCII tags</TITLE>
+    <!
+      created: Tue Aug 10 13:00:00 2010
+      by Jon Tischler
+    >
+  </HEAD>
+  <H1>Definition of new geometry file for 34ID-E microdiffracation, ASCII tags</H1>
+  <h3>by Jon Tischler, Aug 10, 2010</h3>
+
+  <h2>An Example:</h2>
+
+<p>
+
+$filetype		geometryFileN<br/>
+$dateWritten	Wed, Jun 9, 2010<br/>
+$timeWritten	13:19:58.6 (-5)<br/>
+$EPOCH			3358934399					// seconds from midnight January 1, 1904<br/>
+$fileNote		all three, but with old Orange energies<br/>
+</p>
+
+<p>
+// Sample<br/>
+$SampleOrigin	{8200.00,-4758.83,-4476.00}			// sample origin in raw PM500 units (micron)<br/>
+$SampleRot		{-0.00600000,0.00600000,-0.00001800}	// sample positioner rotation vector (length is angle in radians)<br/>
+</p>
+
+<p>
+// Detectors<br/>
+$Ndetectors		3							// number of detectors in use, must be <= MAX_Ndetectors<br/>
+</p>
+
+<p>
+$d0_Nx			2048						// number of un-binned pixels in full detector<br/>
+$d0_Ny			2048<br/>
+$d0_sizeX		409.600						// size of CCD (mm)<br/>
+$d0_sizeY		409.600<br/>
+$d0_R			{-1.20325462,-1.21034222,-1.22127733}	// rotation vector (length is angle in radians)<br/>
+$d0_P			{25.130,-1.538,510.690}		// translation vector (mm)<br/>
+$d0_timeMeasured	Wed, Jun 9, 2010, 13:18:48 (-5)	// when this geometry was calculated<br/>
+$d0_geoNote	Optimized using CalibrationListOrange0<br/>
+$d0_detectorID	PE1621 723-3335			// unique detector ID<br/>
+</p>
+
+<p>
+$d1_Nx			1024						// number of un-binned pixels in full detector<br/>
+$d1_Ny			1024<br/>
+$d1_sizeX		204.800						// size of CCD (mm)<br/>
+$d1_sizeY		204.800<br/>
+$d1_R			{-1.76778912,-0.72913126,-1.75902010}	// rotation vector (length is angle in radians)<br/>
+$d1_P			{-142.371,-0.816,413.065}		// translation vector (mm)<br/>
+$d1_timeMeasured	Wed, Jun 9, 2010, 13:18:48 (-5)	// when this geometry was calculated<br/>
+$d1_geoNote	Optimized using CalibrationListYellow1<br/>
+$d1_detectorID	PE0820 763-1807			// unique detector ID<br/>
+</p>
+
+<p>
+$d2_Nx			1024						// number of un-binned pixels in full detector<br/>
+$d2_Ny			1024<br/>
+$d2_sizeX		204.800						// size of CCD (mm)<br/>
+$d2_sizeY		204.800<br/>
+$d2_R			{-0.61780900,-1.50293674,-0.62354849}	// rotation vector (length is angle in radians)<br/>
+$d2_P			{-141.869,-2.500,416.236}		// translation vector (mm)<br/>
+$d2_timeMeasured	Wed, Jun 9, 2010, 13:18:48 (-5)	// when this geometry was calculated<br/>
+$d2_geoNote	Optimized using CalibrationListPurple2<br/>
+$d2_detectorID	PE0820 763-1850			// unique detector ID<br/>
+</p>
+
+<p>
+// Wire<br/>
+$wireDia		52.00						// diameter of wire (micron)<br/>
+$wireKnife		0							// true if wire on a knife edge, false for free-standing wire<br/>
+$wireOrigin		{2.50,0.00,0.00}			// wire origin in raw PM500 frame (micron)<br/>
+$wireRot		{0.00450000,-0.00684000,-0.00003375}	// wire positioner rotation vector (length is angle in radians)<br/>
+$wireAxis		{1.000000,0.000000,0.000000}	// unit vector along wire axis, usually close to (1,0,0)<br/>
+$wireF			-200.00						// F of wire for a constant F wire scan (raw PM500 units)<br/>
+</p>
+
+</HTML>

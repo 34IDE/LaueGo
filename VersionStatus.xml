@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, March 17, 2015" time="02:03:32 PM CDT" isoTime="2015-03-17T14:03:32"></written>
+	<written date="Tuesday, March 17, 2015" time="02:25:37 PM CDT" isoTime="2015-03-17T14:25:37"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<fileCount>266</fileCount>
+	<fileCount>268</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="92e394d642229d345dd0a63ab32e18b3" ext=".xml">materials/Si.xml</file>
@@ -64,6 +64,7 @@
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="29cafe5148d2f8c838aa0fa682b4da52" ext=".xml">materials/ZnS Wurtzite.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bcb8c7309ae0ae6b4a1e7f07e657ee4d" ext=".xml">materials/Scandium.xml</file>
+	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" ext="">micro/Euler_Debug_ppc</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c2f5a5af8cc4245eea7b44efed7243d3" ext=".xml">materials/LaSrMnO3_Rhom.xml</file>
 	<file version="nan" time="2014-02-12T12:35:11" md5="21fe5d59b8ab82f4f8b759a39428a853" ext=".xml">materials/Rene-104.xml</file>
 	<file version="1.33" time="2014-09-08T15:20:36" md5="e3008e29ad482f76f02c8ec7c06a0ff1" ext=".ipf">microN/EnergyWireScansN.ipf</file>
@@ -117,7 +118,7 @@
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" ext=".ipf">micro/monoCalibrate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4db7d860a567fcf9047e74ffb6bdaacc" ext=".xml">geometrys/geoN_2012-06-13_17-40-22.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">doc/microDiffractionMedia/Picture7.png</file>
-	<file version="3.14" time="2015-03-17T14:01:09" md5="94e8101010d08118aca2c7f9935ec9c3" ext=".ipf">always/GeneralFirst.ipf</file>
+	<file version="3.14" time="2015-03-17T14:25:12" md5="6540abdc0c90a4411ad882469907ae3a" ext=".ipf">always/GeneralFirst.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="6bcac22bfb97414500a8cee93c81ca52" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2014-10-30T13:10:27" md5="f7fc043b1fccd1bc57a8c85bd7119a48" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2014-10-30T13:09:24" md5="859a758545e47d314c72723c59a5eaec" ext=".mtl">materials/BePS-200.mtl</file>
@@ -162,6 +163,7 @@
 	<file version="nan" time="2014-02-20T09:41:12" md5="6b4cf0d152db7a266db3fec8f8fa821e" ext=".xml">materials/PbTiO3.xml</file>
 	<file version="1.01" time="2014-10-06T09:42:00" md5="d0f03e7884dcb8b68c7e1627054c2fe8" ext=".ipf">Lattice/PoleFigure.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4600c4022689de127291ae80e57517f7" ext=".xml">materials/PbMnNbO.xml</file>
+	<file version="nan" time="2010-08-10T14:43:23" md5="6fdcf5251dacaf7cba15897530f70e28" ext=".html">doc/geo_tag OLD.html</file>
 	<file version="0.3" time="2014-06-19T21:13:08" md5="7936767db5a26f759a5d54e056472c47" ext=".ipf">General/HDF5images.ipf</file>
 	<file version="nan" time="2014-10-30T13:10:01" md5="d376e1c9abd53b3eedb7179645c0ca16" ext=".mtl">materials/MnO.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d045d4620e0d7a69e96a406dc3c3005c" ext=".xml">materials/HEA2.xml</file>
@@ -186,7 +188,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="7647344d783096253b64b5d8de677149" ext=".xml">geometrys/geoN_2012-02-09_10-54-13.xml</file>
 	<file version="nan" time="2014-04-21T15:54:31" md5="ac063d5e1eba5f9e999464802e875493" ext=".xml">materials/IN625.xml</file>
 	<file version="nan" time="2014-03-04T11:15:53" md5="028b928e6aa13bd5190cdbcad4eec441" ext=".xml">geometrys/geoD_2013-02-21_17-10-03.xml</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" ext="">micro/Euler_Debug_ppc</file>
+	<file version="nan" time="2010-08-10T14:30:37" md5="41929f77238a229edbd3260d33cabc1b" ext=".html">doc/geoN_tag.html</file>
 	<file version="0.9948" time="2014-04-30T10:32:23" md5="32df742aee7f7d055aa8acbb46fa1bf0" ext=".ipf">micro/EnergyWireScans.ipf</file>
 	<file version="0.02" time="2014-04-30T10:31:04" md5="b0f908fc7fa668858c9a43e746ae2da0" ext=".ipf">micro/BudaiExtra.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bb2a689b7334c1a698aeec3f952cd0ed" ext=".xml">materials/Ti-7Al.xml</file>

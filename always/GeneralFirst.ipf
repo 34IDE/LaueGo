@@ -159,21 +159,27 @@ Menu "Help"
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		// "micro Diffraction", /Q, BrowseHelpFile("microDiffraction.html")
 		"Geometry File Description", /Q, JZTgeneral#BrowseHelpFile("geometry.html")
+		"LaueGo Web Page", /Q, JZTgeneral#BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
+		SubMenu "Old"
+			"Geometry tag file", /Q, JZTgeneral#BrowseHelpFile("geoN_tag.html")
+			"Old GeometryN tag file", /Q, JZTgeneral#BrowseHelpFile("geo_tag OLD.html")
+		End
 	End
 End
 //
-Static Function BrowseHelpFile(html)
-	String html
+Static Function BrowseHelpFile(urlStr)
+	String urlStr
 
-	String sss = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
-	sss = ParseFilePath(5,sss,"/",0,0)		// convert from Mac to POSIX
-	String urlStr = "file://"+sss+html		// complete the URL
+	if (!StringMatch(urlStr,"http:*"))			// assume that urlStr is just a file name in doc's
+		String sss = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
+		sss = ParseFilePath(5,sss,"/",0,0)		// convert from Mac to POSIX
+		urlStr = "file://"+sss+urlStr			// complete the URL
+	endif
 	BrowseURL/Z urlStr
 	if (V_flag)
 		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
 	endif
 End
-
 
 
 //  ====================================================================================  //
