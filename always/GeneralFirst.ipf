@@ -154,31 +154,7 @@ End
 
 Menu "Help"
 	"-"
-	SubMenu "LaueGo"
-		"micro Diffraction", /Q, DisplayHelpTopic/K=1/Z "LaueGo"
-		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
-		// "micro Diffraction", /Q, BrowseHelpFile("microDiffraction.html")
-		"Geometry File Description", /Q, JZTgeneral#BrowseHelpFile("geometry.html")
-		SubMenu "Old"
-			"GeometryN tag file", /Q, JZTgeneral#BrowseHelpFile("geoN_tag.html")
-			"Real Old Geometry tag file", /Q, JZTgeneral#BrowseHelpFile("geo_tag OLD.html")
-		End
-		"LaueGo Web Page", /Q, JZTgeneral#BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
-	End
-End
-//
-Static Function BrowseHelpFile(urlStr)
-	String urlStr
-
-	if (!StringMatch(urlStr,"http:*"))			// assume that urlStr is just a file name in doc's
-		String sss = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
-		sss = ParseFilePath(5,sss,"/",0,0)		// convert from Mac to POSIX
-		urlStr = "file://"+sss+urlStr			// complete the URL
-	endif
-	BrowseURL/Z urlStr
-	if (V_flag)
-		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
-	endif
+	"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 End
 
 
