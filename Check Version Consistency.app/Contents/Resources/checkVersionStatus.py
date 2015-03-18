@@ -246,6 +246,7 @@ def ignoreName(name):								# ignore folders or files with this name
 	if (len(low)-low.rfind('old'))==3: ignore=True	# ends with old
 	if 'old version' in low: ignore=True			# skip definitely old versions
 	if '(no copy)' in low: ignore=True				# obviously not this
+	if 'obsolete' in low: ignore=True				# ignore obsolete procedures
 	if low[0]=='.': ignore=True						# no hidden files or hidden directories
 
 	if low=='new': ignore=True
