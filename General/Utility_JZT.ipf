@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.57
+#pragma version = 3.58
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1457,6 +1457,8 @@ ThreadSafe Function WaveInClass(ww,waveClassList,[all])
 	Variable all					// when all is TRUE, then all of the classes in waveClassList must be present, not just one
 	if (!WaveExists(ww))
 		return 0
+	elseif (strlen(waveClassList)==1 && char2num(waveClassList)==42)		// just a "*" matches everything
+		return 1
 	elseif (strlen(waveClassList)<1)
 		return 1
 	endif
