@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.30
+#pragma version = 0.31
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -8,6 +8,8 @@
 // Nov 15, 2012, version 0.23		Changed load commands so that dark and slice are passed as "slice:1;dark:fullNameofWave;" in extras 
 // Nov 29, 2012, version 0.24		added HDFSaveImage()
 //	Jun 19, 2014, version 0.30		added optional string extras to argument of ReadHDF5header()
+//	Mar 19, 2015, version 0.31		added support in GuessDetectorID() for new Perkin-Elmer side detectors, but this routine is DEPRECATED
+//												also added NewImageGraphHDF5proto(), in cases where ImageDisplayScaling.ipf has not been included
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -248,11 +250,23 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		print "Created a 2-d wave    '"+NameOfWave(image)+"'"
 		DoAlert 1, "Display this image"
 		if (V_Flag==1)
-			NewImageGraph(image,NaN)
+			// NewImageGraph(image,NaN) is in ImageDisplayScaling.ipf, which may not be present
+			FUNCREF NewImageGraphHDF5proto fnew= $"NewImageGraph"
+			fnew(image,NaN)
 		endif
 	endif
 	return GetWavesDataFolder(image,2)
 End
+//
+Function/S NewImageGraphHDF5proto(image,withButtons)
+	Wave image
+	Variable withButtons
+	Variable NOButtons
+	return ""
+End
+
+
+
 //strConstant testfileNameStr = "Macintosh HD:Users:Shared:temp_tischler:dev:reconstructC_Big:Ge-fly_4.h5"
 //Function test_LoadHDF5imageFile(fname,slice)
 //	String fname
@@ -1000,6 +1014,7 @@ End
 
 
 
+// This routine is DEPRECATED.  It is OLD, and makes bad assumptions.
 Static Function/T GuessDetectorID(wnote,[fast])
 	String wnote
 	Variable fast
@@ -1021,7 +1036,9 @@ Static Function/T GuessDetectorID(wnote,[fast])
 		detectorID = "PE0820, 763-1807"				// Yellow detector, fast assumes 1K x 1K is always Yellow
 	elseif (endxy>1022)
 		detectorID = "_none_"
-		Prompt detectorID,"detector ID",popup, "_none_;PE1621, 723-3335 (Orange);PE0820, 763-1807 (Yellow);PE0820, 763-1850 (Purple)"
+		String knowDetectorIDs = "PE1621 723-3335 (Orange);PE0820 763-1807 (Yellow);PE0820 763-1850 (Purple);"
+		knowDetectorIDs += "PE0822 883-4841 (Yellow);PE0822 883-4843 (Purple);"
+		Prompt detectorID,"detector ID",popup, "_none_;"+knowDetectorIDs
 		DoPrompt "detector ID",detectorID
 		if (V_flag)
 			detectorID = ""

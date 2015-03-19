@@ -1,15 +1,16 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.76
+#pragma version = 1.77
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 
-Constant USE_DISTORTION_DEFAULT = 0		// default is TO USE distortion
-Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
+Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
+// Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
+Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
 StrConstant LaueGoMainMenuName = "LaueGo (micro)"
-Strconstant EPICS_PREFIX="34ide:geometryN:"	// prefix for the geometry PVs
-Constant FIRST_PIXEL=0						// use for zero-based pixels
+Strconstant EPICS_PREFIX="34ide:geometryN:"// prefix for the geometry PVs
+Constant FIRST_PIXEL=0								// use for zero-based pixels
 StrConstant defaultGeoTagName="geoN"			// default start of name for geometry files
 
 //Static StrConstant GeoWebServer = "www.uni.aps.anl.gov/34ide"
@@ -3850,13 +3851,15 @@ Function/T detectorID2color(detectorID)
 	Variable i
 	for (i=0;i<MAX_Ndetectors;i+=1)
 		strswitch(detectorID)
-			case "PE1621 723-3335":				// Orange
+			case "PE1621 723-3335":				// Orange, from ORNL
 				return "Orange"
 				break
-			case "PE0820 763-1807":				// Yellow
+			case "PE0820 763-1807":				// Yellow, from ORNL, old
+			case "PE0822 883-4841":				// Yellow, from NIST, new
 				return "Yellow"
 				break
-			case "PE0820 763-1850":				// Purple
+			case "PE0820 763-1850":				// Purple, from ORNL, old
+			case "PE0822 883-4843":				// Purple, from NIST, new
 				return "Purple"
 		endswitch
 	endfor
