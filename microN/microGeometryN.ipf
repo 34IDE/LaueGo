@@ -8,6 +8,10 @@
 Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
 // Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
+Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;"
+// 3 detectors from ORNL are: PE1621 723-3335, PE0820 763-1807, PE0820 763-1850
+// 2 detectors from NIST are: PE0822 883-4841, PE0822 883-4843
+
 StrConstant LaueGoMainMenuName = "LaueGo (micro)"
 Strconstant EPICS_PREFIX="34ide:geometryN:"// prefix for the geometry PVs
 Constant FIRST_PIXEL=0								// use for zero-based pixels
@@ -3848,23 +3852,25 @@ End
 //
 Function/T detectorID2color(detectorID)
 	String detectorID
-	Variable i
-	for (i=0;i<MAX_Ndetectors;i+=1)
-		strswitch(detectorID)
-			case "PE1621 723-3335":				// Orange, from ORNL
-				return "Orange"
-				break
-			case "PE0820 763-1807":				// Yellow, from ORNL, old
-			case "PE0822 883-4841":				// Yellow, from NIST, new
-				return "Yellow"
-				break
-			case "PE0820 763-1850":				// Purple, from ORNL, old
-			case "PE0822 883-4843":				// Purple, from NIST, new
-				return "Purple"
-		endswitch
-	endfor
-	return ""
+	// DetIDcolors is a static string constant set at the top of this file
+	return StringByKey(detectorID,DetIDcolors)
 End
+//Function/T detectorID2color(detectorID)
+//	String detectorID
+//	strswitch(detectorID)
+//		case "PE1621 723-3335":				// Orange, from ORNL
+//			return "Orange"
+//			break
+//		case "PE0820 763-1807":				// Yellow, from ORNL, old
+//		case "PE0822 883-4841":				// Yellow, from NIST, new
+//			return "Yellow"
+//			break
+//		case "PE0820 763-1850":				// Purple, from ORNL, old
+//		case "PE0822 883-4843":				// Purple, from NIST, new
+//			return "Purple"
+//	endswitch
+//	return ""
+//End
 //
 Static Function GeoPanelDetectorDisable(win)			// enable/disable detector fields based on check box
 	String win

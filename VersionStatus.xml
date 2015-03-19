@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, March 18, 2015" time="05:33:26 PM CDT" isoTime="2015-03-18T17:33:26"></written>
+	<written date="Thursday, March 19, 2015" time="04:58:05 PM CDT" isoTime="2015-03-19T16:58:05"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>265</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
@@ -140,7 +140,7 @@
 	<file version="2.33" time="2014-04-24T13:55:00" md5="f5e5c66e18c86e9684cffe320d3a685d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" ext="">microN/Euler4</file>
 	<file version="2.03" time="2014-06-20T11:07:54" md5="c704bf995a0f1018bfd72a6ebc0bf7b9" ext=".ipf">General/WinView.ipf</file>
-	<file version="1.76" time="2015-03-18T10:40:05" md5="446e5c48462029a726a5f28a92dc0c63" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="1.77" time="2015-03-19T16:55:57" md5="a4533030dad944f1d238f5f2b7c41f34" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.12" time="2014-12-07T14:25:31" md5="3e283a6c33aef15547b975df251fc202" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="nan" time="2014-09-22T11:39:14" md5="a76623e0bb5bb5f392b53eab8e390243" ext=".xml">materials/VO2/VO2_M1_1992Rogers.xml</file>
 	<file version="2.46" time="2014-10-06T09:42:00" md5="5b85d9c071c467894ab121b5dbcd7ac1" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
@@ -162,7 +162,7 @@
 	<file version="1.01" time="2014-10-06T09:42:00" md5="d0f03e7884dcb8b68c7e1627054c2fe8" ext=".ipf">Lattice/PoleFigure.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4600c4022689de127291ae80e57517f7" ext=".xml">materials/PbMnNbO.xml</file>
 	<file version="nan" time="2010-08-10T14:43:23" md5="6fdcf5251dacaf7cba15897530f70e28" ext=".html">doc/geo_tag OLD.html</file>
-	<file version="0.3" time="2014-06-19T21:13:08" md5="7936767db5a26f759a5d54e056472c47" ext=".ipf">General/HDF5images.ipf</file>
+	<file version="0.31" time="2015-03-19T16:33:44" md5="bb826214dec634949094092ad521e16e" ext=".ipf">General/HDF5images.ipf</file>
 	<file version="nan" time="2014-10-30T13:10:01" md5="d376e1c9abd53b3eedb7179645c0ca16" ext=".mtl">materials/MnO.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d045d4620e0d7a69e96a406dc3c3005c" ext=".xml">materials/HEA2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a74dd9cbe5ed0ed98dbb73da2efe64b7" ext=".xml">materials/LaMnO3_OrthoPhysics.xml</file>
