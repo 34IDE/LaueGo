@@ -1,6 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
-#pragma version = 1.77
+#pragma IgorVersion = 6.11
+#pragma version = 1.78
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -768,7 +769,7 @@ End
 ThreadSafe Function MicroGeometryBad(g)		// check for a valid or Invalid structure
 	STRUCT microGeometry &g						// f is the destination, i is source
 	Variable bad = SampleBad(g.s)
-	Variable N = limit(round(g.Ndetectors),1,3)	// Ndetectors must be 1, 2, or 3
+	Variable N = limit(round(g.Ndetectors),1,MAX_Ndetectors)	// Ndetectors must be 1, 2, 3, ... MAX_Ndetectors
 	bad += (g.Ndetectors != N) || numtype(g.Ndetectors)
 	Variable m, i
 	for (m=0,i=0;m<MAX_Ndetectors;m+=1)		// check the detectors
@@ -1451,7 +1452,7 @@ Function UpdateDefaultGeometryStruct(g,[local])			// Update the default location
 	return 0
 End
 
-Function FillGeometryStructDefault(g)		//fill the geometry structure with test values
+Function FillGeometryStructDefault(g)				//fill the geometry structure with current values
 	STRUCT microGeometry &g							// returns 0 if something set, 0 is nothing done
 
 	String strStruct=StrVarOrDefault(":geoStructStr","")	// set to values in current directory
@@ -1465,7 +1466,7 @@ Function FillGeometryStructDefault(g)		//fill the geometry structure with test v
 		if (V_flag)
 			return 1											// did nothing, nothing found
 		endif
-		StructPut/S/B=2 g, strStruct							// keep a local copy
+		StructPut/S/B=2 g, strStruct					// keep a local copy
 		String/G root:Packages:geometry:geoStructStr = strStruct
 	endif
 	GeometryUpdateCalc(g)
@@ -2121,23 +2122,20 @@ End
 
 
 
-Function SetDefaultGeo2Reference()							// set default geometry to the reference values
+Function SetDefaultGeo2Reference()						// set default geometry to the reference values
 	STRUCT microGeometry g
-	GeoReferenceOrientation(g)								// set geometry to reference values
-
-	String/G root:Packages:geometry:geoStructStr=""	// use default location
-	SVAR geoStructStr = root:Packages:geometry:geoStructStr
-	StructPut/S/B=2 g, geoStructStr
-	if (exists("root:Packages:geometry:PanelValues:Ndetectors")==2 && exists("root:Packages:geometry:PanelValues:knife")==2)
-		SetGeometryPanelGlobals(g)							// set value on geoPanel if it is up
-		DoUpdate
-		if (WinType("microPanel#geoPanel")==7)
-			GeoPanelDetectorDisable("microPanel#geoPanel")
-			GeoPanelDirtyUpdate("microPanel#geoPanel",1)
-		endif
+	GeoReferenceOrientation(g)							// get a g with the reference values
+	DoUpdate
+	String win = "microPanel#geoPanel"
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	if (WinType(win)==7 && SVAR_Exists(geoPanelStructStr))
+		StructPut/S g, geoPanelStructStr				// put contents of g into geoPanelStructStr
+		UpDatePanelValuesFromStruct(win,0)
+		GeoPanelDetectorDisable(win)
+		GeoPanelDirtyUpdate(win,1)
 	endif
 End
-
+//
 Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientation (sort of an ideal set of values)
 	STRUCT microGeometry &g
 	Variable simple					// true means all positioners are square to beam,  false means beam tilted by mirros 6mrad
@@ -3476,6 +3474,36 @@ End
 // ============================================================================================
 // =============================== Start of Geometry Sub-Panel ================================
 
+//	Function 			MakeGeometryParametersPanel(strStruct)							// entry used by a Menu
+//	Function/T			FillGeometryParametersPanel(strStruct,hostWin,left,top)	// the main entry, makes the controls
+//	Static Function	GeoDetectorPopMenuProc(pa) : PopupMenuControl
+//	Static Function/T	detectorPopMenuStr(g)					// re-make the string of detector names for detectorPopup
+//	Static Function 	UpDatePanelValuesFromStruct(win,iDetector)	// reads geoPanelStructStr and sets Panel values
+//	Static Function 	GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
+//	Static Function 	GeoKnifePopMenuProc(pa) : PopupMenuControl
+//	Static Function 	GeoPanelVarChangedProc(sva) : SetVariableControl
+//	Static Function	SetDetectorColor(win,id)
+//	Function/T 			detectorID2color(detectorID)
+//	Static Function 	GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
+//	Function 			SetGeoPanelHook(s)						// provides for saving changed values if panel killed
+//	Static Function 	GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and update buttons to reflect dirty status
+//	Static Function 	GeoSaveFilePopMenuProc(pa) : PopupMenuControl
+//	Static Function 	GeometryPanelButtonProc(B_Struct) : ButtonControl
+//	Function 			fileTime2EpochProto(fileTime,[UTC])
+//	Static Function 	SetGeoStructFromPanelValues(g)		// set structure g the values in geoPanelStructStr
+//	
+//	============================================================================================
+//	
+//	Function 			GeoFromWeb(epoch,gIn)
+//	Function 			GeoFromEPICS(gIn)					// fill the geometry structure from EPICS (uses caget)
+//	Function/S 			protoEPICS_geo(str)				// proto function for get_mult_PV(), also contains default values for testing
+//	Static Function	putGeo2EPICS(gIn)					// put the geometry structure to EPICS (uses caput)
+//	Static Function	putDetector2EPICS(d,dnum)		// put detector values into EPICS, does not check d.used
+//	Static Function	geoLocal_putNum(pv,value)		// utility function for EPICS_put_PV_num()
+//	Static Function	geoLocal_putStr(pv,value)		// EPICS_put_PV_num function for EPICS_put_PV_str()
+//	Function/S 			protoEPICS_putNum(pv,value)	// proto function for EPICS_put_PV_num()
+//	Function/S			protoEPICS_putStr(pv,str)		// proto function for EPICS_put_PV_str()
+
 Function MakeGeometryParametersPanel(strStruct)
 	String strStruct												// optional passed value of geo structure, this is used if passed
 	if (strlen(WinList("GeometrySet",";","WIN:64")))	// window alreay exits, bring it to front
@@ -3488,7 +3516,7 @@ Function MakeGeometryParametersPanel(strStruct)
 	FillGeometryParametersPanel(strStruct,"GeometrySet",0,0)
 End
 //
-Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)
+Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate the controls in the Geo Panel
 	String strStruct												// optional passed value of geo structure, this is used if passed
 	String hostWin													// name of home window
 	Variable left, top											// offsets from the left and top
@@ -3506,58 +3534,11 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)
 	endif
 
 	// create globals for the panel
-	Variable/G root:Packages:geometry:PanelValues:SampleOrigX = g.s.O[0], root:Packages:geometry:PanelValues:SampleOrigY = g.s.O[1], root:Packages:geometry:PanelValues:SampleOrigZ = g.s.O[2]
-	Variable/G root:Packages:geometry:PanelValues:SampleRotX = g.s.R[0], root:Packages:geometry:PanelValues:SampleRotY = g.s.R[1], root:Packages:geometry:PanelValues:SampleRotZ = g.s.R[2]
-
-	Variable/G root:Packages:geometry:PanelValues:Ndetectors = g.Ndetectors
-	NVAR Ndetectors = root:Packages:geometry:PanelValues:Ndetectors	
-
-	Variable/G root:Packages:geometry:PanelValues:iDetector = 0		// detector displayed {0,1,2}
+	Variable/G root:Packages:geometry:PanelValues:iDetector = 0		// detector displayed {0,1,...,MAX_Ndetectors-1}
+	String/G root:Packages:geometry:PanelValues:geoPanelStructStr
 	NVAR iDetector = root:Packages:geometry:PanelValues:iDetector	
-
-	Variable/G root:Packages:geometry:PanelValues:used0 = g.d[0].used
-	Variable/G root:Packages:geometry:PanelValues:Nx0 = g.d[0].Nx,				root:Packages:geometry:PanelValues:Ny0 = g.d[0].Ny
-	Variable/G root:Packages:geometry:PanelValues:sizeX0 = g.d[0].sizeX/1e3,	root:Packages:geometry:PanelValues:sizeY0 = g.d[0].sizeY/1e3	// panel uses mm, g.d[m] uses µm
-	Variable/G root:Packages:geometry:PanelValues:Rx0 = g.d[0].R[0], root:Packages:geometry:PanelValues:Ry0 = g.d[0].R[1], root:Packages:geometry:PanelValues:Rz0 = g.d[0].R[2]
-	Variable/G root:Packages:geometry:PanelValues:Px0 = g.d[0].P[0]/1e3
-	Variable/G root:Packages:geometry:PanelValues:Py0 = g.d[0].P[1]/1e3
-	Variable/G root:Packages:geometry:PanelValues:Pz0 = g.d[0].P[2]/1e3
-
-	Variable/G root:Packages:geometry:PanelValues:used1 = g.d[1].used
-	Variable/G root:Packages:geometry:PanelValues:Nx1 = g.d[1].Nx,				root:Packages:geometry:PanelValues:Ny1 = g.d[1].Ny
-	Variable/G root:Packages:geometry:PanelValues:sizeX1 = g.d[1].sizeX/1e3,	root:Packages:geometry:PanelValues:sizeY1 = g.d[1].sizeY/1e3	// panel uses mm, g.d[m] uses µm
-	Variable/G root:Packages:geometry:PanelValues:Rx1 = g.d[1].R[0], 	root:Packages:geometry:PanelValues:Ry1 = g.d[1].R[1], root:Packages:geometry:PanelValues:Rz1 = g.d[1].R[2]
-	Variable/G root:Packages:geometry:PanelValues:Px1 = g.d[1].P[0]/1e3
-	Variable/G root:Packages:geometry:PanelValues:Py1 = g.d[1].P[1]/1e3
-	Variable/G root:Packages:geometry:PanelValues:Pz1 = g.d[1].P[2]/1e3
-
-	Variable/G root:Packages:geometry:PanelValues:used2 = g.d[2].used
-	Variable/G root:Packages:geometry:PanelValues:Nx2 = g.d[2].Nx,				root:Packages:geometry:PanelValues:Ny2 = g.d[2].Ny
-	Variable/G root:Packages:geometry:PanelValues:sizeX2 = g.d[2].sizeX/1e3,	root:Packages:geometry:PanelValues:sizeY2 = g.d[2].sizeY/1e3	// panel uses mm, g.d[m] uses µm
-	Variable/G root:Packages:geometry:PanelValues:Rx2 = g.d[2].R[0], root:Packages:geometry:PanelValues:Ry2 = g.d[2].R[1], root:Packages:geometry:PanelValues:Rz2 = g.d[2].R[2]
-	Variable/G root:Packages:geometry:PanelValues:Px2 = g.d[2].P[0]/1e3
-	Variable/G root:Packages:geometry:PanelValues:Py2 = g.d[2].P[1]/1e3
-	Variable/G root:Packages:geometry:PanelValues:Pz2 = g.d[2].P[2]/1e3
-
-	Variable/G root:Packages:geometry:PanelValues:dia = g.wire.dia
-	Variable/G root:Packages:geometry:PanelValues:knife = g.wire.knife
-	Variable/G root:Packages:geometry:PanelValues:wireF = g.wire.F
-	Variable/G root:Packages:geometry:PanelValues:wireX0 = g.wire.origin[0], root:Packages:geometry:PanelValues:wireY0 = g.wire.origin[1], root:Packages:geometry:PanelValues:wireZ0 = g.wire.origin[2]
-	Variable/G root:Packages:geometry:PanelValues:axisX = g.wire.axis[0], root:Packages:geometry:PanelValues:axisY = g.wire.axis[1], root:Packages:geometry:PanelValues:axisZ = g.wire.axis[2]
-	Variable/G root:Packages:geometry:PanelValues:wireRotX = g.wire.R[0], root:Packages:geometry:PanelValues:wireRotY = g.wire.R[1], root:Packages:geometry:PanelValues:wireRotZ = g.wire.R[2]
-
-	String/G root:Packages:geometry:PanelValues:timeMeasured0 = g.d[0].timeMeasured
-	String/G root:Packages:geometry:PanelValues:geoNote0 = g.d[0].geoNote
-	String/G root:Packages:geometry:PanelValues:detectorID0 = g.d[0].detectorID
-	String/G root:Packages:geometry:PanelValues:distortionMapFile0 = g.d[0].distortionMapFile
-	String/G root:Packages:geometry:PanelValues:timeMeasured1 = g.d[1].timeMeasured
-	String/G root:Packages:geometry:PanelValues:geoNote1 = g.d[1].geoNote
-	String/G root:Packages:geometry:PanelValues:detectorID1 = g.d[1].detectorID
-	String/G root:Packages:geometry:PanelValues:distortionMapFile1 = g.d[1].distortionMapFile
-	String/G root:Packages:geometry:PanelValues:timeMeasured2 = g.d[2].timeMeasured
-	String/G root:Packages:geometry:PanelValues:geoNote2 = g.d[2].geoNote
-	String/G root:Packages:geometry:PanelValues:detectorID2 = g.d[2].detectorID
-	String/G root:Packages:geometry:PanelValues:distortionMapFile2 = g.d[2].distortionMapFile
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	StructPut/S/B=2 g, geoPanelStructStr					// fill geoPanelStructStr with values from g
 
 	SetWindow kwTopWin,userdata(GeoPanelName)=hostWin+"#geoPanel"
 	NewPanel/K=1/W=(left,top,left+221,top+603)/HOST=$hostWin
@@ -3567,108 +3548,96 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)
 	SetDrawEnv fname= "Lucida Grande",fsize= 16
 	DrawText 20,20,"Geometry"
 
-	ValDisplay Ndetectors,pos={120,8},size={70,13},title="detectors",value= #"root:Packages:geometry:PanelValues:Ndetectors"
+	ValDisplay Ndetectors,pos={120,8},size={70,13},title="detectors"
 	ValDisplay Ndetectors,labelBack=(56797,56797,56797),format="%g",frame=0, limits={0,0,0},barmisc={0,1000}
-	ValDisplay Ndetectors,help={"Number of detectors in use [1-3]"}
+	ValDisplay Ndetectors,help={"Number of detectors available"}
 
-	// Detectors
+	// Detector Controls
 	Variable v=55
 	SetDrawEnv linethick= 2
 	DrawLine 0,v-28,220,v-28
-	PopupMenu detectorPopup,pos={10,v-22},size={203,20},proc=GeoDetectorPopMenuProc,title="Detector "
+	PopupMenu detectorPopup,pos={10,v-22},size={203,20},proc=microGeo#GeoDetectorPopMenuProc,title="Detector "
 	PopupMenu detectorPopup,help={"Select detector to define or display"}
-	PopupMenu detectorPopup,font="Lucida Grande",fSize=14,mode=1,value=#popStrForDetector(g)
+	PopupMenu detectorPopup,font="Lucida Grande",fSize=14,mode=1,value=#detectorPopMenuStr(g)
+	CheckBox used,pos={10,v},size={100,18},font="Lucida Grande",fSize=14,proc=microGeo#GeoPanelUsedCheckBoxProc
 
-	CheckBox used,pos={10,v},size={100,18},font="Lucida Grande",fSize=14
-	CheckBox used,proc=GeoPanelUsedCheckBoxProc,variable= root:Packages:geometry:PanelValues:used0
-	SetVariable Nx,pos={19,21+v},size={94,15},proc=GeoPanelVarChangedProc,title="Nx"
+	SetVariable Nx,pos={19,21+v},size={94,15},proc=microGeo#GeoPanelVarChangedProc,title="Nx"
 	SetVariable Nx,help={"x size of detectors (pixels)"},format="%d"
-	SetVariable Nx,limits={1,5000,0},value= root:Packages:geometry:PanelValues:Nx0,bodyWidth= 60
-	SetVariable Ny,pos={112,21+v},size={94,15},proc=GeoPanelVarChangedProc,title="Ny"
+	SetVariable Nx,limits={1,5000,0}, bodyWidth=60
+	SetVariable Ny,pos={112,21+v},size={94,15},proc=microGeo#GeoPanelVarChangedProc,title="Ny"
 	SetVariable Ny,help={"y size of detector (pixels)"},format="%d"
-	SetVariable Ny,limits={1,5000,0},value= root:Packages:geometry:PanelValues:Ny0,bodyWidth= 60
-	SetVariable sizeX,pos={0,39+v},size={112,15},proc=GeoPanelVarChangedProc,title="X (mm)"
+	SetVariable Ny,limits={1,5000,0}, bodyWidth=60
+	SetVariable sizeX,pos={0,39+v},size={112,15},proc=microGeo#GeoPanelVarChangedProc,title="X (mm)"
 	SetVariable sizeX,help={"outside x size of detector (mm)"}
-	SetVariable sizeX,limits={0,5100,0},value= root:Packages:geometry:PanelValues:sizeX0,bodyWidth= 60
-	SetVariable sizeY,pos={94,39+v},size={112,15},proc=GeoPanelVarChangedProc,title="Y (mm)"
+	SetVariable sizeX,limits={0,5100,0}, bodyWidth=60
+	SetVariable sizeY,pos={94,39+v},size={112,15},proc=microGeo#GeoPanelVarChangedProc,title="Y (mm)"
 	SetVariable sizeY,help={"outside y size of detector (mm)"}
-	SetVariable sizeY,limits={0,500,0},value= root:Packages:geometry:PanelValues:sizeY0,bodyWidth= 60
-	SetVariable Rx,pos={8,58+v},size={75,15},proc=GeoPanelVarChangedProc,title="R"
-	SetVariable Rx,help={"rotation axis for detector 0"},format="%.6f"
-	SetVariable Rx,limits={-3.2,3.2,0},value= root:Packages:geometry:PanelValues:Rx0,bodyWidth= 50
-	SetVariable Ry,pos={85,58+v},size={55,15},proc=GeoPanelVarChangedProc,title=" "
-	SetVariable Ry,help={"direction of wire axis, beam line coords"},format="%.6f"
-	SetVariable Ry,limits={-3.2,3.2,0},value= root:Packages:geometry:PanelValues:Ry0,bodyWidth= 50
-	SetVariable Rz,pos={149,58+v},size={50,15},proc=GeoPanelVarChangedProc,title=" "
-	SetVariable Rz,help={"direction of wire axis, beam line coords"},format="%.6f"
-	SetVariable Rz,limits={-3.2,3.2,0},value= root:Packages:geometry:PanelValues:Rz0,bodyWidth= 50
-	SetVariable Px,pos={8,76+v},size={75,15},proc=GeoPanelVarChangedProc,title="P"
-	SetVariable Px,help={"rotation axis for detector 0"},format="%.3f"
-	SetVariable Px,limits={-1000,1000,0},value= root:Packages:geometry:PanelValues:Px0,bodyWidth= 50
-	SetVariable Py,pos={85,76+v},size={55,15},proc=GeoPanelVarChangedProc,title=" "
-	SetVariable Py,help={"direction of wire axis, beam line coords"},format="%.3f"
-	SetVariable Py,limits={-1000,1000,0},value= root:Packages:geometry:PanelValues:Py0,bodyWidth= 50
-	SetVariable Pz,pos={149,76+v},size={50,15},proc=GeoPanelVarChangedProc,title=" "
-	SetVariable Pz,help={"direction of wire axis, beam line coords"},format="%.3f"
-	SetVariable Pz,limits={-1000,1000,0},value= root:Packages:geometry:PanelValues:Pz0,bodyWidth= 50
-	SetVariable timeMeasured,pos={10,96+v},size={202,15},title="time"
-	SetVariable timeMeasured,value= root:Packages:geometry:PanelValues:timeMeasured0
+	SetVariable sizeY,limits={0,500,0}, bodyWidth=60
+	SetVariable Rx,pos={8,58+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="R"
+	SetVariable Rx,help={"rotation axis for detector"},format="%.6f"
+	SetVariable Rx,limits={-3.2,3.2,0}, bodyWidth=50
+	SetVariable Ry,pos={85,58+v},size={55,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
+	SetVariable Ry,help={"rotation axis for detector"},format="%.6f"
+	SetVariable Ry,limits={-3.2,3.2,0}, bodyWidth=50
+	SetVariable Rz,pos={149,58+v},size={50,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
+	SetVariable Rz,help={"rotation axis for detector"},format="%.6f"
+	SetVariable Rz,limits={-3.2,3.2,0}, bodyWidth=50
+	SetVariable Px,pos={8,76+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="P"
+	SetVariable Px,help={"Position translation for detector"},format="%.3f"
+	SetVariable Px,limits={-1000,1000,0}, bodyWidth=50
+	SetVariable Py,pos={85,76+v},size={55,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
+	SetVariable Py,help={"Position translation for detector"},format="%.3f"
+	SetVariable Py,limits={-1000,1000,0}, bodyWidth=50
+	SetVariable Pz,pos={149,76+v},size={50,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
+	SetVariable Pz,help={"Position translation for detector"},format="%.3f"
+	SetVariable Pz,limits={-1000,1000,0}, bodyWidth=50
+	SetVariable timeMeasured,pos={10,96+v},size={202,15},title="time", proc=microGeo#GeoPanelVarChangedProc
 	SetVariable timeMeasured,help={"date/time when detector calibrated"}
-	SetVariable geoNote,pos={10,116+v},size={202,15},title="note"
-	SetVariable geoNote,value= root:Packages:geometry:PanelValues:geoNote0
+	SetVariable geoNote,pos={10,116+v},size={202,15},title="note", proc=microGeo#GeoPanelVarChangedProc
 	SetVariable geoNote,help={"optional note about this detector"}
-	SetVariable distortionMapFile,pos={10,136+v},size={202,15},title="distortion file"
-	SetVariable distortionMapFile,value= root:Packages:geometry:PanelValues:distortionMapFile0
+	SetVariable distortionMapFile,pos={10,136+v},size={202,15},title="distortion file", proc=microGeo#GeoPanelVarChangedProc
 	SetVariable distortionMapFile,help={"name of file with the distortion map for this detector"}
-	SetVariable detectorID,pos={10,156+v},size={202,15},title="detector ID",proc=SetDetectorColorProc
-	SetVariable detectorID,value= root:Packages:geometry:PanelValues:detectorID0, labelBack=0
+	SetVariable detectorID,pos={10,156+v},size={202,15},title="detector ID",proc=microGeo#GeoPanelVarChangedProc
 	SetVariable detectorID,help={"ID for this detector"}
 
-	// Wire
+	// Wire Controls
 	v = 253
 	SetDrawEnv linethick= 2
 	DrawLine 0,v-20,220,v-20
 	SetDrawEnv fname= "Lucida Grande",fsize= 16
 	DrawText 10,v,"Scanning wire"
-	SetVariable dia,pos={10,v+2},size={81,15},proc=GeoPanelVarChangedProc,title="dia (µm)",bodyWidth= 40
-	SetVariable dia,limits={1,5100,0},value= root:Packages:geometry:PanelValues:dia
-	SetVariable dia,help={"diameter of wire (micron)"}
-	PopupMenu knifePopup,pos={110,v},size={107,20}, proc=GeoKnifePopMenuProc
+	SetVariable dia,pos={10,v+2},size={81,15},proc=microGeo#GeoPanelVarChangedProc,title="dia (µm)",bodyWidth= 40
+	SetVariable dia,limits={1,5100,0},help={"diameter of wire (micron)"}
+	PopupMenu knifePopup,pos={110,v},size={107,20}, proc=microGeo#GeoKnifePopMenuProc
 	PopupMenu knifePopup,mode=(1+g.wire.knife),value= #"\"free-standing;knife edge;\""
 	PopupMenu knifePopup,help={"select if scanning wire is a free standing wire or a true knife edge"}
-	SetVariable wireAxisX,pos={9,22+v},size={68,15},proc=GeoPanelVarChangedProc,title="axis"
+	SetVariable wireAxisX,pos={9,22+v},size={68,15},proc=microGeo#GeoPanelVarChangedProc,title="axis"
 	SetVariable wireAxisX,help={"direction of wire axis, beam line coords"},format="%.6f"
-	SetVariable wireAxisX,limits={-1000,1000,0},value= root:Packages:geometry:PanelValues:axisX,bodyWidth= 45
-	SetVariable wireAxisY,pos={84,22+v},size={45,15},proc=GeoPanelVarChangedProc,title=" "
+	SetVariable wireAxisX,limits={-1000,1000,0}, bodyWidth=45
+	SetVariable wireAxisY,pos={84,22+v},size={45,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
 	SetVariable wireAxisY,help={"direction of wire axis, beam line coords"},format="%.6f"
-	SetVariable wireAxisY,limits={-1000,1000,0},value= root:Packages:geometry:PanelValues:axisY,bodyWidth= 45
-	SetVariable wireAxisZ,pos={138,22+v},size={45,15},proc=GeoPanelVarChangedProc,title=" "
+	SetVariable wireAxisY,limits={-1000,1000,0}, bodyWidth=45
+	SetVariable wireAxisZ,pos={138,22+v},size={45,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
 	SetVariable wireAxisZ,help={"direction of wire axis, beam line coords"},format="%.6f"
-	SetVariable wireAxisZ,limits={-1000,1000,0},value= root:Packages:geometry:PanelValues:axisZ,bodyWidth= 45
+	SetVariable wireAxisZ,limits={-1000,1000,0}, bodyWidth=45
 	SetDrawEnv fsize= 9, textxjust= 1
 	DrawText 102,51+v,"wire positioner origin (µm)"
-	SetVariable wXO,pos={17,51+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
-	SetVariable wXO,help={"X of wire when centered on origin"}
-	SetVariable wXO,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:wireX0
-	SetVariable wYO,pos={76,51+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
-	SetVariable wYO,help={"Y of wire when centered on origin"}
-	SetVariable wYO,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:wireY0
-	SetVariable wZO,pos={135,51+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
-	SetVariable wZO,help={"Z of wire when centered on origin"}
-	SetVariable wZO,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:wireZ0
+	SetVariable wXO,pos={17,51+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable wXO,limits={-50000,50000,0},help={"X of wire when centered on origin"}
+	SetVariable wYO,pos={76,51+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable wYO,limits={-50000,50000,0},help={"Y of wire when centered on origin"}
+	SetVariable wZO,pos={135,51+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable wZO,limits={-50000,50000,0},help={"Z of wire when centered on origin"}
 	SetDrawEnv fsize= 9, textxjust= 1
 	DrawText 102,79+v,"wire positioner rotation R (rad)"
-	SetVariable wRotX,pos={17,79+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable wRotX,pos={17,79+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60,limits={-50000,50000,0}
 	SetVariable wRotX,help={"rotation vector for wire positioner, X-component (rad)"}
-	SetVariable wRotX,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:wireRotX
-	SetVariable wRotY,pos={76,79+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable wRotY,pos={76,79+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60,limits={-50000,50000,0}
 	SetVariable wRotY,help={"rotation vector for wire positioner, Y-component (rad)"}
-	SetVariable wRotY,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:wireRotY
-	SetVariable wRotZ,pos={135,79+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable wRotZ,pos={135,79+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60,limits={-50000,50000,0}
 	SetVariable wRotZ,help={"rotation vector for wire positioner, Z-component (rad)"}
-	SetVariable wRotZ,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:wireRotZ
 
-	// Sample
+	// Sample Controls
 	v = 374
 	SetDrawEnv linethick= 2
 	DrawLine 0,v-20,220,v-20
@@ -3676,27 +3645,21 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)
 	DrawText 10,v,"Sample"
 	SetDrawEnv fsize= 9, textxjust= 1
 	DrawText 102,12+v,"sample positioner origin (µm)"
-	SetVariable sXO,pos={17,12+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
-	SetVariable sXO,help={"X of sample when centered on origin"}
-	SetVariable sXO,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:SampleOrigX
-	SetVariable sYO,pos={76,12+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
-	SetVariable sYO,help={"Y of sample when centered on origin"}
-	SetVariable sYO,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:SampleOrigY
-	SetVariable sZO,pos={135,12+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
-	SetVariable sZO,help={"Z of sample when centered on origin"}
-	SetVariable sZO,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:SampleOrigZ
+	SetVariable sXO,pos={17,12+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable sXO,help={"X of sample when centered on origin"},limits={-50000,50000,0}
+	SetVariable sYO,pos={76,12+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable sYO,help={"Y of sample when centered on origin"},limits={-50000,50000,0}
+	SetVariable sZO,pos={135,12+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable sZO,help={"Z of sample when centered on origin"},limits={-50000,50000,0}
 
 	SetDrawEnv fsize= 9, textxjust= 1
 	DrawText 102,40+v,"sample positioner rotation R (rad)"
-	SetVariable sRotX,pos={17,40+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable sRotX,pos={17,40+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60,limits={-50000,50000,0}
 	SetVariable sRotX,help={"rotation vector for sample positioner, X-component (rad)"}
-	SetVariable sRotX,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:SampleRotX
-	SetVariable sRotY,pos={76,40+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable sRotY,pos={76,40+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60,limits={-50000,50000,0}
 	SetVariable sRotY,help={"rotation vector for sample positioner, Y-component (rad)"}
-	SetVariable sRotY,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:SampleRotY
-	SetVariable sRotZ,pos={135,40+v},size={60,15},proc=GeoPanelVarChangedProc,title=" ",bodyWidth= 60
+	SetVariable sRotZ,pos={135,40+v},size={60,15},proc=microGeo#GeoPanelVarChangedProc,title=" ",bodyWidth= 60,limits={-50000,50000,0}
 	SetVariable sRotZ,help={"rotation vector for sample positioner, Z-component (rad)"}
-	SetVariable sRotZ,limits={-50000,50000,0},value= root:Packages:geometry:PanelValues:SampleRotZ
 
 	// Buttons
 	v = 435
@@ -3725,14 +3688,14 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)
 	Button buttonCancel,pos={35,572},size={150,20},proc=microGeo#GeometryPanelButtonProc,title="Cancel"
 	Button buttonCancel,help={"Close this panel, do not save any changes"}
 	SetWindow kwTopWin,userdata(KillHookFn)="SetGeoPanelHook"
-	ConnectControlsToGlobals(hostWin+"#geoPanel",0)
+	UpDatePanelValuesFromStruct(hostWin+"#geoPanel",iDetector)
 	GeoPanelDetectorDisable("#")
 	GeoPanelDirtyUpdate(hostWin+"#geoPanel",NaN)
 	return "#geoPanel"
 End
 //
-// this is called by the pop up menu to select a particular detector
-Function GeoDetectorPopMenuProc(pa) : PopupMenuControl
+// this is called by the detectorPopup pop up menu to select a particular detector
+Static Function GeoDetectorPopMenuProc(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
 	if (pa.eventCode != 2)
 		return 0
@@ -3740,96 +3703,213 @@ Function GeoDetectorPopMenuProc(pa) : PopupMenuControl
 
 	NVAR iDetector = root:Packages:geometry:PanelValues:iDetector		// detector displayed {0,1,2}
 	iDetector = pa.popNum - 1
-	ConnectControlsToGlobals(pa.win,iDetector)
+	UpDatePanelValuesFromStruct(pa.win,iDetector)
 	GeoPanelDetectorDisable(pa.win)
 	return 0
 End
 //
-Static Function/T popStrForDetector(g)
+Static Function/T detectorPopMenuStr(g)		// re-make the string of detector names for detectorPopup
 	STRUCT microGeometry &g
-
-	String id0 = SelectString(g.d[0].used,"Detector 0",g.d[0].detectorID)
-	String id1 = SelectString(g.d[1].used,"Detector 1",g.d[1].detectorID)
-	String id2 = SelectString(g.d[2].used,"Detector 2",g.d[2].detectorID)
-	id0 = SelectString(strlen(id0),"Detector 0",id0)
-	id1 = SelectString(strlen(id1),"Detector 1",id1)
-	id2 = SelectString(strlen(id2),"Detector 2",id2)
-
-	String popStr
-	sprintf popStr "\"%s;%s;%s;\"",id0,id1,id2
+	String popStr=""
+	Variable i
+	for (i=0;i<MAX_Ndetectors;i+=1)
+		popStr += g.d[i].detectorID + ";"
+	endfor
+	popStr = "\"" + popStr + "\""
 	return popStr
 End
-//
-Static Function ConnectControlsToGlobals(win,iDetector)
-	String win
-	Variable iDetector				//  0, 1, or 2 only
-	if (iDetector!=0 && iDetector!=1 && iDetector!=2)
-		DoAlert 0,"IDetector must be 0, 1, or 2.   iDetector = "+num2str(iDetector)
-		return 1
-	endif
 
-	String path = "root:Packages:geometry:PanelValues:", is = num2istr(iDetector)
-	Variable used = NumVarOrDefault(path+"used"+is,0)
-	String id = StrVarOrDefault("root:Packages:geometry:PanelValues:detectorID"+num2istr(iDetector),"")
-	id = SelectString(strlen(id) && used, "Detector "+num2istr(iDetector),id)
-	CheckBox used,win=$win,title=id, variable= $(path+"used"+is)
-	SetVariable Nx,win=$win, value= $(path+"Nx"+is)
-	SetVariable Ny,win=$win,value= $(path+"Ny"+is)
-	SetVariable sizeX,win=$win,value= $(path+"sizeX"+is)
-	SetVariable sizeY,win=$win,value= $(path+"sizeY"+is)
-	SetVariable Rx,win=$win,value= $(path+"Rx"+is)
-	SetVariable Ry,win=$win,value= $(path+"Ry"+is)
-	SetVariable Rz,win=$win,value= $(path+"Rz"+is)
-	SetVariable Px,win=$win,value= $(path+"Px"+is)
-	SetVariable Py,win=$win,value= $(path+"Py"+is)
-	SetVariable Pz,win=$win,value= $(path+"Pz"+is)
-	SetVariable timeMeasured,win=$win,value= $(path+"timeMeasured"+is)
-	SetVariable geoNote,win=$win,value= $(path+"geoNote"+is)
-	SetVariable distortionMapFile,win=$win,value= $(path+"distortionMapFile"+is)
-	SetVariable detectorID,win=$win,value= $(path+"detectorID"+is)
+
+// take values from the geoPanelStructStr, and put them into the Panel Controls
+// this forece the Panel to show what is in geoPanelStructStr
+Static Function UpDatePanelValuesFromStruct(win,iDetector)
+	String win
+	Variable iDetector				//  0, 1,..., (MAX_Ndetectors-1), will use global for bad values
+
+	if (numtype(iDetector) || iDetector != limit(round(iDetector),0,MAX_Ndetectors-1))
+		iDetector = NumVarOrDefault("root:Packages:geometry:PanelValues:iDetector",0)
+	endif
+	iDetector = numtype(iDetector) ? 0 : limit(round(iDetector),0,MAX_Ndetectors-1)
+
+	STRUCT microGeometry g								// geo that I will use to set displayed Panel values
+	SetGeoStructFromPanelValues(g)					// set structure g the values in geoPanelStructStr
+
+	ValDisplay Ndetectors, win=$win, value = _NUM:g.Ndetectors
+
+	SetVariable Nx, win=$win, value = _NUM:g.d[0].Nx
+	SetVariable Ny, win=$win, value = _NUM:g.d[0].Ny
+	SetVariable sizeX, win=$win, value = _NUM:(g.d[0].sizeX / 1e3)	// panel uses mm, g.d[m] uses µm
+	SetVariable sizeY, win=$win, value = _NUM:(g.d[0].sizeY / 1e3)
+	SetVariable Rx, win=$win, value = _NUM:g.d[iDetector].R[0]
+	SetVariable Ry, win=$win, value = _NUM:g.d[iDetector].R[1]
+	SetVariable Rz, win=$win, value = _NUM:g.d[iDetector].R[2]
+	SetVariable Px, win=$win, value = _NUM:(g.d[iDetector].P[0] / 1e3)	// panel uses mm, g.d[m] uses µm
+	SetVariable Py, win=$win, value = _NUM:(g.d[iDetector].P[1] / 1e3)
+	SetVariable Pz, win=$win, value = _NUM:(g.d[iDetector].P[2] / 1e3)
+	SetVariable timeMeasured, win=$win, value = _STR:g.d[iDetector].timeMeasured
+	SetVariable geoNote, win=$win, value = _STR:g.d[iDetector].geoNote
+	SetVariable distortionMapFile, win=$win, value = _STR:g.d[iDetector].distortionMapFile
+	SetVariable detectorID, win=$win, value = _STR:g.d[iDetector].detectorID
+	Variable used = g.d[iDetector].used
+	String idStr = g.d[iDetector].detectorID
+	idStr = SelectString(strlen(idStr) && used, "Detector "+num2istr(iDetector),idStr)
+	CheckBox used, win=$win, value=used, title=idStr
+
+	PopupMenu knifePopup, win=$win, mode = (1 + g.wire.knife)
+	SetVariable dia, win=$win, win=$win, value = _NUM:g.wire.dia
+	SetVariable wireAxisX, win=$win, value = _NUM:g.wire.axis[0]
+	SetVariable wireAxisY, win=$win, value = _NUM:g.wire.axis[1]
+	SetVariable wireAxisZ, win=$win, value = _NUM:g.wire.axis[2]
+	SetVariable wXO, win=$win, value = _NUM:g.wire.origin[0]
+	SetVariable wYO, win=$win, value = _NUM:g.wire.origin[1]
+	SetVariable wZO, win=$win, value = _NUM:g.wire.origin[2]
+	SetVariable wRotX, win=$win, value = _NUM:g.wire.R[0]
+	SetVariable wRotY, win=$win, value = _NUM:g.wire.R[1]
+	SetVariable wRotZ, win=$win, value = _NUM:g.wire.R[2]
+
+	SetVariable sXO, win=$win, value = _NUM:g.s.O[0]
+	SetVariable sYO, win=$win, value = _NUM:g.s.O[1]
+	SetVariable sZO, win=$win, value = _NUM:g.s.O[2]
+	SetVariable sRotX, win=$win, value = _NUM:g.s.R[0]
+	SetVariable sRotY, win=$win, value = _NUM:g.s.R[1]
+	SetVariable sRotZ, win=$win, value = _NUM:g.s.R[2]
+
+	ControlInfo/W=$win detectorID									// get detctor ID, used to set color
+	SetDetectorColor(win,S_Value)									// set detector color
+
+	PopupMenu detectorPopup,win=$win,value=#detectorPopMenuStr(g)	// re-set popup menu values
 	return 0
 End
-//
-// this is called by all of the check boxes, and it just sets the dirty flag for the panel
-Function GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
+
+
+Static Function GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
 	STRUCT WMCheckboxAction &cba
 	if (cba.eventCode != 2)
 		return 0
 	endif
+
+	NVAR iDetector = root:Packages:geometry:PanelValues:iDetector	
+	STRUCT microGeometry g								// geo that holds panels current values
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
+	g.d[iDetector].used = cba.checked
+	StructPut/S/B=2 g, geoPanelStructStr			// convert updated g back to a string, and put string into geoPanelStructStr
+
 	GeoPanelDetectorDisable(cba.win)
 	GeoPanelDirtyUpdate(cba.win,1)					// set dirty = 1
 	return 0
 End
 //
 // this is called by the wire knife edge pop up menu to set the dirty flag when it is changed
-Function GeoKnifePopMenuProc(pa) : PopupMenuControl
+Static Function GeoKnifePopMenuProc(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
 	if (pa.eventCode != 2)
 		return 0
 	endif
-	NVAR knife = root:Packages:geometry:PanelValues:knife		// 0=free-standing,  1=knife-edge
-	knife = pa.popNum - 1
+
+	STRUCT microGeometry g								// geo that holds panels current values
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
+	g.wire.knife = pa.popNum - 1						// 0=free-standing,  1=knife-edge
+	StructPut/S/B=2 g, geoPanelStructStr			// convert updated g back to a string, and put string into geoPanelStructStr
+
 	GeoPanelDirtyUpdate(pa.win,1)					// set dirty = 1
 	return 0
 End
 //
-// this is called by all of the varables, and it just sets the dirty flag for the panel
-Function GeoPanelVarChangedProc(sva) : SetVariableControl
+
+//	This is called by all of the SetVariable controls,
+//	it updates the geoPanelStructStr for this variable change
+// and sets the dirty flag for the panel
+Static Function GeoPanelVarChangedProc(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
-	if ( sva.eventCode == 3 || sva.eventCode<1)			// return unless number changed
+	if ( sva.eventCode == 3 || sva.eventCode<1)// return unless number changed
 		return 0
 	endif
+
+	STRUCT microGeometry g								// geo that holds panels current values
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
+
+	NVAR iDetector = root:Packages:geometry:PanelValues:iDetector	
+
+	if (StringMatch(sva.ctrlName,"Nx"))			// detector
+		g.d[iDetector].Nx = sva.dval
+	elseif (StringMatch(sva.ctrlName,"Ny"))
+		g.d[iDetector].Ny = sva.dval
+	elseif (StringMatch(sva.ctrlName,"sizeX"))	// panel uses mm, g.d[m] uses µm
+		g.d[iDetector].sizeX = sva.dval * 1000
+	elseif (StringMatch(sva.ctrlName,"sizeY"))
+		g.d[iDetector].sizeY = sva.dval * 1000
+
+	elseif (StringMatch(sva.ctrlName,"Rx"))
+		g.d[iDetector].R[0] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"Ry"))
+		g.d[iDetector].R[1] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"Rz"))
+		g.d[iDetector].R[2] = sva.dval
+
+	elseif (StringMatch(sva.ctrlName,"Px"))		// panel uses mm, g.d[m] uses µm
+		g.d[iDetector].P[0] = sva.dval * 1000
+	elseif (StringMatch(sva.ctrlName,"Py"))
+		g.d[iDetector].P[1] = sva.dval * 1000
+	elseif (StringMatch(sva.ctrlName,"Pz"))
+		g.d[iDetector].P[2] = sva.dval * 1000
+
+	elseif (StringMatch(sva.ctrlName,"timeMeasured"))
+		g.d[iDetector].timeMeasured = sva.sval
+	elseif (StringMatch(sva.ctrlName,"geoNote"))
+		g.d[iDetector].geoNote = sva.sval
+	elseif (StringMatch(sva.ctrlName,"distortionMapFile"))
+		g.d[iDetector].distortionMapFile = sva.sval
+	elseif (StringMatch(sva.ctrlName,"detectorID"))
+		g.d[iDetector].detectorID = sva.sval
+		SetDetectorColor(sva.win,sva.sval)
+	elseif (StringMatch(sva.ctrlName,"dia"))	// wire
+		g.wire.dia = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wireAxisX"))
+		g.wire.axis[0] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wireAxisY"))
+		g.wire.axis[1] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wireAxisZ"))
+		g.wire.axis[2] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wXO"))
+		g.wire.origin[0] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wYO"))
+		g.wire.origin[1] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wZO"))
+		g.wire.origin[2] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wRotX"))
+		g.wire.R[0] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wRotY"))
+		g.wire.R[1] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"wRotZ"))
+		g.wire.R[2] = sva.dval
+
+	elseif (StringMatch(sva.ctrlName,"sXO"))	// sample
+		g.s.O[0] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"sYO"))
+		g.s.O[1] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"sZO"))
+		g.s.O[2] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"sRotX"))
+		g.s.R[0] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"sRotY"))
+		g.s.R[1] = sva.dval
+	elseif (StringMatch(sva.ctrlName,"sRotZ"))
+		g.s.R[2] = sva.dval
+	endif
+
+	StructPut/S/B=2 g, geoPanelStructStr			// convert updated g back to a string, and put string into geoPanelStructStr
 	GeoPanelDirtyUpdate(sva.win,1)					// set dirty = 1
 	return 0
 End
 //
-Function SetDetectorColorProc(sva) : SetVariableControl
-	STRUCT WMSetVariableAction &sva
-	if (sva.eventCode!=2)			// only process "Enter key"
-		return 0
-	endif
+Static Function SetDetectorColor(win,id)
+	String win							// window name
+	String id							// a detector ID
 
-	String color =  detectorID2color(ReplaceString(",",sva.sval,""))
+	String color = detectorID2color(ReplaceString(",",id,""))
 	Variable r=40000,g=40000,b=40000				// default color is gray
 	if (stringmatch(color,"Orange"))
 		r = 65535;		g = 43688;		b = 32768	
@@ -3841,11 +3921,11 @@ Function SetDetectorColorProc(sva) : SetVariableControl
 		color = ""
 	endif
 
-	SetDrawLayer/W=microPanel#geoPanel/K ProgBack
-	SetVariable $(sva.ctrlName) win=$(sva.win), labelBack=(r,g,b)
+	SetDrawLayer/W=$win/K ProgBack
+	SetVariable detectorID win=$win, labelBack=(r,g,b)
 	if (strlen(color))
-		SetDrawEnv/W=microPanel#geoPanel linethick=8, linefgc= (r,g,b)
-		DrawLine/W=microPanel#geoPanel 1,30,1,230
+		SetDrawEnv/W=$win linethick=8, linefgc= (r,g,b)
+		DrawLine/W=$win 1,30,1,230
 	endif
 	return 0
 End
@@ -3855,28 +3935,14 @@ Function/T detectorID2color(detectorID)
 	// DetIDcolors is a static string constant set at the top of this file
 	return StringByKey(detectorID,DetIDcolors)
 End
-//Function/T detectorID2color(detectorID)
-//	String detectorID
-//	strswitch(detectorID)
-//		case "PE1621 723-3335":				// Orange, from ORNL
-//			return "Orange"
-//			break
-//		case "PE0820 763-1807":				// Yellow, from ORNL, old
-//		case "PE0822 883-4841":				// Yellow, from NIST, new
-//			return "Yellow"
-//			break
-//		case "PE0820 763-1850":				// Purple, from ORNL, old
-//		case "PE0822 883-4843":				// Purple, from NIST, new
-//			return "Purple"
-//	endswitch
-//	return ""
-//End
 //
-Static Function GeoPanelDetectorDisable(win)			// enable/disable detector fields based on check box
+Static Function GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
 	String win
 
-	Variable iDetector =NumVarOrDefault("root:Packages:geometry:PanelValues:iDetector",0)
-	Variable disable = NumVarOrDefault("root:Packages:geometry:PanelValues:used"+num2istr(iDetector),0) ? 0 : 2
+	Variable iDetector=NumVarOrDefault("root:Packages:geometry:PanelValues:iDetector",0)
+
+	ControlInfo/W=$win used											// get used T/F
+	Variable disable = V_Value ? 0 : 2
 
 	SetVariable Nx,win=$win, disable=disable;		SetVariable Ny,win=$win, disable=disable
 	SetVariable sizeX,win=$win, disable=disable;	SetVariable sizeY,win=$win, disable=disable
@@ -3886,28 +3952,15 @@ Static Function GeoPanelDetectorDisable(win)			// enable/disable detector fields
 	SetVariable geoNote,win=$win, disable=disable
 	SetVariable distortionMapFile,win=$win, disable=disable
 	SetVariable detectorID,win=$win, disable=disable
-
-	String id = StrVarOrDefault("root:Packages:geometry:PanelValues:detectorID"+num2istr(iDetector),"")
-	id = SelectString(strlen(id) && !disable, "Detector "+num2istr(iDetector),id)
-	CheckBox used,win=$win,title=id
-
-	STRUCT microGeometry g
-	SetGeometryStructToPanelGlobals(g)				// set structure to the values in the geo panel globals
-	PopupMenu detectorPopup,win=$win,value=#popStrForDetector(g)
-
-	// set detector color
-	ControlInfo/W=$win detectorID
-	STRUCT WMSetVariableAction sva
-	sva.sval = StrVarOrDefault(S_DataFolder+S_Value,"")
-	sva.ctrlName = "detectorID"
-	sva.win = win
-	sva.eventCode = 2
-	SetDetectorColorProc(sva)
-
+	if (disable)
+		CheckBox used, win=$win, fColor=(35000,35000,35000)	// not disabled, but grayed out
+	else
+		CheckBox used, win=$win, fColor=(0,0,0)					// is enabled, use black
+	endif
 	return 0
 End
 //
-Function SetGeoPanelHook(s)
+Function SetGeoPanelHook(s)		// provides for saving changed values if panel killed
 	STRUCT WMWinHookStruct &s
 	if (s.eventCode !=2 && s.eventCode !=14)			// only process kill events (both windows & sub-windows)
 		return 0
@@ -3928,14 +3981,13 @@ Function SetGeoPanelHook(s)
 	B_Struct.ctrlName = StringFromList(action-1,"buttonSaveDefault;buttonSaveLocal;buttonCancel")
 	B_Struct.win = s.winName
 	GeometryPanelButtonProc(B_Struct)
-//	GeometryPanelButtonProc(StringFromList(action-1,"buttonSaveDefault;buttonSaveLocal;buttonCancel"))
 End
 //
 Static Function GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and update buttons to reflect dirty status
 	String win
 	Variable dirty
 
-	if (!(dirty>=0))
+	if (!(dirty>=0))				// apssed dirty is invalid, get global value
 		dirty = NumVarOrDefault("root:Packages:geometry:PanelValues:dirty",0)
 	endif
 	Variable/G root:Packages:geometry:PanelValues:dirty = dirty	// make sure the global is set
@@ -3947,11 +3999,7 @@ Static Function GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and upda
 		Button buttonSaveLocal disable=2,fColor=(0,0,0),win=$win
 	endif
 	Button buttonEPICS disable=(exists("get_mult_PV")==6 ? 0 : 2),win=$win
-	NVAR Ndetectors = root:Packages:geometry:PanelValues:Ndetectors	
-	NVAR used0=root:Packages:geometry:PanelValues:used0
-	NVAR used1=root:Packages:geometry:PanelValues:used1
-	NVAR used2=root:Packages:geometry:PanelValues:used2
-	Ndetectors = !(!used0) + !(!used1) + !(!used2)
+
 End
 //
 // this is called by the save geometry to File/EPICS pop up menu to save the geometry.
@@ -3962,13 +4010,13 @@ Static Function GeoSaveFilePopMenuProc(pa) : PopupMenuControl
 	endif
 	PopupMenu $pa.ctrlName,win=$pa.win,mode=1,popvalue="Save Geometry to...",value= #"\"Write Geo to a File;Put Geo to EPICS;\""
 	STRUCT microGeometry g
-	SetGeometryStructToPanelGlobals(g)					// set structure to the values in the geo panel globals
+	SetGeoStructFromPanelValues(g)					// set structure to the values in the geo panel globals
 	if (stringmatch(pa.popStr,"Put Geo to EPICS"))
 		putGeo2EPICS(g)									// put values of g into EPICS
 	elseif (stringmatch(pa.popStr,"Write Geo to a File"))
 		WriteGeoToFile("","",g,"",NaN)
 	else
-		return 1											// This is an ERROR
+		return 1												// This is an ERROR
 	endif
 	return 0
 End
@@ -3980,9 +4028,9 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 	endif
 	String ctrlName= B_Struct.ctrlName
 
-	STRUCT microGeometry g								// used to connect to the globals in the geoPanel
+	STRUCT microGeometry g									// used to connect to the globals in the geoPanel
 
-	if (stringmatch(ctrlName,"buttonCancel"))			// close window, do not save numbers
+	if (stringmatch(ctrlName,"buttonCancel"))		// close window, do not save numbers
 		GeoPanelDirtyUpdate(B_Struct.win,0)			// set dirty = 0
 		String win = StringFromLIst(0,WinList("*",";","WIN:64"))
 		SetWindow $win,hook(closeWin)= $""
@@ -3994,11 +4042,13 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonSaveLocal"))
 		String/G geoStructStr=""							// save it in local folder
 		SVAR geoStructStr = geoStructStr
-	elseif (stringmatch(ctrlName,"buttonEPICS"))
+	elseif (stringmatch(ctrlName,"buttonEPICS"))	// Fill panel geo values from EPICS
 		if (GeoFromEPICS(g))
 			return 1
 		endif
-		SetGeometryPanelGlobals(g)						// set the globals in the geo panel from values in g
+		SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+		StructPut/S g, geoPanelStructStr				// put contents of g into geoPanelStructStr
+		UpDatePanelValuesFromStruct(B_Struct.win,NaN)	// update values in panel from geoPanelStructStr
 		GeoPanelDirtyUpdate(B_Struct.win,1)			// set dirty = 1
 		GeoPanelDetectorDisable(B_Struct.win)
 		return 0
@@ -4055,24 +4105,28 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 			DoAlert 0, errStr+"\rFailed to get geometry from web."
 			return 1
 		endif
-		SetGeometryPanelGlobals(g)						// set the globals in the geo panel from values in g
-		GeoPanelDirtyUpdate(B_Struct.win,1)			// set dirty = 1
+		SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+		StructPut/S g, geoPanelStructStr			// put contents of g into geoPanelStructStr
+		UpDatePanelValuesFromStruct(B_Struct.win,NaN)	// update values in panel from geoPanelStructStr
+		GeoPanelDirtyUpdate(B_Struct.win,1)		// set dirty = 1
 		GeoPanelDetectorDisable(B_Struct.win)
 		return 0
 	elseif (stringmatch(ctrlName,"buttonFillFromFile"))
-		if (ReadGeoFromfile("","home",g))				// fill g with values from file
+		if (ReadGeoFromfile("","home",g))			// fill g with values from file
 			return 1
 		endif
-		SetGeometryPanelGlobals(g)						// set the globals in the geo panel from values in g
-		GeoPanelDirtyUpdate(B_Struct.win,1)			// set dirty = 1
+		SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+		StructPut/S g, geoPanelStructStr			// put contents of g into geoPanelStructStr
+		GeoPanelDirtyUpdate(B_Struct.win,1)		// set dirty = 1
+		UpDatePanelValuesFromStruct(B_Struct.win,NaN)	// update values in panel from geoPanelStructStr
 		GeoPanelDetectorDisable(B_Struct.win)
 		return 0
 	elseif (stringmatch(ctrlName,"buttonWriteToFile"))
-		SetGeometryStructToPanelGlobals(g)			// set structure to the values in the geo panel globals
+		SetGeoStructFromPanelValues(g)				// set structure to the values in the geo panel globals
 		WriteGeoToFile("","",g,"",NaN)
 		return 0
 	elseif (stringmatch(ctrlName,"buttonPrintGeo"))	// print shown geometry parameters to the history
-		SetGeometryStructToPanelGlobals(g)			// set structure to the values in the geo panel globals
+		SetGeoStructFromPanelValues(g)				// set structure to the values in the geo panel globals
 		GeometryUpdateCalc(g)							// calculate other values
 		printGeometry(g)									// print them all out
 		return 0
@@ -4082,10 +4136,10 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 	endif
 
 	// store the global values from panel into the 'geoStructStr''
-	SetGeometryStructToPanelGlobals(g)				// set structure to the values in the geo panel globals
+	SetGeoStructFromPanelValues(g)					// set structure to the values in the geo panel globals
 	GeometryUpdateCalc(g)
 	StructPut/S/B=2 g, geoStructStr
-	GeoPanelDirtyUpdate(B_Struct.win,0)				// set dirty = 0
+	GeoPanelDirtyUpdate(B_Struct.win,0)			// set dirty = 0
 	SavePackagePreferences/FLSH=1 "microGeo","microGeoNPrefs",0,g
 End
 //
@@ -4094,192 +4148,11 @@ Function fileTime2EpochProto(fileTime,[UTC])
 	Variable UTC
 	return NaN
 End
-//
-Static Function SetGeometryPanelGlobals(g)			// set the globals in the geo panel from values in g
-	STRUCT microGeometry &g							// connect to the globals from this structure
-	NVAR Ndetectors = root:Packages:geometry:PanelValues:Ndetectors	
-	NVAR used0=root:Packages:geometry:PanelValues:used0
-	NVAR Nx0=root:Packages:geometry:PanelValues:Nx0,			Ny0=root:Packages:geometry:PanelValues:Ny0
-	NVAR sizeX0=root:Packages:geometry:PanelValues:sizeX0,		sizeY0=root:Packages:geometry:PanelValues:sizeY0
-	NVAR Rx0=root:Packages:geometry:PanelValues:Rx0,			Ry0=root:Packages:geometry:PanelValues:Ry0,		Rz0=root:Packages:geometry:PanelValues:Rz0
-	NVAR Px0=root:Packages:geometry:PanelValues:Px0,			Py0=root:Packages:geometry:PanelValues:Py0,		Pz0=root:Packages:geometry:PanelValues:Pz0
-	NVAR used1=root:Packages:geometry:PanelValues:used1
-	NVAR Nx1=root:Packages:geometry:PanelValues:Nx1,			Ny1=root:Packages:geometry:PanelValues:Ny1
-	NVAR sizeX1=root:Packages:geometry:PanelValues:sizeX1,		sizeY1=root:Packages:geometry:PanelValues:sizeY1
-	NVAR Rx1=root:Packages:geometry:PanelValues:Rx1,			Ry1=root:Packages:geometry:PanelValues:Ry1,		Rz1=root:Packages:geometry:PanelValues:Rz1
-	NVAR Px1=root:Packages:geometry:PanelValues:Px1,			Py1=root:Packages:geometry:PanelValues:Py1, 		Pz1=root:Packages:geometry:PanelValues:Pz1
-	NVAR used2=root:Packages:geometry:PanelValues:used2
-	NVAR Nx2=root:Packages:geometry:PanelValues:Nx2,			Ny2=root:Packages:geometry:PanelValues:Ny2
-	NVAR sizeX2=root:Packages:geometry:PanelValues:sizeX2,		sizeY2=root:Packages:geometry:PanelValues:sizeY2
-	NVAR Rx2=root:Packages:geometry:PanelValues:Rx2,			Ry2=root:Packages:geometry:PanelValues:Ry2,		Rz2=root:Packages:geometry:PanelValues:Rz2
-	NVAR Px2=root:Packages:geometry:PanelValues:Px2,			Py2=root:Packages:geometry:PanelValues:Py2,		Pz2=root:Packages:geometry:PanelValues:Pz2
-	NVAR dia	= root:Packages:geometry:PanelValues:dia
-	NVAR knife = root:Packages:geometry:PanelValues:knife
-	NVAR wireF= root:Packages:geometry:PanelValues:wireF
-	NVAR wireX0=root:Packages:geometry:PanelValues:wireX0
-	NVAR wireY0=root:Packages:geometry:PanelValues:wireY0
-	NVAR wireZ0=root:Packages:geometry:PanelValues:wireZ0
-	NVAR axisX=root:Packages:geometry:PanelValues:axisX,		axisY=root:Packages:geometry:PanelValues:axisY,	axisZ=root:Packages:geometry:PanelValues:axisZ
-	NVAR wireRotX = root:Packages:geometry:PanelValues:wireRotX
-	NVAR wireRotY = root:Packages:geometry:PanelValues:wireRotY
-	NVAR wireRotZ = root:Packages:geometry:PanelValues:wireRotZ
 
-	Ndetectors = !(!used0) + !(!used1) + !(!used2)			// set the panel globals from the struct
-	used0	= g.d[0].used
-	Nx0	= g.d[0].Nx;			Ny0	= g.d[0].Ny
-	sizeX0	= g.d[0].sizeX/1e3;	sizeY0	= g.d[0].sizeY/1e3	// panel uses mm, g.d[m] uese µm
-	Rx0	= g.d[0].R[0];			Ry0	= g.d[0].R[1];			Rz0	= g.d[0].R[2]
-	Px0	= g.d[0].P[0]/1e3;	Py0	= g.d[0].P[1]/1e3;	Pz0	= g.d[0].P[2]/1e3
-	used1	= g.d[1].used
-	Nx1	= g.d[1].Nx;			Ny1	= g.d[1].Ny
-	sizeX1	= g.d[1].sizeX/1e3;	sizeY1	= g.d[1].sizeY/1e3
-	Rx1	= g.d[1].R[0];			Ry1	= g.d[1].R[1];			Rz1	= g.d[1].R[2]
-	Px1	= g.d[1].P[0]/1e3;	Py1	= g.d[1].P[1]/1e3;	Pz1	= g.d[1].P[2]/1e3
-	used2	= g.d[2].used
-	Nx2	= g.d[2].Nx;			Ny2	= g.d[2].Ny
-	sizeX2	= g.d[2].sizeX/1e3;	sizeY2	= g.d[2].sizeY/1e3
-	Rx2	= g.d[2].R[0];			Ry2	= g.d[2].R[1];			Rz2	= g.d[2].R[2]
-	Px2	= g.d[2].P[0]/1e3;	Py2	= g.d[2].P[1]/1e3;	Pz2	= g.d[2].P[2]/1e3
-	dia = g.wire.dia
-	wireX0=g.wire.origin[0];	wireY0=g.wire.origin[1];	wireZ0=g.wire.origin[2]
-	axisX = g.wire.axis[0];		axisY = g.wire.axis[1];		axisZ = g.wire.axis[2]
-	wireRotX = g.wire.R[0];		wireRotY = g.wire.R[1];		wireRotZ = g.wire.R[2]
-	knife = g.wire.knife
-	wireF = g.wire.F
-
-	Ndetectors = !(!used0) + !(!used1) + !(!used2)
-
-	SVAR timeMeasured0 = root:Packages:geometry:PanelValues:timeMeasured0
-	SVAR geoNote0 = root:Packages:geometry:PanelValues:geoNote0
-	SVAR detectorID0 = root:Packages:geometry:PanelValues:detectorID0
-	SVAR distortionMapFile0 = root:Packages:geometry:PanelValues:distortionMapFile0
-
-	SVAR timeMeasured1 = root:Packages:geometry:PanelValues:timeMeasured1
-	SVAR geoNote1 = root:Packages:geometry:PanelValues:geoNote1
-	SVAR detectorID1 = root:Packages:geometry:PanelValues:detectorID1
-	SVAR distortionMapFile1 = root:Packages:geometry:PanelValues:distortionMapFile1
-
-	SVAR timeMeasured2 = root:Packages:geometry:PanelValues:timeMeasured2
-	SVAR geoNote2 = root:Packages:geometry:PanelValues:geoNote2
-	SVAR detectorID2 = root:Packages:geometry:PanelValues:detectorID2
-	SVAR distortionMapFile2 = root:Packages:geometry:PanelValues:distortionMapFile2
-	timeMeasured0		= g.d[0].timeMeasured
-	geoNote0				= g.d[0].geoNote
-	detectorID0			= g.d[0].detectorID
-	distortionMapFile0	= g.d[0].distortionMapFile
-	timeMeasured1		= g.d[1].timeMeasured
-	geoNote1				= g.d[1].geoNote
-	detectorID1			= g.d[1].detectorID
-	distortionMapFile1	= g.d[1].distortionMapFile
-	timeMeasured2		= g.d[2].timeMeasured
-	geoNote2				= g.d[2].geoNote
-	detectorID2			= g.d[2].detectorID
-	distortionMapFile2	= g.d[2].distortionMapFile
-
-	NVAR SampleRotX = root:Packages:geometry:PanelValues:SampleRotX
-	NVAR SampleRotY = root:Packages:geometry:PanelValues:SampleRotY
-	NVAR SampleRotZ = root:Packages:geometry:PanelValues:SampleRotZ
-	SampleRotX = g.s.R[0];	SampleRotY = g.s.R[1];		SampleRotZ = g.s.R[2]
-
-	NVAR SampleOrigX=root:Packages:geometry:PanelValues:SampleOrigX
-	NVAR SampleOrigY=root:Packages:geometry:PanelValues:SampleOrigY
-	NVAR SampleOrigZ=root:Packages:geometry:PanelValues:SampleOrigZ
-	SampleOrigX = g.s.O[0];	SampleOrigY = g.s.O[1];		SampleOrigZ = g.s.O[2]
-
-	return 0
-End
-//
-Static Function SetGeometryStructToPanelGlobals(g)		// set structure to the values in the geo panel globals
+Static Function SetGeoStructFromPanelValues(g)	// set structure g to the values on the geo panel
 	STRUCT microGeometry &g								// connect to the globals
-
-	NVAR Ndetectors = root:Packages:geometry:PanelValues:Ndetectors	
-	NVAR used0=root:Packages:geometry:PanelValues:used0
-	NVAR Nx0=root:Packages:geometry:PanelValues:Nx0,			Ny0=root:Packages:geometry:PanelValues:Ny0
-	NVAR sizeX0=root:Packages:geometry:PanelValues:sizeX0,	sizeY0=root:Packages:geometry:PanelValues:sizeY0
-	NVAR Rx0=root:Packages:geometry:PanelValues:Rx0,			Ry0=root:Packages:geometry:PanelValues:Ry0,		Rz0=root:Packages:geometry:PanelValues:Rz0
-	NVAR Px0=root:Packages:geometry:PanelValues:Px0,			Py0=root:Packages:geometry:PanelValues:Py0,		Pz0=root:Packages:geometry:PanelValues:Pz0
-	NVAR used1=root:Packages:geometry:PanelValues:used1
-	NVAR Nx1=root:Packages:geometry:PanelValues:Nx1,			Ny1=root:Packages:geometry:PanelValues:Ny1
-	NVAR sizeX1=root:Packages:geometry:PanelValues:sizeX1,	sizeY1=root:Packages:geometry:PanelValues:sizeY1
-	NVAR Rx1=root:Packages:geometry:PanelValues:Rx1,			Ry1=root:Packages:geometry:PanelValues:Ry1,		Rz1=root:Packages:geometry:PanelValues:Rz1
-	NVAR Px1=root:Packages:geometry:PanelValues:Px1,			Py1=root:Packages:geometry:PanelValues:Py1, 		Pz1=root:Packages:geometry:PanelValues:Pz1
-	NVAR used2=root:Packages:geometry:PanelValues:used2
-	NVAR Nx2=root:Packages:geometry:PanelValues:Nx2,			Ny2=root:Packages:geometry:PanelValues:Ny2
-	NVAR sizeX2=root:Packages:geometry:PanelValues:sizeX2,	sizeY2=root:Packages:geometry:PanelValues:sizeY2
-	NVAR Rx2=root:Packages:geometry:PanelValues:Rx2,			Ry2=root:Packages:geometry:PanelValues:Ry2,		Rz2=root:Packages:geometry:PanelValues:Rz2
-	NVAR Px2=root:Packages:geometry:PanelValues:Px2,			Py2=root:Packages:geometry:PanelValues:Py2,		Pz2=root:Packages:geometry:PanelValues:Pz2
-	NVAR dia	= root:Packages:geometry:PanelValues:dia
-	NVAR knife = root:Packages:geometry:PanelValues:knife
-	NVAR wireF = root:Packages:geometry:PanelValues:wireF
-	NVAR wireX0=root:Packages:geometry:PanelValues:wireX0
-	NVAR wireY0=root:Packages:geometry:PanelValues:wireY0
-	NVAR wireZ0=root:Packages:geometry:PanelValues:wireZ0
-	NVAR axisX=root:Packages:geometry:PanelValues:axisX,		axisY=root:Packages:geometry:PanelValues:axisY,	axisZ=root:Packages:geometry:PanelValues:axisZ
-	Ndetectors = !(!used0) + !(!used1) + !(!used2)
-
-	g.Ndetectors = Ndetectors										// set all the geo values from global values
-	g.d[0].used = used0
-	g.d[0].Nx = Nx0;			g.d[0].Ny = Ny0
-	g.d[0].sizeX = sizeX0*1e3;	g.d[0].sizeY = sizeY0*1e3	// panel uses mm, g.d[m] uese µm
-	g.d[0].R[0] = Rx0;			g.d[0].R[1] = Ry0;			g.d[0].R[2] = Rz0
-	g.d[0].P[0] = Px0*1e3;	g.d[0].P[1] = Py0*1e3;	g.d[0].P[2] = Pz0*1e3
-	g.d[1].used = used1
-	g.d[1].Nx = Nx1;			g.d[1].Ny = Ny1
-	g.d[1].sizeX = sizeX1*1e3;	g.d[1].sizeY = sizeY1*1e3
-	g.d[1].R[0] = Rx1;			g.d[1].R[1] = Ry1;			g.d[1].R[2] = Rz1
-	g.d[1].P[0] = Px1*1e3;	g.d[1].P[1] = Py1*1e3;	g.d[1].P[2] = Pz1*1e3
-	g.d[2].used = used2
-	g.d[2].Nx = Nx2;			g.d[2].Ny = Ny2
-	g.d[2].sizeX = sizeX2*1e3;	g.d[2].sizeY = sizeY2*1e3
-	g.d[2].R[0] = Rx2;			g.d[2].R[1] = Ry2;			g.d[2].R[2] = Rz2
-	g.d[2].P[0] = Px2*1e3;	g.d[2].P[1] = Py2*1e3;	g.d[2].P[2] = Pz2*1e3
-	g.wire.dia = dia
-	g.wire.origin[0] = wireX0;	g.wire.origin[1] = wireY0;	g.wire.origin[2] = wireZ0
-	g.wire.axis[0] = axisX;		g.wire.axis[1] = axisY;		g.wire.axis[2] = axisZ
-	g.wire.knife = knife
-	g.wire.F = wireF
-
-
-	SVAR timeMeasured0 = root:Packages:geometry:PanelValues:timeMeasured0
-	SVAR geoNote0 = root:Packages:geometry:PanelValues:geoNote0
-	SVAR detectorID0 = root:Packages:geometry:PanelValues:detectorID0
-	SVAR distortionMapFile0 = root:Packages:geometry:PanelValues:distortionMapFile0
-	SVAR timeMeasured1 = root:Packages:geometry:PanelValues:timeMeasured1
-	SVAR geoNote1 = root:Packages:geometry:PanelValues:geoNote1
-	SVAR detectorID1 = root:Packages:geometry:PanelValues:detectorID1
-	SVAR distortionMapFile1 = root:Packages:geometry:PanelValues:distortionMapFile1
-	SVAR timeMeasured2 = root:Packages:geometry:PanelValues:timeMeasured2
-	SVAR geoNote2 = root:Packages:geometry:PanelValues:geoNote2
-	SVAR detectorID2 = root:Packages:geometry:PanelValues:detectorID2
-	SVAR distortionMapFile2 = root:Packages:geometry:PanelValues:distortionMapFile2
-	g.d[0].timeMeasured	= timeMeasured0
-	g.d[0].geoNote			= geoNote0
-	g.d[0].detectorID		= detectorID0
-	g.d[0].distortionMapFile= distortionMapFile0
-	g.d[1].timeMeasured	= timeMeasured1
-	g.d[1].geoNote			= geoNote1
-	g.d[1].detectorID		= detectorID1
-	g.d[1].distortionMapFile= distortionMapFile1
-	g.d[2].timeMeasured	= timeMeasured2
-	g.d[2].geoNote			= geoNote2
-	g.d[2].detectorID		= detectorID2
-	g.d[2].distortionMapFile= distortionMapFile2
-
-	NVAR wireRotX = root:Packages:geometry:PanelValues:wireRotX
-	NVAR wireRotY = root:Packages:geometry:PanelValues:wireRotY
-	NVAR wireRotZ = root:Packages:geometry:PanelValues:wireRotZ
-	g.wire.R[0] = wireRotX;	g.wire.R[1] = wireRotY;	g.wire.R[2] = wireRotZ;
-
-	NVAR SampleRotX = root:Packages:geometry:PanelValues:SampleRotX
-	NVAR SampleRotY = root:Packages:geometry:PanelValues:SampleRotY
-	NVAR SampleRotZ = root:Packages:geometry:PanelValues:SampleRotZ
-	g.s.R[0] = SampleRotX;	g.s.R[1] = SampleRotY;	g.s.R[2] = SampleRotZ;
-
-	NVAR SampleOrigX = root:Packages:geometry:PanelValues:SampleOrigX
-	NVAR SampleOrigY = root:Packages:geometry:PanelValues:SampleOrigY
-	NVAR SampleOrigZ = root:Packages:geometry:PanelValues:SampleOrigZ
-	g.s.O[0] = SampleOrigX;	g.s.O[1] = SampleOrigY;	g.s.O[2] = SampleOrigZ
-
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	StructGet/S g, geoPanelStructStr					// fill g with the values stored in geoPanelStructStr ( the PanelValues)
 	return 0
 End
 
@@ -4363,7 +4236,7 @@ Function GeoFromWeb(epoch,gIn)
 	return 0
 End
 
-Function GeoFromEPICS(gIn)	//fill the geometry structure from EPICS (uses caget)
+Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget)
 	STRUCT microGeometry &gIn
 
 	String geoList= "Ndetectors.RVAL;"
@@ -4472,7 +4345,7 @@ Function/S protoEPICS_geo(str)									// proto function for get_mult_PV(), also
 End
 
 
-Static Function putGeo2EPICS(gIn)	//fill the geometry structure from EPICS (uses caget)
+Static Function putGeo2EPICS(gIn)	// put the geometry structure to EPICS (uses caput)
 	STRUCT microGeometry &gIn
 
 	if (exists("EPICS_put_PV_num")!=6 || exists("EPICS_put_PV_str")!=6)
@@ -4651,7 +4524,7 @@ Static Function  geoLocal_putNum(pv,value)	// utility function for EPICS_put_PV_
 	return 0
 End
 //
-Function geoLocal_putStr(pv,value)	// EPICS_put_PV_num function for EPICS_put_PV_str()
+Static Function geoLocal_putStr(pv,value)	// EPICS_put_PV_num function for EPICS_put_PV_str()
 	String pv								// full PV name
 	String value							// new string value to set
 	if (exists("EPICS_put_PV_str")!=6)
