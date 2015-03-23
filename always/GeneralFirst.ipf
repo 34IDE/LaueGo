@@ -154,7 +154,7 @@ End
 
 Menu "Help"
 	"-"
-	"LaueGo Version Info", /Q, print LaueGoVersion(1)
+	"LaueGo Version Info", /Q, print "\r  "+LaueGoVersion(1)
 	"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 End
 
@@ -167,7 +167,7 @@ Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
 		return ""
 	endif
 
-	String buf=PadString("",1000,0x20)
+	String buf=PadString("",1000,0x20), out=""
 	Variable f
 	Open/R/Z=1 f as VersionStatusPath	// read top of VersionStatus.xml
 	if (V_flag)
@@ -177,32 +177,17 @@ Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
 	Close f
 
 	// extract date & time info from buf
-	Variable i=strsearch(buf,"<written ",0)
+	Variable i=strsearch(buf,"<written ",0,2)
 	if (i<0)
 		return ""
 	endif
 	buf = buf[i+9,Inf]
-	i = strsearch(buf,"></written>",0)
-
-	String dateStr="", timeStr="", isoStr="", out=""
-	i = strsearch(buf,"date=\"",0)
-	dateStr = buf[i+6,Inf]
-	i = strsearch(dateStr,"\"",0)
-	dateStr = dateStr[0,i-1]
-
-	i = strsearch(buf,"time=\"",0)
-	timeStr = buf[i+6,Inf]
-	i = strsearch(timeStr,"\"",0)
-	timeStr = timeStr[0,i-1]
-
-	i = strsearch(buf,"isoTime=\"",0)
-	isoStr = buf[i+9,Inf]
-	i = strsearch(isoStr,"\"",0)
-	isoStr = isoStr[0,i-1]
+	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
+	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
+	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
 
 	// extract fileCount from buf
-	i = strsearch(buf,"<fileCount>",0)
-	Variable fileCount=str2num(buf[i+11,i+22])
+	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
 
 	if (nice)		// for printting to History
 		sprintf out, "LaueGo -- Version Created:  %s,  %s,   %g files,  info from VersionStatus:\r    %s\r",dateStr,timeStr,fileCount,VersionStatusPath
@@ -215,6 +200,25 @@ Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
 	endif
 	return out
 End
+//
+Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of a string delimited by delim in buf
+	//	so, getDelimitedString("date=\"Monday, March 23, 2015\" "), returns "Monday, March 23, 2015"
+	//	or, getDelimitedString("date=_Monday, March 23, 2015_ ",delim="_"), returns "Monday, March 23, 2015"
+	// or, getDelimitedString("date=_Monday, March 23, 2015_ "), returns ""
+	String buf			// input string
+	String delim		// delimiter, defaults to double-quote
+	delim = SelectString(ParamIsDefault(delim),delim,"\"")
+	delim = SelectString(strlen(delim),"\"",delim)
+
+	Variable i0,i1
+	i0 = strsearch(buf,delim,0,2)
+	i1 = strsearch(buf,delim,i0+1,2)
+	if (i0<0 || i1<=i0 || strlen(buf)<=2)
+		return ""
+	endif
+	return buf[i0+1,i1-1]
+End
+
 
 //  ====================================================================================  //
 //  ========================== Start of User Procedures Menu  ==========================  //
