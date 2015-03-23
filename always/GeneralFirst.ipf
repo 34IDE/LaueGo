@@ -154,7 +154,7 @@ End
 
 Menu "Help"
 	"-"
-	"LaueGo Version Info", /Q, print "\r  "+LaueGoVersion(1)
+	"LaueGo Version Info", /Q, print "\r  "+LaueGoVersion(1)+"\r"
 	"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 End
 
@@ -217,6 +217,31 @@ Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of
 		return ""
 	endif
 	return buf[i0+1,i1-1]
+End
+
+
+// This is used to put up a help file (either http: or file:) using the user's web browser
+Function BrowseHelpFile(urlStr)				// first look in User/Docs/WaveMetrics, then in Applications/Igor Pro
+	String urlStr
+
+	if (!StringMatch(urlStr,"http:*") && !StringMatch(urlStr,"file:*")) // not a complete url
+		// assume that urlStr is just a file name in doc's folder
+		String LaueGoDocFolder = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
+		GetFileFolderInfo/Q/Z=1 LaueGoDocFolder
+		if (!V_isFolder)
+			LaueGoDocFolder = SpecialDirPath("Igor Application",1,0,0)+"User Procedures:LaueGo:doc:"
+			GetFileFolderInfo/Q/Z=1 LaueGoDocFolder
+			if (!V_isFolder)
+				return 1
+			endif
+		endif
+		LaueGoDocFolder = ParseFilePath(5,LaueGoDocFolder,"/",0,0)	// convert from Mac to POSIX
+		urlStr = "file://"+LaueGoDocFolder+urlStr							// complete the URL
+	endif
+	BrowseURL/Z urlStr
+	if (V_flag)
+		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
+	endif
 End
 
 

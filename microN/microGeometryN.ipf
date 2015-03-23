@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.78
+#pragma version = 1.79
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -43,27 +43,13 @@ Menu "Help"
 	SubMenu "LaueGo"
 		"micro Diffraction", /Q, DisplayHelpTopic/K=1/Z "LaueGo"
 		// "micro Diffraction", /Q, BrowseHelpFile("microDiffraction.html")
-		"Geometry File Description", /Q, microGeo#BrowseHelpFile("geometry.html")
+		"Geometry File Description", /Q, BrowseHelpFile("geometry.html")
 		SubMenu "Old"
-			"GeometryN tag file", /Q, microGeo#BrowseHelpFile("geoN_tag.html")
-			"Real Old Geometry tag file", /Q, microGeo#BrowseHelpFile("geo_tag OLD.html")
+			"GeometryN tag file", /Q, BrowseHelpFile("geoN_tag.html")
+			"Real Old Geometry tag file", /Q, BrowseHelpFile("geo_tag OLD.html")
 		End
-		"LaueGo Web Page", /Q, microGeo#BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
+		"LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 	End
-End
-//
-Static Function BrowseHelpFile(urlStr)
-	String urlStr
-
-	if (!StringMatch(urlStr,"http:*"))			// assume that urlStr is just a file name in doc's
-		String sss = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
-		sss = ParseFilePath(5,sss,"/",0,0)		// convert from Mac to POSIX
-		urlStr = "file://"+sss+urlStr			// complete the URL
-	endif
-	BrowseURL/Z urlStr
-	if (V_flag)
-		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
-	endif
 End
 
 Menu LaueGoMainMenuName, dynamic
