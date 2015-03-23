@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.14
+#pragma version = 3.15
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.51
@@ -154,9 +154,67 @@ End
 
 Menu "Help"
 	"-"
+	"LaueGo Version Info", /Q, print LaueGoVersion(1)
 	"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 End
 
+Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
+	Variable nice
+
+	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#LaueGoVersion"),":",1,1)+"VersionStatus.xml"
+	GetFileFolderInfo/Q/Z=1 VersionStatusPath
+	if (V_flag)
+		return ""
+	endif
+
+	String buf=PadString("",1000,0x20)
+	Variable f
+	Open/R/Z=1 f as VersionStatusPath	// read top of VersionStatus.xml
+	if (V_flag)
+		return ""
+	endif
+	FBinRead f, buf
+	Close f
+
+	// extract date & time info from buf
+	Variable i=strsearch(buf,"<written ",0)
+	if (i<0)
+		return ""
+	endif
+	buf = buf[i+9,Inf]
+	i = strsearch(buf,"></written>",0)
+
+	String dateStr="", timeStr="", isoStr="", out=""
+	i = strsearch(buf,"date=\"",0)
+	dateStr = buf[i+6,Inf]
+	i = strsearch(dateStr,"\"",0)
+	dateStr = dateStr[0,i-1]
+
+	i = strsearch(buf,"time=\"",0)
+	timeStr = buf[i+6,Inf]
+	i = strsearch(timeStr,"\"",0)
+	timeStr = timeStr[0,i-1]
+
+	i = strsearch(buf,"isoTime=\"",0)
+	isoStr = buf[i+9,Inf]
+	i = strsearch(isoStr,"\"",0)
+	isoStr = isoStr[0,i-1]
+
+	// extract fileCount from buf
+	i = strsearch(buf,"<fileCount>",0)
+	Variable fileCount=str2num(buf[i+11,i+22])
+
+	if (nice)		// for printting to History
+		sprintf out, "LaueGo -- Version Created:  %s,  %s,   %g files,  info from VersionStatus:\r    %s\r",dateStr,timeStr,fileCount,VersionStatusPath
+	else				// for use by other routines
+		out = ReplaceStringByKey("date",out,dateStr,"=")
+		out = ReplaceStringByKey("time",out,timeStr,"=")
+		out = ReplaceStringByKey("isoTime",out,isoStr,"=")
+		out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
+		out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
+	endif
+	return out
+End
 
 //  ====================================================================================  //
 //  ========================== Start of User Procedures Menu  ==========================  //
