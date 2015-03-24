@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.15
+#pragma version = 3.16
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.51
@@ -154,7 +154,7 @@ End
 
 Menu "Help"
 	"-"
-	"LaueGo Version Info", /Q, print "\r  "+LaueGoVersion(1)+"\r"
+	"LaueGo Version Info", /Q, print LaueGoVersion(1)
 	"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 End
 
@@ -162,15 +162,13 @@ Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
 	Variable nice
 
 	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#LaueGoVersion"),":",1,1)+"VersionStatus.xml"
-	GetFileFolderInfo/Q/Z=1 VersionStatusPath
-	if (V_flag)
-		return ""
-	endif
-
-	String buf=PadString("",1000,0x20), out=""
+	String out="", buf=PadString("",1000,0x20)			// buf set to 1000 chars, only read first 1000
 	Variable f
 	Open/R/Z=1 f as VersionStatusPath	// read top of VersionStatus.xml
 	if (V_flag)
+		if (nice)
+			printf "ERROR -- Could not find \"%s\"\r",VersionStatusPath
+		endif
 		return ""
 	endif
 	FBinRead f, buf
@@ -190,7 +188,7 @@ Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
 	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
 
 	if (nice)		// for printting to History
-		sprintf out, "LaueGo -- Version Created:  %s,  %s,   %g files,  info from VersionStatus:\r    %s\r",dateStr,timeStr,fileCount,VersionStatusPath
+		sprintf out, "\r  LaueGo -- Version Created:  %s,  %s,   %g files,  info from VersionStatus:\r    %s\r\r",dateStr,timeStr,fileCount,VersionStatusPath
 	else				// for use by other routines
 		out = ReplaceStringByKey("date",out,dateStr,"=")
 		out = ReplaceStringByKey("time",out,timeStr,"=")
@@ -221,22 +219,27 @@ End
 
 
 // This is used to put up a help file (either http: or file:) using the user's web browser
-Function BrowseHelpFile(urlStr)				// first look in User/Docs/WaveMetrics, then in Applications/Igor Pro
+Function BrowseHelpFile(urlStr)
+	// search order: User/Docs/WaveMetrics/LocalPackages/doc, User/Docs/WaveMetrics/LaueGo/doc, Applications/Igor Pro/LaueGo/doc
 	String urlStr
 
 	if (!StringMatch(urlStr,"http:*") && !StringMatch(urlStr,"file:*")) // not a complete url
 		// assume that urlStr is just a file name in doc's folder
-		String LaueGoDocFolder = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"
-		GetFileFolderInfo/Q/Z=1 LaueGoDocFolder
-		if (!V_isFolder)
-			LaueGoDocFolder = SpecialDirPath("Igor Application",1,0,0)+"User Procedures:LaueGo:doc:"
-			GetFileFolderInfo/Q/Z=1 LaueGoDocFolder
-			if (!V_isFolder)
-				return 1
+		String filePath = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LocalPackages:doc:"+urlStr
+		GetFileFolderInfo/Q/Z=1 filePath
+		if (!V_isFile)								// not in LocalPackages/doc, try Users/LaueGo/doc
+			filePath = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LaueGo:doc:"+urlStr
+			GetFileFolderInfo/Q/Z=1 filePath
+			if (!V_isFile)							// not in Users/LaueGo, try Apps/Igor Pro/LaueGo/doc
+				filePath = SpecialDirPath("Igor Application",1,0,0)+"User Procedures:LaueGo:doc:"+urlStr
+				GetFileFolderInfo/Q/Z=1 filePath
+				if (!V_isFile)						// give up, cannot find file
+					return 1
+				endif
 			endif
 		endif
-		LaueGoDocFolder = ParseFilePath(5,LaueGoDocFolder,"/",0,0)	// convert from Mac to POSIX
-		urlStr = "file://"+LaueGoDocFolder+urlStr							// complete the URL
+		filePath = ParseFilePath(5,filePath,"/",0,0)	// convert from Mac to POSIX
+		urlStr = "file://"+filePath							// complete the URL
 	endif
 	BrowseURL/Z urlStr
 	if (V_flag)
