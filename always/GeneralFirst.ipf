@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.16
+#pragma version = 3.17
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.51
@@ -154,69 +154,16 @@ End
 
 Menu "Help"
 	"-"
-	"LaueGo Version Info", /Q, print LaueGoVersion(1)
-	"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+	SubMenu "LaueGo"
+		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
+		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
+		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+	End
 End
 
-Function/T LaueGoVersion(nice)		// returns info from the VersionStatus.xml file
-	Variable nice
 
-	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#LaueGoVersion"),":",1,1)+"VersionStatus.xml"
-	String out="", buf=PadString("",1000,0x20)			// buf set to 1000 chars, only read first 1000
-	Variable f
-	Open/R/Z=1 f as VersionStatusPath	// read top of VersionStatus.xml
-	if (V_flag)
-		if (nice)
-			printf "ERROR -- Could not find \"%s\"\r",VersionStatusPath
-		endif
-		return ""
-	endif
-	FBinRead f, buf
-	Close f
-
-	// extract date & time info from buf
-	Variable i=strsearch(buf,"<written ",0,2)
-	if (i<0)
-		return ""
-	endif
-	buf = buf[i+9,Inf]
-	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
-	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
-	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
-
-	// extract fileCount from buf
-	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
-
-	if (nice)		// for printting to History
-		sprintf out, "\r  LaueGo -- Version Created:  %s,  %s,   %g files,  info from VersionStatus:\r    %s\r\r",dateStr,timeStr,fileCount,VersionStatusPath
-	else				// for use by other routines
-		out = ReplaceStringByKey("date",out,dateStr,"=")
-		out = ReplaceStringByKey("time",out,timeStr,"=")
-		out = ReplaceStringByKey("isoTime",out,isoStr,"=")
-		out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
-		out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
-	endif
-	return out
-End
-//
-Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of a string delimited by delim in buf
-	//	so, getDelimitedString("date=\"Monday, March 23, 2015\" "), returns "Monday, March 23, 2015"
-	//	or, getDelimitedString("date=_Monday, March 23, 2015_ ",delim="_"), returns "Monday, March 23, 2015"
-	// or, getDelimitedString("date=_Monday, March 23, 2015_ "), returns ""
-	String buf			// input string
-	String delim		// delimiter, defaults to double-quote
-	delim = SelectString(ParamIsDefault(delim),delim,"\"")
-	delim = SelectString(strlen(delim),"\"",delim)
-
-	Variable i0,i1
-	i0 = strsearch(buf,delim,0,2)
-	i1 = strsearch(buf,delim,i0+1,2)
-	if (i0<0 || i1<=i0 || strlen(buf)<=2)
-		return ""
-	endif
-	return buf[i0+1,i1-1]
-End
-
+//  ====================================================================================  //
+//  ========================== Start of Help & Version Info  ===========================  //
 
 // This is used to put up a help file (either http: or file:) using the user's web browser
 Function BrowseHelpFile(urlStr)
@@ -246,6 +193,130 @@ Function BrowseHelpFile(urlStr)
 		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
 	endif
 End
+
+
+Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
+	Variable alert			// also put up the alert dialog
+	String thisVers = ThisLaueGoVersion()
+	if (strlen(thisVers)<1)
+		String str
+		sprintf str, "ERROR -- Could not find VersionStatus.xml"
+		printf "\r  "+str+"\r"
+		DoAlert 0, str
+	endif
+	String dateStr, timeStr, out
+	Variable fileCount, thisEpoch, latestEpoch
+	dateStr = StringByKey("date",thisVers,"=")
+	timeStr = StringByKey("time",thisVers,"=")
+	fileCount = NumberByKey("fileCount",thisVers,"=")
+	thisEpoch = NumberByKey("epoch",thisVers,"=")
+
+	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
+	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
+	out = str
+
+	String latestVers = LaueGoLatestVersionInfo()
+	if (strlen(latestVers)<1)
+		print "\r  Unable to find most recent version info from Web"
+		out += "Unable to find most recent version info from Web"
+	else
+		latestEpoch = NumberByKey("epoch",latestVers,"=")
+		if (latestEpoch > (thisEpoch+2))
+			dateStr = StringByKey("date",latestVers,"=")
+			timeStr = StringByKey("time",latestVers,"=")
+			fileCount = NumberByKey("fileCount",latestVers,"=")
+			printf "The most recent version was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
+			sprintf str, "\rThe most recent version with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
+			out += str
+		else
+			str = "This is the most recent version."
+			print str
+			out += "\r"+str
+		endif
+	endif
+	print " "
+	if (alert)
+		DoAlert 0,out
+	endif
+End
+
+Static Function/T LaueGoLatestVersionInfo()	// get latest verion info from web site
+	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
+	String vs = FetchURL(VersionStatusURL)
+	if (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
+		return ""
+	endif
+	vs = VS2infoStr(vs)
+	vs = ReplaceStringByKey("VersionStatus",vs,"Web","=")
+	return vs
+End
+//
+Static Function/T ThisLaueGoVersion()		// returns info from the Users VersionStatus.xml file
+	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#ThisLaueGoVersion"),":",1,1)+"VersionStatus.xml"
+	String buf=PadString("",1000,0x20)	// buf set to 1000 chars, only read first 1000
+	Variable f
+	Open/R/Z=1 f as VersionStatusPath	// read top of VersionStatus.xml
+	if (V_flag)
+		return ""
+	endif
+	FBinRead f, buf
+	Close f
+
+	String out = VS2infoStr(buf)
+	out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
+	return out
+End
+//
+Static Function/T VS2infoStr(buf)		// convert top part of VersionStatus.xml to a key=value string
+	String buf
+
+	// extract date & time info from buf
+	Variable i=strsearch(buf,"<written ",0,2)
+	if (i<0)
+		return ""
+	endif
+	buf = buf[i+9,Inf]
+	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
+	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
+	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
+
+	// extract fileCount from buf
+	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
+
+	String out=""
+	out = ReplaceStringByKey("date",out,dateStr,"=")
+	out = ReplaceStringByKey("time",out,timeStr,"=")
+	out = ReplaceStringByKey("isoTime",out,isoStr,"=")
+
+	Variable epoch = ISOtime2IgorEpoch(isoStr)
+	if (numtype(epoch)==0 && epoch>0)
+		out = ReplaceNumberByKey("epoch",out,epoch,"=")
+	endif
+	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
+	return out
+End
+//
+Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of a string delimited by delim in buf
+	//	so, getDelimitedString("date=\"Monday, March 23, 2015\" "), returns "Monday, March 23, 2015"
+	//	or, getDelimitedString("date=_Monday, March 23, 2015_ ",delim="_"), returns "Monday, March 23, 2015"
+	// or, getDelimitedString("date=_Monday, March 23, 2015_ "), returns ""
+	String buf			// input string
+	String delim		// delimiter, defaults to double-quote
+	delim = SelectString(ParamIsDefault(delim),delim,"\"")
+	delim = SelectString(strlen(delim),"\"",delim)
+
+	Variable i0,i1
+	i0 = strsearch(buf,delim,0,2)
+	i1 = strsearch(buf,delim,i0+1,2)
+	if (i0<0 || i1<=i0 || strlen(buf)<=2)
+		return ""
+	endif
+	return buf[i0+1,i1-1]
+End
+
+//  =========================== End of Help & Version Info  ============================  //
+//  ====================================================================================  //
+
 
 
 //  ====================================================================================  //

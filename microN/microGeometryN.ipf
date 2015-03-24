@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.79
+#pragma version = 1.80
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -48,7 +48,6 @@ Menu "Help"
 			"GeometryN tag file", /Q, BrowseHelpFile("geoN_tag.html")
 			"Real Old Geometry tag file", /Q, BrowseHelpFile("geo_tag OLD.html")
 		End
-		"LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 	End
 End
 
@@ -1137,33 +1136,20 @@ Function GeometryUpdateCalc(g)	// update all internally calculated things in the
 	STRUCT microGeometry &g
 
 	Init_microGeo()
-
-	Variable Rx, Ry, Rz								// used to make the rotation matrix rho from vector R
-	Variable theta, c, s, c1
-	if (g.Ndetectors>MAX_Ndetectors)
-		String str
-		sprintf str, "ERROR, g.Ndetectors is %d, which is bigger than max value of %d. Reducing it",g.Ndetectors,MAX_Ndetectors
-		DoAlert 0, str
-		printf "\r%s\r",str
-		g.Ndetectors = MAX_Ndetectors
-	endif
-
-	SampleUpdateCalc(g.s)							// update all internally calculated things in the sample structure
-
 	Variable i, N=0
-	for (i=0;i<MAX_Ndetectors;i+=1)
+	for (i=0;i<MAX_Ndetectors;i+=1)				// recalculate g.Ndetectors
 		if (g.d[i].used)
 			DetectorUpdateCalc(g.d[i])			// update all internally calculated things in the detector structures
 			N += 1
 		endif
 	endfor
 	g.Ndetectors = N
-
 	if (Exists("root:Packages:geometry:xymap")==1)
 		Wave xymap=root:Packages:geometry:xymap
 		resetCenterDistortionMap(xymap,(g.d[0].Nx)/2,(g.d[0].Ny)/2)	// update distortion map so that correction at (xc,yc) goes to zero
 	endif
 
+	SampleUpdateCalc(g.s)							// update all internally calculated things in the sample structure
 	WireUpdateCalc(g.wire)							// update all internally calculated things in the wire structure
 End
 //
@@ -1551,7 +1537,7 @@ Static Function/T NewGeoFileName(g)
 	STRUCT microGeometry &g
 	Variable month,day,year,hour,minute,second,TZ, i, epoch=-1		// not using time zone
 	String smonth
-	for (i=0;i<g.Ndetectors;i+=1)
+	for (i=0;i<MAX_Ndetectors;i+=1)
 		if (g.d[i].used)
 			// g.d[i].timeMeasured looks like:   "Thu, Jul 28, 2011, 16:17:44 (-5)"
 			sscanf g.d[i].timeMeasured, "%3s, %3s %d, %d, %02d:%02d:%02d (%g)",smonth,smonth,day,year,hour,minute,second,TZ
@@ -1694,10 +1680,9 @@ Static Function GeoFromKeyValueList(list,g)
 
 	Variable N = NumberByKey("Ndetectors",list,"=")
 	N = N>0 ? round(N) : 0
-	if (N<0  || N>3)
+	if (N<0  || N>MAX_Ndetectors)
 		return 1
 	endif
-	g.Ndetectors = N
 
 	Variable i, value, xx,yy,zz
 	sscanf StringByKey("SampleOrigin",list,"="),"{%g,%g,%g}",xx,yy,zz
@@ -1713,6 +1698,7 @@ Static Function GeoFromKeyValueList(list,g)
 		g.s.R[0] = 0;		g.s.R[1] = 0;		g.s.R[2] = 0
 	endif
 
+	g.Ndetectors = 0
 	String pre, str
 	for (i=0;i<MAX_Ndetectors;i+=1)
 		sprintf pre,"d%d_",i
@@ -1720,6 +1706,7 @@ Static Function GeoFromKeyValueList(list,g)
 		if (!(g.d[i].used))
 			continue
 		endif
+		g.Ndetectors += 1
 		value = NumberByKey(pre+"Nx",list,"=");			g.d[i].Nx = numtype(value) ? g.d[i].Nx : value
 		value = NumberByKey(pre+"Ny",list,"=");			g.d[i].Ny = numtype(value) ? g.d[i].Ny : value
 		value = NumberByKey(pre+"sizeX",list,"=");		g.d[i].sizeX = numtype(value) ? g.d[i].sizeX : value*1e3 // file uses mm, I need µm
@@ -2005,7 +1992,7 @@ Static Function GeoFromXML(buf,g)
 		DoAlert 0,str
 		return 1
 	endif
-	g.Ndetectors = Ndetectors
+	g.Ndetectors = 0
 	Variable i
 	for(i=0;i<MAX_Ndetectors;i+=1)
 		g.d[i].used = 0
@@ -2061,7 +2048,7 @@ Static Function GeoFromXML(buf,g)
 			continue
 		endif
 		detector = XMLtagContents("Detector",buf,occurance=i)
-
+		g.Ndetectors += 1
 		g.d[N].used = 1
 		g.d[N].timeMeasured = XMLtagContents("timeMeasured",detector)
 		g.d[N].geoNote = XMLtagContents("note",detector)
@@ -2906,7 +2893,7 @@ Function PanelHwireMake() : Panel
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
 	Variable dnum, py = g.d[dnum].Ny/2
-	for (dnum=0;dnum<g.Ndetectors && !(g.d[dnum].used);dnum+=1)
+	for (dnum=0; dnum<MAX_Ndetectors && !(g.d[dnum].used); dnum+=1)
 	endfor
 	NewPanel /W=(128,166,438,253)/K=1/N=PanelWireH as "H wire calculator"
 	PopupMenu detectorNum,pos={10,4},size={71,20},proc=microGeo#PanelH_PopMenuProc
@@ -3779,8 +3766,15 @@ Static Function GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
 	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
 	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
 	g.d[iDetector].used = cba.checked
+
+	g.Ndetectors = 0										// re-calculate the number of detectors used
+	Variable i
+	for (i=0;i<MAX_Ndetectors;i+=1)
+		g.Ndetectors += !(!(g.d[i].used))
+	endfor
 	StructPut/S/B=2 g, geoPanelStructStr			// convert updated g back to a string, and put string into geoPanelStructStr
 
+	UpDatePanelValuesFromStruct(cba.win,iDetector)
 	GeoPanelDetectorDisable(cba.win)
 	GeoPanelDirtyUpdate(cba.win,1)					// set dirty = 1
 	return 0
@@ -4352,7 +4346,7 @@ Static Function putGeo2EPICS(gIn)	// put the geometry structure to EPICS (uses c
 		return 1
 	endif
 	Variable i
-	for (i=0;i<g.Ndetectors && !(g.d[i].used);i+=1)
+	for (i=0;i<MAX_Ndetectors && !(g.d[i].used);i+=1)
 	endfor
 	if (i>=g.Ndetectors)
 		DoAlert 0,"No detectors defined"
