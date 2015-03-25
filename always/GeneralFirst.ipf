@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.17
+#pragma version = 3.18
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=3.51
+#include "Utility_JZT", version>=3.58
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
@@ -240,7 +240,7 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 	endif
 End
 
-Static Function/T LaueGoLatestVersionInfo()	// get latest verion info from web site
+Static Function/T LaueGoLatestVersionInfo()// get latest verion info from web site
 	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
 	String vs = FetchURL(VersionStatusURL)
 	if (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
@@ -251,24 +251,24 @@ Static Function/T LaueGoLatestVersionInfo()	// get latest verion info from web s
 	return vs
 End
 //
-Static Function/T ThisLaueGoVersion()		// returns info from the Users VersionStatus.xml file
+Static Function/T ThisLaueGoVersion()			// returns info from the Users VersionStatus.xml file
 	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#ThisLaueGoVersion"),":",1,1)+"VersionStatus.xml"
-	String buf=PadString("",1000,0x20)	// buf set to 1000 chars, only read first 1000
 	Variable f
-	Open/R/Z=1 f as VersionStatusPath	// read top of VersionStatus.xml
+	Open/R/Z=1 f as VersionStatusPath			// read top of VersionStatus.xml
 	if (V_flag)
 		return ""
 	endif
+	FStatus f
+	String buf=PadString("",V_logEOF,0x20)	// buf set to full size of file
 	FBinRead f, buf
 	Close f
-
 	String out = VS2infoStr(buf)
 	out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
 	return out
 End
 //
 Static Function/T VS2infoStr(buf)		// convert top part of VersionStatus.xml to a key=value string
-	String buf
+	String buf									// input xml
 
 	// extract date & time info from buf
 	Variable i=strsearch(buf,"<written ",0,2)
