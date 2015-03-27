@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.06
+#pragma version = 0.07
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
@@ -52,7 +52,7 @@ Function LaueGo_Install()
 
 	// identify the new LaueGo folder
 	DoAlert/T="find NEW LaueGo" 2, "Download newest version from web?"
-	String newFullPath="", name
+	String newFullPath=""							// full path to the expanded archive to install, i.e. the new LaueGo folder
 	if (V_flag==1)										// download LaueGo.zip, expand it, and put it on Desktop
 		newFullPath = FetchLaueGoArchive("")
 	else													// ask user to identify and existing (presumably new) LaueGo folder to use
@@ -70,7 +70,7 @@ Function LaueGo_Install()
 		return 1
 	endif
 
-	name = ParseFilePath(0,newFullPath,":",1,0)
+	String name = ParseFilePath(0,newFullPath,":",1,0)
 	if (!StringMatch(name,"LaueGo"))
 		sprintf str, "The new folder is named \"%s\", it must be named \"LaueGo\".  Rename the folderor try again",name
 		DoAlert 0, str
@@ -178,80 +178,7 @@ Function LaueGo_Install()
 		endif
 	endif
 End
-//
-Static Function Append2Log(line,header)
-	String line
-	Variable header		// flag to print header
 
-	print line
-	String name = StrVarOrDefault("LogFileName",SpecialDirPath("Desktop",0,0,0)+"LaueGoInstallLog.txt")
-	Variable f
-	if (!FileFolderExists(name,file=1))
-		Open/D=1/M="Log file for install"/T=".txt" f as name
-		name = S_fileName
-	endif
-	Open/A/M="Log file for install"/T=".txt" f as name
-
-	if (strlen(S_fileName)<1)
-		return 1
-	endif
-	String/G LogFileName = S_fileName
-
-	FStatus f
-	if (V_logEOF<2 || header)			// print a header
-		String str, head=SelectString(V_logEOF>2,"","\r\r\r\r")
-		head += "********************************************************************************\r"
-		head += "********************************************************************************\r"
-		sprintf str,"            Starting LaueGo Install   %s, %s\r\r",Secs2Date(DateTime,1), Secs2Time(DateTime,1)
-		head += str
-		sprintf str, "  Logging everything in history window to:\r\t\t\"%s\"\r",LogFileName
-		head += str
-		fprintf f,head
-		print head
-	endif
-
-	fprintf f, line+"\r"
-	Close f
-	return 0
-End
-
-Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new experiment
-	Variable empty = 1
-	empty = empty && StringMatch(IgorInfo(1),"Untitled")
-	empty = empty && ItemsInList(FunctionList("*",";","WIN:Procedure"))<1
-	empty = empty && ItemsInList(MacroList("*",";","WIN:Procedure"))<1
-
-	String dirList = DataFolderDir(-1,$"root:")
-	String Variables = StringByKey("VARIABLES",dirList)
-	Variables = RemoveFromList("Gizmo_Error",Variables,",")
-	String Strings = StringByKey("STRINGS",dirList)
-	Strings = RemoveFromList("LogFileName",Strings,",")
-	String Waves= StringByKey("WAVES",dirList)
-	String Folders= StringByKey("FOLDERS",dirList)
-	empty = empty && strlen(StringByKey("FOLDERS",dirList))<1
-	empty = empty && strlen(StringByKey("WAVES",dirList))<1
-	empty = empty && strlen(Variables)<1		// no pre-existing variables
-	empty = empty && strlen(Strings)<1			// no pre-existing strings
-	empty = empty && strlen(Waves)<1			// no pre-existing waves
-	empty = empty && strlen(Folders)<1			// no pre-existing data folders
-
-	String wins=WinList("*",";","WIN:4304"), str=FunctionPath("LaueGo_Install")		// 4304 = 4096 + 128 + 64 + 16
-	str = ParseFilePath(0,str,":",1,0)
-	wins = RemoveFromList(str,wins)
-	wins = RemoveFromList("Procedure",wins)
-	empty = empty && ItemsInList(wins)<1		// no pre-existing windows
-
-	String MainProcedure = ProcedureText("",0,"Procedure")	// contents of main Procedure window
-	Variable i=-1, returns=-1
-	do
-		i = strsearch(MainProcedure,"\r",i+1)
-		returns += 1
-	while(i>=0)
-	empty = empty && strsearch(MainProcedure,"#include",0)<0
-	empty = empty && returns<2
-
-	return empty
-End
 
 
 Static Function AddLocalPackagesFolder(UserPath)	// Create LocalPackages folder if needed, returns 0=success, 1=error
@@ -512,95 +439,6 @@ Static Function CopyAliases2IgorExtensionsLocal(source)
 	endif
 	return madeOne
 End
-//
-Static Function AliasAlreadyThere(source,destination)		// returns 1 if the alias already exists
-	String source
-	String destination
-	GetFileFolderInfo/Q/Z=1 destination
-	if (V_isAliasShortcut)
-		Variable i
-		i = char2num(source[strlen(source)-1])
-		source = SelectString(i==58, source, source[0,strlen(source)-2])
-		i = char2num(S_aliasPath[strlen(S_aliasPath)-1])
-		S_aliasPath = SelectString(i==58, S_aliasPath, S_aliasPath[0,strlen(S_aliasPath)-2])
-		return StringMatch(source,S_aliasPath)
-	endif
-	return 0
-End
-//
-Static Function/T FindFileInDirPath(start,name)		// returns full path searching from start
-	String start			// starting point of search, a full path where to start searching
-	String name				// name of file (or folder) to find
-
-	String FullPath=""
-	String pathName = UniqueName("fpath",12,0)
-	String extension = ParseFilePath(4,name,":",0,0)
-	extension = SelectString(strlen(extension),"",".") + extension
-	NewPath/Q/Z $pathName,start
-	if (V_flag)
-		KillPath/Z $pathName
-		return ""
-	endif
-
-	String list=IndexedFile($pathName,-1,extension), fldr
-	Variable i, N=ItemsInList(list)
-	for (i=0;i<N;i+=1)						// check all files at start
-		if (StringMatch(IndexedFile($pathName,i,extension), name))
-			KillPath/Z $pathName			// found it, all done
-			return start
-		endif
-	endfor
-
-	list = IndexedDir($pathName,-1,1)
-	KillPath/Z $pathName
-	N = ItemsInList(list)
-	for (i=0;i<N;i+=1)						// check in all folders at start
-		fldr = StringFromList(i,list)
-		if (StringMatch(ParseFilePath(0,fldr,":",1,0), name))
-			KillPath/Z $pathName			// found a match, done
-			FullPath = start
-			break
-		endif
-		if (StringMatch(ParseFilePath(4,fldr,":",0,0),"xop"))
-			continue								// don't look inside of xop's (on the Mac an xop is a folder)
-		endif
-		FullPath = FindFileInDirPath(fldr,name)	// search inside of this folder recursively
-		if (strlen(FullPath))				// found it in this folder, go back up the chain
-			break
-		endif
-	endfor
-	return FullPath
-End
-//
-Static Function FileFolderExists(name,[path,file,folder])	// returns 1=exists, 0=does not exist
-	String name					// partial or full file name or folder name
-	String path					// optional path name, e.g. "home"
-	Variable file,folder	// flags, if both set or both unset, it checks for either
-	path = SelectString(ParamIsDefault(path),path,"")
-	file = ParamIsDefault(file) ? 0 : file
-	file = numtype(file) ? 0 : !(!file)
-	folder = ParamIsDefault(folder) ? 0 : folder
-	folder = numtype(folder) ? 0 : !(!folder)
-
-	if (!file && !folder)	// check for either
-		file = 1
-		folder = 1
-	endif
-
-	if (strlen(path))
-		PathInfo $path
-		if (V_flag==0)
-			return 0
-		endif
-		name = S_path+name	// add the path to name
-	endif
-
-	GetFileFolderInfo/Q/Z=1 name
-	Variable found=0
-	found = found || (file ? V_isFile : 0)
-	found = found || (folder ? V_isFolder : 0)
-	return found
-End
 
 // ==================================== End of XOP Aliases ===================================== //
 // ============================================================================================= //
@@ -675,3 +513,182 @@ End
 
 // ================================= End of Help File Aliases ================================== //
 // ============================================================================================= //
+
+
+
+
+// ============================================================================================= //
+// ================================= Start of Helpful Utilities ================================ //
+
+Static Function Append2Log(line,header)
+	String line
+	Variable header		// flag to print header
+
+	print line
+	String name = StrVarOrDefault("LogFileName",SpecialDirPath("Desktop",0,0,0)+"LaueGoInstallLog.txt")
+	Variable f
+	if (!FileFolderExists(name,file=1))
+		Open/D=1/M="Log file for install"/T=".txt" f as name
+		name = S_fileName
+	endif
+	Open/A/M="Log file for install"/T=".txt" f as name
+
+	if (strlen(S_fileName)<1)
+		return 1
+	endif
+	String/G LogFileName = S_fileName
+
+	FStatus f
+	if (V_logEOF<2 || header)			// print a header
+		String str, head=SelectString(V_logEOF>2,"","\r\r\r\r")
+		head += "********************************************************************************\r"
+		head += "********************************************************************************\r"
+		sprintf str,"            Starting LaueGo Install   %s, %s\r\r",Secs2Date(DateTime,1), Secs2Time(DateTime,1)
+		head += str
+		sprintf str, "  Logging everything in history window to:\r\t\t\"%s\"\r",LogFileName
+		head += str
+		fprintf f,head
+		print head
+	endif
+
+	fprintf f, line+"\r"
+	Close f
+	return 0
+End
+
+
+Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new (empty) experiment
+	Variable empty = 1
+	empty = empty && StringMatch(IgorInfo(1),"Untitled")
+	empty = empty && ItemsInList(FunctionList("*",";","WIN:Procedure"))<1
+	empty = empty && ItemsInList(MacroList("*",";","WIN:Procedure"))<1
+
+	String dirList = DataFolderDir(-1,$"root:")
+	String Variables = StringByKey("VARIABLES",dirList)
+	Variables = RemoveFromList("Gizmo_Error",Variables,",")
+	String Strings = StringByKey("STRINGS",dirList)
+	Strings = RemoveFromList("LogFileName",Strings,",")
+	String Waves= StringByKey("WAVES",dirList)
+	String Folders= StringByKey("FOLDERS",dirList)
+	empty = empty && strlen(StringByKey("FOLDERS",dirList))<1
+	empty = empty && strlen(StringByKey("WAVES",dirList))<1
+	empty = empty && strlen(Variables)<1		// no pre-existing variables
+	empty = empty && strlen(Strings)<1			// no pre-existing strings
+	empty = empty && strlen(Waves)<1			// no pre-existing waves
+	empty = empty && strlen(Folders)<1			// no pre-existing data folders
+
+	String wins=WinList("*",";","WIN:4304"), str=FunctionPath("LaueGo_Install")		// 4304 = 4096 + 128 + 64 + 16
+	str = ParseFilePath(0,str,":",1,0)
+	wins = RemoveFromList(str,wins)
+	wins = RemoveFromList("Procedure",wins)
+	wins = RemoveFromList("Utility_JZT.ipf",wins)
+	empty = empty && ItemsInList(wins)<1		// no pre-existing windows
+
+	String MainProcedure = ProcedureText("",0,"Procedure")	// contents of main Procedure window
+	Variable i=-1, returns=-1
+	do
+		i = strsearch(MainProcedure,"\r",i+1)
+		returns += 1
+	while(i>=0)
+	empty = empty && strsearch(MainProcedure,"#include",0)<0
+	empty = empty && returns<2
+
+	return empty
+End
+
+
+Static Function AliasAlreadyThere(source,destination)
+	// returns 1 if source is an alias and it is in destination
+	String source				// original file, not an alias
+	String destination		// desired new alias (not just a folder)
+	GetFileFolderInfo/Q/Z=1 destination
+	if (V_isAliasShortcut)
+		Variable i
+		i = char2num(source[strlen(source)-1])
+		source = SelectString(i==58, source, source[0,strlen(source)-2])	// 58=":"
+		i = char2num(S_aliasPath[strlen(S_aliasPath)-1])
+		S_aliasPath = SelectString(i==58, S_aliasPath, S_aliasPath[0,strlen(S_aliasPath)-2])
+		return StringMatch(source,S_aliasPath)
+	endif
+	return 0
+End
+
+
+Static Function/T FindFileInDirPath(start,name)		// returns full path to name searching from start
+	String start			// starting point of search, a full path where to start searching
+	String name				// name of file (or folder) to find
+
+	String FullPath=""
+	String pathName = UniqueName("fpath",12,0)
+	String extension = ParseFilePath(4,name,":",0,0)
+	extension = SelectString(strlen(extension),"",".") + extension
+	NewPath/Q/Z $pathName,start
+	if (V_flag)
+		KillPath/Z $pathName
+		return ""
+	endif
+
+	String list=IndexedFile($pathName,-1,extension), fldr
+	Variable i, N=ItemsInList(list)
+	for (i=0;i<N;i+=1)						// check all files at start
+		if (StringMatch(IndexedFile($pathName,i,extension), name))
+			KillPath/Z $pathName			// found it, all done
+			return start
+		endif
+	endfor
+
+	list = IndexedDir($pathName,-1,1)
+	KillPath/Z $pathName
+	N = ItemsInList(list)
+	for (i=0;i<N;i+=1)						// check in all folders at start
+		fldr = StringFromList(i,list)
+		if (StringMatch(ParseFilePath(0,fldr,":",1,0), name))
+			KillPath/Z $pathName			// found a match, done
+			FullPath = start
+			break
+		endif
+		if (StringMatch(ParseFilePath(4,fldr,":",0,0),"xop"))
+			continue								// don't look inside of xop's (on the Mac an xop is a folder)
+		endif
+		FullPath = FindFileInDirPath(fldr,name)	// search inside of this folder recursively
+		if (strlen(FullPath))				// found it in this folder, go back up the chain
+			break
+		endif
+	endfor
+	return FullPath
+End
+
+
+Static Function FileFolderExists(name,[path,file,folder])	// returns 1=exists, 0=does not exist
+	String name					// partial or full file name or folder name
+	String path					// optional path name, e.g. "home"
+	Variable file,folder	// flags, if both set or both unset, it checks for either
+	path = SelectString(ParamIsDefault(path),path,"")
+	file = ParamIsDefault(file) ? 0 : file
+	file = numtype(file) ? 0 : !(!file)
+	folder = ParamIsDefault(folder) ? 0 : folder
+	folder = numtype(folder) ? 0 : !(!folder)
+
+	if (!file && !folder)	// check for either
+		file = 1
+		folder = 1
+	endif
+
+	if (strlen(path))
+		PathInfo $path
+		if (V_flag==0)
+			return 0
+		endif
+		name = S_path+name	// add the path to name
+	endif
+
+	GetFileFolderInfo/Q/Z=1 name
+	Variable found=0
+	found = found || (file ? V_isFile : 0)
+	found = found || (folder ? V_isFolder : 0)
+	return found
+End
+
+// ================================== End of Helpful Utilities ================================= //
+// ============================================================================================= //
+
