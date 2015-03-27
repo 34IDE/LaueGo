@@ -91,6 +91,7 @@ def WriteVersionStatus(FolderPath,actualFiles,now):
 	count = len(actualFiles)
 	if count<1: return 1
 
+	gitHash = gitLastHash(FolderPath)		# get git hash of last git commit
 	strDate = time.strftime('%A, %B %d, %Y',now)
 	strTime = time.strftime('%I:%M:%S %p %Z',now)
 	strIso = time.strftime(isoFmt,now)
@@ -98,6 +99,8 @@ def WriteVersionStatus(FolderPath,actualFiles,now):
 	out += '<VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">\n'
 	out += '\t<written date="'+strDate+'" time="'+strTime+'" isoTime="'+strIso+'"></written>\n'
 	out += '\t<sourceFolder>'+FolderPath+'</sourceFolder>\n'
+	if len(gitHash):
+		out += '\t<gitHash>'+gitHash+'</gitHash>\n'
 	out += '\t<fileCount>'+str(count)+'</fileCount>\n'
 	for fName in actualFiles:
 		try:
@@ -181,6 +184,22 @@ def getFolderPath():
 	if FolderPath.find('/Old VersionStatus')>0: FolderPath = FolderPath + '/..'
 	FolderPath = os.path.abspath(FolderPath)			# path to "Igor Shared Procedures"
 	return FolderPath
+
+
+def gitLastHash(path):
+	""" return git hash of current version """
+
+	try:
+		if len(path):	cmd = ' cd "'+path+'" ; '
+		else:			cmd = ''
+
+		cmd += 'git log --pretty=format:"%H" -1'	# %H is long hash, %h is short
+	 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, )
+	 	stdout_value, stderr_value = proc.communicate('through stdin to stdout')
+	 	if len(stderr_value)>0: raise
+		return stdout_value
+	except:
+		return ''
 
 
 now = time.localtime()
