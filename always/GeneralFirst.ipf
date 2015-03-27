@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.18
+#pragma version = 3.19
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.58
@@ -204,35 +204,40 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 		printf "\r  "+str+"\r"
 		DoAlert 0, str
 	endif
-	String dateStr, timeStr, out
+	String dateStr, timeStr, out, thisHash, latestVers, latestHash
 	Variable fileCount, thisEpoch, latestEpoch
 	dateStr = StringByKey("date",thisVers,"=")
 	timeStr = StringByKey("time",thisVers,"=")
 	fileCount = NumberByKey("fileCount",thisVers,"=")
 	thisEpoch = NumberByKey("epoch",thisVers,"=")
+	thisHash = StringByKey("gitHash",thisVers,"=")
 
-	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
+	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files,  commit %s\r",dateStr,timeStr,fileCount,thisHash[0,6]
 	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
 	out = str
 
-	String latestVers = LaueGoLatestVersionInfo()
+	latestVers = LaueGoLatestVersionInfo()
+	latestEpoch = NumberByKey("epoch",latestVers,"=")
+	latestHash = StringByKey("gitHash",latestVers,"=")
+
 	if (strlen(latestVers)<1)
 		print "\r  Unable to find most recent version info from Web"
-		out += "Unable to find most recent version info from Web"
-	else
-		latestEpoch = NumberByKey("epoch",latestVers,"=")
-		if (latestEpoch > (thisEpoch+2))
-			dateStr = StringByKey("date",latestVers,"=")
-			timeStr = StringByKey("time",latestVers,"=")
-			fileCount = NumberByKey("fileCount",latestVers,"=")
-			printf "The most recent version was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
-			sprintf str, "\rThe most recent version with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
-			out += str
-		else
-			str = "This is the most recent version."
+		out += "\r  Unable to find most recent version info from Web"
+	elseif (StringMatch(thisHash,latestHash))
+			str = "  an exact match to the most recent version."
 			print str
 			out += "\r"+str
-		endif
+	elseif (abs(latestEpoch-thisEpoch) <= 1)
+			str = "The hashes do not match, but the most recent version has the same date & time."
+			print str
+			out += "\r"+str
+	else
+		dateStr = StringByKey("date",latestVers,"=")
+		timeStr = StringByKey("time",latestVers,"=")
+		fileCount = NumberByKey("fileCount",latestVers,"=")
+		printf "The most recent version was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
+		sprintf str, "\rThe most recent version with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
+		out += str
 	endif
 	print " "
 	if (alert)
@@ -279,20 +284,27 @@ Static Function/T VS2infoStr(buf)		// convert top part of VersionStatus.xml to a
 	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
 	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
 	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
+	Variable epoch = ISOtime2IgorEpoch(isoStr)
 
 	// extract fileCount from buf
 	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
+
+	i = strsearch(buf,"<gitHash>",0,2)	// extract gitHash from top of xml
+	String gitHash = buf[i+9,i+200]
+	i = strsearch(gitHash,"<",0,2)
+	gitHash = gitHash[0,i-1]
 
 	String out=""
 	out = ReplaceStringByKey("date",out,dateStr,"=")
 	out = ReplaceStringByKey("time",out,timeStr,"=")
 	out = ReplaceStringByKey("isoTime",out,isoStr,"=")
-
-	Variable epoch = ISOtime2IgorEpoch(isoStr)
+	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
 	if (numtype(epoch)==0 && epoch>0)
 		out = ReplaceNumberByKey("epoch",out,epoch,"=")
 	endif
-	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
+	if (strlen(gitHash))
+		out = ReplaceStringByKey("gitHash",out,gitHash,"=")
+	endif
 	return out
 End
 //

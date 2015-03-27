@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, March 27, 2015" time="02:05:05 PM CDT" isoTime="2015-03-27T14:05:05"></written>
+	<written date="Friday, March 27, 2015" time="02:46:22 PM CDT" isoTime="2015-03-27T14:46:22"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>2ecb0b2461c0952052ec9aa1ac4ef0df65f7e99c</gitHash>
+	<gitHash>2bb30083bc9a6f1f4812821cc7e82b782c98e144</gitHash>
 	<fileCount>265</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
@@ -117,7 +117,7 @@
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" ext=".ipf">micro/monoCalibrate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4db7d860a567fcf9047e74ffb6bdaacc" ext=".xml">geometrys/geoN_2012-06-13_17-40-22.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" ext=".png">doc/microDiffractionMedia/Picture7.png</file>
-	<file version="3.18" time="2015-03-25T10:52:38" md5="0109e0a5450b31f4aef2b97798093e8a" ext=".ipf">always/GeneralFirst.ipf</file>
+	<file version="3.19" time="2015-03-27T14:45:34" md5="caf9e0b8d540fff9b867d3c7a422b906" ext=".ipf">always/GeneralFirst.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="6bcac22bfb97414500a8cee93c81ca52" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2014-10-30T13:10:27" md5="f7fc043b1fccd1bc57a8c85bd7119a48" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2014-10-30T13:09:24" md5="859a758545e47d314c72723c59a5eaec" ext=".mtl">materials/BePS-200.mtl</file>
