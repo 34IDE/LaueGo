@@ -14,7 +14,7 @@ import hashlib
 
 isoFmt = '%Y-%m-%dT%H:%M:%S'
 VersionXmlName = 'VersionStatus.xml'
-archiveExtensions = set(['.ipf', '.txt', '.py' , '.xml', '.app', '.exe', '', '.html', '.ifn', 'ihf', '.png', '.mtl', '.hlp', '.rtf'])	# the '' is only for executables
+archiveExtensions = set(['.ipf', '.txt', '.py' , '.xml', '.app', '.exe', '', '.html', '.ifn', '.ihf', '.png', '.mtl', '.hlp', '.rtf'])	# the '' is only for executables
 
 def MakeVersionStatusDict(FolderPath):
 	""" Create a dict containing version status of all ipf, txt, py, xml, etc. files """
