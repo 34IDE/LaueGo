@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.19
+#pragma version = 3.20
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.58
@@ -222,7 +222,7 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 
 	if (strlen(latestVers)<1)
 		print "\r  Unable to find most recent version info from Web"
-		out += "\r  Unable to find most recent version info from Web"
+		out += "\r  Unable to find most recent version info from Web,\r  check your network connection."
 	elseif (StringMatch(thisHash,latestHash))
 			str = "  an exact match to the most recent version."
 			print str
@@ -248,7 +248,13 @@ End
 Static Function/T LaueGoLatestVersionInfo()// get latest verion info from web site
 	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
 	String vs = FetchURL(VersionStatusURL)
-	if (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
+	if (GetRTError(0))
+		print "***",GetRTErrMessage(), "  Check your network connection."
+		Variable err = GetRTError(1)		// clears the error
+	endif
+	if (!(strlen(vs)>0))
+		return ""
+	elseif (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
 		return ""
 	endif
 	vs = VS2infoStr(vs)

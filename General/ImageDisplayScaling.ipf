@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.99
+#pragma version = 2.00
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -534,6 +534,18 @@ Function/S NewImageGraph(image,withButtons)
 		if (withButtons && !NOButtons)
 			String command
 			Button boxes,pos={0,25},size={60,21},proc=ButtonBoxesProc,title="±boxes"
+			FUNCREF detectorID2colorProto  func  = $"detectorID2color"
+			strswitch(func(StringByKey("detectorID",note(image),"=")))
+				case "Orange":
+					Button boxes fColor=(35723,17733,0)		// color the button Orange
+					break
+				case "Yellow":
+					Button boxes fColor=(50000,50000,0)		// color the button Yellow
+					break
+				case "Purple":
+					Button boxes fColor=(65535,30000,65535)	// color the button Purple
+					break
+			endswitch
 			SetWindow kwTopWin,userdata(boxes)=  "boxesOn=0;"
 		endif
 		if (exists("getFittedPeakInfoHook")==6)
@@ -543,6 +555,11 @@ Function/S NewImageGraph(image,withButtons)
 		SetAspectToSquarePixels("")
 	endif
 	return GetWavesDataFolder(image,2)
+End
+//
+Function/T detectorID2colorProto(id)
+	String id
+	return ""
 End
 
 
