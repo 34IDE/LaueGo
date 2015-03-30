@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.80
+#pragma version = 1.81
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -106,20 +106,29 @@ Function MakeMicroPanel(tab)							// makes the main microPanel
 			endif
 		endif
 	else
-//		NewPanel /W=(672,60,991,695)/K=1/N=microPanel
-//		TabControl tabMicroA,pos={0,0},size={317,18},proc=microGeo#microGeneralTabProc
 		NewPanel /W=(672,60,966,696)/K=1/N=microPanel as "LaueGo"
+
+		SetDrawLayer UserBack
+		SetDrawEnv fsize= 14
+		DrawText 4,60,"Help"
+		PopupMenu popupHelp,pos={4,56},size={34,20},proc=microGeo#HelpPopMenuProc,title="?"
+		PopupMenu popupHelp,help={"Show section of LaueGo Help"}
+		PopupMenu popupHelp,mode=0,value= #"\"LaueGo;Modifier Keys;Fitting;Indexing;Tables;Strain Refine\""
+		PopupMenu popupHelp,mode=0,value= #"\"LaueGo;Crystal;Geometry;Index a Pattern;  Fitting;  Indexing;  Tables;  Strain Refine;  Modifier Keys;Energy Scans;Details;Simulation;Calibration;Old\""
+
 		TabControl tabMicroA,pos={-10,0},size={305,18},proc=microGeo#microGeneralTabProc
 		TabControl tabMicroA,help={"The main micro-beam functions"},userdata(tabNum)="3"
 		TabControl tabMicroA,tabLabel(0)="Index",tabLabel(1)="E scans"
 		TabControl tabMicroA,tabLabel(2)="3D-arrays",tabLabel(3)="Geo"
 		TabControl tabMicroA,tabLabel(4)="Xtal"
-
-//		TabControl tabMicroB,pos={0,20},size={317,18},proc=microGeo#microGeneralTabProc
+		
 		TabControl tabMicroB,pos={-10,20},size={305,18},proc=microGeo#microGeneralTabProc
 		TabControl tabMicroB,help={"The main micro-beam functions"},userdata(tabNum)="-1"
 		TabControl tabMicroB,tabLabel(0)="Details",tabLabel(1)="Laue Sim."
-		TabControl tabMicroB,tabLabel(2)="Calibration",tabLabel(3)="Help"
+		TabControl tabMicroB,tabLabel(2)="Calibration"
+#ifdef useHelpTab
+		TabControl tabMicroB,tabLabel(3)="Help"
+#endif
 		SetWindow microPanel,userdata(bottom)=num2str(18+20)
 
 		MoveWindowToCorner("microPanel","tr")			// re-position to the top right corner
@@ -146,10 +155,12 @@ Static Function microGeneralTabProc(tca) : TabControl		// changes the panel for 
 	endswitch
 
 	ControlInfo/W=$(tca.win) $(tca.ctrlName)
+#ifdef useHelpTab
 	if (stringmatch(S_Value,"Help"))
 		DisplayHelpTopic/K=1  "LaueGo"
 		return 0
 	endif
+#endif
 	if (NumberByKey("tabNum",GetUserData(tca.win,tca.ctrlName,"tabNum"),"=")==tab)
 		return 0
 	endif
@@ -189,6 +200,42 @@ Static Function microGeneralTabProc(tca) : TabControl		// changes the panel for 
 	TabControl $tca.ctrlName, win=$tca.win,userdata(panelName)=win
 	SetActiveSubwindow microPanel
 	return 0
+End
+//
+Static Function HelpPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
+	String ctrlName
+	Variable popNum
+	String popStr
+
+	if (stringmatch(popStr,"Crystal"))
+		DisplayHelpTopic/K=1/Z "Crystal Structure"
+	elseif (stringmatch(popStr,"Geometry"))
+		DisplayHelpTopic/K=1/Z "Crystal Structure"
+	elseif (stringmatch(popStr,"Index a Pattern"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern"
+	elseif (stringmatch(popStr,"  Fitting"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Peak Fitting]"
+	elseif (stringmatch(popStr,"  Indexing"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Indexing]"
+	elseif (stringmatch(popStr,"  Tables"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Display Tables...]"
+	elseif (stringmatch(popStr,"  Strain Refine"))
+		DisplayHelpTopic/K=1/Z "Strain Refinement"
+	elseif (stringmatch(popStr,"  Modifier Keys"))
+		DisplayHelpTopic/K=1/Z "Index a Laue Pattern[Mousing around]"
+	elseif (stringmatch(popStr,"Energy Scans"))
+		DisplayHelpTopic/K=1/Z "Energy Scans"
+	elseif (stringmatch(popStr,"Details"))
+		DisplayHelpTopic/K=1/Z "Details tab"
+	elseif (stringmatch(popStr,"Simulation"))
+		DisplayHelpTopic/K=1/Z "Laue Simulation"
+	elseif (stringmatch(popStr,"Calibration"))
+		DisplayHelpTopic/K=1/Z "Calibration"
+	elseif (stringmatch(popStr,"Old"))
+		DisplayHelpTopic/K=1/Z "OLD Geometry"
+	else
+		DisplayHelpTopic/K=1/Z "LaueGo"
+	endif
 End
 //
 Static Function microPanelHook(s)
