@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.63
+#pragma version = 4.64
 #include "LatticeSym", version>=4.29
 #include "microGeometryN", version>=1.75
 #include "Masking", version>1.02
@@ -7864,6 +7864,13 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 	Variable withButtons
 	withButtons = ParamIsDefault(withButtons) ? NaN : withButtons
 	withButtons = numtype(withButtons) ? 1 : !(!withButtons)
+
+	String win=StringFromList(0,FindGraphsWithWave(image))
+	if (strlen(win))
+		DoWindow/F $win
+		return GetWavesDataFolder(image,2)
+	endif
+
 	String result = NewImageGraph(image,withButtons)
 	Wave image = $result
 	if (!WaveExists(image))
