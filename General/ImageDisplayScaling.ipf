@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -748,7 +748,7 @@ Proc Graph_ImageStyle() : GraphStyle
 	GraphImageStyle()
 EndMacro
 //
-OverRide Function GraphImageStyle()
+Function GraphImageStyle()
 	DoUpdate
 	String wName = StringFromList(0,ImageNameList("",";"))
 	Wave image = ImageNameToWaveRef("",wName)

@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma ModuleName=WinViewProc
 #include "ImageDisplayScaling", version>=1.98
 //
@@ -118,6 +118,9 @@
 //
 //	version 2.03(changed Jun 20, 2014)
 //		added optional extras argument to WinViewReadHeader()
+//
+//	version 2.04(changed Apr 2, 2015)
+//		use the GraphImageStyle() in ImageDisplayScaling.ipf, remove GraphImageStyle() from this file
 
 StrConstant IMAGE_FILE_EXT = ".SPE"
 
@@ -259,44 +262,46 @@ Static Strconstant ksControllerTypes="new120 (TYPE II);old120 (TYPE I);ST130;ST1
 
 
 
-Proc GraphImageStyle() : GraphStyle
-	PauseUpdate; Silent 1		// modifying window...
-	String wName = StringFromList(0,WaveList("*",";","DIMS:2,WIN:"))
-	if (strlen(wName)<1)
-		Abort "Unable to find image on top graph"
-	endif
-	ModifyGraph/Z width={Aspect,DimSize($wName,0)/DimSize($wName,1)}
-	ModifyGraph/Z grid=1, tick=2, mirror=1, minor=1, gridStyle=1
-	ModifyGraph/Z lowTrip=0.001, standoff=0, axOffset(bottom)=-1
-	ModifyGraph grid=1,gridRGB=(45000,45000,65535)
-	ControlInfo  button0
-	if (stringmatch(IgorInfo(2),"Macintosh" ))
-		ModifyGraph axOffset(left)=(V_flag==1) ? 0.9 : -1.1 		// mac
-	else
-		ModifyGraph axOffset(left)=(V_flag==1) ? -1.7 : -2.1 		// pc
-	endif
-	Variable/C lohi = getZrange($wName,5)
-	Variable lo = real(lohi), hi = imag(lohi)
-	if (!(WaveType($wName) & 0x40))
-		lo = abs(lo)
-		hi = abs(hi)
-		hi = max(lo,hi)
-		lo = -hi
-		ModifyImage $wName ctab= {lo,hi,RedWhiteBlue,0}
-	else
-		ModifyImage $wName ctab= {real(lohi),imag(lohi),Terrain,1}
-	endif
-
-//	ModifyImage $wName ctab= {real(lohi),imag(lohi),Terrain,1}
-//	ModifyImage $wName ctab= {real(lohi),imag(lohi),PlanetEarth,1}
+// use the GraphImageStyle from ImageDisplayScaling.ipf
 //
-//	ImageStats /M=1  $wName
-//	ModifyImage $wName ctab= {*,V_max/10,PlanetEarth,1}
-	Label/Z left "y  (\\U)"
-	Label/Z bottom "x  (\\U)"
-	SetAxis/A/R left
-	ShowInfo
-EndMacro
+//Proc GraphImageStyle() : GraphStyle
+//	PauseUpdate; Silent 1		// modifying window...
+//	String wName = StringFromList(0,WaveList("*",";","DIMS:2,WIN:"))
+//	if (strlen(wName)<1)
+//		Abort "Unable to find image on top graph"
+//	endif
+//	ModifyGraph/Z width={Aspect,DimSize($wName,0)/DimSize($wName,1)}
+//	ModifyGraph/Z grid=1, tick=2, mirror=1, minor=1, gridStyle=1
+//	ModifyGraph/Z lowTrip=0.001, standoff=0, axOffset(bottom)=-1
+//	ModifyGraph grid=1,gridRGB=(45000,45000,65535)
+//	ControlInfo  button0
+//	if (stringmatch(IgorInfo(2),"Macintosh" ))
+//		ModifyGraph axOffset(left)=(V_flag==1) ? 0.9 : -1.1 		// mac
+//	else
+//		ModifyGraph axOffset(left)=(V_flag==1) ? -1.7 : -2.1 		// pc
+//	endif
+//	Variable/C lohi = getZrange($wName,5)
+//	Variable lo = real(lohi), hi = imag(lohi)
+//	if (!(WaveType($wName) & 0x40))
+//		lo = abs(lo)
+//		hi = abs(hi)
+//		hi = max(lo,hi)
+//		lo = -hi
+//		ModifyImage $wName ctab= {lo,hi,RedWhiteBlue,0}
+//	else
+//		ModifyImage $wName ctab= {real(lohi),imag(lohi),Terrain,1}
+//	endif
+//
+////	ModifyImage $wName ctab= {real(lohi),imag(lohi),Terrain,1}
+////	ModifyImage $wName ctab= {real(lohi),imag(lohi),PlanetEarth,1}
+////
+////	ImageStats /M=1  $wName
+////	ModifyImage $wName ctab= {*,V_max/10,PlanetEarth,1}
+//	Label/Z left "y  (\\U)"
+//	Label/Z bottom "x  (\\U)"
+//	SetAxis/A/R left
+//	ShowInfo
+//EndMacro
 
 
 Function AddGaussianToList()
