@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.00
+#pragma version = 2.01
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -749,12 +749,12 @@ Proc Graph_ImageStyle() : GraphStyle
 EndMacro
 //
 OverRide Function GraphImageStyle()
-	PauseUpdate; Silent 1		// modifying window...
-	String wName = StringFromList(0,WaveList("*",";","DIMS:2,WIN:"))
-	if (strlen(wName)<1)
+	DoUpdate
+	String wName = StringFromList(0,ImageNameList("",";"))
+	Wave image = ImageNameToWaveRef("",wName)
+	if (!WaveExists(image))
 		Abort "Unable to find image on top graph"
 	endif
-	Wave image = $wName
 	ModifyGraph/Z width={Aspect,DimSize(image,0)/DimSize(image,1)}
 	ModifyGraph/Z grid=1, tick=2, mirror=1, minor=1, gridStyle=1
 	ModifyGraph/Z lowTrip=0.001, standoff=0, axOffset(bottom)=-1
@@ -774,14 +774,8 @@ OverRide Function GraphImageStyle()
 		lo = -hi
 		ModifyImage $wName ctab= {lo,hi,RedWhiteBlue256,0}
 	else
-		ModifyImage $wName ctab= {real(lohi),imag(lohi),Terrain256,1}
+		ModifyImage $wName ctab= {lo,hi,Terrain256,1}
 	endif
-
-//	ModifyImage $wName ctab= {real(lohi),imag(lohi),Terrain,1}
-//	ModifyImage $wName ctab= {real(lohi),imag(lohi),PlanetEarth,1}
-//
-//	ImageStats /M=1  image
-//	ModifyImage $wName ctab= {*,V_max/10,PlanetEarth,1}
 	Label/Z left SelectString(strlen(WaveUnits(image,0)),"y","y  (\\U)")
 	Label/Z bottom SelectString(strlen(WaveUnits(image,0)),"x","x  (\\U)")
 	SetAxis/A/R left
