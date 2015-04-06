@@ -65,6 +65,7 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 	Variable isWin = stringmatch(igorInfo(2),"Windows")
 	if (isMac)
 		String exportCmd = exportVariablesCommands("EPICS_BASE;EPICS_HOST_ARCH;PYEPICS_LIBCA;VERSIONER_PYTHON_PREFER_32_BIT;EPICS_CA_MAX_ARRAY_BYTES")
+		pythonScript = ParseFilePath(5,pythonScript,"/",0,0)	// convert HFS to POSIX
 		sprintf cmd "do shell script \"   %s ;  \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"\"",exportCmd,pythonScript,detID,fileName
 		ExecuteScriptText/Z cmd
 		result = S_value
@@ -75,7 +76,8 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 	fileName = Posix2HFS(fileName)		// done with posix file paths, switch to Mac
 
 	Variable err = strsearch(result,"Traceback (most recent call last)",0)>=0
-	err = err || strsearch(result,"ERROR --",0)==0
+	err = err || strsearch(result,"ERROR --",0,2)==0
+	err = err || strsearch(result,"command not found",0,2)>=0
 	if (err)
 		DoAlert 0, "Failed to load latest image from "+detID
 		print "\r\r  "+cmd+"\r\r  "+result
