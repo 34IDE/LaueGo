@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, April 06, 2015" time="01:06:06 PM CDT" isoTime="2015-04-06T13:06:06"></written>
+	<written date="Monday, April 06, 2015" time="02:20:47 PM CDT" isoTime="2015-04-06T14:20:47"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>82b665f61eaf3b50ea7984875bc043721ba18721</gitHash>
+	<gitHash>47217c102d594a013a67e036fc1e2e1e6e980048</gitHash>
 	<fileCount>269</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
@@ -112,7 +112,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="34d7ce9085bad6af4a796d7d3ddb7cd3" ext=".xml">materials/YBCO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="f8be346c86ff1e0a28fbe50b5d250c65" ext=".xml">materials/PZT-Hex.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b39cbf43c31561245c5413fdd6d78858" ext=".xml">materials/CeO2.xml</file>
-	<file version="nan" time="2015-04-06T12:28:50" md5="4420c1d691100e9ba87227db10c15e8c" ext=".py">APS/getADimageH5.py</file>
+	<file version="nan" time="2015-04-06T13:57:26" md5="7c0b8020599a7ecaa91acf44c391e1dc" ext=".py">APS/getADimageH5.py</file>
 	<file version="1.01" time="2014-04-30T10:28:14" md5="7d0b601862db9a8f5ded00c02fd4dd39" ext=".ipf">Grains/NeighborByWalking.ipf</file>
 	<file version="nan" time="2015-03-30T09:52:24" md5="cd5f6e3c450fa0cdaf3944506be9d73e" ext=".ihf">doc/microDiffraction.ihf</file>
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" ext=".ipf">micro/monoCalibrate.ipf</file>
@@ -152,7 +152,7 @@
 	<file version="nan" time="2015-03-07T20:16:43" md5="de5d175054f11d16b08a38843714d4a4" ext=".py">APS/burt_tool.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a41867870f3717daea30770dcb0a8666" ext=".xml">materials/ald37.xml</file>
 	<file version="2.21" time="2015-04-06T12:28:50" md5="29d5cd5b247be7d44fc367f885aac598" ext=".ipf">microN/EnergyScansN.ipf</file>
-	<file version="0.01" time="2015-04-06T13:03:26" md5="c421a2ac8bf00577ecf790fe68ae5bbc" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
+	<file version="0.03" time="2015-04-06T14:15:16" md5="de040674cf77438a584c47eeb84b9a0f" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" ext="">micro/Euler_i386</file>
 	<file version="0.13" time="2013-12-06T23:22:19" md5="9d81fadd43d5d62c5255073c4b486b6c" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7f757ea8b8080ab2c920dcc79559e095" ext=".exe">microN/euler.exe</file>

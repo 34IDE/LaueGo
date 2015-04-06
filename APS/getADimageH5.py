@@ -10,7 +10,7 @@ import h5py
 import epics
 from epics import caget
 
-VERSION = 1.0
+VERSION = 1.01
 NEXUS_VERSION = '4.2.1'
 
 
@@ -334,6 +334,8 @@ if __name__ == '__main__':
 	if not os.path.isdir(destFldr):			# check that destination folder exists
 		raise NameError('the folder = "%s" does not exist' % destFldr)
 
+	if not os.access(destFldr, os.W_OK):	# check that destination folder is writeable
+		raise NameError('the folder = "%s" is not writeable' % destFldr)
 	try:
 		PVroot = imagePVroot.split(':')[0]
 	except:

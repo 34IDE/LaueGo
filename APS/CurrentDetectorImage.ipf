@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3
-#pragma version = 0.01
+#pragma version = 0.03
 #pragma ModuleName=CurrentDetector
 #include "ImageDisplayScaling"
 #include "HDF5images"
@@ -73,11 +73,13 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		print "Windows not yet implemented"
 		return $""
 	endif
-	fileName = Posix2HFS(fileName)		// done with posix file paths, switch to Mac
-
 	Variable err = strsearch(result,"Traceback (most recent call last)",0)>=0
 	err = err || strsearch(result,"ERROR --",0,2)==0
 	err = err || strsearch(result,"command not found",0,2)>=0
+
+	fileName = Posix2HFS(fileName)		// done with posix file paths, switch to Mac style
+	GetFileFolderInfo/Q/Z=1 fileName	// check that hdf5 file exists
+	err = err || (V_Flag || !V_isFile)
 	if (err)
 		DoAlert 0, "Failed to load latest image from "+detID
 		print "\r\r  "+cmd+"\r\r  "+result
