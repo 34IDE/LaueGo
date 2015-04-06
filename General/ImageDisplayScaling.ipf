@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -24,7 +24,7 @@ Menu "Data"
 End
 
 Menu "New"
-	MenuItemIfWaveClassExists("Display image plot with buttons...","spe*;rawImage*","DIMS:2"), NewImageGraph($"",0)
+	MenuItemIfWaveClassExists("Display image plot with buttons...","spe*;rawImage*","DIMS:2"), NewImageGraph($"")
 End
 
 Menu "Load Waves"
@@ -497,9 +497,10 @@ End
 // =============================================================================================
 // ================================ Start of Graph with Buttons ================================
 
-Function/S NewImageGraph(image,withButtons)
+Function/S NewImageGraph(image,[withButtons])
 	Wave image
 	Variable withButtons				// ignored if ButtonBoxesProc() does ot exist
+	withButtons = ParamIsDefault(withButtons) ? 0 : withButtons
 	Variable NOButtons = (exists("ButtonBoxesProc")!=6)
 
 	if (!WaveExists(image) || numtype(withButtons))

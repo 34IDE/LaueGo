@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.64
+#pragma version = 4.65
 #include "LatticeSym", version>=4.29
 #include "microGeometryN", version>=1.75
 #include "Masking", version>1.02
@@ -687,7 +687,7 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 		DoWindow/F $win			// bring window with image to the top
 	else
 		NewImageGraphLocal(image)// no window exists, so make one showing image
-//		NewImageGraph(image,1)	// no window exists, so make one showing image
+//		NewImageGraph(image,withButtons=1)	// no window exists, so make one showing image
 //		Graph_imageMake(image,1)	// no window exists, so make one showing image
   	endif
 //	resetpkLIstFromFullPeakList($(StringByKey("peakListWave",wnote,"=")))
@@ -7689,7 +7689,7 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		endif
 	elseif (stringmatch(ctrlName,"buttonViewImage") && strlen(WaveListClass("spe*;rawImage*;HDF*","*","DIMS:2")))
 		NewImageGraphLocal($"")
-//		NewImageGraph($"",1)
+//		NewImageGraph($"",withButtons=1)
 //		Graph_imageMake($"",1)
 	elseif (stringmatch(ctrlName,"buttonMakeMask") && strlen(WaveListClass("speImage;rawImage*","*","DIMS:2")))
 		MakeMaskThreshold($"",NaN)
@@ -7871,7 +7871,7 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 		return GetWavesDataFolder(image,2)
 	endif
 
-	String result = NewImageGraph(image,withButtons)
+	String result = NewImageGraph(image,withButtons=withButtons)
 	Wave image = $result
 	if (!WaveExists(image))
 		return ""

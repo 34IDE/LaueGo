@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.31
+#pragma version = 0.32
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -10,6 +10,7 @@
 //	Jun 19, 2014, version 0.30		added optional string extras to argument of ReadHDF5header()
 //	Mar 19, 2015, version 0.31		added support in GuessDetectorID() for new Perkin-Elmer side detectors, but this routine is DEPRECATED
 //												also added NewImageGraphHDF5proto(), in cases where ImageDisplayScaling.ipf has not been included
+//	Apr  5, 2015, version 0.32		NewImageGraph() now has withButtons as an optional parameter
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -250,18 +251,16 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		print "Created a 2-d wave    '"+NameOfWave(image)+"'"
 		DoAlert 1, "Display this image"
 		if (V_Flag==1)
-			// NewImageGraph(image,NaN) is in ImageDisplayScaling.ipf, which may not be present
 			FUNCREF NewImageGraphHDF5proto fnew= $"NewImageGraph"
-			fnew(image,NaN)
+			fnew(image)
 		endif
 	endif
 	return GetWavesDataFolder(image,2)
 End
 //
-Function/S NewImageGraphHDF5proto(image,withButtons)
+Function/S NewImageGraphHDF5proto(image,[withButtons])
 	Wave image
 	Variable withButtons
-	Variable NOButtons
 	return ""
 End
 
@@ -391,7 +390,7 @@ End
 //		print "Created a 2-d wave    '"+NameOfWave(image)+"'"
 //		DoAlert 1, "Display this image"
 //		if (V_Flag==1)
-//			NewImageGraph(image,NaN)
+//			NewImageGraph(image)
 //		endif
 //	endif
 //	return GetWavesDataFolder(image,2)

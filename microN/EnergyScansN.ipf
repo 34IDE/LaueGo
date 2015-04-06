@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.20
+#pragma version = 2.21
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -3865,7 +3865,7 @@ Function MakePseudoWhiteImages(pathName,namePart,[range1,range2])
 		MakeEsumPlot()
 	else
 		KillWaves/Z imagePlane
-		NewImageGraph(imageSumAll,0)
+		NewImageGraph(imageSumAll)
 	endif
 	beep
 	return 0

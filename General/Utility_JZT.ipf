@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.58
+#pragma version = 3.59
 // #pragma hide = 1
 
 Menu "Graph"
@@ -55,7 +55,7 @@ End
 //		computeCOM(), compute the Center of Mass
 //		PowerIntegerScale(), rescale a waves values by ^n or ^(1/n), preserves sign for non-complex values
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
-//		cpuFrequency(), systemUserName(), getEnvironment(), returns system info
+//		cpuFrequency(), systemUserName(), sytemHostname(), getEnvironment(), returns system info
 //		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
@@ -2699,7 +2699,7 @@ Function/T systemUserName()		// return unix username
 	endif
 	String cmd
 	sprintf cmd "do shell script \"whoami\""
-	ExecuteScriptText cmd						//returns the user name in double quotes
+	ExecuteScriptText cmd					//returns the user name in double quotes
 	Variable i=strlen(S_value)-2
 	String userName=S_value[1,i]
 	if (i<=0)									// no name,
@@ -2707,14 +2707,16 @@ Function/T systemUserName()		// return unix username
 	endif
 	return userName
 End
-//Function/S ipAddress()			// return the IP address as a string
-//	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
-//		DoAlert 0, "Only know how to get hostname from a Mac"
-//		return ""								// cannot get answer
-//	endif
-//	ExecuteScriptText "do shell script \"hostname\""						//returns something like: 	"tischler.uni.aps.anl.gov"
-//	return  ReplaceString("\"",S_value,"")
-//End
+
+Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
+	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
+		DoAlert 0, "Only know how to get hostname from a Mac"
+		return ""								// cannot get answer
+	endif
+	ExecuteScriptText "do shell script \"hostname\""		//returns something like:	"bob.xray.aps.anl.gov"
+	String hostname = ReplaceString("\"",S_value,"")
+	return ReplaceString("\"",S_value,"")
+End
 
 
 // Get a list of system environment variables, semi-colon separated

@@ -1,14 +1,14 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma ModuleName=Reorient
-#include "microGeometryN", version>=1.28
-#include "IndexingN", version>=3.69
+#include "microGeometryN", version>=1.81
+#include "IndexingN", version>=4.65
 
 
 Menu "BackReflection"
 	"Load Image File...", LoadGenericImageFile("")
 	help={"Load an Image from the file, and then display the image"}
-	MenuItemIfWaveClassExists("Re-Display image plot with buttons...","tif*;rawImage*","DIMS:2"), NewImageGraph($"",1)
+	MenuItemIfWaveClassExists("Re-Display image plot with buttons...","tif*;rawImage*","DIMS:2"), NewImageGraph($"",withButtons=1)
 	help={"Re-Display an image and put buttons on the plot for listing spots"}
 		MenuItemIfWaveClassExists("   Find Z range of image","*","DIMS:2"), getZrange($"",NaN)
 		help={"for an image, find the z range for the specified % range"}

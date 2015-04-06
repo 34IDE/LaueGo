@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.16
+#pragma version = 1.17
 #pragma ModuleName=TiffProc
 #include "ImageDisplayScaling", version>=1.98
 
@@ -206,7 +206,7 @@ Function/S LoadTiffFile(fName,[extras])
 		print "Created a 2-d wave    '"+wName+"'"
 		DoAlert 1, "Display this image"
 		if (V_Flag==1)
-			NewImageGraph(image,NaN)
+			NewImageGraph(image)
 //			Graph_imageMake(image,NaN)
 		endif
 	endif
