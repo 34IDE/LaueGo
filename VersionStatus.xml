@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, April 06, 2015" time="02:20:47 PM CDT" isoTime="2015-04-06T14:20:47"></written>
+	<written date="Wednesday, April 08, 2015" time="06:10:37 PM CDT" isoTime="2015-04-08T18:10:37"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>47217c102d594a013a67e036fc1e2e1e6e980048</gitHash>
+	<gitHash>b9451b5ffc5e46ca6141287c3124c9da4d1ba1b2</gitHash>
 	<fileCount>269</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" ext=".xml">materials/GaN-temp.xml</file>
@@ -173,11 +173,11 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="4a4a324cb89e7e1c4ea5c05069471c39" ext=".xml">materials/Sn-sg141.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a3dd1379a82d5afb5a5d0fec54d0a6a5" ext=".xml">materials/ald09.xml</file>
-	<file version="3.59" time="2015-04-06T12:28:50" md5="6e383db6adc706e39beb75d07d1cfca8" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.6" time="2015-04-08T17:51:12" md5="72a4018da63a2939d1278f8e985f1d52" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" ext="">micro/indexAll_ppc</file>
 	<file version="0.1" time="2015-03-03T14:44:50" md5="7e9f69513635b4c7a94d6117378478d9" ext=".ipf">microN/CuteCells.ipf</file>
-	<file version="2.07" time="2014-12-09T10:31:37" md5="adce34440a83aa290b3bca9ce9ecc523" ext=".ipf">General/GizmoMarkers.ipf</file>
+	<file version="2.08" time="2015-04-08T18:08:47" md5="ba04e35db838d2cbdd56da692e7230ac" ext=".ipf">General/GizmoMarkers.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="30a23c04ba808bbab8285a39cdee87ec" ext=".xml">materials/Al225.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c5c91bd92aeea678b4ea3f1c63118e71" ext=".xml">materials/Ti-7Altry.xml</file>
 	<file version="2.51" time="2014-10-06T09:42:00" md5="e2c5016c449862bc56f9e1d0cc7bb64f" ext=".ipf">microN/ArrayOf3dOrientsN_LongLong.ipf</file>
