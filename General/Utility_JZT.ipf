@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.59
+#pragma version = 3.60
 // #pragma hide = 1
 
 Menu "Graph"
@@ -54,6 +54,7 @@ End
 //		Area of fitted peaks: LorentzianIntegral(W_coef), GaussianIntegral(W_coef), Gaussian2DIntegral(W_coef)
 //		computeCOM(), compute the Center of Mass
 //		PowerIntegerScale(), rescale a waves values by ^n or ^(1/n), preserves sign for non-complex values
+//		FitErrorString(FitError,FitQuitReason), return a string representation of the fitting error
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		cpuFrequency(), systemUserName(), sytemHostname(), getEnvironment(), returns system info
 //		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
@@ -2601,13 +2602,13 @@ Function/S FitErrorString(FitError,FitQuitReason)
 	endif
 
 	String out=""
-	out += SelectString(FitError & 1,"","Unspecified Fit Error; ")
 	out += SelectString(FitError & 2,"","Singular matrix; ")
 	out += SelectString(FitError & 4,"","Out of memory; ")
 	out += SelectString(FitError & 8,"","Function returned NaN or INF; ")
 	out += SelectString(FitError & 16,"","Fit function requested stop; ")
 	out += SelectString(FitError & 32,"","Reentrant curve fitting; ")
-	out += StringFromList(FitQuitReason,"","the iteration limit was reached;the user stopped the fit;the limit of passes without decreasing chi-square was reached;")
+	out += StringFromList(FitQuitReason,";the iteration limit was reached;the user stopped the fit;the limit of passes without decreasing chi-square was reached;")
+	out = SelectString(strlen(out),"Unspecified Fit Error",out)
 	return out
 End
 

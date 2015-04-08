@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.07
-#pragma IgorVersion = 6.2
+#pragma version = 2.08
+#pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
 
@@ -1143,11 +1143,12 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	if (WaveMin(Np)<=0)
 		return ""
 	endif
-	Make/N=(Np[0],Np[1],Np[2])/FREE/D sub3D
+	Make/N=(Np[0],Np[1],Np[2])/FREE/D sub3D, stdDev
 	sub3D = space3D[iLo[0]+p][iLo[1]+q][iLo[2]+r]
 	SetScale/P x, iLo[0]*DimDelta(space3D,0)+DimOffset(space3D,0), DimDelta(space3D,0),"",sub3D
 	SetScale/P y, iLo[1]*DimDelta(space3D,1)+DimOffset(space3D,1), DimDelta(space3D,1),"",sub3D
 	SetScale/P z, iLo[2]*DimDelta(space3D,2)+DimOffset(space3D,2), DimDelta(space3D,2),"",sub3D
+	stdDev = sub3D					// this assumes that one count in detector == 1 photon
 
 	// set the starting point for the fit
 	Variable maxVal=WaveMax(sub3D),minVal=WaveMin(sub3D)
@@ -1159,11 +1160,24 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		W_coef[1] = minVal
 		W_coef[0] = maxVal==0 ? 1 : maxVal
 	endif
-	FuncFitMD/Q GMarkers#Gaussian3DFitFunc, W_coef, sub3D
+
+	Variable V_FitOptions=2, V_FitError=0, V_FitQuitReason=0		// V_FitOptions=2 means robust fitting
+	FuncFitMD/Q GMarkers#Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
+	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
-
 	Make/N=3/D/FREE Qo=W_coef[2*p + 2]
+
+	Variable err = V_FitError
+	err = err || !( Qc[0]==limit(Qo[0],Qlo[0],Qhi[0]) )
+	err = err || !( Qc[1]==limit(Qo[1],Qlo[1],Qhi[1]) )
+	err = err || !( Qc[2]==limit(Qo[2],Qlo[2],Qhi[2]) )
+	if (err)
+		print "ERROR -- Fit failed, peak not inside of fitting volume"
+		print FitErrorString(V_FitError,V_FitQuitReason)
+		return ""
+	endif
+
 	Wave hkl=$""
 #if exists("diffractometer#sample2crystal")
 	STRUCT sampleStructure sa	
@@ -1184,7 +1198,7 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
 		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
 		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
-		printf "Gaussian Fit has offset = %s,  amp = %s\r",ValErrStr(W_coef[0],W_sigma[0],sp=1),ValErrStr(W_coef[1],W_sigma[1],sp=1)
+		printf "Gaussian Fit has offset = %s,  amp = %s,  chisq = %g\r",ValErrStr(W_coef[0],W_sigma[0],sp=1),ValErrStr(W_coef[1],W_sigma[1],sp=1),chisq
 		printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(Qo[0],W_sigma[2],sp=1),units[0],ValErrStr(W_coef[3],W_sigma[3],sp=1),units[0]
 		printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[1],ValErrStr(Qo[1],W_sigma[4],sp=1),units[1],ValErrStr(W_coef[5],W_sigma[5],sp=1),units[1]
 		printf "  <%sz> = %s%s,   FWHMz = %s%s\r",Qstr[2],ValErrStr(Qo[2],W_sigma[6],sp=1),units[1],ValErrStr(W_coef[7],W_sigma[7],sp=1),units[2]
