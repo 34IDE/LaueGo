@@ -1161,7 +1161,8 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		W_coef[0] = maxVal==0 ? 1 : maxVal
 	endif
 
-	Variable V_FitOptions=2, V_FitError=0, V_FitQuitReason=0		// V_FitOptions=2 means robust fitting
+//	Variable V_FitOptions=2, V_FitError=0, V_FitQuitReason=0		// V_FitOptions=2 means robust fitting
+	Variable V_FitError=0, V_FitQuitReason=0
 	FuncFitMD/Q GMarkers#Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
@@ -1169,9 +1170,9 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	Make/N=3/D/FREE Qo=W_coef[2*p + 2]
 
 	Variable err = V_FitError
-	err = err || !( Qc[0]==limit(Qo[0],Qlo[0],Qhi[0]) )
-	err = err || !( Qc[1]==limit(Qo[1],Qlo[1],Qhi[1]) )
-	err = err || !( Qc[2]==limit(Qo[2],Qlo[2],Qhi[2]) )
+	err = err || !( abs(Qc[0]-Qo[0]) < Qhw[0] )
+	err = err || !( abs(Qc[1]-Qo[1]) < Qhw[0] )
+	err = err || !( abs(Qc[2]-Qo[2]) < Qhw[0] )
 	if (err)
 		print "ERROR -- Fit failed, peak not inside of fitting volume"
 		print FitErrorString(V_FitError,V_FitQuitReason)
