@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-put this into a folder named "Old VersionStatus"  which should be inside "Igor Shared Procedures"
+put this into a folder named "Old VersionStatus"  which should be inside "LaueGo" folder
 """
 
 import subprocess
@@ -32,9 +32,9 @@ def MakeVersionStatusDict(FolderPath):
 			if os.path.splitext(dir.lower())[1]=='.app':
 				dirs.remove(dir)  		# don't visit files inside of apps
 				fullpath = os.path.join(FolderPath,dir)
-				mtime = os.stat(fullpath).st_mtime				# modification time (second)
+				mtime = os.stat(fullpath).st_mtime			# modification time (second)
 				timeStr = time.strftime(isoFmt,time.localtime(mtime))
-				actualFiles[dir] = (float('nan'),timeStr,'','.app')
+				actualFiles[dir] = (float('nan'),timeStr,'','','.app')
 
 		relPath = os.path.relpath(root,FolderPath)
 		for file in files:
@@ -48,7 +48,7 @@ def MakeVersionStatusDict(FolderPath):
 			if relPath=='.': rel = file
 			else: rel = os.path.join(relPath,file)
 
-			hexHash = ''
+			md5hex = sha256hex = ''
 			try:
 				fullpath = os.path.join(FolderPath,rel)
 				statinfo = os.stat(fullpath)				# for file size in bytes & modified time
@@ -57,9 +57,15 @@ def MakeVersionStatusDict(FolderPath):
 				f = open(fullpath,'r')
 				buf = f.read(flen)							# read the whole file, to get a good hash
 				f.close()
-				m = hashlib.md5()							# m = hashlib.sha256()
-				m.update(buf)
-				hexHash = m.hexdigest()
+
+				md5 = hashlib.md5()
+				md5.update(buf)
+				md5hex = md5.hexdigest()
+
+				sha = hashlib.sha256()						# the sha256 hash is compatible with Igor
+				sha.update(buf)
+				sha256hex = sha.hexdigest()
+
 				timeStr = time.strftime(isoFmt,time.localtime(mtime))
 			except:
 				buf = ''
@@ -75,7 +81,7 @@ def MakeVersionStatusDict(FolderPath):
 						try:	version = float(buf.split(None,1)[0])
 						except:	version = float('nan')
 
-			actualFiles[rel] = (version,timeStr,hexHash,ext)
+			actualFiles[rel] = (version,timeStr,md5hex,sha256hex,ext)
 
 #			#			if len(file)>0 and version==version:			# valid file name and version number
 #			if len(file)>0:									# valid file name and version number
@@ -104,8 +110,8 @@ def WriteVersionStatus(FolderPath,actualFiles,now):
 	out += '\t<fileCount>'+str(count)+'</fileCount>\n'
 	for fName in actualFiles:
 		try:
-			version,timeStr,hexHash,ext = actualFiles[fName]
-			out += '\t<file version="%g" time="%s" md5="%s" ext="%s">%s</file>\n' % (version,timeStr,hexHash,ext,fName)	# append line to out
+			version,timeStr,md5hex,sha256hex,ext = actualFiles[fName]
+			out += '\t<file version="%g" time="%s" md5="%s" sha256="%s" ext="%s">%s</file>\n' % (version,timeStr,md5hex,sha256hex,ext,fName)	# append line to out
 		except:	pass
 	out += "</VersionStatus>\n"
 
@@ -182,7 +188,7 @@ def getFolderPath():
 	filePath = os.path.realpath(__file__)
 	FolderPath = os.path.dirname(filePath)
 	if FolderPath.find('/Old VersionStatus')>0: FolderPath = FolderPath + '/..'
-	FolderPath = os.path.abspath(FolderPath)			# path to "Igor Shared Procedures"
+	FolderPath = os.path.abspath(FolderPath)			# path to "LaueGo" folder
 	return FolderPath
 
 

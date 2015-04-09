@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-put this into a folder named "Old VersionStatus"  which should be inside "LaueGo" or "LocalPackages", ...
+put this into a folder named "Old VersionStatus"  which should be inside "Igor Shared Procedures" or "LocalPackages", ...
 """
 
 import subprocess
@@ -21,11 +21,11 @@ def compareFiles(Vfiles, actualFiles):		# returns a string detailing mis-matches
 	diffsHash = diffsVersion = diffsMissingOnDisk = diffsActual = ''
 
 	for vf in Vfiles:
-		try:	vvers,visoTime,vHash_md5,vHash,ext = Vfiles[vf]
+		try:	vvers,visoTime,vHash,ext = Vfiles[vf]
 		except:
 			vvers = float('nan')
 			vHash = visoTime = ext = ''
-		try:	avers,aisoTime,aHash_md5,aHash,ext = actualFiles[vf]
+		try:	avers,aisoTime,aHash,ext = actualFiles[vf]
 		except:
 			avers = float('nan')
 			aHash = aisoTime = ext = ''
@@ -42,11 +42,11 @@ def compareFiles(Vfiles, actualFiles):		# returns a string detailing mis-matches
 			diffsHash += 'Hash Mismatch on "%s" \tversion xml=%g  \txmlTime=%s,  actualTime=%s\n' % (vf,vvers,visoTime,aisoTime)
 
 	for af in actualFiles:									# next check that all files on disk are in VersionXmlName
-		try:	avers,aisoTime,aHash_md5,aHash,ext = actualFiles[af]
+		try:	avers,aisoTime,aHash,ext = actualFiles[af]
 		except:
 			avers = float('nan')
 			aHash = aisoTime = ext = ''
-		try:	vvers,visoTime,vHash_md5,vHash,ext = Vfiles[af]
+		try:	vvers,visoTime,vHash,ext = Vfiles[af]
 		except:
 			vvers = float('nan')
 			vHash = visoTime = ext = ''
@@ -100,15 +100,13 @@ def VersionStatusFile2dict(FolderPath):
 			except:	vers = None
 			try:	isoTime = child.attrib['time']
 			except:	isoTime = None
-			try:	md5hex = child.attrib['md5']
-			except:	md5hex = ''
-			try:	sha256hex = child.attrib['sha256']
-			except:	sha256hex = ''
+			try:	hexHash = child.attrib['md5']
+			except:	hexHash = ''
 			try:	fileName = child.text
 			except:	fileName = ''
 			try:	ext = child.attrib['ext']
 			except:	ext = ''
-			files[fileName] = (vers,isoTime,md5hex,sha256hex,ext)
+			files[fileName] = (vers,isoTime,hexHash,ext)
 
 	if not(fileCount == len(files)):
 		print 'ERROR  --  reading '+VersionXmlName+', fileCount = %d, but I read %d files' % (fileCount,len(files))
@@ -135,7 +133,7 @@ def MakeVersionStatusDict(FolderPath):
 				fullpath = os.path.join(FolderPath,dir)
 				mtime = os.stat(fullpath).st_mtime				# modification time (second)
 				timeStr = time.strftime(isoFmt,time.localtime(mtime))
-				actualFiles[dir] = (float('nan'),timeStr,'','','.app')
+				actualFiles[dir] = (float('nan'),timeStr,'','.app')
 
 		relPath = os.path.relpath(root,FolderPath)
 		for file in files:
@@ -149,7 +147,7 @@ def MakeVersionStatusDict(FolderPath):
 			if relPath=='.': rel = file
 			else: rel = os.path.join(relPath,file)
 
-			md5hex = sha256hex = ''
+			hexHash = ''
 			try:
 				fullpath = os.path.join(FolderPath,rel)
 				statinfo = os.stat(fullpath)				# for file size in bytes & modified time
@@ -158,12 +156,9 @@ def MakeVersionStatusDict(FolderPath):
 				f = open(fullpath,'r')
 				buf = f.read(flen)							# read the whole file, to get a good hash
 				f.close()
-				md5 = hashlib.md5()
-				md5.update(buf)
-				md5hex = md5.hexdigest()
-				sha = hashlib.sha256()						# the sha256 hash is compatible with Igor
-				sha.update(buf)
-				sha256hex = sha.hexdigest()
+				m = hashlib.md5()							# m = hashlib.sha256()
+				m.update(buf)
+				hexHash = m.hexdigest()
 				timeStr = time.strftime(isoFmt,time.localtime(mtime))
 			except:
 				buf = ''
@@ -179,9 +174,67 @@ def MakeVersionStatusDict(FolderPath):
 						try:	version = float(buf.split(None,1)[0])
 						except:	version = float('nan')
 
-			actualFiles[rel] = (version,timeStr,md5hex,sha256hex,ext)
+			actualFiles[rel] = (version,timeStr,hexHash,ext)
 
+#			#			if len(file)>0 and version==version:			# valid file name and version number
+#			if len(file)>0:									# valid file name and version number
+#				if relPath=='.': rel = file
+#				else: rel = os.path.join(relPath,file)
 	return actualFiles
+
+# def MakeVersionStatusDict(IgorSharedPath):
+# 	""" Create a dict containing version status of all ipf files """
+# 	global  isoFmt
+# 
+# 	if not os.path.isdir(IgorSharedPath): return ''
+# 
+# 	cmd = 'cd "'+IgorSharedPath+'" ; grep -lR  "#pragma version" *'
+# 	#	print "cmd = ---"+cmd+"---"
+# 	proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, )
+# 	stdout_value, stderr_value = proc.communicate('through stdin to stdout')
+# 	if len(stderr_value)>0:
+# 		print >> sys.stderr, 'ERROR --',repr(stderr_value)
+# 		return ''										# in case of error, assume 1 core
+# 	gresult = stdout_value
+# 
+# 	files = dict()
+# 	for ipfName in gresult.splitlines():
+# 		lowName = ipfName.lower()
+# 		if not('.ipf' in lowName): continue					# only ipf files
+# 		if '/old' in lowName: continue						# skip '/old' directories
+# 		if 'old/' in lowName: continue						# skip 'old/' directories
+# 		if 'old versions' in lowName: continue					# skip definitely old versions
+# 		try:
+# 			fpath = os.path.join(IgorSharedPath,ipfName)
+# 			statinfo = os.stat(fpath)						# for file size in bytes & modified time
+# 			flen = statinfo.st_size							# file size in bytes
+# 			mtime = statinfo.st_mtime						# modification time (second)
+# 			f = open(fpath,'r')
+# 			buf = f.read(flen)								# read the whole file, to get a good hash
+# 			f.close()
+# #			m = hashlib.sha256()
+# 			m = hashlib.md5()
+# 			m.update(buf)
+# 			hexHash = m.hexdigest()
+# 			timeStr = time.strftime(isoFmt,time.localtime(mtime))
+# 			# flen = min(4096,flen)
+# 			# buf = buf[0:flen]								# trim down buf to seach for #pragma version
+# 		except:
+# 			buf = ''
+# 
+# 		i = buf.find('#pragma version')+15					# at start of character after '#pragma version'
+# 		if i<0: continue
+# 		j = buf[i:i+30].find('=')							# find the '='
+# 		if j<0: continue
+# 		i += j+1
+# 		buf = buf[i:i+100].strip()							# version number must be within 100 of '='
+# 		try:	version = float(buf.split(None,1)[0])
+# 		except:	version = float('nan')
+# 		if len(ipfName)>0 and version==version:				# valid file name and version number
+# 			files[ipfName] = (version,timeStr,hexHash)
+# 
+# 	return files
+
 
 
 def ignoreName(name):								# ignore folders or files with this name
@@ -209,7 +262,7 @@ def getFolderPath():
 	filePath = os.path.realpath(__file__)
 	FolderPath = os.path.dirname(filePath)
 	if FolderPath.find('/Old VersionStatus')>0: FolderPath = FolderPath + '/..'
-	FolderPath = os.path.abspath(FolderPath)				# path to "LaueGo"
+	FolderPath = os.path.abspath(FolderPath)				# path to "Igor Shared Procedures"
 	return FolderPath
 
 
