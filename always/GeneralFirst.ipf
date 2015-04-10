@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.20
+#pragma version = 3.21
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=3.58
+#include "Utility_JZT", version>=3.61
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
@@ -156,6 +156,7 @@ Menu "Help"
 	"-"
 	SubMenu "LaueGo"
 		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
+		"   LaueGo Version Info Deep Check...", /Q, DeepCheckActualFiles("")
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 	End
@@ -197,7 +198,12 @@ End
 
 Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 	Variable alert			// also put up the alert dialog
-	String thisVers = ThisLaueGoVersion()
+
+	String thisVers = VersionStatusFromDisk("")		// the entire VersionStatus.xml
+	thisVers = VSbuf2infoStr(thisVers)
+	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)+"VersionStatus.xml"
+	thisVers = ReplaceStringByKey("VersionStatus",thisVers,VersionStatusPath,"=")
+
 	if (strlen(thisVers)<1)
 		String str
 		sprintf str, "ERROR -- Could not find VersionStatus.xml"
@@ -216,7 +222,9 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
 	out = str
 
-	latestVers = LaueGoLatestVersionInfo()
+	latestVers = VersionStatusFromWeb()			// the entire VersionStatus.xml
+	latestVers = VSbuf2infoStr(latestVers)
+	latestVers = ReplaceStringByKey("VersionStatus",latestVers,"Web","=")
 	latestEpoch = NumberByKey("epoch",latestVers,"=")
 	latestHash = StringByKey("gitHash",latestVers,"=")
 
@@ -245,7 +253,211 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 	endif
 End
 
-Static Function/T LaueGoLatestVersionInfo()// get latest verion info from web site
+
+Function/T DeepCheckActualFiles(source,[printIt])
+	// check each of  the actual (local) files against contents of VersionStatus.xml
+	// this runs slowly since it must read and compute the hash for every file in VersionStatus.xml
+	String source		// must be "Web" or "Local" (source of VersionStatus.xml)
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? 0 : !(!printIt)
+
+	source = SelectString(StringMatch(source,"Web*"),source,"Web")
+	source = SelectString(StringMatch(source,"Local*"),source,"Local")
+	if (WhichListItem(source,"Web;Local;")<0)
+		Prompt source "Source of VersionStatus.xml", popup, "Web;Local;"
+		DoPrompt "VersionStatus", source
+		if (V_flag)
+			return ""
+		endif
+		printIt = 1
+	endif
+
+	String buf=""
+	if (StringMatch(source,"Web*"))
+		buf = VersionStatusFromWeb()
+	elseif (StringMatch(source,"Local*"))
+		buf = VersionStatusFromDisk("")
+	else
+		return ""
+	endif
+	String mismatch = CheckVersionStatusAgainstDisk(buf)
+
+	if (printIt)
+		printf "DeepCheckActualFiles(\"%s\"", source
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g",printIt
+		endif
+		printf (")\r")
+		if (strlen(mismatch))
+			printf "mismatched files are:  %s\r",mismatch
+		else
+			print "All files match."
+		endif
+	endif
+	return mismatch
+End
+//
+Static Function/T CheckVersionStatusAgainstDisk(buf)
+	String buf
+
+	String fldr = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)
+	String fileName="x", list, mismatch=""
+	Variable i
+	for (i=0; strlen(fileName);i+=1)
+		fileName = XMLtagContents("file",buf,occurance=i)
+		if (StringMatch(fileName,"*.app"))		// cannot check .apps (they are folders)
+			continue
+		endif
+
+		list = XMLattibutes2KeyList("file",buf,occurance=i)
+		if ( strlen(fileName) && CheckOneFile(list,fldr + ReplaceString("/",fileName,":")) )
+			mismatch += fileName+";"
+		endif
+	endfor
+	return mismatch
+End
+//
+Static Function CheckOneFile(list,fileName)		// returns 1 on mismatch
+	String list			// list of info from VersionStatus
+	String fileName	// full file path to the file
+
+	Variable f			// read in full contents of fileName
+	Open/R/Z=1 f as fileName
+	if (V_flag)
+		return 1
+	endif
+	FStatus f
+	String buf = PadString("",V_logEOF,0x20)
+	FBinRead f, buf		// read in contents of fileName
+	Close f
+	if (StringMatch(StringByKey("sha256",list,"="),Hash(buf,1)))
+		return 0				// sha256 hashes match, return 0
+	endif
+	return 1					// hashes do not match, return 1
+End
+
+
+
+//Static Function/T LaueGoLatestVersionInfo()// get latest verion info from web site
+//	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
+//	String vs = FetchURL(VersionStatusURL)
+//	if (GetRTError(0))
+//		print "***",GetRTErrMessage(), "  Check your network connection."
+//		Variable err = GetRTError(1)		// clears the error
+//	endif
+//	if (!(strlen(vs)>0))
+//		return ""
+//	elseif (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
+//		return ""
+//	endif
+//	vs = VSbuf2infoStr(vs)
+//	vs = ReplaceStringByKey("VersionStatus",vs,"Web","=")
+//	return vs
+//End
+//
+//Static Function/T ThisLaueGoVersion()			// returns info from the Users VersionStatus.xml file
+//	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#ThisLaueGoVersion"),":",1,1)+"VersionStatus.xml"
+//	Variable f
+//	Open/R/Z=1 f as VersionStatusPath			// read top of VersionStatus.xml
+//	if (V_flag)
+//		return ""
+//	endif
+//	FStatus f
+//	String buf=PadString("",V_logEOF,0x20)	// buf set to full size of file
+//	FBinRead f, buf
+//	Close f
+//	String out = VSbuf2infoStr(buf)
+//	out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
+//	return out
+//End
+//
+Static Function/T VSbuf2infoStr(buf)	// convert VersionStatus.xml to a key=value string
+	String buf									// input xml
+
+	buf = XMLtagContents("VersionStatus",buf)
+	if (strlen(buf)<1)
+		return ""
+	endif
+	buf = XMLremoveComments(buf)
+
+	String written = XMLattibutes2KeyList("written",buf)
+	String isoStr = StringByKey("isoTime",written,"=")
+	Variable epoch = ISOtime2IgorEpoch(isoStr)
+	String sourceFolder = XMLtagContents("sourceFolder",buf)
+	String gitHash = XMLtagContents("gitHash",buf)
+
+	Variable fileCount = str2num(XMLtagContents("fileCount",buf))
+
+	String out=""
+	out = ReplaceStringByKey("date",out,StringByKey("date",written,"="),"=")
+	out = ReplaceStringByKey("time",out,StringByKey("time",written,"="),"=")
+	out = ReplaceStringByKey("isoTime",out,isoStr,"=")
+	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
+	if (numtype(epoch)==0 && epoch>0)
+		out = ReplaceNumberByKey("epoch",out,epoch,"=")
+	endif
+	if (strlen(gitHash))
+		out = ReplaceStringByKey("gitHash",out,gitHash,"=")
+	endif
+	return out
+End
+//Static Function/T VS2infoStr(buf)		// convert top part of VersionStatus.xml to a key=value string
+//	String buf									// input xml
+//
+//	// extract date & time info from buf
+//	Variable i=strsearch(buf,"<written ",0,2)
+//	if (i<0)
+//		return ""
+//	endif
+//	buf = buf[i+9,Inf]
+//	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
+//	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
+//	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
+//	Variable epoch = ISOtime2IgorEpoch(isoStr)
+//
+//	// extract fileCount from buf
+//	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
+//
+//	i = strsearch(buf,"<gitHash>",0,2)	// extract gitHash from top of xml
+//	String gitHash = buf[i+9,i+200]
+//	i = strsearch(gitHash,"<",0,2)
+//	gitHash = gitHash[0,i-1]
+//
+//	String out=""
+//	out = ReplaceStringByKey("date",out,dateStr,"=")
+//	out = ReplaceStringByKey("time",out,timeStr,"=")
+//	out = ReplaceStringByKey("isoTime",out,isoStr,"=")
+//	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
+//	if (numtype(epoch)==0 && epoch>0)
+//		out = ReplaceNumberByKey("epoch",out,epoch,"=")
+//	endif
+//	if (strlen(gitHash))
+//		out = ReplaceStringByKey("gitHash",out,gitHash,"=")
+//	endif
+//	return out
+//End
+//
+//Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of a string delimited by delim in buf
+//	//	so, getDelimitedString("date=\"Monday, March 23, 2015\" "), returns "Monday, March 23, 2015"
+//	//	or, getDelimitedString("date=_Monday, March 23, 2015_ ",delim="_"), returns "Monday, March 23, 2015"
+//	// or, getDelimitedString("date=_Monday, March 23, 2015_ "), returns ""
+//	String buf			// input string
+//	String delim		// delimiter, defaults to double-quote
+//	delim = SelectString(ParamIsDefault(delim),delim,"\"")
+//	delim = SelectString(strlen(delim),"\"",delim)
+//
+//	Variable i0,i1
+//	i0 = strsearch(buf,delim,0,2)
+//	i1 = strsearch(buf,delim,i0+1,2)
+//	if (i0<0 || i1<=i0 || strlen(buf)<=2)
+//		return ""
+//	endif
+//	return buf[i0+1,i1-1]
+//End
+
+
+Static Function/T VersionStatusFromWeb()
+	// return the full body of VersionStatus.xml from the web site
 	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
 	String vs = FetchURL(VersionStatusURL)
 	if (GetRTError(0))
@@ -257,15 +469,18 @@ Static Function/T LaueGoLatestVersionInfo()// get latest verion info from web si
 	elseif (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
 		return ""
 	endif
-	vs = VS2infoStr(vs)
-	vs = ReplaceStringByKey("VersionStatus",vs,"Web","=")
 	return vs
 End
 //
-Static Function/T ThisLaueGoVersion()			// returns info from the Users VersionStatus.xml file
-	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#ThisLaueGoVersion"),":",1,1)+"VersionStatus.xml"
+Static Function/T VersionStatusFromDisk(VersionStatusPath)
+	// returns info from the User Procedures VersionStatus.xml file
+	String VersionStatusPath			// full path to VersionStatus.xml (includes the file name)
+	if (strlen(VersionStatusPath)<1)
+		VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)+"VersionStatus.xml"
+	endif
+
 	Variable f
-	Open/R/Z=1 f as VersionStatusPath			// read top of VersionStatus.xml
+	Open/R/Z=1 f as VersionStatusPath			// read all of VersionStatus.xml
 	if (V_flag)
 		return ""
 	endif
@@ -273,64 +488,9 @@ Static Function/T ThisLaueGoVersion()			// returns info from the Users VersionSt
 	String buf=PadString("",V_logEOF,0x20)	// buf set to full size of file
 	FBinRead f, buf
 	Close f
-	String out = VS2infoStr(buf)
-	out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
-	return out
+	return buf
 End
-//
-Static Function/T VS2infoStr(buf)		// convert top part of VersionStatus.xml to a key=value string
-	String buf									// input xml
 
-	// extract date & time info from buf
-	Variable i=strsearch(buf,"<written ",0,2)
-	if (i<0)
-		return ""
-	endif
-	buf = buf[i+9,Inf]
-	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
-	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
-	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
-	Variable epoch = ISOtime2IgorEpoch(isoStr)
-
-	// extract fileCount from buf
-	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
-
-	i = strsearch(buf,"<gitHash>",0,2)	// extract gitHash from top of xml
-	String gitHash = buf[i+9,i+200]
-	i = strsearch(gitHash,"<",0,2)
-	gitHash = gitHash[0,i-1]
-
-	String out=""
-	out = ReplaceStringByKey("date",out,dateStr,"=")
-	out = ReplaceStringByKey("time",out,timeStr,"=")
-	out = ReplaceStringByKey("isoTime",out,isoStr,"=")
-	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
-	if (numtype(epoch)==0 && epoch>0)
-		out = ReplaceNumberByKey("epoch",out,epoch,"=")
-	endif
-	if (strlen(gitHash))
-		out = ReplaceStringByKey("gitHash",out,gitHash,"=")
-	endif
-	return out
-End
-//
-Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of a string delimited by delim in buf
-	//	so, getDelimitedString("date=\"Monday, March 23, 2015\" "), returns "Monday, March 23, 2015"
-	//	or, getDelimitedString("date=_Monday, March 23, 2015_ ",delim="_"), returns "Monday, March 23, 2015"
-	// or, getDelimitedString("date=_Monday, March 23, 2015_ "), returns ""
-	String buf			// input string
-	String delim		// delimiter, defaults to double-quote
-	delim = SelectString(ParamIsDefault(delim),delim,"\"")
-	delim = SelectString(strlen(delim),"\"",delim)
-
-	Variable i0,i1
-	i0 = strsearch(buf,delim,0,2)
-	i1 = strsearch(buf,delim,i0+1,2)
-	if (i0<0 || i1<=i0 || strlen(buf)<=2)
-		return ""
-	endif
-	return buf[i0+1,i1-1]
-End
 
 //  =========================== End of Help & Version Info  ============================  //
 //  ====================================================================================  //

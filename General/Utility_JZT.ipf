@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.60
+#pragma version = 3.61
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1211,21 +1211,21 @@ End
 //	XML support	 (occurance optionally allows selecting the the occuranceth instance of xmltag), note vectors usually delimited by a space
 //
 //	XMLNodeList(buf)											returns a list with all top level nodes in buf
-//	XMLtagContents(xmltag,buf,[occurance])					returns the contents of xmltag
+//	XMLtagContents(xmltag,buf,[occurance])			returns the contents of xmltag
 //	XMLtagContents2List(xmltag,buf,[occurance,delimiters])	returns the contents of xmltag as a list, useful for vectors in the contents
-//	XMLattibutes2KeyList(xmltag,buf)							return a list with all of the attribute value pairs for xmltag
+//	XMLattibutes2KeyList(xmltag,buf)					return a list with all of the attribute value pairs for xmltag
 //	XMLremoveComments(str)									remove all xml comments from str
 
-ThreadSafe Function/T XMLNodeList(buf)				// returns a list of node names at top most level in buf
+ThreadSafe Function/T XMLNodeList(buf)			// returns a list of node names at top most level in buf
 	String buf
 	String name,nodes=""
 	Variable i0=0, i1,i2
 	do
-		i0 = strsearch(buf,"<",i0)						// find start of a tag
+		i0 = strsearch(buf,"<",i0)					// find start of a tag
 		if (i0<0)
 			break
 		endif
-		i1 = strsearch(buf," ",i0)						// find end of tag name using i1 or i2, end will be in i1
+		i1 = strsearch(buf," ",i0)					// find end of tag name using i1 or i2, end will be in i1
 		i1 = i1<0 ? Inf : i1
 		i2 = strsearch(buf,">",i0)
 		i2 = i2<0 ? Inf : i2
@@ -1236,11 +1236,11 @@ ThreadSafe Function/T XMLNodeList(buf)				// returns a list of node names at top
 		name = ReplaceString(";",buf[i0+1,i1-1],"_")// name cannot contain semi-colons
 		nodes += name+";"
 
-		i2 = strsearch(buf,"</"+name+">",i0)			// find the closer for this tag, check for '</name>'
+		i2 = strsearch(buf,"</"+name+">",i0)		// find the closer for this tag, check for '</name>'
 		if (i2<0)
 			i0 = strsearch(buf,">",i1+1)				// no '</name>', just a simple node
 		else
-			i0 = i2 + strlen(name) + 3					// first character after '</name>'
+			i0 = i2 + strlen(name) + 3				// first character after '</name>'
 		endif
 	while(i0>0)
 	return nodes
@@ -1258,13 +1258,13 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance])
 	if (i0<0)
 		return ""
 	endif
-	i0 = strsearch(buf,">",i0)							// character after '>' in intro
+	i0 = strsearch(buf,">",i0)						// character after '>' in intro
 	if (i0<0)
 		return ""
 	endif
-	i0 += 1												// start of contents
+	i0 += 1													// start of contents
 
-	i1 = strsearch(buf,"</"+xmltag+">",i0)-1		// character just before closing '<tag>'
+	i1 = strsearch(buf,"</"+xmltag+">",i0)-1	// character just before closing '<tag>'
 	if (i1<i0 || i1<0)
 		return ""
 	endif
@@ -1276,15 +1276,15 @@ End
 ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //reads a tag contensts and converts it to a list
 	String xmltag
 	String buf
-	Variable occurance									// use 0 for first occurance, 1 for second, ...
-	String delimiters									// characters that might be used for delimiters (NOT semi-colon), default is space, tab, cr, or nl = " \t\r\n"
+	Variable occurance				// use 0 for first occurance, 1 for second, ...
+	String delimiters					// characters that might be used for delimiters (NOT semi-colon), default is space, tab, cr, or nl = " \t\r\n"
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
 	if (ParamIsDefault(delimiters) || strlen(delimiters)==0)
 		delimiters = " \t\r\n"							// the usual white-space characters
 	endif
 
 	String str = XMLtagContents(xmltag,buf,occurance=occurance)
-	str = ReplaceString(";",str,"_")					// cannot have any semi-colons in input string
+	str = ReplaceString(";",str,"_")				// cannot have any semi-colons in input string
 
 	Variable i
 	for (i=0;i<strlen(delimiters);i+=1)
@@ -1292,7 +1292,7 @@ ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //r
 	endfor
 
 	do
-		str = ReplaceString(";;",str,";")				// replace all multiple semi-colons with a single semi-colon
+		str = ReplaceString(";;",str,";")			// replace all multiple semi-colons with a single semi-colon
 	while(strsearch(str,";;",0)>=0)
 
 	if (char2num(str[0])==char2num(";"))			// remove any leaing semi-colon
@@ -1336,18 +1336,19 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance])// return a li
 		if (strlen(key)>0)
 			keyVals = ReplaceStringByKey(key,keyVals,value,"=")
 		endif
-		i0 = strsearch(buf," ",i1,0)						// find space separator, set up for next key="val" pair
-	while(i0>0 && strlen(key) && strlen(value))
+		i0 = strsearch(buf," ",i1,0)					// find space separator, set up for next key="val" pair
+	while(i0>0 && strlen(key))
+//	while(i0>0 && strlen(key) && strlen(value))
 	return keyVals
 End
 
 
-ThreadSafe Function/T XMLremoveComments(str)		// remove all xml comments from str
+ThreadSafe Function/T XMLremoveComments(str)	// remove all xml comments from str
 	String str
 	Variable i0,i1
 	do
 		i0 = strsearch(str,"<!--",0)					// start of a comment
-		i1 = strsearch(str,"-->",0)						// end of a comment
+		i1 = strsearch(str,"-->",0)					// end of a comment
 		if (i0<0 || i1<=i0)
 			break
 		endif
@@ -1363,8 +1364,8 @@ ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance)	// returns the in
 	Variable i0,i1, i, start
 	for (i=0,i0=0;i<=occurance;i+=1)
 		start = i0
-		i0 = strsearch(buf,"<"+xmltag+" ",start)		// find start of a tag with attributes
-		i1 = strsearch(buf,"<"+xmltag+">",start)		// find start of a tag without attributes
+		i0 = strsearch(buf,"<"+xmltag+" ",start)	// find start of a tag with attributes
+		i1 = strsearch(buf,"<"+xmltag+">",start)	// find start of a tag without attributes
 		i0 = i0<0 ? Inf : i0
 		i1 = i1<0 ? Inf : i1
 		i0 = min(i0,i1)
