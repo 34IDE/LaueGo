@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.32
+#pragma version = 4.33
 #include "Utility_JZT" version>=3.55
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -106,6 +106,7 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 //		also added some helpful comments about convert recip <--> direct using MatrixOP
 // with version 4.31, added wave note info in directFrom_xtal(xtal) and in recipFrom_xtal(xtal)
 // with version 4.32, added direct2LatticeConstants(direct)
+// with version 4.33, added isValidLatticeConstants(direct), and imporved formatting in print_crystalStructure()
 
 // Rhombohedral Transformation:
 //
@@ -965,14 +966,14 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 		printf "\t\t%+6.3f\t\t%+6.3f\t\t%+6.3f\r",xtal.Unconventional20,xtal.Unconventional21,xtal.Unconventional22
 	endif
 	printf "\r"
-	printf "				a				b				c   (nm)\r"
-	printf "direct		%+10.7f\t%+10.7f\t%+10.7f\r",xtal.a0,xtal.b0,xtal.c0
-	printf "lattice		%+10.7f\t%+10.7f\t%+10.7f\r",xtal.a1,xtal.b1,xtal.c1
-	printf "			%+10.7f\t%+10.7f\t%+10.7f\r",xtal.a2,xtal.b2,xtal.c2
-	printf "\r				a*				b*				c*  (1/nm)\r"
+	printf "					a				b				c   (nm)\r"
+	printf "direct	\t%+10.7f\t%+10.7f\t%+10.7f\r",xtal.a0,xtal.b0,xtal.c0
+	printf "lattice\t%+10.7f\t%+10.7f\t%+10.7f\r",xtal.a1,xtal.b1,xtal.c1
+	printf " \t\t\t%+10.7f\t%+10.7f\t%+10.7f\r",xtal.a2,xtal.b2,xtal.c2
+	printf "\r					a*				b*				c*  (1/nm)\r"
 	printf "recip	\t%+10.6f\t%+10.6f\t%+10.6f\r",xtal.as0,xtal.bs0,xtal.cs0
-	printf "lattice	\t%+10.6f\t%+10.6f\t%+10.6f\r",xtal.as1,xtal.bs1,xtal.cs1
-	printf "		\t%+10.6f\t%+10.6f\t%+10.6f\r",xtal.as2,xtal.bs2,xtal.cs2
+	printf "lattice\t%+10.6f\t%+10.6f\t%+10.6f\r",xtal.as1,xtal.bs1,xtal.cs1
+	printf "	\t\t\t%+10.6f\t%+10.6f\t%+10.6f\r",xtal.as2,xtal.bs2,xtal.cs2
 	if (strlen(xtal.hashID)<2)
 		printf "hash id = '%s'\r",xtal.hashID
 	endif
@@ -4550,22 +4551,22 @@ End
 //
 //	Extensions
 //	----------
-//	Monoclinic             unique axis b        unique axis c              unique axis a
-//					   abc     c-ba		   abc    ba-c		  abc     -acb
-//					 ----------		---------- 		----------
-//		cell choice 1   :b1   :-b1			   :c1   :-c1			  :a1     :-a1
-//				     2   :b2   :-b2			   :c2   :-c2			  :a2     :-a2
-//				     3   :b3   :-b3			   :c3   :-c3			  :a3     :-a3
+//		Monoclinic			unique axis b		unique axis c		unique axis a
+//					 				abc  c-ba		abc   ba-c			abc	-acb
+//					 			------------		------------ 		------------
+//		cell choice 1		  :b1 	:-b1		:c1 	:-c1			:a1	:-a1
+//				      2		  :b2 	:-b2		:c2  	:-c2			:a2	:-a2
+//				      3		  :b3 	:-b3		:c3  	:-c3			:a3	:-a3
 //
-//    Orthorhombic   :ba-c	change of basis abc -> ba-c
-//					:1		origin choice 1
-//					:2ba-c	origin choice 2, change of basis abc -> ba-c
+//    Orthorhombic	:ba-c		change of basis abc -> ba-c
+//							:1			origin choice 1
+//							:2ba-c	origin choice 2, change of basis abc -> ba-c
 //
 //    Tetragonal		:1	origin choice 1
-//           Cubic		:2	origin choice 2
+//          Cubic		:2	origin choice 2
 //
 //    Trigonal		:H	hexagonal    axes
-//					:R	rhombohedral axes
+//						:R	rhombohedral axes
 
 ThreadSafe Function/S getHMboth(SpaceGroup)	// returns short and (full) Hermann-Mauguin symbol
 	Variable SpaceGroup						//Space Group number, from International Tables
@@ -4994,6 +4995,62 @@ ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells
 //	endif
 	return 1
 End
+
+
+ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
+	STRUCT crystalStructure &xtal					// this sruct is set in this routine
+
+	Variable SpaceGroup=xtal.SpaceGroup			// local value for convienence
+	if (SpaceGroup!=limit(SpaceGroup,1,230))	// invalid SpaceGroup, it must be in range [1,230]
+		return 0
+	elseif (numtype(xtal.a + xtal.b + xtal.c + xtal.alpha + xtal.beta + xtal.gam))
+		return 0								// no Inf or NaN
+	elseif (xtal.a <= 0 || xtal.b <= 0 || xtal.c <= 0 || xtal.alpha <= 0 || xtal.beta <= 0 || xtal.gam <= 0)
+		return 0								// must be > 0
+	endif
+
+	Variable lenTol=max(max(xtal.a,xtal.b),xtal.c) * 1e-4, angleTol=1e-4*180/PI
+	Variable num90s = (abs(xtal.alpha - 90)<angleTol) + (abs(xtal.beta - 90)<angleTol) + (abs(xtal.gam - 90)<angleTol)
+
+	if (SpaceGroup>=195)				// Cubic [195,230]
+		if (num90s==3 && (abs(xtal.a - xtal.b)<lenTol) && (abs(xtal.a - xtal.c)<lenTol) )
+			return 1							// require alpha=beta=gamma=90, and a=b=c
+		endif
+	elseif(SpaceGroup>=168)			// Hexagonal [168,194]
+		if ( num90s==2 && abs(xtal.gam - 120) > angleTol && abs(xtal.a - xtal.b)<lenTol )
+			return 1							// require a==b, alpha=beta=90, gamma=190
+		endif
+	elseif(SpaceGroup>=143)			// Trigonal [143,167] (generally hexagonal cell), for rhomohedral use rhomohedral cell, unless obviously the hexagonal
+		if ( num90s==2 && abs(xtal.gam - 120)<angleTol && abs(xtal.a - xtal.b)<lenTol )
+			return 1							// require a==b, alpha=beta=90, gamma=190
+		elseif ( abs(xtal.alpha - xtal.beta)<angleTol && abs(xtal.alpha - xtal.gam)<angleTol )
+			if ( abs(xtal.a - xtal.b)<lenTol && abs(xtal.a - xtal.c)<lenTol )	
+				return 1						// Rhombohedral axes, require a=b=c
+			endif
+		endif
+	elseif(SpaceGroup>=75)				// Tetragonal [75,142]
+		if (num90s==3 && abs(xtal.a - xtal.b)<lenTol)
+			return 1							// require a==b, alpha=beta=gamma=90
+		endif
+	elseif(SpaceGroup>=16)				// Orthorhombic [16,74]
+		if (num90s==3)
+			return 1							// require alpha=beta=gamma=90
+		endif
+	elseif(SpaceGroup>=3)				// Monoclinic [3,15]
+		if ( abs(xtal.alpha - 90)<angleTol && abs(xtal.gam - 90)<angleTol )
+			return 1
+		endif
+	else										// Triclinic [1,2]
+		return 1								// no requirements on lattice constants
+	endif
+
+	return 0									// NOT valid
+End
+//Function TestisValidLatticeConstants()	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
+//	STRUCT crystalStructure xtal
+//	FillCrystalStructDefault(xtal)
+//	print isValidLatticeConstants(xtal)
+//End
 
 //	End of crystal symmetry stuff
 // =========================================================================
