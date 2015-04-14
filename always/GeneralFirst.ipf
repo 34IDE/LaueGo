@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.21
+#pragma version = 3.22
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.61
@@ -280,7 +280,7 @@ Function/T DeepCheckActualFiles(source,[printIt])
 	else
 		return ""
 	endif
-	String mismatch = CheckVersionStatusAgainstDisk(buf)
+	String mismatch = CheckVersionStatusAgainstDisk(buf,progress=1)
 
 	if (printIt)
 		printf "DeepCheckActualFiles(\"%s\"", source
@@ -297,13 +297,25 @@ Function/T DeepCheckActualFiles(source,[printIt])
 	return mismatch
 End
 //
-Static Function/T CheckVersionStatusAgainstDisk(buf)
+Static Function/T CheckVersionStatusAgainstDisk(buf,[progress])
 	String buf
+	Variable progress
+	progress = ParamIsDefault(progress) || numtype(progress) ? 1 : progress
 
+	Variable fileCount = str2num(XMLtagContents("fileCount",buf))
+	progress = numtype(fileCount) || fileCount<1 ? 0 : progress	// no progress bar without valid fileCount
 	String fldr = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)
 	String fileName="x", list, mismatch=""
 	Variable i
+	if (progress)
+		String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Checking "+num2str(fileCount)+" files.")
+	endif
 	for (i=0; strlen(fileName);i+=1)
+		if (progress && mod(i,5)==0)
+			if (ProgressPanelUpdate(progressWin,i/fileCount*100))
+				break
+			endif
+		endif
 		fileName = XMLtagContents("file",buf,occurance=i)
 		if (StringMatch(fileName,"*.app"))		// cannot check .apps (they are folders)
 			continue
@@ -314,6 +326,10 @@ Static Function/T CheckVersionStatusAgainstDisk(buf)
 			mismatch += fileName+";"
 		endif
 	endfor
+	if (progress)
+		printf "total execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+		DoWindow/K $progressWin
+	endif
 	return mismatch
 End
 //

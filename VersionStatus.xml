@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, April 14, 2015" time="10:45:03 AM CDT" isoTime="2015-04-14T10:45:03"></written>
+	<written date="Tuesday, April 14, 2015" time="02:23:15 PM CDT" isoTime="2015-04-14T14:23:15"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>e65aef6910ae8b9d50fd456328feba711eb29b35</gitHash>
+	<gitHash>66c9d852a65ef81b86ccdc1d5a7855a572e1f681</gitHash>
 	<fileCount>269</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -192,10 +192,10 @@
 	<file version="nan" time="2014-04-21T15:54:31" md5="ac063d5e1eba5f9e999464802e875493" sha256="be463a2716cda9a59f5c200dee59524f1237be7aef3cc885aee45aea405dc00d" ext=".xml">materials/IN625.xml</file>
 	<file version="nan" time="2014-03-04T11:15:53" md5="028b928e6aa13bd5190cdbcad4eec441" sha256="ea946747c3b5e25d23151afedd7faebc6c3e623f9ffda93586c1213a2b7481f3" ext=".xml">geometrys/geoD_2013-02-21_17-10-03.xml</file>
 	<file version="nan" time="2010-08-10T14:30:37" md5="41929f77238a229edbd3260d33cabc1b" sha256="c003f43ae1f7b259fca0f65b50fe2ff14ccb205e8e8472f9e26bcd4473b19438" ext=".html">doc/geoN_tag.html</file>
-	<file version="0.9948" time="2014-04-30T10:32:23" md5="32df742aee7f7d055aa8acbb46fa1bf0" sha256="d15052b53453262c0e2e325111dcfebb036a5652300acd96ea8e2ddd8984e0fa" ext=".ipf">micro/EnergyWireScans.ipf</file>
+	<file version="0.9949" time="2015-04-14T14:07:27" md5="159bb52b122a79ec20e36cf3dfa697fc" sha256="f0925e4d1dd30bd2a424435b8821fc09bd7da30c252122a4f2e8424b6fcc8252" ext=".ipf">micro/EnergyWireScans.ipf</file>
 	<file version="0.02" time="2014-04-30T10:31:04" md5="b0f908fc7fa668858c9a43e746ae2da0" sha256="bfb93dd1f19e95fd746c4d8de010df19366d8e4f79256b8d9dc69fcbd0d4e989" ext=".ipf">micro/BudaiExtra.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="bb2a689b7334c1a698aeec3f952cd0ed" sha256="efbf4c89455bdbe0a764ac1a3beec1d084f7783b156c17fa6fe34ab91bffe077" ext=".xml">materials/Ti-7Al.xml</file>
-	<file version="1.02" time="2014-03-27T16:13:13" md5="93b69d14d1bc2c6c4a6f6944251e1a72" sha256="61fb842f6c84bd80a5a94b05d5e53d20e0c367389981d5cf768db9d5aa15b4af" ext=".ipf">General/Masking.ipf</file>
+	<file version="1.03" time="2015-04-14T14:20:02" md5="2875e9570cfff9bd2e853cad1ad09d3c" sha256="b5fd5b8e927968460c13c71d51f601d7de83dc17c120868a4da972ab36c535a4" ext=".ipf">General/Masking.ipf</file>
 	<file version="nan" time="2014-09-22T11:40:43" md5="ef8cafb3ac6ed5293a21c1e86d60730d" sha256="cf25fc3c103e4da4b37fb6ce965f6d86e71257f3745e8bcf594964b73d97269a" ext=".xml">materials/VO2/VO2_M2_1977Ghedira.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="f7cbe5ad6d73260131a8d08f2a847f0d" sha256="3a1ff49978374d7b272605b29e4be50f56e243b329c8f2c47f271d024331bd33" ext=".png">doc/microDiffractionMedia/Picture2.png</file>
 	<file version="nan" time="2014-04-24T13:00:23" md5="0902b938308b3695f59381de7f1744e4" sha256="f64a6370a24fe66009b7b52bc83c9d5754ccdd09c1ebd997a4ac01751439dbf4" ext=".xml">materials/IN740.xml</file>
