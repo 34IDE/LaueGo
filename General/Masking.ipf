@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Masking
-#pragma version = 1.02
+#pragma version = 1.03
 
 
 Menu "GraphMarquee",dynamic
@@ -24,7 +24,8 @@ Menu "GraphMarquee",dynamic
 End
 
 
-OverRide Function/S MarqueeMaskMenuItem(item,[csr])
+// OverRide 
+Function/S MarqueeMaskMenuItem(item,[csr])
 	String item
 	String csr
 
@@ -68,34 +69,6 @@ OverRide Function/S MarqueeMaskMenuItem(item,[csr])
 	endif
 	return item
 End
-//OverRide Function/S MarqueeMaskMenuItem(item,[csr])
-//	String item
-//	String csr
-//
-//	Variable disable = 0
-//	csr = SelectString(ParamIsDefault(csr),csr,"")
-//	Variable ic = char2num(UpperStr(csr[0]))
-//	if ((ic>=char2num("A") && ic<=char2num("J")))	// have a valid cursor letter
-//		disable = strlen(CsrInfo($num2char(ic)))<1
-//	endif
-//
-//	String imageName = StringFromList(0,ImageNameList("",";"))
-//	if (strlen(imageName)<1)
-//		return "("+item
-//	endif
-//	Wave image = ImageNameToWaveRef("",imageName)
-//	if (!WaveExists(image))
-//		return "("+item
-//	endif
-//	String class = StringByKey("waveClass", note(image),"=")
-//
-//	disable = disable || !stringmatch(class,"image&Mask")	// not an editable mask
-//	if (disable)
-//		item = "("+item
-//		// item = "("
-//	endif
-//	return item
-//End
 
 
 //=======================================================================================

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyWireScans
-#pragma version = 0.9948
+#pragma version = 0.9949
 
 #include "WinView", version>=1.82
 #include "microGeometry", version>=2.56
@@ -48,15 +48,15 @@ Static Constant secPerPixelDistort = 15.24e-3	// time is takes to process distor
 //End
 Menu "GraphMarquee",dynamic
 	"-"
-	MarqueeMaskMenuItem("Add Marquee to Mask"),/Q, AddMarqueeToMask()
+	EnergyWireScans#MarqueeMaskMenuItem("Add Marquee to Mask"),/Q, AddMarqueeToMask()
 	help={"add the area of this marquee to the mask, (this will include the area of the marquee in the analysis"}
-	MarqueeMaskMenuItem("Subtract Marquee From Mask"),/Q,SubtractMarqueeFromMask()
+	EnergyWireScans#MarqueeMaskMenuItem("Subtract Marquee From Mask"),/Q,SubtractMarqueeFromMask()
 	help={"remove the area of this marquee from the mask, (all pixels within this area will not be used in the analysis"}
-	MarqueeMaskMenuItem("Clear the Mask"),ClearMask()
+	EnergyWireScans#MarqueeMaskMenuItem("Clear the Mask"),ClearMask()
 	help={"reset the whole mask to empty, no points will be analyzed.  Use this to clear a mask so you can start addding points again"}
 End
 //
-Function/S MarqueeMaskMenuItem(item)
+Static Function/S MarqueeMaskMenuItem(item)
 	String item
 
 	String imageName = StringFromList(0,ImageNameList("",";"))
@@ -101,7 +101,7 @@ Menu "micro", dynamic
 		//      help={"add area of marquee to mask (usually accessed by clicking in marquee)"}
 		//"    Subtract Marquee From Mask",/Q,SubtractMarqueeFromMask()
 		//      help={"subtract area of marquee from mask (usually accessed by clicking in marquee)"}
-		MarqueeMaskMenuItem("    Clear the Mask"),ClearMask()
+		EnergyWireScans#MarqueeMaskMenuItem("    Clear the Mask"),ClearMask()
 		      help={"clear the current mask (usually accessed by clicking in marquee)"}
 		"-"
 		MenuItemIfWaveExists("Graph Intensity on [keV x Depth]","keV_Depth"),MakeGraph_keV_Depth()
@@ -154,11 +154,11 @@ Function SetDataFolderFromMenu1()
 	printf "\r\r¥¥ changed data folder from  '%s'  -->  '%s'\r",from,to
 End
 
-Function/S MenuItemIfWaveExists(item,wName)
-	String item
-	String wName
-	return SelectString(WaveExists($wName) ,"(","")+item
-End
+//Function/S MenuItemIfWaveExists(item,wName)
+//	String item
+//	String wName
+//	return SelectString(WaveExists($wName) ,"(","")+item
+//End
 //
 Function/S MenuItemIfGraphNamesExist(item,nameList)
 	String item
