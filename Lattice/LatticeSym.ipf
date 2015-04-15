@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.33
+#pragma version = 4.34
 #include "Utility_JZT" version>=3.55
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -107,6 +107,7 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 // with version 4.31, added wave note info in directFrom_xtal(xtal) and in recipFrom_xtal(xtal)
 // with version 4.32, added direct2LatticeConstants(direct)
 // with version 4.33, added isValidLatticeConstants(direct), and imporved formatting in print_crystalStructure()
+// with version 4.34, added DescribeSymOps(direct), CheckDirectRecip()
 
 // Rhombohedral Transformation:
 //
@@ -153,6 +154,7 @@ Menu "Analysis"
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
 		"\\M0Space Group number <ÐÐ> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
+		"Describe the Symmetry Operations", DescribeSymOps($"")
 		"angle between two hkl's",angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN)
 		"  Convert old xtl files to new xml files",ConverXTLfile2XMLfile("")
 		"-"
@@ -4459,7 +4461,11 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry 
 	ops = abs(ops[p][q][r])<1e-13 ? 0 : ops[p][q][r]		// remove the almost zeros
 	ops = abs(1-ops[p][q][r])<1e-13 ? 1 : ops[p][q][r]	//  and make almost 1's equal to 1
 	ops = abs(1+ops[p][q][r])<1e-13 ? -1 : ops[p][q][r]
-	Note/K ops, "Nproper="+num2istr(Nproper)+";"
+
+	String wnote="waveClass=SymmetryOperations;"
+	wnote = ReplaceNumberByKey("Nproper",wnote,Nproper,"=")
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	Note/K ops, wnote
 	return GetWavesDataFolder(ops,2)
 End
 //
@@ -4543,6 +4549,76 @@ End
 //	endfor
 //	return err
 //End
+
+
+Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry operations, returns result as a list too
+	Wave SymOps
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+
+	if (!WaveExists(SymOps))
+		Wave SymOps = $StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
+	endif
+	if (!WaveExists(SymOps))
+		return ""
+	elseif (DimSize(SymOps,1)!=3 || DimSize(SymOps,2)!=3)
+		return ""
+	endif
+	Variable Nproper = NumberByKey("Nproper",note(SymOps),"=")
+	Variable SpaceGroup = NumberByKey("SpaceGroup",note(SymOps),"=")
+	if (!(Nproper>0))
+		return ""
+	endif
+	if (printIt)
+		String system = StringFromList(latticeSystem(SpaceGroup),LatticeSystemNames)
+		printf "For Space Group %g  (%s) %s,  %g proper rotations\r",SpaceGroup,system,getFullHMSym(SpaceGroup),Nproper
+	endif
+
+	Make/N=3/D/FREE axis, v3
+	Make/N=(3,3)/D/FREE sym
+	String out = ReplaceNumberByKey("Nproper","",Nproper,"=")
+	out = ReplaceNumberByKey("SpaceGroup",out,SpaceGroup,"=")
+	String str, name								// name of axis
+	Variable i, angle, div
+	for (i=0;i<Nproper;i+=1)
+		sym = SymOps[i][p][q]
+		angle = axisOfMatrix(sym,axis)		// returns normalized axis
+		angle = abs(angle)<0.1 ? 0 : angle
+
+		if (abs(axis[0]-1)<0.02)
+			name = "X-axis"
+		elseif (abs(axis[1]-1)<0.02)
+			name = "Y-axis"
+		elseif (abs(axis[2]-1)<0.02)
+			name = "Z-axis"
+		elseif (abs(axis[0]+1)<0.02)
+			angle = -angle
+			name = "X-axis"
+		elseif (abs(axis[1]+1)<0.02)
+			angle = -angle
+			name = "Y-axis"
+		elseif (abs(axis[2]+1)<0.02)
+			angle = -angle
+			name = "Z-axis"
+		elseif (abs(angle)>0)
+			div = smallestNonZeroValue(axis)
+			axis /= div
+			name = vec2str(axis)+" axis"
+		endif
+		if (abs(angle)<0.1)
+			str = "Identity (no rotation)"
+		else
+			sprintf str, "%g¡ rotation about the %s",angle,name
+		endif
+		out += str+";"
+		if (printIt)
+			print str
+		endif
+	endfor
+	return out
+End
+
+
 
 
 // returns info about the symmetry of a structure
@@ -5051,6 +5127,17 @@ End
 //	FillCrystalStructDefault(xtal)
 //	print isValidLatticeConstants(xtal)
 //End
+
+
+Function CheckDirectRecip(direct,recip)	// returns True if recip & direct go together
+	Wave direct,recip
+	Variable tol = WaveType(direct) & 0x04 ? 1e-13 : 1e-6
+	Variable tol2 = WaveType(recip) & 0x04 ? 1e-13 : 1e-6
+	tol = max(tol,tol2)
+	MatrixOP/FREE delta = (2*PI * (Inv(direct))^t) - recip
+	MatrixOP/FREE err = sum(abs(delta))
+	return err[0] < tol
+End
 
 //	End of crystal symmetry stuff
 // =========================================================================

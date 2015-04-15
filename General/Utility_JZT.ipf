@@ -40,8 +40,10 @@ End
 //		isdigit(c) & isletter(c), handy utilities
 //		angleVec2Vec(a,b)		finds angle between two vectors (degree)
 //		rotationAngleOfMat(rot)  finds the total rotation angle of a matrix 'rot'
+//		isRotationMat(mat,[tol]), returns true if mat is a rotation matrix
 //		axisOfMatrix(mat,axis,[squareUp]), find axis and angle from the rotation matrix mat
 //		SquareUpMatrix(rot), turns rot from almost a rotation matrix to a true rotation matrix
+//		smallestNonZeroValue(vec,[tol]), returns the abs( smallest non-zero element ), e.g. {0, -0.1, 3} returns 0.1
 //		MedianOfWave(), returns median (or other percentile) of a wave, useful for picking scaling ranges
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
@@ -2134,6 +2136,19 @@ End
 //	return 1
 
 
+ThreadSafe Function isdigit(c)				// returns 1 if c is a digit, 0-9 (otherwise returns 0)
+	String c
+	Variable i=char2num(c)
+	return (48<=i && i<=57)
+End
+
+
+ThreadSafe Function isletter(c)				// returns 1 if c is an upper or lower case letter (otherwise returns 0)
+	String c
+	Variable i=char2num(c)
+	return (65<=i && i<=90) || (97<=i && i<=122)
+End
+
 
 ThreadSafe Function angleVec2Vec(a,b)		// return the angle between two vectors (degree)
 	Wave a,b
@@ -2152,17 +2167,20 @@ ThreadSafe Function rotationAngleOfMat(rot)	// returns the total rotation angle 
 End
 
 
-ThreadSafe Function isdigit(c)				// returns 1 if c is a digit, 0-9 (otherwise returns 0)
-	String c
-	Variable i=char2num(c)
-	return (48<=i && i<=57)
-End
-
-
-ThreadSafe Function isletter(c)				// returns 1 if c is an upper or lower case letter (otherwise returns 0)
-	String c
-	Variable i=char2num(c)
-	return (65<=i && i<=90) || (97<=i && i<=122)
+ThreadSafe Function isRotationMat(mat,[tol])	// true if mat is a rotation matrix
+	Wave mat
+	Variable tol							// positive threshold for zero
+	if (!WaveExists(mat))
+		return 0								// mat does not exist
+	elseif (DimSize(mat,0)<2 || (DimSize(mat,0) != DimSize(mat,1)))
+		return 0								// mat not a square matrix, at least 2x2
+	endif 
+	tol = ParamIsDefault(tol) || numtype(tol) || tol<=0 ? NaN : tol
+	if (numtype(tol))
+		tol = WaveType(mat) & 0x04 ? 1e-13 : 1e-6
+	endif
+	MatrixOP/FREE err = sum(abs((mat x (mat^t)) - Identity(3)))
+	return (err[0]<tol)
 End
 
 
@@ -2236,6 +2254,27 @@ ThreadSafe Function SquareUpMatrix(rot)
 	return 0
 End
 
+
+ThreadSafe Function smallestNonZeroValue(vec,[tol])
+	// returns the abs( smallest non-zero element ), this routine ignores NaN's
+	// {0, 0.1, 3} returns 0.1,  {0, -0.1, 3} returns 0.1
+	//  This is useful if you want to display {0, 0.1, 3} as integers, then dividing gives {0, 1, 30}
+	Wave vec								// a vector or matrix of any dimension
+	Variable tol						// positive threshold for zero
+
+	if (!WaveExists(vec))
+		return NaN						// vec does not exist
+	elseif (numpnts(vec)<1)
+		return NaN
+	endif
+	tol = ParamIsDefault(tol) || numtype(tol) || tol<=0 ? NaN : tol
+	if (numtype(tol))
+		tol = WaveType(vec) & 0x04 ? 1e-13 : 1e-6
+	endif
+	MatrixOP/FREE temp = abs(vec)
+	temp = temp < tol ? NaN : temp
+	return WaveMin(temp)
+End
 
 
 ThreadSafe Function MedianOfWave(wwIN,f,[x1,x2,p1,p2])

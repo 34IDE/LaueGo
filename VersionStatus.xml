@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, April 14, 2015" time="02:47:33 PM CDT" isoTime="2015-04-14T14:47:33"></written>
+	<written date="Wednesday, April 15, 2015" time="03:06:15 PM CDT" isoTime="2015-04-15T15:06:15"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>e84858bac194482167d642d2aab54ff0f1b613f5</gitHash>
+	<gitHash>a346e48397885d3b9b9922029b97ef25b6f8cd4b</gitHash>
 	<fileCount>269</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -98,7 +98,7 @@
 	<file version="2.62" time="2014-11-12T10:15:38" md5="6acba1079d913d4a93363d504965aeb7" sha256="0ef5f616e7a962c2256a11163e5ee470c134ac3f12b143af88b590ea22232fe6" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" sha256="8fe414dd1188fea23be7f6badac82d7c6690d636c811a66af7f7a50a08192515" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" sha256="198a282c972e2d45609cd82ea8243af6af5b878726371b661dfabc93f309ba00" ext=".mtl">materials/LaMnO3.mtl</file>
-	<file version="4.33" time="2015-04-13T09:56:47" md5="7059e0b623daff443bea69cb3a62a954" sha256="d0cda2c85f3f74cb33ecec3a48d18fdb1e3901c478f4f5a8ba8e20014a7bfb49" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.34" time="2015-04-15T15:04:32" md5="2a10d10610c99fb396b18cb635e018dc" sha256="021fa17389f25d91b5a7bb6c486d403e350f3848a59b39a4a63ea514d5ca13c3" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" sha256="6060302a5225a5473a5c948b8d9cb756136a55a4b1b2c1f91e3484c8a73d9e87" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" sha256="418ab8556758b40aba34cbc92056ec10a620de115505e2bd68e9805be929f968" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" sha256="98f1c8c454a199ff6ee8d24fced76dea00d6d8a33bad14957640e1e8da441f5e" ext="">micro/Euler_ppc</file>
@@ -173,7 +173,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="4a4a324cb89e7e1c4ea5c05069471c39" sha256="37dd292ed46b810e8b04611007503cfa431a2563870d214f63cc106559865662" ext=".xml">materials/Sn-sg141.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a3dd1379a82d5afb5a5d0fec54d0a6a5" sha256="721705a50c93d30f496951d51602a55f6e7ed1ed2f619bdedf455e48b89706cc" ext=".xml">materials/ald09.xml</file>
-	<file version="3.61" time="2015-04-10T14:01:20" md5="00c7c766f0612ada05ba40d443d401cb" sha256="b798b43dc3bd54374713fe813041dbdfae985f74e4c8c87e62e8606842f82ef6" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.61" time="2015-04-15T14:39:19" md5="d9de53eb5e7e1c437d6f2a40e0daac96" sha256="90d23d5e2a156b4591b656385a947885d97ebd584b948a51a009f2d8ceb8b97d" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" sha256="046d4254c47b4f09b6431ab4ed90abcec16510aaf6bf5486985ea6ad6ed98e84" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
 	<file version="0.1" time="2015-03-03T14:44:50" md5="7e9f69513635b4c7a94d6117378478d9" sha256="985d8898c034489a51e54f8230fed74bbc63656ef0b83716d9c32b6cf11a24f9" ext=".ipf">microN/CuteCells.ipf</file>
