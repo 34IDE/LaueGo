@@ -896,11 +896,38 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	elseif (WaveDims(image)!=2)
 		return 1
 	endif
+
+	STRUCT microGeometry geo
+	if (FillGeometryStructDefault(geo))	//fill the geometry structure with test values
+		DoAlert 0, "no geometry structure found, did you forget to set it?"
+		return 1
+	endif
+
+	String wnote=note(image)
+	Variable startx,groupx, starty,groupy	// ROI of the actual image
+	startx = NumberByKey("startx",wnote,"=")
+	groupx = NumberByKey("groupx",wnote,"=")
+	starty = NumberByKey("starty",wnote,"=")
+	groupy = NumberByKey("groupy",wnote,"=")
+	startx = numtype(startx) ? FIRST_PIXEL : startx
+	groupx = numtype(groupx) ? 1 : groupx
+	starty = numtype(starty) ? FIRST_PIXEL : starty
+	groupy = numtype(groupy) ? 1 : groupy
+
+	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	Make/N=3/D/FREE Pvec = geo.d[dNum].P[p]	// get theta resolution from detector (resolution to 1/2 pixel in theta)
+	Variable perpDist = norm(Pvec)
+	Variable dangleX = groupx * geo.d[dNum].sizeX / geo.d[dNum].Nx
+	Variable dangleY = groupy * geo.d[dNum].sizeY / geo.d[dNum].Ny
+	Variable anglePlaces = -floor( log(min(dangleX,dangleY)/4 / perpDist * 180/PI) )
+	anglePlaces = numtype(anglePlaces) ? 4 : limit(anglePlaces,1,8)
+	String angFmt = "%."+num2istr(anglePlaces)+"f"
+
 	GetWindow $win psize
 	Variable vert = limit((s.mouseLoc.v-V_top)/(V_bottom-V_top),0,1)	// fractional position on graph
 	Variable horiz = limit((s.mouseLoc.h-V_left)/(V_right-V_left),0,1)
 
-	Variable mx,my							// pixel position at the mouse-click
+	Variable mx,my										// pixel position at the mouse-click
 	GetAxis/W=$win/Q bottom
 	if (V_flag)
 		return 1
@@ -912,7 +939,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	endif
 	my = (V_min-V_max)*vert + V_max
 
-	String tagStr="", wnote="", str
+	String tagStr="", str
 	Variable h,k,l, angleErr,keV=NaN,SpaceGroup
 	Variable dist2, m
 	Variable px,py
@@ -987,26 +1014,12 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			Abort "not useFitted or useMouse"
 		endif
 
-		STRUCT microGeometry geo
-		if (FillGeometryStructDefault(geo))	//fill the geometry structure with test values
-			DoAlert 0, "no geometry structure found, did you forget to set it?"
-			return 1
-		endif
 		if (WaveExists(FullPeakList))
 			wnote = note(FullPeakList)
 		else
 			wnote = note(image)		
 		endif
 		Make/N=3/O/D/FREE qBL
-		Variable startx,groupx, starty,groupy	// ROI of the original image
-		startx = NumberByKey("startx",wnote,"=")
-		groupx = NumberByKey("groupx",wnote,"=")
-		starty = NumberByKey("starty",wnote,"=")
-		groupy = NumberByKey("groupy",wnote,"=")
-		startx = numtype(startx) ? FIRST_PIXEL : startx
-		groupx = numtype(groupx) ? 1 : groupx
-		starty = numtype(starty) ? FIRST_PIXEL : starty
-		groupy = numtype(groupy) ? 1 : groupy
 		Variable pxUnb = (startx-FIRST_PIXEL) + groupx*px + (groupx-1)/2	// change to un-binned pixels
 		Variable pyUnb = (starty-FIRST_PIXEL) + groupy*py + (groupy-1)/2	// pixels are still zero based
 		Variable depth = NumberByKey("depth",wnote,"=")
@@ -1018,20 +1031,12 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		endif
 		keV = (numtype(keV)==0 && keV>0) ? keV : NaN
 
-		Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
 		Variable theta = pixel2q(geo.d[dNum],pxUnb,pyUnb,qBL,depth=depth)	// get theta, and q^ in Beam Line system
 		Variable/C pz = useDistortion ? microGeo#peakCorrect(geo.d[dNum],pxUnb,pyUnb) : cmplx(0,0)
 
-		Make/N=3/D/FREE Pvec = geo.d[dNum].P[p]		// get theta resolution from detector (resolution to 1/2 pixel in theta)
-		Variable dangleX = groupx * geo.d[dNum].sizeX / geo.d[dNum].Nx
-		Variable dangleY = groupy * geo.d[dNum].sizeY / geo.d[dNum].Ny
-		Variable anglePlaces = -floor( log(min(dangleX,dangleY)/4 / norm(Pvec) * 180/PI) )
-		anglePlaces = numtype(anglePlaces) ? 4 : limit(anglePlaces,1,8)
-		String fmt = "%."+num2istr(anglePlaces)+"f"
-
 		Variable Qmag=NaN
 		if (useFitted)
-			sprintf tagStr,"\\Zr090Fitted peak position (%.2f, %.2f)\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f\r\\F'Symbol'q\\F]0 = "+fmt+"\\F'Symbol'°\\F]0",px,py,fwx,fwy,xc,theta*180/PI
+			sprintf tagStr,"\\Zr090Fitted peak position (%.2f, %.2f)\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0",px,py,fwx,fwy,xc,theta*180/PI
 		elseif (useMissing)
 			sprintf tagStr,"\\Zr090Missing peak: (%.2f, %.2f)\r(%d %d %d) at %.4f keV",px,py,missing[imiss][0],missing[imiss][1],missing[imiss][2],keV
 			String desc = StringByKey("xtalDesc",note(missing),"=")
@@ -1044,9 +1049,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			tagStr +="\\F]0"
 		elseif (useMouse)
 			if (useDistortion)
-				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+fmt+"\\F'Symbol'°\\F]0,     distort=%.2f px",px,py,theta*180/PI,cabs(pz)
+				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0,     distort=%.2f px",px,py,theta*180/PI,cabs(pz)
 			else
-				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+fmt+"\\F'Symbol'°\\F]0",px,py,theta*180/PI
+				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0",px,py,theta*180/PI
 			endif
 			if (numtype(keV))
 				sprintf str,"\r\[0\\Zr075q\X0\y+20^\y-20\BBL\\M\\Zr075 = {%.3f, %.3f, %.3f}\M\\Zr090",qBL[0],qBL[1],qBL[2]
@@ -1074,9 +1079,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 					MatrixOp/O/FREE hkl = recip x hkli			// go from integral hkl to Q in BL
 					Variable dtheta = angleVec2Vec(hkl,qBL)	// angle between fitted peak and indexed peak
 					if (useDistortion)
-						sprintf str,"\r\\F'Symbol'Dq\\F]0 = "+fmt+"\\F'Symbol'°\\F]0,   distort=%.2f px",dtheta,cabs(pz)
+						sprintf str,"\r\\F'Symbol'Dq\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0,   distort=%.2f px",dtheta,cabs(pz)
 					else
-						sprintf str,"\r\\F'Symbol'Dq\\F]0 = "+fmt+"\\F'Symbol'°\\F]0",dtheta
+						sprintf str,"\r\\F'Symbol'Dq\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0",dtheta
 					endif
 					tagStr += str
 				endif
@@ -1127,9 +1132,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		angleErr=FullPeakIndexed[m][8][ip]
 		SpaceGroup=NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
 		if (ip>0)
-			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+fmt+" (deg)",h,k,l,keV,px,py,m,ip,angleErr
+			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+angFmt+" (deg)",h,k,l,keV,px,py,m,ip,angleErr
 		else
-			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+fmt+" (deg)",h,k,l,keV,px,py,m,angleErr
+			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+angFmt+" (deg)",h,k,l,keV,px,py,m,angleErr
 		endif
 		tagStr = "\\Zr090Indexed peak position\r" + str
 		tagStr += SelectString(numtype(SpaceGroup),"\r"+getSymString(SpaceGroup)+"    Space Group #"+num2istr(SpaceGroup),"")
