@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, April 15, 2015" time="03:06:15 PM CDT" isoTime="2015-04-15T15:06:15"></written>
+	<written date="Tuesday, April 21, 2015" time="08:56:01 AM CDT" isoTime="2015-04-21T08:56:01"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>a346e48397885d3b9b9922029b97ef25b6f8cd4b</gitHash>
+	<gitHash>6d80259aa4af4d47aaf43898090085ff117a14f3</gitHash>
 	<fileCount>269</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -58,7 +58,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" sha256="9ba07203fe152ef4493d9bd0ca90a845d69ed00b2dd2584ef07c04756d907bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.11" time="2014-04-30T10:34:47" md5="ac190b7444d9f6ce3425257b5bcfa831" sha256="f61e3c918f897f0c48885bd0644d845204ed2dbd77af3e157526ead391396226" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" sha256="b2e50305ba19e5514f3ca7f853db655171bce982732f8c452953a594f5d07854" ext=".xml">materials/Ge.xml</file>
-	<file version="4.65" time="2015-04-06T12:28:51" md5="3de4e6195ffb99d2a3b0c064baee7221" sha256="e956214ccb368cb5f4d0070a3ce0b4eda6c9355c33fe2366bf8b5938b2a9ca08" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.65" time="2015-04-21T08:55:03" md5="331500f67911cf8cf0a0e8135b2f55e5" sha256="496247ff5282892aeceb117451eacc1155d66b550e8b9e4e8cab2f844ddd6b34" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.83" time="2015-03-16T11:42:13" md5="fdcb8dae1bb300fd232a1b1ebb2bd30d" sha256="b5d5c95430cebee683fb45f40f5c7850c5fe964df3c3fe7d0deab369f0319aad" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" sha256="0b6abd4c56e4c6d47569bf63e059ba6eed35847565e373287820bb4eb31b5323" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="1.2" time="2013-10-28T11:28:48" md5="17203d813a1374b68b86c78787129b44" sha256="00c4370e4160deafb66929e37ef7d5d566f0c1db52069cca16b5bf6b9af6fa8c" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
