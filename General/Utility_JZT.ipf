@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.61
+#pragma version = 3.63
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3089,46 +3089,53 @@ Function AskForUserForDateTime(epoch)
 End
 
 
-ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector to s string suitable for printing, does not include name
-	Wave w										// 1d wave to print
+ThreadSafe Function/T vec2str(w1,[places,maxPrint,bare,zeroThresh,sep])		// convert vector to s string suitable for printing, does not include name
+	Wave w1										// 1d wave to print
 	Variable places							// number of places, for default, use negative or NaN
 	Variable maxPrint							// maximum number of elements to print, defaults to 20
 	Variable bare								// if bare is TRUE, then suppress the "{}" in the output
+	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
 	String sep									// optional separator, default is ",  "   a comma and 2 spaces
 
 	maxPrint = ParamIsDefault(maxPrint) ? 20 : maxPrint
 	maxPrint = maxPrint>0 ? maxPrint : 20
 	places = ParamIsDefault(places) ? -1 : places
 	bare = ParamIsDefault(bare) ? 0 : !(!bare)
+	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 	sep = SelectString(ParamIsDefault(sep),sep,",  ")
 
-	if (!WaveExists(w))
+	if (!WaveExists(w1))
 		return SelectString(bare,"{}","")
 	endif
 
-//	Wave/T tw=$GetWavesDataFolder(w,2)
-//	Wave/C cw=$GetWavesDataFolder(w,2)
-	Variable waveIsComplex = WaveType(w) %& 0x01
-	Variable numeric = (WaveType(w)!=0)
+//	Wave/T tw=$GetWavesDataFolder(w1,2)
+//	Wave/C cw=$GetWavesDataFolder(w1,2)
+	Variable waveIsComplex = WaveType(w1) %& 0x01
+	Variable numeric = (WaveType(w1)!=0)
 
 	String fmt
 	if (waveIsComplex)
-		Wave/C cw=w
+		Wave/C cw=w1
 		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
 		sprintf fmt,"(%%.%dg, %%.%dg)",places,places
 	elseif (numeric)
 		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
 		sprintf fmt,"%%.%dg",places
 	elseif (places>0)										// must be text, and a maximum length given
-		Wave/T tw=w
+		Wave/T tw=w1
 		sprintf fmt, "\"%d%%s\"",places
 	else														// must be text with no preferred length
-		Wave/T tw=w
+		Wave/T tw=w1
 		fmt = "\"%%s\""
 	endif
 
+	Duplicate/FREE w1, wInternal
+	if (numeric && zeroThresh)
+		wInternal = abs(wInternal)<zeroThresh ? 0 : wInternal
+	endif
+
 	Variable i=0, n
-	n = numpnts(w)
+	n = numpnts(wInternal)
 	maxPrint = min(n,maxPrint)
 	String str, out=SelectString(bare,"{","")
 
@@ -3136,7 +3143,7 @@ ThreadSafe Function/T vec2str(w,[places,maxPrint,bare,sep])		// convert vector t
 		if (waveIsComplex)						// a complex wave
 			sprintf str,fmt, real(cw[i]),imag(cw[i])
 		elseif (numeric && (!waveIsComplex))	// a simple number wave
-			sprintf str,fmt, w[i]
+			sprintf str,fmt, wInternal[i]
 		elseif (!numeric)							// a text wave
 			sprintf str,"\"%s\"", tw[i]
 		endif
@@ -3320,27 +3327,29 @@ End
 
 //  ====================================================================================  //
 //  ============================== Start of Wave Printing ==============================  //
-ThreadSafe Function printWave(w,[name,brief])		// print a wave (vector or matrix) to history
-	Wave w
-	String name										// optional user supplied name to use
-	Variable brief										// print in briefer form
+
+ThreadSafe Function printWave(w1,[name,brief,zeroThresh])	// print a wave (vector or matrix) to history
+	Wave w1
+	String name									// optional user supplied name to use
+	Variable brief								// print in briefer form
+	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
 	if (ParamIsDefault(name))
-		name = NameOfWave(w)
+		name = NameOfWave(w1)
 	endif
 	brief = ParamIsDefault(brief) ? 0 : !(!brief)
-	if (!WaveExists(w))
+	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
+	if (!WaveExists(w1))
 		print "in 'printWave', wave does not exist"
-		// DoAlert 0, "in 'printWave', wave does not exist"
 		return 1
 	endif
 
-	if (DimSize(w, 1)<=1)		// for vectors
-		printvec(w,name=name)
-	elseif (DimSize(w, 2)==0)	// for 2-d matrix
-		if (DimSize(w,0)<=1 || DimSize(w,1)<=1)
-			printvec(w,name=name)
+	if (DimSize(w1, 1)<=1)					// for vectors
+		printvec(w1,name=name)
+	elseif (DimSize(w1, 2)==0)			// for 2-d matrix
+		if (DimSize(w1,0)<=1 || DimSize(w1,1)<=1)
+			printvec(w1,name=name)
 		else
-			return printmat(w,name=name,brief=brief)
+			return printmat(w1,name=name,brief=brief)
 		endif
 	else
 		print "cannot yet handle dimensions 3 or 4"
@@ -3348,31 +3357,35 @@ ThreadSafe Function printWave(w,[name,brief])		// print a wave (vector or matrix
 	return 0
 End
 //
-ThreadSafe Static Function printvec(w,[name])		// print a vector to screen
-	Wave w
-	String name										// optional user supplied name to use
+ThreadSafe Static Function printvec(w1,[name,zeroThresh])	// print a vector to screen
+	Wave w1
+	String name									// optional user supplied name to use
+	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
 	if (ParamIsDefault(name))
-		name = NameOfWave(w)
+		name = NameOfWave(w1)
 	endif
+	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 
 	if (strlen(name))
-		printf "%s = %s\r", name,vec2str(w)
+		printf "%s = %s\r", name,vec2str(w1, zeroThresh=zeroThresh)
 	else
-		printf "%s\r", vec2str(w)
+		printf "%s\r", vec2str(w1, zeroThresh=zeroThresh)
 	endif
 End
 //
-ThreadSafe Static Function printmat(m,[name,brief,rowMax])
-	Wave m
-	String name										// optional user supplied name to use
-	Variable brief										// print in briefer form
-	Variable rowMax									// maximum number of rows to print
+ThreadSafe Static Function printmat(m1,[name,brief,rowMax,zeroThresh])
+	Wave m1
+	String name									// optional user supplied name to use
+	Variable brief								// print in briefer form
+	Variable rowMax							// maximum number of rows to print
+	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
 	if (ParamIsDefault(name))
-		name = NameOfWave(m)
+		name = NameOfWave(m1)
 	endif
 	rowMax = ParamIsDefault(rowMax) ? 50 : rowMax
 	rowMax = (rowMax>0) ? rowMax : 50
-	if (DimSize(m, 1)==0 || DimSize(m,2)!=0)	// for 2-d matrix only
+	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
+	if (DimSize(m1,1)==0 || DimSize(m1,2)!=0)	// for 2-d matrix only
 		print "Can only print 2-d matricies with printmat"
 		// DoAlert 0, "Can only print 2-d matricies with printmat"
 		return 1
@@ -3381,19 +3394,19 @@ ThreadSafe Static Function printmat(m,[name,brief,rowMax])
 	if (brief && strlen(name))
 		printf "%s:\r",name
 	endif
-	Variable Nrow=DimSize(m,0), row
+	Variable Nrow=DimSize(m1,0), row
 	Nrow = min(Nrow,rowMax)
 	for (row=0;row<Nrow;row+=1)
-		if (WaveType(m) %& 0x01)					// true for complex numbers
-			print printmatOneListComplex(m,row,name=name,brief=brief)
+		if (WaveType(m1) %& 0x01)			// true for complex numbers
+			print printmatOneListComplex(m1,row, name=name, brief=brief, zeroThresh=zeroThresh)
 		else
-			print printmatOneListReal(m,row,name=name,brief=brief)
+			print printmatOneListReal(m1,row, name=name, brief=brief, zeroThresh=zeroThresh)
 		endif
 	endfor
-	if (DimSize(m,0)>Nrow)
+	if (DimSize(m1,0)>Nrow)
 		print "      ."
 		print "      ."
-		printf "      .\t\t printed only %d of the %d rows\r",Nrow,DimSize(m,1)
+		printf "      .\t\t printed only %d of the %d rows\r",Nrow,DimSize(m1,1)
 	endif
 //	if (DimSize(mw,0)>Nrow || DimSize(mw,1)>Nrow)
 //		printf "Only printed part of the (%d x %d) matrix\r",DimSize(mw,0),DimSize(mw,1)
@@ -3401,58 +3414,74 @@ ThreadSafe Static Function printmat(m,[name,brief,rowMax])
 	return 0
 End
 //
-ThreadSafe Static Function/T printmatOneListReal(m,row,[name,brief])// print one line for real (not complex) matricies
-	Wave m
-	Variable row										// row number (starts with 0)
-	String name										// optional user supplied name to use
-	Variable brief										// print in briefer form
+ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,zeroThresh])// print one line for real (not complex) matricies
+	Wave m1
+	Variable row								// row number (starts with 0)
+	String name									// optional user supplied name to use
+	Variable brief								// print in briefer form
+	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
 	if (ParamIsDefault(name))
-		name = NameOfWave(m)
+		name = NameOfWave(m1)
 	endif
+	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 
+	Duplicate/FREE m1, mInternal
+	if (zeroThresh)
+		mInternal = abs(m1)<zeroThresh ? 0 : m1
+	endif
 	String line="", str
-	Variable j, Ncol=DimSize(m,1)
+	Variable j, Ncol=DimSize(m1,1)
 	for (j=0;j<Ncol;j+=1)
 		if (strlen(line)>100)
 			line += "  ..."
 			break
 		elseif (brief)
-			sprintf str, "%g    ",m[row][j]
+			sprintf str, "%g    ",mInternal[row][j]
 		else
-			sprintf str, "%s[%d][%d] = %g;    ",name,row,j,m[row][j]
+			sprintf str, "%s[%d][%d] = %g;    ",name,row,j,mInternal[row][j]
 		endif
 		line += str
 	endfor
-	line = line[0,strlen(line)-4-1]					// strip off trailing 4 spaces
+	line = line[0,strlen(line)-4-1]		// strip off trailing 4 spaces
 	return line
 End
 //
-ThreadSafe Static Function/T printmatOneListComplex(m,row,[name,brief])// print one line for complex (not real) matricies
-	Wave/C m
-	Variable row										// row number (starts with 0)
-	String name										// optional user supplied name to use
-	Variable brief										// print in briefer form
+ThreadSafe Static Function/T printmatOneListComplex(m1,row,[name,brief,zeroThresh])// print one line for complex (not real) matricies
+	Wave/C m1
+	Variable row								// row number (starts with 0)
+	String name									// optional user supplied name to use
+	Variable brief								// print in briefer form
+	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
 	if (ParamIsDefault(name))
-		name = NameOfWave(m)
+		name = NameOfWave(m1)
+	endif
+	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : !(!brief)
+	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
+
+	Duplicate/FREE m1, mInternal
+	if (zeroThresh)
+		mInternal = abs(m1)<zeroThresh ? 0 : m1
 	endif
 	String line="", str
-	Variable j, Ncol=DimSize(m,1)
+	Variable j, Ncol=DimSize(m1,1)
 	for (j=0;j<Ncol;j+=1)
 		if (strlen(line)>100)
 			line += "  ..."
 			break
 		elseif (brief)
-			sprintf str, "(%g,%g)    ",real(m[row][j]),imag(m[row][j])
+			sprintf str, "(%g,%g)    ",real(mInternal[row][j]),imag(mInternal[row][j])
 		else
-			sprintf str, "%s[%d][%d] = (%g,%g);    ",name,row,j,real(m[row][j]),imag(m[row][j])
+			sprintf str, "%s[%d][%d] = (%g,%g);    ",name,row,j,real(mInternal[row][j]),imag(mInternal[row][j])
 		endif
 		line += str
 	endfor
-	line = line[0,strlen(line)-4-1]					// strip off trailing 4 spaces
+	line = line[0,strlen(line)-4-1]		// strip off trailing 4 spaces
 	return line
 End
+
 //  =============================== End of Wave Printing ===============================  //
 //  ====================================================================================  //
+
 
 
 //  ====================================================================================  //
