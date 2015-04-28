@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.63
+#pragma version = 3.64
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3344,12 +3344,12 @@ ThreadSafe Function printWave(w1,[name,brief,zeroThresh])	// print a wave (vecto
 	endif
 
 	if (DimSize(w1, 1)<=1)					// for vectors
-		printvec(w1,name=name)
+		printvec(w1,name=name,zeroThresh=zeroThresh)
 	elseif (DimSize(w1, 2)==0)			// for 2-d matrix
 		if (DimSize(w1,0)<=1 || DimSize(w1,1)<=1)
-			printvec(w1,name=name)
+			printvec(w1,name=name,zeroThresh=zeroThresh)
 		else
-			return printmat(w1,name=name,brief=brief)
+			return printmat(w1,name=name,brief=brief,zeroThresh=zeroThresh)
 		endif
 	else
 		print "cannot yet handle dimensions 3 or 4"
