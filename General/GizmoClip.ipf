@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.00
+#pragma version = 2.01
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GClipPlanes
 #include "GizmoUtility", version>=0.16
@@ -101,13 +101,13 @@ Static Function GizmoClipPlaneButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventCode != 2)									// mouse up event
 		return 0
-	elseif (itemsInList(WinList("*",";","WIN:4096"))<1)	// no gizmos available, nothing to do
+	elseif (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))<1)	// no gizmos available, nothing to do
 		return 0
 	elseif (!stringmatch(ba.ctrlName,"removeClipPlaneButton"))
 		return 1											// unknown buttong
 	endif
 
-	String gizName = StringFromList(0,WinList("*",";","WIN:4096"))		// name of top gizmo
+	String gizName = StringFromList(0,WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))		// name of top gizmo
 	String groupList=GetGizmoObjects("group",gizmo=gizName)			// list of current group objects
 	Variable clipON=(WhichListItem(GizmoClipPlanePanelGroupName,groupList)>=0)		// group exists for clip planes
 	if (clipON)
@@ -122,7 +122,7 @@ End
 Static Function GizmoClipPlanePanelUpdate(win)	// update the Panel to reflect the current Gizmo
 	String win
 
-	String gizName = StringFromList(0,WinList("*",";","WIN:4096"))		// name of top gizmo
+	String gizName = StringFromList(0,WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))		// name of top gizmo
 	String Nstr=SelectString(strlen(gizName),"","/N="+gizName)
 	String groupList=""	
 	if (strlen(gizName)>0)

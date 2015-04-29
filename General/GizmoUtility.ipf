@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.01
+#pragma version = 2.02
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -58,9 +58,14 @@ Function ActivateCornerCubeOnGizmo([GizmoName,forceCalc])			// Show corner cubes
 	endif
 
 	if (!isCornerCubeDisplayedOnGizmo(GizmoName=GizmoName))
+#if (IgorVersion()<7)
 		String Nswitch=SelectString(strlen(GizmoName),"","/N="+GizmoName)
 		Execute "ModifyGizmo"+Nswitch+" setDisplayList=-1, object="+objectName
 		Execute "ModifyGizmo"+Nswitch+" compile"
+#else
+		ModifyGizmo/N=$GizmoName setDisplayList=-1, object=$objectName
+		ModifyGizmo/N=$GizmoName compile
+#endif
 	endif
 	return 0
 End
@@ -72,9 +77,14 @@ Function DeActivateCornerCubeOnGizmo([GizmoName])			// returns true if the gizmo
 
 	if (isCornerCubeDisplayedOnGizmo(GizmoName=GizmoName))
 		String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// if "", then add the corner cubes
+#if (IgorVersion()<7)
 		String Nswitch=SelectString(strlen(GizmoName),"","/N="+GizmoName)
 		Execute "RemoveFromGizmo"+Nswitch+" displayItem="+objectName
 		Execute "ModifyGizmo"+Nswitch+" compile"
+#else
+		RemoveFromGizmo/N=$GizmoName displayItem=$objectName
+		ModifyGizmo/N=$GizmoName compile
+#endif
 	endif
 	return 0
 End
@@ -184,6 +194,7 @@ Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
 	endif
 
 	if (WhichListItem(objectName,scatterList)<0 && strlen(objectName))	// group does not exist, create it
+#if (IgorVersion()<7)
 		Execute "ModifyGizmo startRecMacro"
 		Execute "AppendToGizmo"+Nswitch+" Scatter="+GetWavesDataFolder(wCorners,2)+",name="+objectName
 		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ scatterColorType,0}"
@@ -195,6 +206,19 @@ Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
 		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ color,0,0,0,1}"
 		Execute "ModifyGizmo"+Nswitch+" userString={CubeCorners,\""+objectName+"\"}"	// save name of cube corner object
 		Execute "ModifyGizmo endRecMacro"
+#else
+		ModifyGizmo startRecMacro
+		AppendToGizmo/N=$GizmoName Scatter=$GetWavesDataFolder(wCorners,2), name=$objectName
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ scatterColorType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ markerType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ sizeType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ rotationType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ Shape,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ size,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ color,0,0,0,1}
+		ModifyGizmo/N=$GizmoName userString={CubeCorners, objectName}	// save name of cube corner object
+		ModifyGizmo endRecMacro
+#endif
 	endif
 	return objectName
 End
@@ -212,9 +236,14 @@ Static Function/T getCornerCubeObjectNameOnGizmo([GizmoName])		// returns name o
 		Nswitch = "/N="+GizmoName
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo/Z"+Nswitch+" userString=CubeCorners"
 	String objectName=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
+#else
+	GetGizmo/Z/N=$GizmoName userString=CubeCorners
+	String objectName=S_GizmoUserString
+#endif
 
 	if (strlen(objectName)<1)			// in case of legacy gizmos
 		String scatterList = GetGizmoObjects("scatter",gizmo=GizmoName)
@@ -368,7 +397,11 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	endfor
 
 	// ************************* Group Object Start *******************
+#if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
+#else
+	AppendToGizmo group,name=$groupName
+#endif
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	Execute "AppendToGizmo string=\""+title1+"\",strFont=\""+font+"\",name=Title1"
 	Execute "ModifyGizmo modifyObject=Title1 property={Clipped,0}"
@@ -760,7 +793,7 @@ End
 
 Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 	String xlabel,ylabel,zlabel
-	if (itemsInList(WinList("*",";","WIN:4096"))==0)
+	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		return 1
 	endif
 
@@ -1155,7 +1188,7 @@ End
 
 Function/T GetGizmoBoxDisplayed(gizName)		// returns list with XYZ range of gizmo in USER units
 	String gizName				// use empty string for top gizmo
-	if (itemsInList(WinList("*",";","WIN:4096"))==0)
+	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		return ""
 	endif
 
@@ -1321,7 +1354,7 @@ Static Function/T GizmosWithWave(scatter)
 	if (!WaveExists(scatter))
 		return ""
 	endif
-	String list = WinList("*", ";", "WIN:4096" )	// list of possible gizmos
+	String list = WinList("*", ";", "WIN:"+num2istr(GIZMO_WIN_BIT) )	// list of possible gizmos
 	Variable N=ItemsInlist(list)
 	String str, wName=GetWavesDataFolder(scatter,2)
 	Variable i
@@ -1353,7 +1386,38 @@ End
 
 
 
+#if (IgorVersion()>=7)
+Menu "Gizmo"
+	"-"
+	"Put Cube Corners on Gizmo", ActivateCornerCubeOnGizmo(forceCalc=1)
+	"De-Activate Cube Corners on Gizmo", DeActivateCornerCubeOnGizmo()
+	"-"
+End
 
+#if (strlen(WinList("microGeometryN.ipf", ";","WIN:128")))
+Menu "Gizmo"
+	"Gizmo X-H plane", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0,0,0,1}												// X-H
+	"Gizmo X-F plane", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707106781186547,0,0,0.707106781186547}	// X-F
+	"Gizmo H-F plane", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}									// H-F
+	"Gizmo Beamline", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={-0.270598,0.653282,-0.270598,0.653281}		// ModifyGizmo euler={0,-90,45}
+	"-"
+End
+#else
+Menu "Gizmo"
+	"Gizmo X-Y plane [along beam, Z-axis]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.0,0.0,0.0,1.0}
+	"Gizmo Y-Z plane [side view, X-axis]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}
+	"Gizmo X-Z plane [-Y axis]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707107,0.0,0.0,0.707107}
+	"Gizmo X-Z plane [top view]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={-0.707107,0.0,0.0,0.707107}
+	"Gizmo 111 vertical [0-11 to right]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.060003,-0.540625,-0.455768,0.704556}
+	//	ModifyGizmo euler = {45, acos(1/sqrt(3))*180/PI, 90}
+	"-"
+End
+#endif
+#endif
+
+
+
+#if (IgorVersion()<7)
 Static Function InitGizmoUtilityGeneral()
 	Execute/Q/Z "GizmoMenu AppendItem={JZT0,\"-\", \"\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZT1,\"Put Cube Corners on Gizmo\", \"ActivateCornerCubeOnGizmo(forceCalc=1)\"}"
@@ -1374,3 +1438,7 @@ Static Function InitGizmoUtilityGeneral()
 	endif
 	Execute/Q/Z "GizmoMenu AppendItem={JZT4,\"-\", \"\"}"
 End
+#else
+Static Function InitGizmoUtilityGeneral()
+End
+#endif

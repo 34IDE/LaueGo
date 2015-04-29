@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.62	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.63	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -1754,7 +1754,7 @@ End
 Function Set3dSurfaceZscale(zmax)
 	Variable zmax										// max z value (Inf->autoscale, NaN->ask user)
 
-	if (strlen(WinList("*", "","WIN:4096"))<1)		// no surface plot is up
+	if (strlen(WinList("*", "","WIN:"+num2istr(GIZMO_WIN_BIT)))<1)		// no surface plot is up
 		return NaN
 	endif
 	Wave SliceWaveAbs=SliceWaveAbs

@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.42
+#pragma version = 1.43
 // #include "vector-math"	// was needed for normalize()
 Constant debugN = 0
 
@@ -44,7 +44,7 @@ End
 
 Window PanelGizmoView() : Panel
 	PauseUpdate; Silent 1		// building window...
-	String gizWin = StringFromList(0,WinList("*",";","WIN:4096"))		// gizmo window for positioning
+	String gizWin = StringFromList(0,WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))		// gizmo window for positioning
 	if (strlen(WinList("Panel_GizmoViewer","","WIN:64"))>1)
 		DoWindow/F Panel_GizmoViewer
 		AutoPositionWindow /M=0/R=$gizWin Panel_GizmoViewer

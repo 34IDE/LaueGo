@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.64
+#pragma version = 3.65
 // #pragma hide = 1
 
 Menu "Graph"
@@ -272,7 +272,7 @@ Proc Add_Corner_Labels_To_Layout() : LayoutStyle
 EndMacro
 //
 Static Function/S CornerStampWindow()
-	String win=WinName(0,127+4096,1)// Graph, Table, Layout, Notebook,Panel, or XOP window
+	String win=WinName(0,127+GIZMO_WIN_BIT,1)// Graph, Table, Layout, Notebook,Panel, or XOP window
 	String gwin=""
 
 	switch(WinType(win))

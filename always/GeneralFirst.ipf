@@ -2,9 +2,12 @@
 #pragma version = 3.22
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=3.61
+#include "Utility_JZT", version>=3.65
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
+#if (IgorVersion()<7)
+Constant GIZMO_WIN_TYPE = 13			// numbers for Igor 6 and under
+Constant GIZMO_WIN_BIT = 4096
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	if(exists("NewGizmo")==4)			// If the Gizmo XOP is available, alwalys put in this menu item.
@@ -12,6 +15,14 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	endif
 	return 0
 End
+
+#else
+Constant GIZMO_WIN_TYPE = 17			// numbers for Igor 7
+Constant GIZMO_WIN_BIT = 65536	
+Menu "Gizmo"
+	"Square Up Gizmo", SquareUpGizmo("")
+End
+#endif
 
 
 Menu "Analysis"
@@ -69,7 +80,7 @@ End
 
 
 Menu "Edit"
-	JZTgeneral#MenuItemIfWindowTypes("Copy Window Info",1+2+64+4096), /Q,  JZTgeneral#GetWindowInfo2Scrap()
+	JZTgeneral#MenuItemIfWindowTypes("Copy Window Info",1+2+64+GIZMO_WIN_BIT), /Q,  JZTgeneral#GetWindowInfo2Scrap()
 	SubMenu JZTgeneral#MenuItemIfScrapValidWindowInfo("  Paste Window","type")
 		JZTgeneral#MenuItemIfScrapValidWindowInfo("Paste Window Size","left"), /Q, JZTgeneral#PutSizeWindow("")
 		JZTgeneral#MenuItemIfScrapValidWindowInfo("Paste Graph Axis Ranges","axis_left_min"), /Q, JZTgeneral#PutScrapGraphAxis("")
@@ -723,10 +734,10 @@ Static Function/T MenuItemIfScrapValidWindowInfo(item,requiredKeys)
 	endif
 
 	Variable flag = NumberByKey("flag",scrap)
-	String gName = StringFromList(0,WinList("*",";","WIN:"+num2istr(1+2+64+4096)))
+	String gName = StringFromList(0,WinList("*",";","WIN:"+num2istr(1+2+64+GIZMO_WIN_BIT)))
 	Variable topType = WinType(gName)
 	topType = topType==7 ? 64 : topType		// Panel should be 64
-	topType = topType==13 ? 4096 : topType	// XOP window should be 4096
+	topType = topType==GIZMO_WIN_TYPE ? GIZMO_WIN_BIT : topType	// Gizmo window should be GIZMO_WIN_BIT
 
 	if (flag == topType)
 		return item
@@ -736,7 +747,7 @@ End
 
 
 Static Function/T GetWindowInfo2Scrap()
-	Variable flags = 1+2+64+ (exists("NewGizmo")==4 ? 4096 : 0)
+	Variable flags = 1+2+64+ (exists("NewGizmo")==4 ? GIZMO_WIN_BIT : 0)
 	String wName=StringFromLIst(0,WinList("*",";","WIN:"+num2istr(flags))), type=""
 	Variable graph=0, gizmo=0, table=0, panel=0, flag=0
 	if (WhichListItem(wName, WinList("*",";","WIN:1"))>=0)
@@ -751,12 +762,17 @@ Static Function/T GetWindowInfo2Scrap()
 		panel = 1
 		flag = 64
 		type = "Panel"
-	elseif (WhichListItem(wName, WinList("*",";","WIN:4096"))>=0 && flags>=4096)	// a Gizmo/XOP
+	elseif (WhichListItem(wName, WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))>=0 && flags>=GIZMO_WIN_BIT)	// a Gizmo/XOP
 		type = "Gizmo"
-		flag = 4096
+		flag = GIZMO_WIN_BIT
+#if (IgorVersion()<7)
 		Execute "GetGizmo gizmoNameList"
 		String gList=StrVarOrDefault("S_GizmoNames","")
 		KillStrings/Z S_GizmoNames
+#else
+		GetGizmo gizmoNameList
+		String gList=S_GizmoNames
+#endif
 		if (WhichListItem(wName, gList)<0)
 			wName = ""
 		else
@@ -772,10 +788,16 @@ Static Function/T GetWindowInfo2Scrap()
 	keys = ReplaceStringByKey("wName",keys,wName)
 	keys = ReplaceNumberByKey("flag",keys,flag)
 	if (gizmo)
+#if (IgorVersion()<7)
 		Execute "GetGizmo winPixels"			// get window position & size
 		Variable left=NumVarOrDefault("V_left",NaN), right=NumVarOrDefault("V_right",NaN)
 		Variable top=NumVarOrDefault("V_top",NaN), bottom=NumVarOrDefault("V_bottom",NaN)
 		KillVariables/Z V_left, V_right, V_top, V_bottom
+#else
+		Variable V_left,V_right,V_top,V_bottom
+		GetGizmo winPixels						// get window position & size
+		Variable left=V_left, right=V_right, top=top, bottom=V_bottom
+#endif
 		if (numtype(top+bottom+left+right))
 			DoAlert 0, "Unable to get Size of Gizmo Window"
 			return ""
@@ -785,9 +807,14 @@ Static Function/T GetWindowInfo2Scrap()
 		keys = ReplaceNumberByKey("right",keys,right)
 		keys = ReplaceNumberByKey("bottom",keys,bottom)
 
+#if (IgorVersion()<7)
 		Execute "GetGizmo curRotation"
 		Variable euler0=NumVarOrDefault("GizmoEulerA",NaN), euler1=NumVarOrDefault("GizmoEulerB",NaN), euler2=NumVarOrDefault("GizmoEulerC",NaN)
 		KillVariables/Z GizmoEulerA,GizmoEulerB,GizmoEulerC
+#else
+		GetGizmo curRotation
+		Variable euler0=GizmoEulerA, euler1=GizmoEulerB, euler2=GizmoEulerC
+#endif
 		if (numtype(euler0+euler1+euler2))
 			DoAlert 0, "Unable to get Orientation from Gizmo"
 			return ""
@@ -873,7 +900,7 @@ Static Function PutSizeWindow(scrap)
 		case "GizmoWindowInfo":
 			type = "Gizmo"
 			gizmo = 1
-			flag = 4096
+			flag = GIZMO_WIN_BIT
 			break
 		default:
 			DoAlert 0, "Did Not find valid window info in Clipboard"
@@ -897,17 +924,29 @@ Static Function PutSizeWindow(scrap)
 	top = NaN
 	left = NaN
 	if (gizmo)
+#if (IgorVersion()<7)
 		Execute "GetGizmo gizmoName"
 		gName=StrVarOrDefault("S_GizmoName","")
 		KillStrings/Z S_GizmoName
+#else
+		GetGizmo gizmoName
+		gName = S_GizmoName
+#endif
 		if (strlen(gName)<1)
 			DoAlert 0,"No Gizmo Visible to Re-Size"
 			return 1
 		endif
+#if (IgorVersion()<7)
 		Execute "GetGizmo winPixels"			// get current window position
 		left = NumVarOrDefault("V_left",NaN)
 		top = NumVarOrDefault("V_top",NaN)
 		KillVariables/Z V_left, V_right, V_top, V_bottom
+#else
+		Variable V_left,V_right,V_top,V_bottom
+		GetGizmo winPixels						// get current window position
+		left = V_left
+		top = V_top
+#endif
 	else
 		if (strlen(gName)<1)
 			DoAlert 0,"No "+type+" Visible to Re-Size"
@@ -977,14 +1016,24 @@ Static Function PutGizmoQuaternion(scrap)		// Set Quaternion
 		DoAlert 0,"Clipboard does not contain a Gizmo Quaternion Information"
 		return 1
 	endif
+#if (IgorVersion()<7)
 	Execute "GetGizmo gizmoName"
 	String gName=StrVarOrDefault("S_GizmoName","")
 	KillStrings/Z S_GizmoName
+#else
+	GetGizmo gizmoName
+	String gName=S_GizmoName
+#endif
 	if (strlen(gName)<1)
 		DoAlert 0,"No Gizmo Visible to Rotate"
 		return 1
 	endif
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo/N="+gName+" SETQUATERNION="+quaternion
+#else
+	Wave qw = str2vec(quaternion)
+	ModifyGizmo/N=$gName SETQUATERNION={qw[0], qw[1], qw[2], qw[3]}
+#endif
 	return 0
 End
 //

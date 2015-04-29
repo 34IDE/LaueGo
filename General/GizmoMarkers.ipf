@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.08
+#pragma version = 2.09
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -390,7 +390,7 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventCode != 2)	// mouse up event
 		return 0
-	elseif (itemsInList(WinList("*",";","WIN:4096"))<1)
+	elseif (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))<1)
 		return 0
 	endif
 
@@ -664,7 +664,7 @@ Static Function GizmoScatterMarkerUpdateHook(s)		// update all values on Marker 
 End
 //
 Static Function GizmoMarkerPanelUpdate()
-	if (strlen(WinList("*","","WIN:4096"))<1)	// if no gizmos, disable everything
+	if (strlen(WinList("*","","WIN:"+num2istr(GIZMO_WIN_BIT)))<1)	// if no gizmos, disable everything
 		PopupMenu waveSelectPopup,disable=2, win=GizmoScatterMarkerPanel
 		SetVariable xyzStep,disable=2, win=GizmoScatterMarkerPanel
 		Button FitPeakButton,disable=1, win=GizmoScatterMarkerPanel

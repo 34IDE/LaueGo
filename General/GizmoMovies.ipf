@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.02
+#pragma version = 2.03
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
@@ -75,7 +75,7 @@ Function MakeMovieOfGizmo(gizName,movieSteps,[printIt,testing])
 		fromPanel = 1
 	endif
 
-	String GizmoNamesList = WinList("*",";","WIN:4096")
+	String GizmoNamesList = WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT))
 	if (WhichListItem(gizName,GizmoNamesList)<0)
 		gizName = ""
 		if (ItemsInList(GizmoNamesList)<1)
@@ -710,7 +710,7 @@ Static Function UpdateMovieStepPanelButtons()
 	disable = NframesFromMovieStepListWave(steps,all=1)>0 ? 0 : 2
 	Button SaveWaveButton, disable=0
 
-	disable = strlen(WinList("*","","WIN:4096"))>0 ? 0 : 2
+	disable = strlen(WinList("*","","WIN:"+num2istr(GIZMO_WIN_BIT)))>0 ? 0 : 2
 	Button MakeMovieWaveButton, disable=disable
 
 	return 0

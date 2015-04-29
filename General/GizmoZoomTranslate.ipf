@@ -1,9 +1,14 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.00
+#pragma version = 2.01
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GZoomTrans
 #include "GizmoUtility", version>=0.16
 
+#if (IgorVersion()>=7)
+Menu "Gizmo"
+	"Zoom & Translate", MakeGizmoZoomTransPanel()
+End
+#endif
 
 Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	Variable refNum, kind
@@ -51,22 +56,24 @@ Function MakeGizmoZoomTransPanel() : Panel
 End
 
 Function showBox()
-	if (itemsInList(WinList("*",";","WIN:4096"))==0)
+	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		return 1
 	endif
 
 	String fldrSav= GetDataFolder(1)
 	SetDataFolder root:Packages:GizmoZoomTranslate
+#if (IgorVersion()<7)
 	Execute "GetGizmo userBoxLimits"
 	NVAR GizmoBoxXmin=GizmoBoxXmin, GizmoBoxXmax=GizmoBoxXmax
 	NVAR GizmoBoxYmin=GizmoBoxYmin, GizmoBoxYmax=GizmoBoxYmax
 	NVAR GizmoBoxZmin=GizmoBoxZmin, GizmoBoxZmax=GizmoBoxZmax
+#else
+	GetGizmo userBoxLimits
+#endif
 	printf "GizmoBox = [%g, %g] [%g, %g] [%g, %g]\r",GizmoBoxXmin, GizmoBoxXmax,GizmoBoxYmin, GizmoBoxYmax,GizmoBoxZmin, GizmoBoxZmax
-
 	Variable GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax
 	getGizmoDataLimits(GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax)
 	printf "Gizmo Data = [%g, %g] [%g, %g] [%g, %g]\r",GizmoXmin, GizmoXmax,GizmoYmin, GizmoYmax,GizmoZmin, GizmoZmax
-
 	Variable zoom,xc,yc,zc, xhw,yhw,zhw
 	getGizmoCurrentZoomCent(zoom,xc,yc,zc, xhw,yhw,zhw)
 	printf "center offset = {%g, %g, %g},   half-widths = {%g, %g, %g}\r",xc,yc,zc,xhw,yhw,zhw
@@ -76,12 +83,16 @@ End
 
 Function translateGizmo(dx,dy,dz)
 	Variable dx,dy,dz
-	if (itemsInList(WinList("*",";","WIN:4096"))==0)
+	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		return 1
 	endif
 
 	if (numtype(dx+dy+dz))
+#if (IgorVersion()<7)
 		Execute/Z/Q "ModifyGizmo autoScale"
+#else
+		ModifyGizmo autoScale
+#endif
 		return 0
 	endif
 
@@ -93,22 +104,31 @@ Function translateGizmo(dx,dy,dz)
 	dx -= (XminB+XmaxB)/2 - (Xmin+Xmax)/2
 	dy -= (YminB+YmaxB)/2 - (Ymin+Ymax)/2
 	dz -= (ZminB+ZmaxB)/2 - (Zmin+Zmax)/2
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo scalingOption=0"
 	String cmd
 	sprintf cmd "ModifyGizmo setOuterBox={%g,%g,%g,%g,%g,%g}",XminB+dx,XmaxB+dx, YminB+dy,YmaxB+dy, ZminB+dz,ZmaxB+dz
 	Execute cmd
 	Execute "ModifyGizmo scalingMode=8"
+#else
+	ModifyGizmo scalingOption=0
+	ModifyGizmo setOuterBox={XminB+dx,XmaxB+dx, YminB+dy,YmaxB+dy, ZminB+dz,ZmaxB+dz}
+	ModifyGizmo scalingMode=8
 End
 
 
 Function zoomGizmo(zoom)
 	Variable zoom
-	if (itemsInList(WinList("*",";","WIN:4096"))==0)
+	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		return 1
 	endif
 
 	if (zoom<=0 || numtype(zoom))
+#if (IgorVersion()<7)
 		Execute/Z/Q "ModifyGizmo autoScale"
+#else
+		ModifyGizmo autoScale
+#endif
 		return 0
 	endif
 
@@ -122,11 +142,17 @@ Function zoomGizmo(zoom)
 	Variable xWidth=Xmax-Xmin, yWidth=Ymax-Ymin, zWidth=Zmax-Zmin
 	Variable dx = zoom*xWidth/2, dy = zoom*yWidth/2, dz = zoom*zWidth/2
 
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo scalingOption=0"
 	String cmd
 	sprintf cmd "ModifyGizmo setOuterBox={%g,%g,%g,%g,%g,%g}",xc-dx, xc+dx, yc-dy, yc+dy, zc-dz, zc+dz
 	Execute cmd
 	Execute "ModifyGizmo scalingMode=8"
+#else
+	ModifyGizmo scalingOption=0
+	ModifyGizmo setOuterBox={xc-dx, xc+dx, yc-dy, yc+dy, zc-dz, zc+dz}
+	ModifyGizmo scalingMode=8
+#endif
 	//	ModifyGizmo scalingMode=8
 	//	ModifyGizmo ScalingMode=2
 End
@@ -155,8 +181,8 @@ Static Function GizmoZoomTranslateSetVarProc(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
 
 	switch( sva.eventCode )
-		case 1: // mouse up
-		case 2: // Enter key
+		case 1:		// mouse up
+		case 2:		// Enter key
 			Variable dval = sva.dval
 			String ctrlName = sva.ctrlName
 			break
@@ -188,13 +214,18 @@ Static Function GizmoZoomTransButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventCode != 2)	// mouse up event
 		return 0
-	elseif (itemsInList(WinList("*",";","WIN:4096"))<1)
+	elseif (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))<1)
 		return 0
 	endif
 
 	if (stringmatch(ba.ctrlName,"autoButton"))
+#if (IgorVersion()>=7)
 		Execute/Z/Q "ModifyGizmo scalingOption=0"
 		Execute/Z/Q "ModifyGizmo autoScale"
+#else
+		ModifyGizmo scalingOption=0
+		ModifyGizmo autoScale
+#endif
 		Variable zoom,xc,yc,zc, xhw,yhw,zhw
 		getGizmoCurrentZoomCent(zoom,xc,yc,zc, xhw,yhw,zhw)
 		SetVariable zoomVal,value= _NUM:zoom
@@ -209,10 +240,15 @@ Static Function GizmoZoomTransButtonProc(ba) : ButtonControl
 		dx = hw - (Xhi-Xlo)/2
 		dy = hw - (Yhi-Ylo)/2
 		dz = hw - (Zhi-Zlo)/2
+#if (IgorVersion()>=7)
 		String cmd
 		sprintf cmd "ModifyGizmo setOuterBox={%g,%g,%g,%g,%g,%g}",Xlo-dx,Xhi+dx, Ylo-dy,Yhi+dy, Zlo-dz,Zhi+dz
 		Execute cmd
 		Execute "ModifyGizmo scalingMode=8"
+#else
+		ModifyGizmo setOuterBox={Xlo-dx,Xhi+dx, Ylo-dy,Yhi+dy, Zlo-dz,Zhi+dz}
+		ModifyGizmo scalingMode=8
+#endif
 	endif
 
 	return 0
@@ -220,7 +256,7 @@ End
 //
 Static Function getGizmoCurrentZoomCent(zoom,xc,yc,zc,xhw,yhw,zhw)
 	Variable &zoom, &xc,&yc,&zc, &xhw,&yhw,&zhw
-	if (itemsInList(WinList("*",";","WIN:4096"))==0)
+	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		zoom = NaN
 		xc = NaN
 		yc = NaN
@@ -245,6 +281,7 @@ End
 Static Function getGizmoCurrentBox(Xlo,Xhi,Ylo,Yhi,Zlo,Zhi)
 	Variable &Xlo,&Xhi,&Ylo,&Yhi,&Zlo,&Zhi
 
+#if (IgorVersion()<7)
 	String fldrSav= GetDataFolder(1)
 	SetDataFolder root:Packages:GizmoZoomTranslate
 	Execute "GetGizmo userBoxLimits"
@@ -255,6 +292,15 @@ Static Function getGizmoCurrentBox(Xlo,Xhi,Ylo,Yhi,Zlo,Zhi)
 	Yhi = NumVarOrDefault("root:Packages:GizmoZoomTranslate:GizmoBoxYmax",NaN)
 	Zlo = NumVarOrDefault("root:Packages:GizmoZoomTranslate:GizmoBoxZmin",NaN)
 	Zhi = NumVarOrDefault("root:Packages:GizmoZoomTranslate:GizmoBoxZmax",NaN)
+#else
+	GetGizmo userBoxLimits
+	Xlo = GizmoBoxXmin
+	Xhi = GizmoBoxXmax
+	Ylo = GizmoBoxYmin
+	Yhi = GizmoBoxYmax
+	Zlo = GizmoBoxZmin
+	Zhi = GizmoBoxZmax
+#endif
 	if (numtype(Xlo+Xhi+Ylo+Yhi+Zlo+Zhi))
 		getGizmoDataLimits(Xlo,Xhi,Ylo,Yhi,Zlo,Zhi)	// use full data range if there  are no box values
 	endif
@@ -263,6 +309,7 @@ End
 Static Function getGizmoDataLimits(Xlo,Xhi,Ylo,Yhi,Zlo,Zhi)
 	Variable &Xlo,&Xhi,&Ylo,&Yhi,&Zlo,&Zhi
 
+#if (IgorVersion()<7)
 	String fldrSav= GetDataFolder(1)
 	SetDataFolder root:Packages:GizmoZoomTranslate
 	Execute "GetGizmo dataLimits"
@@ -273,6 +320,15 @@ Static Function getGizmoDataLimits(Xlo,Xhi,Ylo,Yhi,Zlo,Zhi)
 	Yhi = NumVarOrDefault("root:Packages:GizmoZoomTranslate:GizmoYmax",NaN)
 	Zlo = NumVarOrDefault("root:Packages:GizmoZoomTranslate:GizmoZmin",NaN)
 	Zhi = NumVarOrDefault("root:Packages:GizmoZoomTranslate:GizmoZmax",NaN)
+#else
+	GetGizmo dataLimits
+	Xlo = GizmoXmin
+	Xhi = GizmoXmax
+	Ylo = GizmoYmin
+	Yhi = GizmoYmax
+	Zlo = GizmoZmin
+	Zhi = GizmoZmax
+#endif
 End
 
 //  ======================================================================================  //
@@ -282,7 +338,9 @@ End
 
 Static Function InitGizmoZoomTranslate()
 	GizmoUtil#InitGizmoUtilityGeneral()
+#if (IgorVersion()<7)
 	Execute/Q/Z "GizmoMenu AppendItem={JZTz0,\"Zoom & Translate\", \"MakeGizmoZoomTransPanel()\"}"
+#endif
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:GizmoZoomTranslate
 End
