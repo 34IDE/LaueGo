@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.09
+#pragma version = 2.10
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -23,6 +23,13 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	return 0
 End
 
+
+#if (IgorVersion()>=7)
+Menu "Gizmo"
+	"Marker Panel", MakeGizmoScatterMarkerPanel()
+	"   Marker Info", PrintGizmoMarkerInfoAll()
+End
+#endif
 
 
 //  ======================================================================================  //
@@ -860,7 +867,12 @@ Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to
 	rgba = SelectString(ParamIsDefault(rgba),rgba,"")
 	alpha = ParamIsDefault(alpha) ? NaN : alpha
 
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo stopRotation"
+#else
+	ModifyGizmo stopRotation
+#endif
+	Variable Vflag = 0
 	String wname=GizmoGetScatterMarkerWave()
 	if (strlen(wname)<1)								// scatterMarker wave is not in object list, add it
 		if (!WaveExists(scatter))						// need this to know where the scatterMarker waves are located
@@ -889,13 +901,20 @@ Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to
 		endif
 
 		String CrossObject=""
+#if (IgorVersion()<7)
 		Execute "GetGizmo/Z objectItemExists=CrossPathGroup0"
-		if (NumVarOrDefault("V_Flag",0))
+		Vflag = NumVarOrDefault("V_Flag",0)
+#else
+		GetGizmo/Z objectItemExists=CrossPathGroup0
+		Vflag = V_flag
+#endif
+		if (VFlag)
 			CrossObject = "CrossPathGroup0"		// use existing cross object
 		else
 			CrossObject = AddGizmoMarkerGroup("CrossPathGroup", rgba=rgba,alpha=alpha)
 		endif
 
+#if (IgorVersion()<7)
 		Execute "ModifyGizmo startRecMacro"
 		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(gizmoScatterMarkerArray,2)+",name=scatterMarkerArray"
 		Execute "ModifyGizmo ModifyObject=scatterMarkerArray property={ markerType,0}"
@@ -917,12 +936,43 @@ Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to
 		endif
 		Execute "ModifyGizmo ModifyObject=scatterMarkerArray property={ objectName,"+CrossObject+"}"
 		Execute "ModifyGizmo endRecMacro"
+#else
+		ModifyGizmo startRecMacro
+		AppendToGizmo Scatter=$GetWavesDataFolder(gizmoScatterMarkerArray,2),name=scatterMarkerArray
+		ModifyGizmo ModifyObject=scatterMarkerArray property={ markerType,0}
+		ModifyGizmo ModifyObject=scatterMarkerArray property={ rotationType,0}
+		ModifyGizmo ModifyObject=scatterMarkerArray property={ Shape,7}
+		if (WaveExists(gizmoScatterMarkerArrayRGBA))
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ scatterColorType,1}
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ colorWave, $GetWavesDataFolder(gizmoScatterMarkerArrayRGBA,2)}
+		else
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ scatterColorType,0}
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ color,0,0,0,.5}
+		endif
+		if (WaveExists(gizmoScatterMarkerArraySize))
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ sizeType,1}
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ sizeWave, $GetWavesDataFolder(gizmoScatterMarkerArraySize,2)}
+		else
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ sizeType,0}
+			ModifyGizmo ModifyObject=scatterMarkerArray property={ size,0.5}
+		endif
+		ModifyGizmo ModifyObject=scatterMarkerArray property={ objectName, $CrossObject}
+		ModifyGizmo endRecMacro
+#endif
 		wname = GetWavesDataFolder(gizmoScatterMarkerArray,2)
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo displayItemExists=scatterMarkerArray"
+#else
+	GetGizmo displayItemExists=scatterMarkerArray
+#endif
 	if (!NumVarOrDefault("V_Flag",1))		// object not in display list, add it before other objects
+#if (IgorVersion()<7)
 		Execute "GetGizmo displayList"		// list of all displayed objects
+#else
+		GetGizmo displayList					// list of all displayed objects
+#endif
 		Wave/T TW_DisplayList=TW_DisplayList
 		Variable i,N=DimSize(TW_DisplayList,0)
 		for (i=N-1;i>=0;i-=1)
@@ -933,44 +983,74 @@ Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to
 				break
 			endif
 		endfor
+#if (IgorVersion()<7)
 		if (i>=0)									// position it before other objects
 			Execute "ModifyGizmo insertDisplayList="+num2istr(i)+", object=scatterMarkerArray"
 		else											// just put it at end
 			Execute "ModifyGizmo setDisplayList=-1, object=scatterMarkerArray"
 		endif
+#else
+		if (i>=0)									// position it before other objects
+			ModifyGizmo insertDisplayList=i, object=scatterMarkerArray
+		else											// just put it at end
+			ModifyGizmo setDisplayList=-1, object=scatterMarkerArray
+		endif
+#endif
 	endif
 
 	return wname
 End
 //
 Static Function GizmoRemoveScatterMarkers()		// removes marker from gizmo if needed, it does not remove it from the object list
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo stopRotation"
 	Execute "GetGizmo displayItemExists=scatterMarkerArray"
 	NVAR V_flag=V_flag
 	if (V_flag)										// object not in display list, remove it
 		Execute "RemoveFromGizmo displayItem=scatterMarkerArray"
 	endif
+#else
+	ModifyGizmo stopRotation
+	GetGizmo displayItemExists=scatterMarkerArray
+	if (V_flag)										// object not in display list, remove it
+		RemoveFromGizmo displayItem=scatterMarkerArray
+	endif
+#endif
 End
 //
 Static Function GizmoScatterMarkerDisplayed()		// returns true if scatter marker is displayed
+#if (IgorVersion()<7)
 	Execute "GetGizmo displayItemExists=scatterMarkerArray"
 	NVAR V_Flag=V_Flag
 	return V_Flag
+#else
+	GetGizmo displayItemExists=scatterMarkerArray
+	return V_Flag
+#endif
 End
 //
 Static Function/T GizmoGetScatterMarkerWave()	// gets name of wave with position of scatter marker
 	String wname=""
 
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo stopRotation"
 	Execute "GetGizmo objectItemExists=scatterMarkerArray"
 	NVAR V_Flag=V_Flag
 	if (!V_Flag)									// not in object list, so stop here
 		return ""
 	endif
-
 	Execute "GetGizmo objectList"			// find name of wave with marker position
+	KIllStrings/Z S_gizmoObjectList
+#else
+	GetGizmo objectItemExists=scatterMarkerArray
+	if (!V_Flag)									// not in object list, so stop here
+		return ""
+	endif
+	GetGizmo objectList							// find name of wave with marker position
+#endif
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+
 	String str
-	Wave/T TW_gizmoObjectList
 	Variable i,i0,i1
 	for (i=0;i<numpnts(TW_gizmoObjectList);i+=1)
 		str = TW_gizmoObjectList[i]
@@ -982,7 +1062,6 @@ Static Function/T GizmoGetScatterMarkerWave()	// gets name of wave with position
 		endif
 	endfor
 	KillWaves/Z TW_gizmoObjectList
-	KIllStrings/Z S_gizmoObjectList
 
 	return wname
 End
@@ -1623,8 +1702,10 @@ End
 
 Static Function InitGizmoMarkers()
 	GizmoUtil#InitGizmoUtilityGeneral()
+#if (IgorVersion()<7)
 	Execute/Q/Z "GizmoMenu AppendItem={JZTm0,\"Marker Panel\", \"MakeGizmoScatterMarkerPanel()\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZTm1,\"   Marker Info\", \"PrintGizmoMarkerInfoAll()\"}"
+#endif
 End
 
 //  ==================================== End of Init =====================================  //

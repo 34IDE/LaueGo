@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.21
+#pragma version = 2.22
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -984,7 +984,7 @@ Static Function/T MakeGraph_Q_NPositioners(Q_positions,image,i0,j0,k0)	// displa
 		title += "\r"+StringByKey("dateExposed",wnote,"=")
 	endif
 
-	if (strlen(WinList(graphName,"","WIN:4097")))	// graph or Gizmo
+	if (strlen(WinList(graphName,"","WIN:"+num2istr(1+GIZMO_WIN_BIT))))	// graph or Gizmo
 		DoWindow/F $graphName						// graph is already up, so just bring it to front
 	elseif (exists(graphName)==5)	
 		Execute graphName+"()"						// a recreation macro exists, run it

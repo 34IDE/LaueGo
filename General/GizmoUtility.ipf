@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.02
+#pragma version = 2.03
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -179,7 +179,7 @@ Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
 	elseif(! (WaveDims(wCorners)==2 && DimSize(wCorners,0)==8 && DimSize(wCorners,1)==3) )
 		return ""
 	elseif (!ParamIsDefault(GizmoName) && strlen(GizmoName))
-		if (WinType(GizmoName)!=13)
+		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
 			return ""
 		endif
 		Nswitch = "/N="+GizmoName
@@ -230,7 +230,7 @@ Static Function/T getCornerCubeObjectNameOnGizmo([GizmoName])		// returns name o
 	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
 	String Nswitch=""
 	if (!ParamIsDefault(GizmoName) && strlen(GizmoName))
-		if (WinType(GizmoName)!=13)
+		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
 			return ""
 		endif
 		Nswitch = "/N="+GizmoName
@@ -399,9 +399,6 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	// ************************* Group Object Start *******************
 #if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
-#else
-	AppendToGizmo group,name=$groupName
-#endif
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	Execute "AppendToGizmo string=\""+title1+"\",strFont=\""+font+"\",name=Title1"
 	Execute "ModifyGizmo modifyObject=Title1 property={Clipped,0}"
@@ -441,6 +438,49 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 		endif
 	endif
 	Execute "ModifyGizmo currentGroupObject=\"::\""
+
+#else
+	AppendToGizmo group,name=$groupName
+	ModifyGizmo currentGroupObject=groupName+
+	AppendToGizmo string=title1,strFont=font,name=Title1
+	ModifyGizmo modifyObject=Title1 property={Clipped,0}
+	if (strlen(title2))
+		AppendToGizmo string=title2,strFont=font,name=Title2
+		ModifyGizmo modifyObject=Title2 property={Clipped,0}
+	endif
+	if (strlen(title3))
+		AppendToGizmo string=title3,strFont=font,name=Title3
+		ModifyGizmo modifyObject=Title3 property={Clipped,0}
+	endif
+	if (strlen(title4))
+		AppendToGizmo string=title4,strFont=font,name=Title4
+		ModifyGizmo modifyObject=Title4 property={Clipped,0}
+	endif
+
+	if (stringmatch(pos,"TL"))
+		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,1.9,0}
+	elseif (stringmatch(pos,"BL"))
+		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,-1.95,0}
+	endif
+	ModifyGizmo setDisplayList=1, opName=rotateTitle, operation=rotate, data={180,1,0,0}
+	ModifyGizmo setDisplayList=2, opName=scaleTitle, operation=scale, data={0.1,0.1,0.1}
+	ModifyGizmo setDisplayList=3, object=Title1
+	if (strlen(title2))
+		ModifyGizmo setDisplayList=4, opName=translateTitle2, operation=translate, data={0,1,0}
+		ModifyGizmo setDisplayList=5, opName=scaleTitle2, operation=scale, data={0.8,0.8,0.8}
+		ModifyGizmo setDisplayList=6, object=Title2
+		if (strlen(title3))
+			ModifyGizmo setDisplayList=7, opName=translateTitle3, operation=translate, data={0,1,0}
+			ModifyGizmo setDisplayList=8, opName=scaleTitle3, operation=scale, data={0.7,0.7,0.7}
+			ModifyGizmo setDisplayList=9, object=Title3
+			if (strlen(title4))
+				ModifyGizmo setDisplayList=10, opName=translateTitle4, operation=translate, data={0,1.5,0}
+				ModifyGizmo setDisplayList=11, object=Title4
+			endif
+		endif
+	endif
+	ModifyGizmo currentGroupObject="::"
+#endif
 	// ************************* Group Object End *******************
 	return groupName
 End
@@ -490,6 +530,7 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 
 	String cmd
 	// ************************* Group Object Start *******************
+#if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	sprintf cmd "AppendToGizmo string=\"%s\",strFont=\"%s\",name=stringScaleBar",unitStr,font
@@ -507,6 +548,23 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	Execute "ModifyGizmo setDisplayList=6, object=stringScaleBar"
 	Execute "ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
+#else
+	AppendToGizmo group,name=$groupName
+	ModifyGizmo currentGroupObject=groupName
+	AppendToGizmo string=unitStr,strFont=font,name=stringScaleBar
+	ModifyGizmo modifyObject=stringScaleBar property={Clipped,0}
+	AppendToGizmo line={GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}, name=line0
+	AppendToGizmo attribute lineWidth=5, name=lineWidth0
+	ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix
+	ModifyGizmo setDisplayList=1, attribute=lineWidth0
+	ModifyGizmo setDisplayList=2, object=line0
+	ModifyGizmo setDisplayList=3, opName=translateScaleBarText, operation=translate, data={GIZMO_SCALE_BAR_LEFT_EDGE,-1.85,0}
+	ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}
+	ModifyGizmo setDisplayList=5, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}
+	ModifyGizmo setDisplayList=6, object=stringScaleBar
+	ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix
+	ModifyGizmo currentGroupObject="::"
+#endif
 	// ************************* Group Object End *******************
 	return groupName
 End
@@ -520,9 +578,15 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	Variable scaleFactor=1
 	String units = "nm"
 	String win=s.winName
+	String scaleBarName="", str, font="Geneva"
+#if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z objectNameList"
-	String listObjectNames=StrVarOrDefault("S_ObjectNames",""), scaleBarName="", str, font="Geneva"
+	String listObjectNames=StrVarOrDefault("S_ObjectNames","")
 	KillStrings/Z S_ObjectNames
+#else
+	GetGizmo/N=$win/Z objectNameList
+	String listObjectNames=S_ObjectNames,
+#endif
 	Variable i
 	for (i=0;i<ItemsInList(listObjectNames);i+=1)
 		if (StringMatch(StringFromList(i,listObjectNames),"ScaleBarGroup*"))
@@ -534,10 +598,23 @@ Static Function GzimoReSetScaleBarHookProc(s)
 		return 0
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z displayItemExists=scaleBase"
-	if (NumVarOrDefault("V_flag",0))
+	Variable Vflag = (NumVarOrDefault("V_flag",0))
+	KillVariables/Z V_Flag
+#else
+	GetGizmo/N=$win/Z displayItemExists=scaleBase
+	Variable Vflag = V_flag
+#endif
+	if (Vflag)
+#if (IgorVersion()<7)
 		Execute "GetGizmo/N="+win+"/Z displayList"
+		KillStrings/Z S_DisplayList
+#else
+		GetGizmo/N=$win/Z displayList
+#endif
 		Wave/T TW_DisplayList=TW_DisplayList
+
 		for (i=0;i<numpnts(TW_DisplayList);i+=1)
 			if (strsearch(TW_DisplayList[i],"opName=scaleBase, operation=scale,",0,2)>0)
 				str = TW_DisplayList[i]
@@ -549,15 +626,19 @@ Static Function GzimoReSetScaleBarHookProc(s)
 
 		endfor
 		KillWaves/Z TW_DisplayList
-		KillStrings/Z S_DisplayList
-		KillVariables/Z V_Flag
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z dataLimits"
 	Variable dx = NumVarOrDefault("GizmoXmax",1)-NumVarOrDefault("GizmoXmin",1)
 	Variable dy = NumVarOrDefault("GizmoYmax",1)-NumVarOrDefault("GizmoYmin",1)
 	Variable dz = NumVarOrDefault("GizmoZmax",1)-NumVarOrDefault("GizmoZmin",1)
 	KillVariables/Z GizmoXmin,GizmoXmax,GizmoYmin,GizmoYmax,GizmoZmin,GizmoZmax
+#else
+	GetGizmo/N=$win/Z dataLimits
+	Variable dx=GizmoXmax-GizmoXmin, dy=GizmoYmax-GizmoYmin, dz=GizmoZmax-GizmoZmin
+#endif
+
 	Variable maxLength = max(max(dx,dy),dz)
 	Variable BarLength = 10^floor(log(maxLength))
 	if (5*BarLength < maxLength)					// for scale bar use multipliers of 1, 2, or 5 ONLY
@@ -568,8 +649,14 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	Variable dxGizmoLine = BarLength/maxLength * scaleFactor * 2
 	//	printf "maxLength = %g,  BarLength = %g,   dxGizmoLine = %g,  dxGizmoLine-1.75 = %g\r",maxLength,BarLength,dxGizmoLine, dxGizmoLine-1.75
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z objectList"
+	KillStrings/Z S_gizmoObjectList
+#else
+	Execute GetGizmo/N=$win/Z objectList
+#endif
 	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+
 	Variable i0,i1
 	for (i0=0,i=0; i<numpnts(TW_gizmoObjectList); i+=1)
 		if (strsearch(TW_gizmoObjectList[i], "AppendToGizmo group,name="+scaleBarName,0,2)>0)
@@ -608,9 +695,9 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	endfor
 	//	printf "units = '%s'\r",units
 	KillWaves/Z TW_gizmoObjectList
-	KillStrings/Z S_gizmoObjectList
 	String unitStr = num2str(BarLength)+" "+units
 
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo/N="+win+"/Z startRecMacro"
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\""+scaleBarName+"\""
 	Execute "ModifyGizmo/N="+win+"/Z modifyObject=stringScaleBar, property={string,\""+unitStr+"\"}"
@@ -618,6 +705,14 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	Execute str
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
 	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
+#else
+	ModifyGizmo/N=$win/Z startRecMacro
+	ModifyGizmo/N=$win/Z currentGroupObject=scaleBarName
+	ModifyGizmo/N=$win/Z modifyObject=stringScaleBar, property={string,unitStr}
+	ModifyGizmo/N=$win/Z modifyObject=line0, property={vertex,GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}
+	ModifyGizmo/N=$win/Z currentGroupObject="::"
+	ModifyGizmo/N=$win/Z endRecMacro
+#endif
 	return 0	 
 End
 
@@ -663,6 +758,7 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha])
 	endif
 
 	// ************************* Group Object Start *******************
+#if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	String str
@@ -710,6 +806,53 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha])
 	endif
 	Execute "ModifyGizmo setDisplayList=-1, opName=popAttribute0, operation=popAttribute"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
+#else
+	AppendToGizmo group,name=$groupName
+	ModifyGizmo currentGroupObject=groupName
+	String str
+	Variable v = GIZMO_MARKER_END_SIZE>0 ? 1-2*GIZMO_MARKER_END_SIZE : 1
+	AppendToGizmo line={-v,0,0,v,0,0}, name=lineX
+	AppendToGizmo line={0,-v,0,0,v,0}, name=lineY
+	AppendToGizmo line={0,0,-v,0,0,v}, name=lineZ
+	if (GIZMO_MARKER_END_SIZE>0)
+		Variable endType=limit(GIZMO_MARKER_END_TYPE,0,1)
+		if (endType==0)							// boxes
+			AppendToGizmo box={GIZMO_MARKER_END_SIZE,GIZMO_MARKER_END_SIZE,GIZMO_MARKER_END_SIZE},name=endMarkers
+			ModifyGizmo modifyObject=endMarkers property={calcNormals,1}
+		elseif (endType==1)						// spheres
+			AppendToGizmo sphere={GIZMO_MARKER_END_SIZE,25,25},name=endMarkers
+		endif
+	endif
+	AppendToGizmo attribute lineWidth=2, name=lineWidthCross
+	if (strlen(rgba))
+		AppendToGizmo attribute color={$rgba},name=colorLine
+	endif
+	ModifyGizmo setDisplayList=0, opName=pushAttribute0, operation=pushAttribute, data=5
+	ModifyGizmo setDisplayList=1, attribute=lineWidthCross
+	if (strlen(rgba))
+		ModifyGizmo setDisplayList=2, attribute=colorLine
+	endif
+	ModifyGizmo setDisplayList=-1, object=lineX
+	ModifyGizmo setDisplayList=-1, object=lineY
+	ModifyGizmo setDisplayList=-1, object=lineZ
+	if (GIZMO_MARKER_END_SIZE>0)
+		v = 1 - GIZMO_MARKER_END_SIZE
+		ModifyGizmo setDisplayList=-1, opName=translateXminus, operation=translate, data={-v,0,0}
+		ModifyGizmo setDisplayList=-1, object=endMarkers
+		ModifyGizmo setDisplayList=-1, opName=translateXplus, operation=translate, data={2*v,0,0}
+		ModifyGizmo setDisplayList=-1, object=endMarkers
+		ModifyGizmo setDisplayList=-1, opName=translateYminus, operation=translate, data={-v,-v,0}
+		ModifyGizmo setDisplayList=-1, object=endMarkers
+		ModifyGizmo setDisplayList=-1, opName=translateYplus, operation=translate, data={0,2*v,0}
+		ModifyGizmo setDisplayList=-1, object=endMarkers
+		ModifyGizmo setDisplayList=-1, opName=translateZminus, operation=translate, data={0,-v,-v}
+		ModifyGizmo setDisplayList=-1, object=endMarkers
+		ModifyGizmo setDisplayList=-1, opName=translateZplus, operation=translate, data={0,0,2*v}
+		ModifyGizmo setDisplayList=-1, object=endMarkers
+	endif
+	ModifyGizmo setDisplayList=-1, opName=popAttribute0, operation=popAttribute
+	ModifyGizmo currentGroupObject="::"
+#endif
 	// ************************* Group Object End *******************
 
 	return groupName
@@ -739,6 +882,7 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	endif
 
 	// ************************* Group Object Start *******************
+#if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	Execute "AppendToGizmo freeAxesCue={0,0,0,1},name=freeAxesCue_BeamLine"
@@ -785,6 +929,54 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	Execute "ModifyGizmo setDisplayList=29, opName=popMatrix0, operation=popMatrix"
 	Execute "ModifyGizmo setDisplayList=30, opName=popAttribute0, operation=popAttribute"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
+#else
+	AppendToGizmo group,name=$groupName
+	ModifyGizmo currentGroupObject=groupName
+	AppendToGizmo freeAxesCue={0,0,0,1},name=freeAxesCue_BeamLine
+	AppendToGizmo string="X(BL)",strFont=$font,name=stringX
+	ModifyGizmo modifyObject=stringX property={Clipped,0}
+	AppendToGizmo string="Y(BL)",strFont=$font,name=stringY
+	ModifyGizmo modifyObject=stringY property={Clipped,0}
+	AppendToGizmo string="Z(BL)",strFont=$font+,name=stringZ
+	ModifyGizmo modifyObject=stringZ property={Clipped,0}
+	AppendToGizmo cylinder={0,0.2,1,25,25},name=cylinderArrow
+	AppendToGizmo attribute lineWidth=2, name=lineWidthCross
+	AppendToGizmo attribute color={1,0,0,1},name=colorXred
+	AppendToGizmo attribute color={0,1,0,1},name=colorYgreen
+	AppendToGizmo attribute color={0,0,1,1},name=colorZblue
+	ModifyGizmo setDisplayList=0, opName=pushAttribute0, operation=pushAttribute, data=5
+	ModifyGizmo setDisplayList=1, attribute=lineWidthCross
+	ModifyGizmo setDisplayList=2, opName=pushMatrix0, operation=pushMatrix
+	ModifyGizmo setDisplayList=3, opName=rotate45, operation=rotate, data={-45,1,0,0}
+	ModifyGizmo setDisplayList=4, object=freeAxesCue_BeamLine
+	ModifyGizmo setDisplayList=5, opName=pushMatrix_X, operation=pushMatrix
+	ModifyGizmo setDisplayList=6, opName=translateX, operation=translate, data={1,0,0}
+	ModifyGizmo setDisplayList=7, opName=scaleX, operation=scale, data={0.07,0.07,0.07}
+	ModifyGizmo setDisplayList=8, attribute=colorXred
+	ModifyGizmo setDisplayList=9, opName=rotateX, operation=rotate, data={-90,0,1,0}
+	ModifyGizmo setDisplayList=10, object=stringX
+	ModifyGizmo setDisplayList=11, object=cylinderArrow
+	ModifyGizmo setDisplayList=12, opName=popMatrix_X, operation=popMatrix
+	ModifyGizmo setDisplayList=13, opName=pushMatrix_Y, operation=pushMatrix
+	ModifyGizmo setDisplayList=14, opName=translateY, operation=translate, data={0,1,0}
+	ModifyGizmo setDisplayList=15, attribute=colorYgreen
+	ModifyGizmo setDisplayList=16, opName=scaleY, operation=scale, data={0.07,0.07,0.07}
+	ModifyGizmo setDisplayList=17, opName=rotateY, operation=rotate, data={90,1,0,0}
+	ModifyGizmo setDisplayList=18, object=stringY
+	ModifyGizmo setDisplayList=19, object=cylinderArrow
+	ModifyGizmo setDisplayList=20, opName=popMatrix_Y, operation=popMatrix
+	ModifyGizmo setDisplayList=21, opName=pushMatrix_Z, operation=pushMatrix
+	ModifyGizmo setDisplayList=22, opName=translateZ, operation=translate, data={0,0,1}
+	ModifyGizmo setDisplayList=23, attribute=colorZblue
+	ModifyGizmo setDisplayList=24, opName=scaleZ, operation=scale, data={0.07,0.07,0.07}
+	ModifyGizmo setDisplayList=25, opName=rotateZ, operation=rotate, data={180,1,0,0}
+	ModifyGizmo setDisplayList=26, object=stringZ
+	ModifyGizmo setDisplayList=27, object=cylinderArrow
+	ModifyGizmo setDisplayList=28, opName=popMatrix_Z, operation=popMatrix
+	ModifyGizmo setDisplayList=29, opName=popMatrix0, operation=popMatrix
+	ModifyGizmo setDisplayList=30, opName=popAttribute0, operation=popAttribute
+	ModifyGizmo currentGroupObject="::"
+#endif
 	// ************************* Group Object End *******************
 
 	return groupName
@@ -797,13 +989,21 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 		return 1
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo objectItemExists=axes0"
 	NVAR V_Flag=V_Flag
 	if (!V_flag)
 		Execute "AppendToGizmo Axes=boxAxes,name=axes0"
 	endif
 	String cmd
+#else
+	GetGizmo objectItemExists=axes0
+	if (!V_flag)
+		AppendToGizmo Axes=boxAxes,name=axes0
+	endif
+#endif
 
+#if (IgorVersion()<7)
 	if (stringmatch(xlabel,"empty"))
 		Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabel,0}"
 	elseif (strlen(xlabel))
@@ -836,6 +1036,37 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 		Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelDistance,0.2}"
 		Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelScale,0.5}"
 	endif
+#else
+	if (stringmatch(xlabel,"empty"))
+		ModifyGizmo ModifyObject=axes0,property={0,axisLabel,0}
+	elseif (strlen(xlabel))
+		ModifyGizmo ModifyObject=axes0,property={0,ticks,3}
+		ModifyGizmo ModifyObject=axes0,property={0,axisLabel,1}
+		ModifyGizmo ModifyObject=axes0,property={0,axisLabelText,xlabel}
+		ModifyGizmo ModifyObject=axes0,property={0,axisLabelDistance,0.05}
+		ModifyGizmo ModifyObject=axes0,property={0,axisLabelScale,0.5}
+	endif
+
+	if (stringmatch(ylabel,"empty"))
+		ModifyGizmo ModifyObject=axes0,property={1,axisLabel,0}
+	elseif (strlen(ylabel))
+		ModifyGizmo ModifyObject=axes0,property={1,ticks,3}
+		ModifyGizmo ModifyObject=axes0,property={1,axisLabel,1}
+		ModifyGizmo ModifyObject=axes0,property={1,axisLabelText,ylabel}
+		ModifyGizmo ModifyObject=axes0,property={1,axisLabelDistance,0.05}
+		ModifyGizmo ModifyObject=axes0,property={1,axisLabelScale,0.5}
+	endif
+
+	if (stringmatch(zlabel,"empty"))
+		ModifyGizmo ModifyObject=axes0,property={2,axisLabel,0}
+	elseif (strlen(zlabel))
+		ModifyGizmo ModifyObject=axes0,property={2,ticks,3}
+		ModifyGizmo ModifyObject=axes0,property={2,axisLabel,1}
+		ModifyGizmo ModifyObject=axes0,property={2,axisLabelText,zlabel}
+		ModifyGizmo ModifyObject=axes0,property={2,axisLabelDistance,0.2}
+		ModifyGizmo ModifyObject=axes0,property={2,axisLabelScale,0.5}
+	endif
+#endif
 End
 
 
@@ -865,6 +1096,7 @@ Function/T AddGizmoClipPlaneGroup(groupName)
 	endif
 	if (WhichListItem(groupName,groupList)<0 && strlen(groupName))	// group does not exist, create it
 		// ************************* Group Object Start *******************
+#if (IgorVersion()<7)
 		Execute "AppendToGizmo group,name="+groupName
 		Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 		Execute "ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data=12288"	// enable all of the 6 clip planes
@@ -874,8 +1106,24 @@ Function/T AddGizmoClipPlaneGroup(groupName)
 		Execute "ModifyGizmo setDisplayList=4, opName=enable4, operation=enable, data=12292"
 		Execute "ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data=12293"
 		Execute "ModifyGizmo currentGroupObject=\"::\""
+#else
+		AppendToGizmo group,name=$groupName
+		ModifyGizmo currentGroupObject=groupName
+		ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data=12288		// enable all of the 6 clip planes
+		ModifyGizmo setDisplayList=1, opName=enable1, operation=enable, data=12289
+		ModifyGizmo setDisplayList=2, opName=enable2, operation=enable, data=12290
+		ModifyGizmo setDisplayList=3, opName=enable3, operation=enable, data=12291
+		ModifyGizmo setDisplayList=4, opName=enable4, operation=enable, data=12292
+		ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data=12293
+		ModifyGizmo currentGroupObject="::"
+#endif
 		// ************************* Group Object End *******************
+
+#if (IgorVersion()<7)
 		Execute "ModifyGizmo userString={"+groupName+",\"\"}"	// there are no clip planes yet defined, so make empty
+#else
+		ModifyGizmo userString={$groupName,""}						// there are no clip planes yet defined, so make empty
+#endif
 	endif
 	return groupName
 End
@@ -890,16 +1138,26 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 	if (WhichListItem(groupName,groupList)<0)				// group must already exists 
 		return 1
 	endif
+#if (IgorVersion()<7)
 	Execute "GetGizmo/Z userString="+groupName
 	String keyVals=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
+#else
+	GetGizmo/Z userString="+groupName
+	String keyVals=S_GizmoUserString
+#endif
 
 	Variable err=0
 	strswitch(action)
 		case "delete":
 		case "remove":
+#if (IgorVersion()<7)
 			Execute "RemoveFromGizmo/Z object="+groupName
 			Execute "ModifyGizmo userString={"+groupName+",\"\"}"	// there are no clip planes, so make empty
+#else
+			RemoveFromGizmo/Z object=$groupName
+			ModifyGizmo userString={$groupName,""}						// there are no clip planes, so make empty
+#endif
 			break
 
 		case "update":
@@ -921,9 +1179,15 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 			String clipPlane="ClipPlane"+action[1]+SelectString(char2num(action[0])==43,"n","p")
 			if (numtype(clipVal))
 				keyVals = RemoveByKey(action,keyVals)
+#if (IgorVersion()<7)
 				Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 				Execute "RemoveFromGizmo/Z displayItem="+clipPlane
 				Execute "ModifyGizmo currentGroupObject=\"::\""
+#else
+				ModifyGizmo currentGroupObject=groupName
+				RemoveFromGizmo/Z displayItem=$clipPlane
+				ModifyGizmo currentGroupObject="::"
+#endif
 			else
 				keyVals = ReplaceNumberByKey(action,keyVals,clipVal)
 				String box=GetGizmoBoxDisplayed("")
@@ -955,19 +1219,42 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 				endif
 				dataStr += num2str(clipBox)+"}"
 
+#if (IgorVersion()<7)
 				Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 				Execute "GetGizmo displayNameList"
 				String names=StrVarOrDefault("S_DisplayNames","")
 				KillStrings/Z S_DisplayNames
+#else
+				ModifyGizmo currentGroupObject=groupName
+				GetGizmo displayNameList
+				String names=S_DisplayNames
+#endif
 				if (WhichListItem(clipPlane,names)<0)				// not present, add it
+#if (IgorVersion()<7)
 					Execute "ModifyGizmo setDisplayList=-1, opName="+clipPlane+", operation=ClipPlane, data="+dataStr
+#else
+					ModifyGizmo setDisplayList=-1, opName=$clipPlane, operation=ClipPlane, data=$dataStr
+#endif
 				else													// just modify existing
+#if (IgorVersion()<7)
 					Execute "ModifyGizmo/Z opName="+clipPlane+", operation=ClipPlane, data="+dataStr
+#else
+					ModifyGizmo/Z opName=$clipPlane, operation=ClipPlane, data=$dataStr
+#endif
 				endif
+#if (IgorVersion()<7)
 				Execute "ModifyGizmo currentGroupObject=\"::\""
+#else
+				ModifyGizmo currentGroupObject="::"
+#endif
 			endif
+#if (IgorVersion()<7)
 			Execute "ModifyGizmo userString={"+groupName+",\""+keyVals+"\"}"
 			Execute "ModifyGizmo compile"
+#else
+			ModifyGizmo userString={$groupName,keyVals}
+			ModifyGizmo compile
+#endif
 			break
 
 		default:
@@ -988,18 +1275,25 @@ End
 Function isGizmoObjectDisplayed(object,[gizmo])		// returns -1 if object no found on displayList, if found return place in displayList
 	String object						// name of a gizmo object
 	String gizmo
-	String Nswitch = ""
-	if (!ParamIsDefault(gizmo) && strlen(gizmo))
-		if (WinType(gizmo)!=13)
+	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
+
+	if (strlen(gizmo))
+		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return -1
 		endif
-		Nswitch = "/N="+gizmo
 	endif
 
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
 	Execute "GetGizmo/Z"+Nswitch+" displayList"
 	String displayList=StrVarOrDefault("S_DisplayList","")
 	KillWaves/Z TW_DisplayList
 	KillStrings/Z S_DisplayList
+#else
+	GetGizmo/Z/N=$gizmo displayList
+	String displayList=S_DisplayList
+	KillWaves/Z TW_DisplayList
+#endif
 
 	String item, find="*, object="+object
 	Variable i,i0, num=-1
@@ -1024,22 +1318,27 @@ Function/T GetGizmoObjects(type,[gizmo,exclude])		// returns list of objects of 
 	String type						// type of object to look for, e.g. "scatter"
 	String gizmo
 	String exclude					// an optional list of objects to exclude
+	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
 
-	String Nswitch = ""
-	if (!ParamIsDefault(gizmo) && strlen(gizmo))
-		if (WinType(gizmo)!=13)
+	if (strlen(gizmo))
+		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return ""
 		endif
-		Nswitch = "/N="+gizmo
 	endif
-	if (ParamIsDefault(exclude))
-		exclude = ""
-	endif
+	exclude = SelectString(ParamIsDefault(exclude),exclude,"")
 
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
 	Execute "GetGizmo/Z"+Nswitch+" objectList"
 	String objectList=StrVarOrDefault("S_gizmoObjectList","")
 	KillWaves/Z TW_gizmoObjectList
 	KillStrings/Z S_gizmoObjectList
+#else
+	GetGizmo/Z/N=$gizmo objectList
+	String objectList=S_gizmoObjectList
+	KillWaves/Z TW_gizmoObjectList
+#endif
+
 	String item, objects="", objName
 	String typeSep=type+SelectString(stringmatch(type,"group"),"=",",")
 	Variable i
@@ -1058,18 +1357,24 @@ End
 
 Function/T GizmoListScatterWaves([gizmo])		// get list of all scatter plots, except 'scatterMarker0, scatterMarker1, ...
 	String gizmo									// optional name of gizmo
-	String Nswitch = ""
 	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
 	if (strlen(gizmo))
-		if (WinType(gizmo)!=13)
+		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return ""
 		endif
-		Nswitch = "/N="+gizmo
 	endif
 
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
 	Execute "ModifyGizmo"+Nswitch+" stopRotation"
 	Execute "GetGizmo"+Nswitch+" displayList"		// list of all displayed objects
 	Execute "GetGizmo"+Nswitch+" objectList"		// find name of wave with marker position
+	KIllStrings/Z S_DisplayList, S_gizmoObjectList
+#else
+	ModifyGizmo/N=$gizmo stopRotation
+	GetGizmo/N=$gizmo displayList			// list of all displayed objects
+	GetGizmo/N=$gizmo objectList				// find name of wave with marker position
+#endif
 	Wave/T TW_DisplayList=TW_DisplayList, TW_gizmoObjectList=TW_gizmoObjectList
 
 	String keyList=""
@@ -1098,25 +1403,30 @@ Function/T GizmoListScatterWaves([gizmo])		// get list of all scatter plots, exc
 		keyList = ReplaceStringByKey(wname,keyList,scatterName,"=")
 	endfor
 	KillWaves/Z TW_DisplayList, TW_gizmoObjectList
-	KIllStrings/Z S_DisplayList, S_gizmoObjectList
 	return keyList
 End
 
 
 Function/T GizmoListIsoSurfaceWaves([gizmo])		// get list of all iso surface waves
 	String gizmo									// optional name of gizmo
-	String Nswitch = ""
 	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
 	if (strlen(gizmo))
-		if (WinType(gizmo)!=13)
+		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return ""
 		endif
-		Nswitch = "/N="+gizmo
 	endif
 
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
 	Execute "ModifyGizmo"+Nswitch+" stopRotation"
 	Execute "GetGizmo"+Nswitch+" displayList"		// list of all displayed objects
 	Execute "GetGizmo"+Nswitch+" objectList"		// find name of wave with marker position
+	KIllStrings/Z S_DisplayList, S_gizmoObjectList
+#else
+	ModifyGizmo/N=$gizmo stopRotation
+	GetGizmo/N=$gizmo displayList			// list of all displayed objects
+	GetGizmo/N=$gizmo objectList				// find name of wave with marker position
+#endif
 	Wave/T TW_DisplayList=TW_DisplayList, TW_gizmoObjectList=TW_gizmoObjectList
 
 	String keyList=""
@@ -1139,26 +1449,32 @@ Function/T GizmoListIsoSurfaceWaves([gizmo])		// get list of all iso surface wav
 		keyList = ReplaceStringByKey(wname,keyList,scatterName,"=")
 	endfor
 	KillWaves/Z TW_DisplayList, TW_gizmoObjectList
-	KIllStrings/Z S_DisplayList, S_gizmoObjectList
 	return keyList
 End
 
 
 Function/T GizmoListSurfaceWaves([gizmo])		// get list of all Surface plots on gizmo
 	String gizmo									// optional name of gizmo
-	String Nswitch = ""
 	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
 	if (strlen(gizmo))
-		if (WinType(gizmo)!=13)
+		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return ""
 		endif
-		Nswitch = "/N="+gizmo
 	endif
 
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
 	Execute "ModifyGizmo"+Nswitch+" stopRotation"
-	Execute "GetGizmo"+Nswitch+" displayList"		// list of all displayed objects
 	Execute "GetGizmo"+Nswitch+" objectList"		// find name of wave with marker position
-	Wave/T TW_DisplayList=TW_DisplayList, TW_gizmoObjectList=TW_gizmoObjectList
+//	Execute "GetGizmo"+Nswitch+" displayList"		// list of all displayed objects
+//	KIllStrings/Z S_DisplayList
+//	KillWaves/Z TW_DisplayList
+	KIllStrings/Z S_gizmoObjectList
+#else
+	ModifyGizmo/N=$gizmo stopRotation
+	GetGizmo/N=$gizmo objectList				// find name of wave with marker position
+#endif
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 
 	String keyList=""
 	String str, wname, list, surfaceName
@@ -1180,35 +1496,45 @@ Function/T GizmoListSurfaceWaves([gizmo])		// get list of all Surface plots on g
 		endif
 		keyList = ReplaceStringByKey(wname,keyList,surfaceName,"=")
 	endfor
-	KillWaves/Z TW_DisplayList, TW_gizmoObjectList
-	KIllStrings/Z S_DisplayList, S_gizmoObjectList
+	KillWaves/Z TW_gizmoObjectList
 	return keyList
 End
 
 
-Function/T GetGizmoBoxDisplayed(gizName)		// returns list with XYZ range of gizmo in USER units
-	String gizName				// use empty string for top gizmo
+Function/T GetGizmoBoxDisplayed(gizmo)		// returns list with XYZ range of gizmo in USER units
+	String gizmo				// use empty string for top gizmo
 	if (itemsInList(WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))==0)
 		return ""
 	endif
 
-	String Nstr=SelectString(strlen(gizName),"","/N="+gizName)
-
-	Execute "GetGizmo"+Nstr+" userBoxLimits"
+#if (IgorVersion()<7)
+	//	String Nstr=SelectString(strlen(gizmo),"","/N="+gizmo)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
+	Execute "GetGizmo"+Nswitch+" userBoxLimits"
 	NVAR GizmoBoxXmin=GizmoBoxXmin, GizmoBoxXmax=GizmoBoxXmax
 	NVAR GizmoBoxYmin=GizmoBoxYmin, GizmoBoxYmax=GizmoBoxYmax
 	NVAR GizmoBoxZmin=GizmoBoxZmin, GizmoBoxZmax=GizmoBoxZmax
-	//	printf "GizmoBox = [%g, %g] [%g, %g] [%g, %g]\r",GizmoBoxXmin, GizmoBoxXmax,GizmoBoxYmin, GizmoBoxYmax,GizmoBoxZmin, GizmoBoxZmax
 	Variable Xlo=GizmoBoxXmin,Xhi=GizmoBoxXmax,Ylo=GizmoBoxYmin,Yhi=GizmoBoxYmax,Zlo=GizmoBoxZmin,Zhi=GizmoBoxZmax
 	KillVariables/Z GizmoBoxXmin, GizmoBoxXmax, GizmoBoxYmin, GizmoBoxYmax, GizmoBoxZmin, GizmoBoxZmax
+#else
+	GetGizmo/N=$gizmo userBoxLimits
+	Variable Xlo=GizmoBoxXmin,Xhi=GizmoBoxXmax,Ylo=GizmoBoxYmin,Yhi=GizmoBoxYmax,Zlo=GizmoBoxZmin,Zhi=GizmoBoxZmax
+#endif
+	//	printf "GizmoBox = [%g, %g] [%g, %g] [%g, %g]\r",Xlo,Xhi, Ylo,Yhi, Zlo,Zhi
+
 	if (numtype(Xlo+Xhi+Ylo+Yhi+Zlo+Zhi))
-		Execute "GetGizmo"+Nstr+" dataLimits"
+#if (IgorVersion()<7)
+		Execute "GetGizmo"+Nswitch+" dataLimits"
 		NVAR GizmoXmin=GizmoXmin, GizmoXmax=GizmoXmax
 		NVAR GizmoYmin=GizmoYmin, GizmoYmax=GizmoYmax
 		NVAR GizmoZmin=GizmoZmin, GizmoZmax=GizmoZmax
 		Xlo=GizmoXmin;Xhi=GizmoXmax; Ylo=GizmoYmin;Yhi=GizmoYmax; Zlo=GizmoZmin;Zhi=GizmoZmax
-		//	printf "GizmoRange = [%g, %g] [%g, %g] [%g, %g]\r",GizmoXmin, GizmoXmax,GizmoYmin, GizmoYmax,GizmoZmin, GizmoZmax
 		KillVariables/Z GizmoXmin, GizmoXmax, GizmoYmin, GizmoYmax, GizmoZmin, GizmoZmax
+#else
+		GetGizmo/N=$gizmo dataLimits
+		Xlo=GizmoXmin;Xhi=GizmoXmax; Ylo=GizmoYmin;Yhi=GizmoYmax; Zlo=GizmoZmin;Zhi=GizmoZmax
+#endif
+		//	printf "GizmoRange = [%g, %g] [%g, %g] [%g, %g]\r",Xlo,Xhi, Ylo,Yhi, Zlo,Zhi
 	endif
 	String out=""
 	if (numtype(Xlo+Xhi+Ylo+Yhi+Zlo+Zhi)==0)
@@ -1225,13 +1551,18 @@ Function/WAVE GizmoObjectWave(objectName,objType,[gizmo])
 	String gizmo						// optional name of gizmo
 	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
 	if (strlen(gizmo))
-		if (WinType(gizmo)!=13)
+		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return $""
 		endif
 	endif
 
 	// get all ojects
-	Execute "GetGizmo"+SelectString(strlen(gizmo),"","/N="+gizmo)+" objectList"
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
+	Execute "GetGizmo"+Nswitch+" objectList"
+#else
+	GetGizmo/N=$gizmo objectList
+#endif
 	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 
 	Wave ww = $""
@@ -1306,42 +1637,72 @@ Static Function/T AppendParametricXYZ2Gizmo(parametricXYZ,class)
 	String xyzName = GetWavesDataFolder(parametricXYZ,2)
 	if (strlen(win)>0)
 		DoWindow/F $win				// for wave already in gizmo, bring it to front
-		Execute "GetGizmo/N="+win+"/Z objectList"
+
+#if (IgorVersion()<7)
+		String Nswitch = SelectString(strlen(win),"","/N="+win)
+		Execute "GetGizmo"+Nswitch+"/Z objectList"
+#else
+		GetGizmo/N=$win/Z objectList
+#endif
 		Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+
 		for (i=0,j=-1; i<numpnts(TW_gizmoObjectList) && j<0; i+=1)
 			j = strsearch(TW_gizmoObjectList[i],xyzName,0,2)
 		endfor
+		KillWaves/Z TW_gizmoObjectList
 		return StringByKey("name",TW_gizmoObjectList[i-1],"=",",")
 	endif
 
 	String wnote=note(parametricXYZ)
 	Wave sourceWave = $StringByKey("source", wnote,"=")
 	if (!WaveExists(sourceWave))
+		KillWaves/Z TW_gizmoObjectList
 		return ""
 	endif
 	win = GizmosWithWave(sourceWave)
 	if (strlen(win)<1)
+		KillWaves/Z TW_gizmoObjectList
 		return ""
 	endif
 	DoWindow/F $win					// bring gizmo to front, and then append the surface
 	DoUpdate
 
 	// Find unsued name for surface, starting with "ParametricSurf0"
-	Execute "GetGizmo/N="+win+"/Z objectNameList"
-	SVAR S_ObjectNames=S_ObjectNames
+#if (IgorVersion()<7)
+	Nswitch = SelectString(strlen(win),"","/N="+win)
+	Execute "GetGizmo"+Nswitch+"/Z objectNameList"
+	String ObjectNames = StrVarOrDefault("S_ObjectNames","")
+	KillStrings/Z S_ObjectNames
+	KillWaves/Z TW_gizmoObjectList
+#else
+	Execute "GetGizmo"+Nswitch+"/Z objectNameList"
+	String ObjectNames = S_ObjectNames
+#endif
 	String rgbaName=StringByKey("RGBA",wnote,"="), surfaceName
 	for (i=0,j=0; j>=0; i+=1)
 		surfaceName = "ParametricSurf"+num2istr(i)
-		j = WhichListItem(surfaceName, S_ObjectNames)
+		j = WhichListItem(surfaceName, ObjectNames)
 	endfor
-	Execute "AppendToGizmo Surface="+xyzName+",name="+surfaceName
-	Execute "ModifyGizmo ModifyObject="+surfaceName+" property={ srcMode,4}"
-	Execute "ModifyGizmo modifyObject="+surfaceName+" property={calcNormals,1}"
+
+#if (IgorVersion()<7)
+	Execute "AppendToGizmo"+Nswitch+" Surface="+xyzName+",name="+surfaceName
+	Execute "ModifyGizmo"+Nswitch+" ModifyObject="+surfaceName+" property={ srcMode,4}"
+	Execute "ModifyGizmo"+Nswitch+" modifyObject="+surfaceName+" property={calcNormals,1}"
 	if (exists(rgbaName)==1)
-		Execute "ModifyGizmo ModifyObject="+surfaceName+" property={ surfaceColorType,3}"
-		Execute "ModifyGizmo ModifyObject="+surfaceName+" property={ surfaceColorWave,"+rgbaName+"}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+surfaceName+" property={ surfaceColorType,3}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+surfaceName+" property={ surfaceColorWave,"+rgbaName+"}"
 	endif
-	Execute "ModifyGizmo setDisplayList=-1, object="+surfaceName
+	Execute "ModifyGizmo"+Nswitch+" setDisplayList=-1, object="+surfaceName
+#else
+	AppendToGizmo/N=$win Surface=$xyzName,name=$surfaceName
+	ModifyGizmo/N=$win ModifyObject=$surfaceName property={ srcMode,4}
+	ModifyGizmo/N=$win modifyObject=$surfaceName property={calcNormals,1}
+	if (exists(rgbaName)==1)
+		ModifyGizmo/N=$win ModifyObject=$surfaceName property={ surfaceColorType,3}
+		ModifyGizmo/N=$win ModifyObject=$surfaceName property={ surfaceColorWave,$rgbaName}
+	endif
+	ModifyGizmo/N=$win setDisplayList=-1, object=$surfaceName
+#endif
 	return surfaceName
 End
 

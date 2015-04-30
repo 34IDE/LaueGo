@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.03
+#pragma version = 2.04
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
@@ -25,6 +25,11 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 End
 
 
+#if (IgorVersion()>=7)
+Menu "Gizmo"
+	"Movie Steps Panel...", MakeMovieStepsPanel()
+End
+#endif
 
 
 Menu "Gizmo-Movie"
@@ -172,6 +177,7 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 
 	String progressWin = ProgressPanelStart("",showTime=1), cmd
 	DoWindow/F $(gm.gizmoName)
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo/N="+gm.gizmoName+" stopRotation"
 	sprintf cmd, "ModifyGizmo/N=%s SETQUATERNION={%g,%g,%g,%g}",gm.gizmoName,gm.quaternion[0],gm.quaternion[1],gm.quaternion[2],gm.quaternion[3]
 	Execute cmd
@@ -181,8 +187,15 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 	Variable left=NumVarOrDefault("V_left",NaN), right=NumVarOrDefault("V_right",NaN)
 	Variable top=NumVarOrDefault("V_top",NaN), bottom=NumVarOrDefault("V_bottom",NaN)
 	KillVariables/Z V_left, V_right, V_top, V_bottom
-
 	Execute "ExportGizmo wave as \""+gm.imageName+"\""	// get a picture of the gizmo
+#else
+	ModifyGizmo/N=$(gm.gizmoName) stopRotation
+	ModifyGizmo/N=$(gm.gizmoName) SETQUATERNION={gm.quaternion[0],gm.quaternion[1],gm.quaternion[2],gm.quaternion[3]}
+	ModifyGizmo/N=$(gm.gizmoName) update = 2
+	GetGizmo/N=$(gm.gizmoName) winPixels						// get gizmo window position & size
+	Variable left=V_left, right=V_right, top=V_top, bottom=V_bottom
+	ExportGizmo wave as $(gm.imageName)						// get a picture of the gizmo
+#endif
 	Wave GizmoImage=$(gm.imageName)
 
 	// make the Graph to hold images of the Gizmo
@@ -305,8 +318,13 @@ Static Function AddGizmoFrames2Movie(gm,N)
 	STRUCT gizmoMovieStruct &gm
 	Variable N			// number of frames to add, usually 1
 
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo/N="+gm.gizmoName+" update = 1"
 	Execute "ExportGizmo wave as \""+gm.imageName+"\""	// get a picture of the gizmo
+#else
+	ModifyGizmo/N=$(gm.gizmoName) update = 1
+	ExportGizmo wave as $(gm.imageName)						// get a picture of the gizmo
+#endif
 	DoWindow/F $(gm.graphName)									// bring graph with new picture to front
 	DoUpdate/W=$(gm.graphName)									// update graph to show picture
 	Variable i, MovieIsOpen = NumVarOrDefault("MovieIsOpenGlobal",0)
@@ -334,9 +352,14 @@ Static Function InsertGizmoMovieClipPlanesGroup(group)
 		return NaN								// ERROR, no group name
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo displayNameList"
 	String DisplayList=StrVarOrDefault("S_DisplayNames","")
 	KillStrings/Z S_DisplayNames
+#else
+	GetGizmo displayNameList
+	String DisplayList=S_DisplayNames
+#endif
 
 	Variable m=WhichListItem(group,DisplayList)
 	if (m>=0)
@@ -356,7 +379,11 @@ Static Function InsertGizmoMovieClipPlanesGroup(group)
 	m = max(0,m)								// first is at least 0
 	m = m>=N ? 0 : m							// if no axes found, put at top (i.e. 0)
 
+#if (IgorVersion()<7)
 	Execute "ModifyGizmo insertDisplayList="+num2istr(m)+", object="+group
+#else
+	ModifyGizmo insertDisplayList=m, object=$group
+#endif
 	return m
 End
 
@@ -366,12 +393,18 @@ Function RemoveGizmoMovieClipPlane(gm)	// remove gizmo movie clip plane group fr
 	if (strlen(gm.clipPlaneGroupName)<1)	// if no clip plane group, do nothing
 		return 0
 	endif
+
+#if (IgorVersion()<7)
 	String cmd
 	sprintf cmd, "ModifyGizmo/N=%s userString={%s,\"\"}",gm.gizmoName,gm.clipPlaneGroupName
 	Execute cmd
 	sprintf cmd, "RemoveFromGizmo/N=%s/U=2/Z object=%s",gm.gizmoName,gm.clipPlaneGroupName
 	Execute cmd
-	gm.clipPlaneGroupName = ""				// flags that clip plane group is gone
+#else
+	ModifyGizmo/N=$(gm.gizmoName) userString={gm.clipPlaneGroupName,""}
+	RemoveFromGizmo/N=$(gm.gizmoName)/U=2/Z object=$(gm.clipPlaneGroupName)
+#endif
+	gm.clipPlaneGroupName = ""			// flags that clip plane group is gone
 	return 0
 End
 
@@ -395,11 +428,15 @@ Static Function AddRotationMovieFrame(gm,da,axis)
 	normalize(qr)
 	qr *= sin(da)
 	qr[0] = cos(da)
-
 	Wave qnew = GizmoMovies#MultiplyQuaternions(qr,q0)
-	String cmd
-	sprintf cmd, "ModifyGizmo SETQUATERNION={%s}",vec2str(qnew,bare=1)
+
+#if (IgorVersion()<7)
+	String cmd, Nswitch=SelectString(strlen(gm.gizmoName),"","/N="+(gm.gizmoName))
+	sprintf cmd, "ModifyGizmo%s SETQUATERNION={%s}",Nswitch,vec2str(qnew,bare=1)
 	Execute cmd
+#else
+	ModifyGizmo/N=$(gm.gizmoName) SETQUATERNION={qnew[0],qnew[1],qnew[2],qnew[3]}
+#endif
 	gm.quaternion[0] = qnew[0]	// save as current quaternion
 	gm.quaternion[1] = qnew[1]
 	gm.quaternion[2] = qnew[2]
@@ -412,22 +449,30 @@ End
 Function/WAVE getGizmoQuaternion(gwin)
 	String gwin
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo gizmoNameList"
 	String GizmoNames = StrVarOrDefault("S_GizmoNames","")
 	KillVariables/Z S_GizmoNames
+#else
+	GetGizmo gizmoNameList
+	String GizmoNames = S_GizmoNames
+#endif
 	if (strlen(gwin) && WhichListItem(gwin,GizmoNames)<0)
 		return $""
 	endif
 
-	String cmd="GetGizmo/Z curMatrix"
-	if (strlen(gwin))
-		if (WhichListItem(gwin,GizmoNames)>=0)
-			sprintf cmd, "GetGizmo/N=%s/Z curMatrix",gwin
-		else
-			return $""
-		endif
+#if (IgorVersion()<7)
+	if (strlen(gwin) && WhichListItem(gwin,GizmoNames)<0)
+		return $""
 	endif
-	Execute cmd
+	String Nswitch=SelectString(strlen(gwin),"","/N="+(gwin))
+	Execute "GetGizmo"+Nswitch+"/Z curMatrix"
+#else
+	if (strlen(gwin) && WhichListItem(gwin,GizmoNames)<0)
+		return $""
+	endif
+	GetGizmo/N=$gwin/Z curMatrix
+#endif
 	Wave M_RotationMatrix=M_RotationMatrix
 	if (!WaveExists(M_RotationMatrix))
 		return $""
@@ -1027,6 +1072,7 @@ Static Function MakeGizmoMovieTestGizmo()	// show the test data in a Gizmo
 		return 1
 	endif
 
+#if (IgorVersion()<7)
 	Execute "NewGizmo/K=1/N=GizmoMovieTest0/T=\"GizmoMovieTest0\" /W=(151,297,746,892)"
 	Execute "ModifyGizmo startRecMacro"
 	Execute "AppendToGizmo Scatter=root:xyzTestGizmoMovie,name=scatter0"
@@ -1055,6 +1101,36 @@ Static Function MakeGizmoMovieTestGizmo()	// show the test data in a Gizmo
 	Execute "ModifyGizmo compile"
 	Execute "ModifyGizmo showAxisCue=1"
 	Execute "ModifyGizmo endRecMacro"
+#else
+	NewGizmo/K=1/N=GizmoMovieTest0/T="GizmoMovieTest0" /W=(151,297,746,892)
+	ModifyGizmo startRecMacro
+	AppendToGizmo Scatter=root:xyzTestGizmoMovie,name=scatter0
+	ModifyGizmo ModifyObject=scatter0 property={ scatterColorType,1}
+	ModifyGizmo ModifyObject=scatter0 property={ Shape,2}
+	ModifyGizmo ModifyObject=scatter0 property={ size,3}
+	ModifyGizmo ModifyObject=scatter0 property={ colorWave,root:rgbaTestGizmoMovie}
+	AppendToGizmo Axes=boxAxes,name=axes0
+	ModifyGizmo ModifyObject=axes0,property={-1,axisScalingMode,1}
+	ModifyGizmo ModifyObject=axes0,property={-1,axisColor,0,0,0,1}
+	ModifyGizmo ModifyObject=axes0,property={0,ticks,3}
+	ModifyGizmo ModifyObject=axes0,property={1,ticks,3}
+	ModifyGizmo ModifyObject=axes0,property={2,ticks,3}
+	ModifyGizmo ModifyObject=axes0,property={0,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0,property={1,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0,property={2,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0,property={0,axisLabelText,"X"}
+	ModifyGizmo ModifyObject=axes0,property={1,axisLabelText,"Y"}
+	ModifyGizmo ModifyObject=axes0,property={2,axisLabelText,"Z"}
+	ModifyGizmo modifyObject=axes0 property={Clipped,0}
+	ModifyGizmo setDisplayList=0, object=axes0
+	ModifyGizmo setDisplayList=1, object=scatter0
+	ModifyGizmo SETQUATERNION={-0.708885,-0.338485,0.298854,0.541845}
+	ModifyGizmo autoscaling=1
+	ModifyGizmo currentGroupObject=""
+	ModifyGizmo compile
+	ModifyGizmo showAxisCue=1
+	ModifyGizmo endRecMacro
+#endif
 End
 
 //  =========================== End of TESTING Movie Of Gizmo ============================  //
@@ -1083,8 +1159,9 @@ End
 
 Static Function InitGizmoMovies()
 	GizmoUtil#InitGizmoUtilityGeneral()
+#if (IgorVersion()<7)
 	Execute/Q/Z "GizmoMenu AppendItem={JZTmov0,\"Movie Steps Panel...\", \"MakeMovieStepsPanel()\"}"
-
+#endif
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:GizmoMovies
 	ResetMovieStepTypes()

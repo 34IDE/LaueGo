@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GClipPlanes
 #include "GizmoUtility", version>=0.16
@@ -21,6 +21,11 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 End
 
 
+#if (IgorVersion()<7)
+Menu "Gizmo"
+	"Clip Plane", MakeGizmoClipPlanePanel()
+End
+#endif
 
 
 //  ======================================================================================  //
@@ -88,9 +93,14 @@ Static Function GizmoClipPlanePopMenuProc(pa) : PopupMenuControl
 	if (pa.eventCode != 2)		// break out if NOT mouse-up
 		return 0
 	endif
+#if (IgorVersion()<7)
 	Execute "GetGizmo/Z userString="+GizmoClipPlanePanelGroupName
 	String keyVals=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
+#else
+	GetGizmo/Z userString=$GizmoClipPlanePanelGroupName
+	String keyVals=S_GizmoUserString
+#endif
 	Variable val=NumberByKey(pa.popStr,keyVals)
 	SetVariable clipValue,value= _NUM:val
 	SetLimitsClipPlanePanel(pa.win)
@@ -139,23 +149,40 @@ Static Function GizmoClipPlanePanelUpdate(win)	// update the Panel to reflect th
 	endif
 
 	// otherwise clip planes group is present
+#if (IgorVersion()<7)
 	Execute "GetGizmo/Z"+Nstr+" userString="+GizmoClipPlanePanelGroupName
 	String keyVals=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
+#else
+	GetGizmo/Z/N=$gizName userString=$GizmoClipPlanePanelGroupName
+	String keyVals=S_GizmoUserString
+#endif
 	Button removeClipPlaneButton, win=$win, title="remove clip planes"
 
 	if (strlen(keyVals)<1)
+#if (IgorVersion()<7)
 		Execute "RemoveFromGizmo/Z displayItem="+GizmoClipPlanePanelGroupName
+#else
+		RemoveFromGizmo/Z displayItem=$GizmoClipPlanePanelGroupName
+#endif
 	else
 		// check if GizmoClipPlanePanelGroupName is displayed, if not then display it
 		Variable index = isGizmoObjectDisplayed(GizmoClipPlanePanelGroupName)
 		if (index<0)
 			index = IndexForClipPlanesInDisplayList()
+#if (IgorVersion()<7)
 			if (index>=0)
 				Execute "ModifyGizmo insertDisplayList="+num2istr(index)+", object="+GizmoClipPlanePanelGroupName
 			else
 				Execute "ModifyGizmo setDisplayList=-1, object="+GizmoClipPlanePanelGroupName
 			endif
+#else
+			if (index>=0)
+				ModifyGizmo insertDisplayList=index, object=$GizmoClipPlanePanelGroupName
+			else
+				ModifyGizmo setDisplayList=-1, object=$GizmoClipPlanePanelGroupName
+			endif
+#endif
 		endif
 	endif
 
@@ -196,7 +223,12 @@ End
 // finds position in display list for the clip planes,  before any "real" objects, but after everything else
 Static Function IndexForClipPlanesInDisplayList()	// put it right before the first "real" object, ignore groups
 	String realObjects=""							//	list of "real" objects, isoSurface, scatter, sphere, ...
-	Execute "GetGizmo objectList"					// find name of wave with marker position
+#if (IgorVersion()<7)
+	Execute "GetGizmo objectList"				// find name of wave with marker position
+	KillStrings/Z S_gizmoObjectList
+#else
+	GetGizmo objectList								// find name of wave with marker position
+#endif
 	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 
 	String realTypes=LowerStr("isoSurface;Scatter;Path;surface;ribbon;voxelgram;line;triangle;quad;box;sphere;cylinder;disk;")
@@ -217,7 +249,12 @@ Static Function IndexForClipPlanesInDisplayList()	// put it right before the fir
 		endif
 	endfor
 
-	Execute "GetGizmo displayList"					// list of all displayed objects
+#if (IgorVersion()<7)
+	Execute "GetGizmo displayList"				// list of all displayed objects
+	KillStrings/Z S_DisplayList
+#else
+	GetGizmo displayList							// list of all displayed objects
+#endif
 	Wave/T TW_DisplayList=TW_DisplayList
 	Variable index=-1
 	for (m=0;m<numpnts(TW_DisplayList) && index<0;m+=1)		// find first realObject in TW_DisplayList
@@ -234,15 +271,21 @@ Static Function IndexForClipPlanesInDisplayList()	// put it right before the fir
 			endif
 		endif
 	endfor
+	KillWaves/Z TW_gizmoObjectList, TW_DisplayList
 	return index
 End
 
 
 Function getClipPlaneValue(plane)	// Utility to get the current clip value for a plane.
 	String plane					// plane id, one of {"-X", "+X",  "-Y", "+Y",  "-Z", "+Z"}
+#if (IgorVersion()<7)
 	Execute "GetGizmo/Z userString="+GizmoClipPlanePanelGroupName
 	String keyVals=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
+#else
+	GetGizmo/Z userString=$GizmoClipPlanePanelGroupName
+	String keyVals=S_GizmoUserString
+#endif
 	return NumberByKey(plane,keyVals)
 End
 
@@ -252,7 +295,9 @@ End
 
 Static Function InitGizmoClipPlanes()
 	GizmoUtil#InitGizmoUtilityGeneral()
+#if (IgorVersion()<7)
 	Execute/Q/Z "GizmoMenu AppendItem={JZTc0,\"Clip Plane\", \"MakeGizmoClipPlanePanel()\"}"
+#endif
 End
 
 

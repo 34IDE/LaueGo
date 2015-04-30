@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.65
+#pragma version = 3.66
 // #pragma hide = 1
 
 Menu "Graph"
@@ -276,7 +276,7 @@ Static Function/S CornerStampWindow()
 	String gwin=""
 
 	switch(WinType(win))
-		case 3:		// a layout, find the first graph on this layout
+		case 3:						// a layout, find the first graph on this layout
 			String list="x"
 			Variable i
 			for (i=0; strlen(gwin)==0 && strlen(list); i+=1)		// get first graph name
@@ -286,17 +286,17 @@ Static Function/S CornerStampWindow()
 				endif
 			endfor
 			break
-		case 1:		// a graph, gwin is win
-		case 2:		// a table, gwin is win
-		case 13:	// from an XOP, probably a gizmo
+		case 1:						// a graph, gwin is win
+		case 2:						// a table, gwin is win
+		case GIZMO_WIN_TYPE:	// from an XOP, probably a gizmo
 			gwin = win
 			break
-		default:		// only layout or graph
+		default:						// only layout or graph
 			gwin = ""
 	endswitch
 	gwin = SelectString(strlen(gwin),"",":")+gwin
 
-	PathInfo home			// creates String s_path
+	PathInfo home					// creates String s_path
 	return S_path+IgorInfo(1)+gwin
 End
 
@@ -1776,13 +1776,26 @@ Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specifi
 		return ""
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo/Z gizmoNameList"
-	String gName, objetAll, gList=StrVarOrDefault("S_GizmoNames",""), list=""
+	String gList=StrVarOrDefault("S_GizmoNames","")
+	KillStrings/Z S_GizmoNames
+#else
+	GetGizmo/Z gizmoNameList
+	String gList=S_GizmoNames
+#endif
+	String gName, objetAll, list=""
 	Variable i, N=ItemsInList(gList)
 	for (i=0;i<N;i+=1)
 		gName=StringFromList(i,gList)				// check each gizmo that is displayed
+#if (IgorVersion()<7)
 		Execute "GetGizmo/Z/N="+gName+" objectList"
-		objetAll=StrVarOrDefault("S_gizmoObjectList","")
+		objetAll = StrVarOrDefault("S_gizmoObjectList","")
+		KillStrings/Z S_gizmoObjectList
+#else
+		GetGizmo/Z/N=$gName objectList
+		objetAll = S_gizmoObjectList
+#endif
 		objetAll = ReplaceString("=",objetAll,";")
 		objetAll = ReplaceString(",",objetAll,";")
 		objetAll = ReplaceString("}",objetAll,";")
@@ -1793,7 +1806,6 @@ Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specifi
 			list += gName+";"
 		endif
 	endfor
-	KillStrings/Z S_GizmoNames, S_gizmoObjectList
 	KillWaves/Z TW_gizmoObjectList
 	return list
 End
@@ -3545,21 +3557,29 @@ Function SquareUpGizmo(gName)
 		DoAlert 0, "Gizmo XOP must be installed"
 		return 1
 	elseif (strlen(gName)<1)
+#if (IgorVersion()<7)
 		Execute "GetGizmo gizmoName"
-		gName=StrVarOrDefault("S_GizmoName","")
+		gName = StrVarOrDefault("S_GizmoName","")
 		KillStrings/Z S_GizmoName
+#else
+		GetGizmo gizmoName
+		gName = S_GizmoName
+#endif
 	endif
 	if (strlen(gName)<1)
 		return 1
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo winPixels"			// get window position & size
 	Variable left=NumVarOrDefault("V_left",NaN), right=NumVarOrDefault("V_right",NaN)
 	Variable top=NumVarOrDefault("V_top",NaN), bottom=NumVarOrDefault("V_bottom",NaN)
 	KillVariables/Z V_left, V_right, V_top, V_bottom
+#else
+	GetGizmo winPixels						// get window position & size
+	Variable left=V_left, right=V_right, top=V_top, bottom=V_bottom
+#endif
 	Variable height=bottom-top
-	// Variable width=right-left, height=bottom-top
-	// printf "[top=%g,  bottom=%g,  Æ=%g],   [left=%g,  right=%g,  Æ=%g]\r"top,bottom,height,  left,right,width
 	top = max(44,top)
 	MoveWindow/W=$gName left, top, left+height, top+height
 End

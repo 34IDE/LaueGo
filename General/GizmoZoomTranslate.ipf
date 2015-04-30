@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.01
+#pragma version = 2.02
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GZoomTrans
 #include "GizmoUtility", version>=0.16
@@ -114,6 +114,7 @@ Function translateGizmo(dx,dy,dz)
 	ModifyGizmo scalingOption=0
 	ModifyGizmo setOuterBox={XminB+dx,XmaxB+dx, YminB+dy,YmaxB+dy, ZminB+dz,ZmaxB+dz}
 	ModifyGizmo scalingMode=8
+#endif
 End
 
 
@@ -219,7 +220,7 @@ Static Function GizmoZoomTransButtonProc(ba) : ButtonControl
 	endif
 
 	if (stringmatch(ba.ctrlName,"autoButton"))
-#if (IgorVersion()>=7)
+#if (IgorVersion()<7)
 		Execute/Z/Q "ModifyGizmo scalingOption=0"
 		Execute/Z/Q "ModifyGizmo autoScale"
 #else
@@ -240,7 +241,7 @@ Static Function GizmoZoomTransButtonProc(ba) : ButtonControl
 		dx = hw - (Xhi-Xlo)/2
 		dy = hw - (Yhi-Ylo)/2
 		dz = hw - (Zhi-Zlo)/2
-#if (IgorVersion()>=7)
+#if (IgorVersion()<7)
 		String cmd
 		sprintf cmd "ModifyGizmo setOuterBox={%g,%g,%g,%g,%g,%g}",Xlo-dx,Xhi+dx, Ylo-dy,Yhi+dy, Zlo-dz,Zhi+dz
 		Execute cmd

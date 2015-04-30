@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.83
+#pragma version=1.84
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1096,20 +1096,33 @@ Static Function/WAVE MakeVisibleMaskInGizmo(waveMatchStr,[resolution])
 		return $""
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo  objectItemExists="+objName
 	NVAR flag=V_flag
 	if (!flag)
 		return $""
 	endif
+#else
+	GetGizmo  objectItemExists=$objName
+	if (!V_flag)
+		return $""
+	endif
+#endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo objectList"
-	SVAR S_gizmoObjectList=S_gizmoObjectList
+	String gizmoObjectList = StrVarOrDefault("S_gizmoObjectList","")
+	KillStrings/Z S_gizmoObjectList
+	KillWaves/Z TW_gizmoObjectList
+#else
+	GetGizmo objectList
+	String gizmoObjectList = S_gizmoObjectList
+#endif
 
 	String item=""
-	Variable i,N=ItemsInList(S_gizmoObjectList)
-
+	Variable i,N=ItemsInList(gizmoObjectList)
 	for (i=0;i<N;i+=1)
-		item = StringFromList(i,S_gizmoObjectList)
+		item = StringFromList(i,gizmoObjectList)
 		if (strsearch(item,",name="+objName,Inf,3)>=0)
 			break
 		endif
@@ -1124,8 +1137,6 @@ Static Function/WAVE MakeVisibleMaskInGizmo(waveMatchStr,[resolution])
 		DoAlert 0, "Could not find a Gizmo with a scatter wave matching '"+waveMatchStr+"'"
 		return $""
 	endif
-	KillStrings/Z S_gizmoObjectList
-	KillWaves/Z TW_gizmoObjectList
 
 	Wave wxyz=$wName
 	if (!waveExists(wxyz))
@@ -1134,6 +1145,7 @@ Static Function/WAVE MakeVisibleMaskInGizmo(waveMatchStr,[resolution])
 	resolution = numtype(resolution) ? NumberByKey("resolution",note(wxyz),"=") : resolution
 	resolution = numtype(resolution) ? 0.5 : resolution
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo  userBoxLimits"		// get displayed box
 	NVAR GizmoBoxXmin=GizmoBoxXmin, GizmoBoxXmax=GizmoBoxXmax
 	NVAR GizmoBoxYmin=GizmoBoxYmin, GizmoBoxYmax=GizmoBoxYmax
@@ -1142,6 +1154,13 @@ Static Function/WAVE MakeVisibleMaskInGizmo(waveMatchStr,[resolution])
 	Variable ylo=GizmoBoxYmin-resolution, yhi=GizmoBoxYmax+resolution
 	Variable zlo=GizmoBoxZmin-resolution, zhi=GizmoBoxZmax+resolution
 	KillVariables/Z GizmoBoxXmin,GizmoBoxXmax,GizmoBoxYmin,GizmoBoxYmax,GizmoBoxZmin,GizmoBoxZmax
+#else
+	Variable GizmoBoxXmin, GizmoBoxXmax, GizmoBoxYmin, GizmoBoxYmax, GizmoBoxZmin, GizmoBoxZmax
+	GetGizmo  userBoxLimits					// get displayed box
+	Variable xlo=GizmoBoxXmin-resolution, xhi=GizmoBoxXmax+resolution
+	Variable ylo=GizmoBoxYmin-resolution, yhi=GizmoBoxYmax+resolution
+	Variable zlo=GizmoBoxZmin-resolution, zhi=GizmoBoxZmax+resolution
+#endif
 
 	String vName = wName+"Visible"
 	N=DimSize(wxyz,0)
@@ -1182,24 +1201,31 @@ Static Function/T TopObjectTypeInGizmo(objectType,[rejectList])		// returns name
 	if (strlen(objectType)<1)
 		return ""
 	endif
+#if (IgorVersion()<7)
 	Execute "GetGizmo objectList"
 	SVAR S_gizmoObjectList=S_gizmoObjectList
+	String gizmoObjectList = StrVarOrDefault("S_gizmoObjectList","")
+	KillStrings/Z S_gizmoObjectList
+	KillWaves/Z TW_gizmoObjectList
+#else
+	GetGizmo objectList
+	GetGizmo objectList
+	String gizmoObjectList = S_gizmoObjectList
+#endif
 	String objName
 	Variable i0=0, i1
 	do
 		objName = ""
-		i0 = strsearch(S_gizmoObjectList,"AppendToGizmo "+objectType+"=",i0,2)
+		i0 = strsearch(gizmoObjectList,"AppendToGizmo "+objectType+"=",i0,2)
 		if (i0>0)
-			i0 = strsearch(S_gizmoObjectList,",name=",i0)
-			i1 = strsearch(S_gizmoObjectList,";",i0+6)
+			i0 = strsearch(gizmoObjectList,",name=",i0)
+			i1 = strsearch(gizmoObjectList,";",i0+6)
 			if (i0>0 && i1>0)
-				objName = S_gizmoObjectList[i0+6,i1-1]
+				objName = gizmoObjectList[i0+6,i1-1]
 			endif
 			i0 += 10
 		endif
 	while(WhichListItem(objName,rejectList)>=0 && i0>0)
-	KillWaves/Z TW_gizmoObjectList
-	KillStrings/Z S_gizmoObjectList
 	return objName
 End
 
@@ -2171,6 +2197,7 @@ Function MakeGizmo_xmlData(scatt)
 	endif
 
 	String name=UniqueName("Gizmo",5,0)
+#if (IgorVersion()<7)
 	Execute "NewGizmo/N="+name+"/T=\""+name+"\" /W=(253,44,804,566)"
 	Execute "ModifyGizmo startRecMacro"
 
@@ -2232,6 +2259,70 @@ Function MakeGizmo_xmlData(scatt)
 	Execute "ModifyGizmo currentGroupObject=\"\""
 	Execute "ModifyGizmo compile"
 	Execute "ModifyGizmo endRecMacro"
+#else
+	NewGizmo/N=$name/T=name/W=(253,44,804,566)
+	ModifyGizmo startRecMacro
+
+	if (strlen(title))
+		AppendToGizmo string=title,strFont="Geneva",name=Title
+	endif
+	AppendToGizmo attribute blendFunc={770,771},name=blendFunc0
+	AppendToGizmo Axes=boxAxes,name=axes0
+	setGizmoAxisLabels("X  (µm)","H  (µm)","F  (µm)")
+
+	AppendToGizmo Scatter=GetWavesDataFolder(scatt,2),name=scatter0
+	ModifyGizmo ModifyObject=scatter0 property={ scatterColorType,1}
+	ModifyGizmo ModifyObject=scatter0 property={ markerType,0}
+	ModifyGizmo ModifyObject=scatter0 property={ sizeType,0}
+	ModifyGizmo ModifyObject=scatter0 property={ rotationType,0}
+	ModifyGizmo ModifyObject=scatter0 property={ Shape,5}
+	ModifyGizmo ModifyObject=scatter0 property={ size,0.01}
+	if (WaveExists(rgba))
+		ModifyGizmo ModifyObject=scatter0 property={ colorWave,GetWavesDataFolder(rgba,2)}
+	endif
+	ModifyGizmo ModifyObject=scatter0 property={ CTABScaling,96}
+	ModifyGizmo ModifyObject=scatter0 property={ MinRGBA,0,0.699992,3.0518e-05,3.0518e-05,1}
+	ModifyGizmo ModifyObject=scatter0 property={ MaxRGBA,0,0,1,0.987213,1}
+
+	if (WaveExists(cubeCorners))
+		AppendToGizmo Scatter=GetWavesDataFolder(cubeCorners,2),name=cubeCorners
+		ModifyGizmo ModifyObject=cubeCorners property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=cubeCorners property={ markerType,0}
+		ModifyGizmo ModifyObject=cubeCorners property={ sizeType,0}
+		ModifyGizmo ModifyObject=cubeCorners property={ rotationType,0}
+		ModifyGizmo ModifyObject=cubeCorners property={ Shape,5}
+		ModifyGizmo ModifyObject=cubeCorners property={ size,0.01}
+		ModifyGizmo ModifyObject=cubeCorners property={ color,0,0,0,1}
+	endif
+
+	AppendToGizmo light=Directional,name=light0
+	ModifyGizmo light=light0 property={ position,0.426121,-0.439519,0.790724,0.0}
+	ModifyGizmo light=light0 property={ direction,0.426121,-0.439519,0.790724}
+	ModifyGizmo light=light0 property={ specular,0.733333,0.733333,0.733333,0.5}
+
+	if (strlen(title))
+		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,1.9,0}
+		ModifyGizmo setDisplayList=1, opName=scaleTitle, operation=scale, data={0.1,0.1,0.1}
+		ModifyGizmo setDisplayList=2, opName=rotateTitle, operation=rotate, data={180,1,0,0}
+		ModifyGizmo setDisplayList=3, object=Title
+		ModifyGizmo setDisplayList=4, opName=MainTransform, operation=mainTransform
+	endif
+	ModifyGizmo setDisplayList=-1, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}
+	ModifyGizmo setDisplayList=-1, opName=scale0, operation=scale, data={1.25,1.25,1.25}
+	ModifyGizmo setDisplayList=-1, attribute=blendFunc0
+	ModifyGizmo setDisplayList=-1, object=axes0
+	ModifyGizmo setDisplayList=-1, object=scatter0
+	if (WaveExists(cubeCorners))
+		ModifyGizmo setDisplayList=-1, object=cubeCorners
+	endif
+	ModifyGizmo setDisplayList=-1, opName=clearColor0, operation=clearColor, data={0.733,0.733,0.733,1}
+	ModifyGizmo SETQUATERNION={0.824516,0.417235,-0.157751,-0.348105}
+	ModifyGizmo autoscaling=1
+	ModifyGizmo currentGroupObject=""
+	ModifyGizmo compile
+	ModifyGizmo endRecMacro
+#endif
+
 End
 //
 Static Function/T getTitleFromNote(list)
