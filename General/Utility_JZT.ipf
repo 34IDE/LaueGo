@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.66
+#pragma version = 3.67
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1785,17 +1785,20 @@ Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specifi
 	String gList=S_GizmoNames
 #endif
 	String gName, objetAll, list=""
-	Variable i, N=ItemsInList(gList)
+	Variable i, m, N=ItemsInList(gList)
 	for (i=0;i<N;i+=1)
 		gName=StringFromList(i,gList)				// check each gizmo that is displayed
 #if (IgorVersion()<7)
 		Execute "GetGizmo/Z/N="+gName+" objectList"
-		objetAll = StrVarOrDefault("S_gizmoObjectList","")
 		KillStrings/Z S_gizmoObjectList
 #else
 		GetGizmo/Z/N=$gName objectList
-		objetAll = S_gizmoObjectList
 #endif
+		Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+		objetAll = ""
+		for (m=0;m<numpnts(TW_gizmoObjectList);m+=1)
+			objetAll += TW_gizmoObjectList[m]+";"
+		endfor
 		objetAll = ReplaceString("=",objetAll,";")
 		objetAll = ReplaceString(",",objetAll,";")
 		objetAll = ReplaceString("}",objetAll,";")
@@ -3572,16 +3575,13 @@ Function SquareUpGizmo(gName)
 
 #if (IgorVersion()<7)
 	Execute "GetGizmo winPixels"			// get window position & size
-	Variable left=NumVarOrDefault("V_left",NaN), right=NumVarOrDefault("V_right",NaN)
-	Variable top=NumVarOrDefault("V_top",NaN), bottom=NumVarOrDefault("V_bottom",NaN)
-	KillVariables/Z V_left, V_right, V_top, V_bottom
 #else
 	GetGizmo winPixels						// get window position & size
-	Variable left=V_left, right=V_right, top=V_top, bottom=V_bottom
 #endif
-	Variable height=bottom-top
-	top = max(44,top)
-	MoveWindow/W=$gName left, top, left+height, top+height
+	NVAR V_left=V_left, V_top=V_top, V_bottom=V_bottom
+	Variable height=V_bottom-V_top, top=max(44,V_top)
+	MoveWindow/W=$gName V_left, top, V_left+height, V_top+height
+	KillVariables/Z V_left, V_right, V_top, V_bottom
 End
 
 //  =============================== End of Square Pixels ===============================  //
