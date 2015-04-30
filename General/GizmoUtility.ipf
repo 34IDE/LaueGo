@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.03
+#pragma version = 2.04
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -1330,20 +1330,17 @@ Function/T GetGizmoObjects(type,[gizmo,exclude])		// returns list of objects of 
 #if (IgorVersion()<7)
 	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
 	Execute "GetGizmo/Z"+Nswitch+" objectList"
-	String objectList=StrVarOrDefault("S_gizmoObjectList","")
-	KillWaves/Z TW_gizmoObjectList
 	KillStrings/Z S_gizmoObjectList
 #else
 	GetGizmo/Z/N=$gizmo objectList
-	String objectList=S_gizmoObjectList
-	KillWaves/Z TW_gizmoObjectList
 #endif
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 
 	String item, objects="", objName
 	String typeSep=type+SelectString(stringmatch(type,"group"),"=",",")
-	Variable i
-	for (i=0;i<ItemsInList(objectList,";");i+=1)
-		item = StringFromList(i,objectList,";")
+	Variable i, N=DimSize(TW_gizmoObjectList,0)
+	for (i=0;i<N;i+=1)
+		item = TW_gizmoObjectList[i]
 		if (strsearch(item,"AppendToGizmo "+typeSep,0,2)==1)
 			objName = TrimFrontBackWhiteSpace(StringByKey("name",item,"=",","))
 			if (WhichListItem(objName,exclude)<0)
@@ -1351,6 +1348,7 @@ Function/T GetGizmoObjects(type,[gizmo,exclude])		// returns list of objects of 
 			endif
 		endif
 	endfor
+	KillWaves/Z TW_gizmoObjectList
 	return objects
 End
 

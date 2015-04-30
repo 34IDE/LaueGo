@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.84
+#pragma version=1.85
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1111,18 +1111,16 @@ Static Function/WAVE MakeVisibleMaskInGizmo(waveMatchStr,[resolution])
 
 #if (IgorVersion()<7)
 	Execute "GetGizmo objectList"
-	String gizmoObjectList = StrVarOrDefault("S_gizmoObjectList","")
 	KillStrings/Z S_gizmoObjectList
-	KillWaves/Z TW_gizmoObjectList
 #else
 	GetGizmo objectList
-	String gizmoObjectList = S_gizmoObjectList
 #endif
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 
 	String item=""
-	Variable i,N=ItemsInList(gizmoObjectList)
+	Variable i,N=DimSize(TW_gizmoObjectList,0)
 	for (i=0;i<N;i+=1)
-		item = StringFromList(i,gizmoObjectList)
+		item = TW_gizmoObjectList[i]
 		if (strsearch(item,",name="+objName,Inf,3)>=0)
 			break
 		endif
@@ -1203,30 +1201,28 @@ Static Function/T TopObjectTypeInGizmo(objectType,[rejectList])		// returns name
 	endif
 #if (IgorVersion()<7)
 	Execute "GetGizmo objectList"
-	SVAR S_gizmoObjectList=S_gizmoObjectList
-	String gizmoObjectList = StrVarOrDefault("S_gizmoObjectList","")
 	KillStrings/Z S_gizmoObjectList
-	KillWaves/Z TW_gizmoObjectList
 #else
 	GetGizmo objectList
-	GetGizmo objectList
-	String gizmoObjectList = S_gizmoObjectList
 #endif
-	String objName
-	Variable i0=0, i1
-	do
-		objName = ""
-		i0 = strsearch(gizmoObjectList,"AppendToGizmo "+objectType+"=",i0,2)
-		if (i0>0)
-			i0 = strsearch(gizmoObjectList,",name=",i0)
-			i1 = strsearch(gizmoObjectList,";",i0+6)
-			if (i0>0 && i1>0)
-				objName = gizmoObjectList[i0+6,i1-1]
-			endif
-			i0 += 10
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+	String objName, item
+	Variable i, N=DimSize(TW_gizmoObjectList,0), i0
+	for (i=0;i<N;i+=1)
+		item = TW_gizmoObjectList[i]
+		if ( strsearch(item,"AppendToGizmo "+objectType+"=",0,2) < 0 )
+			continue								// only examing "AppendToGizmo " lines
 		endif
-	while(WhichListItem(objName,rejectList)>=0 && i0>0)
-	return objName
+		i0 = strsearch(item,",name=",i0)
+		objName = ""
+		if (i0>0)
+			objName = item[i0+6,Inf]
+		endif
+		if (WhichListItem(objName,rejectList)<0 && i0>=0)
+			return objName						// found something & not in reject list
+		endif
+	endfor
+	return ""
 End
 
 // ******************************  this section needs work ******************************

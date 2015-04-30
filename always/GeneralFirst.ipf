@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.22
+#pragma version = 3.23
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.65
@@ -790,15 +790,13 @@ Static Function/T GetWindowInfo2Scrap()
 	if (gizmo)
 #if (IgorVersion()<7)
 		Execute "GetGizmo winPixels"			// get window position & size
+#else
+		GetGizmo winPixels						// get window position & size
+#endif
 		Variable left=NumVarOrDefault("V_left",NaN), right=NumVarOrDefault("V_right",NaN)
 		Variable top=NumVarOrDefault("V_top",NaN), bottom=NumVarOrDefault("V_bottom",NaN)
 		KillVariables/Z V_left, V_right, V_top, V_bottom
-#else
-		Variable V_left,V_right,V_top,V_bottom
-		GetGizmo winPixels						// get window position & size
-		Variable left=V_left, right=V_right, top=top, bottom=V_bottom
-#endif
-		if (numtype(top+bottom+left+right))
+		if (numtype(top + bottom + left + right))
 			DoAlert 0, "Unable to get Size of Gizmo Window"
 			return ""
 		endif
