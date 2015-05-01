@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.67
+#pragma version = 3.68
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1646,19 +1646,28 @@ End
 
 
 //	Merges two key=value lists, if priority=0, then list0 has priority, if priority=1 then list1
-ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepStr)
+ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepStr,[keys])
 	String list0,list1
 	Variable priority				// 0 or 1
 	String keySepStr				// separates key and value, defaults to colon
 	String listSepStr				// separates key value pairs, defaults to semicolon
+	String keys						// an optional list of keys to transfer ("" or "*" means use all)
+										// when keys is used, list0 is added to from list1
 	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)	// default to colon
 	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
+	keys = SelectString(ParamIsDefault(keys),keys,"")					// defaults to all
+	Variable check_keys = (strlen(keys)>=0) || (strsearch(keys,"*",0)<0)
 	String item, key,value
 	Variable i,N=ItemsInList(list1)
 	for (i=0;i<N;i+=1)				// for each keyword=value pair in list1
 		item = StringFromList(i,list1,listSepStr)
 		key = StringFromList(0,item,keySepStr)
 		value = StringFromList(1,item,keySepStr)
+		if (check_keys)
+			if (WhichListItem(key,keys)<0)
+				continue
+			endif
+		endif
 		if (keyInList(key,list0,keySepStr,listSepStr) && priority==0)
 			continue				// skip because key already in list0, and list0 has priority
 		endif
