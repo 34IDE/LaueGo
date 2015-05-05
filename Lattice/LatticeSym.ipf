@@ -1,10 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.34
-#include "Utility_JZT" version>=3.55
+#pragma version = 4.35
+#include "Utility_JZT" version>=3.68
 #include "MaterialsLocate"								// used to find the path to the materials files
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
+Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 
 //	remember to execute    InitLatticeSymPackage()
 //
@@ -100,7 +101,7 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 // with version 4.26, added bond info to the AtomView menu
 // with version 4.27, when writing files, use "\n" instead of "\r" for line termination. 
 //		also changed crystalStructure2xml() and convertOneXTL2XML() to take a new line argument.
-// with version 4.28, in positionsOfOneAtomType() duplicate atoms are now within 5pm (in x,y,&z) not just 1e-3
+// with version 4.28, in positionsOfOneAtomType() duplicate atoms are now within 50pm (in x,y,&z) not just 1e-3
 //		also positionsOfOneAtomType() uses free waves rather than real temp waves
 // with version 4.30, in str2recip(str), now handles both "}{" and "},{" type strings
 //		also added some helpful comments about convert recip <--> direct using MatrixOP
@@ -108,6 +109,8 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 // with version 4.32, added direct2LatticeConstants(direct)
 // with version 4.33, added isValidLatticeConstants(direct), and imporved formatting in print_crystalStructure()
 // with version 4.34, added DescribeSymOps(direct), CheckDirectRecip()
+// with version 4.35, MatrixOP in Fstruct(), change variable Q --> Qmag, and calc of F uses complex math now.
+//		also in positionsOfOneAtomType, make condition based on true atom distances, & use MatrixOP too.
 
 // Rhombohedral Transformation:
 //
@@ -4048,7 +4051,7 @@ End
 
 
 Function/C Fstruct(xtal,h,k,l,[keV,T_K])
-	STRUCT crystalStructure &xtal						// this sruct is filled  by this routine
+	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
 	Variable h,k,l
 	Variable keV
 	Variable T_K										// Temperature (K), used to calculate Debye-Waller factor
@@ -4064,7 +4067,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
 	Variable system = latticeSystem(SpaceGroup)
 
-	if (!(mod(h,1) || mod(k,1) || mod(l,1)))			// non-integral, always allowed
+	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
 		String sym = getHMsym(SpaceGroup)			// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
@@ -4093,7 +4096,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 						return zero
 					endif
 				endif
-				break										// using rhombohedral axes, so all are allowed
+				break											// using rhombohedral axes, so all are allowed
 		endswitch
 		if (system==HEXAGONAL)
 			if (!ALLOW_HEXAGONAL(h,k,l)) 
@@ -4102,43 +4105,44 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		endif
 	endif
 
-	Variable useCromer = (exists("Get_f")==6)			// calculate fatom using Cromer-Liberman
-	Variable Q = (useCromer || xtal.Vibrate) ? 2*PI/dSpacing(xtal,h,k,l) : 0	// |Q| vector (nm)
-	if (numtype(xtal.atom[0].U11)==0)					// need Q-vector
-		Make/N=3/D/FREE qvec
-		qvec[0] = h*xtal.as0 + k*xtal.bs0 + l*xtal.cs0
-		qvec[1] = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
-		qvec[2] = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
+	Make/N=3/D/FREE hkl={h,k,l}
+	Variable useCromer = (exists("Get_f")==6)	// calculate fatom using Cromer-Liberman
+	Variable Qmag = (useCromer || xtal.Vibrate) ? 2*PI/dSpacing(xtal,h,k,l) : 0	// |Q| vector (nm)
+	if (numtype(xtal.atom[0].U11)==0)				// need Q-vector
+		Wave recip = recipFrom_xtal(xtal)			// get reicprocal lattice from xtal
+		MatrixOP/FREE qvec = recip x hkl
 	endif
 	if (useCromer)											// need energy
 		keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",10)
 	endif
 
-	Variable Freal=0,Fimag=0
-	Variable na,i
+	Variable i
 	Variable  arg
 	Variable/C fatomC
 	Variable fatomMag, fatomArg=0
 	String name
 	Variable valence
 	Variable m
-	Variable amu, DW, thetaM								// thetaM = Debye Temperature (K)
+	Variable amu, DW, thetaM							// thetaM = Debye Temperature (K)
 	Variable Biso, Uiso, itemp
+	Variable/C c2PI=cmplx(0,2*PI), ifatomArg
+	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
+	Variable Fr, Fi
 
 	reMakeAtomXYZs(xtal)
 	if (!(xtal.N>=1))
 		return cmplx(1,0)
 	endif
 
-	for (m=0;m<xtal.N;m+=1)								// loop over the defined atoms
+	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
 		name="root:Packages:Lattices:atom"+num2istr(m)
 		valence = numtype(xtal.atom[m].valence) ? 0 : xtal.atom[m].valence
 		Wave ww = $name
-		FUNCREF Get_f_proto fa= $"Get_f"					// if Get_f() does not exist, then Get_f_proto() will be used
+		FUNCREF Get_f_proto fa= $"Get_f"			// if Get_f() does not exist, then Get_f_proto() will be used
 		if (valence==0 )
-			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Q/10, keV)
+			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Qmag/10, keV)
 		else
-			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Q/10, keV,valence=valence)
+			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Qmag/10, keV,valence=valence)
 		endif
 		fatomC = r2polar(fatomC)
 		fatomMag = real(fatomC)
@@ -4151,15 +4155,15 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 			itemp = atomThermalInfo(xtal.atom[m],T_K=T_K)	// Get kind of thermal info present (0 means none)
 			if (itemp==1)
 				thetaM = xtal.atom[m].DebyeT
-				amu = Element_amu(xtal.atom[m].Zatom)	// mass of atom (amu)
-				DW = exp(-DW_factor_M(T_K,thetaM,Q,amu))	// calculates the M in exp(-M), no I/O
+				amu = Element_amu(xtal.atom[m].Zatom)			// mass of atom (amu)
+				DW = exp(-DW_factor_M(T_K,thetaM,Qmag,amu))// calculates the M in exp(-M), no I/O
 				fatomMag *= DW>0 ? DW : 1
 			elseif (itemp==2)
-				Biso = xtal.atom[m].Biso					// B-factor (nmê^2)
-				fatomMag *= exp(-Biso * (Q/(4*PI))^2)	// exp[-B * (sin(theta)/lam)^2 ]
+				Biso = xtal.atom[m].Biso							// B-factor (nmê^2)
+				fatomMag *= exp(-Biso * (Qmag/(4*PI))^2)	// exp[-B * (sin(theta)/lam)^2 ]
 			elseif (itemp==3)
 				Uiso = xtal.atom[m].Uiso
-				fatomMag *= exp(-Q*Q*Uiso/2)			// B = (8*¹^2 U)
+				fatomMag *= exp(-Qmag*Qmag*Uiso/2)				// B = (8*¹^2 U)
 			elseif (itemp>=4)
 				// qUq = q^t x U x q
 				Variable qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2 + (xtal.atom[m].U33)*qvec[2]^2
@@ -4170,21 +4174,17 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 				fatomMag *= DW>0 ? DW : 1
 			endif
 		endif
-
-		na = DimSize(ww,0)
-		for (i=0;i<na;i+=1)
-			arg = 2*PI*(h*ww[i][0]+k*ww[i][1]+l*ww[i][2]) + fatomArg
-			Freal += fatomMag*cos(arg)
-			Fimag += fatomMag*sin(arg)
-		endfor
+		ifatomArg = cmplx(0,fatomArg)
+		MatrixOP/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl) + ifatomArg))
+		Fc += Fcm[0]										// accumulate for this atom
 	endfor
 
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
 		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
-		Variable Fr=1. + cos(arg), Fi=sin(arg)
-		Variable rr=Freal, ii=Fimag
-		Freal = rr*Fr - ii*Fi
-		Fimag = rr*Fi + ii*Fr
+		Fr = 1. + cos(arg)
+		Fi = sin(arg)
+		Variable rr=real(Fc), ii=imag(Fc)
+		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 		//  for hexagonal:
 		//	h+2k=3n,		l=even;		F = 4*f			1
 		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
@@ -4192,14 +4192,14 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
 
-	Freal = abs(Freal)<1e-8 ? 0 : Freal
-	Fimag = abs(Fimag)<1e-8 ? 0 : Fimag
-	return cmplx(Freal,Fimag)
+	Fr = abs(real(Fc))<1e-8 ? 0 : real(Fc)		// set tiny values to zero
+	Fi = abs(imag(Fc))<1e-8 ? 0 : imag(Fc)
+	return cmplx(Fr,Fi)
 End
 //
-Function/C Get_f_proto(AtomType,Q, keV, [valence])	// simple-minded fatom, just (Z-valence)
+Function/C Get_f_proto(AtomType,Qmag, keV, [valence])	// simple-minded fatom, just (Z-valence)
 	string AtomType
-	variable keV,Q
+	variable keV,Qmag
 	variable valence									// optional integer for valence
 	valence = ParamIsDefault(valence) ? 0 : valence
 	Variable freal = ZfromLabel(AtomType) - valence
@@ -4207,13 +4207,13 @@ Function/C Get_f_proto(AtomType,Q, keV, [valence])	// simple-minded fatom, just 
 	return cmplx(freal,0)
 End
 //
-Static Function DW_factor_M(T,thetaM,Q,amu)		// calculates the M in exp(-M), no I/O
+Static Function DW_factor_M(T,thetaM,Qmag,amu)		// calculates the M in exp(-M), no I/O
 	Variable T			// Temperature (K)
-	Variable thetaM		// Debye Temperature (K)
-	Variable Q			// length of q vector (1/nm)
+	Variable thetaM	// Debye Temperature (K)
+	Variable Qmag		// length of q vector (1/nm)
 	Variable amu		// mass of atom (amu)
 
-	if (T<0 || thetaM<0 || Q<0 || amu<0 || numtype(T+thetaM+Q+amu))
+	if (T<0 || thetaM<0 || Qmag<0 || amu<0 || numtype(T+thetaM+Qmag+amu))
 		return NaN
 	elseif (T<=0)
 		return 0
@@ -4225,7 +4225,7 @@ Static Function DW_factor_M(T,thetaM,Q,amu)		// calculates the M in exp(-M), no 
 	endif
 	Variable Phi = Integrate1D(LatticeSym#PhiIntegrand,0,xx)/xx
 	Variable B = (3*hbar^2 * T * c^2)/(2*(amu*amu_eV)*kB*thetaM^2)* (Phi + xx/4)
-	Variable M = B *(Q*1.e9)^2		// Q is in 1/nm, but we need it in 1/m
+	Variable M = B *(Qmag*1.e9)^2		// Q is in 1/nm, but we need it in 1/m
 	return M
 End
 //
@@ -4289,10 +4289,10 @@ End
 //	printf "F(%d %d %d) = %g %s i%g,      |F| = %g\r",h,k,l,real(Fc),SelectString(imag(Fc)<0,"+","-"),abs(imag(Fc)),sqrt(magsqr(Fc))
 //End
 //
-Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyz)
+Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 	STRUCT crystalStructure &xtal	// provides SpaceGroup, a,b,c
 	Variable xx,yy,zz		// fractional coords of this kind of atom
-	Wave xyz					// list of all equiv posiitions for this atom in fractional coords
+	Wave xyzIN				// result, list of all equiv positions for this atom in fractional coords
 
 	Variable SpaceGroup=xtal.SpaceGroup
 	SetSymOpsForSpaceGroup(SpaceGroup)			// ensure existance of symmetry op mats and vecs
@@ -4301,44 +4301,41 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyz)
 	if (!WaveExists(mats) || !WaveExists(bvecs))
 		Abort"Unable to get symmetry operations in positionsOfOneAtomType()"
 	endif
+	Wave direct = directFrom_xtal(xtal)		// get direct lattice from xtal
+	Variable minDist2 = minPossibleBondLength^2
 
-	Variable xmin=0.1/(xtal.a), ymin=0.1/(xtal.b), zmin=0.1/(xtal.c)	// fractional values that gives 10pm = 0.1
 	Make/N=(3,3)/D/FREE mat
-	Make/N=3/D/FREE bv, in={xx,yy,zz}
+	Make/N=3/D/FREE bv, in={xx,yy,zz}, vec
 	Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
-	Redimension/N=(Neq,3) xyz
-	xyz = NaN
-	Variable dup, i,N
+
+	Make/N=(Neq,3)/D/FREE xyz=NaN				// internal copy of fractional coords
+	Make/N=(Neq,3)/D/FREE xyznm=NaN				// real positions (in nm), NOT fractional coords (in sync with xyz[][])
+	Variable N
 	// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
 	for (m=0,N=0;m<Neq;m+=1)
 		mat = mats[m][p][q]
 		bv = bvecs[m][p]
-		MatrixOp/FREE rr = mat x in + bv
-		rr += abs(floor(rr))						// translate back in to unit cell, so value in [0,1)
-		rr = mod(rr,1)
-		for (i=0,dup=0;i<N;i+=1)					// reject duplicates positions
-			dup = abs(xyz[i][0]-rr[0])<xmin && abs(xyz[i][1]-rr[1])<ymin && abs(xyz[i][2]-rr[2])<zmin	// a duplicate if x,y,z too close
-			if (dup)
-				break
-			endif
-		endfor
-		if (!dup)									// not a duplicate, so add to the list of positions
-			// printf "atom at  %.5f, %.5f, %.5f\r",rr[0],rr[1],rr[2]
-			xyz[N][] = rr[q]
+		MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
+		rr += abs(floor(rr))						// translate to a unit cell with only positive values
+		rr = mod(rr,1)									//   and restrict values to values to [0,1), the first unit cell
+
+		MatrixOP/FREE vec = direct x rr			// real space vector for rr
+		MatrixOP/FREE compares = greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq))))
+		MatrixOP/FREE isDup = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
+		if (isDup[0]<1)								// not a duplicate, so add to the list of positions
+			xyz[N][] = rr[q]							// rr is not an equivalent atom, save it to xyz[N]
+			xyznm[N][] = vec[q]						// keep xyznm in sync with xyz
 			N += 1
 		endif
 	endfor
-	Redimension/N=(N,3) xyz						// remove extra space (since no duplicates)
 
 	Wave Unconventional=root:Packages:Lattices:Unconventional
 	if (WaveExists(Unconventional))					// Unconventional exists, transform all the fractional coords
-		Make/N=3/D/FREE vec
-		for (i=0;i<N;i+=1)
-			vec = xyz[i][p]
-			MatrixOp/O/FREE vec = Unconventional x vec
-			xyz[i][] = vec[q]
-		endfor
+		MatrixOP/FREE xyz = ( Unconventional x (xyz^t) )^t
 	endif
+
+	Redimension/N=(N,3) xyzIN						// remove extra space (it is all filled with NaN's)
+	xyzIN = xyz[p][q]									// and, update xyzIN with correct values
 	return N
 End
 
