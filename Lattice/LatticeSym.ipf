@@ -1134,7 +1134,7 @@ Static Function ForceLatticeToStructure(xtal)
 	elseif(SpaceGroup>=143)			// Trigonal (generally hexagonal cell), for rhomohedral use rhomohedral cell, unless obviously the hexagonal
 
 		if (isRhombohedral(SpaceGroup))	// rhombohedral structure
-			if ((abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6)	// obviously hexagonal
+			if ((abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-3)	// obviously hexagonal
 				xtal.b = xtal.a
 				xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
 			else								// rhombohedral with rhombohedral cell
