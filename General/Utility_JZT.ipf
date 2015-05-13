@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.68
+#pragma version = 3.69
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1656,7 +1656,7 @@ ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepSt
 	keySepStr = SelectString(strlen(keySepStr),":",keySepStr)	// default to colon
 	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
 	keys = SelectString(ParamIsDefault(keys),keys,"")					// defaults to all
-	Variable check_keys = (strlen(keys)>=0) || (strsearch(keys,"*",0)<0)
+	Variable check_keys = (strlen(keys)>0) && (strsearch(keys,"*",0)!=0)
 	String item, key,value
 	Variable i,N=ItemsInList(list1)
 	for (i=0;i<N;i+=1)				// for each keyword=value pair in list1
@@ -1664,7 +1664,7 @@ ThreadSafe Function/S MergeKeywordLists(list0,list1,priority,keySepStr,listSepSt
 		key = StringFromList(0,item,keySepStr)
 		value = StringFromList(1,item,keySepStr)
 		if (check_keys)
-			if (WhichListItem(key,keys)<0)
+			if (WhichListItem(key,keys)<0)	// checking keys, but key not in list, so skip
 				continue
 			endif
 		endif
