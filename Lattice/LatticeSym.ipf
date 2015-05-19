@@ -135,6 +135,8 @@ Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum poss
 //		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
 //		Vc      = MatrixDet(directLattice)		// Volume of unit cell
 //		VcRecip = MatrixDet(recipLatice)		// Volume of reciprocal lattice cell
+//
+//		kf^ = ki^ - 2*(ki^ . q^)*q^
 
 
 Menu "Analysis"

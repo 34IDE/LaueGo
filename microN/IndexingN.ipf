@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.65
+#pragma version = 4.67
 #include "LatticeSym", version>=4.29
 #include "microGeometryN", version>=1.75
 #include "Masking", version>1.02
@@ -283,11 +283,29 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable/G root:Packages:micro:Index:keVmaxCalc=keVmaxCalc, root:Packages:micro:Index:keVmaxTest=keVmaxTest
 	String/G root:Packages:micro:Index:FullPeakList0=NameOfWave(FullPeakList0), root:Packages:micro:Index:FullPeakList1=NameOfWave(FullPeakList1), root:Packages:micro:Index:FullPeakList2=NameOfWave(FullPeakList2)
 
-	if (maxSpots>2)
-		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,maxSpots=maxSpots,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,quiet=!printIt))
-	else
-		Wave FullPeakIndexed=$(runEulerCommand(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,quiet=!printIt))
+	String args=""
+	args = ReplaceStringByKey("FullPeakList",args, GetWavesDataFolder(FullPeakList0,2))
+	if (WaveExists(FullPeakList1))
+		args = ReplaceStringByKey("FullPeakList1",args, GetWavesDataFolder(FullPeakList1,2))
 	endif
+	if (WaveExists(FullPeakList2))
+		args = ReplaceStringByKey("FullPeakList2",args, GetWavesDataFolder(FullPeakList2,2))
+	endif
+	args = ReplaceNumberByKey("keVmaxCalc",args,keVmaxCalc)
+	args = ReplaceNumberByKey("keVmaxTest",args,keVmaxTest)
+	args = ReplaceNumberByKey("angleTolerance",args,angleTolerance)
+	args = ReplaceNumberByKey("hp",args,hp)
+	args = ReplaceNumberByKey("kp",args,kp)
+	args = ReplaceNumberByKey("lp",args,lp)
+	args = ReplaceNumberByKey("cone",args,cone)
+	args = ReplaceNumberByKey("maxSpots",args,maxSpots)
+	args = ReplaceNumberByKey("printIt",args,printIt)
+
+	String funcName=StringFromList(0,StrVarOrDefault("root:Packages:micro:indexingIgorFunc",""))
+	String str=StringFromList(1,StrVarOrDefault("root:Packages:micro:indexingIgorFunc",""))
+	funcName = SelectString(strlen(str), "", str+"#") + funcName
+	FUNCREF runIndexingEulerCommand runIndexingFunc = $funcName
+	Wave FullPeakIndexed = runIndexingFunc(args)
 	if (!WaveExists(FullPeakIndexed))
 		if (printIt)
 			print "\tNothing indexed"
@@ -303,7 +321,10 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 
 	if (printIt)
 		String timeStr = SelectString(executionTime>=60,num2str(executionTime)+" sec", Secs2Time(executionTime,5,1)+" ("+num2str(executionTime)+" sec)")
-		printf "from Euler, found %d patterns, indexed %d out of %d spots  with rms=%g¡ in %s",NpatternsFound,Nindexed,NiData, rms_error,timeStr
+		str = StrVarOrDefault("root:Packages:micro:indexingExecutable","")
+		str += StringFromList(0,StrVarOrDefault("root:Packages:micro:indexingIgorFunc",""))
+		str = SelectString(strlen(str),"Euler",str)
+		printf "from \"%s\", found %d patterns, indexed %d out of %d spots  with rms=%.3g¡ in %s",str,NpatternsFound,Nindexed,NiData, rms_error,timeStr
 		printf ",   "+SurfaceNormalString(FullPeakIndexed)+"\r"
 		if (NpatternsFound>1)
 			Wave RL0=str2recip(StringByKey("recip_lattice0",wnote,"="))
@@ -1036,9 +1057,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 		Variable Qmag=NaN
 		if (useFitted)
-			sprintf tagStr,"\\Zr090Fitted peak position (%.2f, %.2f)\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0",px,py,fwx,fwy,xc,theta*180/PI
+			sprintf tagStr,"\\Zr090Fitted peak position (%.2f, %.2f)\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0,   #%d",px,py,fwx,fwy,xc,theta*180/PI,m
 		elseif (useMissing)
-			sprintf tagStr,"\\Zr090Missing peak: (%.2f, %.2f)\r(%d %d %d) at %.4f keV",px,py,missing[imiss][0],missing[imiss][1],missing[imiss][2],keV
+			sprintf tagStr,"\\Zr090Missing peak: (%.2f, %.2f)\r(%d %d %d) at %.4f keV,   #%d",px,py,missing[imiss][0],missing[imiss][1],missing[imiss][2],keV,imiss
 			String desc = StringByKey("xtalDesc",note(missing),"=")
 			if (strlen(desc)>0)
 				tagStr +="\r"+desc
@@ -1775,16 +1796,16 @@ End
 //
 Static Function/S ParagraphsFromIndexing(fpi,ip)
 	Wave fpi									// usually FullPeakIndexed
-	Variable ip									// pattern number (usually 0)
+	Variable ip								// pattern number (usually 0)
 
-	Variable maxLines=17						// max number of lines in one paragraph
+	Variable maxLines=17					// max number of lines in one paragraph
 	String line, par1="",par2=""
 
 	String deg = SelectString(stringmatch(IgorInfo(2),"Macintosh"),"\F'Symbol'°\F]0","¡")
 	String topLine = "\\Z09 (hkl)\t keV\t           pixel\t err"+deg
 
 	Variable i, N = DimSize(fpi,0)
-	for (i=0;i<min(N,maxLines);i+=1)			// set par1
+	for (i=0;i<min(N,maxLines);i+=1)	// set par1
 		if (numtype(fpi[i][0][ip]))
 			continue
 		endif
@@ -1810,10 +1831,10 @@ End
 Function/T pickIndexingFunction(path)
 	String path						// path to folder on disk to be searched
 	if (strlen(path)<1)
-		path = ParseFilePath(1,FunctionPath("runEulerCommand"),":",1,0)// default path to the executables
+		path = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// default path to the executables
 	endif
 
-	String defaultExe,exe=""
+	String defaultExe
 	Variable isMac = stringmatch(igorInfo(2),"Macintosh")
 	if (isMac && stringmatch(igorinfo(4),"PowerPC"))
 		defaultExe = "Euler_ppc"
@@ -1822,9 +1843,12 @@ Function/T pickIndexingFunction(path)
 		defaultExe = "Euler_i386"
 		isMac = 2
 	else
-		defaultExe = "Euler.exe"
+		defaultExe = "Euler.exe"	// default for MSWindows
 	endif
-	exe = StrVarOrDefault("root:Packages:micro:indexingExecutableMac","")
+	String exeOld = StrVarOrDefault("root:Packages:micro:indexingExecutable","")
+	String indexFuncOld=StrVarOrDefault("root:Packages:micro:indexingIgorFunc","")
+	String old = exeOld + indexFuncOld				// one is always "", so this works
+	old = SelectString(strlen(old), "default", old)
 
 	// get list of possibilities
 	NewPath/O/Q/Z IndexingSearchPath, path
@@ -1832,98 +1856,129 @@ Function/T pickIndexingFunction(path)
 		DoAlert 0,"Unable to set path to "+path
 		return ""
 	endif
-	String list=""
+	String exeList=""
 	if (isMac)
-		list = IndexedFile(IndexingSearchPath,-1,"????")
+		exeList = IndexedFile(IndexingSearchPath,-1,"????")
 		Variable i, bad
 		String fname
-		for (i=ItemsInList(list)-1;i>=0;i-=1)
-			fname = StringFromList(i,list)
+		for (i=ItemsInList(exeList)-1;i>=0;i-=1)
+			fname = StringFromList(i,exeList)
 			GetFileFolderInfo/Q/Z path+fname
 			bad = (strlen(S_fileType+S_creator) || V_isInvisible || !V_isFile || V_isAliasShortcut || V_isStationery || V_logEOF<300e3)
-			bad = bad || stringmatch(fname,"*.exe")				// on a Mac, exclude .exe files
+			bad = bad || StringMatch(fname,"*.ipf")		// exclude Igor procedure files
+			bad = bad || StringMatch(fname,"*.exe")		// on a Mac, exclude .exe files
 			if (isMac ==1)											// for ppc, exclude files ending in i386 or intel
-				bad = bad || stringmatch(fname,"*i386") || stringmatch(fname,"*intel")
+				bad = bad || StringMatch(fname,"*i386") || StringMatch(fname,"*intel")
 			elseif (isMac==2)										// for intel, exclude files ending with ppc
-				bad = bad || stringmatch(fname,"*ppc")	
+				bad = bad || StringMatch(fname,"*ppc")	
 			endif
 			if (bad)
-				list = RemoveFromList(fname,list)
+				exeList = RemoveFromList(fname,exeList)
 			endif
 		endfor
 	else
-		list = IndexedFile(IndexingSearchPath,-1,".exe")
+		exeList = IndexedFile(IndexingSearchPath,-1,".exe")	// on MSWindows, only *.exe files
 	endif
-	if (ItemsInList(list)<1)			// nothing to select from
-		DoAlert 0,"No executables found, do nothing."
+
+	String indexFuncList = FunctionList("runIndexing*",";", "KIND:2,VALTYPE:8,NPARAMS:1,WIN:Procedure")
+	String list = FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:IndexingInternal")
+	indexFuncList += list
+	indexFuncList += FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:IndexingN.ipf")
+	indexFuncList = RemoveFromList("runIndexingEulerCommand",indexFuncList)
+	if (ItemsInList(exeList+indexFuncList)<1)			// nothing to select from
+		DoAlert 0,"No executables or indexing functions found.\r  Doing nothing."
 		return ""
 	endif
 
 	// choose from list of possibilities
-	Prompt exe,"name of indexing program",popup,"_default_;"+list
+	String exe=exeOld
+	if (strlen(exe)==0 && strlen(indexFuncOld)>0)
+		exe = StringFromList(0,indexFuncOld)
+	endif
+	String popUpList = "_default_;"
+	if (strlen(exeList) && strlen(indexFuncList))
+		popUpList += exeList+" ;"+indexFuncList
+	elseif (strlen(exeList))
+		popUpList += exeList
+	elseif (strlen(indexFuncList))
+		popUpList += indexFuncList
+	endif
+	Prompt exe,"name of indexing program",popup, popupList
 	DoPrompt/HELP="Choose a different program for indexing.\r  Euler is fast\r  IndexAll is slow\r  default is usually best." "indexing program",exe
 	if (V_flag)
 		return ""
 	endif
+	exe = SelectString(StringMatch(exe,"_default_") || strlen(exe)<2, exe, "")	// change invalids to ""
 
-	// set global, or delete it if default
-	if (stringmatch(exe,defaultExe) || stringmatch(exe,"_default_")|| strlen(exe)<1)	// set to use default
-		KillStrings/Z root:Packages:micro:indexingExecutableMac
- 		printf "\r\r ==========  Setting Indexing Executable to use default  ==========\r\r\r"
+	String exeNew="", indexFuncNew=""
+	if (WhichListItem(exe,list)>=0)
+		indexFuncNew = exe+";IndexingInternal"
+		exe = "IndexingInternal#"+exe
+	elseif (WhichListItem(exe,indexFuncList)>=0)
+		indexFuncNew = exe
 	else
-		String/G root:Packages:micro:indexingExecutableMac = exe
-		printf "\r\r ==========  Setting Indexing Executable to '%s'  ==========\r\r\r",exe
+		exeNew = exe
+	endif
+
+	String final = exeNew + indexFuncNew
+	final = SelectString(strlen(final), "default", final)
+	printf "\r\r ==========  Changing Indexing Executable from \"%s\"  -->  \"%s\"  ==========\r\r\r", old, final
+
+	if (strlen(exeNew))				// set globals, or delete depending upon what was chosen
+		String/G root:Packages:micro:indexingExecutable = exeNew
+	else
+		KillStrings/Z root:Packages:micro:indexingExecutable
+	endif
+	if (strlen(indexFuncNew))
+		String/G root:Packages:micro:indexingIgorFunc = indexFuncNew
+	else
+		KillStrings/Z root:Packages:micro:indexingIgorFunc
 	endif
 	return exe
 End
 
 
 // using the result from FitPeaks() run Euler, and read in the results from the index file
-Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,quiet])
-	Wave FullPeakList
-	Variable keVmaxCalc				// 17, maximum energy to calculate (keV)
-	Variable keVmaxTest				// 26, maximum energy to test (keV)  [-t]
-	Variable angleTolerance				// 0.25, angular tolerance (deg)
-	Variable hp,kp,lp					// preferred hkl
-	Variable cone						// angle from preferred hkl, (0 < cone < 180¡)
-	Variable maxSpots					// -n max num. of spots from data file to use, default is 250
-	Wave FullPeakList1
-	Wave FullPeakList2
-	Variable quiet
-	maxSpots = ParamIsDefault(maxSpots) ? -1 : maxSpots
+Function/WAVE runIndexingEulerCommand(args)
+	String args
+	Wave FullPeakList = $StringByKey("FullPeakList",args)
+	Variable keVmaxCalc = NumberByKey("keVmaxCalc",args)				// 17, maximum energy to calculate (keV)
+	Variable keVmaxTest = NumberByKey("keVmaxTest",args)				// 26, maximum energy to test (keV)  [-t]
+	Variable angleTolerance = NumberByKey("angleTolerance",args)	// 0.25, angular tolerance (deg)
+	Variable hp = NumberByKey("hp",args)										// preferred hkl
+	Variable kp = NumberByKey("kp",args)
+	Variable lp = NumberByKey("lp",args)
+	Variable cone = NumberByKey("cone",args)								// angle from preferred hkl, (0 < cone < 180¡)
+	Variable maxSpots = NumberByKey("maxSpots",args)						// -n max num. of spots from data file to use, default is 250
+	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
+	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
+	Variable printIt = NumberByKey("printIt",args)
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
-	if (ParamIsDefault(FullPeakList1))
-		Wave FullPeakList1=$""
-	endif
-	if (ParamIsDefault(FullPeakList2))
-		Wave FullPeakList2=$""
-	endif
-	quiet = ParamIsDefault(quiet) ? NaN : quiet
-	quiet = numtype(quiet) ? 0 : !(!quiet)
+	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : printIt
 
 	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
 	badNums += numtype(hp+kp+lp)
 	badNums += !(cone>1 && cone<180)
 	if (badNums)
-		DoAlert 0, "Invalid inputs sent to runEulerCommand()"
-		printf "runEulerCommand(%s,%g,%g,%g)\r",NameOfWave(FullPeakList),keVmaxCalc,keVmaxTest,angleTolerance
-		return ""
+		DoAlert 0, "Invalid inputs sent to runIndexingEulerCommand()"
+		printf "runIndexingEulerCommand(%s,%g,%g,%g)\r",NameOfWave(FullPeakList),keVmaxCalc,keVmaxTest,angleTolerance
+		return $""
 	elseif (!WaveExists(FullPeakList))
-		DoAlert 0, "the input wave does not exist in runEulerCommand()"
-		return ""
+		DoAlert 0, "the input wave does not exist in runIndexingEulerCommand()"
+		return $""
 	elseif (DimSize(FullPeakList,0)<1 || DimSize(FullPeakList,1)!=11)
 		DoAlert 0, "Full peak list '"+NameOfWave(FullPeakList)+"' is empty or the wrong size"
-		return ""
+		return $""
 	elseif (WaveExists(FullPeakList1))
 		if (DimSize(FullPeakList1,1)!=11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList1)+"' is the wrong size"
-			return ""
+			return $""
 		endif
 	elseif (WaveExists(FullPeakList2))
 		if (DimSize(FullPeakList2,1)!=11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList2)+"' is the wrong size"
-			return ""
+			return $""
 		endif
 	endif
 
@@ -1931,45 +1986,45 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	Variable isWin = stringmatch(igorInfo(2),"Windows")
 
 	// first write the command file to drive Euler
-	String upath=SpecialDirPath("Temporary",0,1,0)	// local path (probably unix path) for the command line
-	String mpath=SpecialDirPath("Temporary",0,0,0)	// mac style path for use only within Igor
+	String upath=SpecialDirPath("Temporary",0,1,0)// local path (probably unix path) for the command line
+	String mpath=SpecialDirPath("Temporary",0,0,0)// mac style path for use only within Igor
 	PathInfo home
-	if (V_flag)									// the path "home" exists, use it
+	if (V_flag)													// the path "home" exists, use it
 		mpath = S_path
 		if (stringmatch(igorInfo(2),"Macintosh"))
 			upath = ParseFilePath(5,S_path,"/",0,0)	// Convert HFS>POSIX only on Mac, not Windows
 		endif
 	endif
-	NewPath/O/Q/Z EulerCalcFolder, mpath		// need a new path name since "home" may not exist
+	NewPath/O/Q/Z EulerCalcFolder, mpath				// need a new path name since "home" may not exist
 	if (V_flag)
 		DoAlert 0, "Unable to create path to do Euler calculation, try saving the experiment first."
-		return ""
+		return $""
 	endif
-	String peakFile="generic_Peaks.txt"		// name of file with input peak positions
+	String peakFile="generic_Peaks.txt"				// name of file with input peak positions
 	if(FullPeakList2Qfile(FullPeakList,peakFile,"EulerCalcFolder",FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2))// convert peaks to a Qlist+intens, and write to a file
-		return ""									// nothing happened
+		return $""												// nothing happened
 	endif
 
 	// find the full path name of the Euler executable
-	String name,EulerPath = ParseFilePath(1,FunctionPath("runEulerCommand"),":",1,0)// path to the Euler executable
+	String exe,EulerPath = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// path to the Euler executable
 	if (isMac && stringmatch(igorinfo(4),"PowerPC"))	// find the default name for this architecture
-		name = "Euler_ppc"
+		exe = "Euler_ppc"
 	elseif (isMac && stringmatch(igorinfo(4),"Intel"))
-		name = "Euler_i386"
+		exe = "Euler_i386"
 	elseif (isWin)
-		name = "Euler.exe"
+		exe = "Euler.exe"
 	else
-		name = "Euler"
+		exe = "Euler"
 	endif
-	name = StrVarOrDefault("root:Packages:micro:indexingExecutableMac",name)	// over ride default if indexingExecutableMac is set
-	GetFileFolderInfo/Q/Z EulerPath+name
-	EulerPath += SelectString(V_Flag==0 && V_isFile,"Euler",name)	// use just plane Euler if Euler_ppc or Euler_i386 does not exist
+	exe = StrVarOrDefault("root:Packages:micro:indexingExecutable",exe)
+	GetFileFolderInfo/Q/Z EulerPath+exe
+	EulerPath += SelectString(V_Flag==0 && V_isFile,"Euler",exe)	// use just plane Euler if Euler_ppc or Euler_i386 does not exist
 	if (stringmatch(igorInfo(2),"Macintosh"))			// on Mac, convert EulerPath from HFS to Posix
 		EulerPath = ParseFilePath(5,EulerPath,"/",0,0)
 	endif
 	if (strlen(EulerPath)<1)
-		DoAlert 0, "cannot find the executable '"+name+"'"
-		return ""
+		DoAlert 0, "cannot find the executable '"+exe+"'"
+		return $""
 	endif
 
 	String cmd, result
@@ -1996,7 +2051,7 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 		variable errflag=V_flag
 		if (errflag != 0)
 			printf "Failed to open %s for writing", FullBatchFileName
-			return ""
+			return $""
 		endif
 		if (maxSpots > 2)
 			fprintf BatchFileRN, "\"%s\" -k %g -t %g -a %g -h %d %d %d -c %g -n %d -f \"%s\" > \"%s\"\r\n", WindowsEulerPath,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,maxSpots,FullPeakFileName,OutputFile
@@ -2023,15 +2078,15 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	err = strsearch(result,"writing output to file '",0)<0
 	if (err)
 		if (!NumVarOrDefault("root:Packages:micro:Index:SKIP_EULER_ERRORS",0))
-			if (!quiet)
-				DoAlert 0, "failure in runEulerCommand()"
+			if (printIt)
+				DoAlert 0, "failure in runIndexingEulerCommand()"
 			endif
 			print "\r\r"
 			print cmd
 			print "\r\r"
 			print result
 		endif
-		return ""								// there is no index file
+		return $""								// there is no index file
 	endif
 	Variable i = strsearch(result,"writing output to file '",0)
 	String line = result[i,Inf]
@@ -2039,23 +2094,23 @@ Static Function/S runEulerCommand(FullPeakList,keVmaxCalc,keVmaxTest,angleTolera
 	line = line[i,Inf]
 	String indexFile = line[0,strsearch(line,"'",0)-1]
 	if (!strlen(indexFile))
-		DoAlert 0, "in runEulerCommand(), cannot find the index file"
+		DoAlert 0, "in runIndexingEulerCommand(), cannot find the index file"
 		print "\r\r"
 		print result
-		return ""								// there is no index file
+		return $""								// there is no index file
 	endif
 	return readIndexFile(indexFile,"EulerCalcFolder")	// read an index file and create an array to hold the results, return array name
 End
 //
 //
 // 
-Static Function/S readIndexFile(indexFile,path)
+Static Function/WAVE readIndexFile(indexFile,path)
 	String indexFile						// name of index file, the output from Euler
 	String path							// name of Igor path to go with indexFile
 
 	Variable f = OpenFileOf_ftype(indexFile,"IndexFile",path)// open an index file
 	if (f<1)
-		return ""						// could not get any info from indexFile 
+		return $""						// could not get any info from indexFile 
 	endif
 	FStatus f
 	String buffer=""
@@ -2073,8 +2128,7 @@ Static Function/S readIndexFile(indexFile,path)
 	STRUCT microGeometry geo
 	if (FillGeometryStructDefault(geo))					//fill the geometry structure with test values
 		DoAlert 0, "no geometry structure found, did you forget to set it?"
-//		return GetWavesDataFolder(FullPeakIndexed,2)		// can not compute (px,py), but still a valid result
-		return ""													// can not compute (px,py), but still a valid result
+		return $""													// can not compute (px,py), but still a valid result
 	endif
 
 	Variable ipattern=0										// number of current patterns
@@ -2085,7 +2139,7 @@ Static Function/S readIndexFile(indexFile,path)
 	String FullPeakIndexedName = CleanupName("FullPeakIndexed"+ReplaceString("FullPeakList",peakListName,""),0)
 	Variable Npatterns = NumberByKey("NpatternsFound",wnote,"=")
 	if (!(Npatterns>0))
-			return ""
+			return $""
 	endif
 	Variable startx,groupx, starty,groupy, ddLocal
 	startx = NumberByKey("startx",wnote,"=")
@@ -2183,15 +2237,15 @@ Static Function/S readIndexFile(indexFile,path)
 	endif
 
 	Note/K FullPeakIndexed, wnote
-	SetDimLabel 1,0,Qx,FullPeakIndexed		;	SetDimLabel 1,1,Qy,FullPeakIndexed
-	SetDimLabel 1,2,Qz,FullPeakIndexed		;	SetDimLabel 1,3,h,FullPeakIndexed
-	SetDimLabel 1,4,k,FullPeakIndexed			;	SetDimLabel 1,5,l,FullPeakIndexed
+	SetDimLabel 1,0,Qx,FullPeakIndexed				;	SetDimLabel 1,1,Qy,FullPeakIndexed
+	SetDimLabel 1,2,Qz,FullPeakIndexed				;	SetDimLabel 1,3,h,FullPeakIndexed
+	SetDimLabel 1,4,k,FullPeakIndexed				;	SetDimLabel 1,5,l,FullPeakIndexed
 	SetDimLabel 1,6,Intensity,FullPeakIndexed	;	SetDimLabel 1,7,keV,FullPeakIndexed
 	SetDimLabel 1,8,angleErr,FullPeakIndexed	;	SetDimLabel 1,9,pixelX,FullPeakIndexed
-	SetDimLabel 1,10,pixelY,FullPeakIndexed	;	SetDimLabel 1,11,detNum,FullPeakIndexed
+	SetDimLabel 1,10,pixelY,FullPeakIndexed		;	SetDimLabel 1,11,detNum,FullPeakIndexed
 
 	KillWaves/Z M_Lower,M_Upper,W_LUPermutation,M_x
-	return GetWavesDataFolder(FullPeakIndexed,2)
+	return FullPeakIndexed
 End
 //
 Static Function OpenFileOf_ftype(fname,ftype,path)// open a file only if it is of type ftype
@@ -2792,7 +2846,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 	String peakFile="generic_XY.txt"			// name of file to receive result
 
 	// find the full path name of the peaksearch executable
-	String name,PeakSearchPath = ParseFilePath(1,FunctionPath("runEulerCommand"),":",1,0)// path to the peaksearch executable
+	String name,PeakSearchPath = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// path to the peaksearch executable
 
 	if (isMac && stringmatch(igorinfo(4),"PowerPC"))	// find the default name for this architecture
 		name = "peaksearch_ppc"
@@ -2917,7 +2971,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 End
 //
 // begin block commented RX:
-//#elif stringmatch(igorInfo(2),"Windows")			// Windows version of runEulerCommand()
+//#elif stringmatch(igorInfo(2),"Windows")			// Windows version of runIndexingEulerCommand()
 // //
 // //	This is just a stub until I get a final version
 // // using the result from FitPeaks() run peaksearch, and read in the results from output file
@@ -4477,7 +4531,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	fprintf refNum,"$latticeParameters	{ %g, %g, %g, %g, %g, %g }// using nm and degrees\n",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	fprintf refNum,"$lengthUnit			nm					// length unit for lattice constants a,b,c\n"
 	fprintf refNum,"$SpaceGroup			%d					// Structure number from International Tables\n",xtal.SpaceGroup
-	if (stringmatch(StrVarOrDefault("root:Packages:micro:indexingExecutableMac",""),"EulerOrig"))
+	if (stringmatch(StrVarOrDefault("root:Packages:micro:indexingExecutable",""),"EulerOrig"))
 		fprintf refNum,"$latticeStructure		%d					// Structure number from International Tables\n",xtal.SpaceGroup
 	endif
 	str = "\t// {element  x y z occupancy}"
