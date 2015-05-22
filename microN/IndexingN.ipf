@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.67
+#pragma version = 4.68
 #include "LatticeSym", version>=4.29
 #include "microGeometryN", version>=1.75
 #include "Masking", version>1.02
@@ -890,7 +890,6 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	elseif (useFitted)
 		s.cursorCode = 17					// big "?" for fitted
 	elseif (useMouse)
-//		s.cursorCode = 16					// box with dot for only mouse
 		s.cursorCode = 18					// small box with cross for only mouse
 	else
 		s.cursorCode = 0					// for nothing
@@ -990,27 +989,23 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		if (useFitted)
 			Variable dmiss=Inf, imiss = -1
 			if (useMissing)
-				N=DimSize(missing,0)
-				for (i=0;i<N;i+=1)		// search through all fitted peaks
-					px = missing[i][3]	// FullPeakList contains binned pixels (of fitted peaks)
-					py = missing[i][4]
-					if ((px-mx)^2+(py-my)^2 < dmiss)
-						imiss = i
-						dmiss = (px-mx)^2+(py-my)^2
-					endif
-				endfor
+				N = DimSize(missing,0)
+				Make/N=2/FREE mxmy={mx,my}								// location from mouse
+				Make/N=(N,2)/FREE pxpy = missing[p][3+q] - mxmy[q]
+				MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all fitted peaks
+				WaveStats/M=1/Q dpxpy2
+				imiss = V_minLoc
+				dmiss = V_min
 			endif
 			dist2=Inf
 			m=-1								// find the indexed peak closest to the mouse-click
-			N=DimSize(FullPeakList,0)
-			for (i=0;i<N;i+=1)			// search through all fitted peaks
-				px = FullPeakList[i][0]// FullPeakList contains binned pixels (of fitted peaks)
-				py = FullPeakList[i][1]
-				if ((px-mx)^2+(py-my)^2 < dist2)
-					m = i
-					dist2 = (px-mx)^2+(py-my)^2
-				endif
-			endfor
+			N = DimSize(FullPeakList,0)
+			Make/N=2/FREE mxmy={mx,my}								// location from mouse
+			Make/N=(N,2)/FREE pxpy = FullPeakList[p][q] - mxmy[q]
+			MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all fitted peaks
+			WaveStats/M=1/Q dpxpy2
+			m = V_minLoc
+			dist2 = V_min
 			if (numtype(dist2) && numtype(dmiss))
 				return 1						// no fitted or missing peak found
 			endif
@@ -1132,15 +1127,12 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		endif
 		dist2=Inf
 		m=-1																// find the indexed peak closest to the mouse-click
-		N=DimSize(FullPeakIndexed,0)
-		for (i=0;i<N;i+=1)											// search through all indexed peaks
-			px = FullPeakIndexed[i][9][ip]						// binned pixels
-			py = FullPeakIndexed[i][10][ip]
-			if ((px-mx)^2+(py-my)^2 < dist2)
-				m = i
-				dist2 = (px-mx)^2+(py-my)^2
-			endif
-		endfor
+		N = DimSize(FullPeakIndexed,0)
+		Make/N=2/FREE mxmy={mx,my}								// location from mouse
+		Make/N=(N,2)/FREE pxpy = FullPeakIndexed[p][9+q][ip] - mxmy[q]
+		MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all indexed peaks
+		WaveStats/M=1/Q dpxpy2
+		m = V_minLoc
 		if (m<0)
 			return 1														// no indexed peak found
 		endif
@@ -1166,15 +1158,13 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		endif
 		dist2=Inf
 		m=-1																// find the indexed peak closest to the mouse-click
-		N=DimSize(PeaksForStrain,0)
-		for (i=0;i<N;i+=1)											// search through all indexed peaks
-			px = PeaksForStrain[i][11]							// binned pixels
-			py = PeaksForStrain[i][12]
-			if ((px-mx)^2+(py-my)^2 < dist2)
-				m = i
-				dist2 = (px-mx)^2+(py-my)^2
-			endif
-		endfor
+		N = DimSize(PeaksForStrain,0)
+		Make/N=2/FREE mxmy={mx,my}								// location from mouse
+		Make/N=(N,2)/FREE pxpy = PeaksForStrain[p][11+q] - mxmy[q]
+		MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all strain refined peaks
+		WaveStats/M=1/Q dpxpy2
+		m = V_minLoc
+		dist2 = V_min
 		if (m<0)
 			return 1														// no indexed peak found
 		endif
