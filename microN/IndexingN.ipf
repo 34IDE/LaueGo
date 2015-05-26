@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.12
-#pragma version = 4.68
+#pragma version = 4.69
 #include "LatticeSym", version>=4.29
 #include "microGeometryN", version>=1.75
 #include "Masking", version>1.02
@@ -898,15 +898,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 	Variable i,N, useMissing=0
 	if (useFitted)							// check if useFitted also include Missing
-		String traceList = TraceNameList(win,";",1)
-		N = ItemsInLIst(traceList)
-		for (i=0;i<N;i+=1)
-			Wave missing = TraceNameToWaveRef(win,StringFromLIst(i,traceList))
-			if (WaveInClass(missing,"MissingPeakList*"))
-				useMissing = 1				// MissingPeakList is on graph so use it too
-				break
-			endif
-		endfor
+		Wave missing = TraceNameToWaveRef(win,StringFromLIst(0,TraceNamesInClass("MissingPeakList*",win)))
+		useMissing = WaveExists(missing)
 	endif
 
 	String imageName = StringFromList(0,ImageNameList(win,";"))
@@ -4613,16 +4606,16 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 End
 
 
-Function TableFullPeakList(w)
-	Wave w
-	if (!WaveExists(w))
+Function TableFullPeakList(ww)
+	Wave ww
+	if (!WaveExists(ww))
 		String list = reverseList(WaveListClass("FittedPeakList*","*",""))
 		Variable i = ItemsInLIst(list)
 		if (i<1)
 			DoAlert 0, "No waves of this type in current folder"
 			return 1
 		elseif (i==1)
-			Wave w = $StringFromList(0,list)
+			Wave ww = $StringFromList(0,list)
 		else
 			String wName = StringFromList(i-1,list)
 			Prompt wName, "Wave with list of fitted peaks",popup,list
@@ -4630,34 +4623,26 @@ Function TableFullPeakList(w)
 			if (V_flag)
 				return 1
 			endif			
-			Wave w = $wName
+			Wave ww = $wName
 		endif
-		if (!WaveExists(w))
+		if (!WaveExists(ww))
 			DoAlert 0, "No waves of name "+wName
 			return 1
 		endif
 	endif
-
-	String table = FindTableWithWave(w)
-	if (strlen(table)>0)
-		DoWindow/F $table
-		return 0
-	endif
-	Edit/K=1/W=(5,44,891,684) w.ld
-	ModifyTable width(Point)=30,title(w.d)="Fitted Peaks",width(w.l)=20
-	ModifyTable format(w.d)=3,width(w.d)=74
+	DisplayTableOfWave(ww)
 End
 
-Function TableFullPeakIndexed(w)
-	Wave w
-	if (!WaveExists(w))
+Function TableFullPeakIndexed(ww)
+	Wave ww
+	if (!WaveExists(ww))
 		String list = reverseList(WaveListClass("IndexedPeakList*","*",""))
 		Variable i = ItemsInLIst(list)
 		if (i<1)
 			DoAlert 0, "No waves of this type in current folder"
 			return 1
 		elseif (i==1)
-			Wave w = $StringFromList(0,list)
+			Wave ww = $StringFromList(0,list)
 		else
 			String wName = StringFromList(i-1,list)
 			Prompt wName, "Wave with list of indexed peaks",popup,list
@@ -4665,34 +4650,26 @@ Function TableFullPeakIndexed(w)
 			if (V_flag)
 				return 1
 			endif			
-			Wave w = $wName
+			Wave ww = $wName
 		endif
-		if (!WaveExists(w))
+		if (!WaveExists(ww))
 			DoAlert 0, "No waves of name "+wName
 			return 1
 		endif
 	endif
-
-	String table = FindTableWithWave(w)
-	if (strlen(table)>0)
-		DoWindow/F $table
-		return 0
-	endif
-	Edit/K=1/W=(5,44,960,684) w.ld
-	ModifyTable width(Point)=30,title(w.d)="Indexed Peaks",width(w.l)=20
-	ModifyTable format(w.d)=3,width(w.d)=74
+	DisplayTableOfWave(ww)
 End
 
-Function TableFullPeakStrain(w)
-	Wave w
-	if (!WaveExists(w))
+Function TableFullPeakStrain(ww)
+	Wave ww
+	if (!WaveExists(ww))
 		String list = reverseList(WaveListClass("StrainPeakList*","*",""))
 		Variable i = ItemsInLIst(list)
 		if (i<1)
 			DoAlert 0, "No waves of this type in current folder"
 			return 1
 		elseif (i==1)
-			Wave w = $StringFromList(0,list)
+			Wave ww = $StringFromList(0,list)
 		else
 			String wName = StringFromList(i-1,list)
 			Prompt wName, "Wave with list of indexed peaks",popup,list
@@ -4700,36 +4677,26 @@ Function TableFullPeakStrain(w)
 			if (V_flag)
 				return 1
 			endif			
-			Wave w = $wName
+			Wave ww = $wName
 		endif
-		if (!WaveExists(w))
+		if (!WaveExists(ww))
 			DoAlert 0, "No waves of name "+wName
 			return 1
 		endif
 	endif
-
-	String table = FindTableWithWave(w)
-	if (strlen(table)>0)
-		DoWindow/F $table
-		return 0
-	endif
-
-	Variable right = DimSize(w,1)>14 ? 1333 : 1109		// 1035
-	Edit/K=1/W=(5,44,right,681) w.ld					// right was 1035
-	ModifyTable width(Point)=30,title(w.d)="Strain Peaks",width(w.l)=20
-	ModifyTable format(w.d)=3,width(w.d)=74
+	DisplayTableOfWave(ww)
 End
 
-Function TableMissingPeakList(w)
-	Wave w
-	if (!WaveExists(w))
+Function TableMissingPeakList(ww)
+	Wave ww
+	if (!WaveExists(ww))
 		String list = reverseList(WaveListClass("MissingPeakList*","*",""))
 		Variable i = ItemsInLIst(list)
 		if (i<1)
 			DoAlert 0, "No waves of this type in current folder"
 			return 1
 		elseif (i==1)
-			Wave w = $StringFromList(0,list)
+			Wave ww = $StringFromList(0,list)
 		else
 			String wName = StringFromList(i-1,list)
 			Prompt wName, "Wave with list of missing peaks",popup,list
@@ -4737,22 +4704,14 @@ Function TableMissingPeakList(w)
 			if (V_flag)
 				return 1
 			endif			
-			Wave w = $wName
+			Wave ww = $wName
 		endif
-		if (!WaveExists(w))
+		if (!WaveExists(ww))
 			DoAlert 0, "No waves of name "+wName
 			return 1
 		endif
 	endif
-
-	String table = FindTableWithWave(w)
-	if (strlen(table)>0)
-		DoWindow/F $table
-		return 0
-	endif
-	Edit/K=1/W=(5,44,518,684) w.ld
-	ModifyTable width(Point)=30,width(w.l)=20
-	ModifyTable format(w.d)=3,width(w.d)=74
+	DisplayTableOfWave(ww)
 End
 
 
