@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.71
+#pragma version = 4.72
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -1898,10 +1898,7 @@ Function/T pickIndexingFunction(path)
 		exeList = IndexedFile(IndexingSearchPath,-1,".exe")	// on MSWindows, only *.exe files
 	endif
 
-	String indexFuncList = FunctionList("runIndexing*",";", "KIND:2,VALTYPE:8,NPARAMS:1,WIN:Procedure")
-	String list = FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:Indexing_Internal.ipf")
-	indexFuncList += list
-	indexFuncList += FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:IndexingN.ipf")
+	String indexFuncList = FunctionList("runIndexing*",";", "KIND:2,VALTYPE:8,NPARAMS:1")
 	indexFuncList = RemoveFromList("runIndexingEulerCommand",indexFuncList)
 	if (ItemsInList(exeList+indexFuncList)<1)			// nothing to select from
 		DoAlert 0,"No executables or indexing functions found.\r  Doing nothing."
@@ -1929,10 +1926,7 @@ Function/T pickIndexingFunction(path)
 	exe = SelectString(StringMatch(exe,"[default binary]") || strlen(exe)<2, exe, "")	// change invalids to ""
 
 	String exeNew="", indexFuncNew=""
-	if (WhichListItem(exe,list)>=0)
-		indexFuncNew = exe+";IndexingInternal"
-		exe = "IndexingInternal#"+exe
-	elseif (WhichListItem(exe,indexFuncList)>=0)
+	if (WhichListItem(exe,indexFuncList)>=0)
 		indexFuncNew = exe
 	else
 		exeNew = exe

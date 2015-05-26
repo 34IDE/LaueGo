@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.05
+#pragma version = 0.06
 #include "IndexingN", version>=4.70
 
 Static Constant hc = 1.239841857			// keV-nm
@@ -30,7 +30,7 @@ End
 //  ====================================================================================  //
 //  =============================== Start of Qs Indexing ===============================  //
 
-Static Function/WAVE runIndexingQsIgor(args)
+Function/WAVE runIndexingQsIgor(args)
 	String args
 	Wave FullPeakList = $StringByKey("FullPeakList",args)
 	Variable keVmaxCalc = NumberByKey("keVmaxCalc",args)	// 14, maximum energy for peaks to check (keV)
@@ -485,7 +485,7 @@ End
 //	This should let me use a reduced angle tolerance and fewer hkl's.
 // Use rotation vectors rather than Euler angles.
 
-Static Function/WAVE runIndexingZonesIgor(args)
+Function/WAVE runIndexingZonesIgor(args)
 	String args
 	Wave FullPeakList = $StringByKey("FullPeakList",args)
 	Variable keVmax = NumberByKey("keVmaxTest",args)	// 30, maximum energy for finding peaks (keV)
