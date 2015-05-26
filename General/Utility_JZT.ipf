@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.69
+#pragma version = 3.70
 // #pragma hide = 1
 
 Menu "Graph"
@@ -25,6 +25,8 @@ End
 //	7	WaveListClass() & WaveInClass(), used for handling the "waveClass=ccccc;" in wave notes
 //		  also AddClassToWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
 //		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
+//		  FoldersWithWaveClass(), returns list of sub-folders with wave of a certain class
+//		  TraceNamesInClass(), like TraceNameList(), but limit result to a list of wave classes
 //	8	Contains lots of utility stuff
 //		RecompileAllProcedures(), FORCE ALL procedures to recompile
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
@@ -32,6 +34,7 @@ End
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
 //		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
+//		DisplayTableOfWave(...), display table taking into account any col/row labels
 //		getListOfTypesInFile(), returns file type (using the $filetype) in my old standard files (trying to start only using xml)
 //		DrawMarker(), draw a marker
 //		xy2saturatedColors(), computes saturated colors for and RGB wheel on an xy graph
@@ -1557,6 +1560,18 @@ Function/T FoldersWithWaveClass(fldrPath,waveClassList,search,options,[all,win])
 	return list
 End
 
+
+Function/T TraceNamesInClass(waveClassList,win,[optionsFlag])
+	// like TraceNameList(), but limit result to a list of wave classes
+	// returns a list of acceptable trace names, use TraceNameToWaveRef() to get wave ref.
+	String waveClassList			// list of classes, semi-colon separated
+	String win
+	Variable optionsFlag
+	optionsFlag = ParamIsDefault(optionsFlag) || numtype(optionsFlag) ? 1 : optionsFlag
+	String list=TraceNameList(win,";",optionsFlag )
+	return IncludeOnlyWavesInClass(list,waveClassList)
+End
+
 //  ============================= End WaveClass in Wave Note =============================  //
 //  ======================================================================================  //
 
@@ -1851,6 +1866,91 @@ Function/T FindTablesWithWave(w)	// find the table windows which contains the sp
 	endfor
 	return out
 End
+
+
+
+Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,left,maxRows,maxCols])
+	// put up a table of a 2D wave
+	Wave ww						// the ZonesWave wave (4 columns)
+	String classes				// can use commas or semicolons and *
+	String promptStr			// string for use in prompts
+	String names				// name wildcards as used in WaveList()
+	String options				// WaveList() options (e.g. "DIMS:2")
+	Variable colWid			// fixed column width (points)
+	Variable top,left			// top left corner of table
+	Variable maxRows			// maximum number of rows to show
+	Variable maxCols			// maximum number of columns to show
+	classes = SelectString(ParamIsDefault(classes),classes,"*")
+	promptStr = SelectString(ParamIsDefault(promptStr),promptStr,"Select a Wave for Table")
+	names = SelectString(ParamIsDefault(names),names,"*")
+	options = SelectString(ParamIsDefault(options),options,"")
+	colWid = ParamIsDefault(colWid) || colWid<=1 || numtype(colWid) ? 80 : colWid
+	top = ParamIsDefault(top) || numtype(top) ? 44 : limit(top,44,500)
+	left = ParamIsDefault(left) || numtype(left) ? 5 : limit(left,0,784)
+	maxRows = ParamIsDefault(maxRows) || numtype(maxRows) ? 90 : limit(maxRows,3,200)
+	maxCols = ParamIsDefault(maxCols) || numtype(maxCols) ? 15 : limit(maxCols,3,30)
+	if (!WaveExists(ww))
+		String list=WaveListClass(classes,names,options)
+		if(ItemsInList(list)==1)
+			Wave ww = $StringFromList(0,list)
+		elseif (ItemsInList(list)>1)
+			String name
+			Prompt name,promptStr+" Wave",popup,list
+			DoPrompt promptStr,name
+			if (!V_flag)
+				Wave ww= $name
+			endif
+		endif
+	endif
+	if (!WaveExists(ww))
+		return $""
+	endif
+	String win=StringFromList(0,FindTablesWithWave(ww))	// find an existing table windows containing ww
+	if (strlen(win))
+		DoWindow/F $win								// Table already exists, just bring it to front
+		return ww
+	endif
+
+	String fontName=GetDefaultFont("")
+	Variable fontSize = 12
+
+	Variable i, Nr=DimSize(ww,0), Nc=DimSize(ww,1), hasColLabels, hasRowLabels
+	for (i=0,hasColLabels=0; i<Nc; i+=1)
+		hasColLabels = hasColLabels || strlen(GetDimLabel(ww,1,i))
+	endfor
+	for (i=0,hasRowLabels=0; i<Nc; i+=1)
+		hasRowLabels = max(hasRowLabels, FontSizeStringWidth(fontName,fontSize,0,GetDimLabel(ww,0,i)))
+	endfor
+	Nr = min(maxRows,Nr)							// limit display to maxRows rows
+	Nc = min(maxCols,Nc)							// limit display to maxCols columns
+
+	String screen1=StringByKey("SCREEN1",IgorInfo(0))
+	i = strsearch(screen1,"RECT=",0)
+	String rect = StringByKey("RECT",screen1[i,Inf],"=")
+	Variable scrWidth=str2num(StringFromList(2,rect,",")), scrHeight=str2num(StringFromList(3,rect,","))
+	scrWidth = numtype(scrWidth) || scrWidth<800 ? 1000 : scrWidth
+	scrHeight = numtype(scrHeight) || scrHeight<600 ? 600 : scrHeight
+
+	Variable width = 53 + colWid*Nc, lwidth=0
+	Variable height = 86 + (FontSizeHeight(fontName,fontSize,0))*Nr
+	if (hasColLabels || hasRowLabels)
+		lwidth = max(hasRowLabels+3, 20)
+		width += lwidth
+		height +=  Nr*4
+	endif
+	width = min(scrWidth-2*left, width)
+	height =  min(scrHeight-top-5, height)
+
+	if (lwidth)											// Make the table /W=(left,top,right,bottom)
+		Edit/W=(left,top,left+width,top+height)/K=1 ww.ld
+		ModifyTable width(ww.l)=lwidth
+	else
+		Edit/W=(left,top,left+width,top+height)/K=1 ww
+	endif
+	ModifyTable font=fontName, size=fontSize, format(Point)=1,width(Point)=36, width(ww.d)=colWid
+	return ww
+End
+
 
 
 // make a function getFiletype that goes to a file and determines it's filetype, this applies to old $tag type files
