@@ -1,21 +1,21 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
-#pragma IgorVersion = 6.12
-#pragma version = 4.69
-#include "LatticeSym", version>=4.29
-#include "microGeometryN", version>=1.75
+#pragma IgorVersion = 6.2
+#pragma version = 4.71
+#include "LatticeSym", version>=4.35
+#include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
-#include "ImageDisplayScaling", version>=1.98
+#include "ImageDisplayScaling", version>=2.03
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&2)
 #include "tiff"
 //#else
 #endif
 //#if (Exists("HDF5OpenFile")==4)
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&1 && Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.30
+#include "HDF5images", version>=0.32
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
-#include "WinView", version>=2.03
+#include "WinView", version>=2.04
 //#else
 #endif
 Constant INDEXING_MAX_CALC = 30
@@ -54,7 +54,7 @@ Menu LaueGoMainMenuName
 	help={"removes bkg and then finds and fits peaks, do not use anymore"}
 //	  pkLIstImageMenuItem("   Reset Fitted Peak list from boxes"),setFittedPeaksFromList($"",NaN,pkList)
 //	  help={"reset list of peaks for fitting to the boxes on an image plot"}
-	MenuItemIfWaveClassExists("Index and Display...","FittedPeakList","DIMS:2,MAXCOLS:11,MINCOLS:11"),IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN)
+	MenuItemIfWaveClassExists("Index and Display...","FittedPeakList*","DIMS:2,MAXCOLS:11,MINCOLS:11"),IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN)
 	help={"Index the identified peaks, using the defined lattice, and then show it all on a plot"}
 	   MenuItemIfWaveClassExists("  Refine Strain","IndexedPeakList*",""),Indexing#MenuStrainRefine(NaN,"")
 //	   MenuItemIfWaveClassExists("  Refine Strain","IndexedPeakList*",""),DeviatoricStrainRefine(NaN,"",printit=1)
@@ -76,8 +76,8 @@ Menu LaueGoMainMenuName
 	   help={"calculate the rotation between two different indexation results, useful when indexing finds multiple patterns"}
 	//	SubMenu("Tables")
 	MenuItemsWaveClassOnGraph("Angle Between Cursors","speImage*;rawImage*",""),/Q,AngleBetweenTwoPointsGeneral($"",$"",nan, nan,nan,nan)
-	SubMenu(MenuItemIfWaveClassExists("Tables","FittedPeakList;IndexedPeakList*",""))
-		MenuItemIfWaveClassExists("Fitted Peaks","FittedPeakList",""),TableFullPeakList($"")
+	SubMenu(MenuItemIfWaveClassExists("Tables","FittedPeakList*;IndexedPeakList*",""))
+		MenuItemIfWaveClassExists("Fitted Peaks","FittedPeakList*",""),TableFullPeakList($"")
 		help={"Show table of identified peak positions"}
 		MenuItemIfWaveClassExists("Indexed Peaks","IndexedPeakList*",""),TableFullPeakIndexed($"")
 		help={"Show table of indexed peaks"}
@@ -182,7 +182,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		sprintf hkl,"%d, %d, %d",hp,kp,lp
 		Prompt hkl,"preferred hkl of center"
 		Prompt cone,"max angle¡ from hkl prefer to spot"
-		String pkList=WaveListClass("FittedPeakList","*","DIMS:2,MAXCOLS:11,MINCOLS:11")
+		String pkList=WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:11,MINCOLS:11")
 		String peakListStr0="", peakListStr1="", peakListStr2=""
 		Variable multi=0
 		if (WaveExists(FullPeakList0))
@@ -443,9 +443,9 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 		return ""
 	endif
 
-	String flist = reverseList(WaveListClass("FittedPeakList","*","DIMS:2"))
+	String flist = reverseList(WaveListClass("FittedPeakList*","*","DIMS:2"))
 	Variable perfect=0
-	if (!WaveInClass(indexedList,"IndexedPeakList") || !WaveInClass(peakList,"FittedPeakList") || !(dNum==limit(round(dNum),0,2)))
+	if (!WaveInClass(indexedList,"IndexedPeakList*") || !WaveInClass(peakList,"FittedPeakList*") || !(dNum==limit(round(dNum),0,2)))
 		String indexName="", peakListName=""
 		Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";" )))
 		String win=StringFromList(0,FindGraphsWithWave(image))
@@ -467,7 +467,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 			indexName = NameOfWave(indexedList)
 		endif
 		Prompt dNum,"Detector Number (probably 1 or)",popup,"Detector 0 (Orange);Detector 1 (Yellow);Detector 2 (Purple);"
-		String ilist = reverseList(WaveListClass("IndexedPeakList","*",""))+"perfect Si;"
+		String ilist = reverseList(WaveListClass("IndexedPeakList*","*",""))+"perfect Si;"
 		Prompt indexName, "FullPeakIndexed List to provide sample rotation",popup,ilist
 		Prompt peakListName, "Fitted Peaks List",popup,flist
 		dNum += 1
@@ -902,12 +902,20 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		useMissing = WaveExists(missing)
 	endif
 
-	String imageName = StringFromList(0,ImageNameList(win,";"))
+	String imageName = StringFromList(0,ImageNameList(win,";")), wnote=""
+	String FullPeakName="", FullPeakIndexName="", PeaksForStrainName="", TraceName=""
 	Wave image = ImageNameToWaveRef(win,StringFromList(0,ImageNameList(win,";")))
 	if (!WaveExists(image))
-		return 1
+		FullPeakName = StringFromList(0,TraceNamesInClass("FittedPeakList*",win))
+		Wave FullPeakList = TraceNameToWaveRef(win,FullPeakName)
+		if (!WaveExists(FullPeakList))
+			return 1
+		endif
+		wnote = note(FullPeakList)
 	elseif (WaveDims(image)!=2)
 		return 1
+	else
+		wnote = note(image)
 	endif
 
 	STRUCT microGeometry geo
@@ -916,7 +924,6 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		return 1
 	endif
 
-	String wnote=note(image)
 	Variable startx,groupx, starty,groupy	// ROI of the actual image
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
@@ -960,17 +967,28 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	ip = (ip<0 || numtype(ip)) ? 0 : ip
 
 	Wave FullPeakIndexed=$(StringByKey("FullPeakIndexed",GetUserData("","","Indexing"),"="))
+	if (!WaveExists(FullPeakIndexed))
+		FullPeakIndexName = StringFromList(0,TraceNamesInClass("IndexedPeakList*",win))
+		Wave FullPeakIndexed = TraceNameToWaveRef(win,FullPeakIndexName)
+	else
+		FullPeakIndexName = NameOfWave(FullPeakIndexed)
+	endif
 	if (WaveExists(FullPeakIndexed))
 		ip = limit(ip,0,max(DimSize(FullPeakIndexed,2)-1,0))
 		Wave PeaksForStrain=$( GetWavesDataFolder(FullPeakIndexed,1)+"PeaksForStrain")
+		PeaksForStrainName = NameOfWave(PeaksForStrain)
 	endif
 	useStrain = useStrain && (modDate(PeaksForStrain) >= modDate(FullPeakIndexed))	// only use strain if not stale
 	useStrain = useStrain && (NumberByKey("patternNum", note(PeaksForStrain),"=")==ip)
 	useIndex = useIndex && !useStrain
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
+	Variable wIndex=NaN
 
 	if (useFitted || useMouse)				// examining fitted peaks (or mouse position)
-		Wave FullPeakList=$(StringByKey("FullPeakList",GetUserData("","","FitPeaks"),"="))
+		if (!WaveExists(FullPeakList))
+			Wave FullPeakList=$(StringByKey("FullPeakList",GetUserData("","","FitPeaks"),"="))
+			FullPeakName = NameOfWave(FullPeakList)
+		endif
 		if (!WaveExists(FullPeakList))
 			Wave FullPeakList=FindPeakListForImage(image)
 		endif
@@ -989,6 +1007,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				WaveStats/M=1/Q dpxpy2
 				imiss = V_minLoc
 				dmiss = V_min
+				wIndex = imiss
+				TraceName = NameOfWave(missing)
 			endif
 			dist2=Inf
 			m=-1								// find the indexed peak closest to the mouse-click
@@ -999,6 +1019,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			WaveStats/M=1/Q dpxpy2
 			m = V_minLoc
 			dist2 = V_min
+			wIndex = m
+			TraceName = FullPeakName
 			if (numtype(dist2) && numtype(dmiss))
 				return 1						// no fitted or missing peak found
 			endif
@@ -1045,7 +1067,13 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 		Variable Qmag=NaN
 		if (useFitted)
-			sprintf tagStr,"\\Zr090Fitted peak position (%.2f, %.2f)\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0,   #%d",px,py,fwx,fwy,xc,theta*180/PI,m
+			sprintf tagStr,"\\Zr090Fitted peak position (%.2f, %.2f)",px,py
+			if (numtype(fwx+fwy)==0)
+				sprintf str,"\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f",fwx,fwy,xc
+				tagStr += str
+			endif
+			sprintf str,"\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0,   #%d",theta*180/PI,m
+			tagStr += str
 		elseif (useMissing)
 			sprintf tagStr,"\\Zr090Missing peak: (%.2f, %.2f)\r(%d %d %d) at %.4f keV,   #%d",px,py,missing[imiss][0],missing[imiss][1],missing[imiss][2],keV,imiss
 			String desc = StringByKey("xtalDesc",note(missing),"=")
@@ -1095,7 +1123,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 					tagStr += str
 				endif
 			endif
-		else																// test for recip in image wave note
+		elseif (WaveExists(image))								// test for recip in image wave note
 			wnote = note(image)
 			Wave recip = str2recip(StringByKey("recip_lattice"+num2istr(ip),wnote,"="))
 			if (!WaveExists(recip))
@@ -1126,15 +1154,17 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all indexed peaks
 		WaveStats/M=1/Q dpxpy2
 		m = V_minLoc
+		wIndex = m
+		TraceName = FullPeakIndexName
 		if (m<0)
 			return 1														// no indexed peak found
 		endif
-		h=FullPeakIndexed[m][3][ip]
-		k=FullPeakIndexed[m][4][ip]
-		l=FullPeakIndexed[m][5][ip]
-		px = FullPeakIndexed[m][9][ip]
-		py = FullPeakIndexed[m][10][ip]
-		keV=FullPeakIndexed[m][7][ip]
+		h =   FullPeakIndexed[m][3][ip]
+		k =   FullPeakIndexed[m][4][ip]
+		l =   FullPeakIndexed[m][5][ip]
+		px =  FullPeakIndexed[m][9][ip]
+		py =  FullPeakIndexed[m][10][ip]
+		keV = FullPeakIndexed[m][7][ip]
 		angleErr=FullPeakIndexed[m][8][ip]
 		SpaceGroup=NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
 		if (ip>0)
@@ -1157,6 +1187,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all strain refined peaks
 		WaveStats/M=1/Q dpxpy2
 		m = V_minLoc
+		wIndex = m
+		TraceName = PeaksForStrainName
 		dist2 = V_min
 		if (m<0)
 			return 1														// no indexed peak found
@@ -1176,16 +1208,19 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\rÆ=%.2g%s\rhkl=(%d %d %d),   #%d",px,py, keV,angleErr,angleErrUnit,h,k,l,m
 		tagStr = "\\Zr090Strained peak position\r" + str
 	endif
-	px = limit(px,0,DimSize(image,0)-1)						// needed in case (px,py) is outside the image
-	py = limit(py,0,DimSize(image,1)-1)
-	Variable index = round(px) + DimSize(image,0)*round(py)	// convert px,py back to index into image
+	if (WaveExists(image))
+		px = limit(px,0,DimSize(image,0)-1)					// needed in case (px,py) is outside the image
+		py = limit(py,0,DimSize(image,1)-1)
+		wIndex = round(px) + DimSize(image,0)*round(py)	// convert px,py back to index into image
+	endif
 	GetAxis/W=$win/Q bottom
 	horiz = (px-V_min)/ (V_max-V_min)
 	GetAxis/W=$win/Q left
 	vert = (py-V_max)/(V_min-V_max)
 	Variable x0 = horiz<0.5 ? 5 : -5,  y0 = vert<0.5 ? -5 : 5
 	String anchor = SelectString(horiz<0.5,"R","L")+ SelectString(vert<0.5,"B","T")
-	Tag/C/N=indexedPeakInfo/W=$win/A=$anchor/F=2/L=2/X=(x0)/Y=(y0)/P=1 $imageName,index,tagStr
+	str = SelectString(strlen(imageName), TraceName, imageName)
+	Tag/C/N=indexedPeakInfo/W=$win/A=$anchor/F=2/L=2/X=(x0)/Y=(y0)/P=1 $str, wIndex, tagStr
 	DoUpdate
 	return 1																// 1 means do not send back to Igor for more processing
 End
@@ -1864,7 +1899,7 @@ Function/T pickIndexingFunction(path)
 	endif
 
 	String indexFuncList = FunctionList("runIndexing*",";", "KIND:2,VALTYPE:8,NPARAMS:1,WIN:Procedure")
-	String list = FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:IndexingInternal")
+	String list = FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:Indexing_Internal.ipf")
 	indexFuncList += list
 	indexFuncList += FunctionList("runIndexing*",";", "KIND:18,VALTYPE:8,NPARAMS:1,WIN:IndexingN.ipf")
 	indexFuncList = RemoveFromList("runIndexingEulerCommand",indexFuncList)
@@ -1878,7 +1913,7 @@ Function/T pickIndexingFunction(path)
 	if (strlen(exe)==0 && strlen(indexFuncOld)>0)
 		exe = StringFromList(0,indexFuncOld)
 	endif
-	String popUpList = "_default_;"
+	String popUpList = "[default binary];"
 	if (strlen(exeList) && strlen(indexFuncList))
 		popUpList += exeList+" ;"+indexFuncList
 	elseif (strlen(exeList))
@@ -1891,7 +1926,7 @@ Function/T pickIndexingFunction(path)
 	if (V_flag)
 		return ""
 	endif
-	exe = SelectString(StringMatch(exe,"_default_") || strlen(exe)<2, exe, "")	// change invalids to ""
+	exe = SelectString(StringMatch(exe,"[default binary]") || strlen(exe)<2, exe, "")	// change invalids to ""
 
 	String exeNew="", indexFuncNew=""
 	if (WhichListItem(exe,list)>=0)
@@ -6218,8 +6253,8 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 			return ""
 		endif
 	endif
-	String FitPeakWaveList = WaveListClass("FittedPeakList","*","")
-	String indexWaveList = WaveListClass("IndexedPeakList","*","")
+	String FitPeakWaveList = WaveListClass("FittedPeakList*","*","")
+	String indexWaveList = WaveListClass("IndexedPeakList*","*","")
 	Variable pickList=0, pickIndex=0
 	if (!WaveExists(FullPeakList))
 		if (ItemsInList(FitPeakWaveList)==1)
@@ -7593,7 +7628,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 	d = strlen(WaveListClass("FittedPeakList*","*","MINCOLS:1"))<1 ? 2 : 0
 	Button buttonIndex,win=$win,disable= d
 
-	d = (strlen(WaveListClass("FittedPeakList","*","DIMS:2,MAXCOLS:11,MINCOLS:11")) && strlen(WaveListClass("IndexedPeakList","*",""))) ? 0 : 2
+	d = (strlen(WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:11,MINCOLS:11")) && strlen(WaveListClass("IndexedPeakList*","*",""))) ? 0 : 2
 	Button buttonStrainRefine,win=$win,disable= d
 
 	d = (strlen(WaveListClass("IndexedPeakList*","*",""))) ? 0 : 2
@@ -7613,7 +7648,7 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 		SetVariable L_IndexEneVar,win=$win,noedit=0,frame=2,disable= d
 	endif
 
-	d = strlen(WaveListClass("FittedPeakList;IndexedPeakList*","*",""))<1 ? 2 : 0
+	d = strlen(WaveListClass("FittedPeakList*;IndexedPeakList*","*",""))<1 ? 2 : 0
 	PopupMenu popupTables,win=$win,disable=d
 
 	if (exists("Load3dRecipLatticesFileXML")==6)
@@ -7729,12 +7764,12 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 			endif
 			fitPeakFuncLast = fitPeakFunc
 		endif
-	elseif (stringmatch(ctrlName,"buttonAuxIndex") && strlen(WaveListClass("IndexedPeakList;","*","")) && g.Ndetectors>1)
+	elseif (stringmatch(ctrlName,"buttonAuxIndex") && strlen(WaveListClass("IndexedPeakList*;","*","")) && g.Ndetectors>1)
 		MakeIndexedWaveForAuxDetector(NaN,$"",$"")
 //	elseif (stringmatch(ctrlName,"buttonPeaksFromBoxes") && strlen(StrVarOrDefault("pkList","")))
 //		SVAR pkList=pkList
 //		setFittedPeaksFromList($"",NaN,pkList)
-	elseif (stringmatch(ctrlName,"buttonIndex") && strlen(WaveListClass("FittedPeakList","*","DIMS:2,MAXCOLS:11,MINCOLS:11")))
+	elseif (stringmatch(ctrlName,"buttonIndex") && strlen(WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:11,MINCOLS:11")))
 		IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN,printit=1)
 	elseif (stringmatch(ctrlName,"buttonStrainRefine"))
 #ifdef USE_ENERGY_STRAIN_REFINE			//#if (Exists("TotalStrainRefine")==6)
@@ -7836,7 +7871,7 @@ Function TablesPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 	String ctrlName
 	Variable popNum
 	String popStr
-	if (strlen(WaveListClass("FittedPeakList;IndexedPeakList*","*",""))<1)
+	if (strlen(WaveListClass("FittedPeakList*;IndexedPeakList*","*",""))<1)
 		return 1
 	endif
 	if (stringmatch(popStr,"Fitted Peaks"))
