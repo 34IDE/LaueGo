@@ -1,18 +1,35 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf360
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Monaco;}
+{\rtf1\ansi\ansicpg1252\cocoartf1347\cocoasubrtf570
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Monaco;}
 {\colortbl;\red255\green255\blue255;}
 \margl1440\margr1440\vieww20300\viewh17200\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-8120\ql\qnatural\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-8120\pardirnatural
 
 \f0\fs24 \cf0 An example of a fictional crystal structure, 95%NaCl + 5%KCl.  Note, any unknown tags will be ignored, so this file structure is easily extended.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural\pardirnatural
-\cf0 The <citation> tag is an example of a tag that will be ignored.  You can also include comments as shown\
-The required tags are:
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 The <citation> tag is an example of a tag that will be ignored.  You can also include comments using:\
+	
+\f1 <!-- Comment Text -->\
+The "//" comments that are used here are INVALID, and must not appear in the xml file. They are only here for explanation.
+\f0 \
+The ONLY required tags are:
 \f1  <cif>, <chemical_name_common>, <space_group_IT_number>, <cell>, <a>, <b>, <c>, <alpha>, <beta>, <gamma>
 \f0 \
+Everything else is optional.\
 The 
 \f1 <atom_site>
 \f0  tags are only needed if you want good structure factors and extinctions.\
+Any 
+\f1 <atom_site>
+\f0 , must contain at lease  
+\f1 <label>, <symbol>, 
+\f0 and  <
+\f1 fract_xyz> or (<fract_x>, <fract_y>, and <fract_z>)\
+A
+\f0 ll other tags in  the 
+\f1 <atom_site>
+\f0  are optional
+\f1 .
+\f0 \
 \
 \
 
@@ -23,11 +40,11 @@ The
 \f1 <cif>											
 \f0 // everything about the structure is in <cif> ... </cif>
 \f1 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\ql\qnatural\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\pardirnatural
 \cf0 	<chemical_name_common>NaCl, table salt</chemical_name_common>  
 \f0 // This is the name you want to call this structure
 \f1 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 \cf0 	<space_group_IT_number>225</space_group_IT_number>	
 \f0 // space group number from International Tables [1-230]
 \f1 \
@@ -35,13 +52,13 @@ The
 \f0 // the <cell> ... </cell> describes the unit cell
 \f1 \
 		<a unit="pm">564.02</a>					
-\f0 // for a, b, c, allowed units are Angstrom, m, inch, mile, yeard, parsec, lightYear
+\f0 // for a, b, c, allowed units are Angstrom, m, inch, mile, yard, parsec, lightYear
 \f1 \
 		<b unit="pm">564.02</b>					
 \f0 //	along with a prefix, e.g. "nm", or "pparsec"
 \f1 \
 		<c unit="pm">564.02</c>					
-\f0 //	default units are Angstroms
+\f0 //	default units are Angstroms, this example shows pico-meters.
 \f1 \
 		<alpha>90</alpha>						
 \f0 // angles (degree)
@@ -59,7 +76,7 @@ The
 \f0 // There is one <atom_site>...</atom_site> tag for each symmetry inequivalent atom\
 
 \f1 		<label>Na1</label>						
-\f0 // This is just a string to id the atom type
+\f0 // This is just a string to id the atom type, the labels should all be different
 \f1 \
 		<symbol>Na</symbol>						
 \f0 // the atomic symbol, first letter is uppercase, second is lower
@@ -91,7 +108,7 @@ The
 \f1 \
 		<symbol>K</symbol>\
 		<fract_x>0</fract_x>						
-\f0 // this old style still works
+\f0 // this old style still works, this looks more like cif
 \f1 \
 		<fract_y>0</fract_y>\
 		<fract_z>0</fract_z>\
@@ -110,103 +127,17 @@ The
 		<DebyeTemperature unit="K">670</DebyeTemperature>\
 	</atom_site>\
 	<bond_chemical unit="nm" n0="Na1" n1="Cl001">0.2418</bond_chemical> 
-\f0 // OPTIONAL
+\f0 // OPTIONAL, n0 & n1 refer to labels of defined atoms, and the value is the bond length.
 \f1 \
-	<bond_chemical unit="nm" n0="K1" n1="Cl001">0.2399</bond_chemical>\
-	<citation doi="10.1038/328606a0">Acta Cryst. ;www.somewhere.org/paper.html</citation> 
+	<bond_chemical unit="nm" n0="K1" n1="Cl001">0.2399</bond_chemical> 
+\f0 //    one line for each TYPE of bond. 
+\f1 \
+	<citation doi="10.1103/328606a0">Smith, Jones, Gupta, Acta Cryst. 78, (2008) 020503(R)</citation> 
 \f0 // OPTIONAL, where this information came from
 \f1 \
 </cif>\
-<!--   \
-		Thermal parameters of form exp(-2 PI^2 U11 h^2 8 a*^2 + ... + U12hka*b*)\
+<!-- \
+		Thermal parameters are of form exp(-2 PI^2 U11 h^2 8 a*^2 + ... + U12hka*b*)\
 		U12 = U23 = U13 = 0 by symmetry\
   -->\
-\
-\
-\
-OLDER\
-\
-<cif>											
-\f0 // everything about the structure is in <cif> ... </cif>
-\f1 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\ql\qnatural\pardirnatural
-\cf0 	<chemical_name_common>NaCl, table salt</chemical_name_common>  
-\f0 // This is the name you want to call this structure
-\f1 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural\pardirnatural
-\cf0 	<space_group_IT_number>225</space_group_IT_number>	
-\f0 // space group number from International Tables [1-230]
-\f1 \
-	<cell>									
-\f0 // the <cell> ... </cell> describes the unit cell
-\f1 \
-		<a unit="pm">564.02</a>					
-\f0 // for a, b, c, allowed units are Angstrom, m, inch, mile, yeard, parsec, lightYear
-\f1 \
-		<b unit="pm">564.02</b>					
-\f0 //	along with a prefix, e.g. "nm", or "pparsec"
-\f1 \
-		<c unit="pm">564.02</c>					
-\f0 //	default units are Angstroms
-\f1 \
-		<alpha>90</alpha>						
-\f0 // angles (degree)
-\f1 \
-		<beta>90</beta>\
-		<gamma>90</gamma>\
-		<temperature unit="C">22.5</temperature>		
-\f0 // OPTIONAL, temperature if known, and alphaT is the thermal expansion coefficient
-\f1 \
-		<alphaT>5.9e-06</alphaT>		<!-- a = ao*(1+alphaT*(TempC-22.5)) -->  
-\f0 // OPTIONAL, also formula for calculating a(T)
-\f1 \
-	</cell>\
-	<atom_site>								
-\f0 // There is one <atom_site>...</atom_site> tag for each symmetry inequivalent atom\
-
-\f1 		<label>Na1</label>						
-\f0 // This is just a string to id the atom type
-\f1 \
-		<symbol>Na</symbol>						
-\f0 // the atomic symbol, first letter is uppercase, second is lower
-\f1 \
-		<fract_x>0</fract_x>						
-\f0 // position of this atom in fractional coordinates
-\f1 \
-		<fract_y>0</fract_y>\
-		<fract_z>0</fract_z>\
-		<occupancy>0.95</occupancy>					
-\f0 // OPTIONAL, occupancy, must be in range (0,1], default is 1
-\f1 \
-		<DebyeTemperature unit="K">670</DebyeTemperature>	
-\f0 // OPTIONAL, Debye Temperature, units are C or F, default is infinite
-\f1 \
-		<!-- The Debye Temperatuers are made up -->		
-\f0 // an example of a comment
-\f1 \
-	</atom_site>\
-	<atom_site>\
-		<label>K1</label>						
-\f0 // so this is 95%NaCl + 5%KCl
-\f1 \
-		<symbol>K</symbol>\
-		<fract_x>0</fract_x>\
-		<fract_y>0</fract_y>\
-		<fract_z>0</fract_z>\
-		<occupancy>0.05</occupancy>\
-		<DebyeTemperature unit="K">670</DebyeTemperature>\
-	</atom_site>\
-	<atom_site>\
-		<label>Cl001</label>\
-		<symbol>Cl</symbol>\
-		<fract_x>0.5</fract_x>\
-		<fract_y>0.5</fract_y>\
-		<fract_z>0.5</fract_z>\
-		<DebyeTemperature unit="K">670</DebyeTemperature>\
-	</atom_site>\
-	<citation>Acta Cryst. ;www.somewhere.org/paper.html</citation> 
-\f0 // OPTIONAL, where this information came from
-\f1 \
-</cif>\
-\
 }
