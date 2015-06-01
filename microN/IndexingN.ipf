@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.72
+#pragma version = 4.73
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -301,9 +301,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	args = ReplaceNumberByKey("maxSpots",args,maxSpots)
 	args = ReplaceNumberByKey("printIt",args,printIt)
 
-	String funcName=StringFromList(0,StrVarOrDefault("root:Packages:micro:indexingIgorFunc",""))
-	String str=StringFromList(1,StrVarOrDefault("root:Packages:micro:indexingIgorFunc",""))
-	funcName = SelectString(strlen(str), "", str+"#") + funcName
+	String funcName = StringFromList(0,GetIndexingFuncOrExec())
 	FUNCREF runIndexingEulerCommand runIndexingFunc = $funcName
 	Wave FullPeakIndexed = runIndexingFunc(args)
 	if (!WaveExists(FullPeakIndexed))
@@ -321,8 +319,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 
 	if (printIt)
 		String timeStr = SelectString(executionTime>=60,num2str(executionTime)+" sec", Secs2Time(executionTime,5,1)+" ("+num2str(executionTime)+" sec)")
-		str = StrVarOrDefault("root:Packages:micro:indexingExecutable","")
-		str += StringFromList(0,StrVarOrDefault("root:Packages:micro:indexingIgorFunc",""))
+		String str = ReplaceString(";", GetIndexingFuncOrExec(), "")		// removes all ";" is like a concatenate
 		str = SelectString(strlen(str),"Euler",str)
 		printf "from \"%s\", found %d patterns, indexed %d out of %d spots  with rms=%.3g¡ in %s",str,NpatternsFound,Nindexed,NiData, rms_error,timeStr
 		printf ",   "+SurfaceNormalString(FullPeakIndexed)+"\r"
@@ -1863,10 +1860,13 @@ Function/T pickIndexingFunction(path)
 	else
 		defaultExe = "Euler.exe"	// default for MSWindows
 	endif
-	String exeOld = StrVarOrDefault("root:Packages:micro:indexingExecutable","")
-	String indexFuncOld=StrVarOrDefault("root:Packages:micro:indexingIgorFunc","")
+	String str = GetIndexingFuncOrExec()			// = "indexingIgorFunc;indexingExecutable;"
+	String indexFuncOld=StringFromList(0,str), exeOld=StringFromList(1,str)
 	String old = exeOld + indexFuncOld				// one is always "", so this works
 	old = SelectString(strlen(old), "default", old)
+	STRUCT indexingTypeStruct indexPref
+	indexPref.executable = exeOld
+	indexPref.internal = indexFuncOld
 
 	// get list of possibilities
 	NewPath/O/Q/Z IndexingSearchPath, path
@@ -1938,16 +1938,51 @@ Function/T pickIndexingFunction(path)
 
 	if (strlen(exeNew))				// set globals, or delete depending upon what was chosen
 		String/G root:Packages:micro:indexingExecutable = exeNew
+		indexPref.executable = exeNew
 	else
 		KillStrings/Z root:Packages:micro:indexingExecutable
+		indexPref.executable = ""
 	endif
 	if (strlen(indexFuncNew))
 		String/G root:Packages:micro:indexingIgorFunc = indexFuncNew
+		indexPref.internal = indexFuncNew
 	else
 		KillStrings/Z root:Packages:micro:indexingIgorFunc
+		indexPref.internal = ""
 	endif
+	SavePackagePreferences/FLSH=1 "microGeo","indexing",0,indexPref
 	return exe
 End
+//
+Static Function/T GetIndexingFuncOrExec()		// returns "indexingIgorFunc;indexingExecutable;"
+	String indexingIgorFunc = StrVarOrDefault("root:Packages:micro:indexingIgorFunc","")
+	String indexingExecutable = StrVarOrDefault("root:Packages:micro:indexingExecutable","")
+
+	Variable funcExists = ItemsInList(FunctionList(indexingIgorFunc,";", "KIND:2,VALTYPE:8,NPARAMS:1"))>0
+	Variable execExists = strlen(indexingExecutable)>0
+	indexingIgorFunc = SelectString(funcExists, "", indexingIgorFunc)
+	indexingExecutable = SelectString(execExists, "", indexingExecutable)
+
+	if (strlen(indexingIgorFunc+indexingExecutable)<1)	// nothing defined locally, check preferences
+		STRUCT indexingTypeStruct indexPref
+		LoadPackagePreferences/MIS=0 "microGeo", "indexing", 0, indexPref
+		indexingIgorFunc = indexPref.internal
+		indexingExecutable = indexPref.executable
+	endif
+
+	funcExists = ItemsInList(FunctionList(indexingIgorFunc,";", "KIND:2,VALTYPE:8,NPARAMS:1"))>0
+	indexingIgorFunc = SelectString(funcExists, "", indexingIgorFunc)
+	String EulerPath = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// path to the Euler executable
+	GetFileFolderInfo/Q/Z EulerPath+indexingExecutable
+	indexingExecutable = SelectString(V_Flag==0 && V_isFile, "", indexingExecutable)
+
+	return indexingIgorFunc+";"+indexingExecutable+";"
+End
+//
+Static Structure indexingTypeStruct	// structure definition of a measured or calculated zone
+	char executable[400]					// name of executable (empty implies the default)
+	char internal[400]						// name of Igor function to use for indexing (empty implies an executable)
+EndStructure
 
 
 // using the result from FitPeaks() run Euler, and read in the results from the index file
@@ -2028,7 +2063,7 @@ Function/WAVE runIndexingEulerCommand(args)
 	else
 		exe = "Euler"
 	endif
-	exe = StrVarOrDefault("root:Packages:micro:indexingExecutable",exe)
+	exe = StringFromList(1,GetIndexingFuncOrExec())
 	GetFileFolderInfo/Q/Z EulerPath+exe
 	EulerPath += SelectString(V_Flag==0 && V_isFile,"Euler",exe)	// use just plane Euler if Euler_ppc or Euler_i386 does not exist
 	if (stringmatch(igorInfo(2),"Macintosh"))			// on Mac, convert EulerPath from HFS to Posix
@@ -4543,7 +4578,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	fprintf refNum,"$latticeParameters	{ %g, %g, %g, %g, %g, %g }// using nm and degrees\n",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	fprintf refNum,"$lengthUnit			nm					// length unit for lattice constants a,b,c\n"
 	fprintf refNum,"$SpaceGroup			%d					// Structure number from International Tables\n",xtal.SpaceGroup
-	if (stringmatch(StrVarOrDefault("root:Packages:micro:indexingExecutable",""),"EulerOrig"))
+	if (stringmatch(StringFromList(1,GetIndexingFuncOrExec()),"EulerOrig"))
 		fprintf refNum,"$latticeStructure		%d					// Structure number from International Tables\n",xtal.SpaceGroup
 	endif
 	str = "\t// {element  x y z occupancy}"
