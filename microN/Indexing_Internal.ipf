@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.06
+#pragma version = 0.07
 #include "IndexingN", version>=4.70
 
 Static Constant hc = 1.239841857			// keV-nm
@@ -1356,7 +1356,12 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	Redimension/N=(N,-1) GhatMeasured							// N is now the actual number of spots in GhatMeasured
 
 	Variable val
-	String str, wnoteQs = "WaveClass=QsMeasured;"
+	String str, wnoteQs
+	if (StringMatch(StringByKey("WaveClass",wnotePeak,"="),"FittedPeakListTest*"))
+		wnoteQs = "WaveClass=QsMeasuredTest;"
+	else
+		wnoteQs = "WaveClass=QsMeasured;"
+	endif
 	wnoteQs = ReplaceStringByKey("structureDesc",wnoteQs,xtal.desc,"=")
 	sprintf str,"{ %g, %g, %g, %g, %g, %g }",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnoteQs = ReplaceStringByKey("latticeParameters",wnoteQs,str,"=")
