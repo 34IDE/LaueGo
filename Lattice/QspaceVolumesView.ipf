@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.13
+#pragma version = 1.14
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -446,7 +446,8 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		return 1
 	endif
 
-	String cornerList = WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3"), cName=""
+	String cornerList = WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3"), cName=""
+	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
 	cornerList = WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(Qspace3D))
 	if (ItemsInList(cornerList)==1)
 		cName = StringFromList(0,cornerList)
@@ -518,9 +519,10 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 
 	if (WaveExists(corners))
 		displayObjectList += "scatterCubeCorners;"
-		ImageStats/M=1/G={0,7, 0,0} corners;		QxLo = V_min	;	QxHi = V_max	// need these later for setting a*, b*, c*
-		ImageStats/M=1/G={0,7, 1,1} corners;		QyLo = V_min	;	QyHi = V_max
-		ImageStats/M=1/G={0,7, 2,2} corners;		QzLo = V_min	;	QzHi = V_max
+		Variable icor=DimSize(corners,0)-1			// this will be 2 or 7 (7 is old way)
+		ImageStats/M=1/G={0,icor, 0,0} corners;		QxLo = V_min	;	QxHi = V_max	// need these later for setting a*, b*, c*
+		ImageStats/M=1/G={0,icor, 1,1} corners;		QyLo = V_min	;	QyHi = V_max
+		ImageStats/M=1/G={0,icor, 2,2} corners;		QzLo = V_min	;	QzHi = V_max
 #if (IgorVersion()<7)
 		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=scatterCubeCorners"
 		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ scatterColorType,0}"
@@ -1348,7 +1350,7 @@ Function/WAVE MakeRadialLine(corners,[point,printIt])
 	endif
 
 	Make/N=3/D/FREE lo, hi
-	Make/N=8/D/FREE v=corners[p][0]
+	Make/N=(DimSize(corners,0))/D/FREE v=corners[p][0]
 	lo[0] = WaveMin(v) ;	hi[0] = WaveMax(v)
 	v = corners[p][1]
 	lo[1] = WaveMin(v) ;	hi[1] = WaveMax(v)

@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.04
+#pragma version = 2.05
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -96,7 +96,8 @@ Static Function/WAVE FindMakeCubeCornerWaves([GizmoName,forceCalc])		// finds (o
 	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
 	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
 
-	String cornerList=WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
+	String cornerList=WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3")
+	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
 	String gizmoScatterList=GizmoListScatterWaves(gizmo=GizmoName)
 	String gizmoIsoSurfaceList=GizmoListIsoSurfaceWaves(gizmo=GizmoName)		// get list of all iso surface waves
 	String gizmoSurfaceList=GizmoListSurfaceWaves(gizmo=GizmoName)		// get list of all surface waves
@@ -176,7 +177,7 @@ Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
 	String Nswitch=""
 	if (!WaveExists(wCorners))								// check that wCorners is valid
 		return ""
-	elseif(! (WaveDims(wCorners)==2 && DimSize(wCorners,0)==8 && DimSize(wCorners,1)==3) )
+	elseif(! (WaveDims(wCorners)==2 && (DimSize(wCorners,0)==8 || DimSize(wCorners,0)==2) && DimSize(wCorners,1)==3) )
 		return ""
 	elseif (!ParamIsDefault(GizmoName) && strlen(GizmoName))
 		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
@@ -327,17 +328,10 @@ Function/WAVE MakeGizmocubeCorners(xyz)
 	endif
 
 	String name=CleanupName(NameOfWave(xyz)+"Corners",0)
-	Make/N=(8,3)/O $name=NaN
-	Wave corners = $name
+	Make/N=(2,3)/O $name/WAVE=corners =NaN
 	SetScale d 0,0,units, corners
 	corners[0][0] = Xlo;	corners[0][1] = Ylo; 	corners[0][2] = Zlo
-	corners[1][0] = Xhi;	corners[1][1] = Ylo; 	corners[1][2] = Zlo
-	corners[2][0] = Xlo;	corners[2][1] = Yhi; 	corners[2][2] = Zlo
-	corners[3][0] = Xhi;	corners[3][1] = Yhi; 	corners[3][2] = Zlo
-	corners[4][0] = Xlo;	corners[4][1] = Ylo; 	corners[4][2] = Zhi
-	corners[5][0] = Xhi;	corners[5][1] = Ylo; 	corners[5][2] = Zhi
-	corners[6][0] = Xlo;	corners[6][1] = Yhi; 	corners[6][2] = Zhi
-	corners[7][0] = Xhi;	corners[7][1] = Yhi; 	corners[7][2] = Zhi
+	corners[1][0] = Xhi;	corners[1][1] = Yhi; 	corners[1][2] = Zhi
 	String wnote="waveClass=GizmoCorners;"
 	wnote = ReplaceStringByKey("sourceWave",wnote,NameOfWave(xyz),"=")
 	wnote = ReplaceStringByKey("sourceWavePath",wnote,GetWavesDataFolder(xyz,1),"=")
