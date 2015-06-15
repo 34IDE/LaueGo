@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.50
+#pragma version = 0.51
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -45,6 +45,8 @@ Menu "Diffractometer"
 		help = {"Load one image from a spec scan with 2D detector."}
 		"Re Plot spec Image...", rePlotDiffractometerImage(NaN,NaN)
 		help = {"Re-Plot one image from a diffractometer scan."}
+		"Display a raw image...",DisplayDiffractometerImage($"")
+		"-"
 		"Set spec names for normalizing...",specImage#SetGlobalSpecialSpecNames()
 	End
 	"-"
@@ -1072,6 +1074,38 @@ Function/T rePlotDiffractometerImage(scanNum,pindex,[extras])
 	return ""
 End
 //
+Function/T DisplayDiffractometerImage(image,[printIt])
+	Wave image
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+
+	if (!WaveExists(image))
+		String ilist = WaveListClass("rawImage*","*","DIMS:2")
+
+		if (ItemsInList(ilist)<1)
+			return ""
+		elseif (ItemsInList(ilist)==1)
+			Wave image = $StringFromList(0,ilist)
+		else
+			String name
+			Prompt name, "image to display", popup, ilist
+			DoPrompt "Select image", name
+			if (V_flag)
+				return ""
+			endif
+			Wave image = $name
+		endif
+		printIt = 1
+	endif
+	if (printIt)
+		printf "DisplayDiffractometerImage(%s)\r", NameOfWave(image)
+	endif
+	if (!WaveExists(image))
+		return ""
+	endif
+	return GraphDiffractometerImage(image)
+End
+//
 Static Function/T GraphDiffractometerImage(image)
 	Wave image
 	if (!WaveExists(image))
@@ -1084,7 +1118,7 @@ Static Function/T GraphDiffractometerImage(image)
 	endif
 	Variable faint=55000											// or try 4500
 
-	String wnote=note(image), title, str
+	String wnote=note(image), title="", str
 	Variable scanNum=NumberByKey("scanNum",wnote,"="), point=NumberByKey("scanPoint",wnote,"=")
 	Variable keV=specInfo(scanNum,"DCM_energy")
 	keV = numtype(keV) ? specInfo(scanNum,"keV") : keV
@@ -1096,7 +1130,17 @@ Static Function/T GraphDiffractometerImage(image)
 	String timeWritten = specInfoT(scanNum,"timeWritten")
 	String command = specInfoT(scanNum,"specCommand")
 	String fileName=StringByKey("file_name",wnote,"=")
-	sprintf title,"scan%d - #%d,   %s",scanNum,point,comment
+
+	// sprintf title,"scan%d - #%d,   %s",scanNum,point,comment
+	if (numtype(scanNum)==0)
+		title += "scan"+num2str(scanNum)
+	endif
+	if (numtype(point)==0)
+		title += " - #"+num2str(point)
+	endif
+	if (strlen(comment))
+		title += ",   "+comment
+	endif
 	if (strlen(timeWritten))
 		title += "\r"+specTime2Igor(timeWritten,2)
 	endif
@@ -1261,7 +1305,7 @@ End
 
 Function/T LoadSpecImage(scanNum,pindex[,extras])
 	Variable scanNum											// scanNumber in spec file
-	Variable pindex												// point in scanNum
+	Variable pindex											// point in scanNum
 	String extras												// example		"quiet:1;multiple:0;"
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 	Variable quiet = NumberByKey("quiet",extras)				// for quiet=1, if any problems just return
@@ -1302,22 +1346,22 @@ Function/T LoadSpecImage(scanNum,pindex[,extras])
 		printf "spec scan %g has been loaded, BUT it has only %d points, you asked for point=%g\r",scanNum,numpnts(ww),pindex
 		return ""
 	endif
-	String fullName = specImageFileName(scanNum,pindex)		// full path+name to file
-	GetFileFolderInfo/Q/Z=1 fullName							// check if file exists
-	PathInfo home
-	if (!V_isFile && V_flag)									// look for a path relative to "home" path, if home exists
-//		String str = ":"+ParseFilePath(0,S_path,":",1,0)+":"
-//		Variable ii = strsearch(fullName,str,0)
-//		ii += strlen(str)
-//		fullName = S_path+fullName[ii,Inf]
-		fullName = S_path+fullName
-		GetFileFolderInfo/P=home/Q/Z=1 fullName				// again, check if file exists
-		if (!V_isFile)											// file does not exist, give up looking
-			if (!quiet)
-				printf "Could not find file  '%s'\r",fullName
-			endif
-			return ""
+	String fullName = specImageFileName(scanNum,pindex)	// full path+name to file
+	GetFileFolderInfo/Q/Z=1 fullName					// check if file exists in current directory
+	if (!V_isFile)												// did not find it yet
+		String path=StringByKey("path",extras)
+		path = SelectString(strlen(path), StrVarOrDefault("root:Packages:spec:specDefaultPath","home"), path)
+		GetFileFolderInfo/P=$path/Q/Z=1 ":"+fullName	// again, check if file exists using given path
+		if (V_isFile)
+			PathInfo $path
+			fullName = S_path+fullName
 		endif
+	endif
+	if (!V_isFile)												// file could not be found, give up looking
+		if (!quiet)
+			printf "Could not find file  '%s'\r",fullName
+		endif
+		return ""
 	endif
 
 	String wnote, fldrSav= GetDataFolder(1)
@@ -1465,22 +1509,22 @@ Function/T LoadSpecImageInfo(scanNum,pindex[,extras])
 		printf "spec scan %g has been loaded, BUT it has only %d points, you asked for point=%g\r",scanNum,numpnts(ww),pindex
 		return ""
 	endif
-	String fullName = specImageFileName(scanNum,pindex)		// full path+name to file
-	GetFileFolderInfo/Q/Z=1 fullName							// check if file exists
-	PathInfo home
-	if (!V_isFile && V_flag)									// look for a path relative to "home" path, if home exists
-//		String str = ":"+ParseFilePath(0,S_path,":",1,0)+":"
-//		Variable ii = strsearch(fullName,str,0)
-//		ii += strlen(str)
-//		fullName = S_path+fullName[ii,Inf]
-		fullName = S_path+fullName
-		GetFileFolderInfo/P=home/Q/Z=1 fullName				// again, check if file exists
-		if (!V_isFile)											// file does not exist, give up looking
-			if (!quiet)
-				printf "Could not find file  '%s'\r",fullName
-			endif
-			return ""
+	String fullName = specImageFileName(scanNum,pindex)	// full path+name to file
+	GetFileFolderInfo/Q/Z=1 fullName					// check if file exists in current directory
+	if (!V_isFile)												// did not find it yet
+		String path=StringByKey("path",extras)
+		path = SelectString(strlen(path), StrVarOrDefault("root:Packages:spec:specDefaultPath","home"), path)
+		GetFileFolderInfo/P=$path/Q/Z=1 ":"+fullName	// again, check if file exists using given path
+		if (V_isFile)
+			PathInfo $path
+			fullName = S_path+fullName
 		endif
+	endif
+	if (!V_isFile)												// file could not be found, give up looking
+		if (!quiet)
+			printf "Could not find file  '%s'\r",fullName
+		endif
+		return ""
 	endif
 
 	String list = ReadGenericHeader(fullName)
