@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.47
+#pragma version = 0.48
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -30,7 +30,7 @@ Menu "Diffractometer"
 		"Load New Detector Geometry...",LoadDetectorGeoGeneral(NaN)
 //		"Load Detector Geometry from a File...",LoadDetectorsFromFile("","")
 		"Write Detector Geometry to File...",WriteDetectorToFile("","")
-		"Enter Detector Parameters Manually...", diffractometer#SetDetectorParameters(NaN,NaN,NaN,NaN,"","","")
+		"Enter Detector Parameters Manually...", diffractometer#SetDetectorParameters(NaN,NaN,NaN,NaN,"","","",0)
 		"Re-Set Detector for a  PIlatus 100K...", diffractometer#ResetSetPilatus100Kcalibration("",NaN,NaN,NaN)
 		"-"
 		"Set Sample Orientation...", diffractometer#SetSampleReferenceReflections("","","","","","","",NaN,NaN)
@@ -2304,11 +2304,12 @@ Static Function InValidPilatus(d)							// checks if orientation of Pilatus is v
 End
 
 
-Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,[quiet,id,fresh])	// set default detector to the reference values
+Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,Ptype,[quiet,id,fresh])	// set default detector to the reference values
 	Variable Nx,Ny
 	Variable dx,dy
 	String Rstr, Pstr
 	String dNote
+	Variable Ptype								// 0="P[0],P[1],P[2]",  1="px,py,dist along Z"
 	Variable quiet
 	String id									// optional detector id
 	Variable fresh								// a new detector (not changing a current one)
@@ -2369,21 +2370,24 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,[quiet,id,fres
 		Prompt Pstr, "Translation vector (mm)"
 		Prompt id,"Unique Detector ID"
 		Prompt dNote, "Optional Note for Geometry"
-		DoPrompt "Detector Size & Location", Nx,Ny,dx,dy,Rstr,Pstr,id,dNote
+		Prompt Ptype,"Translation vector description", popup,"P[0], P[1], P[2];px, py, P[2]"
+		Ptype += 1
+		DoPrompt "Detector Size & Location", Nx,Ny,dx,dy,Ptype,Pstr,Rstr,id,dNote
 		if (V_flag)
 			return 1
 		endif
-		printf  "SetDetectorParameters(%g,%g,%g,%g,\"%s\",\"%s\",\"%s\")\r",Nx,Ny,dx,dy,Rstr,Pstr,dNote
+		Ptype -= 1
+		printf  "SetDetectorParameters(%g,%g,%g,%g,\"%s\",\"%s\",\"%s\", %g)\r",Nx,Ny,dx,dy,Rstr,Pstr,dNote,Ptype
 		quiet = 0
 	endif
 
 	STRUCT detectorGeometry df
 	CopyOneDetectorGeometry(df,d)
-	df.Nx = Nx ;				df.Ny = Ny
-	df.sizeX = dx * Nx ;		df.sizeY = dy * Ny
+	df.Nx = Nx ;				df.Ny = Ny						// get size and number of pixels
+	df.sizeX = dx * Nx ;	df.sizeY = dy * Ny
 	df.geoNote = dNote
 
-	Rstr = ReplaceString(",",Rstr," ")
+	Rstr = ReplaceString(",",Rstr," ")						// get the R[3] vector
 	Rstr = ReplaceString(";",Rstr," ")
 	Rstr = ReplaceString(":",Rstr," ")
 	sscanf Rstr,"%g %g %g",xx,yy,zz
@@ -2392,12 +2396,16 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,[quiet,id,fres
 	endif
 	df.R[0] = xx ;	df.R[1] = yy ;	df.R[2] = zz
 
-	Pstr = ReplaceString(",",Pstr," ")
+	Pstr = ReplaceString(",",Pstr," ")						// get the P[3] vector
 	Pstr = ReplaceString(";",Pstr," ")
 	Pstr = ReplaceString(":",Pstr," ")
 	sscanf Pstr,"%g %g %g",xx,yy,zz
 	if (V_flag!=3)
 		return 1
+	endif
+	if (Ptype==1)													// user entered center pixel & distance, not P[3]
+		xx = (0.5*(Nx - 1) - xx) / (Nx/df.sizeX)
+		yy = (0.5*(Ny-1) - yy) / (Ny/df.sizeY)
 	endif
 	df.P[0] = xx ;	df.P[1] = yy ;	df.P[2] = zz
 
@@ -2405,7 +2413,7 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,[quiet,id,fres
 	df.detectorID = id
  	df.used = 1
 	df.distortionMapFile = ""
-	DetectorUpdateCalc(df)								// update all internally calculated things in the detector structure
+	DetectorUpdateCalc(df)										// update all internally calculated things in the detector structure
 	if (DetectorBad(df))
 		DoAlert 0,"Detector Parameters are BAD\rNothing changed"
 		return 1
@@ -2413,7 +2421,7 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,[quiet,id,fres
 
 	CopyOneDetectorGeometry(ds.d[Nid],df)
 	ds.last = Nid
-	UpdateDefaultDetectorStruct(ds)					// does a DetectorUpdateCalc(), and stores new values where they will be found
+	UpdateDefaultDetectorStruct(ds)							// does a DetectorUpdateCalc(), and stores new values where they will be found
 	if (!quiet)
 		print "changed detector from:"
 		printOneDetector(d)
@@ -2546,7 +2554,7 @@ Static Function ResetSetPilatus100Kcalibration(xydir,px0,py0,dist)
 	endif
 	print " "
 	if (reset==2)
-		SetDetectorParameters(Nx,Ny,dpixel,dpixel,Rstr,Pstr,dNote,quiet=0,id=id)	// set default detector to the reference values
+		SetDetectorParameters(Nx,Ny,dpixel,dpixel,Rstr,Pstr,dNote,0,quiet=0,id=id)	// set default detector to the reference values
 	else
 		print "Detector Calibration UN-changed"
 	endif

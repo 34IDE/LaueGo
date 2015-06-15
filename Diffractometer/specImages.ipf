@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.51
+#pragma version = 0.52
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -1766,7 +1766,7 @@ Function init_specImage(imageType)
 //	endif
 	if (exists("root:Packages:Diffractometer:DiffractometerName")!=2 || exists("root:Packages:Diffractometer:DiffractometerAxisNames")!=2 || exists("root:Packages:Diffractometer:Naxes")!=2)
 		diffractometer#SelectDiffractometer("")
-		diffractometer#SetDetectorParameters(NaN,NaN,NaN,NaN,"","","")
+		diffractometer#SetDetectorParameters(NaN,NaN,NaN,NaN,"","","",0)
 	endif
 
 	String str,ipf,types="",vers="", typeVers="PilatusTiffs:2.10;HDF5:0.26;WinView:2.10;Tiff simple:1.14"
