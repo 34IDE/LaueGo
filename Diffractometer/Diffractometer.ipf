@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.48
+#pragma version = 0.49
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -2193,6 +2193,8 @@ Static Function/T Detectors2xmlStr(ds)
 		xml += str
 		sprintf str, "\t\t\t<P unit=\"mm\">%.3f %.3f %.3f</P>\n",d.P[0],d.P[1],d.P[2]
 		xml += str
+		sprintf str, "\t\t\t<pixel0>%.2f %.2f</pixel0>\t\t\t<!-- only provided for user reference -->\n",d.px0,d.py0
+		xml += str
 		if (strlen(d.timeMeasured))
 			sprintf str, "\t\t\t<timeMeasured>%s</timeMeasured>%s\n",d.timeMeasured,SelectString(comment,"","	<!-- when this geometry was calculated -->")
 			xml += str
@@ -2421,6 +2423,10 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,Ptype,[quiet,i
 
 	CopyOneDetectorGeometry(ds.d[Nid],df)
 	ds.last = Nid
+	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName","")
+	if (strlen(DiffractometerName))
+		ds.diffractometer = DiffractometerName
+	endif
 	UpdateDefaultDetectorStruct(ds)							// does a DetectorUpdateCalc(), and stores new values where they will be found
 	if (!quiet)
 		print "changed detector from:"
