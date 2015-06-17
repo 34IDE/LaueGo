@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.49
+#pragma version = 0.50
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -1567,7 +1567,7 @@ End
 
 
 
-Function SetDefaultDetector2Reference(point)					// set default detector to the reference values
+Function SetDefaultDetector2Reference(point)		// set default detector to the reference values
 	Variable point												// if TRUE then a point detector
 	if (numtype(point))
 		Prompt point,"Default Detector Type",popup,"Area;Point"
@@ -1579,17 +1579,17 @@ Function SetDefaultDetector2Reference(point)					// set default detector to the 
 		printf "SetDefaultDetector2Reference(%g)\r",point
 	endif
 
-	STRUCT detectorGeometrys ds								// returns 0 if something set, 0 is nothing done
-	if (FillDetectorsStruct(ds))								//fill the detector structures with current values
+	STRUCT detectorGeometrys ds							// returns 0 if something set, 0 is nothing done
+	if (FillDetectorsStruct(ds))							//fill the detector structures with current values
 		return 1
 	endif
 
 	STRUCT detectorGeometry d
-	DetectorReferenceOrientation(d,point)						// get reference values for a detector
+	DetectorReferenceOrientation(d,point)				// get reference values for a detector
 	ds.diffractometer = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)	// name of diffractometer (e.g. fourc)
 
-	UpdateDetectorInList(ds,d,0)								// does a DetectorUpdateCalc(), and stores new values where they will be found
-	UpdateDefaultDetectorStruct(ds)							// does a DetectorUpdateCalc(), and stores new values where they will be found
+	UpdateDetectorInList(ds,d,0)							// does a DetectorUpdateCalc(), and stores new values where they will be found
+	UpdateDefaultDetectorStruct(ds)						// does a DetectorUpdateCalc(), and stores new values where they will be found
 	return 0
 End
 //
@@ -2205,7 +2205,7 @@ Static Function/T Detectors2xmlStr(ds)
 			xml += str
 		endif
 		if (strlen(d.detectorID))
-			sprintf str, "\t\t\t<ID>%s</ID>%s\n",d.detectorID,SelectString(comment,"","\t\t\t<!-- unique detector ID -->")
+			sprintf str, "\t\t\t<ID>%s</ID>%s\n",d.detectorID,SelectString(comment,"","\t<!-- unique detector ID -->")
 			xml += str
 		endif
 
