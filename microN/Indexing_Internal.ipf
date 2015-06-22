@@ -2096,9 +2096,6 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[cone,lattice,angle,axis,tol,keVmax,
 				hkl[1] = k
 				for (h=0; h<=hklMax && N<Nreq; h=LatticeSym#incrementIndex(h))
 					hkl[0] = h
-					if (!allowedHKL(h,k,l,xtal))
-						continue
-					endif
 					MatrixOP/FREE/O qvec = recip x hkl
 					MatrixOP/FREE/O qhat = Normalize(qvec)
 					pz = q2pixel(geo.d[0],qhat)
@@ -2110,7 +2107,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[cone,lattice,angle,axis,tol,keVmax,
 					MatrixOP/FREE Qmag = sqrt(sum(magSqr(recip x hkl)))
 					qvec = qhat * Qmag[0]
 					keV = -hc*Qmag[0] / (4*PI*MatrixDot(ki,qhat))	// Q = 4*PI*sin(theta)/lambda
-					if (isNewDirection(Ghat3,qhat,cosTol) && MatrixDot(qhat,qUp)>cosCone || keV>keVmax)
+					if (isNewDirection(Ghat3,qhat,cosTol) && MatrixDot(qhat,qUp)>cosCone && keV<=keVmax && allowedHKL(h,k,l,xtal))
 						FullPeakListTest[N][0] = px
 						FullPeakListTest[N][1] = py
 						intens = genericIntensity(xtal,qvec,hkl,keV)
