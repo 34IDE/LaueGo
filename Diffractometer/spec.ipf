@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.43
+#pragma version = 2.44
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -113,6 +113,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Feb 24, 2015, DisplaySpecScan() will not append a wave to a graph if it is already there
 //
 // Feb 24, 2015, added waveClass to the spec waves
+//
+// Jun 22, 2015, added "#UQn" kludge for Herix files
 
 Menu "Data"
 	"-"
@@ -1861,9 +1863,9 @@ Function ReadDataColumns(fileVar,nameList)
 		name = StringFromList(i,wavesList, ";")
 		if (strlen(name)>0)
 			if (stringmatch(name,"Time_"))
-				Make/D/N=(waveLength) $name		// use double precision for a time wave
+				Make/D/N=(waveLength) $name	// use double precision for a time wave
 			else
-				Make/N=(waveLength) $name			// start with a size of waveLength
+				Make/N=(waveLength) $name		// start with a size of waveLength
 			endif
 			Wave wav=$name
 			wav=NaN
@@ -1874,18 +1876,20 @@ Function ReadDataColumns(fileVar,nameList)
 	scanLen = 0
 	do
 		FReadLine fileVar, line
-		if ((strlen(line)<=1) || (char2num(line[0,0])==35))		// check for end of file, blank line, or end of data
-			if (!strsearch(line,"#C",0))		// skip comment lines during the scan (a request from Pete).
-				continue							// comments start with '#C'
+		if ((strlen(line)<=1) || (char2num(line[0,0])==35))		// check for end of file, blank line, end of data, or starts with "#"
+			if (strsearch(line,"#C",0)>=0)			// skip comment lines during the scan (a request from Pete).
+				continue										// comments start with '#C'
+			elseif (strsearch(line,"#UQ",0)>=0)	// skip "#UQ..." lines, screwed up Herix
+				continue										// some stupid Herix thing
 			endif
-			break									// 35 is ASCII '#',  any other # indicates end of scan
+			break										// 35 is ASCII '#',  any other # indicates end of scan
 		endif
 		scanLen += 1								// found a good line, increment scan length
 
-		if (scanLen>waveLength)					// need to extend size of input waves
+		if (scanLen>waveLength)				// need to extend size of input waves
 			waveLength += sizeIncrement
 			i = 0
-			name=""								// increase size of the data waves
+			name=""									// increase size of the data waves
 			do
 				name = StringFromList(i,wavesList, ";")
 				if (strlen(name)>0)
@@ -1900,7 +1904,7 @@ Function ReadDataColumns(fileVar,nameList)
 		AssignOneLine(line,scanLen-1,ncols,nameList)
 	while(1)
 
-	i = 0											// make the data waves correct length
+	i = 0												// make the data waves correct length
 	do
 		name = StringFromList(i,wavesList, ";")
 		if (strlen(name)>0)
