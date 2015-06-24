@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma ModuleName=WinViewProc
 #include "ImageDisplayScaling", version>=1.98
 //
@@ -121,6 +121,9 @@
 //
 //	version 2.04(changed Apr 2, 2015)
 //		use the GraphImageStyle() in ImageDisplayScaling.ipf, remove GraphImageStyle() from this file
+//
+//	version 2.05(changed Jun 24, 2015)
+//		changed FitOneGaussianPeak(), it now uses the optional printIt variable.
 
 StrConstant IMAGE_FILE_EXT = ".SPE"
 
@@ -415,7 +418,7 @@ Function GaussianCenter(printON)	// returns 1 if error,  0 is OK
 	Wave image = $ImageName
 
 	// set up for the gaussian fit
-	Variable i = FitOneGaussianPeak(Image,V_left,V_right,V_bottom,V_top)	// returns 1 if error,  0 is OK
+	Variable i = FitOneGaussianPeak(Image,V_left,V_right,V_bottom,V_top,printIt=1)	// returns 1 if error,  0 is OK
 	if (i)
 		return i
 	endif
@@ -502,7 +505,7 @@ Function FitListOfGaussians(ImageName,pkList,halfWidth)		// build Gauss_coef and
 		xmax=min(nx-1,x0+halfWidth)
 		ymin=max(0,y0-halfWidth)
 		ymax=min(ny-1,y0+halfWidth)
-		if (FitOneGaussianPeak(image,xmin,xmax,ymin,ymax))
+		if (FitOneGaussianPeak(image,xmin,xmax,ymin,ymax,printIt=1))
 			x0=NaN
 			y0=NaN
 		else

@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -46,7 +46,7 @@ Menu "GraphMarquee", dynamic
 	help={"remove the peak in the marquee from the peak list"}
 	MarqueeCsrImageDisplayMenuItem("Add Peak at Cursor A"),/Q, AddPeakAtCursorA()
 	help={"add position of cursor A (the round one) to the peak list"}
-	MarqueeImageDisplayMenuItem("Report Center of Gaussian"),/Q, Gaussian2dPeakCenter(1)
+	MarqueeImageDisplayMenuItem("Report Center of Gaussian"),/Q, Gaussian2dPeakCenter()
 	help={"do a gaussian fit and report the result (does not add to peak list)"}
 	MarqueeImageDisplayMenuItem("Report Center of Mass"),/Q, ShowCenterOfMass2d(1)
 	help={"report the center of mass of the marquee (does not add to peak list)"}
@@ -1451,7 +1451,7 @@ Function AddGaussianToPeakList()
 	if (!WaveInClass(peakList,"FittedPeakList*;"))
 		return 1
 	endif
-	if (Gaussian2dPeakCenter(0))
+	if (Gaussian2dPeakCenter())
 		return 1
 	endif
 	Wave W_coef=W_coef, W_sigma=W_sigma
@@ -1513,7 +1513,7 @@ End
 //	if (!WaveInClass(peakList,"FittedPeakList*;"))
 //		return 1
 //	endif
-//	if (Gaussian2dPeakCenter(0))
+//	if (Gaussian2dPeakCenter())
 //		return 1
 //	endif
 //	Wave W_coef=W_coef, W_sigma=W_sigma
@@ -1640,141 +1640,216 @@ Function RemovePeakFromPeakList()				// returns row number removed, -1 if nothin
 End
 
 
-Function Gaussian2dPeakCenter(printON)	// returns 1 if error,  0 is OK
-// the result is passed to calling function by W_coef or {K0, K1, ... K6}
-// this fits a 2-d gaussina to a region on an image.  The region is selected with a marquee in an image plot, or specified
-	Variable printON							// enables print out of result
+Function Gaussian2dPeakCenter([printIt])	// returns 1 if error,  0 is OK
+	// the result is passed to calling function by W_coef or {K0, K1, ... K6}
+	// this fits a 2-d Gaussian to a region on an image.  The region is selected with a marquee in an image plot, or specified
+	Variable printIt							// enables print out of result
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : !(!printIt)
 
-	Variable V_left, V_right, V_bottom, V_top
 	if (WinType("")!=1)
 		Abort "Top window must be a graph, with region selected"
 	endif
 	String xaxis=StringByKey("XAXIS",ImageInfo("","",0)), yaxis=StringByKey("YAXIS",ImageInfo("","",0))
-	GetMarquee/Z $yaxis, $xaxis					// this sets V_left, V_right, . . .
-	String win = S_marqueeWin						// name of top graph window
+	GetMarquee/Z $yaxis, $xaxis					// this sets left, right, . . .
+	Variable left=V_left, right=V_right, bottom=V_bottom, top=V_top
+	String win=S_marqueeWin						// name of top graph window
 	if (V_flag==0)
 		DoAlert 0, "No region selected on the graph"
 		return 1
 	endif
-	if (V_right==0 && V_left==0 || V_top==0 && V_bottom==0)
+	if (right==0 && left==0 || top==0 && bottom==0)
 		DoAlert 0, "Unable get range for horizonal or vertical axis info for the selected graph"
 		return 1
 	endif
 
-	// Find the wave that is the image (assume that it is the only 2-d wave on the graph
-	String imageName = StringFromList(0,ImageNameList(win,";"))	// name of wave with image
-	if (strlen(ImageName)<1)
+	// Find the wave that is the image (assume that it is the only 2-d wave on the graph)
+	String imageName=StringFromList(0,ImageNameList(win,";"))	// name of wave with image
+	if (strlen(imageName)<1)
 		DoAlert 0, "Unable to find image on top graph"
 		return 1
 	endif
-	Wave image = ImageNameToWaveRef(win,imageName)
+	Wave imageDisplayed=ImageNameToWaveRef(win,imageName)
+	Variable Nx=DimSize(imageDisplayed,0), Ny=DimSize(imageDisplayed,1)
 
-	// set up for the gaussian fit
-	Variable i = FitOneGaussianPeak(image,V_left,V_right,V_bottom,V_top)	// returns 1 if error,  0 is OK
+	if (WaveDims(imageDisplayed)>2)
+		Duplicate/FREE imageDisplayed, image
+		Redimension/N=(Nx,Ny) image
+		image = imageDisplayed[p][q][0]
+	else
+		Wave image = imageDisplayed
+	endif
+	String info=ImageInfo(win,imageName,0)
+	Wave xPlot=$(StringByKey("XWAVEDF",info)+StringByKey("XWAVE",info))
+	Wave yPlot=$(StringByKey("YWAVEDF",info)+StringByKey("YWAVE",info))
+	if (WaveExists(xPlot))
+		Duplicate/FREE xPlot, xw
+		Redimension/N=(Nx) xw
+		xw = (xPlot[p]+xPlot[p+1]) / 2
+	else
+		Wave xw=$""
+	endif
+	if (WaveExists(yPlot))
+		Duplicate/FREE yPlot, yw
+		Redimension/N=(Ny) yw
+		yw = (yPlot[p]+yPlot[p+1]) / 2
+	else
+		Wave yw=$""
+	endif
+
+	// do the Gaussian fit
+	Variable i = FitOneGaussianPeak(image,left,right,bottom,top, xw=xw, yw=yw)	// returns 1 on error,  0 is OK
 	if (i)
 		return i
 	endif
 
-	Wave W_coef=W_coef
-	Wave W_sigma=W_sigma
-	Variable x0,y0,dx,dy,cor
-	Variable fw= ( 2*sqrt(2*ln(2)) )			// this factor corrects for 2-d sigma to FWHM, apply to K3, K5, and the corresponding errors
-	x0 = W_coef[2]
-	dx = W_coef[3] * fw
-	y0 = W_coef[4]
-	dy = W_coef[5] * fw
-	cor = W_coef[6]
-	if (printON)
-		Variable pixels = (DimDelta(image,0)==1 && DimDelta(image,1)==1 && DimOffset(image,0)==0 && DimOffset(image,1)==0)
-		Variable places1, places2, places3
-		if (pixels)
-			places1 = 2
-			places2 = 2
-			places3 = 2
-		else
-			Variable placesX = limit(ceil(log(limit(1/abs(W_sigma[2]),0.1,1e12))),0,12)
-			Variable placesY = limit(ceil(log(limit(1/abs(W_sigma[4]),0.1,1e12))),0,12)
-			places1 = max(placesX,placesY)
-			placesX = limit(ceil(log(limit(1/abs(W_sigma[3]*fw),0.1,1e12))),0,12)
-			placesY = limit(ceil(log(limit(1/abs(W_sigma[5]*fw),0.1,1e12))),0,12)
-			places2 = max(placesX,placesY)
-			places3 = limit(ceil(log(limit(1/abs(W_sigma[6]),0.1,1e12))),0,12)
-		endif
-		String fmt
-		sprintf fmt, "Gaussian peak in '%%s' at (%%.%df±%%.%df, %%.%df±%%.%df) with FWHM of (%%.%df±%%.%df, %%.%df±%%.%df) and correlation of %%.%df±%%.%df  Amp=%%.3g\r",places1,places1,places1,places1,places2,places2,places2,places2,places3,places3
-		printf fmt,ImageName,x0,W_sigma[2],y0,W_sigma[4],dx,W_sigma[3]*fw,dy,W_sigma[5]*fw,cor,W_sigma[6],W_coef[1]
+	Wave W_coef=W_coef, W_sigma=W_sigma
+	Variable x0=W_coef[2], y0=W_coef[4], cor=W_coef[6]
+	Variable fw=( 2*sqrt(2*ln(2)) )			// this factor corrects for 2-d sigma to FWHM, apply to K3, K5, and the corresponding errors
+	Variable dx=W_coef[3]*fw, dy=W_coef[5]*fw
+	if (printIt)
+		printf "Gaussian peak in '%s' at (%s, %s) with FWHM of (%s, %s) and correlation of %s  Amp=%.3g\r",ImageName, ValErrStr(x0,W_sigma[2]), ValErrStr(y0,W_sigma[4]), ValErrStr(dx,W_sigma[3]*fw), ValErrStr(dy,W_sigma[5]*fw), ValErrStr(cor,W_sigma[6]), W_coef[1]
 		DoAlert 1, "Draw a cross at result"
 		if (V_Flag==1)
-			DrawMarker(x0,y0,abs(V_right-V_left),abs(V_top-V_bottom),"Cross",win=win)
+			DrawMarker(x0,y0,abs(right-left),abs(top-bottom),"Cross",win=win)
 		endif
 	endif
 	return 0
 End
+//Function Gaussian2dPeakCenter(printON)	// returns 1 if error,  0 is OK
+//// the result is passed to calling function by W_coef or {K0, K1, ... K6}
+//// this fits a 2-d gaussina to a region on an image.  The region is selected with a marquee in an image plot, or specified
+//	Variable printON							// enables print out of result
+//
+//	Variable V_left, V_right, V_bottom, V_top
+//	if (WinType("")!=1)
+//		Abort "Top window must be a graph, with region selected"
+//	endif
+//	String xaxis=StringByKey("XAXIS",ImageInfo("","",0)), yaxis=StringByKey("YAXIS",ImageInfo("","",0))
+//	GetMarquee/Z $yaxis, $xaxis					// this sets V_left, V_right, . . .
+//	String win = S_marqueeWin						// name of top graph window
+//	if (V_flag==0)
+//		DoAlert 0, "No region selected on the graph"
+//		return 1
+//	endif
+//	if (V_right==0 && V_left==0 || V_top==0 && V_bottom==0)
+//		DoAlert 0, "Unable get range for horizonal or vertical axis info for the selected graph"
+//		return 1
+//	endif
+//
+//	// Find the wave that is the image (assume that it is the only 2-d wave on the graph
+//	String imageName = StringFromList(0,ImageNameList(win,";"))	// name of wave with image
+//	if (strlen(ImageName)<1)
+//		DoAlert 0, "Unable to find image on top graph"
+//		return 1
+//	endif
+//	Wave image = ImageNameToWaveRef(win,imageName)
+//
+//	// set up for the gaussian fit
+//	Variable i = FitOneGaussianPeak(image,V_left,V_right,V_bottom,V_top)	// returns 1 if error,  0 is OK
+//	if (i)
+//		return i
+//	endif
+//
+//	Wave W_coef=W_coef
+//	Wave W_sigma=W_sigma
+//	Variable x0,y0,dx,dy,cor
+//	Variable fw= ( 2*sqrt(2*ln(2)) )			// this factor corrects for 2-d sigma to FWHM, apply to K3, K5, and the corresponding errors
+//	x0 = W_coef[2]
+//	dx = W_coef[3] * fw
+//	y0 = W_coef[4]
+//	dy = W_coef[5] * fw
+//	cor = W_coef[6]
+//	if (printON)
+//		Variable pixels = (DimDelta(image,0)==1 && DimDelta(image,1)==1 && DimOffset(image,0)==0 && DimOffset(image,1)==0)
+//		Variable places1, places2, places3
+//		if (pixels)
+//			places1 = 2
+//			places2 = 2
+//			places3 = 2
+//		else
+//			Variable placesX = limit(ceil(log(limit(1/abs(W_sigma[2]),0.1,1e12))),0,12)
+//			Variable placesY = limit(ceil(log(limit(1/abs(W_sigma[4]),0.1,1e12))),0,12)
+//			places1 = max(placesX,placesY)
+//			placesX = limit(ceil(log(limit(1/abs(W_sigma[3]*fw),0.1,1e12))),0,12)
+//			placesY = limit(ceil(log(limit(1/abs(W_sigma[5]*fw),0.1,1e12))),0,12)
+//			places2 = max(placesX,placesY)
+//			places3 = limit(ceil(log(limit(1/abs(W_sigma[6]),0.1,1e12))),0,12)
+//		endif
+//		String fmt
+//		sprintf fmt, "Gaussian peak in '%%s' at (%%.%df±%%.%df, %%.%df±%%.%df) with FWHM of (%%.%df±%%.%df, %%.%df±%%.%df) and correlation of %%.%df±%%.%df  Amp=%%.3g\r",places1,places1,places1,places1,places2,places2,places2,places2,places3,places3
+//		printf fmt,ImageName,x0,W_sigma[2],y0,W_sigma[4],dx,W_sigma[3]*fw,dy,W_sigma[5]*fw,cor,W_sigma[6],W_coef[1]
+//		DoAlert 1, "Draw a cross at result"
+//		if (V_Flag==1)
+//			DrawMarker(x0,y0,abs(V_right-V_left),abs(V_top-V_bottom),"Cross",win=win)
+//		endif
+//	endif
+//	return 0
+//End
 
-Function FitOneGaussianPeak(Image,V_left,V_right,V_bottom,V_top,[Q])	// returns 1 if error,  0 is OK
+
+Function FitOneGaussianPeak(image,left,right,bottom,top,[xw,yw,printIt])	// returns 1 if error,  0 is OK
 // the result is passed to calling function by W_coef or {K0, K1, ... K6}
-// this fits a 2-d gaussina to a region on an image.  The region is selected with a marquee in an image plot, or specified
+// this fits a 2-d Gaussian to a region on an image.  The region is selected with a marquee in an image plot, or specified
 	Wave image									// wave with image to fit
-	Variable V_left, V_right, V_bottom, V_top	// range to use for fit
-	Variable Q									// quiet flag
-
-	Q = ParamIsDefault(Q) ? 0 : Q
+	Variable left, right, bottom, top	// range to use for fit
+	Wave xw,yw									// x & y waves giving the x & y axes for the image
+	Variable printIt							// enables print out of result
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : !(!printIt)
 	if (!WaveExists(image))
 		DoAlert 0, "Unable to find image to fit"
 		return -1
 	endif
 
-	Variable pixels=1					// using image in pixels
+	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
+	if (WaveExists(xw))
+		if (numpnts(xw)!=Nx)
+			Wave xw = $""						// for invalid xw, set to null wave
+		endif
+	endif
+	if (WaveExists(yw))
+		if (numpnts(yw)!=Ny)
+			Wave yw = $""						// for invalid yw, set to null wave
+		endif
+	endif
+
+	Variable pixels=1							// using image in pixels
 	pixels = (DimDelta(image,0)==1 && DimDelta(image,1)==1 && DimOffset(image,0)==0 && DimOffset(image,1)==0)
 	if (pixels)
 		Variable swap
-		if (V_top<V_bottom)			// insist that bottom < top
-			swap = V_top
-			V_top = V_bottom
-			V_bottom = swap
+		if (top<bottom)						// insist that bottom < top
+			swap = top
+			top = bottom
+			bottom = swap
 		endif
-		if (V_right<V_left)				// insist that left < right
-			swap = V_left
-			V_left = V_right
-			V_right = swap
+		if (right<left)						// insist that left < right
+			swap = left
+			left = right
+			right = swap
 		endif
-		V_left = limit(floor(V_left),0,DimSize(image,0)-1)	// these are pixels, so they need to be integers
-		V_right = limit(ceil(V_right),0,DimSize(image,0)-1)
-		V_bottom = limit(floor(V_bottom),0,DimSize(image,1)-1)
-		V_top = limit(ceil(V_top),0,DimSize(image,1)-1)
+		left = limit(floor(left),0,DimSize(image,0)-1)	// these are pixels, so they need to be integers
+		right = limit(ceil(right),0,DimSize(image,0)-1)
+		bottom = limit(floor(bottom),0,DimSize(image,1)-1)
+		top = limit(ceil(top),0,DimSize(image,1)-1)
 	endif
 
-	// set up for the gaussian fit
+	// set up for the Gaussian fit
 	Make/N=7/O/D W_coef, W_sigma=W_sigma
 	Variable V_FitOptions=4, V_FitError=0,V_FitQuitReason=0
-	V_FitOptions=4
 	//	Execute "SetIgorOption UseVeclib=0"
-	Make/O/T T_Constraints={"K3 > 0","K5 > 0","K6 > 0","K6 < 1"}
+	Make/T/FREE T_Constraints={"K3 > 0","K5 > 0","K6 > 0","K6 < 1"}
 	if (pixels)
-		CurveFit/Q/N Gauss2D image[V_left,V_right][V_bottom,V_top]/C=T_Constraints 
+		CurveFit/Q/N Gauss2D image[left,right][bottom,top]/C=T_Constraints				// pixels
+	elseif (WaveExists(xw) && WaveExists(yw))
+		CurveFit/Q/N Gauss2D image(left,right)(bottom,top)/C=T_Constraints/X=xw/Y=yw	// scaled with x & y waves
+	elseif (WaveExists(xw))
+		CurveFit/Q/N Gauss2D image(left,right)(bottom,top)/C=T_Constraints/X=xw			// scaled with only x wave
+	elseif (WaveExists(yw))
+		CurveFit/Q/N Gauss2D image(left,right)(bottom,top)/C=T_Constraints/Y=yw			// scaled with only y wave
 	else
-		CurveFit/Q/N Gauss2D image(V_left,V_right)(V_bottom,V_top)/C=T_Constraints 
+		CurveFit/Q/N Gauss2D image(left,right)(bottom,top)/C=T_Constraints				// scaled with image scaling
 	endif
-	KillWaves/Z T_Constraints
-//	CurveFit/Q/N Gauss2D image[V_left,V_right][V_bottom,V_top]		// constraints on K6 are not needed for Igor 5
-// however, if constraints are not used, then K6 does not remain in [0,1]
-//	if (V_FitError && WhichListItem("reFit_GaussianPkList",GetRTStackInfo(0))<0)
-//	if (V_FitError && WhichListItem("reFit_GaussianPkList",GetRTStackInfo(0))<0 && WhichListItem("NewFitPeaks",GetRTStackInfo(0))<0)
-	if (V_FitError && WhichListItem("reFit_GaussianPkList",GetRTStackInfo(0))<0 && WhichListItem("NewFitPeaks",GetRTStackInfo(0))<0 && WhichListItem("FitPeaksStepWise",GetRTStackInfo(0))<0)
-		String errString = ""
-		if (V_FitError)
-			errString += "V_FitError = '"
-			errString += SelectString(V_FitError-2,"Singular Matrix","Out of memory","Function return NaN or INF")
-			errString += "'     "
-		endif
-		if (V_FitQuitReason)
-			errString += "V_FitQuitReason = '"
-			errString += SelectString(V_FitQuitReason-2,"iteration limit was reached","user stopped the fit","limit of passes without decreasing chi-square")
-			errString += "'"
-		endif
-		if (!Q)
-			printf "%s\r",errString
-		endif
+	if (printIt && V_FitError)
+		print FitErrorString(V_FitError,V_FitQuitReason)
 	endif
 	if (!V_FitError)
 		Wave W_coef = W_coef
@@ -1783,6 +1858,78 @@ Function FitOneGaussianPeak(Image,V_left,V_right,V_bottom,V_top,[Q])	// returns 
 	endif
 	return V_FitError
 End
+//Function FitOneGaussianPeak(Image,V_left,V_right,V_bottom,V_top,[Q])	// returns 1 if error,  0 is OK
+//// the result is passed to calling function by W_coef or {K0, K1, ... K6}
+//// this fits a 2-d gaussina to a region on an image.  The region is selected with a marquee in an image plot, or specified
+//	Wave image									// wave with image to fit
+//	Variable V_left, V_right, V_bottom, V_top	// range to use for fit
+//	Variable Q									// quiet flag
+//
+//	Q = ParamIsDefault(Q) ? 0 : Q
+//	if (!WaveExists(image))
+//		DoAlert 0, "Unable to find image to fit"
+//		return -1
+//	endif
+//
+//	Variable pixels=1					// using image in pixels
+//	pixels = (DimDelta(image,0)==1 && DimDelta(image,1)==1 && DimOffset(image,0)==0 && DimOffset(image,1)==0)
+//	if (pixels)
+//		Variable swap
+//		if (V_top<V_bottom)			// insist that bottom < top
+//			swap = V_top
+//			V_top = V_bottom
+//			V_bottom = swap
+//		endif
+//		if (V_right<V_left)				// insist that left < right
+//			swap = V_left
+//			V_left = V_right
+//			V_right = swap
+//		endif
+//		V_left = limit(floor(V_left),0,DimSize(image,0)-1)	// these are pixels, so they need to be integers
+//		V_right = limit(ceil(V_right),0,DimSize(image,0)-1)
+//		V_bottom = limit(floor(V_bottom),0,DimSize(image,1)-1)
+//		V_top = limit(ceil(V_top),0,DimSize(image,1)-1)
+//	endif
+//
+//	// set up for the gaussian fit
+//	Make/N=7/O/D W_coef, W_sigma=W_sigma
+//	Variable V_FitOptions=4, V_FitError=0,V_FitQuitReason=0
+//	V_FitOptions=4
+//	//	Execute "SetIgorOption UseVeclib=0"
+//	Make/O/T T_Constraints={"K3 > 0","K5 > 0","K6 > 0","K6 < 1"}
+//	if (pixels)
+//		CurveFit/Q/N Gauss2D image[V_left,V_right][V_bottom,V_top]/C=T_Constraints 
+//	else
+//		CurveFit/Q/N Gauss2D image(V_left,V_right)(V_bottom,V_top)/C=T_Constraints 
+//	endif
+//	KillWaves/Z T_Constraints
+////	CurveFit/Q/N Gauss2D image[V_left,V_right][V_bottom,V_top]		// constraints on K6 are not needed for Igor 5
+//// however, if constraints are not used, then K6 does not remain in [0,1]
+////	if (V_FitError && WhichListItem("reFit_GaussianPkList",GetRTStackInfo(0))<0)
+////	if (V_FitError && WhichListItem("reFit_GaussianPkList",GetRTStackInfo(0))<0 && WhichListItem("NewFitPeaks",GetRTStackInfo(0))<0)
+//	if (V_FitError && WhichListItem("reFit_GaussianPkList",GetRTStackInfo(0))<0 && WhichListItem("NewFitPeaks",GetRTStackInfo(0))<0 && WhichListItem("FitPeaksStepWise",GetRTStackInfo(0))<0)
+//		String errString = ""
+//		if (V_FitError)
+//			errString += "V_FitError = '"
+//			errString += SelectString(V_FitError-2,"Singular Matrix","Out of memory","Function return NaN or INF")
+//			errString += "'     "
+//		endif
+//		if (V_FitQuitReason)
+//			errString += "V_FitQuitReason = '"
+//			errString += SelectString(V_FitQuitReason-2,"iteration limit was reached","user stopped the fit","limit of passes without decreasing chi-square")
+//			errString += "'"
+//		endif
+//		if (!Q)
+//			printf "%s\r",errString
+//		endif
+//	endif
+//	if (!V_FitError)
+//		Wave W_coef = W_coef
+//		Variable zero = -1e-15, one=1+1e-12					// almost zero, almost one
+//		V_FitError += (W_coef[3]<zero || W_coef[5]<zero || W_coef[6]<zero || W_coef[6]>one) ? 32 : 0			//  constraints failed, set bit 5
+//	endif
+//	return V_FitError
+//End
 
 
 Function Add_COM_ToPeakList()

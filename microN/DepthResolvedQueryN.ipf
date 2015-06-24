@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.57
+#pragma version = 1.58
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -1011,7 +1011,7 @@ Function FindAndFitGaussianCenter(imageIn,width)	// returns 1 if error,  0 is OK
 	V_bottom = limit(yc-w2,0,jmax)
 
 	// set up for the gaussian fit
-	Variable i = FitOneGaussianPeak(image,V_left,V_right,V_bottom,V_top,Q=1)	// returns 1 if error,  0 is OK
+	Variable i = FitOneGaussianPeak(image,V_left,V_right,V_bottom,V_top)	// returns 1 if error,  0 is OK
 	if (i)
 		KillWaves/Z imageFitTemp_JZT
 		return i
