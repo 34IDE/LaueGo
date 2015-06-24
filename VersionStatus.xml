@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, June 17, 2015" time="01:16:12 PM CDT" isoTime="2015-06-17T13:16:12"></written>
+	<written date="Wednesday, June 24, 2015" time="01:00:05 PM CDT" isoTime="2015-06-24T13:00:05"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>e34890532ef010a28081f11336ed97d2fc82ec6c</gitHash>
+	<gitHash>4a7168356bbcd83dec3ae535a62e27844c7746f3</gitHash>
 	<fileCount>270</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -29,7 +29,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="45092064aa2f391fcad76837b1322c01" sha256="9d0b87630c90b7ec5c12ec872611cd69727dffab4117e4264ba3a0e6d8ca4cae" ext=".xml">materials/LaMnO3_Ortho.xml</file>
 	<file version="2.02" time="2015-04-30T09:29:28" md5="f7342857402b8480f6c3303a8f044100" sha256="3879a69ed42a2cd965b455ad0194c409adf49ceb080981f5fc80ef46fbc75ce5" ext=".ipf">General/GizmoClip.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" sha256="822fd56a1f37923f54410eac72306f005c8c37dd7b54104eaa8ab0dc741998dd" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.43" time="2015-02-24T10:56:31" md5="a78aad30971145243b964e5f8d7187ca" sha256="b8846b1e6ea27e979e9b2c41df4adec84c412c5e50bf0ec145b10ba2c0f8740e" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.45" time="2015-06-24T12:57:31" md5="fde4cea665c86c5d6d07825e49f9ad58" sha256="e6a85e7450451bfd50ec6f4535ddb14263dd65062343332f34a2ee158d5110a5" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="nan" time="2015-03-05T14:55:21" md5="be59db1adb3175814a31ad76649733d4" sha256="f69388c63ddb982c880967a0871b7a8be0c6a55cd31c570641eba767832e1e16" ext=".xml">materials/Ni3Al.xml</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" sha256="93ec0b54c4c2a1e3a276fbb5ed400d5126aca93ebbd6d9096fe52d18e9e211dc" ext=".ipf">General/absorption.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="89037fe313f31195b4aced86d4e09779" sha256="9a05aecc9c9c602088edc5744068e3d8d196e49257f20bad447d7acbaa3b563c" ext=".xml">materials/Sn-sg141-best.xml</file>
@@ -58,7 +58,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" sha256="9ba07203fe152ef4493d9bd0ca90a845d69ed00b2dd2584ef07c04756d907bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.11" time="2014-04-30T10:34:47" md5="ac190b7444d9f6ce3425257b5bcfa831" sha256="f61e3c918f897f0c48885bd0644d845204ed2dbd77af3e157526ead391396226" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" sha256="b2e50305ba19e5514f3ca7f853db655171bce982732f8c452953a594f5d07854" ext=".xml">materials/Ge.xml</file>
-	<file version="0.07" time="2015-06-01T11:47:27" md5="8fb24d45b81292f179c08d38affd5639" sha256="eb14dcf143696310ab8377962910cc659908b8d9fa59a3a1635a69de697ee378" ext=".ipf">microN/Indexing_Internal.ipf</file>
+	<file version="0.07" time="2015-06-22T18:01:03" md5="3b139f495d4886d8afaa045e967d7504" sha256="bdcd2d8d0aba35c5f1288dfc88390ac11340ad37b0fde9ae627b18c9218a732d" ext=".ipf">microN/Indexing_Internal.ipf</file>
 	<file version="4.73" time="2015-06-01T17:06:44" md5="848b2127271212daa61ce8fea860c009" sha256="24c5c9262084fd2a4aa4d2d145d2cf241bfa06a300663bc1b4d053e119f176ef" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.85" time="2015-04-30T14:58:32" md5="16f8e5e595499368cae26ddaeda822d3" sha256="a0dbc4d8f472444e35f69c7126db0d683888ca120295a05e939256fb1f2896ab" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" sha256="0b6abd4c56e4c6d47569bf63e059ba6eed35847565e373287820bb4eb31b5323" ext=".ipf">APS/IonChamber.ipf</file>

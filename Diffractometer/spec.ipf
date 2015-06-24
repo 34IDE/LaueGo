@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.44
+#pragma version = 2.45
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -115,6 +115,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Feb 24, 2015, added waveClass to the spec waves
 //
 // Jun 22, 2015, added "#UQn" kludge for Herix files
+//
+// Jun 24, 2015, changed the "#UQn" kludge to just skip all lines starting with a "#" embedded in the scan data.
 
 Menu "Data"
 	"-"
@@ -687,7 +689,7 @@ EndMacro
 Function SpecGenericGraphStyle()
 	if (ItemsInList(WinList("*",";","WIN:1"))==0)
 		return 1
-	elseif (exists("SpecGenericGraphStyleLocal")==5)	// a Macro or Proc
+	elseif (exists("SpecGenericGraphStyleLocal")==5)	// a Macro or Proc (NOT Function)
 		Execute "SpecGenericGraphStyleLocal()"
 	else
 		FUNCREF SpecGenericGraphStyleTemplate styleFunc = $"SpecGenericGraphStyleLocal"
@@ -1858,17 +1860,15 @@ Function ReadDataColumns(fileVar,nameList)
 	nameList = TagDuplicateItemsInList(nameList,";"," ")	// add space before duplicate names
 	wavesList = RemoveItemsWithPrefix(nameList,";"," ")
 
-	Variable i = 0
+	Variable i=0
 	do
 		name = StringFromList(i,wavesList, ";")
 		if (strlen(name)>0)
 			if (stringmatch(name,"Time_"))
-				Make/D/N=(waveLength) $name	// use double precision for a time wave
+				Make/D/N=(waveLength) $name = NaN	// must use double precision for a time wave
 			else
-				Make/N=(waveLength) $name		// start with a size of waveLength
+				Make/N=(waveLength) $name = NaN		// start with waveLength points
 			endif
-			Wave wav=$name
-			wav=NaN
 		endif
 		i += 1
 	while (strlen(name)>0)
@@ -1876,13 +1876,12 @@ Function ReadDataColumns(fileVar,nameList)
 	scanLen = 0
 	do
 		FReadLine fileVar, line
-		if ((strlen(line)<=1) || (char2num(line[0,0])==35))		// check for end of file, blank line, end of data, or starts with "#"
-			if (strsearch(line,"#C",0)>=0)			// skip comment lines during the scan (a request from Pete).
-				continue										// comments start with '#C'
-			elseif (strsearch(line,"#UQ",0)>=0)	// skip "#UQ..." lines, screwed up Herix
-				continue										// some stupid Herix thing
-			endif
-			break										// 35 is ASCII '#',  any other # indicates end of scan
+		// scan data ends with a blank line, EOF, or a new scan "#S" line, the #S should not happen, but check just in case.
+		// the scan data can have imbedded "#" lines, expecially "#C", but sometimes we get others like the "#UQ1" from sector 30.
+		if ((strlen(line)<=2) || (strsearch(line,"#S",0)>=0))		// scan data done at EOF, blank line, or next scan line
+			break
+		elseif (char2num(line[0,0])==35 )	// skip all lines starting with "#" that are imbedded in the scan data
+			continue									//   note, 35 is ASCII '#'
 		endif
 		scanLen += 1								// found a good line, increment scan length
 
@@ -1904,7 +1903,7 @@ Function ReadDataColumns(fileVar,nameList)
 		AssignOneLine(line,scanLen-1,ncols,nameList)
 	while(1)
 
-	i = 0												// make the data waves correct length
+	i = 0												// trim the data waves to the actual length
 	do
 		name = StringFromList(i,wavesList, ";")
 		if (strlen(name)>0)
@@ -1915,74 +1914,6 @@ Function ReadDataColumns(fileVar,nameList)
 	while (strlen(name)>0)
 	return scanLen
 End
-//Function ReadDataColumns(fileVar,nameList)
-//	// with the file positioned at the beginning of a set of columns, read them into waves
-//	Variable fileVar			// file ref number
-//	String nameList			// list of wave names, one for each column
-//
-//	String line
-//	Variable ncols = ItemsInList(nameList,";")
-//	Variable sizeIncrement = 100
-//	Variable waveLength = sizeIncrement
-//	Variable scanLen								// count up number of points in scan
-//	String cmd, name=""							// for names of each data waves
-//	String wavesList								// nameList but without duplicate names
-//	nameList = TagDuplicateItemsInList(nameList,";"," ")	// add space before duplicate names
-//	wavesList = RemoveItemsWithPrefix(nameList,";"," ")
-//
-//	Variable i = 0
-//	do
-//		name = StringFromList(i,wavesList, ";")
-//		if (strlen(name)>0)
-//			cmd = "Make/N="+num2istr(waveLength)+" "+name	// start with a size of waveLength
-//			Execute cmd
-//			cmd = name+" = NaN"
-//			Execute cmd
-//		endif
-//		i += 1
-//	while (strlen(name)>0)
-//
-//	scanLen = 0
-//	do
-//		FReadLine fileVar, line
-//		if ((strlen(line)<=1) || (char2num(line[0,0])==35))		// check for end of file, blank line, or end of data
-//			if (!strsearch(line,"#C",0))		// skip comment lines during the scan (a request from Pete).
-//				continue							// comments start with '#C'
-//			endif
-//			break									// 35 is ASCII '#',  any other # indicates end of scan
-//		endif
-//		scanLen += 1								// found a good line, increment scan length
-//
-//		if (scanLen>waveLength)					// need to extend size of input waves
-//			waveLength += sizeIncrement
-//			i = 0
-//			name=""								// increase size of the data waves
-//			do
-//				name = StringFromList(i,wavesList, ";")
-//				if (strlen(name)>0)
-//					cmd = "Redimension/N="+num2istr(waveLength)+" "+name
-//					Execute cmd
-//					cmd = name+"["+num2istr(waveLength-sizeIncrement)+","+num2istr(waveLength-1)+"]=NaN"
-//					Execute cmd
-//				endif
-//				i += 1
-//			while (strlen(name)>0)
-//		endif
-//
-//		AssignOneLine(line,scanLen-1,ncols,nameList)
-//	while(1)
-//
-//	i = 0											// make the data waves correct length
-//	do
-//		name = StringFromList(i,wavesList, ";")
-//		if (strlen(name)>0)
-//			cmd = "Redimension/N="+num2istr(scanLen)+" "+name
-//			Execute cmd
-//		endif
-//		i += 1
-//	while (strlen(name)>0)
-//	return scanLen
-//End
 
 
 Function/T FindDataStart(fileVar)
