@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.07
+#pragma version = 0.08
 #include "IndexingN", version>=4.70
 
 Static Constant hc = 1.239841857			// keV-nm
@@ -2086,42 +2086,41 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[cone,lattice,angle,axis,tol,keVmax,
 	Make/N=(Nreq,11)/D/O $FullPeakListName/WAVE=FullPeakListTest = NaN
 	Variable keV, intens, intensMax=0
 	Variable/C pz
-	Variable h,k,l, N							// N is the actual number of unique spots saved
 	Variable Nx=2048, Ny=2048, px,py
-	Variable hklMax, hklMaxMax=20
-	for (hklMax=0,N=0; hklMax<=hklMaxMax && N<Nreq; hklMax+=1)
-		for (l=0; l<=hklMax && N<Nreq; l=LatticeSym#incrementIndex(l))
-			hkl[2] = l
-			for (k=0; k<=hklMax && N<Nreq; k=LatticeSym#incrementIndex(k))
-				hkl[1] = k
-				for (h=0; h<=hklMax && N<Nreq; h=LatticeSym#incrementIndex(h))
-					hkl[0] = h
-					MatrixOP/FREE/O qvec = recip x hkl
-					MatrixOP/FREE/O qhat = Normalize(qvec)
-					pz = q2pixel(geo.d[0],qhat)
-					px = real(pz)
-					py = imag(pz)
-					if (px<0 || px>=Nx || py<0 || py>=Ny || numtype(px+py))	// misses the detector
-						continue
-					endif
-					MatrixOP/FREE Qmag = sqrt(sum(magSqr(recip x hkl)))
-					qvec = qhat * Qmag[0]
-					keV = -hc*Qmag[0] / (4*PI*MatrixDot(ki,qhat))	// Q = 4*PI*sin(theta)/lambda
-					if (isNewDirection(Ghat3,qhat,cosTol) && MatrixDot(qhat,qUp)>cosCone && keV<=keVmax && allowedHKL(h,k,l,xtal))
-						FullPeakListTest[N][0] = px
-						FullPeakListTest[N][1] = py
-						intens = genericIntensity(xtal,qvec,hkl,keV)
-						intensMax = max(intens,intensMax)
-						FullPeakListTest[N][10] = intens
+	Variable hklMax=20
 
-						GhatsMeasured[N][] = qhat[q]		// a new direction, save it...
-						GhatsMeasuredHKL[N][] = hkl[q]	// hkl associated with each test Ghat
-						Ghat3[N][] = qhat[q]			// Ghat3 only needed for isNewDirection()
-						N += 1
-					endif
-				endfor
-			endfor
-		endfor
+	Wave hkls = hklOrderedList(hklMax)
+	Variable Nhkls=DimSize(hkls,0)
+	Redimension/N=(Nhkls,-1) hkls
+	MatrixOP/FREE qvecs = ( recip x hkls^t )^t
+	MatrixOP/FREE qhats = NormalizeRows(qvecs)
+	MatrixOP/FREE Qmags = sqrt(sumRows(magSqr(qvecs)))
+
+	Make/N=3/D/FREE qhat, qvec, hkl
+	Variable h,k,l, N							// N is the actual number of unique spots saved
+	for (i=0; i<Nhkls && N<Nreq; i+=1)
+		hkl = hkls[i][p]
+		qhat = qhats[i][p]
+		qvec = qvecs[i][p]
+		pz = q2pixel(geo.d[0],qhat)
+		px = real(pz)
+		py = imag(pz)
+		if (px<0 || px>=Nx || py<0 || py>=Ny || numtype(px+py))	// misses the detector
+			continue
+		endif
+		keV = -hc*Qmags[i] / (4*PI*MatrixDot(ki,qhat))	// Q = 4*PI*sin(theta)/lambda
+		if (isNewDirection(Ghat3,qhat,cosTol) && MatrixDot(qhat,qUp)>cosCone && keV<=keVmax && allowedHKL(hkl[0],hkl[1],hkl[2],xtal))
+			FullPeakListTest[N][0] = px
+			FullPeakListTest[N][1] = py
+			intens = genericIntensity(xtal,qvec,hkl,keV)
+			intensMax = max(intens,intensMax)
+			FullPeakListTest[N][10] = intens
+
+			GhatsMeasured[N][] = qhat[q]		// a new direction, save it...
+			GhatsMeasuredHKL[N][] = hkl[q]	// hkl associated with each test Ghat
+			Ghat3[N][] = qhat[q]				// Ghat3 only needed for isNewDirection()
+			N += 1
+		endif
 	endfor
 	Redimension/N=(N,-1) GhatsMeasured,GhatsMeasuredHKL, Ghat3	// trim to actual size
 	Redimension/N=(N,-1) FullPeakListTest
