@@ -15,6 +15,11 @@ Menu "Data"
 	"Generic Wave Note Info", GenericWaveNoteInfo($"","")
 End
 
+
+Static Constant Smallest32bitFloat = 1.39989716586049e-45
+Static Constant Smallest64bitFloat = 4.94065645841247e-324
+
+
 // Sections:
 //	1	function for optionally showing menus, e.g. MenuItemIfWaveClassExists(), and others
 //	2	macros to put labels on lower left/right of plots to identify where they came from
@@ -3257,7 +3262,10 @@ ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// 
 	endif
 
 	Duplicate/FREE w1, wInternal
-	if (numeric && zeroThresh)
+	if (numeric)
+		if (!zeroThresh || numtype(zeroThresh))
+			zeroThresh = DefaultZeroThresh(w1)
+		endif
 		wInternal = abs(wInternal)<zeroThresh ? 0 : wInternal
 	endif
 
@@ -3288,6 +3296,18 @@ ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// 
 		out += SelectString(bare,"}","")
 	endif
 	return out
+End
+//
+ThreadSafe Static Function DefaultZeroThresh(ww)
+	Wave ww
+	switch(WaveType(ww) & 0x3E)
+		case 0x02:						// 32 bit float
+			return Smallest32bitFloat
+		case 0x04:						// 64 bit float
+			return Smallest64bitFloat
+		default:							// all integer types
+			return 0
+	endswitch
 End
 
 
@@ -3561,11 +3581,12 @@ ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,fmt,zeroThre
 	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : !(!brief)
 	fmt = SelectString(ParamIsDefault(fmt),fmt,"%g")
 	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
+	if (!zeroThresh || numtype(zeroThresh))
+		zeroThresh = DefaultZeroThresh(m1)
+	endif
 
 	Duplicate/FREE m1, mInternal
-	if (zeroThresh)
-		mInternal = abs(m1)<zeroThresh ? 0 : m1
-	endif
+	mInternal = abs(m1)<zeroThresh ? 0 : m1
 
 	if (brief && strlen(fmt))
 		fmt = fmt + "    "
@@ -3590,6 +3611,9 @@ ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,fmt,zeroThre
 	return line
 End
 //
+
+
+
 ThreadSafe Static Function/T printmatOneListComplex(m1,row,[name,brief,fmt,zeroThresh])// print one line for complex (not real) matricies
 	Wave/C m1
 	Variable row								// row number (starts with 0)
@@ -3604,10 +3628,15 @@ ThreadSafe Static Function/T printmatOneListComplex(m1,row,[name,brief,fmt,zeroT
 	fmt = SelectString(ParamIsDefault(fmt),fmt,"%g,%g")
 	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 
-	Duplicate/FREE m1, mInternal
-	if (zeroThresh)
-		mInternal = abs(m1)<zeroThresh ? 0 : m1
+	if (!zeroThresh || numtype(zeroThresh))
+		zeroThresh = DefaultZeroThresh(m1)
 	endif
+
+	Make/N=(DimSize(m1,0))/D/FREE rInternal,iInternal
+	rInternal = real(m1)
+	iInternal = imag(m1)
+	rInternal = abs(rInternal)<zeroThresh ? 0 : rInternal
+	iInternal = abs(iInternal)<zeroThresh ? 0 : iInternal
 
 	if (brief)
 		fmt = "("+fmt+")    "
@@ -3622,9 +3651,9 @@ ThreadSafe Static Function/T printmatOneListComplex(m1,row,[name,brief,fmt,zeroT
 			line += "  ..."
 			break
 		elseif (brief)
-			sprintf str, fmt,real(mInternal[row][j]),imag(mInternal[row][j])
+			sprintf str, fmt,rInternal[row][j],iInternal[row][j]
 		else
-			sprintf str, fmt,name,row,j,real(mInternal[row][j]),imag(mInternal[row][j])
+			sprintf str, fmt,name,row,j,rInternal[row][j],iInternal[row][j]
 		endif
 		line += str
 	endfor
