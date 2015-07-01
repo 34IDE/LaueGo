@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.70
+#pragma version = 3.71
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3213,9 +3213,10 @@ Function AskForUserForDateTime(epoch)
 End
 
 
-ThreadSafe Function/T vec2str(w1,[places,maxPrint,bare,zeroThresh,sep])		// convert vector to s string suitable for printing, does not include name
+ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// convert vector to s string suitable for printing, does not include name
 	Wave w1										// 1d wave to print
 	Variable places							// number of places, for default, use negative or NaN
+	String fmt									// optional format for on number, this OVERRIDES places
 	Variable maxPrint							// maximum number of elements to print, defaults to 20
 	Variable bare								// if bare is TRUE, then suppress the "{}" in the output
 	Variable zeroThresh						// |values| < zeroThresh show as a "0", in many vectors 1e-15 is really zero
@@ -3224,6 +3225,7 @@ ThreadSafe Function/T vec2str(w1,[places,maxPrint,bare,zeroThresh,sep])		// conv
 	maxPrint = ParamIsDefault(maxPrint) ? 20 : maxPrint
 	maxPrint = maxPrint>0 ? maxPrint : 20
 	places = ParamIsDefault(places) ? -1 : places
+	fmt = SelectString(ParamIsDefault(fmt),fmt,"")
 	bare = ParamIsDefault(bare) ? 0 : !(!bare)
 	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 	sep = SelectString(ParamIsDefault(sep),sep,",  ")
@@ -3237,8 +3239,9 @@ ThreadSafe Function/T vec2str(w1,[places,maxPrint,bare,zeroThresh,sep])		// conv
 	Variable waveIsComplex = WaveType(w1) %& 0x01
 	Variable numeric = (WaveType(w1)!=0)
 
-	String fmt
-	if (waveIsComplex)
+	if (strlen(fmt))
+		// fmt was passed, do not reset it
+	elseif (waveIsComplex)
 		Wave/C cw=w1
 		places = places>=0 ? min(20,places) : 5	// default to 5 for unacceptable values
 		sprintf fmt,"(%%.%dg, %%.%dg)",places,places
