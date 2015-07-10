@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.08
+#pragma version = 0.09
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
@@ -564,6 +564,7 @@ Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new (empty) exp
 	empty = empty && ItemsInList(MacroList("*",";","WIN:Procedure"))<1
 
 	String dirList = DataFolderDir(-1,$"root:")
+	dirList = ReplaceString("\r",dirList,"")
 	String Variables = StringByKey("VARIABLES",dirList)
 	Variables = RemoveFromList("Gizmo_Error",Variables,",")
 	String Strings = StringByKey("STRINGS",dirList)
@@ -577,7 +578,8 @@ Static Function ExperimentEmpty()	// returns TRUE=1 if this is a new (empty) exp
 	empty = empty && strlen(Waves)<1			// no pre-existing waves
 	empty = empty && strlen(Folders)<1			// no pre-existing data folders
 
-	String wins=WinList("*",";","WIN:69840"), str=FunctionPath("LaueGo_Install")		// 69840 = 65536 + 4096 + 128 + 64 + 16
+	String optStr="WIN:"+SelectString(IgorVersion()<7,"69840","4304")		// 69840 = 65536 + 4096 + 128 + 64 + 16
+	String wins=WinList("*",";",optStr), str=FunctionPath("LaueGo_Install")
 	str = ParseFilePath(0,str,":",1,0)
 	wins = RemoveFromList(str,wins)
 	wins = RemoveFromList("Procedure",wins)

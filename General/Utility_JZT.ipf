@@ -16,7 +16,7 @@ Menu "Data"
 End
 
 
-Static Constant Smallest32bitFloat = 1.39989716586049e-45
+Static Constant Smallest32bitFloat = 1.40129846432482e-45			// see DefaultZeroThresh(ww) below for use and finding
 Static Constant Smallest64bitFloat = 4.94065645841247e-324
 
 
@@ -3309,6 +3309,41 @@ ThreadSafe Static Function DefaultZeroThresh(ww)
 			return 0
 	endswitch
 End
+//Function FindSmallestFloatMachine()
+//	Variable last
+//	Make/N=1/D/FREE double=1
+//	do
+//		last = double[0]
+//		double[0] /= 2
+//	while(double[0]!=0)
+//	print/d last
+//
+//	Variable mult=0.9999999, factor=mult
+//	double[0] = last
+//	do
+//		last = double[0]
+//		double[0] *= factor
+//		factor *= mult
+//	while(double[0]!=0)
+//	print/d last
+//
+//	print " "
+//	Make/N=1/FREE single=1
+//	do
+//		last = single[0]
+//		single[0] /= 2
+//	while(single[0]!=0)
+//	print/d last
+//
+//	factor=mult
+//	single[0] = last
+//	do
+//		last = single[0]
+//		single[0] *= factor
+//		factor *= mult
+//	while(single[0]!=0)
+//	print/d last
+//End
 
 
 ThreadSafe Function/WAVE str2vec(str,[sep])// returns a free vector based on the string
@@ -3587,7 +3622,6 @@ ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,fmt,zeroThre
 
 	Duplicate/FREE m1, mInternal
 	mInternal = abs(m1)<zeroThresh ? 0 : m1
-
 	if (brief && strlen(fmt))
 		fmt = fmt + "    "
 	else
@@ -3611,9 +3645,6 @@ ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,fmt,zeroThre
 	return line
 End
 //
-
-
-
 ThreadSafe Static Function/T printmatOneListComplex(m1,row,[name,brief,fmt,zeroThresh])// print one line for complex (not real) matricies
 	Wave/C m1
 	Variable row								// row number (starts with 0)
