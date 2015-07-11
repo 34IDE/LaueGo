@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.81
+#pragma version = 1.82
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -3756,10 +3756,10 @@ Static Function UpDatePanelValuesFromStruct(win,iDetector)
 
 	ValDisplay Ndetectors, win=$win, value = _NUM:g.Ndetectors
 
-	SetVariable Nx, win=$win, value = _NUM:g.d[0].Nx
-	SetVariable Ny, win=$win, value = _NUM:g.d[0].Ny
-	SetVariable sizeX, win=$win, value = _NUM:(g.d[0].sizeX / 1e3)	// panel uses mm, g.d[m] uses µm
-	SetVariable sizeY, win=$win, value = _NUM:(g.d[0].sizeY / 1e3)
+	SetVariable Nx, win=$win, value = _NUM:g.d[iDetector].Nx
+	SetVariable Ny, win=$win, value = _NUM:g.d[iDetector].Ny
+	SetVariable sizeX, win=$win, value = _NUM:(g.d[iDetector].sizeX / 1e3)	// panel uses mm, g.d[m] uses µm
+	SetVariable sizeY, win=$win, value = _NUM:(g.d[iDetector].sizeY / 1e3)
 	SetVariable Rx, win=$win, value = _NUM:g.d[iDetector].R[0]
 	SetVariable Ry, win=$win, value = _NUM:g.d[iDetector].R[1]
 	SetVariable Rz, win=$win, value = _NUM:g.d[iDetector].R[2]
