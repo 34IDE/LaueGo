@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.72
+#pragma version = 3.73
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1926,7 +1926,7 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 	for (i=0,hasColLabels=0; i<Nc; i+=1)
 		hasColLabels = hasColLabels || strlen(GetDimLabel(ww,1,i))
 	endfor
-	for (i=0,hasRowLabels=0; i<Nc; i+=1)
+	for (i=0,hasRowLabels=0; i<Nr; i+=1)
 		hasRowLabels = max(hasRowLabels, FontSizeStringWidth(fontName,fontSize,0,GetDimLabel(ww,0,i)))
 	endfor
 	Nr = min(maxRows,Nr)							// limit display to maxRows rows
