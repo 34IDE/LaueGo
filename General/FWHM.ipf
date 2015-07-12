@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.10
+#pragma version = 2.11
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -43,7 +43,7 @@ Static Function/S MenuItemIfFitPeakOnGraph(item,classes,optionsStr)
 	Variable invisible			// controls menu item when conditions not met: true -> menu item absent, false or absent -> menu item grayed out
 	Variable all					// when all is TRUE, then all of the classes in waveClassList must be present, not just one
 	String list = WaveListClass(classes,"*",optionsStr,all=all)
-	if (strlen(list) && strlen(WinList("*",";","WIN:1")))
+	if (strlen(list) && strlen(WinList("*",";","WIN:1,VISIBLE:1")))
 		return item
 	endif
 	return "("+item

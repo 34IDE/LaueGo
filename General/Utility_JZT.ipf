@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.71
+#pragma version = 3.72
 // #pragma hide = 1
 
 Menu "Graph"
@@ -129,9 +129,12 @@ Function/S MenuItemIfTopGraphImage(item)
 End
 
 // menu active only if a graph is displayed, useful when using a Cursor on the graph
-Function/S MenuItemIfAnyGraphExists(item)
+Function/S MenuItemIfAnyGraphExists(item,[visible])
 	String item
-	if (strlen(WinList("*",";","WIN:1"))<1)
+	Variable visible						// default is to ONLY show visible graphs, use visible=0 to include both
+	visible = ParamIsDefault(visible) || numtype(visible) ? 1 : visible
+	String optStr = SelectString(visible, "WIN:1", "WIN:1,VISIBLE:1")
+	if (strlen(WinList("*",";",optStr))<1)
 		return "("+item					// top graph does not contain an image, so disable menu item
 	endif
 	return item

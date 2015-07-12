@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.04
+#pragma version = 2.05
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
@@ -35,7 +35,7 @@ End
 Menu "Gizmo-Movie"
 	"Gizmo Movie Steps Panel...", MakeMovieStepsPanel()
 	MenuItemIfWaveClassExists("Fill Panel from a Wave","MovieStepsList*",""), FillMovieStepsPanelFromWave($"")
-	MenuItemIfWinExists("Save Panel to a Wave","MovieStepsPanel","WIN:64"), SaveMovieSteps2Wave()
+	MenuItemIfWinExists("Save Panel to a Wave","MovieStepsPanel","WIN:64,VISIBLE:1"), SaveMovieSteps2Wave()
 	"<I  Test Data & Gizmo", GizmoMovies#MakeTestGizmoData(); GizmoMovies#MakeGizmoMovieTestGizmo(); MakeMovieStepsPanel()
 End
 
