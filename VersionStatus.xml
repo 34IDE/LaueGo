@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Saturday, July 11, 2015" time="10:38:57 PM CDT" isoTime="2015-07-11T22:38:57"></written>
+	<written date="Wednesday, July 15, 2015" time="08:27:57 PM CDT" isoTime="2015-07-15T20:27:57"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>dfb115239ecd1cb12e1fd0221466b7bca74dc05f</gitHash>
+	<gitHash>4a3f0e933e1f8c708251bca0442f3a1988ce50b4</gitHash>
 	<fileCount>270</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -58,7 +58,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="59b8acecf168d3c10b63504ec6568bdc" sha256="9ba07203fe152ef4493d9bd0ca90a845d69ed00b2dd2584ef07c04756d907bdc" ext=".xml">materials/Ti-6Al_OSU.xml</file>
 	<file version="2.11" time="2014-04-30T10:34:47" md5="ac190b7444d9f6ce3425257b5bcfa831" sha256="f61e3c918f897f0c48885bd0644d845204ed2dbd77af3e157526ead391396226" ext=".ipf">micro/Triangulate.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="7d2fd9513474e6bf619523a46f541018" sha256="b2e50305ba19e5514f3ca7f853db655171bce982732f8c452953a594f5d07854" ext=".xml">materials/Ge.xml</file>
-	<file version="0.08" time="2015-06-29T12:34:07" md5="339e87a3b89fecce0cbf98b79f79c6b7" sha256="d5cc2498445578dce048ee971dffe59c355e89a11f80a6d4e90e60b92c11a078" ext=".ipf">microN/Indexing_Internal.ipf</file>
+	<file version="0.09" time="2015-07-15T09:37:22" md5="bba0dbb6ce42b8e8e80207e1974ea14b" sha256="f744332bf70fd49b152434a5f550fce0f38e3a391b0c0b4dbbbc4555772de082" ext=".ipf">microN/Indexing_Internal.ipf</file>
 	<file version="4.73" time="2015-06-01T17:06:44" md5="848b2127271212daa61ce8fea860c009" sha256="24c5c9262084fd2a4aa4d2d145d2cf241bfa06a300663bc1b4d053e119f176ef" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.85" time="2015-04-30T14:58:32" md5="16f8e5e595499368cae26ddaeda822d3" sha256="a0dbc4d8f472444e35f69c7126db0d683888ca120295a05e939256fb1f2896ab" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" sha256="0b6abd4c56e4c6d47569bf63e059ba6eed35847565e373287820bb4eb31b5323" ext=".ipf">APS/IonChamber.ipf</file>
@@ -99,7 +99,7 @@
 	<file version="2.63" time="2015-04-29T17:28:34" md5="3374ab1d235e90438883d76de81474e8" sha256="0d2237f9bbd8b773bf3d01ee1f58a1d2ff3c83db7ce55a7e7fe5c1ea2c025446" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="12c15d0282fb6a0d2e3d5e7530f480bb" sha256="8fe414dd1188fea23be7f6badac82d7c6690d636c811a66af7f7a50a08192515" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" sha256="198a282c972e2d45609cd82ea8243af6af5b878726371b661dfabc93f309ba00" ext=".mtl">materials/LaMnO3.mtl</file>
-	<file version="4.35" time="2015-06-02T16:12:44" md5="8eea54e7aaf8ab7150f943cfe8c6efeb" sha256="2336ca2a62a708ad54f45538f356723c3b8eba735c92894fbf9e06838b153926" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="4.36" time="2015-07-15T20:24:41" md5="c55a4e186203f4eaf025773b28eaa605" sha256="0131a8a89ed463364290d9e9cbea21266623c8383e31111b452d959f8d221e36" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" sha256="6060302a5225a5473a5c948b8d9cb756136a55a4b1b2c1f91e3484c8a73d9e87" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" sha256="418ab8556758b40aba34cbc92056ec10a620de115505e2bd68e9805be929f968" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" sha256="98f1c8c454a199ff6ee8d24fced76dea00d6d8a33bad14957640e1e8da441f5e" ext="">micro/Euler_ppc</file>
