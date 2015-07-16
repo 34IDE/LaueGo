@@ -2064,13 +2064,13 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_c_nm,fSize=12,format="%.7f"
 	SetVariable set_c_nm,limits={0,inf,0},value= root:Packages:Lattices:PanelValues:c
 	SetVariable set_alpha,pos={45,163},size={100,17},proc=LatticePanelParamProc,title="a°"
-	SetVariable set_alpha,font="Symbol",fSize=14,format="%.5f"
+	SetVariable set_alpha,font="Symbol",fSize=14,format="%10.5f"
 	SetVariable set_alpha,limits={0,180,0},value= root:Packages:Lattices:PanelValues:alpha
 	SetVariable set_beta,pos={45,183},size={100,17},proc=LatticePanelParamProc,title="b°"
-	SetVariable set_beta,font="Symbol",fSize=14,format="%.5f"
+	SetVariable set_beta,font="Symbol",fSize=14,format="%10.5f"
 	SetVariable set_beta,limits={0,180,0},value= root:Packages:Lattices:PanelValues:bet
 	SetVariable set_gamma,pos={45,203},size={100,17},proc=LatticePanelParamProc,title="g°"
-	SetVariable set_gamma,font="Symbol",fSize=14,format="%.5f"
+	SetVariable set_gamma,font="Symbol",fSize=14,format="%10.5f"
 	SetVariable set_gamma,limits={0,180,0},value= root:Packages:Lattices:PanelValues:gam
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
 	Button buttonLatticeSave,help={"Save these values as the current values"}
@@ -4729,7 +4729,7 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 		if (abs(angle)<0.1)
 			str = "Identity (no rotation)"
 		else
-			sprintf str, "%g¡ rotation about the %s",angle,name
+			sprintf str, "% 4.0f¡ rotation about the %s",angle,name
 		endif
 		out += str+";"
 		if (printIt)
