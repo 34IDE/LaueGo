@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.08
+#pragma version = 0.09
 #include "IndexingN", version>=4.70
 
 Static Constant hc = 1.239841857			// keV-nm
@@ -1609,6 +1609,143 @@ Static Function genericIntensity(xtal,qvec,hkl,keV)
 	return intens
 End
 
+
+ThreadSafe Static Function/WAVE hklOrderedList(hklMax,[hklLo,hklHi,Nmax])
+	// If you need an ordered list of hkl's, this is much faster then getting fancy
+	// and trying to order the loops.  LatticeSym#incrementIndex(h) is not too bad, but 
+	// using an another loop around the hkl loops slows you down a factor of 33 for hklMax=16
+	// for hklMax=20 this is faster by x88, for hklMax=30 faster by x420
+	// If you only want the smallest Nmax hkl, then do a Redimension/N=(Nmax,-1) hkls
+	// Note, if you only want k&l to vary and h fixed, you can say:
+	// Wave hkls = hklOrderedList(hklMax,hLo=1,hHi=1)
+
+	Variable hklMax
+	Wave hklLo, hklHi								// optional range of h,k,l (if not passed or NaN, use hklMax)
+
+	Variable Nmax									// max number of hkls to make, default is 1e6 (and 1e6 takes ~1minute)
+	Nmax = ParamIsDefault(Nmax) || numtype(Nmax) || round(Nmax)<1 ? 1e6 : round(Nmax)
+	hklMax = round(hklMax)
+
+	Variable hLo=NaN,hHi=NaN, kLo=NaN,kHi=NaN, lLo=NaN,lHi=NaN		// can be passed in hklLo & hklHi to overRide hklMax
+	if (WaveExists(hklLo))
+		hLo = hklLo[0]
+		kLo = hklLo[1]
+		lLo = hklLo[2]
+	endif
+	if (WaveExists(hklHi))
+		hHi = hklHi[0]
+		kHi = hklHi[1]
+		lHi = hklHi[2]
+	endif
+	hLo = numtype(hLo) ? -hklMax : round(hLo)	// use ±hklMax if value is invalid
+	kLo = numtype(kLo) ? -hklMax : round(kLo)
+	lLo = numtype(lLo) ? -hklMax : round(lLo)
+	hHi = numtype(hHi) ?  hklMax : round(hHi)
+	kHi = numtype(kHi) ?  hklMax : round(kHi)
+	lHi = numtype(lHi) ?  hklMax : round(lHi)
+	Variable Nh=hHi-hLo+1, Nk=kHi-kLo+1, Nl=lHi-lLo+1
+	Variable N=Nh*Nk*Nl
+	if (numtype(Nh+Nk+Nl) || Nh<1 || Nk<1 || Nl<1 || N>Nmax)
+		return $""
+	endif
+
+	Make/N=(N,3)/I/FREE hkls
+	Make/N=3/I/FREE hkl
+	Variable h,k,l, i
+	for (h=hHi,i=0; h>=hLo; h-=1)
+		hkl[0] = h
+		for (k=kHi; k>=kLo; k-=1)
+			hkl[1] = k
+			for (l=lHi; l>=lLo; l-=1)
+				hkl[2] = l
+				hkls[i][] = hkl[q]
+				i += 1
+			endfor
+		endfor
+	endfor
+
+	MatrixOP/FREE len2 = sumRows(magSqr(hkls))
+	Make/N=(N)/I/FREE index
+	MakeIndex len2, index
+	WaveClear len2
+	Duplicate/FREE hkls, hklsOut
+	hklsOut = hkls[index[p]][q]
+	return hklsOut
+End
+//Function check_hklOrderedList(hklMax)
+//	Variable hklMax
+//
+//	Variable h,k,l, N, hklM
+//	Variable Nmax = (2*hklMax+1)^3
+//	printf "should generate (2*%d+1)^3 = %d^3 = %d hkl's\r",hklMax,2*hklMax+1,Nmax
+//
+//	Make/N=(Nmax,3)/FREE/I hkls=1e9
+//	Make/N=3/I/FREE hkl
+//	timeIncrement(1)
+//	for (hklM=0,N=0; hklM<=hklMax; hklM+=1)
+//		for (l=0; abs(l)<=hklM; l=LatticeSym#incrementIndex(l))
+//			hkl[2] = l
+//			for (k=0; k<=hklM; k=LatticeSym#incrementIndex(k))
+//				hkl[1] = k
+//				for (h=0; h<=hklM; h=LatticeSym#incrementIndex(h))
+//					hkl[0] = h
+//					MatrixOP/FREE absMax = maxVal(abs(hkl))
+//					if (absMax[0]<hklM)
+//						continue
+//					endif
+//					hkls[N][] = hkl[q]
+//					N += 1
+//				endfor
+//			endfor
+//		endfor
+//	endfor
+//	print "N = ",N,"  incrementIndex with outer loop ",timeIncrement(0)
+//	Duplicate/O hkls hklsView
+//
+//	timeIncrement(1)
+//	for (l=0,N=0; abs(l)<=hklMax; l=LatticeSym#incrementIndex(l))
+//		hkl[2] = l
+//		for (k=0; k<=hklMax; k=LatticeSym#incrementIndex(k))
+//			hkl[1] = k
+//			for (h=0; h<=hklMax; h=LatticeSym#incrementIndex(h))
+//				hkl[0] = h
+//				hkls[N][] = hkl[q]
+//				N += 1
+//			endfor
+//		endfor
+//	endfor
+//	print "N = ",N,"  only incrementIndex ",timeIncrement(0)
+//
+//	timeIncrement(1)
+//	N = 0
+//	for (l=-hklMax; l<=hklMax; l+=1)
+//		hkl[2] = l
+//		for (k=-hklMax; k<=hklMax; k+=1)
+//			hkl[1] = k
+//			for (h=-hklMax; h<=hklMax; h+=1)
+//				hkl[0] = h
+//				N += 1
+//			endfor
+//		endfor
+//	endfor
+//	print "N = ",N,"  assign hkl,N   ",timeIncrement(0)
+//
+//	timeIncrement(1)
+//	N = 0
+//	for (l=-hklMax; l<=hklMax; l+=1)
+//		for (k=-hklMax; k<=hklMax; k+=1)
+//			for (h=-hklMax; h<=hklMax; h+=1)
+//				N += 1
+//			endfor
+//		endfor
+//	endfor
+//	print "N = ",N,"  just looping   ",timeIncrement(0)
+//
+//	timeIncrement(1)
+//	Wave hkls = hklOrderedList(16)
+//	print "N = ",N,"  hklOrderedList ",timeIncrement(0)
+//	Duplicate/O hkls hkls2View
+//End
 
 
 ThreadSafe Static Function/WAVE RotMatAboutAxisOnly(axis)		// return rotation matrix

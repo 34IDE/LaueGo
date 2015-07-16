@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.35
+#pragma version = 4.36
 #include "Utility_JZT" version>=3.68
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -111,6 +111,9 @@ Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum poss
 // with version 4.34, added DescribeSymOps(direct), CheckDirectRecip()
 // with version 4.35, MatrixOP in Fstruct(), change variable Q --> Qmag, and calc of F uses complex math now.
 //		also in positionsOfOneAtomType, make condition based on true atom distances, & use MatrixOP too.
+// with version 4.36, changed allowedHKL(), now a ThreadSafe version of allowedHKL()
+//		allowedHKL() now cannot use Cromer, but it is ThreadSafe (done for indexing routines).
+//		also added isValidSpaceGroup()
 
 // Rhombohedral Transformation:
 //
@@ -1027,7 +1030,7 @@ Static Function LatticeBad(xtal,[atomsToo])
 	bad += numtype(xtal.alpha + xtal.beta + xtal.gam)
 	bad += !(xtal.alpha > 0) || !(xtal.beta > 0) || !(xtal.gam > 0)
 	bad += xtal.alpha >=180 || xtal.beta >= 180 || xtal.gam >= 180
-	bad += numtype(xtal.SpaceGroup) || xtal.SpaceGroup < 1 || xtal.SpaceGroup > 230
+	bad += !isValidSpaceGroup(xtal.SpaceGroup)
 	for (i=0;i<xtal.N && atomsToo;i+=1)
 		bad += atomBAD(xtal.atom[i])
 		vibrate = vibrate || atomThermalInfo(xtal.atom[i])
@@ -1114,7 +1117,7 @@ Static Function ForceLatticeToStructure(xtal)
 	STRUCT crystalStructure &xtal					// this sruct is set in this routine
 
 	Variable SpaceGroup=xtal.SpaceGroup			// local value for convienence
-	if (SpaceGroup!=limit(SpaceGroup,1,230))		// invalid SpaceGroup, it must be in range [1,230]
+	if (!isValidSpaceGroup(SpaceGroup))			// invalid SpaceGroup, it must be in range [1,230]
 		DoAlert 0, "invalid Space Group number "+num2str(SpaceGroup)
 		return 1
 	endif
@@ -1859,12 +1862,12 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	alpha = numtype(alpha)||alpha<=0 ? 90 : alpha	// for invalid angles, use 90¡
 	bet = numtype(bet)||bet<=0 ? 90 : bet
 	gam = numtype(gam)||gam<=0 ? 90 : gam
-	//	Cubic			[195,230]	//	a
+	//	Cubic				[195,230]	//	a
 	//	Hexagonal		[168,194]	//	a,c
-	//	Trigonal		[143,167]	//	a,alpha
+	//	Trigonal			[143,167]	//	a,alpha
 	//	Tetragonal		[75,142]		//	a,c
 	//	Orthorhombic	[16,74]		//	a,b,c
-	//	Monoclinic		[3,15]			//	a,b,c,gamma
+	//	Monoclinic		[3,15]		//	a,b,c,gamma
 	//	Triclinic		[1,2]			//	a,b,c,alpha,beta,gamma
 //	String item="",structures="FCC:225;BCC:229;Diamond:227;Perovskite:221;Simple Cubic:195;Hexagonal:194;Wurtzite (B4):186;Sapphire:167;Triclinic:1;Space Group #..."
 	String item="",structures="FCC:225;BCC:229;Diamond:227;Perovskite:221;Simple Cubic:195;Hexagonal:194;Wurtzite (B4):186;Sapphire:167;Triclinic:1;Space Group #..."
@@ -1872,7 +1875,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		structures = xtal.desc+":"+num2istr(SpaceGroup)+";"+structures
 	endif
 	Variable i,N=ItemsInList(structures)
-	if (SpaceGroup>=1 && SpaceGroup<=230)			// valid SpaceGroup number
+	if (isValidSpaceGroup(SpaceGroup))				// valid SpaceGroup number
 		structureName = ""
 		for(i=0;i<N;i+=1)
 			item = StringFromList(i,structures)
@@ -1912,7 +1915,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		SpaceGroup=str2num(StringFromList(1,item,":"))
 		structureName = StringFromList(0,item,":")
 	endif
-	if (!(1<=SpaceGroup && SpaceGroup<=230))
+	if (!isValidSpaceGroup(SpaceGroup))
 		return 1
 	endif
 
@@ -2128,7 +2131,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 	Variable SpaceGroup
 
 	SpaceGroup = round(SpaceGroup)
-	if (!(SpaceGroup>=1 && SpaceGroup<=230))
+	if (!isValidSpaceGroup(SpaceGroup))
 		return 1
 	endif
 
@@ -2312,10 +2315,9 @@ Static Function SelectNewSG(find)
 	String list = symmtry2SG(find,type=0,printIt=0)
 	String system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 	Variable SG, Nlist=ItemsInList(list)
-	for (SG=NaN,i=0; i<Nlist; i+=1)
+	for (i=0; i<Nlist; i+=1)
 		SG = str2num(StringFromList(i,list))
-		SG = (SG>=1 && SG<=230) ? SG : NaN
-		if (numtype(SG)==0)
+		if (isValidSpaceGroup(SG))
 			system = StringFromList(latticeSystem(SG),systemNames)
 			//	sprintf str,"%d  %s  %s;", SG,system,getFullHMSym(SG)
 			sprintf str, "%d  %s  %s  [%s];", SG,system,getFullHMSym(SG),getHallSymbol(SG)
@@ -2600,7 +2602,7 @@ Function read_cri_fileOLD(xtal,fname)
 	xtal.desc = line[0,99]
 	FReadLine f, line
 	SpaceGroup = str2num(line)
-	if (!(SpaceGroup>=1 && SpaceGroup<=230))
+	if (!isValidSpaceGroup(SpaceGroup))
 		Close f
 		return 1
 	endif
@@ -3139,7 +3141,7 @@ Static Function readFileXML(xtal,fileName,[path])
 	String str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
 	Variable SG = str2num(XMLtagContents("space_group_IT_number",cif))
-	xtal.SpaceGroup = (SG>=1 && SG<=230) ? SG : 0
+	xtal.SpaceGroup = isValidSpaceGroup(SG) ? SG : 0
 
 	String cell = XMLtagContents("cell",cif)				// cell group
 	String unit
@@ -4062,7 +4064,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	T_K = T_K>0 ? T_K : NaN
 
 	Variable SpaceGroup=xtal.SpaceGroup
-	if (!(SpaceGroup>=1 && SpaceGroup<=230) || numtype(h+k+l))
+	if (!isValidSpaceGroup(SpaceGroup) || numtype(h+k+l))
 		return cmplx(NaN,NaN)	// bad inputs
 	endif
 	Variable/C zero=cmplx(0,0)
@@ -4342,10 +4344,103 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 End
 
 
-Function allowedHKL(h,k,l,xtal)
-	Variable h,k,l
+//Function allowedHKL(h,k,l,xtal)					// NOT threadsafe, but this could use Cromer
+//	Variable h,k,l
+//	STRUCT crystalStructure &xtal
+//	Variable/C Fc = Fstruct(xtal,h,k,l)
+//	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)	// allowed means more than 0.01 electron/atom
+//End
+//
+ThreadSafe Function allowedHKL(h,k,l,xtal)		// does NOT use Cromer, but can be multi-threaded
+	Variable h,k,l											// the hkl may be non-integers
 	STRUCT crystalStructure &xtal
-	Variable/C Fc = Fstruct(xtal,h,k,l)
+
+	Variable SpaceGroup=xtal.SpaceGroup
+	if (!isValidSpaceGroup(SpaceGroup) || numtype(h+k+l))
+		return 0												// bad inputs (not allowed)
+	endif
+	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
+	Variable system = LatticeSym#latticeSystem(SpaceGroup)
+
+	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
+		String sym = getHMsym(SpaceGroup)			// get symmetry symbol
+		strswitch (sym[0,0])
+			case "F":
+				if (mod(h+k,2) || mod(k+l,2) )		// face-centered, hkl must be all even or all odd
+					return 0
+				endif
+				break
+			case "I":
+				if (mod(round(h+k+l),2))				// body-centered, !mod(round(h+k+l),2), sum must be even
+					return 0
+				endif
+				break
+			case "C":
+				if (mod(round(h+k),2))					// C-centered, !mod(round(h+k),2)
+					return 0
+				endif
+				break
+			case "A":
+				if (mod(round(k+l),2))					// A-centered, !mod(round(k+l),2)
+					return 0
+				endif
+				break
+			case "R":
+				if (usingHexAxes)							// rhombohedral cell with hexagonal axes
+					if (mod(-h+k+l,3) && mod(h-k+l,3))	//		allowed are -H+K+L=3n or H-K+L=3n
+						return 0
+					endif
+				endif
+				break											// using rhombohedral axes, so all are allowed
+		endswitch
+		if (system==HEXAGONAL)
+			if (!mod(h+2*k,3) && mod(l,2)) 			// hexagonal, forbidden are: H+2K=3N with L odd
+				return 0
+			endif
+		endif
+	endif
+
+//	LatticeSym#reMakeAtomXYZs(xtal)					// NOT ThreadSafe
+	if (xtal.N<1)
+		return 1												// No atom defined, but passed simple tests, it is allowed
+	endif
+
+	Variable fatomMag
+	Variable m, Fr, Fi
+	Variable/C c2PI=cmplx(0,2*PI)
+	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
+
+if (GetRTError(0))
+print "aaaaaa ",GetRTErrMessage()
+endif
+
+	Make/N=3/D/FREE hkl={h,k,l}
+	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
+		Wave ww = $("root:Packages:Lattices:atom"+num2istr(m))
+		fatomMag = xtal.atom[m].Zatom * xtal.atom[m].occ		// just use Z for the f_atom (this is always REAL)
+		MatrixOP/O/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl)))
+		Fc += Fcm[0]										// accumulate for this atom
+	endfor
+
+if (GetRTError(0))
+print "bbbbbb ",GetRTErrMessage(),"  ww=",WaveExists(ww),"  name=","root:Packages:Lattices:atom"+num2istr(m-1)
+Variable iee = GetRTError(1)
+endif
+
+	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
+		Variable arg
+		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
+		Fr = 1. + cos(arg)
+		Fi = sin(arg)
+		Variable rr=real(Fc), ii=imag(Fc)
+		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
+		//  for hexagonal:
+		//	h+2k=3n,		l=even;		F = 4*f			1
+		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+		//	h+2k=3n±1,	l=even;		F = f			1/4
+		//	h+2k=3n,		l=odd; 		F = 0			0
+	endif
+
 	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
 End
 
@@ -4509,7 +4604,7 @@ End
 //End
 //Static Function testOneSymmetryOp(SpaceGroup)
 //	Variable SpaceGroup
-//	if (SpaceGroup!=limit(round(SpaceGroup),1,230))
+//	if (!isValidSpaceGroup(SpaceGroup))
 //		printf "SpaceGroup = %g, not in [1,230]\r",SpaceGroup
 //		return 1
 //	endif
@@ -4556,7 +4651,34 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	if (!WaveExists(SymOps))
+		String SymmetryOpsPath=StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
 		Wave SymOps = $StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
+		Variable SGw = WaveExists(SymOps) ? NumberByKey("SpaceGroup",note(SymOps),"=") : 0
+		STRUCT crystalStructure xtal
+		if (FillCrystalStructDefault(xtal) && !WaveExists(SymOps))
+			return ""
+		endif
+
+		Variable useWave=0, useXtal=0
+		if (isValidSpaceGroup(SGw) && isValidSpaceGroup(xtal.SpaceGroup) && xtal.SpaceGroup == SGw)
+			useWave = 1
+		elseif (isValidSpaceGroup(SGw) && !isValidSpaceGroup(xtal.SpaceGroup))		// use wave
+			useWave = 1
+		elseif (!isValidSpaceGroup(SGw) && isValidSpaceGroup(xtal.SpaceGroup))		// use xtal
+			useXtal = 1
+		elseif (isValidSpaceGroup(SGw) && isValidSpaceGroup(xtal.SpaceGroup))		// ask
+			DoAlert 2, "SymmetryOpsPath and Lattice Panel Disagree,\r  Remake SymmetryOps"+num2istr(SGw)+" to match Panel?"
+			if (V_flag>2)
+				return ""
+			endif
+			useWave = (V_flag==2)
+			useXtal = (V_flag==1)
+		endif
+		if (useXtal)
+			String wname = MakeSymmetryOps(xtal)
+			String/G root:Packages:Lattices:SymOps:SymmetryOpsPath = wname
+			Wave SymOps = $wname
+		endif
 	endif
 	if (!WaveExists(SymOps))
 		return ""
@@ -4617,6 +4739,10 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 	return out
 End
 
+ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
+	Variable SG
+	return ( SG == limit(round(SG), 1, 230) )
+End
 
 
 
@@ -4658,7 +4784,7 @@ End
 
 ThreadSafe Function/S getHMsym(SpaceGroup)	// returns short Hermann-Mauguin symbol
 	Variable SpaceGroup						//Space Group number, from International Tables
-	if (SpaceGroup<1 || SpaceGroup>230)
+	if (!isValidSpaceGroup(SpaceGroup))
 		return ""								// invalid SpaceGroup number
 	endif
 
@@ -4702,7 +4828,7 @@ End
 // Full H-M symbols only differ from the regular ones (in getHMsym) for Space Groups: 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 ThreadSafe Function/S getFullHMSym(SpaceGroup)	// returns full Hermann-Mauguin symbol
 	Variable SpaceGroup					//Space Group number, from International Tables
-	if (SpaceGroup<1 || SpaceGroup>230)
+	if (!isValidSpaceGroup(SpaceGroup))
 		return ""							// invalid SpaceGroup number
 	endif
 
@@ -4742,7 +4868,7 @@ End
 
 ThreadSafe Function/S getHallSymbol(SpaceGroup)
 	Variable SpaceGroup					//Space Group number, from International Tables
-	if (SpaceGroup<1 || SpaceGroup>230)
+	if (!isValidSpaceGroup(SpaceGroup))
 		return ""							// invalid SpaceGroup number
 	endif
 
@@ -4884,10 +5010,9 @@ Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from 
 		endif
 		printf "SG\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\r"
 		String tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
-		for (SG=NaN,i=0; i<Nlist; i+=1)
+		for (i=0; i<Nlist; i+=1)
 			SG = str2num(StringFromList(i,list))
-			SG = (SG>=1 && SG<=230) ? SG : NaN
-			if (numtype(SG)==0)
+			if (isValidSpaceGroup(SG))
 				fullHM = getFullHMSym(SG)			// usually fullHM is the same as HM
 				HM = getHMSym(SG)
 				fullHM = SelectString(StringMatch(fullHM,HM),"\t\tfull H-M = ["+fullHM+"]","")
@@ -5076,7 +5201,7 @@ ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice consta
 	STRUCT crystalStructure &xtal					// this sruct is set in this routine
 
 	Variable SpaceGroup=xtal.SpaceGroup			// local value for convienence
-	if (SpaceGroup!=limit(SpaceGroup,1,230))	// invalid SpaceGroup, it must be in range [1,230]
+	if (!isValidSpaceGroup(SpaceGroup))			// invalid SpaceGroup, it must be in range [1,230]
 		return 0
 	elseif (numtype(xtal.a + xtal.b + xtal.c + xtal.alpha + xtal.beta + xtal.gam))
 		return 0								// no Inf or NaN
@@ -5168,8 +5293,8 @@ End
 Function lowestAllowedHKL(h,k,l)
 	Variable &h,&k,&l
 
-	STRUCT crystalStructure xtal			// temporary crystal structure
-	FillCrystalStructDefault(xtal)			//fill the lattice structure with default values
+	STRUCT crystalStructure xtal		// temporary crystal structure
+	FillCrystalStructDefault(xtal)	//fill the lattice structure with default values
 //	ForceLatticeToStructure(xtal)
 
 	Variable i
@@ -5177,7 +5302,7 @@ Function lowestAllowedHKL(h,k,l)
 	lowestOrderHKL(hh,kk,ll)			// remove all common factors
 
 	for (i=1;i<16;i+=1)					// never need more than 16 to reach an allowed reflection
-		h = i*hh							// try each of the multiples to reach an allowed reflection
+		h = i*hh								// try each of the multiples to reach an allowed reflection
 		k = i*kk
 		l = i*ll
 		if (allowedHKL(h,k,l,xtal))
@@ -5560,7 +5685,7 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroup)		// make the symmetry operati
 		numSymOps = NumberByKey("numSymOps",note(mats),"=")
 		return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
 	endif
-	if (SpaceGroup<1 || 230<SpaceGroup)						// Space Group must be in range [1, 230]
+	if (!isValidSpaceGroup(SpaceGroup))						// Space Group must be in range [1, 230]
 		DoAlert 0, "Bad Space Group = "+num2str(SpaceGroup)+", in SetSymOpsForSpaceGroup"
 		return 1
 	endif
@@ -5691,7 +5816,7 @@ End
 //
 Static Function/T setSymLine(SpaceGroup)
 	Variable SpaceGroup								// Space Group number [1,230]
-	if (!(1<=SpaceGroup && SpaceGroup<=230))		// invalid
+	if (!isValidSpaceGroup(SpaceGroup))		// invalid
 		return ""
 	endif
 	Make/N=230/O/T symLines_temp__
@@ -6383,11 +6508,10 @@ End
 //
 Static Function/T WyckoffStrFromSG(SG)
 	Variable SG
-
-	SG = round(SG)
-	if (SG<1 || SG>230 || numtype(SG))
+	if (!isValidSpaceGroup(SG))
 		return ""
 	endif
+	SG = round(SG)
 
 	Make/N=230/FREE/T WyckoffWave=""
 	WyckoffWave[0] = {"a:1;","a:1;b:1;c:1;d:1;e:1;f:1;g:1;h:1;i:2;","a:1;b:1;c:1;d:1;e:2;","a:2;","a:2;b:2;c:4;","a:1;b:1;c:2;"}
@@ -6622,7 +6746,7 @@ End
 
 Static Function/WAVE GetWyckoffSymStrings(SG)
 	Variable SG
-	if (SG != limit(round(SG),1,230))
+	if (!isValidSpaceGroup(SG))
 		return $""
 	endif
 
