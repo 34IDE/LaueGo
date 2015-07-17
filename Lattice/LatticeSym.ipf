@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.36
+#pragma version = 4.37
 #include "Utility_JZT" version>=3.68
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -111,8 +111,9 @@ Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum poss
 // with version 4.34, added DescribeSymOps(direct), CheckDirectRecip()
 // with version 4.35, MatrixOP in Fstruct(), change variable Q --> Qmag, and calc of F uses complex math now.
 //		also in positionsOfOneAtomType, make condition based on true atom distances, & use MatrixOP too.
-// with version 4.36, changed allowedHKL(), now a ThreadSafe version of allowedHKL()
+// with version 4.37, changed allowedHKL(), now a ThreadSafe version of allowedHKL()
 //		allowedHKL() now cannot use Cromer, but it is ThreadSafe (done for indexing routines).
+//		to use allowedHKL() with MultiThread you MUST pass the wave refs to the atomN waves
 //		also added isValidSpaceGroup()
 
 // Rhombohedral Transformation:
@@ -4351,19 +4352,24 @@ End
 //	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)	// allowed means more than 0.01 electron/atom
 //End
 //
-ThreadSafe Function allowedHKL(h,k,l,xtal)		// does NOT use Cromer, but can be multi-threaded
+// Example:
+//	Make/N=(xtal.N)/WAVE/FREE atomWaves=$("root:Packages:Lattices:atom"+num2istr(p))	// cannot reach these waves from within a separate thread
+//	Make/N=(Nz)/FREE/WAVE testAllowed
+//	MultiThread testAllowed = allowedHKL(h[p],k[p],l[p],xtal, atomWaves=atomWaves)
+//
+ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, but can be multi-threaded
 	Variable h,k,l											// the hkl may be non-integers
 	STRUCT crystalStructure &xtal
+	Wave/WAVE atomWaves									// ONLY needed when calling this with MultiThread
 
-	Variable SpaceGroup=xtal.SpaceGroup
-	if (!isValidSpaceGroup(SpaceGroup) || numtype(h+k+l))
+	if (!isValidSpaceGroup(xtal.SpaceGroup) || numtype(h+k+l))
 		return 0												// bad inputs (not allowed)
 	endif
 	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
-	Variable system = LatticeSym#latticeSystem(SpaceGroup)
+	Variable system = LatticeSym#latticeSystem(xtal.SpaceGroup)
 
 	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
-		String sym = getHMsym(SpaceGroup)			// get symmetry symbol
+		String sym = getHMsym(xtal.SpaceGroup)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
 				if (mod(h+k,2) || mod(k+l,2) )		// face-centered, hkl must be all even or all odd
@@ -4400,32 +4406,29 @@ ThreadSafe Function allowedHKL(h,k,l,xtal)		// does NOT use Cromer, but can be m
 		endif
 	endif
 
-//	LatticeSym#reMakeAtomXYZs(xtal)					// NOT ThreadSafe
+//	reMakeAtomXYZs(xtal)								// NOT ThreadSafe
 	if (xtal.N<1)
 		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
 
-	Variable fatomMag
-	Variable m, Fr, Fi
+	Variable fatomMag, m, Fr, Fi
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
-
-if (GetRTError(0))
-print "aaaaaa ",GetRTErrMessage()
-endif
-
 	Make/N=3/D/FREE hkl={h,k,l}
 	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
-		Wave ww = $("root:Packages:Lattices:atom"+num2istr(m))
-		fatomMag = xtal.atom[m].Zatom * xtal.atom[m].occ		// just use Z for the f_atom (this is always REAL)
-		MatrixOP/O/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl)))
-		Fc += Fcm[0]										// accumulate for this atom
+		if (WaveExists(atomWaves))
+			Wave ww = atomWaves[m]						// needed when running in a separate thread
+		else
+			Wave ww = $("root:Packages:Lattices:atom"+num2istr(m))	// not available from a separate thread
+		endif
+		fatomMag = xtal.atom[m].Zatom * xtal.atom[m].occ	// just use Z for the f_atom (this is always REAL)
+		if (WaveExists(ww))
+			MatrixOP/O/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl)))
+			Fc += Fcm[0]									// accumulate for this atom
+		else
+			Fc += cmplx(fatomMag,0)					// no atom position, just make it in phase
+		endif
 	endfor
-
-if (GetRTError(0))
-print "bbbbbb ",GetRTErrMessage(),"  ww=",WaveExists(ww),"  name=","root:Packages:Lattices:atom"+num2istr(m-1)
-Variable iee = GetRTError(1)
-endif
 
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
 		Variable arg

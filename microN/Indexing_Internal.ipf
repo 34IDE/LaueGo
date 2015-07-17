@@ -1,14 +1,26 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.09
+#pragma version = 0.10
 #include "IndexingN", version>=4.70
+
+#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
+#include "Indexing_InternalQZ_Gizmo"
+#endif
 
 Static Constant hc = 1.239841857			// keV-nm
 Constant threshDivide = 3
 
+
 //	#define ZONE_TESTING
 //	#define QS_TESTING
-#if defined(ZONE_TESTING) || defined(QS_TESTING)
+
+//	#define ZONE_QS_TESTING
+//	#ifdef ZONE_QS_TESTING
+//	Constant DEBUG_LEVEL=3
+//	#endif
+
+
+#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 Menu "Zones"
 	SubMenu "Test"
 		"Make Simulated Test Pattern...", MakeSimulatedTestPattern(NaN)
@@ -26,6 +38,1113 @@ Menu "Zones"
 	MenuItemIfWaveClassExists("Table of Ghats","QsMeasured*","MINCOLS:3"),/Q, DisplayTableOfWave($"",classes="QsMeasured*",promptStr="Ghat",options="MINCOLS:3",top=65,left=17,colWid=80)
 End
 #endif
+
+
+
+//  ====================================================================================  //
+//  =========================== Start of Zones & Qs Indexing ===========================  //
+
+Function/WAVE runIndexingQsZonesIgor(args)
+	String args
+
+	Wave FullPeakList = $StringByKey("FullPeakList",args)
+	Variable keVmaxCalc = NumberByKey("keVmaxCalc",args)	// 14, maximum energy for peaks to check (keV)
+	Variable keVmaxTest = NumberByKey("keVmaxTest",args)	// 30, maximum energy for finding peaks (keV)
+	Variable angTol = NumberByKey("angleTolerance",args)	// ~0.5¡, angular matrch in pair angles (degree), as this gets bigger it runs slower
+	Variable angPrecision = NumberByKey("angPrecision",args)	// ~0.05¡, used to define zones, precision of peaks, detector, & calibration (degree)
+		// angPrecision	how well we know measured spot directions, combination of peak searching and calibration (used to find zones)
+		// angTol			how well we angles from lattice constants, lattice constants may be poorly known. (used to match angles between Q's)
+	Variable hp = NumberByKey("hp",args)							// preferred hkl
+	Variable kp = NumberByKey("kp",args)
+	Variable lp = NumberByKey("lp",args)
+	Variable cone = NumberByKey("cone",args)					// for possible Qhats & zone axes, range of allowed tilts from central hkl (degree)
+	Variable maxSpots = NumberByKey("maxSpots",args)			// -n max num. of spots from FullPeakList to use, default is 250
+	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
+	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
+	Variable minSpotsForZone = NumberByKey("minSpotsForZone",args)// need at least this many spots to define a zone
+	Variable minNQsMatch = NumberByKey("minNQsMatch",args)// number of Q's in a zone that need to match before I will use it to calc a possible angle
+	Variable printIt = NumberByKey("printIt",args)
+	maxSpots = numtype(maxSpots) || maxSpots<3 ? 250 : maxSpots
+	minSpotsForZone = numtype(minSpotsForZone) || minSpotsForZone<3 || minSpotsForZone>30 ? 5 : round(minSpotsForZone)
+	minNQsMatch = numtype(minNQsMatch) || minNQsMatch<2 || minNQsMatch>30 ? 3 : round(minNQsMatch)
+	printIt = numtype(printIt) ? 0 : printIt
+	if (cone<=0 || numtype(cone))
+		return $""
+	elseif (angTol<=0 || numtype(angTol) || angTol>10)
+		return $""
+	elseif (numtype(hp+kp+lp))
+		return $""
+	elseif (keVmaxCalc<=0 || numtype(keVmaxCalc))
+		return $""
+	elseif (keVmaxTest<=0 || numtype(keVmaxTest))
+		return $""
+	endif
+	angPrecision = numtype(angPrecision) || angPrecision<=0 ? 0.05 : angPrecision
+	Variable err
+	timeIncrement(1)
+	Variable sec0=stopMSTimer(-2)*1e-6
+	Make/N=3/D/FREE ki={0,0,1}										// use this for the incident beam direction
+
+	Wave GhatsMeasured=IndexingInternal#FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2)	// convert peaks to a Qlist+intens+dNum
+	String noteMeasured=note(GhatsMeasured)
+	Variable NG0=DimSize(GhatsMeasured,0)
+	Make/N=(NG0,3)/FREE GhatsOnly=GhatsMeasured[p][q]
+	MatrixOP/FREE qvec0 = sumCols(GhatsOnly)					// assume that average Ghat is Q-vector to center of detector
+
+	STRUCT allZonesStruct measuredZones							// holds info about the measured zones
+	//	In the data find the measured zone axes.
+	// measuredZones is the structure containing all the information about the measured zones
+	// measuredZones.zn[].axisHat[3] and measuredZones.zn[].g.xyz[3] are in BEAMLINE coordinates
+	err = ZoneInfoFromMeasuredSpots(measuredZones,GhatsMeasured, minSpotsForZone, angPrecision)	// find the measured zone axes info
+	if (err || measuredZones.Nz < 2)
+		return $""
+	endif
+	Variable nZmeasured = measuredZones.Nz
+#ifdef ZONE_QS_TESTING
+	if (printIt)
+		printf "*made GhatsMeasured with %d G^'s from the %d zones in measuredZones (require %d Q's to define a zone), %s\r",DimSize(GhatsMeasured,0),nZmeasured,minSpotsForZone,timeIncrement(0)
+		if (DEBUG_LEVEL>=4)
+			print ZonesStruct2Str(measuredZones,maxPrint=5)
+			if (DEBUG_LEVEL>=5)
+				Duplicate GhatsMeasured, GhatsMeasuredView
+				GhatsMeasuredView = abs(GhatsMeasuredView)<1e-12 ? 0 : GhatsMeasuredView
+			endif
+		endif
+	endif
+	Make/N=(nZmeasured,3)/FREE ZonesWave
+	ZonesWave = measuredZones.zn[p].axisHat[q]
+	GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,$"")
+#endif
+
+	//	Make a list of Possible zones (this uses hklPrefer, keVmax, cone). and calc the q^s for each zone.
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))
+		DoAlert 0, "no lattice structure found, did you forget to set it?"
+		return $""
+	endif
+	Wave direct=directFrom_xtal(xtal)
+	Wave recipBase=recipFrom_xtal(xtal)
+	Make/N=3/D/FREE hklPrefer={hp,kp,lp}							// hkl near center of data
+#ifdef ZONE_QS_TESTING
+	if (printIt)
+		printf "*finished setup, have the measured zone info, %s\r",timeIncrement(0)
+		print " "
+	endif
+#endif
+	Variable NmaxTestZones = round(10*STRUCT_ZONES_MAX/nZmeasured)
+	NmaxTestZones = limit(NmaxTestZones,4,STRUCT_ZONES_MAX)	// maximum number of possible zones to make
+	Variable NminTestZones = 3											// want at least 3
+	STRUCT allZonesStruct possibleZones								// holds info about the possible zones
+	// possibleZones is the structure containing all the information about the measured zones
+	// possibleZones.zn[].axisHat[3] and possibleZones.zn[].g.xyz[3] are in BASE CRYSTAL coordinates
+
+#ifndef ZONE_QS_TESTING
+	MakePossibleZoneInfo(possibleZones,xtal,hklPrefer,qvec0,cone*PI/180,keVmaxCalc,NminTestZones,NmaxTestZones,minSpotsForZone)
+	Variable nZpossible = possibleZones.Nz
+#else
+	MakePossibleZoneInfo(possibleZones,xtal,hklPrefer,qvec0,cone*PI/180,keVmaxCalc,NminTestZones,NmaxTestZones,minSpotsForZone,printIt=DEBUG_LEVEL>=4)
+	Variable nZpossible = possibleZones.Nz
+	if (printIt)
+		printf "*made %d (out of %d) Possible Zones to test against,  %s\r",nZpossible,NmaxTestZones,timeIncrement(0)
+		if (DEBUG_LEVEL==4)
+			print "\r        zone 0 is (check the first reflection):\r"+OneZoneStruct2Str(possibleZones.zn[0],maxPrint=6)+"\r"
+		elseif (DEBUG_LEVEL>=5)
+			print ZonesStruct2Str(possibleZones,maxPrint=4)
+		endif
+	endif
+	if (DEBUG_LEVEL>=3)		// make Q^s for display in a Gizmo
+		Make/N=((nZpossible)*STRUCT_ZONESPOTS_MAX,3)/O PossibleQhats=NaN
+		Make/N=((nZpossible)*STRUCT_ZONESPOTS_MAX,3)/I/O Possiblehkls=NaN
+		Variable iq, Nqs, nNs
+		for (iq=0,Nqs=0;iq < nZpossible; iq+=1)
+			nNs = possibleZones.zn[iq].Ns
+			PossibleQhats[Nqs,Nqs+nNs-1][] = possibleZones.zn[iq].g[p-Nqs].xyz[q]
+			Possiblehkls[Nqs,Nqs+nNs-1][] = possibleZones.zn[iq].h[p-Nqs].hkl[q]
+			Nqs += nNs
+		endfor
+	endif
+	Redimension/N=(Nqs,-1) PossibleQhats, Possiblehkls
+#endif
+
+
+//	pick a possible zone (loop)
+//	compare q^(hkl)s with each of the measured zone g^'s to find the rotAxis that works
+//			note, this step is like an indexing step, but rotation axis direction is fixed.
+//			try to use a correlation method (but sparse) where matching is set by angTol (see sparse1Dcorrelate below)
+//		save all that are good enough (based on angTol & NumSpots) along with some stats, {NumSpots, sum(intens), rmsErr, rotAxis}.
+//
+// given the q^ waves for two zones, what are the rotations that connect them?
+	Variable Nalloc=200, NallRots
+	Make/N=(Nalloc,3)/D/FREE AllRotations=NaN
+	Make/N=(Nalloc)/I/FREE AllMatches=0
+	Make/N=(3)/D/FREE rotAxis
+	Variable i, ip, im, nrots, angTolRad=angTol*PI/180
+	Variable angTolRad2 = angTolRad*angTolRad
+	for (im=0,NallRots=0; im<nZmeasured; im+=1)
+		Make/N=(measuredZones.zn[im].Ns,3)/FREE qMeas
+		qMeas = measuredZones.zn[im].g[p].xyz[q]
+		for (ip=0; ip<nZpossible; ip+=1)
+			Make/N=(possibleZones.zn[ip].Ns,3)/FREE qPossible
+			qPossible = possibleZones.zn[ip].g[p].xyz[q]
+			Wave axes = RotsBetweenZones(qPossible,qMeas, minNQsMatch, angTolRad)
+			nrots = DimSize(axes,0)
+			if (nrots<1)
+				continue
+			endif
+			// append all rotations in axes[][0,3] to AllRotations[][3] & AllMatches[] if not a duplicate rotation
+			for (i=0;i<nrots;i+=1)
+				rotAxis = axes[i][p]							// check if this rotAxis is already in AllRotations
+				MatrixOP/FREE diffs2 = sumRows(magSqr(AllRotations-RowRepeat(rotAxis,Nalloc)))
+				if (WaveMin(diffs2) < angTolRad2)			// an existing rotAxis, note: WaveMin(diffs2)==NaN the first time
+					WaveStats/Q/M=1 diffs2						// find location of smallest value in diffs2
+					AllMatches[V_minloc] += axes[i][3]		//  and inrcrement the matches
+				else
+					if (NallRots>=Nalloc)
+						Nalloc += 200
+						Redimension/N=(Nalloc,-1) AllRotations
+						Redimension/N=(Nalloc) AllMatches
+					endif
+					AllRotations[NallRots][] = rotAxis[q]	// save the new rotation
+					AllMatches[NallRots] = axes[i][3]		//   and the number of matches
+					NallRots += 1
+				endif
+			endfor										// end of loop i, over rotation axes for this zone pair
+		endfor											// end of loop ip, over possible zones
+	endfor												// end of loop im, over measured zones
+	Redimension/N=(NallRots,-1) AllRotations// trim to correct length
+	Redimension/N=(NallRots) AllMatches
+	Variable maxMatches = WaveMax(AllMatches)
+	if (NallRots<1 || !(maxMatches>1))
+		printf "Failed to find any rotation axes that rotate %d spots from the Possible zones to the Measured zones, try increasing keVmaxCalc (=%g keV), or cone (=%g¡).\r", minNQsMatch,keVmaxCalc,cone
+		return $""
+	endif
+
+#ifdef ZONE_QS_TESTING
+MatrixOP/O AllRotationsAngleView = sqrt(sumRows(magsqr(AllRotations)))
+AllRotationsAngleView *= 180/PI
+printf "AllRotations[%g][3] has a max of %g, and the smallest rotation is %g¡,  %s\r",NallRots,WaveMax(AllMatches),WaveMin(AllRotationsAngleView),timeIncrement(0)
+Duplicate/O AllRotations, AllRotationsView
+for (i=0;i<NallRots;i+=1)
+	if (AllMatches[i] >= maxMatches)
+		rotAxis = AllRotations[i][p]
+		printf "#%d,  rot = %s,   |rot|=%.3f¡   %d matches\r",i,vec2str(rotAxis),norm(rotAxis)*180/PI,AllMatches[i]
+	endif
+endfor
+Duplicate/O AllMatches, AllMatchesView, AllMatchesViewSize
+Redimension/N=(-1,3) AllMatchesViewSize
+AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
+#endif
+
+	WaveStats/Q/M=1 AllMatches
+	rotAxis = AllRotations[V_maxloc][p]
+	Variable angle = norm(rotAxis)*180/PI
+	Make/N=(3,3)/D/FREE rotMat
+	rotationMatAboutAxis(rotAxis,angle,rotMat)	// make rotMat the matrix version of rotAxis
+	MatrixOP/O/FREE recip = rotMat x recipBase
+	//	printWave(recip,name="rotated recip",brief=1,zeroThresh=1e-9)
+#ifdef ZONE_QS_TESTING
+	if (printIt)
+		printf "*found <rot> = %s  |<rot>|=%.3f¡,  with %d matches, %s\r",vec2str(rotAxis,zeroThresh=1e-9),angle,maxMatches,timeIncrement(0)
+	endif
+#endif
+
+	// find rms error between Ghats and the predicted hkl directions
+	STRUCT microGeometry geo
+	if (FillGeometryStructDefault(geo))	//fill the geometry structure with current values
+		DoAlert 0, "no geometry structure found, did you forget to set it?"
+		return $""
+	endif
+
+	Make/N=3/D/FREE vec
+	Variable startx=NumberByKey("startx",noteMeasured,"="), groupx=NumberByKey("groupx",noteMeasured,"=")
+	Variable starty=NumberByKey("starty",noteMeasured,"="), groupy=NumberByKey("groupy",noteMeasured,"=")
+	Variable/C pz
+	Variable NG1, delta
+	Make/N=(NG0,3)/D/FREE hkls=NaN, hklsAll=NaN
+	for (i=0,NG1=0; i<NG0; i+=1)				// find the indexed hkl's from this rotation
+		vec = GhatsMeasured[i][p]
+		Wave hkl = IndexingInternal#LowestAllowedHKLfromGhat(xtal,recip,vec,keVmaxTest)	// reduce to nearest hkl
+		if (!WaveExists(hkl))
+			continue
+		endif
+		MatrixOP/FREE qvec = recip x hkl
+		MatrixOP/FREE qhat = Normalize( qvec )
+		delta = acos(limit(MatrixDot(qhat,vec),-1,1))*180/PI
+		hklsAll[i][] = hkl[q]					// save found hkl for every measured G, used to fill IndexedWave[][]
+		if (delta < angTol)
+			hkls[NG1][] = hkl[q]				// just save the good ones, this is used for the RefineOrientation()
+			NG1 += 1
+		endif
+	endfor
+#ifdef ZONE_QS_TESTING
+	if (printIt)
+		printf "*found %g hkl's that match this rotation, %s\r",NG1,timeIncrement(0)
+	endif
+#endif
+	if (NG1<3)										// found less than 3 matching hkl's, failure
+		return $""
+	endif
+	Redimension/N=(NG1,-1) hkls
+
+	// do a least-squares optimization on the rotation vector
+	err = IndexingInternal#RefineOrientation(GhatsMeasured,hkls,recipBase,rotAxis)
+	angle = norm(rotAxis)*180/PI
+	rotationMatAboutAxis(rotAxis,angle,rotMat)		// re-make rotMat
+	MatrixOP/O/FREE recip = rotMat x recipBase		//  and re-make recip
+#ifdef ZONE_QS_TESTING
+	if (printIt)
+		printf "*after non-linear least-squares optimization, <rot> = %s  |<rot>|=%.3f¡,  %s\r",vec2str(rotAxis,zeroThresh=1e-9),angle,timeIncrement(0)
+	endif
+#endif
+
+	// now save all indexed values using the optimized rotation
+	Variable Npatterns=1, ipat=0, NG
+	String peakListName = ParseFilePath(3,StringByKey("peakListWave",noteMeasured,"="),":",0,0)
+	String IndexedName = CleanupName("FullPeakIndexed"+ReplaceString("FullPeakList",peakListName,""),0)
+	Make/N=(NG0,12,Npatterns)/O $IndexedName/WAVE=IndexedWave = NaN
+	Variable dNum, px,py, keV, intensity, intensityMax=-Inf
+	Variable rmsGhat, minError=Inf, maxError=-Inf, goodness0=0
+	for (i=0,NG=0; i<NG0; i+=1)							// re-calc with optimized rotation
+		vec = GhatsMeasured[i][p]
+		dNum = GhatsMeasured[i][4]
+		hkl = hklsAll[i][p]
+		MatrixOP/FREE qvec = recip x hkl
+		MatrixOP/FREE qhat = Normalize( qvec )
+		keV = -hc * norm(qvec) / ( 4*PI*MatrixDot(ki,vec) )		// |Q| = 4*¹*sin(theta)/lambda,  MatrixDot(ki,vec) =-sin(theta)
+		delta = acos(limit(MatrixDot(qhat,vec),-1,1))*180/PI	// angle error (degree)
+		if (delta < angTol)
+			maxError = max(delta,maxError)
+			minError = min(delta,minError)
+			rmsGhat += delta*delta
+			intensity = IndexingInternal#genericIntensity(xtal,qvec,hkl,keV)
+			intensityMax = max(intensityMax,intensity)
+			goodness0 += intensity
+			pz = q2pixel(geo.d[dNum],qhat)
+			px = limit(real(pz),0,2047)
+			py = limit(imag(pz),0,2047)
+			px = ( px - (startx-FIRST_PIXEL) - (groupx-1)/2 )/groupx	// change to binned pixels
+			py = ( py - (starty-FIRST_PIXEL) - (groupy-1)/2 )/groupy	// pixels are still zero based
+			IndexedWave[NG][0,2][ipat] = qhat[q]		// Q^
+			IndexedWave[NG][3,5][ipat] = hkl[q-3]		// save the hkl, of this indexed point
+			IndexedWave[NG][6][ipat]   = intensity	// intensity
+			IndexedWave[NG][7][ipat]   = keV			// energy (keV)
+			IndexedWave[NG][8][ipat]   = delta			// angle error (degree)
+			IndexedWave[NG][9][ipat]   = px				// pixel X
+			IndexedWave[NG][10][ipat]  = py				// pixel Y
+			IndexedWave[NG][11][ipat]  = dNum			// detector Number
+			NG += 1
+		endif
+	endfor
+	Redimension/N=(NG,-1,-1) IndexedWave
+	IndexedWave[][6][] /= intensityMax					// normalize so max intensity is 1
+	goodness0 *= NG*NG/intensityMax
+	rmsGhat = sqrt(rmsGhat/NG)
+	IndexedWave[][8][ipat] = abs(IndexedWave[p][8][ipat])<5e-6 ? 0 : IndexedWave[p][8][ipat]	// precision limit
+	Variable executionTime = stopMSTimer(-2)*1e-6 - sec0
+
+
+
+#ifdef ZONE_QS_TESTING
+	printf "Ghat rms error (from %d of %d) Ghats = %.3g¡,  range=[%.4f, %.4f¡],  goodness0=%g\r",NG,NG0,rmsGhat,minError,maxError,goodness0
+	printf "Total time = %.3f s\r",executionTime
+#endif
+
+	SetDimLabel 1,0,Qx,IndexedWave			;	SetDimLabel 1,1,Qy,IndexedWave
+	SetDimLabel 1,2,Qz,IndexedWave			;	SetDimLabel 1,3,h,IndexedWave
+	SetDimLabel 1,4,k,IndexedWave			;	SetDimLabel 1,5,l,IndexedWave
+	SetDimLabel 1,6,Intensity,IndexedWave	;	SetDimLabel 1,7,keV,IndexedWave
+	SetDimLabel 1,8,angleErr,IndexedWave	;	SetDimLabel 1,9,pixelX,IndexedWave
+	SetDimLabel 1,10,pixelY,IndexedWave	;	SetDimLabel 1,11,detNum,IndexedWave
+
+	String str, wnote=ReplaceStringByKey("waveClass",noteMeasured,"IndexedPeakList","=")
+	wnote = ReplaceStringByKey("peakListWave",wnote,GetWavesDataFolder(FullPeakList,2),"=")
+
+	wnote = ReplaceStringByKey("structureDesc",wnote,xtal.desc,"=")
+	sprintf str,"{ %g, %g, %g, %g, %g, %g }",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
+	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
+	wnote = ReplaceStringByKey("lengthUnit",wnote,"nm","=")
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+
+	wnote = ReplaceNumberByKey("keVmaxCalc",wnote,keVmaxCalc,"=")
+	wnote = ReplaceNumberByKey("keVmaxTest",wnote,keVmaxTest,"=")
+	wnote = ReplaceStringByKey("hklPrefer",wnote,vec2str(hklPrefer),"=")
+	wnote = ReplaceNumberByKey("cone",wnote,cone,"=")
+	wnote = ReplaceNumberByKey("angleTolerance",wnote,angTol,"=")
+	wnote = ReplaceNumberByKey("Nindexed",wnote,NG,"=")
+	wnote = ReplaceNumberByKey("NiData",wnote,NG0,"=")
+	wnote = ReplaceNumberByKey("executionTime",wnote,executionTime,"=")
+	wnote = ReplaceNumberByKey("NpatternsFound",wnote,Npatterns,"=")
+	wnote = ReplaceNumberByKey("rms_error0",wnote,rmsGhat,"=")
+	wnote = ReplaceStringByKey("rotation_matrix0",wnote,encodeMatAsStr(rotMat,places=8,vsep=""),"=")
+	wnote = ReplaceStringByKey("recip_lattice0",wnote,encodeMatAsStr(recip,places=8,vsep=""),"=")
+	wnote = ReplaceNumberByKey("goodness0",wnote,goodness0,"=")
+	Wave euler = IndexingInternal#rotAxis2EulerAngles(rotAxis)	// returns the three Euler angles (radian)
+	euler *= 180/PI
+	wnote = ReplaceStringByKey("EulerAngles0",wnote,vec2str(euler,places=11),"=")
+	Note/K IndexedWave, wnote
+	return IndexedWave
+End
+
+
+Static Function ZoneInfoFromMeasuredSpots(zInfo,Ghats,Nmin,precision)
+	// returns zoneInfo that contains zone axis and the list of Ghats contributing to each zone
+	// zInfo is the structure containing all the information about the measured zones
+	// zInfo.zn[].axisHat[3] and zInfo.zn[].g.xyz[3] are in BEAMLINE (measured) coordinates
+	STRUCT allZonesStruct &zInfo	// holds info about the measured zones
+	Wave Ghats							// list of measured G^ (first 3 columns contain G^, the rest are ignored)
+	Variable Nmin						// minimum number of spots to constitute a valid measured zone
+	Variable precision				// angular tolerance used in accepting Q-vec as part of a zone (degree)
+
+	if (!WaveExists(Ghats))
+		return 1
+	endif
+	Variable NG=DimSize(Ghats,0)
+	if (NG<Nmin || Nmin<=2)
+		return 1
+	endif
+	if (strsearch(StringByKey("peakListWave",note(Ghats),"="),"FullPeakListTest",0)>0 && WaveInClass(Ghats,"QsMeasuredTest"))
+		Wave GhatsMeasuredHKL = $(GetWavesDataFolder(Ghats,1)+"GhatsMeasuredHKL")
+	endif
+	Make/N=(STRUCT_ZONES_MAX)/I/FREE nQsinZone=0			// holds number of spots contributing to a zone
+	Make/N=(STRUCT_ZONES_MAX,3)/D/FREE ZoneAxes=0		// direction of each zone axis
+	Make/N=(STRUCT_ZONES_MAX,3)/D/FREE AllAxes=NaN	// holds local info about the measured zones
+	Make/N=(STRUCT_ZONES_MAX,STRUCT_ZONESPOTS_MAX)/I/FREE zSpotIndex=-1
+	Make/N=(STRUCT_ZONESPOTS_MAX)/I/FREE oneSpotIndexList = -1	// holds list of G^'s used to form one zone
+	Variable minDot = cos(5.0*PI/180)	// G-vectors must be > 5 degrees apart to define a zone (not too parallel)
+	Variable tol = cos(precision*PI/180)	// tolerance on dot product
+	Variable sinMax = abs(sin(precision*PI/180))
+	Make/N=3/D/FREE g0, g1, axis, axisAvg
+	Variable Nz=0								// Nz is number of zones found, m is first spot to start searching
+	Variable nQs								// number of spots in this zone
+	Variable mag, dot
+	Variable i,j,ind, m=0					// m is first spot to start searching
+	for (m=0; m<(NG-1) && Nz<STRUCT_ZONES_MAX; m+=1)				// m is first spot that defines this possible zone
+		g0 = Ghats[m][p]
+		for (j=m+1; j<(NG-Nmin+1) && Nz<STRUCT_ZONES_MAX; j+=1)// find second vector to define the zone
+			g1 = Ghats[j][p]
+			if (abs(MatrixDot(g0,g1)) > minDot)
+				continue							// vectors too parallel for defining a zone axis, keep searching
+			endif
+
+			// have a possible pair, (g0,g1) from (m,j)
+			Cross g0,g1
+			Wave W_Cross=W_Cross
+			axis = W_Cross						// possible new zone axis
+			normalize(axis)
+			if (!isNewDirection(ZoneAxes,axis,tol,anti=1))
+				continue							// already have this axis, try again
+			endif
+			// the (g0,g1) pair defining axis[3], has not been found before, check it out
+
+			// have a new unique zone axis, find the spots belonging to this zone
+			axisAvg = 0
+			oneSpotIndexList = -1
+			for (i=0,nQs=0; i<NG; i+=1)	// find how many other spots belong to this axis
+				g1 = Ghats[i][p]
+				Cross g0,g1
+				mag = normalize(W_cross)
+				dot = MatrixDot(W_cross,axis)
+				if (mag<sinMax)				// only look at the cross product when g0 & g1 not too parallel
+					oneSpotIndexList[nQs] = i
+					axisAvg += axis
+					nQs += 1						// this spot real close to g0, increment nQs
+				elseif (abs(dot) > tol)
+					oneSpotIndexList[nQs] = i
+					axisAvg += dot<0 ? -W_cross : W_cross
+					nQs += 1						// a spot in zone, increment nQs
+				endif
+			endfor								// for i
+			if (nQs >= Nmin)					// found another zone with at least Nmin spots, save it
+				normalize(axisAvg)			// want a unit vector, so don't bother dividing by nQs
+				ZoneAxes[Nz][]=axisAvg[q]	// axis of this zone
+				nQsinZone[Nz] = nQs			// save number of spots contributing to this zone
+				zSpotIndex[Nz][0,nQs-1] = oneSpotIndexList[q]
+				Nz += 1
+			endif
+		endfor									// for j
+	endfor										// for m
+	KillWaves/Z W_Cross
+	if (Nz<1)
+		return 1									// failed to find anything
+	endif
+
+	Redimension/N=(Nz) nQsinZone
+	Duplicate/FREE nQsinZone, indexWave
+	MakeIndex/R nQsinZone, indexWave	// sort zones by decreasing number of nQsinZone
+
+	ZonesStructClear(zInfo)				// put sorted values into the zInfo structure
+	zInfo.Nz = Nz
+	zInfo.NsMin = WaveMin(nQsinZone)	// smallest number of sponts in a zone
+	zInfo.measured = 1
+	for (m=0;m<Nz;m+=1)
+		j = indexWave[m]
+		zInfo.zn[m].Ns = nQsinZone[j]
+		zInfo.zn[m].axisHat[0] = ZoneAxes[j][0]
+		zInfo.zn[m].axisHat[1] = ZoneAxes[j][1]
+		zInfo.zn[m].axisHat[2] = ZoneAxes[j][2]
+		for (i=0;i<nQsinZone[j];i+=1)
+			zInfo.zn[m].g[i].xyz[0] = Ghats[zSpotIndex[j][i]][0]
+			zInfo.zn[m].g[i].xyz[1] = Ghats[zSpotIndex[j][i]][1]
+			zInfo.zn[m].g[i].xyz[2] = Ghats[zSpotIndex[j][i]][2]
+//			if (WaveExists(GhatsMeasuredHKL))
+//				zInfo.zn[m].h[i].hkl[0] = GhatsMeasuredHKL[zSpotIndex[j][0]]
+//				zInfo.zn[m].h[i].hkl[1] = GhatsMeasuredHKL[zSpotIndex[j][1]]
+//				zInfo.zn[m].h[i].hkl[2] = GhatsMeasuredHKL[zSpotIndex[j][2]]
+//			endif
+		endfor
+	endfor
+	zInfo.precision = precision
+	zInfo.GhatSource = GetWavesDataFolder(Ghats,2)
+	return 0
+End
+
+
+Static Function MakePossibleZoneInfo(zInfo,xtal,hklC,qCin,cone,keVmax,NzMin,NzMax,minSpotsForZone,[maxLatticeLen,precision,printIt])
+	// returns zoneInfo that contains zone axis and the list of Ghats & hkls contributing to each zone
+	// zInfo is the structure containing all the information about the Possible zones
+	// zInfo.zn[].axisHat[3] and zInfo.zn[].g.xyz[3] are in BASE CRYSTAL coordinates
+	STRUCT allZonesStruct &zInfo	// holds info about the possible zones
+	STRUCT crystalStructure &xtal
+	Wave qCin						// direction of q-vector that diffracts to detector center (in Beam Line coords)
+	Wave hklC						// hkl that diffracts to detector center
+	Variable cone					// limits selection of zone axes and kf, only zones least 90-cone from qC (radian)
+	Variable keVmax				// max energy (keV)
+	Variable NzMin					// minimum number of zones to accept
+	Variable NzMax					// max number of possible zone axes
+	Variable minSpotsForZone	// minimum number of spots needed to make a zone acceptable
+	Variable maxLatticeLen		// max len of a (lattice x ijk) vector
+	Variable precision			// angular tolerance used in accepting Q-vec as part of a zone (radian)
+	Variable printIt
+	maxLatticeLen = ParamIsDefault(maxLatticeLen) || numtype(maxLatticeLen) || maxLatticeLen<=0 ? NaN : maxLatticeLen
+	precision = ParamIsDefault(precision) || numtype(precision) || precision<=0 ? 1e-6 : precision*PI/180
+	printIt = ParamIsDefault(printIt) || numtype(printIt) || strlen(GetRTStackInfo(2))==0 ? 0 : !(!printIt)
+	cone = limit(cone,0.001,PI-precision)		// cone in range [0.001, ¹-tol] (rad)
+	Variable coneZone = limit(cone,0.001,PI/2-precision)	// zone cone in range [0.001, ¹/2-tol] (rad)
+	NzMax = limit(NzMax,1,STRUCT_ZONES_MAX)
+	NzMin = min(NzMin,NzMax)
+	Wave lattice=directFrom_xtal(xtal)
+	maxLatticeLen = numtype(maxLatticeLen) ? ( MatrixDet(lattice)^(1/3) ) * 6 : maxLatticeLen
+	MatrixOP/FREE qC = Normalize( qCin )		// this needs to be normalized, but don't change passed qCin
+	MatrixOP/FREE qC0 = Normalize( 2*PI * (Inv(lattice))^t x hklC )	// similar to qC, but in UN-rotated coordinates
+
+	MatrixOP/FREE ijkMax = floor( rowRepeat(maxLatticeLen,3)/sqrt(sumCols(magSqr(lattice)))^t )
+	Variable imax=ijkMax[0], jmax=ijkMax[1], kmax=ijkMax[2], 	maxMax=WaveMax(ijkMax)
+	if (printIt)
+		printf "  find directions of possible zones using indicies in: i=[%d, %d], j=[%d, %d], k=[%d, %d]\r",-imax,imax, -jmax,jmax, -kmax,kmax
+	endif
+
+timeIncrement(1)
+	Variable maxDot = 1-cos(coneZone)			// maximum allowed value of dot(qC,zoneAxis)
+	Variable cosTol = cos(precision)			// convert angle to dot, this should be slightly less than 1.0
+	Make/N=(NzMax,3)/I/FREE TestAxesijks=0	// contains possible i,j,k for zone axes
+	Make/N=(NzMax,3)/D/FREE TestAxesHats=NaN// contains corresponding possible unit vectors, x,y,z
+
+	Wave ijks = IndexingInternal#hklOrderedList(maxMax)
+	Variable Nijks=DimSize(ijks,0)
+#ifdef ZONE_QS_TESTING
+printf "  -- MakePossibleZoneInfo(), starting with a list of %d ijk's to examine, %s\r",Nijks,timeIncrement(0)
+#endif
+	Make/N=3/I/FREE ijk
+	Variable m, Nz
+	for (m=0,Nz=0; m<Nijks && Nz<NzMax; m+=1)
+		ijk = ijks[m][p]
+		MatrixOP/FREE/O vec = lattice x ijk
+		if (normalize(vec)>maxLatticeLen)			// length is too long, skip
+			continue
+		elseif (abs(MatrixDot(vec,qC0))>maxDot)	// zone axis too close to qC
+			continue
+		elseif (!isNewDirection(TestAxesHats,vec,cosTol,anti=1))	// skip already existing directions too
+			continue
+		endif
+		TestAxesHats[Nz][] = vec[q]					// save this vec as a new possible zone axis
+		TestAxesijks[Nz][] = ijk[q]					//  and save the ijk that goes with it
+		Nz += 1
+	endfor
+	Redimension/N=(Nz,-1) TestAxesHats, TestAxesijks
+#ifdef ZONE_QS_TESTING
+printf "  -- MakePossibleZoneInfo(), found %d possible zone axes, %s\r",Nz,timeIncrement(0)
+#endif
+	if (Nz<NzMin)											// did not find enough zones
+		return 1
+	endif
+#ifdef ZONE_QS_TESTING
+Duplicate/O TestAxesijks, TestAxesijksView
+Duplicate/O TestAxesHats, TestAxesHatsView
+TestAxesHatsView = abs(TestAxesHatsView)<1e-12 ? 0 : TestAxesHatsView
+#endif
+
+	// next fill the structure info for each zone axis
+	Variable NsMin, Ns
+	zInfo.measured = 0									// 0=calculated (not measured)
+	zInfo.precision = precision
+	zInfo.GhatSource = ""
+	zInfo.desc = ""
+
+	Make/N=(xtal.N)/WAVE/FREE atomWaves=$("root:Packages:Lattices:atom"+num2istr(p))	// cannot reach these waves from within a separate thread
+	Make/N=(Nz)/FREE/WAVE AllPossibleZonesW
+	MultiThread AllPossibleZonesW[] = PossibleQsInOneZone(p,TestAxesijks,lattice,xtal,qC,hklC,cone,keVmax,atomWaves=atomWaves,printIt=printIt)
+#ifdef ZONE_QS_TESTING
+print "  -- MakePossibleZoneInfo(), just after calls to PossibleQsInOneZone(...), ",timeIncrement(0)
+#endif
+
+	Variable i, j, NtotalQs=0
+	for (i=0,m=0,NsMin=Inf; i<Nz; i+=1)			// for each zone
+		ijk = TestAxesijks[i][p]
+		vec = TestAxesHats[i][p]
+		Wave possibleZonesW = AllPossibleZonesW[i]	// contains result from PossibleQsInOneZone()
+		// columns of possibleZonesW are {Qx,Qy,Qz, H,K,L, angle}
+		Ns = DimSize(possibleZonesW,0)
+		if (Ns<minSpotsForZone)
+			continue
+		endif
+
+		zInfo.zn[m].Ns = Ns
+		NsMin = min(NsMin,Ns)
+		zInfo.zn[m].axisHat[0] = vec[0]
+		zInfo.zn[m].axisHat[1] = vec[1]
+		zInfo.zn[m].axisHat[2] = vec[2]
+		zInfo.zn[m].axisijk[0] = ijk[0]				// have ijk, because these are possible (not measured)
+		zInfo.zn[m].axisijk[1] = ijk[1]
+		zInfo.zn[m].axisijk[2] = ijk[2]
+		for (j=0;j<Ns;j+=1)
+			zInfo.zn[m].g[j].xyz[0] = possibleZonesW[j][0]	// copy direction and hkl of each spot
+			zInfo.zn[m].g[j].xyz[1] = possibleZonesW[j][1]
+			zInfo.zn[m].g[j].xyz[2] = possibleZonesW[j][2]
+			zInfo.zn[m].h[j].hkl[0] = possibleZonesW[j][3]	// have hkl, because these are possible (not measured)
+			zInfo.zn[m].h[j].hkl[1] = possibleZonesW[j][4]
+			zInfo.zn[m].h[j].hkl[2] = possibleZonesW[j][5]
+			NtotalQs += 1
+		endfor
+		m += 1
+	endfor
+	zInfo.Nz = m
+	zInfo.NsMin = NsMin
+#ifdef ZONE_QS_TESTING
+printf "  -- MakePossibleZoneInfo(), at end found %d zone axes, containing %d Q's (require %d spots for a zone),  %s\r",m,NtotalQs,minSpotsForZone,timeIncrement(0)
+#endif
+	return 0
+End
+
+
+ThreadSafe Static Function/WAVE PossibleQsInOneZone(pnt,ijks,lattice,xtal,qhat0in,hklC,cone,keVmax,[atomWaves,kin,printIt])
+	// returns hkl & G^ for all hkl found on this zone, zone axis is lattice x ijk
+	Variable pnt					// selects one ijk from ijks (done this way for MultiThreading)
+	Wave ijks						// i,j,k for this zone,   zone axis = lattice x ijk
+	Wave lattice					// direct lattice
+	STRUCT crystalStructure &xtal
+	Wave qhat0in					// direction of q-vector that diffracts to center of detector
+	Wave hklC						// hkl that diffracts to near detector center (the preferred hkl)
+	Variable cone					// max cone angle from kf (radian)
+	Variable keVmax				// max energy (keV)
+	Wave/WAVE atomWaves			// contains wave refs to root:Packages:Lattices:atomN
+	Wave kin							// optional incident wave direction (usually defaults to 001)
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? 0 : !(!printIt)
+
+	Make/N=3/I/FREE ijk = ijks[pnt][p]
+	if (printIt)
+		printf "PossibleQsInOneZone(ijk=[%s], direct, q0^=%s, hklC=(%s), %g¡, %gkeV",vec2str(ijk,sep=",",bare=1),vec2str(qhat0in,sep=",",zeroThresh=1e-7),vec2str(hklC,sep=",",bare=1),cone*180/PI,keVmax
+		if (!ParamIsDefault(kin))
+			printf ", kin=",vec2str(kin,sep=",")
+		endif
+		printf ")\r"
+	endif
+
+	Variable tol = 0.01									// angular tolerance (radian) (= ~0.5¡)
+	Make/N=3/D/FREE qhat0=qhat0in[p]				// q-vector that diffracts to center of detector
+	normalize(qhat0)
+
+	Make/N=3/D/FREE ki={0,0,1}						// use this for the incident beam direction
+	if (!ParamIsDefault(kin))							// one was passed, use it
+		ki = kin[p]
+		normalize(ki)
+	endif
+	MatrixOP/FREE axisBase = Normalize( lattice x ijk )	// zone axis
+	MatrixOP/FREE recipBase = 2*PI * (Inv(lattice))^t	// reciprocal lattice
+
+	MatrixOP/FREE qC = Normalize(recipBase x hklC)
+	Cross qC, qhat0									// find a rotation that puts (recipBase x hkl0) parallel to qhat0
+	Wave W_Cross=W_Cross
+	Variable sine=normalize(W_Cross), cosine=MatrixDot(qC,qhat0)
+	Variable angle = atan2(sine,cosine)*180/PI
+	Make/N=(3,3)/D/FREE rot0
+	rotationMatAboutAxis(W_Cross,angle,rot0)
+	MatrixOP/FREE rot0Inv = Inv(rot0)				// I will want this later
+	if (printIt)
+		printf "  rotating %g¡ about the %s\r",angle,vec2str(W_Cross,zeroThresh=1e-7)
+	endif
+	KillWaves/Z W_Cross
+	MatrixOP/FREE recip = rot0 x recipBase
+	MatrixOP/FREE axis = rot0 x axisBase
+	//		so now:  qhat0 || (rot0 x recip0 x hkl0)
+
+	Variable dot = MatrixDot(ki,qhat0)				// points to detector center
+	Make/N=3/D/FREE kf0 = (ki - 2*dot*qhat0)	//		kf^ = ki^ - 2*(ki^ . q^)*q^
+
+	Variable maxTheta = limit(acos(MatrixDot(kf0,ki))+cone,tol,PI-tol)/2
+	Variable maxQLen = 4*PI*sin(maxTheta) * keVmax/hc	// max len of a q-vector = recip0 x hkl)
+	MatrixOP/FREE hklMax = floor( rowRepeat(maxQLen,3)/sqrt(sumCols(magSqr(recip)))^t )
+
+	Variable maxMax=WaveMax(hklMax)
+	if (printIt)
+		printf "  find Possible Q-directions using index range: h=[%+d, %+d], k=[%+d, %+d], l=[%+d, %+d], max(theta)=%g¡\r",-hklMax[0],hklMax[0], -hklMax[1],hklMax[1], -hklMax[2],hklMax[2],maxTheta*180/PI
+	endif
+
+	//		knowing lattice=L and ijk, want hkl s.t.  [ L x ijk ] ¥ [ Inv(L)^t x hkl ] = 0
+	//			or  axis ¥ [ recip x hkl ] = 0
+	//			for a given k & l, this can be solved for h (thus removing one loop from below)
+	//
+	//			since:  recip x hkl = recip x [ (h00)+(0kl) ] = recip x (h00) + recip x (0kl) ]
+	//			axis ¥ [ recip x h00 ] = - axis ¥ [ recip x 0kl]
+	//			h (axis ¥ a*) = - axis ¥ [ recip x 0kl]
+	//			h  = -( axis ¥ [ recip x 0kl] ) / (axis ¥ a*)
+
+	Variable minDot=cos(cone)							// minimum allowed value of dot(kf0,kf)
+	Variable cosTol=cos(tol)
+	Variable coneMax=-Inf, angleMax=-Inf
+
+	// find which of the two {h,k,l} to iterate over, choose the two with smallest
+	// of |axis¥a*|, |axis¥b*|, |axis¥c*|
+	MatrixOP/FREE absDots = abs(axis^t x recip)^t	// absDots[] contains {|axis¥a*|, |axis¥b*|, |axis¥c*|}, used to make index
+	Make/N=3/I/FREE index
+	MakeIndex absDots, index
+	if (printIt)
+		print "  {|axis¥a*|, |axis¥b*|, |axis¥c*|} =",vec2str(absDots,zeroThresh=1e-12)
+		printf "  index = %s  solve for hkl[index[2]]=hkl[%d],  loop over hkl[%d] & hkl[%d] (the first two)\r",vec2str(index),index[2],index[0],index[1]
+	endif
+
+	Variable Nmax=STRUCT_ZONESPOTS_MAX
+	Make/N=3/D/FREE kf, q0=0, star=recip[p][index[2]]		// star is one of a*, b*, or c*
+	Make/N=3/I/FREE hkl
+	Variable axis_dot_star = MatrixDot(axis,star)
+	axis_dot_star = abs(axis_dot_star)<1e-7 ? 0 : axis_dot_star
+	//	print "axis_dot_star = ",axis_dot_star
+	Make/N=3/I/FREE hklLo, hklHi
+	hklLo[index[0]] = -hklMax[index[0]]	;		hklHi[index[0]] = hklMax[index[0]]
+	hklLo[index[1]] = -hklMax[index[1]]	;		hklHi[index[1]] = hklMax[index[1]]
+	hklLo[index[2]] = 0							;		hklHi[index[2]] = 0
+	Wave hkls = IndexingInternal#hklOrderedList(maxMax, hklLo=hklLo, hklHi=hklHi)
+
+	Make/N=(Nmax,7)/D/FREE out=NaN
+	Make/N=(Nmax,3)/D/FREE TestQs=NaN
+	Variable Nhkls=DimSize(hkls,0)
+	Variable m, Ns, Qmag, keV
+
+	for (m=0,Ns=0; m<Nhkls && Ns<Nmax; m+=1)
+		hkl[index[0]] = hkls[m][index[0]]			// hkls[m][]
+		hkl[index[1]] = hkls[m][index[1]]
+		// solve for hkl2 = hkl[index[2]]
+		// do not loop over hkl2, rather solve for hkl2 using:  axis ¥ [ recip x hkl ] = 0
+		//	hkl2  = -( axis ¥ [ recip x 0kl] ) / (axis ¥ star)   from above
+		hkl[index[2]] = 0
+		MatrixOP/FREE/O axis_dot_q0kl = axis . (recip x hkl)
+		hkl[index[2]] = round( -axis_dot_q0kl[0] / axis_dot_star )
+		MatrixOP/FREE/O qhat = recip x hkl
+		Qmag = normalize(qhat)
+		dot = MatrixDot(ki,qhat)			// this will be negative for legit reflections
+		kf = (ki - 2*dot*qhat)				// kf^ = ki^ - 2*(ki^ . q^)*q^
+		keV = -Qmag*hc / (4*PI*dot)
+
+		if (abs(MatrixDot(axis,qhat)) > 1e-5)	// axis ¥ [ recip x hkl ] = 0, not on zone
+			continue
+		elseif (Qmag>maxQLen)				// length is too long, skip
+			continue
+		elseif (MatrixDot(kf,kf0)<minDot)
+			continue								// kf is too far from kf0
+		elseif (cone<PI/2 && dot >= 0)	// for cone angles < 90¡, also check for valid reflection
+			continue								// (ki .dot. q^) must be negative!, Bragg angle must be < 90¡
+		elseif (cone<PI/3 && keV>keVmax)// for cone angles < 60¡, also check for valid energy
+			continue
+		elseif (!isNewDirection(TestQs,qhat,cosTol))
+			continue								// skip already existing directions too
+		elseif (!allowedHKL(hkl[0],hkl[1],hkl[2],xtal,atomWaves=atomWaves))
+			continue
+		endif
+		TestQs[Ns][] = qhat[q]				// a new valid & unique q-direction
+
+		MatrixOP/FREE/O qhatBase = Normalize( recipBase x hkl )
+		out[Ns][0,2] = qhatBase[q]		// q^ in crystal base coordinates
+		out[Ns][3,5] = hkl[q-3]
+		if (Ns==0)
+			q0 = qhatBase[p]					// q of first reflection in crystal base coordinates
+			out[Ns][6] = 0						// angle from first, measured around the zone axis (radian)
+		else
+			out[Ns][6] = acos(MatrixDot(q0,qhatBase))		// angle about the axis, measured from first point
+		endif
+		coneMax = max(coneMax,acos(limit(MatrixDot(kf,kf0),-1,1)))
+		angleMax = max(angleMax,acos(limit(MatrixDot(q0,qhatBase),-1,1)))
+		Ns += 1
+	endfor					// end of loop m
+	Redimension/N=(Ns,-1) out
+	SetDimLabel 1,0,Qx,out	;	SetDimLabel 1,1,Qy,out	;	SetDimLabel 1,2,Qz,out
+	SetDimLabel 1,3,H,out	;	SetDimLabel 1,4,K,out	;	SetDimLabel 1,5,L,out
+	SetDimLabel 1,6,angle,out
+	if (printIt)
+		printf "  for zone axis=%s, found %d spots,   max cone angle = %.2f¡ out of [0,%g¡],  angular range around zone is %.2f¡\r",vec2str(axis,zeroThresh=1e-7,sep=", "),Ns,coneMax*180/PI,cone*180/PI,angleMax*180/PI
+	endif
+	return out
+End
+//
+//Function test_PossibleQsInOneZone(flag)
+//	Variable flag
+//
+//	STRUCT crystalStructure xtal
+//	FillCrystalStructDefault(xtal)
+//	Wave direct=directFrom_xtal(xtal)
+//
+//	Make/N=3/D/FREE qC = {0,1,-1}
+//	Make/N=3/D/FREE hklC={0,0,1}						// hkl that diffracts to detector center
+//	Variable keVmax = 17
+//	Variable cone = 30.*PI/180
+//
+//	Make/N=(2,3)/D/FREE ijks
+//	Make/N=3/I/FREE ijk
+//	ijks[0][0]= {1,0}
+//	ijks[0][1]= {0,1}
+//	ijks[0][2]= {0,0}
+//
+//	timeIncrement(1)
+//	Variable ip, ip2
+//	for (ip=0;ip<10;ip+=1)
+//		ip2 = 2^ip
+//		if (flag & ip2)
+//			Wave out = PossibleQsInOneZone(ip,ijks,direct,xtal,qC,hklC,cone,keVmax,printIt=1)
+//			printf "    test took %s\r",timeIncrement(0)
+//			print " "
+//		endif
+//	endfor
+//	printf "End of All Tests,  %s\r",timeIncrement(0)
+//
+//	if (WaveExists(out))
+//		Duplicate/O out, outView
+//		if (DimSize(out,0)>0)
+//			outView = abs(outView)<1e-12 ? 0 : outView
+//		endif
+//		DisplayTableOfWave(outView)
+//	endif
+//End
+
+
+ThreadSafe Static Function isNewDirection(existingAxes,axis,cosTol,[anti])	// only used by ZoneInfoFromMeasuredSpots()
+	//	returns True if axis does not point toward an existing directions in existingAxes
+	// if anti==1, then axis is also not anti-parallel to existingAxes
+	Wave existingAxes			// array(N,3) list of existing axes
+	Wave axis
+	Variable cosTol			// tolerance on dot:  cosTol = cos(Æangle),  cos(0.1¡) = 0.999998476913288
+	Variable anti				// is true then parallel and anti-parallel return TRUE (default is FALSE)
+	if (norm(axis)==0)
+		return 0					// skip the (000)
+	endif
+	anti = ParamIsDefault(anti) ? 0 : anti
+
+	if (anti)
+		MatrixOP/FREE dots = abs(existingAxes x axis)
+	else
+		MatrixOP/FREE dots = existingAxes x axis
+	endif
+	Variable dotMax = WaveMax(dots)
+	return (dotMax < cosTol || numtype(dotMax))	// if existingAxes filled with NaN then anything works
+End
+
+
+Static Function/WAVE RotsBetweenZones(pQsIn,mQsIN, matchMin, tol)
+	// returns ALL the rotations that take at least matchMin pQs --> mQs
+	Wave pQsIn				// Q^s on a possible zone
+	Wave mQsIN				// Q^s on a measured zone
+	Variable matchMin		// number of required Q^s to match
+	Variable tol			// anglular tolerance for Q^ matching (radian)
+
+	Variable nP=DimSize(pQsIn,0), nM=DimSize(mQsIN,0)
+	if (numtype(nP+nM+matchMin+tol) || nP<matchMin || nM<matchMin || matchMin<=0 || tol<=0)
+		return $""
+	endif
+
+	// find the min acceptable separation between two q's to calculate a rotation
+	Make/N=(nM,3)/D/FREE mQs=mQsIN[p][q]
+	Make/N=3/D/FREE qvec
+	Variable i, minDot=Inf, tooCloseDot=(1-0.01*PI/180)
+	for (i=0;i<nM;i+=1)
+		qvec = mQs[0][p]
+		MatrixOP/FREE dots = mQs x qvec
+		dots = abs(dots) > tooCloseDot ? NaN : dots	// 0.999825 = 1-0.01*PI/180
+		minDot = min(minDot,WaveMin(dots))
+	endfor
+	minDot = cos(acos(limit(minDot,-1,1))/10)	// two q's must be searated by at least minDot to calc rot
+
+	Variable Nalloc = 100
+	Make/N=(Nalloc,3)/D/FREE AllAxes=NaN			// {rx,ry,rz},   rotation vectors
+	Make/N=3/D/FREE qM0, qM1, qP0, qP1, rotAxis
+	Variable dotM, angleM, angleP
+	Variable m0, m1, p0,p1, Nall
+	for (m0=0,Nall=0; m0<(nM-1); m0+=1)			// m0 is first measured direction
+		qM0 = mQsIN[m0][p]
+		for (m1=1; m1<nM; m1+=1)					// m1 is second measured direction
+			qM1 = mQsIN[m1][p]
+			dotM = MatrixDot(qM0,qM1)
+			if (dotM>minDot)							// qM0 ^ qM1 is too small
+				continue
+			endif
+			angleM = acos(limit(dotM,-1,1))
+
+			for (p0=0; p0<(nP-1); p0+=1)			// p0 is first possible direction
+				qP0 = pQsIN[p0][p]
+				for (p1=1;p1<nP;p1+=1)				// m1 is second possible direction
+					qP1 = pQsIN[p1][p]
+					angleP = acos(limit(MatrixDot(qP0,qP1),-1,1))
+					if ( abs(angleP-angleM) > tol)
+						continue
+					endif
+
+					// calc the rotation and accumulate the rotAxis
+					Wave rotAxis = IndexingInternal#rotFromPairs(qM0,qM1,qP0,qP1)
+					if (Nall>=Nalloc)
+						Nalloc += 300
+						Redimension/N=(Nalloc,-1) AllAxes
+					endif
+					allAxes[Nall][] = rotAxis[q]
+					Nall += 1
+				endfor
+			endfor
+		endfor
+	endfor
+	Redimension/N=(Nall,-1) AllAxes
+	if (Nall<=1)
+		return $""
+	endif
+	Make/N=(Nall,4)/D/FREE axes=NaN				// {rx,ry,rz, matches},   rotation vectors & number of matches
+	Make/N=3/D/FREE rotSum
+	Variable m, match, Naxes, tol2=(tol*tol)
+	for (i=0,Naxes=0; i<Nall; i+=1)				// group by matching axis
+		rotAxis = AllAxes[i][p]
+		AllAxes[i][] = NaN
+		MatrixOP/FREE dist2 = sumRows( magSqr(AllAxes - RowRepeat(rotAxis,Nall)) )
+		rotSum = rotAxis
+		for (m=i+1,match=1; m<Nall; m+=1)
+			if (dist2[m]<tol2)
+				match += 1
+				rotSum += AllAxes[m][p]
+				AllAxes[m][] = NaN
+			endif
+		endfor
+		if (match >= matchMin)						// this is a good one, save it
+			axes[Naxes][0,2] = rotSum[q]/match		// save the average axis
+			axes[Naxes][3] = match						//    and number of matches
+			Naxes += 1
+		endif
+	endfor
+	if (Naxes<1)
+		return $""
+	endif
+	Redimension/N=(Naxes,-1) axes
+	return axes
+End
+
+
+
+//       ==========================================================================       //
+//       ========================= Start of Zone Structure ========================       //
+
+Static Constant STRUCT_ZONESPOTS_MAX=50	// max number of Ghats in a single zone
+//Static Constant STRUCT_ZONES_MAX=100		// max number of zones
+Static Constant STRUCT_ZONES_MAX=50		// max number of zones
+//
+Static Structure allZonesStruct					// structure definition of a measured or calculated zone
+	int16 measured								// 1=measured, 0=calculated
+	int16 Nz										// actual number of zones defined here
+	int16 NsMin									// smallest number of spots in any one zone
+	Struct oneZoneStruct zn[STRUCT_ZONES_MAX]	// q vectors in this zone
+	double precision							// precision used when filling the structure
+	char GhatSource[200]					// name of wave used to create the zone info
+	char desc[200]								// an optional description
+EndStructure
+//
+Static Structure oneZoneStruct			// defines ONE zone
+	int32 Ns										// number of spots in this zone
+	double axisHat[3]							// unit vector pointing in zone axis direction
+	int32 axisijk[3]							// ijk for the axis (if it is known)
+	Struct double3vecStruct g[STRUCT_ZONESPOTS_MAX]	// g^s for this zone point
+	Struct int3vecStruct h[STRUCT_ZONESPOTS_MAX]		// hkls for this zone point
+	// the {hkl} are only filled when measured==0, or for test data, for measured spots, hkl is not known.
+EndStructure
+//
+Static Structure double3vecStruct		// structure definition of a single 3-vector (double precision float)
+	double xyz[3]
+EndStructure
+//
+Static Structure int3vecStruct			// structure definition of a single 3-vector (4byte int)
+	int32 hkl[3]
+EndStructure
+//
+Static Function ZonesStructClear(zones)
+	STRUCT allZonesStruct &zones
+	zones.measured	 = 0
+	zones.Nz	 = 0
+	zones.NsMin = 0
+	Variable m, i
+	for (m=0;m<STRUCT_ZONES_MAX;m+=1)
+		zones.zn[m].axisHat[0] = NaN
+		zones.zn[m].axisHat[1] = NaN
+		zones.zn[m].axisHat[2] = NaN
+		zones.zn[m].axisijk[0] = 0
+		zones.zn[m].axisijk[1] = 0
+		zones.zn[m].axisijk[2] = 0
+		zones.zn[m].Ns = 0
+		for (i=0;i<STRUCT_ZONESPOTS_MAX;i+=1)
+			zones.zn[m].g[i].xyz[0] = NaN
+			zones.zn[m].g[i].xyz[1] = NaN
+			zones.zn[m].g[i].xyz[2] = NaN
+			zones.zn[m].h[i].hkl[0] = 0
+			zones.zn[m].h[i].hkl[1] = 0
+			zones.zn[m].h[i].hkl[2] = 0
+		endfor
+	endfor
+	zones.precision = NaN
+	zones.GhatSource = ""
+	zones.desc = ""
+	return 0
+End
+//
+Static Function ZonesStructCopy(dest,source)
+	STRUCT allZonesStruct &dest
+	STRUCT allZonesStruct &source
+	ZonesStructClear(dest)			// start fresh
+	dest.measured = source.measured
+	dest.Nz = source.Nz
+	dest.NsMin = source.NsMin
+	Variable m, i
+	for (m=0;m<STRUCT_ZONES_MAX;m+=1)
+		dest.zn[m].axisHat[0] = source.zn[m].axisHat[0]
+		dest.zn[m].axisHat[1] = source.zn[m].axisHat[1]
+		dest.zn[m].axisHat[2] = source.zn[m].axisHat[2]
+		dest.zn[m].axisijk[0] = source.zn[m].axisijk[0]
+		dest.zn[m].axisijk[1] = source.zn[m].axisijk[1]
+		dest.zn[m].axisijk[2] = source.zn[m].axisijk[2]
+		dest.zn[m].Ns = source.zn[m].Ns
+		for (i=0;i<STRUCT_ZONESPOTS_MAX;i+=1)
+			dest.zn[m].g[i].xyz[0] = source.zn[m].g[i].xyz[0]
+			dest.zn[m].g[i].xyz[1] = source.zn[m].g[i].xyz[1]
+			dest.zn[m].g[i].xyz[2] = source.zn[m].g[i].xyz[2]
+			dest.zn[m].h[i].hkl[0] = source.zn[m].h[i].hkl[0]
+			dest.zn[m].h[i].hkl[1] = source.zn[m].h[i].hkl[1]
+			dest.zn[m].h[i].hkl[2] = source.zn[m].h[i].hkl[2]
+		endfor
+	endfor
+	dest.precision = source.precision
+	dest.GhatSource = source.GhatSource
+	dest.desc = source.desc
+	return 0
+End
+//
+Static Function/T ZonesStruct2Str(zi,[maxPrint])
+	STRUCT allZonesStruct &zi
+	Variable maxPrint
+	maxPrint = ParamIsDefault(maxPrint) || numtype(maxPrint) || maxPrint<=1 ? 10 : maxPrint
+
+	Variable addTerm=0
+	String str, out=""
+	if (strlen(zi.desc))
+		out += zi.desc+"\r"
+	endif
+	sprintf str, "%d %s Zones, (smallest zone has %d spots)\r", zi.Nz, SelectString(zi.measured,"Calculated", "Measured"), zi.NsMin
+	out += str
+	addTerm = 0
+	if (numtype(zi.precision)==0 && zi.precision>0)
+		sprintf str, "  computed with precision = %g¡   ",zi.precision
+		out += str
+		addTerm = 1
+	endif
+	if (strlen(zi.GhatSource))
+		out += "  Ghat source = \""+zi.GhatSource+"\""
+		addTerm = 1
+	endif
+	out += SelectString(addTerm,"","\r")
+	out += "\r"
+	Make/N=3/D/FREE vec
+	Variable m, i
+	for (m=0;m<zi.Nz;m+=1)
+		out += "zone "+num2istr(m)+" "+OneZoneStruct2Str(zi.zn[m])
+	endfor
+	return out
+End
+//
+Static Function/T OneZoneStruct2Str(zn,[maxPrint])
+	STRUCT oneZoneStruct &zn
+	Variable maxPrint
+	maxPrint = ParamIsDefault(maxPrint) || numtype(maxPrint) || maxPrint<=1 ? 10 : maxPrint
+
+	String str, out=""
+	if (zn.Ns < 1)
+		sprintf str, "contains 0 spots\r"
+		out += str
+		return out
+	endif
+
+	Make/N=3/D/FREE vec
+	vec = zn.axisHat[p]
+	sprintf str, "contains %d spots, with an axis = %s",zn.Ns, vec2str(vec,zeroThresh=1e-5,sep=", ")
+	out += str
+	vec = zn.axisijk[p]
+	if (norm(vec)>1e-5)
+		sprintf str, " = direct x [%s]",vec2str(vec,bare=1,sep=",")
+		out += str
+	endif
+	out += "\r"
+
+	str = "  G^s = "
+	Variable i
+	for (i=0;i<min(maxPrint, zn.Ns);i+=1)
+		vec = zn.g[i].xyz[p]
+		str += SelectString(i,"",", ")
+		str += vec2str(vec,zeroThresh=1e-5,maxPrint=maxPrint,sep=",")
+	endfor
+	out += str + SelectString(zn.Ns > maxPrint, "", "...") + "\r"
+
+	vec = zn.h[0].hkl[p]
+	if (norm(vec))
+		str = "  hkls = "
+		for (i=0;i<min(maxPrint, zn.Ns);i+=1)
+			vec = zn.h[i].hkl[p]
+			str += SelectString(i,"",", ")
+			str += vec2str(vec,zeroThresh=1e-5,maxPrint=maxPrint,sep=",")
+		endfor
+		out += str + SelectString(zn.Ns > maxPrint, "", "...") + "\r"
+	endif
+	return out
+End
+//
+//	Function testStruct()
+//		STRUCT allZonesStruct zi
+//		ZonesStructClear(zi)
+//		zi.measured = 1
+//		zi.Nz = 2
+//		zi.NsMin = 2
+//		zi.precision =  0.1
+//		zi.GhatSource = "fullWavePath:name"
+//		zi.desc = "test print"
+//
+//		zi.zn[0].Ns	= 3
+//		zi.zn[0].axisHat[0] = 0.1	;	zi.zn[0].axisHat[1] = 0.2 ; zi.zn[0].axisHat[2] = 0.3
+//		zi.zn[0].g[0].xyz[0] = 0.11	;	zi.zn[0].g[0].xyz[1] = 0.12	;	zi.zn[0].g[0].xyz[2] = 0.13
+//		zi.zn[0].g[1].xyz[0] = 0.21	;	zi.zn[0].g[1].xyz[1] = 0.22	;	zi.zn[0].g[1].xyz[2] = 0.23
+//		zi.zn[0].g[2].xyz[0] = 0.31	;	zi.zn[0].g[2].xyz[1] = 0.32	;	zi.zn[0].g[2].xyz[2] = 0.33
+//
+//		zi.zn[1].Ns	= 2
+//		zi.zn[1].axisHat[0] = -0.1	;	zi.zn[1].axisHat[1] = -0.2	;	zi.zn[1].axisHat[2] = -0.3
+//		zi.zn[1].g[0].xyz[0] = 0.51	;	zi.zn[1].g[0].xyz[1] = 0.52	;	zi.zn[1].g[0].xyz[2] = 0.53
+//		zi.zn[1].h[0].hkl[0] = 1		;	zi.zn[1].h[0].hkl[1] = 2		;	zi.zn[1].h[0].hkl[2] = 3
+//		zi.zn[1].g[1].xyz[0] = 0.61	;	zi.zn[1].g[1].xyz[1] = 0.62	;	zi.zn[1].g[1].xyz[2] = 0.63
+//		zi.zn[1].h[1].hkl[0] = -1		;	zi.zn[1].h[1].hkl[1] = -2		;	zi.zn[1].h[1].hkl[2] = -3
+//		print ZonesStruct2Str(zi)
+//	End
+
+//       ========================== End of Zone Structure =========================       //
+//       ==========================================================================       //
+
+//  ============================ End of Zones & Qs Indexing ============================  //
+//  ====================================================================================  //
+
+
+
 
 //  ====================================================================================  //
 //  =============================== Start of Qs Indexing ===============================  //
@@ -1385,18 +2504,18 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 End
 
 
-Static Function isNewDirection(Ghats,gvec,cosTol)
-	// returns True if gvec is not parallel to any of the vectors in Ghat
-	Wave Ghats
-	Wave gvec
-	Variable cosTol						// tolerance on dot:  cosTol = cos(dAnlge*PI/180),  cos(0.1¡)=0.999998476913288
-	if (norm(gvec)==0)
-		return 0								// skip the (000)
-	endif
-	MatrixOP/FREE dots = Ghats x gvec
-	Variable dotMax = WaveMax(dots)
-	return (dotMax < cosTol || numtype(dotMax))	// if Ghats filled with NaN then anything works
-End
+//Static Function isNewDirection(Ghats,gvec,cosTol)
+//	// returns True if gvec is not parallel to any of the vectors in Ghat
+//	Wave Ghats
+//	Wave gvec
+//	Variable cosTol						// tolerance on dot:  cosTol = cos(dAnlge*PI/180),  cos(0.1¡)=0.999998476913288
+//	if (norm(gvec)==0)
+//		return 0								// skip the (000)
+//	endif
+//	MatrixOP/FREE dots = Ghats x gvec
+//	Variable dotMax = WaveMax(dots)
+//	return (dotMax < cosTol || numtype(dotMax))	// if Ghats filled with NaN then anything works
+//End
 
 
 Static Function FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)	//  returns topSum number of hits at this rot
@@ -2034,6 +3153,32 @@ Static Function/WAVE MatrixRy(angle)	// rotation matrix about the y axis thru an
 	Ry[2][0] = sine;
 	Ry[0][2] = -sine;
 	return Ry
+End
+
+
+Function/T timeIncrement(reStartFresh)
+	Variable reStartFresh
+
+	Variable now=stopMSTimer(-2)
+	if (exists("root:Packages:timeIncrement:tick0")!=2 || reStartFresh)
+		NewDataFolder/O root:Packages
+		NewDataFolder/O root:Packages:timeIncrement
+		Variable/G root:Packages:timeIncrement:tick0=now, root:Packages:timeIncrement:tick1=now
+		return ""
+	endif
+
+	NVAR tick0=root:Packages:timeIncrement:tick0, tick1=root:Packages:timeIncrement:tick1
+	String out=""
+	if (tick1 > tick0)
+		sprintf out, "elapsed time = %.3f s  (Æ = %.3f s)", (now-tick0)*1e-6, (now-tick1)*1e-6
+		if ((now-tick1)*1e-6 > 0.2)
+			out += "\t\t********* This is a long step. *********"
+		endif
+	else
+		sprintf out, "elapsed time = %.3f s", (now-tick0)*1e-6
+	endif
+	tick1 = now
+	return out
 End
 
 //  ================================== End of Utility ==================================  //
