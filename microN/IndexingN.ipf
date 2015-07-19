@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.73
+#pragma version = 4.74
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -1918,10 +1918,19 @@ Function/T pickIndexingFunction(path)
 	elseif (strlen(indexFuncList))
 		popUpList += indexFuncList
 	endif
+	if (strlen(WinList("Indexing_Internal*",";","WIN:128"))==0 && strlen(indexFuncList)==0)
+		popUpList += "[#include internal Igor functions];"	// Indexing_Internal.ipf not usually included, option to include it
+	endif
 	Prompt exe,"name of indexing program",popup, popupList
 	DoPrompt/HELP="Choose a different program for indexing.\r  Euler is fast\r  IndexAll is slow\r  default is usually best." "indexing program",exe
 	if (V_flag)
 		return ""
+	endif
+	if (StringMatch(exe,"[#include internal Igor functions]"))	// now include Indexing_Internal.ipf
+		Execute/P "INSERTINCLUDE  \"Indexing_Internal\", version>=0.10"
+		Execute/P "COMPILEPROCEDURES "
+		DoAlert 0, "To select an internal Igor indexing routine, re-run\r  pickIndexingFunction(\"\")"
+		return ""															// re-running pickIndexingFunction(""), allows chance for COMPILEPROCEDURES to run
 	endif
 	exe = SelectString(StringMatch(exe,"[default binary]") || strlen(exe)<2, exe, "")	// change invalids to ""
 
