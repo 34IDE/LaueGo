@@ -5824,8 +5824,10 @@ Static Function/T setSymLine(SpaceGroup)
 	endif
 	Make/N=230/O/T symLines_temp__
 	Wave/T symLines = symLines_temp__
+	// Triclinic [1,2]  lines 0-1
 	symLines[0]  = "x,y,z"
 	symLines[1]  = "x,y,z;-x,-y,-z"
+	// Monoclinic [3,15]  lines 2-14
 	symLines[2]  = "x,y,z;-x,y,-z"
 	symLines[3]  = "x,y,z;-x,y+1/2,-z"
 	symLines[4]  = "x,y,z;-x,y,-z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z"
@@ -5839,6 +5841,7 @@ Static Function/T setSymLine(SpaceGroup)
 	symLines[12]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2"
 	symLines[13]  = "x,y,z;-x,y+1/2,-z+1/2;-x,-y,-z;x,-y+1/2,z+1/2"
 	symLines[14]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,-y+1/2,z+1/2"
+	// Orthorhombic [16,74]  lines 15-73
 	symLines[15]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z"
 	symLines[16]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2"
 	symLines[17]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
@@ -5921,6 +5924,7 @@ Static Function/T setSymLine(SpaceGroup)
 	symLines[72] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;"
 	symLines[72] += "x,-y+1/2,z+1/2"
 	symLines[73]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;"
+	// Tetragonal [75,142]  lines 74-141
 	symLines[73] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
 	symLines[74]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z"
 	symLines[75]  = "x,y,z;-y,x,z+1/4;-x,-y,z+1/2;y,-x,z+3/4"
@@ -6046,6 +6050,7 @@ Static Function/T setSymLine(SpaceGroup)
 	symLines[141] += "-x+1/2,-y,-z+3/4;-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;"
 	symLines[141] += "x,-y+1/2,-z+3/4;-x,y+1/2,-z+3/4;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;x+1/2,y,-z+3/4;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;"
 	symLines[141] += "-y,-x+1/2,z+3/4;y,x+1/2,z+3/4"
+	// Trigonal [143,167]  lines 142-166
 	symLines[142]  = "x,y,z;-y,x-y,z;-x+y,-x,z"
 	symLines[143]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z+2/3"
 	symLines[144]  = "x,y,z;-y,x-y,z+2/3;-x+y,-x,z+1/3"
@@ -6092,6 +6097,7 @@ Static Function/T setSymLine(SpaceGroup)
 	symLines[166] += "-x+y+2/3,y+1/3,z+5/6;x+2/3,x-y+1/3,z+5/6;-y+2/3,-x+1/3,z+5/6;x+1/3,y+2/3,z+2/3;-y+1/3,x-y+2/3,z+2/3;"
 	symLines[166] += "-x+y+1/3,-x+2/3,z+2/3;x-y+1/3,-y+2/3,-z+1/6;-x+1/3,-x+y+2/3,-z+1/6;y+1/3,x+2/3,-z+1/6;-x+1/3,-y+2/3,-z+2/3;"
 	symLines[166] += "y+1/3,-x+y+2/3,-z+2/3;x-y+1/3,x+2/3,-z+2/3;-x+y+1/3,y+2/3,z+1/6;x+1/3,x-y+2/3,z+1/6;-y+1/3,-x+2/3,z+1/6"
+	// Hexagonal [168,194]  lines 167-193
 	symLines[167]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z"
 	symLines[168]  = "x,y,z;x-y,x,z+1/6;-y,x-y,z+1/3;-x,-y,z+1/2;-x+y,-x,z+2/3;y,-x+y,z+5/6"
 	symLines[169]  = "x,y,z;x-y,x,z+5/6;-y,x-y,z+2/3;-x,-y,z+1/2;-x+y,-x,z+1/3;y,-x+y,z+1/6"
@@ -6134,6 +6140,7 @@ Static Function/T setSymLine(SpaceGroup)
 	symLines[193]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z+1/2;"
 	symLines[193] += "-x+y,y,-z+1/2;x,x-y,-z+1/2;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2;-x+y,y,z;"
 	symLines[193] += "x,x-y,z;-y,-x,z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	// Cubic [195,230]  lines 194-229
 	symLines[194]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z"
 	symLines[195]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;"
 	symLines[195] += "z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;"
@@ -6754,8 +6761,10 @@ Static Function/WAVE GetWyckoffSymStrings(SG)
 	endif
 
 	Make/N=(230)/T/FREE WyckoffSyms
+	// Triclinic [1,2]  lines 0-1
 	WyckoffSyms[0] = "a:x,y,z:1;"
 	WyckoffSyms[1] = "a:0,0,0:1;b:0,0,1/2:1;c:0,1/2,0:1;d:1/2,0,0:1;e:1/2,1/2,0:1;f:1/2,0,1/2:1;g:0,1/2,1/2:1;h:1/2,1/2,1/2:1;i:x,y,z:2;"
+	// Monoclinic [3,15]  lines 2-14
 	WyckoffSyms[2] = "a:0,y,0:1;b:0,y,1/2:1;c:1/2,y,0:1;d:1/2,y,1/2:1;e:x,y,z:2;"
 	WyckoffSyms[3] = "a:x,y,z:2;"
 	WyckoffSyms[4] = "a:0,y,0:2;b:0,y,1/2:2;c:x,y,z:4;"
@@ -6769,6 +6778,7 @@ Static Function/WAVE GetWyckoffSymStrings(SG)
 	WyckoffSyms[12] = "a:0,0,0:2;b:1/2,1/2,0:2;c:0,1/2,0:2;d:1/2,0,0:2;e:0,y,1/4:2;f:1/2,y,1/4:2;g:x,y,z:4;"
 	WyckoffSyms[13] = "a:0,0,0:2;b:1/2,0,0:2;c:0,0,1/2:2;d:1/2,0,1/2:2;e:x,y,z:4;"
 	WyckoffSyms[14] = "a:0,0,0:4;b:0,1/2,0:4;c:1/4,1/4,0:4;d:1/4,1/4,1/2:4;e:0,y,1/4:4;f:x,y,z:8;"
+	// Orthorhombic [16,74]  lines 15-73
 	WyckoffSyms[15] = "a:0,0,0:1;b:1/2,0,0:1;c:0,1/2,0:1;d:0,0,1/2:1;e:1/2,1/2,0:1;f:1/2,0,1/2:1;g:0,1/2,1/2:1;h:1/2,1/2,1/2:1;i:x,0,0:2;j:x,0,1/2:2;k:x,1/2,0:2;l:x,1/2,1/2:2;m:0,y,0:2;n:0,y,1/2:2;o:1/2,y,0:2;p:1/2,y,1/2:2;q:0,0,z:2;r:1/2,0,z:2;s:0,1/2,z:2;t:1/2,1/2,z:2;u:x,y,z:4;"
 	WyckoffSyms[16] = "a:x,0,0:2;b:x,1/2,0:2;c:0,y,1/4:2;d:1/2,y,1/4:2;e:x,y,z:4;"
 	WyckoffSyms[17] = "a:0,0,z:2;b:0,1/2,z:2;c:x,y,z:4;"
@@ -6828,6 +6838,7 @@ Static Function/WAVE GetWyckoffSymStrings(SG)
 	WyckoffSyms[71] = "a:0,0,1/4:4;b:1/2,0,1/4:4;c:0,0,0:4;d:1/2,0,0:4;e:1/4,1/4,1/4:8;f:x,0,1/4:8;g:0,y,1/4:8;h:0,0,z:8;i:0,1/2,z:8;j:x,y,0:8;k:x,y,z:16;"
 	WyckoffSyms[72] = "a:0,0,0:8;b:1/4,1/4,1/4:8;c:x,0,1/4:8;d:1/4,y,0:8;e:0,1/4,z:8;f:x,y,z:16;"
 	WyckoffSyms[73] = "a:0,0,0:4;b:0,0,1/2:4;c:1/4,1/4,1/4:4;d:1/4,1/4,3/4:4;e:0,1/4,z:4;f:x,0,0:8;g:1/4,y,1/4:8;h:0,y,z:8;i:x,1/4,z:8;j:x,y,z:16;"
+	// Tetragonal [75,142]  lines 74-141
 	WyckoffSyms[74] = "a:0,0,z:1;b:1/2,1/2,z:1;c:0,1/2,z:2;d:x,y,z:4;"
 	WyckoffSyms[75] = "a:x,y,z:4;"
 	WyckoffSyms[76] = "a:0,0,z:2;b:1/2,1/2,z:2;c:0,1/2,z:2;d:x,y,z:4;"
@@ -6896,6 +6907,7 @@ Static Function/WAVE GetWyckoffSymStrings(SG)
 	WyckoffSyms[139] = "a:0,0,1/4:4;b:0,1/2,1/4:4;c:0,0,0:4;d:0,1/2,0:4;e:1/4,1/4,1/4:8;f:0,0,z:8;g:0,1/2,z:8;h:x,x+1/2,0:8;i:x,x,1/4:16;j:x,0,1/4:16;k:x,y,0:16;l:x,x+1/2,z:16;m:x,y,z:32;"
 	WyckoffSyms[140] = "a:0,3/4,1/8:4;b:0,1/4,3/8:4;c:0,0,0:8;d:0,0,1/2:8;e:0,1/4,z:8;f:x,0,0:16;g:x,x+1/4,7/8:16;h:0,y,z:16;i:x,y,z:32;"
 	WyckoffSyms[141] = "a:0,1/4,3/8:8;b:0,1/4,1/8:8;c:0,0,0:16;d:0,1/4,z:16;e:x,0,1/4:16;f:x,x+1/4,1/8:16;g:x,y,z:32;"
+	// Trigonal [143,167]  lines 142-166
 	WyckoffSyms[142] = "a:0,0,z:1;b:1/3,2/3,z:1;c:2/3,1/3,z:1;d:x,y,z:3;"
 	WyckoffSyms[143] = "a:x,y,z:3;"
 	WyckoffSyms[144] = "a:x,y,z:3;"
@@ -6921,6 +6933,7 @@ Static Function/WAVE GetWyckoffSymStrings(SG)
 	WyckoffSyms[164] = "a:0,0,1/4:2;b:0,0,0:2;c:0,0,z:4;d:1/3,2/3,z:4;e:1/2,0,0:6;f:x,0,1/4:6;g:x,y,z:12;"
 	WyckoffSyms[165] = "a:0,0,0:3;b:0,0,1/2:3;c:0,0,z:6;d:1/2,0,1/2:9;e:1/2,0,0:9;f:x,0,0:18;g:x,0,1/2:18;h:x,-x,z:18;i:x,y,z:36;"
 	WyckoffSyms[166] = "a:0,0,1/4:6;b:0,0,0:6;c:0,0,z:12;d:1/2,0,0:18;e:x,0,1/4:18;f:x,y,z:36;"
+	// Hexagonal [168,194]  lines 167-193
 	WyckoffSyms[167] = "a:0,0,z:1;b:1/3,2/3,z:2;c:1/2,0,z:3;d:x,y,z:6;"
 	WyckoffSyms[168] = "a:x,y,z:6;"
 	WyckoffSyms[169] = "a:x,y,z:6;"
@@ -6948,6 +6961,7 @@ Static Function/WAVE GetWyckoffSymStrings(SG)
 	WyckoffSyms[191] = "a:0,0,1/4:2;b:0,0,0:2;c:1/3,2/3,1/4:4;d:1/3,2/3,0:4;e:0,0,z:4;f:1/2,0,1/4:6;g:1/2,0,0:6;h:1/3,2/3,z:8;i:1/2,0,z:12;j:x,0,1/4:12;k:x,2x,1/4:12;l:x,y,0:12;m:x,y,z:24;"
 	WyckoffSyms[192] = "a:0,0,1/4:2;b:0,0,0:2;c:1/3,2/3,1/4:4;d:1/3,2/3,0:4;e:0,0,z:4;f:1/2,0,0:6;g:x,0,1/4:6;h:1/3,2/3,z:8;i:x,2x,0:12;j:x,y,1/4:12;k:x,0,z:12;l:x,y,z:24;"
 	WyckoffSyms[193] = "a:0,0,0:2;b:0,0,1/4:2;c:1/3,2/3,1/4:2;d:1/3,2/3,3/4:2;e:0,0,z:4;f:1/3,2/3,z:4;g:1/2,0,0:6;h:x,2x,1/4:6;i:x,0,0:12;j:x,y,1/4:12;k:x,2x,z:12;l:x,y,z:24;"
+	// Cubic [195,230]  lines 194-229
 	WyckoffSyms[194] = "a:0,0,0:1;b:1/2,1/2,1/2:1;c:0,1/2,1/2:3;d:1/2,0,0:3;e:x,x,x:4;f:x,0,0:6;g:x,0,1/2:6;h:x,1/2,0:6;i:x,1/2,1/2:6;j:x,y,z:12;"
 	WyckoffSyms[195] = "a:0,0,0:4;b:1/2,1/2,1/2:4;c:1/4,1/4,1/4:4;d:3/4,3/4,3/4:4;e:x,x,x:16;f:x,0,0:24;g:x,1/4,1/4:24;h:x,y,z:48;"
 	WyckoffSyms[196] = "a:0,0,0:2;b:0,1/2,1/2:6;c:x,x,x:8;d:x,0,0:12;e:x,1/2,0:12;f:x,y,z:24;"
