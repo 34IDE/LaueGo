@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.74
+#pragma version = 4.75
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -2072,7 +2072,9 @@ Function/WAVE runIndexingEulerCommand(args)
 	else
 		exe = "Euler"
 	endif
-	exe = StringFromList(1,GetIndexingFuncOrExec())
+	if (strlen(StringFromList(1,GetIndexingFuncOrExec())))
+		exe = StringFromList(1,GetIndexingFuncOrExec())
+	endif
 	GetFileFolderInfo/Q/Z EulerPath+exe
 	EulerPath += SelectString(V_Flag==0 && V_isFile,"Euler",exe)	// use just plane Euler if Euler_ppc or Euler_i386 does not exist
 	if (stringmatch(igorInfo(2),"Macintosh"))			// on Mac, convert EulerPath from HFS to Posix
