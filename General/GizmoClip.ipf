@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GClipPlanes
 #include "GizmoUtility", version>=0.16
@@ -21,7 +21,7 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 End
 
 
-#if (IgorVersion()<7)
+#if (IgorVersion()>=7)
 Menu "Gizmo"
 	"Clip Plane", MakeGizmoClipPlanePanel()
 End
