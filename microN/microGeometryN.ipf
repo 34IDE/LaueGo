@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.82
+#pragma version = 1.83
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -880,6 +880,70 @@ ThreadSafe Function/C q2pixel(d,qvec,[depth])	// returns pixel position as a com
 	return cmplx(px,py)
 End
 
+
+
+
+// Vectorized version of pixel2q
+// convert px,py positions on detector into Q vectors, assumes ki={0,0,1}
+ThreadSafe Function/WAVE pixel2qVEC(d,pxpy,[depth,DeltaPixelCorrect])	// returns the qhat in beam line coords
+	STRUCT detectorGeometry &d
+	Wave pxpy								// list of pixels to use (must be in raw un-binned pixels), perhaps an ROI, first dimension is number of pixels, second is x,y
+	Variable depth							// sample depth measured along the beam (optional, 0 is default)
+	Wave DeltaPixelCorrect				// contains optional pixel corrections dimensions are [N][2]
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+
+	if (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,1)==2)
+		Wave kf = pixel2XYZVEC(d,pxpy, DeltaPixelCorrect=DeltaPixelCorrect)
+	else
+		Wave kf = pixel2XYZVEC(d,pxpy)	// kf is in direction of pixel in beam line coords
+	endif
+
+	Variable N=DimSize(pxpy,0)
+	Make/N=3/D/FREE ki={0,0,1}				//	ki = geo.ki[p],  incident beam direction (normalized)
+	if (depth==0)
+		MatrixOP/FREE/O kf = NormalizeRows(kf)
+	else
+		Make/N=3/D/FREE depthVec = depth*ki[p]
+		MatrixOP/FREE/O kf = NormalizeRows(kf - rowRepeat(depthVec,N))	// kf(depth) = d*ki + kf(depth=0)
+	endif
+
+	MatrixOP/FREE qhat = NormalizeRows(kf - rowRepeat(ki,N))									// qhat bisects kf and -ki
+	WaveClear ki,kf, depthVec
+	return qhat										// q-vectors in beam line coords
+End
+//
+// Vectorized version of pixel2xyz
+ThreadSafe Function/WAVE pixel2XYZVEC(d,pxpy,[DeltaPixelCorrect])	// convert pixel position to the beam line coordinate system
+	STRUCT detectorGeometry, &d
+	Wave pxpy							// list of pixels to use (must be in raw un-binned pixels), perhaps an ROI, first dimension is number of pixels, second is x,y
+	Wave DeltaPixelCorrect			// contains optional pixel corrections dimensions are [N][2]
+
+	Variable N=DimSize(pxpy,0), Nx=d.Nx, Ny=d.Ny
+	Variable ixc=(Nx-1)/2,  iyc=(Ny-1)/2		// center of detector (pixels)
+
+	Make/N=3/D/FREE Pw, dxyz, ixyzc={ixc,iyc,0}
+	dxyz = {d.sizeX/Nx, d.sizeY/Ny, 0}			// pixel size
+	Pw = d.P[p]
+
+	Make/N=(3,3)/D/FREE rho
+	rho[0][0] = d.rho00 ;	rho[0][1] = d.rho01 ;	rho[0][2] = d.rho02	// xyz = rho x [ (x' y' z') + P ]
+	rho[1][0] = d.rho10 ;	rho[1][1] = d.rho11 ;	rho[1][2] = d.rho12	// rho is pre-calculated from vector d.R
+	rho[2][0] = d.rho20 ;	rho[2][1] = d.rho21 ;	rho[2][2] = d.rho22
+
+	Make/N=(N,3)/FREE xyz							// array of 3-vector to receive the result, position in beam line coords (mm)
+	if (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,1)==2)
+		xyz[][0,1] = pxpy[p][q] + DeltaPixelCorrect[p][q]	// start as pixel position on detector + correction for distortion
+	else
+		xyz[][0,1] = pxpy[p][q]					// start as pixel position on detector
+	endif
+
+	//	xyz = (xyz - ixyzc[q]) * dxyz[q] + Pw[q]		// (x' y' z'), position on detector for all pixels at A[]=0
+	//	MatrixOP/FREE/O xyz = (xyz - rowRepeat(ixyzc,N)) * rowRepeat(dxyz,N) +rowRepeat(Pw,N)		// (x' y' z'), position on detector for all pixels at A[]=0
+	//	MatrixOP/FREE/O xyz = (rho x xyz^t)^t			// rotate detector by calib, and rotate by tth, to the final detector position
+	MatrixOP/FREE/O xyz = (rho x ((xyz - rowRepeat(ixyzc,N)) * rowRepeat(dxyz,N) +rowRepeat(Pw,N))^t)^t		// (x' y' z'), position on detector for all pixels at A[]=0
+	WaveClear rho, Pw, dxyz, ixyzc
+	return xyz
+End
 
 
 // convert px,py positions on detector into Q vector, assumes ki={0,0,1}

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.22
+#pragma version = 2.23
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -7222,6 +7222,8 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,p
 	return wnote
 End
 //
+
+#ifdef OLD_WAY
 // Make an array the same size as an image, but filled with Q^ to each pixel's
 // for a 2K x 2K image, this takes 1 minute.
 Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
@@ -7317,7 +7319,107 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	endif
 	return Qvecs1keV
 End
+#else
+// Make an array the same size as an image, but filled with Q^ to each pixel's
+// for a 2K x 2K image, this takes 1 minute.
+Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
+	Wave image
+	STRUCT microGeometry &geo						// the input geo
+	Wave recip											// reciprocal lattice, used to find range of Q's
+	Variable Elo, Ehi									// Energy Range (keV)
+	Variable depth										// usually determined from image file
+	Wave mask											// optional mask to limit the pixels that get processed (use pixel when mask true)
+	Variable printIt
+	depth = ParamIsDefault(depth) ? NaN : depth
+	printIt = ParamIsDefault(printIt) ? NaN : printIt
+	printIt = numtype(printIt) ? ItemsInList(GetRTStackInfo(0))<3 : !(!printIt)
 
+	if (!WaveExists(image))
+		return $""
+	endif
+	Variable Ni=DimSize(image,0), Nj=DimSize(image,1), N=Ni*Nj
+
+	Variable seconds = stopMSTimer(-2)/1e6			// start timer for initial processing
+	String wnote = note(image)
+	Variable startx, starty, groupx, groupy, dNum
+	startx = NumberByKey("startx", wnote,"=")
+	groupx = NumberByKey("groupx", wnote,"=")
+	starty = NumberByKey("starty", wnote,"=")
+	groupy = NumberByKey("groupy", wnote,"=")
+	if (numtype(depth))
+		depth = NumberByKey("depth", wnote,"=")		// depth for this image
+	endif
+	depth = numtype(depth) ? 0 : depth					// default depth to zero
+	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
+	if (!(dNum>=0 && dNum<=2))
+		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
+		return $""
+	elseif (numtype(startx+starty+groupx+groupy))
+		DoAlert 0,"could not get ROI from wave note of image '"+NameOfWave(image)+"'"
+		return $""
+	endif
+
+	Make/N=(3,Ni,Nj)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
+
+	// for each pixel in image, compute sin(theta) and save it in Qvecs1keV[][]
+	MatrixOP/FREE recipInv = Inv(recip)
+	MatrixOP/FREE diff = sum(magsqr(recipInv - recip^t))
+	Variable useMat = diff[0]>1e-9						// only use recip when it is not an identity matrix
+	Make/N=3/D/FREE qhat, qij, hkl
+
+	Make/N=(N,2)/I/FREE pxpy								// all the pixels in the image, these will be un-binned & zero based
+	pxpy[][0] = mod(p,Ni)*groupx + (groupx-1)/2 + startx	// set the X-pixel values [0,Ni-1]
+	pxpy[][1] = floor(p/Ni)*groupy + (groupy-1)/2 + starty	// set the Y-pixel values [0,Nj-1]
+	Wave qvecs = pixel2qVEC(geo.d[dNum],pxpy,depth=depth)	// qvecs in beam line coords, at this point qvecs are normalized
+
+	Make/N=3/D/FREE ki={0,0,1}
+	Variable factor = 4*PI/hc
+	MatrixOP/FREE qLens = -(qvecs x ki) * factor		// length of each q-vector, qvecs^ x ki == -sin(theta)
+	qvecs *= qLens[p]												// re-scale qhats to real q-vectors
+	Qvecs1keV = qvecs[q+r*Ni][p]								// Qvectors at 1keV, just multiply by E to get Q
+	WaveClear qLens
+
+	// find range of Qx,Qy,Qz
+	if (useMat)														// if recip is identity, this saves 1 minute for large images
+		MatrixOP/FREE/O hkl = (recipInv x (qvecs^t))^t	// this is really hkl/E
+	else
+		Duplicate/FREE qvecs, hkl
+	endif
+	WaveClear qvecs
+
+	if (WaveExists(mask))
+		Make/N=(N)/B/U/FREE maskLocal
+		maskLocal = mask[mod(p,Ni)][floor(p/Ni)] ? 1 : NaN		// set maskLocal to passed values, NaN values are not used
+		hkl = maskLocal[p] ? hkl[p][q] : NaN				// remove values that are masked off (set to NaN)
+		WaveClear maskLocal
+	endif
+
+	MatrixOp/FREE QxLo0 = minVal(ReplaceNaNs(col(hkl,0),Inf))	// minVal() & maxVal don't support NaN's
+	MatrixOp/FREE QyLo0 = minVal(ReplaceNaNs(col(hkl,1),Inf))
+	MatrixOp/FREE QzLo0 = minVal(ReplaceNaNs(col(hkl,2),Inf))
+	MatrixOp/FREE QxHi0 = maxVal(ReplaceNaNs(col(hkl,0),Inf))
+	MatrixOp/FREE QyHi0 = maxVal(ReplaceNaNs(col(hkl,1),Inf))
+	MatrixOp/FREE QzHi0 = maxVal(ReplaceNaNs(col(hkl,2),Inf))
+	Variable QxLo=QxLo0[0], QyLo=QyLo0[0], QzLo=QzLo0[0], QxHi=QxHi0[0], QyHi=QyHi0[0], QzHi=QzHi0[0]
+
+	QxLo *= QxLo>0 ? Elo : Ehi	;	QxHi *= QxHi>0 ? Ehi : Elo
+	QyLo *= QyLo>0 ? Elo : Ehi	;	QyHi *= QyHi>0 ? Ehi : Elo
+	QzLo *= QzLo>0 ? Elo : Ehi	;	QzHi *= QzHi>0 ? Ehi : Elo
+	wnote = ReplaceNumberByKey("QxLo",wnote,QxLo,"=")
+	wnote = ReplaceNumberByKey("QyLo",wnote,QyLo,"=")
+	wnote = ReplaceNumberByKey("QzLo",wnote,QzLo,"=")
+	wnote = ReplaceNumberByKey("QxHi",wnote,QxHi,"=")
+	wnote = ReplaceNumberByKey("QyHi",wnote,QyHi,"=")
+	wnote = ReplaceNumberByKey("QzHi",wnote,QzHi,"=")
+	Note/K Qvecs1keV, wnote
+
+	seconds = stopMSTimer(-2)/1e6 - seconds
+	if (printIt && seconds>5)
+		printf "filling array of Q's from  '%s'  at depth = %g,  took %s\r",NameOfWave(image),depth,Secs2Time(seconds,5,1)
+	endif
+	return Qvecs1keV
+End
+#endif
 
 // Conversions for Undulator A
 Function gap2keV_A(mm)		// convert undulator gap to energy, This is the default, if you have one named gap2keV(mm) it will be used instead
