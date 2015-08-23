@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.14
+#pragma version = 1.15
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -1537,9 +1537,9 @@ Function insideBoundingVolumeStruct(v,vec)		// returns TRUE if vec is inside v
 	STRUCT boundingVolume &v
 	Wave vec
 	Variable inside = v.xlo <= vec[0] && vec[0] <= v.xhi
-	inside += v.ylo <= vec[1] && vec[1] <= v.yhi
-	inside += v.zlo <= vec[2] && vec[2] <= v.zhi
-	return !(!inside)
+	inside = inside && (v.ylo <= vec[1] && vec[1] <= v.yhi)
+	inside = inside && (v.zlo <= vec[2] && vec[2] <= v.zhi)
+	return inside
 End
 //
 //ThreadSafe Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
