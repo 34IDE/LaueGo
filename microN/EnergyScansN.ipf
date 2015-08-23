@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.23
+#pragma version = 2.24
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6138,10 +6138,8 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? NaN : depth
 	Variable Qask = ParamIsDefault(Qbox)		// if Qbox not passed, then ask
-	doConvex = ParamIsDefault(doConvex) ? 0 : doConvex
-	doConvex = numtype(doConvex) ? 0 : !(!doConvex)
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	doConvex = ParamIsDefault(doConvex) || numtype(doConvex) ? 0 : !(!doConvex)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	if (!(recipSource==0 || recipSource==1))
 		recipSource = NumVarOrDefault("root:Packages:micro:Escan:recipSource",NaN)
 		Prompt recipSource, "source of reciprocal lattice", popup, "Beamline Coords;Indexing Result"
@@ -6364,6 +6362,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable N = ItemsInRange(range)							// number of images to be processed
 	Make/N=(N)/FREE/D keV_FillQvsPositions=NaN				// hold the Energies
 	Make/N=(N)/FREE/U/I m_Fill_QHistAt1Depth=0
+	Make/N=(N)/FREE/S currents=NaN, normalization=NaN	// save for possible normalizations
 	// for all the N files (go over range), store the energies, X position, H position, and indicies
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N)+" image headers",resetClock=1)
 	Variable m, j
@@ -6388,7 +6387,17 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		endif
 		keV_FillQvsPositions[i] = keV							// list of energies
 		m_Fill_QHistAt1Depth[i] = m								// file id number for each image
+		currents[i] = NumberByKey("ringCurrent",wnote,"=")
 	endfor
+	Variable useNormalization=0
+	WaveStats/Q/M=1 currents
+	if (V_numNans==0 && V_numINFs==0 && V_min>1)			// valid currents, so create normalization[]
+		V_avg = roundSignificant(V_avg,3)
+		normalization = V_avg / currents						// scale to value of average current
+		useNormalization = 1
+		printf "Normalizing by the beam current, scaled to %g mA\r",V_avg
+	endif
+	WaveClear currents
 	Variable seconds = stopMSTimer(-2)/1e6 - timer0
 	if (printIt && seconds>0.2)
 		printf "first pass to examine headers took %s\r",Secs2Time(seconds,5,3)
@@ -6434,14 +6443,16 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable Elo=keV_FillQvsPositions[ikeVlo], Ehi=keV_FillQvsPositions[ikeVhi]
-	Variable px,py, dQ												// the current pixel to analyze (unbinned full chip pixels)
+	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
 	py = round((starty+endy)/2)									// approximate full chip pixel position in center or the image
 	px = round((startx+endx)/2)
-	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+groupx,py+groupy,$"")))*Elo/hc
+	Variable dQpixel = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+groupx,py+groupy,$"")))*Elo/hc
+	Variable dQenergy = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * abs(dkeV)/hc
+	Variable dQ = max(dQpixel, dQenergy)						// choose larger of energy scan or pixel size
 
 	if (printIt)
-		Variable deV = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
-		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],deV
+		Variable eVrange = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
+		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],eVrange
 		printf "    %s Scan\r",SelectString(mono,"Undulator","Monochromator")
 	endif
 
@@ -6490,12 +6501,17 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		Note/K DistortionMap, "use=1"
 	endif																	// distortion map now ready
 
-	ProgressPanelUpdate(progressWin,0,status="making Qvecs array",resetClock=1)
-	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=mask,depth=depth,printIt=printIt)	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
+	ProgressPanelUpdate(progressWin,0,status="pre-computing Qvecs array, may take 90 sec.",resetClock=1)
+	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
+	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=mask,depth=depth,printIt=printIt)
 	if (mono)
 		KillWaves/Z image												// for mono scans, this image not needed
 	else
 		Wave i0 = image												// save for use as "previous" image in undulator scans
+		if (useNormalization)										// using normalized images (by beam current)
+			Redimension/S i0											// change i0 to float
+			i0 *= normalization[0]
+		endif
 	endif
 
 	// make 3D volume to hold  the 3D q-histogram
@@ -6582,13 +6598,17 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		sprintf name, fileRootFmt, m
 
 		Wave image = $(LoadGenericImageFile(name))			// load image
-		if (mono && WaveExists(image))
+		if (mono && WaveExists(image))							// monochromator scan (not undulator gap)
 			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z image
 		elseif (StringMatch(GetWavesDataFolder(i0,2),GetWavesDataFolder(image,2)))
-			continue
+			continue														// skip first image in undulator gap scan
 		elseif (WaveExists(image))
-			Variable lowThresh=15, maxPixel=65535
+			Variable lowThresh=15, maxPixel=65535				// regular undulator gap scan, use difference between this image and previous image
+			if (useNormalization)									// valid normalization, so normalize
+				Redimension/S image
+				image *= normalization[ipnt]
+			endif
 			MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
 			keV = gap2keV_Func(NumberByKey("undulatorGap",note(image),"="))
 			Note/K dimage, ReplaceNumberByKey("keV",note(image),keV,"=")
@@ -6655,505 +6675,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 	return Qspace3d
 End
-//
-////	Process many images all at one position, same depth and same x-y (actually X-H) positions.
-////	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
-////	No scanning in x, and all at one depth (probably from a thin sample).
-//Function Fill1_3DQspace(recipSource,pathName,namePart,range,[depth,mask,dark,doConvex,printIt])	// does not assume depth in image
-//	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
-//	String pathName			// either name of path to images, or the full expliiciit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
-//	String namePart			// the first part of file name, something like  "EW5_"
-//	String range				// range of file indicies to use
-//	Variable depth
-//	Wave mask					// optional mask to limit the pixels that get processed (use pixel when mask true)
-//	Wave dark					// an optional background wave
-//	Variable doConvex			// if True, make the convex hull
-//	Variable printIt
-//	depth = ParamIsDefault(depth) ? 0 : depth
-//	depth = numtype(depth) ? 0 : depth
-//	doConvex = ParamIsDefault(doConvex) ? 0 : doConvex
-//	doConvex = numtype(doConvex) ? 0 : !(!doConvex)
-//	printIt = ParamIsDefault(printIt) ? NaN : printIt
-//	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
-//	if (!(recipSource==0 || recipSource==1))
-//		recipSource = NumVarOrDefault("root:Packages:micro:Escan:recipSource",NaN)
-//		Prompt recipSource, "source of reciprocal lattice", popup, "Beamline Coords;Indexing Result"
-//		recipSource += 1
-//		DoPrompt "Reciprocal Lattice",recipSource
-//		if (V_flag)
-//			return 1
-//		endif
-//		recipSource -= 1
-//		printIt = 1
-//	endif
-//	if (!(recipSource==0 || recipSource==1))
-//		return 1
-//	endif
-//	String recipLattice=""
-//	if (recipSource==0)
-//		Make/N=(3,3)/D/FREE recip=(p==q)
-//		String indexList=WaveListClass("IndexedPeakList","*","")
-//		if (ItemsInList(indexList)==1)
-//			Wave FullPeakIndexed=$StringFromList(0,indexList)
-//		elseif (ItemsInList(indexList)>1)
-//			String indexName
-//			Prompt indexName,"Source for reciprocal lattice",popup,indexList
-//			DoPrompt "Reciprocal Lattice",indexName
-//			if (V_flag)
-//				return 1
-//			endif
-//			Wave FullPeakIndexed=$indexName
-//		endif
-//		if (WaveExists(FullPeakIndexed))			// if FullPeakIndexed exists, get the indexed reciprocal lattice from it
-//			String indexNote=note(FullPeakIndexed), recipList="", item
-//			Variable i
-//			for (i=0;;i+=1)								// find all reciprocal latticies in wave note
-//				item = StringByKey("recip_lattice"+num2istr(i),indexNote,"=")
-//				if (strlen(item)<1)
-//					break
-//				endif
-//				recipList += "recip_lattice"+num2istr(i)+";"
-//			endfor
-//			if (ItemsInList(recipList)==1)			// get reciprocal lattice from the wave note
-//				item = StringFromList(0,recipList)
-//			elseif (ItemsInList(recipList)>1)
-//				Prompt item,"reciprocal lattice",popup,recipList
-//				DoPrompt "Reciprocal Lattice",item
-//				if (V_flag)
-//					return 1
-//				endif
-//			else
-//				item = ""
-//			endif
-//			if (strlen(item)>0)							// save reciprocal lattice for latter inclusion into another wave note
-//				recipLattice = item +"="+ StringByKey(item,indexNote,"=")
-//			endif
-//		endif
-//	elseif (recipSource==1)
-//		DoAlert 0,"Not yet implemented use of measured reciprocal lattice"
-//		return 1
-//	else
-//		DoAlert 0,"recipSource must be only 0 or 1"
-//		return 1
-//	endif
-//	NewDataFolder/O root:Packages
-//	NewDataFolder/O root:Packages:micro
-//	NewDataFolder/O root:Packages:micro:Escan
-//	Variable/G root:Packages:micro:Escan:recipSource=recipSource
-//
-//	String str
-//	PathInfo $pathName
-//	if (!V_flag || strlen(namePart)<1)				// path does not exist or no namePart, ask user
-//		String pathPart
-//		str = requestFileRoot(pathName,1)
-//		pathPart = StringFromList(0,str)
-//		namePart = StringFromList(1,str)
-//		if (strlen(pathPart)<1 || strlen(namePart)<1)
-//			return 1											// invalid inputs
-//		endif
-//		if (!stringmatch(pathPart,S_path))			// path was changed
-//			if (stringmatch(pathName,"imagePath"))
-//				NewPath/O/M="path to reconstructed image files" imagePath pathPart	// for imagePath, automatically reassign
-//			else
-//				NewPath/M="path to reconstructed image files" $pathName pathPart		// for other names, ask
-//			endif
-//		endif
-//		printIt = 1
-//	endif
-//	PathInfo $pathName
-//	if (strlen(S_path)<1 || strlen(namePart)<1)
-//		return 1												// invalid inputs
-//	endif
-//	if (printIt)
-//		printf "using data from files starting with '%s'\r",S_path+namePart
-//	endif
-//
-//	String list = WaveListClass("imageMask","*","DIMS:2,BYTE:1")	// setup to use optional mask
-//	String maskName = ""
-//	if (WaveExists(mask))
-//		maskName = GetWavesDataFolder(mask,2)
-//	elseif (strlen(list))
-//		maskName = ""
-//		Prompt maskName, "mask to use with image",popup,"_none_;"+list
-//		DoPrompt "mask wave",maskName
-//		if (V_flag)
-//			return 1
-//		endif
-//		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
-//		Wave mask = $maskName							// do not check if wave exists, that a valid option
-//		printIt = 1
-//	endif
-//	maskName = SelectString(WaveExists(mask),"$\"\"",maskName)
-//	String darkList = WaveListClass("imageDark;rawImageDark","*","")
-//	if (!WaveExists(dark) && ItemsInList(darkList)>0)
-//		String darkName
-//		Prompt darkName,"Background Image",popup,"_none_;"+darkList
-//		DoPrompt "Background",darkName
-//		if (V_flag)
-//			return 1
-//		endif
-//		if (cmpstr(darkName,"_none_"))
-//			Wave dark = $darkName
-//		else
-//			Wave dark = $""
-//		endif
-//	endif
-//
-//	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range to scan")	// display a progress bar
-//	if (ItemsInRange(range)<1) 						// if range is empty, get the full range from the directory
-//		range = get_FilesIndexRange(pathName,namePart)
-//		Prompt range,"range of image file numbers to use"
-//		DoPrompt "range",range
-//		if (V_flag)
-//			return 1
-//		endif
-//		if (ItemsInRange(range)<1)
-//			if (printIt)
-//				printf "range of images indicies is '%s'\r",range[0,370]	// cannot print lines longer than 400 chars
-//			endif
-//		endif
-//		printIt = 1
-//	endif
-//
-//	String fileRoot										// complete path up to and including the underscore
-//	PathInfo $pathName
-//	if (V_flag)												// if path exists, reset pathName to the explicit path, otherwise assume it is the explicit path
-//		fileRoot = S_path
-//	elseif (strsearch(pathName,":",Inf,1) == strlen(pathName)-1)
-//		fileRoot = pathName+":"						// ensure terminating colon
-//	endif
-//	fileRoot += namePart
-//	if (printIt)
-//		sprintf str,"Fill1_3DQspace(%g,\"%s\",\"%s\",\"%s\"",recipSource,pathName,namePart,range
-//		if (WaveExists(mask))
-//			maskName = NameOfWave(mask)
-//			str += ",mask="+maskName
-//		endif
-//		if (WaveExists(dark))
-//			darkName = NameOfWave(dark)
-//			str += ",dark="+darkName
-//		endif
-//		str += ")"
-//		print str[0,390]
-//	endif
-//	if (WaveExists(mask))
-//		if (sum(mask)==0)
-//			DoAlert 0, "You picked a mask that is all zero, stopping"
-//			DoWindow/K $progressWin					// done with status window
-//			return 1
-//		endif
-//	endif
-//	if (ItemsInRange(range)<1) 						// if range is empty, get the full range from the directory
-//		DoAlert 0, "range is empty"
-//			DoWindow/K $progressWin					// done with status window
-//		return 1
-//	endif
-//
-//	Variable timer0 = stopMSTimer(-2)/1e6			// starting time, used to time prooess (sec)
-//	STRUCT microGeometry geo
-//	FillGeometryStructDefault(geo)
-//	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
-// 	if (printIt)
-//		printf "processing with distotion %s", SelectString(useDistortion,"OFF","on")
-//		print "     "+SelectString(WaveExists(mask),"and no mask","and using  '"+NameOfWave(mask)+"'  for the mask")
-//	endif
-//
-//	// open the first file in the range, to get info about the images
-//	ProgressPanelUpdate(progressWin,0,status="setting up")
-//	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
-//	String name
-//	sprintf name, "%s%d%s",fileRoot,str2num(range),imageExtension
-//	Wave image = $(LoadGenericImageFile(name))				// load first image in range
-//	if (!WaveExists(image))
-//		printf "could not load very first image named '%s'\r",name
-//		DoAlert 0,"could not load very first image"
-//		DoWindow/K $progressWin									// done with status window
-//		return 1
-//	endif
-//	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
-//	Ni = DimSize(image,0)
-//	Nj = DimSize(image,1)
-//	String wnote = note(image)
-//	KillWaves/Z image
-//	String MonoMode = StringByKey("MonoMode",wnote,"=")// energy for this image
-//	Variable mono = StringMatch(MonoMode,"mono*")			// if not mono, then must be undulator scan
-//	FUNCREF gap2keV_A gap2keV_Func = $SelectString(exists("gap2keV")==6,"gap2keV_A","gap2keV")
-//	Variable keV, gap, startx, endx, starty, endy, groupx, groupy
-//	keV = NumberByKey("keV", wnote,"=")						// energy for this image
-//	gap = NumberByKey("undulatorGap", wnote,"=")			// undulator gap for this image
-//	keV = mono ? keV : gap2keV_Func(gap)						// convert undulator gap to energy for undulator scan
-//	startx = NumberByKey("startx", wnote,"=");	endx = NumberByKey("endx", wnote,"=");	groupx = NumberByKey("groupx", wnote,"=")
-//	starty = NumberByKey("starty", wnote,"=");	endy = NumberByKey("endy", wnote,"=");	groupy = NumberByKey("groupy", wnote,"=")
-//	if (numtype(startx+endx+starty+endy+groupx+groupy))
-//		DoAlert 0,"could not get ROI from wave note of image '"+name+"'"
-//		DoWindow/K $progressWin									// done with status window
-//		return 1
-//	elseif (numtype(keV))
-//		DoAlert 0,"invalid keV in image '"+name+"'"
-//		DoWindow/K $progressWin									// done with status window
-//		return 1
-//	endif
-//
-//	// read header from each of the images, and store it to figure out what was done.
-//	Variable N = ItemsInRange(range)							// number of images to be processed
-//	Make/N=(N)/FREE/D keV_FillQvsPositions=NaN				// hold the Energies
-//	Make/N=(N)/FREE/U/I m_Fill_QHistAt1Depth=0
-//	// for all the N files (go over range), store the energies, X position, H position, and indicies
-//	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N)+" image headers",resetClock=1)
-//	Variable m, j
-//	for (m=str2num(range), i=0; numtype(m)==0; m=NextInRange(range,m), i+=1)		// loop over range
-//		if (mod(m,20)==0)
-//			if (ProgressPanelUpdate(progressWin,i/N*100))	// update progress bar
-//				DoWindow/K $progressWin							// done with status window
-//				print "User abort"
-//				return 1
-//			endif
-//		endif
-//		sprintf name, "%s%d%s",fileRoot,m,imageExtension
-//		wnote=ReadGenericHeader(name)							// wave note to add to file read in
-//		if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
-//			continue
-//		endif
-//		if (mono)
-//			keV = NumberByKey("keV", wnote,"=")				// list of energies
-//		else
-//			gap = NumberByKey("undulatorGap", wnote,"=")	// undulator gap for this image
-//			keV = gap2keV_Func(gap)
-//		endif
-//		keV_FillQvsPositions[i] = keV							// list of energies
-//		m_Fill_QHistAt1Depth[i] = m								// file id number for each image
-//	endfor
-//	Variable seconds = stopMSTimer(-2)/1e6 - timer0
-//	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
-//		printf "first pass to examine headers took %s\r",Secs2Time(seconds,5,3)
-//	endif
-//	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
-//
-//	Variable dkeV,NkeV, off=0
-//	FindScalingFromVec(keV_FillQvsPositions,2e-4,off,dkeV,NkeV)		// get step size and number of points for the energy scan
-//
-//	// correct the scan ranges as necessary
-//	Prompt depth,"depth to use (µm)"
-//	Prompt NkeV,"# of points (NOT intervals) in E "
-//	Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
-//	doConvex += 1
-//	DoPrompt "scan sizes",NkeV,depth,doConvex
-//	if (V_flag)
-//		return 1
-//	endif
-//	doConvex -= 1
-//	depth = numtype(depth) ? 0 : depth
-//
-//	WaveStats/M=1/Q keV_FillQvsPositions
-//	Variable ikeVlo=V_minloc, ikeVhi=V_maxloc				// save location of min and max energies
-//	if (V_numNans)
-//		DoAlert 0, "There were "+num2istr(V_numNans)+" bad images found, they will be skipped"
-//	endif
-//
-//	// note that Q range only depends upon image size and energy range, not on X or H position
-//	sprintf name, "%s%d%s",fileRoot,m_Fill_QHistAt1Depth[ikeVlo],imageExtension	// load one image to get its size & Q range
-//	Wave image = $(LoadGenericImageFile(name))				// load image
-//	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
-//	if (!(dNum>=0 && dNum<=2))
-//		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
-//		DoWindow/K $progressWin									// done with status window
-//		return 1
-//	endif
-//
-//	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
-//	Variable Elo=keV_FillQvsPositions[ikeVlo], Ehi=keV_FillQvsPositions[ikeVhi]
-//	Variable px,py, dQ												// the current pixel to analyze (unbinned full chip pixels)
-//	py = round((starty+endy)/2)									// approximate full chip pixel position in center or the image
-//	px = round((startx+endx)/2)
-//	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+groupx,py+groupy,$"")))*Elo/hc
-//
-//	if (printIt)
-//		Variable deV = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
-//		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],deV
-//		printf "    %s Scan\r",SelectString(mono,"Undulator","Monochromator")
-//	endif
-//
-//	seconds = stopMSTimer(-2)/1e6 - timer0
-//	if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
-//		printf "setting up arrays took %s\r",Secs2Time(seconds,5,3)
-//	endif
-//	// done with the setup part, now actually compute something
-//
-//	if (useDistortion)												// if using the distortion, precompute for all images  here
-//		Abort "Fill1_3DQspace(), filling the distortion map needs serious fixing"
-//		// check if distiortion map already exists
-//		Variable distortionOK=0
-//		if(exists("root:Packages:geometry:tempCachedDistortionMap")==1)	// wave exists, so check its size and location
-//			Wave DistortionMap = root:Packages:geometry:tempCachedDistortionMap
-//			distortionOK = (DimOffset(DistortionMap,0)==startx) && 1
-//			distortionOK = (DimOffset(DistortionMap,1)==starty) && 1
-//			distortionOK = (DimDelta(DistortionMap,0)==groupx) && 1
-//			distortionOK = (DimDelta(DistortionMap,1)==groupy) && 1
-//			distortionOK = (DimSize(DistortionMap,0)==Ni) && 1
-//			distortionOK = (DimSize(DistortionMap,1)==Nj) && 1
-//		endif
-//		if (!distortionOK)											// existing map (if it exists) is not OK, so make a new one
-//			KIllWaves/Z root:Packages:geometry:tempCachedDistortionMap	// ensure that this is gone!
-//			Make/N=(Ni,Nj,2)/O root:Packages:geometry:tempCachedDistortionMapTemp
-//			Wave distortionMap = root:Packages:geometry:tempCachedDistortionMapTemp
-//			SetScale/P x startx,groupx,"", distortionMap	// scale distortionMap[][] to full chip pixels
-//			SetScale/P y starty,groupy,"", distortionMap
-//			Variable/C dxy
-//			Wave xymap = root:Packages:geometry:xymap
-//			ProgressPanelUpdate(progressWin,0,status="making local copy of the distortion map")
-//			for (j=0;j<Nj;j+=1)
-//				for (i=0;i<Ni;i+=1)
-//					py = starty + j*groupy
-//					px = startx + i*groupx
-////					dxy = peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
-//					distortionMap[i][j][0] = real(dxy)			// accumulate all the distortions that I will need
-//					distortionMap[i][j][1] = imag(dxy)
-//				endfor
-//			endfor
-//			Rename root:Packages:geometry:tempCachedDistortionMapTemp, tempCachedDistortionMap
-//			if (ItemsInList(GetRTStackInfo(0))<2 && seconds>0.2)
-//				printf "creating local copy of distortion map took %s\r",Secs2Time(seconds,5,3)
-//			endif
-//		endif
-//		Note/K DistortionMap, "use=1"
-//	endif																	// distortion map now ready
-//
-//	ProgressPanelUpdate(progressWin,0,status="making Qvecs array",resetClock=1)
-//	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=mask,depth=depth,printIt=printIt)	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
-//	if (mono)
-//		KillWaves/Z image												// for mono scans, this image not needed
-//	else
-//		Wave i0 = image												// save for use as "previous" image in undulator scans
-//	endif
-//
-//	// find range of Qx,Qy,Qz
-//	wnote = note(Qvecs1keV)
-//	Variable QxLo = NumberByKey("QxLo",wnote,"="), QxHi = NumberByKey("QxHi",wnote,"=")
-//	Variable QyLo = NumberByKey("QyLo",wnote,"="), QyHi = NumberByKey("QyHi",wnote,"=")
-//	Variable QzLo = NumberByKey("QzLo",wnote,"="), QzHi = NumberByKey("QzHi",wnote,"=")
-//	printf "Q range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
-//
-//	// make 3D volume to hold  the 3D q-histogram
-//	Variable NQx, NQy, NQz
-//	dQ *= 4
-//	NQx = floor((QxHi-QxLo)/dQ)
-//	NQy = floor((QyHi-QyLo)/dQ)
-//	NQz = floor((QzHi-QzLo)/dQ)
-//	Variable NQ = NQx*NQy*NQz
-//	print "NQ = ",NQx, NQy, NQz,"   NQ's = ",NQ
-//	Make/N=3/D/FREE Qc={(QxLo+QxHi)/2, (QyLo+QyHi)/2, (QzLo+QzHi)/2}
-//	Variable Ntot=NQx*NQy*NQz
-//	if (Ntot>1e7)														// Q volume has too many voxels, coarsen so only 1e7 voxels
-//		Variable factor = 215/(Ntot^0.333333)					// 215 is about 3rd root of 1e7
-//		NQx = round(factor*NQx)
-//		NQy = round(factor*NQy)
-//		NQz = round(factor*NQz)
-//		Ntot = NQx*NQy*NQz
-//	endif
-//
-//	Prompt NQx,"no. of Qx points in 3D Q histogram"
-//	Prompt NQy,"no. of Qy points in 3D Q histogram"
-//	Prompt NQz,"no. of Qz points in 3D Q histogram"
-//	DoPrompt "3D Q histogram size",NQx, NQy, NQz
-//	if (V_flag)
-//		return 1
-//	endif
-//	NQx = round(NQx)
-//	NQy = round(NQy)
-//	NQz = round(NQz)
-//	if (!(NQx>0 && NQy>0 && NQz>0))
-//		return 1
-//	endif
-//	printf "Make array Qspace3D[%g][%g][%g] to hold Q-space\r",NQx,NQy,NQz
-//	Make/N=(NQx, NQy, NQz)/O Qspace3D=0						// array to hold Q-space histogram
-//	Make/N=(NQx, NQy, NQz)/FREE/I/U Qspace3DNorm=0		// used for normalizing Qspace3D
-//	String Qunits = SelectString(recipSource,"1/nm","rlu")
-//	SetScale/I x QxLo,QxHi,Qunits, Qspace3D, Qspace3DNorm
-//	SetScale/I y QyLo,QyHi,Qunits, Qspace3D, Qspace3DNorm
-//	SetScale/I z QzLo,QzHi,Qunits, Qspace3D, Qspace3DNorm
-//
-//	// Starting bulk of processing"
-//	// for all the N files (go over range), accumulate Qhist from all images
-//	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N)+" images",resetClock=1)	// update progress bar
-//	Variable ipnt, timer3=stopMSTimer(-2)/1e6, skipUpdate=1		// was 10
-//	for (m=str2num(range),ipnt=0; numtype(m)==0; m=NextInRange(range,m),ipnt+=1)	// loop over range, all the images
-//		if (mod(ipnt,skipUpdate)==0)
-//			if (ProgressPanelUpdate(progressWin,ipnt/N*100))	// update progress bar every 100 images
-//				break														//   and break out of loop
-//			endif
-//		endif
-//		sprintf name, "%s%d%s",fileRoot,m,imageExtension
-//
-//		Wave image = $(LoadGenericImageFile(name))			// load image
-//		if (mono && WaveExists(image))
-//			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark)// fill Qhist from one file, Qhats are precomputed
-//			KillWaves/Z image
-//		elseif (StringMatch(GetWavesDataFolder(i0,2),GetWavesDataFolder(image,2)))
-//			continue
-//		elseif (WaveExists(image))
-//			Variable lowThresh=15, maxPixel=65535
-//			MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
-//			keV = gap2keV_Func(NumberByKey("undulatorGap",note(image),"="))
-//			Note/K dimage, ReplaceNumberByKey("keV",note(image),keV,"=")
-//			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
-//			KillWaves/Z i0												// delete old "previous" image
-//			Wave i0 = image											// save current image as i0, the new "previous" image
-//		else
-//			printf "could not load image named '%s'\r",name
-//			continue
-//		endif
-//	endfor
-//	KillWaves/Z i0, image											// delete left overs
-//	WaveStats/M=1/Q Qspace3D										// check for empty voume
-//	Variable allZero = (V_min==0 && V_max==0)
-//	Variable sec3 = stopMSTimer(-2)/1e6 - timer3
-//	Qspace3D = Qspace3D / Qspace3DNorm							// do the normalization
-//	Qspace3D = Qspace3DNorm ? Qspace3D : 0					// fix divide by zeros
-//	Variable Ntotal = sum(Qspace3DNorm)
-//	WaveClear Qspace3DNorm
-//	TrimZerosOff3D(Qspace3D)										// trim off zeros on outside
-//	printf "Processed %d pixels\r",Ntotal
-//
-//	if (useDistortion)
-//		Note/K DistortionMap, "use=0"
-//	endif
-//
-//	seconds = stopMSTimer(-2)/1e6 - timer0
-//	if (printIt)
-//		printf "\r  processing all %d images took %s	(%.3g µs/pixel)\r",N,Secs2Time(seconds,5,1),1e6*seconds/(N*Npixels)
-//		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
-//	endif
-//	Variable timer = stopMSTimer(-2) / 1e6
-//
-//	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D","=")
-//	wnote = ReplaceNumberByKey("depth",wnote,depth,"=")
-//	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1),"=")
-//	if (WaveExists(mask))
-//		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
-//	endif
-//	if (strlen(recipLattice)>0)
-//		wnote += recipLattice+";"
-//	endif
-//	Note/K Qspace3D, wnote
-//	DoWindow/K $progressWin										// done with status window
-//	beep
-//
-//	if (allZero)
-//		printf "'%s' is ALL zeros, nothing to display\r",NameOfWave(Qspace3D)
-//	else
-//		MakeGizmocubeCorners(Qspace3D)
-//		if (doConvex)
-//			QspaceVolumesView#MakeConvexHullFrom3D(Qspace3D)
-//			beep
-//		endif
-//
-//		String wName=StringFromlist(0,FindGizmosWithWave(Qspace3d))
-//		if (strlen(wName)==0)
-//			MakeGizmoQspace3d(Qspace3D)
-//		endif
-//	endif
-//	return 0
-//End
 //
 Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,printIt])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
 	Wave image
@@ -7589,6 +7110,41 @@ Static Function/T get_FilesIndexRange(pathName,nameFmt,[printIt])
 		printf "range = [%s],    %d points\r",range,ItemsInRange(range)
 	endif
 	return range
+End
+
+
+
+Function FillMovieMoreGapScan(image,initStr)	// finds pixel intensities along a movie
+	Wave image
+	String initStr												// not used, output from FillMovieMoreGapScan_Init()
+
+	Variable lowThresh=15, maxPixel=65535				// regular undulator gap scan, use difference between this image and previous image
+	String wnote = note(image)
+	Variable index = NumberByKey("movieIndex",wnote,"=")		// movie frame index
+	if (index<1)												// the first time through frame, save it to start differences
+		Duplicate/O image, FillMovieMoreGapScan_i0
+	endif
+
+	Wave i0 = FillMovieMoreGapScan_i0					// the previously saved image
+	MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
+
+	i0 = image													// reset i0 to image for the next time through
+	image = dimage												// set image to the difference, what we want in movie frame
+	return 0
+End
+//
+Function/T FillMovieMoreGapScan_Init(list)
+	String list
+	Wave i0 = FillMovieMoreGapScan_i0
+	if (WaveExists(i0))
+		KillWaves/Z i0											// this should never be here, delete in case previous movie stopped early
+	endif
+	return ""
+End
+//
+Function/T FillMovieMoreGapScan_CleanUp(list)
+	String list
+	FillMovieMoreGapScan_Init(list)						// no longer need FillMovieMoreGapScan_i0, kill it.
 End
 
 // ========================================= End of 3D Q-space, No Depth =========================================

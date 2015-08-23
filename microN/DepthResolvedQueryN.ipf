@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.58
+#pragma version = 1.59
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -496,12 +496,16 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	endif
 	if (exists(moreFunc)==6)										// hook for a user supplied function to do some more
 		FUNCREF MoreInFillMovieProto func=$moreFunc
-		if (exists(moreFunc+"_Init")==6)						// an optional init file associated with moreFunc
+		if (exists(moreFunc+"_Init")==6)						// an optional init function associated with moreFunc
 			FUNCREF MoreInFillMovieInitProto funcInit=$(moreFunc+"_Init")
+		endif
+		if (exists(moreFunc+"_CleanUp")==6)					// an optional clean up function associated with moreFunc
+			FUNCREF MoreInFillMovieCleanUpProto funcCleanUp=$(moreFunc+"_CleanUp")
 		endif
 	else
 		FUNCREF MoreInFillMovieProto func=MoreInFillMovieProto
 		FUNCREF MoreInFillMovieInitProto funcInit=MoreInFillMovieInitProto
+		FUNCREF MoreInFillMovieCleanUpProto funcCleanUp=MoreInFillMovieCleanUpProto
 	endif
 
 	String ff = SelectString(itype==4,filePrefix,ParseFilePath(0,fname,":",1,0))
@@ -678,6 +682,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 			AddMovieFrame
 		endif
 	endfor
+	funcCleanUp(wnote)
 	if (!NoMovie)
 		CloseMovie
 	endif
@@ -689,11 +694,29 @@ End
 Function MoreInFillMovieProto(image,initStr)
 	Wave image
 	String initStr					// a generic mechanism to pass specialized info from MoreInFillMovieInitProto() to here
+	// initStr contains, 
+	//		note(image) + 
+	//		boost = NumberByKey("boost",wnote,"=")
+	//		movieIndex = NumberByKey("movieIndex",wnote,"=")				// movie frame index
+	//		movieFileIndex = NumberByKey("movieFileIndex",wnote,"=")	// index from range
+	//		movieLength = NumberByKey("movieLength",wnote,"=")
 End
 Function/T MoreInFillMovieInitProto(list)
 	String list
+	// list contains:
+	//	pathName, filePrefix, fileRoot, imageExtension, range
+	//	surface, absorpLengthmovieName, 
+	//	itype, flatten, skipZeros
+	//	i0, j0, i1, j1		// ROI definition
+	//	Nslices
 	return ""
 End
+Function/T MoreInFillMovieCleanUpProto(list)
+	String list
+	// list contains, the initStr from last call to MoreInFillMovieProto()
+	return ""
+End
+//
 //Function MoreInFillMovieProto(image,[index])
 //	Wave image
 //	Variable index
