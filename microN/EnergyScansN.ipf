@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.24
+#pragma version = 2.25
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6895,14 +6895,14 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 
 	Make/N=3/D/FREE ki={0,0,1}
 	Variable factor = 4*PI/hc
-	MatrixOP/FREE qLens = -(qvecs x ki) * factor		// length of each q-vector, qvecs^ x ki == -sin(theta)
-	qvecs *= qLens[p]												// re-scale qhats to real q-vectors
-	Qvecs1keV = qvecs[q+r*Ni][p]								// Qvectors at 1keV, just multiply by E to get Q
+	MatrixOP/FREE qLens = -(qvecs x ki) * factor	// length of each q-vector, qvecs^ x ki == -sin(theta)
+	qvecs *= qLens[p]											// re-scale qhats to real q-vectors
+	Qvecs1keV = qvecs[q+r*Ni][p]							// Qvectors at 1keV, just multiply by E to get Q
 	WaveClear qLens
 
 	// find range of Qx,Qy,Qz
-	if (useMat)														// if recip is identity, this saves 1 minute for large images
-		MatrixOP/FREE/O hkl = (recipInv x (qvecs^t))^t	// this is really hkl/E
+	if (useMat)													// if recip is identity, this saves 1 minute for large images
+		MatrixOP/FREE/O hkl = (recipInv x (qvecs^t))^t			// this is really hkl/E
 	else
 		Duplicate/FREE qvecs, hkl
 	endif
@@ -6911,16 +6911,16 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	if (WaveExists(mask))
 		Make/N=(N)/B/U/FREE maskLocal
 		maskLocal = mask[mod(p,Ni)][floor(p/Ni)] ? 1 : NaN		// set maskLocal to passed values, NaN values are not used
-		hkl = maskLocal[p] ? hkl[p][q] : NaN				// remove values that are masked off (set to NaN)
+		hkl = maskLocal[p] ? hkl[p][q] : NaN			// remove values that are masked off (set to NaN)
 		WaveClear maskLocal
 	endif
 
-	MatrixOp/FREE QxLo0 = minVal(ReplaceNaNs(col(hkl,0),Inf))	// minVal() & maxVal don't support NaN's
+	MatrixOp/FREE QxLo0 = minVal(ReplaceNaNs(col(hkl,0),Inf))	// minVal() & maxVal don't support NaN's, but ±Inf is OK
 	MatrixOp/FREE QyLo0 = minVal(ReplaceNaNs(col(hkl,1),Inf))
 	MatrixOp/FREE QzLo0 = minVal(ReplaceNaNs(col(hkl,2),Inf))
-	MatrixOp/FREE QxHi0 = maxVal(ReplaceNaNs(col(hkl,0),Inf))
-	MatrixOp/FREE QyHi0 = maxVal(ReplaceNaNs(col(hkl,1),Inf))
-	MatrixOp/FREE QzHi0 = maxVal(ReplaceNaNs(col(hkl,2),Inf))
+	MatrixOp/FREE QxHi0 = maxVal(ReplaceNaNs(col(hkl,0),-Inf))
+	MatrixOp/FREE QyHi0 = maxVal(ReplaceNaNs(col(hkl,1),-Inf))
+	MatrixOp/FREE QzHi0 = maxVal(ReplaceNaNs(col(hkl,2),-Inf))
 	Variable QxLo=QxLo0[0], QyLo=QyLo0[0], QzLo=QzLo0[0], QxHi=QxHi0[0], QyHi=QyHi0[0], QzHi=QzHi0[0]
 
 	QxLo *= QxLo>0 ? Elo : Ehi	;	QxHi *= QxHi>0 ? Ehi : Elo
