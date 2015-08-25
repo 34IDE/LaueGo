@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.73
+#pragma version = 3.74
 // #pragma hide = 1
 
 Menu "Graph"
@@ -263,6 +263,35 @@ Function/S MenuItemIfWinExists(item,win,optionsStr)
 		return "("+item					// win not found, so disable menu item
 	endif
 	return item
+End
+
+// only show menu item when a funcName exists with specified values in optStr
+//	e.g.  MenuItemIfFunctionExists("Write Detector values to EPICS...","EPICS_put_PV_num")
+Function/S MenuItemIfFunctionExists(item,funcName,[optStr])
+	String item
+	String funcName
+	String optStr					// key-values must match result of FunctionInfo() "key:value;"
+	optStr = SelectString(ParamIsDefault(optStr),optStr,"")
+	// optStr example is:  "PROCWIN:Procedure;RETURNTYPE:3;"
+
+	String keyVals = FunctionInfo(funcName)
+	if (strlen(keyVals)<1)		// no function info, add "("
+		return "("+item
+	endif
+
+	if (strlen(optStr)>1)		// an optStr was passed, check for matching
+		String key, value
+		Variable i, N=ItemsInList(optStr)
+		for (i=0;i<N;i+=1)
+			key = StringFromList(0, StringFromList(i,optStr),":")
+			value = StringByKey(key,optStr)
+			if (!StringMatch(StringByKey(key,keyVals), value))
+				return "("+item
+			endif
+		endfor
+	endif
+
+	return item						// either no optStr, or all key:values in optStr match
 End
 
 //  ============================ End of Option Menu Functions ============================  //

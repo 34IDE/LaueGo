@@ -20,7 +20,7 @@ Menu LaueGoMainMenuName
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on 1 Detector","DetectorCalibrationList*",""),GraphCalibrationDetector($"")
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on All Detectors","DetectorCalibrationList*",""),GraphAllCalibrationDetector()
 		MenuItemIfWaveClassExists("  Table of Calibration Data","DetectorCalibrationList*",""), DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:12;MINCOLS:10")
-		"Write Detector values to EPICS...",WriteDetectorGeo2EPICS(NaN)
+		MenuItemIfFunctionExists("Write Detector values to EPICS...","EPICS_put_PV_num"), WriteDetectorGeo2EPICS(NaN)
 		"-"
 		"(testing"
 		"  Make Fake Calibration Data",MakeFakeCalibration3Detectors(NaN)
@@ -1934,7 +1934,7 @@ Function/T FillCalibrationParametersPanel(strStruct,hostWin,left,top)
 	Button buttonMakeCalibData,pos={29,5+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Set Calibration Data"
 	Button buttonMakeCalibData,help={"Set the Calibration Data"}
 
-	Button buttonCalibOptimizeAll3,pos={29,40+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Optimize All"
+	Button buttonCalibOptimizeAll3,pos={29,40+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Optimize..."
 	Button buttonCalibOptimizeAll3,help={"Run Optimization on some set of detectors"}
 
 	Button buttonCalibGraph1,pos={29,75+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Graph 1 Detector"
@@ -1953,7 +1953,7 @@ Function/T FillCalibrationParametersPanel(strStruct,hostWin,left,top)
 	Button buttonCalibWrite2EPICS,help={"Write Optimized results to EPICS"}
 
 	Button buttonCalibPrintHelp,pos={29,240+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Print Help to History"
-	Button buttonCalibPrintHelp,help={"Write Optimized results to EPICS"}
+	Button buttonCalibPrintHelp,help={"Print some Help text to the History"}
 
 	EnableDisableCalibControls(hostWin+"#CalibrationPanel")
 	return "#CalibrationPanel"
