@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.74
+#pragma version = 3.75
 // #pragma hide = 1
 
 Menu "Graph"
@@ -4176,108 +4176,114 @@ End
 
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
 	Variable j
-	j = round(j)
-	//	if (j<1 || j>3999 || numtype(j))
-	if (j<1 || numtype(j))
-		return ""
+
+	String str = SelectString(j<0,"","-")		// start str with the sign
+	j = round(abs(j))
+
+	if (j<1 || numtype(j))					// retrns "" for zero, ±Inf, NaN
+		str = ""
 	elseif (j>=1000)
-		return "M"+RomanNumeral(j-1000)
+		str += "M"+RomanNumeral(j-1000)	// add an M & remove 1000
 	elseif (j>=900)
-		return "CM"+RomanNumeral(j-900)
+		str += "CM"+RomanNumeral(j-900)	// add a CM & remove 900
 	elseif (j>=500)
-		return "D"+RomanNumeral(j-500)
+		str += "D"+RomanNumeral(j-500)	// add a D & remove 500
 	elseif (j>=400)
-		return "CD"+RomanNumeral(j-400)
+		str += "CD"+RomanNumeral(j-400)	// add a CD & remove 400
 	elseif (j>=100)
-		return "C"+RomanNumeral(j-100)
+		str += "C"+RomanNumeral(j-100)	// add a C & remove 100
 	elseif (j>=90)
-		return "XC"+RomanNumeral(j-90)
+		str += "XC"+RomanNumeral(j-90)	// add a XC & remove 90
 	elseif (j>=50)
-		return "L"+RomanNumeral(j-50)
+		str += "L"+RomanNumeral(j-50)	// add a L & remove 50
 	elseif (j>=40)
-		return "XL"+RomanNumeral(j-40)
+		str += "XL"+RomanNumeral(j-40)	// add a XL & remove 40
 	elseif (j>=10)
-		return "X"+RomanNumeral(j-10)
+		str += "X"+RomanNumeral(j-10)	// add a X & remove 10
 	elseif (j>=9)
-		return "IX"+RomanNumeral(j-9)
+		str += "IX"+RomanNumeral(j-9)	// add a IX & remove 9
 	elseif (j>=5)
-		return "V"+RomanNumeral(j-5)
+		str += "V"+RomanNumeral(j-5)		// add a V & remove 5
 	elseif (j>=4)
-		return "IV"+RomanNumeral(j-4)
+		str += "IV"+RomanNumeral(j-4)	// add a IV & remove 4
 	elseif (j>=1)
-		return "I"+RomanNumeral(j-1)
+		str += "I"+RomanNumeral(j-1)		// add a I & remove 1
 	endif
-	return ""
+	return str
 End
 
 
 ThreadSafe Function RomanNumeral2Int(str)	// convert a Roman Numeral string to an integer
 	String str
-	if (strlen(str)<1)
+	if (strlen(str)<1)						// empty strings return NaN, there is no zero
 		return NaN
 	endif
 	str = UpperStr(str )
 
 	Variable iM=char2num("M"),iC=char2num("C"),iX=char2num("X"),iI=char2num("I")
-	Variable j
+	Variable j, isign=1
+	if (char2num(str)==char2num("-"))
+		str = str[1,Inf]						// strip off leading "-", and set isign to -1
+		isign = -1
+	endif
 
-	for (;char2num(str[0])==iM;)
+	for (;char2num(str[0])==iM;)			// fournd all leading "M", add 1000
 		str = str[1,Inf]
 		j += 1000
 	endfor
 
-	if (strsearch(str,"CM",0)==0)
+	if (strsearch(str,"CM",0)==0)		// fournd a leading "CM", add 900
 		str = str[2,Inf]
 		j += 900
 	endif
-	if (strsearch(str,"D",0)==0)
+	if (strsearch(str,"D",0)==0)			// fournd a leading "D", add 500
 		str = str[1,Inf]
 		j += 500
 	endif
-	if (strsearch(str,"CD",0)==0)
+	if (strsearch(str,"CD",0)==0)		// fournd a leading "CD", add 400
 		str = str[2,Inf]
 		j += 400
 	endif
-	for (;char2num(str[0])==iC;)
+	for (;char2num(str[0])==iC;)			// fournd all leading "C", add 100
 		str = str[1,Inf]
 		j += 100
 	endfor
 
-	if (strsearch(str,"XC",0)==0)
+	if (strsearch(str,"XC",0)==0)		// fournd a leading "XC", add 90
 		str = str[2,Inf]
 		j += 90
 	endif
-	if (strsearch(str,"L",0)==0)
+	if (strsearch(str,"L",0)==0)			// fournd a leading "L", add 50
 		str = str[1,Inf]
 		j += 50
 	endif
-	if (strsearch(str,"XL",0)==0)
+	if (strsearch(str,"XL",0)==0)		// fournd a leading "XL", add 40
 		str = str[2,Inf]
 		j += 40
 	endif
-	for (;char2num(str[0])==iX;)
+	for (;char2num(str[0])==iX;)			// fournd all leading "X", add 10
 		str = str[1,Inf]
 		j += 10
 	endfor
 
-	if (strsearch(str,"IX",0)==0)
+	if (strsearch(str,"IX",0)==0)		// fournd a leading "IX", add 9
 		str = str[2,Inf]
 		j += 9
 	endif
-	if (strsearch(str,"V",0)==0)
+	if (strsearch(str,"V",0)==0)			// fournd a leading "V", add 5
 		str = str[1,Inf]
 		j += 5
 	endif
-	if (strsearch(str,"IV",0)==0)
+	if (strsearch(str,"IV",0)==0)		// fournd a leading "IV", add 4
 		str = str[2,Inf]
 		j += 4
 	endif
-	for (;char2num(str[0])==iI;)
+	for (;char2num(str[0])==iI;)			// fournd all leading "I", add 1
 		str = str[1,Inf]
 		j += 1
 	endfor
 
-	j = strlen(str) ? NaN : j
+	j = strlen(str) ? NaN : j*isign		// check that str is all used up & fix sign
 	return j
 End
 
