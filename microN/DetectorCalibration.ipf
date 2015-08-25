@@ -1,8 +1,8 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.82
-#include "microGeometryN", version>=1.63
-#include "ImageDisplayScaling", version>=1.97
+#pragma version = 0.83
+#include "microGeometryN", version>=1.83
+#include "ImageDisplayScaling", version>=2.04
 
 Static Constant hc = 1.239841857					// keV-nm
 // #define OLD_ORIENTATION_METHOD
@@ -12,13 +12,14 @@ Static Constant hc = 1.239841857					// keV-nm
 
 Menu LaueGoMainMenuName
 	SubMenu "Optimize - Calibrate"
+		"Print Help", PrintCalibrationListHelp()
 		MenuItemIfWaveClassExists("Enter Measured Energies for Calibration","IndexedPeakList*",""),EnterMeasuredEnergies("")
 		MenuItemIfWaveClassExists("Set Calibration Input Data for Optimize","IndexedPeakList*",""),MakeCalibData(NaN)
 		MenuItemIfWaveClassExists("Optimize All 3 Detector Geometrys","DetectorCalibrationList*",""),OptimizeAll($"",$"",$"")
 		"-"
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on 1 Detector","DetectorCalibrationList*",""),GraphCalibrationDetector($"")
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on All Detectors","DetectorCalibrationList*",""),GraphAllCalibrationDetector()
-		MenuItemIfWaveClassExists("  Table of Calibration Data","DetectorCalibrationList*",""),TableCalibrationData($"")
+		MenuItemIfWaveClassExists("  Table of Calibration Data","DetectorCalibrationList*",""), DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:12;MINCOLS:10")
 		"Write Detector values to EPICS...",WriteDetectorGeo2EPICS(NaN)
 		"-"
 		"(testing"
@@ -39,9 +40,26 @@ End
 
 ///	noteStr=ReplaceStringByKey("waveClass",noteStr,"DetectorCalibrationList"+SelectString(dNum,"0",""),"=")
 
-
 // To calibrate, find the two vectors R and P that best fit the data in CalibrationList[][]
 // I do not think tOptimizeDetectorCalibrationhat you can also optimize the sizeX & sizeY, they must be constant since I really only measure angles
+
+
+Function PrintCalibrationListHelp()
+	print "in OptimizeAll(calib0,calib1,calib2), the sample rotation is optimized ONLY when calib0 is present"
+	print " "
+	print "		Columns 0-7 defines the input Q's direciton"
+	print "*Required:		CalibrationList[][0,1]	= (px,py) are measured peak position on image"
+	print " Optional:		CalibrationList[][2-4]	= hkl for each measured spot (NOT required for optimization routine, only for info)"
+	print "*Required:		CalibrationList[][5-7]	= Q-vector, calculated from known hkl and the standard reciprocal lattice (NOT rotated from standard orientation)"
+	print " "
+	print "		Columns 8,9 are only filled in when you know some measured energies, they can all be NaN's"
+	print " Optional:		CalibrationList[][8]	= the measured energy of spot (keV), (some are known, some are not)"
+	print " Optional:		CalibrationList[][9]	= theta (deg), obtained from calculated d(hkl) and measured energy using: lambda = 2d sin(theta), NOT used"
+	print " "
+	print "		Columns 10,11 starts out empty, and gets filled in by the optimization routine."
+	print " Set Afterward:		CalibrationList[][10]	= keV calculated from sample orientation and known lattice (does not use measured spot position)"
+	print " Set Afterward:		CalibrationList[][11]	= ÆE (eV),  ( CalibrationList[][8] - CalibrationList[][10] ) *1e3"
+End
 
 
 // ==============================================================================================
@@ -675,8 +693,10 @@ End
 
 
 // this uses pre-defined CalibrationList's and takes them as input, it sets up and optimizes each of the three detectors
-Function OptimizeAll(calib0,calib1,calib2)
+Function OptimizeAll(calib0,calib1,calib2,[printIt])
 	Wave calib0,calib1,calib2								// calibration lists
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	if (WaveExists(calib0))
 		if (!WaveInClass(calib0,"DetectorCalibrationList0"))
 			DoAlert 0, "The first argument "+NameOfWave(calib0)+" is not of 'DetectorCalibrationList0' class"
@@ -696,7 +716,6 @@ Function OptimizeAll(calib0,calib1,calib2)
 		endif
 	endif
 
-	Variable printing = (!strlen(GetRTStackInfo(2))) || stringmatch(GetRTStackInfo(2),"testOneOptimize")
 	String cName0,cName1,cName2
 	if (!WaveExists(calib1) || !WaveExists(calib1) || !WaveExists(calib1))
 		cName0 = SelectString(WaveExists(calib0),"CalibrationList0",NameOfWave(calib0))
@@ -718,7 +737,7 @@ Function OptimizeAll(calib0,calib1,calib2)
 		cName2 = SelectString(exists(cName2)==1,"",cName2)
 		Wave calib0=$cName0, calib1=$cName1, calib2=$cName2
 
-		printing = 1
+		printIt = 1
 		cName0 = SelectString(strlen(cName0),"$\"\"",cName0)
 		cName1 = SelectString(strlen(cName1),"$\"\"",cName1)
 		cName2 = SelectString(strlen(cName2),"$\"\"",cName2)
@@ -794,7 +813,7 @@ Function OptimizeAll(calib0,calib1,calib2)
 		endif
 		CopyDetectorGeometry(d,g.d[dNum])				// set new detector structure to start as the old one
 		Rstart = sqrt((d.R[0]*d.R[0])+(d.R[1]*d.R[1])+(d.R[2]*d.R[2]))*180/PI
-		if (printing)
+		if (printIt)
 			printf "Detector %d\r",dNum
 			Rangle = sqrt((g.d[dNum].R[0])^2 + (g.d[dNum].R[1])^2 + (g.d[dNum].R[2])^2)*180/PI
 			printf "started at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %g¡\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rstart
@@ -803,7 +822,7 @@ Function OptimizeAll(calib0,calib1,calib2)
 		endif
 
 		failed = OptimizeDetectorCalibration(d,cListN)
-		if (failed && printing)
+		if (failed && printIt)
 			printf "-----------------------\rERROR in Optimize\r  %s\r  -----------------------\r",note(cListN)
 		endif
 		noteStr=note(cListN)
@@ -820,7 +839,7 @@ Function OptimizeAll(calib0,calib1,calib2)
 			rhoy = NumberByKey("rhoy",noteStr,"=")
 			rhoz = NumberByKey("rhoz",noteStr,"=")
 		endif
-		if (printing)
+		if (printIt)
 			if (sec>4)
 				printf "\tOptimization toook %s\r",Secs2Time(sec,5,1)
 			endif
@@ -834,13 +853,13 @@ Function OptimizeAll(calib0,calib1,calib2)
 		CopyDetectorGeometry(g.d[dNum],d)				// updagte structure with fitted values for this detector
 	endfor
 	err3 /= (g.Ndetectors)
-	if (printing && numtype(Rend)==0)
+	if (printIt && numtype(Rend)==0)
 		print " "
 		printGeometry(g)
 		print "errList =",errList,"     total error =",err3
 	endif
 
-	if (!failed && printing)
+	if (!failed && printIt)
 		DoAlert 1,"Update current Geometry with these fitted values, err = "+num2str(err3)
 		if (V_flag==1)
 			print "Updated the current geometry with these values"
@@ -946,7 +965,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	return V_flag
 End
 //
-// This routine is for optimizing the detector posiition & rotation and sample orientation simultaneously (only useful for detector 1,2,...   not 0)
+// This routine is for optimizing the detector position & rotation and sample orientation simultaneously (only useful for detector 1,2,...   not 0)
 Function CalibrationErrorRP(CalibrationList,Rx,Ry,Rz,Px,Py,Pz)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
 	Wave CalibrationList
 	Variable Rx,Ry,Rz						// rotation vector for detector
@@ -1104,7 +1123,7 @@ End
 //End
 //
 //
-// This routine is for optimizing the detector posiition & rotation and sample orientation simultaneously (only useful for detector0)
+// This routine is for optimizing the detector position & rotation and sample orientation simultaneously (only useful for detector0)
 Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
 	Wave CalibrationList
 	Variable Rx,Ry,Rz						// rotation vector for detector
@@ -1264,35 +1283,37 @@ Static Function CalculatedQvecEnergy(CalibrationList,m,qcalc)	// fills the calcu
 End
 
 
-Function TableCalibrationData(calib)
-	Wave calib
-//	String wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:10;MINCOLS:10")
-	String wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:12;MINCOLS:10")
-	if (!WaveExists(calib) && ItemsInList(wList)==1)
-		Wave calib = $StringFromList(0,wList)
-	elseif (!WaveExists(calib))
-		String calibName
-		Prompt calibName,"Calibration List wave",popup,wLIst
-		DoPrompt "Calibration List Wave",calibName
-		if (V_flag)
-			return 1
-		endif
-		Wave calib = $calibName
-	endif
-	if (!WaveExists(calib))
-		DoAlert 0,"cannot find CalibrationList wave"
-		return 1
-	endif
-
-	String wName = "Table_"+NameOfWave(calib)
-	String name = StringFromList(0,WinList(wName,";", "WIN:2"))
-	if (strlen(name))
-		DoWindow/F $name
-		return 0
-	endif
-	Edit/K=1/N=$wName/W=(255,125,1144,599) calib.ld
-	ModifyTable format(Point)=1,width(Point)=28,width(calib.l)=42,width(calib.d)=80
-End
+//	Replaced by DisplayTableOfWave() from Utility_JZT.ipf
+//
+//	Function TableCalibrationData(calib)
+//		Wave calib
+//	//	String wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:10;MINCOLS:10")
+//		String wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:12;MINCOLS:10")
+//		if (!WaveExists(calib) && ItemsInList(wList)==1)
+//			Wave calib = $StringFromList(0,wList)
+//		elseif (!WaveExists(calib))
+//			String calibName
+//			Prompt calibName,"Calibration List wave",popup,wLIst
+//			DoPrompt "Calibration List Wave",calibName
+//			if (V_flag)
+//				return 1
+//			endif
+//			Wave calib = $calibName
+//		endif
+//		if (!WaveExists(calib))
+//			DoAlert 0,"cannot find CalibrationList wave"
+//			return 1
+//		endif
+//	
+//		String wName = "Table_"+NameOfWave(calib)
+//		String name = StringFromList(0,WinList(wName,";", "WIN:2"))
+//		if (strlen(name))
+//			DoWindow/F $name
+//			return 0
+//		endif
+//		Edit/K=1/N=$wName/W=(255,125,1144,599) calib.ld
+//		ModifyTable format(Point)=1,width(Point)=28,width(calib.l)=42,width(calib.d)=80
+//	End
 
 
 
@@ -1591,7 +1612,7 @@ Function testOneOptimize(noise)
 	Variable timer=startMSTimer
 	list = MakeFakeCalibration3Detectors(noise)
 	Wave c0=$StringFromList(0,list), c1=$StringFromList(1,list), c2=$StringFromList(2,list)
-	oneErr =  OptimizeAll(c0,c1,c2)
+	oneErr =  OptimizeAll(c0,c1,c2, printIt=1)
 	printf "the error was  %.2g,  and the total execution time for optimizations was %s\r",oneErr,Secs2Time(stopMSTimer(timer)*1e-6,5,1)
 End
 
@@ -1636,7 +1657,7 @@ dR=0.1
 	for (i=0;i<N;i+=1)
 		list = MakeFakeCalibration3Detectors(noise)
 		Wave c0=$StringFromList(0,list), c1=$StringFromList(1,list), c2=$StringFromList(2,list)
-		manyErrs[i] = OptimizeAll(c0,c1,c2)
+		manyErrs[i] = OptimizeAll(c0,c1,c2, printIt=1)
 	endfor
 	WaveStats/Q manyErrs
 	Variable fwhm = 2*noise*sqrt(2*ln(2))
@@ -1931,6 +1952,9 @@ Function/T FillCalibrationParametersPanel(strStruct,hostWin,left,top)
 	Button buttonCalibWrite2EPICS,pos={29,205+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Write to EPICS"
 	Button buttonCalibWrite2EPICS,help={"Write Optimized results to EPICS"}
 
+	Button buttonCalibPrintHelp,pos={29,240+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Print Help to History"
+	Button buttonCalibPrintHelp,help={"Write Optimized results to EPICS"}
+
 	EnableDisableCalibControls(hostWin+"#CalibrationPanel")
 	return "#CalibrationPanel"
 End
@@ -1954,6 +1978,7 @@ Static Function EnableDisableCalibControls(win)				// here to enable/disable
 	d = Exists("EPICS_put_PV_num")==6 ? 0 : 2
 	Button buttonCalibWrite2EPICS,win=$win,disable=d
 
+	Button buttonCalibPrintHelp,win=$win,disable=0			// these two are always enabled
 	Button buttonCalibWireOrigin,win=$win,disable=0
 End
 //
@@ -1972,15 +1997,18 @@ Static Function CalibrationButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonMakeCalibData"))
 		MakeCalibData(NaN)
 	elseif (stringmatch(ctrlName,"buttonCalibOptimizeAll3"))
-		OptimizeAll($"",$"",$"")
+		OptimizeAll($"",$"",$"", printIt=1)
 	elseif (stringmatch(ctrlName,"buttonCalibGraph1"))
 		GraphCalibrationDetector($"")
 	elseif (stringmatch(ctrlName,"buttonCalibGraphAll"))
 		GraphAllCalibrationDetector()
 	elseif (stringmatch(ctrlName,"buttonCalibTable"))
-		TableCalibrationData($"")
+		DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:12;MINCOLS:10")
 	elseif (stringmatch(ctrlName,"buttonCalibWrite2EPICS"))
 		WriteDetectorGeo2EPICS(NaN)
+	elseif (stringmatch(ctrlName,"buttonCalibPrintHelp"))
+		print " "
+		PrintCalibrationListHelp()
 	elseif (stringmatch(ctrlName,"buttonCalibWireOrigin"))
 		calcWireOrigin(NaN,NaN,NaN,NaN,NaN)
 	endif
