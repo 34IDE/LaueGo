@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.13
+#pragma version = 0.14
 #include "IndexingN", version>=4.70
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -830,28 +830,6 @@ End
 //End
 
 
-ThreadSafe Static Function isNewDirection(existingAxes,axis,cosTol,[anti])
-	//	returns True if axis does not point toward an existing directions in existingAxes
-	// if anti==1, then axis is also not anti-parallel to existingAxes
-	Wave existingAxes			// array(N,3) list of existing axes
-	Wave axis
-	Variable cosTol			// tolerance on dot:  cosTol = cos(Æangle),  cos(0.1¡) = 0.999998476913288
-	Variable anti				// is true then parallel and anti-parallel return TRUE (default is FALSE)
-	if (norm(axis)==0)
-		return 0					// skip the (000)
-	endif
-	anti = ParamIsDefault(anti) ? 0 : anti
-
-	if (anti)
-		MatrixOP/FREE dots = abs(existingAxes x axis)
-	else
-		MatrixOP/FREE dots = existingAxes x axis
-	endif
-	Variable dotMax = WaveMax(dots)
-	return (dotMax < cosTol || numtype(dotMax))	// if existingAxes filled with NaN then anything works
-End
-
-
 Static Function/WAVE RotsBetweenZones(pQsIn,mQsIN, matchMin, tol)
 	// returns ALL the rotations that take at least matchMin pQs --> mQs
 	Wave pQsIn				// Q^s on a possible zone
@@ -1216,7 +1194,7 @@ Function/WAVE runIndexingQs(args)
 	Variable atDetector = hkPreferPointsAtDetector(xtal,kfsMeasured)	// True if hklPrefer points at detector (forward scattering), False for top detector
 #ifdef QS_TESTING
 	Wave PossibleQhats = MakePossibleQhats(atDetector,recipBase,qvec0,cone*PI/180,hklPrefer,keVmaxCalc,Nmax=NmaxHKL,kin=ki,printIt=printIt)	// q^ available for checking
-Duplicate/O PossibleQhats, PossibleQhatsView
+	Duplicate/O PossibleQhats, PossibleQhatsView
 	if (printIt)
 		printf "*made PossibleQhats[%d][%d], %s\r",DimSize(PossibleQhats,0),DimSize(PossibleQhats,1),timeIncrement()
 	endif
@@ -1225,7 +1203,7 @@ Duplicate/O PossibleQhats, PossibleQhatsView
 #endif
 
 	// Possible HKL Pairs & Measured Ghat Pairs are lists of {dot,i,j}
-	Variable minDot = cos(measuredSpan*PI/180)									// smallest dot products between all of the GhatsMeasured
+	Variable minDot = cos(measuredSpan*PI/180)										// smallest dot products between all of the GhatsMeasured
 	Wave MeasuredGhatPairs = MakePairsList(GhatsMeasured)						//   only uses first 3 columns of argument
 	Wave PossibleQhatPairs = MakePairsList(PossibleQhats,mindot=minDot)	// all pairs of hkl, {dot, i, j}
 	Variable iMeasured, nMeasuredPairs=DimSize(MeasuredGhatPairs,0)
@@ -1237,8 +1215,7 @@ Duplicate/O PossibleQhats, PossibleQhatsView
 #endif
 
 	// get all of the rotations between pairs, make a list of all the rotation vectors (radian)
-//	Variable dotZero = 1-cos(angTol*PI/180)						// used to compare two dot products for equivalence
-Variable angTolRad = angTol*PI/180
+	Variable angTolRad = angTol*PI/180								// used to compare two directions for equivalence
 	Variable Nalloc = 1000
 	Make/N=(Nalloc,4)/U/I/FREE indexPairs=0						// holds (i,j of measured pair) &  (i,j of calculated pair)
 	Variable angleMeasured, nPairs
@@ -1285,7 +1262,7 @@ Variable angTolRad = angTol*PI/180
 #endif
 
 	// check for lumps or groupings in the set of rotation vectors PairRotations[][3]
-	Variable threshStart=angTol*PI/180		// largest acceptable error between measured and calculated angles
+	Variable threshStart=angTolRad			// largest acceptable error between measured and calculated angles (radian)
 	Variable threshStop=0.001*PI/180		// stop searching when thresh reaches 0.001¡
 #ifdef QS_TESTING
 	if (printIt)
@@ -1368,7 +1345,7 @@ Variable angTolRad = angTol*PI/180
 	endif
 #endif
 
-	// now save all indexed values using the optimized rotation
+	// Save all indexed values using the optimized rotation
 	Variable Npatterns=1, ipat=0, NG
 	String peakListName = ParseFilePath(3,StringByKey("peakListWave",noteMeasured,"="),":",0,0)
 	String IndexedName = CleanupName("FullPeakIndexed"+ReplaceString("FullPeakList",peakListName,""),0)
@@ -1598,117 +1575,6 @@ Static Function/WAVE MakePossibleQhats(atDetector,recip0,qvec0,cone,hkl0,keVmax[
 	return TestQs
 End
 //
-//		Static Function/WAVE MakePossibleQhats(recip0,qvec0,cone,hkl0,keVmax,Nmax,[kin,printIt])
-//			// Make a list of q^[][3] that are available for checking (UN-Rotated)
-//			Wave recip0						// UN-rotated reciprocal lattice
-//			Wave qvec0						// this q-vector diffracts to center of the detector (only use direction)
-//			Variable cone					// only consider q-vectors with kf within cone of qvec0+ki (radian)
-//			Wave hkl0						// preferred hkl, the hkl that we want to diffract near qvec0
-//			Variable keVmax				// maximum allowed energy (keV)
-//			Variable Nmax					// max number of test q-vectors
-//			Wave kin							// optional incident wave direction (usually defaults to 001)
-//			Variable printIt
-//			printIt = ParamIsDefault(printIt) || numtype(printIt) || strlen(GetRTStackInfo(2))==0 ? 0 : !(!printIt)
-//		
-//			Variable tol = 0.1								// angle tolerance (degree)
-//			if (numtype(cone+keVmax+Nmax))
-//				return $""
-//			elseif (cone<tol || cone>(PI-tol))			// cone in range [tol, 180¡-tol]
-//				return $""
-//			elseif (keVmax<=0)
-//				return $""
-//			elseif (Nmax<3 || Nmax>250)					// max number of hkls is in [3,250]
-//				return $""
-//			endif
-//		
-//			Make/N=3/D/FREE ki={0,0,1}					// use this for the incident beam direction
-//			if (!ParamIsDefault(kin))						// one was passed, use it
-//				ki = kin[p]
-//				normalize(ki)
-//			endif
-//			MatrixOP/FREE qhat0 = Normalize(qvec0)	// direction of q-vector that will scatter toward detector center
-//			Redimension/N=3 qhat0
-//		
-//			// find rotation that takes (recip0 x hkl0) --> qvec0
-//			//		rot0 x (recip0 x hkl0) == qhat0
-//			MatrixOP/FREE q0 = Normalize(recip0 x hkl0)
-//			Cross q0, qhat0									// find a rotation that puts (recip0 x hkl0) parallel to qhat0
-//			Wave W_Cross=W_Cross
-//			Variable sine = normalize(W_Cross)
-//			Variable cosine = MatrixDot(q0,qhat0)
-//			Variable angle = atan2(sine,cosine)*180/PI
-//			Make/N=(3,3)/D/FREE rot0
-//			rotationMatAboutAxis(W_Cross,angle,rot0)
-//			KillWaves/Z W_Cross
-//			MatrixOP/FREE recip = rot0 x recip0
-//			//		so now:  qhat0 || (rot0 x recip0 x hkl0)
-//		
-//			Variable dot = MatrixDot(ki,qhat0)
-//			Make/N=3/D/FREE kf0 = (ki - 2*dot*qhat0)//		kf^ = ki^ - 2*(ki^ . q^)*q^
-//			// I want only kf's that are within cone of kf0
-//			Variable maxTheta = limit(acos(MatrixDot(kf0,ki))+cone,tol,PI-tol)/2
-//			Variable maxQLen = 4*PI*sin(maxTheta) * keVmax/hc	// max len of a q-vector = recip0 x hkl)
-//			MatrixOP/FREE hklMax = floor( rowRepeat(maxQLen,3)/sqrt(sumCols(magSqr(recip)))^t )
-//			Variable hmax=hklMax[0], kmax=hklMax[1], lmax=hklMax[2], 	maxMax=WaveMax(hklMax)
-//			if (printIt)
-//				printf "  find Possible Q-directions using index range: h=[%+d, %+d], k=[%+d, %+d], l=[%+d, %+d], max(theta)=%g¡\r",-hmax,hmax, -kmax,kmax, -lmax,lmax,maxTheta*180/PI
-//			endif
-//		
-//			Variable minDot = cos(cone)					// minimum allowed value of dot(kf0,kf)
-//			Variable cosTol=cos(tol), coneMax=-Inf
-//			Make/N=(Nmax,3)/FREE TestQs=NaN				// contains q^x, q^y, q^z, other has h,k,l
-//			Make/N=3/D/FREE hkl, kf
-//			Variable h,k,l, m, h1,k1,l1, N, Qmag
-//			for (m=1,N=0; m<=maxMax && N<Nmax; m+=1)
-//				l1 = min(lmax,m)
-//				for (l=0; l<=l1 && N<Nmax; l=LatticeSym#incrementIndex(l))
-//					hkl[2] = l
-//					k1 = min(kmax,l1)
-//					for (k=0; k<=k1 && N<Nmax; k=LatticeSym#incrementIndex(k))
-//						hkl[1] = k
-//						h1 = min(hmax,k1)
-//						for (h=0; h<=h1 && N<Nmax; h=LatticeSym#incrementIndex(h))
-//							hkl[0] = h
-//							MatrixOP/FREE/O qhat = recip x hkl
-//							Qmag = normalize(qhat)
-//							dot = MatrixDot(ki,qhat)
-//							kf = (ki - 2*dot*qhat)				// kf^ = ki^ - 2*(ki^ . q^)*q^
-//							if (Qmag>maxQLen)
-//								continue								// length is too long, skip
-//							elseif (dot > 0)						// (-ki .dot. q^) < 0 is invalid
-//								continue								// Bragg angle must be < 90¡
-//							elseif (MatrixDot(kf,kf0)<minDot)
-//								continue								// kf is too far from kf0
-//							elseif (!isNewDirection(TestQs,qhat,cosTol))
-//								continue								// skip already existing directions too
-//							endif
-//							TestQs[N][] = qhat[q]				// a new valid & unique q-direction
-//							N += 1
-//							coneMax = max(coneMax,acos(MatrixDot(kf,kf0)))
-//						endfor
-//					endfor
-//				endfor
-//			endfor
-//			Redimension/N=(N,-1) TestQs
-//			MatrixOP/FREE/O TestQs = ( Inv(rot0) x TestQs^t )^t	// rotate TestQs back to UN-rotated frame
-//		
-//			SetDimLabel 1,0,Qx,TestQs							// first 3 columns are the normalized qx,qy,qz
-//			SetDimLabel 1,1,Qy,TestQs
-//			SetDimLabel 1,2,Qz,TestQs
-//			String wnote="waveClass=QhatsTest;"
-//			wnote = ReplaceStringByKey("qvec0",wnote,vec2str(qvec0,places=14,sep=","),"=")
-//			wnote = ReplaceNumberByKey("cone",wnote,cone*180/PI,"=")
-//			wnote = ReplaceStringByKey("hkl0",wnote,vec2str(hkl0,places=14,sep=","),"=")
-//			wnote = ReplaceNumberByKey("keVmax",wnote,keVmax,"=")
-//			if (Nmax!=250)
-//				wnote = ReplaceNumberByKey("Nmax",wnote,Nmax,"=")
-//			endif
-//			wnote = ReplaceNumberByKey("coneMax",wnote,coneMax*180/PI,"=")
-//			wnote = ReplaceStringByKey("recip",wnote,encodeMatAsStr(recip0,places=14),"=")
-//			wnote = ReplaceStringByKey("ki",wnote,vec2str(ki,places=14,sep=","),"=")
-//			Note/K TestQs, wnote
-//			return TestQs
-//		End
 //	Function Test_MakePossibleQhats(cone,keVmax)		// try: Test_MakePossibleQhats(40, 12)
 //		Variable cone			//	=40
 //		Variable keVmax		//	=12
@@ -3376,6 +3242,27 @@ ThreadSafe Static Function AngularSpanOfVectors(hats)
 	return acos(limit(minDots[0],-1,1))*180/PI
 End
 
+
+ThreadSafe Static Function isNewDirection(existingAxes,axis,cosTol,[anti])
+	//	returns True if axis does not point toward an existing directions in existingAxes
+	// if anti==1, then axis is also not anti-parallel to existingAxes
+	Wave existingAxes			// array(N,3) list of existing axes
+	Wave axis
+	Variable cosTol			// tolerance on dot:  cosTol = cos(Æangle),  cos(0.1¡) = 0.999998476913288
+	Variable anti				// is true then parallel and anti-parallel return TRUE (default is FALSE)
+	if (norm(axis)==0)
+		return 0					// skip the (000)
+	endif
+	anti = ParamIsDefault(anti) ? 0 : anti
+
+	if (anti)
+		MatrixOP/FREE dots = abs(existingAxes x axis)
+	else
+		MatrixOP/FREE dots = existingAxes x axis
+	endif
+	Variable dotMax = WaveMax(dots)
+	return (dotMax < cosTol || numtype(dotMax))	// if existingAxes filled with NaN then anything works
+End
 
 
 ThreadSafe Static Function/WAVE RotMatAboutAxisOnly(axis)		// return rotation matrix
