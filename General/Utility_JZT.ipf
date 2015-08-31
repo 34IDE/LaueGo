@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.75
+#pragma version = 3.76
 // #pragma hide = 1
 
 Menu "Graph"
@@ -46,7 +46,8 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		reverseList(), reverses a list, handy for prompt,popups
 //		monotonic(a), checks if a wave is monotonic
 //		isdigit(c) & isletter(c), handy utilities
-//		angleVec2Vec(a,b)		finds angle between two vectors (degree)
+//		angleVec2Vec(a,b), finds angle between two vectors (degree)
+//		perp2Vector(a), returns a free vector that is perpendicular to a, the direction around a is unspecified.
 //		rotationAngleOfMat(rot)  finds the total rotation angle of a matrix 'rot'
 //		isRotationMat(mat,[tol]), returns true if mat is a rotation matrix
 //		axisOfMatrix(mat,axis,[squareUp]), find axis and angle from the rotation matrix mat
@@ -2316,6 +2317,21 @@ ThreadSafe Function angleVec2Vec(a,b)		// return the angle between two vectors (
 	Variable dot = MatrixDot(a,b) / (norm(a)*norm(b))
 	dot = limit(dot,-1,1)						// ensure that the acos will exist
 	return acos(dot)*180/PI
+End
+
+
+ThreadSafe Function/WAVE perp2Vector(a)
+	// returns a new vector that is perpendicular to a, the direction around a is unspecified.
+	Wave a
+	Variable i,j, imin=abs(a[0])<abs(a[1]) ? 0 : 1
+	imin = abs(a[2])<abs(a[imin]) ? 2 : imin
+	i = mod(imin+2,3)
+	j = mod(imin+1,3)
+	Make/N=(3,3)/D/FREE mat=0
+	mat[i][j] = 1						//	see:  https://en.wikipedia.org/wiki/Cross_product
+	mat[j][i] = -1
+	MatrixOP/FREE cr = Normalize(mat x a)
+	return cr
 End
 
 

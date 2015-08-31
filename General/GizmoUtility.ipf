@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.05
+#pragma version = 2.06
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -714,14 +714,15 @@ End
 
 // Add a marker to a gizmo. Returns name of item to include in the display list.
 // Note this just creates a marker group, the marker group needs to be part of a scatter plot to display it
-Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha])
+Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 	String groupName			// probably "groupTitle", If this is empty, then a unique name will be assigned
 	String rgba					// red, green, blue, or "" is black, or you can give your own rgba as "1,1,0,0.5"
 	Variable alpha
+	Variable scale				// optional scale factor, default is 1
 	rgba = SelectString(ParamIsDefault(rgba),rgba,"")
 	alpha = ParamIsDefault(alpha) ? 1 : alpha
 	alpha = numtype(alpha) ? 1 : limit(alpha,0,1)
-
+	scale = ParamIsDefault(scale) || numtype(scale) ? 1 : scale
 
 	if (CheckName(groupName,5))						// invalid groupName passed, create one
 		if (strlen(groupName)<1)						// create a unique group name
@@ -780,6 +781,9 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha])
 	if (strlen(rgba))
 		Execute "ModifyGizmo setDisplayList=2, attribute=colorLine"
 	endif
+	if (!(scale==1))
+		sprintf str, "ModifyGizmo setDisplayList=-1, opName=scaleAll, operation=scale, data={%g,%g,%g}",scale,scale,scale	;	Execute str
+	endif
 	Execute "ModifyGizmo setDisplayList=-1, object=lineX"
 	Execute "ModifyGizmo setDisplayList=-1, object=lineY"
 	Execute "ModifyGizmo setDisplayList=-1, object=lineZ"
@@ -825,6 +829,9 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha])
 	ModifyGizmo setDisplayList=1, attribute=lineWidthCross
 	if (strlen(rgba))
 		ModifyGizmo setDisplayList=2, attribute=colorLine
+	endif
+	if (!(scale==1))
+		ModifyGizmo setDisplayList=-1, opName=scaleAll, operation=scale, data={scale,scale,scale}
 	endif
 	ModifyGizmo setDisplayList=-1, object=lineX
 	ModifyGizmo setDisplayList=-1, object=lineY

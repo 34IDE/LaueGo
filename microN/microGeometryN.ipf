@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.83
+#pragma version = 1.84
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -9,9 +9,13 @@
 Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
 // Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
-Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;"
+Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;Mar-165:Gray;"
+//Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:55000,55000,55000;"
+Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:65535,49344,52171;"
 // 3 detectors from ORNL are: PE1621 723-3335, PE0820 763-1807, PE0820 763-1850
 // 2 detectors from NIST are: PE0822 883-4841, PE0822 883-4843
+//   Mar-165 CCD, use Gray
+//   default color is a light-pink
 
 StrConstant LaueGoMainMenuName = "LaueGo (micro)"
 Strconstant EPICS_PREFIX="34ide:geometryN:"// prefix for the geometry PVs
@@ -3003,15 +3007,17 @@ Function PanelHwireMake() : Panel
 
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
-	Variable dnum, py = g.d[dnum].Ny/2
-	for (dnum=0; dnum<MAX_Ndetectors && !(g.d[dnum].used); dnum+=1)
-	endfor
-	NewPanel /W=(128,166,438,253)/K=1/N=PanelWireH as "H wire calculator"
+
+	String detectorList = detectorPopMenuStr(g,bare=1)
+	Variable dNum = detectorNumFromID(StringFromList(0,detectorList))
+	Variable py = g.d[dnum].Ny/2
+
+	NewPanel /W=(128,166,455,253)/K=1/N=PanelWireH as "H wire calculator"
 	PopupMenu detectorNum,pos={10,4},size={71,20},proc=microGeo#PanelH_PopMenuProc
-	PopupMenu detectorNum,mode=1,popvalue="Orange",value= #"\"Orange;Yellow;Purple\""
-	SetVariable setvar_px,pos={104,3},size={80,19},proc=microGeo#PanelH_SetVarProc,title="px"
+	PopupMenu detectorNum,mode=1,popvalue=StringFromList(0,detectorList),value= #("\""+detectorList+"\"")
+	SetVariable setvar_px,pos={158,3},size={80,19},proc=microGeo#PanelH_SetVarProc,title="px"
 	SetVariable setvar_px,fSize=12,limits={0,2047,10},value= _NUM:100
-	SetVariable setvar_py,pos={190,3},size={80,19},proc=microGeo#PanelH_SetVarProc,title="py"
+	SetVariable setvar_py,pos={244,3},size={80,19},proc=microGeo#PanelH_SetVarProc,title="py"
 	SetVariable setvar_py,fSize=12,limits={0,2047,10},value= _NUM:py
 	SetVariable setvar_depth,pos={10,62},size={140,19},proc=microGeo#PanelH_SetVarProc,title="depth (µm) "
 	SetVariable setvar_depth,fSize=12,limits={-1000,1000,5},format="%.1f",value= _NUM:0
@@ -3021,7 +3027,8 @@ Function PanelHwireMake() : Panel
 	SetVariable setvar_Fwire,fSize=12,limits={-1000,1000,5},value= _NUM:g.wire.F
 	SetVariable setvar_Hwire,pos={162,62},size={140,21},proc=microGeo#PanelH_SetVarProc,title="H\\Bwire\\M (µm) "
 	SetVariable setvar_Hwire,fSize=12,limits={-1000,1000,5},format="%.2f"
-	SetWindow PanelWireH userdata(changed)="2;1;"
+	SetWindow PanelWireH userdata(changed)="2;1;"					// remembers the last two changed of 1=px, 2=depth, 4=Hwire
+	SetWindow PanelWireH userdata(detectorList)=detectorList	// list of available detectors
 
 	calcHofWire("PanelWireH",0)
 	return 0
@@ -3065,10 +3072,10 @@ Static Function calcHofWire(win,whoChanged)
 		SetWindow $win userdata(changed)=str
 	endif
 	if (numtype(i0+i1))
-		i0 = 1
+		i0 = 1							// defaults to px and depth
 		i1 = 2
 	endif
-	Variable dnum						// detector number, {0, 1, 2}
+	Variable dnum						// detector number, {0, 1, 2,..., MAX_Ndetectors}
 	Variable px,py						// requested pixel on detector
 	Variable depth						// requested depth (µm)
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
@@ -3079,38 +3086,44 @@ Static Function calcHofWire(win,whoChanged)
 	ControlInfo/W=$win setvar_Fwire	;	Fwire = V_Value
 	ControlInfo/W=$win setvar_depth	;	depth = V_Value
 	ControlInfo/W=$win setvar_Hwire	;	Hwire = V_Value
-	ControlInfo/W=$win detectorNum	;	dnum = V_Value-1
 	ControlInfo/W=$win popupEdge		;	edge = V_Value==1 ? 1 : 0
+	ControlInfo/W=$win detectorNum
+	String detectorID = StringFromList(V_Value-1,GetUserData(win,"","detectorList"))
+	dNum = detectorNumFromID(detectorID)
+
+	String color = detectorID2color(ReplaceString(",",detectorID,""))
+	Wave rgb=str2vec(StringByKey(color,DetColorRGBs,":"))
+	if (!WaveExists(rgb))
+		Wave rgb=str2vec(StringByKey("default",DetColorRGBs,":"))
+	endif
+
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
-	edge = edge==0 ? 0 : 1				// default for bad input is leading
+	edge = edge==0 ? 0 : 1					// default for bad input is leading
 	g.wire.F = numtype(Fwire) ? g.wire.F : Fwire
 	Make/N=3/D/FREE xyz=NaN
 
-	SetDrawLayer/K UserBack			// re-draw colored box
-	Make/N=(3,3)/U/W/FREE rgb
-	rgb[0][0]= {65535,65535,65535}
-	rgb[0][1]= {43688,65535,30000}
-	rgb[0][2]= {32768,0,65535}
-	SetDrawEnv linefgc=(rgb[dnum][0],rgb[dnum][1],rgb[dnum][2]),fillfgc=(rgb[dnum][0],rgb[dnum][1],rgb[dnum][2]) // Orange
-	DrawRect 1,3,90,23
+	SetDrawLayer/K UserBack				// re-draw colored box
+	SetDrawEnv linefgc=(rgb[0],rgb[1],rgb[2]),fillfgc=(rgb[0],rgb[1],rgb[2])
+	Variable right = FontSizeStringWidth("Geneva",9,1,detectorID)+50
+	DrawRect 1,3,right,24					//	DrawRect 1,3,90,23
 
 	SetVariable setvar_px,format=""
-	if ((i0+i1)==3)					// calc Hwire from depth & px
-		pixel2XYZ(g.d[dnum],px,py,xyz)				// convert pixel position to the beam line coordinate system
+	if ((i0+i1)==3)							// calc Hwire from depth & px
+		pixel2XYZ(g.d[dnum],px,py,xyz)	// convert pixel position to the beam line coordinate system
 		Hwire = DepthPixel2WireH(g,depth,xyz,edge)	// calc H of wire that is tangent to line from depth on beam to pixel on detector (in beam line coords)
 		SetVariable setvar_Hwire,value= _NUM:Hwire
-	elseif ((i0+i1)==5)				// calc depth from px & Hwire
-		Make/N=3/D/FREE Xw=0						// position of wire, assume that the Xwire=0
-		Xw[1] = HF2Y(Hwire,g.wire.F)					// Y =  H*sin(angle) - F*cos(angle)
-		Xw[2] = HF2Z(Hwire,g.wire.F)					// Z =  H*cos(angle) + F*sin(angle)
-		pixel2XYZ(g.d[dnum],px,py,xyz)				// convert pixel position to the beam line coordinate system
+	elseif ((i0+i1)==5)						// calc depth from px & Hwire
+		Make/N=3/D/FREE Xw=0				// position of wire, assume that the Xwire=0
+		Xw[1] = HF2Y(Hwire,g.wire.F)		// Y =  H*sin(angle) - F*cos(angle)
+		Xw[2] = HF2Z(Hwire,g.wire.F)		// Z =  H*cos(angle) + F*sin(angle)
+		pixel2XYZ(g.d[dnum],px,py,xyz)	// convert pixel position to the beam line coordinate system
 		depth = PixelxyzWire2depth(g,xyz,Xw,edge)	// returns depth (µm)
 		SetVariable setvar_depth,value= _NUM:depth
-	elseif ((i0+i1)==6)				// calc px from depth & Hwire
-		Make/N=3/D/FREE Xw=0						// position of wire, assume that the Xwire=0
-		Xw[1] = HF2Y(Hwire,g.wire.F)					// Y =  H*sin(angle) - F*cos(angle)
-		Xw[2] = HF2Z(Hwire,g.wire.F)					// Z =  H*cos(angle) + F*sin(angle)
+	elseif ((i0+i1)==6)						// calc px from depth & Hwire
+		Make/N=3/D/FREE Xw=0				// position of wire, assume that the Xwire=0
+		Xw[1] = HF2Y(Hwire,g.wire.F)		// Y =  H*sin(angle) - F*cos(angle)
+		Xw[2] = HF2Z(Hwire,g.wire.F)		// Z =  H*cos(angle) + F*sin(angle)
 		px = WireDepth2Pixel(g,dnum,py,Xw,depth,edge)	// find px, given the wire and depth
 		SetVariable setvar_px,format="%.1f",value= _NUM:px
 	endif
@@ -3792,14 +3805,19 @@ Static Function GeoDetectorPopMenuProc(pa) : PopupMenuControl
 	return 0
 End
 //
-Static Function/T detectorPopMenuStr(g)		// re-make the string of detector names for detectorPopup
+Static Function/T detectorPopMenuStr(g,[bare])	// re-make the string of detector names for detectorPopup
 	STRUCT microGeometry &g
+	Variable bare					// if True, do not add the " at start & end
+	bare = ParamIsDefault(bare) || numtype(bare) ? 0 : bare
 	String popStr=""
 	Variable i
 	for (i=0;i<MAX_Ndetectors;i+=1)
-		popStr += g.d[i].detectorID + ";"
+		popStr += SelectString(strlen(g.d[i].detectorID), "", g.d[i].detectorID + ";")
 	endfor
-	popStr = "\"" + popStr + "\""
+
+	if (!bare)
+		popStr = "\"" + popStr + "\""
+	endif
 	return popStr
 End
 
@@ -4001,21 +4019,16 @@ Static Function SetDetectorColor(win,id)
 	String id							// a detector ID
 
 	String color = detectorID2color(ReplaceString(",",id,""))
-	Variable r=40000,g=40000,b=40000				// default color is gray
-	if (stringmatch(color,"Orange"))
-		r = 65535;		g = 43688;		b = 32768	
-	elseif (stringmatch(color,"Yellow"))
-		r = 65535;		g = 65535;		b = 0
-	elseif (stringmatch(color,"Purple"))
-		r = 65535;		g = 30000;		b = 65535
-	else
-		color = ""
+	Wave rgb=str2vec(StringByKey(color,DetColorRGBs,":"))
+	if (!WaveExists(rgb))
+		Wave rgb=str2vec(StringByKey("default",DetColorRGBs,":"))
+		print rgb
 	endif
 
 	SetDrawLayer/W=$win/K ProgBack
-	SetVariable detectorID win=$win, labelBack=(r,g,b)
+	SetVariable detectorID win=$win, labelBack=(rgb[0],rgb[1],rgb[2])
 	if (strlen(color))
-		SetDrawEnv/W=$win linethick=8, linefgc= (r,g,b)
+		SetDrawEnv/W=$win linethick=8, linefgc= (rgb[0],rgb[1],rgb[2])
 		DrawLine/W=$win 1,30,1,230
 	endif
 	return 0

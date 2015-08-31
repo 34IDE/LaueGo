@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.75
+#pragma version = 4.76
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -127,7 +127,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable keVmaxTest				// 30, maximum energy to test (keV)  [-t]
 	Variable angleTolerance		// 0.25, angular tolerance (deg)
 	Variable hp,kp,lp					// preferred hkl
-	Variable cone						// angle from preferred hkl, (0 < cone < 180¡)
+	Variable cone						// angle from preferred hkl, (0 < cone ² 180¡)
 	Variable maxSpots					// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1				// contains the result of a peak fitting
 	Wave FullPeakList2				// contains the result of a peak fitting
@@ -164,7 +164,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
 	badNums += numtype(hp+kp+lp)
-	badNums += !(cone>1 && cone<180)
+	badNums += !(cone>1 && cone<=180)
 	badNums += (abs(hp)+abs(kp)+abs(lp))==0
 	if (badWave || badNums)
 		keVmaxCalc = (keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) ? keVmaxCalc : NaN
@@ -177,7 +177,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		hp = numtype(hp) ? NumVarOrDefault("root:Packages:micro:Index:hp",0) : hp
 		kp = numtype(kp) ? NumVarOrDefault("root:Packages:micro:Index:kp",0) : kp
 		lp = numtype(lp) ? NumVarOrDefault("root:Packages:micro:Index:lp",2) : lp
-		cone = (cone>1 && cone<180) ? cone : NumVarOrDefault("root:Packages:micro:Index:cone",( is4500S ? 179 : 72 ))
+		cone = (cone>1 && cone<=180) ? cone : NumVarOrDefault("root:Packages:micro:Index:cone",( is4500S ? 179 : 72 ))
 		String hkl
 		sprintf hkl,"%d, %d, %d",hp,kp,lp
 		Prompt hkl,"preferred hkl of center"
@@ -239,7 +239,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 				N2 = DimSize(FullPeakList2,0)
 			endif
 		endif
-		if (!(cone>1 && cone<180) && WaveExists(FullPeakList0))
+		if (!(cone>1 && cone<=180) && WaveExists(FullPeakList0))
 			cone = EstimateConeAngle(NaN,image=FullPeakList0)	// user requested auto-guess of cone angle
 		endif
 		if (ParamIsDefault(maxSpots) && (N0+N1+N2)>250)		// more than 250 spots in FullPeakLIst
@@ -252,7 +252,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		endif
 		badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 		badNums += !(angleTolerance>=0.01 && angleTolerance<10)
-		badNums += numtype(hp+kp+lp) + !(cone>1 && cone<180)
+		badNums += numtype(hp+kp+lp) + !(cone>1 && cone<=180)
 		badNums += (abs(hp)+abs(kp)+abs(lp))==0
 		sscanf hkl,"%d, %d, %d", hp,kp,lp
 		printf "¥IndexAndDisplay(%s,%g,%g,%g, %d,%d,%d,%g",peakListStr0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone
@@ -2004,7 +2004,7 @@ Function/WAVE runIndexingEulerCommand(args)
 	Variable hp = NumberByKey("hp",args)										// preferred hkl
 	Variable kp = NumberByKey("kp",args)
 	Variable lp = NumberByKey("lp",args)
-	Variable cone = NumberByKey("cone",args)								// angle from preferred hkl, (0 < cone < 180¡)
+	Variable cone = NumberByKey("cone",args)								// angle from preferred hkl, (0 < cone ² 180¡)
 	Variable maxSpots = NumberByKey("maxSpots",args)						// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
@@ -2012,10 +2012,11 @@ Function/WAVE runIndexingEulerCommand(args)
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
 	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : printIt
 
+	cone = cone==180 ? 180-0.001 : cone
 	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
 	badNums += !(angleTolerance>=0.01 && angleTolerance<10)
 	badNums += numtype(hp+kp+lp)
-	badNums += !(cone>1 && cone<180)
+	badNums += !(cone>1 && cone<=180)
 	if (badNums)
 		DoAlert 0, "Invalid inputs sent to runIndexingEulerCommand()"
 		printf "runIndexingEulerCommand(%s,%g,%g,%g)\r",NameOfWave(FullPeakList),keVmaxCalc,keVmaxTest,angleTolerance
@@ -7974,15 +7975,15 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 		return result
 	endif
 
-	Make/N=3/FREE xyz = {0,1,-1}				// Q of surface normal
-	Variable/C pz =  q2pixel(g.d[dnum],xyz)		// pixel location of surface normal
-	Variable px=real(pz), py=imag(pz), Nx=g.d[dnum].Nx, Ny=g.d[dnum].Ny
-	if (numtype(px+py))							// perhaps the beam is on path of direct beam
-		xyz = {0,0, g.d[dnum].P[2]}
-		XYZ2pixel(g.d[dnum],xyz,px,py)
-	endif
-	if (px==limit(px,0,Nx-1) && py==limit(py,0,Ny-1))
-		Variable NxFW=Nx/10, NyFW=Ny/10
+	Variable px,py, Nx=g.d[dnum].Nx, Ny=g.d[dnum].Ny
+	Make/N=3/D/FREE xyz, xyzAbs				// xyz points to detector center
+	pixel2XYZ(g.d[dNum],0.5*(Nx-1),0.5*(Ny-1),xyz)
+	xyzAbs = abs(xyz)
+	WaveStats/M=1/Q xyzAbs						// need to find which value in xyz has the largest magnitude
+	xyz = p==V_maxloc ? sign(xyz[p]) : 0	// xyz is now the closest orthogonal direction that points to the detector
+	XYZ2pixel(g.d[dNum],xyz,px,py)			// set pixel where xyz hits detector
+	if (px>=0 && px <= g.d[dNum].Nx && py>=0 && py <= g.d[dNum].Ny)	// (px,py) IS on detector, draw cross
+		Variable NxFW=Nx/10, NyFW=Ny/10							// size of cross
 		if (numtype(startx+starty+groupx+groupy)==0 && (groupx>1 || groupy>1))	// binned image
 			px = round(( px-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
 			py = round(( py-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
