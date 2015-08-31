@@ -282,10 +282,10 @@ Function GizmoOfMakePairRotations()
 	endif
 
 	Execute "AppendToGizmo Axes=boxAxes,name=axes0"
-
 	setGizmoAxisLabels("X","Y","Z")
 	String titleGroupName = AddGizmoTitleGroup("","green: rotAxis from FindPeakInRots()",title2="red: symmetry reduced rotAxis",title3="black: MakeSimulatedTestSpots()")
-	
+	String Pink3dCross = AddGizmoMarkerGroup("",rgba="1,0.6,1,1",scale=0.15)
+
 	Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=CubeCornersScatter"
 	Execute "ModifyGizmo ModifyObject=CubeCornersScatter property={ markerType,0}"
 	Execute "ModifyGizmo ModifyObject=CubeCornersScatter property={ sizeType,0}"
@@ -299,9 +299,10 @@ Function GizmoOfMakePairRotations()
 	Execute "ModifyGizmo setDisplayList=3, opName=scale0, operation=scale, data={1.25,1.25,1.25}"
 	Execute "ModifyGizmo setDisplayList=4, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}"
 	Execute "ModifyGizmo setDisplayList=5, attribute=blendFunc0"
-	Execute "ModifyGizmo setDisplayList=6, object=axes0"
-	Execute "ModifyGizmo setDisplayList=7, object=PairRotationScatter"
-	Execute "ModifyGizmo setDisplayList=8, object=CubeCornersScatter"
+	Execute "ModifyGizmo setDisplayList=6, object="+Pink3dCross
+	Execute "ModifyGizmo setDisplayList=7, object=axes0"
+	Execute "ModifyGizmo setDisplayList=8, object=PairRotationScatter"
+	Execute "ModifyGizmo setDisplayList=9, object=CubeCornersScatter"
 	Execute "ModifyGizmo SETQUATERNION={-0.917130,-0.171883,-0.272546,-0.234738}"
 	Execute "ModifyGizmo autoscaling=1"
 	Execute "ModifyGizmo currentGroupObject=\"\""
