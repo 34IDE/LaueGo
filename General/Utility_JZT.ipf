@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.76
+#pragma version = 3.77
 // #pragma hide = 1
 
 Menu "Graph"
@@ -87,6 +87,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
 //		SquareUpGizmo(gName), Used to square up a graph gizmo
+//		num2Ordinal(n), converts integer n to ordinal string, e.g. 1 --> "1st"
 //		ChangeStrEnding(oldEnd, inStr, newEnd)  if inStr ends in oldEnd, replace oldEnd with newEnd
 //		SIprefix2factor(prefix)  get the factor for an SI prefix
 //		ConvertUnits2meters(unit,[defaultLen])  returns conversion factor from unit to meters
@@ -3832,6 +3833,22 @@ End
 
 //  =============================== End of Square Pixels ===============================  //
 //  ====================================================================================  //
+
+ThreadSafe Function/T num2Ordinal(n)
+	// converts integer n to ordinal string, e.g. 1 --> "1st"
+	// if n is not an integer then just append "th"
+	Variable n		// an integer
+	String ending=StringFromList(abs(n),"th;st;nd;rd;")
+	ending = SelectString(strlen(ending),"th",ending)
+	if (numtype(n))
+		ending = ""
+	elseif (abs(round(n)-n)>1e-5)
+		ending = "th"
+	else
+		n = round(n)
+	endif
+	return num2str(n)+ending
+End
 
 
 ThreadSafe Function/T ChangeStrEnding(oldEnd, inStr, newEnd)
