@@ -101,9 +101,9 @@ Function PhysicalConstant_InsertStatic(name,[printIt])
 	conversions += "{220} lattice spacing of silicon=aoSi022_m,1,Si {220} (m):aoSi022_nm,1e9,Si {220} (nm):aoSi022_A,1e10,Si {220} (Å);"
 	conversions += "Avogadro constant=NA,1,Avogadro constant (1 mole);"
 	conversions += "electron mass energy equivalent in MeV="
-		conversions += "me_eV,1e6,electron mass energy equivalent (eV):"
-		conversions += "me_keV,1e3,electron mass energy equivalent (keV):"
-		conversions += "me_MeV,1,electron mass energy equivalent (MeV);"
+	conversions += "me_eV,1e6,electron mass energy equivalent (eV):"
+	conversions += "me_keV,1e3,electron mass energy equivalent (keV):"
+	conversions += "me_MeV,1,electron mass energy equivalent (MeV);"
 
 	String lists=StringByKey(name,conversions,"="), outName, comment
 	Variable N=ItemsInList(lists,":"),i
@@ -300,7 +300,7 @@ ThreadSafe Static Function/T formatPhysicalConstantStructure(c,[always])
 	endif
 	fmt = "%."+num2str(placesOfPrecision(c.value))+"g"
 	sprintf str,fmt,c.value
-	full = c.name+" = "+str
+	full = c.name + SelectString(strlen(c.symbol), "", " ("+c.symbol+")") +" = "+str
 	fmt = "%."+num2str(placesOfPrecision(c.err))+"g"
 	sprintf str,fmt,c.err
 	String pm = SelectString(stringmatch(IgorInfo(2),"Macintosh"),"+/-","±")
@@ -387,6 +387,15 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 	String buf
 	STRUCT PhysicalConstantStructureAll &cAll
 
+	String symbols = "speed of light in vacuum:c;inverse meter-electron volt relationship:hc;"
+	symbols += "inverse meter-atomic mass unit relationship:h/c;inverse meter-hartree relationship:hc;"
+	symbols += "inverse meter-hertz relationship:c;inverse meter-joule relationship:hc;"
+	symbols += "inverse meter-kelvin relationship:hc/k;inverse meter-kilogram relationship:h/c;"
+	symbols += "Avogadro constant:NA;Bohr radius:a0;Boltzmann constant:kB;classical electron radius:re;"
+	symbols += "elementary charge:e;fine-structure constant:alpha;inverse fine-structure constant:1/alpha;"
+	symbols += "Newtonian constant of gravitation:G;standard acceleration of gravity:g;proton mass:mp;"
+	symbols += "Rydberg constant:Ry;standard atmosphere:atm;{220} lattice spacing of silicon:aSi220;"
+
 	Variable val0=NaN, err0=NaN, unit0=NaN
 	// This routine is really stupid, but that is because the text file that I download from NIST is really stupid.  It has no rules,
 	//	and there is little about the file that is standard.  If you can find either a more standard text file or an xml file that would be better.
@@ -429,7 +438,7 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 		if (strlen(line)<2)
 			continue
 		endif
-
+		initPhysicalConstantStructure(clocal)
 		strVal = line[val0,err0-1]
 		strVal = ReplaceString("...",strVal,"")	// sometimes used with "exact" constants
 		strVal = ReplaceString(" ",strVal,"")		// no spaces allowed in value
@@ -447,6 +456,7 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 		name = ReplaceString("mom.",name,"moment")	// remove abbreviations
 		name = ReplaceString("mag.",name,"magnetic")
 		clocal.name = name[0,PhysicalConstantMaxStrLen]
+		clocal.symbol = StringByKey(clocal.name,symbols)
 		clocal.valid = 1									// set valid to true
 
 		j = mod(nConstants,100)
@@ -502,8 +512,9 @@ Static Structure PhysicalConstantStructure
 	char name[PhysicalConstantMaxStrLen+1]
 	double value
 	double err
-	char unit[PhysicalConstantMaxStrLen+1]
 	int16 exact
+	char unit[PhysicalConstantMaxStrLen+1]
+	char symbol[PhysicalConstantMaxStrLen+1]
 EndStructure
 //
 Static Structure PhysicalConstantStructureAll
@@ -525,6 +536,7 @@ ThreadSafe Static Function copyPhysicalConstantStructure(f,i)
 	f.value	= i.value
 	f.err		= i.err
 	f.unit	= i.unit
+	f.symbol	= i.symbol
 	f.exact	= i.exact
 End
 //
@@ -535,6 +547,7 @@ ThreadSafe Static Function initPhysicalConstantStructure(c)
 	c.value	= NaN
 	c.err		= NaN
 	c.unit	= ""
+	c.symbol = ""
 	c.exact	= 0
 End
 //
