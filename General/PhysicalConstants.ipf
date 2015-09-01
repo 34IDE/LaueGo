@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.10
+#pragma version = 2.11
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=3.51		// supplies:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), placesOfPrecision(a), roundSignificant(val,N)
 Static StrConstant PhysicalConstantServerURL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -444,6 +444,8 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 		clocal.unit = unit[0,PhysicalConstantMaxStrLen]
 
 		name = TrimFrontBackWhiteSpace(line[0,val0-1])
+		name = ReplaceString("mom.",name,"moment")	// remove abreviations
+		name = ReplaceString("mag.",name,"magnetic")
 		clocal.name = name[0,PhysicalConstantMaxStrLen]
 		clocal.valid = 1									// set valid to true
 
