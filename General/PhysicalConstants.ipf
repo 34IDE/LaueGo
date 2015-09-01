@@ -444,7 +444,7 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 		clocal.unit = unit[0,PhysicalConstantMaxStrLen]
 
 		name = TrimFrontBackWhiteSpace(line[0,val0-1])
-		name = ReplaceString("mom.",name,"moment")	// remove abreviations
+		name = ReplaceString("mom.",name,"moment")	// remove abbreviations
 		name = ReplaceString("mag.",name,"magnetic")
 		clocal.name = name[0,PhysicalConstantMaxStrLen]
 		clocal.valid = 1									// set valid to true
