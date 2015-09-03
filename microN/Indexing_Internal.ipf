@@ -15,9 +15,8 @@ Static Constant INDEXING_KEV_MIN = 2		// minimum energy (kev)
 
 //	#define ZONE_TESTING
 //	#define QS_TESTING
-
 //	#define ZONE_QS_TESTING
-//	#ifdef ZONE_QS_TESTING
+//	#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 //	Constant DEBUG_LEVEL=3
 //	#endif
 
@@ -44,7 +43,7 @@ End
 
 
 //  ====================================================================================  //
-//  =========================== Start of Zones & Qs Indexing ===========================  //
+//  ============================ Start of Zones+Qs Indexing ============================  //
 
 Function/WAVE runIndexingQsZones(args)
 	String args
@@ -309,7 +308,7 @@ AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
 	String IndexedName = CleanupName("FullPeakIndexed"+ReplaceString("FullPeakList",peakListName,""),0)
 	Make/N=(NG0,12,Npatterns)/O $IndexedName/WAVE=IndexedWave = NaN
 	Variable dNum, px,py, keV, intensity, intensityMax=-Inf
-	Variable rmsGhat, minError=Inf, maxError=-Inf, goodness0=0
+	Variable rmsGhat, minError=Inf, maxError=-Inf
 	for (i=0,NG=0; i<NG0; i+=1)							// re-calc with optimized rotation
 		vec = GhatsMeasured[i][p]
 		dNum = GhatsMeasured[i][4]
@@ -323,8 +322,7 @@ AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
 			minError = min(delta,minError)
 			rmsGhat += delta*delta
 			intensity = genericIntensity(xtal,qvec,hkl,keV)
-			intensityMax = max(intensityMax,intensity)
-			goodness0 += intensity
+			intensityMax = numtype(intensity) ? intensityMax : max(intensityMax,intensity)
 			pz = q2pixel(geo.d[dNum],qhat)
 			px = limit(real(pz),0,2047)
 			py = limit(imag(pz),0,2047)
@@ -343,7 +341,7 @@ AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
 	endfor
 	Redimension/N=(NG,-1,-1) IndexedWave
 	IndexedWave[][6][] /= intensityMax					// normalize so max intensity is 1
-	goodness0 *= NG*NG/intensityMax
+	Variable goodness0 = goodNessOfPattern(IndexedWave,ipat)
 	rmsGhat = sqrt(rmsGhat/NG)
 	IndexedWave[][8][ipat] = abs(IndexedWave[p][8][ipat])<5e-6 ? 0 : IndexedWave[p][8][ipat]	// precision limit
 	Variable executionTime = stopMSTimer(-2)*1e-6 - sec0
@@ -1124,7 +1122,7 @@ End
 //       ========================== End of Zone Structure =========================       //
 //       ==========================================================================       //
 
-//  ============================ End of Zones & Qs Indexing ============================  //
+//  ============================= End of Zones+Qs Indexing =============================  //
 //  ====================================================================================  //
 
 
@@ -1353,7 +1351,7 @@ Function/WAVE runIndexingQs(args)
 	Make/N=(NG0,12,Npatterns)/O $IndexedName/WAVE=IndexedWave = NaN
 	Make/N=3/D/O/FREE hkl
 	Variable dNum, px,py, keV, intensity, intensityMax=-Inf
-	Variable rmsGhat, minError=Inf, maxError=-Inf, goodness0=0
+	Variable rmsGhat, minError=Inf, maxError=-Inf
 	for (i=0,NG=0; i<NG0; i+=1)							// re-calc with optimized rotation
 		vec = GhatsMeasured[i][p]
 		dNum = GhatsMeasured[i][4]
@@ -1367,8 +1365,7 @@ Function/WAVE runIndexingQs(args)
 			minError = min(delta,minError)
 			rmsGhat += delta*delta
 			intensity = genericIntensity(xtal,qvec,hkl,keV)
-			intensityMax = max(intensityMax,intensity)
-			goodness0 += intensity
+			intensityMax = numtype(intensity) ? intensityMax : max(intensityMax,intensity)
 			pz = q2pixel(g.d[dNum],qhat)
 			px = limit(real(pz),0,2047)
 			py = limit(imag(pz),0,2047)
@@ -1387,7 +1384,7 @@ Function/WAVE runIndexingQs(args)
 	endfor
 	Redimension/N=(NG,-1,-1) IndexedWave
 	IndexedWave[][6][] /= intensityMax					// normalize so max intensity is 1
-	goodness0 *= NG*NG/intensityMax
+	Variable goodness0 = goodNessOfPattern(IndexedWave,ipat)
 	rmsGhat = sqrt(rmsGhat/NG)
 	IndexedWave[][8][ipat] = abs(IndexedWave[p][8][ipat])<5e-6 ? 0 : IndexedWave[p][8][ipat]	// precision limit
 #ifdef QS_TESTING
@@ -1886,7 +1883,7 @@ endif
 	String IndexedName = CleanupName("FullPeakIndexed"+ReplaceString("FullPeakList",peakListName,""),0)
 	Make/N=(NG0,12,Npatterns)/O $IndexedName/WAVE=IndexedWave = NaN
 	Variable dNum, px,py, keV, intensity, intensityMax=-Inf, ipat=0
-	Variable NG, rmsGhat, minError=Inf, maxError=-Inf, goodness0=0
+	Variable NG, rmsGhat, minError=Inf, maxError=-Inf
 	for (i=0,NG=0; i<NG0; i+=1)					// re-calc with optimized rotation
 		vec = GhatsMeasured[i][p]
 		dNum = GhatsMeasured[i][4]
@@ -1900,8 +1897,7 @@ endif
 			minError = min(delta,minError)
 			rmsGhat += delta*delta
 			intensity = genericIntensity(xtal,qvec,hkl,keV)
-			intensityMax = max(intensityMax,intensity)
-			goodness0 += intensity
+			intensityMax = numtype(intensity) ? intensityMax : max(intensityMax,intensity)
 			pz = q2pixel(g.d[dNum],qhat)
 			px = limit(real(pz),0,2047)
 			py = limit(imag(pz),0,2047)
@@ -1920,7 +1916,7 @@ endif
 	endfor
 	Redimension/N=(NG,-1,-1) IndexedWave
 	IndexedWave[][6][] /= intensityMax
-	goodness0 *= NG*NG/intensityMax
+	Variable goodness0 = goodNessOfPattern(IndexedWave,ipat)
 	rmsGhat = sqrt(rmsGhat/NG)
 	Variable executionTime = stopMSTimer(-2)*1e-6 - sec0
 #ifdef ZONE_TESTING
@@ -3066,6 +3062,18 @@ End
 //	print hkPreferPointsAtDetector(xtal,GhatsOnly)
 //End
 
+
+ThreadSafe Static Function goodNessOfPattern(FullPeakIndexed,ipat)
+	Wave FullPeakIndexed
+	Variable ipat			// pattern number usually 0
+
+	Variable Nspots=DimSize(FullPeakIndexed,0)
+	Make/N=(Nspots)/D/FREE intensity=FullPeakIndexed[p][6]
+	WaveStats/M=1/Q intensity
+	Variable goodness = V_sum>0 ? V_sum*(Nspots*Nspots) : Nspots
+	return goodness
+End
+
 //  ============================== End of Common Indexing ==============================  //
 //  ====================================================================================  //
 
@@ -3095,6 +3103,7 @@ Static Function genericIntensity(xtal,qvec,hkl,keV)
 	//	F2*(lambda^2)*8*(PI^2)/(s^2)
 	Variable lambda = hc/keV
 	Variable intens = F2*(lambda*lambda)*8*(PI*PI)/s2	// intens = (Integrated Intensity)/(re^2), assuming polarization term = 1
+	intens = numtype(intens) || intens<0 ? 0 : intens
 	return intens
 End
 

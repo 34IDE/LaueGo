@@ -1,11 +1,13 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.37
+#pragma version = 4.38
 #include "Utility_JZT" version>=3.68
 #include "MaterialsLocate"								// used to find the path to the materials files
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
+Static StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;;Fl;;Lv"
+Static Constant ELEMENT_Zmax = 116
 
 //	remember to execute    InitLatticeSymPackage()
 //
@@ -115,6 +117,7 @@ Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum poss
 //		allowedHKL() now cannot use Cromer, but it is ThreadSafe (done for indexing routines).
 //		to use allowedHKL() with MultiThread you MUST pass the wave refs to the atomN waves
 //		also added isValidSpaceGroup()
+// with version 4.38, added ELEMENT_Symbols and changed Get_f_proto() to be a better.
 
 // Rhombohedral Transformation:
 //
@@ -2664,12 +2667,6 @@ End
 //
 ThreadSafe Static Function ZfromLabel(symb)	// returns Z for an atomic symbol (NOT case sensitive), used for the atomic strucure factor
 	String symb					// atomic symbol
-	String symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;"
-	symbols += "K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;"
-	symbols += "Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;"
-	symbols += "Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;"
-	symbols += "Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;"
-	symbols += "Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt"
 	symb = symb[0,1]
 	symb[0,0] = UpperStr(symb[0,0])		// ensure first char is upper case
 	symb[1,1] = LowerStr(symb[1,1])		// and second character is lower
@@ -2677,23 +2674,16 @@ ThreadSafe Static Function ZfromLabel(symb)	// returns Z for an atomic symbol (N
 	if (c<97 || c>122)
 		symb = symb[0,0]
 	endif
-	Variable iz = WhichListItem(symb,symbols)+1
+	Variable iz = WhichListItem(symb,ELEMENT_Symbols)+1
 	return ((iz>0) ? iz : NaN)
 End
 //
 ThreadSafe Static Function/T Z2symbol(Z)	// returns chemical symbol from atomic number Z.
 	Variable Z					// atomic number
-	String symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;"
-	symbols += "K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;"
-	symbols += "Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;"
-	symbols += "Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;"
-	symbols += "Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;"
-	symbols += "Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;"
-	Variable Zmax=itemsInList(symbols)
-	if (!(Z>=1 && Z<=Zmax))
+	if (!(Z>=1 && Z<=ELEMENT_Zmax))
 		return ""
 	endif
-	return StringFromLIst(Z-1,symbols)
+	return StringFromLIst(Z-1,ELEMENT_Symbols)
 End
 
 
@@ -4204,13 +4194,48 @@ End
 //
 Function/C Get_f_proto(AtomType,Qmag, keV, [valence])	// simple-minded fatom, just (Z-valence)
 	string AtomType
-	variable keV,Qmag
+	variable keV										// energy is ignored in this simple calculation
+	Variable Qmag										// |Q| in (1/nm), == 2*PI/d
 	variable valence									// optional integer for valence
 	valence = ParamIsDefault(valence) ? 0 : valence
-	Variable freal = ZfromLabel(AtomType) - valence
-	freal = numtype(freal) ? 1 : max(freal,0)
-	return cmplx(freal,0)
+
+	Variable iz=ZfromLabel(AtomType), Bval
+	if (iz<1 || numtype(iz))
+		return NaN
+	elseif (iz<=10)
+		Make/FREE BwTemp={58.3331,10.9071,4.33979,42.9165,23.0888,12.7188,0.02064,13.8964,11.2651, 9}	// use 9 for Ne
+		Bval = BwTemp[iz-1]
+	elseif (iz<=18)
+		Make/FREE coef={6.8736,0.011759,-0.025672}
+		Bval = poly(coef,iz-1)
+	elseif (iz<=50)
+		Make/FREE coef={51.647,-3.5557,0.085621,-0.00070461}
+		Bval = poly(coef,iz-1)
+	elseif (iz<=58)
+		Make/FREE BwTemp={5.24328,4.74225,4.27091,0.26422,0.23092,0.15152,0.1104,0.12335}
+		Bval = BwTemp[iz-51]
+	elseif (iz<=70)
+		Make/FREE coef={30.119,-0.85371,0.006597}
+		Bval = poly(coef,iz-1)
+	else
+		Make/FREE coef={-57.258,2.1161,-0.025226,9.8321e-05}
+		Bval = poly(coef,iz-1)
+	endif
+
+	Variable Svector = Qmag/(4*PI)/10			// must be in (1/Angstrom)
+	Variable f0 = iz * exp(-Svector*Svector*(Bval)) - valence
+	f0 = numtype(f0) ? 1 : max(f0,0)			// always a valid number > 0
+	return cmplx(f0,0)
 End
+//Function/C Get_f_proto(AtomType,Qmag, keV, [valence])	// simple-minded fatom, just (Z-valence)
+//	string AtomType
+//	variable keV,Qmag
+//	variable valence									// optional integer for valence
+//	valence = ParamIsDefault(valence) ? 0 : valence
+//	Variable freal = ZfromLabel(AtomType) - valence
+//	freal = numtype(freal) ? 1 : max(freal,0)
+//	return cmplx(freal,0)
+//End
 //
 Static Function DW_factor_M(T,thetaM,Qmag,amu)		// calculates the M in exp(-M), no I/O
 	Variable T			// Temperature (K)

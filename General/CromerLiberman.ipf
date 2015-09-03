@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=1.9
+#pragma version=1.91
 #pragma ModuleName=CromerLiberman
 
 //This is implementation of Cromer-Liberman code for calcualtions of fprime and f double prime, and mu-over-rho
@@ -785,7 +785,8 @@ static Function Cromer_Get_f0(AtomName,Svector,[valence])
 		NVAR/Z Cnumber=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_c"))
 		if (!WaveExists(Awave) || !WaveExists(Bwave) || !NVAR_Exists(Cnumber))
 			setDataFolder oldDf
-			abort "Error in Get_f0 routine, database input for this atom (atom state) does not exist"
+			return NaN
+//			abort "Error in Get_f0 routine, database input for this atom (atom state) does not exist"
 		endif
 	endif
 	
@@ -2564,14 +2565,14 @@ static Function Initialize_f0()
 	No_c=12.9008
 	//********************************
 	//	"NO",   36.8731, 32.6784, 16.7732, 2.75513, 0.40324, 3.23045, 14.1302, 145.481, 12.9008,
-	//********************************     Lw
-	make/N=4/O Lw_a, Lw_b
-	variable/g Lw_c
-	Lw_a={36.3813, 33.1999, 16.6469, 3.31406}
-	Lw_b={0.40165, 3.13608, 13.7255, 119.377}
-	Lw_c=13.4313
+	//********************************     Lr
+	make/N=4/O Lr_a, Lr_b
+	variable/g Lr_c
+	Lr_a={36.3813, 33.1999, 16.6469, 3.31406}
+	Lr_b={0.40165, 3.13608, 13.7255, 119.377}
+	Lr_c=13.4313
 	//********************************
-	//	"LW",   36.3813, 33.1999, 16.6469, 3.31406, 0.40165, 3.13608, 13.7255, 119.377, 13.4313,
+	//	"LR",   36.3813, 33.1999, 16.6469, 3.31406, 0.40165, 3.13608, 13.7255, 119.377, 13.4313,
 	//********************************     H
 //	make/N=4/O H_a, H_b
 //	variable/g H_c
@@ -3988,7 +3989,7 @@ static Function Cromer_InitializeStrings()
 	FillMeStr = "SYM=NO;ETERM=0;NSHELLS=0;"  
 	string/g $("103")  
 	SVAR FillMeStr = $("103")  
-	FillMeStr = "SYM=LW;ETERM=0;NSHELLS=0;"  
+	FillMeStr = "SYM=LR;ETERM=0;NSHELLS=0;"  
 	setDataFOlder OldDf
 end
 
