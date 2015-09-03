@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.76
+#pragma version = 4.77
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -421,7 +421,8 @@ Static Function pick_keV_calc()				// given xtal, return a good number for the k
 		Abort "in pick_keV_calc()"
 	endif
 	//	Variable factor = NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,0)&2 ? 3.0 : 5.0
-	Variable factor = 5.0
+//	Variable factor = 5.0
+	Variable factor = 4.0
 	Variable keV = factor * (PrimitiveCellFactor(xtal)/(xtal.Vc))^0.33333
 	keV = round(keV*10)/10						// round to 0.1 keV
 	return keV

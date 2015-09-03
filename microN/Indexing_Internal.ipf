@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.14
-#include "IndexingN", version>=4.70
+#pragma version = 0.15
+#include "IndexingN", version>=4.77
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 #include "Indexing_InternalQZ_Gizmo"
@@ -9,7 +9,8 @@
 
 Static Constant hc = 1.239841857			// keV-nm
 Constant threshDivide = 3
-Static Constant INDEXING_KEV_MIN = 4		// minimum energy (kev)
+Static Constant INDEXING_KEV_MAX = 30		// maximum for keV calc (not test) (kev)
+Static Constant INDEXING_KEV_MIN = 2		// minimum energy (kev)
 
 
 //	#define ZONE_TESTING
@@ -1446,7 +1447,7 @@ Static Function/WAVE MakePossibleQhats(atDetector,recip0,qvec0,cone,hkl0,keVmax[
 	Wave kin							// optional incident wave direction (defaults to 001)
 	Variable printIt
 	Nmax = ParamIsDefault(Nmax) || numtype(Nmax) ? 250 : round(Nmax)
-	keVmin = ParamIsDefault(keVmin) || keVmin<=0 || numtype(keVmin) ? INDEXING_KEV_MIN : keVmin
+	keVmin = ParamIsDefault(keVmin) || keVmin<=0 || numtype(keVmin) ? 0 : keVmin
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	Variable tol = 0.1*PI/180						// angle tolerance (radian)
@@ -1455,11 +1456,12 @@ Static Function/WAVE MakePossibleQhats(atDetector,recip0,qvec0,cone,hkl0,keVmax[
 		return $""
 	elseif (cone<tol || cone>(PI-tol))			// cone in range [tol, 180¡-tol]
 		return $""
-	elseif (keVmax<=0 || keVmin>=keVmax)
+	elseif (keVmax<INDEXING_KEV_MIN || keVmin>=keVmax || keVmax>INDEXING_KEV_MAX)
 		return $""
 	elseif (Nmax<3 || Nmax>500)					// max number of hkls is in range [3,500]
 		return $""
 	endif
+	keVmin = keVmin==0 ? keVmin : keVmax/20
 
 	Make/N=3/D/FREE ki={0,0,1}					// use this for the incident beam direction
 	if (!ParamIsDefault(kin))						// one was passed, use it
@@ -1533,7 +1535,7 @@ Static Function/WAVE MakePossibleQhats(atDetector,recip0,qvec0,cone,hkl0,keVmax[
 		ki_dot_q = MatrixDot(ki,qhat)
 		kf = (ki - 2*ki_dot_q*qhat)				// kf^ = ki^ - 2*(ki^ . q^)*q^
 		kf_dot_kf0 = MatrixDot(kf,kf0)
-		if (Qmag>maxQLen)
+		if (Qmag>maxQLen || Qmag<minQLen)
 			continue										// length is too long, skip
 		elseif (ki_dot_q > 0)						// (-ki .dot. q^) < 0 is invalid, e.g. NEVER need (100) & (-100)
 			continue										// Bragg angle must be < 90¡
