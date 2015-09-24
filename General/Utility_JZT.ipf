@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.77
+#pragma version = 3.78
 // #pragma hide = 1
 
 Menu "Graph"
@@ -36,6 +36,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		RecompileAllProcedures(), FORCE ALL procedures to recompile
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
 //		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
+//		joinLists(a,b,[sep]) returns lists a & b joined together in one list
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
 //		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
@@ -1751,6 +1752,22 @@ ThreadSafe Function/S keysInList(keyVals,keySepStr,listSepStr)
 		endif
 	endfor
 	return out
+End
+
+
+Function/T joinLists(a,b,[sep])
+	// join two lists using separator sep.  This takes care of terminated or un-terminated lists
+	String a,b			// two list with sep as separator
+	String sep			// defaults to ";"
+	sep = SelectString(ParamIsDefault(sep), sep, ";")	// not given, use ";"
+	sep = SelectString(strlen(sep)<1, sep, ";")			// empty string, use ";"
+	if (strlen(a)<1)			// a is empty, just b
+		return b
+	elseif (strlen(b)<1)	// b is empty, just a
+		return a
+	else							// join a & b
+		return RemoveEnding(a,sep)+ sep + b
+	endif
 End
 
 
