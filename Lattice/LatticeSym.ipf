@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.38
-#include "Utility_JZT" version>=3.68
+#pragma version = 4.39
+#include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
@@ -118,6 +118,7 @@ Static Constant ELEMENT_Zmax = 116
 //		to use allowedHKL() with MultiThread you MUST pass the wave refs to the atomN waves
 //		also added isValidSpaceGroup()
 // with version 4.38, added ELEMENT_Symbols and changed Get_f_proto() to be a better.
+// with version 4.39, Fixed ERROR in Fstruct()
 
 // Rhombohedral Transformation:
 //
@@ -1084,7 +1085,7 @@ Static Function atomBAD(atom)
 	return (bad>0)
 End
 //
-Static Function atomThermalInfo(atom,[T_K])	// True if atom contains thermal information of some kind
+ThreadSafe Static Function atomThermalInfo(atom,[T_K])	// True if atom contains thermal information of some kind
 	Struct atomTypeStructure &atom
 	Variable T_K											// optional temperature
 	T_K = ParamIsDefault(T_K) ? 0 : T_K			// only consider T_K if it is passed (0 is valid)
@@ -1356,9 +1357,9 @@ Static Function CleanOutCrystalStructure(xtal)	// clean out all unused values an
 End
 
 
-Function densityOfCrystalStructure(xtal)				// returns the density (g/cm^3)
-	STRUCT crystalStructure &xtal						// this sruct is filled  by this routine
-	Variable NA=6.02214199e23						// Avagadro's number
+Function densityOfCrystalStructure(xtal)		// returns the density (g/cm^3)
+	STRUCT crystalStructure &xtal					// this sruct is filled  by this routine
+	Variable NA=6.02214199e23							// Avagadro's number
 	String name
 
 	reMakeAtomXYZs(xtal)
@@ -4101,28 +4102,20 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	endif
 
 	Make/N=3/D/FREE hkl={h,k,l}
-	Variable useCromer = (exists("Get_f")==6)	// calculate fatom using Cromer-Liberman
-	Variable Qmag = (useCromer || xtal.Vibrate) ? 2*PI/dSpacing(xtal,h,k,l) : 0	// |Q| vector (nm)
+	Variable Qmag = 2*PI/dSpacing(xtal,h,k,l)	// |Q| vector (nm)
 	if (numtype(xtal.atom[0].U11)==0)				// need Q-vector
 		Wave recip = recipFrom_xtal(xtal)			// get reicprocal lattice from xtal
 		MatrixOP/FREE qvec = recip x hkl
 	endif
-	if (useCromer)											// need energy
-		keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",10)
-	endif
+	keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",10)
 
-	Variable i
-	Variable  arg
 	Variable/C fatomC
 	Variable fatomMag, fatomArg=0
 	String name
 	Variable valence
 	Variable m
-	Variable amu, DW, thetaM							// thetaM = Debye Temperature (K)
-	Variable Biso, Uiso, itemp
 	Variable/C c2PI=cmplx(0,2*PI), ifatomArg
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
-	Variable Fr, Fi
 
 	reMakeAtomXYZs(xtal)
 	if (!(xtal.N>=1))
@@ -4145,6 +4138,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		fatomMag *= xtal.atom[m].occ
 
 		if (xtal.Vibrate)
+			Variable amu, DW, thetaM								// thetaM = Debye Temperature (K)
+			Variable Biso, Uiso, itemp
 			//	M = B*(sin^2(theta)/lam^2) --> M = B/(16 ¹^2) * Q^2
 			//	exp(-B * sin^2(theta)/lam^2)		B = 8 * ¹^2 * <u^2> =  8 * ¹^2 * Uiso
 			itemp = atomThermalInfo(xtal.atom[m],T_K=T_K)	// Get kind of thermal info present (0 means none)
@@ -4174,6 +4169,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		Fc += Fcm[0]										// accumulate for this atom
 	endfor
 
+	Variable Fr, Fi, arg
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
 		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
 		Fr = 1. + cos(arg)
@@ -4192,10 +4188,10 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	return cmplx(Fr,Fi)
 End
 //
-Function/C Get_f_proto(AtomType,Qmag, keV, [valence])	// simple-minded fatom, just (Z-valence)
+ThreadSafe Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fatom, just (Z-valence)
 	string AtomType
 	variable keV										// energy is ignored in this simple calculation
-	Variable Qmag										// |Q| in (1/nm), == 2*PI/d
+	Variable QAngstrom								// |Q| in (1/), == 2*PI/d[]
 	variable valence									// optional integer for valence
 	valence = ParamIsDefault(valence) ? 0 : valence
 
@@ -4222,7 +4218,7 @@ Function/C Get_f_proto(AtomType,Qmag, keV, [valence])	// simple-minded fatom, ju
 		Bval = poly(coef,iz-1)
 	endif
 
-	Variable Svector = Qmag/(4*PI)/10			// must be in (1/Angstrom)
+	Variable Svector = QAngstrom/(4*PI)/10	// must be in (1/Angstrom)
 	Variable f0 = iz * exp(-Svector*Svector*(Bval)) - valence
 	f0 = numtype(f0) ? 1 : max(f0,0)			// always a valid number > 0
 	return cmplx(f0,0)
@@ -4264,7 +4260,7 @@ Static Function PhiIntegrand(xx)		// this function should never be called with x
 	return xx>0 ? xx/(exp(xx)-1) : 1
 End
 //
-Static Function Element_amu(Z)
+ThreadSafe Static Function Element_amu(Z)
 	Variable Z
 	String amuList
 	amuList   = "1.00794;4.002602;6.941;9.012182;10.811;12.0107;14.0067;15.9994;18.9984032;20.1797;22.98977;24.305;"
