@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.39
+#pragma version = 4.40
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -119,6 +119,7 @@ Static Constant ELEMENT_Zmax = 116
 //		also added isValidSpaceGroup()
 // with version 4.38, added ELEMENT_Symbols and changed Get_f_proto() to be a better.
 // with version 4.39, Fixed ERROR in Fstruct()
+// with version 4.40, Get_f_proto() was ThreadSafe, it must NOT be ThreadSafe (since Get_F is not)
 
 // Rhombohedral Transformation:
 //
@@ -4188,7 +4189,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	return cmplx(Fr,Fi)
 End
 //
-ThreadSafe Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fatom, just (Z-valence)
+Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fatom, just (Z-valence)
 	string AtomType
 	variable keV										// energy is ignored in this simple calculation
 	Variable QAngstrom								// |Q| in (1/Å), == 2*PI/d[Å]
