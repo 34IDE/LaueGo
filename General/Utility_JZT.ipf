@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.79
+#pragma version = 3.80
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3681,7 +3681,7 @@ ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,fmt,zeroThre
 		name = NameOfWave(m1)
 	endif
 	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : !(!brief)
-	fmt = SelectString(ParamIsDefault(fmt),fmt,"%g")
+	fmt = SelectString(ParamIsDefault(fmt)|| strlen(fmt)<1,fmt,"%g")
 	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 	if (!zeroThresh || numtype(zeroThresh))
 		zeroThresh = DefaultZeroThresh(m1)
@@ -3689,7 +3689,7 @@ ThreadSafe Static Function/T printmatOneListReal(m1,row,[name,brief,fmt,zeroThre
 
 	Duplicate/FREE m1, mInternal
 	mInternal = abs(m1)<zeroThresh ? 0 : m1
-	if (brief && strlen(fmt))
+	if (brief)
 		fmt = fmt + "    "
 	else
 		fmt = "%s[%d][%d] = "+fmt+";    "

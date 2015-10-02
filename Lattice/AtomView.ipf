@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.27
+#pragma version = 0.28
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -728,23 +728,21 @@ Static Function FindMinSeparation(xyz)	// find the closest distance between two 
 	Wave xyz				// list of atom xyz positions
 
 	Variable N=DimSize(xyz,0)
-	Make/N=3/D/FREE xyz0						// the test position
+	Make/N=3/D/FREE xyz0								// the test position
 	Variable i,iN, dmin=Inf
 	for (i=0;i<(N-1);i+=1)
 		xyz0 = xyz[i][p]
 		iN = N-i-1
-		if (iN>1)
+		if (iN>1)											// many atom pairs to check, use MatrixOP
 			Make/N=(iN,3)/FREE/D xyzi
 			xyzi = xyz[p+i+1][q]
 			MatrixOP/FREE/O dxyz = sqrt(sumRows(magSqr(xyzi - rowRepeat(xyz0,iN))))
 			dxyz = dxyz<AtomView_zero ? Inf : dxyz	// don't permit zero distances
 			dmin = min(dmin,WaveMin(dxyz))
 		else
-			Redimension/N=3 dxyz
-			dxyz = xyz0[p] - xyz[i+1][p]
-			if (norm(dxyz)>AtomView_zero)
-				dmin = min(dmin,norm(dxyz))
-			endif
+			xyz0 -= xyz[i+1][p]							// only 1 atom pair to check
+			Variable dlast = norm(xyz0)
+			dmin = dlast > AtomView_zero && dlast<dmin ? dlast : dmin
 		endif
 	endfor
 	return dmin
