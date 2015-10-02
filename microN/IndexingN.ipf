@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.77
+#pragma version = 4.78
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -20,6 +20,7 @@
 #endif
 Constant INDEXING_MAX_CALC = 30
 Constant INDEXING_MAX_TEST = 51
+Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your Mail Procedure window
 
 //	with version 2.50, I changed so that yc in the file header always superceedes yc in the geo panel
 //	with version 3.00, allow use of both microGeo and microGeoN
@@ -318,25 +319,38 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable rms_error = NumberByKey("rms_error0",wnote,"=")
 
 	if (printIt)
-		String timeStr = SelectString(executionTime>=60,num2str(executionTime)+" sec", Secs2Time(executionTime,5,1)+" ("+num2str(executionTime)+" sec)")
+		Make/N=(DimSize(FullPeakIndexed,0))/FREE keVs=NaN
+		keVs = FullPeakIndexed[p][7][0]
+		keVs = numtype(keVs) ? -Inf : keVs
+		Variable keVmax = WaveMax(keVs)
+		String secStr
+		sprintf secStr, "%.3g", executionTime
+		String timeStr=SelectString(executionTime>=60,secStr+" sec", Secs2Time(executionTime,5,1)+" ("+secStr+" sec)")
 		String str = ReplaceString(";", GetIndexingFuncOrExec(), "")		// removes all ";" is like a concatenate
 		str = SelectString(strlen(str),"Euler",str)
-		printf "from \"%s\", found %d patterns, indexed %d out of %d spots  with rms=%.3g¡ in %s",str,NpatternsFound,Nindexed,NiData, rms_error,timeStr
+		printf "from \"%s\", found %d patterns, indexed %d out of %d spots (Emax=%.3f keV)  with rms=%.3g¡ in %s",str,NpatternsFound,Nindexed,NiData,keVmax,rms_error,timeStr
 		printf ",   "+SurfaceNormalString(FullPeakIndexed)+"\r"
 		if (NpatternsFound>1)
 			Wave RL0=str2recip(StringByKey("recip_lattice0",wnote,"="))
-			Variable i, angle
-			for (i=1;i<NpatternsFound;i+=1)
-				rms_error = NumberByKey("rms_error"+num2istr(i),wnote,"=")
-				printf "  also found pattern %d  with rms=%g¡,   %s\r",i, rms_error,SurfaceNormalString(FullPeakIndexed,pattern=i)
-				Wave RL=str2recip(StringByKey("recip_lattice"+num2istr(i),wnote,"="))
+			Variable pat, angle
+			for (pat=1;pat<NpatternsFound;pat+=1)
+				keVs = FullPeakIndexed[p][7][pat]
+				keVs = numtype(keVs) ? -Inf : keVs
+				keVmax = WaveMax(keVs)
+				rms_error = NumberByKey("rms_error"+num2istr(pat),wnote,"=")
+				printf "  also found pattern %d (Emax=%.3f keV)  with rms=%g¡,   %s\r",pat,keVmax,rms_error,SurfaceNormalString(FullPeakIndexed,pattern=pat)
+				Wave RL=str2recip(StringByKey("recip_lattice"+num2istr(pat),wnote,"="))
 				Make/N=3/D/FREE hkl3
 				angle = rotationBetweenRecipLattices(RL0,RL,hkl3,ints=1)
-				printf "  pattern%d  is a rotation of %.3f¡ about an (%s)  from pattern0\r",i,angle,hkl2str(hkl3[0],hkl3[1],hkl3[2])
+				printf "  pattern%d  is a rotation of %.3f¡ about an (%s)  from pattern0\r",pat,angle,hkl2str(hkl3[0],hkl3[1],hkl3[2])
 			endfor
 		endif
-		DoAlert 1, "Examine fit on a picture"
-		if (V_flag==1)
+		if (INDEXING_ASK_BEFORE_DISPLAYING)
+			DoAlert 1, "Examine fit on a picture"
+			if (V_flag==1)
+				DisplayResultOfIndexing(FullPeakIndexed,NaN)
+			endif
+		else
 			DisplayResultOfIndexing(FullPeakIndexed,NaN)
 		endif
 	endif
@@ -1930,7 +1944,8 @@ Function/T pickIndexingFunction(path)
 	if (StringMatch(exe,"[#include internal Igor functions]"))	// now include Indexing_Internal.ipf
 		Execute/P "INSERTINCLUDE  \"Indexing_Internal\", version>=0.10"
 		Execute/P "COMPILEPROCEDURES "
-		DoAlert 0, "To select an internal Igor indexing routine, re-run\r  pickIndexingFunction(\"\")"
+		Execute/P "pickIndexingFunction(\"\")"
+		DoAlert 0, "re-running to Select an internal Igor indexing routine."
 		return ""															// re-running pickIndexingFunction(""), allows chance for COMPILEPROCEDURES to run
 	endif
 	exe = SelectString(StringMatch(exe,"[default binary]") || strlen(exe)<2, exe, "")	// change invalids to ""
