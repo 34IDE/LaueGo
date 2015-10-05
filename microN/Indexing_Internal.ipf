@@ -102,6 +102,9 @@ Function/WAVE runIndexingQsZones(args)
 	// measuredZones.zn[].axisHat[3] and measuredZones.zn[].g.xyz[3] are in BEAMLINE coordinates
 	err = ZoneInfoFromMeasuredSpots(measuredZones,GhatsMeasured, minSpotsForZone, angPrecision)	// find the measured zone axes info
 	if (err || measuredZones.Nz < 2)
+#ifdef ZONE_QS_TESTING
+		printf "Unable to find any measured zones, err=%g\r",err
+#endif
 		return $""
 	endif
 	Variable nZmeasured = measuredZones.Nz
@@ -119,6 +122,10 @@ Function/WAVE runIndexingQsZones(args)
 	Make/N=(nZmeasured,3)/FREE ZonesWave
 	ZonesWave = measuredZones.zn[p].axisHat[q]
 	GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,$"")
+	Variable iz
+	for (iz=0; iz<(measuredZones.Nz); iz+=1)
+		MakeZoneLinesOnGraph(measuredZones)
+	endfor
 #endif
 
 	//	Make a list of Possible zones (this uses hklPrefer, keVmax, cone). and calc the q^s for each zone.
@@ -388,6 +395,43 @@ AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
 	Note/K IndexedWave, wnote
 	return IndexedWave
 End
+//
+Static Function/WAVE MakeZoneLinesOnGraph(allZones)
+	Struct allZonesStruct &allZones
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)			//fill the geometry structure with current values
+
+//print ZonesStruct2Str(allZones)
+
+	Make/N=3/D/FREE qvec
+	Variable/C pz
+	Variable j, i, Nspots, Npnts=0, ipnt=0
+	for (j=0;j<allZones.Nz;j+=1)
+		Npnts += allZones.zn[j].Ns + 1
+	endfor
+	Make/N=(Npnts,2)/O ZoneLines=NaN
+
+	for (j=0,ipnt=0; j<allZones.Nz; j+=1)
+		Nspots = allZones.zn[j].Ns
+		if (Nspots<2)
+			continue
+		endif
+		Make/N=(Nspots,2)/FREE xLine=NaN, yLine=NaN
+		for (i=0; i<Nspots; i+=1)
+			qvec = allZones.zn[j].g[i].xyz[p]
+			pz = q2pixel(g.d[0],qvec)			// convert qvector to pixel position
+			xLine[i] = real(pz)
+			yLine[i] = imag(pz)
+		endfor
+		Sort xLine, xLine, yLine
+		ZoneLines[ipnt,ipnt+Nspots-1][0] = xLine[p-ipnt]
+		ZoneLines[ipnt,ipnt+Nspots-1][1] = yLine[p-ipnt]
+		ipnt += Nspots+1
+	endfor
+
+	Redimension/N=(Npnts-1,-1) ZoneLines		// remove final NaN
+	return ZoneLines
+End
 
 
 Static Function ZoneInfoFromMeasuredSpots(zInfo,Ghats,Nmin,precision)
@@ -409,23 +453,22 @@ Static Function ZoneInfoFromMeasuredSpots(zInfo,Ghats,Nmin,precision)
 	if (strsearch(StringByKey("peakListWave",note(Ghats),"="),"FullPeakListTest",0)>0 && WaveInClass(Ghats,"QsMeasuredTest"))
 		Wave GhatsMeasuredHKL = $(GetWavesDataFolder(Ghats,1)+"GhatsMeasuredHKL")
 	endif
-	Make/N=(STRUCT_ZONES_MAX)/I/FREE nQsinZone=0			// holds number of spots contributing to a zone
+	Make/N=(NG,3)/D/FREE gs = Ghats[p][q]					// the normalized g-vectors
+	Make/N=(STRUCT_ZONES_MAX)/I/FREE nQsinZone=0		// holds number of spots contributing to a zone
 	Make/N=(STRUCT_ZONES_MAX,3)/D/FREE ZoneAxes=0		// direction of each zone axis
 	Make/N=(STRUCT_ZONES_MAX,3)/D/FREE AllAxes=NaN	// holds local info about the measured zones
 	Make/N=(STRUCT_ZONES_MAX,STRUCT_ZONESPOTS_MAX)/I/FREE zSpotIndex=-1
-	Make/N=(STRUCT_ZONESPOTS_MAX)/I/FREE oneSpotIndexList = -1	// holds list of G^'s used to form one zone
-	Variable minDot = cos(5.0*PI/180)	// G-vectors must be > 5 degrees apart to define a zone (not too parallel)
-	Variable tol = cos(precision*PI/180)	// tolerance on dot product
-	Variable sinMax = abs(sin(precision*PI/180))
-	Make/N=3/D/FREE g0, g1, axis, axisAvg
+	Variable minDot = cos(5.0*PI/180)			// G-vectors must be > 5 degrees apart to define a zone (not too parallel)
+	Variable tol = cos(precision*PI/180)		// tolerance on dot product
+	Variable perpTol = cos((90-precision)*PI/180)
+	Make/N=3/D/FREE g0, g1, axis
 	Variable Nz=0								// Nz is number of zones found, m is first spot to start searching
 	Variable nQs								// number of spots in this zone
-	Variable mag, dot
-	Variable i,j,ind, m=0					// m is first spot to start searching
-	for (m=0; m<(NG-1) && Nz<STRUCT_ZONES_MAX; m+=1)				// m is first spot that defines this possible zone
-		g0 = Ghats[m][p]
+	Variable i,j,m								// m is first spot to start searching
+	for (m=0,Nz=0; m<(NG-1) && Nz<STRUCT_ZONES_MAX; m+=1)	// m is first spot that defines this possible zone
+		g0 = gs[m][p]
 		for (j=m+1; j<(NG-Nmin+1) && Nz<STRUCT_ZONES_MAX; j+=1)// find second vector to define the zone
-			g1 = Ghats[j][p]
+			g1 = gs[j][p]
 			if (abs(MatrixDot(g0,g1)) > minDot)
 				continue							// vectors too parallel for defining a zone axis, keep searching
 			endif
@@ -441,30 +484,62 @@ Static Function ZoneInfoFromMeasuredSpots(zInfo,Ghats,Nmin,precision)
 			// the (g0,g1) pair defining axis[3], has not been found before, check it out
 
 			// have a new unique zone axis, find the spots belonging to this zone
-			axisAvg = 0
-			oneSpotIndexList = -1
-			for (i=0,nQs=0; i<NG; i+=1)	// find how many other spots belong to this axis
-				g1 = Ghats[i][p]
-				Cross g0,g1
-				mag = normalize(W_cross)
-				dot = MatrixDot(W_cross,axis)
-				if (mag<sinMax)				// only look at the cross product when g0 & g1 not too parallel
-					oneSpotIndexList[nQs] = i
-					axisAvg += axis
-					nQs += 1						// this spot real close to g0, increment nQs
-				elseif (abs(dot) > tol)
-					oneSpotIndexList[nQs] = i
-					axisAvg += dot<0 ? -W_cross : W_cross
-					nQs += 1						// a spot in zone, increment nQs
-				endif
-			endfor								// for i
-			if (nQs >= Nmin)					// found another zone with at least Nmin spots, save it
-				normalize(axisAvg)			// want a unit vector, so don't bother dividing by nQs
-				ZoneAxes[Nz][]=axisAvg[q]	// axis of this zone
-				nQsinZone[Nz] = nQs			// save number of spots contributing to this zone
-				zSpotIndex[Nz][0,nQs-1] = oneSpotIndexList[q]
-				Nz += 1
+			// find the best axis comparing to all gs that are close to perpendicualr to axis
+			MatrixOP/FREE isPerp = greater(perpTol, Abs(gs x axis))	// true when g^ perp to axis
+			nQs = sum(isPerp)
+			if (nQs < Nmin)					// not enough spost to qualify as a valid zone, skip
+				continue
 			endif
+
+			Variable ip
+			Make/N=(nQs,3)/D/FREE gPlane
+			for (i=0,ip=0; i<NG; i+=1)
+				if (isPerp[i])
+					gPlane[ip][] = gs[i][q]
+					ip += 1
+				endif
+			endfor
+			Wave axis = FindVecPerp2Many(gPlane)	// set axis to vec that is most perp to all of gPlane
+			if (!WaveExists(axis))
+				continue
+			endif
+
+			ZoneAxes[Nz][] = axis[q]		// axis of this zone
+			nQs = min(nQs,STRUCT_ZONESPOTS_MAX)	// only room for STRUCT_ZONESPOTS_MAX spots
+			nQsinZone[Nz] = nQs				// save number of spots contributing to this zone
+			for (i=0,ip=0; i<NG; i+=1)
+				if (isPerp[i])
+					zSpotIndex[Nz][ip] = i
+					ip += 1
+				endif
+			endfor
+			Nz += 1
+
+//			axisAvg = 0
+//			oneSpotIndexList = -1
+//			for (i=0,nQs=0; i<NG; i+=1)	// find how many other spots belong to this axis
+//				g1 = Ghats[i][p]
+//				Cross g0,g1
+//				mag = normalize(W_cross)
+//				dot = MatrixDot(W_cross,axis)
+//				if (mag<sinMax)				// only look at the cross product when g0 & g1 not too parallel
+//					oneSpotIndexList[nQs] = i
+//					axisAvg += axis
+//					nQs += 1						// this spot real close to g0, increment nQs
+//				elseif (abs(dot) > tol)
+//					oneSpotIndexList[nQs] = i
+//					axisAvg += dot<0 ? -W_cross : W_cross
+//					nQs += 1						// a spot in zone, increment nQs
+//				endif
+//			endfor								// for i
+//			if (nQs >= Nmin)					// found another zone with at least Nmin spots, save it
+//				normalize(axisAvg)			// want a unit vector, so don't bother dividing by nQs
+//				ZoneAxes[Nz][]=axisAvg[q]	// axis of this zone
+//				nQsinZone[Nz] = nQs			// save number of spots contributing to this zone
+//				zSpotIndex[Nz][0,nQs-1] = oneSpotIndexList[q]
+//				Nz += 1
+//			endif
+
 		endfor									// for j
 	endfor										// for m
 	KillWaves/Z W_Cross
@@ -500,6 +575,70 @@ Static Function ZoneInfoFromMeasuredSpots(zInfo,Ghats,Nmin,precision)
 	zInfo.precision = precision
 	zInfo.GhatSource = GetWavesDataFolder(Ghats,2)
 	return 0
+End
+//
+Static Function/WAVE FindVecPerp2Many(hats)		// return a vec that is most perp to all of hats
+	Wave hats					// (N,3)
+	Variable N=DimSize(hats,0)
+	if (N<2)
+		return $""
+	endif
+
+	Make/N=3/D/FREE g0 = hats[0][p]
+
+	MatrixOp/FREE absDots = Abs(hats x g0)
+	WaveStats/M=1/Q absDots
+	Make/N=3/D/FREE g1 = hats[V_minloc][p]	// g1 is most perpendicular to g0
+	Cross g0,g1
+	Wave W_Cross=W_Cross
+	Make/N=3/D/FREE axis=W_Cross
+	normalize(axis)								// approximate answer
+	if (N<3)
+		return axis									// only two vectors, so this is the answer
+	endif
+
+	Make/N=3/D/FREE a1,a0=g0
+	Cross axis, a0
+	a1 = W_Cross
+	KillWaves/Z W_Cross
+	normalize(a1)
+	// now axis is close to answer and a0 & a1 are perp to axis
+
+	// want to minimize SUM{ (ax*a0 + ay*a1 + axis) . hats }
+	// so take derivatives and setting to zero gives:
+	//	2*ax*g0i^2 + 2*g0i*ay*g1i + 2*g0i*gai = 0
+	//	2*ay*g1i^2 + 2*ax*g0i*g1i + 2*g1i*gai = 0
+	//
+	//	g0i^2   * ax + g0i*g1i * ay = -g0i*gai
+	//	g0i*g1i * ax + g1i^2 * ay   = -g1i*gai
+	//
+	//	g0i^2,   g0i*g1i   x   ax   = -g0i*gai
+	// g0i*g1i, g1i^2         ay     -g1i*gai
+	//        mat         x  axay  =  bvec
+	MatrixOP/FREE g0i = hats x a0			// hats[i] . a0
+	MatrixOP/FREE g1i = hats x a1			// hats[i] . a1
+	MatrixOP/FREE gai = hats x axis			// hats[i] . axis
+
+	Make/N=(2,2)/D/FREE mat	// form linear equation mat x axay = bvec
+	Make/N=(2)/D/FREE bvec
+	MatrixOP/FREE ss = sum(magSqr(g0i))
+	mat[0][0] = ss[0]				// SUM{ g0i^2 }
+	MatrixOP/FREE ss = sum(g0i*g1i)
+	mat[0][1] = ss[0]				// SUM{ g0i*g1i }
+	mat[1][0] = ss[0]				// SUM{ g0i*g1i }
+	MatrixOP/FREE ss = sum(magSqr(g1i))
+	mat[1][1] = ss[0]				// SUM{ g1i^2 }
+
+	MatrixOP/FREE ss = -sum(g0i * gai)
+	bvec[0] = ss[0]	
+	MatrixOP/FREE ss = -sum(g1i * gai)
+	bvec[1] = ss[0]
+
+	// now have mat x axay = bvec, solve for axay
+	MatrixOP/FREE axay = Inv(mat) x bvec
+	axis = axay[0]*a0[p] + axay[1]*a1[p] + axis[p]
+	normalize(axis)				// final answer
+	return axis
 End
 
 
