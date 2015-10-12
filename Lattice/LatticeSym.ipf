@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.41
+#pragma version = 4.42
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -120,6 +120,7 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.39, Fixed ERROR in Fstruct()
 // with version 4.40, Get_f_proto() was ThreadSafe, it must NOT be ThreadSafe (since Get_F is not)
 // with version 4.41, removed ELEMENT_Symbols (it is now in Utility_JZT.ipf)
+// with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
 
 // Rhombohedral Transformation:
 //
@@ -1942,21 +1943,26 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		b = a
 		alpha=90;  bet=90;  gam=120
 	elseif(SpaceGroup>=143)		// Trigonal
-		if (isRhombohedral(SpaceGroup))	// rhombohedral structure
-			DoPrompt/HELP="" "Rhombohedral lattice constants (rhombohedral cell)",a,alpha
-			b=a  ;  c=a
-			bet=alpha;  gam=alpha
-		else
+		Variable useHex=1
+		if (isRhombohedral(SpaceGroup))
+			Prompt useHex, "Use Hex axes", popup, "Hexagonal Axes;Rhombohedral Axes"
+			DoPrompt "What kind of Axes?", useHex
+			if (V_flag)
+				return 1
+			endif
+			useHex = useHex == 1
+		endif
+
+		if (useHex)
 			c = (a==c) ? 3*a : c
 			DoPrompt/HELP="" "Trigonal lattice constants (hexagoanl cell)",a,c
 			b = a
 			alpha=90;  bet=90;  gam=120
+		else
+			DoPrompt/HELP="" "Rhombohedral lattice constants (rhombohedral cell)",a,alpha
+			b=a  ;  c=a
+			bet=alpha;  gam=alpha
 		endif
-//	elseif(SpaceGroup>=143)		// Trigonal, use the hexagonal cell
-//		c = (a==c) ? 3*a : c
-//		DoPrompt/HELP="" "Trigonal lattice constants",a,c
-//		b = a
-//		alpha=90;  bet=90;  gam=120
 	elseif(SpaceGroup>=75)			// Tetragonal
 		DoPrompt/HELP="" "Tetragonal lattice constants",a,c
 		b = a

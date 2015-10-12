@@ -75,13 +75,21 @@ Function MakeStereo(Hz,Kz,Lz,hklmax,fntSize,phi,[Qmax,hklPerp, WulffStepIn,Wulff
 	if (!(fntSize>0) || !(hklmax>0) || numtype(Hz+Kz+Lz))
 		return 1
 	endif
-	if (setLattice())
-		return 1
-	endif
 
+	if (!StringMatch(GetRTStackInfo(2),"StereoOfIndexedPattern"))
+		if (setLattice())
+			return 1
+		endif
+	endif
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))		//fill the lattice structure with current values
 		DoAlert 0, "No Lattice, please set one"
+		MakeLatticeParametersPanel("")
+		return 1
+	endif
+	if (LatticeSym#LatticeBad(xtal))
+		DoAlert 0, "Lattice is INvalid, re-set it"
+		MakeLatticeParametersPanel("")
 		return 1
 	endif
 
