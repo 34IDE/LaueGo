@@ -20,7 +20,7 @@
 #endif
 Constant INDEXING_MAX_CALC = 30
 Constant INDEXING_MAX_TEST = 51
-Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your Mail Procedure window
+Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your Main Procedure window
 
 //	with version 2.50, I changed so that yc in the file header always superceedes yc in the geo panel
 //	with version 3.00, allow use of both microGeo and microGeoN
