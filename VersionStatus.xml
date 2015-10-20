@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, October 13, 2015" time="10:21:12 AM CDT" isoTime="2015-10-13T10:21:12"></written>
+	<written date="Tuesday, October 20, 2015" time="02:03:46 PM CDT" isoTime="2015-10-20T14:03:46"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>a8200d5503bea4f572337151ce432eebf7b58505</gitHash>
+	<gitHash>4d90d1635859f9760fc50ccc89041c285dad45e2</gitHash>
 	<fileCount>273</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -115,7 +115,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="34d7ce9085bad6af4a796d7d3ddb7cd3" sha256="f9fcafce01f0d9ecdebe0a05d10d340b8429e0a382d4d3487bfc3d7bdd78745b" ext=".xml">materials/YBCO.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="f8be346c86ff1e0a28fbe50b5d250c65" sha256="49e5179a5d6bcf890d38d7667f0831f8e0dc186656869389f21afaef24e053fe" ext=".xml">materials/PZT-Hex.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="b39cbf43c31561245c5413fdd6d78858" sha256="4192586c00ae18a398572cdd4598cdfb115810fa9f5b735aef963783d56d799e" ext=".xml">materials/CeO2.xml</file>
-	<file version="nan" time="2015-04-06T13:57:26" md5="7c0b8020599a7ecaa91acf44c391e1dc" sha256="62359d69ad9b132f5c626e3d389a59da706f550c2db8ad61e24a659f2e320884" ext=".py">APS/getADimageH5.py</file>
+	<file version="nan" time="2015-10-20T13:37:17" md5="238342bbd0be914211327d002f3e4063" sha256="e9ed9df7d32153ba92a6eaf865dde751499729c32ae7f4ee9b5f8fd1c2875aeb" ext=".py">APS/getADimageH5.py</file>
 	<file version="1.01" time="2014-04-30T10:28:14" md5="7d0b601862db9a8f5ded00c02fd4dd39" sha256="f15d0034cd443bc3d00d11a5a2fb73e6ae740c0aef5ec2c124e3a9ff560726ef" ext=".ipf">Grains/NeighborByWalking.ipf</file>
 	<file version="nan" time="2015-08-07T15:10:20" md5="2e65e8f8d8537be5043e811f53ead827" sha256="ad47caa7654fe030adae49860973159d6438108cc4b853a907141987c56caeb3" ext=".ihf">doc/microDiffraction.ihf</file>
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" sha256="59a4b79a1667e89196e69ee368ca60bcd2f8160f79a2319e883678d124f78f60" ext=".ipf">micro/monoCalibrate.ipf</file>
@@ -155,7 +155,7 @@
 	<file version="nan" time="2015-03-07T20:16:43" md5="de5d175054f11d16b08a38843714d4a4" sha256="2f04278a18a7dcfe236d49be57092e8585f0908a42fae52a11bf99126cea97b7" ext=".py">APS/burt_tool.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a41867870f3717daea30770dcb0a8666" sha256="889e3bccda7d0fefcda042fcbd09966f2d40866379b20eb74631e703ed87cb77" ext=".xml">materials/ald37.xml</file>
 	<file version="2.25" time="2015-08-24T11:37:40" md5="afcf7f29d3bcdcfd6465bad9fbfdaaf9" sha256="b565eea3af11ce27063993e5068afa53350ebf0aaa69b6ee97931032479673d9" ext=".ipf">microN/EnergyScansN.ipf</file>
-	<file version="0.03" time="2015-04-06T14:15:16" md5="de040674cf77438a584c47eeb84b9a0f" sha256="8a821ec777b66565a9f6c4d7c4a5e5ae50ab60c4165b1f1227b3f4f109cf8138" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
+	<file version="0.04" time="2015-10-20T14:00:43" md5="abc4d100328e738a1de18062f193d457" sha256="2f62e0b6210b5d5e886767b00e9d08a5835881de0d0990b8543e8bcb008fc23c" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" sha256="84d27f78ad9abdeaf06f07412fe8294dbaf22ba3efa428e723a6c495214be982" ext="">micro/Euler_i386</file>
 	<file version="0.13" time="2013-12-06T23:22:19" md5="9d81fadd43d5d62c5255073c4b486b6c" sha256="e9e75bcc74d39617c46cc90f1ab8ce436bd66de1f75d45805cd4557c6f8c92bd" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7f757ea8b8080ab2c920dcc79559e095" sha256="fc2fc6a6b5289c30f9955769743f53687374c563f52e16ae1fa0715bf88bbe03" ext=".exe">microN/euler.exe</file>
