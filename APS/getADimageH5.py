@@ -297,10 +297,10 @@ def writeHDF5(image,destFile,pvValues):
 	wire.create_dataset('wireX', data=pvValues['wireX'])
 	wire.create_dataset('wireY', data=pvValues['wireY'])
 	wire.create_dataset('wireZ', data=pvValues['wireZ'])
-	wire.create_dataset('AerotechH', data=pvValues['wireZ'])
-	wire.create_dataset('wirebaseX', data=pvValues['wireZ'])
-	wire.create_dataset('wirebaseY', data=pvValues['wireZ'])
-	wire.create_dataset('wirebaseZ', data=pvValues['wireZ'])
+	wire.create_dataset('AerotechH', data=pvValues['AerotechH'])
+	wire.create_dataset('wirebaseX', data=pvValues['wirebaseX'])
+	wire.create_dataset('wirebaseY', data=pvValues['wirebaseY'])
+	wire.create_dataset('wirebaseZ', data=pvValues['wirebaseZ'])
 
 	f.close()
 
