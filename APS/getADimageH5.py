@@ -37,7 +37,9 @@ def getAllPVsDebug(PVroot):
 
 
 def getImage(imagePVroot):
-	NDdimsPV = epics.PV(imagePVroot+'NDimensions_RBV')
+	try:	port = caget(imagePVroot+'PortName_RBV')
+	except:	raise NameError('Could not find \"%r\"' % (imagePVroot+'PortName_RBV',))
+	if len(port)<1: raise NameError('Could not find \"%r\"' % (imagePVroot+'PortName_RBV',))
 
 	try:
 		NDdimsPV = epics.PV(imagePVroot+'NDimensions_RBV')
@@ -77,6 +79,10 @@ def getImage(imagePVroot):
 
 def getAllPVs(PVroot):
 	# epics.caget(pvname[, as_string=False[, count=None[, as_numpy=True[, timeout=None[, use_monitor=False ] ] ] ] ])
+
+	try:	port = caget(PVroot+':cam1:PortName_RBV')
+	except:	raise NameError('Could not find \"%r\"' % (PVroot+':cam1:PortName_RBV',))
+	if len(port)<1: raise NameError('Could not find \"%r\"' % (PVroot+':cam1:PortName_RBV',))
 
 	pvValues = {}
 	pvValues['Nx'] = caget(PVroot+':cam1:MaxSizeX_RBV')
@@ -350,8 +356,11 @@ if __name__ == '__main__':
 		image = getImageDebug(imagePVroot)
 		pvValues = getAllPVsDebug(PVroot)
 	else:
-		pvValues =  getAllPVs(PVroot)
-		image = getImage(imagePVroot)
+		try:
+			pvValues =  getAllPVs(PVroot)
+			image = getImage(imagePVroot)
+		except:
+			exit(1)
 
 	writeHDF5(image,destFile,pvValues)
 

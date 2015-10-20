@@ -1,9 +1,15 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3
-#pragma version = 0.03
+#pragma version = 0.04
 #pragma ModuleName=CurrentDetector
 #include "ImageDisplayScaling"
 #include "HDF5images"
+
+
+// REQUIRED_SUBNET and KNOWN_ADs can be overridden in your Main Procedure window
+StrConstant REQUIRED_SUBNET = "xray.aps.anl.gov"
+StrConstant KNOWN_ADs = "34idePE2:image1=Orange;34idePE1:image1=Yellow;34idePE3:image1=Purple;"
+
 
 Menu "Macros"
 	"Show Current Detector", LoadCurrentDetector("")
@@ -17,34 +23,31 @@ End
 
 // load an image from AreaDetector
 Function/WAVE LoadCurrentDetector(detID,[printIt])
-	String detID				// may be one of "Orange;Yellow;Purple" or the id such as "34idePE2:image1"
+	String detID				// may be one of the colors in KNOWN_ADs, e.g. "Orange" or the id such as "34idePE2:image1"
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
-	if (strsearch(sytemHostname(), "xray.aps.anl.gov",0)<0)
+	String str
+	if (strsearch(sytemHostname(), REQUIRED_SUBNET,0)<0)
 		if (printIt)
-			print "LoadCurrentDetector() only works at the APS on the beamline network"
+			sprintf str, "LoadCurrentDetector() only works on the \"%s\" beamline network", REQUIRED_SUBNET
+			DoAlert 1, str
+			print str
 		endif
 		return $""
 	endif
 
-	String colors = "Orange=34idePE2:image1;Yellow=34idePE1:image1;Purple=34idePE3:image1;"
-	String crates = "34idePE2:image1=Orange;34idePE1:image1=Yellow;34idePE3:image1=Purple;"
-
-	String str = StringByKey(detID,colors,"=")
-	if (strlen(str))
-		detID = str
-	endif
-
+	str=ad_from_color(detID)				// if detID is a color, then this convert to AreaDetector image PV
+	detID = SelectString(strlen(str), detID, str)
 	if (strlen(detID)<1)
-		Prompt detID, "detector", popup, "34idePE2:image1  Orange;34idePE1:image1  Yellow;34idePE3:image1  Purple;"
+		Prompt detID, "detector", popup, ReplaceString("=",KNOWN_ADs,"  ")
 		DoPrompt "Detector", detID
 		if (V_flag)
 			return $""
 		endif
 		detID = StringFromList(0,detID," ")
 	endif
-	String color = StringByKey(detID,crates,"=")
+	String color = StringByKey(detID,KNOWN_ADs,"=")
 
 	if (strlen(color)<1)
 		return $""
@@ -73,16 +76,22 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		print "Windows not yet implemented"
 		return $""
 	endif
-	Variable err = strsearch(result,"Traceback (most recent call last)",0)>=0
+	Variable unAvailable = StringMatch(result,"cannot connect to *:PortName_RBV")
+	Variable err = unAvailable || strsearch(result,"Traceback (most recent call last)",0)>=0
 	err = err || strsearch(result,"ERROR --",0,2)==0
 	err = err || strsearch(result,"command not found",0,2)>=0
-
 	fileName = Posix2HFS(fileName)		// done with posix file paths, switch to Mac style
 	GetFileFolderInfo/Q/Z=1 fileName	// check that hdf5 file exists
 	err = err || (V_Flag || !V_isFile)
 	if (err)
-		DoAlert 0, "Failed to load latest image from "+detID
-		print "\r\r  "+cmd+"\r\r  "+result
+		str = "Failed to load latest image from "+detID
+		str += SelectString(unAvailable, "", "\r  '"+detID+"' cannot be reached, is it on?")
+		DoAlert 0, str
+		if (unAvailable)
+			printf "detID = \"%s\" cannot be reached, check if it is on?\r",detId
+		else
+			print "\r\r  "+cmd+"\r\r  "+result
+		endif
 		return $""								// there is no image
 	endif
 
@@ -114,6 +123,21 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		fnew(image)
 	endif
 	return image
+End
+//
+Static Function/T ad_from_color(color)
+	String color
+
+	String ad, item
+	Variable i
+	do
+		item = StringFromList(i,KNOWN_ADs)
+		if (StringMatch(StringFromList(1,item,"="),color))
+			return StringFromList(0,item,"=")
+		endif
+		i += 1
+	while(strlen(item)>0)
+	return ""
 End
 //
 Static Function/T exportVariablesCommands(varList)	// make an export command with quoted values
