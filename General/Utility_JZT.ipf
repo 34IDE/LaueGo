@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.80
+#pragma version = 3.81
 // #pragma hide = 1
 
 Menu "Graph"
@@ -69,7 +69,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		PowerIntegerScale(), rescale a waves values by ^n or ^(1/n), preserves sign for non-complex values
 //		FitErrorString(FitError,FitQuitReason), return a string representation of the fitting error
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
-//		cpuFrequency(), systemUserName(), sytemHostname(), getEnvironment(), returns system info
+//		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
 //		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
@@ -2953,6 +2953,19 @@ Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.
 	ExecuteScriptText "do shell script \"hostname\""		//returns something like:	"bob.xray.aps.anl.gov"
 	String hostname = ReplaceString("\"",S_value,"")
 	return ReplaceString("\"",S_value,"")
+End
+
+Function/T localTimeZoneName()
+	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
+		print "Only know how to get Time Zone name from a Mac"
+		return ""									// cannot get answer
+	endif
+	ExecuteScriptText "do shell script \"date +'%Z'\""			//returns something like: 	"CST"
+	if (strlen(S_value)>5)
+		DoAlert 0, "Unable to get local Time Zone name, message is '"+S_value+"'"
+	endif
+	return ReplaceString("\"",S_value,"")
+	return S_value
 End
 
 
