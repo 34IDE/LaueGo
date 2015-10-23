@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.06
+#pragma version = 2.07
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -210,13 +210,13 @@ Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
 #else
 		ModifyGizmo startRecMacro
 		AppendToGizmo/N=$GizmoName Scatter=$GetWavesDataFolder(wCorners,2), name=$objectName
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ scatterColorType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ markerType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ sizeType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ rotationType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ Shape,1}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ size,1}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName property={ color,0,0,0,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ scatterColorType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ markerType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ sizeType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ rotationType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ Shape,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ size,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ color,0,0,0,1}
 		ModifyGizmo/N=$GizmoName userString={CubeCorners, objectName}	// save name of cube corner object
 		ModifyGizmo endRecMacro
 #endif
@@ -435,20 +435,24 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 
 #else
 	AppendToGizmo group,name=$groupName
-	ModifyGizmo currentGroupObject=groupName+
+	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo string=title1,strFont=font,name=Title1
-	ModifyGizmo modifyObject=Title1 property={Clipped,0}
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//	ModifyGizmo modifyObject=Title1 property={Clipped,0}
 	if (strlen(title2))
 		AppendToGizmo string=title2,strFont=font,name=Title2
-		ModifyGizmo modifyObject=Title2 property={Clipped,0}
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=Title2 property={Clipped,0}
 	endif
 	if (strlen(title3))
 		AppendToGizmo string=title3,strFont=font,name=Title3
-		ModifyGizmo modifyObject=Title3 property={Clipped,0}
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=Title3 property={Clipped,0}
 	endif
 	if (strlen(title4))
 		AppendToGizmo string=title4,strFont=font,name=Title4
-		ModifyGizmo modifyObject=Title4 property={Clipped,0}
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=Title4 property={Clipped,0}
 	endif
 
 	if (stringmatch(pos,"TL"))
@@ -546,9 +550,11 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo string=unitStr,strFont=font,name=stringScaleBar
-	ModifyGizmo modifyObject=stringScaleBar property={Clipped,0}
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//	ModifyGizmo modifyObject=stringScaleBar property={Clipped,0}
 	AppendToGizmo line={GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}, name=line0
 	AppendToGizmo attribute lineWidth=5, name=lineWidth0
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix
 	ModifyGizmo setDisplayList=1, attribute=lineWidth0
 	ModifyGizmo setDisplayList=2, object=line0
@@ -556,6 +562,7 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}
 	ModifyGizmo setDisplayList=5, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}
 	ModifyGizmo setDisplayList=6, object=stringScaleBar
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix
 	ModifyGizmo currentGroupObject="::"
 #endif
@@ -579,7 +586,7 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	KillStrings/Z S_ObjectNames
 #else
 	GetGizmo/N=$win/Z objectNameList
-	String listObjectNames=S_ObjectNames,
+	String listObjectNames=S_ObjectNames
 #endif
 	Variable i
 	for (i=0;i<ItemsInList(listObjectNames);i+=1)
@@ -647,7 +654,7 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	Execute "GetGizmo/N="+win+"/Z objectList"
 	KillStrings/Z S_gizmoObjectList
 #else
-	Execute GetGizmo/N=$win/Z objectList
+	GetGizmo/N=$win/Z objectList
 #endif
 	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 
@@ -702,8 +709,10 @@ Static Function GzimoReSetScaleBarHookProc(s)
 #else
 	ModifyGizmo/N=$win/Z startRecMacro
 	ModifyGizmo/N=$win/Z currentGroupObject=scaleBarName
+//	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo/N=$win/Z modifyObject=stringScaleBar, property={string,unitStr}
-	ModifyGizmo/N=$win/Z modifyObject=line0, property={vertex,GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}
+//	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	ModifyGizmo/N=$win/Z modifyObject=line0, objectType=line property={vertex,GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}
 	ModifyGizmo/N=$win/Z currentGroupObject="::"
 	ModifyGizmo/N=$win/Z endRecMacro
 #endif
@@ -816,14 +825,15 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 		Variable endType=limit(GIZMO_MARKER_END_TYPE,0,1)
 		if (endType==0)							// boxes
 			AppendToGizmo box={GIZMO_MARKER_END_SIZE,GIZMO_MARKER_END_SIZE,GIZMO_MARKER_END_SIZE},name=endMarkers
-			ModifyGizmo modifyObject=endMarkers property={calcNormals,1}
+			ModifyGizmo modifyObject=endMarkers objectType=box property={calcNormals,1}
 		elseif (endType==1)						// spheres
 			AppendToGizmo sphere={GIZMO_MARKER_END_SIZE,25,25},name=endMarkers
 		endif
 	endif
 	AppendToGizmo attribute lineWidth=2, name=lineWidthCross
 	if (strlen(rgba))
-		AppendToGizmo attribute color={$rgba},name=colorLine
+		Wave wrgba = str2vec(str)
+		AppendToGizmo attribute color={wrgba[0],wrgba[1],wrgba[2],wrgba[3]},name=colorLine
 	endif
 	ModifyGizmo setDisplayList=0, opName=pushAttribute0, operation=pushAttribute, data=5
 	ModifyGizmo setDisplayList=1, attribute=lineWidthCross
@@ -851,6 +861,7 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 		ModifyGizmo setDisplayList=-1, opName=translateZplus, operation=translate, data={0,0,2*v}
 		ModifyGizmo setDisplayList=-1, object=endMarkers
 	endif
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=-1, opName=popAttribute0, operation=popAttribute
 	ModifyGizmo currentGroupObject="::"
 #endif
@@ -934,12 +945,15 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo freeAxesCue={0,0,0,1},name=freeAxesCue_BeamLine
-	AppendToGizmo string="X(BL)",strFont=$font,name=stringX
-	ModifyGizmo modifyObject=stringX property={Clipped,0}
-	AppendToGizmo string="Y(BL)",strFont=$font,name=stringY
-	ModifyGizmo modifyObject=stringY property={Clipped,0}
-	AppendToGizmo string="Z(BL)",strFont=$font+,name=stringZ
-	ModifyGizmo modifyObject=stringZ property={Clipped,0}
+	AppendToGizmo string="X(BL)",strFont=font,name=stringX
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//	ModifyGizmo modifyObject=stringX property={Clipped,0}
+	AppendToGizmo string="Y(BL)",strFont=font,name=stringY
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//	ModifyGizmo modifyObject=stringY property={Clipped,0}
+	AppendToGizmo string="Z(BL)",strFont=font,name=stringZ
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//	ModifyGizmo modifyObject=stringZ property={Clipped,0}
 	AppendToGizmo cylinder={0,0.2,1,25,25},name=cylinderArrow
 	AppendToGizmo attribute lineWidth=2, name=lineWidthCross
 	AppendToGizmo attribute color={1,0,0,1},name=colorXred
@@ -947,9 +961,11 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	AppendToGizmo attribute color={0,0,1,1},name=colorZblue
 	ModifyGizmo setDisplayList=0, opName=pushAttribute0, operation=pushAttribute, data=5
 	ModifyGizmo setDisplayList=1, attribute=lineWidthCross
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=2, opName=pushMatrix0, operation=pushMatrix
 	ModifyGizmo setDisplayList=3, opName=rotate45, operation=rotate, data={-45,1,0,0}
 	ModifyGizmo setDisplayList=4, object=freeAxesCue_BeamLine
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=5, opName=pushMatrix_X, operation=pushMatrix
 	ModifyGizmo setDisplayList=6, opName=translateX, operation=translate, data={1,0,0}
 	ModifyGizmo setDisplayList=7, opName=scaleX, operation=scale, data={0.07,0.07,0.07}
@@ -957,7 +973,9 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	ModifyGizmo setDisplayList=9, opName=rotateX, operation=rotate, data={-90,0,1,0}
 	ModifyGizmo setDisplayList=10, object=stringX
 	ModifyGizmo setDisplayList=11, object=cylinderArrow
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=12, opName=popMatrix_X, operation=popMatrix
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=13, opName=pushMatrix_Y, operation=pushMatrix
 	ModifyGizmo setDisplayList=14, opName=translateY, operation=translate, data={0,1,0}
 	ModifyGizmo setDisplayList=15, attribute=colorYgreen
@@ -965,7 +983,9 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	ModifyGizmo setDisplayList=17, opName=rotateY, operation=rotate, data={90,1,0,0}
 	ModifyGizmo setDisplayList=18, object=stringY
 	ModifyGizmo setDisplayList=19, object=cylinderArrow
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=20, opName=popMatrix_Y, operation=popMatrix
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=21, opName=pushMatrix_Z, operation=pushMatrix
 	ModifyGizmo setDisplayList=22, opName=translateZ, operation=translate, data={0,0,1}
 	ModifyGizmo setDisplayList=23, attribute=colorZblue
@@ -973,8 +993,11 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	ModifyGizmo setDisplayList=25, opName=rotateZ, operation=rotate, data={180,1,0,0}
 	ModifyGizmo setDisplayList=26, object=stringZ
 	ModifyGizmo setDisplayList=27, object=cylinderArrow
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=28, opName=popMatrix_Z, operation=popMatrix
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=29, opName=popMatrix0, operation=popMatrix
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=30, opName=popAttribute0, operation=popAttribute
 	ModifyGizmo currentGroupObject="::"
 #endif
@@ -1039,33 +1062,33 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 	endif
 #else
 	if (stringmatch(xlabel,"empty"))
-		ModifyGizmo ModifyObject=axes0,property={0,axisLabel,0}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabel,0}
 	elseif (strlen(xlabel))
-		ModifyGizmo ModifyObject=axes0,property={0,ticks,3}
-		ModifyGizmo ModifyObject=axes0,property={0,axisLabel,1}
-		ModifyGizmo ModifyObject=axes0,property={0,axisLabelText,xlabel}
-		ModifyGizmo ModifyObject=axes0,property={0,axisLabelDistance,0.05}
-		ModifyGizmo ModifyObject=axes0,property={0,axisLabelScale,0.5}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,ticks,3}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabel,1}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelText,xlabel}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelDistance,0.05}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelScale,0.5}
 	endif
 
 	if (stringmatch(ylabel,"empty"))
-		ModifyGizmo ModifyObject=axes0,property={1,axisLabel,0}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabel,0}
 	elseif (strlen(ylabel))
-		ModifyGizmo ModifyObject=axes0,property={1,ticks,3}
-		ModifyGizmo ModifyObject=axes0,property={1,axisLabel,1}
-		ModifyGizmo ModifyObject=axes0,property={1,axisLabelText,ylabel}
-		ModifyGizmo ModifyObject=axes0,property={1,axisLabelDistance,0.05}
-		ModifyGizmo ModifyObject=axes0,property={1,axisLabelScale,0.5}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,ticks,3}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabel,1}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelText,ylabel}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelDistance,0.05}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelScale,0.5}
 	endif
 
 	if (stringmatch(zlabel,"empty"))
-		ModifyGizmo ModifyObject=axes0,property={2,axisLabel,0}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabel,0}
 	elseif (strlen(zlabel))
-		ModifyGizmo ModifyObject=axes0,property={2,ticks,3}
-		ModifyGizmo ModifyObject=axes0,property={2,axisLabel,1}
-		ModifyGizmo ModifyObject=axes0,property={2,axisLabelText,zlabel}
-		ModifyGizmo ModifyObject=axes0,property={2,axisLabelDistance,0.2}
-		ModifyGizmo ModifyObject=axes0,property={2,axisLabelScale,0.5}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,ticks,3}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabel,1}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelText,zlabel}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelDistance,0.2}
+		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelScale,0.5}
 	endif
 #endif
 End

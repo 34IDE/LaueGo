@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.15
+#pragma version = 1.16
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -505,14 +505,14 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		Execute "ModifyGizmo ModifyObject=scatterMarker0 property={ objectName,"+CrossPathGroup+"}"
 #else
 		AppendToGizmo Scatter=$GetWavesDataFolder(gizmoScatterMarker,2),name=scatterMarker0
-		ModifyGizmo ModifyObject=scatterMarker0 property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ markerType,0}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ sizeType,0}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ rotationType,0}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ Shape,7}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ size,0.5}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ color,0,0,0,0.5}
-		ModifyGizmo ModifyObject=scatterMarker0 property={ objectName,$CrossPathGroup}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ markerType,0}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ sizeType,0}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ rotationType,0}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ Shape,7}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ size,0.5}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ color,0,0,0,0.5}
+		ModifyGizmo ModifyObject=scatterMarker0 objectType=scatter property={ objectName,$CrossPathGroup}
 #endif
 		displayObjectList += "scatterMarker0;"
 	endif
@@ -534,13 +534,13 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ color,0,0,0,0}"
 #else
 		AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=scatterCubeCorners
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ markerType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ sizeType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ rotationType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ Shape,1}
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ size,1}
-		ModifyGizmo ModifyObject=scatterCubeCorners property={ color,0,0,0,0}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ markerType,0}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ sizeType,0}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ rotationType,0}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ Shape,1}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ size,1}
+		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ color,0,0,0,0}
 #endif
 	else
 		QxLo = DimOffset(Qspace3D,0)	;	QxHi = QxLo + (DimSize(Qspace3D,0)-1) * DimDelta(Qspace3D,0)
@@ -611,33 +611,33 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	Execute "ModifyGizmo modifyObject=axesBeamLineQ property={Clipped,0}"
 #else
 	AppendToGizmo Axes=boxAxes,name=axesBeamLineQ
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={-1,axisScalingMode,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={-1,axisColor,0,0,0,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,ticks,3}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,ticks,3}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,ticks,3}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,fontScaleFactor,0.8}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,fontScaleFactor,0.8}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,fontScaleFactor,0.8}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,axisLabel,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,axisLabel,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,axisLabel,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,axisLabelText,"Qx  (1/nm)"}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,axisLabelText,"Qy  (1/nm)"}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,axisLabelText,"Qz  (1/nm)"}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,axisLabelCenter,-0.1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,axisLabelCenter,-0.1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,axisLabelCenter,-0.1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,axisLabelDistance,0.05}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,axisLabelDistance,0.05}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,axisLabelDistance,0.3}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,axisLabelScale,0.4}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,axisLabelScale,0.4}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,axisLabelScale,0.4}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={0,axisLabelRGBA,0,0,0,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={1,axisLabelRGBA,0,0,0,1}
-	ModifyGizmo ModifyObject=axesBeamLineQ,property={2,axisLabelRGBA,0,0,0,1}
-	ModifyGizmo modifyObject=axesBeamLineQ property={Clipped,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={-1,axisScalingMode,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={-1,axisColor,0,0,0,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,ticks,3}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,ticks,3}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,ticks,3}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,fontScaleFactor,0.8}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,fontScaleFactor,0.8}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,fontScaleFactor,0.8}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabel,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabel,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabel,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelText,"Qx  (1/nm)"}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelText,"Qy  (1/nm)"}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelText,"Qz  (1/nm)"}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelCenter,-0.1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelCenter,-0.1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelCenter,-0.1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelDistance,0.05}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelDistance,0.05}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelDistance,0.3}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelScale,0.4}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelScale,0.4}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelScale,0.4}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelRGBA,0,0,0,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelRGBA,0,0,0,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelRGBA,0,0,0,1}
+	ModifyGizmo modifyObject=axesBeamLineQ, objectType=axes property={-1,Clipped,0}
 #endif
 	displayObjectList += "axesBeamLineQ;"
 
@@ -650,10 +650,10 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		Execute "ModifyGizmo ModifyObject=sampledVolumeSurface property={ backColor,0.749996,0.811093,1,0.1}"
 #else
 		AppendToGizmo Surface=$GetWavesDataFolder(SampledVolumeXYZ,2),name=sampledVolumeSurface
-		ModifyGizmo ModifyObject=sampledVolumeSurface property={ surfaceColorType,1}
-		ModifyGizmo ModifyObject=sampledVolumeSurface property={ srcMode,1}
-		ModifyGizmo ModifyObject=sampledVolumeSurface property={ frontColor,0.749996,0.811093,1,0.1}
-		ModifyGizmo ModifyObject=sampledVolumeSurface property={ backColor,0.749996,0.811093,1,0.1}
+		ModifyGizmo ModifyObject=sampledVolumeSurface objectType=surface property={ surfaceColorType,1}
+		ModifyGizmo ModifyObject=sampledVolumeSurface objectType=surface property={ srcMode,1}
+		ModifyGizmo ModifyObject=sampledVolumeSurface objectType=surface property={ frontColor,0.749996,0.811093,1,0.1}
+		ModifyGizmo ModifyObject=sampledVolumeSurface objectType=surface property={ backColor,0.749996,0.811093,1,0.1}
 #endif
 		displayObjectList += "sampledVolumeSurface;"
 	endif
@@ -664,6 +664,7 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		Execute "ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform"
 #else
 		ModifyGizmo setDisplayList=-1, object=$groupTitle
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 		ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform
 #endif
 	endif
@@ -856,15 +857,15 @@ Static Function/T AddIso2Gizmo(isoWave,isoName,isoValue,front,back)
 	//	Execute "ModifyGizmo setDisplayList=-1, object=isoSurface0"
 #else
 	AppendToGizmo isoSurface=$GetWavesDataFolder(isoWave,2),name=$isoName
-	ModifyGizmo ModifyObject=$isoName property={ surfaceColorType,1}
-	ModifyGizmo ModifyObject=$isoName property={ lineColorType,0}
-	ModifyGizmo ModifyObject=$isoName property={ lineWidthType,0}
-	ModifyGizmo ModifyObject=$isoName property={ fillMode,2}
-	ModifyGizmo ModifyObject=$isoName property={ lineWidth,1}
-	ModifyGizmo ModifyObject=$isoName property={ isoValue,isoValue)}
-	ModifyGizmo ModifyObject=$isoName property={ frontColor,Mr,Mg,Mb,Ma}
-	ModifyGizmo ModifyObject=$isoName property={ backColor,r,g,b,a}
-	ModifyGizmo ModifyObject=$isoName property={calcNormals,1}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ surfaceColorType,1}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ lineColorType,0}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ lineWidthType,0}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ fillMode,2}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ lineWidth,1}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ isoValue,isoValue}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ frontColor,Mr,Mg,Mb,Ma}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={ backColor,r,g,b,a}
+	ModifyGizmo ModifyObject=$isoName objectType=isosurface property={calcNormals,1}
 	//	ModifyGizmo setDisplayList=-1, object=isoSurface0
 #endif
 	return isoName
@@ -936,20 +937,20 @@ Static Function/T AddGizmoRecipAxis(rlv,Qc,dLo,dHi,hCenter,name,rgba,[alpha])
 #else
 	Wave rgbaVec = str2vec(rgba)
 	AppendToGizmo Axes=CustomAxis,name=$name
-	ModifyGizmo ModifyObject=$name, property={0,axisRange,qs[0][0],qs[0][1],qs[0][2], qs[1][0],qs[1][1],qs[1][2]}
-	ModifyGizmo ModifyObject=$name, property={0,lineWidth,2}
-	ModifyGizmo ModifyObject=$name, property={0,axisScalingMode,1}
-	ModifyGizmo ModifyObject=$name, property={0,axisColor, rgbaVec[0],rgbaVec[1],rgbaVec[2],rgbaVec[3]}
-	ModifyGizmo ModifyObject=$name, property={0,ticks,3}
-	ModifyGizmo ModifyObject=$name, property={0,labelRotationAxis,5,1,1}
-	ModifyGizmo ModifyObject=$name, property={0,labelRotationAngle,43.443}
-	ModifyGizmo ModifyObject=$name, property={0,labelOffset,-0.15,-0.05,0.05}
-	ModifyGizmo ModifyObject=$name, property={0,labelColor, rgbaVec[0],rgbaVec[1],rgbaVec[2],rgbaVec[3]}
-	ModifyGizmo ModifyObject=$name, property={0,fontScaleFactor,0.7}
-	ModifyGizmo ModifyObject=$name, property={0,numTicks,7}
-	ModifyGizmo ModifyObject=$name, property={0,axisMinValue, hCenter+dLo}
-	ModifyGizmo ModifyObject=$name, property={0,axisMaxValue, hCenter+dHi}
-	ModifyGizmo ModifyObject=$name, property={Clipped,0}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisRange,qs[0][0],qs[0][1],qs[0][2], qs[1][0],qs[1][1],qs[1][2]}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,lineWidth,2}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisScalingMode,1}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisColor, rgbaVec[0],rgbaVec[1],rgbaVec[2],rgbaVec[3]}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,ticks,3}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelRotationAxis,5,1,1}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelRotationAngle,43.443}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelOffset,-0.15,-0.05,0.05}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelColor, rgbaVec[0],rgbaVec[1],rgbaVec[2],rgbaVec[3]}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,fontScaleFactor,0.7}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,numTicks,7}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisMinValue, hCenter+dLo}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisMaxValue, hCenter+dHi}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={-1,Clipped,0}
 #endif
 	return name
 End
@@ -1005,7 +1006,8 @@ Static Function/T AddGizmoTitle(wTitle,groupName)
 		Execute "ModifyGizmo modifyObject="+name+" property={Clipped,0}"
 #else
 		AppendToGizmo string=wTitle[i],strFont="Geneva",name=$name
-		ModifyGizmo modifyObject=$name property={Clipped,0}
+// xxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=$name objectType=string property={Clipped,0}
 #endif
 	endfor
 

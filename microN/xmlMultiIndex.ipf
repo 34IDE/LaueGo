@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.85
+#pragma version=1.86
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1153,7 +1153,7 @@ Static Function/WAVE MakeVisibleMaskInGizmo(waveMatchStr,[resolution])
 	Variable zlo=GizmoBoxZmin-resolution, zhi=GizmoBoxZmax+resolution
 	KillVariables/Z GizmoBoxXmin,GizmoBoxXmax,GizmoBoxYmin,GizmoBoxYmax,GizmoBoxZmin,GizmoBoxZmax
 #else
-	Variable GizmoBoxXmin, GizmoBoxXmax, GizmoBoxYmin, GizmoBoxYmax, GizmoBoxZmin, GizmoBoxZmax
+//	Variable GizmoBoxXmin, GizmoBoxXmax, GizmoBoxYmin, GizmoBoxYmax, GizmoBoxZmin, GizmoBoxZmax
 	GetGizmo  userBoxLimits					// get displayed box
 	Variable xlo=GizmoBoxXmin-resolution, xhi=GizmoBoxXmax+resolution
 	Variable ylo=GizmoBoxYmin-resolution, yhi=GizmoBoxYmax+resolution
@@ -2266,35 +2266,35 @@ Function MakeGizmo_xmlData(scatt)
 	AppendToGizmo Axes=boxAxes,name=axes0
 	setGizmoAxisLabels("X  (µm)","H  (µm)","F  (µm)")
 
-	AppendToGizmo Scatter=GetWavesDataFolder(scatt,2),name=scatter0
-	ModifyGizmo ModifyObject=scatter0 property={ scatterColorType,1}
-	ModifyGizmo ModifyObject=scatter0 property={ markerType,0}
-	ModifyGizmo ModifyObject=scatter0 property={ sizeType,0}
-	ModifyGizmo ModifyObject=scatter0 property={ rotationType,0}
-	ModifyGizmo ModifyObject=scatter0 property={ Shape,5}
-	ModifyGizmo ModifyObject=scatter0 property={ size,0.01}
+	AppendToGizmo Scatter=$GetWavesDataFolder(scatt,2),name=scatter0
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ scatterColorType,1}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ markerType,0}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ sizeType,0}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ rotationType,0}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ Shape,5}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ size,0.01}
 	if (WaveExists(rgba))
-		ModifyGizmo ModifyObject=scatter0 property={ colorWave,GetWavesDataFolder(rgba,2)}
+		ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ colorWave,$GetWavesDataFolder(rgba,2)}
 	endif
-	ModifyGizmo ModifyObject=scatter0 property={ CTABScaling,96}
-	ModifyGizmo ModifyObject=scatter0 property={ MinRGBA,0,0.699992,3.0518e-05,3.0518e-05,1}
-	ModifyGizmo ModifyObject=scatter0 property={ MaxRGBA,0,0,1,0.987213,1}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ CTABScaling,96}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ MinRGBA,0,0.699992,3.0518e-05,3.0518e-05,1}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ MaxRGBA,0,0,1,0.987213,1}
 
 	if (WaveExists(cubeCorners))
-		AppendToGizmo Scatter=GetWavesDataFolder(cubeCorners,2),name=cubeCorners
-		ModifyGizmo ModifyObject=cubeCorners property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=cubeCorners property={ markerType,0}
-		ModifyGizmo ModifyObject=cubeCorners property={ sizeType,0}
-		ModifyGizmo ModifyObject=cubeCorners property={ rotationType,0}
-		ModifyGizmo ModifyObject=cubeCorners property={ Shape,5}
-		ModifyGizmo ModifyObject=cubeCorners property={ size,0.01}
-		ModifyGizmo ModifyObject=cubeCorners property={ color,0,0,0,1}
+		AppendToGizmo Scatter=$GetWavesDataFolder(cubeCorners,2),name=cubeCorners
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ markerType,0}
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ sizeType,0}
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ rotationType,0}
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ Shape,5}
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ size,0.01}
+		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ color,0,0,0,1}
 	endif
 
 	AppendToGizmo light=Directional,name=light0
-	ModifyGizmo light=light0 property={ position,0.426121,-0.439519,0.790724,0.0}
-	ModifyGizmo light=light0 property={ direction,0.426121,-0.439519,0.790724}
-	ModifyGizmo light=light0 property={ specular,0.733333,0.733333,0.733333,0.5}
+	ModifyGizmo modifyObject=light0 objectType=light property={ position,0.426121,-0.439519,0.790724,0.0}
+	ModifyGizmo modifyObject=light0 objectType=light property={ direction,0.426121,-0.439519,0.790724}
+	ModifyGizmo modifyObject=light0 objectType=light property={ specular,0.733333,0.733333,0.733333,0.5}
 
 	if (strlen(title))
 		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,1.9,0}

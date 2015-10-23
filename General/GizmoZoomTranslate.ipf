@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.02
+#pragma version = 2.03
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GZoomTrans
 #include "GizmoUtility", version>=0.16
@@ -71,7 +71,7 @@ Function showBox()
 	GetGizmo userBoxLimits
 #endif
 	printf "GizmoBox = [%g, %g] [%g, %g] [%g, %g]\r",GizmoBoxXmin, GizmoBoxXmax,GizmoBoxYmin, GizmoBoxYmax,GizmoBoxZmin, GizmoBoxZmax
-	Variable GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax
+//	Variable GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax
 	getGizmoDataLimits(GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax)
 	printf "Gizmo Data = [%g, %g] [%g, %g] [%g, %g]\r",GizmoXmin, GizmoXmax,GizmoYmin, GizmoYmax,GizmoZmin, GizmoZmax
 	Variable zoom,xc,yc,zc, xhw,yhw,zhw

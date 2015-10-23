@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.45
+#pragma version = 2.46
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -2815,7 +2815,7 @@ End
 
 Function DurationOfspecScans(range)				// returns duration of the spec scans
 	String range									// a range of spec scan numbers
-	Variable topOfStack = (ItemsInList(GetRTStackInfo(0))<2
+	Variable topOfStack = ItemsInList(GetRTStackInfo(0))<2
 	if (numtype(str2num(range))==2 && topOfStack)
 		Prompt range, "range of spec scan"
 		DoPrompt "scan range", range

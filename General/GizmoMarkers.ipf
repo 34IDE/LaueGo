@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.10
+#pragma version = 2.11
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -315,7 +315,7 @@ Static Function GizmoScatterMarkerSetVarProc(sva) : SetVariableControl
 
 	if (stringmatch(sva.ctrlName,"xyzStep"))			// xyzStep changed, use its value to set step sizes
 		ControlInfo/W=$(sva.win) xyzStep
-		Variable step = ((numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
+		Variable step = (numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
 		if (numtype(step)==0)									// a valid step was given, use it
 			SetVariable Xabsolute, limits={xLo,xHi,step}, win=$(sva.win)
 			SetVariable Yabsolute, limits={yLo,yHi,step}, win=$(sva.win)
@@ -795,7 +795,7 @@ Static Function updatePanelXYZlimits(scatter)
 	endif
 
 	ControlInfo/W=GizmoScatterMarkerPanel xyzStep
-	Variable step = ((numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
+	Variable step = (numtype(V_Value)==0 && V_Value>0) ? V_Value : NaN
 	if (numtype(step)==0)					// a valid step was given, use it
 		SetVariable Xabsolute, limits={xLo,xHi,step}, win=GizmoScatterMarkerPanel
 		SetVariable Yabsolute, limits={yLo,yHi,step}, win=GizmoScatterMarkerPanel
@@ -939,24 +939,24 @@ Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to
 #else
 		ModifyGizmo startRecMacro
 		AppendToGizmo Scatter=$GetWavesDataFolder(gizmoScatterMarkerArray,2),name=scatterMarkerArray
-		ModifyGizmo ModifyObject=scatterMarkerArray property={ markerType,0}
-		ModifyGizmo ModifyObject=scatterMarkerArray property={ rotationType,0}
-		ModifyGizmo ModifyObject=scatterMarkerArray property={ Shape,7}
+		ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ markerType,0}
+		ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ rotationType,0}
+		ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ Shape,7}
 		if (WaveExists(gizmoScatterMarkerArrayRGBA))
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ scatterColorType,1}
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ colorWave, $GetWavesDataFolder(gizmoScatterMarkerArrayRGBA,2)}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ scatterColorType,1}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ colorWave, $GetWavesDataFolder(gizmoScatterMarkerArrayRGBA,2)}
 		else
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ scatterColorType,0}
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ color,0,0,0,.5}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ scatterColorType,0}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ color,0,0,0,.5}
 		endif
 		if (WaveExists(gizmoScatterMarkerArraySize))
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ sizeType,1}
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ sizeWave, $GetWavesDataFolder(gizmoScatterMarkerArraySize,2)}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ sizeType,1}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ sizeWave, $GetWavesDataFolder(gizmoScatterMarkerArraySize,2)}
 		else
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ sizeType,0}
-			ModifyGizmo ModifyObject=scatterMarkerArray property={ size,0.5}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ sizeType,0}
+			ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ size,0.5}
 		endif
-		ModifyGizmo ModifyObject=scatterMarkerArray property={ objectName, $CrossObject}
+		ModifyGizmo ModifyObject=scatterMarkerArray objectType=scatter property={ objectName, $CrossObject}
 		ModifyGizmo endRecMacro
 #endif
 		wname = GetWavesDataFolder(gizmoScatterMarkerArray,2)
