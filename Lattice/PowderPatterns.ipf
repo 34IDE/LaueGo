@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.13
+#pragma version = 0.14
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -721,7 +721,7 @@ Function TablePowderLines(w)
 	endif
 
 	Wave/T hklStr = $(GetWavesDataFolder(w,1)+StringByKey("hklStrWave",note(w),"="))
-	Variable right = (WaveExists(hklStr) ? 709 : 588
+	Variable right = WaveExists(hklStr) ? 709 : 588
 
 	Edit/K=1/W=(5,44,right,434) w.ld
 	ModifyTable width(Point)=1,title(w.d)="Powder Lines",width(w.l)=20, format(w.d)=3,width(w.d)=68
