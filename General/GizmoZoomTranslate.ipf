@@ -67,11 +67,11 @@ Function showBox()
 	NVAR GizmoBoxXmin=GizmoBoxXmin, GizmoBoxXmax=GizmoBoxXmax
 	NVAR GizmoBoxYmin=GizmoBoxYmin, GizmoBoxYmax=GizmoBoxYmax
 	NVAR GizmoBoxZmin=GizmoBoxZmin, GizmoBoxZmax=GizmoBoxZmax
+	Variable GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax
 #else
 	GetGizmo userBoxLimits
 #endif
 	printf "GizmoBox = [%g, %g] [%g, %g] [%g, %g]\r",GizmoBoxXmin, GizmoBoxXmax,GizmoBoxYmin, GizmoBoxYmax,GizmoBoxZmin, GizmoBoxZmax
-//	Variable GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax
 	getGizmoDataLimits(GizmoXmin,GizmoXmax, GizmoYmin,GizmoYmax, GizmoZmin,GizmoZmax)
 	printf "Gizmo Data = [%g, %g] [%g, %g] [%g, %g]\r",GizmoXmin, GizmoXmax,GizmoYmin, GizmoYmax,GizmoZmin, GizmoZmax
 	Variable zoom,xc,yc,zc, xhw,yhw,zhw
