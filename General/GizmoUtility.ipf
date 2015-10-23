@@ -1167,7 +1167,7 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 	String keyVals=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
 #else
-	GetGizmo/Z userString="+groupName
+	GetGizmo/Z userString=groupName
 	String keyVals=S_GizmoUserString
 #endif
 
