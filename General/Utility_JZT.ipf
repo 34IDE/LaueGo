@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.81
+#pragma version = 3.82
 // #pragma hide = 1
 
 Menu "Graph"
@@ -79,6 +79,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
 //		epoch2ISOtime(seconds), convert an Igor epoch (in seconds) to an ISO8601 format string
 //		AskForUserForDateTime(epoch), puts up a dialog to select a date & time, returns the epoch
+//		ElapsedTime2Str(seconds,[showSec,fracDigits]), convert seconds to a nice time interval string
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
 //		encodeMatAsStr(mat,[places]), convert mat to a string interpretable by decodeMatFromStr(), used for wave notes
@@ -3296,6 +3297,55 @@ Function AskForUserForDateTime(epoch)
 	epoch = err ? NaN : date2secs(year,month,day) + 3600*hour + 60*minute + second
 	return epoch
 End
+
+
+Function/T ElapsedTime2Str(seconds,[showSec,fracDigits])	// convert seconds to a nice time interval string
+	Variable seconds
+	Variable showSec
+	Variable fracDigits
+
+	if (ParamIsDefault(showSec) && ParamIsDefault(fracDigits))
+		if (seconds < 5*60)
+			showSec = 1
+		endif
+		if (seconds < 2)
+			fracDigits = 2
+		elseif (seconds < 60)
+			fracDigits = 1
+		else
+			fracDigits = 0
+		endif
+	else
+		showSec = ParamIsDefault(showSec) || numtype(showSec) ? 0 : showSec
+		fracDigits = ParamIsDefault(fracDigits) || numtype(fracDigits) ? 0 : fracDigits
+		fracDigits = fracDigits<=0 || showSec<5 ? 0 : round(fracDigits)
+	endif
+	showSec = showSec ? 5 : 4
+
+	Variable years=trunc(seconds/(365*24*3600))	// integer number of years (365.0 days/year)
+	seconds -= years * (365*24*3600)
+	Variable weeks=trunc(seconds/(7*24*3600))		// integer number of weeks (<= 52)
+	seconds -= weeks * (7*24*3600)
+	Variable days=trunc(seconds/(24*3600))			// integer number of days (<= 7)
+	seconds -= days * (24*3600)
+
+	String str=""
+	if (years>0)
+		str += num2istr(years)+" yr,  "
+	endif
+	if (weeks>0)
+		str += num2istr(weeks)+" wk,  "
+	endif
+	if (days>0)
+		str += num2istr(days)+" d,  "
+	endif
+	if (seconds>0)
+		str += Secs2Time(seconds,showSec,fracDigits)
+	endif
+	str = RemoveEnding(str,",  ")
+	return str
+End
+
 
 
 ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// convert vector to s string suitable for printing, does not include name
