@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.86
+#pragma version=1.87
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -33,6 +33,7 @@ Menu "Rotations"
 	multiIndex#MenuItemIfValidRawDataExists("Re-Process Loaded XML"), ProcessLoadedXMLfile(Inf,NaN)
 	MenuItemIfWaveClassExists("  Load Pixels from one step in XML file","Random3dArrays",""),/Q,LoadPixelsFromXML(-1)
 	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
+	MenuItemsWaveClassOnGraph("Separate 3D data to slices for 2D plotting","Random3dArrays",""), AllWavesOnGraph("")
 	MenuItemIfWaveClassExists("Make Gizmo of 3D xml data","Random3dArrays",""),MakeGizmo_xmlData($"")
 	MenuItemIfWaveClassExists("Make another RGBA [2D or 3D]","Random3dArraysXYZ,Random3dArrays",""),Make2D_3D_RGBA($"",$"","",NaN,NaN)
 	MenuItemIfWaveClassExists("Simulated a Laue Pattern from gm...","Random3dArraysGm*",""),SimulatedLauePatternFromGM($"",NaN,NaN)
@@ -470,6 +471,7 @@ Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
 	Make/N=3/FREE rgb
 
 	Make/N=(Ng,3)/O/W/U rotRGBpole=0	// more than enough (will never get more than Nsym )
+	Note/K rotRGBpole, ReplaceStringByKey("waveClass",wnote,"Random3dArraysRGB","=")
 	Variable r = radiusOnPoleFigure(x0,y0,rad)	// radius on polefigure plot for saturated color
 	Variable dist2, dist2min,xmin,ymin, iadd
 	Variable i,N, dot, dist, m
@@ -520,6 +522,7 @@ Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
 	Redimension/N=(N,3) poleXYrgb
 	wnote = ReplaceNumberByKey("Npnts",wnote,N,"=")
 	Note/K poleXY, wnote
+	Note/K poleXYrgb, ReplaceStringByKey("waveClass",wnote,"poleXYpointsRGB","=")
 
 	// make rotRGBpoleIntens, which is probably more suitable for plots
 	//	Wave iwave=sumAboveThreshold			// wave for intensity scaling
@@ -536,11 +539,13 @@ Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
 
 	if (exists("xyz")==1)							// make RGBA for use with a gizmo
 		Duplicate/O rotRGBpole, rotRGBApole
+		Note/K rotRGBApole, ReplaceStringByKey("waveClass",note(rotRGBpole),"Random3dArraysRGBA","=")
 		Redimension/S/N=(-1,4) rotRGBApole
 		rotRGBApole = rotRGBpole/65535
 		rotRGBApole[][3] = 0.5
 		if (WaveExists(rgbi))
 			Duplicate/O rotRGBpole, rotRGBApoleIntens
+			Note/K rotRGBApoleIntens, ReplaceStringByKey("waveClass",note(rotRGBpole),"Random3dArraysRGBA","=")
 			Redimension/S/N=(-1,4) rotRGBApoleIntens
 			rotRGBApoleIntens = rgbi/65535
 			rotRGBApoleIntens[][3] = 0.5
@@ -2851,74 +2856,149 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	Variable ForceNew			// forces a new plot to be made
 	minRange = ParamIsDefault(minRange) ? 1 : minRange
 	minRange = numtype(minRange) || minRange<=0 ? 1 : minRange
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	ForceNew = ParamIsDefault(ForceNew) ? 0 : ForceNew
 	ForceNew = numtype(ForceNew) ? 0 : !(!ForceNew)
 
-	String fldrSav=GetDataFolder(1)
-	if (strsearch(fldr,"root:",0)!=0 && char2num(fldr[0])!=char2num(":"))
-		fldr = ":" + fldr
+	String fldrSav=GetDataFolder(1), str
+	if (strlen(fldr)==0)
+		String list=""
+		if (ItemsInList(WaveListClass("Random3dArrays","*","",fldr=":")))
+			list += "-current folder-;"
+		endif
+		list += FoldersWithWaveClass("","Random3dArrays","*","")
+		if (ItemsInList(list)<1)
+			return ""
+		elseif (ItemsInList(list)==1)
+			str = StringFromList(0,list)
+		else
+			Prompt str, "Choose Folder with data", popup, list
+			DoPrompt "Choose Folder",str
+			if (V_flag)
+				return ""
+			endif
+			printIt = 1
+		endif
+		if (!StringMatch(str,"-current folder-"))
+			fldr = FixUpFolderName(fldr)+str
+		else
+			fldr = ":"
+		endif
 	endif
-	Variable len=strlen(fldr)
-	if (strsearch(fldr,"::",Inf,1)==(len-2) && len>1)			// if it ends in "::" then add a ":"
-		fldr += ":"
-	elseif (!StringMatch(fldr[len-1],":") && len>1)	// if it does not end in a ":" add one
-		fldr += ":"
-	endif	
+	fldr = FixUpFolderName(fldr)
 	if (!DataFolderExists(fldr))
 		return ""
 	endif
+
+	if (printIt)
+		printf "Make2Dplot_xmlData(\"%s\"", fldr
+		if (!ParamIsDefault(minRange))
+			printf ", minRange=%g", minRange
+		endif		
+		if (!ParamIsDefault(ForceNew))
+			printf ", ForceNew=%g", ForceNew
+		endif		
+		if (!ParamIsDefault(printIt))
+			printf ", printIt=%g", printIt
+		endif		
+		printf ")\r"
+	endif
+
 	Wave XX=$(fldr+"XX"), YY=$(fldr+"YY"), ZZ=$(fldr+"ZZ")
 	Wave HH=$(fldr+"HH"), FF=$(fldr+"FF"), depth=$(fldr+"depth")
-	if (!WaveExists(XX) || !WaveExists(YY) || !WaveExists(ZZ) || !WaveExists(HH) || !WaveExists(FF))
-		DoAlert 0,"Could not find one of XX,YY,ZZ,HH,FF  in \""+fldr+"\""
-		return ""
-	endif
-	if (WaveDims(XX)!=1 || DimSize(XX,0)<2)
-		DoAlert 0,"XX wave is not 1D or is too short"
-		return ""
-	endif
-	Variable N=DimSize(XX,0)
-
-	// determine what to plot
-	Variable dX=WaveMax(XX)-WaveMin(XX), dY=WaveMax(YY)-WaveMin(YY), dZ=WaveMax(ZZ)-WaveMin(ZZ)
-	Variable dH=WaveMax(HH)-WaveMin(HH), dF=WaveMax(FF)-WaveMin(FF), ddepth=0
-	if (WaveExists(depth))
-		ddepth=WaveMax(depth)-WaveMin(depth)
-	endif
-	dX = dX<minRange ? 0 : dX					// set to zero if too small to be real
-	dY = dY<minRange ? 0 : dY
-	dZ = dZ<minRange ? 0 : dZ
-	dH = dH<minRange ? 0 : dH
-	dF = dF<minRange ? 0 : dF
-	ddepth = ddepth<1 ? 0 : ddepth
-	ddepth = numtype(ddepth) ? 0 : ddepth
-
+	Variable Nwaves=WaveExists(XX)+WaveExists(YY)+WaveExists(ZZ)+WaveExists(HH)+WaveExists(FF)
 	Variable marker=16							// 16 is square, 18 is diamond
 	Variable yRev=0, xRev=0					// flags whether to revers axis
 	Wave Xw=$"", Yw=$""							// waves to use for X & Y axes
-	if (dX==0 && ddepth>0 && dH>0 && dF>0)	// a wire scan with X-constant, and sample scanned in H
-		Wave Xw=HH, Yw=FF
-		yRev = 1
-		marker = 18
-	elseif (dX==0 && ddepth>0)				// wire scan at constant X, ???
-		Wave Xw=ZZ, Yw=YY
-		marker = 18
-	elseif (dY==0 && ddepth>0)				// slice into the sample with moving X, Sample-Y constant
-		Wave Xw=XX, Yw=depth
-		marker = 16
-	elseif (ddepth==0)
-		Wave Xw=XX, Yw=HH							// no wire scan, just scanned sample surface
-		marker = 16
+	if (Nwaves==2)
+		if (WaveExists(HH) && WaveExists(HH))
+			Wave Xw=HH, Yw=FF
+			yRev = 1
+			marker = 18
+		elseif (WaveExists(YY) && WaveExists(ZZ))
+			Wave Xw=ZZ, Yw=YY
+			marker = 18
+		elseif (WaveExists(XX) && WaveExists(depth))
+			Wave Xw=XX, Yw=depth
+			marker = 16
+		elseif (WaveExists(XX) && WaveExists(HH))
+			Wave Xw=XX, Yw=HH						// no wire scan, just scanned sample surface
+			marker = 16
+		endif
+	elseif (Nwaves>=5)							// a full set of waves, figure it out
+		if (!WaveExists(XX) || !WaveExists(YY) || !WaveExists(ZZ) || !WaveExists(HH) || !WaveExists(FF))
+			str = "Could not find one of XX,YY,ZZ,HH,FF  in \""+fldr+"\""
+			DoAlert 0, str
+			print str
+			return ""
+		endif
+
+		// determine what to plot
+		Variable dX=WaveMax(XX)-WaveMin(XX), dY=WaveMax(YY)-WaveMin(YY), dZ=WaveMax(ZZ)-WaveMin(ZZ)
+		Variable dH=WaveMax(HH)-WaveMin(HH), dF=WaveMax(FF)-WaveMin(FF), ddepth=0
+		if (WaveExists(depth))
+			ddepth=WaveMax(depth)-WaveMin(depth)
+		endif
+		dX = dX<minRange ? 0 : dX				// set to zero if too small to be real
+		dY = dY<minRange ? 0 : dY
+		dZ = dZ<minRange ? 0 : dZ
+		dH = dH<minRange ? 0 : dH
+		dF = dF<minRange ? 0 : dF
+		ddepth = ddepth<1 ? 0 : ddepth
+		ddepth = numtype(ddepth) ? 0 : ddepth
+
+		if (dX==0 && ddepth>0 && dH>0 && dF>0)	// a wire scan with X-constant, and sample scanned in H
+			Wave Xw=HH, Yw=FF
+			yRev = 1
+			marker = 18
+		elseif (dX==0 && ddepth>0)			// wire scan at constant X, ???
+			Wave Xw=ZZ, Yw=YY
+			marker = 18
+		elseif (dY==0 && ddepth>0)			// slice into the sample with moving X, Sample-Y constant
+			Wave Xw=XX, Yw=depth
+			marker = 16
+		elseif (ddepth==0)
+			Wave Xw=XX, Yw=HH						// no wire scan, just scanned sample surface
+			marker = 16
+		endif
+	else
+		return ""
+	endif
+	String Xname=NameOfWave(Xw), Yname=NameOfWave(Yw), Zname
+	if (!WaveExists(Xw) || !WaveExists(Yw))	// ask the user
+		String waveNameList=""
+		waveNameList += SelectString(WaveExists(XX),"","XX;")
+		waveNameList += SelectString(WaveExists(YY),"","YY;")
+		waveNameList += SelectString(WaveExists(ZZ),"","ZZ;")
+		waveNameList += SelectString(WaveExists(HH),"","HH;")
+		waveNameList += SelectString(WaveExists(FF),"","FF;")
+		waveNameList += SelectString(WaveExists(depth),"","depth;")
+		if (ItemsInList(waveNameList)>=2)
+			xName = StringFromList(0,waveNameList)
+			yName = StringFromList(1,waveNameList)
+			Prompt xName, "Wave for X-axis", popup, waveNameList
+			Prompt yName, "Wave for Y-axis", popup, waveNameList
+			DoPrompt "Choose Axes", xName, yName
+			if (V_flag)
+				return ""
+			endif
+			Wave Xw = $xName
+			Wave Yw = $yName
+			printIt = 1
+		endif
+	endif
+	if (WaveDims(Xw)!=1 || DimSize(Xw,0)<2)
+		DoAlert 0,"Waves are not 1D or is too short"
+		return ""
 	endif
 	if (!WaveExists(Xw) || !WaveExists(Yw))
-		String str="Could not figure out suitable X and Y axes"
+		str="Could not figure out suitable X and Y axes"
 		printf "ranges in sample are: ÆX=%g, ÆY=%g, ÆZ=%g, ÆH=%g, ÆF=%g, Ædepth=%g\r",dX,dY,dZ, dH,dF, ddepth
 		print str
 		DoAlert 0, str
 		return ""
 	endif
+	Variable N = DimSize(Xw,0)
 
 	String win=StringFromList(0,FindGraphsWithWave(Yw))
 	if (!ForceNew && strlen(win))			// plot exists, bring it to front
@@ -2926,21 +3006,28 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 		return win
 	endif
 
-	String listInFldr=WaveListClass("Random3dArrays","*","DIMS:1,TEXT:0")
+	String listInFldr=WaveListClass("Random3dArrays","*","DIMS:1,TEXT:0",fldr=fldr)
+	listInFldr = ReplaceString(fldr,listInFldr,"")
 	listInFldr = RemoveFromList("XX;YY;ZZ;HH;FF;depth",listInFldr)
 
-	String listUni0="Nindexed;totalSum;sumAboveThreshold;numAboveThreshold;rmsIndexed;totalAngles;"
-	String listBi0="RX;RH;RF;RY;RZ;"
-	listInFldr += WaveListClass("Random3dArraysRGB","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
-	String Xname=NameOfWave(Xw), Yname=NameOfWave(Yw), Zname
-	Prompt Zname,"Wave for Z-axis Color", popup,listInFldr
-	sprintf str, "Color for '%s' vs '%s' Graph",Yname,Xname
-	DoPrompt str, Zname
-	if (V_flag)
+	Variable NXw=DimSize(Xw,0)
+	listInFldr += WaveListClass("Random3dArraysRGB","*","DIMS:2,MINCOLS:3,MAXCOLS:3,MINROWS:"+num2istr(NXw),fldr=fldr)
+	Xname = NameOfWave(Xw)
+	Yname = NameOfWave(Yw)
+	if (ItemsInList(listInFldr)==0)
 		return ""
+	elseif (ItemsInList(listInFldr)==1)
+		Zname = StringFromList(0,listInFldr)
+	else
+		Prompt Zname,"Wave for Z-axis Color", popup,listInFldr
+		sprintf str, "Color for '%s' vs '%s' Graph",Yname,Xname
+		DoPrompt str, Zname
+		if (V_flag)
+			return ""
+		endif
 	endif
 	Wave Zw=$Zname
-	if (!WaveExists(Zw) || !WaveExists(Yw))
+	if (!WaveExists(Zw))
 		str="Could not figure out suitable Z-axis"
 		print str
 		DoAlert 0, str
@@ -2949,7 +3036,6 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 
 	Variable isRGB=DimSize(Zw,1)==3, BiPolar=0, UniPolar=0
 	if (!isRGB)
-		//	BiPolar = (WaveMin(Zw)*WaveMax(Zw)) < 0
 		BiPolar = WaveMin(Zw)<0
 		UniPolar = !BiPolar
 	endif
@@ -3019,11 +3105,163 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	title = TrimFrontBackWhiteSpace(title)
 	TextBox/N=titleText/F=0/B=1/A=LB/X=2/Y=2 title
 
+	Variable sliceVal = NumVarOrDefault(fldr+"sliceValue",NaN)
+	String sliceName = StrVarOrDefault(fldr+"sliceName","")
+	str = GetWavesDataFolder(Xw,1)
+	if (numtype(sliceVal)==0 && strlen(sliceName) && StringMatch(str,"*:oneSlice_*:"))
+		Variable iSlice=strsearch(str,":oneSlice_",Inf,3) + 10
+		iSlice = str2num(str[iSlice,Inf])
+		if (iSlice >= 0)
+			sprintf str, "Slice %d\r%s = %g µm", iSlice, sliceName, sliceVal
+			TextBox/C/N=text0/F=0/A=LT str
+		endif
+	endif
+
 	if (mref>=0 && mref<DimSize(Xw,0))
 		Cursor/P A $Yname mref
 		ShowInfo
 	endif
 	return StringFromList(0,WinList("*",";","WIN:1"))
+End
+
+
+
+Function AllWavesOnGraph(gName)	// separate the plot of a 3D set of data into a set of slices
+	String gName
+
+	String str = SelectString(strlen(gName),"kwTopWin",gName)	
+	GetWindow $str wavelist
+	Wave/T W_WaveList=W_WaveList
+	Variable i, Nwaves=DimSize(W_WaveList,0)
+	Make/N=(Nwaves)/T/FREE wNames = W_WaveList[p][1]
+	KillWaves/Z W_WaveList
+
+	printf "copying parts of %s into separate folders\r",vec2str(wNames)
+
+	Make/N=(Nwaves)/WAVE/FREE wwList
+	for (i=0;i<Nwaves;i+=1)
+		Wave wy = $wNames[i]
+		wwList[i] = wy
+	endfor
+
+	str = getDirectionOfSlice(gName)
+	String sliceName = StringFromList(0,str)
+	Wave wSlice = $StringFromList(1,str)
+	if (!WaveExists(wSlice))
+		print "Failed to get the direction of the slice (perpendicular to plane)"
+		return 1
+	endif
+
+	Variable N=DimSize(wSlice,0)
+	Duplicate/FREE wSlice, ws
+	Sort ws, ws
+	Duplicate/FREE ws, wsDiff
+	Redimension/N=(N-1,-1) wsDiff
+	wsDiff = ws[p+1] - ws[p]
+	wsDiff = wsDiff > 0.3 ? 1 : 0
+	Variable Nslices = sum(wsDiff)+1
+
+	Make/N=(Nslices)/I/FREE points
+	Variable m
+	for (i=0,m=0; i<N; i+=1)
+		if (wsDiff[i])
+			points[m] = i
+			m += 1
+		endif
+	endfor
+	points[Nslices-1] = N-1
+
+	Make/N=(Nslices)/FREE sliceValues=NaN
+	Variable lastPoint=-1
+	for (i=0;i<Nslices;i+=1)
+		WaveStats/M=1/Q/R=[lastPoint+1, points[i]] ws
+		lastPoint = points[i]
+		sliceValues[i] = V_avg
+	endfor
+	KillWaves/Z ws, wsDiff
+
+	String fldrName, fldrList=""
+	for (i=0;i<Nslices;i+=1)
+		fldrName = "oneSlice_"+num2istr(i)
+		NewDataFolder/O $fldrName
+		fldrList += fldrName+";"
+	endfor
+
+	printf "putting %d slices into %s\r",Nslices,fldrList
+	printf "at slice values of %s\r",vec2str(sliceValues)
+
+	Variable j
+	for (m=0;m<Nslices;m+=1)
+
+		Make/N=(N)/I/FREE hit=-1
+		for (i=0,j=0; i<N; i+=1)		// determine which points are in slice m
+			if (abs(wSlice[i]-sliceValues[m])<0.3)
+				hit[j] = i
+				j += 1
+			endif
+		endfor
+		Redimension/N=(j) hit
+
+		fldrName = ":"+StringFromList(m,fldrList)+":"
+		Variable/G $(fldrName+"sliceValue") = sliceValues[m]
+		String/G $(fldrName+"sliceName") = sliceName
+		for (i=0;i<Nwaves;i+=1)
+			str = fldrName+wNames[i]
+			Wave wSource = wwList[i]
+			Duplicate/O wSource, $str
+			Wave wy = $str
+			Redimension/N=(j,-1,-1) wy
+
+			if (WaveDims(wSource)==1)
+				wy = wSource[hit[p]]
+			elseif (WaveDims(wSource)==2)
+				wy = wSource[hit[p]][q]
+			elseif (WaveDims(wSource)==3)
+				wy = wSource[hit[p]][q][r]
+			endif
+		endfor
+	endfor
+	return 0
+End
+//
+Static Function/T getDirectionOfSlice(gName)
+	String gName
+
+	String ylist=TraceNameList(gName,";",7), wlist=ylist
+	Variable i
+	for (i=0;i<ItemsInList(ylist);i+=1)
+		Wave wx = XWaveRefFromTrace(gName, StringFromList(i,ylist))
+		wlist += NameOfWave(wx)+";"
+	endfor
+
+	String sliceName=""
+	if (WhichListItem("XX", wlist)>=0 && WhichListItem("YY", wlist)>=0)
+		sliceName = "Z"
+	elseif (WhichListItem("XX", wlist)>=0 && WhichListItem("ZZ", wlist)>=0)
+		sliceName = "Y"
+	elseif (WhichListItem("YY", wlist)>=0 && WhichListItem("ZZ", wlist)>=0)
+		sliceName = "X"
+	elseif (WhichListItem("XX", wlist)>=0 && WhichListItem("HH", wlist)>=0)
+		sliceName = "F"
+	elseif (WhichListItem("XX", wlist)>=0 && WhichListItem("FF", wlist)>=0)
+		sliceName = "H"
+	elseif (WhichListItem("HH", wlist)>=0 && WhichListItem("FF", wlist)>=0)
+		sliceName = "X"
+	endif
+
+	if (strlen(sliceName)<1)
+		Prompt sliceName, "Direction of Slice (the coordinate that is constant)", popup, "X;H;F;Y;Z;depth"
+		DoPrompt "Slice?", sliceName
+		if (V_flag)
+			return ""
+		endif
+	endif
+	Wave wSlice = $StringByKey(sliceName,"X:XX;Y:YY;Z:ZZ;H:HH;F:FF;depth:depth")
+	if (!WaveExists(wSlice))
+		return ""
+	endif
+
+	return sliceName+";"+GetWavesDataFolder(wSlice,2)
 End
 
 

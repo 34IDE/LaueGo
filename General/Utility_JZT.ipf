@@ -35,6 +35,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		  TraceNamesInClass(), like TraceNameList(), but limit result to a list of wave classes
 //	8	Contains lots of utility stuff
 //		RecompileAllProcedures(), FORCE ALL procedures to recompile
+//		FixUpFolderName(fldr), return foldr name with the needed ":", so fldr+"wavename" is valid
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
 //		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
 //		joinLists(a,b,[sep]) returns lists a & b joined together in one list
@@ -1576,18 +1577,20 @@ End
 
 
 // returns list of folders containing waves with waveClassList
-Function/T FoldersWithWaveClass(fldrPath,waveClassList,search,options,[all,win])
+Function/T FoldersWithWaveClass(fldrPath,waveClassList,search,options,[all,win,fullPath])
 	String fldrPath					// folder in which to look, defaults to current folder
 	String waveClassList			// a list of acceptable wave classes (semicolon separated)
 	String search						// same as first argument in WaveList()
 	String options						// same as last argument in WaveList()
 	Variable all						// when all is TRUE, then all of the classes in waveClassList must be present, not just one
 	String win							// when present, only provide waves also displayed in win
-	String fldr							// name of data folder to check, default is current folder
+	Variable fullPath					// flag, when true, returned list has full path
 	all = ParamIsDefault(all) ? 0 : !(!all)
 	all = numtype(all) ? 0 : all
 	win = SelectString(ParamIsDefault(win),win,"")
+	fullPath = ParamIsDefault(fullPath) || numtype(fullPath) ? 0 : !(!fullPath)
 	fldrPath = SelectString(strlen(fldrPath),":",fldrPath)
+	fldrPath = FixUpFolderName(fldrPath)	// add necessary ":"
 
 	DFREF DFR = $fldrPath
 	Variable Nlist = CountObjectsDFR(DFR,4)
@@ -1595,8 +1598,8 @@ Function/T FoldersWithWaveClass(fldrPath,waveClassList,search,options,[all,win])
 	Variable i
 	for (i=0;i<Nlist;i+=1)		// check each folder in fldrPath
 		name = GetIndexedObjNameDFR(DFR,4,i)
-		if (ItemsInList(WaveListClass(waveClassList,search,options,all=all,win=win,fldr=name)))
-			list += name+";"
+		if (ItemsInList(WaveListClass(waveClassList,search,options,all=all,win=win,fldr=fldrPath+name)))
+			list += SelectString(fullPath,"",fldrPath) + name + ";"
 		endif
 	endfor
 	return list
@@ -1627,6 +1630,23 @@ Proc RecompileAllProcedures()						// FORCE ALL procedures to recompile,  This m
 	SetIgorOption poundUnDefine=DOESNTMATTER	// don't leave this defined.
 	Execute/P/Q/Z "COMPILEPROCEDURES "				// re-compile (all)
 	// print "ran RecompileAllProcedures"
+End
+
+
+Function/T FixUpFolderName(fldr)		// return foldr name with the needed ":", so fldr+"wavename" is valid
+	String fldr
+	if (strlen(fldr)<1)
+		return ""
+	endif
+
+	if (strsearch(fldr,"root:",0,2) != 0)				// if it does not start with "root:" then it must start with ":"
+		fldr = SelectString(strsearch(fldr,":",0), "", ":") + fldr
+	endif
+	Variable i = strlen(fldr)-1
+	if (i>0 && char2num(fldr[i])!=char2num(":"))	// it must end with a ":"
+		fldr += ":"
+	endif
+	return fldr
 End
 
 
