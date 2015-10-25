@@ -33,7 +33,7 @@ Menu "Rotations"
 	multiIndex#MenuItemIfValidRawDataExists("Re-Process Loaded XML"), ProcessLoadedXMLfile(Inf,NaN)
 	MenuItemIfWaveClassExists("  Load Pixels from one step in XML file","Random3dArrays",""),/Q,LoadPixelsFromXML(-1)
 	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
-	MenuItemsWaveClassOnGraph("Separate 3D data to slices for 2D plotting","Random3dArrays",""), AllWavesOnGraph("")
+	MenuItemsWaveClassOnGraph("Separate 3D data to slices for 2D plotting","Random3dArrays",""), SeparateSlicesFromGraph("")
 	MenuItemIfWaveClassExists("Make Gizmo of 3D xml data","Random3dArrays",""),MakeGizmo_xmlData($"")
 	MenuItemIfWaveClassExists("Make another RGBA [2D or 3D]","Random3dArraysXYZ,Random3dArrays",""),Make2D_3D_RGBA($"",$"","",NaN,NaN)
 	MenuItemIfWaveClassExists("Simulated a Laue Pattern from gm...","Random3dArraysGm*",""),SimulatedLauePatternFromGM($"",NaN,NaN)
@@ -3126,7 +3126,7 @@ End
 
 
 
-Function AllWavesOnGraph(gName)	// separate the plot of a 3D set of data into a set of slices
+Function SeparateSlicesFromGraph(gName)	// separate a 3D set of data into separate slices, get info from a graph
 	String gName
 
 	String str = SelectString(strlen(gName),"kwTopWin",gName)	
