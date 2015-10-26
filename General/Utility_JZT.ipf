@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.82
+#pragma version = 3.83
 // #pragma hide = 1
 
 Menu "Graph"
@@ -77,7 +77,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //		StopAllTimers(), stops all the Igor timers
 //		dateStr2ISO8601Str(), convert a date to an ISO 8601 format
 //		ISOtime2niceStr(iso), convert ISO8601 string to a nice format for graph annotations
-//		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN)
+//		ISOtime2IgorEpoch(iso), convert ISO8601 string to an Igor Epoch (error returns NaN), if TZ present, then returns epoch in UTC
 //		epoch2ISOtime(seconds), convert an Igor epoch (in seconds) to an ISO8601 format string
 //		AskForUserForDateTime(epoch), puts up a dialog to select a date & time, returns the epoch
 //		ElapsedTime2Str(seconds,[showSec,fracDigits]), convert seconds to a nice time interval string
@@ -3209,24 +3209,60 @@ ThreadSafe Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// co
 End
 
 
-ThreadSafe Function ISOtime2IgorEpoch(iso)	// convert ISO8601 string to an Igor Epoch (error returns NaN)
-	String iso									// format     2013-10-02T01:22:35  (the seconds are optional)
+ThreadSafe Function ISOtime2IgorEpoch(iso,[NOTZ])	// convert ISO8601 string to an Igor Epoch (error returns NaN)
+	// if no timezone info present, then the result is independent of timezone
+	// if timezone info present, then returned seconds are in UTC
+	// valid timezones are of the form: "+01", "+0130", "-01:30", "Z" (only Z, not other letters)
+	// to get the old behavior, use new ISOtime2IgorEpoch(iso, NOTZ=1) instead
+	String iso									// format     2013-10-02T01:22:35-06:00  (the seconds are optional, the time zone is optional)
+	Variable NOTZ								// if True, then ignore any time zone info, just use local (this is like the old version)
+	NOTZ = ParamIsDefault(NOTZ) || numtype(NOTZ) ? 0 : NOTZ		// default is interpret timezone info
 
-	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
+	Variable year,month,day, hr,mn,se
+
 	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
-	Variable N=V_flag
-
-	if (N<3 || numtype(year+month+day))
+	Variable N=V_flag, UTC
+	if (N<3)
 		return NaN
 	endif
-	Variable epoch=date2secs(year, month, day )
-	if (N>=5)
-		epoch += hr*3600
-		epoch += mn*60
-		se = (N>=6) ? se : 0
-		epoch += se
+	UTC = date2secs(year, month, day )
+	UTC += N>=4 ? hr*3600 : 0
+	UTC += N>=5 ? mn*60 : 0
+	UTC += N>=6 ? se : 0
+
+	Variable i0
+	i0 = strsearch(iso,"T",i0)+1
+	if (N==3 || NOTZ || i0<1)				// no timezone info, done
+		return UTC
 	endif
-	return epoch
+
+	if (isletter(iso[strlen(iso)-1]))
+		if (cmpstr(iso[strlen(iso)-1],"Z"))
+			return NaN							// the only allowed letter timezone is "Z"
+		endif
+	endif
+	Variable ip,im,i1
+	ip = strsearch(iso,"+",i0)
+	im = strsearch(iso,"-",i0)
+	i1 = max(ip,im)
+	if (i1<0)
+		return UTC								// not timezone info, done
+	endif
+	String tzStr=iso[i1,Inf]
+
+	Variable tzH=0,tzM=0, tzLen=strlen(tzStr)
+	if (tzLen==6)
+		sscanf tzStr,"%3d:%2d", tzH,tzM
+	elseif (tzLen==5)
+		sscanf tzStr,"%3d%2d", tzH,tzM
+	elseif (tzLen==3)
+		sscanf tzStr,"%3d", tzH
+	endif
+	tzM *= im>0 ? -1 : 1
+	tzH += (V_flag==2) ? tzM/60 : 0
+
+	UTC -= tzH*3600
+	return UTC
 End
 
 
@@ -4442,6 +4478,28 @@ End
 
 //  ======================================================================================  //
 //  ======================== Start of legacy deprecated functions ========================  //
+
+// use new ISOtime2IgorEpoch(iso, NOTZ=1) instead
+//ThreadSafe Function ISOtime2IgorEpoch(iso)	// convert ISO8601 string to an Igor Epoch (error returns NaN)
+//	String iso									// format     2013-10-02T01:22:35  (the seconds are optional)
+//
+//	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
+//	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
+//	Variable N=V_flag
+//
+//	if (N<3 || numtype(year+month+day))
+//		return NaN
+//	endif
+//	Variable epoch=date2secs(year, month, day )
+//	if (N>=5)
+//		epoch += hr*3600
+//		epoch += mn*60
+//		se = (N>=6) ? se : 0
+//		epoch += se
+//	endif
+//	return epoch
+//End
+
 
 Function/S CornerStamp1_()		// ONLY for backwards compatibility, DEPRECATED, use JZTutil#CornerStampWindow()
 	PathInfo home

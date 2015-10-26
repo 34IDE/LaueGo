@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.20
-#pragma version = 0.02
+#pragma version = 0.03
 #pragma ModuleName=BurtFiles
 
 Menu "Load Waves"
