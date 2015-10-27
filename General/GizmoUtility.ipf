@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.07
+#pragma version = 2.08
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -436,23 +436,23 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 #else
 	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
-	AppendToGizmo string=title1,strFont=font,name=Title1
+	AppendToGizmo string=title1,strFont=font,name=title1
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//	ModifyGizmo modifyObject=Title1 property={Clipped,0}
+//	ModifyGizmo modifyObject=title1 objectType=string, property={Clipped,0}
 	if (strlen(title2))
 		AppendToGizmo string=title2,strFont=font,name=Title2
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=Title2 property={Clipped,0}
+//		ModifyGizmo modifyObject=Title2 objectType=string, property={Clipped,0}
 	endif
 	if (strlen(title3))
 		AppendToGizmo string=title3,strFont=font,name=Title3
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=Title3 property={Clipped,0}
+//		ModifyGizmo modifyObject=Title3 objectType=string, property={Clipped,0}
 	endif
 	if (strlen(title4))
 		AppendToGizmo string=title4,strFont=font,name=Title4
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=Title4 property={Clipped,0}
+//		ModifyGizmo modifyObject=Title4 objectType=string, property={Clipped,0}
 	endif
 
 	if (stringmatch(pos,"TL"))
@@ -462,7 +462,7 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	endif
 	ModifyGizmo setDisplayList=1, opName=rotateTitle, operation=rotate, data={180,1,0,0}
 	ModifyGizmo setDisplayList=2, opName=scaleTitle, operation=scale, data={0.1,0.1,0.1}
-	ModifyGizmo setDisplayList=3, object=Title1
+	ModifyGizmo setDisplayList=3, object=title1
 	if (strlen(title2))
 		ModifyGizmo setDisplayList=4, opName=translateTitle2, operation=translate, data={0,1,0}
 		ModifyGizmo setDisplayList=5, opName=scaleTitle2, operation=scale, data={0.8,0.8,0.8}
@@ -551,10 +551,9 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo string=unitStr,strFont=font,name=stringScaleBar
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//	ModifyGizmo modifyObject=stringScaleBar property={Clipped,0}
+//	ModifyGizmo modifyObject=stringScaleBar objectType=string, property={Clipped,0}
 	AppendToGizmo line={GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}, name=line0
 	AppendToGizmo attribute lineWidth=5, name=lineWidth0
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix
 	ModifyGizmo setDisplayList=1, attribute=lineWidth0
 	ModifyGizmo setDisplayList=2, object=line0
@@ -562,7 +561,6 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}
 	ModifyGizmo setDisplayList=5, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}
 	ModifyGizmo setDisplayList=6, object=stringScaleBar
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix
 	ModifyGizmo currentGroupObject="::"
 #endif
@@ -709,9 +707,7 @@ Static Function GzimoReSetScaleBarHookProc(s)
 #else
 	ModifyGizmo/N=$win/Z startRecMacro
 	ModifyGizmo/N=$win/Z currentGroupObject=scaleBarName
-//	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-	ModifyGizmo/N=$win/Z modifyObject=stringScaleBar, property={string,unitStr}
-//	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	ModifyGizmo/N=$win/Z modifyObject=stringScaleBar, objectType=string, property={string,unitStr}
 	ModifyGizmo/N=$win/Z modifyObject=line0, objectType=line property={vertex,GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}
 	ModifyGizmo/N=$win/Z currentGroupObject="::"
 	ModifyGizmo/N=$win/Z endRecMacro
@@ -861,7 +857,6 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 		ModifyGizmo setDisplayList=-1, opName=translateZplus, operation=translate, data={0,0,2*v}
 		ModifyGizmo setDisplayList=-1, object=endMarkers
 	endif
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=-1, opName=popAttribute0, operation=popAttribute
 	ModifyGizmo currentGroupObject="::"
 #endif
@@ -961,11 +956,9 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	AppendToGizmo attribute color={0,0,1,1},name=colorZblue
 	ModifyGizmo setDisplayList=0, opName=pushAttribute0, operation=pushAttribute, data=5
 	ModifyGizmo setDisplayList=1, attribute=lineWidthCross
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=2, opName=pushMatrix0, operation=pushMatrix
 	ModifyGizmo setDisplayList=3, opName=rotate45, operation=rotate, data={-45,1,0,0}
 	ModifyGizmo setDisplayList=4, object=freeAxesCue_BeamLine
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=5, opName=pushMatrix_X, operation=pushMatrix
 	ModifyGizmo setDisplayList=6, opName=translateX, operation=translate, data={1,0,0}
 	ModifyGizmo setDisplayList=7, opName=scaleX, operation=scale, data={0.07,0.07,0.07}
@@ -973,9 +966,7 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	ModifyGizmo setDisplayList=9, opName=rotateX, operation=rotate, data={-90,0,1,0}
 	ModifyGizmo setDisplayList=10, object=stringX
 	ModifyGizmo setDisplayList=11, object=cylinderArrow
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=12, opName=popMatrix_X, operation=popMatrix
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=13, opName=pushMatrix_Y, operation=pushMatrix
 	ModifyGizmo setDisplayList=14, opName=translateY, operation=translate, data={0,1,0}
 	ModifyGizmo setDisplayList=15, attribute=colorYgreen
@@ -983,9 +974,7 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	ModifyGizmo setDisplayList=17, opName=rotateY, operation=rotate, data={90,1,0,0}
 	ModifyGizmo setDisplayList=18, object=stringY
 	ModifyGizmo setDisplayList=19, object=cylinderArrow
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=20, opName=popMatrix_Y, operation=popMatrix
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=21, opName=pushMatrix_Z, operation=pushMatrix
 	ModifyGizmo setDisplayList=22, opName=translateZ, operation=translate, data={0,0,1}
 	ModifyGizmo setDisplayList=23, attribute=colorZblue
@@ -993,11 +982,8 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	ModifyGizmo setDisplayList=25, opName=rotateZ, operation=rotate, data={180,1,0,0}
 	ModifyGizmo setDisplayList=26, object=stringZ
 	ModifyGizmo setDisplayList=27, object=cylinderArrow
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=28, opName=popMatrix_Z, operation=popMatrix
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=29, opName=popMatrix0, operation=popMatrix
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
 	ModifyGizmo setDisplayList=30, opName=popAttribute0, operation=popAttribute
 	ModifyGizmo currentGroupObject="::"
 #endif
@@ -1133,12 +1119,12 @@ Function/T AddGizmoClipPlaneGroup(groupName)
 #else
 		AppendToGizmo group,name=$groupName
 		ModifyGizmo currentGroupObject=groupName
-		ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data=12288		// enable all of the 6 clip planes
-		ModifyGizmo setDisplayList=1, opName=enable1, operation=enable, data=12289
-		ModifyGizmo setDisplayList=2, opName=enable2, operation=enable, data=12290
-		ModifyGizmo setDisplayList=3, opName=enable3, operation=enable, data=12291
-		ModifyGizmo setDisplayList=4, opName=enable4, operation=enable, data=12292
-		ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data=12293
+		ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data={12288,}	// enable all of the 6 clip planes
+		ModifyGizmo setDisplayList=1, opName=enable1, operation=enable, data={12289,}
+		ModifyGizmo setDisplayList=2, opName=enable2, operation=enable, data={12290,}
+		ModifyGizmo setDisplayList=3, opName=enable3, operation=enable, data={12291,}
+		ModifyGizmo setDisplayList=4, opName=enable4, operation=enable, data={12292,}
+		ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data={12293,}
 		ModifyGizmo currentGroupObject="::"
 #endif
 		// ************************* Group Object End *******************
@@ -1224,6 +1210,7 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 				elseif (strsearch(action,"Z",0,2)==1)						// convert Z clipVal to range [-1,1]
 					clipBox = (2*clipVal - xyzLoHi[4] - xyzLoHi[5]) / (xyzLoHi[5]-xyzLoHi[4])
 				endif
+#if (IgorVersion()<7)
 				String dataStr=""
 				if (strsearch(action,"-X",0,2)>=0)
 					dataStr = "{0,1,0,0,"
@@ -1242,6 +1229,33 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 					dataStr = "{5,0,0,-1,"
 				endif
 				dataStr += num2str(clipBox)+"}"
+#else
+				Variable plane, A,B,C,D
+				if (strsearch(action,"-X",0,2)>=0)
+					plane = 0
+					A=1; B=0; C=0		//		dataStr = "{0,1,0,0,"
+					clipBox *= -1
+				elseif (strsearch(action,"+X",0,2)>=0)
+					plane = 1
+					A=-1; B=0; C=0		//		dataStr = "{1,-1,0,0,"
+				elseif (strsearch(action,"-Y",0,2)>=0)
+					plane = 2
+					A=0; B=1; C=0		//		dataStr = "{2,0,1,0,"
+					clipBox *= -1
+				elseif (strsearch(action,"+Y",0,2)>=0)
+					plane = 3
+					A=0; B=-1; C=0		//		dataStr = "{3,0,-1,0,"
+				elseif (strsearch(action,"-Z",0,2)>=0)
+					plane = 4
+					A=0; B=0; C=1		//		dataStr = "{4,0,0,1,"
+					clipBox *= -1
+				elseif (strsearch(action,"+Z",0,2)>=0)
+					plane = 5
+					A=0; B=0; C=-1		//		dataStr = "{5,0,0,-1,"
+				endif
+//				dataStr += num2str(clipBox)+"}"
+
+#endif
 
 #if (IgorVersion()<7)
 				Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
@@ -1257,13 +1271,13 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 #if (IgorVersion()<7)
 					Execute "ModifyGizmo setDisplayList=-1, opName="+clipPlane+", operation=ClipPlane, data="+dataStr
 #else
-					ModifyGizmo setDisplayList=-1, opName=$clipPlane, operation=ClipPlane, data=$dataStr
+					ModifyGizmo setDisplayList=-1, opName=$clipPlane, operation=ClipPlane, data={plane,A,B,C,D}
 #endif
 				else													// just modify existing
 #if (IgorVersion()<7)
 					Execute "ModifyGizmo/Z opName="+clipPlane+", operation=ClipPlane, data="+dataStr
 #else
-					ModifyGizmo/Z opName=$clipPlane, operation=ClipPlane, data=$dataStr
+					ModifyGizmo/Z opName=$clipPlane, operation=ClipPlane, data={plane,A,B,C,D}
 #endif
 				endif
 #if (IgorVersion()<7)
@@ -1697,7 +1711,7 @@ Static Function/T AppendParametricXYZ2Gizmo(parametricXYZ,class)
 	KillStrings/Z S_ObjectNames
 	KillWaves/Z TW_gizmoObjectList
 #else
-	Execute "GetGizmo"+Nswitch+"/Z objectNameList"
+	GetGizmo/N=$win/Z objectNameList
 	String ObjectNames = S_ObjectNames
 #endif
 	String rgbaName=StringByKey("RGBA",wnote,"="), surfaceName
@@ -1717,11 +1731,11 @@ Static Function/T AppendParametricXYZ2Gizmo(parametricXYZ,class)
 	Execute "ModifyGizmo"+Nswitch+" setDisplayList=-1, object="+surfaceName
 #else
 	AppendToGizmo/N=$win Surface=$xyzName,name=$surfaceName
-	ModifyGizmo/N=$win ModifyObject=$surfaceName property={ srcMode,4}
-	ModifyGizmo/N=$win modifyObject=$surfaceName property={calcNormals,1}
+	ModifyGizmo/N=$win ModifyObject=$surfaceName objectType=Surface, property={ srcMode,4}
+	ModifyGizmo/N=$win modifyObject=$surfaceName objectType=Surface, property={calcNormals,1}
 	if (exists(rgbaName)==1)
-		ModifyGizmo/N=$win ModifyObject=$surfaceName property={ surfaceColorType,3}
-		ModifyGizmo/N=$win ModifyObject=$surfaceName property={ surfaceColorWave,$rgbaName}
+		ModifyGizmo/N=$win ModifyObject=$surfaceName objectType=Surface, property={ surfaceColorType,3}
+		ModifyGizmo/N=$win ModifyObject=$surfaceName objectType=Surface, property={ surfaceColorWave,$rgbaName}
 	endif
 	ModifyGizmo/N=$win setDisplayList=-1, object=$surfaceName
 #endif
