@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, October 27, 2015" time="11:40:45 AM CDT" isoTime="2015-10-27T11:40:45"></written>
+	<written date="Tuesday, October 27, 2015" time="04:12:42 PM CDT" isoTime="2015-10-27T16:12:42"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>121f8e856c136932e7c68b9a79611a1781b8b43c</gitHash>
+	<gitHash>1ba1e39bfeab13a2814c84c03935b21bc730ad48</gitHash>
 	<fileCount>273</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -154,7 +154,7 @@
 	<file version="0.02" time="2014-04-30T10:26:18" md5="d185b56b1e92d1c5ed4f06a0b4162fda" sha256="681f143f92e05e8dd964d77761ec4ba0375c2948b9470988156769da01bcf0a1" ext=".ipf">materials/materialsLocate.ipf</file>
 	<file version="nan" time="2015-03-07T20:16:43" md5="de5d175054f11d16b08a38843714d4a4" sha256="2f04278a18a7dcfe236d49be57092e8585f0908a42fae52a11bf99126cea97b7" ext=".py">APS/burt_tool.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="a41867870f3717daea30770dcb0a8666" sha256="889e3bccda7d0fefcda042fcbd09966f2d40866379b20eb74631e703ed87cb77" ext=".xml">materials/ald37.xml</file>
-	<file version="2.25" time="2015-08-24T11:37:40" md5="afcf7f29d3bcdcfd6465bad9fbfdaaf9" sha256="b565eea3af11ce27063993e5068afa53350ebf0aaa69b6ee97931032479673d9" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.26" time="2015-10-27T13:26:56" md5="0169a0255e372b2b6391be520ed7a34f" sha256="3831db2b49880075133705fd827bec143ba036324190661b3a6897f7900631a9" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="0.04" time="2015-10-20T14:00:43" md5="abc4d100328e738a1de18062f193d457" sha256="2f62e0b6210b5d5e886767b00e9d08a5835881de0d0990b8543e8bcb008fc23c" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" sha256="84d27f78ad9abdeaf06f07412fe8294dbaf22ba3efa428e723a6c495214be982" ext="">micro/Euler_i386</file>
 	<file version="0.14" time="2015-10-23T15:20:07" md5="34dabdf2b737f45099b8cf4507cdcbd1" sha256="f87078c9eb865d27d973a892bc794d5818eb7c63c7c276b2131a9a95e097f045" ext=".ipf">Lattice/PowderPatterns.ipf</file>
@@ -207,7 +207,7 @@
 	<file version="nan" time="2014-10-30T13:10:03" md5="f8ad18774e169a20fef847e88612a0b3" sha256="f2b4ec7bad2d5bd41607f549ba1cf976f44b76b12ab3db5b358ae42a3a1fa4a9" ext=".mtl">materials/LiF.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="314f26a24853e57f27d2994885f4d613" sha256="4f6f5cf5e550b250f19ad2a4f41d32988040c6fa53dae58a964d18c7d04aef79" ext=".xml">materials/LaAlO3_PseudoCubic.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="fde12c23ffdfde57b393c6256dbe67f0" sha256="71d10f1c6c55ec84cc584096d78ae41ebe80a914dab1b1a126de5680b582f720" ext=".xml">geometrys/geoN_2013-01-31_15-10-07.xml</file>
-	<file version="0.28" time="2015-10-02T13:46:33" md5="56a59295650fc8c38227db5e64fca0d0" sha256="8f3ba3bea2e277a4baa322c1c9b691ae240fb8a47a823b2df46588b4799d8bdc" ext=".ipf">Lattice/AtomView.ipf</file>
+	<file version="0.29" time="2015-10-27T13:36:33" md5="0cd2d4d16eb8fc81b4dea0949331c9f1" sha256="f3f02033da58204be91b324a7aa6ffcb8260adb4a4755b9f1f3b23b38cb280d8" ext=".ipf">Lattice/AtomView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="31e93c2c106e45661bdf5e04fdebd9a6" sha256="fb741a8bc01c0628df3e86771afacf6ec3a67c78ea1dd184fea3cf4d99267654" ext=".xml">materials/NaCl.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="21c8c1a4e96121064f92dbfa36ec916e" sha256="43b6c9e782c6d8cdd5e2362564974c08b34734b63f177b83b538d70ecbebac10" ext=".xml">geometrys/geoN_2013-03-23_14-27-53.xml</file>
 	<file version="2.17" time="2013-10-28T11:28:49" md5="943bd23067647c83f99d989b53f102c8" sha256="33a2b022cddfee9384fe43e1e40f06c649026e9c853cce7b0d1aa1fa545a796f" ext=".ipf">micro/indexLots.ipf</file>

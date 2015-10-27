@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.28
+#pragma version = 0.29
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -15,7 +15,15 @@
 Constant AtomView_GrayBkg = 0.75	// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
 Constant AtomView_BondLineWidth = 5	// Can OverRide with :OverRide Constant AtomView_BondLineWidth=3
 StrConstant AtomView_CellOutLineColor = "0.733333,0.733333,0.733333,1"
+Constant AtomView_CellOutLineColorR = 0.733333
+Constant AtomView_CellOutLineColorG = 0.733333
+Constant AtomView_CellOutLineColorB = 0.733333
+Constant AtomView_CellOutLineColorA = 1
 StrConstant AtomView_BondColor = "0.4,0.4,0.4,1"
+Constant AtomView_BondColorR = 0.4
+Constant AtomView_BondColorG = 0.4
+Constant AtomView_BondColorB = 0.4
+Constant AtomView_BondColorA = 1
 Constant AtomView_UseCovalent = 1	// Can OverRide with :OverRide Constant AtomView_UseCovalent=1
 												// turn this flag on to use covalent radius instead of atomic radius.
 Constant AtomView_SphereQuality = 50	// Can OverRide with :OverRide Constant AtomView_SphereQuality=100
@@ -986,15 +994,15 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Execute "NewGizmo/N="+gizName+"/T=\""+gizName+"\" /W=(234,45,992,803)"
 	Execute "ModifyGizmo startRecMacro"
 #else
-	NewGizmo/N=$gizName/W=(234,45,992,803)/T=$gizName
-	"ModifyGizmo startRecMacro
+	NewGizmo/N=$gizName/W=(234,45,992,803)/T=gizName
+	ModifyGizmo startRecMacro
 #endif
 	titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
 
 	MatrixOP/FREE maxX = maxVal(col(xyz,0))
 	MatrixOP/FREE maxY = maxVal(col(xyz,1))
 	MatrixOP/FREE maxZ = maxVal(col(xyz,2))
-	Variable maxLength = max(max(maxX,maxY),maxZ)
+	Variable maxLength = max(max(maxX[0],maxY[0]),maxZ[0])
 	scaleBarGroup = AddScaleBarGroup("",maxLength,"nm",scaleFactor=scaleFactor)
 
 	Variable fixedLight = 0
@@ -1008,11 +1016,11 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo light=lightFixed property={ diffuse,0.45,0.45,0.45,1.0}"
 #else
 		AppendToGizmo light=Directional,name=lightFixed				// this light is fixed (just like title)
-		ModifyGizmo light=lightFixed property={ position,0,0,-1,0}
-		ModifyGizmo light=lightFixed property={ direction,0,0,-1}
-		ModifyGizmo light=lightFixed property={ ambient,0.45,0.45,0.45,1}
-		ModifyGizmo light=lightFixed property={ specular,1,1,1,1.0}
-		ModifyGizmo light=lightFixed property={ diffuse,0.45,0.45,0.45,1.0}
+		ModifyGizmo modifyObject=lightFixed objectType=light, property={ position,0,0,-1,0}
+		ModifyGizmo modifyObject=lightFixed objectType=light, property={ direction,0,0,-1}
+		ModifyGizmo modifyObject=lightFixed objectType=light, property={ ambient,0.45,0.45,0.45,1}
+		ModifyGizmo modifyObject=lightFixed objectType=light, property={ specular,1,1,1,1.0}
+		ModifyGizmo modifyObject=lightFixed objectType=light, property={ diffuse,0.45,0.45,0.45,1.0}
 #endif
 	endif
 
@@ -1027,12 +1035,12 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Execute "ModifyGizmo light=lightMoving property={ diffuse,0.866667,0.866667,0.866667,1}"
 #else
 	AppendToGizmo light=Directional,name=lightMoving							// this light is spins with the atoms
-	ModifyGizmo light=lightMoving property={ position,0,0,-1,0}
-	ModifyGizmo light=lightMoving property={ direction,0,0,-1}
-	ModifyGizmo light=lightMoving property={ specular,1,1,1,1}
-//	ModifyGizmo light=lightMoving property={ diffuse,0,0,0,1}
-	ModifyGizmo light=lightMoving property={ ambient,0.866667,0.866667,0.866667,1}
-	ModifyGizmo light=lightMoving property={ diffuse,0.866667,0.866667,0.866667,1}
+	ModifyGizmo modifyObject=lightMoving objectType=light, property={ position,0,0,-1,0}
+	ModifyGizmo modifyObject=lightMoving objectType=light, property={ direction,0,0,-1}
+	ModifyGizmo modifyObject=lightMoving objectType=light, property={ specular,1,1,1,1}
+//	ModifyGizmo modifyObject=lightMoving objectType=light, property={ diffuse,0,0,0,1}
+	ModifyGizmo modifyObject=lightMoving objectType=light, property={ ambient,0.866667,0.866667,0.866667,1}
+	ModifyGizmo modifyObject=lightMoving objectType=light, property={ diffuse,0.866667,0.866667,0.866667,1}
 #endif
 
 	if (numpnts(a)==3 && numpnts(b)==3 && numpnts(c)==3)
@@ -1088,7 +1096,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	AppendToGizmo attribute specular={1.0,1.0,0.8,1,1032},name=specularAtom0
 	ModifyGizmo setObjectAttribute={generalAtom,shininessAtom0}
 	ModifyGizmo setObjectAttribute={generalAtom,specularAtom0}
-	ModifyGizmo modifyObject=generalAtom,property={colorType,0}
+	ModifyGizmo modifyObject=generalAtom, objectType=sphere, property={colorType,0}
 #endif
 
 	objectList += "atomViewAtoms;"
@@ -1105,15 +1113,15 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Execute "ModifyGizmo ModifyObject=atomViewAtoms property={ objectName,generalAtom}"
 #else
 	AppendToGizmo Scatter=$GetWavesDataFolder(xyz,2),name=atomViewAtoms
-	ModifyGizmo ModifyObject=atomViewAtoms property={ scatterColorType,1}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ markerType,0}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ sizeType,1}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ rotationType,0}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ size,0.2}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ colorWave, $GetWavesDataFolder(rgba,2)}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ sizeWave, $GetWavesDataFolder(size,2)}
-	ModifyGizmo ModifyObject=atomViewAtoms property={ Shape,7}			// 7 means an object, set in next line
-	ModifyGizmo ModifyObject=atomViewAtoms property={ objectName,generalAtom}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ scatterColorType,1}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ markerType,0}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ sizeType,1}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ rotationType,0}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ size,0.2}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ colorWave, $GetWavesDataFolder(rgba,2)}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ sizeWave, $GetWavesDataFolder(size,2)}
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ Shape,7}			// 7 means an object, set in next line
+	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ objectName,generalAtom}
 #endif
 
 	if (WaveExists(bonds))
@@ -1131,10 +1139,10 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "AppendToGizmo attribute specular={0.1,0.1,0.1,1,1032},name=specularBond0"
 #else
 		AppendToGizmo Path=$GetWavesDataFolder(bonds,2),name=atomViewBonds
-		ModifyGizmo ModifyObject=atomViewBonds property={ pathColorType,1}
-		ModifyGizmo ModifyObject=atomViewBonds property={ lineWidthType,1}
-		ModifyGizmo ModifyObject=atomViewBonds property={ lineWidth,num2str(lineWidth)}
-		ModifyGizmo ModifyObject=atomViewBonds property={ pathColor,$AtomView_BondColor}
+		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ pathColorType,1}
+		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ lineWidthType,1}
+		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ lineWidth,lineWidth}
+		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ pathColor,AtomView_BondColorR,AtomView_BondColorG,AtomView_BondColorB,AtomView_BondColorA}
 		ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}
 		AppendToGizmo attribute specular={0.1,0.1,0.1,1,1032},name=specularBond0
 #endif
@@ -1150,10 +1158,10 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColor,"+AtomView_CellOutLineColor+"}"
 #else
 		AppendToGizmo Path=$GetWavesDataFolder(cell,2),name=cellOutline
-		ModifyGizmo ModifyObject=cellOutline property={ pathColorType,1}
-		ModifyGizmo ModifyObject=cellOutline property={ lineWidthType,1}
-		ModifyGizmo ModifyObject=cellOutline property={ lineWidth,0.5}
-		ModifyGizmo ModifyObject=cellOutline property={ pathColor, $AtomView_CellOutLineColor}
+		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ pathColorType,1}
+		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ lineWidthType,1}
+		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ lineWidth,0.5}
+		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ pathColor, AtomView_CellOutLineColorR,AtomView_CellOutLineColorG,AtomView_CellOutLineColorB,AtomView_CellOutLineColorA}
 #endif
 	endif
 	if (WaveExists(cell0))
@@ -1166,10 +1174,10 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColor,"+AtomView_CellOutLineColor+"}"
 #else
 		AppendToGizmo Path=$GetWavesDataFolder(cell0,2),name=cellOutline0
-		ModifyGizmo ModifyObject=cellOutline0 property={ pathColorType,1}
-		ModifyGizmo ModifyObject=cellOutline0 property={ lineWidthType,1}
-		ModifyGizmo ModifyObject=cellOutline0 property={ lineWidth,AtomView_BondLineWidth}
-		ModifyGizmo ModifyObject=cellOutline0 property={ pathColor,$AtomView_CellOutLineColor}
+		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ pathColorType,1}
+		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ lineWidthType,1}
+		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ lineWidth,AtomView_BondLineWidth}
+		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ pathColor,AtomView_CellOutLineColorR,AtomView_CellOutLineColorG,AtomView_CellOutLineColorB,AtomView_CellOutLineColorA}
 #endif
 	endif
 
@@ -1187,13 +1195,13 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo userString={CubeCorners,\"AtomViewCubeCorners\"}"	// save name of cube corner object
 #else
 		AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=AtomViewCubeCorners
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ markerType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ sizeType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ rotationType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ Shape,1}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ size,1}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners property={ color,0,0,0,1}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ markerType,0}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ sizeType,0}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ rotationType,0}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ Shape,1}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ size,1}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ color,0,0,0,1}
 		ModifyGizmo userString={CubeCorners,"AtomViewCubeCorners"}	// save name of cube corner object
 #endif
 	endif
@@ -1289,7 +1297,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		ModifyGizmo namedHookStr={ScaleBarHook,GizmoUtil#GzimoReSetScaleBarHookProc}
 	endif
 	if (strlen(title2))
-		ModifyGizmo namedHookStr={ScaleBarHook,"AtomView#AtomViewGizmoFixHookProc"}
+		ModifyGizmo namedHookStr={ScaleBarHook,AtomView#AtomViewGizmoFixHookProc}
 	endif
 	ModifyGizmo compile
 	//	ModifyGizmo showInfo
@@ -1433,18 +1441,21 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
 	AppendToGizmo group,name=$groupName
-	ModifyGizmo currentGroupObject=$groupName
+	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo cylinder={0.02,0,0.1,25,25},name=cylinderArrow
 	AppendToGizmo line={0,0,0,a[0],a[1],a[2]}, name=lineX
 	AppendToGizmo line={0,0,0,b[0],b[1],b[2]}, name=lineY
 	AppendToGizmo line={0,0,0,c[0],c[1],c[2]}, name=lineZ
 	if (showNames)
-		AppendToGizmo string="a",strFont=$font,name=string_a
-		ModifyGizmo modifyObject=string_a property={Clipped,0}
-		AppendToGizmo string="b",strFont=$font,name=string_b
-		ModifyGizmo modifyObject=string_b property={Clipped,0}
-		AppendToGizmo string="c",strFont=$font,name=string_c
-		ModifyGizmo modifyObject=string_c property={Clipped,0}
+		AppendToGizmo string="a",strFont=font,name=string_a
+//	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=string_a property={Clipped,0}
+		AppendToGizmo string="b",strFont=font,name=string_b
+//	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=string_b property={Clipped,0}
+		AppendToGizmo string="c",strFont=font,name=string_c
+//	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+//		ModifyGizmo modifyObject=string_c property={Clipped,0}
 	endif
 	AppendToGizmo attribute lineWidth=2, name=lineWidthArrow
 	AppendToGizmo attribute color={1,0,0,1},name=colorRed
@@ -1565,7 +1576,7 @@ Static Function AtomViewGizmoFixHookProc(s)
 #else
 	ModifyGizmo/N=$win/Z startRecMacro
 	ModifyGizmo/N=$win/Z currentGroupObject=titleGroupName
-	ModifyGizmo/N=$win/Z modifyObject=Title2, property={string,title2}
+	ModifyGizmo/N=$win/Z modifyObject=Title2, objectType=string, property={string,title2}
 	ModifyGizmo/N=$win/Z currentGroupObject="::"
 	ModifyGizmo/N=$win/Z endRecMacro
 #endif
