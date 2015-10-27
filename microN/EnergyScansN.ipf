@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.25
+#pragma version = 2.26
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -2169,7 +2169,8 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 	Variable bkg=NaN, bkgErr=NaN
 	Variable VoigtShape=NaN, VoigtShapeErr=NaN
 	Variable sl2 = sqrt(ln(2))
-	if (numtype(lo+hi)==0 && (hi-lo)>4)		// for a valid range, fit the peak
+	WaveStats/M=1/Q/R=[lo,hi]/Z Qhist			// check for at least 4 valid points in range
+	if (numtype(lo+hi)==0 && V_npnts>4)		// for a valid range, fit the peak
 		Variable fitLineShape=NumVarOrDefault("root:Packages:micro:Escan:fitLineShape",0)	// 0=Lorentz, 1=Gauss, 2=Voigt
 		if (fitLineShape==0)							// Lorentzian
 			CurveFit/Q/N=(quiet) lor Qhist[lo,hi]/AD=(!quiet)
@@ -3364,6 +3365,7 @@ Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index i
 
 	Variable imax,i
 	imax = (V_maxloc-DimOffset(pkWave,0))/DimDelta(pkWave,0)// index of the max
+	imax = round(imax)
 	if (!(1<imax && imax<N-1))										// too close to the edges
 		return 1
 	endif
@@ -3378,6 +3380,7 @@ Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index i
 			break
 		endif
 	endfor
+	lo = max(0,lo)
 	for (hi=imax;hi<N;hi+=1)
 		if (pkWave[hi]<half)
 			break
