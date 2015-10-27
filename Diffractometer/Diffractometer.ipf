@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.50
+#pragma version = 0.51
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -260,6 +260,7 @@ End
 //  ============================================================================  //
 //  ============================== Start of Make a Movie ==============================  //
 
+#if strlen(WinList("spec.ipf",";","WIN:128"))
 Function MakeMovieSpecScanImages(scanNum)
 	Variable scanNum
 
@@ -441,6 +442,7 @@ Static Function LabelReLabelGraphMovieFrame(movieFrame)
 	endif
 	return 0
 End
+#endif
 
 //  =============================== End of Make a Movie ==============================  //
 //  ============================================================================  //
@@ -843,7 +845,7 @@ Static Function/WAVE string2wave(list)
 End
 
 
-#if strlen(FunctionList("specInfo","","WIN:spec.ipf"))
+#if strlen(WinList("spec.ipf",";","WIN:128"))
 // special extra stuff for spec
 Function SetLocalSampleStructFromSpec(scanNum)	// sets local sample structure from spec info
 	Variable scanNum
@@ -884,6 +886,8 @@ Function/WAVE protoSpec2BL(inverse)
 	return mat
 End
 #endif
+
+
 
 //  ============================================================================  //
 //  ============================ End of Sample Orientation =============================  //
