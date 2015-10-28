@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.51
+#pragma version = 0.52
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -1408,17 +1408,18 @@ Static Function DetectorUpdateCalc(d)				// update all internally calculated thi
 		d.rho00 = 1;		d.rho01 = 0;		d.rho02 = 0
 		d.rho10 = 0;		d.rho11 = 1;		d.rho12 = 0
 		d.rho20 = 0;		d.rho21 = 0;		d.rho22 = 1
-		return 0
+//		return 0
+	else
+		c=cos(theta)
+		s=sin(theta)
+		c1 = 1-c
+		Rx /= theta;	Ry /= theta;	Rz /= theta		// make |{Rx,Ry,Rz}| = 1
+
+		d.rho00 = Rx*Rx*c1 + c;		d.rho01 = Rx*Ry*c1 - Rz*s;	d.rho02 = Rx*Rz*c1 + Ry*s	// this is the Rodrigues formula from:
+		d.rho10 = Rx*Ry*c1 + Rz*s;	d.rho11 = Ry*Ry*c1 + c;		d.rho12 = Ry*Rz*c1 - Rx*s	// http://mathworld.wolfram.com/RodriguesRotationFormula.html
+		d.rho20 = Rx*Rz*c1 - Ry*s;	d.rho21 = Ry*Rz*c1 + Rx*s ;	d.rho22 = Rz*Rz*c1 + c
 	endif
 
-	c=cos(theta)
-	s=sin(theta)
-	c1 = 1-c
-	Rx /= theta;	Ry /= theta;	Rz /= theta		// make |{Rx,Ry,Rz}| = 1
-
-	d.rho00 = Rx*Rx*c1 + c;		d.rho01 = Rx*Ry*c1 - Rz*s;	d.rho02 = Rx*Rz*c1 + Ry*s	// this is the Rodrigues formula from:
-	d.rho10 = Rx*Ry*c1 + Rz*s;	d.rho11 = Ry*Ry*c1 + c;		d.rho12 = Ry*Rz*c1 - Rx*s	// http://mathworld.wolfram.com/RodriguesRotationFormula.html
-	d.rho20 = Rx*Rz*c1 - Ry*s;	d.rho21 = Ry*Rz*c1 + Rx*s ;	d.rho22 = Rz*Rz*c1 + c
 
 	Variable px0,py0
 	px0 = 0.5*(d.Nx-1) - ((d.Nx/d.sizeX) * (d.P[0]))			// px0 & py0 are redundant, but convienent to have
@@ -1571,8 +1572,9 @@ End
 
 
 
-Function SetDefaultDetector2Reference(point)		// set default detector to the reference values
+Function SetDefaultDetector2Reference(point,[fresh])	// set default detector to the reference values
 	Variable point												// if TRUE then a point detector
+	Variable fresh												// force it to fresh simple values
 	if (numtype(point))
 		Prompt point,"Default Detector Type",popup,"Area;Point"
 		DoPrompt "Detector Type", point
@@ -1583,16 +1585,24 @@ Function SetDefaultDetector2Reference(point)		// set default detector to the ref
 		printf "SetDefaultDetector2Reference(%g)\r",point
 	endif
 
-	STRUCT detectorGeometrys ds							// returns 0 if something set, 0 is nothing done
-	if (FillDetectorsStruct(ds))							//fill the detector structures with current values
-		return 1
+	if (!fresh)
+		STRUCT detectorGeometrys ds						// returns 0 if something set, 0 is nothing done
+		if (!FillDetectorsStruct(ds))					//fill the detector structures with current values
+			return 0												// found the previous values
+		endif
 	endif
 
 	STRUCT detectorGeometry d
 	DetectorReferenceOrientation(d,point)				// get reference values for a detector
 	ds.diffractometer = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)	// name of diffractometer (e.g. fourc)
 
-	UpdateDetectorInList(ds,d,0)							// does a DetectorUpdateCalc(), and stores new values where they will be found
+	if (fresh)
+		ds.N = 1
+		ds.last = 0
+		CopyOneDetectorGeometry(ds.d[0],d)
+	else
+		UpdateDetectorInList(ds,d,0)						// does a DetectorUpdateCalc(), and stores new values where they will be found
+	endif
 	UpdateDefaultDetectorStruct(ds)						// does a DetectorUpdateCalc(), and stores new values where they will be found
 	return 0
 End
