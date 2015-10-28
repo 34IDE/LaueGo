@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.42
+#pragma version = 4.43
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -121,6 +121,7 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.40, Get_f_proto() was ThreadSafe, it must NOT be ThreadSafe (since Get_F is not)
 // with version 4.41, removed ELEMENT_Symbols (it is now in Utility_JZT.ipf)
 // with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
+// with version 4.43, added showPanel to InitLatticeSymPackage()
 
 // Rhombohedral Transformation:
 //
@@ -151,10 +152,10 @@ Static Constant ELEMENT_Zmax = 116
 
 Menu "Analysis"
 	SubMenu "Lattice"
+		"<BLattice Set Panel...",MakeLatticeParametersPanel("")
+		help={"Define the crystal structure and lattice to be used"}
 		"Show Crystal Structure",showCrystalStructure()
 		help={"Shows the crystal structure and lattice that is currently defined"}
-		"Set Crystal Structure...",MakeLatticeParametersPanel("")
-		help={"Define the crystal structure and lattice to be used"}
 		"  Edit the Atom Positions...",EditAtomPositionsMenu()
 		help={"Manually set/change the atom positions"}
 		"Load a new Crystal Structure...",LoadCrystal("")
@@ -5691,10 +5692,15 @@ End
 
 
 
-Function InitLatticeSymPackage()								// used to initialize this package
+Function InitLatticeSymPackage([showPanel])			// used to initialize this package
+	Variable showPanel											// optionally show the Panel too
+	showPanel = ParamIsDefault(showPanel) || numtype(showPanel) ? 0 : showPanel
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:Lattices
 	NewDataFolder/O root:Packages:Lattices:SymOps
+	if (showPanel)
+		MakeLatticeParametersPanel("")
+	endif
 End
 
 
