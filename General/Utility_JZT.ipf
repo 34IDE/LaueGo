@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.83
+#pragma version = 3.84
 // #pragma hide = 1
 
 Menu "Graph"
@@ -227,14 +227,28 @@ End
 
 
 // This is really useful with an  Execute/P ... command
-// e.g.  MenuItemIfWindowAbsent("Include ABC Support","ABC.ipf"), Execute/P "INSERTINCLUDE  \"ABC\"";Execute/P "COMPILEPROCEDURES "
-Function/S MenuItemIfWindowAbsent(item,win)		// Shows menu item if win NOT present
+// e.g.  MenuItemIfWindowAbsent("Include ABC Support","ABC.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"ABC\"";Execute/P "COMPILEPROCEDURES "
+Function/S MenuItemIfWindowAbsent(item,win,options)		// Shows menu item if win NOT present
+	String item			// the string that appears in the menu
+	String win			// may contains wildcard
+	String options		// options that are in WinList()
+	Variable present = (strlen(WinList(win,"",options)))>0
+	return SelectString(present,"","(")+item
+End
+//
+Function/S MenuItemIfWindowHidden(item,win)		// Shows menu item if win NOT present
 	String item
 	String win
-
 	GetWindow/Z $win, hide
 	return SelectString(V_flag,"(","")+item
 End
+//Function/S MenuItemIfWindowAbsent(item,win)		// Shows menu item if win NOT present
+//	String item
+//	String win
+//
+//	GetWindow/Z $win, hide
+//	return SelectString(V_flag,"(","")+item
+//End
 
 // only show menu item when a single specific wave exists
 Function/S MenuItemIfWaveExists(item,wname)

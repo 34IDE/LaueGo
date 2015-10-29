@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.43
+#pragma version = 4.44
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -122,6 +122,7 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.41, removed ELEMENT_Symbols (it is now in Utility_JZT.ipf)
 // with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
 // with version 4.43, added showPanel to InitLatticeSymPackage()
+// with version 4.44, definition of MenuItemIfWindowAbsent() was changed
 
 // Rhombohedral Transformation:
 //
@@ -174,9 +175,9 @@ Menu "Analysis"
 		"angle between two hkl's",angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN)
 		"  Convert old xtl files to new xml files",ConverXTLfile2XMLfile("")
 		"-"
-		MenuItemIfWindowAbsent("Include Powder Patterns Support","PowderPatterns.ipf"), Execute/P "INSERTINCLUDE  \"PowderPatterns\", version>=0.10";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_PowderPatternLattice()"
+		MenuItemIfWindowAbsent("Include Powder Patterns Support","PowderPatterns.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"PowderPatterns\", version>=0.10";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_PowderPatternLattice()"
 		help = {"Load Function used to compute Powder Patterns from Loaded Lattice"}
-		MenuItemIfWindowAbsent("Include Atom View Support","AtomView.ipf"), Execute/P "INSERTINCLUDE  \"AtomView\", version>=0.17";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_AtomViewLattice()"
+		MenuItemIfWindowAbsent("Include Atom View Support","AtomView.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"AtomView\", version>=0.17";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_AtomViewLattice()"
 		help = {"Load Function used to Display Atoms from the Loaded Lattice in a Gizmo"}
 	End
 End
