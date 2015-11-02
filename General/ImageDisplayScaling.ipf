@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -506,12 +506,17 @@ Function/S NewImageGraph(image,[withButtons])
 	if (!WaveExists(image) || numtype(withButtons))
 		String wList = reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
 		String wName=SelectString(WaveExists(image),StringFromList(0,wList),NameOfWave(image))
+		if (strlen(wName)<1)
+			return ""
+		endif
 		withButtons = numtype(withButtons) ? 0 : withButtons
 		withButtons = withButtons ? 1 : 2
 		Prompt withButtons,"put the buttons on the graph",popup,"Yes;No"
 		Prompt wName, "image to show", popup, wList
 		if (NOButtons)
-			DoPrompt "choose image", wName
+			if (ItemsInList(wList)>1)
+				DoPrompt "choose image", wName
+			endif
 		else
 			DoPrompt "choose image", wName, withButtons
 			withButtons = (withButtons==1) ? 1 : 0
