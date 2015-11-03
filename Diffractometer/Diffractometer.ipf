@@ -2640,33 +2640,33 @@ Function MakeDetectorGeoPanel()
 	SetDrawLayer UserBack
 	SetDrawEnv fsize= 18,textrgb= (1,16019,65535)
 	DrawText 6,22,"Detector Geometrys"
-	PopupMenu iDetectorPopup,pos={214,2},size={80,21},proc=NdetectorPopMenuProc,title="\\F'Consolas'\\Z18det #"
+	PopupMenu iDetectorPopup,pos={214,2},size={80,21},proc=diffractometer#NdetectorPopMenuProc,title="\\F'Consolas'\\Z18det #"
 	PopupMenu iDetectorPopup,font="Consolas",fSize=12
 	PopupMenu iDetectorPopup,mode=1,popvalue="0",value= #list
-	CheckBox DetectorUsedCheck,pos={37,30},size={58,21},proc=DetectorUsedCheckProc,title="\\F'Consolas'\\Z18Used"
+	CheckBox DetectorUsedCheck,pos={37,30},size={58,21},proc=diffractometer#DetectorUsedCheckProc,title="\\F'Consolas'\\Z18Used"
 	CheckBox DetectorUsedCheck,font="Consolas",fSize=12,value= 1
-	SetVariable NxSetvar,pos={20,60},size={84,24},bodyWidth=60,proc=DetectorGeometrySetVarProc,title="Nx"
+	SetVariable NxSetvar,pos={20,60},size={84,24},bodyWidth=60,proc=diffractometer#DetectorGeometrySetVarProc,title="Nx"
 	SetVariable NxSetvar,font="Consolas",fSize=18,format="%d"
 	SetVariable NxSetvar,limits={1,10000,0},value= _NUM:487
-	SetVariable NySetvar,pos={20,90},size={84,24},bodyWidth=60,proc=DetectorGeometrySetVarProc,title="Ny"
+	SetVariable NySetvar,pos={20,90},size={84,24},bodyWidth=60,proc=diffractometer#DetectorGeometrySetVarProc,title="Ny"
 	SetVariable NySetvar,font="Consolas",fSize=18,format="%d"
 	SetVariable NySetvar,limits={1,10000,0},value= _NUM:195
-	SetVariable SizexSetvar,pos={137,60},size={143,24},bodyWidth=90,proc=DetectorGeometrySetVarProc,title="width"
+	SetVariable SizexSetvar,pos={137,60},size={143,24},bodyWidth=90,proc=diffractometer#DetectorGeometrySetVarProc,title="width"
 	SetVariable SizexSetvar,font="Consolas",fSize=18,format="%g"
 	SetVariable SizexSetvar,limits={0.1,10000,0},value= _NUM:83.764
-	SetVariable SizeySetvar,pos={128,90},size={153,24},bodyWidth=90,proc=DetectorGeometrySetVarProc,title="height"
+	SetVariable SizeySetvar,pos={128,90},size={153,24},bodyWidth=90,proc=diffractometer#DetectorGeometrySetVarProc,title="height"
 	SetVariable SizeySetvar,font="Consolas",fSize=18,format="%g"
 	SetVariable SizeySetvar,limits={0.1,10000,0},value= _NUM:33.54
 	SetVariable PvecStrSetvar,pos={16,126},size={272,19},bodyWidth=260,title="P"
-	SetVariable PvecStrSetvar,font="Consolas",fSize=14,proc=DetectorGeometrySetVarProc
+	SetVariable PvecStrSetvar,font="Consolas",fSize=14,proc=diffractometer#DetectorGeometrySetVarProc
 	SetVariable PvecStrSetvar,limits={-inf,inf,0},value= _STR:"5, 10, 1000"
 	SetVariable RvecStrSetvar,pos={16,149},size={272,19},bodyWidth=260,title="R"
-	SetVariable RvecStrSetvar,font="Consolas",fSize=14,proc=DetectorGeometrySetVarProc
+	SetVariable RvecStrSetvar,font="Consolas",fSize=14,proc=diffractometer#DetectorGeometrySetVarProc
 	SetVariable RvecStrSetvar,limits={-inf,inf,0},value= _STR:"0, 0, 0"
 	SetVariable IDsetvar,pos={9,180},size={279,19},bodyWidth=260,title="ID"
-	SetVariable IDsetvar,font="Consolas",fSize=14,proc=DetectorGeometrySetVarProc
+	SetVariable IDsetvar,font="Consolas",fSize=14,proc=diffractometer#DetectorGeometrySetVarProc
 	SetVariable IDsetvar,limits={-inf,inf,0},value= _STR:"PILATUS 100K, 1-0005, APS"
-	Button UpdateButton,pos={114,31},size={85,20},disable=1,proc=DetectorUpdateButtonProc,title="Update"
+	Button UpdateButton,pos={114,31},size={85,20},disable=1,proc=diffractometer#DetectorUpdateButtonProc,title="Update"
 	Button UpdateButton,fSize=18,fColor=(65535,16385,16385)
 	SetWindow kwTopWin,userdata(dirty)="0"
 	SetDetectorPanelValues(0)	
@@ -2677,7 +2677,7 @@ Function MakeDetectorGeoPanel()
 End
 
 
-Function NdetectorPopMenuProc(pa) : PopupMenuControl
+Static Function NdetectorPopMenuProc(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
 	if (pa.eventCode == 2)																// mouse up
 		String win = pa.win
@@ -2690,7 +2690,7 @@ Function NdetectorPopMenuProc(pa) : PopupMenuControl
 End
 
 
-Function DetectorUsedCheckProc(cba) : CheckBoxControl
+Static Function DetectorUsedCheckProc(cba) : CheckBoxControl
 	STRUCT WMCheckboxAction &cba
 	if (cba.eventCode == 2)
 		Variable checked = cba.checked
@@ -2701,7 +2701,7 @@ End
 
 
 // a detector value was changed, mark as dirty, and show the update button
-Function DetectorGeometrySetVarProc(sva) : SetVariableControl
+Static Function DetectorGeometrySetVarProc(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
 
 	if (sva.eventCode == 1 || sva.eventCode == 2)	// mouse up or Enter key
@@ -2714,7 +2714,7 @@ End
 
 
 // collect values of controls and update the detector definition
-Function DetectorUpdateButtonProc(ba) : ButtonControl
+Static Function DetectorUpdateButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	if (ba.eventCode == 2)		// mouse up
@@ -2759,7 +2759,7 @@ Function DetectorUpdateButtonProc(ba) : ButtonControl
 End
 
 
-Function SetDetectorPanelValues(idet)		// set panel values to the existing values
+Static Function SetDetectorPanelValues(idet)		// set panel values to the existing values
 	Variable idet									// detector number, 0 - MAX_DETECTORS-1
 
 	STRUCT detectorGeometrys ds				// returns 0 if something set, 0 is nothing done
@@ -2793,7 +2793,7 @@ Function SetDetectorPanelValues(idet)		// set panel values to the existing value
 End
 
 
-Function UpdateDetectorPanelUsed(usedFlag)
+Static Function UpdateDetectorPanelUsed(usedFlag)
 	Variable usedFlag				// 1 for used, 0 for UNused
 
 	Variable disable = usedFlag ? 0 : 2
