@@ -534,6 +534,7 @@ Function/S NewImageGraph(image,[withButtons])
 	String win=StringFromList(0,FindGraphsWithWave(image))
 	if (strlen(win))
 		DoWindow/F $win
+		return ""
 	else
 		Display /W=(345,44,822,440)
 		AppendImage image

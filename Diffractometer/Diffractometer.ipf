@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.52
+#pragma version = 0.53
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -24,6 +24,8 @@ Static StrConstant GeoWebServer = "sector34.xray.aps.anl.gov/34ide"
 
 Menu "Diffractometer"
 	SubMenu "Sample\Detector"
+		"Detector Geo Panel", MakeDetectorGeoPanel()
+		"-"
 		"Print Sample", PrintCurrentSample()
 		"Print Detectors",PrintCurrentDetectors()
 		"-"
@@ -257,8 +259,8 @@ End
 
 
 
-//  ============================================================================  //
-//  ============================== Start of Make a Movie ==============================  //
+//  ======================================================================================  //
+//  =============================== Start of Make a Movie ================================  //
 
 #if strlen(WinList("spec.ipf",";","WIN:128"))
 Function MakeMovieSpecScanImages(scanNum)
@@ -444,14 +446,14 @@ Static Function LabelReLabelGraphMovieFrame(movieFrame)
 End
 #endif
 
-//  =============================== End of Make a Movie ==============================  //
-//  ============================================================================  //
+//  ================================ End of Make a Movie =================================  //
+//  ======================================================================================  //
 
 
 
 
-//  ============================================================================  //
-//  ============================ Start of Sample Orientation ============================  //
+//  ======================================================================================  //
+//  ============================= Start of Sample Orientation ============================  //
 
 Structure sampleStructure			// structure definition for a sample
 	uchar name[256]				// sample name
@@ -889,14 +891,14 @@ End
 
 
 
-//  ============================================================================  //
-//  ============================ End of Sample Orientation =============================  //
+//  ======================================================================================  //
+//  ============================= End of Sample Orientation ==============================  //
 
 
 
 
-//  ============================================================================  //
-//  ========================= Start of Diffractometer Definitions ==========================  //
+//  ======================================================================================  //
+//  ======================== Start of Diffractometer Definitions =========================  //
 
 Structure diffractometerTypeStruct	// structure that identifies a diffractometer type, used with package prefs
 	uchar name[100]				// name, e.g. fourc,kappa, ...
@@ -1161,13 +1163,13 @@ Function protoReferenceOrientation(s,px,py)	// fills s with the reference orient
 	return 1									// flags an error, the values above are kind of pointless
 End
 
-//  ============================================================================  //
-//  ========================== End of Diffractometer Definitions ==========================  //
+//  ======================================================================================  //
+//  ========================== End of Diffractometer Definitions =========================  //
 
 
 
 
-//  ============================================================================  //
+//  ======================================================================================  //
 //  ============================ Start of Detector Orientation ===========================  //
 
 //	Note, for a point detector, just configure the detector to be 1x1.  So in reality, everyhing is treated as an area detector
@@ -2607,14 +2609,246 @@ Static Function/C PvectorFromPixels(px0,py0)
 	return cmplx(P0,P1)
 End
 
-//  ============================================================================  //
-//  ============================ End of Detector Orientation ============================  //
+//  ======================================================================================  //
+//  ============================ End of Detector Orientation =============================  //
 
 
 
 
-//  ============================================================================  //
-//  ============================= Start of Utility Routines =============================  //
+
+
+
+
+
+//  ======================================================================================  //
+//  ============================ Start of Detector Geo Panel =============================  //
+
+Function MakeDetectorGeoPanel()
+	if (strlen(WinList("DetectorGeoPanel","","WIN:64")))
+		DoWindow/F DetectorGeoPanel
+		return 0
+	endif
+
+	Variable i
+	String list="\""
+	for (i=0;i<MAX_DETECTORS;i+=1)
+		list += num2istr(i)+";"
+	endfor
+	list += "\""
+
+	NewPanel/K=1/W=(1103,48,1406,259)/N=DetectorGeoPanel
+	SetDrawLayer UserBack
+	SetDrawEnv fsize= 18,textrgb= (1,16019,65535)
+	DrawText 6,22,"Detector Geometrys"
+	PopupMenu iDetectorPopup,pos={214,2},size={80,21},proc=NdetectorPopMenuProc,title="\\F'Consolas'\\Z18det #"
+	PopupMenu iDetectorPopup,font="Consolas",fSize=12
+	PopupMenu iDetectorPopup,mode=1,popvalue="0",value= #list
+	CheckBox DetectorUsedCheck,pos={37,30},size={58,21},proc=DetectorUsedCheckProc,title="\\F'Consolas'\\Z18Used"
+	CheckBox DetectorUsedCheck,font="Consolas",fSize=12,value= 1
+	SetVariable NxSetvar,pos={20,60},size={84,24},bodyWidth=60,proc=DetectorGeometrySetVarProc,title="Nx"
+	SetVariable NxSetvar,font="Consolas",fSize=18,format="%d"
+	SetVariable NxSetvar,limits={1,10000,0},value= _NUM:487
+	SetVariable NySetvar,pos={20,90},size={84,24},bodyWidth=60,proc=DetectorGeometrySetVarProc,title="Ny"
+	SetVariable NySetvar,font="Consolas",fSize=18,format="%d"
+	SetVariable NySetvar,limits={1,10000,0},value= _NUM:195
+	SetVariable SizexSetvar,pos={137,60},size={143,24},bodyWidth=90,proc=DetectorGeometrySetVarProc,title="width"
+	SetVariable SizexSetvar,font="Consolas",fSize=18,format="%g"
+	SetVariable SizexSetvar,limits={0.1,10000,0},value= _NUM:83.764
+	SetVariable SizeySetvar,pos={128,90},size={153,24},bodyWidth=90,proc=DetectorGeometrySetVarProc,title="height"
+	SetVariable SizeySetvar,font="Consolas",fSize=18,format="%g"
+	SetVariable SizeySetvar,limits={0.1,10000,0},value= _NUM:33.54
+	SetVariable PvecStrSetvar,pos={16,126},size={272,19},bodyWidth=260,title="P"
+	SetVariable PvecStrSetvar,font="Consolas",fSize=14,proc=DetectorGeometrySetVarProc
+	SetVariable PvecStrSetvar,limits={-inf,inf,0},value= _STR:"5, 10, 1000"
+	SetVariable RvecStrSetvar,pos={16,149},size={272,19},bodyWidth=260,title="R"
+	SetVariable RvecStrSetvar,font="Consolas",fSize=14,proc=DetectorGeometrySetVarProc
+	SetVariable RvecStrSetvar,limits={-inf,inf,0},value= _STR:"0, 0, 0"
+	SetVariable IDsetvar,pos={9,180},size={279,19},bodyWidth=260,title="ID"
+	SetVariable IDsetvar,font="Consolas",fSize=14,proc=DetectorGeometrySetVarProc
+	SetVariable IDsetvar,limits={-inf,inf,0},value= _STR:"PILATUS 100K, 1-0005, APS"
+	Button UpdateButton,pos={114,31},size={85,20},disable=1,proc=DetectorUpdateButtonProc,title="Update"
+	Button UpdateButton,fSize=18,fColor=(65535,16385,16385)
+	SetWindow kwTopWin,userdata(dirty)="0"
+	SetDetectorPanelValues(0)	
+
+	MoveWindowToCorner("DetectorGeoPanel","TR")
+
+	return 1
+End
+
+
+Function NdetectorPopMenuProc(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+	if (pa.eventCode == 2)																// mouse up
+		String win = pa.win
+		Variable idet = round(str2num(pa.popStr))
+		idet = numtype(idet) ? 0 : idet
+		SetWindow $win userdata(dirty)=num2istr(0)
+		SetDetectorPanelValues(idet)
+	endif
+	return 0
+End
+
+
+Function DetectorUsedCheckProc(cba) : CheckBoxControl
+	STRUCT WMCheckboxAction &cba
+	if (cba.eventCode == 2)
+		Variable checked = cba.checked
+		UpdateDetectorPanelUsed(checked)
+	endif
+	return 0
+End
+
+
+// a detector value was changed, mark as dirty, and show the update button
+Function DetectorGeometrySetVarProc(sva) : SetVariableControl
+	STRUCT WMSetVariableAction &sva
+
+	if (sva.eventCode == 1 || sva.eventCode == 2)	// mouse up or Enter key
+		String win = sva.win
+		SetWindow $win userdata(dirty)=num2istr(1)	// always change to dirty when changing a value
+		Button UpdateButton,disable=0
+	endif
+	return 0
+End
+
+
+// collect values of controls and update the detector definition
+Function DetectorUpdateButtonProc(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	if (ba.eventCode == 2)		// mouse up
+		String win = ba.win
+		ControlInfo/W=$win iDetectorPopup
+		Variable idet = str2num(S_Value)
+		if (idet<0 || idet>=MAX_DETECTORS || mod(idet,1))
+			DoAlert 0,"ERROR -- idet = "+num2str(idet)
+			return 1
+		endif
+		STRUCT detectorGeometry d				// returns 0 if something set, 0 is nothing done
+		ControlInfo/W=$win DetectorUsedCheck	;	d.used = V_Value
+		ControlInfo/W=$win NxSetvar				;	d.Nx = V_Value
+		ControlInfo/W=$win NySetvar				;	d.Ny = V_Value
+		ControlInfo/W=$win SizexSetvar			;	d.sizeX = V_Value
+		ControlInfo/W=$win SizeySetvar			;	d.sizeY = V_Value
+		ControlInfo/W=$win IDsetvar				;	d.detectorID = S_Value
+
+		ControlInfo/W=$win PvecStrSetvar		;	Wave Pvec = str2vec(S_Value)
+		d.P[0] = Pvec[0] ;	d.P[1] = Pvec[1] ;	d.P[2] = Pvec[2]
+
+		ControlInfo/W=$win RvecStrSetvar		;	Wave Rvec = str2vec(S_Value)
+		d.R[0] = Rvec[0] ;	d.R[1] = Rvec[1] ;	d.R[2] = Rvec[2]
+
+		d.geoNote = ""
+		d.distortionMapFile = ""
+		d.timeMeasured = epoch2ISOtime(DateTime,localTZ=1)
+		diffractometer#DetectorUpdateCalc(d)
+
+		printf "\r**Updating detector %d to:\r",idet
+		diffractometer#printOneDetector(d,more=0)
+
+		STRUCT detectorGeometrys ds				// returns 0 if something set, 0 is nothing done
+		if (FillDetectorsStruct(ds))
+			return 1
+		endif
+		diffractometer#CopyOneDetectorGeometry(ds.d[idet],d)
+		diffractometer#UpdateDefaultDetectorStruct(ds,local=1)
+		Button UpdateButton,disable=1			// hide the update button
+	endif
+	return 0
+End
+
+
+Function SetDetectorPanelValues(idet)		// set panel values to the existing values
+	Variable idet									// detector number, 0 - MAX_DETECTORS-1
+
+	STRUCT detectorGeometrys ds				// returns 0 if something set, 0 is nothing done
+	if (FillDetectorsStruct(ds))
+		return 1
+	endif
+	SetWindow kwTopWin userdata(dirty)=num2istr(0)	// always reset dirty=0 when filling existing values
+
+	Variable usedFlag = ds.d[idet].used
+	CheckBox DetectorUsedCheck,value=usedFlag
+
+	SetVariable NxSetvar, value= _NUM:ds.d[idet].Nx
+	SetVariable NySetvar, value= _NUM:ds.d[idet].Ny
+	SetVariable SizexSetvar, value= _NUM:ds.d[idet].sizeX
+	SetVariable SizeySetvar, value= _NUM:ds.d[idet].sizeY
+
+	String detectorID = ds.d[idet].detectorID
+	SetVariable IDsetvar,value= _STR:detectorID
+
+	Make/N=3/D/FREE vec
+	vec = ds.d[idet].P[p]
+	String Pstr = vec2str(vec,bare=1,zeroThresh=1e-12,sep=", ")
+	SetVariable PvecStrSetvar,value= _STR:Pstr
+
+	vec = ds.d[idet].R[p]
+	String Rstr = vec2str(vec,bare=1,zeroThresh=1e-12,sep=", ")
+	SetVariable RvecStrSetvar,value= _STR:Rstr
+
+	UpdateDetectorPanelUsed(usedFlag)
+	return 0
+End
+
+
+Function UpdateDetectorPanelUsed(usedFlag)
+	Variable usedFlag				// 1 for used, 0 for UNused
+
+	Variable disable = usedFlag ? 0 : 2
+	SetVariable NxSetvar,disable=disable
+	SetVariable NySetvar,disable=disable
+	SetVariable SizexSetvar,disable=disable
+	SetVariable SizeySetvar,disable=disable
+	SetVariable PvecStrSetvar,disable=disable
+	SetVariable RvecStrSetvar,disable=disable
+	SetVariable IDsetvar,disable=disable
+
+	Variable dirty = str2num(GetUserData("","","dirty"))
+	dirty = numtype(dirty) ? 0 : dirty
+	disable = dirty ? 0 : 1
+	Button UpdateButton,disable=disable
+	return 0
+End
+
+Static Function MoveWindowToCorner(win,corner)
+	String win
+	String corner													//  one of "TL", "TR", "BL", "BR"
+	corner = UpperStr(corner)
+	win = SelectString(strlen(win)>0,StringFromList(0,WinList("*",";","WIN:71")),win)
+	if (strlen(win)<1 || WhichListItem(corner,"TL;TR;BL;BR")<0)
+		return 1
+	endif
+
+	Variable leftScreen,topScreen,rightScreen,bottomScreen,  top, left
+	if (stringmatch(IgorInfo(2),"Windows"))					// use the inside of the Igor Application Window on Windows
+		GetWindow kwFrameInner,wsize
+		leftScreen = V_left ;	rightScreen = V_right
+		topScreen = V_top ;		bottomScreen = V_bottom
+	else	
+		String list = StringByKey("SCREEN1",IgorInfo(0))	// for a Mac, use the whole screen (except menubar)
+		Variable i=strsearch(list,"RECT=",0)
+		sscanf list[i+5,Inf], "%g,%g,%g,%g", leftScreen,topScreen,rightScreen,bottomScreen
+		topScreen += 44											// leave room for menubar on Mac
+	endif
+
+	GetWindow $win,wsize										// size of window to move
+	Variable width=V_right-V_left, height=V_bottom-V_top	// get size of the window
+	top = stringmatch(corner[0],"T") ? topScreen : (bottomScreen-height)	// desired top left position of window
+	left = stringmatch(corner[1],"L") ? leftScreen : (rightScreen-width)
+	MoveWindow/W=$win left,top,left+width,top+height
+	return 0
+End
+
+//  ============================= End of Detector Geo Panel ==============================  //
+//  ======================================================================================  //
+
+
+
+
+//  ======================================================================================  //
+//  ============================= Start of Utility Routines ==============================  //
 
 //ThreadSafe Static Function/WAVE recip_from_xtal(xtal)
 Static Function/WAVE recip_from_xtal(xtal)
@@ -2682,13 +2916,13 @@ ThreadSafe Static Function angleBetweenVecs(a,b)
 	return acos(dot) * 180/PI
 End
 
-//  ============================================================================  //
-//  ============================== End of Utility Routines =============================  //
+//  ======================================================================================  //
+//  ============================== End of Utility Routines ===============================  //
 
 
 
-//  ============================================================================  //
-//  ================================= Start of Init ==================================  //
+//  ======================================================================================  //
+//  =================================== Start of Init ====================================  //
 
 
 Static Function SelectDiffractometer(name)
@@ -2807,8 +3041,8 @@ Function Init_Diffractometer()
 	endif
 End
 
-//  ============================================================================  //
-//  ================================== End of Init ==================================  //
+//  ======================================================================================  //
+//  ==================================== End of Init =====================================  //
 
 
 

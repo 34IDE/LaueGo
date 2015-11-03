@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.84
+#pragma version = 3.85
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3303,8 +3303,10 @@ ThreadSafe Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice f
 	return out
 End
 
-ThreadSafe Function/T epoch2ISOtime(epoch)			// convert an Igor epoch (in seconds) to an ISO8601 format
+ThreadSafe Function/T epoch2ISOtime(epoch,[localTZ])	// convert an Igor epoch (in seconds) to an ISO8601 format
 	Variable epoch
+	Variable localTZ											// flag if true, then add offset for local time zone
+	localTZ = ParamIsDefault(localTZ) || numtype(localTZ) ? 0 : localTZ
 
 	Variable s = mod(epoch,60)							// number of seconds
 	Variable frac=roundSignificant(mod(epoch,1),5)// fractional seconds
@@ -3317,6 +3319,24 @@ ThreadSafe Function/T epoch2ISOtime(epoch)			// convert an Igor epoch (in second
 		out += Secs2Time(epoch,3)							// seconds, but no fracitonal seconds
 	else
 		out += Secs2Time(epoch,3,places)				// fractional seconds
+	endif
+
+	if (localTZ)												// add time zone info
+		Variable tz = date2secs(-1,-1,-1)
+		if (tz==0)
+			out += "Z"
+		else
+			String str, ssign=SelectString(tz>0,"-","+")	
+			tz = abs(tz)										// sign already taken care of by ssign
+			Variable hr = trunc(tz/3600)
+			Variable minutes = round(mod(tz/60,60))
+			sprintf str,"%02d", tz/3600
+			out += ssign+str
+			if (minutes)			// minutes too
+				sprintf str,":%02d",minutes
+				out += str
+			endif
+		endif
 	endif
 	return out
 End
