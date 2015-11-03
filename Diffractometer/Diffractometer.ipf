@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.53
+#pragma version = 0.54
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -185,6 +185,34 @@ Static Function/WAVE sample2crystal(s,vSample)	// rotate vector from sample-loca
 End
 
 
+ThreadSafe Static Function/WAVE sample2crystalVEC(s,vSamples)	// rotate vector from sample-rotation frame into crystal based frame
+	STRUCT sampleStructure &s						// structure definition for a sample
+	Wave vSamples
+	Make/N=(3,3)/D/FREE UB
+	UB = s.UB[p+3*q]
+
+	MatrixOP/FREE vCrystals = (Inv(UB) x (vSamples^t))^t
+
+	WaveClear UB
+	if (numtype(sum(vCrystals)))
+		WaveClear vCrystals							// causes return to pass null wave reference
+	endif
+	return vCrystals
+End
+
+
+ThreadSafe Static Function/WAVE sample2beamline(A,vSample)		// rotate vector from beamline to sample-location frame, (un-does diffractometer)
+	Wave A
+	Wave vSample					// vector in sample frame
+	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)
+	String fname = DiffractometerName+"Matrix"
+	FUNCREF protoMatrix diffractMatrix = $fname
+	Wave Tmat = diffractMatrix(A)
+	MatrixOP/FREE vBL = Tmat x vSample			// vector in beam line frame
+	return vBL
+End
+
+
 Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflections, sets the orientation of crystal w.r.t sample-location
 	STRUCT oneOrientation &ref0, &ref1		// measured orientations used to find UB
 
@@ -254,6 +282,55 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 	UB = abs(UB) < 1e-14 ? 0 : UB
 	WaveClear Tmat, axis, rot2, qhklMeasured, qhkl, ki,kf, A
 	return UB
+End
+
+
+
+// find alpha, beta, qhat starts out as {1,0,0}
+Static Function/C alpha_beta(Aw,[surf])	// returns (alpha,beta)
+	Wave Aw
+	Wave surf										// optional direction of surface normal (when A[]==0)
+
+	Make/N=3/D/FREE hat={1,0,0}				// direction of surface normal when A[]==0
+	if (WaveExists(surf))
+		hat = surf
+		normalize(hat)
+	endif
+
+	Wave hatBL = sample2beamline(Aw,hat)
+	STRUCT detectorGeometrys ds
+	FillDetectorsStruct(ds)
+
+	Make/N=3/D/FREE kf, ki={0,0,1}
+	pixel2xyz(ds.d[0],ds.d[0].px0,ds.d[0].py0,Aw,kf)
+	normalize(kf)
+	Variable a=asin(-MatrixDot(hatBL,ki))
+	Variable b=asin(MatrixDot(hatBL,kf))
+	return cmplx(a,b)
+End
+//
+Static Function/Wave alpha_betaVEC(Aw,pxpy,[surf])	// returns alpha and sets betaWave
+	Wave Aw
+	Wave pxpy
+	Wave surf										// optional direction of surface normal (when A[]==0)
+
+	Make/N=3/D/FREE hat={1,0,0}				// direction of surface normal when A[]==0
+	if (WaveExists(surf))
+		hat = surf
+		normalize(hat)
+	endif
+
+	Wave hatBL = sample2beamline(Aw,hat)
+	STRUCT detectorGeometrys ds
+	FillDetectorsStruct(ds)
+
+	Wave xyzs = pixel2xyzVEC(ds.d[0],pxpy,Aw)		// convert pixel position to the beam line coordinate system
+	MatrixOP/FREE kfs = NormalizeRows(xyzs)
+	Make/N=3/D/FREE ki={0,0,1}
+	MatrixOP/FREE betaWave = asin(kfs x hatBL)		// holds the beta for each pixel
+	Variable alpha = asin(-MatrixDot(hatBL,ki))	// alpha is independent of pixel
+	Note/K betaWave, num2str(alpha)
+	return betaWave
 End
 
 
@@ -1278,6 +1355,29 @@ ThreadSafe Static Function/WAVE QofPixelBLVEC(d,keV,pxpy,A,[depth])	// returns Q
 End
 
 
+Static Function/WAVE pixel2kf(d,px,py,Aw,keV)
+	STRUCT detectorGeometry &d
+	Variable px,py
+	Wave Aw
+	Variable keV
+
+	Variable pxOK = numtype(px)==0 && px>=0 && px<d.Nx-1
+	Variable pyOK = numtype(py)==0 && py>=0 && py<d.Ny-1
+	if (!pxOK || !pyOK)
+		return $""
+	endif
+	
+	Make/N=3/D/FREE kf
+	pixel2xyz(d,px,py,Aw,kf)
+	normalize(kf)
+	if (numtype(keV)==0 && keV>0)
+		Variable klen = 2*PI * keV/hc_keVnm
+		kf *= klen
+	endif
+	return kf
+End
+
+
 Static Function pixel2xyz(d,px,py,A,xyz,[DeltaPixelCorrect])	// convert pixel position to the beam line coordinate system
 	STRUCT detectorGeometry, &d
 	Variable px,py									// pixel position on detector (full chip & zero based)
@@ -1799,18 +1899,18 @@ Function LoadDetectorFromWeb(dateStr,timeStr,[tagName,epoch,printIt])
 	endif
 
 
-	String buf = diffractometer#xmlContents(result)
+	String buf = xmlContents(result)
 	STRUCT detectorGeometrys ds
-	err = diffractometer#DetectorsFromXML(buf,ds)
+	err = DetectorsFromXML(buf,ds)
 	if (err)
 		DoAlert 0,"UN-able to load a valid detector\rNothing done"
 	else
 		printf "using diffractometer '%s'\r",SelectString(strlen(ds.diffractometer),"UNKNOWN",ds.diffractometer)
 		Variable i
 		for (i=0;i<MAX_DETECTORS;i+=1)
-			diffractometer#printOneDetector(ds.d[i])
+			printOneDetector(ds.d[i])
 		endfor
-		diffractometer#UpdateDefaultDetectorStruct(ds)
+		UpdateDefaultDetectorStruct(ds)
 	endif
 	return err
 End
@@ -2742,17 +2842,17 @@ Static Function DetectorUpdateButtonProc(ba) : ButtonControl
 		d.geoNote = ""
 		d.distortionMapFile = ""
 		d.timeMeasured = epoch2ISOtime(DateTime,localTZ=1)
-		diffractometer#DetectorUpdateCalc(d)
+		DetectorUpdateCalc(d)
 
 		printf "\r**Updating detector %d to:\r",idet
-		diffractometer#printOneDetector(d,more=0)
+		printOneDetector(d,more=0)
 
 		STRUCT detectorGeometrys ds				// returns 0 if something set, 0 is nothing done
 		if (FillDetectorsStruct(ds))
 			return 1
 		endif
-		diffractometer#CopyOneDetectorGeometry(ds.d[idet],d)
-		diffractometer#UpdateDefaultDetectorStruct(ds,local=1)
+		CopyOneDetectorGeometry(ds.d[idet],d)
+		UpdateDefaultDetectorStruct(ds,local=1)
 		Button UpdateButton,disable=1			// hide the update button
 	endif
 	return 0
