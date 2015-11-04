@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.24
+#pragma version = 3.25
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.65
@@ -940,7 +940,6 @@ Static Function PutSizeWindow(scrap)
 		top = NumVarOrDefault("V_top",NaN)
 		KillVariables/Z V_left, V_right, V_top, V_bottom
 #else
-		Variable V_left,V_right,V_top,V_bottom
 		GetGizmo winPixels						// get current window position
 		left = V_left
 		top = V_top

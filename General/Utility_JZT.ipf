@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.85
+#pragma version = 3.86
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3993,10 +3993,10 @@ Function SquareUpGizmo(gName)
 
 #if (IgorVersion()<7)
 	Execute "GetGizmo winPixels"			// get window position & size
+	NVAR V_left=V_left, V_top=V_top, V_bottom=V_bottom
 #else
 	GetGizmo winPixels						// get window position & size
 #endif
-	NVAR V_left=V_left, V_top=V_top, V_bottom=V_bottom
 	Variable height=V_bottom-V_top, top=max(44,V_top)
 	MoveWindow/W=$gName V_left, top, V_left+height, V_top+height
 	KillVariables/Z V_left, V_right, V_top, V_bottom

@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.20
-#pragma version = 2.08
+#pragma version = 2.09
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -434,7 +434,7 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 
 #else
-	AppendToGizmo group,name=$groupName
+	AppendToGizmo group,name=groupName
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo string=title1,strFont=font,name=title1
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -547,7 +547,7 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	Execute "ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-	AppendToGizmo group,name=$groupName
+	AppendToGizmo group,name=groupName
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo string=unitStr,strFont=font,name=stringScaleBar
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -810,7 +810,7 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 	Execute "ModifyGizmo setDisplayList=-1, opName=popAttribute0, operation=popAttribute"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-	AppendToGizmo group,name=$groupName
+	AppendToGizmo group,name=groupName
 	ModifyGizmo currentGroupObject=groupName
 	String str
 	Variable v = GIZMO_MARKER_END_SIZE>0 ? 1-2*GIZMO_MARKER_END_SIZE : 1
@@ -937,7 +937,7 @@ Function/T AddGizmoBeamLineAxesGroup(groupName)
 	Execute "ModifyGizmo setDisplayList=30, opName=popAttribute0, operation=popAttribute"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-	AppendToGizmo group,name=$groupName
+	AppendToGizmo group,name=groupName
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo freeAxesCue={0,0,0,1},name=freeAxesCue_BeamLine
 	AppendToGizmo string="X(BL)",strFont=font,name=stringX
@@ -1117,7 +1117,7 @@ Function/T AddGizmoClipPlaneGroup(groupName)
 		Execute "ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data=12293"
 		Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-		AppendToGizmo group,name=$groupName
+		AppendToGizmo group,name=groupName
 		ModifyGizmo currentGroupObject=groupName
 		ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data={12288,}	// enable all of the 6 clip planes
 		ModifyGizmo setDisplayList=1, opName=enable1, operation=enable, data={12289,}
