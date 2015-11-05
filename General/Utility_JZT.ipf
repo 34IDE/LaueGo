@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.86
+#pragma version = 3.87
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3627,6 +3627,10 @@ ThreadSafe Function/T encodeMatAsStr(mat,[places,vsep])	// write a string interp
 	vsep = SelectString(ParamIsDefault(vsep),vsep,",")
 
 	Variable i, Nr=DimSize(mat,0), Nc=DimSize(mat,1)
+	if (Nc<1)
+		return vec2str(mat,places=places,sep=",")
+	endif
+
 	Make/N=(Nr)/D/FREE vec
 	String str="{"
 	for (i=0;i<Nc;i+=1)

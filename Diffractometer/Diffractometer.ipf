@@ -1,14 +1,14 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.54
+#pragma version = 0.55
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
 
 #define HAVE_VECTOR_OPS
-Constant MAX_REF_ORIENTATIONS = 20				// maximum number of orientations that may be defined (on first 2 used so far)
+Constant MAX_REF_ORIENTATIONS = 20					// maximum number of orientations that may be defined (on first 2 used so far)
 StrConstant defaultGeoTagName="geoD"				// default start of name for geometry files
 Static Constant MAX_Naxes = 10
-Static strConstant DEFAULT_DIFF_NAME = "fourc"	// default diffractometer name
+Static strConstant DEFAULT_DIFF_NAME = "fourc"// default diffractometer name
 Static strConstant DEFAULT_AXIS_NAMES = "2-theta;theta;chi;phi"
 Static Constant DEFAULT_Naxes = 4					// number of axes used by diffractometer (you can use OverRide with this!)
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
@@ -68,8 +68,8 @@ End
 
 //ThreadSafe 
 Function/WAVE HKLofPixel(s,d,keV,px,py,A,[depth])// returns hkl of pixel in beam CRYSTAL frame, (not sample frame, not BL coords)
-	STRUCT sampleStructure &s						// structure defining a sample
-	STRUCT detectorGeometry, &d					// structure defining a detector
+	STRUCT sampleStructure &s					// structure defining a sample
+	STRUCT detectorGeometry, &d				// structure defining a detector
 	Variable keV									// for keV<=0, just return qvec with length 1
 	Variable px,py									// pixel on detector
 	Wave A											// wave with diffractometer angles
@@ -80,9 +80,9 @@ Function/WAVE HKLofPixel(s,d,keV,px,py,A,[depth])// returns hkl of pixel in beam
 
 	Make/N=3/D/FREE qvec
 	if (ParamIsDefault(depth))
-		QofPixel(d,keV,px,py,A,qvec)				// returns Q of pixel in beam SAMPLE frame, (not crystal frame, not BL coords)
+		QofPixel(d,keV,px,py,A,qvec)					// returns Q of pixel in beam SAMPLE frame, (not crystal frame, not BL coords)
 	else
-		QofPixel(d,keV,px,py,A,qvec,depth=depth)	// same as above, but with depth passed
+		QofPixel(d,keV,px,py,A,qvec,depth=depth)// same as above, but with depth passed
 	endif
 	Wave hkl = sample2crystal(s,qvec)				// rotate qvec from sample-location frame into crystal based frame, the hkl
 	WaveClear qvec
@@ -92,11 +92,11 @@ End
 //ThreadSafe 
 Function QofPixel(d,keV,px,py,A,qvecIN,[depth])	// returns Q of pixel in beam SAMPLE frame, (not crystal frame, not BL coords)
 	STRUCT detectorGeometry, &d
-	Variable keV									// for keV<=0, just return qvec with length 1
-	Variable px,py									// pixel on detector
-	Wave A											// wave with diffractometer angles
+	Variable keV								// for keV<=0, just return qvec with length 1
+	Variable px,py								// pixel on detector
+	Wave A										// wave with diffractometer angles
 	Wave qvecIN									// 3-vector to recieve the result
-	Variable depth									// depth of point (measured along Z from origin)
+	Variable depth								// depth of point (measured along Z from origin)
 	if (!(keV>0))
 		return NaN
 	endif
@@ -117,7 +117,7 @@ End
 //
 // Vectorized version of QofPixel()
 Threadsafe Static Function/WAVE QofPixelVEC(d,keV,pxpy,A,[depth])// returns Qs of pixels in SAMPLE frame, (not crystal frame, not BL coords)
-	STRUCT detectorGeometry, &d					// one detector geometry for whole image
+	STRUCT detectorGeometry, &d				// one detector geometry for whole image
 	Variable keV									// for keV<=0, just return qvec with length 1, one energy for whole image
 	Wave pxpy										// array of pixels to use (must be in raw un-binned pixels), perhaps an ROI
 	Wave A											// wave with diffractometer angles, one set of angles for whole image
@@ -146,7 +146,7 @@ ThreadSafe Static Function beamline2sample(A,vBL,vSample)		// rotate vector from
 	String fname = DiffractometerName+"Matrix"
 	FUNCREF protoMatrix diffractMatrix = $fname
 	Wave Tmat = diffractMatrix(A)
-	MatrixOP/FREE vec = Inv(Tmat) x vBL			// temporary vector in sample frame
+	MatrixOP/FREE vec = Inv(Tmat) x vBL		// temporary vector in sample frame
 	vSample = vec
 	WaveClear Tmat, vec
 	return norm(vec)
@@ -155,7 +155,7 @@ End
 // Vectorized version of beamline2sample()
 ThreadSafe Static Function/WAVE beamline2sampleVEC(A,vBLs)	// rotate vector from beamline to sample-location frame, (un-does diffractometer)
 	Wave A
-	Wave vBLs										// vectors in beam line frame
+	Wave vBLs											// vectors in beam line frame
 
 	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)
 //	String fname = "diffractometer#"+DiffractometerName+"Matrix"
@@ -214,7 +214,7 @@ End
 
 
 Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflections, sets the orientation of crystal w.r.t sample-location
-	STRUCT oneOrientation &ref0, &ref1		// measured orientations used to find UB
+	STRUCT oneOrientation &ref0, &ref1				// measured orientations used to find UB
 
 	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)
 //	String fname = "diffractometer#"+DiffractometerName+"Matrix"
@@ -230,7 +230,7 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 		DoAlert 0, "No Detector Structure, please set one"
 		return $""
 	endif
-	Make/N=(Naxes)/D/FREE A					// angles of a measured point
+	Make/N=(Naxes)/D/FREE A							// angles of a measured point
 
 	if (sampleRefBad(ref0) || sampleRefBad(ref1))
 		return $""
@@ -240,10 +240,10 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 	A = ref0.A[p]
 	Make/N=3/D/FREE ki, kf, qhkl
 	ki={0,0,2*PI/(ref0.lambda)}
-	pixel2xyz(d,ref0.px,ref0.py,A,kf)			// convert pixel position to the beam line coordinate system
-//		Wave rot = detectorMatrix(A)			// a point detector
+	pixel2xyz(d,ref0.px,ref0.py,A,kf)				// convert pixel position to the beam line coordinate system
+//		Wave rot = detectorMatrix(A)					// a point detector
 //		MatrixOP/FREE/O kf = rot x ki
-	normalize(kf)								// change length of kf to 2¹/lambda
+	normalize(kf)											// change length of kf to 2¹/lambda
 	kf *= 2*PI/(ref0.lambda)
 	Wave Tmat = diffractMatrix(A)
 	MatrixOP/FREE/O qhklMeasured = Inv(Tmat) x (kf-ki)
@@ -251,24 +251,24 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 	hkl2Q(ref0.h,ref0.k,ref0.l, qhkl,normal=1)
 	Wave axis = wCross(qhkl,qhklMeasured)
 	Variable angle = asin(normalize(axis))
-	Wave UB = rotationMatFromAxis(axis,angle)// first rotation in making UB, aligns first measured H0
+	Wave UB = rotationMatFromAxis(axis,angle)	// first rotation in making UB, aligns first measured H0
 	WaveClear Tmat
 
-	axis = qhklMeasured						// axis of rotation to use with second reflection
+	axis = qhklMeasured									// axis of rotation to use with second reflection
 
 	// direction of second reflection, 2theta = A1[0]
 	A = ref1.A[p]
 	ki={0,0,2*PI/(ref1.lambda)}
-	pixel2xyz(d,ref1.px,ref1.py,A,kf)		// convert pixel position to the beam line coordinate system
-//		Wave rot = detectorMatrix(A)			// a point detector
+	pixel2xyz(d,ref1.px,ref1.py,A,kf)				// convert pixel position to the beam line coordinate system
+//		Wave rot = detectorMatrix(A)					// a point detector
 //		MatrixOP/FREE/O kf = rot x ki
-	normalize(kf)								// change length of kf to 2¹/lambda
+	normalize(kf)											// change length of kf to 2¹/lambda
 	kf *= 2*PI/(ref1.lambda)
 	Wave Tmat = diffractMatrix(A)
 	MatrixOP/FREE/O qhklMeasured = Inv(Tmat) x (kf-ki)
 	normalize(qhklMeasured)
-	hkl2Q(ref1.h,ref1.k,ref1.l, qhkl,normal=1)// note that both qhklMeasured and qhkl are normalized
-	MatrixOP/FREE/O qhkl = UB x qhkl			// put in first rotation
+	hkl2Q(ref1.h,ref1.k,ref1.l, qhkl,normal=1)		// note that both qhklMeasured and qhkl are normalized
+	MatrixOP/FREE/O qhkl = UB x qhkl					// put in first rotation
 	// need to rotate about axis (previous qMeasured) to bring qhkl as close as possible to qhklMeasured
 
 	// change qhkl & qhklMeasured to components that are perpendicular to axis
@@ -276,7 +276,7 @@ Static Function/WAVE Measured2UB(ref0,ref1)	// compute UB from 2 measured reflec
 	MatrixOP/FREE/O qhklMeasured = qhklMeasured - axis x (axis . qhklMeasured)
 
 	angle = asin(norm(wCross(qhkl,qhklMeasured)))	// rotate from qhkl to qhklMeasured about axis
-	Wave rot2 = rotationMatFromAxis(axis,angle)		// set mat to be a rotation matrix about axis with angle
+	Wave rot2 = rotationMatFromAxis(axis,angle)	// set mat to be a rotation matrix about axis with angle
 
 	MatrixOP/FREE/O UB = rot2 x UB
 	UB = abs(UB) < 1e-14 ? 0 : UB
@@ -314,22 +314,27 @@ Static Function/Wave alpha_betaVEC(Aw,pxpy,[surf])	// returns alpha and sets bet
 	Wave pxpy
 	Wave surf										// optional direction of surface normal (when A[]==0)
 
-	Make/N=3/D/FREE hat={1,0,0}				// direction of surface normal when A[]==0
+	Make/N=3/D/FREE hat={1,0,0}				// direction of surface normal when A[]==0, this is along x-axis
 	if (WaveExists(surf))
 		hat = surf
 		normalize(hat)
 	endif
 
-	Wave hatBL = sample2beamline(Aw,hat)
+	Wave hatBL = sample2beamline(Aw,hat)				// outward surface normal of sample in BL coordinates
 	STRUCT detectorGeometrys ds
 	FillDetectorsStruct(ds)
 
 	Wave xyzs = pixel2xyzVEC(ds.d[0],pxpy,Aw)		// convert pixel position to the beam line coordinate system
 	MatrixOP/FREE kfs = NormalizeRows(xyzs)
 	Make/N=3/D/FREE ki={0,0,1}
-	MatrixOP/FREE betaWave = asin(kfs x hatBL)		// holds the beta for each pixel
-	Variable alpha = asin(-MatrixDot(hatBL,ki))	// alpha is independent of pixel
-	Note/K betaWave, num2str(alpha)
+	MatrixOP/FREE betaWave = asin(kfs x hatBL)		// holds the beta for each pixel (radian)
+	Variable alpha = asin(-MatrixDot(hatBL,ki))	// alpha is independent of pixel (radian)
+
+	String wnote="waveClass=betaWave;"
+	wnote = ReplaceNumberByKey("alpha",wnote,alpha,"=")
+	wnote = ReplaceStringByKey("surfNormalSample",wnote,encodeMatAsStr(hat),"=")
+	wnote = ReplaceStringByKey("surfNormalBL",wnote,encodeMatAsStr(hatBL),"=")
+	Note/K betaWave, wnote
 	return betaWave
 End
 
@@ -375,7 +380,7 @@ Function MakeMovieSpecScanImages(scanNum)
 	Duplicate/O image, movieFrame
 	KillWaves/Z image
 
-	Variable Np=specInfo(scanNum,"Npoints")			// number of points in this scan
+	Variable Np=specInfo(scanNum,"Npoints")	// number of points in this scan
 	wnote = ReplaceNumberByKey("scanNum",wnote, scanNum ,"=")
 	wnote = ReplaceNumberByKey("SCAN_LEN",wnote, Np ,"=")
 	Note/K movieFrame, wnote
@@ -458,7 +463,7 @@ Static Function/S MakeGraphMovieFrame()
 	LabelReLabelGraphMovieFrame(movieFrame)
 
 	STRUCT detectorGeometry d
-	if (FillDetectorStructDefault(d,""))				//fill the detector structure with current values
+	if (FillDetectorStructDefault(d,""))	//fill the detector structure with current values
 		DoAlert 0, "No Detector Structure, please set one"
 		return gName
 	endif
@@ -532,19 +537,19 @@ End
 //  ======================================================================================  //
 //  ============================= Start of Sample Orientation ============================  //
 
-Structure sampleStructure			// structure definition for a sample
+Structure sampleStructure		// structure definition for a sample
 	uchar name[256]				// sample name
 	STRUCT crystalStructure xtal	// structure definition for a crystal lattice
 	double UB[9]					// a linear version of the UB matrix
-									//   for UB[3][3],    UB = s.UB[p+3*q]
+										//   for UB[3][3],    UB = s.UB[p+3*q]
 	int16 Nrefs						// number of refs that were set (max of MAX_REF_ORIENTATIONS)
 	STRUCT oneOrientation refs[MAX_REF_ORIENTATIONS]	// measured orientations used to find UB
 EndStructure
 //
-Structure oneOrientation			// structure definition, one crystal reflection used to make an orientation
+Structure oneOrientation		// structure definition, one crystal reflection used to make an orientation
 	double	h,k,l
-	double	A[MAX_Naxes]			// angles where the reflection was found (tth,theta,chi,phi)
-	double	lambda					// wavelength used to find this reflection
+	double	A[MAX_Naxes]		// angles where the reflection was found (tth,theta,chi,phi)
+	double	lambda				// wavelength used to find this reflection
 	double	px,py					// pixel location of peak center (not used if px <= 0, e.g. for a Bicron detector)
 EndStructure
 
@@ -553,41 +558,41 @@ EndStructure
 Static Function SetSampleStruct(name,xtal,ref0,ref1,s)
 	String name										// name of sample (truncated to 256)
 	STRUCT crystalStructure &xtal
-	STRUCT oneOrientation &ref0, &ref1			// measured orientations used to find UB
-	STRUCT sampleStructure &s						// structure definition for a sample
+	STRUCT oneOrientation &ref0, &ref1		// measured orientations used to find UB
+	STRUCT sampleStructure &s					// structure definition for a sample
 
 	s.name = name[0,255]
 	copy_xtal(s.xtal,xtal)
 	s.Nrefs = 2
-	copyOneOrientation(s.refs[0],ref0)				// copy a oneOrientation structure
+	copyOneOrientation(s.refs[0],ref0)		// copy a oneOrientation structure
 	copyOneOrientation(s.refs[1],ref1)
 	UpdateDefaultSampleStruct(s)
 End
 
 
-Function FillSampleStructDefault(s)				//fill the sample structure with current default values
-	STRUCT sampleStructure &s						// returns 0 if something set, 0 is nothing done
+Function FillSampleStructDefault(s)	//fill the sample structure with current default values
+	STRUCT sampleStructure &s				// returns 0 if something set, 0 is nothing done
 
 	String strStruct=StrVarOrDefault(":sampleStructStr","")	// set to values in current directory
 	if (strlen(strStruct)<1)
 		strStruct=StrVarOrDefault("root:Packages:Diffractometer:sampleStructStr","")	// try the default location
 	endif
-	if (strlen(strStruct)>1)						// found structure information, load into s
+	if (strlen(strStruct)>1)				// found structure information, load into s
 		StructGet/S/B=2 s, strStruct
-	else												// not found in this experiment, try the prefs
+	else											// not found in this experiment, try the prefs
 		LoadPackagePreferences/MIS=1 "Diffractometer","samplePrefs",0,s
 		if (V_flag)
 			return 1								// did nothing, nothing found
 		endif
 	endif
-	UpdateDefaultSampleStruct(s)					// this ensures that if we loaded it from prefs, that local values are updated
+	UpdateDefaultSampleStruct(s)			// this ensures that if we loaded it from prefs, that local values are updated
 	return 0
 End
 
 
-Function UpdateDefaultSampleStruct(s,[local])		// Update the default location with values in s
+Function UpdateDefaultSampleStruct(s,[local])	// Update the default location with values in s
 	STRUCT sampleStructure &s						// returns 0 if something set, 0 is nothing done
-	Variable local									// if true will also update sampleStructStr in the current folder if it already exists (It will NOT create local sampleStructStr)
+	Variable local										// if true will also update sampleStructStr in the current folder if it already exists (It will NOT create local sampleStructStr)
 	local = ParamIsDefault(local) ? 0 : local
 	local = numtype(local) ? 0 : !(!local)
 
@@ -595,7 +600,7 @@ Function UpdateDefaultSampleStruct(s,[local])		// Update the default location wi
 	String sStructStr
 	StructPut/S/B=2 s, sStructStr
 
-	String/G root:Packages:Diffractometer:sampleStructStr=sStructStr		// always save to default location
+	String/G root:Packages:Diffractometer:sampleStructStr=sStructStr	// always save to default location
 	SavePackagePreferences/FLSH=1 "Diffractometer","samplePrefs",0,s	// alwasy update prefs too
 
 	local = local || (exists(":sampleStructStr")==2)// save locally if told to, or if a local already exists in current datafolder
@@ -617,14 +622,14 @@ Function SetDefaultSample2Reference()				// set default sample to the reference 
 	return 0
 End
 //
-Static Function SampleReferenceOrientation(s)		// sets s to the reference orientation (sort of an ideal set of values)
+Static Function SampleReferenceOrientation(s)	// sets s to the reference orientation (sort of an ideal set of values)
 	STRUCT sampleStructure &s
 
 	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME), str=""
 	STRUCT detectorGeometry d
 	Variable px=0, py=0
 	if (!FillDetectorStructDefault(d,""))			//fill the detector structure with test values
-		px = d.px0									// center of detector
+		px = d.px0											// center of detector
 		py = d.py0
 	endif
 
@@ -641,7 +646,7 @@ End
 
 
 Static Function SampleUpdateCalc(s)
-	STRUCT sampleStructure &s						// structure definition for a sample
+	STRUCT sampleStructure &s					// structure definition for a sample
 
 	Wave UB = Measured2UB(s.refs[0],s.refs[1])
 	if (WaveExists(UB))							// if a valid UB matrix, then reset structue, otherwise structure unchanged
@@ -654,8 +659,8 @@ Static Function SampleUpdateCalc(s)
 End
 
 
-Function copyOneOrientation(dest,in)				// copy a oneOrientation structure
-	STRUCT oneOrientation &dest, &in				// dest is the destination, in is source
+Function copyOneOrientation(dest,in)		// copy a oneOrientation structure
+	STRUCT oneOrientation &dest, &in		// dest is the destination, in is source
 	Variable Naxes=NumVarOrDefault("root:Packages:Diffractometer:Naxes",DEFAULT_Naxes)
 	dest.h = in.h
 	dest.k = in.k
@@ -669,14 +674,14 @@ Function copyOneOrientation(dest,in)				// copy a oneOrientation structure
 	dest.py = in.py
 End
 
-Function PrintCurrentSample()						// prints the current default sample to the history
+Function PrintCurrentSample()				// prints the current default sample to the history
 	STRUCT sampleStructure s
-	FillSampleStructDefault(s)						//fill the geometry structure with current values
+	FillSampleStructDefault(s)				//fill the geometry structure with current values
 	printSampleStructure(s)
 End
 //
 Function printSampleStructure(s)
-	STRUCT sampleStructure &s						// structure definition for a sample
+	STRUCT sampleStructure &s					// structure definition for a sample
 
 	Variable Naxes=NumVarOrDefault("root:Packages:Diffractometer:Naxes",DEFAULT_Naxes)
 	if (strlen(s.name))
@@ -723,7 +728,7 @@ Static Function SetSampleReferenceReflections(name,hklStr0,Astr0,hklStr1,Astr1,p
 	FillSampleStructDefault(s)
 
 	STRUCT crystalStructure xtal
-	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with current values
+	if (FillCrystalStructDefault(xtal))		//fill the lattice structure with current values
 		DoAlert 0, "No Lattice, please set one"
 		return 1
 	endif
@@ -795,7 +800,7 @@ Static Function SetSampleReferenceReflections(name,hklStr0,Astr0,hklStr1,Astr1,p
 		printf "SetSampleReferenceReflections(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%g,%g)\r",name,hklStr0,Astr0,hklStr1,Astr1,pstr0,pstr1,lam0,lam1
 	endif
 
-	STRUCT sampleStructure sf						// structure definition for a sample
+	STRUCT sampleStructure sf				// structure definition for a sample
 	sf.Nrefs = 2
 	sf.name = name
 	sf.refs[0].lambda = lam0
@@ -854,7 +859,7 @@ Static Function SetSampleReferenceReflections(name,hklStr0,Astr0,hklStr1,Astr1,p
 	print "to:"
 	printSampleStructure(sf)
 
-	UpdateDefaultSampleStruct(s)					// update default locations with this value of s
+	UpdateDefaultSampleStruct(s)		// update default locations with this value of s
 	return 0
 End
 //
@@ -872,7 +877,7 @@ End
 //End
 //
 Static Function sampleRefBad(ref)
-	STRUCT oneOrientation &ref					// measured orientations used to find UB
+	STRUCT oneOrientation &ref		// measured orientations used to find UB
 
 	Variable N=NumVarOrDefault("root:Packages:Diffractometer:Naxes",NaN)
 	if (numtype(ref.h + ref.k + ref.l + ref.lambda + ref.px + ref.py + N))
@@ -899,14 +904,14 @@ End
 //End
 Static Function/WAVE string2wave(list)
 	String list
-	list = ReplaceString(",",list," ")		// change all separators to spaces
+	list = ReplaceString(",",list," ")			// change all separators to spaces
 	list = ReplaceString(";",list," ")
 	list = ReplaceString(":",list," ")
 	list = TrimTrailingWhiteSpace(list)
 	do
 		list = ReplaceString("  ",list," ")	// change all multiple spaces to single space
 	while (strsearch(list,"  ",0)>=0)
-	list = ReplaceString(" ",list,";")		// change space separators to semi-colons
+	list = ReplaceString(" ",list,";")			// change space separators to semi-colons
 
 	Variable i, val, N=ItemsInList(list)
 	if (N<1)
@@ -978,7 +983,7 @@ End
 Structure diffractometerTypeStruct	// structure that identifies a diffractometer type, used with package prefs
 	uchar name[100]				// name, e.g. fourc,kappa, ...
 	int16 Naxes						// number of axes in this diffractometer
-	uchar axesNames[256]			// semicolon separated list of axis names
+	uchar axesNames[256]		// semicolon separated list of axis names
 	double KA						// kappa angle (degree)
 EndStructure
 
@@ -1025,8 +1030,8 @@ End
 
 
 //ThreadSafe 
-Static Function/WAVE CDPSpec2BL(inverse)		// same as for fourc
-	Variable inverse								// if true return Inv(spec2BL)
+Static Function/WAVE CDPSpec2BL(inverse)	// same as for fourc
+	Variable inverse									// if true return Inv(spec2BL)
 	return fourcSpec2BL(inverse)
 End
 
@@ -1038,21 +1043,21 @@ End
 // Static
 ThreadSafe Function/WAVE fourcMatrix(A)
 	Wave A
-	Variable theta=A[1], chi=A[2], phi=A[3]						// A[0]=2theta
+	Variable theta=A[1], chi=A[2], phi=A[3]					// A[0]=2theta
 
 	Make/N=(3,3)/D/FREE thetaM,chiM,phiM
 
-	Variable ct=cos(theta*PI/180), st=sin(theta*PI/180)			// theta rotation, about x-axis
+	Variable ct=cos(theta*PI/180), st=sin(theta*PI/180)	// theta rotation, about x-axis
 	thetaM[0][0]= {1, 0, 0}
 	thetaM[0][1]= {0, ct, -st}
 	thetaM[0][2]= {0, st, ct}
 
-	Variable cc=cos(chi*PI/180), sc=sin(chi*PI/180)				// chi rotation, about z-axis
+	Variable cc=cos(chi*PI/180), sc=sin(chi*PI/180)		// chi rotation, about z-axis
 	chiM[0][0]= {cc, sc, 0}
 	chiM[0][1]= {-sc, cc, 0}
 	chiM[0][2]= {0, 0,1}
 
-	Variable cp=cos(phi*PI/180), sp=sin(phi*PI/180)			// phi rotation,  about x-axis
+	Variable cp=cos(phi*PI/180), sp=sin(phi*PI/180)		// phi rotation,  about x-axis
 	phiM[0][0]= {1, 0, 0}
 	phiM[0][1]= {0, cp, -sp}
 	phiM[0][2]= {0, sp, cp}
@@ -1098,11 +1103,11 @@ Static Function/WAVE fourcSpec2BL(inverse)
 	Variable inverse						// if true return Inv(spec2BL)
 	Make/N=(3,3)/D/FREE rotMat
 	if (inverse)							// sets rotMat = Inv(spec2BL)
-		rotMat[0][0]= {0,0,1}				// qSPEC = rotMat x qBL,    qBL = spec2BL x qSPE
+		rotMat[0][0]= {0,0,1}			// qSPEC = rotMat x qBL,    qBL = spec2BL x qSPE
 		rotMat[0][1]= {1,0,0}
 		rotMat[0][2]= {0,1,0}
 	else										// set rotMat to spec2BL
-		rotMat[0][0] = {0,1,0}				//  qBL = spec2BL x qSPEC,   and rotMat = spec2BL
+		rotMat[0][0] = {0,1,0}			//  qBL = spec2BL x qSPEC,   and rotMat = spec2BL
 		rotMat[0][1] = {0,0,1}
 		rotMat[0][2] = {1,0,0}
 	endif
@@ -1131,23 +1136,23 @@ End
 //ThreadSafe Static Function/WAVE kappaMatrix(A)
 ThreadSafe Function/WAVE kappaMatrix(A)
 	Wave A
-	Variable theta=A[1], kappa=A[2], phi=A[3]						// A[0]=2theta
+	Variable theta=A[1], kappa=A[2], phi=A[3]				// A[0]=2theta
 
 	Variable KA=NumVarOrDefault("root:Packages:Diffractometer:KA",50)// kappa angle
 	Make/N=(3,3)/D/FREE thetaM,kappaM,phiM
 
-	Variable ct=cos(theta*PI/180), st=sin(theta*PI/180)			// theta rotation
+	Variable ct=cos(theta*PI/180), st=sin(theta*PI/180)	// theta rotation
 	thetaM[0][0]= {1, 0, 0}
 	thetaM[0][1]= {0, ct, -st}
 	thetaM[0][2]= {0, st, ct}
 
-	Variable cKA=cos(KA*PI/180), sKA=sin(KA*PI/180)			// kappa rotation
+	Variable cKA=cos(KA*PI/180), sKA=sin(KA*PI/180)		// kappa rotation
 	Variable ck=cos(kappa*PI/180), sk=sin(kappa*PI/180)
 	kappaM[0][0]= {ck+cKA*(1-ck),  cKA*sKA*(1-ck), -sKA*sk}
 	kappaM[0][1]= {cKA*sKA*(1-ck), ck+sKA*sKA, cKA*sk}
 	kappaM[0][2]= {sKA*sk, -cKA*sk, ck}
 
-	Variable cp=cos(phi*PI/180), sp=sin(phi*PI/180)			// phi rotation
+	Variable cp=cos(phi*PI/180), sp=sin(phi*PI/180)		// phi rotation
 	phiM[0][0]= {1, 0, 0}
 	phiM[0][1]= {0, cp, -sp}
 	phiM[0][2]= {0, sp, cp}
@@ -1160,7 +1165,7 @@ End
 // Static
 ThreadSafe Function/WAVE kappaDetectorMatrix(A)// returns a rotation matrix describing current detector rotation
 	Wave A
-	return doubleDetectorMatrix(A[0],A[5])			// delta, nu
+	return doubleDetectorMatrix(A[0],A[5])		// delta, nu
 End
 //Static Function/WAVE kappaDetectorMatrix(A)		// returns a rotation matrix describing current detector rotation
 //	Wave A
@@ -1169,7 +1174,7 @@ End
 
 
 //ThreadSafe 
-Static Function/WAVE kappapec2BL(inverse)			// same as for fourc
+Static Function/WAVE kappapec2BL(inverse)	// same as for fourc
 	Variable inverse									// if true return Inv(spec2BL)
 	return fourcSpec2BL(inverse)
 End
@@ -1182,7 +1187,7 @@ ThreadSafe Function/WAVE simpleVerticalDetectorMatrix(A0)// returns a rotation m
 	Variable A0										// vertical detector angle (degree)
 	Variable tth=A0*PI/180						// 2theta (rad), this is the angle of the arm, not actual scattering angle
 	Make/N=(3,3)/D/FREE rot
-	Variable c=cos(tth), s=sin(tth)					// positive rotation is up from +z (at 0¡) to +y (at A0=90¡)
+	Variable c=cos(tth), s=sin(tth)			// positive rotation is up from +z (at 0¡) to +y (at A0=90¡)
 	rot[0][0] = {1, 0, 0}
 	rot[0][1] = {0, c,-s}
 	rot[0][2] = {0, s, c}
@@ -1198,14 +1203,14 @@ ThreadSafe Function/WAVE doubleDetectorMatrix(delta,nu)// returns a rotation mat
 
 	Variable c=cos(delta*PI/180), s=sin(delta*PI/180)
 	Make/N=(3,3)/D/FREE rotDelta		// positive rotation is up from +z (at 0¡) to +y (at delta=90¡)
-	rotDelta[0][0] = {1, 0, 0}				// rotation matrix about x-axis
+	rotDelta[0][0] = {1, 0, 0}		// rotation matrix about x-axis
 	rotDelta[0][1] = {0, c,-s}
 	rotDelta[0][2] = {0, s, c}
 
 	c = cos(nu*PI/180)					// positive rotation is from +z (at 0¡) to +x (at nu=90¡)
 	s = sin(nu*PI/180)
 	Make/N=(3,3)/D/FREE rotNu
-	rotNu[0][0] = {c, 0,-s}				// rotation matrix about y-axis
+	rotNu[0][0] = {c, 0,-s}			// rotation matrix about y-axis
 	rotNu[0][1] = {0, 1, 0}
 	rotNu[0][2] = {s, 0, c}
 
@@ -1216,7 +1221,7 @@ End
 
 
 
-ThreadSafe Function/WAVE protoMatrix(A)		// used for both the sample and detector matricies
+ThreadSafe Function/WAVE protoMatrix(A)			// used for both the sample and detector matricies
 	Wave A
 	return $""
 End
@@ -1256,18 +1261,18 @@ End
 
 
 Structure detectorGeometrys		// structure definition for a detector
-	int16 N							// number of detectors defined (must be <= MAX_DETECTORS)
-	int16 last						// last detector index (probably the one you want)
+	int16 N								// number of detectors defined (must be <= MAX_DETECTORS)
+	int16 last							// last detector index (probably the one you want)
 	uchar diffractometer[100]		// name of diffractometer (e.g. fourc)
 	Struct detectorGeometry d[MAX_DETECTORS]
 EndStructure
 
-Structure detectorGeometry			// structure definition for a detector
-	int16 used						// TRUE=detector used, FALSE=detector un-used
-	int32 Nx, Ny					// # of un-binned pixels in full detector
+Structure detectorGeometry		// structure definition for a detector
+	int16 used							// TRUE=detector used, FALSE=detector un-used
+	int32 Nx, Ny						// # of un-binned pixels in full detector
 	double sizeX,sizeY				// outside size of detector (sizeX = Nx*pitchX), measured to outer edge of outer pixels (mm)
-	double R[3]						// rotation vector (length is angle in radians)
-	double P[3]						// translation vector (mm)
+	double R[3]							// rotation vector (length is angle in radians)
+	double P[3]							// translation vector (mm)
 
 	uchar timeMeasured[100]		// when this geometry was calculated
 	uchar geoNote[100]				// note
@@ -1282,36 +1287,36 @@ Structure detectorGeometry			// structure definition for a detector
 EndStructure
 
 
-Function DetectorGeometryLocate()					// This only used by FunctionPath("DetectorGeometryLocate")
-	return 0										//   to find the path to this file
+Function DetectorGeometryLocate()	// This only used by FunctionPath("DetectorGeometryLocate")
+	return 0									//   to find the path to this file
 End
 
 
 // ThreadSafe 
 Static Function QofPixelBL(d,keV,px,py,A,qvecIN,[depth])	// returns Q of pixel in beam line frame, This is NOT q in sample
 	STRUCT detectorGeometry, &d
-	Variable keV									// for keV<=0, just return qvec with length 1
-	Variable px,py									// pixel on detector
-	Wave A											// wave with diffractometer angles
+	Variable keV								// for keV<=0, just return qvec with length 1
+	Variable px,py								// pixel on detector
+	Wave A										// wave with diffractometer angles
 	Wave qvecIN									// 3-vector to recieve the result
-	Variable depth									// depth of point (measured along Z from origin)
+	Variable depth								// depth of point (measured along Z from origin)
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? 0 : depth
 	keV = keV>0 ? keV : NaN
 
 	Variable klen = keV>0 ? 2*PI*keV/hc_keVnm : 1// 2*PI/lambda
-	Make/N=3/D/FREE kf, ki={0,0,1}				// kf points to position on detector (mm)
-	pixel2xyz(d,px,py,A,kf)						// pixel (px,py) on detector
-	kf[2] -= depth									// depth correction
+	Make/N=3/D/FREE kf, ki={0,0,1}		// kf points to position on detector (mm)
+	pixel2xyz(d,px,py,A,kf)				// pixel (px,py) on detector
+	kf[2] -= depth								// depth correction
 	normalize(kf)
 
 	//	MatrixOP/FREE  qout = T x UB x recip x hkl
 
 	Variable theta = acos(MatrixDot(kf,ki))/2	// ki.kf = cos(2theta), (radians)
 	if (WaveExists(qvecIN))
-		qvecIN = (kf - ki)*klen						// q in beam line frame  (kf - ki)
+		qvecIN = (kf - ki)*klen			// q in beam line frame  (kf - ki)
 		if (!(keV>0))
-			normalize(qvecIN)						// no energy, so make a unit vector
+			normalize(qvecIN)					// no energy, so make a unit vector
 		endif
 	endif
 	WaveClear ki,kf
@@ -1321,19 +1326,19 @@ End
 // Vectorized version of QofPixelBL
 ThreadSafe Static Function/WAVE QofPixelBLVEC(d,keV,pxpy,A,[depth])	// returns Q of pixel in beam line frame, This is NOT q in sample
 	STRUCT detectorGeometry, &d
-	Variable keV									// for keV<=0, just return qvecs with length 1
-	Wave pxpy										// array of pixels to use (must be in raw un-binned pixels), perhaps an ROI
-	Wave A											// wave with diffractometer angles
-	Variable depth									// depth of point (measured along Z from origin)
+	Variable keV								// for keV<=0, just return qvecs with length 1
+	Wave pxpy									// array of pixels to use (must be in raw un-binned pixels), perhaps an ROI
+	Wave A										// wave with diffractometer angles
+	Variable depth								// depth of point (measured along Z from origin)
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? 0 : depth
 	keV = keV>0 ? keV : NaN
 
-	Variable N=DimSize(pxpy,0)					// number of pixels to process
+	Variable N=DimSize(pxpy,0)			// number of pixels to process
 	Variable klen = keV>0 ? 2*PI*keV/hc_keVnm : 1// 2*PI/lambda
-	Make/N=3/D/FREE ki={0,0,klen}				// incident wave vector, length=2PI/lambda
+	Make/N=3/D/FREE ki={0,0,klen}		// incident wave vector, length=2PI/lambda
 
-	Wave kf = pixel2xyzVEC(d,pxpy,A)				// position (xyz BL coords) of every pixel
+	Wave kf = pixel2xyzVEC(d,pxpy,A)	// position (xyz BL coords) of every pixel
 	if (depth==0)
 		MatrixOP/FREE/O kf = NormalizeRows(kf)*klen
 	else
@@ -1378,19 +1383,19 @@ End
 
 Static Function pixel2xyz(d,px,py,A,xyz,[DeltaPixelCorrect])	// convert pixel position to the beam line coordinate system
 	STRUCT detectorGeometry, &d
-	Variable px,py									// pixel position on detector (full chip & zero based)
+	Variable px,py								// pixel position on detector (full chip & zero based)
 	Wave A
 	Wave xyz										// 3-vector to receive the result, position in beam line coords (mm)
-	Wave DeltaPixelCorrect							// contains optional pixel corrections dimensions are [Nx][Ny][2]
+	Wave DeltaPixelCorrect					// contains optional pixel corrections dimensions are [Nx][Ny][2]
 
 	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)
 	Variable xp,yp, zp								// x' and y' (requiring z'=0), detector starts centered on origin and perpendicular to z-axis
-	xp = (px - 0.5*(d.Nx-1)) * d.sizeX/d.Nx		// (x' y' z'), position on detector
+	xp = (px - 0.5*(d.Nx-1)) * d.sizeX/d.Nx	// (x' y' z'), position on detector
 	yp = (py - 0.5*(d.Ny-1)) * d.sizeY/d.Ny
 
 	if (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,2)==2)
 		Variable ix=limit(round(px),0,(d.Nx-1)),iy=limit(round(py),0,(d.Ny-1))
-		px += DeltaPixelCorrect[ix][iy][0]// start as pixel position on detector + correction for distortion
+		px += DeltaPixelCorrect[ix][iy][0]		// start as pixel position on detector + correction for distortion
 		py += DeltaPixelCorrect[ix][iy][1]
 	endif
 	//	//	Make/N=3/D/FREE vec= { ( px-(Nx/2) ) * dx, ( py-(Ny/2) ) * dy, dist }	// position of pixel at nu=0
@@ -1411,7 +1416,7 @@ Static Function pixel2xyz(d,px,py,A,xyz,[DeltaPixelCorrect])	// convert pixel po
 	MatrixOP/FREE/O vec = rot x xyz				// rotate vec by tth, to the actual detector position
 	xyz = vec
 
-	Variable tthTotal, dot=vec[2]/norm(vec)		// calculate total scattering angle
+	Variable tthTotal, dot=vec[2]/norm(vec)	// calculate total scattering angle
 	if (dot >= 1)
 		tthTotal = 0
 	elseif (dot <= -1)
@@ -1427,7 +1432,7 @@ ThreadSafe Static Function/WAVE pixel2xyzVEC(d,pxpy,A,[DeltaPixelCorrect])		// c
 	STRUCT detectorGeometry, &d
 	Wave pxpy										// array of pixels to use (must be in raw un-binned pixels), perhaps an ROI, first dimension is number of pixels, second is x,y
 	Wave A
-	Wave DeltaPixelCorrect							// contains optional pixel corrections dimensions are [N][2]
+	Wave DeltaPixelCorrect						// contains optional pixel corrections dimensions are [N][2]
 
 	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName",DEFAULT_DIFF_NAME)
 	Variable N=DimSize(pxpy,0), Nx=d.Nx, Ny=d.Ny
@@ -1435,7 +1440,7 @@ ThreadSafe Static Function/WAVE pixel2xyzVEC(d,pxpy,A,[DeltaPixelCorrect])		// c
 
 	String dname = DiffractometerName+"DetectorMatrix"
 	FUNCREF protoMatrix detectorMatrix = $dname
-	Wave rot = detectorMatrix(A)					// rotation of detector
+	Wave rot = detectorMatrix(A)				// rotation of detector
 	if (!WaveExists(rot))
 		return $""
 	endif
@@ -1454,7 +1459,7 @@ ThreadSafe Static Function/WAVE pixel2xyzVEC(d,pxpy,A,[DeltaPixelCorrect])		// c
 	if (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,1)==2)
 		xyz[][0,1] = pxpy[p][q] + DeltaPixelCorrect[p][q]	// start as pixel position on detector + correction for distortion
 	else
-		xyz[][0,1] = pxpy[p][q]					// start as pixel position on detector
+		xyz[][0,1] = pxpy[p][q]				// start as pixel position on detector
 	endif
 
 	//	xyz = (xyz - ixyzc[q]) * dxyz[q] + Pw[q]		// (x' y' z'), position on detector for all pixels at A[]=0
@@ -1486,23 +1491,23 @@ Static Function/WAVE MakePixelListFromImage(image,[pxpyName])
 		pxpyName = CleanupName(pxpyName,0)
 		Make/N=(N,2) $pxpyName/WAVE=pxpy	// all of the pixel values desired, NOT FREE wave
 	endif
-	pxpy[][0] = mod(p,Nx)*groupx+startx			// units are full-chip unbinned, even if pixel are from a binned ROI
+	pxpy[][0] = mod(p,Nx)*groupx+startx	// units are full-chip unbinned, even if pixel are from a binned ROI
 	pxpy[][1] = floor((p+0.4)/Nx)*groupy+starty
 	return pxpy
 End
 
 
 
-Static Function DetectorUpdateCalc(d)				// update all internally calculated things in the detector structure
+Static Function DetectorUpdateCalc(d)		// update all internally calculated things in the detector structure
 	STRUCT detectorGeometry &d
 	if (!(d.used))
 		return 1
 	endif
 
-	Variable Rx, Ry, Rz								// used to make the rotation matrix rho from vector R
+	Variable Rx, Ry, Rz							// used to make the rotation matrix rho from vector R
 	Variable theta, c, s, c1
 	Variable i
-	Rx=d.R[0]; Ry=d.R[1]; Rz=d.R[2]				// make the rotation matrix rho from vector R
+	Rx=d.R[0]; Ry=d.R[1]; Rz=d.R[2]			// make the rotation matrix rho from vector R
 	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)
 	if (theta==0)									// no rotation, set to identity matrix
 		d.rho00 = 1;		d.rho01 = 0;		d.rho02 = 0
@@ -1534,9 +1539,9 @@ Static Function DetectorUpdateCalc(d)				// update all internally calculated thi
 	return 0
 End
 //
-Static Function UpdateDefaultDetectorStruct(ds,[local])			// Update the default location with values in ds
-	STRUCT detectorGeometrys &ds								// returns 0 if something set, 0 is nothing done
-	Variable local												// if true will also update detStructStr in the current folder if it already exists (It will NOT create local detStructStr)
+Static Function UpdateDefaultDetectorStruct(ds,[local])	// Update the default location with values in ds
+	STRUCT detectorGeometrys &ds				// returns 0 if something set, 0 is nothing done
+	Variable local									// if true will also update detStructStr in the current folder if it already exists (It will NOT create local detStructStr)
 	local = ParamIsDefault(local) ? 0 : local
 	local = numtype(local) ? 0 : !(!local)
 
@@ -1552,43 +1557,43 @@ Static Function UpdateDefaultDetectorStruct(ds,[local])			// Update the default 
 	String/G root:Packages:Diffractometer:detectorStructStr=detStructStr	// always save to default location
 	SavePackagePreferences/FLSH=1 "Diffractometer","detectorPrefs",0,ds	// alwasy update prefs too
 
-	local = local || (exists(":detStructStr")==2)				// save locally if told to, or if a local already exists in current datafolder
+	local = local || (exists(":detStructStr")==2)	// save locally if told to, or if a local already exists in current datafolder
 	if (local)
-		String/G :detectorStructStr=detStructStr				// make a local copy too
+		String/G :detectorStructStr=detStructStr	// make a local copy too
 	endif
 	return 0
 End
 
-Function FillDetectorsStruct(ds)								//fill the detector structures with current values
-	STRUCT detectorGeometrys &ds								// returns 0 if something set, 0 is nothing done
+Function FillDetectorsStruct(ds)					//fill the detector structures with current values
+	STRUCT detectorGeometrys &ds						// returns 0 if something set, 0 is nothing done
 
 	String strStruct=StrVarOrDefault(":detectorStructStr","")	// set to values in current directory
 	if (strlen(strStruct)<1)
 		strStruct=StrVarOrDefault("root:Packages:Diffractometer:detectorStructStr","")	// try the default values
 	endif
-	if (strlen(strStruct)>1)									// found structure information in this experiment, load into ds
+	if (strlen(strStruct)>1)							// found structure information in this experiment, load into ds
 		StructGet/S/B=2 ds, strStruct
-	else															// no detector in this experiment, try the prefs
+	else														// no detector in this experiment, try the prefs
 		LoadPackagePreferences/MIS=1 "Diffractometer","detectorPrefs",0,ds
 		if (V_flag)
 			return 1											// did nothing, nothing found
 		endif
 	endif
-	UpdateDefaultDetectorStruct(ds)							// this ensures that if we loaded it from prefs, that local values are updated
+	UpdateDefaultDetectorStruct(ds)					// this ensures that if we loaded it from prefs, that local values are updated
 	return 0
 End
 
-Function FillDetectorStructDefault(d,id)						//fill the detector structure with current values
-	STRUCT detectorGeometry &d								// returns 0 if something set, 0 is nothing done
-	String id													// detector id, if "", then use ds.last
+Function FillDetectorStructDefault(d,id)		//fill the detector structure with current values
+	STRUCT detectorGeometry &d						// returns 0 if something set, 0 is nothing done
+	String id												// detector id, if "", then use ds.last
 
-	STRUCT detectorGeometrys ds								// returns 0 if something set, 0 is nothing done
+	STRUCT detectorGeometrys ds						// returns 0 if something set, 0 is nothing done
 	if (FillDetectorsStruct(ds))
 		return 1
 	endif
 
-	Variable i = ds.last											// default to pass back if no id specified
-	if (strlen(id)>0)											// search for detector with matching id
+	Variable i = ds.last								// default to pass back if no id specified
+	if (strlen(id)>0)										// search for detector with matching id
 		for (i=0;i<MAX_DETECTORS;i+=1)
 			if (ds.d[i].used && StringMatch(ds.d[i].detectorID,id))	// found detector with correct ID
 				break
@@ -1604,10 +1609,10 @@ Function FillDetectorStructDefault(d,id)						//fill the detector structure with
 	return 0
 End
 //
-Static Function FindDetectorIdIndex(ds,id,[used])				// find index into ds.d[i] for id, returns -1 if not found
+Static Function FindDetectorIdIndex(ds,id,[used])	// find index into ds.d[i] for id, returns -1 if not found
 	STRUCT detectorGeometrys &ds
 	String id
-	Variable used												// if true, only find used detectors
+	Variable used													// if true, only find used detectors
 	used = ParamIsDefault(used) ? 0 : used
 	used = numtype(used) ? 0 : !(!used)
 	if (strlen(id)<1)
@@ -1621,46 +1626,46 @@ Static Function FindDetectorIdIndex(ds,id,[used])				// find index into ds.d[i] 
 			return 1
 		endif
 	endfor
-	return -1													// failed to find id
+	return -1														// failed to find id
 End
 //
-Static Function NextEmptyDetectorIndex(ds)						// find index into ds.d[i] for first empty slot, returns -1 if all are full
+Static Function NextEmptyDetectorIndex(ds)	// find index into ds.d[i] for first empty slot, returns -1 if all are full
 	STRUCT detectorGeometrys &ds
 	String id
 
 	Variable i
 	for (i=0;i<MAX_DETECTORS;i+=1)
-		if (!(ds.d[i].used))										// found a detector that is not used
+		if (!(ds.d[i].used))						// found a detector that is not used
 			return i
 		endif
 	endfor
-	return -1													// failed to find id
+	return -1											// failed to find id
 End
 
 
 
-Static Function UpdateDetectorInList(ds,d,force)			// update a detector in a list of detector geometrys
-	STRUCT detectorGeometrys &ds						// list of detector geometrys
-	STRUCT detectorGeometry &d						// detector geometry to replace
-	Variable force										// flag, if true, then overwrite last detector if list is full
+Static Function UpdateDetectorInList(ds,d,force)	// update a detector in a list of detector geometrys
+	STRUCT detectorGeometrys &ds				// list of detector geometrys
+	STRUCT detectorGeometry &d				// detector geometry to replace
+	Variable force									// flag, if true, then overwrite last detector if list is full
 
 	String id = d.detectorID
 	Variable i, last=-1, empty=-1
 	for (i=0;i<MAX_DETECTORS;i+=1)
-		if (StringMatch(ds.d[i].detectorID,id))			// found detector with correct ID
+		if (StringMatch(ds.d[i].detectorID,id))	// found detector with correct ID
 			break
 		endif
-		if (!(ds.d[i].used) && empty<0)					// save first empty slot
+		if (!(ds.d[i].used) && empty<0)		// save first empty slot
 			empty = i
 		endif
 	endfor
 
 	if (i<MAX_DETECTORS)
-		last = i											// overwrite existing detector with same ID
+		last = i										// overwrite existing detector with same ID
 	elseif (empty>=0)
-		last = empty									// overwrite first empty slot
+		last = empty								// overwrite first empty slot
 	elseif (force)
-		last = MAX_DETECTORS-1						// overwrite last detector in list
+		last = MAX_DETECTORS-1					// overwrite last detector in list
 	endif
 	if (last>=0)
 		DetectorUpdateCalc(d)
@@ -1715,7 +1720,7 @@ Static Function DetectorReferenceOrientation(d,point)			// sets d to the referen
 	if (point)
 		// define a simple point detector 1m from sample, with a size of 1cm square
 		d.used = 1
-		d.Nx = 1 ;			d.Ny = 1							// number of un-binned pixels in whole detector
+		d.Nx = 1 ;			d.Ny = 1								// number of un-binned pixels in whole detector
 		d.sizeX = 10;		d.sizeY = 10						// outside size of detector (mm)
 		d.R[0]=0;			d.R[1]=0;			d.R[2]=0		// angle of detector, theta = 0¡
 		d.P[0]=0;			d.P[1]=0;			d.P[2]=1000	// offset to detector (mm)
@@ -1727,7 +1732,7 @@ Static Function DetectorReferenceOrientation(d,point)			// sets d to the referen
 		// define a Pilatus 100K Detector located at 1m from sample with pixels along x and y
 		d.used = 1
 		d.Nx = 487 ;				d.Ny = 195					// number of un-binned pixels in whole detector
-		d.sizeX = 487*0.172;		d.sizeY = 195*0.172		// outside size of detector (mm)
+		d.sizeX = 487*0.172;		d.sizeY = 195*0.172	// outside size of detector (mm)
 		d.R[0]=0;			d.R[1]=0;			d.R[2]=0		// angle of detector @ theta=0¡
 		d.P[0]=0;			d.P[1]=0;			d.P[2]=1000	// offset to detector (mm)
 		d.timeMeasured = ""
@@ -1886,8 +1891,8 @@ Function LoadDetectorFromWeb(dateStr,timeStr,[tagName,epoch,printIt])
 		return err
 	endif
 
-	Variable N=strlen(result), dquote=char2num("\"")			// ASCII value of a double-quote
-	if (char2num(result[0])==dquote)							// remove leading double-quote from Apple Script
+	Variable N=strlen(result), dquote=char2num("\"")	// ASCII value of a double-quote
+	if (char2num(result[0])==dquote)						// remove leading double-quote from Apple Script
 		result = result[1,N-1]
 		N -= 1
 	endif
@@ -2059,7 +2064,7 @@ End
 
 
 Function LoadDetectorsFromFile(fileName,path)
-	String fileName							// full path name to the file
+	String fileName						// full path name to the file
 	String path								// name of an Igor path to use
 
 	STRUCT detectorGeometrys ds
@@ -2078,7 +2083,7 @@ Function LoadDetectorsFromFile(fileName,path)
 End
 //
 Static Function ReadDetectorsFromFile(fileName,path,ds)
-	String fileName							// full path name to the file
+	String fileName						// full path name to the file
 	String path								// name of an Igor path to use
 	STRUCT detectorGeometrys &ds
 
@@ -2190,7 +2195,7 @@ End
 Static Function/S xmlContents(buf)
 	String buf
 
-	Variable i1, i0=strsearch(buf,"<?xml",0)	// find start of header tag
+	Variable i1, i0=strsearch(buf,"<?xml",0)// find start of header tag
 	if (i0<0)
 		return ""
 	endif
@@ -2204,9 +2209,9 @@ End
 
 
 Function WriteDetectorToFile(fileName,path,[ds])
-	String fileName						// full path name to the file
+	String fileName					// full path name to the file
 	String path							// name of an Igor path to use
-	STRUCT detectorGeometrys &ds		// structure defining a detector
+	STRUCT detectorGeometrys &ds	// structure defining a detector
 
 	if (ParamIsDefault(ds))
 		STRUCT detectorGeometrys dds
@@ -2336,7 +2341,7 @@ End
 
 
 
-Function CopyDetectorGeometrys(f,i)				// copy a all detector structures
+Function CopyDetectorGeometrys(f,i)			// copy a all detector structures
 	STRUCT detectorGeometrys &f, &i				// f is the destination, i is source
 
 	f.N = i.N
@@ -2348,8 +2353,8 @@ Function CopyDetectorGeometrys(f,i)				// copy a all detector structures
 	endfor
 End
 //
-Static Function CopyOneDetectorGeometry(f,i)		// copy a detector structure
-	STRUCT detectorGeometry &f, &i				// f is the destination, i is source
+Static Function CopyOneDetectorGeometry(f,i)	// copy a detector structure
+	STRUCT detectorGeometry &f, &i					// f is the destination, i is source
 	f.used = i.used
 	f.Nx = i.Nx;			f.Ny = i.Ny
 	f.sizeX = i.sizeX;		f.sizeY = i.sizeY
@@ -2371,18 +2376,18 @@ Static Function DetectorBad(d)
 		return 1
 	endif
 	Variable bad = (numtype(d.Nx + d.Nx + d.sizeX + d.sizeY + d.R[0] + d.R[1] + d.R[2] + d.P[0] + d.P[1] + d.P[2])>0)
-	bad += (d.Nx<1 || d.Nx>5000)												// detector cannot have more than 5000 pixels along one edge
+	bad += (d.Nx<1 || d.Nx>5000)														// detector cannot have more than 5000 pixels along one edge
 	bad += (d.Ny<1 || d.Ny>5000)
-	bad += (d.sizeX<1 || d.sizeX>2000)											// detector cannot be larger than 2m
+	bad += (d.sizeX<1 || d.sizeX>2000)												// detector cannot be larger than 2m
 	bad += (d.sizeY<1 || d.sizeY>2000)
-	bad += (abs(d.R[0])>2*PI || abs(d.R[1])>2*PI || abs(d.R[2])>2*PI)		// rotation cannot be more than 2¹
-	bad += (abs(d.P[0])>4000 || abs(d.P[0])>4000 || abs(d.P[0])>4000)		// P cannot be more than 4m in any direction
-	bad += InValidPilatus(d)													// can only be bad if ID looks like a Pilatus 100K
+	bad += (abs(d.R[0])>2*PI || abs(d.R[1])>2*PI || abs(d.R[2])>2*PI)	// rotation cannot be more than 2¹
+	bad += (abs(d.P[0])>4000 || abs(d.P[0])>4000 || abs(d.P[0])>4000)	// P cannot be more than 4m in any direction
+	bad += InValidPilatus(d)															// can only be bad if ID looks like a Pilatus 100K
 	return (!(!bad))
 End
 
 
-Static Function InValidPilatus(d)							// checks if orientation of Pilatus is valid (beam goes in front)
+Static Function InValidPilatus(d)						// checks if orientation of Pilatus is valid (beam goes in front)
 	STRUCT detectorGeometry &d							// returns 0 if something set, 0 is nothing done
 	if (strsearch(d.detectorID,"PILATUS 100K",0,2)<0)	// if the ID does not looks like a Pilatus 100K, then return isValid
 		return 0
@@ -2391,7 +2396,7 @@ Static Function InValidPilatus(d)							// checks if orientation of Pilatus is v
 	Variable dpixel=0.172, Nx=487, Ny=195
 	Variable err = sqrt((d.Nx - Nx)^2 + (d.Ny - Ny)^2 + (d.sizeX/dpixel - Nx)^2 + (d.sizeY/dpixel - Ny)^2)
 	err = numtype(err) ? Inf : err
-	if (err>0.01)											// check size to 0.01 pixels
+	if (err>0.01)												// check size to 0.01 pixels
 		return 1
 	endif
 
@@ -2564,7 +2569,7 @@ Static Function ResetSetPilatus100Kcalibration(xydir,px0,py0,dist)
 
 	STRUCT detectorGeometrys ds
 	FillDetectorsStruct(ds)
-	Variable Nid=FindDetectorIdIndex(ds,id)				// index to this ID, -1 means not found
+	Variable Nid=FindDetectorIdIndex(ds,id)		// index to this ID, -1 means not found
 	if (Nid<0)
 		Nid = NextEmptyDetectorIndex(ds)
 	endif
@@ -2574,7 +2579,7 @@ Static Function ResetSetPilatus100Kcalibration(xydir,px0,py0,dist)
 	CopyOneDetectorGeometry(d,ds.d[Nid])
 	// set the default values
 
-	px0 = px0 > 0 ? px0 : d.px0							// first default to previous
+	px0 = px0 > 0 ? px0 : d.px0						// first default to previous
 	py0 = py0 > 0 ? py0 : d.py0
 	dist = dist > 0 ? dist : abs(d.P[2])
 
@@ -2815,7 +2820,7 @@ End
 Static Function DetectorUpdateButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
-	if (ba.eventCode == 2)		// mouse up
+	if (ba.eventCode == 2)			// mouse up
 		String win = ba.win
 		ControlInfo/W=$win iDetectorPopup
 		Variable idet = str2num(S_Value)
@@ -2823,7 +2828,7 @@ Static Function DetectorUpdateButtonProc(ba) : ButtonControl
 			DoAlert 0,"ERROR -- idet = "+num2str(idet)
 			return 1
 		endif
-		STRUCT detectorGeometry d				// returns 0 if something set, 0 is nothing done
+		STRUCT detectorGeometry d	// returns 0 if something set, 0 is nothing done
 		ControlInfo/W=$win DetectorUsedCheck	;	d.used = V_Value
 		ControlInfo/W=$win NxSetvar				;	d.Nx = V_Value
 		ControlInfo/W=$win NySetvar				;	d.Ny = V_Value
@@ -2857,7 +2862,7 @@ Static Function DetectorUpdateButtonProc(ba) : ButtonControl
 End
 
 
-Static Function SetDetectorPanelValues(idet)		// set panel values to the existing values
+Static Function SetDetectorPanelValues(idet)	// set panel values to the existing values
 	Variable idet									// detector number, 0 - MAX_DETECTORS-1
 
 	STRUCT detectorGeometrys ds				// returns 0 if something set, 0 is nothing done
@@ -2920,7 +2925,7 @@ Static Function MoveWindowToCorner(win,corner)
 	endif
 
 	Variable leftScreen,topScreen,rightScreen,bottomScreen,  top, left
-	if (stringmatch(IgorInfo(2),"Windows"))					// use the inside of the Igor Application Window on Windows
+	if (stringmatch(IgorInfo(2),"Windows"))				// use the inside of the Igor Application Window on Windows
 		GetWindow kwFrameInner,wsize
 		leftScreen = V_left ;	rightScreen = V_right
 		topScreen = V_top ;		bottomScreen = V_bottom
@@ -2931,7 +2936,7 @@ Static Function MoveWindowToCorner(win,corner)
 		topScreen += 44											// leave room for menubar on Mac
 	endif
 
-	GetWindow $win,wsize										// size of window to move
+	GetWindow $win,wsize												// size of window to move
 	Variable width=V_right-V_left, height=V_bottom-V_top	// get size of the window
 	top = stringmatch(corner[0],"T") ? topScreen : (bottomScreen-height)	// desired top left position of window
 	left = stringmatch(corner[1],"L") ? leftScreen : (rightScreen-width)
@@ -3037,7 +3042,7 @@ Static Function SelectDiffractometer(name)
 		NVAR/Z Naxes = root:Packages:Diffractometer:Naxes
 		NVAR/Z KA = root:Packages:Diffractometer:KA
 	endif
-	String listFull = "fourc:33BM,4,2-theta theta chi phi;"				// "name0:where0,Naxes0,axisList0;name1:where1,Naxes1,axisList1; ..."
+	String listFull = "fourc:33BM,4,2-theta theta chi phi;"	// "name0:where0,Naxes0,axisList0;name1:where1,Naxes1,axisList1; ..."
 	listFull += "kappa:33ID,6,delta theta kappa phi mu nu;"
 	listFull += "CDP:33ID,3,nu mu delta;"
 	if (!keyInList(DiffractometerName,listFull,":",";"))		// current diffractometer is not in fullList, add it
@@ -3072,9 +3077,9 @@ Static Function SelectDiffractometer(name)
 	if (!keyInList(name,listFull,"","") && !(N>0))	// check that name is valid
 		return 1
 	endif
-	DiffractometerName = name						// update global name
+	DiffractometerName = name					// update global name
 	Naxes = N										// update global Naxes
-	DiffractometerAxisNames = axes					// update global axis names
+	DiffractometerAxisNames = axes			// update global axis names
 	KA = (strsearch(name,"kappa",0,2)<0) ? NaN : 50
 
 	STRUCT diffractometerTypeStruct dt
@@ -3133,7 +3138,7 @@ Function Init_Diffractometer()
 
 	if (strlen(FunctionList("FillSampleStructDefault","","KIND:2")))
 		STRUCT sampleStructure s
-		if (FillSampleStructDefault(s))					//fill the sample structure with current values
+		if (FillSampleStructDefault(s))				//fill the sample structure with current values
 			SetDefaultSample2Reference()				// there was an error, set to idealized reference values
 		endif
 	endif
