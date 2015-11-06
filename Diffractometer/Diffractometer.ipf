@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.55
+#pragma version = 0.56
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -2743,6 +2743,10 @@ Function MakeDetectorGeoPanel()
 	SetDrawLayer UserBack
 	SetDrawEnv fsize= 18,textrgb= (1,16019,65535)
 	DrawText 6,22,"Detector Geometrys"
+	DrawText 285,143,"mm"
+	DrawText 285,79,"mm"
+	DrawText 285,109,"mm"
+	DrawText 281,166,"rad"
 	PopupMenu iDetectorPopup,pos={214,2},size={80,21},proc=diffractometer#NdetectorPopMenuProc,title="\\F'Consolas'\\Z18det #"
 	PopupMenu iDetectorPopup,font="Consolas",fSize=12
 	PopupMenu iDetectorPopup,mode=1,popvalue="0",value= #list
@@ -2760,13 +2764,13 @@ Function MakeDetectorGeoPanel()
 	SetVariable SizeySetvar,pos={128,90},size={153,24},bodyWidth=90,proc=diffractometer#DetectorGeometrySetVarProc,title="height"
 	SetVariable SizeySetvar,font="Consolas",fSize=18,format="%g"
 	SetVariable SizeySetvar,limits={0.1,10000,0},value= _NUM:33.54
-	SetVariable PvecStrSetvar,pos={16,126},size={272,19},bodyWidth=260,title="P"
+	SetVariable PvecStrSetvar,pos={9,126},size={272,19},bodyWidth=260,title="P"
 	SetVariable PvecStrSetvar,font="Consolas",fSize=14,proc=diffractometer#DetectorGeometrySetVarProc
 	SetVariable PvecStrSetvar,limits={-inf,inf,0},value= _STR:"5, 10, 1000"
-	SetVariable RvecStrSetvar,pos={16,149},size={272,19},bodyWidth=260,title="R"
+	SetVariable RvecStrSetvar,pos={9,149},size={272,19},bodyWidth=260,title="R"
 	SetVariable RvecStrSetvar,font="Consolas",fSize=14,proc=diffractometer#DetectorGeometrySetVarProc
 	SetVariable RvecStrSetvar,limits={-inf,inf,0},value= _STR:"0, 0, 0"
-	SetVariable IDsetvar,pos={9,180},size={279,19},bodyWidth=260,title="ID"
+	SetVariable IDsetvar,pos={2,180},size={279,19},bodyWidth=260,title="ID"
 	SetVariable IDsetvar,font="Consolas",fSize=14,proc=diffractometer#DetectorGeometrySetVarProc
 	SetVariable IDsetvar,limits={-inf,inf,0},value= _STR:"PILATUS 100K, 1-0005, APS"
 	Button UpdateButton,pos={114,31},size={85,20},disable=1,proc=diffractometer#DetectorUpdateButtonProc,title="Update"
