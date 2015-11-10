@@ -1898,7 +1898,7 @@ Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specifi
 	KillStrings/Z S_GizmoNames
 #else
 	GetGizmo/Z gizmoNameList
-	String gList=S_GizmoNames
+	String gList = SelectString(strlen(S_GizmoNames)>0, "", S_GizmoNames)
 #endif
 	String gName, objetAll, list=""
 	Variable i, m, N=ItemsInList(gList)
