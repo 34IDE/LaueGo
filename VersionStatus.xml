@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, November 06, 2015" time="01:03:51 PM CST" isoTime="2015-11-06T13:03:51"></written>
+	<written date="Monday, November 09, 2015" time="06:08:24 PM CST" isoTime="2015-11-09T18:08:24"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>d828624487a9b9510fa6da0d950619b1ad6b6cc6</gitHash>
+	<gitHash>da095887b17ced91eb7627d4f85a4c389ff1f89a</gitHash>
 	<fileCount>273</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -39,7 +39,7 @@
 	<file version="0.04" time="2013-10-28T11:28:49" md5="2596730c5c9139e078980e8f00e36fd2" sha256="fa5451e20c5e55cd4cd564d15bce444eb2f6f4aa2a2b66c4f831796f28214795" ext=".ipf">microN/FlyImageExtract.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d2cecdf854958ec7e2e6f5b58341ef18" sha256="f215a2d24e27fb54f7a9391fe31eb4c3e3b26ef536b2e02271a0340d42edc823" ext=".xml">materials/PZT-Rhomb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8f514e77e27d6af2814f4abb383f9466" sha256="9a1508d2ff7a062bf087174ec42a6a38effa07d3dee91671c5e13b752fc819c9" ext=".xml">materials/Mo.xml</file>
-	<file version="2.11" time="2015-07-11T18:51:38" md5="c7ec333ccb42ad2d9cc4f3a02f97a6d9" sha256="31610a024c6608af9a543a1771e526f55a880a78903ca87d8b088586d7ab6d76" ext=".ipf">General/FWHM.ipf</file>
+	<file version="2.12" time="2015-11-09T17:42:32" md5="2590fdd6d9a2b9b1779f1d8a5de46e53" sha256="dbbbffc055409528d54a8a46d2bdef741e833575a6e3da951fafdf965728171f" ext=".ipf">General/FWHM.ipf</file>
 	<file version="2.02" time="2015-04-06T12:28:50" md5="71f7c816b78fa886768eeeff46b720f6" sha256="d52e433d5bb230dded7db6d885a6d920d920fad8724ab99e87d029a7d7b480b3" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2015-03-16T13:55:50" md5="cd77de6db2098b618af02ccb19324887" sha256="77dfac712a4d10a7588117f23b7dd8f5bcb575cad795d26aed3f9e68e8a713a2" ext=".html">doc/microDiffraction.html</file>
 	<file version="1.01" time="2014-04-30T10:28:09" md5="34d3fc84b9db4ef2adbae7fcca0a36ec" sha256="2d55b09b3c2fed72b05a43740647b38d55c1c1fb8cd14306118874a8f0c24085" ext=".ipf">Grains/CutUpGrains.ipf</file>

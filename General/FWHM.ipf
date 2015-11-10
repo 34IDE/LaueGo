@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.11
+#pragma version = 2.12
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -1150,7 +1150,7 @@ ThreadSafe Function pnt2xWyWx(yw,xw,pnt)// convert from point to x
 	Wave yw,xw
 	Variable pnt
 
-	pnt = limit(pnt,0,DimSize(xw,0)-1)
+	pnt = limit(pnt,0,DimSize(yw,0)-1)
 	Variable xval
 	if (WaveExists(xw))
 		xval = xw[pnt]								// x-wave given
