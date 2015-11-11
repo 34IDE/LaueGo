@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, November 10, 2015" time="01:54:15 PM CST" isoTime="2015-11-10T13:54:15"></written>
+	<written date="Wednesday, November 11, 2015" time="05:28:44 PM CST" isoTime="2015-11-11T17:28:44"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>8374aa73490215855fe7d15f4c8fbaafda4ce38a</gitHash>
+	<gitHash>8bf84b2ab82e2f172da5c4a6ac378e1641eae96c</gitHash>
 	<fileCount>273</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -71,7 +71,7 @@
 	<file version="nan" time="2014-02-12T12:35:11" md5="21fe5d59b8ab82f4f8b759a39428a853" sha256="eb671ffc437fb6276160e07b787d1b924bae65b36f4e30780177744dc4d6e94f" ext=".xml">materials/Rene-104.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="46d8348f073a45cb4117fdde50740d84" sha256="5b03768d69c5ff161bfd29f76841ca308d5ef3dd78d35cccf0e1b92a902b7cc2" ext=".xml">materials/Cr.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="89edf241338c6e8db2e8246a25a10037" sha256="4020ca41dd125e02be39b46494b70cc3f96c3f19494ef0edd680e4aee8b7b62b" ext=".xml">materials/ZnO.xml</file>
-	<file version="0.56" time="2015-11-06T12:12:29" md5="a6bb8a474dbb898afd9c4f9e6d6a78f9" sha256="6cac74c30a31e413957971fe23b1e0e79747c73ded06680e17a72c304dd5ad9b" ext=".ipf">Diffractometer/Diffractometer.ipf</file>
+	<file version="0.57" time="2015-11-11T16:21:37" md5="7d239245bee870802ea0c0114e3b7f13" sha256="623c2994ddb973a56ba1e1e804af1cc69097e3c49bc81741a8eb378f7c7f1a51" ext=".ipf">Diffractometer/Diffractometer.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1a6433a69704966fd280c9338f02b6b0" sha256="b1684d6672ff34a296abf3156f80fcc29da4086d8cb2bf01939044a0564cef04" ext=".xml">materials/Sn-sg229.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="33d733e9e15a83d36bbe85d6cf933331" sha256="fe369fc716af653df46860fd880893f0aa722f3153f546b81268e683ea1a7ff2" ext=".xml">materials/YBCO2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7fd56632214ddaf61f5143df4e74464c" sha256="6b90045853bd730b4d227dbf3b89c12a74a6c46b6e899eb3612fd07a6a42209f" ext=".png">doc/microDiffractionMedia/Picture8.png</file>

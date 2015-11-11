@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.56
+#pragma version = 0.57
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -1178,6 +1178,75 @@ Static Function/WAVE kappapec2BL(inverse)	// same as for fourc
 	Variable inverse									// if true return Inv(spec2BL)
 	return fourcSpec2BL(inverse)
 End
+
+
+
+ThreadSafe Function/WAVE psicMatrix(A)					// sample orientation
+	Wave A
+	Variable eta=A[1], chi=A[2], phi=A[3]	, mu=A[4]	// A[6] = {delta, eta, chi, phi, mu, nu}
+	Make/N=(3,3)/D/FREE muM, etaM, chiM, phiM
+
+	Variable cm=cos(mu*PI/180), sm=sin(mu*PI/180)		// mu rotation, rotate the mu-circle (including eta) about y-axis
+	muM[0][0]= {cm, 0, -sm}
+	muM[0][1]= {0, 1, 0}
+	muM[0][2]= {sm, 0, cm}
+
+	Variable ce=cos(eta*PI/180), se=sin(eta*PI/180)	// eta rotation, rotate the chi-circle about x-axis
+	etaM[0][0]= {1, 0, 0}
+	etaM[0][1]= {0, ce, -se}
+	etaM[0][2]= {0, se, ce}
+
+	Variable cc=cos(chi*PI/180), sc=sin(chi*PI/180)	// chi rotation, about z-axis
+	chiM[0][0]= {cc, sc, 0}
+	chiM[0][1]= {-sc, cc, 0}
+	chiM[0][2]= {0, 0,1}
+
+	Variable cp=cos(phi*PI/180), sp=sin(phi*PI/180)	// phi rotation, rotate sample about x-axis (at chi=0, phi == eta)
+	phiM[0][0]= {1, 0, 0}
+	phiM[0][1]= {0, cp, -sp}
+	phiM[0][2]= {0, sp, cp}
+
+	MatrixOP/FREE sampleRot = muM x etaM x chiM x phiM
+	WaveClear etaM, chiM, phiM, muM
+	return sampleRot
+End
+//
+// Static
+ThreadSafe Function/WAVE psicDetectorMatrix(A)// returns a rotation matrix describing current detector rotation
+	Wave A
+	return doubleDetectorMatrix(A[0],A[5])		// A[0]=delta, A[5]=nu
+End
+/
+//ThreadSafe 
+Static Function/WAVE psicSpec2BL(inverse)	// same as for fourc
+	Variable inverse									// if true return Inv(spec2BL)
+	return fourcSpec2BL(inverse)
+End
+
+
+Static Function psicReferenceOrientation(s,px,py)
+	STRUCT sampleStructure &s
+	Variable px,py
+
+	s.name = "spec default values"
+	s.Nrefs = 2
+	s.refs[0].h=0 ;			s.refs[0].k=1 ;	s.refs[0].l=0		// primary reflection
+	s.refs[0].A[0] = 60	;	s.refs[0].A[1] = 30	;	s.refs[0].A[2] = 0	;	s.refs[0].A[3] = 0	;	s.refs[0].A[4] = 0	;	s.refs[0].A[5] = 0
+	s.refs[1].h=-1 ;		s.refs[1].k=0 ;	s.refs[1].l=0	// secondary reflection
+	s.refs[1].A[0] = 60	;	s.refs[1].A[1] = 30	;	s.refs[1].A[2] = -90;	s.refs[1].A[3] = 0	;	s.refs[0].A[4] = 0	;	s.refs[0].A[5] = 0
+
+	s.xtal.desc = "psic default"
+	s.xtal.SpaceGroup = 221
+	s.xtal.a = 0.154
+	LatticeSym#ForceLatticeToStructure(s.xtal)
+	s.refs[0].lambda = 0.154
+	s.refs[1].lambda = 0.154
+	s.refs[0].px = px ;		s.refs[0].py = py		// using a point detector, NOT an area detector
+	s.refs[1].px = px ;		s.refs[1].py = py		// using a point detector, NOT an area detector
+	return 0
+End
+
+
 
 
 
@@ -3048,6 +3117,7 @@ Static Function SelectDiffractometer(name)
 	endif
 	String listFull = "fourc:33BM,4,2-theta theta chi phi;"	// "name0:where0,Naxes0,axisList0;name1:where1,Naxes1,axisList1; ..."
 	listFull += "kappa:33ID,6,delta theta kappa phi mu nu;"
+	listFull += "psic:33ID,6,delta eta chi phi mu nu;"
 	listFull += "CDP:33ID,3,nu mu delta;"
 	if (!keyInList(DiffractometerName,listFull,":",";"))		// current diffractometer is not in fullList, add it
 		listFull += DiffractometerName+":"+num2istr(Naxes)+","+ReplaceString(";", DiffractometerAxisNames,",")+";"
