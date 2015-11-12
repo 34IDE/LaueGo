@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.25
+#pragma version = 3.26
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=3.65
+#include "Utility_JZT", version>=3.89
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 #if (IgorVersion()<7)
@@ -313,26 +313,27 @@ Static Function/T CheckVersionStatusAgainstDisk(buf,[progress])
 	Variable progress
 	progress = ParamIsDefault(progress) || numtype(progress) ? 1 : progress
 
-	Variable fileCount = str2num(XMLtagContents("fileCount",buf))
+	String VS = XMLtagContents("VersionStatus",buf)
+	Variable fileCount = str2num(XMLtagContents("fileCount",VS))
 	progress = numtype(fileCount) || fileCount<1 ? 0 : progress	// no progress bar without valid fileCount
 	String fldr = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)
 	String fileName="x", list, mismatch=""
-	Variable i
+	Variable i, start1=0, start2=0
 	if (progress)
 		String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Checking "+num2str(fileCount)+" files.")
 	endif
 	for (i=0; strlen(fileName);i+=1)
-		if (progress && mod(i,5)==0)
+		if (progress && mod(i,20)==0)
 			if (ProgressPanelUpdate(progressWin,i/fileCount*100))
 				break
 			endif
 		endif
-		fileName = XMLtagContents("file",buf,occurance=i)
-		if (StringMatch(fileName,"*.app"))		// cannot check .apps (they are folders)
-			continue
-		endif
 
-		list = XMLattibutes2KeyList("file",buf,occurance=i)
+		fileName = XMLtagContents("file",VS, start=start1)
+		list = XMLattibutes2KeyList("file",VS, start=start2)
+		start1 = max(start1,start2)
+		start2 = max(start1,start2)
+
 		if ( strlen(fileName) && CheckOneFile(list,fldr + ReplaceString("/",fileName,":")) )
 			mismatch += fileName+";"
 		endif
@@ -347,6 +348,11 @@ End
 Static Function CheckOneFile(list,fileName)		// returns 1 on mismatch
 	String list			// list of info from VersionStatus
 	String fileName	// full file path to the file
+
+	GetFileFolderInfo/Q/Z=1 fileName
+	if (V_isFolder)
+		return 0			// do not check folders, just assume all OK (needed for *.app folders)
+	endif
 
 	Variable f			// read in full contents of fileName
 	Open/R/Z=1 f as fileName

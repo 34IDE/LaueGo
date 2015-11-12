@@ -1277,6 +1277,15 @@ End
 //	XMLtagContents2List(xmltag,buf,[occurance,delimiters])	returns the contents of xmltag as a list, useful for vectors in the contents
 //	XMLattibutes2KeyList(xmltag,buf)					return a list with all of the attribute value pairs for xmltag
 //	XMLremoveComments(str)									remove all xml comments from str
+//
+//	for XMLtagContents() and XMLattibutes2KeyList()
+// when there are MANY occurances of xmltag, do not use occurance, but rather:
+//	Variable start=0
+//	String feed
+//	do
+//		feed = XMLtagContents("feed",buf, start=start)
+//		other code goes here ...
+//	while(strlen(feed))
 
 ThreadSafe Function/T XMLNodeList(buf)			// returns a list of node names at top most level in buf
 	String buf
@@ -1309,26 +1318,19 @@ ThreadSafe Function/T XMLNodeList(buf)			// returns a list of node names at top 
 End
 
 
-// when there are many occurances of xmltag, do not use occurance, but rather:
-//	Variable start=0
-//	String feed
-//	do
-//		feed = XMLtagContents("feed",buf, start=start)
-//		other code goes here ...
-//	while(strlen(feed))
-//
 ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	String xmltag
 	String buf
 	Variable occurance									// use 0 for first occurance, 1 for second, ...
 	Variable &start										// offset in buf, start searching at buf[start], new start is returned
-																// both occurance and start may be used together, but you will not generally use both
+																// both occurance and start may be used together, but usually you only want to use one of them
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
-	start = ParamIsDefault(start) || numtype(start) || start<1 ? 0 : round(start)
+	Variable startLocal = ParamIsDefault(start) ? 0 : start
+	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
 
 	Variable i0,i1
-	if (start>0)
-		i0 = startOfxmltag(xmltag,buf[start,Inf],occurance) + start
+	if (startLocal>0)
+		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
 	else
 		i0 = startOfxmltag(xmltag,buf,occurance)
 	endif
@@ -1336,44 +1338,27 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 		return ""
 	endif
 	i0 = strsearch(buf,">",i0)						// character after '>' in intro
-	if (i0<0)
+	if (i0<0)												// this is an ERROR
 		return ""
 	endif
 	i0 += 1													// start of contents
 
 	i1 = strsearch(buf,"</"+xmltag+">",i0)-1	// character just before closing '<tag>'
+	startLocal = strsearch(buf,">",i1)+1			// character just after closing '<tag>'
+
 	if (i1<i0 || i1<0)
-		start = -1
+		if (!ParamIsDefault(start))
+			start = -1
+		endif
 		return ""
 	endif
 
-	start = strsearch(buf,">",i1)+1					// character just after closing '<tag>'
+	if (!ParamIsDefault(start))
+		start = startLocal
+	endif
+
 	return buf[i0,i1]
 End
-//ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance])
-//	String xmltag
-//	String buf
-//	Variable occurance									// use 0 for first occurance, 1 for second, ...
-//	occurance = ParamIsDefault(occurance) ? 0 : occurance
-//
-//	Variable i0,i1
-//	i0 = startOfxmltag(xmltag,buf,occurance)
-//	if (i0<0)
-//		return ""
-//	endif
-//	i0 = strsearch(buf,">",i0)						// character after '>' in intro
-//	if (i0<0)
-//		return ""
-//	endif
-//	i0 += 1													// start of contents
-//
-//	i1 = strsearch(buf,"</"+xmltag+">",i0)-1	// character just before closing '<tag>'
-//	if (i1<i0 || i1<0)
-//		return ""
-//	endif
-//
-//	return buf[i0,i1]
-//End
 
 
 ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //reads a tag contensts and converts it to a list
@@ -1405,43 +1390,56 @@ ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //r
 End
 
 
-ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance])// return a list with all of the attribute value pairs for xmltag
+ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// return a list with all of the attribute value pairs for xmltag
 	String xmltag											// name of tag to find
 	String buf												// buf containing xml
 	Variable occurance									// use 0 for first occurance, 1 for second, ...
+	Variable &start										// offset in buf, start searching at buf[start], new start is returned
+																// both occurance and start may be used together, but usually you only want to use one of them
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
+	Variable startLocal = ParamIsDefault(start) ? 0 : start
+	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
 
 	Variable i0,i1
-	i0 = startOfxmltag(xmltag,buf,occurance)
+	if (startLocal>0)
+		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
+	else
+		i0 = startOfxmltag(xmltag,buf,occurance)
+	endif
 	if (i0<0)
 		return ""
 	endif
 	i0 += strlen(xmltag)+2								// start of attributes
 	i1 = strsearch(buf,">",i0)-1						// end of attributes
-	if (i1<i0)
-		return ""
+	String key, value, keyVals=""
+
+	if (i1 < i0)											// this is an ERROR
+		startLocal = -1
+	else
+		startLocal = i1 + 2								// character just after closing '>'
+		// parse buf into key=value pairs
+		buf = buf[i0,i1]
+		buf = ReplaceString("\t",buf," ")
+		buf = ReplaceString("\r",buf," ")
+		buf = ReplaceString("\n",buf," ")
+		buf = TrimFrontBackWhiteSpace(buf)
+		i0 = 0
+		do
+			i1 = strsearch(buf,"=",i0,0)
+			key = TrimFrontBackWhiteSpace(buf[i0,i1-1])
+			i0 = strsearch(buf,"\"",i1,0)+1				// character after the first double quote around value
+			i1 = strsearch(buf,"\"",i0,0)-1				// character before the second double quote around value
+			value = buf[i0,i1]
+			if (strlen(key)>0)
+				keyVals = ReplaceStringByKey(key,keyVals,value,"=")
+			endif
+			i0 = strsearch(buf," ",i1,0)					// find space separator, set up for next key="val" pair
+		while(i0>0 && strlen(key))
 	endif
 
-	// parse buf into key=value pairs
-	buf = buf[i0,i1]
-	buf = ReplaceString("\t",buf," ")
-	buf = ReplaceString("\r",buf," ")
-	buf = ReplaceString("\n",buf," ")
-	buf = TrimFrontBackWhiteSpace(buf)
-	String key, value, keyVals=""
-	i0 = 0
-	do
-		i1 = strsearch(buf,"=",i0,0)
-		key = TrimFrontBackWhiteSpace(buf[i0,i1-1])
-		i0 = strsearch(buf,"\"",i1,0)+1				// character after the first double quote around value
-		i1 = strsearch(buf,"\"",i0,0)-1				// character before the second double quote around value
-		value = buf[i0,i1]
-		if (strlen(key)>0)
-			keyVals = ReplaceStringByKey(key,keyVals,value,"=")
-		endif
-		i0 = strsearch(buf," ",i1,0)					// find space separator, set up for next key="val" pair
-	while(i0>0 && strlen(key))
-//	while(i0>0 && strlen(key) && strlen(value))
+	if (!ParamIsDefault(start))							// set start if it was passed
+		start = startLocal
+	endif
 	return keyVals
 End
 
