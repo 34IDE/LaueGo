@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.87
+#pragma version = 3.89
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1309,14 +1309,29 @@ ThreadSafe Function/T XMLNodeList(buf)			// returns a list of node names at top 
 End
 
 
-ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance])
+// when there are many occurances of xmltag, do not use occurance, but rather:
+//	Variable start=0
+//	String feed
+//	do
+//		feed = XMLtagContents("feed",buf, start=start)
+//		other code goes here ...
+//	while(strlen(feed))
+//
+ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	String xmltag
 	String buf
 	Variable occurance									// use 0 for first occurance, 1 for second, ...
+	Variable &start										// offset in buf, start searching at buf[start], new start is returned
+																// both occurance and start may be used together, but you will not generally use both
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
+	start = ParamIsDefault(start) || numtype(start) || start<1 ? 0 : round(start)
 
 	Variable i0,i1
-	i0 = startOfxmltag(xmltag,buf,occurance)
+	if (start>0)
+		i0 = startOfxmltag(xmltag,buf[start,Inf],occurance) + start
+	else
+		i0 = startOfxmltag(xmltag,buf,occurance)
+	endif
 	if (i0<0)
 		return ""
 	endif
@@ -1328,11 +1343,37 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance])
 
 	i1 = strsearch(buf,"</"+xmltag+">",i0)-1	// character just before closing '<tag>'
 	if (i1<i0 || i1<0)
+		start = -1
 		return ""
 	endif
 
+	start = strsearch(buf,">",i1)+1					// character just after closing '<tag>'
 	return buf[i0,i1]
 End
+//ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance])
+//	String xmltag
+//	String buf
+//	Variable occurance									// use 0 for first occurance, 1 for second, ...
+//	occurance = ParamIsDefault(occurance) ? 0 : occurance
+//
+//	Variable i0,i1
+//	i0 = startOfxmltag(xmltag,buf,occurance)
+//	if (i0<0)
+//		return ""
+//	endif
+//	i0 = strsearch(buf,">",i0)						// character after '>' in intro
+//	if (i0<0)
+//		return ""
+//	endif
+//	i0 += 1													// start of contents
+//
+//	i1 = strsearch(buf,"</"+xmltag+">",i0)-1	// character just before closing '<tag>'
+//	if (i1<i0 || i1<0)
+//		return ""
+//	endif
+//
+//	return buf[i0,i1]
+//End
 
 
 ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //reads a tag contensts and converts it to a list
