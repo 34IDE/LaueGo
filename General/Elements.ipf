@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 1.79
+#pragma version = 1.80
 #pragma ModuleName=elements
 #include "MaterialsLocate"								// used to find the path to the materials files
 Constant MIN_LINE_SEPARATION_FRACTION = 0.15	// you can over ride this in your main procedure window.
@@ -59,6 +59,9 @@ Constant ELEMENT_Zmax = 116
 //
 //	Nov 14, 2015		1.79
 //		moved isotope data to data/isotopes.xml
+//
+//	Nov 16, 2015		1.80
+//		moved all the other element data to isotope data to data/elementData.xml
 
 Menu "Analysis"
       Submenu "Element"
@@ -1015,7 +1018,7 @@ End
 
 
 Static Function MakeFullEmissionInfo()
-	Make/T/N=92/O root:Packages:Elements:FullEmissionLineInfo=""
+	Make/T/N=93/O root:Packages:Elements:FullEmissionLineInfo=""
 	Wave/T FullEmissionLineInfo = root:Packages:Elements:FullEmissionLineInfo
 
 	String eStr = ""						// This contains the input data
