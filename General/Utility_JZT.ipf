@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.89
+#pragma version = 3.90
 // #pragma hide = 1
 
 Menu "Graph"
@@ -780,6 +780,93 @@ ThreadSafe Function isInRange(range,m)// returns TRUE if m is a number in range
 	endfor
 	return 0
 End
+
+Function/T subRangeOfRange(fullRange,jlo,jhi)
+	// returns new string range containing only values in [jlo,jhi]
+	String fullRange							// original string range
+	Variable jlo,jhi							// want new range to go from jlo ... jhi
+	jlo = round(jlo)
+	jhi = round(jhi)
+
+	String item, subRange=""
+	Variable i, delta, ifirst, ilast, stride
+	for (i=0; 1; i+=1)
+		item = StringFromList(i,fullRange,",")
+		ifirst = str2num(item)
+		ilast = lastInRange(item)
+		if (numtype(ifirst+ilast))		// finished all the simple ranges
+			break
+		elseif (ilast < jlo)				// starting point is further on, try next item
+			continue
+		elseif (ifirst > jhi)				// any further simple ranges are past jhi, done
+			break
+		endif
+
+		stride = str2num(StringFromList(1,item,":"))
+		stride = stride > 0 ? stride : 1
+		if (strlen(subRange)==0)
+			delta = max(ceil((jlo-ifirst)/stride),0)
+			jlo = ifirst + stride*delta	// first point equal or greater than jlo in item
+			subRange = num2istr(jlo)		// start to build the first piece of subRange
+			if (jhi >= ilast && ilast>ifirst)	// add all of this simple range
+				subRange += "-"+num2istr(ilast)
+				subRange += SelectString(stride>1, "", ":"+num2istr(stride) )	// add the :stride
+			elseif (ilast>ifirst)			// can only use part of this simple range
+				jhi = ifirst + stride*floor((jhi-ifirst)/stride)	// last point less than or equal to jhi in item
+				subRange += "-"+num2istr(jhi)
+				subRange += SelectString(stride>1, "", ":"+num2istr(stride) )	// add the :stride
+			endif
+		elseif (ilast <= jhi)				// jhi is past this simple range, just append item to subRange
+			subRange += ","+item
+		else										// ilast (from item) is in this item (this is the last simple range)
+			jhi = ifirst + stride*floor((jhi-ifirst)/stride)	// last point less than or equal to jhi in item
+			subRange += ","+num2istr(ifirst)	// start to build the first piece of subRange
+			if (jhi > ifirst)					// something to add to subRange
+				subRange += "-"+num2istr(jhi)
+				subRange += SelectString(stride>1, "", ":"+num2istr(stride) )	// add the :stride
+			endif
+		endif
+	endfor
+
+	return subRange
+End
+//	Function test()
+//		Variable bad
+//		bad = bad || test1("1-100,105-140",10,20, "10-20")
+//		bad = bad || test1("1-100,105-140",99,107, "99-100,105-107")
+//		bad = bad || test1("1-15",10,20, "10-15")
+//		bad = bad || test1("-10-100,105-140",99,107, "99-100,105-107")
+//		bad = bad || test1("-10-100,105-140",-5,107, "-5-100,105-107")
+//		bad = bad || test1("-10-100,105-140",-50,107, "-10-100,105-107")
+//		bad = bad || test1("10-100,105-140",10,20, "10-20")
+//		bad = bad || test1("10-100,105-140",5,20, "10-20")
+//		bad = bad || test1("-10-100,105-140",-50,500, "-10-100,105-140")
+//		bad = bad || test1("1-100,105-140",-50,107, "1-100,105-107")
+//		bad = bad || test1("1-100,105-140",5,107, "5-100,105-107")
+//		bad = bad || test1("1-100,105-140",5,500, "5-100,105-140")
+//		bad = bad || test1("1-100,105-140,490-510",5,500, "5-100,105-140,490-500")
+//	
+//		bad = bad || test1("0-100:2",10,20, "10-20:2")
+//		bad = bad || test1("0-100:2",-10,20, "0-20:2")
+//		bad = bad || test1("0-100:2",-10,100, "0-100:2")
+//		bad = bad || test1("0-100:2",-10,101, "0-100:2")
+//		bad = bad || test1("0-100:2,105-140",98,107, "98-100:2,105-107")
+//		bad = bad || test1("1-100:2,105-140",95,107, "95-99:2,105-107")
+//		print SelectString(bad,"all OK", "ERROR")
+//	End
+//	Static Function test1(fullRange,jlo,jhi, answer)
+//		String fullRange
+//		Variable jlo,jhi
+//		String answer
+//		String subRange = subRangeOfRange(fullRange,jlo,jhi)
+//		Variable bad = !StringMatch(subRange,answer)
+//		if (bad)
+//			printf "%ssubRangeOfRange(\"%s\", %d, %d) --> \"%s\"\r",SelectString(bad, "    ", "*** "), fullRange,jlo,jhi,subRange
+//		endif
+//		return bad
+//	End
+
+
 
 // Caution expandRange("1-100000",";") will produce a very long string!  Use NextInRange() to avoid this problem
 ThreadSafe Function/S expandRange(range,sep)	// expand a string like "2-5,7,9-12,50" to "2,3,4,5,7,9,10,11,12,50"

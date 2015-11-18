@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.26
+#pragma version = 3.27
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=3.89
+#include "Utility_JZT", version>=3.90
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 #if (IgorVersion()<7)
