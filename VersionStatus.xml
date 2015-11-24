@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, November 18, 2015" time="01:05:58 PM CST" isoTime="2015-11-18T13:05:58"></written>
+	<written date="Monday, November 23, 2015" time="08:53:47 PM CST" isoTime="2015-11-23T20:53:47"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>eb5eb466e619016ac4f12e774e04ce144be69c66</gitHash>
+	<gitHash>d61d35d15e8ad0df431c9d40ac9099350ecb5c16</gitHash>
 	<fileCount>275</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -256,7 +256,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="52db038f84da7d58e9fac596af4ec0ac" sha256="33e960dcf8812bfed17a63d342810b9986c4a401ce03fb5b004d7ff4f1b466a2" ext=".xml">materials/YMnO3_Katsufuji.xml</file>
 	<file version="nan" time="2014-09-22T11:40:39" md5="149f13c0bd0be7638571a54382890bcd" sha256="afb1ccff93cf17877aa0107c42d87d552e7702e28d2aff45962bfc100c716ed4" ext=".xml">materials/VO2/VO2_M2_1999Galy.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="30618db52defe21f78b2023698bf74c5" sha256="f39dbff8e369f1de7a4335ae7ca2f373e72ac616bfdeb63777de7b530a592a37" ext=".xml">materials/Ti_what.xml</file>
-	<file version="4.78" time="2015-10-13T10:11:19" md5="66634aa2ea15aa63a1451f5a55329ce5" sha256="c4505e93c5030178fa3854e8a95707a1b2bcba4cbe011b1b93e2f8fdaf7a9787" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="4.79" time="2015-11-23T20:49:11" md5="2905329e7e577e3282b8f94fb80a69fd" sha256="55f787f6e32350306a15af9022313e2aa6425f5a89fc37a56ca94c5e9a30e353" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2dc45bbd2511b8fdc52adf1de3cfd0c1" sha256="165db23bf281f082a95d1c5f053515b922a858b42500b0332444a3a1ac8b8069" ext=".xml">materials/SrTiO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="e7eacd1961726b26d3492282dc4598cb" sha256="1d440d0f977552a9655cfa721993da842ba216e5fd6241eb159681f06387704d" ext=".xml">materials/Al75.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1c77c9950cb0235ab0d938044b335e06" sha256="7c28fe7135bca1228c13c2ebcb629b4f765bb3a1b7131111e3f4d714f213de0b" ext=".xml">geometrys/geoN_2012-11-10_17-59-03.xml</file>
