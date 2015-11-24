@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.78
+#pragma version = 4.79
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -1736,10 +1736,11 @@ Function/WAVE MakeEmptyPeakListForImage(image,[ask,keyVals])
 	if (!WaveExists(image))
 		return $""
 	endif
-	String peakListName=GetWavesDataFolder(FindPeakListForImage(image),2)
-	if (Exists(peakListName)==1)
+
+	Wave peakListWave=FindPeakListForImage(image)
+	if (WaveExists(peakListWave))
 		DoAlert 0, "FullPeakList already exists, will use it."
-		return $peakListName
+		return peakListWave
 	endif
 	if (ParamIsDefault(keyVals))
 		keyVals = ""
@@ -1753,7 +1754,7 @@ Function/WAVE MakeEmptyPeakListForImage(image,[ask,keyVals])
 	endif
 
 	String wnote = note(image)
-	peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
+	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
 	Make/N=(0,11)/O $peakListName/WAVE=FullPeakList
 	wnote = ReplaceStringByKey("fittedIgorImage",wnote,GetWavesDataFolder(image,2),"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"FittedPeakList","=")
