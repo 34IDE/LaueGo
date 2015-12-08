@@ -17,12 +17,12 @@
 		<label>Ru1</label>
 		<symbol>Ru</symbol>
 		<fract_xyz>0 0 0</fract_xyz>
-		<WyckoffSymbol>a</WyckoffSymb>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract_xyz>0.3001 0.3001 0</fract_xyz>
-		<WyckoffSymbol>f</WyckoffSymb>
+		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 </cif>
