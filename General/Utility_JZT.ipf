@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.90
+#pragma version = 3.91
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1752,9 +1752,16 @@ Function/T TraceNamesInClass(waveClassList,win,[optionsFlag])
 	String waveClassList			// list of classes, semi-colon separated
 	String win
 	Variable optionsFlag
-	optionsFlag = ParamIsDefault(optionsFlag) || numtype(optionsFlag) ? 1 : optionsFlag
-	String list=TraceNameList(win,";",optionsFlag )
-	return IncludeOnlyWavesInClass(list,waveClassList)
+	optionsFlag = ParamIsDefault(optionsFlag) || numtype(optionsFlag) ? 1 : optionsFlag	// only normal graph traces (exclude contours & hidden)
+	String listAll=TraceNameList(win,";",optionsFlag), list="", trName
+
+	Variable i, N=ItemsInlist(listAll)
+	for (i=0;i<N;i+=1)			// for each trace, check if it is in waveClassList
+		trName = StringFromList(i,listAll)
+		Wave ww = TraceNameToWaveRef(win, trName)
+		list += SelectString(WaveInClass(ww,waveClassList), "", trName+";")
+	endfor
+	return list
 End
 
 //  ============================= End WaveClass in Wave Note =============================  //
