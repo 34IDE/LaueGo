@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.29
+#pragma version = 0.30
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -33,6 +33,7 @@ Constant AtomView_zero= 1e-10		// distances less than this (=1e-19 m) are consid
 
 //Static Constant GizmoScaleSize_BASE=7.5
 Static Constant GizmoScaleSize_BASE=3.75
+Static Constant maxIgorNameLen=31
 
 Menu "Analysis"
 	SubMenu "Lattice"
@@ -247,6 +248,8 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	Variable i=strsearch(prefix,"_",Inf,1)			// also, trim off a trailing underscore
 	i = i>0 && i==strlen(prefix)-1 ? i-1 : strlen(prefix)-1
 	prefix = prefix[0,i]
+
+	//	Function/T AddEndingToWaveName(wName,waveNameEnd)
 	String fldr = GetDataFolder(1)+prefix+"_AtomView"
 	if (!stringmatch(GetDataFolder(0),prefix+"_AtomView"))		// not already in fldr
 		NewDataFolder/O/S $fldr
@@ -813,8 +816,10 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 	key = SelectString(i>1,key,key[0,i-1])
 	String prefix = fldrName+key
 
-	Wave bonds = $(prefix+"_Bonds")
-	Wave bondSource = $(prefix+"_Bonds_Source")
+//	Wave bonds = $(prefix+"_Bonds")
+//	Wave bondSource = $(prefix+"_Bonds_Source")
+	Wave bonds = $AddEndingToWaveName(prefix,"_Bonds")
+	Wave bondSource = $AddEndingToWaveName(prefix,"_Bonds_Source")
 	Wave/T type = $(prefix+"_Type")
 	if (!WaveExists(bonds) || !WaveExists(bondSource) || !WaveExists(type))
 		return ""
@@ -881,6 +886,16 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 
 
 	return out
+End
+
+Static Function/T AddEndingToWaveName(wName,waveNameEnd)
+	// create a new wave name from wav but with a new ending, needed due to maxIgorNameLen
+	String wName
+	String waveNameEnd
+
+	wName = wName[0,maxIgorNameLen-strlen(waveNameEnd)-1]
+	wName += waveNameEnd
+	return wName
 End
 
 //  ========================= End Get Info About Bonds =========================  //

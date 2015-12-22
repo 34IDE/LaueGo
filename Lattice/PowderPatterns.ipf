@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.14
+#pragma version = 0.15
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -141,7 +141,7 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	Variable N = ceil(Qwidth/fwhmQ * 5)		// number of points in curve
 	N = theta ? 2*N : N							// sample at higher resolution because we will interpolate back down
 
-	wName = NameOfWave(lines)+SelectString(theta,"_Q","_Theta")
+	wName = AddEndingToWaveName(NameOfWave(lines),SelectString(theta,"_Q","_Theta"))
 	Make/N=(N)/O $wName/WAVE=intens = 0	// Wave to receive intensity
 	Variable useF2 = numtype(lines[0][6])!=0
 	String leftLabel = SelectString(useF2,"Intensity","| F |\\S2\\M")
@@ -187,7 +187,17 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	GraphPowderPattern(intens)				// create  the graph or bring it to the front
 	return intens
 End
+//
+Static Function/T AddEndingToWaveName(wName,waveNameEnd)
+	// create a new wave name from wav but with a new ending, needed due to maxNameLen
+	String wName
+	String waveNameEnd
 
+	Variable maxNameLen=31
+	wName = wName[0,maxNameLen-strlen(waveNameEnd)-1]
+	wName += waveNameEnd
+	return wName
+End
 
 Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	Variable Qmax				// max Q (1/nm)
