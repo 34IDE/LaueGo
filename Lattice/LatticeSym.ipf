@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.44
+#pragma version = 4.45
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -123,6 +123,7 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
 // with version 4.43, added showPanel to InitLatticeSymPackage()
 // with version 4.44, definition of MenuItemIfWindowAbsent() was changed
+// with version 4.45, added SetToValidDummyXTAL() for use by FillCrystalStructDefault() for startup bug found by Jan
 
 // Rhombohedral Transformation:
 //
@@ -1684,6 +1685,9 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 		if (V_flag)
 			return 1											// did nothing, nothing found, give up
 		endif
+		if (!isValidLatticeConstants(xtal))
+			SetToValidDummyXTAL(xtal)					// set to valid dummy values
+		endif
 		StructPut/S/B=2 xtal, strStruct				// keep a local copy after loading from PackagePreferences
 		String/G root:Packages:Lattices:crystalStructStr = strStruct
 	endif
@@ -1693,6 +1697,34 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 	xtal.haveDebyeT = xtalHasDebye(xtal)			// True if some one of the atoms has a Debye Temperature
 	return 0
 End
+//
+Static Function SetToValidDummyXTAL(xtal)		// fill the crystal structure with valid dummy values
+	STRUCT crystalStructure &xtal
+	xtal.desc = "Dummy Structure"
+	xtal.a = 0.5
+	xtal.b = 0.5
+	xtal.c = 0.5
+	xtal.alpha = 90
+	xtal.beta = 90
+	xtal.gam = 90
+	xtal.SpaceGroup=195
+	xtal.Vc = 0.125
+	xtal.Vibrate = 0
+	xtal.haveDebyeT = 0
+	xtal.Nbonds = 0
+	xtal.N = 1
+	xtal.sourceFile=""
+	xtal.hashID = ""
+
+	xtal.N = 1
+	xtal.atom[0].x = 0
+	xtal.atom[0].y = 0
+	xtal.atom[0].z = 0
+	xtal.atom[0].Zatom = 1
+	xtal.atom[0].name = "H1"
+	xtal.atom[0].occ = 1
+	xtal.atom[0].valence = 0
+	End
 
 
 Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local, Packages, and PackagePreferences
