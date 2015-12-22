@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.45
+#pragma version = 4.46
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -123,7 +123,8 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
 // with version 4.43, added showPanel to InitLatticeSymPackage()
 // with version 4.44, definition of MenuItemIfWindowAbsent() was changed
-// with version 4.45, added SetToValidDummyXTAL() for use by FillCrystalStructDefault() for startup bug found by Jan
+// with version 4.45, added SetToDummyXTAL() for use by FillCrystalStructDefault() for startup bug found by Jan
+// with version 4.46, added SetToDummyATOM() and cleaned up v4.45
 
 // Rhombohedral Transformation:
 //
@@ -1325,16 +1326,7 @@ Static Function CleanOutCrystalStructure(xtal)	// clean out all unused values an
 		endif
 	endfor
 	for (m=N;m<STRUCTURE_ATOMS_MAX;m+=1)	// loop over the unused atoms
-		xtal.atom[m].name = ""
-		xtal.atom[m].Zatom = 1
-		xtal.atom[m].x = 0 ; xtal.atom[m].y = 0 ; xtal.atom[m].z = 0
-		xtal.atom[m].occ = 1
-		xtal.atom[m].WyckoffSymbol = ""
-		xtal.atom[m].valence = 0
-		xtal.atom[m].mult = 1
-		xtal.atom[m].DebyeT = NaN ; xtal.atom[m].Biso = NaN ; xtal.atom[m].Uiso = NaN
-		xtal.atom[m].U11 = NaN ; xtal.atom[m].U22 = NaN ; xtal.atom[m].U33 = NaN
-		xtal.atom[m].U12 = NaN ; xtal.atom[m].U13 = NaN ; xtal.atom[m].U23 = NaN
+		SetToDummyATOM(xtal.atom[m])
 	endfor
 
 	Variable Nlen
@@ -1686,7 +1678,7 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 			return 1											// did nothing, nothing found, give up
 		endif
 		if (!isValidLatticeConstants(xtal))
-			SetToValidDummyXTAL(xtal)					// set to valid dummy values
+			SetToDummyXTAL(xtal)						// set to valid dummy values
 		endif
 		StructPut/S/B=2 xtal, strStruct				// keep a local copy after loading from PackagePreferences
 		String/G root:Packages:Lattices:crystalStructStr = strStruct
@@ -1698,33 +1690,37 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 	return 0
 End
 //
-Static Function SetToValidDummyXTAL(xtal)		// fill the crystal structure with valid dummy values
+Static Function SetToDummyXTAL(xtal)				// fill the crystal structure with valid dummy values
 	STRUCT crystalStructure &xtal
 	xtal.desc = "Dummy Structure"
-	xtal.a = 0.5
-	xtal.b = 0.5
-	xtal.c = 0.5
-	xtal.alpha = 90
-	xtal.beta = 90
-	xtal.gam = 90
-	xtal.SpaceGroup=195
+	xtal.SpaceGroup=195									// simple cubic
+	xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
+	xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
 	xtal.Vc = 0.125
-	xtal.Vibrate = 0
-	xtal.haveDebyeT = 0
+	xtal.Vibrate = 0	;	xtal.haveDebyeT = 0
 	xtal.Nbonds = 0
 	xtal.N = 1
 	xtal.sourceFile=""
 	xtal.hashID = ""
 
 	xtal.N = 1
-	xtal.atom[0].x = 0
-	xtal.atom[0].y = 0
-	xtal.atom[0].z = 0
-	xtal.atom[0].Zatom = 1
+	SetToDummyATOM(xtal.atom[0])
 	xtal.atom[0].name = "H1"
-	xtal.atom[0].occ = 1
-	xtal.atom[0].valence = 0
-	End
+End
+//
+Static Function SetToDummyATOM(atom)		// fill the atom structure with valid dummy values
+	STRUCT atomTypeStructure &atom
+	atom.name = ""
+	atom.Zatom = 1
+	atom.x = 0	;	atom.y = 0	;	atom.z = 0
+	atom.occ = 1
+	atom.valence = 0
+	atom.WyckoffSymbol = ""
+	atom.mult = 1
+	atom.DebyeT = NaN	;	atom.Biso = NaN	;	atom.Uiso = NaN
+	atom.U11 = NaN	;	atom.U22 = NaN	;	atom.U33 = NaN	
+	atom.U12 = NaN	;	atom.U13 = NaN	;	atom.U23 = NaN
+End
 
 
 Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local, Packages, and PackagePreferences
