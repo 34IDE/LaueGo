@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, December 22, 2015" time="01:33:43 PM CST" isoTime="2015-12-22T13:33:43"></written>
+	<written date="Tuesday, December 22, 2015" time="01:39:44 PM CST" isoTime="2015-12-22T13:39:44"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>0988f7016f5b4d690035bf0f234acb31fdd6b945</gitHash>
+	<gitHash>fb50d53f4cec2fcf30cf13788335cbef8ccf8070</gitHash>
 	<fileCount>275</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
