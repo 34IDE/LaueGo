@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.46
+#pragma version = 4.47
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -373,7 +373,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	listName = GetWavesDataFolder(atomNameList,2)
 	atomNameList = xtal.atom[p].name
 
-	NewPanel /W=(74,44,403,301-24) as "Edit Atoms,  Close When Done..."
+	NewPanel /W=(74,44,403,301-24)/K=1 as "Edit Atoms,  Close When Done..."
 	SetDrawLayer UserBack
 	SetDrawEnv linethick= 2
 	DrawLine 0,164,330,164
