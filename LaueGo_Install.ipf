@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.09
+#pragma version = 0.10
 // #pragma hide = 1
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
@@ -51,11 +51,15 @@ Function LaueGo_Install()
 	endif
 
 	// identify the new LaueGo folder
-	DoAlert/T="find NEW LaueGo" 2, "Download newest version from web?"
+	Variable downLoad=1
+	Prompt download, "source of New LaueGo Folder:", popup, "Download from APS web site;Download from GitHub;Locate new LaueGo folder on this computer"
+	DoPrompt "NEW LaueGo", download
 	String newFullPath=""							// full path to the expanded archive to install, i.e. the new LaueGo folder
-	if (V_flag==1)										// download LaueGo.zip, expand it, and put it on Desktop
-		newFullPath = FetchLaueGoArchive("")
-	else													// ask user to identify and existing (presumably new) LaueGo folder to use
+	if (download==1)									// download LaueGo.zip, from APS web site, expand it, and put it on Desktop
+		newFullPath = FetchLaueGoArchive(JZTArchiveURL)
+	elseif (download==2)							// download LaueGo.zip, from GitHub site, expand it, and put it on Desktop
+		newFullPath = FetchLaueGoArchive(gitHubArchiveURL)
+	else													// ask user to find the new (unzipped) LaueGo folder, probably on the Desktop
 		NewPath/M="Find NEW LaueGo folder"/O/Q/Z NewLaueGo
 		if (V_flag)
 			return 1
@@ -63,6 +67,7 @@ Function LaueGo_Install()
 		PathInfo NewLaueGo
 		newFullPath=S_path[0,strlen(S_path)-2]
 	endif
+
 	if (StringMatch(LaueGoFullPath,newFullPath))
 		str = "The New LaueGo folder is the same as the existing LaueGo folder!"
 		Append2Log(str,0)
@@ -250,15 +255,15 @@ Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip fi
 		return ""
 	endif
 
-	if (strlen(	urlStr)<1)
-		Prompt urlStr, "URL to use for Downloading LaueGo", popup, "APS;gitHub"
-		DoPrompt "Download Site",urlStr
-		if (V_flag)
-			return ""
-		endif
-		urlStr = SelectString(StringMatch(urlStr,"gitHub"),urlStr,gitHubArchiveURL)
-		urlStr = SelectString(StringMatch(urlStr,"APS"),urlStr,JZTArchiveURL)
-	endif
+//	if (strlen(	urlStr)<1)
+//		Prompt urlStr, "URL to use for Downloading LaueGo", popup, "APS;gitHub"
+//		DoPrompt "Download Site",urlStr
+//		if (V_flag)
+//			return ""
+//		endif
+//		urlStr = SelectString(StringMatch(urlStr,"gitHub"),urlStr,gitHubArchiveURL)
+//		urlStr = SelectString(StringMatch(urlStr,"APS"),urlStr,JZTArchiveURL)
+//	endif
 	if (strlen(urlStr)<1)
 		str = "Could not get the URL to the LaueGo.zip file.\rTry again."
 		Append2Log(str,0)
@@ -297,30 +302,35 @@ Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip fi
 	FBinWrite f, response
 	Close f
 
-	String cmd=""
-	sprintf str, "set zipPath to quoted form of POSIX path of (\"%s\" as alias)\n",destinationZip
-	cmd += str
-	sprintf str, "set outPath to quoted form of POSIX path of (\"%s\" as alias)\n",DesktopFldr
-	cmd += str
-	cmd += "tell application \"System Events\"\n"
-	cmd += "do shell script \"unzip \" & zipPath & \" -d \" & outPath\n"
-	cmd += "end tell\n"
-	sprintf str, "set LGfolder to \"%s\" as alias\n",destinationFldr
-	cmd += str
-	sprintf str, "	tell application \"Finder\" to set label index of LGfolder to 6"	// 6=Green
-	cmd += str
-	//	print ReplaceString("\n",cmd,"\r")
-	ExecuteScriptText/Z cmd
-	if (V_flag)
-		sprintf str, "failure in unzipping \"%s\"\rcmd = \r'%s'\r\r",destinationZip,ReplaceString("\n",cmd,"\r")
-		Append2Log(str,0)
-		Append2Log(S_value+"\r\r",0)				// there is no valid file path
+	Variable err = UnZipOnMac(destinationZip, DesktopFldr, deleteZip=1, overWrite=0, printIt=1)
+	if (err)
+		return ""
 	endif
-	DeleteFile /Z destinationZip					// done unzipping, delete the zip file
-	if (V_flag)
-		sprintf str, "Could NOT delete the zip file  \"%s\"\r\tProceeding..."
-		Append2Log(str,0)
-	endif
+
+//	String cmd=""
+//	sprintf str, "set zipPath to quoted form of POSIX path of (\"%s\" as alias)\n",destinationZip
+//	cmd += str
+//	sprintf str, "set outPath to quoted form of POSIX path of (\"%s\" as alias)\n",DesktopFldr
+//	cmd += str
+//	cmd += "tell application \"System Events\"\n"
+//	cmd += "do shell script \"unzip \" & zipPath & \" -d \" & outPath\n"
+//	cmd += "end tell\n"
+//	sprintf str, "set LGfolder to \"%s\" as alias\n",destinationFldr
+//	cmd += str
+//	sprintf str, "	tell application \"Finder\" to set label index of LGfolder to 6"	// 6=Green
+//	cmd += str
+//	//	print ReplaceString("\n",cmd,"\r")
+//	ExecuteScriptText/Z cmd
+//	if (V_flag)
+//		sprintf str, "failure in unzipping \"%s\"\rcmd = \r'%s'\r\r",destinationZip,ReplaceString("\n",cmd,"\r")
+//		Append2Log(str,0)
+//		Append2Log(S_value+"\r\r",0)				// there is no valid file path
+//	endif
+//	DeleteFile /Z destinationZip					// done unzipping, delete the zip file
+//	if (V_flag)
+//		sprintf str, "Could NOT delete the zip file  \"%s\"\r\tProceeding..."
+//		Append2Log(str,0)
+//	endif
 
 	if (FileFolderExists(destinationFldr,folder=1))
 		sprintf str, "Done Downloading, the new folder   \"%s\"",destinationFldr
@@ -519,6 +529,154 @@ End
 
 // ============================================================================================= //
 // ================================= Start of Helpful Utilities ================================ //
+
+
+Function UnZipFiles(zipFile,DestFolder,[deleteZip,overWrite,printIt])
+	String zipFile				// name of zip file to expand
+	String DestFolder			// folder to put results (defaults to same folder as zip file"
+	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
+	Variable overWrite		// if True, over write existing files when un-zipping (default is NOT overwite)
+	Variable printIt
+	deleteZip = ParamIsDefault(deleteZip) || numtype(deleteZip) ? 0 : !(!deleteZip)
+	overWrite = ParamIsDefault(overWrite) || numtype(overWrite) ? 0 : !(!overWrite)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	Variable err
+	if (StringMatch(IgorInfo(2),"Macintosh"))
+		err = UnZipOnMac(zipFile,DestFolder, deleteZip=deleteZip, overWrite=overWrite, printIt=printIt)
+	elseif (StringMatch(IgorInfo(2),"Windows"))
+		err = UnzipFileOnDesktopWindows(zipFile, deleteZip)
+	else
+		Append2Log("ERROR -- UnZipOnMac() only works on Macintosh or Windows",0)
+		err = 1
+	endif
+	return err
+End
+//
+Static Function UnZipOnMac(zipFile,DestFolder,[deleteZip,overWrite,printIt])
+	String zipFile				// name of zip file to expand
+	String DestFolder			// folder to put results (defaults to same folder as zip file"
+	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
+	Variable overWrite		// if True, over write existing files when un-zipping (default is NOT overwite)
+	Variable printIt
+	deleteZip = ParamIsDefault(deleteZip) || numtype(deleteZip) ? 0 : deleteZip
+	overWrite = ParamIsDefault(overWrite) || numtype(overWrite) ? 0 : overWrite
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (!StringMatch(IgorInfo(2),"Macintosh"))
+		print "ERROR -- UnZipOnMac() only works on Macintosh"
+		return 1
+	endif
+
+	// check for valid input zip file
+	GetFileFolderInfo/P=home/Q/Z=1 zipFile
+	if (V_Flag || !V_isFile)
+		if (printIt)
+			Append2Log("ERROR -- file not found, nothing done",0)
+		endif
+		return 1
+	endif
+	printIt = StringMatch(S_Path,zipFile) ? printIt : 1
+
+	String str=""
+	zipFile = S_Path
+	if (!StringMatch(ParseFilePath(4,zipFile,":",0,0),"zip"))
+		if (printIt)
+			sprintf str, "ERROR -- \"%s\" is not a zip file\r",zipFile
+			Append2Log(str,0)
+		endif
+		return 1
+	endif
+
+	// check for valid destination folder
+	if (strlen(DestFolder)<1)
+		DestFolder = ParseFilePath(1,zipFile,":",1,0)
+	endif
+	GetFileFolderInfo/P=home/Q/Z=1 DestFolder
+	if (V_Flag || !V_isFolder)
+		if (printIt)
+			Append2Log("ERROR -- destination folder not found, nothing done",0)
+		endif
+		return 1
+	endif
+	DestFolder = S_Path
+	printIt = StringMatch(S_Path,DestFolder) ? printIt : 1
+
+	// get POSIX versions of paths for the shell script
+	String zipFilePOSIX = ParseFilePath(5,zipFile,"/",0,0)
+	String DestFolderPOSIX = ParseFilePath(5,DestFolder,"/",0,0)
+
+	// create the shell script and execute it
+	String cmd, switches=SelectString(overWrite,""," -o")
+	sprintf cmd, "do shell script \"unzip %s \\\"%s\\\" -d \\\"%s\\\"\"", switches, zipFilePOSIX,DestFolderPOSIX
+	ExecuteScriptText/Z cmd						//returns something only on error
+	if (V_flag)
+		sprintf str, "\r  ERROR -unzipping,  V_flag =",V_flag
+		Append2Log(str,0)
+		sprintf str, "cmd = ",ReplaceString("\n",cmd,"\r")
+		Append2Log(str,0)
+		sprintf str, "\r  S_value =",ReplaceString("\n",S_value,"\r")
+		Append2Log(str,0)
+		return V_flag									// all done, to not consider deleting the zip file
+	elseif (printIt)
+		sprintf str, "unzipping \"%s\"  -->  \"%s\"\r", zipFilePOSIX, DestFolderPOSIX
+		Append2Log(str,0)
+	endif
+
+	// optionally delete the zip file if requested
+	if (deleteZip)
+		DeleteFile/M="Delete the zip file"/Z zipFile
+		if (V_flag==0 && printIt)
+			sprintf str, "Deleted:  \"%s\"\r", zipFile
+			Append2Log(str,0)
+		endif
+	endif
+	return V_flag
+End
+//
+Function UnzipFileOnDesktopWindows(ZipFileName, deleteSource)
+	string ZipFileName			// name of zip file on Desktop
+	variable deleteSource		// also delete the source zip file if this is TRUE
+	if (!StringMatch(IgorInfo(2),"Windows"))
+		Append2Log("ERROR -- UnzipFileOnDesktopWindows() only works on Windows",0)
+		return 1
+	endif
+
+	//create Path to Desktop
+	NewPath/O Desktop, SpecialDirPath("Desktop", 0, 0, 0 )
+	//check that the file exists
+	GetFileFolderInfo /P=Desktop /Q/Z=1 ZipFileName
+	if(V_Flag!=0)
+		Abort "Zip file not found on Desktop"
+	endif	
+	//create the command file on the desktop, this is Zipjs.bat per 
+	//from <a href="https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat" title="https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat" rel="nofollow">https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zi...</a>	
+	String origBatFileName = ParseFilePath(1,FunctionPath("UnzipFileOnDesktopWindows"),":", 1,0 )+"zipjs.bat"
+	GetFileFolderInfo/Q/Z origBatFileName
+	if (V_flag || !V_isFile)
+		Append2Log("ERROR -- Unable to find:  "+origBatFileName,0)
+		return 1
+	endif
+	CopyFile/I=0/O/P=Desktop/Z=1 origBatFileName as "zipjs.bat"		// copy bat file to the Desktop
+
+	//created the zipjs.bat command file which will unzip the file for us.
+	//now create cmd in line with
+	//             zipjs.bat unzip -source C:\myDir\myZip.zip -destination C:\MyDir -keep no -force no
+	// the destination folder is created by the script. 
+	// -keep yes will keep the content of the zip file, -force yes will overwrite the tempfolder for the data if exists
+	// be careful, -force yes will wipe out the destination, if exists, so make sure the data are directed to non-existing folder.
+	string strToDesktop = SpecialDirPath("Desktop", 0, 1, 0 )
+	string cmd = strToDesktop+"zipjs.bat unzip -source "
+	cmd +=strToDesktop+ZipFileName+" -destination "
+	cmd +=strToDesktop+"ZipFileTempFldr  -keep yes -force yes"
+	ExecuteScriptText cmd
+	//delete the batch file to clean up...
+	DeleteFile /P=Desktop /Z  "zipjs.bat"
+	if(deleteSource)
+		DeleteFile /P=Desktop /Z  ZipFileName		
+	endif
+	return 0
+End	
+
 
 Static Function Append2Log(line,header)
 	String line
