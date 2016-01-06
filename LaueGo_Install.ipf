@@ -1,14 +1,23 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.10
-// #pragma hide = 1
+#pragma version = 0.11
+
 Constant LaueGo_Install_Test = 0
 Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
 Static strConstant JZTArchiveURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/LaueGo.zip"
-Static Constant minimumArchiveLen = 16777216	// 16MB (16*1024*1024)
-
-strConstant xopList = "HDF5.xop;HDF5 Help.ihf;MultiPeakFit.xop;MultiPeakFit Help.ihf;"	// list of xop's to install, this can be overidden
-//Static strConstant = xopList = "HDF5.xop;HDF5 Help.ihf;HFSAndPosix.xop;HFSAndPosix Help.ihf;"
+Static Constant minimumArchiveLen = 16777216	// 16MB (16*1024*1024), it must be larger than this.
+#if (IgorVersion()<7)
+	strConstant xopList = "HDF5.xop;HDF5 Help.ihf;MultiPeakFit.xop;MultiPeakFit Help.ihf;"	// list of xop's to install, this can be overidden
+	strConstant IgorExtensionsFolder = "Igor Extensions"
+#elif (StringMatch(StringByKey("IGORKIND",IgorInfo(0)),"pro64*"))
+	strConstant xopList = "HDF5-64.xop;HDF5 Help.ihf;"	// list of xop's to install, this can be overidden
+	strConstant IgorExtensionsFolder = "Igor Extensions (64-bit)"
+#elif (StringMatch(StringByKey("IGORKIND",IgorInfo(0)),"pro*"))
+	strConstant xopList = "HDF5.xop;HDF5 Help.ihf;"	// list of xop's to install, this can be overidden
+	strConstant IgorExtensionsFolder = "Igor Extensions"
+#else
+	Abort "Cannot Identify Kind of Igor"
+#endif
 
 
 Menu "__LaueGo Install__"
@@ -31,18 +40,18 @@ Function LaueGo_Install()
 	Append2Log(str,0)
 	String UserPath = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:"
 
-	if (!LaueGoInstall#FileFolderExists(UserPath,folder=1))
+	if (!FileFolderExists(UserPath,folder=1))
 		DoAlert 0,"The \"User Path\", does not exist, quit Igor and try again"
 		return 1
 	endif
 	String LaueGoFullPath = UserPath+"LaueGo"		// official location of the LaueGo folder
 
-	Variable existing = LaueGoInstall#FileFolderExists(LaueGoFullPath,folder=1)
+	Variable existing = FileFolderExists(LaueGoFullPath,folder=1)
 	String oldFolderDestination=""
 	if (existing)
 		sprintf oldFolderDestination, "LaueGo_%sT%s",Secs2Date(DateTime,-2),Secs2Time(DateTime,3)
 		oldFolderDestination = SpecialDirPath("Desktop",0,0,0)+CleanupName(oldFolderDestination,0)
-		if (LaueGoInstall#FileFolderExists(oldFolderDestination,folder=1))
+		if (FileFolderExists(oldFolderDestination,folder=1))
 			sprintf str, "Old folder named \"%s\"  already exists!",oldFolderDestination
 			DoAlert 0, str
 			Append2Log(str,0)
@@ -67,7 +76,6 @@ Function LaueGo_Install()
 		PathInfo NewLaueGo
 		newFullPath=S_path[0,strlen(S_path)-2]
 	endif
-
 	if (StringMatch(LaueGoFullPath,newFullPath))
 		str = "The New LaueGo folder is the same as the existing LaueGo folder!"
 		Append2Log(str,0)
@@ -135,7 +143,7 @@ Function LaueGo_Install()
 	// install the alias to "always first.ipf"
 	String alwaysFirstSource=LaueGoFullPath+":always:always first.ipf"
 	String alwaysFirstDestination = SpecialDirPath("Igor Pro User Files",0,0,0)+"Igor Procedures:always first.ipf"
-	if (LaueGoInstall#AliasAlreadyThere(alwaysFirstSource,alwaysFirstDestination))
+	if (AliasAlreadyThere(alwaysFirstSource,alwaysFirstDestination))
 		Append2Log("The alias to \":always:always first.ipf\" is already in \"Igor Procedures\", no action taken",0)
 	else
 		Append2Log("  about to create the alias",0)
@@ -235,7 +243,7 @@ End
 
 
 
-Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip file to the Desktop
+Static Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip file to the Desktop
 	String urlStr
 
 	String str
@@ -302,7 +310,7 @@ Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo zip fi
 	FBinWrite f, response
 	Close f
 
-	Variable err = UnZipOnMac(destinationZip, DesktopFldr, deleteZip=1, overWrite=0, printIt=1)
+	Variable err = UnZipFiles(destinationZip, DesktopFldr, deleteZip=1, overWrite=0, printIt=1)
 	if (err)
 		return ""
 	endif
@@ -360,7 +368,7 @@ Function InstallXOPsAsNeeded(list,restart)
 	if (!FileFolderExists(IgorRoot,folder=1))
 		Abort "Cannot find the Igor path, quit Igor and try again"
 	endif
-	if (!FileFolderExists(SpecialDirPath("Igor Pro User Files",0,0,0)+"Igor Extensions",folder=1))
+	if (!FileFolderExists(SpecialDirPath("Igor Pro User Files",0,0,0)+IgorExtensionsFolder,folder=1))
 		Abort "Cannot find path to the Users 'Igor Pro User Files' in Users Documents folder, quit Igor and try again"
 	endif
 
@@ -431,7 +439,7 @@ Static Function CopyAliases2IgorExtensionsLocal(source)
 		Abort "The source '"+source+"' does not exist"
 	endif
 
-	String destination0 = SpecialDirPath("Igor Pro User Files",0,0,0)+"Igor Extensions"
+	String destination0 = SpecialDirPath("Igor Pro User Files",0,0,0)+IgorExtensionsFolder
 	if (!FileFolderExists(destination0,folder=1))
 		Abort "The destination folder '"+destination0+"' does not exist"
 	endif
@@ -495,7 +503,7 @@ Function InstallAliasesToHelpFiles(LaueGoFullPath)
 	Variable i=0
 	do													// make list of aliases that are not already there
 		name = IndexedFile($sPath,i,".ihf")
-		if (LaueGoInstall#AliasAlreadyThere(sourcePath+name,destPath+name))
+		if (AliasAlreadyThere(sourcePath+name,destPath+name))
 			sprintf str, "  alias is already present for    \"%s\"",name
 			Append2Log(str,0)
 		elseif (strlen(name))
@@ -529,154 +537,6 @@ End
 
 // ============================================================================================= //
 // ================================= Start of Helpful Utilities ================================ //
-
-
-Function UnZipFiles(zipFile,DestFolder,[deleteZip,overWrite,printIt])
-	String zipFile				// name of zip file to expand
-	String DestFolder			// folder to put results (defaults to same folder as zip file"
-	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
-	Variable overWrite		// if True, over write existing files when un-zipping (default is NOT overwite)
-	Variable printIt
-	deleteZip = ParamIsDefault(deleteZip) || numtype(deleteZip) ? 0 : !(!deleteZip)
-	overWrite = ParamIsDefault(overWrite) || numtype(overWrite) ? 0 : !(!overWrite)
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-
-	Variable err
-	if (StringMatch(IgorInfo(2),"Macintosh"))
-		err = UnZipOnMac(zipFile,DestFolder, deleteZip=deleteZip, overWrite=overWrite, printIt=printIt)
-	elseif (StringMatch(IgorInfo(2),"Windows"))
-		err = UnzipFileOnDesktopWindows(zipFile, deleteZip)
-	else
-		Append2Log("ERROR -- UnZipOnMac() only works on Macintosh or Windows",0)
-		err = 1
-	endif
-	return err
-End
-//
-Static Function UnZipOnMac(zipFile,DestFolder,[deleteZip,overWrite,printIt])
-	String zipFile				// name of zip file to expand
-	String DestFolder			// folder to put results (defaults to same folder as zip file"
-	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
-	Variable overWrite		// if True, over write existing files when un-zipping (default is NOT overwite)
-	Variable printIt
-	deleteZip = ParamIsDefault(deleteZip) || numtype(deleteZip) ? 0 : deleteZip
-	overWrite = ParamIsDefault(overWrite) || numtype(overWrite) ? 0 : overWrite
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-	if (!StringMatch(IgorInfo(2),"Macintosh"))
-		print "ERROR -- UnZipOnMac() only works on Macintosh"
-		return 1
-	endif
-
-	// check for valid input zip file
-	GetFileFolderInfo/P=home/Q/Z=1 zipFile
-	if (V_Flag || !V_isFile)
-		if (printIt)
-			Append2Log("ERROR -- file not found, nothing done",0)
-		endif
-		return 1
-	endif
-	printIt = StringMatch(S_Path,zipFile) ? printIt : 1
-
-	String str=""
-	zipFile = S_Path
-	if (!StringMatch(ParseFilePath(4,zipFile,":",0,0),"zip"))
-		if (printIt)
-			sprintf str, "ERROR -- \"%s\" is not a zip file\r",zipFile
-			Append2Log(str,0)
-		endif
-		return 1
-	endif
-
-	// check for valid destination folder
-	if (strlen(DestFolder)<1)
-		DestFolder = ParseFilePath(1,zipFile,":",1,0)
-	endif
-	GetFileFolderInfo/P=home/Q/Z=1 DestFolder
-	if (V_Flag || !V_isFolder)
-		if (printIt)
-			Append2Log("ERROR -- destination folder not found, nothing done",0)
-		endif
-		return 1
-	endif
-	DestFolder = S_Path
-	printIt = StringMatch(S_Path,DestFolder) ? printIt : 1
-
-	// get POSIX versions of paths for the shell script
-	String zipFilePOSIX = ParseFilePath(5,zipFile,"/",0,0)
-	String DestFolderPOSIX = ParseFilePath(5,DestFolder,"/",0,0)
-
-	// create the shell script and execute it
-	String cmd, switches=SelectString(overWrite,""," -o")
-	sprintf cmd, "do shell script \"unzip %s \\\"%s\\\" -d \\\"%s\\\"\"", switches, zipFilePOSIX,DestFolderPOSIX
-	ExecuteScriptText/Z cmd						//returns something only on error
-	if (V_flag)
-		sprintf str, "\r  ERROR -unzipping,  V_flag =",V_flag
-		Append2Log(str,0)
-		sprintf str, "cmd = ",ReplaceString("\n",cmd,"\r")
-		Append2Log(str,0)
-		sprintf str, "\r  S_value =",ReplaceString("\n",S_value,"\r")
-		Append2Log(str,0)
-		return V_flag									// all done, to not consider deleting the zip file
-	elseif (printIt)
-		sprintf str, "unzipping \"%s\"  -->  \"%s\"\r", zipFilePOSIX, DestFolderPOSIX
-		Append2Log(str,0)
-	endif
-
-	// optionally delete the zip file if requested
-	if (deleteZip)
-		DeleteFile/M="Delete the zip file"/Z zipFile
-		if (V_flag==0 && printIt)
-			sprintf str, "Deleted:  \"%s\"\r", zipFile
-			Append2Log(str,0)
-		endif
-	endif
-	return V_flag
-End
-//
-Function UnzipFileOnDesktopWindows(ZipFileName, deleteSource)
-	string ZipFileName			// name of zip file on Desktop
-	variable deleteSource		// also delete the source zip file if this is TRUE
-	if (!StringMatch(IgorInfo(2),"Windows"))
-		Append2Log("ERROR -- UnzipFileOnDesktopWindows() only works on Windows",0)
-		return 1
-	endif
-
-	//create Path to Desktop
-	NewPath/O Desktop, SpecialDirPath("Desktop", 0, 0, 0 )
-	//check that the file exists
-	GetFileFolderInfo /P=Desktop /Q/Z=1 ZipFileName
-	if(V_Flag!=0)
-		Abort "Zip file not found on Desktop"
-	endif	
-	//create the command file on the desktop, this is Zipjs.bat per 
-	//from <a href="https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat" title="https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat" rel="nofollow">https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zi...</a>	
-	String origBatFileName = ParseFilePath(1,FunctionPath("UnzipFileOnDesktopWindows"),":", 1,0 )+"zipjs.bat"
-	GetFileFolderInfo/Q/Z origBatFileName
-	if (V_flag || !V_isFile)
-		Append2Log("ERROR -- Unable to find:  "+origBatFileName,0)
-		return 1
-	endif
-	CopyFile/I=0/O/P=Desktop/Z=1 origBatFileName as "zipjs.bat"		// copy bat file to the Desktop
-
-	//created the zipjs.bat command file which will unzip the file for us.
-	//now create cmd in line with
-	//             zipjs.bat unzip -source C:\myDir\myZip.zip -destination C:\MyDir -keep no -force no
-	// the destination folder is created by the script. 
-	// -keep yes will keep the content of the zip file, -force yes will overwrite the tempfolder for the data if exists
-	// be careful, -force yes will wipe out the destination, if exists, so make sure the data are directed to non-existing folder.
-	string strToDesktop = SpecialDirPath("Desktop", 0, 1, 0 )
-	string cmd = strToDesktop+"zipjs.bat unzip -source "
-	cmd +=strToDesktop+ZipFileName+" -destination "
-	cmd +=strToDesktop+"ZipFileTempFldr  -keep yes -force yes"
-	ExecuteScriptText cmd
-	//delete the batch file to clean up...
-	DeleteFile /P=Desktop /Z  "zipjs.bat"
-	if(deleteSource)
-		DeleteFile /P=Desktop /Z  ZipFileName		
-	endif
-	return 0
-End	
-
 
 Static Function Append2Log(line,header)
 	String line
@@ -850,5 +710,1046 @@ Static Function FileFolderExists(name,[path,file,folder])	// returns 1=exists, 0
 End
 
 // ================================== End of Helpful Utilities ================================= //
+// ============================================================================================= //
+
+
+
+
+// ============================================================================================= //
+// ==================================== Start of Un-Zipping ==================================== //
+
+// Short routine to select the right function to un-zip on either Macintosh or Windows
+// NOTE, the Windows only unzips to the Desktop!
+Function UnZipFiles(zipFile,DestFolder,[deleteZip,overWrite,printIt])
+	String zipFile				// name of zip file to expand
+	String DestFolder			// folder to put results (defaults to same folder as zip file"
+	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
+	Variable overWrite		// if True, over write existing files when un-zipping (default is NOT overwite)
+	Variable printIt
+	deleteZip = ParamIsDefault(deleteZip) || numtype(deleteZip) ? 0 : !(!deleteZip)
+	overWrite = ParamIsDefault(overWrite) || numtype(overWrite) ? 0 : !(!overWrite)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	Variable err
+	if (StringMatch(IgorInfo(2),"Macintosh"))
+		err = UnZipOnMac(zipFile,DestFolder, deleteZip=deleteZip, overWrite=overWrite, printIt=printIt)
+	elseif (StringMatch(IgorInfo(2),"Windows"))
+		err = UnzipFileOnDesktopWindows(zipFile, deleteZip)
+	else
+		Append2Log("ERROR -- UnZipOnMac() only works on Macintosh or Windows",0)
+		err = 1
+	endif
+	return err
+End
+//
+Static Function UnZipOnMac(zipFile,DestFolder,[deleteZip,overWrite,printIt])
+	String zipFile				// name of zip file to expand
+	String DestFolder			// folder to put results (defaults to same folder as zip file"
+	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
+	Variable overWrite		// if True, over write existing files when un-zipping (default is NOT overwite)
+	Variable printIt
+	deleteZip = ParamIsDefault(deleteZip) || numtype(deleteZip) ? 0 : deleteZip
+	overWrite = ParamIsDefault(overWrite) || numtype(overWrite) ? 0 : overWrite
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (!StringMatch(IgorInfo(2),"Macintosh"))
+		print "ERROR -- UnZipOnMac() only works on Macintosh"
+		return 1
+	endif
+
+	// check for valid input zip file
+	GetFileFolderInfo/P=home/Q/Z=1 zipFile
+	if (V_Flag || !V_isFile)
+		if (printIt)
+			Append2Log("ERROR -- file not found, nothing done",0)
+		endif
+		return 1
+	endif
+	printIt = StringMatch(S_Path,zipFile) ? printIt : 1
+
+	String str=""
+	zipFile = S_Path
+	if (!StringMatch(ParseFilePath(4,zipFile,":",0,0),"zip"))
+		if (printIt)
+			sprintf str, "ERROR -- \"%s\" is not a zip file\r",zipFile
+			Append2Log(str,0)
+		endif
+		return 1
+	endif
+
+	// check for valid destination folder
+	if (strlen(DestFolder)<1)
+		DestFolder = ParseFilePath(1,zipFile,":",1,0)
+	endif
+	GetFileFolderInfo/P=home/Q/Z=1 DestFolder
+	if (V_Flag || !V_isFolder)
+		if (printIt)
+			Append2Log("ERROR -- destination folder not found, nothing done",0)
+		endif
+		return 1
+	endif
+	DestFolder = S_Path
+	printIt = StringMatch(S_Path,DestFolder) ? printIt : 1
+
+	// get POSIX versions of paths for the shell script
+	String zipFilePOSIX = ParseFilePath(5,zipFile,"/",0,0)
+	String DestFolderPOSIX = ParseFilePath(5,DestFolder,"/",0,0)
+
+	// create the shell script and execute it
+	String cmd, switches=SelectString(overWrite,""," -o")
+	sprintf cmd, "do shell script \"unzip %s \\\"%s\\\" -d \\\"%s\\\"\"", switches, zipFilePOSIX,DestFolderPOSIX
+	ExecuteScriptText/Z cmd						//returns something only on error
+	if (V_flag)
+		sprintf str, "\r  ERROR -unzipping,  V_flag =",V_flag
+		Append2Log(str,0)
+		sprintf str, "cmd = ",ReplaceString("\n",cmd,"\r")
+		Append2Log(str,0)
+		sprintf str, "\r  S_value =",ReplaceString("\n",S_value,"\r")
+		Append2Log(str,0)
+		return V_flag									// all done, to not consider deleting the zip file
+	elseif (printIt)
+		sprintf str, "unzipping \"%s\"  -->  \"%s\"\r", zipFilePOSIX, DestFolderPOSIX
+		Append2Log(str,0)
+	endif
+
+	// optionally delete the zip file if requested
+	if (deleteZip)
+		DeleteFile/M="Delete the zip file"/Z zipFile
+		if (V_flag==0 && printIt)
+			sprintf str, "Deleted:  \"%s\"\r", zipFile
+			Append2Log(str,0)
+		endif
+	endif
+	return V_flag
+End
+//
+Static Function UnzipFileOnDesktopWindows(ZipFileName, deleteSource)
+	string ZipFileName			// name of zip file on Desktop
+	variable deleteSource		// also delete the source zip file if this is TRUE
+	if (!StringMatch(IgorInfo(2),"Windows"))
+		Append2Log("ERROR -- UnzipFileOnDesktopWindows() only works on Windows",0)
+		return 1
+	endif
+
+	//create Path to Desktop
+	NewPath/O Desktop, SpecialDirPath("Desktop", 0, 0, 0 )
+	//check that the file exists
+	GetFileFolderInfo /P=Desktop /Q/Z=1 ZipFileName
+	if(V_Flag!=0)
+		Abort "Zip file not found on Desktop"
+	endif	
+
+	//create the command file on the desktop, this is Zipjs.bat per 
+	//from <a href="https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat" title="https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat" rel="nofollow">https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zi...</a>	
+	DoWindow zipjsbat
+	if(V_Flag==0)
+		CreateZipjsbat()	
+	endif
+	SaveNotebook/O/P=Desktop zipjsbat as "zipjs.bat"
+	DoWindow/K zipjsbat
+	//created the zipjs.bat command file which will unzip the file for us, note must kill the internal Notebook
+	//or Igor will held the file and Windows will throw errors
+	//now create cmd in line with
+	//             zipjs.bat unzip -source C:\myDir\myZip.zip -destination C:\MyDir -keep no -force no
+	// the destination folder is created by the script. 
+	// -keep yes will keep the content of the zip file, -force yes will overwrite the tempfolder for the data if exists
+	// be careful, -force yes will wipe out the destination, if exists, so make sure the data are directed to non-existing folder.
+	string strToDesktop = SpecialDirPath("Desktop", 0, 1, 0 )
+	string cmd = strToDesktop+"zipjs.bat unzip -source "
+	cmd +=strToDesktop+ZipFileName+" -destination "
+	cmd +=strToDesktop+"ZipFileTempFldr  -keep yes -force yes"
+	ExecuteScriptText cmd
+	//delete the batch file to clean up...
+	DeleteFile /P=Desktop /Z  "zipjs.bat"
+	if(deleteSource)
+		DeleteFile /P=Desktop /Z  ZipFileName		
+	endif
+	return 0
+End	
+//
+Static Function CreateZipjsbat()
+	//from https://github.com/npocmaka/batch.scripts/blob/master/hybrids/jscript/zipjs.bat
+	//how to use see
+	//http://stackoverflow.com/questions/28043589/how-can-i-compress-zip-and-uncompress-unzip-files-and-folders-with-bat
+	// this is short summary of the description there. Can unzpi, zip and do much more... 
+	//
+	//// unzip content of a zip to given folder.content of the zip will be not preserved (-keep no).Destination will be not overwritten (-force no)
+	//call zipjs.bat unzip -source C:\myDir\myZip.zip -destination C:\MyDir -keep no -force no
+	//
+	//// lists content of a zip file and full paths will be printed (-flat yes)
+	//call zipjs.bat list -source C:\myZip.zip\inZipDir -flat yes
+	//
+	//// lists content of a zip file and the content will be list as a tree (-flat no)
+	//call zipjs.bat list -source C:\myZip.zip -flat no
+	//
+	//// prints uncompressed size in bytes
+	//zipjs.bat getSize -source C:\myZip.zip
+	//
+	//// zips content of folder without the folder itself
+	//call zipjs.bat zipDirItems -source C:\myDir\ -destination C:\MyZip.zip -keep yes -force no
+	//
+	//// zips file or a folder (with the folder itslelf)
+	//call zipjs.bat zipItem -source C:\myDir\myFile.txt -destination C:\MyZip.zip -keep yes -force no
+	//
+	//// unzips only part of the zip with given path inside
+	//call zipjs.bat unZipItem -source C:\myDir\myZip.zip\InzipDir\InzipFile -destination C:\OtherDir -keep no -force yes
+	//call zipjs.bat unZipItem -source C:\myDir\myZip.zip\InzipDir -destination C:\OtherDir 
+	//
+	//// adds content to a zip file
+	//call zipjs.bat addToZip -source C:\some_file -destination C:\myDir\myZip.zip\InzipDir -keep no
+	//call zipjs.bat addToZip -source  C:\some_file -destination C:\myDir\myZip.zip
+
+
+	String nb = "zipjsbat"
+	NewNotebook/N=$nb/F=0/V=0/K=1/W=(321,81.5,820.5,376.25)
+	Notebook $nb defaultTab=20, statusWidth=252
+	Notebook $nb font="Arial", fSize=10, fStyle=0, textRGB=(0,0,0)
+	Notebook $nb text="@if (@X)==(@Y) @end /* JScript comment\r"
+	Notebook $nb text="\t@echo off\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\trem :: the first argument is the script name as it will be used for proper help message\r"
+	Notebook $nb text="\tcscript //E:JScript //nologo \"%~f0\" \"%~nx0\" %*\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\texit /b %errorlevel%\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="@if (@X)==(@Y) @end JScript comment */\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="/*\r"
+	Notebook $nb text="Compression/uncompression command-line tool that uses Shell.Application and WSH/Jscript -\r"
+	Notebook $nb text="http://msdn.microsoft.com/en-us/library/windows/desktop/bb774085(v=vs.85).aspx\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="Some resources That I've used:\r"
+	Notebook $nb text="http://www.robvanderwoude.com/vbstech_files_zip.php\r"
+	Notebook $nb text="https://code.google.com/p/jsxt/source/browse/trunk/js/win32/ZipFile.js?r=161\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="UPDATE *17-03-15*\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="Devnullius Plussed noticed a bug in ZipDirItems  and ZipItem functions (now fixed)\r"
+	Notebook $nb text="And also following issues (at the moment not handled by the script):\r"
+	Notebook $nb text="- if there's not enough space on the system drive (usually C:\\) the script could produce various errors "
+	Notebook $nb text=", most often the script halts.\r"
+	Notebook $nb text="- Folders and files that contain unicode symbols cannot be handled by Shell.Application object.\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="UPDATE *24-03-15*\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="Error messages are caught in waitforcount method and if shuch pops-up the script is stopped.\r"
+	Notebook $nb text="As I don't know hoe to check the content of the pop-up the exact reason for the failure is not given\r"
+	Notebook $nb text="but only the possible reasons.\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="------\r"
+	Notebook $nb text="It's possible to be ported for C#,Powershell and JScript.net so I'm planning to do it at some time.\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="For sure there's a lot of room for improvements and optimization and I'm absolutely sure there are some "
+	Notebook $nb text="bugs\r"
+	Notebook $nb text="as the script is big enough to not have.\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="!!!\r"
+	Notebook $nb text="For suggestions contact me at - npocmaka@gmail.com\r"
+	Notebook $nb text="!!!\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="*/\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="//   CONSTANTS\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="// TODO - Shell.Application and Scripting.FileSystemObject objects could be set as global variables to a"
+	Notebook $nb text="void theit creation\r"
+	Notebook $nb text="// in every method.\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//empty zip character sequense\r"
+	Notebook $nb text="var ZIP_DATA= \"PK\" + String.fromCharCode(5) + String.fromCharCode(6) + \"\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0"
+	Notebook $nb text="\\0\\0\";\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="var SLEEP_INTERVAL=200;\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//copy option(s) used by Shell.Application.CopyHere/MoveHere\r"
+	Notebook $nb text="var NO_PROGRESS_BAR=4;\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//oprions used for zip/unzip\r"
+	Notebook $nb text="var force=true;\r"
+	Notebook $nb text="var move=false;\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//option used for listing content of archive\r"
+	Notebook $nb text="var flat=false;\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="var source=\"\";\r"
+	Notebook $nb text="var destination=\"\";\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="var ARGS = WScript.Arguments;\r"
+	Notebook $nb text="var scriptName=ARGS.Item(0);\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="//   ADODB.Stream extensions\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ADODB ) {\r"
+	Notebook $nb text="\tvar ADODB = {};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! ADODB.Stream ) {\r"
+	Notebook $nb text="\tADODB.Stream = {};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="// writes a binary data to a file\r"
+	Notebook $nb text="if ( ! ADODB.Stream.writeFile ) {\r"
+	Notebook $nb text="\tADODB.Stream.writeFile = function(filename, bindata)\r"
+	Notebook $nb text="\t{\r"
+	Notebook $nb text="        var stream = new ActiveXObject(\"ADODB.Stream\");\r"
+	Notebook $nb text="        stream.Type = 2;\r"
+	Notebook $nb text="        stream.Mode = 3;\r"
+	Notebook $nb text="        stream.Charset =\"ASCII\";\r"
+	Notebook $nb text="        stream.Open();\r"
+	Notebook $nb text="        stream.Position = 0;\r"
+	Notebook $nb text="        stream.WriteText(bindata);\r"
+	Notebook $nb text="        stream.SaveToFile(filename, 2);\r"
+	Notebook $nb text="        stream.Close();\r"
+	Notebook $nb text="\t\treturn true;\r"
+	Notebook $nb text="\t};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="//   common\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.Common ) {\r"
+	Notebook $nb text="\tvar Common = {};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Common.WaitForCount ) {\r"
+	Notebook $nb text="\tCommon.WaitForCount = function(folderObject,targetCount,countFunction){\r"
+	Notebook $nb text="\t\tvar shell = new ActiveXObject(\"Wscript.Shell\");\r"
+	Notebook $nb text="\t\twhile (countFunction(folderObject) < targetCount ){\r"
+	Notebook $nb text="\t\t\tWScript.Sleep(SLEEP_INTERVAL);\r"
+	Notebook $nb text="\t\t\t//checks if a pop-up with error message appears while zipping\r"
+	Notebook $nb text="\t\t\t//at the moment I have no idea how to read the pop-up content\r"
+	Notebook $nb text="\t\t\t// to give the exact reason for failing\r"
+	Notebook $nb text="\t\t\tif (shell.AppActivate(\"Compressed (zipped) Folders Error\")) {\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(\"Error While zipping\");\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(\"\");\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(\"Possible reasons:\");\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(\" -source contains filename(s) with unicode characters\");\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(\" -produces zip exceeds 8gb size (or 2,5 gb for XP and 2003)\");\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(\" -not enough space on system drive (usually C:\\\\)\");\r"
+	Notebook $nb text="\t\t\t\tWScript.Quit(432);\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t\t\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Common.getParent ) {\r"
+	Notebook $nb text="\tCommon.getParent = function(path){\r"
+	Notebook $nb text="\t\tvar splitted=path.split(\"\\\\\");\r"
+	Notebook $nb text="\t\tvar result=\"\";\r"
+	Notebook $nb text="\t\tfor (var s=0;s<splitted.length-1;s++){\r"
+	Notebook $nb text="\t\t\tif (s==0) {\r"
+	Notebook $nb text="\t\t\t\tresult=splitted[s];\r"
+	Notebook $nb text="\t\t\t} else {\r"
+	Notebook $nb text="\t\t\t\tresult=result+\"\\\\\"+splitted[s];\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\treturn result;\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Common.getName ) {\r"
+	Notebook $nb text="\tCommon.getName = function(path){\r"
+	Notebook $nb text="\t\tvar splitted=path.split(\"\\\\\");\r"
+	Notebook $nb text="\t\treturn splitted[splitted.length-1];\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//file system object has a problem to create a folder with slashes at the end\r"
+	Notebook $nb text="if ( ! Common.stripTrailingSlash ) {\r"
+	Notebook $nb text="\tCommon.stripTrailingSlash = function(path){\r"
+	Notebook $nb text="\t\twhile (path.substr(path.length - 1,path.length) == '\\\\') {\r"
+	Notebook $nb text="\t\t\tpath=path.substr(0, path.length - 1);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\treturn path;\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="//   Scripting.FileSystemObject extensions\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if (! this.Scripting) {\r"
+	Notebook $nb text="\tvar Scripting={};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if (! Scripting.FileSystemObject) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject={};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.DeleteItem ) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.DeleteItem = function (item) \r"
+	Notebook $nb text="\t{\r"
+	Notebook $nb text="\t\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\tif (FSOObj.FileExists(item)){\r"
+	Notebook $nb text="\t\t\tFSOObj.DeleteFile(item);\r"
+	Notebook $nb text="\t\t\treturn true;\r"
+	Notebook $nb text="\t\t} else if (FSOObj.FolderExists(item) ) {\r"
+	Notebook $nb text="\t\t\tFSOObj.DeleteFolder(Common.stripTrailingSlash(item));\r"
+	Notebook $nb text="\t\t\treturn true;\r"
+	Notebook $nb text="\t\t} else {\r"
+	Notebook $nb text="\t\t\treturn false;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.ExistsFile ) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.ExistsFile = function (path)\r"
+	Notebook $nb text="\t{\r"
+	Notebook $nb text="\t\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\treturn FSOObj.FileExists(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="if ( !Scripting.FileSystemObject.ExistsFolder ) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.ExistsFolder = function (path){\r"
+	Notebook $nb text="\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\treturn FSOObj.FolderExists(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.isFolder ) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.isFolder = function (path){\r"
+	Notebook $nb text="\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\treturn FSOObj.FolderExists(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.isEmptyFolder ) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.isEmptyFolder = function (path){\r"
+	Notebook $nb text="\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\tif(FSOObj.FileExists(path)){\r"
+	Notebook $nb text="\t\t\treturn false;\r"
+	Notebook $nb text="\t\t}else if (FSOObj.FolderExists(path)){\t\r"
+	Notebook $nb text="\t\t\tvar folderObj=FSOObj.GetFolder(path);\r"
+	Notebook $nb text="\t\t\tif ((folderObj.Files.Count+folderObj.SubFolders.Count)==0){\r"
+	Notebook $nb text="\t\t\t\treturn true;\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\treturn false;\t\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.CreateFolder) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.CreateFolder = function (path){\r"
+	Notebook $nb text="\t\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\tFSOObj.CreateFolder(path);\r"
+	Notebook $nb text="\t\treturn FSOObj.FolderExists(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.ExistsItem) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.ExistsItem = function (path){\r"
+	Notebook $nb text="\t\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="\t\treturn FSOObj.FolderExists(path)||FSOObj.FileExists(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Scripting.FileSystemObject.getFullPath) {\r"
+	Notebook $nb text="\tScripting.FileSystemObject.getFullPath = function (path){\r"
+	Notebook $nb text="\t\tvar FSOObj= new ActiveXObject(\"Scripting.FileSystemObject\");\r"
+	Notebook $nb text="        return FSOObj.GetAbsolutePathName(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="//   Shell.Application extensions\r"
+	Notebook $nb text="if ( ! this.Shell ) {\r"
+	Notebook $nb text="\tvar Shell = {};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if (! Shell.Application ) {\r"
+	Notebook $nb text="\tShell.Application={};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Shell.Application.ExistsFolder ) {\r"
+	Notebook $nb text="\tShell.Application.ExistsFolder = function(path){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tvar targetObject = new Object;\r"
+	Notebook $nb text="\t\tvar targetObject=ShellObj.NameSpace(path);\r"
+	Notebook $nb text="\t\tif (typeof targetObject === 'undefined' || targetObject == null ){\r"
+	Notebook $nb text="\t\t\treturn false;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\treturn true;\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Shell.Application.ExistsSubItem ) {\r"
+	Notebook $nb text="\tShell.Application.ExistsSubItem = function(path){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tvar targetObject = new Object;\r"
+	Notebook $nb text="\t\tvar targetObject=ShellObj.NameSpace(Common.getParent(path));\r"
+	Notebook $nb text="\t\tif (typeof targetObject === 'undefined' || targetObject == null ){\r"
+	Notebook $nb text="\t\t\treturn false;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tvar subItem=targetObject.ParseName(Common.getName(path));\r"
+	Notebook $nb text="\t\tif(subItem === 'undefined' || subItem == null ){\r"
+	Notebook $nb text="\t\t\treturn false;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\treturn true;\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Shell.Application.ItemCounterL1 ) {\r"
+	Notebook $nb text="\tShell.Application.ItemCounterL1 = function(path){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tvar targetObject = new Object;\r"
+	Notebook $nb text="\t\tvar targetObject=ShellObj.NameSpace(path);\r"
+	Notebook $nb text="\t\tif (targetObject != null ){\r"
+	Notebook $nb text="\t\t\treturn targetObject.Items().Count;\t\r"
+	Notebook $nb text="\t\t} else {\r"
+	Notebook $nb text="\t\t\treturn 0;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="// shell application item.size returns the size of uncompressed state of the file.\r"
+	Notebook $nb text="if ( ! Shell.Application.getSize ) {\r"
+	Notebook $nb text="\tShell.Application.getSize = function(path){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tvar targetObject = new Object;\r"
+	Notebook $nb text="\t\tvar targetObject=ShellObj.NameSpace(path);\r"
+	Notebook $nb text="\t\tif (! Shell.Application.ExistsFolder (path)){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(path + \"does not exists or the file is incorrect type.Be sure you are using full path to"
+	Notebook $nb text=" the file\");\r"
+	Notebook $nb text="\t\t\treturn 0;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (typeof size === 'undefined'){\r"
+	Notebook $nb text="\t\t\tvar size=0;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (targetObject != null ){\r"
+	Notebook $nb text="\t\t\t\r"
+	Notebook $nb text="\t\t\tfor (var i=0; i<targetObject.Items().Count;i++){\r"
+	Notebook $nb text="\t\t\t\tif(!targetObject.Items().Item(i).IsFolder){\r"
+	Notebook $nb text="\t\t\t\t\tsize=size+targetObject.Items().Item(i).Size;\r"
+	Notebook $nb text="\t\t\t\t} else if (targetObject.Items().Item(i).Count!=0){\r"
+	Notebook $nb text="\t\t\t\t\tsize=size+Shell.Application.getSize(targetObject.Items().Item(i).Path);\r"
+	Notebook $nb text="\t\t\t\t}\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t} else {\r"
+	Notebook $nb text="\t\t\treturn 0;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\treturn size;\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="if ( ! Shell.Application.TakeAction ) {\r"
+	Notebook $nb text="\tShell.Application.TakeAction = function(destination,item, move ,option){\r"
+	Notebook $nb text="\t\tif(typeof destination != 'undefined' && move){\r"
+	Notebook $nb text="\t\t\tdestination.MoveHere(item,option);\r"
+	Notebook $nb text="\t\t} else if(typeof destination != 'undefined') {\r"
+	Notebook $nb text="\t\t\tdestination.CopyHere(item,option);\r"
+	Notebook $nb text="\t\t} \r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//ProcessItem and  ProcessSubItems can be used both for zipping and unzipping\r"
+	Notebook $nb text="// When an item is zipped another process is ran and the control is released\r"
+	Notebook $nb text="// but when the script stops also the copying to the zipped file stops.\r"
+	Notebook $nb text="// Though the zipping is transactional so a zipped files will be visible only after the zipping is done\r"
+	Notebook $nb text="// and we can rely on items count when zip operation is performed. \r"
+	Notebook $nb text="// Also is impossible to compress an empty folders.\r"
+	Notebook $nb text="// So when it comes to zipping two additional checks are added - for empty folders and for count of item"
+	Notebook $nb text="s at the \r"
+	Notebook $nb text="// destination.\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Shell.Application.ProcessItem ) {\r"
+	Notebook $nb text="\tShell.Application.ProcessItem = function(toProcess, destination  , move ,isZipping,option){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tdestinationObj=ShellObj.NameSpace(destination);\r"
+	Notebook $nb text="\t\t\t\r"
+	Notebook $nb text="\t\tif (destinationObj!= null ){\r"
+	Notebook $nb text="\t\t\tif (isZipping && Scripting.FileSystemObject.isEmptyFolder(toProcess)) {\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(toProcess +\" is an empty folder and will be not processed\");\r"
+	Notebook $nb text="\t\t\t\treturn;\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t\tShell.Application.TakeAction(destinationObj,toProcess, move ,option);\r"
+	Notebook $nb text="\t\t\tvar destinationCount=Shell.Application.ItemCounterL1(destination);\r"
+	Notebook $nb text="\t\t\tvar final_destination=destination + \"\\\\\" + Common.getName(toProcess);\r"
+	Notebook $nb text="\t\t\t\r"
+	Notebook $nb text="\t\t\tif (isZipping && !Shell.Application.ExistsSubItem(final_destination)) {\r"
+	Notebook $nb text="\t\t\t\tCommon.WaitForCount(destination\r"
+	Notebook $nb text="\t\t\t\t\t,destinationCount+1,Shell.Application.ItemCounterL1);\r"
+	Notebook $nb text="\t\t\t} else if (isZipping && Shell.Application.ExistsSubItem(final_destination)){\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(final_destination + \" already exists and task cannot be completed\");\r"
+	Notebook $nb text="\t\t\t\treturn;\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t}\t\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Shell.Application.ProcessSubItems ) {\r"
+	Notebook $nb text="\tShell.Application.ProcessSubItems = function(toProcess, destination  , move ,isZipping ,option){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tvar destinationObj=ShellObj.NameSpace(destination);\r"
+	Notebook $nb text="\t\tvar toItemsToProcess=new Object;\r"
+	Notebook $nb text="\t\ttoItemsToProcess=ShellObj.NameSpace(toProcess).Items();\r"
+	Notebook $nb text="\t\t\t\r"
+	Notebook $nb text="\t\tif (destinationObj!= null ){\r"
+	Notebook $nb text="\t\t\t\t\t\t\r"
+	Notebook $nb text="\t\t\tfor (var i=0;i<toItemsToProcess.Count;i++) {\r"
+	Notebook $nb text="\t\t\t\t\r"
+	Notebook $nb text="\t\t\t\tif (isZipping && Scripting.FileSystemObject.isEmptyFolder(toItemsToProcess.Item(i).Path)){\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\t\t\t\tWScript.Echo(\"\");\r"
+	Notebook $nb text="\t\t\t\t\tWScript.Echo(toItemsToProcess.Item(i).Path + \" is empty and will be not processed\");\r"
+	Notebook $nb text="\t\t\t\t\tWScript.Echo(\"\");\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\t\t\t} else {\r"
+	Notebook $nb text="\t\t\t\t\tShell.Application.TakeAction(destinationObj,toItemsToProcess.Item(i),move,option);\r"
+	Notebook $nb text="\t\t\t\t\tvar destinationCount=Shell.Application.ItemCounterL1(destination);\r"
+	Notebook $nb text="\t\t\t\t\tif (isZipping) {\r"
+	Notebook $nb text="\t\t\t\t\t\tCommon.WaitForCount(destination,destinationCount+1,Shell.Application.ItemCounterL1);\r"
+	Notebook $nb text="\t\t\t\t\t}\r"
+	Notebook $nb text="\t\t\t\t}\r"
+	Notebook $nb text="\t\t\t}\t\r"
+	Notebook $nb text="\t\t}\t\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! Shell.Application.ListItems ) {\r"
+	Notebook $nb text="\tShell.Application.ListItems = function(parrentObject){\r"
+	Notebook $nb text="\t\tvar ShellObj=new ActiveXObject(\"Shell.Application\");\r"
+	Notebook $nb text="\t\tvar targetObject = new Object;\r"
+	Notebook $nb text="\t\tvar targetObject=ShellObj.NameSpace(parrentObject);\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\tif (! Shell.Application.ExistsFolder (parrentObject)){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(parrentObject + \"does not exists or the file is incorrect type.Be sure the full path the"
+	Notebook $nb text=" path is used\");\r"
+	Notebook $nb text="\t\t\treturn;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (typeof initialSCount == 'undefined') {\r"
+	Notebook $nb text="\t\t\tinitialSCount=(parrentObject.split(\"\\\\\").length-1);\r"
+	Notebook $nb text="\t\t\tWScript.Echo(parrentObject);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tvar spaces=function(path){\r"
+	Notebook $nb text="\t\t\tvar SCount=(path.split(\"\\\\\").length-1)-initialSCount;\r"
+	Notebook $nb text="\t\t\tvar s=\"\";\r"
+	Notebook $nb text="\t\t\tfor (var i=0;i<=SCount;i++) {\r"
+	Notebook $nb text="\t\t\t\ts=\" \"+s;\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t\treturn s;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tvar printP = function (item,end){\r"
+	Notebook $nb text="\t\t\tif (flat) {\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo(targetObject.Items().Item(i).Path+end);\r"
+	Notebook $nb text="\t\t\t}else{\r"
+	Notebook $nb text="\t\t\t\tWScript.Echo( spaces(targetObject.Items().Item(i).Path)+targetObject.Items().Item(i).Name+end);\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\tif (targetObject != null ){\r"
+	Notebook $nb text="\t\t\tvar folderPath=\"\";\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\t\t\tfor (var i=0; i<targetObject.Items().Count;i++) {\r"
+	Notebook $nb text="\t\t\t\t\tif(targetObject.Items().Item(i).IsFolder && targetObject.Items().Item(i).Count==0 ){\r"
+	Notebook $nb text="\t\t\t\t\t\tprintP(targetObject.Items().Item(i),\"\\\\\");\r"
+	Notebook $nb text="\t\t\t\t\t} else if (targetObject.Items().Item(i).IsFolder){\r"
+	Notebook $nb text="\t\t\t\t\t\tfolderPath=parrentObject+\"\\\\\"+targetObject.Items().Item(i).Name;\r"
+	Notebook $nb text="\t\t\t\t\t\tprintP(targetObject.Items().Item(i),\"\\\\\")\r"
+	Notebook $nb text="\t\t\t\t\t\tShell.Application.ListItems(folderPath);\t\t\t\t\t\t\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\t\t\t\t} else {\r"
+	Notebook $nb text="\t\t\t\t\t\tprintP(targetObject.Items().Item(i),\"\")\r"
+	Notebook $nb text="\t\t\t\t\t\t\r"
+	Notebook $nb text="\t\t\t\t\t}\r"
+	Notebook $nb text="\t\t\t\t}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\t\t}\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="//     ZIP Utils\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils ) {\r"
+	Notebook $nb text="\tvar ZIPUtils = {};\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.ZipItem) {\t\r"
+	Notebook $nb text="\tZIPUtils.ZipItem = function(source, destination ) {\r"
+	Notebook $nb text="\t\tif (!Scripting.FileSystemObject.ExistsFolder(source)) {\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"\");\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"file \" + source +\" does not exist\");\r"
+	Notebook $nb text="\t\t\tWScript.Quit(2);\t\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (Scripting.FileSystemObject.ExistsFile(destination) && force ) {\r"
+	Notebook $nb text="\t\t\tScripting.FileSystemObject.DeleteItem(destination);\r"
+	Notebook $nb text="\t\t\tADODB.Stream.writeFile(destination,ZIP_DATA);\r"
+	Notebook $nb text="\t\t} else if (!Scripting.FileSystemObject.ExistsFile(destination)) {\r"
+	Notebook $nb text="\t\t\tADODB.Stream.writeFile(destination,ZIP_DATA);\r"
+	Notebook $nb text="\t\t} else {\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"Destination \"+destination+\" already exists.Operation will be aborted\");\r"
+	Notebook $nb text="\t\t\tWScript.Quit(15);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tsource=Scripting.FileSystemObject.getFullPath(source);\r"
+	Notebook $nb text="\t\tdestination=Scripting.FileSystemObject.getFullPath(destination);\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tShell.Application.ProcessItem(source,destination,move,true ,NO_PROGRESS_BAR);\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.ZipDirItems) {\t\r"
+	Notebook $nb text="\tZIPUtils.ZipDirItems = function(source, destination ) {\r"
+	Notebook $nb text="\t\tif (!Scripting.FileSystemObject.ExistsFolder(source)) {\r"
+	Notebook $nb text="\t\t\tWScript.Echo();\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"file \" + source +\" does not exist\");\r"
+	Notebook $nb text="\t\t\tWScript.Quit(2);\t\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (Scripting.FileSystemObject.ExistsFile(destination) && force ) {\r"
+	Notebook $nb text="\t\t\tScripting.FileSystemObject.DeleteItem(destination);\r"
+	Notebook $nb text="\t\t\tADODB.Stream.writeFile(destination,ZIP_DATA);\r"
+	Notebook $nb text="\t\t} else if (!Scripting.FileSystemObject.ExistsFile(destination)) {\r"
+	Notebook $nb text="\t\t\tADODB.Stream.writeFile(destination,ZIP_DATA);\r"
+	Notebook $nb text="\t\t} else {\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"Destination \"+destination+\" already exists.Operation will be aborted\");\r"
+	Notebook $nb text="\t\t\tWScript.Quit(15);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tsource=Scripting.FileSystemObject.getFullPath(source);\r"
+	Notebook $nb text="\t\tdestination=Scripting.FileSystemObject.getFullPath(destination);\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tShell.Application.ProcessSubItems(source, destination, move ,true,NO_PROGRESS_BAR);\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (move){\r"
+	Notebook $nb text="\t\t\tScripting.FileSystemObject.DeleteItem(source);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.Unzip) {\t\r"
+	Notebook $nb text="\tZIPUtils.Unzip = function(source, destination ) {\r"
+	Notebook $nb text="\t\tif(!Shell.Application.ExistsFolder(source) ){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"Either the target does not exist or is not a correct type\");\r"
+	Notebook $nb text="\t\t\treturn;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (Scripting.FileSystemObject.ExistsItem(destination) && force ) {\r"
+	Notebook $nb text="\t\t\tScripting.FileSystemObject.DeleteItem(destination);\r"
+	Notebook $nb text="\t\t} else if (Scripting.FileSystemObject.ExistsItem(destination)){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(\"Destination \" + destination + \" already exists\");\r"
+	Notebook $nb text="\t\t\treturn;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tScripting.FileSystemObject.CreateFolder(destination);\r"
+	Notebook $nb text="\t\tsource=Scripting.FileSystemObject.getFullPath(source);\r"
+	Notebook $nb text="\t\tdestination=Scripting.FileSystemObject.getFullPath(destination);\r"
+	Notebook $nb text="\t\tShell.Application.ProcessSubItems(source, destination, move ,false,NO_PROGRESS_BAR);\t\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (move){\r"
+	Notebook $nb text="\t\t\tScripting.FileSystemObject.DeleteItem(source);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="    }\t\t\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.AddToZip) {\r"
+	Notebook $nb text="\tZIPUtils.AddToZip = function(source, destination ) {\r"
+	Notebook $nb text="\t\tif(!Shell.Application.ExistsFolder(destination)) {\r"
+	Notebook $nb text="\t\t\tWScript.Echo(destination +\" is not valid path to/within zip.Be sure you are not using relative paths\""
+	Notebook $nb text=");\r"
+	Notebook $nb text="\t\t\tWscript.Exit(\"101\");\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif(!Scripting.FileSystemObject.ExistsItem(source)){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(source +\" does not exist\");\r"
+	Notebook $nb text="\t\t\tWscript.Exit(\"102\");\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tsource=Scripting.FileSystemObject.getFullPath(source);\r"
+	Notebook $nb text="\t\tShell.Application.ProcessItem(source,destination,move,true ,NO_PROGRESS_BAR); \r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.UnzipItem) {\t\r"
+	Notebook $nb text="\tZIPUtils.UnzipItem = function(source, destination ) {\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\t\tif(!Shell.Application.ExistsSubItem(source)){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(source + \":Either the target does not exist or is not a correct type\");\r"
+	Notebook $nb text="\t\t\treturn;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (Scripting.FileSystemObject.ExistsItem(destination) && force ) {\r"
+	Notebook $nb text="\t\t\tScripting.FileSystemObject.DeleteItem(destination);\r"
+	Notebook $nb text="\t\t} else if (Scripting.FileSystemObject.ExistsItem(destination)){\r"
+	Notebook $nb text="\t\t\tWScript.Echo(destination+\" - Destination already exists\");\r"
+	Notebook $nb text="\t\t\treturn;\r"
+	Notebook $nb text="\t\t} \r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tScripting.FileSystemObject.CreateFolder(destination);\r"
+	Notebook $nb text="\t\tdestination=Scripting.FileSystemObject.getFullPath(destination);\r"
+	Notebook $nb text="\t\tShell.Application.ProcessItem(source, destination, move ,false,NO_PROGRESS_BAR);\r"
+	Notebook $nb text="\t\t                            \r"
+	Notebook $nb text="    }\t\t\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.getSize) {\t\r"
+	Notebook $nb text="\tZIPUtils.getSize = function(path) {\r"
+	Notebook $nb text="\t\t// first getting a full path to the file is attempted\r"
+	Notebook $nb text="\t\t// as it's required by shell.application\r"
+	Notebook $nb text="\t\t// otherwise is assumed that a file within a zip \r"
+	Notebook $nb text="\t\t// is aimed\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\t//TODO - find full path even if the path points to internal for the \r"
+	Notebook $nb text="\t\t// zip directory\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (Scripting.FileSystemObject.ExistsFile(path)){\r"
+	Notebook $nb text="\t\t\tpath=Scripting.FileSystemObject.getFullPath(path);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tWScript.Echo(Shell.Application.getSize(path));\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="if ( ! this.ZIPUtils.list) {\t\r"
+	Notebook $nb text="\tZIPUtils.list = function(path) {\r"
+	Notebook $nb text="\t\t// first getting a full path to the file is attempted\r"
+	Notebook $nb text="\t\t// as it's required by shell.application\r"
+	Notebook $nb text="\t\t// otherwise is assumed that a file within a zip \r"
+	Notebook $nb text="\t\t// is aimed\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\t//TODO - find full path even if the path points to internal for the \r"
+	Notebook $nb text="\t\t// zip directory\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\t// TODO - optional printing of each file uncompressed size\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t\tif (Scripting.FileSystemObject.ExistsFile(path)){\r"
+	Notebook $nb text="\t\t\tpath=Scripting.FileSystemObject.getFullPath(path);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tShell.Application.ListItems(path);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="/////////////////////////////////////\r"
+	Notebook $nb text="//   parsing'n'running\r"
+	Notebook $nb text="function printHelp(){\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" list -source zipFile [-flat yes|no]\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tlist the content of a zip file\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tzipFile - absolute path to the zip file\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\t\tcould be also a directory or a directory inside a zip file or\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\t\tor a .cab file or an .iso file\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-flat - indicates if the structure of the zip will be printed as tree\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\t\tor with absolute paths (-flat yes).Default is yes.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" list -source C:\\\\myZip.zip -flat no\" );\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" list -source C:\\\\myZip.zip\\\\inZipDir -flat yes\" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" getSize -source zipFile\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tprints uncompressed size of the zipped file in bytes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tzipFile - absolute path to the zip file\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\t\tcould be also a directory or a directory inside a zip file or\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\t\tor a .cab file or an .iso file\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" getSize -source C:\\\\myZip.zip\" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" zipDirItems -source source_dir -destination destination.zip [-force yes|no"
+	Notebook $nb text="] [-keep yes|no]\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tzips the content of given folder without the folder itself \");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tsource_dir - path to directory which content will be compressed\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tEmpty folders in the source directory will be ignored\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tdestination.zip - path/name  of the zip file that will be created\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-force - indicates if the destination will be overwritten if already exists.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-keep - indicates if the source content will be moved or just copied/kept.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" zipDirItems -source C:\\\\myDir\\\\ -destination C:\\\\MyZip.zip -keep yes"
+	Notebook $nb text=" -force no\" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" zipItem -source item -destination destination.zip [-force yes|no] [-keep y"
+	Notebook $nb text="es|no]\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tzips file or directory to a destination.zip file \");\r"
+	Notebook $nb text="\tWScript.Echo( \"\titem - path to file or directory which content will be compressed\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tIf points to an empty folder it will be ignored\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tIf points to a folder it also will be included in the zip file alike zipdiritems comma"
+	Notebook $nb text="nd\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tEventually zipping a folder in this way will be faster as it does not process every el"
+	Notebook $nb text="ement one by one\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tdestination.zip - path/name  of the zip file that will be created\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-force - indicates if the destination will be overwritten if already exists.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-keep - indicates if the source content will be moved or just copied/kept.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" zipItem -source C:\\\\myDir\\\\myFile.txt -destination C:\\\\MyZip.zip -ke"
+	Notebook $nb text="ep yes -force no\" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" unzip -source source.zip -destination destination_dir [-force yes|no] [-ke"
+	Notebook $nb text="ep yes|no]\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tunzips the content of a zip file to a given directory \");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tsource - path to the zip file that will be expanded\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tEventually .iso , .cab or even an ordinary directory can be used as a source\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tdestination_dir - path to directory where unzipped items will be stored\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-force - indicates if the destination will be overwritten if already exists.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-keep - indicates if the source content will be moved or just copied/kept.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" unzip -source C:\\\\myDir\\\\myZip.zip -destination C:\\\\MyDir -keep no -"
+	Notebook $nb text="force no\" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" unZipItem -source source.zip -destination destination_dir [-force yes|no] "
+	Notebook $nb text="[-keep yes|no]\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tunzips  a single within a given zip file to a destination directory\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tsource - path to the file/folcer within a zip  that will be expanded\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tEventually .iso , .cab or even an ordinary directory can be used as a source\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tdestination_dir - path to directory where unzipped item will be stored\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-force - indicates if the destination directory will be overwritten if already exists.\""
+	Notebook $nb text=");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-keep - indicates if the source content will be moved or just copied/kept.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" unZipItem -source C:\\\\myDir\\\\myZip.zip\\\\InzipDir\\\\InzipFile -destina"
+	Notebook $nb text="tion C:\\\\OtherDir -keep no -force yes\" );\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" unZipItem -source C:\\\\myDir\\\\myZip.zip\\\\InzipDir -destination C:\\\\Ot"
+	Notebook $nb text="herDir \" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( scriptName + \" addToZip -source sourceItem -destination destination.zip  [-keep yes|no]\")"
+	Notebook $nb text=";\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tadds file or folder to already exist zip file\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tsource - path to the item that will be processed\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\tdestination_zip - path to the zip where the item will be added\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t-keep - indicates if the source content will be moved or just copied/kept.\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\tdefault is yes\");\r"
+	Notebook $nb text="\tWScript.Echo( \"Example:\");\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" addToZip -source C:\\\\some_file -destination C:\\\\myDir\\\\myZip.zip\\\\In"
+	Notebook $nb text="zipDir -keep no \" );\r"
+	Notebook $nb text="\tWScript.Echo( \"\t\" + scriptName + \" addToZip -source  C:\\\\some_file -destination C:\\\\myDir\\\\myZip.zip \" "
+	Notebook $nb text=");\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tWScript.Echo( \"\tby Vasil \\\"npocmaka\\\" Arnaudov - npocmaka@gmail.com\" );\r"
+	Notebook $nb text="\tWScript.Echo( \"\tver 0.1 \" );\r"
+	Notebook $nb text="\tWScript.Echo( \"\tlatest version could be found here https://github.com/npocmaka/batch.scripts/blob/maste"
+	Notebook $nb text="r/hybrids/jscript/zipjs.bat\" );\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="function parseArguments(){\r"
+	Notebook $nb text="\tif (WScript.Arguments.Length==1 || WScript.Arguments.Length==2 || ARGS.Item(1).toLowerCase() == \"-help\""
+	Notebook $nb text=" ||  ARGS.Item(1).toLowerCase() == \"-h\" ) {\r"
+	Notebook $nb text="\t\tprintHelp();\r"
+	Notebook $nb text="\t\tWScript.Quit(0);\r"
+	Notebook $nb text="   }\r"
+	Notebook $nb text="   \r"
+	Notebook $nb text="   //all arguments are key-value pairs plus one for script name and action taken - need to be even numbe"
+	Notebook $nb text="r\r"
+	Notebook $nb text="\tif (WScript.Arguments.Length % 2 == 1 ) {\r"
+	Notebook $nb text="\t\tWScript.Echo(\"Illegal arguments \");\r"
+	Notebook $nb text="\t\tprintHelp();\r"
+	Notebook $nb text="\t\tWScript.Quit(1);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\t//ARGS\r"
+	Notebook $nb text="\tfor(var arg = 2 ; arg<ARGS.Length-1;arg=arg+2) {\r"
+	Notebook $nb text="\t\tif (ARGS.Item(arg) == \"-source\") {\r"
+	Notebook $nb text="\t\t\tsource = ARGS.Item(arg +1);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (ARGS.Item(arg) == \"-destination\") {\r"
+	Notebook $nb text="\t\t\tdestination = ARGS.Item(arg +1);\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (ARGS.Item(arg).toLowerCase() == \"-keep\" && ARGS.Item(arg +1).toLowerCase() == \"no\") {\r"
+	Notebook $nb text="\t\t\tmove=true;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (ARGS.Item(arg).toLowerCase() == \"-force\" && ARGS.Item(arg +1).toLowerCase() == \"no\") {\r"
+	Notebook $nb text="\t\t\tforce=false;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t\tif (ARGS.Item(arg).toLowerCase() == \"-flat\" && ARGS.Item(arg +1).toLowerCase() == \"yes\") {\r"
+	Notebook $nb text="\t\t\tflat=true;\r"
+	Notebook $nb text="\t\t}\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="\tif (source == \"\"){\r"
+	Notebook $nb text="\t\tWScript.Echo(\"Source not given\");\r"
+	Notebook $nb text="\t\tprintHelp();\r"
+	Notebook $nb text="\t\tWScript.Quit(59);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="var checkDestination=function(){\r"
+	Notebook $nb text="\tif (destination == \"\"){\r"
+	Notebook $nb text="\t\tWScript.Echo(\"Destination not given\");\r"
+	Notebook $nb text="\t\tprintHelp();\r"
+	Notebook $nb text="\t\tWScript.Quit(65);\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="\r"
+	Notebook $nb text="var main=function(){\r"
+	Notebook $nb text="\tparseArguments();\r"
+	Notebook $nb text="\tswitch (ARGS.Item(1).toLowerCase()) {\r"
+	Notebook $nb text="\tcase \"list\":\r"
+	Notebook $nb text="\t\tZIPUtils.list(source);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tcase \"getsize\":\r"
+	Notebook $nb text="\t\tZIPUtils.getSize(source);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tcase \"zipdiritems\":\r"
+	Notebook $nb text="\t\tcheckDestination();\r"
+	Notebook $nb text="\t\tZIPUtils.ZipDirItems(source,destination);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tcase \"zipitem\":\r"
+	Notebook $nb text="\t\tcheckDestination();\r"
+	Notebook $nb text="\t\tZIPUtils.ZipDirItems(source,destination);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tcase \"unzip\":\r"
+	Notebook $nb text="\t\tcheckDestination();\r"
+	Notebook $nb text="\t\tZIPUtils.Unzip(source,destination);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tcase \"unzipitem\":\r"
+	Notebook $nb text="\t\tcheckDestination();\r"
+	Notebook $nb text="\t\tZIPUtils.UnzipItem(source,destination);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tcase \"addtozip\":\r"
+	Notebook $nb text="\t\tcheckDestination();\r"
+	Notebook $nb text="\t\tZIPUtils.AddToZip(source,destination);\r"
+	Notebook $nb text="\t\tbreak;\r"
+	Notebook $nb text="\tdefault:\r"
+	Notebook $nb text="\t\tWScript.Echo(\"No valid switch has been passed\");\r"
+	Notebook $nb text="\t\tprintHelp();\r"
+	Notebook $nb text="\t\t\r"
+	Notebook $nb text="\t}\r"
+	Notebook $nb text="\t\r"
+	Notebook $nb text="}\r"
+	Notebook $nb text="main();\r"
+	Notebook $nb text="//\r"
+	Notebook $nb text="//////////////////////////////////////"
+end
+
+// ===================================== End of Un-Zipping ===================================== //
 // ============================================================================================= //
 
