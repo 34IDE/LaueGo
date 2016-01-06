@@ -358,7 +358,7 @@ End
 //		InstallXOPsAsNeeded("HDF5.xop;HDF5 Help.ihf;",1)
 //		InstallXOPsAsNeeded("HDF5.xop;HDF5 Help.ihf;HFSAndPosix.xop;HFSAndPosix Help.ihf;",1)
 //
-Function InstallXOPsAsNeeded(list,restart)
+Static Function InstallXOPsAsNeeded(list,restart)
 	String list										// list of .xop's and .ihf's to put in Users "Igor Extensions"
 	Variable restart								// 1=ask to restart, 0=don't ask to restart
 	restart = numtype(restart) ? 1 : !(!restart)
@@ -467,7 +467,7 @@ End
 // ================================ Start of Help File Aliases ================================= //
 
 // find *.ihf files in LaueGo:doc, and put aliases to them in "...:Igor Pro 6 User Files:Igor Help Files:"
-Function InstallAliasesToHelpFiles(LaueGoFullPath)
+Static Function InstallAliasesToHelpFiles(LaueGoFullPath)
 	String LaueGoFullPath
 	// probably "MacComputer:Users:userName:Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures:LaueGo"
 
@@ -720,7 +720,7 @@ End
 
 // Short routine to select the right function to un-zip on either Macintosh or Windows
 // NOTE, the Windows only unzips to the Desktop!
-Function UnZipFiles(zipFile,DestFolder,[deleteZip,overWrite,printIt])
+Static Function UnZipFiles(zipFile,DestFolder,[deleteZip,overWrite,printIt])
 	String zipFile				// name of zip file to expand
 	String DestFolder			// folder to put results (defaults to same folder as zip file"
 	Variable deleteZip		// if True, delete the zip file when done (default is NO delete)
