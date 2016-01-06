@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, January 04, 2016" time="01:46:30 PM CST" isoTime="2016-01-04T13:46:30"></written>
+	<written date="Wednesday, January 06, 2016" time="10:51:08 AM CST" isoTime="2016-01-06T10:51:08"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>3a0d0be508c23eba0c6410eaf0ac7d414146bf0a</gitHash>
+	<gitHash>8549b6be4b31fa8b175bb166e62bd5625b25196c</gitHash>
 	<fileCount>275</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -126,7 +126,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="6bcac22bfb97414500a8cee93c81ca52" sha256="df02d8805dd16b3872b3c130f986bda5eb737fabe7be20100bf6443f97196f15" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2014-10-30T13:10:27" md5="f7fc043b1fccd1bc57a8c85bd7119a48" sha256="6ba22b5a6a0483ce16dea9bbd486ba22ee227a5488c8d1b579f23adbb411c466" ext=".mtl">materials/CdWO4.mtl</file>
 	<file version="nan" time="2014-10-30T13:09:24" md5="859a758545e47d314c72723c59a5eaec" sha256="cb7ee3e43bd2d5508b54cfd8ca3bbf7dd9c0122d98fbdf7f544f209d6361e6c1" ext=".mtl">materials/BePS-200.mtl</file>
-	<file version="0.09" time="2015-07-10T12:01:53" md5="18aec4483f93dcb3d32aa331629c6f73" sha256="8e3949236f07bf78562ee0ec2496660e9ffc67794d9a1a0a76855219fd216644" ext=".ipf">LaueGo_Install.ipf</file>
+	<file version="0.11" time="2016-01-06T10:48:26" md5="dd8410152d6766acf35f78df91bb9e88" sha256="348aebf3806a179dc3e7a80966df23c3fd4a2c26d0146b84d6bcdf4c17d5ad6e" ext=".ipf">LaueGo_Install.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2e7a06042ee382cfc47da4eddf030a77" sha256="6d6d4b678c96ee7efb5ba7863cf0796f25d9bac5f55f7771a8a43db404671709" ext=".xml">materials/Al.xml</file>
 	<file version="nan" time="2015-08-07T15:10:20" md5="842427c8dccddee9905e48da2004e9fb" sha256="b85c28efb9f2f5b204cdf8cbe44a7b024c07ebba3dbfe2e8735d5262ca9c5317" ext=".ihf">doc/Utility_JZT.ihf</file>
 	<file version="nan" time="2014-03-04T11:56:16" md5="e14984054d4661c474487323b7044a1a" sha256="360a924d0003a83d684fc2f550da4402cfacb973a970c78301a80313b6ea9b60" ext=".xml">geometrys/geoN_2013-07-03_16-01-03.xml</file>
