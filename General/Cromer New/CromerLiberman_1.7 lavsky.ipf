@@ -1,6 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.0
-#pragma ModuleName=CromerLiberman
+#pragma version=1.7
 
 //This is implementation of Cromer-Liberman code for calcualtions of fprime and f double prime, and mu-over-rho
 // included is also code to calculate f0 as function f Q ( = 2p/d = 4*pi*sin(theta)/lambda [A^-1])
@@ -18,13 +17,6 @@
 //release 1.6 fixed confusion of using sometimes S and sometimes Q for scattering vector, resulting in wrong results for Q(S) !=0 calculations. 
 //		 Scattering vector should be now in the whole code called Q only.
 //release 1.7 fixed CromerBufferEnenergyPrecision call which caused the lookup to work with fixed precision and not controlled by user...
-//release 1.7 changed Get_f() changed so that if keV>0 you get whole thing, but otherwise only fo.
-//release 1.8 changed Get_f() and Get_f0() & Cromer_Get_f0() & Get_f() & Atomic_f_Xray() so that they accept optional valence for an atom.
-//		also added the #ModuleName=CromerLiberman line at top
-//release 1.9 (4/29/2014), changed name of CleanupAtomName() to StripOffValence(), and added static Function num2symb(AtomType)
-//		moved StripOffValence() from the many places it was called into Cromer_Get_fp(), now called one place
-//		put num2symb inside of Cromer_Get_fp() and Cromer_Get_f0(), and Atomic_f_Xray(), you can pass "14" and it will know "Si"
-//release 2.0 added change by JZT Jan 7, 2016
 
 //this code is translated from C translation of the Fortran source code. It is inefficient and difficult to read.
 //
@@ -81,7 +73,7 @@
 //
 //	Get_MuOverRho(AtomType, keV)		returns mu over rho as real number in [cm^2/gram]		input is "Atom name" and energy in keV
 //
-//	Get_f0(AtomType,Q,valence=v)		returns f0 as real number in  [electron units]				input is "Atom name" and Q = 2*pi/d=4*pi*sin(theta)/Lambda [A^-1]
+//	Get_f0(AtomType,Q)					returns f0 as real number in  [electron units]				input is "Atom name" and Q = 2*pi/d=4*pi*sin(theta)/Lambda [A^-1]
 //
 //  	To speedup routine operations, the code creates database of calculated data. It contains up to CromerBufferLength
 //      (defined below) values stored for faster access, when value already calculated is requested...
@@ -127,13 +119,11 @@ End
 
 
 // ************************************************************************ ********************************************************
-Function/C Atomic_f_Xray(AtomType,Q,keV,[valence,printIt])// compute fo(Q)+f'(E)+f''(E), and mu too, call this from a menu
-	String AtomType							// name of atom desired
-	Variable Q								// 2*pi/d = 4*pi*sin(theta)/Lambda  (1/Angstroms)
+Function/C Atomic_f_Xray(AtomType,Q,keV)// compute fo(Q)+f'(E)+f''(E), and mu too, call this from a menu
+	String AtomType						// name of atom desired
+	Variable Q							// 2*pi/d = 4*pi*sin(theta)/Lambda  (1/Angstroms)
 	Variable keV							// energy (keV)
-	variable valence						// optional integer for valence
-	Variable printIt
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
 
 	String symbs=""
 	symbs += "H;H-1;He;Li;Li+1;Be;Be+2;B;C;N;O;O-1;F;F-1;Na;Na+1;Mg;Mg+2;Al;Al+3;Si;Si+4;P;S;Cl;Cl-1;"
@@ -146,8 +136,8 @@ Function/C Atomic_f_Xray(AtomType,Q,keV,[valence,printIt])// compute fo(Q)+f'(E)
 
 	AtomType = LowerStr(AtomType)
 	AtomType[0,0] = UpperStr(AtomType[0])
-	AtomType = num2symb(AtomType)		// convert number to Symbol
-	if (strlen(AtomType)<1 || numtype(Q+keV) || Q<0 || keV<0 || WhichListItem(AtomType,symbs)<0)
+	Variable printIt=0
+	if (strlen(AtomType)<1 || numtype(Q) || Q<0 || numtype(keV) || keV<0)
 		Q = numtype(Q) ? 0 : abs(Q)
 		keV = numtype(keV) ? 8 : abs(keV)
 		Prompt keV, "Energy of X-ray (keV)"
@@ -160,12 +150,7 @@ Function/C Atomic_f_Xray(AtomType,Q,keV,[valence,printIt])// compute fo(Q)+f'(E)
 		printIt=1
 	endif
 
-	Variable/C f
-	if (ParamIsDefault(valence))
-		f = Get_f(AtomType,Q,keV)
-	else
-		f = Get_f(AtomType,Q,keV, valence=valence)
-	endif
+	Variable/C f=Get_f(AtomType,Q,keV)
 	Variable muRho=Get_MuOverRho(AtomType,keV)
 	if (numtype(f) && printIt)
 		printf "  f(%s,  Q=%g,  keV=%g) = Unknown symbol or bad energy\r",AtomType,Q,keV
@@ -178,28 +163,16 @@ End
 
 
 //********************************************************************************************************************************
-Function/C Get_f(AtomType,Q, keV, [valence])	//returns complex value of f0+fp+i*fpp
+Function/C Get_f(AtomType,Q, keV)				//returns complex value of f0+fp+i*fpp
 	string AtomType
 	variable keV,Q
-	variable valence								// optional integer for valence
 	//keV - energy in keV
 	//Q is scattering vector (2*pi/d) or also (4*pi*sin(theta)/lambda) [A^-1]
 	//AtomType is "Fe" etc. 
 
 	string OldDf=GetDataFOlder(1)
 	variable/C result
-	variable f0
-
-	if (ParamIsDefault(valence))
-		f0 = Get_f0(AtomType,Q)
-	else
-		f0 = Get_f0(AtomType,Q, valence=valence)
-	endif
-
-	result = f0
-	if (keV>0)
-		result += Cromer_Get_fp(CleanupAtomName(AtomType), keV, "ComplexF")
-	endif
+	result= Cromer_Get_fp(CleanupAtomName(AtomType), keV, "ComplexF")+Get_f0(AtomType,Q)		
 	setDataFOlder OldDf
 	return result
 end
@@ -256,22 +229,16 @@ Function Get_MuOverRho(AtomType, keV)			//returns real value of mu over rho
 	return result
 end
 //********************************************************************************************************************************
-Function Get_f0(AtomType,Q, [valence])				//returns value of f0
+Function Get_f0(AtomType,Q)					//returns value of f0
 	string AtomType
-	variable Q											//2*pi/d for scattering
-	variable valence									// optional integer for valence
-
+	variable Q								//2*pi/d for scattering
+	
 	variable ScattVct
 	ScattVct=Q/(4*pi)								//this scales the Q to sin(theta)/Lambda from input Q value. 
 	//Cromer Mann code uses sin(theta)/Lambda, which is = Q/(4*pi)
 	string OldDf=GetDataFOlder(1)
 	variable result
-	if (ParamIsDefault(valence))
-		result = Cromer_Get_f0(AtomType,ScattVct)	//calls static function to calculate this
-	else
-		result = Cromer_Get_f0(AtomType,ScattVct,valence=valence)
-	endif
-
+	result= Cromer_Get_f0(AtomType,ScattVct)		//calls static function to calculate this
 	setDataFolder OldDf
 	return result
 end
@@ -422,7 +389,7 @@ static Function Cromer_RecordData(AtomType, xk, fp,fpp, pmu)
 end
 //********************************************************************************************************************************
 //********************************************************************************************************************************
-static Function/T CleanupAtomName(AtomType)		// also strip off the valence
+static Function/T CleanupAtomName(AtomType)
 	string AtomType
 	
 	variable i, imax = strlen(AtomType)
@@ -436,23 +403,6 @@ static Function/T CleanupAtomName(AtomType)		// also strip off the valence
 	endfor
 	return FixedAtomType
 end
-
-//********************************************************************************************************************************
-
-static Function/T num2symb(AtomType)		// translates an atomic number into the correct symbol, added in version 1.9
-	String AtomType
-
-	Variable Z = str2num(AtomType)
-	if (Z==limit(round(Z),1,98))				// a  valid number was passed, process
-		String symbs=""
-		symbs += "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;"
-		symbs += "Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;"
-		symbs += "In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;"
-		symbs += "W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;"
-		AtomType = StringFromList(Z-1,symbs)
-	endif
-	return AtomType
-End
 
 //********************************************************************************************************************************
 //********************************************************************************************************************************
@@ -733,24 +683,16 @@ end
 //********************************************************************************************************************************
 //********************************************************************************************************************************
 
-static Function Cromer_Get_f0(AtomName,Svector, [valence])
-	//this function retuns for give scattering vector value of f0 for any atom
+static Function Cromer_Get_f0(AtomName,Svector)
 	string AtomName
 	variable Svector				//2*pi/d for scattering
-	variable valence				// optional integer for valence
-	// note on valence.  If you want f0 for "Fe+3", then you have two choices, you can either
-	//	set AtomName="Fe+3" and ignore valence (this works), e.g. Cromer_Get_f0("Fe+3", 2.3)
-	// or you can use Cromer_Get_f0("Fe+3", 2.3, valence=3)
-	// The advantage of specifying the valence yourself comes with "O-2"
-	//	print Cromer_Get_f0("Fe+3", 2.3) produces and error since I only have values for "O" & "O-1"
-	// but print Cromer_Get_f0("Fe+3", 2.3, valence=-2) returns the value for "O-1"
-
-	AtomName = num2symb(AtomName)			// change numbers to symbol, e.g. "14" --> "Si"
-
+	//this function retuns for give scattering vector value of f0 for any atom
+	
 	string oldDf=getDataFolder(1)
 	//NewDataFolder/O root:Packages
 	//NewDataFolder/O/S root:Packages:F0_calculations
-
+	
+	
 	Wave/Z Awave=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_a"))
 	Wave/Z Bwave=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_b"))
 	NVAR/Z Cnumber=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_c"))
@@ -762,8 +704,7 @@ static Function Cromer_Get_f0(AtomName,Svector, [valence])
 		NVAR/Z Cnumber=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_c"))
 		if (!WaveExists(Awave) || !WaveExists(Bwave) || !NVAR_Exists(Cnumber))
 			setDataFolder oldDf
-			return NaN
-			// abort "Error in Get_f0 routine, database input for this atom (atom state) does not exist"
+			abort "Error in Get_f0 routine, database input for this atom (atom state) does not exist"
 		endif
 	endif
 	
@@ -2542,14 +2483,14 @@ static Function Initialize_f0()
 	No_c=12.9008
 	//********************************
 	//	"NO",   36.8731, 32.6784, 16.7732, 2.75513, 0.40324, 3.23045, 14.1302, 145.481, 12.9008,
-	//********************************     Lr
-	make/N=4/O Lr_a, Lr_b
-	variable/g Lr_c
-	Lr_a={36.3813, 33.1999, 16.6469, 3.31406}
-	Lr_b={0.40165, 3.13608, 13.7255, 119.377}
-	Lr_c=13.4313
+	//********************************     Lw
+	make/N=4/O Lw_a, Lw_b
+	variable/g Lw_c
+	Lw_a={36.3813, 33.1999, 16.6469, 3.31406}
+	Lw_b={0.40165, 3.13608, 13.7255, 119.377}
+	Lw_c=13.4313
 	//********************************
-	//	"LR",   36.3813, 33.1999, 16.6469, 3.31406, 0.40165, 3.13608, 13.7255, 119.377, 13.4313,
+	//	"LW",   36.3813, 33.1999, 16.6469, 3.31406, 0.40165, 3.13608, 13.7255, 119.377, 13.4313,
 	//********************************     H
 //	make/N=4/O H_a, H_b
 //	variable/g H_c
@@ -3966,7 +3907,7 @@ static Function Cromer_InitializeStrings()
 	FillMeStr = "SYM=NO;ETERM=0;NSHELLS=0;"  
 	string/g $("103")  
 	SVAR FillMeStr = $("103")  
-	FillMeStr = "SYM=LR;ETERM=0;NSHELLS=0;"  
+	FillMeStr = "SYM=LW;ETERM=0;NSHELLS=0;"  
 	setDataFOlder OldDf
 end
 

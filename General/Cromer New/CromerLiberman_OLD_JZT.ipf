@@ -86,7 +86,7 @@
 
 static constant CromerBufferLength=200							//number of last calculations stored for faster recall
 static constant CromerBufferEnenergyPrecision=0.0002			//energy precision at which the value in buffer will be considered correct and will be returned to user instead of recalculating new one
-
+//    				default value is 0.0002 which is 0.2eV
 //    The use of this database speeds up the process by factor of 40 or so when looking for data existing stored in the database.. 
 //
 //    It may be useful to reset all of the databases, which this code is using, including the Buffer database.
@@ -127,12 +127,11 @@ End
 // ************************************************************************ ********************************************************
 Function/C Atomic_f_Xray(AtomType,Q,keV,[valence,printIt])// compute fo(Q)+f'(E)+f''(E), and mu too, call this from a menu
 	String AtomType							// name of atom desired
-	Variable Q									// 2*pi/d = 4*pi*sin(theta)/Lambda  (1/Angstroms)
-	Variable keV								// energy (keV)
-	variable valence							// optional integer for valence
+	Variable Q								// 2*pi/d = 4*pi*sin(theta)/Lambda  (1/Angstroms)
+	Variable keV							// energy (keV)
+	variable valence						// optional integer for valence
 	Variable printIt
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? 0 : ( !(!printIt) || (ItemsInList(GetRTStackInfo(0))<2) )
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	String symbs=""
 	symbs += "H;H-1;He;Li;Li+1;Be;Be+2;B;C;N;O;O-1;F;F-1;Na;Na+1;Mg;Mg+2;Al;Al+3;Si;Si+4;P;S;Cl;Cl-1;"
@@ -163,7 +162,7 @@ Function/C Atomic_f_Xray(AtomType,Q,keV,[valence,printIt])// compute fo(Q)+f'(E)
 	if (ParamIsDefault(valence))
 		f = Get_f(AtomType,Q,keV)
 	else
-		f = Get_f(AtomType,Q,keV,valence=valence)
+		f = Get_f(AtomType,Q,keV, valence=valence)
 	endif
 	Variable muRho=Get_MuOverRho(AtomType,keV)
 	if (numtype(f) && printIt)
@@ -192,12 +191,12 @@ Function/C Get_f(AtomType,Q, keV, [valence])	//returns complex value of f0+fp+i*
 	if (ParamIsDefault(valence))
 		f0 = Get_f0(AtomType,Q)
 	else
-		f0 = Get_f0(AtomType,Q,valence=valence)
+		f0 = Get_f0(AtomType,Q, valence=valence)
 	endif
+
+	result = f0
 	if (keV>0)
-		result= Cromer_Get_fp(AtomType, keV, "ComplexF")+f0
-	else
-		result= f0
+		result += Cromer_Get_fp(CleanupAtomName(AtomType), keV, "ComplexF")
 	endif
 	setDataFOlder OldDf
 	return result
@@ -211,7 +210,7 @@ Function/C Get_fp(AtomType, keV)				//returns complex value of fp+i*fpp
 	
 	string OldDf=GetDataFOlder(1)
 	variable/C result
-	result= Cromer_Get_fp(AtomType, keV, "ComplexF")			//call static routine to calculate this....	
+	result= Cromer_Get_fp(CleanupAtomName(AtomType), keV, "ComplexF")			//call static routine to calculate this....	
 	setDataFOlder OldDf
 	return result
 end
@@ -224,7 +223,7 @@ Function Get_RealPartfp(AtomType, keV)				//returns real value of fp
 	
 	string OldDf=GetDataFOlder(1)
 	variable result
-	result= Cromer_Get_fp(AtomType, keV, "Fprime")		//call static routine to calculate this....
+	result= Cromer_Get_fp(CleanupAtomName(AtomType), keV, "Fprime")		//call static routine to calculate this....
 	setDataFOlder OldDf
 	return result
 end
@@ -237,7 +236,7 @@ Function Get_ImagPartfpp(AtomType, keV)			//returns real value of fpp
 	
 	string OldDf=GetDataFOlder(1)
 	variable result
-	result= Cromer_Get_fp(AtomType, keV, "FDoublePrime")	//call static routine to calculate this....
+	result= Cromer_Get_fp(CleanupAtomName(AtomType), keV, "FDoublePrime")	//call static routine to calculate this....
 	setDataFOlder OldDf
 	return result
 end
@@ -250,12 +249,12 @@ Function Get_MuOverRho(AtomType, keV)			//returns real value of mu over rho
 	
 	string OldDf=GetDataFOlder(1)
 	variable result
-	result= Cromer_Get_fp(AtomType, keV, "pmu")			//call static routine to calculate this....
+	result= Cromer_Get_fp(CleanupAtomName(AtomType), keV, "pmu")			//call static routine to calculate this....
 	setDataFOlder OldDf
 	return result
 end
 //********************************************************************************************************************************
-Function Get_f0(AtomType,Q,[valence])				//returns value of f0
+Function Get_f0(AtomType,Q, [valence])				//returns value of f0
 	string AtomType
 	variable Q											//2*pi/d for scattering
 	variable valence									// optional integer for valence
@@ -266,9 +265,9 @@ Function Get_f0(AtomType,Q,[valence])				//returns value of f0
 	string OldDf=GetDataFOlder(1)
 	variable result
 	if (ParamIsDefault(valence))
-		result= Cromer_Get_f0(AtomType,ScattVct)	//calls static function to calculate this
+		result = Cromer_Get_f0(AtomType,ScattVct)	//calls static function to calculate this
 	else
-		result= Cromer_Get_f0(AtomType,ScattVct,valence=valence)
+		result = Cromer_Get_f0(AtomType,ScattVct,valence=valence)
 	endif
 
 	setDataFolder OldDf
@@ -349,7 +348,7 @@ static Function/C Cromer_FindDataC(AtomType, xk)
 	endif
 	FPrimeDataBaseCounter-=1				//decrease counter for all existing records = aging them...
 	For(i=0;i<dimsize(FPrimeDataBase,0);i+=1)
-		if (cmpstr(FPrimeDataBaseAtoms[i],AtomType)==0 && abs(xk-FPrimeDataBase[i][4])<0.001)		//the data record for this atom and energy exist
+		if (cmpstr(FPrimeDataBaseAtoms[i],AtomType)==0 && abs(xk-FPrimeDataBase[i][4])<CromerBufferEnenergyPrecision)		//the data record for this atom and energy exist
 				FPrimeDataBaseCounter[i]=100														//increase the counter
 				return cmplx(FPrimeDataBase[i][1],FPrimeDataBase[i][2])
 		endif
@@ -727,7 +726,7 @@ end
 //********************************************************************************************************************************
 //********************************************************************************************************************************
 
-static Function Cromer_Get_f0(AtomName,Svector,[valence])
+static Function Cromer_Get_f0(AtomName,Svector, [valence])
 	//this function retuns for give scattering vector value of f0 for any atom
 	string AtomName
 	variable Svector				//2*pi/d for scattering
@@ -786,7 +785,7 @@ static Function Cromer_Get_f0(AtomName,Svector,[valence])
 		if (!WaveExists(Awave) || !WaveExists(Bwave) || !NVAR_Exists(Cnumber))
 			setDataFolder oldDf
 			return NaN
-//			abort "Error in Get_f0 routine, database input for this atom (atom state) does not exist"
+			// abort "Error in Get_f0 routine, database input for this atom (atom state) does not exist"
 		endif
 	endif
 	
