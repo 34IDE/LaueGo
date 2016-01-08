@@ -24,7 +24,7 @@
 //release 1.9 (4/29/2014), changed name of CleanupAtomName() to StripOffValence(), and added static Function num2symb(AtomType)
 //		moved StripOffValence() from the many places it was called into Cromer_Get_fp(), now called one place
 //		put num2symb inside of Cromer_Get_fp() and Cromer_Get_f0(), and Atomic_f_Xray(), you can pass "14" and it will know "Si"
-//release 2.0 added change by JZT Jan 7, 2016
+//release 2.0 combined Tischler & Ilavsky versions, by JZT Jan 7, 2016, also changed Lw --> Lr (Lawrencium)
 
 //this code is translated from C translation of the Fortran source code. It is inefficient and difficult to read.
 //
@@ -422,6 +422,15 @@ static Function Cromer_RecordData(AtomType, xk, fp,fpp, pmu)
 end
 //********************************************************************************************************************************
 //********************************************************************************************************************************
+static Function/T StripOffValence(AtomType)		// strip off the valence
+	string AtomType
+
+	Variable i = max(strsearch(AtomType,"+",0), strsearch(AtomType,"-",0))
+	return SelectString(i, AtomType, "", AtomType[0,i-1])
+end
+
+//********************************************************************************************************************************
+
 static Function/T CleanupAtomName(AtomType)		// also strip off the valence
 	string AtomType
 	
@@ -508,6 +517,9 @@ static Function/C Cromer_Get_fp(AtomType, xK, ReturnWhat)
 	//nord - order of interpolation
 	//pmu - mu over rho (cm^2/g)
 	//ReturnWhat - ComplexF, FPrime, FDoublePrime, pmu
+
+	AtomType = StripOffValence(AtomType)	// remove any valence, this does not handle valence
+	AtomType = num2symb(AtomType)			// change numbers to symbol, e.g. "14" --> "Si"
 	
 	string OldDf=GetDataFolder(1)
 	Cromer_Initialize(0)		//initialize, if needed		
@@ -750,6 +762,35 @@ static Function Cromer_Get_f0(AtomName,Svector, [valence])
 	string oldDf=getDataFolder(1)
 	//NewDataFolder/O root:Packages
 	//NewDataFolder/O/S root:Packages:F0_calculations
+
+	valence = ParamIsDefault(valence) ? NaN : round(valence)
+	valence = (strlen(AtomName)>2) ? NaN : valence		// a valence in name takes precedence
+	if (numtype(valence)==0 && abs(valence)<10 && abs(valence)>0)		// a valid valence passed, and non-zero too
+		// key-list having valences for elements, every element has a zero valence available
+		String knownValences = "H:-1;Li:1;Be:2;O:-1;F:-1;Na:1;Mg:2;Al:3;Si:4;Cl:-1;K:1;Ca:2;"
+		knownValences += "Sc:3;Ti:3,4;V:2,3,5;Cr:2,3;Mn:2,3,4;Fe:2,3;Co:2,3;Ni:2,3;Cu:1,2;"
+		knownValences += "Zn:2;Ga:3;Br:-1;Rb:1;Sr:2;Y:3;Zr:4;Nb:3,5;Mo:3,5,6;Ru:3,4;Rh:3,4;"
+		knownValences += "Pd:2,4;Ag:1,2;Cd:2;In:3;Sn:2,4;Sb:3,5;I:-1;Cs:1;Ba:2;La:3;Ce:3,4;"
+		knownValences += "Pr:3,4;Nd:3;Pm:3;Sm:3;Eu:2,3;Gd:3;Tb:3;Dy:3;Ho:3;Er:3;Tm:3;Yb:2,3;Lu:3;"
+		String list = StringByKey(AtomName,knownValences)	// a comma separated list of available valences
+		list = ReplaceString(",", list,";")
+
+		if (valence * str2num(StringFromList(0,list)) < 0)	// sign of valence opposite what is available
+			valence = 0
+		elseif (valence<0)
+			valence = WhichListItem("-1",list) < 0 ? 0 : -1	// the only negative numbers are -1, thats it
+		else
+			variable iv, v=0, vbest=0
+			for (iv=0;iv<ItemsInList(list);iv+=1)
+				v = str2num(StringFromList(iv,list))
+				vbest = (v <= valence) ? v : vbest
+			endfor
+			valence = vbest
+		endif
+		if (valence)												// change the name to match the valence
+			sprintf AtomName,"%s%+d", AtomName, valence
+		endif
+	endif
 
 	Wave/Z Awave=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_a"))
 	Wave/Z Bwave=$("root:Packages:CromerCalculations:"+possiblyQuoteName(AtomName+"_b"))
