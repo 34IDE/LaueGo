@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, January 06, 2016" time="10:51:08 AM CST" isoTime="2016-01-06T10:51:08"></written>
+	<written date="Thursday, January 14, 2016" time="03:43:43 PM CST" isoTime="2016-01-14T15:43:43"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>8549b6be4b31fa8b175bb166e62bd5625b25196c</gitHash>
+	<gitHash>760cef5d5f2d0ef52ef4602f50450d63558c7b40</gitHash>
 	<fileCount>275</fileCount>
 	<file version="nan" time="2013-10-28T11:28:48" md5="00bc5f09ce262e9cc8fb6623d60ba011" sha256="43bc18836b263941cda53c6da6f39401629903c1423ba081126a78ec561bdef9" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="c60e929fe9f1a9be337dec698f6dc90c" sha256="813f97bf032563f7e0467b362122d69d41a3a1d611270ff89aea5998cec84f4f" ext=".xml">materials/GaN-temp.xml</file>
@@ -52,7 +52,7 @@
 	<file version="2.11" time="2015-09-01T15:13:40" md5="9df098b1bc977c40808befbd1efdf96a" sha256="51a1427d5c34a25482ab44ba87ac1743b8386e825dcee87ea13534d0b5cd90a0" ext=".ipf">General/PhysicalConstants.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="4f9d1ef62a587ddc29a3b61fce96b7cd" sha256="2facbbb062a62fcfb0ce8d2695ea9b4030b221011c6295cc1ddc9a6dabe10de8" ext=".xml">materials/SrLaGaO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="0f371a92479dd3587d334a17f1e73d69" sha256="2e65d8514950d046b7741f947c02e92e6260b2e50f41c7e45628721b69e8b18d" ext=".xml">materials/UO2F2.xml</file>
-	<file version="1.91" time="2015-09-03T13:14:25" md5="7d6285a5c8c918a93d131019b2ce8b52" sha256="10dc9d66b1ace9f87170b00383376effaffc520c284459f956f531dea9a4572c" ext=".ipf">General/CromerLiberman.ipf</file>
+	<file version="2" time="2016-01-08T10:13:18" md5="422f6a96eb0d40cc58391319010fe5ab" sha256="96c882280be5851b21b5fce994b6526f06276208da15c626d5aa7ba48aad9003" ext=".ipf">General/CromerLiberman.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="2f0f2b98c412547292c5f9f0a02d80ef" sha256="56a2c535f036d388264c015603716131840af24d501adcea9478f696a9919e81" ext=".xml">materials/Al2Cu.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="ac1d6ff5d4fff4f97c4ade3fa19b9e51" sha256="5c08deef70800ab40ab9ba97c84d69fa6ef4e4e0c84394c20befb6fd8267506f" ext=".xml">materials/Diamond.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="78934459e3765af66d0814d9cd84a37a" sha256="f6a4be64eaeba0d4e6f12c1f2748775ae6a23abfeac8f97849c2cd7a729c4c37" ext=".xml">materials/HEA.xml</file>
