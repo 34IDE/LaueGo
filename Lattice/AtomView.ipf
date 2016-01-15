@@ -1304,11 +1304,9 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	ModifyGizmo autoscaling=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))
-//		SetWindow $gizName hook(ScaleBarHook)=GizmoUtil#GzimoReSetScaleBarHookProc
 		ModifyGizmo namedHookStr={ScaleBarHook,GizmoUtil#GzimoReSetScaleBarHookProc}
 	endif
 	if (strlen(title2))
-//		SetWindow $gizName hook(TitleHook)=AtomView#AtomViewGizmoFixHookProc
 		ModifyGizmo namedHookStr={TitleHook,AtomView#AtomViewGizmoFixHookProc}
 	endif
 	ModifyGizmo compile
