@@ -7,7 +7,12 @@
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
 Static Constant GIZMO_MARKER_END_TYPE = 1			// 0=box on ends of lines, 1=sphere on ends of lines (you can OverRide this in the Main procedure)
 Static Constant MAX_N_OBJECTS=500					// maximum number of objects that can be created using these routines (such as scatter, groups, titles, ...)
+#if (IgorVersion()<7)
 Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a Gizmo
+#else
+Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -0.95	// left edge of scale bar on a Gizmo
+#endif
+
 
 //	MakeGizmocubeCorners(xyz)	Make a scatter wave that contains xyz and is CUBICAL
 //	AddGizmoTitleGroup()			Add the title to a gizmo. Returns name of item to include in the display list
@@ -217,7 +222,8 @@ Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
 		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ Shape,1}
 		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ size,1}
 		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ color,0,0,0,1}
-		ModifyGizmo/N=$GizmoName userString={CubeCorners, objectName}	// save name of cube corner object
+//		ModifyGizmo/N=$GizmoName userString={CubeCorners, objectName}	// save name of cube corner object
+		SetWindow $GizmoName userdata(CubeCorners)="AtomViewCubeCorners"
 		ModifyGizmo endRecMacro
 #endif
 	endif
@@ -242,8 +248,8 @@ Static Function/T getCornerCubeObjectNameOnGizmo([GizmoName])		// returns name o
 	String objectName=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
 #else
-	GetGizmo/Z/N=$GizmoName userString=CubeCorners
-	String objectName=S_GizmoUserString
+//	GetGizmo/Z/N=$GizmoName userString=CubeCorners
+	String objectName = GetUserData(GizmoName,"","CubeCorners")
 #endif
 
 	if (strlen(objectName)<1)			// in case of legacy gizmos
@@ -526,11 +532,11 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 		return ""
 	endif
 
-	String cmd
 	// ************************* Group Object Start *******************
 #if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
+	String cmd
 	sprintf cmd "AppendToGizmo string=\"%s\",strFont=\"%s\",name=stringScaleBar",unitStr,font
 	Execute cmd
 	Execute "ModifyGizmo modifyObject=stringScaleBar property={Clipped,0}"
@@ -547,7 +553,7 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	Execute "ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-	AppendToGizmo group,name=groupName
+	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
 	AppendToGizmo string=unitStr,strFont=font,name=stringScaleBar
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -558,10 +564,10 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	ModifyGizmo setDisplayList=1, attribute=lineWidth0
 	ModifyGizmo setDisplayList=2, object=line0
 	ModifyGizmo setDisplayList=3, opName=translateScaleBarText, operation=translate, data={GIZMO_SCALE_BAR_LEFT_EDGE,-1.85,0}
-	ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}
-	ModifyGizmo setDisplayList=5, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}
-	ModifyGizmo setDisplayList=6, object=stringScaleBar
-	ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix
+//	ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}
+	ModifyGizmo setDisplayList=4, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}
+	ModifyGizmo setDisplayList=5, object=stringScaleBar
+	ModifyGizmo setDisplayList=6, opName=popMatrix0, operation=popMatrix
 	ModifyGizmo currentGroupObject="::"
 #endif
 	// ************************* Group Object End *******************

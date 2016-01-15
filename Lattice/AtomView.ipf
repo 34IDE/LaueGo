@@ -1004,15 +1004,20 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	endfor
 	useBlend = useBlend<0 ? 0 : !(!useBlend)	// if no duplicate atoms found, useBlend=0 (no blending)
 
-	String str, objectList="", attributeList="", titleGroup="", scaleBarGroup=""
+	String str, objectList="", attributeList="", scaleBarGroup=""
 #if (IgorVersion()<7)
 	Execute "NewGizmo/N="+gizName+"/T=\""+gizName+"\" /W=(234,45,992,803)"
 	Execute "ModifyGizmo startRecMacro"
+	String titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
 #else
 	NewGizmo/N=$gizName/W=(234,45,992,803)/T=gizName
 	ModifyGizmo startRecMacro
+	String title = "\Z18"+desc
+	title += SelectString(strlen(title2),"", "\r"+title2)
+	title += SelectString(strlen(title3),"", "\r"+title3)
+	title += SelectString(strlen(sourceFldr),"", "\r\Z09"+sourceFldr)
+	TextBox/C/N=textTitle/F=0/B=1/A=LT/X=2/Y=2 title
 #endif
-	titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
 
 	MatrixOP/FREE maxX = maxVal(col(xyz,0))
 	MatrixOP/FREE maxY = maxVal(col(xyz,1))
@@ -1021,23 +1026,25 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	scaleBarGroup = AddScaleBarGroup("",maxLength,"nm",scaleFactor=scaleFactor)
 
 	Variable fixedLight = 0
-	if (strlen(titleGroup+scaleBarGroup) && fixedLight)
 #if (IgorVersion()<7)
+	if (strlen(titleGroup+scaleBarGroup) && fixedLight)
 		Execute "AppendToGizmo light=Directional,name=lightFixed"				// this light is fixed (just like title)
 		Execute "ModifyGizmo light=lightFixed property={ position,0,0,-1,0}"
 		Execute "ModifyGizmo light=lightFixed property={ direction,0,0,-1}"
 		Execute "ModifyGizmo light=lightFixed property={ ambient,0.45,0.45,0.45,1}"
 		Execute "ModifyGizmo light=lightFixed property={ specular,1,1,1,1.0}"
 		Execute "ModifyGizmo light=lightFixed property={ diffuse,0.45,0.45,0.45,1.0}"
+	endif
 #else
+	if (strlen(scaleBarGroup) && fixedLight)
 		AppendToGizmo light=Directional,name=lightFixed				// this light is fixed (just like title)
 		ModifyGizmo modifyObject=lightFixed objectType=light, property={ position,0,0,-1,0}
 		ModifyGizmo modifyObject=lightFixed objectType=light, property={ direction,0,0,-1}
 		ModifyGizmo modifyObject=lightFixed objectType=light, property={ ambient,0.45,0.45,0.45,1}
 		ModifyGizmo modifyObject=lightFixed objectType=light, property={ specular,1,1,1,1.0}
 		ModifyGizmo modifyObject=lightFixed objectType=light, property={ diffuse,0.45,0.45,0.45,1.0}
-#endif
 	endif
+#endif
 
 	objectList += "lightMoving;"
 #if (IgorVersion()<7)
@@ -1104,9 +1111,8 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Execute "ModifyGizmo setObjectAttribute={generalAtom,specularAtom0}"
 	Execute "ModifyGizmo modifyObject=generalAtom,property={colorType,0}"
 #else
+	// This is a generic atom, with shininess & some specular, no color or size
 	AppendToGizmo sphere={0.1,AtomView_SphereQuality,AtomView_SphereQuality},name=generalAtom
-	sprintf str,"AppendToGizmo sphere={0.1,%d,%d},name=generalAtom",AtomView_SphereQuality,AtomView_SphereQuality
-	Execute str									// This is a generic atom, with shininess & some specular, no color or size
 	AppendToGizmo attribute shininess={100,1032},name=shininessAtom0
 	AppendToGizmo attribute specular={1.0,1.0,0.8,1,1032},name=specularAtom0
 	ModifyGizmo setObjectAttribute={generalAtom,shininessAtom0}
@@ -1210,14 +1216,9 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo userString={CubeCorners,\"AtomViewCubeCorners\"}"	// save name of cube corner object
 #else
 		AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=AtomViewCubeCorners
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ markerType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ sizeType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ rotationType,0}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ Shape,1}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ size,1}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners objectType=scatter, property={ color,0,0,0,1}
-		ModifyGizmo userString={CubeCorners,"AtomViewCubeCorners"}	// save name of cube corner object
+		ModifyGizmo ModifyObject=AtomViewCubeCorners,objectType=scatter,property={ Shape,1}
+		ModifyGizmo ModifyObject=AtomViewCubeCorners,objectType=scatter,property={ size,0}
+		SetWindow $gizName userdata(CubeCorners)="AtomViewCubeCorners"
 #endif
 	endif
 
@@ -1230,8 +1231,8 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	ModifyGizmo setDisplayList=-1, opName=clearColor0, operation=clearColor, data={AtomView_GrayBkg,AtomView_GrayBkg,AtomView_GrayBkg,1}
 #endif
 
-	if (strlen(titleGroup+scaleBarGroup))
 #if (IgorVersion()<7)
+	if (strlen(titleGroup+scaleBarGroup))
 		if (fixedLight)
 			Execute "ModifyGizmo setDisplayList=-1, object=lightFixed"
 		endif
@@ -1242,53 +1243,47 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 			Execute "ModifyGizmo setDisplayList=-1, object="+scaleBarGroup
 		endif
 		Execute "ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform"
+	endif
+	Execute "ModifyGizmo setDisplayList=-1, opName=orthoBase, operation=ortho, data={-2,2,-2,2,-3,3}"
+	sprintf str, "ModifyGizmo setDisplayList=-1, opName=scaleBase, operation=scale, data={%g,%g,%g}",scaleFactor,scaleFactor,scaleFactor
+	Execute str
+	if (useBlend)
+		Execute "ModifyGizmo setDisplayList=-1, attribute=blendingFunction"
+		Execute "ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042"
+	endif
 #else
+	if (strlen(scaleBarGroup))
 		if (fixedLight)
 			ModifyGizmo setDisplayList=-1, object=lightFixed
-		endif
-		if (strlen(titleGroup))
-			ModifyGizmo setDisplayList=-1, object=$titleGroup
 		endif
 		if (strlen(scaleBarGroup))
 			ModifyGizmo setDisplayList=-1, object=$scaleBarGroup
 		endif
 		ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform
-#endif
 	endif
-#if (IgorVersion()<7)
-	Execute "ModifyGizmo setDisplayList=-1, opName=orthoBase, operation=ortho, data={-2,2,-2,2,-3,3}"
-	sprintf str, "ModifyGizmo setDisplayList=-1, opName=scaleBase, operation=scale, data={%g,%g,%g}",scaleFactor,scaleFactor,scaleFactor
-	Execute str
-#else
 	ModifyGizmo setDisplayList=-1, opName=orthoBase, operation=ortho, data={-2,2,-2,2,-3,3}
 	ModifyGizmo setDisplayList=-1, opName=scaleBase, operation=scale, data={scaleFactor,scaleFactor,scaleFactor}
-#endif
-
 	if (useBlend)
-#if (IgorVersion()<7)
-		Execute "ModifyGizmo setDisplayList=-1, attribute=blendingFunction"
-		Execute "ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042"
-#else
 		ModifyGizmo setDisplayList=-1, attribute=blendingFunction
 		ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042
-#endif
 	endif
+#endif
 
+#if (IgorVersion()<7)
 	for (i=0;i<ItemsInList(attributeList);i+=1)
-#if (IgorVersion()<7)
 		Execute "ModifyGizmo setDisplayList=-1, attribute="+StringFromList(i,attributeList)
-#else
-		ModifyGizmo setDisplayList=-1, attribute=$StringFromList(i,attributeList)
-#endif
 	endfor
-
 	for (i=0;i<ItemsInList(objectList);i+=1)
-#if (IgorVersion()<7)
 		Execute "ModifyGizmo setDisplayList=-1, object="+StringFromList(i,objectList)
-#else
-		ModifyGizmo setDisplayList=-1, object=$StringFromList(i,objectList)
-#endif
 	endfor
+#else
+	for (i=0;i<ItemsInList(attributeList);i+=1)
+		ModifyGizmo setDisplayList=-1, attribute=$StringFromList(i,attributeList)
+	endfor
+	for (i=0;i<ItemsInList(objectList);i+=1)
+		ModifyGizmo setDisplayList=-1, object=$StringFromList(i,objectList)
+	endfor
+#endif
 
 #if (IgorVersion()<7)
 	Execute "ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}"
@@ -1298,7 +1293,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		Execute "ModifyGizmo namedHookStr={ScaleBarHook,\"GizmoUtil#GzimoReSetScaleBarHookProc\"}"
 	endif
 	if (strlen(title2))
-		Execute "ModifyGizmo namedHookStr={ScaleBarHook,\"AtomView#AtomViewGizmoFixHookProc\"}"
+		Execute "ModifyGizmo namedHookStr={TitleHook,\"AtomView#AtomViewGizmoFixHookProc\"}"
 	endif
 	Execute "ModifyGizmo compile"
 	//	Execute "ModifyGizmo showInfo"
@@ -1309,10 +1304,12 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	ModifyGizmo autoscaling=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))
+//		SetWindow $gizName hook(ScaleBarHook)=GizmoUtil#GzimoReSetScaleBarHookProc
 		ModifyGizmo namedHookStr={ScaleBarHook,GizmoUtil#GzimoReSetScaleBarHookProc}
 	endif
 	if (strlen(title2))
-		ModifyGizmo namedHookStr={ScaleBarHook,AtomView#AtomViewGizmoFixHookProc}
+//		SetWindow $gizName hook(TitleHook)=AtomView#AtomViewGizmoFixHookProc
+		ModifyGizmo namedHookStr={TitleHook,AtomView#AtomViewGizmoFixHookProc}
 	endif
 	ModifyGizmo compile
 	//	ModifyGizmo showInfo
@@ -1457,10 +1454,31 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 #else
 	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
-	AppendToGizmo cylinder={0.02,0,0.1,25,25},name=cylinderArrow
+
 	AppendToGizmo line={0,0,0,a[0],a[1],a[2]}, name=lineX
+	Modifygizmo modifyobject=lineX,objectType=line,property={colorType,2}
+	Modifygizmo modifyobject=lineX,objectType=line,property={colorValue,0,1,0,0,1}
+	Modifygizmo modifyobject=lineX,objectType=line,property={colorValue,1,1,0,0,1}
+	Modifygizmo modifyobject=lineX,objectType=line,property={arrowMode,2}
+	Modifygizmo modifyobject=lineX,objectType=line,property={endArrowHeight,0.1}
+	Modifygizmo modifyobject=lineX,objectType=line,property={endArrowBase,0.03}
+
 	AppendToGizmo line={0,0,0,b[0],b[1],b[2]}, name=lineY
+	Modifygizmo modifyobject=lineY,objectType=line,property={colorType,2}
+	Modifygizmo modifyobject=lineY,objectType=line,property={colorValue,0,0,1,0,1}
+	Modifygizmo modifyobject=lineY,objectType=line,property={colorValue,1,0,1,0,1}
+	Modifygizmo modifyobject=lineY,objectType=line,property={arrowMode,2}
+	Modifygizmo modifyobject=lineY,objectType=line,property={endArrowHeight,0.1}
+	Modifygizmo modifyobject=lineY,objectType=line,property={endArrowBase,0.03}
+
 	AppendToGizmo line={0,0,0,c[0],c[1],c[2]}, name=lineZ
+	Modifygizmo modifyobject=lineZ,objectType=line,property={colorType,2}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={colorValue,0,0,0,1,1}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={colorValue,1,0,0,1,1}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={arrowMode,2}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={endArrowHeight,0.1}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={endArrowBase,0.03}
+
 	if (showNames)
 		AppendToGizmo string="a",strFont=font,name=string_a
 //	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1473,21 +1491,15 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 //		ModifyGizmo modifyObject=string_c property={Clipped,0}
 	endif
 	AppendToGizmo attribute lineWidth=2, name=lineWidthArrow
-	AppendToGizmo attribute color={1,0,0,1},name=colorRed
-	AppendToGizmo attribute color={0,1,0,1},name=colorGreen
-	AppendToGizmo attribute color={0,0,1,1},name=colorBlue
 	AppendToGizmo attribute specular={0,0,0,1,1032},name=specularOFF
 	AppendToGizmo attribute shininess={0,1032},name=shininessOFF
 
 	ModifyGizmo setDisplayList=0, attribute=shininessOFF
 	ModifyGizmo setDisplayList=1, attribute=lineWidthArrow
 
-
-	ModifyGizmo setDisplayList=-1, attribute=colorRed
 	ModifyGizmo setDisplayList=-1, object=lineX
 	ModifyGizmo setDisplayList=-1, opName=translateX, operation=translate, data={a[0],a[1],a[2]}
 	ModifyGizmo setDisplayList=-1, opName=rotateX, operation=rotate, data={rotX[0],rotX[1],rotX[2],rotX[3]}
-	ModifyGizmo setDisplayList=-1, object=cylinderArrow
 	if (showNames)
 		ModifyGizmo setDisplayList=-1, opName=scale_a, operation=scale, data={0.1,0.1,0.1}
 		ModifyGizmo setDisplayList=-1, object=string_a
@@ -1496,11 +1508,9 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 	rotX[0] = -rotX[0]
 	ModifyGizmo setDisplayList=-1, opName=rotateMX, operation=rotate, data={rotX[0],rotX[1],rotX[2],rotX[3]}
 	ModifyGizmo setDisplayList=-1, opName=translateMX, operation=translate, data={-a[0],-a[1],-a[2]}
-	ModifyGizmo setDisplayList=-1, attribute=colorGreen
 	ModifyGizmo setDisplayList=-1, object=lineY
 	ModifyGizmo setDisplayList=-1, opName=translateY, operation=translate, data={b[0],b[1],b[2]}
 	ModifyGizmo setDisplayList=-1, opName=rotateY, operation=rotate, data={-90,1,0,0}
-	ModifyGizmo setDisplayList=-1, object=cylinderArrow
 	if (showNames)
 		ModifyGizmo setDisplayList=-1, opName=scale_b, operation=scale, data={0.1,0.1,0.1}
 		ModifyGizmo setDisplayList=-1, object=string_b
@@ -1509,10 +1519,8 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 	ModifyGizmo setDisplayList=-1, opName=rotateMY, operation=rotate, data={90,1,0,0}
 	ModifyGizmo setDisplayList=-1, opName=translateMY, operation=translate, data={-b[0],-b[1],-b[2]}
 
-	ModifyGizmo setDisplayList=-1, attribute=colorBlue
 	ModifyGizmo setDisplayList=-1, object=lineZ
 	ModifyGizmo setDisplayList=-1, opName=translateZ, operation=translate, data={c[0],c[1],c[2]}
-	ModifyGizmo setDisplayList=-1, object=cylinderArrow
 	if (showNames)
 		ModifyGizmo setDisplayList=-1, opName=scale_c, operation=scale, data={0.1,0.1,0.1}
 		ModifyGizmo setDisplayList=-1, object=string_c
