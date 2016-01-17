@@ -1,8 +1,10 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LatticeSym
-#pragma version = 4.47
+#pragma version = 5.00
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
+
+// #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
@@ -125,6 +127,9 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.44, definition of MenuItemIfWindowAbsent() was changed
 // with version 4.45, added SetToDummyXTAL() for use by FillCrystalStructDefault() for startup bug found by Jan
 // with version 4.46, added SetToDummyATOM() and cleaned up v4.45
+// with version 4.48, fixed a bug in positionsOfOneAtomType() & equivalentHKLs() occured when rowRepeat(vec,1)
+//
+// with version 5.00, changed definition of direct lattice to a||x and c*|| z (was b||y), added #define OLD_LATTICE_ORIENTATION to get old way
 
 // Rhombohedral Transformation:
 //
@@ -1147,8 +1152,8 @@ Static Function ForceLatticeToStructure(xtal)
 	elseif(SpaceGroup>=168)			// Hexagonal
 		xtal.b = xtal.a
 		xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
-	elseif(SpaceGroup>=143)			// Trigonal (generally hexagonal cell), for rhomohedral use rhomohedral cell, unless obviously the hexagonal
 
+	elseif(SpaceGroup>=143)			// Trigonal (generally hexagonal cell), for rhomohedral use rhomohedral cell, unless obviously the hexagonal
 		if (isRhombohedral(SpaceGroup))	// rhombohedral structure
 			if ((abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-3)	// obviously hexagonal
 				xtal.b = xtal.a
@@ -1194,6 +1199,64 @@ Static Function ForceLatticeToStructure(xtal)
 	return 0
 End
 //
+#ifndef OLD_LATTICE_ORIENTATION		// added at version<5.00, with a_Parallel_X, a||x and c*||z
+Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors from a,b,c,..., also calculates Vc & density
+	STRUCT crystalStructure &xtal
+	// Although not used here, note that the following also works:
+	//		MatrixOP recipLatice = 2*PI * (Inv(directLattice))^t
+	//		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
+	//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
+	//
+	//	see:   https://en.wikipedia.org/wiki/Fractional_coordinates
+	//
+	Variable a=xtal.a, b=xtal.b, c=xtal.c
+	Variable sa = sin((xtal.alpha)*PI/180), ca = cos((xtal.alpha)*PI/180)
+	Variable cb = cos((xtal.beta)*PI/180), cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
+	Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
+	Variable Vc = a*b*c * phi							// volume of unit cell
+	Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
+
+	Variable a0,a1,a2,  b0,b1,b2,  c0,c1,c2		//components of the direct lattice vectors
+	a0=a				; a1=0						; a2=0
+	b0=b*cg			; b1=b*sg					; b2=0
+	c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+
+	xtal.Vc = Vc
+	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2	// assign to xtal values
+	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
+	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
+	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2¹/Vc
+	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2¹/Vc
+	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2¹/Vc
+
+	Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
+	allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
+	allZero += abs(xtal.Unconventional20)+abs(xtal.Unconventional21)+abs(xtal.Unconventional22)
+	xtal.Unconventional00 = allZero==0 ? NaN : xtal.Unconventional00
+	if (numtype(xtal.Unconventional00)==0 && xtal.Unconventional00>-100 && xtal.Unconventional00<100)
+		Make/N=(3,3)/O/D root:Packages:Lattices:Unconventional
+		Wave Unconventional=root:Packages:Lattices:Unconventional
+		Unconventional[0][0]=xtal.Unconventional00;	Unconventional[0][1]=xtal.Unconventional01;	Unconventional[0][2]=xtal.Unconventional02
+		Unconventional[1][0]=xtal.Unconventional10;	Unconventional[1][1]=xtal.Unconventional11;	Unconventional[1][2]=xtal.Unconventional12
+		Unconventional[2][0]=xtal.Unconventional20;	Unconventional[2][1]=xtal.Unconventional21;	Unconventional[2][2]=xtal.Unconventional22
+	else
+		KillWaves/Z root:Packages:Lattices:Unconventional
+	endif
+
+	xtal.density = densityOfCrystalStructure(xtal)
+	if (xtal.N==0)								// no atom defined, make one dummy atom
+		xtal.N = 1
+		xtal.atom[0].x = 0
+		xtal.atom[0].y = 0
+		xtal.atom[0].z = 0
+		xtal.atom[0].Zatom = 1				// Z of the atom
+		xtal.atom[0].name = "H1"
+		xtal.atom[0].occ = 1
+		xtal.atom[0].valence = 0
+	endif
+	return 0
+End
+#else													// OLD_LATTICE_ORIENTATION was defined, this gives c||z which is non-standard
 Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors from a,b,c,..., also calculates Vc & density
 	STRUCT crystalStructure &xtal
 	// Although not used here, note that the following also works:
@@ -1244,6 +1307,7 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	endif
 	return 0
 End
+#endif
 
 Function/WAVE direct2LatticeConstants(direct)	// calculate lattice constants angles in degree
 	// take three direct lattice vectors and return lattice constants as a free wave[6]
@@ -1366,7 +1430,7 @@ Function densityOfCrystalStructure(xtal)		// returns the density (g/cm^3)
 		Wave ww = $name
 		amuAll += Element_amu(xtal.atom[m].Zatom)*DimSize(ww,0) * xtal.atom[m].occ
 	endfor
-	return (amuAll/NA)/(xtal.Vc * 1e-21)				// grams / cm^3
+	return (amuAll/NA)/(xtal.Vc * 1e-21)			// grams / cm^3
 End
 
 Static Function NetChargeCell(xtal)						// find the net charge in a cell (from valences), should be zero
@@ -4383,8 +4447,11 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		rr = mod(rr,1)									//   and restrict values to values to [0,1), the first unit cell
 
 		MatrixOP/FREE vec = direct x rr			// real space vector for rr
-		MatrixOP/FREE compares = greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq))))
-		MatrixOP/FREE isDup = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
+		if (Neq<2)
+			MatrixOP/FREE isDup = maxVal( greater(minDist2, sumRows(magSqr(xyznm - vec^t))) )
+		else
+			MatrixOP/FREE isDup = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
+		endif
 		if (isDup[0]<1)								// not a duplicate, so add to the list of positions
 			xyz[N][] = rr[q]							// rr is not an equivalent atom, save it to xyz[N]
 			xyznm[N][] = vec[q]						// keep xyznm in sync with xyz
@@ -4530,8 +4597,17 @@ ThreadSafe Function/WAVE equivalentHKLs(xtal,hkl0,[noNeg])
 	endif
 
 	Variable Nproper=NumberByKey("Nproper",note(SymmetryOp),"=")
+	if (Nproper<1)
+		return $""									// there should always be at least 1 proper rotation (identity)
+	endif
 	Make/N=(3,3)/D/FREE rot
 	Make/N=(Nproper,3)/D/FREE hklEquiv=NaN	// holds all the symmetry equivalent hkl
+
+	if (Nproper==1)
+		hklEquiv[0][] = hkl0[q]				// only 1 proper rotation, must be the identity
+		return hklEquiv							//   this also avoids error at RowRepeat(hkl,1)
+	endif
+
 	Variable isym,NsymOps, diffMin
 	for (isym=0, NsymOps=0; isym<Nproper; isym+=1)
 		rot = SymmetryOp[isym][p][q]
@@ -4584,9 +4660,7 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry 
 	Wave ops = $wName
 
 	Make/N=(3,3)/D/FREE direct,mat
-	direct[0][0] = xtal.a0;		direct[0][1] = xtal.b0;		direct[0][2] = xtal.c0
-	direct[1][0] = xtal.a1;		direct[1][1] = xtal.b1;		direct[1][2] = xtal.c1
-	direct[2][0] = xtal.a2;		direct[2][1] = xtal.b2;		direct[2][2] = xtal.c2
+	direct = { {xtal.a0, xtal.a1, xtal.a2}, {xtal.b0, xtal.b1, xtal.b2}, {xtal.c0, xtal.c1, xtal.c2} }
 	MatrixOp/FREE/O directI = Inv(direct)
 
 	Variable i, N=0, Nproper=0
@@ -5240,7 +5314,7 @@ ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells
 			return 2
 		case "R":										// Rhombohedral
 			if (abs(xtal.alpha-90)+abs(xtal.beta-90)+abs(xtal.gam-120) < 0.01)		// using Hexagonal axes
-				return 3								// there are 3 rhombohedral cells / hexagonal cell
+				return 3									// there are 3 rhombohedral cells / hexagonal cell
 			else
 				return 1
 			endif
@@ -5248,10 +5322,10 @@ ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells
 
 //	Variable SG = xtal.SpaceGroup
 //	if (SG<=194 && SG>=168)						// Hexagonal
-//		return 1										// Hexagonal is a primitive cell
+//		return 1											// Hexagonal is a primitive cell
 //	elseif (SG<168 && SG>=143)					// Trigonal (Rhombohedral)
 //		if (abs(xtal.alpha-90)+abs(xtal.beta-90)+abs(xtal.gam-120) < 0.01)		// using Hexagonal axes
-//			return 3									// there are 3 rhombohedral cells / hexagonal cell
+//			return 3										// there are 3 rhombohedral cells / hexagonal cell
 //		endif
 //	endif
 	return 1
@@ -5383,6 +5457,9 @@ Function NearestAllowedHKL(xtal,hkl,[dhklMax])
 
 	Variable N=(2*dhklMax+1)^3			// number of hkl's to check
 	Variable h0=round(hkl[0]), k0=round(hkl[1]), l0=round(hkl[2])
+	if (N<=1)
+		hkl={h0,k0,l0}
+	endif
 	Make/N=(N,3)/FREE/I hklTest
 	Variable i, m, dh,dk,dl
 	for (dl=0; dl<=dhklMax; dl=incrementIndex(dl))
@@ -5429,15 +5506,11 @@ End
 
 Function/WAVE recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal lattice
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE RL
-	RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}		// the reciprocal lattice
-	RL[0][1] = {xtal.bs0,xtal.bs1,xtal.bs2}
-	RL[0][2] = {xtal.cs0,xtal.cs1,xtal.cs2}
+	Make/N=(3,3)/D/FREE RL								// the reciprocal lattice
+	RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
 	if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
 		setDirectRecip(xtal)							// re-make the as0, as1, ...
-		RL[0][0] = {xtal.as0,xtal.as1,xtal.as2}	// try again
-		RL[0][1] = {xtal.bs0,xtal.bs1,xtal.bs2}
-		RL[0][2] = {xtal.cs0,xtal.cs1,xtal.cs2}
+		RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
 	endif
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
@@ -5451,15 +5524,11 @@ End
 
 Function/WAVE directFrom_xtal(xtal)				// returns a FREE wave with real lattice
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE DL
-	DL[0][0] = {xtal.a0,xtal.a1,xtal.a2}			// the reciprocal lattice
-	DL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
-	DL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
+	Make/N=(3,3)/D/FREE DL								// the direct lattice
+	DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
 	if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
 		setDirectRecip(xtal)							// re-make the a0, a1, ...
-		DL[0][0] = {xtal.a0,xtal.a1,xtal.a2}		// try again
-		DL[0][1] = {xtal.b0,xtal.b1,xtal.b2}
-		DL[0][2] = {xtal.c0,xtal.c1,xtal.c2}
+		DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
 	endif
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
@@ -5477,10 +5546,8 @@ ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal 
 	str = ReplaceString("},{",str,"}{")		// sometimes string is like: "{{1,2,3},{4,5,6},{7,8,9}}"
 	sscanf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	if (V_flag==9)
-		Make/N=(3,3)/D/FREE RL
-		RL[0][0]= {as0,as1,as2}					// the reciprocal lattice
-		RL[0][1]= {bs0,bs1,bs2}
-		RL[0][2]= {cs0,cs1,cs2}
+		Make/N=(3,3)/D/FREE RL						// the reciprocal lattice
+		RL = { {as0,as1,as2}, {bs0,bs1,bs2}, {cs0,cs1,cs2} }
 		return RL
 	else
 		return $""
