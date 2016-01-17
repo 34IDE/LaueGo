@@ -1210,8 +1210,8 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	//	see:   https://en.wikipedia.org/wiki/Fractional_coordinates
 	//
 	Variable a=xtal.a, b=xtal.b, c=xtal.c
-	Variable sa = sin((xtal.alpha)*PI/180), ca = cos((xtal.alpha)*PI/180)
-	Variable cb = cos((xtal.beta)*PI/180), cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
+	Variable ca = cos((xtal.alpha)*PI/180), cb = cos((xtal.beta)*PI/180)
+	Variable cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
 	Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
 	Variable Vc = a*b*c * phi							// volume of unit cell
 	Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
