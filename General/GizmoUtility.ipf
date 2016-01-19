@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
-#pragma IgorVersion = 6.20
-#pragma version = 2.09
+#pragma IgorVersion = 6.21
+#pragma version = 2.10
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -362,15 +362,44 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	title2 = SelectString(ParamIsDefault(title2),title2,"")
 	title3 = SelectString(ParamIsDefault(title3),title3,"")
 	title4 = SelectString(ParamIsDefault(title4),title4,"")
-	pos = SelectString(ParamIsDefault(pos),pos,"TL")
-	pos = SelectString(strlen(pos),"TL",pos)	// defaults to top left
+	pos = SelectString(ParamIsDefault(pos),pos,"LT")
+	pos = SelectString(strlen(pos),"LT",pos)	// defaults to top left
 	String font="Geneva"
+	Variable fontSize=18
 
-	if (WhichListItem(pos,"TL;BL;")<0)
+	if (WhichListItem(pos,"LT;LB;")<0)
 		return ""
 	elseif (strlen(title1)<1)
 		return ""
-	elseif (CheckName(groupName,5))
+	endif
+
+	// remove empty strings, slide down
+	Make/N=4/T/FREE titleWave={title1,title2,title3,title4}
+	Variable i,j
+	for (j=0;j<3;j+=1)									// remove any empty strings
+		for (i=0;i<(4-j);i+=1)
+			if (strlen(titleWave[0]))
+				break
+			endif
+			titleWave[j,2] = titleWave[p+1]		// slide down 1
+			titleWave[3] = ""
+		endfor
+	endfor
+	Make/N=4/W/U/FREE useStr = ( strlen(titleWave[p]) > 0 )
+	if (sum(useStr)<1)									// nothing to do
+		return ""
+	endif
+
+#if (IgorVersion()>=7)
+	groupName = "textTitle"
+	String title = "\Z18"+titleWave[0]
+	title += SelectString(useStr[1],"", "\r\Zr080"+titleWave[1])
+	title += SelectString(useStr[2],"", "\r\Zr070"+titleWave[2])
+	title += SelectString(useStr[3],"", "\r"+titleWave[3])
+	TextBox/C/N=$groupName/F=0/B=1/A=$pos/X=2/Y=2 title
+
+#else
+	if (CheckName(groupName,5))
 		if (strlen(groupName)<1)						// create a unique group name
 			NewDataFolder/O root:Packages				// ensure Packages exists
 			NewDataFolder/O root:Packages:JZT_GizmoUtility	// ensure geometry exists
@@ -385,19 +414,7 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 		groupName = CleanupName(groupName,0)
 	endif
 
-	Variable i
-	for (i=0;i<3 && strlen(title2)==0;i+=1)	// don't leave empty strings between full ones
-		title2 = title3							// e.g. "aa","","cc","dd"  --> "aa,"cc","dd",""
-		title3 = title4
-		title4 = ""
-	endfor
-	for (i=0;i<2 && strlen(title3)==0;i+=1)
-		title3 = title4
-		title4 = ""
-	endfor
-
 	// ************************* Group Object Start *******************
-#if (IgorVersion()<7)
 	Execute "AppendToGizmo group,name="+groupName
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	Execute "AppendToGizmo string=\""+title1+"\",strFont=\""+font+"\",name=Title1"
@@ -415,9 +432,9 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 		Execute "ModifyGizmo modifyObject=Title4 property={Clipped,0}"
 	endif
 
-	if (stringmatch(pos,"TL"))
+	if (stringmatch(pos,"LT"))
 		Execute "ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,1.9,0}"
-	elseif (stringmatch(pos,"BL"))
+	elseif (stringmatch(pos,"LB"))
 		Execute "ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,-1.95,0}"
 	endif
 	Execute "ModifyGizmo setDisplayList=1, opName=rotateTitle, operation=rotate, data={180,1,0,0}"
@@ -438,54 +455,9 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 		endif
 	endif
 	Execute "ModifyGizmo currentGroupObject=\"::\""
-
-#else
-	AppendToGizmo group,name=groupName
-	ModifyGizmo currentGroupObject=groupName
-	AppendToGizmo string=title1,strFont=font,name=title1
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//	ModifyGizmo modifyObject=title1 objectType=string, property={Clipped,0}
-	if (strlen(title2))
-		AppendToGizmo string=title2,strFont=font,name=Title2
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=Title2 objectType=string, property={Clipped,0}
-	endif
-	if (strlen(title3))
-		AppendToGizmo string=title3,strFont=font,name=Title3
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=Title3 objectType=string, property={Clipped,0}
-	endif
-	if (strlen(title4))
-		AppendToGizmo string=title4,strFont=font,name=Title4
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=Title4 objectType=string, property={Clipped,0}
-	endif
-
-	if (stringmatch(pos,"TL"))
-		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,1.9,0}
-	elseif (stringmatch(pos,"BL"))
-		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,-1.95,0}
-	endif
-	ModifyGizmo setDisplayList=1, opName=rotateTitle, operation=rotate, data={180,1,0,0}
-	ModifyGizmo setDisplayList=2, opName=scaleTitle, operation=scale, data={0.1,0.1,0.1}
-	ModifyGizmo setDisplayList=3, object=title1
-	if (strlen(title2))
-		ModifyGizmo setDisplayList=4, opName=translateTitle2, operation=translate, data={0,1,0}
-		ModifyGizmo setDisplayList=5, opName=scaleTitle2, operation=scale, data={0.8,0.8,0.8}
-		ModifyGizmo setDisplayList=6, object=Title2
-		if (strlen(title3))
-			ModifyGizmo setDisplayList=7, opName=translateTitle3, operation=translate, data={0,1,0}
-			ModifyGizmo setDisplayList=8, opName=scaleTitle3, operation=scale, data={0.7,0.7,0.7}
-			ModifyGizmo setDisplayList=9, object=Title3
-			if (strlen(title4))
-				ModifyGizmo setDisplayList=10, opName=translateTitle4, operation=translate, data={0,1.5,0}
-				ModifyGizmo setDisplayList=11, object=Title4
-			endif
-		endif
-	endif
-	ModifyGizmo currentGroupObject="::"
-#endif
 	// ************************* Group Object End *******************
+#endif
+
 	return groupName
 End
 

@@ -1008,16 +1008,11 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 #if (IgorVersion()<7)
 	Execute "NewGizmo/N="+gizName+"/T=\""+gizName+"\" /W=(234,45,992,803)"
 	Execute "ModifyGizmo startRecMacro"
-	String titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
 #else
 	NewGizmo/N=$gizName/W=(234,45,992,803)/T=gizName
 	ModifyGizmo startRecMacro
-	String title = "\Z18"+desc
-	title += SelectString(strlen(title2),"", "\r"+title2)
-	title += SelectString(strlen(title3),"", "\r"+title3)
-	title += SelectString(strlen(sourceFldr),"", "\r\Z09"+sourceFldr)
-	TextBox/C/N=textTitle/F=0/B=1/A=LT/X=2/Y=2 title
 #endif
+	String titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
 
 	MatrixOP/FREE maxX = maxVal(col(xyz,0))
 	MatrixOP/FREE maxY = maxVal(col(xyz,1))
@@ -1545,9 +1540,7 @@ Static Function AtomViewGizmoFixHookProc(s)
 #if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z objectList"
 	KillStrings/Z S_gizmoObjectList
-#else
-	GetGizmo/N=$win/Z objectList
-#endif
+
 	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
 	Wave xyz=$""
 	String str, title2=""
@@ -1570,14 +1563,10 @@ Static Function AtomViewGizmoFixHookProc(s)
 		return 0
 	endif
 
-#if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z objectNameList"
 	String ObjectNames = StrVarOrDefault("S_ObjectNames","")
 	KillStrings/Z S_ObjectNames
-#else
-	GetGizmo/N=$win/Z objectNameList
-	String ObjectNames = S_ObjectNames
-#endif
+
 	String titleGroupName=""									// find the name of the title group
 	for (i=0;i<ItemsInList(ObjectNames);i+=1)
 		if (stringmatch(StringFromList(i,ObjectNames),"gizmoStringGroup*"))
@@ -1588,18 +1577,49 @@ Static Function AtomViewGizmoFixHookProc(s)
 		return 0
 	endif
 
-#if (IgorVersion()<7)
 	Execute "ModifyGizmo/N="+win+"/Z startRecMacro"
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\""+titleGroupName+"\""
 	Execute "ModifyGizmo/N="+win+"/Z modifyObject=Title2, property={string,\""+title2+"\"}"
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
 	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
 #else
-	ModifyGizmo/N=$win/Z startRecMacro
-	ModifyGizmo/N=$win/Z currentGroupObject=titleGroupName
-	ModifyGizmo/N=$win/Z modifyObject=Title2, objectType=string, property={string,title2}
-	ModifyGizmo/N=$win/Z currentGroupObject="::"
-	ModifyGizmo/N=$win/Z endRecMacro
+
+	GetGizmo/N=$win/Z objectItemExists=atomViewAtoms
+	if (!V_flag)
+		return 0
+	endif
+	GetGizmo/N=$win/Z objectList
+
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+	Wave xyz=$""
+	String str, title2="", wnote=""
+	Variable i0,i1,i
+	for (i=0;i<DimSize(TW_gizmoObjectList,0);i+=1)	// find the xyz wave
+		if (StringMatch(TW_gizmoObjectList[i],"*AppendToGizmo Scatter=*,name=atomViewAtoms"))
+			str = TW_gizmoObjectList[i]
+			i0 = strsearch(str,"Scatter=",0,2)+8
+			i1 = strsearch(str,",name=atomViewAtoms",i0,2)-1
+			Wave xyz=$(str[i0,i1])
+			wnote = note(xyz)
+			str = StringByKey("Nabc",wnote,"=")
+			if (strlen(str)>1)
+				title2 = ReplaceString(" ",str," x ")+" cells"	// new title2 string
+			endif
+			break
+		endif
+	endfor
+	KillWaves/Z TW_gizmoObjectList
+	if (strlen(title2)<1)
+		return 0
+	endif
+
+	String desc = StringByKey("desc",wnote,"="), title3=""
+	Variable bondLenMax=NumberByKey("bondLenMax",wnote,"=")
+	if (bondLenMax>0)
+		sprintf title3,"max bond length = %g nm",bondLenMax
+	endif
+	String sourceFldr = StringByKey("sourceFldr",wnote,"=")
+	String titleGroup = AddGizmoTitleGroup("textTitle",desc,title2=title2,title3=title3,title4=sourceFldr)
 #endif
 	return 0	 
 End
