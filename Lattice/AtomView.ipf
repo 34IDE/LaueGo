@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.30
+#pragma version = 0.32
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1474,14 +1474,8 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 
 	if (showNames)
 		AppendToGizmo string="a",strFont=font,name=string_a
-//	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=string_a property={Clipped,0}
 		AppendToGizmo string="b",strFont=font,name=string_b
-//	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=string_b property={Clipped,0}
 		AppendToGizmo string="c",strFont=font,name=string_c
-//	xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-//		ModifyGizmo modifyObject=string_c property={Clipped,0}
 	endif
 	AppendToGizmo attribute lineWidth=2, name=lineWidthArrow
 	AppendToGizmo attribute specular={0,0,0,1,1032},name=specularOFF
@@ -1537,32 +1531,21 @@ Static Function AtomViewGizmoFixHookProc(s)
 	endif
 	String win=s.winName
 
-#if (IgorVersion()<7)
-	Execute "GetGizmo/N="+win+"/Z objectList"
-	KillStrings/Z S_gizmoObjectList
+	Wave xyz = $GetItemFromGizmoObject(win,"atomViewAtoms","scatter")
+	if (!WaveExists(xyz))
+		return 0
+	endif
 
-	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
-	Wave xyz=$""
-	String str, title2=""
-	Variable i0,i1,i
-	for (i=0;i<DimSize(TW_gizmoObjectList,0);i+=1)	// find the xyz wave
-		if (StringMatch(TW_gizmoObjectList[i],"*AppendToGizmo Scatter=*,name=atomViewAtoms"))
-			str = TW_gizmoObjectList[i]
-			i0 = strsearch(str,"Scatter=",0,2)+8
-			i1 = strsearch(str,",name=atomViewAtoms",i0,2)-1
-			Wave xyz=$(str[i0,i1])
-			str = StringByKey("Nabc",note(xyz),"=")
-			if (strlen(str)>1)
-				title2 = ReplaceString(" ",str," x ")+" cells"	// new title2 string
-			endif
-			break
-		endif
-	endfor
-	KillWaves/Z TW_gizmoObjectList
+	String wnote=note(xyz), title2="", str
+	str = StringByKey("Nabc",wnote,"=")
+	if (strlen(str)>1)
+		title2 = ReplaceString(" ",str," x ")+" cells"	// new title2 string
+	endif
 	if (strlen(title2)<1)
 		return 0
 	endif
 
+#if (IgorVersion()<7)
 	Execute "GetGizmo/N="+win+"/Z objectNameList"
 	String ObjectNames = StrVarOrDefault("S_ObjectNames","")
 	KillStrings/Z S_ObjectNames
@@ -1583,36 +1566,6 @@ Static Function AtomViewGizmoFixHookProc(s)
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
 	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
 #else
-
-	GetGizmo/N=$win/Z objectItemExists=atomViewAtoms
-	if (!V_flag)
-		return 0
-	endif
-	GetGizmo/N=$win/Z objectList
-
-	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
-	Wave xyz=$""
-	String str, title2="", wnote=""
-	Variable i0,i1,i
-	for (i=0;i<DimSize(TW_gizmoObjectList,0);i+=1)	// find the xyz wave
-		if (StringMatch(TW_gizmoObjectList[i],"*AppendToGizmo Scatter=*,name=atomViewAtoms"))
-			str = TW_gizmoObjectList[i]
-			i0 = strsearch(str,"Scatter=",0,2)+8
-			i1 = strsearch(str,",name=atomViewAtoms",i0,2)-1
-			Wave xyz=$(str[i0,i1])
-			wnote = note(xyz)
-			str = StringByKey("Nabc",wnote,"=")
-			if (strlen(str)>1)
-				title2 = ReplaceString(" ",str," x ")+" cells"	// new title2 string
-			endif
-			break
-		endif
-	endfor
-	KillWaves/Z TW_gizmoObjectList
-	if (strlen(title2)<1)
-		return 0
-	endif
-
 	String desc = StringByKey("desc",wnote,"="), title3=""
 	Variable bondLenMax=NumberByKey("bondLenMax",wnote,"=")
 	if (bondLenMax>0)

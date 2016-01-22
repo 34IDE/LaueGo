@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.10
+#pragma version = 2.12
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -1556,6 +1556,60 @@ Function/T GetGizmoBoxDisplayed(gizmo)		// returns list with XYZ range of gizmo 
 	endif
 	return out
 End
+
+
+
+Function/T GetItemFromGizmoObject(win,object,name)
+	String win
+	String object
+	String name
+
+#if (IgorVersion()<7)
+	String Nswitch = SelectString(strlen(win),"","/N="+win)
+	Execute "GetGizmo"+Nswitch+"/Z objectList"
+#else
+	GetGizmo/N=$win/Z objectList
+#endif
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+	KillStrings/Z S_gizmoObjectList
+	if (!WaveExists(TW_gizmoObjectList))
+		return ""
+	endif
+
+	String line, str, findAppend, findModify, out=""
+	sprintf findAppend, "*AppendToGizmo %s=*,name=%s", name,object
+	sprintf findModify, "*ModifyGizmo modifyObject=%s,*%s*", object,name
+
+	Variable i0,i1,i, N=DimSize(TW_gizmoObjectList,0)
+	for (i=0;i<N;i+=1)
+		line = TW_gizmoObjectList[i]
+		if (StringMatch(line,findAppend))
+			sprintf str, "AppendToGizmo %s=",name
+			i0 = strsearch(line,str,0,2)+strlen(str)
+			if (i0<0)
+				return ""
+			endif
+			i1 = strsearch(line,",",i0,2)
+			out = line[i0,i1-1]
+			break
+		elseif (StringMatch(line,findModify))
+			i0 = strsearch(line,",property={",0,2)
+			if (i0<1)
+				return ""
+			endif
+			i0 += strlen(",property={")
+			i0 = strsearch(line,name,i0,2) + strlen(name) + 1
+			i1 = strsearch(line,"}",i0,2)
+			out = TrimFrontBackWhiteSpace(line[i0,i1-1])
+			break
+		endif
+
+	endfor
+	KillWaves/Z TW_gizmoObjectList
+	return out
+End
+
+
 
 
 Function/WAVE GizmoObjectWave(objectName,objType,[gizmo])
