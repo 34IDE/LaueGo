@@ -1067,7 +1067,7 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 	Execute "ModifyGizmo setDisplayList=-1, opName=popAttribute0, operation=popAttribute"
 	Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-	AppendToGizmo group,name=groupName
+	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
 	String str
 	Variable v = GIZMO_MARKER_END_SIZE>0 ? 1-2*GIZMO_MARKER_END_SIZE : 1

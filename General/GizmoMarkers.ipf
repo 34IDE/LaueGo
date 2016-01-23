@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.11
+#pragma version = 2.12
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -507,6 +507,9 @@ Static Function GizmoMarkerShowHideButtonProc(ba) : ButtonControl
 
 	String win=ba.win
 	ControlInfo/W=$win waveSelectPopup
+	if (V_Value<1)
+		return 0
+	endif
 	Wave scatter=$S_Value
 	if (!WaveExists(scatter))
 		return 0
@@ -964,10 +967,11 @@ Static Function/T GizmoAddScatterMarker([scatter,rgba,alpha])		// adds marker to
 
 #if (IgorVersion()<7)
 	Execute "GetGizmo displayItemExists=scatterMarkerArray"
+	Variable V_Flag=NumVarOrDefault("V_Flag",1)
 #else
 	GetGizmo displayItemExists=scatterMarkerArray
 #endif
-	if (!NumVarOrDefault("V_Flag",1))		// object not in display list, add it before other objects
+	if (!V_Flag)									// object not in display list, add it before other objects
 #if (IgorVersion()<7)
 		Execute "GetGizmo displayList"		// list of all displayed objects
 #else
