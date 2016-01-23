@@ -507,7 +507,7 @@ Static Function GizmoMarkerShowHideButtonProc(ba) : ButtonControl
 
 	String win=ba.win
 	ControlInfo/W=$win waveSelectPopup
-	if (V_Value<1)
+	if (V_flag < 1 || V_Value<1)
 		return 0
 	endif
 	Wave scatter=$S_Value
