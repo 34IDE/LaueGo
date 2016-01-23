@@ -897,8 +897,14 @@ Static Function/T AddEndingToWaveName(wName,waveNameEnd)
 	String wName
 	String waveNameEnd
 
+	String path=""								// a possible path preceeding the name
+	Variable i=strsearch(wName,":",Inf,1)
+	if (i>=0)
+		path = wName[0,i]						// strip off the path and save it
+		wName = wName[i+1,Inf]				// wName, now only the name part (no path)
+	endif
 	wName = wName[0,maxIgorNameLen-strlen(waveNameEnd)-1]
-	wName += waveNameEnd
+	wName = path + wName + waveNameEnd	// reassemble the full name
 	return wName
 End
 
