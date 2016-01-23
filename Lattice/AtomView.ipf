@@ -1578,6 +1578,7 @@ Static Function AtomViewGizmoFixHookProc(s)
 	KillStrings/Z S_ObjectNames
 
 	String titleGroupName=""									// find the name of the title group
+	Variable i
 	for (i=0;i<ItemsInList(ObjectNames);i+=1)
 		if (stringmatch(StringFromList(i,ObjectNames),"gizmoStringGroup*"))
 		titleGroupName = StringFromList(i,ObjectNames)
