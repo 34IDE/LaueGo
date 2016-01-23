@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.32
+#pragma version = 0.33
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -12,24 +12,29 @@
 #initFunctionName "Init_AtomViewLattice()"
 
 // These Constant values can be OverRidden by adding the line in your Main Procedure window.  Don't change this file.
-Constant AtomView_GrayBkg = 0.75	// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
+Constant AtomView_GrayBkg = 0.75		// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
 Constant AtomView_BondLineWidth = 5	// Can OverRide with :OverRide Constant AtomView_BondLineWidth=3
 StrConstant AtomView_CellOutLineColor = "0.733333,0.733333,0.733333,1"
 Constant AtomView_CellOutLineColorR = 0.733333
 Constant AtomView_CellOutLineColorG = 0.733333
 Constant AtomView_CellOutLineColorB = 0.733333
 Constant AtomView_CellOutLineColorA = 1
+
+
+#if (IgorVersion()<7)
 StrConstant AtomView_BondColor = "0.4,0.4,0.4,1"
-Constant AtomView_BondColorR = 0.4
-Constant AtomView_BondColorG = 0.4
-Constant AtomView_BondColorB = 0.4
-Constant AtomView_BondColorA = 1
-Constant AtomView_UseCovalent = 1	// Can OverRide with :OverRide Constant AtomView_UseCovalent=1
+#else
+Constant AtomView_BondColorR = 0.2
+Constant AtomView_BondColorG = 0.2
+Constant AtomView_BondColorB = 0.2
+Constant AtomView_BondColorA = 0.8
+Constant AtomView_BondDia = 0.008
+#endif
+Constant AtomView_UseCovalent = 1		// Can OverRide with :OverRide Constant AtomView_UseCovalent=1
 												// turn this flag on to use covalent radius instead of atomic radius.
 Constant AtomView_SphereQuality = 50	// Can OverRide with :OverRide Constant AtomView_SphereQuality=100
+Constant AtomView_zero= 1e-10			// distances less than this (=1e-19 m) are considered zero
 Constant AtomView_UseBlend = -1		// Can OverRide with :OverRide Constant AtomView_UseBlend=1, 0=NoBlend, 1=Blend, -1=Auto
-Constant AtomView_zero= 1e-10		// distances less than this (=1e-19 m) are considered zero
-
 
 //Static Constant GizmoScaleSize_BASE=7.5
 Static Constant GizmoScaleSize_BASE=3.75
@@ -884,7 +889,6 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 		out += str
 	endfor
 
-
 	return out
 End
 
@@ -906,12 +910,14 @@ End
 //  ============================= Start Make Gizmo =============================  //
 //  ============================================================================  //
 
-Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Gizmo
+Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns name of Gizmo
 	Wave xyz
 	Variable showNames					// if true, show a,b,c labels on lattice vectors
 	Variable scaleFactor				// scale up model in Gizmo Window
+	Variable useBlend					// 0=no blend, 1=blend, -1=auto
 	scaleFactor = ParamIsDefault(scaleFactor) ? 1.25 : scaleFactor
 	scaleFactor = numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
+	useBlend = ParamIsDefault(useBlend) || numtype(useBlend) ? AtomView_UseBlend : useBlend
 	if(exists("NewGizmo")!=4)			// Do nothing if the Gizmo XOP is not available.
 		DoAlert 0, "Gizmo XOP must be installed"
 		return ""
@@ -973,7 +979,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Wave size = $StringByKey("sizeWave",wNote,"=")
 	Wave rgba = $StringByKey("rgbaWave",wNote,"=")
 	Wave Zwave = $StringByKey("ZWave",wNote,"=")
-	Wave AtomTypewave = $StringByKey("atomAtomTypeWave",wNote,"=")
+	Wave/T AtomTypewave = $StringByKey("atomAtomTypeWave",wNote,"=")
 	Wave bonds = $StringByKey("bondsWave",wNote,"=")
 	Wave corners = $StringByKey("cornersWave",wNote,"=")
 	Wave cell = $StringByKey("cellOutlineWave",wNote,"=")
@@ -994,15 +1000,21 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Wave b = str2vec(StringByKey("bVec",wNote,"="),sep=",")
 	Wave c = str2vec(StringByKey("cVec",wNote,"="),sep=",")
 
-	Variable useBlend = AtomView_UseBlend			// 0=no blend, 1=blend, -1=auto
-	Make/N=3/D/FREE xyz0
-	Variable m, N=DimSize(xyz,0)
-	for (m=0;m<N && useBlend<0;m+=1)				// search for two atoms at same position if useBlend is auto (-1)
-		xyz0 = xyz[m][p]
-		MatrixOP/FREE/O dxyz = greater(AtomView_zero,sumRows(magSqr(xyz-rowRepeat(xyz0,N))))
-		useBlend = sum(dxyz)>=2 ? 1 : useBlend
-	endfor
-	useBlend = useBlend<0 ? 0 : !(!useBlend)	// if no duplicate atoms found, useBlend=0 (no blending)
+#if (IgorVersion()>=7)
+	// for Igor7 prefer blend, but turn off blend when long labels are used
+	useBlend = useBlend<0 && !StringMatch(AtomTypewave[0],"*001") ? 1 : useBlend
+#endif
+	if (useBlend < 0)			// auto was chosen, decide on blending
+		Variable m, N=DimSize(xyz,0)
+		Make/N=3/D/FREE xyz0
+		// when useBlend == -1, then turn on blending when two atoms are at the same location
+		for (m=0;m<N && useBlend<0;m+=1)				// search for two atoms at same position if useBlend is auto (-1)
+			xyz0 = xyz[m][p]
+			MatrixOP/FREE/O dxyz = greater(AtomView_zero,sumRows(magSqr(xyz-rowRepeat(xyz0,N))))
+			useBlend = sum(dxyz)>=2 ? 1 : useBlend
+		endfor
+		useBlend = useBlend<0 ? 0 : !(!useBlend)	// if no duplicate atoms found, useBlend=0 (no blending)
+	endif
 
 	String str, objectList="", attributeList="", scaleBarGroup=""
 #if (IgorVersion()<7)
@@ -1115,7 +1127,6 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	ModifyGizmo modifyObject=generalAtom, objectType=sphere, property={colorType,0}
 #endif
 
-	objectList += "atomViewAtoms;"
 #if (IgorVersion()<7)
 	Execute "AppendToGizmo Scatter="+GetWavesDataFolder(xyz,2)+",name=atomViewAtoms"
 	Execute "ModifyGizmo ModifyObject=atomViewAtoms property={ scatterColorType,1}"
@@ -1127,7 +1138,20 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	Execute "ModifyGizmo ModifyObject=atomViewAtoms property={ sizeWave,"+GetWavesDataFolder(size,2)+"}"
 	Execute "ModifyGizmo ModifyObject=atomViewAtoms property={ Shape,7}"			// 7 means an object, set in next line
 	Execute "ModifyGizmo ModifyObject=atomViewAtoms property={ objectName,generalAtom}"
+	objectList += "atomViewAtoms;"
 #else
+	if (useBlend)				// when using blend, you can also show the atom labels
+		AppendToGizmo Scatter=$GetWavesDataFolder(xyz,2),name=atomViewAtomsLabels
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ markerType,0}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ sizeType,0}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ rotationType,0}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ Shape,8}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ size,1.5}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ color,0,0,0,1}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ TextWave,$GetWavesDataFolder(AtomTypewave,2)}
+		objectList += "atomViewAtomsLabels;"
+	endif
 	AppendToGizmo Scatter=$GetWavesDataFolder(xyz,2),name=atomViewAtoms
 	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ scatterColorType,1}
 	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ markerType,0}
@@ -1138,6 +1162,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ sizeWave, $GetWavesDataFolder(size,2)}
 	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ Shape,7}			// 7 means an object, set in next line
 	ModifyGizmo ModifyObject=atomViewAtoms objectType=scatter, property={ objectName,generalAtom}
+	objectList += "atomViewAtoms;"
 #endif
 
 	if (WaveExists(bonds))
@@ -1159,7 +1184,9 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor])	// returns name of Giz
 		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ lineWidthType,1}
 		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ lineWidth,lineWidth}
 		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ pathColor,AtomView_BondColorR,AtomView_BondColorG,AtomView_BondColorB,AtomView_BondColorA}
-		ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}
+		ModifyGizmo ModifyObject=atomViewBonds,objectType=path,property={ drawTube,1}
+		ModifyGizmo ModifyObject=atomViewBonds,objectType=path,property={ fixedRadius,AtomView_BondDia}
+			ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}
 		AppendToGizmo attribute specular={0.1,0.1,0.1,1,1032},name=specularBond0
 #endif
 	endif
