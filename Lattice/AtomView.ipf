@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.33
+#pragma version = 0.34
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -987,6 +987,9 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Wave Zwave = $StringByKey("ZWave",wNote,"=")
 	Wave/T AtomTypewave = $StringByKey("atomAtomTypeWave",wNote,"=")
 	Wave bonds = $StringByKey("bondsWave",wNote,"=")
+	if (DimSize(bonds,0)<1)
+		Wave bonds = $""
+	endif
 	Wave corners = $StringByKey("cornersWave",wNote,"=")
 	Wave cell = $StringByKey("cellOutlineWave",wNote,"=")
 	Wave cell0 = $StringByKey("cellOutlineWave0",wNote,"=")

@@ -1,6 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
+#pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.00
+#pragma version = 5.01
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -64,7 +65,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 3.96, added support for Debye-Waller factor, added some optional arguments to Fstruct()
 //	with version 3.97, changed Fstruct() to use Q properly, and changed getFstruct(), added inputs for Temperature & keV
 //	with version 3.99, added proper support for Biso, Uiso, Uij, and WyckoffSymbol
-//		also changed ConvertUnits2meters() to handle units like "nm^2" or "Å^-1"
+//		also changed ConvertUnits2meters() to handle units like "nm^2" or "√Ö^-1"
 //	with version 4.00, fixed editing of Biso, Uiso, Uij
 //		also fixed EditAtomPositions(), atomBad(), atomThermalInfo(), Fstruct(), readFileXML() to correctly handle thermal parameters.
 //	with version 4.01, changed atom editing to use a much nicer Panel.  Changed EditAtomPositions(), added SetAtomEditPanelValues(), ChangeAtomEditPanelSize(), 
@@ -176,7 +177,7 @@ Menu "Analysis"
 		help={"Crude Structure Factor using current lattice"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
-		"\\M0Space Group number <––> symmetry",symmtry2SG("")
+		"\\M0Space Group number <‚Äì‚Äì> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 		"Describe the Symmetry Operations", DescribeSymOps($"")
 		"angle between two hkl's",angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN)
@@ -243,7 +244,7 @@ Structure atomTypeStructure	// defines one type of atom in a crystal structure
 	int16 valence				// valence of atom, must be an integer
 	int16 mult					// multiplicity
 	double DebyeT				// Debye Temperature (K),  for DebyeT, B, Uiso, & U_ij, use only one method
-	double Biso					// B-factor (nm^2) using:   exp(-M) = exp(-B * sin^2(theta)/lam^2)		B = 8 * π^2 * <u^2> =  8 * π^2 * Uiso, 	exp[-B*q^2 / (16 π^2) ]
+	double Biso					// B-factor (nm^2) using:   exp(-M) = exp(-B * sin^2(theta)/lam^2)		B = 8 * œÄ^2 * <u^2> =  8 * œÄ^2 * Uiso, 	exp[-B*q^2 / (16 œÄ^2) ]
 	double Uiso					// isotropic U (nm^2)
 	double U11					// anisotropic U(11) (nm^2)
 	double U22					// anisotropic U(22) (nm^2)
@@ -288,7 +289,7 @@ Function showCrystalStructure()						// prints the structure that is currently b
 		return 1
 	endif
 	String str, sym = getHMboth(xtal.SpaceGroup)
-	sprintf str, "'%s'  %d atoms,  #%d   %s\r%.9g, %.9g, %.9gnm,\r%g°, %g°, %g°",xtal.desc,xtal.N,xtal.SpaceGroup,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
+	sprintf str, "'%s'  %d atoms,  #%d   %s\r%.9g, %.9g, %.9gnm,\r%g¬∞, %g¬∞, %g¬∞",xtal.desc,xtal.N,xtal.SpaceGroup,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	Variable netCharge = NetChargeCell(xtal)
 	if (netCharge)
 		str += "\r  *** Charge imbalance in cell = "+num2str(netCharge)+" ***"
@@ -297,7 +298,7 @@ Function showCrystalStructure()						// prints the structure that is currently b
 	if (V_flag==1)
 		print_crystalStructure(xtal)					// prints out the value in a crystalStructure structure
 	else
-		printf "currently using  '%s'  lattice is  #%d   %s     %.9gnm, %.9gnm, %.9gnm,   %g°, %g°, %g°",xtal.desc,xtal.SpaceGroup,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
+		printf "currently using  '%s'  lattice is  #%d   %s     %.9gnm, %.9gnm, %.9gnm,   %g¬∞, %g¬∞, %g¬∞",xtal.desc,xtal.SpaceGroup,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 		if (xtal.N > 0)
 			printf ",   %g defined atom types\r",xtal.N
 		else
@@ -409,11 +410,11 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomOcc,pos={10,141},size={110,19},title="Occupancy",fSize=12,proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomOcc,limits={0,1,0},value= _NUM:1
 
-	SetVariable setAtomDebyeT,pos={17,173},size={127,19},bodyWidth=60,title="Debye (°K)"
+	SetVariable setAtomDebyeT,pos={17,173},size={127,19},bodyWidth=60,title="Debye (¬∞K)"
 	SetVariable setAtomDebyeT,fSize=12,limits={0.01,inf,0},value= _NUM:NaN , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomBiso,pos={17,170},size={155,24},bodyWidth=60,title="B-isotropic (Å\\S2\\M)"
+	SetVariable setAtomBiso,pos={17,170},size={155,24},bodyWidth=60,title="B-isotropic (√Ö\\S2\\M)"
 	SetVariable setAtomBiso,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomUiso,pos={17,170},size={155,24},bodyWidth=60,title="U-isotropic (Å\\S2\\M)"
+	SetVariable setAtomUiso,pos={17,170},size={155,24},bodyWidth=60,title="U-isotropic (√Ö\\S2\\M)"
 	SetVariable setAtomUiso,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomU11,pos={10,173},size={73,21},bodyWidth=50,title="U\\B11\\M"
 	SetVariable setAtomU11,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
@@ -427,8 +428,8 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomU13,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomU23,pos={212,204},size={73,21},bodyWidth=50,title="U\\B23\\M"
 	SetVariable setAtomU23,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	TitleBox titleUij1,pos={290,171},size={14,21},title="Å\\S2\\M",fSize=12,frame=0
-	TitleBox titleUij2,pos={291,203},size={14,21},title="Å\\S2\\M",fSize=12,frame=0
+	TitleBox titleUij1,pos={290,171},size={14,21},title="√Ö\\S2\\M",fSize=12,frame=0
+	TitleBox titleUij2,pos={291,203},size={14,21},title="√Ö\\S2\\M",fSize=12,frame=0
 
 	String win=StringFromList(0,WinList("*",";","WIN:64"))
 	if (Natoms>0)
@@ -529,11 +530,11 @@ End
 //	SetVariable setAtomOcc,pos={10,137},size={110,19},title="Occupancy",fSize=12,proc=LatticeSym#AtomEditSetVarProc
 //	SetVariable setAtomOcc,limits={0,1,0},value= _NUM:1
 //
-//	SetVariable setAtomDebyeT,pos={17,173},size={127,19},bodyWidth=60,title="Debye (°K)"
+//	SetVariable setAtomDebyeT,pos={17,173},size={127,19},bodyWidth=60,title="Debye (¬∞K)"
 //	SetVariable setAtomDebyeT,fSize=12,limits={0.01,inf,0},value= _NUM:NaN , proc=LatticeSym#AtomEditSetVarProc
-//	SetVariable setAtomBiso,pos={17,170},size={155,24},bodyWidth=60,title="B-isotropic (Å\\S2\\M)"
+//	SetVariable setAtomBiso,pos={17,170},size={155,24},bodyWidth=60,title="B-isotropic (√Ö\\S2\\M)"
 //	SetVariable setAtomBiso,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-//	SetVariable setAtomUiso,pos={17,170},size={155,24},bodyWidth=60,title="U-isotropic (Å\\S2\\M)"
+//	SetVariable setAtomUiso,pos={17,170},size={155,24},bodyWidth=60,title="U-isotropic (√Ö\\S2\\M)"
 //	SetVariable setAtomUiso,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
 //	SetVariable setAtomU11,pos={10,173},size={73,21},bodyWidth=50,title="U\\B11\\M"
 //	SetVariable setAtomU11,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
@@ -547,8 +548,8 @@ End
 //	SetVariable setAtomU13,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
 //	SetVariable setAtomU23,pos={212,204},size={73,21},bodyWidth=50,title="U\\B23\\M"
 //	SetVariable setAtomU23,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-//	TitleBox titleUij1,pos={290,171},size={14,21},title="Å\\S2\\M",fSize=12,frame=0
-//	TitleBox titleUij2,pos={291,203},size={14,21},title="Å\\S2\\M",fSize=12,frame=0
+//	TitleBox titleUij1,pos={290,171},size={14,21},title="√Ö\\S2\\M",fSize=12,frame=0
+//	TitleBox titleUij2,pos={291,203},size={14,21},title="√Ö\\S2\\M",fSize=12,frame=0
 //
 //	String win=StringFromList(0,WinList("*",";","WIN:2"))
 //	if (Natoms>0)
@@ -837,7 +838,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	ControlInfo/W=$win setAtomOcc		;		xtal.atom[m].occ = V_Value
 	ControlInfo/W=$win setValencePopup	;		xtal.atom[m].valence = str2num(S_Value)
 	ControlInfo/W=$win setAtomDebyeT	;		xtal.atom[m].DebyeT = V_Value
-	ControlInfo/W=$win setAtomBiso		;		xtal.atom[m].Biso = V_Value * 0.01	// Panel uses Å^2, xtal uses nm^2
+	ControlInfo/W=$win setAtomBiso		;		xtal.atom[m].Biso = V_Value * 0.01	// Panel uses √Ö^2, xtal uses nm^2
 	ControlInfo/W=$win setAtomUiso		;		xtal.atom[m].Uiso = V_Value * 0.01
 	ControlInfo/W=$win setAtomU11		;		xtal.atom[m].U11 = V_Value * 0.01
 	ControlInfo/W=$win setAtomU22		;		xtal.atom[m].U22 = V_Value * 0.01
@@ -865,7 +866,7 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
 	Variable i,N=xtal.N
 	if (WhichListItem("LatticePanelButtonProc",GetRTStackInfo(0))>=0)
-		printf "•showCrystalStructure()\r"
+		printf "‚Ä¢showCrystalStructure()\r"
 	endif
 	if (strlen(xtal.desc))
 		printf "'%s'   \t",xtal.desc
@@ -882,7 +883,7 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 	else
 		printf "\r"
 	endif
-	printf "lattice constants  { %.15gnm, %.15gnm, %.15gnm,   %.15g°, %.15g°, %.15g° }",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
+	printf "lattice constants  { %.15gnm, %.15gnm, %.15gnm,   %.15g¬∞, %.15g¬∞, %.15g¬∞ }",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	if (numtype(xtal.Temperature)==0)
 		Variable Temperature = xtal.Temperature
 		String unit = "C"
@@ -890,14 +891,14 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 			unit = "K"
 			Temperature = ConvertTemperatureUnits(Temperature,"C",unit)		// xtal.Temperature is always C
 		endif
-		printf ",   Temperature = %g °%s\r",Temperature,unit
+		printf ",   Temperature = %g ¬∞%s\r",Temperature,unit
 	else
 		printf "\r"
 	endif
 	if (SG<=167 && SG>=143 && (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6)	// also show rhombohedral lattice constants
 		Variable aRhom = sqrt(3*(xtal.a)^2 + (xtal.c)^2)/3
 		Variable alphaRhom = 2*asin(1.5/sqrt(3+(xtal.c/xtal.a)^2)) * 180/PI
-		printf "   Rhombohedral constants, aRhom = %.8g nm,   alpha(Rhom) = %.8g°\r",aRhom,alphaRhom
+		printf "   Rhombohedral constants, aRhom = %.8g nm,   alpha(Rhom) = %.8g¬∞\r",aRhom,alphaRhom
 	endif
 	if (strlen(xtal.sourceFile)>1)
 		printf "xtal read from file: \"%s\"\r",xtal.sourceFile
@@ -937,9 +938,9 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 			if (itemp==1)					// Thermal vibration information, print at most one kind of info
 				printf "\t    Debye Temperature = %g K",xtal.atom[i].DebyeT
 			elseif (itemp==2)
-				printf "    Isotropic B = %g (Å^2)",(xtal.atom[i].Biso * 100)
+				printf "    Isotropic B = %g (√Ö^2)",(xtal.atom[i].Biso * 100)
 			elseif (itemp==3)
-				printf "    Isotropic U = %g (Å^2)",(xtal.atom[i].Uiso * 100)
+				printf "    Isotropic U = %g (√Ö^2)",(xtal.atom[i].Uiso * 100)
 			elseif (itemp>=4)
 				printf "    An-Isotropic U, U11 = %g, U22 = %g, U33 = %g (nm^2)",(xtal.atom[i].U11 *100),(xtal.atom[i].U22 *100),(xtal.atom[i].U33 *100)
 				if (itemp==5)
@@ -1225,9 +1226,9 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2	// assign to xtal values
 	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
 	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
-	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2π/Vc
-	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2π/Vc
-	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2π/Vc
+	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2œÄ/Vc
+	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2œÄ/Vc
+	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2œÄ/Vc
 
 	Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
 	allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
@@ -1276,9 +1277,9 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2
 	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
 	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
-	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2π/Vc
-	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2π/Vc
-	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2π/Vc
+	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2œÄ/Vc
+	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2œÄ/Vc
+	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2œÄ/Vc
 
 	Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
 	allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
@@ -1597,7 +1598,7 @@ Function angleBetweenHKLs(h1,k1,l1,  h2,k2,l2)		// find angle between (h1,k1,l1)
 	angle *= 180/PI
 	KillWaves hkl_angleBetweenHKLs1, hkl_angleBetweenHKLs2
 	if (ItemsInList(GetRTStackInfo(0))<2)
-		printf "angle between (%s) and (%s) is %g°\r",hkl2str(h1,k1,l1),hkl2str(h2,k2,l2),angle
+		printf "angle between (%s) and (%s) is %g¬∞\r",hkl2str(h1,k1,l1),hkl2str(h2,k2,l2),angle
 	endif
 	return angle
 End
@@ -1960,7 +1961,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	a = numtype(a)||a<=0 ? 0.405 : a			// default is aluminum
 	b = numtype(b)||b<=0 ? a : b
 	c = numtype(c)||c<=0 ? a : c
-	alpha = numtype(alpha)||alpha<=0 ? 90 : alpha	// for invalid angles, use 90°
+	alpha = numtype(alpha)||alpha<=0 ? 90 : alpha	// for invalid angles, use 90¬∞
 	bet = numtype(bet)||bet<=0 ? 90 : bet
 	gam = numtype(gam)||gam<=0 ? 90 : gam
 	//	Cubic				[195,230]	//	a
@@ -2023,9 +2024,9 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	Prompt a, "a (nm)"
 	Prompt b, "b (nm)"
 	Prompt c, "c (nm)"
-	Prompt alpha, "alpha (°)"
-	Prompt bet, "beta (°)"
-	Prompt gam, "gamma (°)"
+	Prompt alpha, "alpha (¬∞)"
+	Prompt bet, "beta (¬∞)"
+	Prompt gam, "gamma (¬∞)"
 
 	if (SpaceGroup>=195)			// Cubic
 		DoPrompt/HELP="" "Cubic lattice constants",a
@@ -2169,13 +2170,13 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_c_nm,pos={45,133},size={128,18},proc=LatticePanelParamProc,title="c (nm)"
 	SetVariable set_c_nm,fSize=12,format="%.7f"
 	SetVariable set_c_nm,limits={0,inf,0},value= root:Packages:Lattices:PanelValues:c
-	SetVariable set_alpha,pos={45,163},size={100,17},proc=LatticePanelParamProc,title="a∞"
+	SetVariable set_alpha,pos={45,163},size={100,17},proc=LatticePanelParamProc,title="a¬∞"
 	SetVariable set_alpha,font="Symbol",fSize=14,format="%10.5f"
 	SetVariable set_alpha,limits={0,180,0},value= root:Packages:Lattices:PanelValues:alpha
-	SetVariable set_beta,pos={45,183},size={100,17},proc=LatticePanelParamProc,title="b∞"
+	SetVariable set_beta,pos={45,183},size={100,17},proc=LatticePanelParamProc,title="b¬∞"
 	SetVariable set_beta,font="Symbol",fSize=14,format="%10.5f"
 	SetVariable set_beta,limits={0,180,0},value= root:Packages:Lattices:PanelValues:bet
-	SetVariable set_gamma,pos={45,203},size={100,17},proc=LatticePanelParamProc,title="g∞"
+	SetVariable set_gamma,pos={45,203},size={100,17},proc=LatticePanelParamProc,title="g¬∞"
 	SetVariable set_gamma,font="Symbol",fSize=14,format="%10.5f"
 	SetVariable set_gamma,limits={0,180,0},value= root:Packages:Lattices:PanelValues:gam
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
@@ -2211,7 +2212,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	ValDisplay d_LatticeDisp,pos={12,460},size={123,16},title="d(nm)",font="Lucida Grande",fSize=12,format="%.7f"
 	ValDisplay d_LatticeDisp,limits={0,0,0},value=#"root:Packages:Lattices:PanelValues:dspace_nm"
 	ValDisplay d_LatticeDisp,help={"d-spacing (nm) calculated using the lattice"},frame=0
-	SetVariable T_LatticeVar,pos={143,459},size={70,18},proc=LatticePanelParamProc,title="T(°C)",font="Lucida Grande",fSize=12
+	SetVariable T_LatticeVar,pos={143,459},size={70,18},proc=LatticePanelParamProc,title="T(¬∞C)",font="Lucida Grande",fSize=12
 	SetVariable T_LatticeVar,limits={-273.151,inf,0},value=root:Packages:Lattices:PanelValues:T_C
 	SetVariable T_LatticeVar,help={"Temperature (C) used when Thermal factors are given"}
 	ValDisplay Fr_3atticeDisp,pos={20,483},size={80,17},title="F =",value= #"root:Packages:Lattices:PanelValues:Fr"
@@ -2616,7 +2617,7 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 		return 1
 	endif
 	String unit = StringByKey("lengthUnit",list,"=")
-	if (stringmatch(unit,"Ang*") || stringmatch(unit,"Å*"))
+	if (stringmatch(unit,"Ang*") || stringmatch(unit,"√Ö*"))
 		a*= 10  ;  b*= 10  ;  c*= 10
 	endif
 	alphaT = str2num(StringByKey("latticeAlphaT",list,"="))
@@ -3472,9 +3473,9 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 		if (itemp==1)								// write ONE kind of thermal vibartion info
 			cif += "\t\t<DebyeTemperature unit=\"K\">"+num2StrFull(xtal.atom[i].DebyeT)+"</DebyeTemperature>"+NL
 		elseif (itemp==2)
-			cif += "\t\t<B_iso unit=\"Å^2\">"+num2StrFull(xtal.atom[i].Biso * 100)+"</B_iso>"+NL
+			cif += "\t\t<B_iso unit=\"√Ö^2\">"+num2StrFull(xtal.atom[i].Biso * 100)+"</B_iso>"+NL
 		elseif (itemp==3)
-			cif += "\t\t<U_iso unit=\"Å^2\">"+num2StrFull(xtal.atom[i].Uiso * 100)+"</U_iso>"+NL
+			cif += "\t\t<U_iso unit=\"√Ö^2\">"+num2StrFull(xtal.atom[i].Uiso * 100)+"</U_iso>"+NL
 		elseif (itemp>=4)
 			cif += "\t\t<aniso_U_11 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U11)+"</aniso_U_11>"+NL
 			cif += "\t\t<aniso_U_22 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U22)+"</aniso_U_22>"+NL
@@ -3956,20 +3957,20 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.atom[N].WyckoffSymbol = str[0]
 			occ = str2num(StringFromList(WhichListItem("_atom_site_occupancy",list),line))
 			xtal.atom[N].occ = occ >=0 ? limit(occ,0,1) : 1
-			Biso = str2num(StringFromList(WhichListItem("_atom_site_B_iso_or_equiv",list),line))/100	// assume value in Å^2
+			Biso = str2num(StringFromList(WhichListItem("_atom_site_B_iso_or_equiv",list),line))/100	// assume value in √Ö^2
 			xtal.atom[N].Biso = Biso>0 ? Biso : NaN
 			if (!(xtal.atom[N].Biso > 0))
-				Uiso = str2num(StringFromList(WhichListItem("_atom_site_U_iso_or_equiv",list),line))/100	// assume value in Å^2
+				Uiso = str2num(StringFromList(WhichListItem("_atom_site_U_iso_or_equiv",list),line))/100	// assume value in √Ö^2
 				xtal.atom[N].Uiso = Uiso>0 ? Uiso : NaN
 				if (!(xtal.atom[N].Uiso > 0))
-					Uij = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_11",list),line))/100	// assume value in Å^2
+					Uij = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_11",list),line))/100	// assume value in √Ö^2
 					if (Uij>0)
 						xtal.atom[N].U11 = Uij
-						xtal.atom[N].U22 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_22",list),line))/100	// assume value in Å^2
-						xtal.atom[N].U33 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_33",list),line))/100	// assume value in Å^2
-						xtal.atom[N].U12 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_12",list),line))/100	// assume value in Å^2
-						xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100	// assume value in Å^2
-						xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100	// assume value in Å^2
+						xtal.atom[N].U22 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_22",list),line))/100	// assume value in √Ö^2
+						xtal.atom[N].U33 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_33",list),line))/100	// assume value in √Ö^2
+						xtal.atom[N].U12 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_12",list),line))/100	// assume value in √Ö^2
+						xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100	// assume value in √Ö^2
+						xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100	// assume value in √Ö^2
 					endif
 				endif
 			endif
@@ -4092,7 +4093,7 @@ Function/C getFstruct(h,k,l,[keV,T,printIt])	// user interface to getting F for 
 		keV = keV>0 ? keV : NaN
 		T = T>-273.15 ? T : NaN
 
-		printf "•getFstruct(%g,%g,%g",h,k,l
+		printf "‚Ä¢getFstruct(%g,%g,%g",h,k,l
 		if (keV>0)
 			printf ", keV=%g",keV
 		endif
@@ -4112,7 +4113,7 @@ Function/C getFstruct(h,k,l,[keV,T,printIt])	// user interface to getting F for 
 			printf ", %gkeV",keV
 		endif
 		if (T>0)
-			printf ", %g°C",T
+			printf ", %g¬∞C",T
 		endif
 		printf ") = %g %s i%g,      |F|^2 = %g\r",real(Fc),SelectString(imag(Fc)<0,"+","-"),abs(imag(Fc)),magsqr(Fc)
 	endif
@@ -4241,8 +4242,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		if (xtal.Vibrate)
 			Variable amu, DW, thetaM								// thetaM = Debye Temperature (K)
 			Variable Biso, Uiso, itemp
-			//	M = B*(sin^2(theta)/lam^2) --> M = B/(16 π^2) * Q^2
-			//	exp(-B * sin^2(theta)/lam^2)		B = 8 * π^2 * <u^2> =  8 * π^2 * Uiso
+			//	M = B*(sin^2(theta)/lam^2) --> M = B/(16 œÄ^2) * Q^2
+			//	exp(-B * sin^2(theta)/lam^2)		B = 8 * œÄ^2 * <u^2> =  8 * œÄ^2 * Uiso
 			itemp = atomThermalInfo(xtal.atom[m],T_K=T_K)	// Get kind of thermal info present (0 means none)
 			if (itemp==1)
 				thetaM = xtal.atom[m].DebyeT
@@ -4250,11 +4251,11 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 				DW = exp(-DW_factor_M(T_K,thetaM,Qmag,amu))// calculates the M in exp(-M), no I/O
 				fatomMag *= DW>0 ? DW : 1
 			elseif (itemp==2)
-				Biso = xtal.atom[m].Biso							// B-factor (nmÍ^2)
+				Biso = xtal.atom[m].Biso							// B-factor (nm√ç^2)
 				fatomMag *= exp(-Biso * (Qmag/(4*PI))^2)	// exp[-B * (sin(theta)/lam)^2 ]
 			elseif (itemp==3)
 				Uiso = xtal.atom[m].Uiso
-				fatomMag *= exp(-Qmag*Qmag*Uiso/2)				// B = (8*π^2 U)
+				fatomMag *= exp(-Qmag*Qmag*Uiso/2)				// B = (8*œÄ^2 U)
 			elseif (itemp>=4)
 				// qUq = q^t x U x q
 				Variable qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2 + (xtal.atom[m].U33)*qvec[2]^2
@@ -4279,8 +4280,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 		//  for hexagonal:
 		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3n±1,	l=even;		F = f			1/4
+		//	h+2k=3n¬±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+		//	h+2k=3n¬±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
 
@@ -4292,7 +4293,7 @@ End
 Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fatom, just (Z-valence)
 	string AtomType
 	variable keV										// energy is ignored in this simple calculation
-	Variable QAngstrom								// |Q| in (1/Å), == 2*PI/d[Å]
+	Variable QAngstrom								// |Q| in (1/√Ö), == 2*PI/d[√Ö]
 	variable valence									// optional integer for valence
 	valence = ParamIsDefault(valence) ? 0 : valence
 
@@ -4564,8 +4565,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 		//  for hexagonal:
 		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3n±1,	l=even;		F = f			1/4
+		//	h+2k=3n¬±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+		//	h+2k=3n¬±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
 
@@ -4864,7 +4865,7 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 		if (abs(angle)<0.1)
 			str = "Identity (no rotation)"
 		else
-			sprintf str, "% 4.0f° rotation about the %s",angle,name
+			sprintf str, "% 4.0f¬∞ rotation about the %s",angle,name
 		endif
 		out += str+";"
 		if (printIt)
@@ -5579,7 +5580,7 @@ End
 
 ThreadSafe Function str2hkl(hklStr,h,k,l)
 	// returns the hkl values from a string, pretty forgiving about format in string
-	// moved to here from Dynamical.ipf versions ≤1.14
+	// moved to here from Dynamical.ipf versions ‚â§1.14
 	String hklStr
 	Variable &h,&k,&l
 
@@ -5636,9 +5637,9 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over t
 	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
 	return str
 End
-//	str += SelectString(h<0,"","\\S \\f01—\\f00\\M\\X0")+" "+num2istr(abs(h))	// mac
-//	str += SelectString(k<0,"","\\[1\\S\\f01 —\\f00\\M\\X1")+" "+num2istr(abs(k))
-//	str += SelectString(l<0,"","\\[2\\S \\f01—\\f00\\M\\X2")+" "+num2istr(abs(l))
+//	str += SelectString(h<0,"","\\S \\f01‚Äî\\f00\\M\\X0")+" "+num2istr(abs(h))	// mac
+//	str += SelectString(k<0,"","\\[1\\S\\f01 ‚Äî\\f00\\M\\X1")+" "+num2istr(abs(k))
+//	str += SelectString(l<0,"","\\[2\\S \\f01‚Äî\\f00\\M\\X2")+" "+num2istr(abs(l))
 
 
 ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has minuses to one using a bar over the following character
@@ -5648,7 +5649,7 @@ ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has
 	spaces = round(spaces)==limit(spaces,1,5) ? spaces : 0
 
 	String sspaces = PadString("",spaces,0x20), bs
-	String bChar=SelectString(stringmatch(IgorInfo(2),"Windows"),"—","Ø")	// Mac bar character, on Windows use "Ø"
+	String bChar=SelectString(stringmatch(IgorInfo(2),"Windows"),"‚Äî","√ò")	// Mac bar character, on Windows use "√ò"
 	for (; strsearch(str,"-",0)>=0;)
 		sprintf bs, "\\[9\\S\\f01%s\\]9\\M\\X9",sspaces+bChar
 		str = ReplaceString("-",str,bs,0,1)
@@ -5659,7 +5660,7 @@ End
 //	String str
 //	String bs
 //	Variable i
-//	String bChar=SelectString(stringmatch(IgorInfo(2),"Windows"),"—","Ø")	// Mac bar character, on Windows use "Ø"
+//	String bChar=SelectString(stringmatch(IgorInfo(2),"Windows"),"‚Äî","√ò")	// Mac bar character, on Windows use "√ò"
 //	for (i=0; i<=9 && strsearch(str,"-",0)>=0; i+=1)
 //		sprintf bs, "\\[%d\\S\\f01%s\\f00\\M\\X%d",i,bChar,i
 //		str = ReplaceString("-",str,bs,0,1)
@@ -5831,7 +5832,7 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroup)		// make the symmetry operati
 	String symOperations=setSymLine(SpaceGroup)			// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
 	Variable i,N=ItemsInList(symOperations)
 	String wName = "root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup)
-	Make/N=(N,3,3)/O/B $wName								// this only holds 0 or ±1
+	Make/N=(N,3,3)/O/B $wName								// this only holds 0 or ¬±1
 	Wave equivM = $wName
 	wName = "root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SpaceGroup)
 	Make/N=(N,3)/O/D $wName
