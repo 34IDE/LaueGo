@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.27
+#pragma version = 3.28
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.90
@@ -163,6 +163,7 @@ Static Function LoadAllGizmoUtilities()
 End
 
 
+#if (IgorVersion()<7)
 Menu "Help"
 	"-"
 	SubMenu "LaueGo"
@@ -170,9 +171,28 @@ Menu "Help"
 		"   LaueGo Version Info Deep Check...", /Q, DeepCheckActualFiles("")
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+		SubMenu "Roman"
+			"*CHARACTER*(Geneva,36)", GetLastUserMenuInfo; print S_value, V_value
+		End
+		SubMenu "Symbol"
+			"*CHARACTER*(Symbol,36)", GetLastUserMenuInfo; print S_value, V_value
+		End
 	End
 End
-
+#else
+Menu "Help"
+	"-"
+	SubMenu "LaueGo"
+		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
+		"   LaueGo Version Info Deep Check...", /Q, DeepCheckActualFiles("")
+		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
+		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
+		SubMenu "Characters"
+			"*CHARACTER*(Geneva,36)", GetLastUserMenuInfo; print S_value, V_value
+		End
+	End
+End
+#endif
 
 //  ====================================================================================  //
 //  ========================== Start of Help & Version Info  ===========================  //
