@@ -13,14 +13,14 @@
 		<temperature unit="C">86.85</temperature>
 	</cell>
 	<atom_site>
-		<label>V1</label>
+		<label>V</label>
 		<symbol>V</symbol>
 		<fract_x>0</fract_x>
 		<fract_y>0</fract_y>
 		<fract_z>0</fract_z>
 	</atom_site>
 	<atom_site>
-		<label>O1</label>
+		<label>O</label>
 		<symbol>O</symbol>
 		<fract_x>0.3001</fract_x>
 		<fract_y>0.3001</fract_y>

@@ -12,7 +12,7 @@
 		<gamma>120</gamma>
 	</cell>
 	<atom_site>
-		<label>Be1</label>
+		<label>Be</label>
 		<symbol>Be</symbol>
 		<fract_xyz>0.33333 0.66667 0.25</fract_xyz>
 		<DebyeTemperature unit="K">1440</DebyeTemperature>

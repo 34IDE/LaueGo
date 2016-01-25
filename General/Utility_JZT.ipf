@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.91
+#pragma version = 3.92
 // #pragma hide = 1
 
 Menu "Graph"
@@ -19,6 +19,7 @@ End
 StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;;Fl;;Lv"
 Static Constant Smallest32bitFloat = 1.40129846432482e-45			// see DefaultZeroThresh(ww) below for use and finding
 Static Constant Smallest64bitFloat = 4.94065645841247e-324
+Static Constant maxIgorWaveNameLen=31
 
 
 // Sections:
@@ -36,6 +37,7 @@ Static Constant Smallest64bitFloat = 4.94065645841247e-324
 //	8	Contains lots of utility stuff
 //		RecompileAllProcedures(), FORCE ALL procedures to recompile
 //		FixUpFolderName(fldr), return foldr name with the needed ":", so fldr+"wavename" is valid
+//		AddEndingToWaveName(wName,waveNameEnd), add an ending to wName, without exceeding max permitted name length
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
 //		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
 //		joinLists(a,b,[sep]) returns lists a & b joined together in one list
@@ -1794,6 +1796,23 @@ Function/T FixUpFolderName(fldr)		// return foldr name with the needed ":", so f
 		fldr += ":"
 	endif
 	return fldr
+End
+
+
+Function/T AddEndingToWaveName(wName,waveNameEnd)
+	// create a new wave name from wav but with a new ending, needed due to maxIgorWaveNameLen
+	String wName
+	String waveNameEnd
+
+	String path=""								// a possible path preceeding the name
+	Variable i=strsearch(wName,":",Inf,1)
+	if (i>=0)
+		path = wName[0,i]						// strip off the path and save it
+		wName = wName[i+1,Inf]				// wName, now only the name part (no path)
+	endif
+	wName = wName[0,maxIgorWaveNameLen-strlen(waveNameEnd)-1]
+	wName = path + wName + waveNameEnd	// reassemble the full name
+	return wName
 End
 
 

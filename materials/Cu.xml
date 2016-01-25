@@ -12,7 +12,7 @@
 		<gamma>90</gamma>
 	</cell>
 	<atom_site>
-		<label>Cu001</label>
+		<label>Cu</label>
 		<symbol>Cu</symbol>
 		<fract_xyz>0 0 0</fract_xyz>
 		<DebyeTemperature unit="K">343.5</DebyeTemperature>

@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.34
+#pragma version = 0.35
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -38,7 +38,6 @@ Constant AtomView_UseBlend = -1		// Can OverRide with :OverRide Constant AtomVie
 
 //Static Constant GizmoScaleSize_BASE=7.5
 Static Constant GizmoScaleSize_BASE=3.75
-Static Constant maxIgorNameLen=31
 
 Menu "Analysis"
 	SubMenu "Lattice"
@@ -890,22 +889,6 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 	endfor
 
 	return out
-End
-
-Static Function/T AddEndingToWaveName(wName,waveNameEnd)
-	// create a new wave name from wav but with a new ending, needed due to maxIgorNameLen
-	String wName
-	String waveNameEnd
-
-	String path=""								// a possible path preceeding the name
-	Variable i=strsearch(wName,":",Inf,1)
-	if (i>=0)
-		path = wName[0,i]						// strip off the path and save it
-		wName = wName[i+1,Inf]				// wName, now only the name part (no path)
-	endif
-	wName = wName[0,maxIgorNameLen-strlen(waveNameEnd)-1]
-	wName = path + wName + waveNameEnd	// reassemble the full name
-	return wName
 End
 
 //  ========================= End Get Info About Bonds =========================  //

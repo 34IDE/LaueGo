@@ -12,7 +12,7 @@
 		<gamma>90</gamma>
 	</cell>
 	<atom_site>
-		<label>La1</label>
+		<label>La</label>
 		<symbol>La</symbol>
 		<fract_x>0.0</fract_x>
 		<fract_y>0.0</fract_y>
@@ -20,7 +20,7 @@
 		<occupancy>0.5</occupancy>
 	</atom_site>
 	<atom_site>
-		<label>Sr1</label>
+		<label>Sr</label>
 		<symbol>Sr</symbol>
 		<fract_x>0.0</fract_x>
 		<fract_y>0.0</fract_y>
@@ -28,7 +28,7 @@
 		<occupancy>0.5</occupancy>
 	</atom_site>
 	<atom_site>
-		<label>Ga1</label>
+		<label>Ga</label>
 		<symbol>Ga</symbol>
 		<fract_x>0.0</fract_x>
 		<fract_y>0.0</fract_y>

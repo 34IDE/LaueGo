@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.16
+#pragma version = 0.17
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -186,22 +186,6 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	endif
 	GraphPowderPattern(intens)				// create  the graph or bring it to the front
 	return intens
-End
-//
-Static Function/T AddEndingToWaveName(wName,waveNameEnd)
-	// create a new wave name from wav but with a new ending, needed due to maxIgorNameLen
-	String wName
-	String waveNameEnd
-
-	String path=""								// a possible path preceeding the name
-	Variable i=strsearch(wName,":",Inf,1)
-	if (i>=0)
-		path = wName[0,i]						// strip off the path and save it
-		wName = wName[i+1,Inf]				// wName, now only the name part (no path)
-	endif
-	wName = wName[0,maxIgorNameLen-strlen(waveNameEnd)-1]
-	wName = path + wName + waveNameEnd	// reassemble the full name
-	return wName
 End
 
 Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])

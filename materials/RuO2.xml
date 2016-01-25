@@ -14,13 +14,13 @@
 		<temperature unit="C">22.5</temperature>
 	</cell>
 	<atom_site>
-		<label>Ru1</label>
+		<label>Ru</label>
 		<symbol>Ru</symbol>
 		<fract_xyz>0 0 0</fract_xyz>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
-		<label>O1</label>
+		<label>O</label>
 		<symbol>O</symbol>
 		<fract_xyz>0.3001 0.3001 0</fract_xyz>
 		<WyckoffSymbol>f</WyckoffSymbol>

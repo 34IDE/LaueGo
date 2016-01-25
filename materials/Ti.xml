@@ -12,7 +12,7 @@
 		<gamma>120</gamma>
 	</cell>
 	<atom_site>
-		<label>Ti001</label>
+		<label>Ti</label>
 		<symbol>Ti</symbol>
 		<fract_xyz>0.33333 0.66667 0.25</fract_xyz>
 		<DebyeTemperature unit="K">420</DebyeTemperature>
