@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.79
+#pragma version = 4.80
 #include "LatticeSym", version>=4.35
 #include "microGeometryN", version>=1.81
 #include "Masking", version>1.02
@@ -7505,9 +7505,9 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 		DrawLine 0,offset,221,offset
 
 		Button buttonIndexNewPoleXML,pos={1,15+offset},size={140,20},proc=IndexButtonProc,title="New Pole Figure"
-		Button buttonIndexNewPoleXML,help={"index lots of images"}
+		Button buttonIndexNewPoleXML,help={"Create a Pole Figure from current xml file data."}
 		Button buttonIndexRePlotPoleXML,pos={150,15+offset},size={70,20},proc=IndexButtonProc,title="Re-Plot"
-		Button buttonIndexRePlotPoleXML,help={"index lots of images"}
+		Button buttonIndexRePlotPoleXML,help={"Re-Plot the calculated Pole Figure"}
 
 		Button buttonIndexRefineStrainMany,pos={1,40+offset},size={140,20},proc=IndexButtonProc,title="Strain Refine Many"
 		Button buttonIndexRefineStrainMany,help={"Strain Refine Many Indexed Images"}
@@ -7531,9 +7531,9 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 		Button buttonIndex2Dplot,help={"Put up a 2D plot of loaded XML data"}
 
 		Button buttonIndexGizmoXML,pos={1,120+offset},size={140,20},proc=IndexButtonProc,title="Gizmo of 3d XML"
-		Button buttonIndexGizmoXML,help={"index lots of images"}
+		Button buttonIndexGizmoXML,help={"Make a Gizmo from the XML data"}
 		Button buttonIndexColorHexagon,pos={150,120+offset},size={70,20},proc=IndexButtonProc,title="Color Hex"
-		Button buttonIndexColorHexagon,help={"index lots of images"}
+		Button buttonIndexColorHexagon,help={"Display direction colors"}
 
 		Button buttonIndexHistogram,pos={1,145+offset},size={140,20},proc=IndexButtonProc,title="Histogram 3D array"
 		Button buttonIndexHistogram,help={"Create a histogram of an interpolated 3D array"}
@@ -7541,7 +7541,7 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 		Button buttonIndexHistogramPlot,help={"Re-Plot the histogram of an interpolated 3D array"}
 
 		Button buttonIndexRotation,pos={1,170+offset},size={190,20},proc=IndexButtonProc,title="Rotation between 2 Points"
-		Button buttonIndexRotation,help={"index lots of images"}
+		Button buttonIndexRotation,help={"Find the rotation angle between two points, probably identified with cursors A & B"}
 
 		offset += 125 + 30 + 25
 	endif

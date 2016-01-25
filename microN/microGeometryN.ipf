@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.84
+#pragma version = 1.85
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -3671,31 +3671,31 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 	SetVariable sizeY,help={"outside y size of detector (mm)"}
 	SetVariable sizeY,limits={0,500,0}, bodyWidth=60
 	SetVariable Rx,pos={8,58+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="R"
-	SetVariable Rx,help={"rotation axis for detector"},format="%.6f"
+	SetVariable Rx,help={"x-component of rotation axis for detector, length in radian"},format="%.6f"
 	SetVariable Rx,limits={-3.2,3.2,0}, bodyWidth=50
 	SetVariable Ry,pos={85,58+v},size={55,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
-	SetVariable Ry,help={"rotation axis for detector"},format="%.6f"
+	SetVariable Ry,help={"y-component of rotation axis for detector, length in radian"},format="%.6f"
 	SetVariable Ry,limits={-3.2,3.2,0}, bodyWidth=50
 	SetVariable Rz,pos={149,58+v},size={50,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
-	SetVariable Rz,help={"rotation axis for detector"},format="%.6f"
+	SetVariable Rz,help={"z-component of rotation axis for detector, length in radian"},format="%.6f"
 	SetVariable Rz,limits={-3.2,3.2,0}, bodyWidth=50
 	SetVariable Px,pos={8,76+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="P"
-	SetVariable Px,help={"Position translation for detector"},format="%.3f"
+	SetVariable Px,help={"x-component of Position translation for detector (mm)"},format="%.3f"
 	SetVariable Px,limits={-1000,1000,0}, bodyWidth=50
 	SetVariable Py,pos={85,76+v},size={55,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
-	SetVariable Py,help={"Position translation for detector"},format="%.3f"
+	SetVariable Py,help={"y-component of Position translation for detecto (mm)r"},format="%.3f"
 	SetVariable Py,limits={-1000,1000,0}, bodyWidth=50
 	SetVariable Pz,pos={149,76+v},size={50,15},proc=microGeo#GeoPanelVarChangedProc,title=" "
-	SetVariable Pz,help={"Position translation for detector"},format="%.3f"
+	SetVariable Pz,help={"z-component of Position translation for detector (mm)"},format="%.3f"
 	SetVariable Pz,limits={-1000,1000,0}, bodyWidth=50
 	SetVariable timeMeasured,pos={10,96+v},size={202,15},title="time", proc=microGeo#GeoPanelVarChangedProc
 	SetVariable timeMeasured,help={"date/time when detector calibrated"}
 	SetVariable geoNote,pos={10,116+v},size={202,15},title="note", proc=microGeo#GeoPanelVarChangedProc
-	SetVariable geoNote,help={"optional note about this detector"}
+	SetVariable geoNote,help={"note about this detector (optional)"}
 	SetVariable distortionMapFile,pos={10,136+v},size={202,15},title="distortion file", proc=microGeo#GeoPanelVarChangedProc
-	SetVariable distortionMapFile,help={"name of file with the distortion map for this detector"}
+	SetVariable distortionMapFile,help={"name of file with the distortion map for this detector (optonal)"}
 	SetVariable detectorID,pos={10,156+v},size={202,15},title="detector ID",proc=microGeo#GeoPanelVarChangedProc
-	SetVariable detectorID,help={"ID for this detector"}
+	SetVariable detectorID,help={"unique ID for this detector"}
 
 	// Wire Controls
 	v = 253
@@ -3778,7 +3778,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 		PopupMenu SaveGeoPopup,help={"Write values in this panel to a file or to EPICS"}
 	else
 		Button buttonWriteToFile,pos={35,528},size={150,20},proc=microGeo#GeometryPanelButtonProc,title="Write to a file"
-		Button buttonWriteToFile,help={"Write values in this panel to a file"}
+		Button buttonWriteToFile,help={"Write values in this panel to a 'geoN' file"}
 	endif
 	Button buttonPrintGeo,pos={35,550},size={150,20},proc=microGeo#GeometryPanelButtonProc,title="Print Geo to History"
 	Button buttonPrintGeo,help={"print geometry values to the history"}

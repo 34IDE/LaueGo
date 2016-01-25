@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.02
+#pragma version = 5.03
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -2064,6 +2064,12 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_c_nm,pos={45,133},size={128,18},proc=LatticePanelParamProc,title="c (nm)"
 	SetVariable set_c_nm,fSize=12,format="%.7f"
 	SetVariable set_c_nm,limits={0,inf,0},value= root:Packages:Lattices:PanelValues:c
+	SetVariable set_a_nm,help={"lattice constant (nm), length of 'a' vector"}
+	SetVariable set_b_nm,help={"lattice constant (nm), length of 'b' vector"}
+	SetVariable set_c_nm,help={"lattice constant (nm), length of 'c' vector"}
+	SetVariable set_alpha,help={"lattice constant (degree), angle between b & c vectors"}
+	SetVariable set_beta,help={"lattice constant (degree), angle between a & c vectors"}
+	SetVariable set_gamma,help={"lattice constant (degree), angle between a & b vectors"}
 
 	SetVariable set_alpha,pos={45,163},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
 	SetVariable set_beta,pos={45,183},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
@@ -2119,10 +2125,10 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable T_LatticeVar,help={"Temperature (C) used when Thermal factors are given"}
 	ValDisplay Fr_3atticeDisp,pos={20,483},size={80,17},title="F =",value= #"root:Packages:Lattices:PanelValues:Fr"
 	ValDisplay Fr_3atticeDisp,font="Lucida Grande",fSize=12,format="%.3f",limits={0,0,0},barmisc={0,1000}
-	ValDisplay Fr_3atticeDisp,help={"d-spacing (nm) calculated using the lattice"},frame=0
+	ValDisplay Fr_3atticeDisp,help={"real part of F(hkl) calulated from the lattice"},frame=0
 	ValDisplay Fi_3atticeDisp,pos={104,483},size={80,17},title="+i",value= #"root:Packages:Lattices:PanelValues:Fi"
 	ValDisplay Fi_3atticeDisp,font="Lucida Grande",fSize=12,format="%.3f",limits={0,0,0},barmisc={0,1000}
-	ValDisplay Fi_3atticeDisp,help={"d-spacing (nm) calculated using the lattice"},frame=0
+	ValDisplay Fi_3atticeDisp,help={"imag part of F(hkl) calulated from the lattice"},frame=0
 
 	String subWin = GetUserData("","","LatticePanelName")
 	UpdatePanelLatticeConstControls(subWin,SpaceGroup)
