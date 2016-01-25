@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.59
+#pragma version = 1.60
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -278,7 +278,9 @@ Static Function DetailButtonProc(B_Struct) : ButtonControl
 		ImageMetaData2Waves("","","","")
 	//rxadd
 	elseif (stringmatch(ctrlName,"buttonFlyExtract"))
+#if (Exists("HDF5OpenFile")==4)
 		flyImageExtract()
+#endif
 	//end rxadd
 	endif
 	EnableDisableDetailControls(GetUserData("microPanel","","DetailPanelName"))
