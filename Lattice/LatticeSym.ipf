@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.03
+#pragma version = 5.04
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -130,6 +130,7 @@ Static Constant ELEMENT_Zmax = 116
 // with version 4.48, fixed a bug in positionsOfOneAtomType() & equivalentHKLs() occured when rowRepeat(vec,1)
 //
 // with version 5.00, changed definition of direct lattice to a||x and c*|| z (was b||y), added #define OLD_LATTICE_ORIENTATION to get old way
+//	with version 5.04, changed readFileXML()
 
 // Rhombohedral Transformation:
 //
@@ -3100,7 +3101,7 @@ Static Function readCrystalStructureXML(xtal,fname)
 End
 //
 Static Function readFileXML(xtal,fileName,[path])
-	STRUCT crystalStructure &xtal						// this sruct is printed in this routine
+	STRUCT crystalStructure &xtal
 	String fileName
 	String path
 	if (ParamIsDefault(path))
@@ -3185,9 +3186,10 @@ Static Function readFileXML(xtal,fileName,[path])
 	i0 = strsearch(cif,"<atom_site",i0,2)
 	do
 		atomSite = XMLtagContents("atom_site",cif[i0,Inf])	// one atom site
-		atomLabel = XMLtagContents("label",atomSite)
-		symbol = XMLtagContents("symbol",atomSite)
-		Zatom = ZfromLabel(symbol)
+		atomLabel = XMLtagContents("label",atomSite)			// label for this atom type
+		symbol = XMLtagContents("symbol",atomSite)				// atomic symbol for this atom type
+		atomLabel = SelectString(strlen(atomLabel), symbol, atomLabel)	// if no label given, use the symbol (may not be unique)
+		Zatom = ZfromLabel(SelectString(strlen(symbol),atomLabel,symbol))	// get Z
 		WyckoffSymbol = XMLtagContents("WyckoffSymbol",atomSite)
 		Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))
 		if (WaveExists(xyz) && numpnts(xyz)==3)
@@ -3282,6 +3284,7 @@ Static Function readFileXML(xtal,fileName,[path])
 		N += 1
 	while(N<STRUCTURE_ATOMS_MAX && i0>0)
 	xtal.N = N											// number of atoms described here
+	ForceXtalAtomNamesUnique(xtal)					// forces all of the xtal atom names to be unique
 
 	Variable i, unitsConvert, Nbond=0, Nlen
 	String bondKeys, label0,label1,list
@@ -3308,6 +3311,88 @@ Static Function readFileXML(xtal,fileName,[path])
 	xtal.Nbonds = Nbond
 	ForceLatticeToStructure(xtal)
 	return 0
+End
+//
+Static Function ForceXtalAtomNamesUnique(xtal)		// forces all of the xtal atom names to be unique
+	STRUCT crystalStructure &xtal
+
+	Variable N=xtal.N
+	Make/T/N=(N)/FREE all=xtal.atom[p].name	// holds all the names
+
+	String namej, base, nameTest
+	Variable i,j,num
+	for (j=0;j<(N-1);j+=1)
+		namej = all[j]								// check this name against others
+		if (strlen(namej)<1)						// skip empty names
+			continue
+		elseif (countDuplicateNames(all,namej)>1)		// will found duplicates (always find 1)
+			splitLabel(namej,base,num)
+			if (numtype(num))						// try to change "Cu" -> "Cu1"
+				num = 1
+				nameTest = AddNum2Base(base,num)
+				if (countDuplicateNames(all,nameTest)<1)	// base+"1" does not exist
+					all[j] = nameTest
+				endif
+			endif
+
+			for (i=j+1;i<N;i+=1)					// look for matches to namej
+				if (StringMatch(all[i],namej))	// need to change all[i]
+					do
+						num += 1
+						nameTest = AddNum2Base(base,num)
+					while (countDuplicateNames(all,nameTest))
+					all[i] = nameTest
+				endif
+			endfor
+		endif
+	endfor
+
+	for (j=0;j<N;j+=1)
+		xtal.atom[j].name = all[j]
+	endfor
+End
+//
+Static Function splitLabel(name,base,num)
+	String name		// for name of form "Ab0001"
+	String &base		// returns "Ab"
+	Variable &num		// returns 1
+
+	Variable i, N=strlen(name)
+	for (i=N-1;i>=0;i-=1)			// find number at end
+		if (!isdigit(name[i]))
+			break
+		endif
+	endfor
+	num = (i+1>=N) ? NaN : str2num(name[i+1,Inf])
+	base = ""
+	if (i>=0)
+		base = name[0,i]
+	endif
+End
+//
+Static Function countDuplicateNames(ws,name)
+	// counts how many times name appers in ws
+	Wave/T ws						// a string wave
+	String name					// a string to search for
+	Variable N=DimSize(ws,0)
+	Make/N=(N)/FREE dup=0
+	dup = StringMatch(ws[p],name)
+	return sum(dup)
+End
+//
+Static Function/T AddNum2Base(base,num)
+	String base
+	Variable num
+	if (numtype(num) || num<0)
+		return base
+	endif
+	String name = base + num2istr(num)
+	if (strlen(name)>59)			// too long, trim base
+		String nStr = num2istr(num)
+		Variable i = 59 - strlen(nStr)
+		name = base[0,i]+nStr
+	endif
+	return name
 End
 
 
