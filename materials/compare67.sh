@@ -101,6 +101,8 @@ cmp YZrO.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/mater
 cmp Zn.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/Zn.xml
 cmp ZnO.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/ZnO.xml
 cmp ZnS_Wurtzite.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/ZnS_Wurtzite.xml
+cmp TiO2\ Anatase.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/TiO2\ Anatase.xml
+cmp TiO2\ Rutile.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/TiO2\ Rutile.xml
 
 cmp VO2/VO2_M1_1970Longo.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/VO2/VO2_M1_1970Longo.xml
 cmp VO2/VO2_M1_1992Rogers.xml ../../../../Igor\ Pro\ 7\ User\ Files/User\ Procedures/LaueGo/materials/VO2/VO2_M1_1992Rogers.xml

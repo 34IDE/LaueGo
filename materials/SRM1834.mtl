@@ -29,7 +29,7 @@
 	Default fraction is 1 if fraction is not specified
 
 	for a fully defined mixture, fraction_present=1, and you do not have to include it, 
-	BUT if your list only defines 90% of the sample, then add fraction_present="0.1"
+	BUT if your list only defines 90% of the sample, then add fraction_present="0.9"
 -->
 
 
