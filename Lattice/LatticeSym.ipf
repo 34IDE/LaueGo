@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.04
+#pragma version = 5.05
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -131,6 +131,7 @@ Static Constant ELEMENT_Zmax = 116
 //
 // with version 5.00, changed definition of direct lattice to a||x and c*|| z (was b||y), added #define OLD_LATTICE_ORIENTATION to get old way
 //	with version 5.04, changed readFileXML()
+//	with version 5.05, changed setDirectRecip() so that Rhombohedral sytems orient a,b,c about the 111
 
 // Rhombohedral Transformation:
 //
@@ -1103,7 +1104,8 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	//		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
 	//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
 	//
-	//	see:   https://en.wikipedia.org/wiki/Fractional_coordinates
+	//	see:		https://en.wikipedia.org/wiki/Fractional_coordinates
+	//  and		International Tables (2006) Vol. B, chapter 3.3 page 360
 	//
 	Variable a=xtal.a, b=xtal.b, c=xtal.c
 	Variable ca = cos((xtal.alpha)*PI/180), cb = cos((xtal.beta)*PI/180)
@@ -1113,9 +1115,20 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
 
 	Variable a0,a1,a2,  b0,b1,b2,  c0,c1,c2		//components of the direct lattice vectors
-	a0=a				; a1=0						; a2=0
-	b0=b*cg			; b1=b*sg					; b2=0
-	c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+	if (!isRhombohedralXtal(xtal))
+		// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
+		a0=a				; a1=0						; a2=0
+		b0=b*cg			; b1=b*sg					; b2=0
+		c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+	else
+		// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
+		// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
+		Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
+		Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
+		a0=p2q			; a1=pmq					; a2=pmq
+		b0=pmq			; b1=p2q					; b2=pmq
+		c0=pmq			; c1=pmq					; c2=p2q
+	endif
 
 	xtal.Vc = Vc
 	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2	// assign to xtal values
@@ -5276,6 +5289,11 @@ ThreadSafe Static Function ALLOW_HEXAGONAL(h,k,l)	// hexagonal, // forbidden are
 End
 
 
+
+ThreadSafe Function isRhombohedralXtal(xtal)
+	STRUCT crystalStructure &xtal
+	return (isRhombohedral(xtal.SpaceGroup) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
+End
 
 ThreadSafe Function isRhombohedral(SpaceGroup)
 	Variable SpaceGroup
