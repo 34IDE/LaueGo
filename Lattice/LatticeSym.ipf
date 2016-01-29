@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.05
+#pragma version = 5.06
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -132,6 +132,7 @@ Static Constant ELEMENT_Zmax = 116
 // with version 5.00, changed definition of direct lattice to a||x and c*|| z (was b||y), added #define OLD_LATTICE_ORIENTATION to get old way
 //	with version 5.04, changed readFileXML()
 //	with version 5.05, changed setDirectRecip() so that Rhombohedral sytems orient a,b,c about the 111
+//	with version 5.06, small menu fix
 
 // Rhombohedral Transformation:
 //
@@ -178,7 +179,7 @@ Menu "Analysis"
 		help={"Crude Structure Factor using current lattice"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
-		"\\M0Space Group number <––> symmetry",symmtry2SG("")
+		"\\M0Space Group number <--> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 		"Describe the Symmetry Operations", DescribeSymOps($"")
 		"angle between two hkl's",angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN)
