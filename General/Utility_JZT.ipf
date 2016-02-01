@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.92
+#pragma version = 3.93
 // #pragma hide = 1
 
 Menu "Graph"
@@ -11,7 +11,6 @@ Menu "Layout"
 	"Append Multiple Graphs to a Layout",AppendGraph2LayoutN(NaN,"","")
 End
 Menu "Data"
-//	"Generic Wave Note Info",/Q,GenericWaveNoteInfo($"","")
 	"Generic Wave Note Info", GenericWaveNoteInfo($"","")
 End
 
@@ -20,6 +19,13 @@ StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;C
 Static Constant Smallest32bitFloat = 1.40129846432482e-45			// see DefaultZeroThresh(ww) below for use and finding
 Static Constant Smallest64bitFloat = 4.94065645841247e-324
 Static Constant maxIgorWaveNameLen=31
+#if (IgorVersion()<7)
+Constant GIZMO_WIN_TYPE = 13			// numbers for Igor 6 and under
+Constant GIZMO_WIN_BIT = 4096
+#else
+Constant GIZMO_WIN_TYPE = 17			// numbers for Igor 7
+Constant GIZMO_WIN_BIT = 65536	
+#endif
 
 
 // Sections:

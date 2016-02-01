@@ -1,13 +1,11 @@
 #pragma rtGlobals= 2
-#pragma version = 3.28
+#pragma version = 3.29
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.90
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 #if (IgorVersion()<7)
-Constant GIZMO_WIN_TYPE = 13			// numbers for Igor 6 and under
-Constant GIZMO_WIN_BIT = 4096
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	if(exists("NewGizmo")==4)			// If the Gizmo XOP is available, alwalys put in this menu item.
@@ -15,10 +13,7 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	endif
 	return 0
 End
-
 #else
-Constant GIZMO_WIN_TYPE = 17			// numbers for Igor 7
-Constant GIZMO_WIN_BIT = 65536	
 Menu "Gizmo"
 	"Square Up Gizmo", SquareUpGizmo("")
 End
