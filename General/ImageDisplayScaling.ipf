@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.05
+#pragma version = 2.06
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -497,10 +497,12 @@ End
 // =============================================================================================
 // ================================ Start of Graph with Buttons ================================
 
-Function/S NewImageGraph(image,[withButtons])
+Function/S NewImageGraph(image,[withButtons,kill])
 	Wave image
 	Variable withButtons				// ignored if ButtonBoxesProc() does ot exist
+	Variable kill							// optionally set the /K flag in Display command
 	withButtons = ParamIsDefault(withButtons) ? 0 : withButtons
+	kill = ParamIsDefault(kill) || numtype(kill) ? 0 : limit(round(kill),0,3)
 	Variable NOButtons = (exists("ButtonBoxesProc")!=6)
 
 	if (!WaveExists(image) || numtype(withButtons))
@@ -536,7 +538,7 @@ Function/S NewImageGraph(image,[withButtons])
 		DoWindow/F $win
 		return ""
 	else
-		Display /W=(345,44,822,440)
+		Display/W=(345,44,822,440)/K=(kill)
 		AppendImage image
 		if (withButtons && !NOButtons)
 			String command
