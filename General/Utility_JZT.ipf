@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.93
+#pragma version = 3.94
 // #pragma hide = 1
 
 Menu "Graph"
@@ -99,6 +99,8 @@ Constant GIZMO_WIN_BIT = 65536
 //		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
 //		SquareUpGizmo(gName), Used to square up a graph gizmo
+//		added LetterName2Unicode(letter), returns unicode version of letter {alpha,Beta,...} and {Alef, bet, gimel...}
+//			for Igor6, returns Mac Roman keyboard characters as well as it can.
 //		num2Ordinal(n), converts integer n to ordinal string, e.g. 1 --> "1st"
 //		ChangeStrEnding(oldEnd, inStr, newEnd)  if inStr ends in oldEnd, replace oldEnd with newEnd
 //		SIprefix2factor(prefix)  get the factor for an SI prefix
@@ -4166,6 +4168,96 @@ End
 
 //  =============================== End of Square Pixels ===============================  //
 //  ====================================================================================  //
+
+
+
+
+//  ====================================================================================  //
+//  ============================= Start of Unicode Letters =============================  //
+
+#if (IgorVersion()<7)
+Function/T LetterName2Unicode(letter)		// Igor 6 does not support unicode
+	String letter
+
+	if (cmpstr(letter,"Delta",0)==0)
+		letter = num2char(198)
+	elseif (cmpstr(letter,"mu",1)==0)
+		letter = num2char(181)
+	elseif (cmpstr(letter,"Sigma",1)==0)
+		letter = num2char(183)
+	elseif (cmpstr(letter,"Pi",1)==0)
+		letter = num2char(184)
+	elseif (cmpstr(letter,"pi",1)==0)
+		letter = num2char(185)
+	elseif (cmpstr(letter,"Omega",1)==0)
+		letter = num2char(189)
+	endif
+	return letter
+End
+#else
+Function/T LetterName2Unicode(letter)
+	// returns a unicode letter from the name "letter", e.g.
+	//		LetterName2Unicode("Q") --> "Q"
+	//		LetterName2Unicode("Delta") --> Delta
+	//		LetterName2Unicode("alpha") --> alpha
+	String letter
+	if (strlen(letter)<2)		// just a roman letter, not a  "name"
+		return letter
+	endif
+	String greek = Greek2Unicode(letter)
+	if (strlen(greek)>0)
+		return greek	
+	endif
+	String hebrew = Hebrew2Unicode(letter)
+	if (strlen(hebrew)>0)
+		return hebrew	
+	endif
+	return ""			// failed to find anything
+End
+//
+Static Function/T Greek2Unicode(letter)
+	String letter
+	Variable upper=0, lower=0, i=char2num(letter)
+	upper = (65<=i && i<=90)
+	lower = (97<=i && i<=122)
+	letter = LowerStr(letter)
+	letter = ReplaceString(" ",letter,"")
+	letter = ReplaceString("lamda",letter,"lambda")		// optional spelling
+	String allGreekLetters = "alpha;beta;gamma;delta;epsilon;zeta;eta;theta;iota;kappa;lambda;mu;nu;xi;omicron;pi;rho;finalsigma;sigma;tau;upsilo;phi;chi;psi;omega;"
+	i = WhichListItem(letter,allGreekLetters)
+	if (i<0 || (upper+lower)<1)
+		return ""
+	endif
+	i += lower ? 0x03B1 : 0x0391		// offset to Greek section (lowercase starts at 0x03B1 = 0x0391+32)
+	return num2char(i)
+End
+//
+Static Function/T Hebrew2Unicode(letter)
+	String letter
+	Variable i=char2num(letter)
+	letter = LowerStr(letter)
+	letter = ReplaceString(" ",letter,"")
+
+	letter = ReplaceString("Mapiq",letter,"Dagesh")		// optional spellings
+	letter = ReplaceString("Shuruq",letter,"Dagesh")
+
+	String allHebrewLetters = "alef;bet;gimel;dalet;he;vav;zayin;het;tet;yod;finalkaf;kaf;lamed;finalmem;mem;finalnun;nun;samekh;ayin;finalpe;pe;finaltsadi;tsadi;qof;resh;shin;tav;"
+	i = WhichListItem(letter,allHebrewLetters)
+	if (i>=0)
+		i += 0x05D0							// offset to start of Hebrew section
+	elseif (StringMatch(letter,"Dagesh"))
+		i = 0x05BC
+	elseif (i<0)
+		return ""
+	endif
+	return num2char(i)
+End
+#endif
+
+//  ============================== End of Unicode Letters ==============================  //
+//  ====================================================================================  //
+
+
 
 ThreadSafe Function/T num2Ordinal(n)
 	// converts integer n to ordinal string, e.g. 1 --> "1st"
