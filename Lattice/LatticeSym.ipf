@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.06
+#pragma version = 5.07
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -153,6 +153,7 @@ Static Constant ELEMENT_Zmax = 116
 //
 //
 // Although not used here, note that the following also works:
+//		NOTE Inv(A^t) = Inv(A)^t, so the order of Inv() and ^t do not matter
 //		MatrixOP recipLatice   = 2*PI * (Inv(directLattice))^t
 //		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
 //		Vc      = MatrixDet(directLattice)		// Volume of unit cell

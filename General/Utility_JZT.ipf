@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.94
+#pragma version = 3.95
 // #pragma hide = 1
 
 Menu "Graph"
@@ -4232,14 +4232,20 @@ Static Function/T Greek2Unicode(letter)
 	return num2char(i)
 End
 //
+//	for a vav with a dot in middle, use:  LetterName2Unicode("vav")+LetterName2Unicode("Dagesh")
 Static Function/T Hebrew2Unicode(letter)
-	String letter
+	String letter							//	http://www.i18nguy.com/unicode/hebrew.html
 	Variable i=char2num(letter)
 	letter = LowerStr(letter)
 	letter = ReplaceString(" ",letter,"")
 
 	letter = ReplaceString("Mapiq",letter,"Dagesh")		// optional spellings
 	letter = ReplaceString("Shuruq",letter,"Dagesh")
+	Variable addSinDot = 0
+	if (StringMatch(letter,"sin"))
+		letter = "shin"
+		addSinDot = 1
+	endif
 
 	String allHebrewLetters = "alef;bet;gimel;dalet;he;vav;zayin;het;tet;yod;finalkaf;kaf;lamed;finalmem;mem;finalnun;nun;samekh;ayin;finalpe;pe;finaltsadi;tsadi;qof;resh;shin;tav;"
 	i = WhichListItem(letter,allHebrewLetters)
@@ -4250,7 +4256,15 @@ Static Function/T Hebrew2Unicode(letter)
 	elseif (i<0)
 		return ""
 	endif
-	return num2char(i)
+
+	String out = num2char(i)
+	if (addSinDot)
+		out += num2char(0x05C2)
+//	elseif (StringMatch(letter,"shin"))
+//		out += num2char(0x05C1)
+	endif
+
+	return out
 End
 #endif
 
