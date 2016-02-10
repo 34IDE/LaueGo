@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, February 03, 2016" time="05:46:29 PM CST" isoTime="2016-02-03T17:46:29"></written>
+	<written date="Wednesday, February 10, 2016" time="03:47:18 PM CST" isoTime="2016-02-10T15:47:18"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>6c55cc3079dd2b17ff56a7550d28fcabe5c5c706</gitHash>
+	<gitHash>82d38821a8a9ff5bbc896dd598246aa70308b66a</gitHash>
 	<fileCount>279</fileCount>
 	<file version="nan" time="2016-01-25T12:57:57" md5="d9b1e8d93e3fd97c81927313fa95ee34" sha256="8ae1259f3c0b0e00104e4210738b0391a642e6d181b65eeb09632bc7fd6f8460" ext=".xml">materials/Pd.xml</file>
 	<file version="nan" time="2016-01-25T13:03:05" md5="2f67198c8a906e5b110d4539373cd36d" sha256="545dbdb21cb5476d19ea29f45b37cefe4efca2a774f5b938e5adf4c1fe72a6ca" ext=".xml">materials/YBCO3.xml</file>
@@ -100,7 +100,7 @@
 	<file version="2.63" time="2015-04-29T17:28:34" md5="3374ab1d235e90438883d76de81474e8" sha256="0d2237f9bbd8b773bf3d01ee1f58a1d2ff3c83db7ce55a7e7fe5c1ea2c025446" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2016-01-25T13:04:34" md5="eeed0fcfdd5bfc921da52bef39ebde6b" sha256="85dfa98c299dba31f3c2efa8f5eed4212e9d0aa161a8d58f0765df8bcd5d0e69" ext=".xml">materials/Zn.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" sha256="198a282c972e2d45609cd82ea8243af6af5b878726371b661dfabc93f309ba00" ext=".mtl">materials/LaMnO3.mtl</file>
-	<file version="5.06" time="2016-01-29T16:39:55" md5="a0ad8690dc764b71b8c5f92c4c9480fb" sha256="0c4a6574267b630e9343437da5c21200fe8add1dfc900d860693522d8dc6be63" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="5.07" time="2016-02-10T14:47:46" md5="8a67844e3d716db96fb73539bb859d01" sha256="88f05a2b3dc0f5155a8496dccac7742c26ebe27c04c403eb620ddb006085e028" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" sha256="6060302a5225a5473a5c948b8d9cb756136a55a4b1b2c1f91e3484c8a73d9e87" ext=".mtl">materials/water.mtl</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" sha256="418ab8556758b40aba34cbc92056ec10a620de115505e2bd68e9805be929f968" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2016-01-25T12:57:34" md5="2422015b8a7872d61048791e1f99a020" sha256="d72887e8e503578abdb8f7ad21bcf1c9f195631f180670b5daabecdddc7531a3" ext=".xml">materials/PbMgNbO.xml</file>
@@ -176,7 +176,7 @@
 	<file version="nan" time="2016-01-25T12:53:54" md5="50488771118b8c66292084f0ef4c091e" sha256="35fcc2202902c9733d3dd665ff8332e4210f43bd49265690a73b5242012b8957" ext=".xml">materials/LaMnO3_OrthoPhysics.xml</file>
 	<file version="nan" time="2016-01-25T13:06:54" md5="abcac4df1d49d8111046c7e69476a29c" sha256="fdf9a269df92032e08c8b89bd446772f0076d82d0f6c1da7322849303a76928a" ext=".xml">materials/VO2/VO2_M2_1977Ghedira.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/PilatusTiffs.ipf</file>
-	<file version="3.93" time="2016-02-01T11:40:37" md5="1e5c69af6a02f8da6723d3ef9ea1b277" sha256="bcc68c0fdee4f2e3c35e49a21335ea618ce2fbc8f113898375c67db1baf108ac" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.95" time="2016-02-10T14:27:05" md5="2eccc78cae6e9e17fa2d53591858686c" sha256="ed06e08362f93c227d2803b762a9455b71fdd3e57fd8fc50f394f03ea48a30ab" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8392fea4c2aeef593efea0621b100407" sha256="de7a232387dfa33de7d0b7ce3a26e68d8a040cc318c3ba6885f2d8ae18938113" ext=".xml">materials/funky files/Cu3Pd-sg221.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" sha256="046d4254c47b4f09b6431ab4ed90abcec16510aaf6bf5486985ea6ad6ed98e84" ext=".hlp">materials/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
