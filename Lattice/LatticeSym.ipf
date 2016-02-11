@@ -2,7 +2,7 @@
 #pragma ModuleName=LatticeSym
 #pragma version = 5.08
 #include "Utility_JZT" version>=3.78
-#include "MaterialsLocate"								// used to find the path to the materials files
+#include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
 
@@ -2520,7 +2520,7 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 
 	PathInfo materials
 	if (strlen(S_path)<1)							// make it if it does not exist
-		NewPath/Z materials, ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)
+		NewPath/Z materials, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
 	endif
 	PathInfo materials
 	if (strlen(S_path)<1)							// make it if it does not exist
@@ -2987,7 +2987,7 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	fname = FindMaterialsFile(fname)				// find full path to fname, and optionally set materials path
 //	PathInfo materials
 //	if (strlen(S_path)<1)							// make it if it does not exist
-//		NewPath/Z materials, ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)
+//		NewPath/Z materials, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
 //	endif
 //	PathInfo materials
 //	if (strlen(S_path)<1)							// make it if it does not exist
@@ -3038,7 +3038,7 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 	GetFileFolderInfo/Q/Z dirString
 	String usersPath = SelectString(V_isFolder && !V_flag,"",dirString)
 
-	dirString=ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)	// the standard distribution, 3rd choice
+	dirString=ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)	// the standard distribution, 3rd choice
 	String stdPath = SelectString(strlen(dirString),"",dirString)
 
 	dirString = SpecialDirPath("Igor Application",0,0,0)+"materials:"		// system local copy, 4th choice
@@ -3120,7 +3120,7 @@ End
 //	GetFileFolderInfo/Q/Z dirString
 //	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
 //
-//	dirString=ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)	// the default distribution, 4th choice
+//	dirString=ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)	// the default distribution, 4th choice
 //	dirList += SelectString(WhichListItem(dirString,dirList)<0 && strlen(dirString),"",dirString+";")
 //	// printf "dirList =  '%s'\r",dirList
 //
@@ -3181,8 +3181,8 @@ Static Function readCrystalStructureXML(xtal,fname)
 
 	PathInfo materialsXML
 	if (strlen(S_path)<1)								// make it if it does not exist
-//		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)+"xml"
-		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)
+//		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)+"xml"
+		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
 	endif
 	PathInfo materialsXML
 	if (strlen(S_path)<1)								// make it if it does not exist
@@ -3607,7 +3607,7 @@ Function ConverXTLfile2XMLfile(xtlName)
 
 	PathInfo materials
 	if (strlen(S_path)<1)							// make it if it does not exist
-		NewPath/Z materials, ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)
+		NewPath/Z materials, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
 	endif
 	PathInfo materials
 	if (strlen(S_path)<1)							// make it if it does not exist
@@ -3871,7 +3871,7 @@ Static Function readCrystalStructureCIF(xtal,fname)
 
 	PathInfo materialsXML
 	if (strlen(S_path)<1)								// make it if it does not exist
-		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)
+		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
 	endif
 	PathInfo materialsXML
 	if (strlen(S_path)<1)								// make it if it does not exist
