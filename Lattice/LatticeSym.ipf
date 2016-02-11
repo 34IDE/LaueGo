@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.07
+#pragma version = 5.08
 #include "Utility_JZT" version>=3.78
 #include "MaterialsLocate"								// used to find the path to the materials files
 
@@ -133,6 +133,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.04, changed readFileXML()
 //	with version 5.05, changed setDirectRecip() so that Rhombohedral sytems orient a,b,c about the 111
 //	with version 5.06, small menu fix
+//	with version 5.07, improved FindMaterialsFile()
 
 // Rhombohedral Transformation:
 //
@@ -3022,41 +3023,67 @@ End
 //
 Static Function/S FindMaterialsFile(fname)					// returns full path to a materials file
 	String fname
-//	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;old cri Files (*.cri):.cri;All Files:.*;"
 	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;CIF Files (*.cif):.cif;old cri Files (*.cri):.cri;All Files:.*;"
-	String dirString, dirList=""							// a list of possible materials directories
-
-	PathInfo materials
-	dirList += SelectString(V_flag,"",S_path+";")							// materials path is already set, the 1st choice
-
-	dirString = SpecialDirPath("Igor Pro User Files",0,0,0)+"materials:"	// user's local copy, 2nd choice
-	GetFileFolderInfo/Q/Z dirString
-	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
-
-	PathInfo Igor
-	dirString = SelectString(V_flag,"",S_path+"materials:;")				// system local copy, 3rd choice
-	GetFileFolderInfo/Q/Z dirString
-	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
-
-	dirString=ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)	// the default distribution, 4th choice
-	dirList += SelectString(WhichListItem(dirString,dirList)<0 && strlen(dirString),"",dirString+";")
-	// printf "dirList =  '%s'\r",dirList
 
 	GetFileFolderInfo/Q/Z fname						// full path name passed, that was east
 	if (V_isfile)
 		return fname
 	endif
 
+	String dirString, dirList=""							// a list of possible materials directories
+	PathInfo materials
+	String materialsPath = SelectString(V_flag,"__empty__",S_path)			// materials path is already set, the 1st choice
+
+	dirString = SpecialDirPath("Igor Pro User Files",0,0,0)+"materials:"	// user's local copy, 2nd choice
+	GetFileFolderInfo/Q/Z dirString
+	String usersPath = SelectString(V_isFolder && !V_flag,"",dirString)
+
+	dirString=ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)	// the standard distribution, 3rd choice
+	String stdPath = SelectString(strlen(dirString),"",dirString)
+
+	dirString = SpecialDirPath("Igor Application",0,0,0)+"materials:"		// system local copy, 4th choice
+	GetFileFolderInfo/Q/Z dirString
+	String appPath = SelectString(V_isFolder && !V_flag,"",dirString)
+
+	String dirKeyList=""
+	if (StringMatch(materialsPath,usersPath))
+		dirList = "User files;"
+		dirKeyList = ReplaceStringByKey("User files",dirKeyList,materialsPath)
+	elseif (StringMatch(materialsPath,stdPath))
+		dirList = "Standard Distribution;"
+		dirKeyList = ReplaceStringByKey("Standard Distribution",dirKeyList,materialsPath)
+	elseif (StringMatch(materialsPath,appPath))
+		dirList = "Igor application folder;"
+		dirKeyList = ReplaceStringByKey("Igor application folder",dirKeyList,materialsPath)
+	else
+		dirList = SelectString(StringMatch(materialsPath,"__empty__"), materialsPath+";","")
+	endif
+
+	if (WhichListItem("User files",dirList)<0 && strlen(usersPath))
+		dirList += "User files;"
+		dirKeyList = ReplaceStringByKey("User files",dirKeyList,usersPath)
+	endif
+	if (WhichListItem("Standard Distribution",dirList)<0 && strlen(stdPath))
+		dirList += "Standard Distribution;"
+		dirKeyList = ReplaceStringByKey("Standard Distribution",dirKeyList,stdPath)
+	endif
+	if (WhichListItem("Igor application folder",dirList)<0 && strlen(appPath))
+		dirList += "Igor application folder;"
+		dirKeyList = ReplaceStringByKey("Igor application folder",dirKeyList,appPath)
+	endif
+
 	fname = ParseFilePath(0,fname,":",1,0)			// check for fname in each of dirList
-	Variable i
-	for (i=0;i<ItemsInList(dirList);i+=1)
-		dirString = StringFromList(i,dirList)
-		GetFileFolderInfo/Q/Z dirString+fname
-		if (V_isFile)									// found fname in dirString
-			UpdateMaterialsPath(dirString)
-			return dirString+fname 
-		endif
-	endfor
+	if (strlen(fname))
+		Variable i
+		for (i=0;i<ItemsInList(dirList);i+=1)
+			dirString = StringFromList(i,dirList)
+			GetFileFolderInfo/Q/Z dirString+fname
+			if (V_isFile)									// found fname in dirString
+				LatticeSym#UpdateMaterialsPath(dirString)
+				return dirString+fname 
+			endif
+		endfor
+	endif
 
 	// could not find the materials file, time to start asking user for help
 	dirString = StringFromList(0,dirList)
@@ -3067,17 +3094,72 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 			return ""
 		endif
 	endif
-	UpdateMaterialsPath(dirString)
+
+	LatticeSym#UpdateMaterialsPath(StringByKey(dirString,dirKeyList))
 
 	Variable f
 	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materials f as fname
-
 	fname = S_fileName
-
-	// printf "dirList =  '%s'\r",dirList
-	// printf "fname =  '%s'\r",fname
 	return fname
 End
+//Static Function/S FindMaterialsFile(fname)					// returns full path to a materials file
+//	String fname
+////	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;old cri Files (*.cri):.cri;All Files:.*;"
+//	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;CIF Files (*.cif):.cif;old cri Files (*.cri):.cri;All Files:.*;"
+//	String dirString, dirList=""							// a list of possible materials directories
+//
+//	PathInfo materials
+//	dirList += SelectString(V_flag,"",S_path+";")							// materials path is already set, the 1st choice
+//
+//	dirString = SpecialDirPath("Igor Pro User Files",0,0,0)+"materials:"	// user's local copy, 2nd choice
+//	GetFileFolderInfo/Q/Z dirString
+//	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
+//
+//	PathInfo Igor
+//	dirString = SelectString(V_flag,"",S_path+"materials:;")				// system local copy, 3rd choice
+//	GetFileFolderInfo/Q/Z dirString
+//	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
+//
+//	dirString=ParseFilePath(1,FunctionPath("MaterialsAreHere"),":",1,0)	// the default distribution, 4th choice
+//	dirList += SelectString(WhichListItem(dirString,dirList)<0 && strlen(dirString),"",dirString+";")
+//	// printf "dirList =  '%s'\r",dirList
+//
+//	GetFileFolderInfo/Q/Z fname						// full path name passed, that was east
+//	if (V_isfile)
+//		return fname
+//	endif
+//
+//	fname = ParseFilePath(0,fname,":",1,0)			// check for fname in each of dirList
+//	Variable i
+//	for (i=0;i<ItemsInList(dirList);i+=1)
+//		dirString = StringFromList(i,dirList)
+//		GetFileFolderInfo/Q/Z dirString+fname
+//		if (V_isFile)									// found fname in dirString
+//			UpdateMaterialsPath(dirString)
+//			return dirString+fname 
+//		endif
+//	endfor
+//
+//	// could not find the materials file, time to start asking user for help
+//	dirString = StringFromList(0,dirList)
+//	if (itemsInList(dirList)>1)
+//		Prompt dirString,"Folder with materials",popup,dirList
+//		DoPrompt "Directory",dirString
+//		if (V_flag)
+//			return ""
+//		endif
+//	endif
+//	UpdateMaterialsPath(dirString)
+//
+//	Variable f
+//	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materials f as fname
+//
+//	fname = S_fileName
+//
+//	// printf "dirList =  '%s'\r",dirList
+//	// printf "fname =  '%s'\r",fname
+//	return fname
+//End
 //
 Static Function UpdateMaterialsPath(dirString)
 	String dirString
