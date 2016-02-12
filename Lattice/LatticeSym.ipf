@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.08
+#pragma version = 5.09
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -134,6 +134,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.05, changed setDirectRecip() so that Rhombohedral sytems orient a,b,c about the 111
 //	with version 5.06, small menu fix
 //	with version 5.07, improved FindMaterialsFile()
+//	with version 5.09, FindMaterialsFile() also looks in Documents for "materials" folder
 
 // Rhombohedral Transformation:
 //
@@ -3038,10 +3039,14 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 	GetFileFolderInfo/Q/Z dirString
 	String usersPath = SelectString(V_isFolder && !V_flag,"",dirString)
 
-	dirString=ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)	// the standard distribution, 3rd choice
+	dirString = SpecialDirPath("Documents",0,0,0)+"materials:"				// in the "Documents" folder, 3rd choice
+	GetFileFolderInfo/Q/Z dirString
+	String docPath = SelectString(V_isFolder && !V_flag,"",dirString)
+
+	dirString=ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)	// the standard distribution, 4th choice
 	String stdPath = SelectString(strlen(dirString),"",dirString)
 
-	dirString = SpecialDirPath("Igor Application",0,0,0)+"materials:"		// system local copy, 4th choice
+	dirString = SpecialDirPath("Igor Application",0,0,0)+"materials:"		// system local copy, 5th choice
 	GetFileFolderInfo/Q/Z dirString
 	String appPath = SelectString(V_isFolder && !V_flag,"",dirString)
 
@@ -3049,6 +3054,9 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 	if (StringMatch(materialsPath,usersPath))
 		dirList = "User files;"
 		dirKeyList = ReplaceStringByKey("User files",dirKeyList,materialsPath)
+	elseif (StringMatch(materialsPath,docPath))
+		dirList = "Documents;"
+		dirKeyList = ReplaceStringByKey("Documents",dirKeyList,materialsPath)
 	elseif (StringMatch(materialsPath,stdPath))
 		dirList = "Standard Distribution;"
 		dirKeyList = ReplaceStringByKey("Standard Distribution",dirKeyList,materialsPath)
@@ -3062,6 +3070,10 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 	if (WhichListItem("User files",dirList)<0 && strlen(usersPath))
 		dirList += "User files;"
 		dirKeyList = ReplaceStringByKey("User files",dirKeyList,usersPath)
+	endif
+	if (WhichListItem("Documents",dirList)<0 && strlen(docPath))
+		dirList += "Documents;"
+		dirKeyList = ReplaceStringByKey("Documents",dirKeyList,docPath)
 	endif
 	if (WhichListItem("Standard Distribution",dirList)<0 && strlen(stdPath))
 		dirList += "Standard Distribution;"
@@ -3171,7 +3183,8 @@ Static Function UpdateMaterialsPath(dirString)
 	if (V_flag && stringmatch(S_path,dirString))		// nothing to change, all is OK
 		return 0
 	endif
-	NewPath/Z materials, dirString
+//	NewPath/Z materials, dirString
+	NewPath/Z/O materials, dirString
 	return 0
 End
 
