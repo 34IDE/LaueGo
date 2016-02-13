@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.35
+#pragma version = 0.36
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1132,7 +1132,8 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Execute "ModifyGizmo ModifyObject=atomViewAtoms property={ objectName,generalAtom}"
 	objectList += "atomViewAtoms;"
 #else
-	if (useBlend)				// when using blend, you can also show the atom labels
+//	if (useBlend)				// when using blend, you can also show the atom labels
+	if (useBlend && Na*Nb*Nc <= 2)		// when using blend, you can also show the atom labels
 		AppendToGizmo Scatter=$GetWavesDataFolder(xyz,2),name=atomViewAtomsLabels
 		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ scatterColorType,0}
 		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ markerType,0}
