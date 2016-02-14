@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.09
+#pragma version = 5.10
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -135,6 +135,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.06, small menu fix
 //	with version 5.07, improved FindMaterialsFile()
 //	with version 5.09, FindMaterialsFile() also looks in Documents for "materials" folder
+//	with version 5.10, allow all thermal parameters to be set, and Uij can be negative too
 
 // Rhombohedral Transformation:
 //
@@ -968,30 +969,17 @@ Static Function atomBAD(atom)
 	bad += numtype(atom.occ) || atom.occ<0 || atom.occ>1
 	bad += atom.Zatom != limit(round(atom.Zatom),1,92)
 	bad += !(abs(atom.valence)<10)					// a valence of 10 is too big
-	bad += atom.DebyeT < 0
+	bad += atom.DebyeT < 0								// Debye, and isotropic U or B must be positive
 	bad += atom.Biso < 0 || numtype(atom.Biso)==1
 	bad += atom.Uiso < 0 || numtype(atom.Uiso)==1
-	bad += atom.U11 < 0 || numtype(atom.U11)==1
-	bad += atom.U22 < 0 || numtype(atom.U22)==1
-	bad += atom.U33 < 0 || numtype(atom.U33)==1
-	bad += atom.U12 < 0 || numtype(atom.U12)==1
-	bad += atom.U13 < 0 || numtype(atom.U13)==1
-	bad += atom.U23 < 0 || numtype(atom.U23)==1
 
-	Variable usingT = (atom.DebyeT > 0)
-	usingT += (atom.Biso > 0)
-	usingT += (atom.Uiso > 0)
-	usingT += (atom.U11 > 0 || atom.U22 > 0 || atom.U33 > 0)
-	bad += usingT>1									// too many thermal vibration methods
-
-	if (atom.U11 > 0 || atom.U22 > 0 || atom.U33 > 0)	// using anisotropic U
-		bad += !(atom.U11 >= 0)						// if one is used, all symmetric U's must be valid
-		bad += !(atom.U22 >= 0)
-		bad += !(atom.U33 >= 0)
-		if (atom.U12 > 0 || atom.U13 > 0 || atom.U23 > 0)	// using anisotropic U cross-terms
-			bad += !(atom.U12 >= 0)					// if one is used, they all must be valid
-			bad += !(atom.U13 >= 0)
-			bad += !(atom.U23 >= 0)
+	// Note, anisotropic Uij can be negative
+	if (numtype(atom.U11)==0 || numtype(atom.U22)==0 || numtype(atom.U33)==0)	// using anisotropic Uii
+		// if one is Uii valid, all symmetric Uii must be valid
+		bad += numtype(atom.U11 + atom.U22 + atom.U33)!=0
+		if (numtype(atom.U12)==0 || numtype(atom.U13)==0 || numtype(atom.U23)==0)	// using anisotropic Uij
+			// if one Uij is valid, all asymmetric Uij must be valid
+			bad += numtype(atom.U12 + atom.U13 + atom.U23)!=0
 		endif
 	endif
 	return (bad>0)
@@ -1010,8 +998,8 @@ ThreadSafe Static Function atomThermalInfo(atom,[T_K])	// True if atom contains 
 	//		5 = U11, U22, U22, U12, U13, U23
 
 	Variable thetaM = atom.DebyeT
-	Variable U11_OK = (atom.U11 >= 0 && atom.U22 >= 0 && atom.U33 >= 0) && ((atom.U11 + atom.U22 + atom.U33) > 0)
-	Variable U12_OK = (atom.U12 >= 0 && atom.U13 >= 0 && atom.U23 >= 0) && ((atom.U12 + atom.U13 + atom.U23) > 0)
+	Variable U11_OK = numtype(atom.U11 + atom.U22 + atom.U33) == 0
+	Variable U12_OK = numtype(atom.U12 + atom.U13 + atom.U23) == 0
 
 	Variable vibrate=0
 	if (thetaM>0 && T_K>=0)		// have a valid and Debye Temperature and Temperature
@@ -3333,45 +3321,36 @@ Static Function readFileXML(xtal,fileName,[path])
 		unit = StringByKey("unit", XMLattibutes2KeyList("DebyeTemperature",atomSite),"=")
 		unit = SelectString(strlen(unit),"K",unit)				// default Debye Temperature units are K
 		DebyeT = ConvertTemperatureUnits(DebyeT,unit,"K")	// DebyeT is always stored as 
-		Biso=NaN;  Uiso=NaN;  aU11=NaN; aU22=NaN; aU33=NaN;  aU12=NaN; aU13=NaN; aU23=NaN	// these will be set if valid
-		if (!(DebyeT>0))
-			Biso = str2num(XMLtagContents("B_iso",atomSite))
-			Biso = Biso <=0 || numtype(Biso) ?  NaN : Biso
-			unit = StringByKey("unit", XMLattibutes2KeyList("B_iso",atomSite),"=")
-			Biso *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
-			if (!(Biso>0))
-				Uiso = str2num(XMLtagContents("U_iso",atomSite))
-				Uiso = Uiso <=0 || numtype(Uiso) ?  NaN : Uiso
-				unit = StringByKey("unit", XMLattibutes2KeyList("U_iso",atomSite),"=")
-				Uiso *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
-				if (!(Uiso>0))
-					aU11 = str2num(XMLtagContents("aniso_U_11",atomSite))
-					unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_11",atomSite),"=")
-					aU11 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
-					aU22 = str2num(XMLtagContents("aniso_U_22",atomSite))
-					unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_22",atomSite),"=")
-					aU22 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-					aU33 = str2num(XMLtagContents("aniso_U_33",atomSite))
-					unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_33",atomSite),"=")
-					aU33 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-					aU12 = str2num(XMLtagContents("aniso_U_12",atomSite))
-					unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_12",atomSite),"=")
-					aU12 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-					aU13 = str2num(XMLtagContents("aniso_U_13",atomSite))
-					unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_13",atomSite),"=")
-					aU13 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-					aU23 = str2num(XMLtagContents("aniso_U_23",atomSite))
-					unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_23",atomSite),"=")
-					aU23 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-					aU11 = aU11 <=0 || numtype(aU11) ?  NaN : aU11
-					aU22 = aU22 <=0 || numtype(aU22) ?  NaN : aU22
-					aU33 = aU33 <=0 || numtype(aU33) ?  NaN : aU33
-					aU12 = aU12 <=0 || numtype(aU12) ?  NaN : aU12
-					aU13 = aU13 <=0 || numtype(aU13) ?  NaN : aU13
-					aU23 = aU23 <=0 || numtype(aU23) ?  NaN : aU23
-				endif
-			endif
-		endif
+
+		Biso = str2num(XMLtagContents("B_iso",atomSite))
+		Biso = Biso <=0 || numtype(Biso) ?  NaN : Biso
+		unit = StringByKey("unit", XMLattibutes2KeyList("B_iso",atomSite),"=")
+		Biso *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
+
+		Uiso = str2num(XMLtagContents("U_iso",atomSite))
+		Uiso = Uiso <=0 || numtype(Uiso) ?  NaN : Uiso
+		unit = StringByKey("unit", XMLattibutes2KeyList("U_iso",atomSite),"=")
+		Uiso *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
+
+		aU11 = str2num(XMLtagContents("aniso_U_11",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_11",atomSite),"=")
+		aU11 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
+		aU22 = str2num(XMLtagContents("aniso_U_22",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_22",atomSite),"=")
+		aU22 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		aU33 = str2num(XMLtagContents("aniso_U_33",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_33",atomSite),"=")
+		aU33 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		aU12 = str2num(XMLtagContents("aniso_U_12",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_12",atomSite),"=")
+		aU12 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		aU13 = str2num(XMLtagContents("aniso_U_13",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_13",atomSite),"=")
+		aU13 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		aU23 = str2num(XMLtagContents("aniso_U_23",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_23",atomSite),"=")
+		aU23 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+
 		xtal.atom[N].name = atomLabel[0,59]
 		xtal.atom[N].Zatom = Zatom
 		xtal.atom[N].x = fracX
@@ -3384,12 +3363,12 @@ Static Function readFileXML(xtal,fileName,[path])
 		xtal.atom[N].DebyeT = DebyeT
 		xtal.atom[N].Biso = Biso
 		xtal.atom[N].Uiso = Uiso
-		xtal.atom[N].U11 = aU11
-		xtal.atom[N].U22 = aU22
-		xtal.atom[N].U33 = aU33
-		xtal.atom[N].U12 = aU12
-		xtal.atom[N].U13 = aU13
-		xtal.atom[N].U23 = aU23
+		xtal.atom[N].U11 = numtype(aU11) ?  NaN : aU11
+		xtal.atom[N].U22 = numtype(aU22) ?  NaN : aU22
+		xtal.atom[N].U33 = numtype(aU33) ?  NaN : aU33
+		xtal.atom[N].U12 = numtype(aU12) ?  NaN : aU12
+		xtal.atom[N].U13 = numtype(aU13) ?  NaN : aU13
+		xtal.atom[N].U23 = numtype(aU23) ?  NaN : aU23
 		i0 = strsearch(cif,"<atom_site",i0+10,2)
 		N += 1
 	while(N<STRUCTURE_ATOMS_MAX && i0>0)
@@ -4040,9 +4019,9 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			i1 = strsearch(buf,"\n",i0)
 			line = buf[i0,i1-1]								// un-terminated line
 			xtal.atom[N].DebyeT = NaN
-			xtal.atom[N].Uiso = NaN
-			xtal.atom[N].U11 = NaN	;	xtal.atom[N].U22 = NaN	;		xtal.atom[N].U33 = NaN
-			xtal.atom[N].U12 = NaN	;	xtal.atom[N].U13 = NaN	;		xtal.atom[N].U23 = NaN
+			xtal.atom[N].Uiso = NaN	;	xtal.atom[N].Biso = NaN
+			xtal.atom[N].U11 = NaN		;	xtal.atom[N].U22 = NaN	;		xtal.atom[N].U33 = NaN
+			xtal.atom[N].U12 = NaN		;	xtal.atom[N].U13 = NaN	;		xtal.atom[N].U23 = NaN
 
 			name = StringFromList(WhichListItem("_atom_site_label",list),line)
 			xtal.atom[N].name = name[0,59]
@@ -4062,21 +4041,16 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.atom[N].occ = occ >=0 ? limit(occ,0,1) : 1
 			Biso = str2num(StringFromList(WhichListItem("_atom_site_B_iso_or_equiv",list),line))/100	// assume value in Angstrom^2
 			xtal.atom[N].Biso = Biso>0 ? Biso : NaN
-			if (!(xtal.atom[N].Biso > 0))
-				Uiso = str2num(StringFromList(WhichListItem("_atom_site_U_iso_or_equiv",list),line))/100	// assume value in Angstrom^2
-				xtal.atom[N].Uiso = Uiso>0 ? Uiso : NaN
-				if (!(xtal.atom[N].Uiso > 0))
-					Uij = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_11",list),line))/100	// assume value in Angstrom^2
-					if (Uij>0)
-						xtal.atom[N].U11 = Uij
-						xtal.atom[N].U22 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_22",list),line))/100	// assume value in Angstrom^2
-						xtal.atom[N].U33 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_33",list),line))/100
-						xtal.atom[N].U12 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_12",list),line))/100
-						xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100
-						xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100
-					endif
-				endif
-			endif
+
+			Uiso = str2num(StringFromList(WhichListItem("_atom_site_U_iso_or_equiv",list),line))/100	// assume value in Angstrom^2
+			xtal.atom[N].Uiso = Uiso>0 ? Uiso : NaN
+
+			xtal.atom[N].U11 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_11",list),line))/100	// assume value in Angstrom^2
+			xtal.atom[N].U22 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_22",list),line))/100
+			xtal.atom[N].U33 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_33",list),line))/100
+			xtal.atom[N].U12 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_12",list),line))/100
+			xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100
+			xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100
 			i0 = i1+1										// start of next line
 		endfor
 		xtal.N = N
