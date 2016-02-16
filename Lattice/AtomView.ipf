@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.36
+#pragma version = 0.37
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -7,7 +7,7 @@
 #include "GizmoZoomTranslate", version>=2.00
 #include "GizmoClip", version>=2.00
 #include "GizmoMarkers", version>=2.00
-#include "LatticeSym", version>=4.26
+#include "LatticeSym", version>=5.10
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"
 
@@ -73,16 +73,16 @@ Static Function AtomViewPopMenuProc(pa) : PopupMenuControl		// used in the Latti
 	endif
 
 	if (strsearch(pa.popStr,"Make Cells of Atoms",0,2)>=0)
-		//	printf "¥MakeCellsOfLattice(NaN,NaN,NaN)\r"
+		//	printf "%sMakeCellsOfLattice(NaN,NaN,NaN)\r", BULLET
 		MakeCellsOfLattice(NaN,NaN,NaN)
 	elseif (strsearch(pa.popStr,"Bond Info",0,2)>=0)
-		printf "¥MakeAtomViewGizmo($\"\")\r"
+		printf "%sMakeAtomViewGizmo($\"\")\r", BULLET
 		AllUniqueBonds("", printIt=1)
 	elseif (strsearch(pa.popStr,"Gizmo of Atoms",0,2)>=0)
-		printf "¥MakeAtomViewGizmo($\"\")\r"
+		printf "%sMakeAtomViewGizmo($\"\")\r", BULLET
 		MakeAtomViewGizmo($"")
 	elseif (strsearch(pa.popStr,"Atom Type at Cursor",0,2)>=0)
-		printf "¥ShowAtomViewInfo(1)\r"
+		printf "%sShowAtomViewInfo(1)\r", BULLET
 		print ShowAtomViewInfo(1)
 	endif
 
@@ -179,7 +179,7 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		if (V_flag)
 			return $""
 		endif
-		printf "¥MakeCellsOfLattice(%g,%g,%g",Na,Nb,Nc
+		printf "%sMakeCellsOfLattice(%g,%g,%g", BULLET, Na,Nb,Nc
 		if (numtype(blen)==0 || !ParamIsDefault(blen))
 			printf ", blen=%g",blen
 		endif

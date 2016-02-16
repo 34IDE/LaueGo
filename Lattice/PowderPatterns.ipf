@@ -1,9 +1,11 @@
+#pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.17
+#pragma version = 0.18
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_PowderPatternLattice()"
+#include "LatticeSym" version>=5.10
 
 
 Menu "Analysis"
@@ -22,8 +24,13 @@ Menu "Analysis"
 	End
 End
 
-Static Constant hc_keVnm = 1.239841856				// h*c (keV-nm)
+Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
 Static Constant N_POWDER_LINES_COLUMNS = 8		// number of coumns in a powder lines wave
+#if (IgorVersion()<7)
+	Static strConstant PLUSMINUS = "\261"		// Windows use ALT keycode 0177 = 261 octal, on mac option-shift-=
+#else
+	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, PLUS-MINUS SIGN
+#endif
 
 
 Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
@@ -48,19 +55,19 @@ Static Function PowderPatternPopMenuProc(pa) : PopupMenuControl
 	endif
 
 	if (strsearch(pa.popStr,"Calculate Powder Lines",0,2)>=0)
-		printf "¥CalcPowderLines(NaN)\r"
+		printf "%sCalcPowderLines(NaN)\r", BULLET
 		CalcPowderLines(NaN)
 	elseif (strsearch(pa.popStr,"Make Powder Pattern from Lines",0,2)>=0)
-		printf "¥PowderPatternFromLines($\"\",NaN)\r"
+		printf "%sPowderPatternFromLines($\"\",NaN)\r", BULLET
 		PowderPatternFromLines($"",NaN)
 	elseif (strsearch(pa.popStr,"Graph of Powder Pattern",0,2)>=0)
-		printf "¥GraphPowderPattern($\"\")\r"
+		printf "%sGraphPowderPattern($\"\")\r", BULLET
 		print GraphPowderPattern($"")
 	elseif (strsearch(pa.popStr,"Graph of Powder Lines",0,2)>=0)
-		printf "¥GraphPowderLines($\"\")\r"
+		printf "%sGraphPowderLines($\"\")\r", BULLET
 		print GraphPowderLines($"")
 	elseif (strsearch(pa.popStr,"Table of Powder Lines",0,2)>=0)
-		printf "¥TablePowderLines($\"\")\r"
+		printf "%sTablePowderLines($\"\")\r", BULLET
 		print TablePowderLines($"")
 	endif
 	return 0
@@ -153,7 +160,7 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	wnote = ReplaceStringByKey("PowderLines",wnote,GetWavesDataFolder(lines,2),"=")
 	wnote = ReplaceStringByKey("leftLabel",wnote,leftLabel,"=")
 	Variable dQ = Qwidth/(N-1)
-	String xUnits = SelectString(theta,"1/nm","¡")
+	String xUnits = SelectString(theta,"1/nm",DEGREESIGN)
 
 	// first calculate in Q whether we want Q or theta
 	Variable m,in, a = 4*ln(2)/(fwhmQ*fwhmQ)	// gaussian = exp(-a*x^2) in Q (not theta)
@@ -248,7 +255,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	keV = keV<=0 || numtype(keV) ? NaN : keV
 	Variable lambda = hc_keVnm/keV
 	if (lambda>0)
-		Qmax = min(Qmax,4*PI/lambda)				// with keV, Q is limited to theta=90¡
+		Qmax = min(Qmax,4*PI/lambda)				// with keV, Q is limited to theta=90 degree
 	endif
 	Variable/G root:Packages:Lattices:Powder:defaultQmax=Qmax
 	Variable/G root:Packages:Lattices:Powder:defaultKeV=keV
@@ -373,8 +380,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 
 	Note/K lineShort, wNote
 	if (printIt)
-		String plusMinus = SelectString(stringmatch(IgorInfo(2),"Macintosh"),"",num2char(-79))	// for Windows use ALT keycode 0177
-		printf "Created Powder Lines in '%s',  with %d lines,  range of hkl is [%s%d, %s%d, %s%d]\r",wname,Nlines,plusMinus,hmax,plusMinus,kmax,plusMinus,lmax
+		printf "Created Powder Lines in '%s',  with %d lines,  range of hkl is [%s%d, %s%d, %s%d]\r",wname,Nlines,PLUSMINUS,hmax,PLUSMINUS,kmax,PLUSMINUS,lmax
 	endif
 	return lineShort
 End
@@ -523,15 +529,22 @@ Function GraphPowderPattern(ww)
 		ix = 4
 	elseif (StringMatch(WaveUnits(ww,0),"1/nm"))
 		ix = 0
-	elseif (StringMatch(WaveUnits(ww,0),"¡"))
+	elseif (StringMatch(WaveUnits(ww,0),DEGREESIGN))
 		ix = 4
 	endif
-
+#if (IgorVersion()<7)
 	if (strlen(WaveUnits(ww,-1))==0)
-		bottomLabel = SelectString(ix,"Q  (\\Enm\\S-1\\M)","\\Zr150\\F'Symbol'q°\\F]0 \\E\\M")
+		bottomLabel = SelectString(ix,"Q  (\\Enm\\S-1\\M)", "\\Zr150\\F'Symbol'q\260\\F]0 \\E\\M")	// "\260" = option-5, degree sign in Symbol font
 	else
-		bottomLabel = SelectString(ix,"Q  (\\U)","\\Zr150\\F'Symbol'q\\F]0\\U\\M")
+		bottomLabel = SelectString(ix,"Q  (\\U)", "\\Zr150\\F'Symbol'q\\F]0\\U\\M")
 	endif
+#else
+	if (strlen(WaveUnits(ww,-1))==0)
+		bottomLabel = SelectString(ix,"Q  (\\Enm\\S-1\\M)", LetterName2Unicode("theta")+DEGREESIGN+" \\E\\M")
+	else
+		bottomLabel = SelectString(ix,"Q  (\\U)", LetterName2Unicode("theta")+"\\U\\M")
+	endif
+#endif
 
 	Display /W=(92,274,1135,578) ww
 	if (WaveExists(lines))
@@ -603,7 +616,11 @@ Function GraphPowderLines(ww,[theta])
 	Variable iy=numtype(ww[0][6]) ? 5 : 6
 	Variable ix = (theta && numtype(ww[0][4])==0) ? 4 : 0
 	String leftLabel = SelectString(iy==6,"| F |\\S2\\M","Intensity")
-	String bottomLabel = SelectString(ix,"Q  (nm\\S-1\\M)","\\Zr150\\F'Symbol'q°\\F]0\\M")
+#if (IgorVersion()<7)
+	String bottomLabel = SelectString(ix,"Q  (nm\\S-1\\M)", "\\Zr150\\F'Symbol'q\260\\F]0\\M")	// "\260" = option-5, degree sign in Symbol font
+#else
+	String bottomLabel = SelectString(ix,"Q  (nm\\S-1\\M)", LetterName2Unicode("theta")+DEGREESIGN+"\\M")
+#endif
 
 	String wnote = note(ww)
 	Variable keV = NumberByKey("keV",wnote,"=")
@@ -666,7 +683,7 @@ Static Function ShowPowderLinesWindowHook(s)
 		sprintf str, "\\Zr075\rQ = %g nm\\S-1\M\\Zr075",Qval
 		tagStr += str
 		if (theta>0)
-			sprintf str, "\rtheta = %g¡",theta
+			sprintf str, "\rtheta = %g"+DEGREESIGN,theta
 			tagStr += str
 		endif
 		sprintf str, "\rmult = %g",mult
