@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.10
+#pragma version = 5.11
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -2954,7 +2954,7 @@ Function writeCrystalStructure2xmlFile(path,fname)	// writes the current xtal to
 	STRUCT crystalStructure xtal				// this sructure is written in this routine
 	FillCrystalStructDefault(xtal)
 	ForceLatticeToStructure(xtal)
-	String cif =  crystalStructure2xml(xtal,NEW_LINE)	// convert xtal to cif
+	String cif = crystalStructure2xml(xtal,NEW_LINE)	// convert xtal to cif
 
 	Variable f
 	Open/C="R*ch"/F="XML Files (*.xml):.xml;"/M="file to write"/P=$path/Z=2 f as fname
@@ -3487,7 +3487,7 @@ End
 
 Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal structure to xml sting (suitable for a file)
 	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
-	String NL											// new line string (probably "\r" or "\n"
+	String NL											// new line string (probably "\r" or "\n")
 
 	String cif="<cif>"+NL
 	String str, unit=" unit=\"nm\""
