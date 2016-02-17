@@ -1,1 +1,29 @@
-<?xml version="1.0" encoding="UTF-8" ?><cif>	<chemical_name_common>FeS2 (Pyrite)</chemical_name_common>	<space_group_IT_number>205</space_group_IT_number>	<cell>		<a unit="nm">0.54187</a>		<b unit="nm">0.54187</b>		<c unit="nm">0.54187</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>	</cell>	<atom_site>		<label>Fe</label>		<symbol>Fe</symbol>		<fract_xyz>0 0 0</fract_xyz>		<valence>2</valence>	</atom_site>	<atom_site>		<label>S</label>		<symbol>S</symbol>		<fract_xyz>0.385 0.385 0.385</fract_xyz>		<valence>-1</valence>	</atom_site>	<bond_chemical unit="nm" n0="Fe01" n1="S01">0.22647</bond_chemical>	<bond_chemical unit="nm" n0="S01" n1="S01">0.21587</bond_chemical>	<citation doi="10.1103/PhysRevB.43.11926">M. Birkholz, S. Fiechter, A. Hartmann, and H. Tributsch, Phys. Rev. B 43, 11926 (1991)</citation></cif>
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>FeS2 (Pyrite)</chemical_name_common>
+	<space_group_IT_number>205</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.54187</a>
+		<b unit="nm">0.54187</b>
+		<c unit="nm">0.54187</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+		<valence>2</valence>
+	</atom_site>
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract_xyz>0.385 0.385 0.385</fract_xyz>
+		<valence>-1</valence>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Fe" n1="S">0.22647</bond_chemical>
+	<bond_chemical unit="nm" n0="S" n1="S">0.21587</bond_chemical>
+	<citation doi="10.1103/PhysRevB.43.11926">M. Birkholz, S. Fiechter, A. Hartmann, and H. Tributsch, Phys. Rev. B 43, 11926 (1991)</citation>
+</cif>

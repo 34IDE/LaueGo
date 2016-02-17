@@ -1,1 +1,166 @@
-<?xml version="1.0" encoding="UTF-8" ?><cif>	<chemical_name_common>YBa2Cu3O7</chemical_name_common>	<space_group_IT_number>47</space_group_IT_number>	<cell>		<a unit="nm">0.3827</a>		<b unit="nm">0.3893</b>		<c unit="nm">1.1699</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>	</cell>	<atom_site>		<label>Y</label>		<symbol>Y</symbol>		<fract_xyz>0.5 0.5 0.5</fract_xyz>		<aniso_U_11 unit="pm^2">123</aniso_U_11>		<aniso_U_22 unit="pm^2">162</aniso_U_22>		<aniso_U_33 unit="pm^2">1</aniso_U_33>		<valence>2</valence>		<WyckoffSymbol>h</WyckoffSymbol>	</atom_site>	<atom_site>		<label>Ba</label>		<symbol>Ba</symbol>		<fract_xyz>0.5 0.5 0.185</fract_xyz>		<aniso_U_11 unit="pm^2">68</aniso_U_11>		<aniso_U_22 unit="pm^2">45</aniso_U_22>		<aniso_U_33 unit="pm^2">87</aniso_U_33>		<valence>2</valence>		<WyckoffSymbol>t</WyckoffSymbol>	</atom_site>	<atom_site>		<label>Cu1</label>		<symbol>Cu</symbol>		<fract_xyz>0 0 0</fract_xyz>		<aniso_U_11 unit="pm^2">144</aniso_U_11>		<aniso_U_22 unit="pm^2">237</aniso_U_22>		<aniso_U_33 unit="pm^2">32</aniso_U_33>		<valence>2</valence>		<WyckoffSymbol>a</WyckoffSymbol>	</atom_site>	<atom_site>		<label>Cu2</label>		<symbol>Cu</symbol>		<fract_xyz>0 0 0.3565</fract_xyz>		<aniso_U_11 unit="pm^2">55</aniso_U_11>		<aniso_U_22 unit="pm^2">57</aniso_U_22>		<aniso_U_33 unit="pm^2">90</aniso_U_33>		<valence>3</valence>		<WyckoffSymbol>q</WyckoffSymbol>	</atom_site>	<atom_site>		<label>O1</label>		<symbol>O</symbol>		<fract_xyz>0 0.5 0</fract_xyz>		<aniso_U_11 unit="pm^2">587</aniso_U_11>		<aniso_U_22 unit="pm^2">68</aniso_U_22>		<aniso_U_33 unit="pm^2">35</aniso_U_33>		<valence>-2</valence>		<WyckoffSymbol>e</WyckoffSymbol>	</atom_site>	<atom_site>		<label>O2</label>		<symbol>O</symbol>		<fract_xyz>0 0 0.1566</fract_xyz>		<aniso_U_11 unit="pm^2">1</aniso_U_11>		<aniso_U_22 unit="pm^2">226</aniso_U_22>		<aniso_U_33 unit="pm^2">59</aniso_U_33>		<valence>-2</valence>		<WyckoffSymbol>q</WyckoffSymbol>	</atom_site>	<atom_site>		<label>O3</label>		<symbol>O</symbol>		<fract_xyz>0.5 0 0.3776</fract_xyz>		<aniso_U_11 unit="pm^2">23</aniso_U_11>		<aniso_U_22 unit="pm^2">112</aniso_U_22>		<aniso_U_33 unit="pm^2">168</aniso_U_33>		<valence>-2</valence>		<WyckoffSymbol>s</WyckoffSymbol>	</atom_site>	<atom_site>		<label>O4</label>		<symbol>O</symbol>		<fract_xyz>0 0.5 0.3765</fract_xyz>		<aniso_U_11 unit="pm^2">22</aniso_U_11>		<aniso_U_22 unit="pm^2">256</aniso_U_22>		<aniso_U_33 unit="pm^2">131</aniso_U_33>		<valence>-2</valence>		<WyckoffSymbol>r</WyckoffSymbol>	</atom_site>	<bond_chemical unit="nm" n0="Y1" n1="O3">0.2418</bond_chemical>	<bond_chemical unit="nm" n0="Y1" n1="O4">0.2399</bond_chemical>	<bond_chemical unit="nm" n0="Ba1" n1="O1">0.2891</bond_chemical>	<bond_chemical unit="nm" n0="Ba1" n1="O2">0.275</bond_chemical>	<bond_chemical unit="nm" n0="Ba1" n1="O3">0.298</bond_chemical>	<bond_chemical unit="nm" n0="Ba1" n1="O4">0.2948</bond_chemical>	<bond_chemical unit="nm" n0="Cu1" n1="O1">0.1947</bond_chemical>	<bond_chemical unit="nm" n0="Cu1" n1="O2">0.1834</bond_chemical>	<bond_chemical unit="nm" n0="Cu2" n1="O2">0.2341</bond_chemical>	<bond_chemical unit="nm" n0="Cu2" n1="O3">0.1929</bond_chemical>	<bond_chemical unit="nm" n0="Cu2" n1="O4">0.1961</bond_chemical>	<citation doi="10.1038/328606a0">Calestani and Rizzoli, Nature 328, 606-607 (13 August 1987)</citation></cif><!--   		Thermal parameters of form exp(-2 PI^2 U11 h^2 8 a*^2 + ... + U12hka*b*)		U12 = U23 = U13 = 0 by symmetry  --><!--   OLD VERSION<cif>	<chemical_name_common>YBa2Cu3O7</chemical_name_common>	<space_group_IT_number>47</space_group_IT_number>	<cell>		<a unit="nm">0.3818</a>		<b unit="nm">0.3889</b>		<c unit="nm">1.1668</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>	</cell>	<atom_site>		<label>Y0001</label>		<symbol>Y</symbol>		<fract_xyz>0.5 0.5 0.5</fract_xyz>	</atom_site>	<atom_site>		<label>Ba001</label>		<symbol>Ba</symbol>		<fract_xyz>0.5 0.5 0.186</fract_xyz>	</atom_site>	<atom_site>		<label>Cu001</label>		<symbol>Cu</symbol>		<fract_xyz>0 0 0</fract_xyz>	</atom_site>	<atom_site>		<label>Cu002</label>		<symbol>Cu</symbol>		<fract_xyz>0 0 0.355</fract_xyz>	</atom_site>	<atom_site>		<label>O0001</label>		<symbol>O</symbol>		<fract_xyz>0 0.5 0</fract_xyz>	</atom_site>	<atom_site>		<label>O0002</label>		<symbol>O</symbol>		<fract_xyz>0.5 0 0.38</fract_xyz>	</atom_site>	<atom_site>		<label>O0003</label>		<symbol>O</symbol>		<fract_xyz>0 0.5 0.376</fract_xyz>	</atom_site>	<atom_site>		<label>O0004</label>		<symbol>O</symbol>		<fract_xyz>0 0 0.156</fract_xyz>	</atom_site></cif>  -->
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>YBa2Cu3O7</chemical_name_common>
+	<space_group_IT_number>47</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.3827</a>
+		<b unit="nm">0.3893</b>
+		<c unit="nm">1.1699</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Y</label>
+		<symbol>Y</symbol>
+		<fract_xyz>0.5 0.5 0.5</fract_xyz>
+		<aniso_U_11 unit="pm^2">123</aniso_U_11>
+		<aniso_U_22 unit="pm^2">162</aniso_U_22>
+		<aniso_U_33 unit="pm^2">1</aniso_U_33>
+		<valence>2</valence>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Ba</label>
+		<symbol>Ba</symbol>
+		<fract_xyz>0.5 0.5 0.185</fract_xyz>
+		<aniso_U_11 unit="pm^2">68</aniso_U_11>
+		<aniso_U_22 unit="pm^2">45</aniso_U_22>
+		<aniso_U_33 unit="pm^2">87</aniso_U_33>
+		<valence>2</valence>
+		<WyckoffSymbol>t</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Cu1</label>
+		<symbol>Cu</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+		<aniso_U_11 unit="pm^2">144</aniso_U_11>
+		<aniso_U_22 unit="pm^2">237</aniso_U_22>
+		<aniso_U_33 unit="pm^2">32</aniso_U_33>
+		<valence>2</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Cu2</label>
+		<symbol>Cu</symbol>
+		<fract_xyz>0 0 0.3565</fract_xyz>
+		<aniso_U_11 unit="pm^2">55</aniso_U_11>
+		<aniso_U_22 unit="pm^2">57</aniso_U_22>
+		<aniso_U_33 unit="pm^2">90</aniso_U_33>
+		<valence>3</valence>
+		<WyckoffSymbol>q</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract_xyz>0 0.5 0</fract_xyz>
+		<aniso_U_11 unit="pm^2">587</aniso_U_11>
+		<aniso_U_22 unit="pm^2">68</aniso_U_22>
+		<aniso_U_33 unit="pm^2">35</aniso_U_33>
+		<valence>-2</valence>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract_xyz>0 0 0.1566</fract_xyz>
+		<aniso_U_11 unit="pm^2">1</aniso_U_11>
+		<aniso_U_22 unit="pm^2">226</aniso_U_22>
+		<aniso_U_33 unit="pm^2">59</aniso_U_33>
+		<valence>-2</valence>
+		<WyckoffSymbol>q</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.5 0 0.3776</fract_xyz>
+		<aniso_U_11 unit="pm^2">23</aniso_U_11>
+		<aniso_U_22 unit="pm^2">112</aniso_U_22>
+		<aniso_U_33 unit="pm^2">168</aniso_U_33>
+		<valence>-2</valence>
+		<WyckoffSymbol>s</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O4</label>
+		<symbol>O</symbol>
+		<fract_xyz>0 0.5 0.3765</fract_xyz>
+		<aniso_U_11 unit="pm^2">22</aniso_U_11>
+		<aniso_U_22 unit="pm^2">256</aniso_U_22>
+		<aniso_U_33 unit="pm^2">131</aniso_U_33>
+		<valence>-2</valence>
+		<WyckoffSymbol>r</WyckoffSymbol>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Y" n1="O3">0.2418</bond_chemical>
+	<bond_chemical unit="nm" n0="Y" n1="O4">0.2399</bond_chemical>
+	<bond_chemical unit="nm" n0="Ba" n1="O1">0.2891</bond_chemical>
+	<bond_chemical unit="nm" n0="Ba" n1="O2">0.275</bond_chemical>
+	<bond_chemical unit="nm" n0="Ba" n1="O3">0.298</bond_chemical>
+	<bond_chemical unit="nm" n0="Ba" n1="O4">0.2948</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu1" n1="O1">0.1947</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu1" n1="O2">0.1834</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu2" n1="O2">0.2341</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu2" n1="O3">0.1929</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu2" n1="O4">0.1961</bond_chemical>
+	<citation doi="10.1038/328606a0">Calestani and Rizzoli, Nature 328, 606-607 (13 August 1987)</citation>
+</cif>
+<!--   
+		Thermal parameters of form exp(-2 PI^2 U11 h^2 8 a*^2 + ... + U12hka*b*)
+		U12 = U23 = U13 = 0 by symmetry
+  -->
+
+
+<!--   OLD VERSION
+<cif>
+	<chemical_name_common>YBa2Cu3O7</chemical_name_common>
+	<space_group_IT_number>47</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.3818</a>
+		<b unit="nm">0.3889</b>
+		<c unit="nm">1.1668</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Y0001</label>
+		<symbol>Y</symbol>
+		<fract_xyz>0.5 0.5 0.5</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>Ba001</label>
+		<symbol>Ba</symbol>
+		<fract_xyz>0.5 0.5 0.186</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>Cu001</label>
+		<symbol>Cu</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>Cu002</label>
+		<symbol>Cu</symbol>
+		<fract_xyz>0 0 0.355</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>O0001</label>
+		<symbol>O</symbol>
+		<fract_xyz>0 0.5 0</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>O0002</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.5 0 0.38</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>O0003</label>
+		<symbol>O</symbol>
+		<fract_xyz>0 0.5 0.376</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>O0004</label>
+		<symbol>O</symbol>
+		<fract_xyz>0 0 0.156</fract_xyz>
+	</atom_site>
+</cif>
+  -->

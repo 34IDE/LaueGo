@@ -1,1 +1,26 @@
-<?xml version="1.0" encoding="UTF-8" ?><cif>	<chemical_name_common>Al2O3 Sapphire (hexagonal)</chemical_name_common>	<space_group_IT_number>167</space_group_IT_number>	<cell>		<a unit="nm">0.4758</a>		<b unit="nm">0.4758</b>		<c unit="nm">1.2991</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>120</gamma>	</cell>	<atom_site>		<label>Al</label>		<symbol>Al</symbol>		<fract_xyz>0 0 0.3523</fract_xyz>		<DebyeTemperature unit="K">1047</DebyeTemperature>	</atom_site>	<atom_site>		<label>O</label>		<symbol>O</symbol>		<fract_xyz>0.3064 0 0.25</fract_xyz>		<DebyeTemperature unit="K">1047</DebyeTemperature>	</atom_site></cif>
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Al2O3 Sapphire (hexagonal)</chemical_name_common>
+	<space_group_IT_number>167</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.4758</a>
+		<b unit="nm">0.4758</b>
+		<c unit="nm">1.2991</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+	<atom_site>
+		<label>Al</label>
+		<symbol>Al</symbol>
+		<fract_xyz>0 0 0.3523</fract_xyz>
+		<DebyeTemperature unit="K">1047</DebyeTemperature>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.3064 0 0.25</fract_xyz>
+		<DebyeTemperature unit="K">1047</DebyeTemperature>
+	</atom_site>
+</cif>

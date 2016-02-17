@@ -1,1 +1,98 @@
-<?xml version="1.0" encoding="UTF-8" ?><cif>	<chemical_name_common>MgAl2O4 spinel</chemical_name_common>	<space_group_IT_number>227</space_group_IT_number>	<cell>		<a unit="nm">0.8083</a>		<b unit="nm">0.8083</b>		<c unit="nm">0.8083</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>		<alphaT>7.5e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->	</cell>	<atom_site>		<label>Mg</label>		<symbol>Mg</symbol>		<fract_xyz>0 0 0</fract_xyz>		<valence>2</valence>		<B_iso unit="Å^2">0.57</B_iso>	<!-- B = 8 * pi^2 <u^2> -->	</atom_site>	<atom_site>		<label>Al</label>		<symbol>Al</symbol>		<fract_xyz>0.625 0.625 0.625</fract_xyz>		<valence>3</valence>		<B_iso unit="Å^2">0.1</B_iso>	<!-- B = 8 * pi^2 <u^2> -->	</atom_site>	<atom_site>		<label>O</label>		<symbol>O</symbol>		<fract_xyz>0.3872 0.3872 0.3872</fract_xyz>		<valence>-2</valence>		<B_iso unit="Å^2">0.5</B_iso>	<!-- B = 8 * pi^2 <u^2> -->	</atom_site>	<citation doi="10.1088/0022-3719/9/9/002">1976 J. Phys. C: Solid State Phys. 9 L231, K D Rouse, M W Thomas and B T M Willis			also http://phycomp.technion.ac.il/~ira/types.html#MgAl2O4</citation></cif><!-- Original	<chemical_name_common>MgAl2O4 spinel</chemical_name_common>	<space_group_IT_number>227</space_group_IT_number>	<cell>		<a unit="nm">0.798</a>		<b unit="nm">0.798</b>		<c unit="nm">0.798</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>	</cell>	<atom_site>		<label>Al001</label>		<symbol>Al</symbol>		<fract_x>0</fract_x>		<fract_y>0</fract_y>		<fract_z>0</fract_z>		<occupancy>0.206</occupancy>	</atom_site>	<atom_site>		<label>Al002</label>		<symbol>Al</symbol>		<fract_x>0.625</fract_x>		<fract_y>0.625</fract_y>		<fract_z>0.625</fract_z>		<occupancy>0.897</occupancy>	</atom_site>	<atom_site>		<label>Mg001</label>		<symbol>Mg</symbol>		<fract_x>0</fract_x>		<fract_y>0</fract_y>		<fract_z>0</fract_z>		<occupancy>0.794</occupancy>	</atom_site>	<atom_site>		<label>Mg002</label>		<symbol>Mg</symbol>		<fract_x>0.625</fract_x>		<fract_y>0.625</fract_y>		<fract_z>0.625</fract_z>		<occupancy>0.103</occupancy>	</atom_site>	<atom_site>		<label>O0001</label>		<symbol>O</symbol>		<fract_x>0.3872</fract_x>		<fract_y>0.3872</fract_y>		<fract_z>0.3872</fract_z>	</atom_site>-->
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>MgAl2O4 spinel</chemical_name_common>
+	<space_group_IT_number>227</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.8083</a>
+		<b unit="nm">0.8083</b>
+		<c unit="nm">0.8083</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<alphaT>7.5e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
+	</cell>
+
+	<atom_site>
+		<label>Mg</label>
+		<symbol>Mg</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+		<valence>2</valence>
+		<B_iso unit="Å^2">0.57</B_iso>	<!-- B = 8 * pi^2 <u^2> -->
+	</atom_site>
+
+	<atom_site>
+		<label>Al</label>
+		<symbol>Al</symbol>
+		<fract_xyz>0.625 0.625 0.625</fract_xyz>
+		<valence>3</valence>
+		<B_iso unit="Å^2">0.1</B_iso>	<!-- B = 8 * pi^2 <u^2> -->
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.3872 0.3872 0.3872</fract_xyz>
+		<valence>-2</valence>
+		<B_iso unit="Å^2">0.5</B_iso>	<!-- B = 8 * pi^2 <u^2> -->
+	</atom_site>
+	<citation doi="10.1088/0022-3719/9/9/002">1976 J. Phys. C: Solid State Phys. 9 L231, K D Rouse, M W Thomas and B T M Willis
+			also http://phycomp.technion.ac.il/~ira/types.html#MgAl2O4</citation>
+</cif>
+
+
+<!-- 
+
+Original
+
+	<chemical_name_common>MgAl2O4 spinel</chemical_name_common>
+	<space_group_IT_number>227</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.798</a>
+		<b unit="nm">0.798</b>
+		<c unit="nm">0.798</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Al001</label>
+		<symbol>Al</symbol>
+		<fract_x>0</fract_x>
+		<fract_y>0</fract_y>
+		<fract_z>0</fract_z>
+		<occupancy>0.206</occupancy>
+	</atom_site>
+	<atom_site>
+		<label>Al002</label>
+		<symbol>Al</symbol>
+		<fract_x>0.625</fract_x>
+		<fract_y>0.625</fract_y>
+		<fract_z>0.625</fract_z>
+		<occupancy>0.897</occupancy>
+	</atom_site>
+	<atom_site>
+		<label>Mg001</label>
+		<symbol>Mg</symbol>
+		<fract_x>0</fract_x>
+		<fract_y>0</fract_y>
+		<fract_z>0</fract_z>
+		<occupancy>0.794</occupancy>
+	</atom_site>
+	<atom_site>
+		<label>Mg002</label>
+		<symbol>Mg</symbol>
+		<fract_x>0.625</fract_x>
+		<fract_y>0.625</fract_y>
+		<fract_z>0.625</fract_z>
+		<occupancy>0.103</occupancy>
+	</atom_site>
+	<atom_site>
+		<label>O0001</label>
+		<symbol>O</symbol>
+		<fract_x>0.3872</fract_x>
+		<fract_y>0.3872</fract_y>
+		<fract_z>0.3872</fract_z>
+	</atom_site>
+
+-->

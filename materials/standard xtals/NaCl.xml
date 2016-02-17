@@ -1,1 +1,28 @@
-<?xml version="1.0" encoding="UTF-8" ?><cif>	<chemical_name_common>NaCl</chemical_name_common>	<space_group_IT_number>225</space_group_IT_number>	<cell>		<a unit="pm">564.02</a>		<b unit="pm">564.02</b>		<c unit="pm">564.02</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>	</cell>	<atom_site>		<label>Na</label>		<symbol>Na</symbol>		<fract_x>0</fract_x>		<fract_y>0</fract_y>		<fract_z>0</fract_z>	</atom_site>	<atom_site>		<label>Cl</label>		<symbol>Cl</symbol>		<fract_x>0.5</fract_x>		<fract_y>0.5</fract_y>		<fract_z>0.5</fract_z>	</atom_site></cif>
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>NaCl</chemical_name_common>
+	<space_group_IT_number>225</space_group_IT_number>
+	<cell>
+		<a unit="pm">564.02</a>
+		<b unit="pm">564.02</b>
+		<c unit="pm">564.02</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Na</label>
+		<symbol>Na</symbol>
+		<fract_x>0</fract_x>
+		<fract_y>0</fract_y>
+		<fract_z>0</fract_z>
+	</atom_site>
+	<atom_site>
+		<label>Cl</label>
+		<symbol>Cl</symbol>
+		<fract_x>0.5</fract_x>
+		<fract_y>0.5</fract_y>
+		<fract_z>0.5</fract_z>
+	</atom_site>
+</cif>

@@ -1,1 +1,63 @@
-<?xml version="1.0" encoding="UTF-8" ?><cif>	<chemical_name_common>NGO (NdGaO3)</chemical_name_common>	<space_group_IT_number>62</space_group_IT_number>	<cell>		<a unit="nm">0.54276</a>		<b unit="nm">0.54979</b>		<c unit="nm">0.77078</c>		<alpha>90</alpha>		<beta>90</beta>		<gamma>90</gamma>	</cell>	<atom_site>		<label>Nd</label>		<symbol>Nd</symbol>		<fract_x>0.49092</fract_x>		<fract_y>0.04142</fract_y>		<fract_z>0.25</fract_z>	</atom_site>	<atom_site>		<label>Ga</label>		<symbol>Ga</symbol>		<fract_x>0</fract_x>		<fract_y>0</fract_y>		<fract_z>0.5</fract_z>	</atom_site>	<atom_site>		<label>O1</label>		<symbol>O</symbol>		<fract_x>0.08</fract_x>		<fract_y>0.0174</fract_y>		<fract_z>0.75</fract_z>	</atom_site>	<atom_site>		<label>O2</label>		<symbol>O</symbol>		<fract_x>0.7107</fract_x>		<fract_y>0.2097</fract_y>		<fract_z>0.5422</fract_z>	</atom_site>	<citation>Journal of Allyos and compounds V382 (2004) 84-91, Senyshyn: Journal of Allyos and compounds V297 (2000) 46-52, Vasylechko;</citation>	<!--  coefficients for a polynomial fit --></cif><!-- // coefficients for a polynomial fit$aT0	0.5417							// coefficients of for temperature dependent a, b, c$aT1	0								// a = $aT0 + $aT1*T + $aT2*T^2 + $aT3*T^3 + ...$aT2	1.5342e-8						// T is in Kelvin$aT3	-1.5869e-11$aT4	5.9098e-15$bT0	0.54945							// similar for b$bT1	0$bT2	0.50221e-8$bT3	-3.9087e-12$bT4	1.244e-15$cT0	0.76873							// similar for c$cT1	0$cT2	2.8564e-8$cT3	-3.45e-11$cT4	13.766e-15 -->
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>NGO (NdGaO3)</chemical_name_common>
+	<space_group_IT_number>62</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.54276</a>
+		<b unit="nm">0.54979</b>
+		<c unit="nm">0.77078</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Nd</label>
+		<symbol>Nd</symbol>
+		<fract_x>0.49092</fract_x>
+		<fract_y>0.04142</fract_y>
+		<fract_z>0.25</fract_z>
+	</atom_site>
+	<atom_site>
+		<label>Ga</label>
+		<symbol>Ga</symbol>
+		<fract_x>0</fract_x>
+		<fract_y>0</fract_y>
+		<fract_z>0.5</fract_z>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract_x>0.08</fract_x>
+		<fract_y>0.0174</fract_y>
+		<fract_z>0.75</fract_z>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract_x>0.7107</fract_x>
+		<fract_y>0.2097</fract_y>
+		<fract_z>0.5422</fract_z>
+	</atom_site>
+	<citation>Journal of Allyos and compounds V382 (2004) 84-91, Senyshyn: Journal of Allyos and compounds V297 (2000) 46-52, Vasylechko;</citation>
+	<!--  coefficients for a polynomial fit -->
+</cif>
+
+<!-- 
+// coefficients for a polynomial fit
+$aT0	0.5417							// coefficients of for temperature dependent a, b, c
+$aT1	0								// a = $aT0 + $aT1*T + $aT2*T^2 + $aT3*T^3 + ...
+$aT2	1.5342e-8						// T is in Kelvin
+$aT3	-1.5869e-11
+$aT4	5.9098e-15
+$bT0	0.54945							// similar for b
+$bT1	0
+$bT2	0.50221e-8
+$bT3	-3.9087e-12
+$bT4	1.244e-15
+$cT0	0.76873							// similar for c
+$cT1	0
+$cT2	2.8564e-8
+$cT3	-3.45e-11
+$cT4	13.766e-15
+ -->
