@@ -1,10 +1,11 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.12
+#pragma version = 2.13
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
 //		The old functions are still there, but with new innards
+// with v2.13 pk.net is the total area-bkg. It was just the area in the FWHM for simple peaks.
 
 Static Constant MAX_PEAK_COEFS = 6
 
@@ -679,23 +680,21 @@ ThreadSafe Function/WAVE CalcSimplePeakParameters(yw,xw,useBkg,[pLo,pHi])	// loo
 		pStart = round((V_maxloc-xoff)/dx)				// pStart in points (highest point)
 	endif
 
-	p1 = FindLevelFromPoint(yw,level,pStart,-1,dip,p1=pLo)	// find left side
-	p2 = FindLevelFromPoint(yw,level,pStart,1,dip,p1=pHi)	// find right side
+	p1 = FindLevelFromPoint(yw,level,pStart,-1,dip,p1=pLo)	// find left side at HalfMax
+	p2 = FindLevelFromPoint(yw,level,pStart,1,dip,p1=pHi)	// find right side at HalfMax
 	OrderValues(p1,p2)
-	Variable xLo=pnt2xWyWx(yw,xw,p1), xHi=pnt2xWyWx(yw,xw,p2)		// convert from point to x
 
+	Variable xLo=pnt2xWyWx(yw,xw,pLo), xHi=pnt2xWyWx(yw,xw,pHi)		// get x of requested range from points
 	if (numtype(p1+p2))
 		return $""
 	elseif (WaveExists(xw))
-		FWHM = abs(xw[p2]-xw[p1])
-		center=(xw[p2]+xw[p1])/2
-//		net = areaXY(xw,yw) - (xw[N-1]-xw[0])*bkg
-		net = areaXY(xw,yw,xLo,xHi) - (xw[pHi]-xw[pLo])*bkg
+		FWHM = abs(xw[p2]-xw[p1])							// distance between half heights
+		center=(xw[p2]+xw[p1])/2							// center is midway between half heights
+		net = areaXY(xw,yw,xLo,xHi) - (xw[pHi]-xw[pLo])*bkg	// net is integrated over requested range
 	else
-		FWHM = abs((p2-p1)*dx)
-		center = dx*(p2+p1)/2 + xoff
-//		net = area(yw) - bkg*(N-1)*dx
-		net = area(yw,xLo,xHi) - bkg*(pHi-pLo)*dx
+		FWHM = abs((p2-p1)*dx)								// distance between half heights
+		center = dx*(p2+p1)/2 + xoff						// center is midway between half heights
+		net = area(yw,xLo,xHi) - bkg*(pHi-pLo)*dx	// net is integrated over requested range
 	endif
 
 	Make/N=6/D/FREE Wc={bkg, amp, center, FWHM, net, COM}
