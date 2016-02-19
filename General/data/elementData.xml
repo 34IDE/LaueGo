@@ -21,7 +21,7 @@
 	<boil>20.28</boil>
 	<radius>2.08</radius>
 	<covRadius>0.32</covRadius>
-	<electroneg>2.1</electroneg>
+	<electroneg>2.2</electroneg>
 	<atomVol>14.1</atomVol>
 	<DebyeT>122</DebyeT>
 	<state>g</state>
@@ -45,7 +45,7 @@
 	<melt>0.95</melt>
 	<boil>4.216</boil>
 	<covRadius>0.93</covRadius>
-	<electroneg>0</electroneg>
+	<electroneg>NaN</electroneg>
 	<atomVol>31.8</atomVol>
 	<state>g</state>
 	<edges>
@@ -274,7 +274,7 @@
 	<boil>27.1</boil>
 	<radius>0.51</radius>
 	<covRadius>0.71</covRadius>
-	<electroneg>0</electroneg>
+	<electroneg>NaN</electroneg>
 	<atomVol>16.9</atomVol>
 	<DebyeT>74.6</DebyeT>
 	<state>g</state>
@@ -545,7 +545,7 @@
 	<boil>87.45</boil>
 	<radius>0.88</radius>
 	<covRadius>0.98</covRadius>
-	<electroneg>0</electroneg>
+	<electroneg>NaN</electroneg>
 	<atomVol>24.2</atomVol>
 	<DebyeT>92</DebyeT>
 	<state>g</state>
@@ -1292,7 +1292,7 @@
 	<boil>120.85</boil>
 	<radius>1.03</radius>
 	<covRadius>1.89</covRadius>
-	<electroneg>0</electroneg>
+	<electroneg>NaN</electroneg>
 	<atomVol>32.2</atomVol>
 	<DebyeT>71.9</DebyeT>
 	<state>g</state>
@@ -2212,7 +2212,7 @@
 	<boil>165.1</boil>
 	<radius>1.24</radius>
 	<covRadius>1.31</covRadius>
-	<electroneg>2.6</electroneg>
+	<electroneg>NaN/electroneg>
 	<atomVol>42.9</atomVol>
 	<DebyeT>64</DebyeT>
 	<state>g</state>
@@ -4042,7 +4042,7 @@
 	<melt>202</melt>
 	<boil>211.4</boil>
 	<radius>1.34</radius>
-	<electroneg>0</electroneg>
+	<electroneg>NaN</electroneg>
 	<atomVol>50.5</atomVol>
 	<state>g</state>
 	<edges>
@@ -4282,6 +4282,7 @@
 	<boil>4300</boil>
 	<radius>1.63</radius>
 	<covRadius>2</covRadius>
+	<electroneg>1.5</electroneg>
 	<DebyeT>262</DebyeT>
 	<state>s</state>
 	<edges>
@@ -4325,6 +4326,7 @@
 	<boil>4407</boil>
 	<radius>1.56</radius>
 	<covRadius>1.96</covRadius>
+	<electroneg>1.38</electroneg>
 	<DebyeT>300</DebyeT>
 	<state>s</state>
 	<edges>
@@ -4381,6 +4383,7 @@
 	<thermalConduc>6.3</thermalConduc>
 	<melt>912</melt>
 	<boil>4175</boil>
+	<electroneg>1.36</electroneg>
 	<state>s</state>
 </Z93>
 
@@ -4395,6 +4398,7 @@
 	<specificHeat>0.13</specificHeat>
 	<melt>913</melt>
 	<boil>3505</boil>
+	<electroneg>1.28</electroneg>
 	<state>s</state>
 </Z94>
 
@@ -4408,6 +4412,7 @@
 	<thermalConduc>10</thermalConduc>
 	<melt>1449</melt>
 	<boil>2880</boil>
+	<electroneg>1.13</electroneg>
 	<state>s</state>
 </Z95>
 
@@ -4419,6 +4424,7 @@
 	<firstIon>6.02</firstIon>
 	<thermalConduc>10</thermalConduc>
 	<melt>1620</melt>
+	<electroneg>1.3</electroneg>
 </Z96>
 
 <Z97>
@@ -4428,6 +4434,7 @@
 	<density>14</density>
 	<firstIon>6.23</firstIon>
 	<thermalConduc>10</thermalConduc>
+	<electroneg>1.3</electroneg>
 </Z97>
 
 <Z98>
@@ -4437,6 +4444,7 @@
 	<firstIon>6.3</firstIon>
 	<thermalConduc>10</thermalConduc>
 	<melt>1170</melt>
+	<electroneg>1.3</electroneg>
 </Z98>
 
 <Z99>
@@ -4446,6 +4454,7 @@
 	<firstIon>6.42</firstIon>
 	<thermalConduc>10</thermalConduc>
 	<melt>1130</melt>
+	<electroneg>1.3</electroneg>
 </Z99>
 
 <Z100>
@@ -4455,18 +4464,21 @@
 	<firstIon>6.5</firstIon>
 	<thermalConduc>10</thermalConduc>
 	<melt>1800</melt>
+	<electroneg>1.3</electroneg>
 </Z100>
 
 <Z101>
 	<symb>Md</symb>
 	<name>Mendelevium</name>
 	<amu>258</amu>
+	<electroneg>1.3</electroneg>
 </Z101>
 
 <Z102>
 	<symb>No</symb>
 	<name>Nobelium</name>
 	<amu>259</amu>
+	<electroneg>1.3</electroneg>
 </Z102>
 
 <Z103>
