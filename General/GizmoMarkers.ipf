@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.12
+#pragma version = 2.13
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=0.16
@@ -1472,7 +1472,7 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 
 	FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
 	Wave RL = getRl(scatter,point)
-	if (WaveDims(scatter)==3 && WaveExists(RL) && WhichListItem(WaveUnits(scatter,0),Q_UNITS_LIST)>=0)
+	if (WaveExists(RL) && WaveDims(scatter)==3 && WhichListItem(WaveUnits(scatter,0),Q_UNITS_LIST)>=0)
 		Make/N=3/D/FREE Qc={x0,y0,z0}		// This is probably Q-space, so try for an hkl
 		MatrixOP/FREE hkl = Inv(RL) x Qc
 		M.h = hkl[0];		M.k = hkl[1];		M.l = hkl[2]
