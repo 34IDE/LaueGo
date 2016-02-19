@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.37
+#pragma version = 0.38
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -34,6 +34,8 @@ Constant AtomView_UseCovalent = 1		// Can OverRide with :OverRide Constant AtomV
 												// turn this flag on to use covalent radius instead of atomic radius.
 Constant AtomView_SphereQuality = 50	// Can OverRide with :OverRide Constant AtomView_SphereQuality=100
 Constant AtomView_zero= 1e-10			// distances less than this (=1e-19 m) are considered zero
+Constant AtomView_minBondLen = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
+Constant AtomView_maxBondLen = 0.310		// 0.310 nm = 310 pm, maximum possible distance between atoms
 Constant AtomView_UseBlend = -1		// Can OverRide with :OverRide Constant AtomView_UseBlend=1, 0=NoBlend, 1=Blend, -1=Auto
 
 //Static Constant GizmoScaleSize_BASE=7.5
@@ -318,10 +320,11 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		Wave bonds = MakeBondList_Given(prefix,xtal,xyz)
 	endif
 	if (!WaveExists(bonds))
-		if (!(blen>0))				// find max length to use for bonds
-			// blen = FindMinSeparation(xyz)*1.01
-			blen = FindMinSeparation(xyz)*1.05
-		endif
+//		if (!(blen>0))				// find max length to use for bonds
+//			// blen = FindMinSeparation(xyz)*1.01
+//			blen = FindMinSeparation(xyz)*1.05
+//		endif
+		// blen is set in MakeBondList_blen()
 		Wave bonds = MakeBondList_blen(prefix,xyz,blen=blen)
 	endif
 
@@ -592,14 +595,24 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1)<3)
 		return $""
 	endif
-	if (!(blen>0))				// find max length to use for bonds
-		blen = FindMinSeparation(xyz)*1.01
-	endif
 	Variable N=DimSize(xyz,0)
-
 	String name = GetWavesDataFolder(xyz,2)
 	name = ReplaceString("_XYZ",name,"_Type")
 	Wave/T types = $name
+
+	Make/N=(N)/FREE eNeg=Element_electroneg(LatticeSym#ZfromLabel(types[p]))
+	WaveStats/M=1/Q eNeg
+	Variable isMetalic = (V_max-V_min) < 0.4
+
+	if (!(blen>0))				// find max length to use for bonds
+		if (isMetalic)
+			blen = AtomView#FindMinSeparation(xyz)*1.05
+		else
+			blen = AtomView_maxBondLen
+		else
+		endif
+	endif
+	//	print "blen =",blen
 
 	name = GetWavesDataFolder(xyz,1)+prefix+"_Bonds"
 	Variable Nmax=300, Nbonds=0
@@ -614,14 +627,18 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	wNote = ReplaceNumberByKey("bondLenMax",wNote,blen,"=")
 
 	Make/N=3/D/FREE xyz0, dxyz
-	Variable i,j, Nb, len
+	Variable i,j, Nb, len, eNegj, eNegi
 	for (Nb=0,j=0; j<(N-1); j+=1)
 		xyz0 = xyz[j][p]
-
+		eNegj = eNeg[j]
 		for (i=j+1;i<N;i+=1)
+			eNegi = eNeg[i]
+			if (!isMetalic && abs(eNegi-eNegj)<0.5)	// a covalent or ionic bond needs deltaElector > 0.5
+				continue
+			endif
 			dxyz = xyz0[p] - xyz[i][p]
 			len = norm(dxyz)
-			if (AtomView_zero<len && len<=blen)	// found a bond
+			if (AtomView_minBondLen<len && len<=blen)	// found a bond
 				if ((Nb+3)>=Nmax)				// need more room
 					Nmax += 300	
 					Redimension/N=(Nmax,-1) bonds, bsource
@@ -643,9 +660,10 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 		KillWaves/Z bonds, bsource
 		return $""
 	endif
+	// print "Nbonds =",Nbonds, "   ",SelectString(isMetalic,"Ionic","Metalic")
 
 	Redimension/N=(Nb-1,-1) bonds, bsource
-	bonds = abs(bonds)<AtomView_zero ? 0 : bonds
+	bonds = abs(bonds)<AtomView_minBondLen ? 0 : bonds
 	wNote = ReplaceNumberByKey("Nbonds",wNote,Nbonds,"=")
 	Note/K bonds, wNote
 	Note/K bsource, ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Source","=")
@@ -679,6 +697,105 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 
 	return bonds
 End
+//Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bonds are given
+//	String prefix
+//	Wave xyz				// list of atom xyz positions
+//	Variable bLen		// maximum distance that gets a bond
+//	bLen = ParamIsDefault(bLen) ? NaN : bLen
+//	bLen = bLen>0 ? bLen : NaN
+//
+//	if (!WaveExists(xyz))
+//		return $""
+//	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1)<3)
+//		return $""
+//	endif
+//	if (!(blen>0))				// find max length to use for bonds
+//		blen = FindMinSeparation(xyz)*1.05
+//	endif
+//	Variable N=DimSize(xyz,0)
+//
+//	String name = GetWavesDataFolder(xyz,2)
+//	name = ReplaceString("_XYZ",name,"_Type")
+//	Wave/T types = $name
+//
+//	name = GetWavesDataFolder(xyz,1)+prefix+"_Bonds"
+//	Variable Nmax=300, Nbonds=0
+//	Make/N=(Nmax,3)/O $name/WAVE=bonds = NaN
+//	name += "_Source"
+//	Make/N=(Nmax)/O $name/WAVE=bsource = NaN
+//	String buniqueName = GetWavesDataFolder(xyz,1)+prefix+"_Bonds_Unique"
+//
+//	String wNote="waveClass=atomViewBonds;"
+//	wNote = ReplaceStringByKey("source",wNote,GetWavesDataFolder(xyz,2),"=")
+//	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
+//	wNote = ReplaceNumberByKey("bondLenMax",wNote,blen,"=")
+//
+//	Make/N=3/D/FREE xyz0, dxyz
+//	Variable i,j, Nb, len
+//	for (Nb=0,j=0; j<(N-1); j+=1)
+//		xyz0 = xyz[j][p]
+//
+//		for (i=j+1;i<N;i+=1)
+//			dxyz = xyz0[p] - xyz[i][p]
+//			len = norm(dxyz)
+//			if (AtomView_minBondLen<len && len<=blen)	// found a bond
+//				if ((Nb+3)>=Nmax)				// need more room
+//					Nmax += 300	
+//					Redimension/N=(Nmax,-1) bonds, bsource
+//				endif
+//				bonds[Nb+0][] = xyz0[q]
+//				bonds[Nb+1][] = xyz[i][q]
+//				bonds[Nb+2][] = NaN
+//				bsource[Nb+0] = j
+//				bsource[Nb+1] = i
+//				bsource[Nb+2] = NaN
+//				Nb += 3
+//				Nbonds += 1
+//			endif
+//		endfor
+//	endfor
+//
+//	if (Nb<1)
+//		Redimension/N=(0,-1) bonds, bsource
+//		KillWaves/Z bonds, bsource
+//		return $""
+//	endif
+//
+//	Redimension/N=(Nb-1,-1) bonds, bsource
+//	bonds = abs(bonds)<AtomView_minBondLen ? 0 : bonds
+//	wNote = ReplaceNumberByKey("Nbonds",wNote,Nbonds,"=")
+//	Note/K bonds, wNote
+//	Note/K bsource, ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Source","=")
+//
+//	// Store the unique bonds found here
+//	Make/N=(Nb,3)/O/T $buniqueName/WAVE=bunique = ""
+//	Make/N=3/D/FREE bvec
+//	Variable dup,m,Nu=0		// Nu is number of unique bonds
+//	String b0,b1
+//	for (i=0,Nu=0; i<Nb; i+=3)
+//		b0 = types[bsource[i]]
+//		b1 = types[bsource[i+1]]
+//
+//		for (m=0,dup=0; m<Nu && !dup; m+=1)	// search if b0,b1 already in bunique
+//			dup += stringmatch(bunique[m][0],b0) && stringmatch(bunique[m][1],b1)
+//			dup += stringmatch(bunique[m][0],b1) && stringmatch(bunique[m][1],b0)
+//		endfor
+//		if (!dup)										// no match, add this bond
+//			bunique[Nu][0] = b0
+//			bunique[Nu][1] = b1
+//			bvec = bonds[i][p] - bonds[i+1][p]
+//			bunique[Nu][2] = num2str(norm(bvec))
+//			Nu += 1
+//		endif
+//	endfor
+//	Redimension/N=(Nu,-1) bunique
+//	wNote = RemoveByKey("Nbonds",wNote,"=")
+//	wNote = ReplaceNumberByKey("NbondsUnique",wNote,Nu,"=")
+//	wNote = ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Unique","=")
+//	Note/K bunique, wNote
+//
+//	return bonds
+//End
 //	Function test_MakeBondList_blen()
 //		Wave xyz=Si_XYZ
 //		Wave wb = MakeBondList_blen("Si",xyz)
@@ -752,12 +869,12 @@ Static Function FindMinSeparation(xyz)	// find the closest distance between two 
 			Make/N=(iN,3)/FREE/D xyzi
 			xyzi = xyz[p+i+1][q]
 			MatrixOP/FREE/O dxyz = sqrt(sumRows(magSqr(xyzi - rowRepeat(xyz0,iN))))
-			dxyz = dxyz<AtomView_zero ? Inf : dxyz	// don't permit zero distances
+			dxyz = dxyz<AtomView_minBondLen ? Inf : dxyz	// don't permit zero distances
 			dmin = min(dmin,WaveMin(dxyz))
 		else
 			xyz0 -= xyz[i+1][p]							// only 1 atom pair to check
 			Variable dlast = norm(xyz0)
-			dmin = dlast > AtomView_zero && dlast<dmin ? dlast : dmin
+			dmin = dlast > AtomView_minBondLen && dlast<dmin ? dlast : dmin
 		endif
 	endfor
 	return dmin
