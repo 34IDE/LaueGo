@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.11
+#pragma version = 5.12
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -136,6 +136,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.07, improved FindMaterialsFile()
 //	with version 5.09, FindMaterialsFile() also looks in Documents for "materials" folder
 //	with version 5.10, allow all thermal parameters to be set, and Uij can be negative too
+//	with version 5.12, can now also get name from _chemical_name_mineral
 
 // Rhombohedral Transformation:
 //
@@ -3951,6 +3952,9 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	name = CIF_readString("_chemical_formula_structural",buf)
 	if (strlen(name)<1)
 		name = CIF_readString("_chemical_name_systematic",buf)
+	endif
+	if (strlen(name)<1)
+		name = CIF_readString("_chemical_name_mineral",buf)
 	endif
 	String str = SelectString(strlen(name),desc,name)
 	xtal.desc = str[0,99]
