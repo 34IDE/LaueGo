@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.12
+#pragma version = 5.13
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -137,6 +137,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.09, FindMaterialsFile() also looks in Documents for "materials" folder
 //	with version 5.10, allow all thermal parameters to be set, and Uij can be negative too
 //	with version 5.12, can now also get name from _chemical_name_mineral
+//	with version 5.13, can now also get name from _chemical_name_mineral working correctly
 
 // Rhombohedral Transformation:
 //
@@ -3904,6 +3905,9 @@ Static Function readFileCIF(xtal,fileName,[path])
 	buf = ReplaceString("\r",buf,"\n")
 
 	Variable i = strsearch(buf,"data_",0)		// find the _data section
+	if (i>0)
+		i = strsearch(buf,"\ndata_",0)			// _data is not first, it must start a line
+	endif
 	if (i<0)
 		DoAlert 0,"Cannot find 'data_*' to start"
 		return 1
@@ -3918,7 +3922,7 @@ Static Function readFileCIF(xtal,fileName,[path])
 		i = strsearch(buf,"\n",0)
 		desc = buf[5,i-1]
 	endif
-	i = strsearch(buf,"\n",i+1)+1
+//	i = strsearch(buf,"\n",i+1)+1
 	buf = buf[i,Inf]
 
 	i = strsearch(buf,"\ndata_",0)			// check for second data_ section

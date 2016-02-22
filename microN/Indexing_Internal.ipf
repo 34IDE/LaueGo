@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.15
-#include "IndexingN", version>=4.77
+#pragma version = 0.16
+#include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 #include "Indexing_InternalQZ_Gizmo"
@@ -21,8 +21,13 @@ Static Constant INDEXING_KEV_MIN = 2		// minimum energy (kev)
 //	#endif
 
 
+Menu LaueGoMainMenuName
+	MenuItemIfWaveClassExists("  Calc & Show Zones...","FittedPeakList*","DIMS:2,MINCOLS:11"),PutZoneLinesOnGraph($"")
+End
+
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 Menu "Zones"
+	MenuItemIfWaveClassExists("Calc & Show Zones...","FittedPeakList*","DIMS:2,MINCOLS:11"),PutZoneLinesOnGraph($"")
 	SubMenu "Test"
 		"Make Simulated Test Pattern...", MakeSimulatedTestPattern(NaN)
 		"Make Test Spots...", IndexingInternal#MakeTestSpots(NaN)
@@ -2229,7 +2234,9 @@ Static Function/WAVE MakeZonesWave(GhatsMeasured,Nmin,[tolAngle,printIt])
 	Wave zw = FindZonesWithNspots(GhatsMeasured,Nmin,tolAngle)
 	Variable Nz = WaveExists(zw) ? DimSize(zw,0) : 0
 	if (Nz<1)
-		printf "for Nmin = %d,  No zones found\r",Nmin
+		if (printIt)
+			printf "for Nmin = %d,  No zones found\r",Nmin
+		endif
 		return $""
 	endif
 
@@ -2357,6 +2364,180 @@ Static Function isNewAxis(existingAxes,axis,tol)	// only used by FindZonesWithNs
 	MatrixOP/FREE dots = abs(existingAxes x axis)
 	Variable dotMax = WaveMax(dots)
 	return (dotMax < tol)
+End
+
+
+Function/WAVE PutZoneLinesOnGraph(FullPeakList)
+	// Find the zones from fitted peaks, and put lines on plot showing the zones.
+	Wave FullPeakList
+
+	STRUCT microGeometry g
+	if (FillGeometryStructDefault(g))	//fill the geometry structure with current values
+		DoAlert 0, "no geometry structure found, did you forget to set it?"
+		return $""
+	endif
+	String FullPeakName=""
+	if (!WaveExists(FullPeakList))		// need to find the FullPeakList
+		Wave FullPeakList = $StringByKey("FullPeakList",GetUserData("","","FitPeaks"),"=")
+		if (!WaveExists(FullPeakList))
+			String list = WaveListClass("FittedPeakList","*","MINCOLS:11")
+			if (ItemsInList(list)<1)
+				return $""
+			elseif (ItemsInList(list)==1)
+				Wave FullPeakList = $StringFromList(0,list)
+			else
+				Prompt FullPeakName,"Full Peak List",popup, list
+				DoPrompt "Peak List",FullPeakName
+				if (V_flag)
+					return $""
+				endif
+				Wave FullPeakList = $FullPeakName
+			endif
+		endif
+	endif
+	if (!WaveExists(FullPeakList))
+		return $""
+	endif
+
+	FullPeakName = NameOfWave(FullPeakList)
+	String ending="Other", outName=""
+	if (strsearch(FullPeakName,"FullPeakList",0)==0)
+		ending = FullPeakName[12,inf]
+	endif
+	outName = CleanupName("ZoneLines"+ending,0)
+
+	Variable i, N=DimSize(FullPeakList,0)
+	Make/N=(N,3)/FREE Ghats=NaN
+	Make/N=3/D/FREE qhat
+	for (i=0;i<N;i+=1)
+		pixel2q(g.d[0],FullPeakList[i][0],FullPeakList[i][1],qhat)
+		Ghats[i][] = qhat[q]
+	endfor
+	Note/K Ghats, "waveClass=QsMeasured;"
+	Wave waxes = MakeZonesWave(Ghats,NaN,printIt=0)
+	if (!WaveExists(waxes))
+		return $""
+	endif
+	Wave zl = MakeZoneLinesForGraph(g.d[0],waxes)
+#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
+	Duplicate/O waxes, $CleanupName("ZoneAxes"+ending,0)
+#endif
+	Duplicate/O zl, $outName
+	Wave zOut = $outName
+
+	Wave image = $StringByKey("fittedIgorImage",note(FullPeakList),"=")
+	String win = StringFromList(0,FindGraphsWithWave(image))
+	CheckDisplayed/W=$win zOut
+	if (strlen(win) && !V_flag)		// image displayed, but zOut NOT on image
+		AppendToGraph/W=$win zOut[*][1] vs zOut[*][0]
+		ModifyGraph lSize($outName)=2, lStyle($outName)=7, rgb($outName)=(0,50000,0)
+	endif
+	return zOut
+End
+//
+Static Function/WAVE MakeZoneLinesForGraph(d,axes,[dAngle,depth])
+	STRUCT detectorGeometry &d
+	Wave axes					// list of zone axes dim(N,3)
+	Variable dAngle			// angular step size along lines (degree)
+	Variable depth				// depth of sample (rarely if ever used), probably 0
+	dAngle = ParamIsDefault(dAngle) || numtype(dAngle) || dAngle<0 ? NaN : dAngle
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+	if (!WaveExists(axes))
+		return $""
+	endif
+	Variable N=DimSize(axes,0)
+
+	if (!(dAngle>0))								// find the angular step size
+		Make/N=3/D/FREE q1,q2
+		pixel2q(d,d.Nx/2,0,q1)
+		pixel2q(d,d.Nx/2,d.Ny-1,q2)
+		dAngle = acos(MatrixDot(q1,q2))		// anglular size in y-direction (radian)
+		pixel2q(d,0,d.Ny/2,q1)
+		pixel2q(d,d.Nx-1,d.Ny/2,q2)
+		dAngle = min(acos(MatrixDot(q1,q2)),dAngle)	// anglular size in x-direction (radian)
+		dAngle /= 50
+//		printf "using an angular step size of %g¡\r",dAngle*180/PI
+	endif
+	Variable NLineMax = ceil(PI/dAngle)+2
+	Make/N=(NLineMax)/FREE pxs,pys,angles
+	Make/N=(N*(NLineMax+1),2)/FREE ZoneLines=NaN	// (x,y) parirs of each point on the curve
+	SetScale d 0,0,"pixel", ZoneLines
+
+	Make/N=3/D/FREE qDetCenter				// q that diffracts to detector center
+	pixel2q(d,d.Nx/2,d.Ny/2,qDetCenter,depth=depth)
+
+	Make/N=3/D/FREE q0, qperp, qvec, axis
+	Variable/C pz
+	Variable plusEnd, minusEnd, Nline
+	Variable iaxis, m, i, sine, cosine, angle
+	for (iaxis=0,m=0; iaxis<N; iaxis+=1)	// once for each zone axis
+		axis = axes[iaxis][p]
+		normalize(axis)
+		q0 = qDetCenter - MatrixDot(qDetCenter,axis)*axis
+		normalize(q0)								// q on zone that is closest to detector center
+//		printf "q0[%d] = %s,   angle=%g¡\r",iaxis,vec2str(q0), acos(MatrixDot(q0,qDetCenter))*180/PI
+
+		Cross axis, q0
+		Wave W_Cross=W_Cross
+		qperp = W_Cross
+		normalize(qperp)							// q on zone that is perpendicular to q0
+		plusEnd = 1
+		minusEnd = 1
+		Nline = 0
+		angles = Inf
+		for (i=0;i<100 && (plusEnd || minusEnd);i+=1)
+			angle = i*dAngle
+			cosine = cos(angle)
+			sine = sin(angle)
+			if (plusEnd)
+				qvec = cosine*q0 + sine*qperp
+				pz = q2pixel(d,qvec,depth=depth)
+				if (pixelOnDetector(d,pz))		// true if more in this direction
+					pxs[Nline] = real(pz)
+					pys[Nline] = imag(pz)
+					angles[Nline] = angle
+					Nline += 1
+				else
+					plusEnd = 0							// done with the plus direction
+				endif
+			endif
+			if (minusEnd && i)
+				qvec = cosine*q0 - sine*qperp
+				pz = q2pixel(d,qvec,depth=depth)
+				if (pixelOnDetector(d,pz))		// true if more in this direction
+					pxs[Nline] = real(pz)
+					pys[Nline] = imag(pz)
+					angles[Nline] = -angle
+					Nline += 1
+				else
+					minusEnd = 0						// done with the minus direction
+				endif
+			endif
+		endfor
+		Sort angles, pxs, pys
+		ZoneLines[m,m+Nline-1][0] = pxs[p-m]
+		ZoneLines[m,m+Nline-1][1] = pys[p-m]
+		m += Nline + 1
+	endfor
+	KillWaves/Z W_Cross
+
+	Redimension/N=(m-1,-1) ZoneLines
+	return ZoneLines
+End
+//
+Static Function pixelOnDetector(d,pz)
+	STRUCT detectorGeometry &d
+	Variable/C pz
+	Variable px=real(pz), py=imag(pz)
+
+	if (numtype(px+py))
+		return 0
+	elseif (px<0 || px>=(d.Nx-1))
+		return 0
+	elseif (py<0 || py>=(d.Ny-1))
+		return 0
+	endif
+	return 1
 End
 
 //  =============================== End of Zones Indexing ==============================  //
