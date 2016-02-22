@@ -1491,7 +1491,7 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 
 		Variable NindexedMax = DimSize(FullPeakIndexed,0)
 		Make/N=(NindexedMax)/D/FREE wi
-		Make/N=3/D/FREE abc
+		Make/N=3/D/FREE vec
 		Variable Nindexed
 		for (m=0;m<Npattern;m+=1)
 			Redimension/N=(NindexedMax) wi
@@ -1512,12 +1512,12 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 			str = StringByKey("recip_lattice"+mStr,inote,"=")
 			Wave w33 = matString2mat33(str)
 			xml += "\t\t\t<recip_lattice"+runit+">\n"
-			abc = w33[p][0]
-			xml += "\t\t\t\t<astar>"+vec2str(abc,places=9,bare=1,sep=" ")+"</astar>\n"
-			abc = w33[p][1]
-			xml += "\t\t\t\t<bstar>"+vec2str(abc,places=9,bare=1,sep=" ")+"</bstar>\n"
-			abc = w33[p][2]
-			xml += "\t\t\t\t<cstar>"+vec2str(abc,places=9,bare=1,sep=" ")+"</cstar>\n"
+			vec = w33[p][0]
+			xml += "\t\t\t\t<astar>"+vec2str(vec,places=9,bare=1,sep=" ")+"</astar>\n"
+			vec = w33[p][1]
+			xml += "\t\t\t\t<bstar>"+vec2str(vec,places=9,bare=1,sep=" ")+"</bstar>\n"
+			vec = w33[p][2]
+			xml += "\t\t\t\t<cstar>"+vec2str(vec,places=9,bare=1,sep=" ")+"</cstar>\n"
 			xml += "\t\t\t</recip_lattice>\n"
 
 			xml += "\t\t\t<hkl_s>\n"

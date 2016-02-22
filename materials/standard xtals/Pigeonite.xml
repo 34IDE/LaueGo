@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Pigeonite</chemical_name_common>
+	<space_group_IT_number>14</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.9706</a>
+		<b unit="nm">0.895</b>
+		<c unit="nm">0.5246</c>
+		<alpha>90</alpha>
+		<beta>108.59</beta>
+		<gamma>90</gamma>
+		<volume>0.431935937648581</volume>
+	</cell>
+	<atom_site>
+		<label>Mg1</label>
+		<symbol>Mg</symbol>
+		<fract_xyz>0.2508 0.6548 0.2328</fract_xyz>
+		<valence>2</valence>
+		<occupancy>0.72</occupancy>
+		<aniso_U_11 unit="nm^2">7.29e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">6.49e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">9.77e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">4.2e-06</aniso_U_12>
+		<aniso_U_13 unit="nm^2">3.01e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">2.3e-06</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Fe1</label>
+		<symbol>Fe</symbol>
+		<fract_xyz>0.2508 0.6548 0.2328</fract_xyz>
+		<valence>2</valence>
+		<occupancy>0.28</occupancy>
+		<aniso_U_11 unit="nm^2">7.29e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">6.49e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">9.77e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">4.2e-06</aniso_U_12>
+		<aniso_U_13 unit="nm^2">3.01e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">2.3e-06</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Fe2</label>
+		<symbol>Fe</symbol>
+		<fract_xyz>0.2564 0.0183 0.2308</fract_xyz>
+		<valence>2</valence>
+		<occupancy>0.76</occupancy>
+		<aniso_U_11 unit="nm^2">0.0001201</aniso_U_11>
+		<aniso_U_22 unit="nm^2">0.0001826</aniso_U_22>
+		<aniso_U_33 unit="nm^2">0.0001428</aniso_U_33>
+		<aniso_U_12 unit="nm^2">2.09e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">1.62e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">1.13e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Ca2</label>
+		<symbol>Ca</symbol>
+		<fract_xyz>0.2564 0.0183 0.2308</fract_xyz>
+		<valence>2</valence>
+		<occupancy>0.18</occupancy>
+		<aniso_U_11 unit="nm^2">0.0001201</aniso_U_11>
+		<aniso_U_22 unit="nm^2">0.0001826</aniso_U_22>
+		<aniso_U_33 unit="nm^2">0.0001428</aniso_U_33>
+		<aniso_U_12 unit="nm^2">2.09e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">1.62e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">1.13e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Mg2</label>
+		<symbol>Mg</symbol>
+		<fract_xyz>0.2564 0.0183 0.2308</fract_xyz>
+		<valence>2</valence>
+		<occupancy>0.06</occupancy>
+		<aniso_U_11 unit="nm^2">0.0001201</aniso_U_11>
+		<aniso_U_22 unit="nm^2">0.0001826</aniso_U_22>
+		<aniso_U_33 unit="nm^2">0.0001428</aniso_U_33>
+		<aniso_U_12 unit="nm^2">2.09e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">1.62e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">1.13e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>SiA</label>
+		<symbol>Si</symbol>
+		<fract_xyz>0.0427 0.3398 0.2797</fract_xyz>
+		<valence>4</valence>
+		<aniso_U_11 unit="nm^2">7.29e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">6.09e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">8.64e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-4.2e-06</aniso_U_12>
+		<aniso_U_13 unit="nm^2">2.32e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">-2.71e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>SiB</label>
+		<symbol>Si</symbol>
+		<fract_xyz>0.5504 0.8367 0.2372</fract_xyz>
+		<valence>4</valence>
+		<aniso_U_11 unit="nm^2">6e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">6.49e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">6.51e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-1.67e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">1.85e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">1.35e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1A</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.8659 0.3404 0.1715</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11 unit="nm^2">4.72e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">9.33e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">8.39e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-1.67e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">7e-06</aniso_U_13>
+		<aniso_U_23 unit="nm^2">-2.93e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O2A</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.122 0.497 0.3306</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11 unit="nm^2">0.0001758</aniso_U_11>
+		<aniso_U_22 unit="nm^2">5.28e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">9.52e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-8.3e-06</aniso_U_12>
+		<aniso_U_13 unit="nm^2">7.42e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">-1.8e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O3A</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.1037 0.2633 0.5779</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11 unit="nm^2">6e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">0.0001217</aniso_U_22>
+		<aniso_U_33 unit="nm^2">0.0001516</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-2.5e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">1.85e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">5.19e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1B</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.3743 0.8342 0.1344</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11 unit="nm^2">9.86e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">6.49e-05</aniso_U_22>
+		<aniso_U_33 unit="nm^2">7.01e-05</aniso_U_33>
+		<aniso_U_12 unit="nm^2">1.25e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">3.94e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">-1.58e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O2B</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.629 0.9877 0.3765</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11 unit="nm^2">9.43e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">0.0001826</aniso_U_22>
+		<aniso_U_33 unit="nm^2">0.0001741</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-7.51e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">7.65e-05</aniso_U_13>
+		<aniso_U_23 unit="nm^2">-7.44e-05</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O3B</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.6053 0.7087 0.4773</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11 unit="nm^2">4.29e-05</aniso_U_11>
+		<aniso_U_22 unit="nm^2">0.0001542</aniso_U_22>
+		<aniso_U_33 unit="nm^2">0.0001328</aniso_U_33>
+		<aniso_U_12 unit="nm^2">-2.09e-05</aniso_U_12>
+		<aniso_U_13 unit="nm^2">7e-06</aniso_U_13>
+		<aniso_U_23 unit="nm^2">5.41e-05</aniso_U_23>
+	</atom_site>
+	<citation>
+		Morimoto N, Guven N, American Mineralogist, 55 (1970), 1195-1209
+		"Refinement of the crystal structure of pigeonite", code_amcsd 0000209
+		_chemical_compound_source 'Isle of Mull, Scotland'
+		_chemical_formula_sum 'Mg.78 Fe1.04 Ca.18 Si2 O6'
+	</citation>
+</cif>

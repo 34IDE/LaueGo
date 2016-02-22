@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.17
+#pragma version = 0.18
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2367,9 +2367,15 @@ Static Function isNewAxis(existingAxes,axis,tol)	// only used by FindZonesWithNs
 End
 
 
-Function/WAVE PutZoneLinesOnGraph(FullPeakList)
+Function/WAVE PutZoneLinesOnGraph(FullPeakList,[Nmin,tolAngle,printIt])
 	// Find the zones from fitted peaks, and put lines on plot showing the zones.
 	Wave FullPeakList
+	Variable Nmin			// minimum number of spot required to indentify a zone
+	Variable tolAngle		// angular tolerance used in accepting Q-vec as part of a zone
+	Variable printIt
+	Nmin = ParamIsDefault(Nmin) || numtype(Nmin) || Nmin<3 ? 7 : Nmin
+	tolAngle = ParamIsDefault(tolAngle) || numtype(tolAngle) || tolAngle<=0 ? 1 : tolAngle
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	STRUCT microGeometry g
 	if (FillGeometryStructDefault(g))	//fill the geometry structure with current values
@@ -2379,6 +2385,8 @@ Function/WAVE PutZoneLinesOnGraph(FullPeakList)
 	String FullPeakName=""
 	if (!WaveExists(FullPeakList))		// need to find the FullPeakList
 		Wave FullPeakList = $StringByKey("FullPeakList",GetUserData("","","FitPeaks"),"=")
+		Prompt Nmin,"min number of spots on a zone [3,100]"
+		Prompt tolAngle, "angle tolerance in defining a zone (degree)"
 		if (!WaveExists(FullPeakList))
 			String list = WaveListClass("FittedPeakList","*","MINCOLS:11")
 			if (ItemsInList(list)<1)
@@ -2386,20 +2394,38 @@ Function/WAVE PutZoneLinesOnGraph(FullPeakList)
 			elseif (ItemsInList(list)==1)
 				Wave FullPeakList = $StringFromList(0,list)
 			else
+				Nmin = limit(Nmin,3,100)
 				Prompt FullPeakName,"Full Peak List",popup, list
-				DoPrompt "Peak List",FullPeakName
+				DoPrompt "Peak List",FullPeakName, Nmin, tolAngle
 				if (V_flag)
 					return $""
 				endif
 				Wave FullPeakList = $FullPeakName
 			endif
 		endif
+		if (ParamIsDefault(Nmin) || ParamIsDefault(tolAngle) || numtype(Nmin+tolAngle) || Nmin<3 || tolAngle <=0)
+			DoPrompt "Zone Finding Parameters",Nmin, tolAngle
+			if (V_flag)
+				return $""
+			endif
+		endif
+		printIt = 1
+	endif
+	FullPeakName = NameOfWave(FullPeakList)
+	if (printIt)
+		printf "PutZoneLinesOnGraph(%s",FullPeakName
+		if (!ParamIsDefault(Nmin) || Nmin!=7)
+			printf ", Nmin=%g", Nmin
+		endif
+		if (!ParamIsDefault(tolAngle) || tolAngle!=1)
+			printf ", tolAngle=%g", tolAngle
+		endif
+		printf ")\r"
 	endif
 	if (!WaveExists(FullPeakList))
 		return $""
 	endif
 
-	FullPeakName = NameOfWave(FullPeakList)
 	String ending="Other", outName=""
 	if (strsearch(FullPeakName,"FullPeakList",0)==0)
 		ending = FullPeakName[12,inf]
@@ -2414,7 +2440,7 @@ Function/WAVE PutZoneLinesOnGraph(FullPeakList)
 		Ghats[i][] = qhat[q]
 	endfor
 	Note/K Ghats, "waveClass=QsMeasured;"
-	Wave waxes = MakeZonesWave(Ghats,NaN,printIt=0)
+	Wave waxes = MakeZonesWave(Ghats, Nmin, tolAngle=tolAngle, printIt=0)
 	if (!WaveExists(waxes))
 		return $""
 	endif

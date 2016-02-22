@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.13
+#pragma version = 5.14
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -845,10 +845,11 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 			elseif (itemp==3)
 				printf "    Isotropic U = %g (%s^2)",(xtal.atom[i].Uiso * 100),ARING
 			elseif (itemp>=4)
-				printf "    An-Isotropic U, U11 = %g, U22 = %g, U33 = %g (nm^2)",(xtal.atom[i].U11 *100),(xtal.atom[i].U22 *100),(xtal.atom[i].U33 *100)
+				printf "    Anisotropic U: U11=%+g, U22=%+g, U33=%+g",(xtal.atom[i].U11 *100),(xtal.atom[i].U22 *100),(xtal.atom[i].U33 *100)
 				if (itemp==5)
-					printf "    An-Isotropic U, U12 = %g, U13 = %g, U23 = %g (nm^2)",(xtal.atom[i].U12 *100),(xtal.atom[i].U13 *100),(xtal.atom[i].U23 *100)
+					printf "    U12=%+g, U13=%+g, U23=%+g",(xtal.atom[i].U12 *100),(xtal.atom[i].U13 *100),(xtal.atom[i].U23 *100)
 				endif
+				printf " (nm^2)"
 			endif
 			printf "\r"
 		endfor
