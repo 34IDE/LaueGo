@@ -2450,6 +2450,9 @@ Function/WAVE PutZoneLinesOnGraph(FullPeakList,[Nmin,tolAngle,printIt])
 #endif
 	Duplicate/O zl, $outName
 	Wave zOut = $outName
+	if (printIt)
+		printf "  created wave '%s' containing lines for %d zones\r",outName,DimSize(waxes,0)
+	endif
 
 	Wave image = $StringByKey("fittedIgorImage",note(FullPeakList),"=")
 	String win = StringFromList(0,FindGraphsWithWave(image))
