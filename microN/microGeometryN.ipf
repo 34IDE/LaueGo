@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.85
+#pragma version = 1.86
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -3105,7 +3105,7 @@ Static Function calcHofWire(win,whoChanged)
 
 	SetDrawLayer/K UserBack				// re-draw colored box
 	SetDrawEnv linefgc=(rgb[0],rgb[1],rgb[2]),fillfgc=(rgb[0],rgb[1],rgb[2])
-	Variable right = FontSizeStringWidth("Geneva",9,1,detectorID)+50
+	Variable right = FontSizeStringWidth(GenevaEquivFont,9,1,detectorID)+50
 	DrawRect 1,3,right,24					//	DrawRect 1,3,90,23
 
 	SetVariable setvar_px,format=""

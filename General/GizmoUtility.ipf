@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.13
+#pragma version = 2.14
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -364,7 +364,7 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	title4 = SelectString(ParamIsDefault(title4),title4,"")
 	pos = SelectString(ParamIsDefault(pos),pos,"LT")
 	pos = SelectString(strlen(pos),"LT",pos)	// defaults to top left
-	String font="Geneva"
+	String font=GenevaEquivFont
 	Variable fontSize=18
 
 	if (WhichListItem(pos,"LT;LB;")<0)
@@ -505,7 +505,7 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 
 	// ************************* Group Object Start *******************
 #if (IgorVersion()<7)
-	font = SelectString(strlen(font),"Geneva",font)
+	font = SelectString(strlen(font),GenevaEquivFont,font)
 	Execute "AppendToGizmo group,name="+groupName
 	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
 	String cmd
@@ -564,8 +564,8 @@ End
 //	String font
 //	scaleFactor = ParamIsDefault(scaleFactor) ? 1 : scaleFactor
 //	scaleFactor = numtype(scaleFactor) || scaleFactor<=0 ? 1 : scaleFactor
-//	font = SelectString(ParamIsDefault(font),font,"Geneva")
-//	font = SelectString(strlen(font),"Geneva",font)
+//	font = SelectString(ParamIsDefault(font),font,GenevaEquivFont)
+//	font = SelectString(strlen(font),GenevaEquivFont,font)
 //	if (maxLength<=0 || numtype(maxLength))
 //		return ""
 //	endif
@@ -652,7 +652,7 @@ Static Function GzimoReSetScaleBarHookProc(s)
 	Variable scaleFactor=1
 	String units = "nm"
 	String win=s.winName
-	String scaleBarName="", str, font="Geneva"
+	String scaleBarName="", str, font=GenevaEquivFont
 	Execute "GetGizmo/N="+win+"/Z objectNameList"
 	String listObjectNames=StrVarOrDefault("S_ObjectNames","")
 	KillStrings/Z S_ObjectNames
@@ -834,7 +834,7 @@ End
 //	Variable scaleFactor=1
 //	String units = "nm"
 //	String win=s.winName
-//	String scaleBarName="", str, font="Geneva"
+//	String scaleBarName="", str, font=GenevaEquivFont
 //#if (IgorVersion()<7)
 //	Execute "GetGizmo/N="+win+"/Z objectNameList"
 //	String listObjectNames=StrVarOrDefault("S_ObjectNames","")
@@ -1125,7 +1125,7 @@ End
 
 Function/T AddGizmoBeamLineAxesGroup(groupName)
 	String groupName			// probably "BeamLineAxesGroup0", If this is empty, then a unique name will be assigned
-	String font="Geneva"
+	String font=GenevaEquivFont
 
 	if (CheckName(groupName,5))						// invalid groupName passed, create one
 		if (strlen(groupName)<1)						// create a unique group name

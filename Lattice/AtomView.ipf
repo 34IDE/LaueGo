@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.38
+#pragma version = 0.39
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1456,8 +1456,8 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 	Wave ain,bin,cin
 	String font
 	Variable showNames		// if true, show a,b,c labels on lattice vectors
-	font = SelectString(ParamIsDefault(font),font,"Geneva")
-	font = SelectString(strlen(font),"Geneva",font)
+	font = SelectString(ParamIsDefault(font),font,GenevaEquivFont)
+	font = SelectString(strlen(font),GenevaEquivFont,font)
 	showNames = ParamIsDefault(showNames) ? 0 : showNames
 	showNames = numtype(showNames) ? 0 : !(!showNames)
 

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=DoAll
-#pragma version = 0.02
+#pragma version = 0.03
 
 //Static Constant pxPrimary=NaN, pyPrimary=NaN, ycPrimary = NaN		// needed by DoAll(),  actually DoAllSingleSpotInfo(), and also by FillMovieMore()
 //Static Constant hPrimary=NaN, kPrimary=NaN, lPrimary=NaN			// following 3 lines only needed when using two spos
@@ -1080,7 +1080,7 @@ Static Function/T addFixedTitleStringToGizmo(pos,title)
 	Execute "AppendToGizmo group,name="+name
 	// ************************* Group Object Start *******************
 	Execute "ModifyGizmo currentGroupObject=\""+name+"\""
-	Execute "AppendToGizmo string=\""+title+"\",strFont=\"Geneva\",name=string0"
+	Execute "AppendToGizmo string=\""+title+"\",strFont=\""+GenevaEquivFont+"\",name=string0"
 	Execute "AppendToGizmo attribute color={0,0,0,1},name=colorBlack"
 
 	Execute "ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix"
@@ -1122,7 +1122,7 @@ Static Function/T addStringToGizmo(pos,title)
 	// ************************* Group Object Start *******************
 	Execute "ModifyGizmo currentGroupObject=\""+name+"\""
 
-	Execute "AppendToGizmo string=\""+title+"\",strFont=\"Geneva\",name=string0"
+	Execute "AppendToGizmo string=\""+title+"\",strFont=\""+GenevaEquivFont+"\",name=string0"
 	Execute "AppendToGizmo attribute color={0,0,0,1},name=colorBlack"
 	Execute "ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix"
 	Execute "ModifyGizmo setDisplayList=1, opName=rotate0, operation=rotate, data={180,1,0,0}"

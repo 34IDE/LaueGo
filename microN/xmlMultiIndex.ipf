@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.87
+#pragma version=1.88
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -2203,7 +2203,7 @@ Function MakeGizmo_xmlData(scatt)
 	Execute "ModifyGizmo startRecMacro"
 
 	if (strlen(title))
-		Execute "AppendToGizmo string=\""+title+"\",strFont=\"Geneva\",name=Title"
+		Execute "AppendToGizmo string=\""+title+"\",strFont=\""+GenevaEquivFont+"\",name=Title"
 	endif
 	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendFunc0"
 	Execute "AppendToGizmo Axes=boxAxes,name=axes0"
@@ -2265,7 +2265,7 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo startRecMacro
 
 	if (strlen(title))
-		AppendToGizmo string=title,strFont="Geneva",name=Title
+		AppendToGizmo string=title,strFont=GenevaEquivFont,name=Title
 	endif
 	AppendToGizmo attribute blendFunc={770,771},name=blendFunc0
 	AppendToGizmo Axes=boxAxes,name=axes0

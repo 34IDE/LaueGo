@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.16
+#pragma version = 1.17
 #include "ImageDisplayScaling", version>= 1.87
 #include "ColorNames"
 #include "GizmoUtility" version>= 0.07
@@ -1002,10 +1002,10 @@ Static Function/T AddGizmoTitle(wTitle,groupName)
 	for (i=0;i<N;i+=1)
 		name = "Title"+num2str(i)
 #if (IgorVersion()<7)
-		Execute "AppendToGizmo string=\""+wTitle[i]+"\",strFont=\"Geneva\",name="+name
+		Execute "AppendToGizmo string=\""+wTitle[i]+"\",strFont=\""+GenevaEquivFont+"\",name="+name
 		Execute "ModifyGizmo modifyObject="+name+" property={Clipped,0}"
 #else
-		AppendToGizmo string=wTitle[i],strFont="Geneva",name=$name
+		AppendToGizmo string=wTitle[i],strFont=GenevaEquivFont,name=$name
 // xxxxxxxxxxxxxxxxxxxxxxxxxxx
 //		ModifyGizmo modifyObject=$name objectType=string property={Clipped,0}
 #endif

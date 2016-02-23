@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.29
+#pragma version = 3.30
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.90
@@ -17,6 +17,12 @@ End
 Menu "Gizmo"
 	"Square Up Gizmo", SquareUpGizmo("")
 End
+#endif
+
+#if StringMatch(IgorInfo(2)"Windows")
+strConstant GenevaEquivFont = "Verdana"			// on windows, this is the Geneva equivalent
+#else
+strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 #endif
 
 
@@ -167,7 +173,7 @@ Menu "Help"
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Roman"
-			"*CHARACTER*(Geneva,36)", GetLastUserMenuInfo; print S_value, V_value
+			"*CHARACTER*(Times New Roman,36)", GetLastUserMenuInfo; print S_value, V_value
 		End
 		SubMenu "Symbol"
 			"*CHARACTER*(Symbol,36)", GetLastUserMenuInfo; print S_value, V_value
@@ -183,7 +189,7 @@ Menu "Help"
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Characters"
-			"*CHARACTER*(Geneva,36)", GetLastUserMenuInfo; print S_value, V_value
+			"*CHARACTER*(Times New Roman,36)", GetLastUserMenuInfo; print S_value, V_value
 		End
 	End
 End
