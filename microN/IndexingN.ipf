@@ -1,11 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.80
-#include "LatticeSym", version>=4.35
-#include "microGeometryN", version>=1.81
-#include "Masking", version>1.02
-#include "ImageDisplayScaling", version>=2.03
+#pragma version = 4.81
+#include "LatticeSym", version>=5.14
+#include "microGeometryN", version>=1.85
+#include "Masking", version>1.03
+#include "ImageDisplayScaling", version>=2.06
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&2)
 #include "tiff"
 //#else
@@ -5200,10 +5200,12 @@ End
 
 
 
-Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l)
+Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l,[printIt])
 	Wave FullPeakIndexed
 	Variable pattern
 	Variable h,k,l
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	Variable i
 	if (!WaveExists(FullPeakIndexed))
@@ -5222,7 +5224,9 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l)
 		endif
 	endif
 	if (!WaveExists(FullPeakIndexed))
-		DoAlert 0, "cannot find wave of indexed peak information 'FullPeakIndexed'"
+		if (printIt)
+			print "cannot find wave of indexed peak information 'FullPeakIndexed'"
+		endif
 		return NaN
 	endif
 
@@ -5257,35 +5261,39 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l)
 			return NaN
 		endif
 	endif
+	if (printIt)
+		printf "EnergyOfhkl(%s, %g, %g,%g,%g)\r", NameOfWave(FullPeakIndexed),pattern,h,k,l
+	endif
 	if (numtype(h+k+l))
 		return NaN
 	endif
 
-	Variable d									// d-spacing
-	Variable as0,as1,as2						// componenets of a*
-	Variable bs0,bs1,bs2						// componenets of b*
-	Variable cs0,cs1,cs2						// componenets of c*
-	Make/N=3/O/D/FREE qvec, ki={0,0,1}
+	Make/N=3/O/D/FREE ki={0,0,1}
 	String wnote = note(FullPeakIndexed)
-	String recip_lattice = StringByKey("recip_lattice"+num2istr(pattern),wnote,"=")	// the starting point
-	sscanf recip_lattice, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
-	if (V_flag!=9)
-		DoAlert 0, "Unable to read recip_lattice"
+	Wave recip = decodeMatFromStr(StringByKey("recip_lattice"+num2istr(pattern),wnote,"="))
+	if (!WaveExists(recip))
+		if (printIt)
+			print "Unable to read recip_lattice"
+		endif
 		return NaN
 	endif
-	qvec[0] = h*as0 + k*bs0 + l*cs0
-	qvec[1] = h*as1 + k*bs1 + l*cs1
-	qvec[2] = h*as2 + k*bs2 + l*cs2
-	d = 2*PI/normalize(qvec)
-
-	Variable sineTheta = -MatrixDot(qvec,ki)	// sin(theta) = -ki dot qhat
+	Make/N=3/D/FREE hkl = {h,k,l}
+	MatrixOP/FREE qhat = recip x hkl
+	Variable d = 2*PI/normalize(qhat)			// d-spacing, and normalized qhat
+	Variable sineTheta = -MatrixDot(qhat,ki)// sin(theta) = -ki dot qhat
+	if (sineTheta<=0)									// reflection is unreachable
+		if (printIt)
+			printf "the (%g, %g, %g) reflection is unreachable\r",h,k,l
+		endif
+		return NaN
+	endif
 	Variable keV = hc/(2*d*sineTheta)			// energy
 	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
 
 	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 		Variable px=NaN, py=NaN
 		STRUCT microGeometry geo
-		if (!FillGeometryStructDefault(geo))			//fill the geometry structure with test values
+		if (!FillGeometryStructDefault(geo))	//fill the geometry structure with test values
 			Variable startx,groupx, starty,groupy, ddLocal, ycLocal
 			startx = NumberByKey("startx",wnote,"=")
 			groupx = NumberByKey("groupx",wnote,"=")
@@ -5295,15 +5303,17 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l)
 			groupx = numtype(groupx) ? 1 : groupx
 			starty = numtype(starty) ? FIRST_PIXEL : starty
 			groupy = numtype(groupy) ? 1 : groupy
-			Variable/C pz = q2pixel(geo.d[dNum],qvec)
+			Variable/C pz = q2pixel(geo.d[dNum],qhat)
 			px = (real(pz)-(startx-FIRST_PIXEL)-(groupx-1)/2)/groupx		// change to binned pixels
 			py = (imag(pz)-(starty-FIRST_PIXEL)-(groupy-1)/2)/groupy		// pixels are still zero based
 		endif
-		printf "for %s pattern #%d,  d[(%s)] = %.9g nm,   E(%s) = %.4f keV   (theta=%.3f¡)",NameOfWave(FullPeakIndexed),pattern,hkl2str(h,k,l),d,hkl2str(h,k,l),keV,asin(sineTheta)*180/PI
-		if (numtype(px+py)==0)
-			printf "       should be at pixel [%.2f, %.2f]",px,py
+		if (printIt)
+			printf "for %s pattern #%d,  d[(%s)] = %.9g nm,   E(%s) = %.4f keV   (theta=%.3f¡)",NameOfWave(FullPeakIndexed),pattern,hkl2str(h,k,l),d,hkl2str(h,k,l),keV,asin(sineTheta)*180/PI
+			if (numtype(px+py)==0)
+				printf "       should be at pixel [%.2f, %.2f]",px,py
+			endif
+			printf "\r"
 		endif
-		printf "\r"
 	endif
 	return keV
 End
@@ -7846,7 +7856,7 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		NVAR h=root:Packages:micro:Index:h_e
 		NVAR k=root:Packages:micro:Index:k_e
 		NVAR l=root:Packages:micro:Index:l_e
-		Variable/G Energy_keV = EnergyOfhkl($"",NaN,h,k,l)			// the energy is saved in a global so that it is available by the user
+		Variable/G Energy_keV = EnergyOfhkl($"",NaN,h,k,l,printIt=1)	// the energy is saved in a global so that it is available by the user
 
 #if (Exists("Load3dRecipLatticesFileXML")==6)
 	elseif (stringmatch(ctrlName,"buttonIndexNewPoleXML") && strlen(WaveListClass("Random3dArraysGm","*","")))
