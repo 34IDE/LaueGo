@@ -3,8 +3,8 @@
 #pragma version = 1.11
 #pragma IgorVersion = 6.11
 
-#include  "microGeometryN", version>=1.85
-#include  "LatticeSym", version>=5.14
+#include  "microGeometryN", version>=1.20
+#include  "LatticeSym", version>=3.54
 
 
 Menu LaueGoMainMenuName
@@ -24,28 +24,25 @@ End
 
 Static Constant hc = 1.239841857		// keV-nm
 
-Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detector,printIt])
-	Variable Elo,Ehi						// energy range (keV)
+Function/T MakeSimulatedLauePattern(h0,k0,l0,Elo,Ehi,[Nmax,detector])
 	Variable h0,k0,l0					// central hkl
-	Wave recipSource					// OPTIONAL, either a (3,3) mat with recip lattice, OR a waveClass=IndexedPeakList* with a recip_lattice0
+	Variable Elo,Ehi						// energy range (keV)
 	Variable Nmax						// maximum number of reflection to generate
 	Variable detector					// detector number [0,MAX_Ndetectors-1]
-	Variable printIt
 	Nmax = ParamIsDefault(Nmax) ? 100 : Nmax
 	Nmax = (Nmax>0 && Nmax<=2000) ? Nmax : 100
-	detector = ParamIsDefault(detector) ? 0 : detector
+	detector = ParamIsDefault(detector) ? NaN : detector
 	detector = detector==round(limit(detector,0,MAX_Ndetectors-1)) ? detector : NaN
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	STRUCT crystalStructure xtal							// crystal structure
 	if (FillCrystalStructDefault(xtal))						//fill the geometry structure with current default values
 		DoAlert 0,"Unable to load Crystal Structure"
-		return $""
+		return ""
 	endif
 	STRUCT microGeometry geo
 	if (FillGeometryStructDefault(geo))					//fill the geometry structure with current default values
 		DoAlert 0,"Unable to load geometry"
-		return $""
+		return ""
 	endif
 
 	String dList = "", color
@@ -59,36 +56,29 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		endif
 	endfor
 	if (Ndetectors<1)										// nothing there
-		return $""
+		return ""
 	elseif (Ndetectors>1 && ParamIsDefault(detector))		// force a choice of which detector to use
 		detector = NaN
 	endif
 
 	Variable startx=0, endx=(geo.d[0].Nx)-1, groupx=1	// used to define the ROI
 	Variable starty=0, endy=(geo.d[0].Ny)-1, groupy=1
-
-	String recipName=NameOfWave(recipSource)
-	Variable needDialog = (numtype(Elo+Ehi) || Elo<0 || Ehi<=Elo || numtype(detector))
-	needDialog = needDialog || ( !WaveExists(recipSource) && ( numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0) ) )
-	if (needDialog)
+	String recipSource=""									// empty string means use (h0,k0,l0) and detector center
+	if (numtype(h0+k0+l0+Elo+Ehi) || Elo<0 || Ehi<=Elo || numtype(detector))
 		if (numtype(h0+k0+l0))
 			h0=0;	k0=0;	l0=1							// default to the (001) reflection
 		endif
 		Elo = (numtype(Elo) || Elo<0) ? 6 : Elo
 		Ehi = (numtype(Ehi) || Ehi<=Elo) ? max(25,15+Elo) : Ehi
-		Prompt Elo,"low energy cutoff (keV)"
-		Prompt Ehi,"high energy cutoff (keV)"
 		Prompt h0,"h"
 		Prompt k0,"k"
 		Prompt l0,"l"
+		Prompt Elo,"low energy cutoff (keV)"
+		Prompt Ehi,"high energy cutoff (keV)"
 		Prompt Nmax,"maximum number of reflections to accept"
-//		String recipList = "{h0,k0,l0} at center;"+WaveListClass("IndexedPeakList*;IndexedPeakListSimulate*","*",""), str
-		String recipList = "{h0,k0,l0} at center;"+WaveListClass("IndexedPeakList*","*",""), str
-		recipList += WaveList("*",";","DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
-		Prompt recipName,"Orientation Source",popup,recipList
-		DoPrompt "hkl & energy",h0,Elo,k0,Ehi,l0,recipName,Nmax
+		DoPrompt "hkl & energy",h0,Elo,k0,Ehi,l0,Nmax
 		if (V_flag)
-			return $""
+			return ""
 		endif
 		Prompt startx,"X start of ROI [0, "+num2istr(geo.d[0].Nx -1)+"]"
 		Prompt starty,"X start of ROI [0, "+num2istr(geo.d[0].Ny -1)+"]"
@@ -100,47 +90,36 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		Prompt detectorName,"Detector",popup,dList
 		DoPrompt "ROI (full chip un-binned pixels)",startx,starty,endx,endy,groupx,groupy,detectorName
 		if (V_flag)
-			return $""
+			return ""
 		endif
 		detector = str2num(detectorName)
 		endx = min(geo.d[detector].Nx-1,endx)
 		endy = min(geo.d[detector].Ny-1,endy)
-		Wave recipSource = $recipName
 
-		Wave recip
-		if (WaveExists(recipSource))
-			if (DimSize(recipSource,0)==3 && DimSize(recipSource,1)==3)
-				Wave recip = recipSource				// recipSource is a 3x3 mat, all done
-			else												// try to get recip from wave note
-				Wave recip = decodeMatFromStr(StringByKey("recip_lattice0", note(ww),"="))	
+		String recipList = "{h0,k0,l0} at center;"+WaveListClass("IndexedPeakList*;IndexedPeakListSimulate*","*",""), str
+		if (ItemsInList(recipList)>1)
+			Prompt recipSource,"Orientation Source",popup,recipList
+			DoPrompt "Orientation",recipSource
+			if (V_flag)
+				return ""
 			endif
-		else
+
+			Wave ww = $recipSource
+			if (WaveExists(ww))
+				str = StringByKey("recip_lattice0", note(ww),"=")
+				Variable as0,as1,as2, bs0,bs1,bs2, cs0,cs1,cs2
+				sscanf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2, bs0,bs1,bs2, cs0,cs1,cs2
+				if (V_flag==9)
+					Make/N=(3,3)/D/FREE recip0
+					recip0[0][0]=as0;	recip0[0][1]=bs0;	recip0[0][2]=cs0
+					recip0[1][0]=as1;	recip0[1][1]=bs1;	recip0[1][2]=cs1
+					recip0[2][0]=as2;	recip0[2][1]=bs2;	recip0[2][2]=cs2
+				endif
+			else
+				recipSource = ""
+			endif
 		endif
-	endif
-	recipName = SelectString(WaveExists(recipSource),"",NameOfWave(recipSource))
-
-	if (printIt)
 		printf "MakeSimulatedLauePattern(%g,%g,%g,%g,%g,Nmax=%d,detector=%d)\r",h0,k0,l0,Elo,Ehi,Nmax,detector
-
-
-//		printf MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detector,printIt])
-
-
-
-
-
-//Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detector,printIt])
-
-
-
-
-
-
-	endif
-	needDialog = (numtype(Elo+Ehi) || Elo<0 || Ehi<=Elo || numtype(detector))
-	needDialog = needDialog || ( !WaveExists(recipSource) && ( numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0) ) )
-	if (needDialog)
-		return $""
 	endif
 
 	String FullPeakIndexedName
@@ -148,15 +127,23 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	Make/N=(Nmax,12,1)/O $FullPeakIndexedName
 	Wave PeakIndexed = $FullPeakIndexedName
 
-	Make/N=3/D/FREE hkl={h0,k0,l0}
-	if (!WaveExists(recip) && norm(hkl)>1e-5)		// make recip from {h0,k0,l0}
+	Make/N=3/D/FREE hkl
+	Make/N=(3,3)/O/D/FREE recip
+	if (WaveExists(recip0))
+		recip = recip0
+	else
 		// find qcenter, Q vector to the center of the detector, we want (h0,k0,l0) to be parallel to qcenter
 		Make/N=3/D/FREE qcenter
 		pixel2q(geo.d[detector],(geo.d[detector].Nx -1)/2,(geo.d[detector].Ny -1)/2, qcenter)
 		printf "vector from sample to detector center = {%g, %g, %g}\r",qcenter[0],qcenter[1],qcenter[2]
 
-		Wave recip = recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal lattice
+		// make the reciprocal lattice
+		recip[0][0]=xtal.as0;	recip[0][1]=xtal.bs0;	recip[0][2]=xtal.cs0
+		recip[1][0]=xtal.as1;	recip[1][1]=xtal.bs1;	recip[1][2]=xtal.cs1
+		recip[2][0]=xtal.as2;	recip[2][1]=xtal.bs2;	recip[2][2]=xtal.cs2
+
 		// compute rotation that puts (h0,k0,l0) along qcenter (i.e. puts reference reflection on detector)
+		hkl = {h0,k0,l0}
 		MatrixOp/O/FREE qhat = recip x hkl
 		normalize(qhat)
 		Cross qhat, qcenter									// W_Cross is the new rotation axis
@@ -166,9 +153,6 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		microGeo#rotationMatFromAxis(W_Cross,theta,rho)
 		KillWaves/Z W_Cross
 		MatrixOp/O/FREE recip = rho x recip
-	endif
-	if (!WaveExists(recip))
-		return $""
 	endif
 
 	//	find highest 2theta --> thetaMax
@@ -246,11 +230,11 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,Secs2Time(executionTime,5,0)
 
 	String wnote=ReplaceStringByKey("waveClass","","IndexedPeakListSimulate","=")
-	if (strlen(recipName)==0)
+	if (strlen(recipSource)==0)
 		sprintf str,"%g,%g,%g",h0,k0,l0
 		wnote = ReplaceStringByKey("hkl",wnote,str,"=")
 	else
-		wnote = ReplaceStringByKey("recipSource",wnote,recipName,"=")
+		wnote = ReplaceStringByKey("recipSource",wnote,recipSource,"=")
 	endif
 	wnote = ReplaceNumberByKey("Elo",wnote,Elo,"=")
 	wnote = ReplaceNumberByKey("Ehi",wnote,Ehi,"=")
@@ -313,7 +297,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 			DisplaySimulatedLauePattern(PeakIndexed)
 		endif
 	endif
-	return PeakIndexed
+	return GetWavesDataFolder(PeakIndexed,2)
 End
 //
 Static Function parallel_hkl_exists(h,k,l,N,pw)
@@ -561,7 +545,7 @@ Static Function LaueSimButtonProc(B_Struct) : ButtonControl
 	String ctrlName=B_Struct.ctrlName
 
 	if (stringmatch(ctrlName,"buttonMakeLaueSim"))
-		MakeSimulatedLauePattern(NaN,NaN)
+		MakeSimulatedLauePattern(NaN,NaN,NaN,NaN,NaN)
 	elseif (stringmatch(ctrlName,"buttonLaueSimRePlot"))
 		DisplaySimulatedLauePattern($"")
 	endif
