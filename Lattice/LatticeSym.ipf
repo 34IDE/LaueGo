@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.14
+#pragma version = 5.15
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -3981,6 +3981,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		SG = str2num(SymString2SG(SGstr,1))
 	endif
 	xtal.SpaceGroup = SG > 0 ? SG : 1
+	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
 
 	xtal.N = 0
 	// find the atoms
@@ -4064,7 +4065,6 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		endfor
 		xtal.N = N
 	endif
-	xtal.Temperature = NaN
 	xtal.Nbonds	 = 0
 	xtal.Unconventional00 = NaN
 	xtal.sourceFile = ""
