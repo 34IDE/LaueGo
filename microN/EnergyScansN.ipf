@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.26
+#pragma version = 2.27
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6127,7 +6127,7 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox,doConvex,printIt])	// does not assume depth in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox,doConvex,FilterFunc,printIt])	// does not assume depth in image
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
@@ -6137,11 +6137,13 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Wave dark					// an optional background wave
 	STRUCT boundingVolume &Qbox
 	Variable doConvex			// if True, make the convex hull
+	String FilterFunc			// OPTIONAL name of a filter for the image
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? NaN : depth
 	Variable Qask = ParamIsDefault(Qbox)		// if Qbox not passed, then ask
 	doConvex = ParamIsDefault(doConvex) || numtype(doConvex) ? 0 : !(!doConvex)
+	FilterFunc = SelectString(ParamIsDefault(FilterFunc),FilterFunc,"")
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	if (!(recipSource==0 || recipSource==1))
 		recipSource = NumVarOrDefault("root:Packages:micro:Escan:recipSource",NaN)
@@ -6267,6 +6269,19 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		endif
 	endif
 
+	String filterFuncList=FunctionList("*_ImageFilter",";","KIND:2,NPARAMS:1,VALTYPE:1")
+	filterFuncList = RemoveFromList("Proto_ImageFilter",filterFuncList)
+	if (strlen(FilterFunc)==0 && ItemsInList(filterFuncList))
+		Prompt FilterFunc,"Filter Function for each image",popup, "-none-;"+filterFuncList
+		DoPrompt "Filter for Image",FilterFunc
+		if (V_flag)
+			return $""
+		endif
+	endif
+	FilterFunc = SelectString(StringMatch(FilterFunc,"-none-"),FilterFunc,"")	// remove "-none-"
+	FilterFunc = SelectString(StringMatch(FilterFunc,"Proto_ImageFilter"),FilterFunc,"")	// remove proto func too.
+	FUNCREF Proto_ImageFilter Local_ImageFilter = $FilterFunc		// if FilterFunc="", then the proto will be run.
+
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range to scan")	// display a progress bar
 	if (ItemsInRange(range)<1) 						// if range is empty, get the full range from the directory
 		range = get_FilesIndexRange(pathName,nameFmt)
@@ -6300,6 +6315,9 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		if (WaveExists(dark))
 			darkName = NameOfWave(dark)
 			str += ",dark="+darkName
+		endif
+		if (strlen(FilterFunc)>0)
+			str += ",FilterFunc=\""+FilterFunc+"\""
 		endif
 		str += ")"
 		print str[0,390]
@@ -6337,6 +6355,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		DoWindow/K $progressWin									// done with status window
 		return $""
 	endif
+	Local_ImageFilter(image)
 	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
 	Ni = DimSize(image,0)
 	Nj = DimSize(image,1)
@@ -6437,6 +6456,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	// note that Q range only depends upon image size and energy range, not on X or H position
 	sprintf name, fileRootFmt, m_Fill_QHistAt1Depth[ikeVlo]	// load one image to get its size & Q range
 	Wave image = $(LoadGenericImageFile(name))				// load image
+	Local_ImageFilter(image)
 	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
@@ -6601,6 +6621,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		sprintf name, fileRootFmt, m
 
 		Wave image = $(LoadGenericImageFile(name))			// load image
+		Local_ImageFilter(image)
 		if (mono && WaveExists(image))							// monochromator scan (not undulator gap)
 			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z image
@@ -6679,6 +6700,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	return Qspace3d
 End
 //
+Function Proto_ImageFilter(image)				// proto for a filter run on each image before histograming it
+	Wave image
+	//	MatrixFilter/N=3 median image			// example, a median filter, use "Funciton Median_ImageFilter(image)"
+	return 0
+End
+//
 Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,printIt])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
 	Wave image
 	Wave Qvecs1keV										// pre-computed array of sin(theta)'s that is same size as the image to be loaded
@@ -6740,7 +6767,7 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,p
 	endfor
 
 	Variable seconds = stopMSTimer(-2)/1e6 - timer	// stop timer here
-	if (printIt && seconds>2.0)
+	if (printIt && seconds>7.0)
 		printf "	processing image '%s' took %s\r",NameOfWave(image),Secs2Time(seconds,5,2)
 	endif
 	return wnote
