@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.27
+#pragma version = 2.28
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6127,21 +6127,25 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox,doConvex,FilterFunc,printIt])	// does not assume depth in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, doConvex,FilterFunc,printIt])	// does not assume depth in image
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
 	String range				// range of file indicies to use
-	Variable depth				// in case image does not contain depth
-	Wave mask					// optional mask to limit the pixels that get processed (use pixel when mask true)
-	Wave dark					// an optional background wave
-	STRUCT boundingVolume &Qbox
+	Variable depth				// OPTIONAL, in case image does not contain depth
+	Wave mask					// OPTIONAL, optional mask to limit the pixels that get processed (use pixel when mask true)
+	Wave dark					// OPTIONAL, an optional background wave
+	STRUCT boundingVolume &Qbox	// OPTIONAL, do not specify both Qbox AND {NQx,NQy,NQz}
+	Variable NQx,NQy,NQz	// OPTIONAL, dmensions of final Qspace3D array
 	Variable doConvex			// if True, make the convex hull
-	String FilterFunc			// OPTIONAL name of a filter for the image
+	String FilterFunc			// OPTIONA.L name of a filter for the image
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? NaN : depth
 	Variable Qask = ParamIsDefault(Qbox)		// if Qbox not passed, then ask
+	NQx = ParamIsDefault(NQx) || NQx<=0 ? NaN : NQx		// default to NaN, the program figures it out
+	NQy = ParamIsDefault(NQy) || NQy<=0 ? NaN : NQy
+	NQz = ParamIsDefault(NQz) || NQz<=0 ? NaN : NQz
 	doConvex = ParamIsDefault(doConvex) || numtype(doConvex) ? 0 : !(!doConvex)
 	FilterFunc = SelectString(ParamIsDefault(FilterFunc),FilterFunc,"")
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
@@ -6316,9 +6320,10 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			darkName = NameOfWave(dark)
 			str += ",dark="+darkName
 		endif
-		if (strlen(FilterFunc)>0)
-			str += ",FilterFunc=\""+FilterFunc+"\""
-		endif
+		str += SelectString(strlen(FilterFunc), "", ",FilterFunc=\""+FilterFunc+"\"")
+		str += SelectString(ParamIsDefault(NQx), ",NQx="+num2str(NQx), "")
+		str += SelectString(ParamIsDefault(NQy), ",NQy="+num2str(NQy), "")
+		str += SelectString(ParamIsDefault(NQz), ",NQz="+num2str(NQz), "")
 		str += ")"
 		print str[0,390]
 	endif
@@ -6544,10 +6549,10 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable QxLo = NumberByKey("QxLo",wnote,"="), QxHi = NumberByKey("QxHi",wnote,"=")
 	Variable QyLo = NumberByKey("QyLo",wnote,"="), QyHi = NumberByKey("QyHi",wnote,"=")
 	Variable QzLo = NumberByKey("QzLo",wnote,"="), QzHi = NumberByKey("QzHi",wnote,"=")
-	Variable NQx, NQy, NQz
 	if (printIt)
 		printf "Q data range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
 	endif
+	Qask = numtype(NQx+NQy+NQz) ? Qask : 0					// do not ask if NQx,NQy,NQz were given
 	if (Qask)															// Qbox NOT passed, ask for Q range
 		printIt = 1
 		dQ *= 4
@@ -6576,7 +6581,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		NQx = round(NQx)
 		NQy = round(NQy)
 		NQz = round(NQz)
-	else																	// Qbox was passed, use Qbox values
+	elseif (numtype(NQx+NQy+NQz))								// Qbox was passed, and NQx,NQy,NQz not given
 		if (QxLo > Qbox.xhi || QxHi < Qbox.xlo || QyLo > Qbox.yhi || QyHi < Qbox.ylo || QzLo > Qbox.zhi || QzHi < Qbox.zlo)
 			print "Requested Q-volume does not contain any data"
 			printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
