@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.28
+#pragma version = 2.29
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -302,7 +302,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		maskName = GetWavesDataFolder(mask,2)
 	elseif (strlen(list))
 		maskName = ""
-		Prompt maskName, "mask to use with image",popup,"_none_;"+list
+		Prompt maskName, "mask to use with image",popup,"-none-;"+list
 		Prompt maskNorm, "subtract dark using pixels outside of mask",popup,"Nothing;Suppress"
 		maskNorm += 1
 		DoPrompt "mask wave",maskName,maskNorm
@@ -310,7 +310,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			return 1
 		endif
 		maskNorm = maskNorm==2
-		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
+		maskName = SelectString(stringmatch(maskName,"-none-"),maskName,"")
 		Wave mask = $maskName								// do not check if wave exists, that a valid option
 		printIt = 1
 	endif
@@ -318,12 +318,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	String darkList = WaveListClass("imageDark;rawImageDark","*","")
 	if (!WaveExists(dark) && ItemsInList(darkList)>0)
 		String darkName
-		Prompt darkName,"Background Image",popup,"_none_;"+darkList
+		Prompt darkName,"Background Image",popup,"-none-;"+darkList
 		DoPrompt "Background",darkName
 		if (V_flag)
 			return 1
 		endif
-		if (cmpstr(darkName,"_none_"))
+		if (cmpstr(darkName,"-none-"))
 			Wave dark = $darkName
 		else
 			Wave dark = $""
@@ -2793,12 +2793,12 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	String darkList = WaveListClass("imageDark;rawImageDark","*","")
 	if (!WaveExists(dark) && ItemsInList(darkList)>0)
 		String darkName
-		Prompt darkName,"Background Image",popup,"_none_;"+darkList
+		Prompt darkName,"Background Image",popup,"-none-;"+darkList
 		DoPrompt "Background",darkName
 		if (V_flag)
 			return 1
 		endif
-		if (cmpstr(darkName,"_none_"))
+		if (cmpstr(darkName,"-none-"))
 			Wave dark = $darkName
 		else
 			Wave dark = $""
@@ -4593,12 +4593,12 @@ Function Fill_QvsDepth_OLD(d0,pathName,namePart,range1,range2,mask,[depth])
 		maskName = GetWavesDataFolder(mask,2)
 	elseif (strlen(list))
 		maskName = ""
-		Prompt maskName, "mask to use with image",popup,"_none_;"+list
+		Prompt maskName, "mask to use with image",popup,"-none-;"+list
 		DoPrompt "mask wave",maskName
 		if (V_flag)
 			return 1
 		endif
-		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
+		maskName = SelectString(stringmatch(maskName,"-none-"),maskName,"")
 		Wave mask = $maskName						// do not check if wave exists, that a valid option
 		printIt = 1
 	endif
@@ -5300,7 +5300,7 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 		maskName = GetWavesDataFolder(mask,2)
 	elseif (strlen(list))
 		maskName = ""
-		Prompt maskName, "mask to use with image",popup,"_none_;"+list
+		Prompt maskName, "mask to use with image",popup,"-none-;"+list
 		Prompt maskNorm, "subtract dark using pixels outside of mask",popup,"Nothing;Suppress"
 		maskNorm += 1
 		DoPrompt "mask wave",maskName,maskNorm
@@ -5308,7 +5308,7 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 			return 1
 		endif
 		maskNorm = maskNorm==2
-		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
+		maskName = SelectString(stringmatch(maskName,"-none-"),maskName,"")
 		Wave mask = $maskName							// do not check if wave exists, that a valid option
 		printIt = 1
 	endif
@@ -5316,12 +5316,12 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 	String darkList = WaveListClass("imageDark;rawImageDark","*","")
 	if (!WaveExists(dark) && ItemsInList(darkList)>0)
 		String darkName
-		Prompt darkName,"Background Image",popup,"_none_;"+darkList
+		Prompt darkName,"Background Image",popup,"-none-;"+darkList
 		DoPrompt "Background",darkName
 		if (V_flag)
 			return 1
 		endif
-		if (cmpstr(darkName,"_none_"))
+		if (cmpstr(darkName,"-none-"))
 			Wave dark = $darkName
 		else
 			Wave dark = $""
@@ -6248,12 +6248,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		maskName = GetWavesDataFolder(mask,2)
 	elseif (strlen(list) && ParamIsDefault(mask))
 		maskName = ""
-		Prompt maskName, "mask to use with image",popup,"_none_;"+list
+		Prompt maskName, "mask to use with image",popup,"-none-;"+list
 		DoPrompt "mask wave",maskName
 		if (V_flag)
 			return $""
 		endif
-		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
+		maskName = SelectString(stringmatch(maskName,"-none-"),maskName,"")
 		Wave mask = $maskName							// do not check if wave exists, that a valid option
 		printIt = 1
 	endif
@@ -6261,12 +6261,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	String darkList = WaveListClass("imageDark;rawImageDark","*","")
 	if (!WaveExists(dark) && ItemsInList(darkList)>0 && ParamIsDefault(dark))
 		String darkName
-		Prompt darkName,"Background Image",popup,"_none_;"+darkList
+		Prompt darkName,"Background Image",popup,"-none-;"+darkList
 		DoPrompt "Background",darkName
 		if (V_flag)
 			return $""
 		endif
-		if (cmpstr(darkName,"_none_"))
+		if (cmpstr(darkName,"-none-"))
 			Wave dark = $darkName
 		else
 			Wave dark = $""
@@ -6671,7 +6671,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		printf "\r  processing all %d images took %s	(%.3g µs/pixel)\r",N,Secs2Time(seconds,5,1),1e6*seconds/(N*Npixels)
 		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
 	endif
-	Variable timer = stopMSTimer(-2) / 1e6
 
 	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D","=")
 	wnote = ReplaceNumberByKey("depth",wnote,depth,"=")
@@ -6679,11 +6678,15 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	if (WaveExists(mask))
 		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
 	endif
+	wnote = ReplaceNumberByKey("executionSeconds",wnote,seconds,"=")
 	if (strlen(recipLattice)>0)
 		wnote += recipLattice+";"
 	endif
 	Note/K Qspace3D, wnote
 	DoWindow/K $progressWin										// done with status window
+	if (seconds>(12*60))											// execution took more than 12 minutes, save experiment
+		SaveExperiment
+	endif
 	if (printIt)
 		beep
 	endif
