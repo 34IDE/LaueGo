@@ -1,9 +1,9 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.18
+#pragma version = 1.19
 #include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
-#include "GizmoUtility" version>= 2.14
+#include "GizmoUtility" version>= 2.15
 
 Menu "Qspace"
 	MenuItemIfWaveClassExists("Gizmo of Qspace ...","Qspace3D*","DIMS:3"), MakeGizmoQspace3D($"")
@@ -332,9 +332,8 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	if (strlen(file_time))
 		wTitle[1] += SelectString(strlen(wTitle[1]),"",", ")+file_time
 	endif
-	String sep = SelectString(strsearch(file_name,"/",0)>0, ":", "/")
+	String sep = SelectString(strsearch(file_name,"\\",0)>0, ":", "\\")
 	wTitle[2] = ParseFilePath(0,file_name,sep,1,0)
-//	wTitle[2] = ParseFilePath(1,file_name,":",1,0)
 	if (numtype(X1+Y1+Z1)==0)
 		sprintf str, "XYZ = {%g, %g, %g}",X1,Y1,Z1
 		wTitle[3] = str
@@ -478,15 +477,17 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	String/G root:Packages:QspaceVolumes:Gizmo:ColorTable = ColorTable
 	Variable/G root:Packages:QspaceVolumes:Gizmo:revColors = revColors
 
+	String groupTitle = ""
 #if (IgorVersion()<7)
 	Execute "NewGizmo/N="+gizName+"/T=\""+gizName+"\" /W=(154,44,922,812)"
 	Execute "ModifyGizmo startRecMacro"
-	String groupTitle = AddGizmoTitle(wTitle,"groupTitleQsp")
+	groupTitle = AddGizmoTitle(wTitle,"groupTitleQsp")
 	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendingFunction"
 #else
+	Variable Billboarding = 1
 	NewGizmo/N=$gizName/T=gizName/W=(154,44,922,812)
 	ModifyGizmo startRecMacro
-	String groupTitle = AddGizmoTitle(wTitle,"groupTitleQsp")
+	AddGizmoTitleGroup("groupTitleQsp",wTitle[0],title2=wTitle[1],title3=wTitle[2],title4=wTitle[3],pos="LT")
 	AppendToGizmo attribute blendFunc={770,771},name=blendingFunction
 #endif
 	String object,displayObjectList=""
@@ -616,28 +617,31 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,ticks,3}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,ticks,3}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,ticks,3}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,fontScaleFactor,0.8}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,fontScaleFactor,0.8}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,fontScaleFactor,0.8}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,fontScaleFactor,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,fontScaleFactor,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,fontScaleFactor,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabel,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabel,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabel,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelText,"Qx  (1/nm)"}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelText,"Qy  (1/nm)"}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelText,"Qz  (1/nm)"}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelCenter,-0.1}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelCenter,-0.1}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelCenter,-0.1}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelDistance,0.05}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelDistance,0.05}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelDistance,0.3}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelScale,0.4}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelScale,0.4}
-	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelScale,0.4}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelCenter,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelCenter,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelCenter,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelDistance,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelDistance,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelDistance,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelScale,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelScale,1}
+	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelScale,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={0,axisLabelRGBA,0,0,0,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={1,axisLabelRGBA,0,0,0,1}
 	ModifyGizmo ModifyObject=axesBeamLineQ, objectType=axes property={2,axisLabelRGBA,0,0,0,1}
 	ModifyGizmo modifyObject=axesBeamLineQ, objectType=axes property={-1,Clipped,0}
+	ModifyGizmo ModifyObject=axesBeamLineQ,objectType=Axes,property={0,labelBillboarding,Billboarding}
+	ModifyGizmo ModifyObject=axesBeamLineQ,objectType=Axes,property={1,labelBillboarding,Billboarding}
+	ModifyGizmo ModifyObject=axesBeamLineQ,objectType=Axes,property={2,labelBillboarding,Billboarding}
 #endif
 	displayObjectList += "axesBeamLineQ;"
 
@@ -662,10 +666,6 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 #if (IgorVersion()<7)
 		Execute "ModifyGizmo setDisplayList=-1, object="+groupTitle
 		Execute "ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform"
-#else
-		ModifyGizmo setDisplayList=-1, object=$groupTitle
-// xxxxxxxxxxxxxxxxxxxxxxxxxxx
-		ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform
 #endif
 	endif
 #if (IgorVersion()<7)
@@ -964,6 +964,11 @@ End
 //		Execute "ModifyGizmo setDisplayList=-1, object="+groupTitle
 //		Execute "ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform"
 //	endif
+//
+//	*********************************************************
+//	NOTE, this whole function is really only useful for Igor6.
+//	*********************************************************
+//
 Static Function/T AddGizmoTitle(wTitle,groupName)
 	Wave/T wTitle
 	String groupName							// defaults to "groupTitle"

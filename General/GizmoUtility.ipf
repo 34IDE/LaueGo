@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.14
+#pragma version = 2.15
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -369,7 +369,7 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 
 	if (WhichListItem(pos,"LT;LB;")<0)
 		return ""
-	elseif (strlen(title1)<1)
+	elseif (strlen(title1+title2+title3+title4)<1)
 		return ""
 	endif
 
@@ -394,7 +394,8 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 	groupName = "textTitle"
 	String title = "\Z18"+titleWave[0]
 	title += SelectString(useStr[1],"", "\r\Zr080"+titleWave[1])
-	title += SelectString(useStr[2],"", "\r\Zr070"+titleWave[2])
+//	title += SelectString(useStr[2],"", "\r\Zr070"+titleWave[2])
+	title += SelectString(useStr[2],"", "\r\Zr080"+titleWave[2])
 	title += SelectString(useStr[3],"", "\r"+titleWave[3])
 	TextBox/C/N=$groupName/F=0/B=1/A=$pos/X=2/Y=2 title
 
