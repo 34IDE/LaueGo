@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.18
+#pragma version = 0.19
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -25,9 +25,11 @@ Menu LaueGoMainMenuName
 	MenuItemIfWaveClassExists("  Calc & Show Zones...","FittedPeakList*","DIMS:2,MINCOLS:11"),PutZoneLinesOnGraph($"")
 End
 
-#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 Menu "Zones"
 	MenuItemIfWaveClassExists("Calc & Show Zones...","FittedPeakList*","DIMS:2,MINCOLS:11"),PutZoneLinesOnGraph($"")
+End
+#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
+Menu "Zones"
 	SubMenu "Test"
 		"Make Simulated Test Pattern...", MakeSimulatedTestPattern(NaN)
 		"Make Test Spots...", IndexingInternal#MakeTestSpots(NaN)
