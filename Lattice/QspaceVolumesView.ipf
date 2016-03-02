@@ -1,9 +1,9 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.17
-#include "ImageDisplayScaling", version>= 1.87
+#pragma version = 1.18
+#include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
-#include "GizmoUtility" version>= 0.07
+#include "GizmoUtility" version>= 2.14
 
 Menu "Qspace"
 	MenuItemIfWaveClassExists("Gizmo of Qspace ...","Qspace3D*","DIMS:3"), MakeGizmoQspace3D($"")
@@ -1351,7 +1351,7 @@ Function/WAVE MakeRadialLine(corners,[point,printIt])
 		return $""
 	endif
 
-	Make/N=3/D/FREE lo, hi
+	Make/N=3/D/FREE lo, hi				// lowest and highest values in x,y,z
 	Make/N=(DimSize(corners,0))/D/FREE v=corners[p][0]
 	lo[0] = WaveMin(v) ;	hi[0] = WaveMax(v)
 	v = corners[p][1]
@@ -1368,22 +1368,23 @@ Function/WAVE MakeRadialLine(corners,[point,printIt])
 	endif
 
 	name=CleanupName(NameOfWave(corners)+"_radialLine",0)
-	Make/N=(2,3)/O $name/WAVE=line = 0
+	Make/N=(2,3)/O $name/WAVE=line = NaN
 	String wnote=ReplaceStringByKey("waveClass",note(corners),"GizmoRadialLine,GizmoPath","=")
 	Note/K line, wnote
 	if (printIt)
 		printf "Created a radial line named  '%s'  in folder  '%s'\r",NameOfWave(line),GetWavesDataFolder(line,1)
 		print "To add this to a Gizmo, add a new Path with this wave as the source"
 	endif
-	line [1][] = vc[q]					// one end of line lies at center of Gizmo
+	line[1][] = vc[q]						// one end of line always lies at center of Gizmo
 	if (lo[0]<=0 && hi[0]<=0 && lo[1]<=0 && hi[1]<=0 && lo[2]<=0 && hi[2]<=0)
-		line[0][] = 0
-		return line							// origin is inside box, so do not truncate line
+		line[0][] = 0						// origin is inside box, so start of line is {0,0,0}
+	else
+		Make/N=3/D/FREE towardZero, ps
+		towardZero = vc[p]>0 ? lo[p] : hi[p]	// limit that projects towards origin
+		ps = towardZero/vc
+		Variable psMin = WaveMax(ps)	// closest to 1, when ps==1, line has zero length
+		line[0][] = psMin*vc[q]
 	endif
-
-	// radial line is all points v, s.t.   v = p*vc,   where p is a real number
-	MatrixOP/FREE ps = minVal(vc/hi)
-	line[0][] = ps[0]*vc[q]
 	return line
 End
 

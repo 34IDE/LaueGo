@@ -6685,6 +6685,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Note/K Qspace3D, wnote
 	DoWindow/K $progressWin										// done with status window
 	if (seconds>(12*60))											// execution took more than 12 minutes, save experiment
+		print "Processing took more than 12 minutees, Saving this Igor Experiemnt"
 		SaveExperiment
 	endif
 	if (printIt)
@@ -6710,7 +6711,12 @@ End
 //
 Function Proto_ImageFilter(image)				// proto for a filter run on each image before histograming it
 	Wave image
-	//	MatrixFilter/N=3 median image			// example, a median filter, use "Funciton Median_ImageFilter(image)"
+	return 0
+End
+//
+Function Median_ImageFilter(image)				// this one is good for removing random hot pixels
+	Wave image
+	MatrixFilter/N=3 median image				// does a 3x3 median filter over the whole image
 	return 0
 End
 //
