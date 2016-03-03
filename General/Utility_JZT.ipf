@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.95
+#pragma version = 3.96
 // #pragma hide = 1
 
 Menu "Graph"
@@ -104,10 +104,11 @@ Constant GIZMO_WIN_BIT = 65536
 //		num2Ordinal(n), converts integer n to ordinal string, e.g. 1 --> "1st"
 //		ChangeStrEnding(oldEnd, inStr, newEnd)  if inStr ends in oldEnd, replace oldEnd with newEnd
 //		SIprefix2factor(prefix)  get the factor for an SI prefix
-//		ConvertUnits2meters(unit,[defaultLen])  returns conversion factor from unit to meters
+//		ConvertUnits2meters(unit,[defaultLen])  returns conversion factor from length unit to meters
 //		ConvertTemperatureUnits(Tin,unitIn,unitOut)  returns Temperature in units of (unitOut)
 //		ConvertNumWithUnitsLength(in,outUnit,[rnd,space])  can convert "2in" to "0.0508 m"
 //		SplitNumAndUnits(in)  take string such as "-9.3e2 mi" --> "-9.3e2;mi",  or "2 nm^-1" --> "2;nm^-1"
+//		ConvertUnits2seconds(unit,[defaultLen])  returns conversion factor from time unit to seconds
 //		RomanNumeral(j) converts a number to a Roman Numeral string, NO upper limit, so watch out for string length
 //		RomanNumeral2Int(str) convert a Roman Numeral string to an integer
 //	9	Old legacy or deprecated functions
@@ -4368,6 +4369,34 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	String unit
 	Variable defaultLen
 	defaultLen = ParamIsDefault(defaultLen) ? NaN : defaultLen
+	//
+	//	meter, metre, m		1 m
+	//	inch, inches, in		0.0254 m
+	//	foot, feet, ft			12 inches
+	//	yard, yd					36 inches
+	//	mile, mi					5280 feet
+	//	nauticalmile			1852 m
+	//	Angstrom, Ang, 		1e-10 m
+	//	micron, micrometer	1e-6 m
+	//	parsec, pc				1 parsec
+	//	lightYear, ly			9.4605284e15 m
+	//	astronomicalunit, au	149597870700 m
+	//	BohrRadius, ao, a0	0.52917721092e-10 m
+	//	fermi, fm				1e-15 m == 1 fm
+	//	mil						0.001 inch
+	//	CuXunit, CuXU			Cu X-unit, 1.00207697e-13 m
+	//	MoXunit, MoXU			Mo X-unit, 1.00209952e-13 m
+	//	Xunit, XU				X-unit (just average of Mo & Cu), 1.002088e-13 m
+	//	Plank, PlanckLength	1.616199e-35 m
+	//	fathom					6 feet
+	//	chain						66 feet
+	//	rod						16.5 feet
+	//	league					3 miles
+	//	furlong					660 feet
+	//	cubit						0.525 m (a rough number)
+	//	point						1/72 inch
+	//	pica						1/72 foot
+	//	Li							Chinese mile is 500m
 
 	unit = ReplaceString(" ",unit,"")			// no spaces
 
@@ -4644,6 +4673,171 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 
 	return Tout
 End
+
+
+ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
+	// returns conversion factor from unit to seconds (NO plural units allowed)
+	// note, dy is deci-year, not day
+	String unit
+	Variable defaultSeconds
+	defaultSeconds = ParamIsDefault(defaultSeconds) ? NaN : defaultSeconds
+	//
+	//	second, sec, s		1
+	//	minute, min, m		60 s
+	//	hour, hr, h			3600 s
+	//	day, d				24 hour
+	//	week, wk				7 days
+	//	fortnight			14 days
+	//	lunar month, moon, lune	29.530588 days
+	//	year, yr, y			365.24219 days
+	//	olympiad				4 years
+	//	lustrum				5 years
+	//	indiction			15 years
+	//	decade				10 years
+	//	century				100 years
+	//	millennium			1000 years
+	//	jiffy					1 fm/c
+	//	shake					1e-8 s
+	//	beat					0.001 day = 3.6 s
+	//	Plank time			1.616199e-35 / c
+	//	Svedberg, Sv		1e-13 s
+	//	galactic year		230e6 years
+	//	sidereal day		23.9344699 hour
+	//	sidereal year		365.256363004 days
+	//	helek					3 + 1/3 seconds
+	//	pahar					3 hours
+
+	unit = ReplaceString(" ",unit,"")				// no spaces
+
+	// check for powers  "^N"
+	Variable ipow=strsearch(unit,"^",0), power=1
+	if (ipow>=0)											// found a power
+		power = str2num(unit[ipow+1,Inf])			// number after "^"
+		unit = unit[0,ipow-1]							// string before "^"
+	endif
+
+	String prefix
+	Variable value=NaN, i = max(0,strlen(unit)-1)
+	Variable c = 299792458								// speed of light (m/s)
+	Variable hour = 3600								// seconds in 1 hour
+	Variable day = 24*hour								// seconds in 1 day
+	Variable year = 365.24219 * day					// seconds in 1 year
+
+	if(StringMatch(unit,"*second") || StringMatch(unit,"*sec") || StringMatch(unit,"*s"))				// the second
+		i = StringMatch(unit,"*second") ? 7 : 2
+		i = StringMatch(unit,"*sec") ? 4 : i
+		value = 1
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*decade"))			// decade = 10 years
+		value = 10 * year
+		prefix = unit[0,strlen(unit)-7]
+	elseif(StringMatch(unit,"*century"))			// century = 100 years
+		value = 100 * year
+		prefix = unit[0,strlen(unit)-8]
+	elseif(StringMatch(unit,"*millennium"))		// millennium = 1000 years
+		value = 1000 * year
+		prefix = unit[0,strlen(unit)-11]
+	elseif(StringMatch(unit,"*fortnight") )		// fortnight = 2 weeks
+		value = 14 * day
+		prefix = unit[0,strlen(unit)-10]
+	elseif(StringMatch(unit,"*lune") || StringMatch(unit,"*lunarmonth") || StringMatch(unit,"*moon"))	// 1 lunar month
+		value = 29.530588 * day
+		i = StringMatch(unit,"*lunarmonth") ? 11 : 5
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*olympiad"))			// olympiad = 4 years
+		value = 4 * year
+		prefix = unit[0,strlen(unit)-9]
+	elseif(StringMatch(unit,"*lustrum"))			// lustrum = 5 years
+		value = 5 * year
+		prefix = unit[0,strlen(unit)-8]
+	elseif(StringMatch(unit,"*indiction"))		// indiction = 5 years
+		value = 15 * year
+		prefix = unit[0,strlen(unit)-10]
+	elseif(StringMatch(unit,"*jiffy"))				// time to go one fermi
+		value = 1e-15 / c	
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*shake"))				// 1e-8 s
+		value = 1e-8
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*beat"))				// 1/1000 of a day (Swatch decimal time)
+		value = 3.6
+		prefix = unit[0,strlen(unit)-5]
+	elseif(StringMatch(unit,"*Plank") || StringMatch(unit,"*Planktime"))
+		value = 1.616199e-35 / c
+		i = StringMatch(unit,"*Planktime") ? 10 : 6
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*Svedberg") || StringMatch(unit,"*Sv"))
+		value = 1e-13
+		i = StringMatch(unit,"*Svedberg") ? 9 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*galacticyear"))	// galactic year = 230e6 years
+		value = 230e6 * year
+		prefix = unit[0,strlen(unit)-13]
+	elseif(StringMatch(unit,"*siderealday"))	// sidereal day = 23.9344699 hour
+		value = 23.9344699 * hour
+		prefix = unit[0,strlen(unit)-12]
+	elseif(StringMatch(unit,"*siderealyear"))	// 1 sidereal year = 365.256363004 day
+		value = 365.256363004 * day
+		prefix = unit[0,strlen(unit)-13]
+	elseif(StringMatch(unit,"*helek"))				// 1 helek = 3 + 1/3 seconds
+		value = 10/3
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*pahar"))				// 1 pahar = 3 hours
+		value = 3 * hour
+		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*minute") || StringMatch(unit,"*min") || StringMatch(unit,"*m"))	// minute = 60 seconds
+		value = 60
+		i = StringMatch(unit,"*minute") ? 7 : 2
+		i = StringMatch(unit,"*min") ? 4 : i
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*hour") || StringMatch(unit,"*hr") || StringMatch(unit,"*h"))	// hour
+		value = hour
+		i = StringMatch(unit,"*hour") ? 5 : 2
+		i = StringMatch(unit,"*hr") ? 3 : i
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*d") || StringMatch(unit,"*day"))	// day
+		value = day
+		i = StringMatch(unit,"*day") ? 4 : 2
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*wk") || StringMatch(unit,"*week") )	// week
+		value = 7*day
+		i = StringMatch(unit,"*week") ? 5 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*year") || StringMatch(unit,"*yr") || StringMatch(unit,"*y"))
+		value = year										// 1 year = 365.24219 days
+		i = StringMatch(unit,"*year") ? 5 : 2
+		i = StringMatch(unit,"*yr") ? 3 : i
+		prefix = unit[0,strlen(unit)-i]
+	else
+		return defaultSeconds							// cannot find base value
+	endif
+
+	prefix = ReplaceString("micro",prefix,"µ")
+	value *= SIprefix2factor(prefix)
+	return (power==1) ? value : (value ^ power)
+End
+//	Function testAllTimes(SIprefix)
+//		String SIprefix
+//	
+//		if (numtype(SIprefix2factor(SIprefix)))
+//			printf "bad SI prefix '%s'\r",SIprefix
+//			return 1
+//		endif
+//	
+//		String list = "second;sec;s;minute;min;m;hour;hr;h;day;d;week;wk;fortnight;lunar month;lune;moon;year;yr;y;"
+//		list += "olympiad;lustrum;indiction;decade;century;millennium;jiffy;shake;beat;Plank time;"
+//		list += "Svedberg;Sv;galactic year;sidereal day;sidereal year;helek;pahar;abc"
+//		String unit
+//		Variable value, i, N=ItemsInList(list)
+//		for (i=0;i<N;i+=1)
+//			unit = StringFromList(i,list)
+//			value = ConvertUnits2seconds(SIprefix+unit)
+//			if (numtype(value))
+//				printf "bad value for:  '%s' + '%s'\r",SIprefix,unit
+//			endif
+//		endfor
+//		return 0
+//	End
 
 
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
