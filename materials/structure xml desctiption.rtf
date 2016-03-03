@@ -1,11 +1,11 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1347\cocoasubrtf570
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf340
 \cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Monaco;}
 {\colortbl;\red255\green255\blue255;}
 \margl1440\margr1440\vieww20300\viewh17200\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-8120\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-8120\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 An example of a fictional crystal structure, 95%NaCl + 5%KCl.  Note, any unknown tags will be ignored, so this file structure is easily extended.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 The <citation> tag is an example of a tag that will be ignored.  You can also include comments using:\
 	
 \f1 <!-- Comment Text -->\
@@ -40,11 +40,11 @@ A
 \f1 <cif>											
 \f0 // everything about the structure is in <cif> ... </cif>
 \f1 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9360\tx10080\pardirnatural\partightenfactor0
 \cf0 	<chemical_name_common>NaCl, table salt</chemical_name_common>  
 \f0 // This is the name you want to call this structure
 \f1 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 	<space_group_IT_number>225</space_group_IT_number>	
 \f0 // space group number from International Tables [1-230]
 \f1 \
@@ -140,4 +140,55 @@ A
 		Thermal parameters are of form exp(-2 PI^2 U11 h^2 8 a*^2 + ... + U12hka*b*)\
 		U12 = U23 = U13 = 0 by symmetry\
   -->\
+\
+\
+recognized length units are:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 duplicate names and abbreviations are grouped in \{...\}\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 	\{meter,metre,m\}, \{foot,feet,ft\}, \{inch,inches,in\}\
+	\{\'c5,Angstrom\}, \{micrometer,micron\}\
+	\{CuXunit,CuXU\}, \{MoXunit,MoXU\}, \{Xunit,XU\}\
+	\{parsec,pc\}, \{lightYear,ly\}, \{astronomicalunit,au\}\
+	\{BohrRadius,ao,a0\}\
+	\{PlanckLength,Plank\}\
+	fermi \
+	nauticalmile\
+	\{mi,mile\}\
+	\{yd,yard\}\
+	mil, fathom, chain, rod, league, furlong, cubit, point, pica, Li\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 recognized SI prefixes are:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 	deci	= "d" = 0.1\
+	centi	= "c" = 0.01\
+	milli	= "m" = 1e-3\
+	micro	= "\'b5" = 1e-6\
+	nano	= "n" = 1e-9\
+	pico	= "p" = 1e-12\
+	femto	= "f" = 1e-15\
+	atto	= "a" = 1e-18\
+	zepto	= "z" = 1e-21\
+	yocto	= "y" = 1e-24\
+\
+	hecto	= "H" = 100  (or "h")\
+	kilo	= "K" = 1e3  (or "k")\
+	Mega	= "M" = 1e6\
+	Giga	= "G" = 1e9\
+	Tera	= "T" = 1e12\
+	Peta	= "P" = 1e15\
+	Exa	= "E" = 1e18\
+	Zeta	= "Z" = 1e21\
+	Yotta	= "Y" = 1e24\
+\
+So the following lines are equivalent:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 		<a unit="pm">564.02</a>\
+		<a unit="nm">0.56402</a>\
+		<a>5.6402</a>					// default is Angstrom\
+		<a unit="yly">0.0596182</a>		// note:  ly==lightYear, and y-->1e-24\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\
 }
