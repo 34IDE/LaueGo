@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, March 03, 2016" time="12:07:25 PM CST" isoTime="2016-03-03T12:07:25"></written>
+	<written date="Thursday, March 03, 2016" time="05:16:57 PM CST" isoTime="2016-03-03T17:16:57"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>bba7f55b666c3df3010baf1f60a0a4ec8411ee07</gitHash>
+	<gitHash>9acf0c1d83f37acb4327100a0daed633434c4966</gitHash>
 	<fileCount>223</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -148,7 +148,7 @@
 	<file version="nan" time="2016-02-17T12:51:46" md5="13c43942af99aba470ecb67d8b5b24cb" sha256="07c0d0ad190bcda47e7200e25ef8962f167dcb148b349183b1d100762ac69ee8" ext=".xml">materials/standard xtals/Fe.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2016-01-25T12:49:54" md5="d610099f98f99705d65bb0e542a9bca2" sha256="8e8b3a2dac173e7f726f8db11a9a65cc9e00835339f63e4736490d9cae32876f" ext=".xml">materials/standard xtals/Cu.xml</file>
-	<file version="3.95" time="2016-02-10T14:27:05" md5="2eccc78cae6e9e17fa2d53591858686c" sha256="ed06e08362f93c227d2803b762a9455b71fdd3e57fd8fc50f394f03ea48a30ab" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.96" time="2016-03-03T17:14:37" md5="a8caa2c96d5c66547534d7831e92cc7e" sha256="c8236730434694a54ec370f399bab997ae31ffdb8f5914fb965afacec7c81e22" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:18" md5="dea0a34450c3db1ed673c6da40c2b2c6" sha256="0a2f75152d14d91bf6c14fd7776904230bdc7a78579ea5d4d7adbff279faaf7f" ext=".xml">materials/standard xtals/Al.xml</file>
 	<file version="nan" time="2016-02-17T12:54:19" md5="c725af52856df9f1797af8ef1529bc02" sha256="4e86c82136ab4f62f7b4ca73b2acd65428c351002f0044a96637156158e00f25" ext=".xml">materials/standard xtals/IN740.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8318859207bfbd615cd77d47bd5cf7aa" sha256="e37b6ebf3de2f280aed777cfcb0c4a772de3f250302c437335237bcb9ece81e9" ext="">micro/Euler</file>
@@ -200,7 +200,7 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" sha256="046d4254c47b4f09b6431ab4ed90abcec16510aaf6bf5486985ea6ad6ed98e84" ext=".hlp">materials/mtl files/absorb.hlp</file>
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" sha256="6060302a5225a5473a5c948b8d9cb756136a55a4b1b2c1f91e3484c8a73d9e87" ext=".mtl">materials/mtl files/water.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" sha256="70f592f0217679888c33725f784e1ba49a98fe79c4672b0c7b49cc8e571f03ec" ext="">micro/indexAll_i386</file>
-	<file version="nan" time="2016-02-11T11:22:51" md5="de0932d5b6a607a92b66eeea1dd5eb07" sha256="9be2cffcfdfaf74fd71b9a5e4b189852608728058e8fd71c9bfef0fdad7043c2" ext=".rtf">materials/structure xml desctiption.rtf</file>
+	<file version="nan" time="2016-03-03T14:40:29" md5="60bb072049b4250fe12f9252d10e3f5c" sha256="2d016691e03456661877799efd0dc96fb0f055e276b3e9b3a6af8c028cadcbcc" ext=".rtf">materials/structure xml desctiption.rtf</file>
 	<file version="1.7" time="2014-04-30T10:24:17" md5="ed03c9cd4579b0431e8c504bd8afe3a6" sha256="75832dd215e153ae7c49095e4f10a58be19c89f57acb6555fa3da07e2bcaa0a3" ext=".ipf">APS/epics.ipf</file>
 	<file version="nan" time="2014-10-30T13:10:03" md5="f8ad18774e169a20fef847e88612a0b3" sha256="f2b4ec7bad2d5bd41607f549ba1cf976f44b76b12ab3db5b358ae42a3a1fa4a9" ext=".mtl">materials/mtl files/LiF.mtl</file>
 	<file version="2.06" time="2016-02-03T17:10:11" md5="824d9640e289c05b77200ed3d7975143" sha256="4c58454eccdf3b72343ce290a4538fb074acc3f7a3c0246308b7a76967fb5c4d" ext=".ipf">General/ImageDisplayScaling.ipf</file>
