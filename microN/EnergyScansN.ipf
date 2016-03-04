@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.29
+#pragma version = 2.30
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6781,7 +6781,7 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,p
 	endfor
 
 	Variable seconds = stopMSTimer(-2)/1e6 - timer	// stop timer here
-	if (printIt && seconds>7.0)
+	if (printIt && seconds>8.0)
 		printf "	processing image '%s' took %s\r",NameOfWave(image),Secs2Time(seconds,5,2)
 	endif
 	return wnote
