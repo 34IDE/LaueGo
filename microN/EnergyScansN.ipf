@@ -5,20 +5,21 @@
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
 // version 2.14 speed up Fill_Q_Positions(), by only reading part of image headers
+// version 2.30 change Fill1_3DQspace() to allow processing only an roi
 
-#include "ImageDisplayScaling", version>=1.98
+#include "ImageDisplayScaling", version>=2.07
 #if (Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.30
+#include "HDF5images", version>=0.32
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
 #include "WinView", version>=2.03
 #endif
-#include "Masking", version>1.02
-#include "GizmoZoomTranslate", version>=2.00
-#include "GizmoClip", version>=2.0
-#include "GizmoMarkers", version>=2.05
-#include "QspaceVolumesView",  version>=1.12
-#include "microGeometryN", version>=1.71
+#include "Masking", version>1.03
+#include "GizmoZoomTranslate", version>=2.03
+#include "GizmoClip", version>=2.03
+#include "GizmoMarkers", version>=2.13
+#include "QspaceVolumesView",  version>=1.19
+#include "microGeometryN", version>=1.86
 
 Static Constant hc = 1.239841857				// hc (keV-nm)
 Static Constant secPerPixelFixed = 18.8e-6		// the fixed time is takes to process one pixel (sec) after any distortion
@@ -3968,11 +3969,11 @@ Function MakeEsumMovie()
 	NewMovie/F=10
 	SetEsumDepthProc("EsumDepthDisp",-1,"","")
 	WaveStats/M=1/Q imageSumAll
-	ImageDisplayScaling# ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
+	ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
 	AddMovieFrame
 
 	WaveStats/M=1/Q imageEsum
-	ImageDisplayScaling# ModifyOnly_ctab_range("","imagePlane",0,V_max/3)
+	ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",0,V_max/3)
 
 
 	Variable i, N=DimSize(imageEsum,2)
@@ -3982,7 +3983,7 @@ Function MakeEsumMovie()
 	endfor
 	SetEsumDepthProc("EsumDepthDisp",-1,"","")
 	WaveStats/M=1/Q imageSumAll
-	ImageDisplayScaling# ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
+	ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
 	AddMovieFrame
 	CloseMovie
 	SetEsumDepthProc("EsumDepthDisp",NumVarOrDefault("EsumDepth",-1),"","")
@@ -4005,7 +4006,7 @@ Function MakeEsumPlot()
 		ModifyImage imagePlane ctab= {*,*,Terrain,1}
 
 		WaveStats/M=1/Q imageSumAll
-		ImageDisplayScaling# ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
+		ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
 
 		ModifyGraph margin(left)=14,margin(bottom)=14,margin(top)=14,margin(right)=14
 		ModifyGraph mirror=2,nticks(left)=3,minor=1,fSize=9,standoff=0
@@ -4056,7 +4057,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 		endif
 		imageplane = imageSumAll
 		WaveStats/M=1/Q imageSumAll
-		ImageDisplayScaling# ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
+		ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
 		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\Zr200S\\Zr050\\F]0(Energys)   \\F'symbol'\\Zr200S\\Zr050\\F]0(Depths)"
 	else
 		list = GetUserData("","","ctab")
@@ -4065,7 +4066,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 			hi = NumberByKey("hi",list,"=")
 			list = ReplaceNumberByKey("sum",list,0,"=")
 			SetWindow kwTopWin userdata(ctab)=list
-			ImageDisplayScaling# ModifyOnly_ctab_range("","imagePlane",lo,hi)
+			ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",lo,hi)
 		endif
 		imageplane = imageEsum[p][q][i]
 		depth = DimOffset(imageEsum,2) + i*DimDelta(imageEsum,2)
@@ -6127,7 +6128,7 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, doConvex,FilterFunc,printIt])	// does not assume depth in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, doConvex,FilterFunc,roi,printIt])	// does not assume depth in image
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
@@ -6139,6 +6140,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable NQx,NQy,NQz	// OPTIONAL, dmensions of final Qspace3D array
 	Variable doConvex			// if True, make the convex hull
 	String FilterFunc			// OPTIONA.L name of a filter for the image
+	STRUCT ImageROIstruct &roi
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? NaN : depth
@@ -6149,6 +6151,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	doConvex = ParamIsDefault(doConvex) || numtype(doConvex) ? 0 : !(!doConvex)
 	FilterFunc = SelectString(ParamIsDefault(FilterFunc),FilterFunc,"")
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	String extras=""
+	if (!ParamIsDefault(roi))						// an roi was given, check to see if it is empty or invalid
+		if (ImageROIstructValid(roi) && !(roi.empty))
+			sprintf extras,"roi=%d,%d,%d,%d;",roi.xLo, roi.xHi, roi.yLo, roi.yHi
+		endif
+	endif
 	if (!(recipSource==0 || recipSource==1))
 		recipSource = NumVarOrDefault("root:Packages:micro:Escan:recipSource",NaN)
 		Prompt recipSource, "source of reciprocal lattice", popup, "Beamline Coords;Indexing Result"
@@ -6353,14 +6361,14 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	ProgressPanelUpdate(progressWin,0,status="setting up")
 	String name
 	sprintf name, fileRootFmt, str2num(range)
-	Wave image = $(LoadGenericImageFile(name))				// load first image in range
+	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load first image in range
 	if (!WaveExists(image))
 		printf "could not load very first image named '%s'\r",name
 		DoAlert 0,"could not load very first image"
 		DoWindow/K $progressWin									// done with status window
 		return $""
 	endif
-	Local_ImageFilter(image)
+//	Local_ImageFilter(image)										// do NOT need to filter this image, not using the contents
 	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
 	Ni = DimSize(image,0)
 	Nj = DimSize(image,1)
@@ -6402,7 +6410,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			endif
 		endif
 		sprintf name, fileRootFmt, m
-		wnote=ReadGenericHeader(name)							// wave note to add to file read in
+		wnote=ReadGenericHeader(name, extras=extras)		// wave note to add to file read in
 		if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
 			continue
 		endif
@@ -6416,6 +6424,9 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		m_Fill_QHistAt1Depth[i] = m								// file id number for each image
 		currents[i] = NumberByKey("ringCurrent",wnote,"=")
 	endfor
+	Make/N=(N,2)/O/D Qspace3DIndexEnergy
+	Qspace3DIndexEnergy[][0] = m_Fill_QHistAt1Depth[p]	// permanently store the index & energy for evey image
+	Qspace3DIndexEnergy[][1] = keV_FillQvsPositions[p]
 	Variable useNormalization=0
 	WaveStats/Q/M=1 currents
 	if (V_numNans==0 && V_numINFs==0 && V_min>1)			// valid currents, so create normalization[]
@@ -6460,7 +6471,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 
 	// note that Q range only depends upon image size and energy range, not on X or H position
 	sprintf name, fileRootFmt, m_Fill_QHistAt1Depth[ikeVlo]	// load one image to get its size & Q range
-	Wave image = $(LoadGenericImageFile(name))				// load image
+	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
 	Local_ImageFilter(image)
 	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
@@ -6624,8 +6635,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			endif
 		endif
 		sprintf name, fileRootFmt, m
-
-		Wave image = $(LoadGenericImageFile(name))			// load image
+		Wave image = $(LoadGenericImageFile(name,extras=extras))
 		Local_ImageFilter(image)
 		if (mono && WaveExists(image))							// monochromator scan (not undulator gap)
 			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark)// fill Qhist from one file, Qhats are precomputed
@@ -6675,13 +6685,18 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D","=")
 	wnote = ReplaceNumberByKey("depth",wnote,depth,"=")
 	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1,sep=","),"=")
+	wnote = ReplaceStringByKey("range",wnote,range,"=")
+	wnote = ReplaceStringByKey("nameFmt",wnote,nameFmt,"=")
 	if (WaveExists(mask))
 		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
 	endif
-	wnote = ReplaceNumberByKey("executionSeconds",wnote,seconds,"=")
+	if (strlen(FilterFunc))
+		wnote = ReplaceStringByKey("FilterFunc",wnote,FilterFunc,"=")
+	endif
 	if (strlen(recipLattice)>0)
 		wnote += recipLattice+";"
 	endif
+	wnote = ReplaceNumberByKey("executionSeconds",wnote,seconds,"=")
 	Note/K Qspace3D, wnote
 	DoWindow/K $progressWin										// done with status window
 	if (seconds>(12*60))											// execution took more than 12 minutes, save experiment

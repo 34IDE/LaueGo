@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.32
+#pragma version = 0.33
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -11,6 +11,7 @@
 //	Mar 19, 2015, version 0.31		added support in GuessDetectorID() for new Perkin-Elmer side detectors, but this routine is DEPRECATED
 //												also added NewImageGraphHDF5proto(), in cases where ImageDisplayScaling.ipf has not been included
 //	Apr  5, 2015, version 0.32		NewImageGraph() now has withButtons as an optional parameter
+//	Mar  5, 2016, version 0.33		LoadHDF5imageFile(...), supports read of an roi, also, ReadHDF5header(...) & HDF5ReadROI(...), will work too
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -59,10 +60,11 @@ Function/S LoadHDF5imageFile(fName,[extras])
 	String fName													// fully qualified name of file to open
 	String extras
 	extras = SelectString(ParamIsDefault(extras),extras,"")
-	Wave dark = $StringByKey("dark",extras)				// optional darkImage to subtract
+	Wave dark = $StringByKey("dark",extras)				// optional darkImage to subtract (should match full image, not roi)
 	Variable slice=NumberByKey("slice",extras)			// slice (only used for mult-image, i.e. 3D arrays)
 	Variable noHeader=NumberByKey("noHeader",extras)
 	noHeader = numtype(noHeader) ? 0 : !(!noHeader)	// do not read the header, just the image
+	Wave roi=str2vec(StringByKey("roi",extras,"="))	// a 4-vector with {iLo,iHi,jLo,jHi}, or a NULL wave
 
 	Variable f, askSlice=(numtype(slice)>0)
 	if (strlen(ParseFilePath(3,fName,":",0,0))<1)		// call dialog if no file name passed
@@ -126,10 +128,8 @@ Function/S LoadHDF5imageFile(fName,[extras])
 	endif
 
 	String wnote=""
-	if (!noHeader && strlen(extras))
+	if (!noHeader)
 		wnote = ReadHDF5header(fName,extras=extras)
-	elseif (!noHeader)
-		wnote = ReadHDF5header(fName)
 	endif
 	HDF5OpenFile/R/Z f as fName
 	if (V_Flag)
@@ -173,6 +173,33 @@ Function/S LoadHDF5imageFile(fName,[extras])
 	Redimension/N=(nx*ny) image
 	Redimension/N=(ny,nx) image
 	MatrixOp/O image = image^t		// WHY !!!!!!
+	if (WaveExists(dark))
+		Redimension/I image								// change from 16bit unsigned to 32 bit signed
+		image -= dark
+		if (!noHeader)
+			wnote = ReplaceStringByKey("bkg",wnote,NameOfWave(dark),"=")
+		endif
+	endif
+
+	Variable i0=0,j0=0										// start of the  sub-region (in binned pixels)
+	if (WaveExists(roi))
+		i0 = roi[0]												// start of sub-region
+		j0 = roi[2]	
+		Variable i1=roi[1], j1=roi[3]					// end of sub-region
+		nx = DimSize(image,0)
+		ny = DimSize(image,1)
+		i1 = (i1==-1) ? nx-1 : i1							// "-1" means the last point
+		j1 = (j1==-1) ? ny-1 : j1
+		if (i1>=nx || j1>=ny || i1<i0 || j1<j0 || i0<0 || j0<0 || numtype(i0+j0+i1+j1))
+			printf "ERROR -- LoadHDF5imageFile(), the given roi = [%g,%g][%g,%g] does not fit within the image\r",i0,i1,j0,j1
+			return ""
+		elseif (i0>0 || j0>0 || i1<(nx-1) || j1<(ny-1))
+			Duplicate/FREE image, imageOrig				// store the original image (temporarily)
+			Redimension/N=(i1-i0+1, j1-j0+1) image	// re-dimension original image to the roi
+			image = imageOrig[i0+p][j0+q]				// copy original data back into smaller image
+			WaveClear imageOrig
+		endif
+	endif
 
 	if (!noHeader && Ndims==3 && slice>=0)			// extract position of an individual slice (if we are extracting one slice)
 		wnote = ReplaceNumberByKey("slice",wnote,slice,"=")
@@ -206,42 +233,35 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		endif
 	endif
 
-	Variable i0=0,j0=0										// start of sub-region (binned pixels)
-	if (!noHeader && (i0!=0 || j0!=0))					// sub-region of image does not start at (0,0)
-		Variable xdim=DimSize(image,0), ydim=DimSize(image,1)
-		Variable startx, endx, groupx, starty, endy, groupy
-		startx	= NumberByKey("startx",wnote,"=")
-		endx	= NumberByKey("endx",wnote,"=")
-		groupx	= NumberByKey("groupx",wnote,"=")
-		starty	= NumberByKey("starty",wnote,"=")
-		endy	= NumberByKey("endy",wnote,"=")
-		groupy	= NumberByKey("groupy",wnote,"=")
-		startx += i0*groupx									// re-set to match the sub-regiion read
-		starty += j0*groupy
-		endx = xdim*groupx+startx-1
-		endy = ydim*groupy+starty-1
-		wnote = ReplaceNumberByKey("xdim",wnote,xdim,"=")
-		wnote = ReplaceNumberByKey("ydim",wnote,ydim,"=")
-		wnote = ReplaceNumberByKey("startx",wnote,startx,"=")
-		wnote = ReplaceNumberByKey("endx",wnote,endx,"=")
-		wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
-		wnote = ReplaceNumberByKey("endy",wnote,endy,"=")
-		wnote = ReplaceNumberByKey("startxRead",wnote,i0,"=")
-		wnote = ReplaceNumberByKey("startyRead",wnote,j0,"=")
-	endif
+//		Not needed, the header is alredy adjusted in 
+//	if (!noHeader && (i0!=0 || j0!=0))					// sub-region of image does not start at (0,0)
+//		Variable xdim=DimSize(image,0), ydim=DimSize(image,1)
+//		Variable startx, endx, groupx, starty, endy, groupy
+//		startx	= NumberByKey("startx",wnote,"=")
+//		endx	= NumberByKey("endx",wnote,"=")
+//		groupx	= NumberByKey("groupx",wnote,"=")
+//		starty	= NumberByKey("starty",wnote,"=")
+//		endy	= NumberByKey("endy",wnote,"=")
+//		groupy	= NumberByKey("groupy",wnote,"=")
+//		startx += i0*groupx									// re-set to match the requested sub-region read
+//		starty += j0*groupy
+//		endx = xdim*groupx+startx-1
+//		endy = ydim*groupy+starty-1
+//		wnote = ReplaceNumberByKey("xdim",wnote,xdim,"=")
+//		wnote = ReplaceNumberByKey("ydim",wnote,ydim,"=")
+//		wnote = ReplaceNumberByKey("startx",wnote,startx,"=")
+//		wnote = ReplaceNumberByKey("endx",wnote,endx,"=")
+//		wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
+//		wnote = ReplaceNumberByKey("endy",wnote,endy,"=")
+//		wnote = ReplaceNumberByKey("startxRead",wnote,i0,"=")
+//		wnote = ReplaceNumberByKey("startyRead",wnote,j0,"=")
+//	endif
 	SetScale/P x 0,1,"pixel", image
 	SetScale/P y 0,1,"pixel", image
-	if (WaveExists(dark))
-		Redimension/I image
-		image -= dark
-		if (!noHeader)
-			wnote = ReplaceStringByKey("bkg",wnote,NameOfWave(dark),"=")
-		endif
-	endif
 	Note/K image,wnote
 
 	//	String wName = WinViewReadROI(fName,0,-1,0,-1)	// load file into wName
-	if (ItemsInList(GetRTStackInfo(0))<=1)
+	if (ItemsInList(GetRTStackInfo(2))==0)
 		printf "total length = %d x %d  = %d points\r", DimSize(image,0),DimSize(image,1),numpnts(image)
 		print "number type is  '"+IgorFileTypeString(NumberByKey("NUMTYPE",WaveInfo(image,0)))+"'"
 		if (WaveExists(dark))
@@ -355,7 +375,7 @@ End
 //		starty	= NumberByKey("starty",wnote,"=")
 //		endy	= NumberByKey("endy",wnote,"=")
 //		groupy	= NumberByKey("groupy",wnote,"=")
-//		startx += i0*groupx									// re-set to match the sub-regiion read
+//		startx += i0*groupx									// re-set to match the sub-region read
 //		starty += j0*groupy
 //		endx = xdim*groupx+startx-1
 //		endy = ydim*groupy+starty-1
@@ -397,19 +417,19 @@ End
 //End
 //
 // NOTE, Igor does not support this, it is just here for completeness
+// This will return an roi, but it reads the whole image and then takes a piece of it
 Function/T HDF5ReadROI(fileName,i0,i1,j0,j1,[extras])
 	String fileName					// fully qualified name of file to open (will not prompt)
 	Variable i0,i1,j0,j1				// pixel range of ROI (if i1 or j1<0 then use whole image)
 	String extras
 	extras = SelectString(ParamIsDefault(extras),extras,"")
-	if (i0>0 || i1!=-1 || j0>0 || j1!=-1)
-		DoAlert 1, "Reading a sub-region of an image is not supported in Igor with HDF5"
-		return ""
-	endif
-	if (ParamIsDefault(extras))
-		return LoadHDF5imageFile(fileName)
-	else
+	String str
+	sprintf str, "%g,%g,%g,%g",i0,i1,j0,j1
+	extras = ReplaceStringByKey("roi",extras,str,"=")
+	if (strlen(extras))
 		return LoadHDF5imageFile(fileName,extras=extras)
+	else
+		return LoadHDF5imageFile(fileName)
 	endif
 End
 
@@ -557,6 +577,8 @@ Function/T ReadHDF5header(fName,[extras])
 			wnote= ReplaceNumberByKey("yDimDet",wnote,round(value),"=")
 		endif
 	endif
+
+	wnote = ResetHeaderToROI(wnote,extras)		// this corrects for when extras contains an roi
 
 	if (!EscanOnly)
 		// strings: detectorID, Model, beamLine, title, userName, sampleName, file_name, file_time
@@ -760,6 +782,49 @@ Function/T ReadHDF5header(fName,[extras])
 	KillWaves/Z y1wave, z1wave,y2wave, z2wave
 	return wnote
 End
+//
+Static Function/T ResetHeaderToROI(list,extras)
+	String list
+	String extras
+
+	Wave roi=str2vec(StringByKey("roi",extras,"="))	// a 4-vector with {iLo,iHi,jLo,jHi}, or a NULL wave
+	if (!WaveExists(roi))
+		return list
+	elseif (DimSize(roi,0)<4)				// not enough data, give up
+		return list
+	endif
+	Variable i0=roi[0], i1=roi[1], j0=roi[2], j1=roi[3]
+
+	Variable xdim=NumberByKey("xdim",list,"="), ydim=NumberByKey("ydim",list,"=")		// size of image (NOT detector)
+	Variable Nx=NumberByKey("xDimDet",list,"="), Ny=NumberByKey("yDimDet",list,"=")	// full size of detector (NOT image)
+	Variable startx=NumberByKey("startx",list,"="), starty=NumberByKey("starty",list,"=")
+	Variable endx=NumberByKey("endx",list,"="), endy=NumberByKey("endy",list,"=")
+	Variable groupx=NumberByKey("groupx",list,"="), groupy=NumberByKey("groupy",list,"=")
+	groupx = numtype(groupx) ? 1 : groupx
+	groupy = numtype(groupy) ? 1 : groupy
+	xdim = numtype(xdim) ? floor((endx-startx+1)/groupx) : xdim
+	ydim = numtype(ydim) ? floor((endy-starty+1)/groupy) : ydim
+	xdim = i1 - i0 + 1						// re-set to match the requested sub-region
+	ydim = j1 - j0 + 1
+	startx += i0*groupx
+	starty += j0*groupy
+	endx = startx + xdim*groupx - 1
+	endy = starty + ydim*groupy - 1
+	if (numtype(startx+endx + starty+endy + xdim+ydim) || startx<0 || starty<0 || endx>Nx || endy>Ny)
+		return list
+	endif
+
+	list = ReplaceNumberByKey("startx",list,startx,"=")
+	list = ReplaceNumberByKey("starty",list,starty,"=")
+	list = ReplaceNumberByKey("endx",list,endx,"=")
+	list = ReplaceNumberByKey("endx",list,endx,"=")
+	list = ReplaceNumberByKey("xdim",list,xdim,"=")
+	list = ReplaceNumberByKey("ydim",list,ydim,"=")
+	return list
+End
+
+
+
 //Function test_ReadHDF5header(fname)
 //	String fname
 //	Open/R/D=2/F=HDFfileFilters/M="pick multi-image HDF5 file"/P=home f as fname

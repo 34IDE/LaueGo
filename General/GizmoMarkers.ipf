@@ -1,8 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.13
+#pragma version = 2.14
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
-#include "GizmoUtility", version>=0.16
+#include "GizmoUtility", version>=2.15
 
 
 Static strConstant Q_UNITS_LIST = "1/nm;nm\\S-1\\M"
@@ -1213,8 +1213,8 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	Np = DimSize(space3D,p)
 	iLo = (Qlo[p]-DimOffSet(space3D,p))/DimDelta(space3D,p)
 	iHi = (QHi[p]-DimOffSet(space3D,p))/DimDelta(space3D,p)
-	iLo = limit(floor(iLo),0,Np)
-	iHi = limit(ceil(iHi),0,Np)
+	iLo = limit(floor(iLo),0,Np-1)
+	iHi = limit(ceil(iHi),0,Np-1)
 	Np = iHi[p]-iLo[p]+1
 	if (0 && printIt)
 		printWave(Qlo,Name="Qlo")

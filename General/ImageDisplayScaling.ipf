@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.06
+#pragma version = 2.07
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -8,6 +8,8 @@
 // to use these macros in your Igor experiment, put this file in the "User Procedures" folder
 // in the "Igor Pro Folder", and uncomment the following line and put it in the top of the procedure
 //folder
+//
+//	at verion 2.07, added the ImageROIstruct Structure and associated functions
 
 
 // =============================================================================================
@@ -178,16 +180,6 @@ End
 // ============================== Start of Generic Image Reading ===============================
 // =============================================================================================
 
-//	I would like to use this structure, but it is easier to use a key:value string for extras
-//
-//Structure extraLoadImageStruct
-//	double	quiet				// for quiet=1, if any problems just return,		only in Pilatus tiff files
-//	double	multiple			// load multiple images, NOT YET WORKING,			only in Pilatus tiff files
-//	double	slice				// slice (only used for mult-image, i.e. 3D arrays),only in HDF5 files
-//	WAVE	dark				// optional darkImage to subtract,					only in HDF5 files
-//EndStructure
-
-
 Function imageLoadersAvailable()		// returns true if a real image loader is available
 	Variable haveHDF5 = exists("LoadHDF5imageFile")==6	// flags indicating which type of images I know how to read
 	Variable haveWinView = exists("LoadWinViewFile")==6
@@ -202,7 +194,7 @@ End
 Function/S LoadGenericImageFile(fileName,[extras])		// returns full path name to loaded image wave
 	String fileName
 	String extras
-//	STRUCT extraLoadImageStruct &extras
+	extras = SelectString(ParamIsDefault(extras), extras,"")
 
 	Variable haveHDF5 = exists("LoadHDF5imageFile")==6	// flags indicating which type of images I know how to read
 	Variable haveWinView = exists("LoadWinViewFile")==6
@@ -234,10 +226,10 @@ Function/S LoadGenericImageFile(fileName,[extras])		// returns full path name to
 		return ""
 	endif
 
-	if (ParamIsDefault(extras))
-		str = func(fileName)								// Load an simple image
+	if (strlen(extras))
+		str = func(fileName,extras=extras)				// Load image with extras
 	else
-		str = func(fileName,extras=extras)					// Load image with extras
+		str = func(fileName)								// Load an simple image
 	endif		
 
 	Wave image = $str
@@ -247,13 +239,12 @@ Function/S LoadGenericImageFile(fileName,[extras])		// returns full path name to
 	endif
 
 	String/G root:Packages:imageDisplay:imageExtension="."+extension
-	return str												// return full path name to the image
+	return str													// return full path name to the image
 End
 //
 Function/T LoadFileProtoShort(fName,[extras])
 	String fName
 	String extras
-//	STRUCT extraLoadImageStruct &extras
 	return ""
 End
 
@@ -263,7 +254,7 @@ Function/S ReadGenericROI(fileName,i0,i1,j0,j1,[extras])	// returns full path na
 	String fileName											// fully qualified name of file to open (will not prompt)
 	Variable i0,i1,j0,j1									// pixel range of ROI (if i1 or j1<0 then use whole image)
 	String extras
-//	STRUCT extraLoadImageStruct &extras
+	extras = SelectString(ParamIsDefault(extras), extras,"")
 
 	Variable f
 	if (strlen((ParseFilePath(3,fileName,":",0,0)))<1)	// call dialog if no file name passed
@@ -287,10 +278,10 @@ Function/S ReadGenericROI(fileName,i0,i1,j0,j1,[extras])	// returns full path na
 		return ""
 	endif
 
-	if (ParamIsDefault(extras))
-		str = func(fileName,i0,i1,j0,j1)					// a simple image
+	if (strlen(extras))
+		str = func(fileName,i0,i1,j0,j1,extras=extras)	// an image with extras
 	else
-		str = func(fileName,i0,i1,j0,j1,extras=extras)		// an image with extras
+		str = func(fileName,i0,i1,j0,j1)						// a simple image
 	endif
 
 	String/G root:Packages:imageDisplay:imageExtension="."+extension
@@ -301,7 +292,6 @@ Function/T ReadGenericROIshortProto(fileName,i0,i1,j0,j1,[extras])
 	String fileName
 	Variable i0,i1,j0,j1
 	String extras
-//	STRUCT extraLoadImageStruct &extras
 	return ""
 End
 
@@ -746,6 +736,102 @@ End
 //		End
 
 // ================================= End of Graph with Buttons =================================
+// =============================================================================================
+
+
+
+// =============================================================================================
+// =================================== Start of roi Structure ==================================
+
+Structure ImageROIstruct	// a ROI on an image
+	int16		empty				// 0 is not empty
+	int32		xLo				// must be >= 0
+	int32		xHi				// must be >= xLo
+	int32		yLo				// must be >= 0
+	int32		yHi				// must be >= yLo
+	int32		Nx					// size of this roi
+	int32		Ny					// computed from yHi-yLo+1
+EndStructure
+//
+Function ImageROIstructInit(roi)
+	STRUCT ImageROIstruct &roi
+	roi.empty = 0
+	roi.xLo = 0	;	roi.xHi = 0
+	roi.yLo = 0	;	roi.yHi = 0
+	roi.Nx = 1	;	roi.Ny = 1
+End
+//
+Function/T ImageROIstruct2str(roi)
+	STRUCT ImageROIstruct &roi
+	String out
+
+	if (roi.empty)
+		out = "ROI is empty"
+	elseif (!ImageROIstructValid(roi))
+		out = "INVALID roi structure"
+	else
+		sprintf out, "ix=[%g, %g] (N=%g),  iy=[%g, %g] (N=%g)\r", roi.xLo,roi.xHi,roi.Nx, roi.yLo,roi.yHi,roi.Ny
+	endif
+	return out
+End
+//
+Function ImageROIstructValid(roi)
+	// check for obvious errors and update Nx,Ny, return 1 if empty, 2 if really invalid
+	STRUCT ImageROIstruct &roi
+
+	if (roi.empty)					// if empty, the values do not matter
+		return 1
+	endif
+
+	Variable err=0
+	if (roi.xLo <= roi.xHi && roi.xLo >= 0)
+		roi.Nx = roi.xHi - roi.xLo + 1
+	else
+		roi.Nx = 0
+		err = 1
+	endif
+
+	if (roi.yLo <= roi.yHi && roi.yLo >= 0)
+		roi.Ny = roi.yHi - roi.yLo + 1
+	else
+		roi.Ny = 0
+		err = 1
+	endif
+
+	return !err
+End
+
+// returns TRUE if roi does NOT fit in the image
+Function roiNOTinImage(image, roi)
+	Wave image				// a 2D array
+	STRUCT ImageROIstruct &roi
+	if (!ImageROIstructValid(roi))
+		return 1				// roi not even valid
+	elseif (roi.xHi >= DimSize(image,0))
+		return 1
+	elseif (roi.yHi >= DimSize(image,1))
+		return 1
+	endif	
+	return 0
+End
+
+//Function aaa()
+//	STRUCT ImageROIstruct roi
+//	initImageROIstruct(roi)
+//	print ImageROIstructValid(roi)
+//	print ImageROIstruct2str(roi)
+//
+//	roi.empty = 1
+//	print ImageROIstructValid(roi)
+//	print ImageROIstruct2str(roi)
+//
+//	roi.xLo = -3
+//	roi.empty = 0
+//	print ImageROIstructValid(roi)
+//	print ImageROIstruct2str(roi)
+//End
+
+// ==================================== End of roi Structure ===================================
 // =============================================================================================
 
 
