@@ -66,7 +66,7 @@ Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz,printIt])
 
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
-	FuncFitMD/Q GMarkers#Gaussian3DFitFunc, W_coef, space3D/W=stdDev/I=1
+	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, space3D/W=stdDev/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
@@ -275,7 +275,7 @@ Function/T XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 
 //	Variable V_FitOptions=2, V_FitError=0, V_FitQuitReason=0		// V_FitOptions=2 means robust fitting
 	Variable V_FitError=0, V_FitQuitReason=0
-	FuncFitMD/Q GMarkers#Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
+	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
@@ -421,7 +421,7 @@ Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets a
 End
 
 
-Static Function/WAVE ExtractSubVolume(volumeAll,Vc,HWx,[HWy,HWz])
+Function/WAVE ExtractSubVolume(volumeAll,Vc,HWx,[HWy,HWz])
 	Wave volumeAll
 	Wave Vc						// point at center of sub-volume (3 vector, scaled coordinates)
 	Variable HWx				// Half Width of sub-volume in units of volumeAll (scaled coordinates)
