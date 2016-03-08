@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.01
+#pragma version = 0.02
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -399,6 +399,42 @@ Static Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	ss = max(-500,ss)
 	return w[0] + w[1]*exp(-ss)
 End
+//Function Gauss3DX(w,xx,yy,zz) : FitFunc
+//	Wave w
+//	Variable xx
+//	Variable yy
+//	Variable zz
+//
+//	//CurveFitDialog/ These comments were created by the Curve Fitting dialog. Altering them will
+//	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
+//	//CurveFitDialog/ Equation:
+//	//CurveFitDialog/ xx -= w[2]	;	yy -= w[3]	;	zz -= w[4]
+//	//CurveFitDialog/ Variable value2 = xx*xx/wxx + yy*yy/wyy + zz*zz/wzz + xx*yy/wxy + xx*zz/wxz + yy*zz/wyz
+//	//CurveFitDialog/ f(xx,yy,zz) = bkg + amp * exp(-value2)
+//	//CurveFitDialog/ End of Equation
+//	//CurveFitDialog/ Independent Variables 3
+//	//CurveFitDialog/ xx
+//	//CurveFitDialog/ yy
+//	//CurveFitDialog/ zz
+//	//CurveFitDialog/ Coefficients 11
+//	//CurveFitDialog/ w[0] = bkg
+//	//CurveFitDialog/ w[1] = amp
+//	//CurveFitDialog/ w[2] = x0
+//	//CurveFitDialog/ w[3] = y0
+//	//CurveFitDialog/ w[4] = z0
+//	//CurveFitDialog/ w[5] = wxx
+//	//CurveFitDialog/ w[6] = wyy
+//	//CurveFitDialog/ w[7] = wzz
+//	//CurveFitDialog/ w[8] = wxy
+//	//CurveFitDialog/ w[9] = wxz
+//	//CurveFitDialog/ w[10] = wyz
+//
+//	xx -= w[2]
+//	yy -= w[3]
+//	zz -= w[4]
+//	Variable value2 = xx*xx/w[5] + yy*yy/w[6] + zz*zz/w[7] + xx*yy/w[8] + xx*zz/w[9] + yy*zz/w[10]
+//	return w[0] + w[1] * exp(-value2)
+//End
 
 
 Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets and for a 3D array
