@@ -4,63 +4,6 @@
 #pragma ModuleName=Stats3D
 
 
-// need to work on ExtractSubVolume, the whole swap thing is not right
-
-
-Static Function/WAVE ExtractSubVolume(volumeAll,Vc,HWx,[HWy,HWz])
-	Wave volumeAll
-	Wave Vc						// point at center of sub-volume (3 vector, scaled coordinates)
-	Variable HWx				// Half Width of sub-volume in units of volumeAll (scaled coordinates)
-	Variable HWy,HWz
-	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy
-	HWz = ParamIsDefault(HWz) || numtype(HWz) || HWz<=0 ? HWx : HWz
-
-	Make/N=3/D/FREE HW = {HWx,HWy,HWz}
-	if (WaveDims(volumeAll)!=3 || numpnts(volumeAll)<2 || numtype(sum(HW)+sum(Vc)) || numpnts(Vc)!=3)
-		return $""
-	endif
-	Make/N=3/D/FREE dxyz=DimDelta(volumeAll,p)
-	Make/N=3/I/FREE ijk = round( (Vc[p] - DimOffset(volumeAll,p)) / DimDelta(volumeAll,p) )
-	Make/N=3/I/FREE Nxyz=DimSize(volumeAll,p)
-	Make/N=3/I/FREE ijkLo, ijkHi
-	ijkLo = limit(round(ijk - HW[p]/DimDelta(volumeAll,p)), 0, Nxyz[p]-1)
-	ijkHi = limit(round(ijk + HW[p]/DimDelta(volumeAll,p)), 0, Nxyz[p]-1)
-	Variable swap
-//	if (ijkLo[0]>ijkHi[0])			// ensure proper order
-//		swap = ijkLo[0]
-//		ijkLo[0] = ijkHi[0]
-//		ijkHi[0] = swap
-//	endif
-//	if (ijkLo[1]>ijkHi[1])
-//		swap = ijkLo[1]
-//		ijkLo[1] = ijkHi[1]
-//		ijkHi[1] = swap
-//	endif
-//	if (ijkLo[2]>ijkHi[2])
-//		swap = ijkLo[2]
-//		ijkLo[2] = ijkHi[2]
-//		ijkHi[2] = swap
-//	endif
-//	ijkLo = max(ijkLo[p],0)
-//	ijkHi = min(ijkHi[p], Nxyz[p]-1)
-	Make/N=3/D/FREE xyz0 = ijkLo[p]*DimDelta(volumeAll,p) + DimOffset(volumeAll,p)
-	Make/N=3/I/FREE Nsub = abs(ijkHi[p] - ijkLo[p] + 1)
-
-	if (WaveMin(Nsub)<1)
-		return $""
-	endif
-	Make/N=(Nsub[0],Nsub[1],Nsub[2])/FREE/D subV=0
-	SetScale/P x xyz0[0],dxyz[0],WaveUnits(volumeAll,0), subV
-	SetScale/P y xyz0[1],dxyz[1],WaveUnits(volumeAll,0), subV
-	SetScale/P z xyz0[2],dxyz[2],WaveUnits(volumeAll,0), subV
-	subV = volumeAll[p+ijkLo[0]][q+ijkLo[1]][r+ijkLo[2]]
-
-	String str, wnote=note(volumeAll)
-	sprintf str, "%d,%d,%d,%d,%d,%d", ijkLo[0],ijkHi[0],ijkLo[1],ijkHi[1],ijkLo[2],ijkHi[2]
-	wnote = ReplaceStringByKey("roi3D",wnote,str,"=")
-	Note/K subV, wnote
-	return subV
-End
 
 Function/T PeakMax3D(vol, [printIt])	// finds max of data in a 3D volume
 	Wave vol
@@ -93,7 +36,7 @@ End
 Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz,printIt])
 	Wave space3D
 	Wave startXYZ						// starting xyz for the fit
-	Variable HWx,HWy,HWz			// half widths dx, dy, dz for the sub volume
+	Variable HWx,HWy,HWz			// starting half widths dx, dy, dz for the fit
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy	// HWy & HWz default to HWx
@@ -107,7 +50,7 @@ Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz,printIt])
 		return ""
 	endif
 
-	Make/N=3/D/FREE HW={HWx,HWy,HWz}			// half widths in x, y, & z for the sub volume
+	Make/N=3/D/FREE HW={HWx,HWy,HWz}			// half widths in x, y, & z for start of fit
 	Duplicate/FREE space3D, stdDev	// this assumes that one count in detector == 1 photon
 
 	// set the starting point for the fit
@@ -475,6 +418,46 @@ Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets a
 		WAVE center = $""
 	endif
 	return center
+End
+
+
+Static Function/WAVE ExtractSubVolume(volumeAll,Vc,HWx,[HWy,HWz])
+	Wave volumeAll
+	Wave Vc						// point at center of sub-volume (3 vector, scaled coordinates)
+	Variable HWx				// Half Width of sub-volume in units of volumeAll (scaled coordinates)
+	Variable HWy,HWz
+	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy
+	HWz = ParamIsDefault(HWz) || numtype(HWz) || HWz<=0 ? HWx : HWz
+
+	Make/N=3/D/FREE HW = {HWx,HWy,HWz}
+	if (WaveDims(volumeAll)!=3 || numpnts(volumeAll)<2 || numtype(sum(HW)+sum(Vc)) || numpnts(Vc)!=3)
+		return $""
+	endif
+	Make/N=3/D/FREE dxyz=DimDelta(volumeAll,p)
+	Make/N=3/I/FREE ijk = round( (Vc[p] - DimOffset(volumeAll,p)) / dxyz[p] )
+	Make/N=3/I/FREE Nxyz=DimSize(volumeAll,p)
+	Make/N=3/I/FREE ijkLo0, ijkHi0, ijkLo,ijkHi
+	ijkLo0 = limit(round(ijk - HW[p]/dxyz[p]), 0, Nxyz[p]-1)		// ijkLo0 goes with first x
+	ijkHi0 = limit(round(ijk + HW[p]/dxyz[p]), 0, Nxyz[p]-1)		// ijkHi0 goes with last x
+	Make/N=3/D/FREE xyz0 = ijkLo0[p]*dxyz[p] + DimOffset(volumeAll,p)
+	ijkLo = min(ijkLo0[p], ijkHi0[p])			// changes when dx is negative
+	ijkHi = max(ijkLo0[p], ijkHi0[p])			// now have ijkLo[p] < ijkHi[p]
+	Make/N=3/I/FREE Nsub = ijkHi[p] - ijkLo[p] + 1
+
+	if (WaveMin(Nsub)<1)
+		return $""
+	endif
+	Make/N=(Nsub[0],Nsub[1],Nsub[2])/FREE/D subV=0
+	SetScale/P x xyz0[0],dxyz[0],WaveUnits(volumeAll,0), subV
+	SetScale/P y xyz0[1],dxyz[1],WaveUnits(volumeAll,0), subV
+	SetScale/P z xyz0[2],dxyz[2],WaveUnits(volumeAll,0), subV
+	subV = volumeAll[p+ijkLo[0]][q+ijkLo[1]][r+ijkLo[2]]
+
+	String str, wnote=note(volumeAll)
+	sprintf str, "%d,%d,%d,%d,%d,%d", ijkLo[0],ijkHi[0],ijkLo[1],ijkHi[1],ijkLo[2],ijkHi[2]
+	wnote = ReplaceStringByKey("roi3D",wnote,str,"=")
+	Note/K subV, wnote
+	return subV
 End
 
 
