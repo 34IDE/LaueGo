@@ -1,13 +1,15 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.02
+#pragma version = 0.03
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
 
 
-Function/T PeakMax3D(vol, [printIt])	// finds max of data in a 3D volume
+Function/T PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
 	Wave vol
+	Variable HW										// HW used for the fit
 	Variable printIt
+	HW = ParamIsDefault(HW) || numtype(HW) || HW<=0 ? NaN : HW
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRtStackInfo(2))==0 : printIt
 	if (!(WaveDims(vol)==3 && numpnts(vol)>0))						// 3D volume array
 		return ""
@@ -16,10 +18,13 @@ Function/T PeakMax3D(vol, [printIt])	// finds max of data in a 3D volume
 	WaveStats/M=1/Q vol
 	Variable maxVal = V_max
 	Make/D/FREE xyzMax={V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
-	Make/N=(3)/D/FREE sizes = (DimSize(vol,p)-1) * DimDelta(vol,p)
 	Make/N=3/I/FREE ijk = round( (xyzMax[p] - DimOffset(vol,p)) / DimDelta(vol,p) )
 	Variable npnt = ijk[2]*DimSize(vol,1)*DimSize(vol,0) + ijk[1]*DimSize(vol,0) + ijk[0]
-	Variable HW = WaveMin(sizes)/2
+	if (numtype(HW) || HW<=0)
+		Make/N=(3)/D/FREE sizes = (DimSize(vol,p)-1) * DimDelta(vol,p)
+		HW = WaveMin(sizes)/2
+	endif
+
 	if (printIt)
 		String name=SelectString(WaveType(vol,2)==1, "", NameOfWave(vol))
 		printf "max = %g   @ %s,  %s[%d][%d][%d],  pnt#=%d\r",maxVal, vec2str(xyzMax,sep=", "), NameOfWave(vol),ijk[0],ijk[1],ijk[2],npnt
@@ -33,10 +38,11 @@ Function/T PeakMax3D(vol, [printIt])	// finds max of data in a 3D volume
 End
 
 
-Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz,printIt])
+Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 	Wave space3D
 	Wave startXYZ						// starting xyz for the fit
 	Variable HWx,HWy,HWz			// starting half widths dx, dy, dz for the fit
+	Wave stdDev							// errors in space3D, standard deviation of each value in space3D
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy	// HWy & HWz default to HWx
@@ -51,7 +57,12 @@ Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz,printIt])
 	endif
 
 	Make/N=3/D/FREE HW={HWx,HWy,HWz}			// half widths in x, y, & z for start of fit
-	Duplicate/FREE space3D, stdDev	// this assumes that one count in detector == 1 photon
+	if (WaveExists(stdDev))
+		Wave errWave = stdDev
+	else
+		Duplicate/FREE space3D, errWave		// this assumes that one count in detector == 1 photon
+		errWave = sqrt(space3D)				// this is shot noise weighting
+	endif
 
 	// set the starting point for the fit
 	Variable maxVal=WaveMax(space3D),minVal=WaveMin(space3D)
@@ -66,7 +77,7 @@ Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz,printIt])
 
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
-	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, space3D/W=stdDev/I=1
+	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, space3D/W=errWave/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
@@ -399,42 +410,46 @@ Static Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	ss = max(-500,ss)
 	return w[0] + w[1]*exp(-ss)
 End
-//Function Gauss3DX(w,xx,yy,zz) : FitFunc
-//	Wave w
-//	Variable xx
-//	Variable yy
-//	Variable zz
-//
-//	//CurveFitDialog/ These comments were created by the Curve Fitting dialog. Altering them will
-//	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
-//	//CurveFitDialog/ Equation:
-//	//CurveFitDialog/ xx -= w[2]	;	yy -= w[3]	;	zz -= w[4]
-//	//CurveFitDialog/ Variable value2 = xx*xx/wxx + yy*yy/wyy + zz*zz/wzz + xx*yy/wxy + xx*zz/wxz + yy*zz/wyz
-//	//CurveFitDialog/ f(xx,yy,zz) = bkg + amp * exp(-value2)
-//	//CurveFitDialog/ End of Equation
-//	//CurveFitDialog/ Independent Variables 3
-//	//CurveFitDialog/ xx
-//	//CurveFitDialog/ yy
-//	//CurveFitDialog/ zz
-//	//CurveFitDialog/ Coefficients 11
-//	//CurveFitDialog/ w[0] = bkg
-//	//CurveFitDialog/ w[1] = amp
-//	//CurveFitDialog/ w[2] = x0
-//	//CurveFitDialog/ w[3] = y0
-//	//CurveFitDialog/ w[4] = z0
-//	//CurveFitDialog/ w[5] = wxx
-//	//CurveFitDialog/ w[6] = wyy
-//	//CurveFitDialog/ w[7] = wzz
-//	//CurveFitDialog/ w[8] = wxy
-//	//CurveFitDialog/ w[9] = wxz
-//	//CurveFitDialog/ w[10] = wyz
-//
-//	xx -= w[2]
-//	yy -= w[3]
-//	zz -= w[4]
-//	Variable value2 = xx*xx/w[5] + yy*yy/w[6] + zz*zz/w[7] + xx*yy/w[8] + xx*zz/w[9] + yy*zz/w[10]
-//	return w[0] + w[1] * exp(-value2)
-//End
+
+
+Static Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
+	Wave w
+	Variable xx
+	Variable yy
+	Variable zz
+
+	//CurveFitDialog/ These comments were created by the Curve Fitting dialog. Altering them will
+	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
+	//CurveFitDialog/ Equation:
+	//CurveFitDialog/ x0 -= w[2]  ;  y0 -= w[3]  ;  z0 -= w[4]
+	//CurveFitDialog/ Variable ss = (x0/xFWHM)^2 + (y0/yFWHM)^2 + (z0/zFWHM)^2 + x0*y0/Cxy + x0*z0/Cxz + y0*z0/Cyz
+	//CurveFitDialog/ f(x0,y0,z0) = bkg + amp * exp(-ss)
+	//CurveFitDialog/ End of Equation
+	//CurveFitDialog/ Independent Variables 3
+	//CurveFitDialog/ x0
+	//CurveFitDialog/ y0
+	//CurveFitDialog/ z0
+	//CurveFitDialog/ Coefficients 11
+	//CurveFitDialog/ w[0] = bkg
+	//CurveFitDialog/ w[1] = amp
+	//CurveFitDialog/ w[2] = x0
+	//CurveFitDialog/ w[3] = xFWHM
+	//CurveFitDialog/ w[4] = y0
+	//CurveFitDialog/ w[5] = yFWHM
+	//CurveFitDialog/ w[6] = z0
+	//CurveFitDialog/ w[7] = zFWHM
+	//CurveFitDialog/ w[8] = Cxy
+	//CurveFitDialog/ w[9] = Cxz
+	//CurveFitDialog/ w[10] = Cyz
+
+	xx -= w[2]
+	yy -= w[3]
+	zz -= w[4]
+	Variable ss = (xx/w[3])^2 + (yy/w[5])^2 + (zz/w[7])^2 + xx*yy/w[8] + xx*zz/w[9] + yy*zz/w[10]
+	ss *= 4*ln(2)
+	ss = max(-500,ss)
+	return w[0] + w[1]*exp(-ss)
+End
 
 
 Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets and for a 3D array
