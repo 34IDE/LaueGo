@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, March 09, 2016" time="11:11:46 AM CST" isoTime="2016-03-09T11:11:46"></written>
+	<written date="Thursday, March 10, 2016" time="12:28:27 PM CST" isoTime="2016-03-10T12:28:27"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>5dc634a1acecbafc8ce50352dd9cee14172bfefb</gitHash>
+	<gitHash>f027ef43c46e14a6d139538f8fbff3913668f850</gitHash>
 	<fileCount>224</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -115,7 +115,7 @@
 	<file version="nan" time="2016-01-26T11:12:02" md5="36bbe0a240f6e8e9cc15eabeafe2a04f" sha256="986987fba55219569afff22b1688d1d75ea304207fdb513763419a5dfa841dff" ext=".xml">materials/standard xtals/TiO2 Rutile.xml</file>
 	<file version="2.85" time="2015-10-12T17:36:07" md5="7df27807f7d67e01d7aedc2d75558b66" sha256="33db027c58c46f3a58e0f6f1d6d178cecd6ee6eed1c62629bc59eb25b2e97221" ext=".ipf">Lattice/StereographicProjection.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:09" md5="f9f6aa5365b9cf0a140799f3e26fb387" sha256="8f619a92c49e68c879f109a3e4c4536a18227c73dfa098e0d5e32b873b258186" ext=".xml">materials/standard xtals/Ni3Al.xml</file>
-	<file version="2.3" time="2016-03-07T11:27:17" md5="838bb242189de96e12dcee2deaf76f03" sha256="b45ab17cd7d33e67126c6182ea3b00c5a9e860a9f86801793404334a85c19016" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.31" time="2016-03-10T11:29:55" md5="233f3356215f223bb5d64f994818c92b" sha256="353304b49405e814dbedddf687307ddd6c90b02d89f79a0a1db9b974fc3e1fb3" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="1.01" time="2014-04-30T10:28:19" md5="7e15359b79fa502b6f6a78c7dfb32a1e" sha256="a0cbe05ee1e3768625356d9a67ad15f1226feb2b2ee91e2f109cdf19e5d576e9" ext=".ipf">Grains/HistogramAxes.ipf</file>
 	<file version="nan" time="2016-02-11T11:22:51" md5="503c9653b72ec792233bdc6e313be059" sha256="178f1ac73d1746d276e19c019451c9d7ce60f465f7eec1b71fa1cf350da8a269" ext=".mtl">materials/mtl files/CoO.mtl</file>
 	<file version="nan" time="2014-03-04T11:53:09" md5="0f132a6036fdba380ef9ead592fbe3d7" sha256="e5d7db3b612bdbf0ce39a9db2ad92180233940d5c0bb8bf00abaa61689760a0f" ext=".txt">geometrys/geometry description.txt</file>
@@ -148,7 +148,7 @@
 	<file version="nan" time="2016-02-17T12:51:46" md5="13c43942af99aba470ecb67d8b5b24cb" sha256="07c0d0ad190bcda47e7200e25ef8962f167dcb148b349183b1d100762ac69ee8" ext=".xml">materials/standard xtals/Fe.xml</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/PilatusTiffs.ipf</file>
 	<file version="nan" time="2016-01-25T12:49:54" md5="d610099f98f99705d65bb0e542a9bca2" sha256="8e8b3a2dac173e7f726f8db11a9a65cc9e00835339f63e4736490d9cae32876f" ext=".xml">materials/standard xtals/Cu.xml</file>
-	<file version="3.96" time="2016-03-03T17:14:37" md5="a8caa2c96d5c66547534d7831e92cc7e" sha256="c8236730434694a54ec370f399bab997ae31ffdb8f5914fb965afacec7c81e22" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="3.97" time="2016-03-10T12:09:29" md5="b32f38858d2d77881af7da2accb84ac5" sha256="2bdfaa5351c6a960fb7b0103aac94871bdb305da5912463a24c57475955b3769" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:18" md5="dea0a34450c3db1ed673c6da40c2b2c6" sha256="0a2f75152d14d91bf6c14fd7776904230bdc7a78579ea5d4d7adbff279faaf7f" ext=".xml">materials/standard xtals/Al.xml</file>
 	<file version="nan" time="2016-02-17T12:54:19" md5="c725af52856df9f1797af8ef1529bc02" sha256="4e86c82136ab4f62f7b4ca73b2acd65428c351002f0044a96637156158e00f25" ext=".xml">materials/standard xtals/IN740.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8318859207bfbd615cd77d47bd5cf7aa" sha256="e37b6ebf3de2f280aed777cfcb0c4a772de3f250302c437335237bcb9ece81e9" ext="">micro/Euler</file>
