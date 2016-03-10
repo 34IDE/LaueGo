@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.15
+#pragma version = 5.16
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -138,6 +138,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.10, allow all thermal parameters to be set, and Uij can be negative too
 //	with version 5.12, can now also get name from _chemical_name_mineral
 //	with version 5.13, can now also get name from _chemical_name_mineral working correctly
+//	with version 5.16, added print_crystalStructStr()
 
 // Rhombohedral Transformation:
 //
@@ -763,6 +764,14 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 End
 
 // ============================= End of Atom Editing ==============================
+
+
+Function print_crystalStructStr(strStruct)	// prints the contents of a crystalStructStr in readable form
+	String strStruct
+	STRUCT crystalStructure xtal					// holds values from strStruct
+	StructGet/S/B=2 xtal, strStruct
+	print_crystalStructure(xtal)
+End
 
 
 Function print_crystalStructure(xtal)			// prints out the value in a crystalStructure
