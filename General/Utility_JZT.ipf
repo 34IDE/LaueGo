@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.96
+#pragma version = 3.97
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1109,10 +1109,11 @@ Function/T ProgressPanelStart(percentName,[stop,showTime,status,wname,part,total
 	endif
 
 	if (WinType(wname)!=7 || strlen(wname)==0)	// passed wname is not a panel, create new one
-		Variable right = stop ? 695 : 630,  bottom=117, new=0
+		Variable top = 87 + 93*mod(CountProgressWindows(),7)
+		Variable right = stop ? 695 : 630,  bottom=top+30, new=0
 		bottom += showTime ? 20 : 0
 		bottom += showStatus ? 20 : 0
-		NewPanel/K=1/W=(330,87,right,bottom)/N=Progress
+		NewPanel/K=1/W=(330,top,right,bottom)/N=Progress
 		wname = S_name									// save the name of the window
 		new = 1
 	endif
@@ -1139,7 +1140,7 @@ Function/T ProgressPanelStart(percentName,[stop,showTime,status,wname,part,total
 		Button stopButton,pos={299,4},size={50,20},title="Break"
 	endif
 
-	Variable top=29
+	top = 29
 	if (showStatus)
 		TitleBox statusTitle,pos={1,top},size={213,16},fSize=12,frame=0,title=status
 		top += 20
@@ -1250,17 +1251,27 @@ Function ProgressPanelNewPart(wname,part,total)	// update part and/or total in t
 	String wname											// window name
 	Variable part,total									// if entered, currently doing part 'part' of 'total' parts, used with wname, part starts at 0
 
-	if (WinType(wname)!=7)							// window not a panel
+	if (WinType(wname)!=7)								// window not a panel
 		return 1
 	endif
 	if (part>=0)											// part is valid, update it
 		SetWindow $wname userdata(part)=num2str(part)
 	endif
 	part = numtype(part) ? 0 : part
-	if (part<total)											// total is valid update it
+	if (part<total)										// total is valid update it
 		SetWindow $wname userdata(total)=num2str(total)
 	endif
 	return 0
+End
+
+Static Function CountProgressWindows()			// returns number of open ProgressWindows
+	String str, wlist=WinList("Progress*",";","WIN:64")
+	Variable i, N
+	for (i=0,N=0; i<ItemsInList(wlist); i+=1)
+		str = GetUserData(StringFromList(i,wlist),"","startTimeSec")
+		N += strlen(str) ? 1 : 0
+	endfor
+	return N
 End
 
 
