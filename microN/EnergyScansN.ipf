@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.30
+#pragma version = 2.31
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -3263,7 +3263,7 @@ Static Function/C thetaRange(geo,image,[maskIN,depth])		// returns the range of 
 End
 
 
-
+#ifdef TRY_ME_OUT
 // find the step size in a coordinate by examining the values
 Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Wave vec
@@ -3273,16 +3273,12 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Variable &dimN
 	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
 
-	Variable last,i, Ndim=1
-	String sortName = UniqueName("vecSort",1,0)
-
-	// first, the step size
-	Duplicate/O vec $sortName
-	Wave vecSort = $sortName
+	// first, get the step size
+	Duplicate/FREE vec vecSort
 	Variable N = numpnts(vecSort)
 	SetScale/P x 0,1,"", vecSort
 
-	vecSort = vecSort[p+1]-vecSort[p]					// make vecSort the differences
+	vecSort = vecSort[p+1]-vecSort[p]			// make vecSort the differences
 	vecSort = abs(vecSort[p])<threshold ? NaN : vecSort[p]
 	Sort vecSort, vecSort
 
@@ -3290,47 +3286,175 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	N = V_npnts
 	Redimension/N=(N) vecSort						// remove all NaN's (small steps) 
 	if (N<1)
-		KillWaves/Z vecSort
 		first = vec[0]									// no steps, just use first point
 		stepSize = 0
 		dimN = 1
 		return 0
 	endif
-	stepSize = vecSort[N/2]							// take the median value (avoids problems with average)
+	stepSize = vecSort[(N-1)/2]					// take the median value (avoids problems with average)
 
 	// round stepSize to 9 significant figures
 	stepSize = (placesOfPrecision(roundSignificant(stepSize,9))<7) ? roundSignificant(stepSize,9) : stepSize
 
-	// second, the starting point
-	Duplicate/O vec $sortName
-	Wave vecSort = $sortName
+	// second, the starting point, the average of all the points within threshold of the lowest
+	Duplicate/FREE vec vecSort
 	SetScale/P x 0,1,"", vecSort
 	Sort vecSort, vecSort
-	i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
-	first = faverage(vecSort,0,i)
+	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
+	first = vecSort(i/2)							// this gives median of the points within threshold of the lowest
+
+	// third, find number of points in "one scan"
+	WaveStats/M=1/Q vec
+	Variable snapBack = 0.1*(V_max-V_min)		// 0.1 of full range is a new scan
+	N = numpnts(vec)
+	Variable tm=0,tn=0, m=0						// tm=# of scan found
+	for (i=1;i<N;i+=1)
+		if (abs(vec[i]-vec[i-1])<threshold)	// this step is a repeat, do not count it
+			continue
+		elseif (abs(vec[i]-vec[i-1])>snapBack)	// this a new scan
+			tm += m+1									// sum of number of points in "a scan"
+			tn += 1										// number of scans found
+			m = 0
+		else												// just another OK step
+			m += 1
+		endif
+	endfor
+	if (m>0)
+		tm += m+1										// sum of number of points in "a scan"
+		tn += 1											// number of scans found
+	endif
+	dimN = round(tm/ tn)
+	return 0
+End
+#else
+// find the step size in a coordinate by examining the values
+Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
+	Wave vec
+	Variable threshold					// a change greater than this is intentional (less is jitter)
+	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
+	Variable &stepSize
+	Variable &dimN
+	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
+
+	// first, get the step size
+	Duplicate/FREE vec vecSort
+	Variable N = numpnts(vecSort)
+	SetScale/P x 0,1,"", vecSort
+
+	vecSort = vecSort[p+1]-vecSort[p]			// make vecSort the differences
+	vecSort = abs(vecSort[p])<threshold ? NaN : vecSort[p]
+	Sort vecSort, vecSort
+
+	WaveStats/Q vecSort
+	N = V_npnts
+	Redimension/N=(N) vecSort						// remove all NaN's (small steps) 
+	if (N<1)
+		first = vec[0]									// no steps, just use first point
+		stepSize = 0
+		dimN = 1
+		return 0
+	endif
+	stepSize = vecSort[(N-1)/2]					// take the median value (avoids problems with average)
+
+	// round stepSize to 9 significant figures
+	stepSize = (placesOfPrecision(roundSignificant(stepSize,9))<7) ? roundSignificant(stepSize,9) : stepSize
+
+	// second, the starting point, the median of all the points within threshold of the lowest
+	Duplicate/FREE vec vecSort
+	SetScale/P x 0,1,"", vecSort
+	Sort vecSort, vecSort
+	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
+	first = vecSort(i/2)							// this gives median of the points within threshold of the lowest
 
 	// third, find number of points in "one scan"
 	N = numpnts(vec)
-	Variable tm=0,tn=0, m=0
+	Variable tm=0,tn=0, m=0						// tm=# of scan found
 	for (i=1;i<N;i+=1)
-		if (abs(vec[i]-vec[i-1])<threshold)				// this step is a repeat, do not count it
+		if (abs(vec[i]-vec[i-1])<threshold)	// this step is a repeat, do not count it
 			continue
-		elseif (abs(vec[i]-vec[i-1]-stepSize)<(abs(stepSize)+threshold))	// this step is the right size
+		elseif (abs(vec[i]-vec[i-1]-stepSize)<(abs(stepSize)+threshold))	// this an OK step
 			m += 1
 		else
-			tm += m+1										// sum of number of points in "a scan"
-			tn += 1											// number of scans found
+			tm += m+1									// sum of number of points in "a scan"
+			tn += 1										// number of scans found
 			m = 0
 		endif
 	endfor
 	if (m>0)
-		tm += m+1											// sum of number of points in "a scan"
-		tn += 1												// number of scans found
+		tm += m+1										// sum of number of points in "a scan"
+		tn += 1											// number of scans found
 	endif
 	dimN = round(tm/ tn)
-	KillWaves/Z vecSort
 	return 0
 End
+#endif
+//// find the step size in a coordinate by examining the values
+//Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
+//	Wave vec
+//	Variable threshold					// a change greater than this is intentional (less is jitter)
+//	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
+//	Variable &stepSize
+//	Variable &dimN
+//	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
+//
+//	Variable last,i, Ndim=1
+//	String sortName = UniqueName("vecSort",1,0)
+//
+//	// first, the step size
+//	Duplicate/O vec $sortName
+//	Wave vecSort = $sortName
+//	Variable N = numpnts(vecSort)
+//	SetScale/P x 0,1,"", vecSort
+//
+//	vecSort = vecSort[p+1]-vecSort[p]					// make vecSort the differences
+//	vecSort = abs(vecSort[p])<threshold ? NaN : vecSort[p]
+//	Sort vecSort, vecSort
+//
+//	WaveStats/Q vecSort
+//	N = V_npnts
+//	Redimension/N=(N) vecSort						// remove all NaN's (small steps) 
+//	if (N<1)
+//		KillWaves/Z vecSort
+//		first = vec[0]									// no steps, just use first point
+//		stepSize = 0
+//		dimN = 1
+//		return 0
+//	endif
+//	stepSize = vecSort[N/2]							// take the median value (avoids problems with average)
+//
+//	// round stepSize to 9 significant figures
+//	stepSize = (placesOfPrecision(roundSignificant(stepSize,9))<7) ? roundSignificant(stepSize,9) : stepSize
+//
+//	// second, the starting point
+//	Duplicate/O vec $sortName
+//	Wave vecSort = $sortName
+//	SetScale/P x 0,1,"", vecSort
+//	Sort vecSort, vecSort
+//	i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
+//	first = faverage(vecSort,0,i)
+//
+//	// third, find number of points in "one scan"
+//	N = numpnts(vec)
+//	Variable tm=0,tn=0, m=0
+//	for (i=1;i<N;i+=1)
+//		if (abs(vec[i]-vec[i-1])<threshold)				// this step is a repeat, do not count it
+//			continue
+//		elseif (abs(vec[i]-vec[i-1]-stepSize)<(abs(stepSize)+threshold))	// this step is the right size
+//			m += 1
+//		else
+//			tm += m+1										// sum of number of points in "a scan"
+//			tn += 1											// number of scans found
+//			m = 0
+//		endif
+//	endfor
+//	if (m>0)
+//		tm += m+1											// sum of number of points in "a scan"
+//		tn += 1												// number of scans found
+//	endif
+//	dimN = round(tm/ tn)
+//	KillWaves/Z vecSort
+//	return 0
+//End
 
 
 
@@ -6128,7 +6252,7 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, doConvex,FilterFunc,roi,printIt])	// does not assume depth in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, doConvex,FilterFunc,roi,autoGo,printIt])	// does not assume depth in image
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
@@ -6139,8 +6263,9 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	STRUCT boundingVolume &Qbox	// OPTIONAL, do not specify both Qbox AND {NQx,NQy,NQz}
 	Variable NQx,NQy,NQz	// OPTIONAL, dmensions of final Qspace3D array
 	Variable doConvex			// if True, make the convex hull
-	String FilterFunc			// OPTIONA.L name of a filter for the image
+	String FilterFunc			// OPTIONAL, name of a filter for the image
 	STRUCT ImageROIstruct &roi
+	Variable autoGo			// OPTIONAL, if true, then do not ask user about Nx,Ny,Nz, just use the auto values
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? NaN : depth
@@ -6150,6 +6275,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	NQz = ParamIsDefault(NQz) || NQz<=0 ? NaN : NQz
 	doConvex = ParamIsDefault(doConvex) || numtype(doConvex) ? 0 : !(!doConvex)
 	FilterFunc = SelectString(ParamIsDefault(FilterFunc),FilterFunc,"")
+	autoGo = ParamIsDefault(autoGo) || numtype(autoGo) ? 0 : !(!autoGo)
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	String extras=""
 	if (!ParamIsDefault(roi))						// an roi was given, check to see if it is empty or invalid
@@ -6172,7 +6298,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		return $""
 	endif
 	String recipLattice=""
-	if (recipSource==0)
+	if (recipSource==1)
 		Make/N=(3,3)/D/FREE recip=(p==q)
 		String indexList=WaveListClass("IndexedPeakList","*","")
 		if (ItemsInList(indexList)==1)
@@ -6184,6 +6310,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			if (V_flag)
 				return $""
 			endif
+			printIt = 1
 			Wave FullPeakIndexed=$indexName
 		endif
 		if (WaveExists(FullPeakIndexed))			// if FullPeakIndexed exists, get the indexed reciprocal lattice from it
@@ -6204,6 +6331,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 				if (V_flag)
 					return $""
 				endif
+				printIt = 1
 			else
 				item = ""
 			endif
@@ -6211,9 +6339,13 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 				recipLattice = item +"="+ StringByKey(item,indexNote,"=")
 			endif
 		endif
-	elseif (recipSource==1)
-		DoAlert 0,"Not yet implemented use of measured reciprocal lattice"
-		return $""
+	elseif (recipSource==0)
+		recipLattice = ""
+		if (printIt)
+			print "No reciprocal lattice given, just using beam line coordinates"
+		endif
+//		DoAlert 0,"Not yet implemented use of measured reciprocal lattice"
+//		return $""
 	else
 		DoAlert 0,"recipSource must be only 0 or 1"
 		return $""
@@ -6279,11 +6411,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		else
 			Wave dark = $""
 		endif
+		printIt = 1
 	endif
 
 	String filterFuncList=FunctionList("*_ImageFilter",";","KIND:2,NPARAMS:1,VALTYPE:1")
 	filterFuncList = RemoveFromList("Proto_ImageFilter",filterFuncList)
-	if (strlen(FilterFunc)==0 && ItemsInList(filterFuncList))
+	if (ParamIsDefault(FilterFunc) && strlen(FilterFunc)==0 && ItemsInList(filterFuncList))
 		Prompt FilterFunc,"Filter Function for each image",popup, "-none-;"+filterFuncList
 		DoPrompt "Filter for Image",FilterFunc
 		if (V_flag)
@@ -6433,7 +6566,9 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		V_avg = roundSignificant(V_avg,3)
 		normalization = V_avg / currents						// scale to value of average current
 		useNormalization = 1
-		printf "Normalizing by the beam current, scaled to %g mA\r",V_avg
+		if (printIt)
+			printf "Normalizing by the beam current, scaled to %g mA\r",V_avg
+		endif
 	endif
 	WaveClear currents
 	Variable seconds = stopMSTimer(-2)/1e6 - timer0
@@ -6447,18 +6582,22 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 
 	Variable dkeV,NkeV, off=0
 	FindScalingFromVec(keV_FillQvsPositions,2e-4,off,dkeV,NkeV)		// get step size and number of points for the energy scan
+	dkeV = abs(dkeV)													// sign is not used
 
 	if (printIt || strlen(GetRTStackInfo(2))==0)			// if called from command line, always do this
 		// correct the scan ranges as necessary
 		Prompt depth,"depth to use (µm)"
-		Prompt NkeV,"# of points (NOT intervals) in E "
+		Prompt dkeV,"step size in E (eV)"
+//		Prompt NkeV,"# of points (NOT intervals) in E "
 		Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
 		doConvex += 1
-		DoPrompt "scan sizes",NkeV,depth,doConvex
+		dkeV *= 1000
+		DoPrompt "scan sizes",dkeV,depth,doConvex
 		if (V_flag)
 			DoWindow/K $progressWin								// done with status window
 			return $""
 		endif
+		dkeV = abs(dkeV/1000)										// sign is not used
 		doConvex -= 1
 	endif
 	depth = numtype(depth) ? 0 : depth							// 0 is better than NaN
@@ -6486,12 +6625,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	py = round((starty+endy)/2)									// approximate full chip pixel position in center or the image
 	px = round((startx+endx)/2)
 	Variable dQpixel = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+groupx,py+groupy,$"")))*Elo/hc
-	Variable dQenergy = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * abs(dkeV)/hc
+	Variable dQenergy = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * dkeV/hc
 	Variable dQ = max(dQpixel, dQenergy)						// choose larger of energy scan or pixel size
 
 	if (printIt)
-		Variable eVrange = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
-		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],eVrange
+//		Variable eVrange = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
+		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],dkeV
 		printf "    %s Scan\r",SelectString(mono,"Undulator","Monochromator")
 	endif
 
@@ -6565,13 +6704,14 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 	Qask = numtype(NQx+NQy+NQz) ? Qask : 0					// do not ask if NQx,NQy,NQz were given
 	if (Qask)															// Qbox NOT passed, ask for Q range
-		printIt = 1
 		dQ *= 4
 		NQx = floor((QxHi-QxLo)/dQ)
 		NQy = floor((QyHi-QyLo)/dQ)
 		NQz = floor((QzHi-QzLo)/dQ)
 		Variable NQ = NQx*NQy*NQz
-		printf "NQ = {%g, %g, %g},   (NQx*NQy*NQz) = %g\r",NQ, NQx,NQy,NQz
+//		if (printIt)
+//			printf "NQ = {%g, %g, %g},   (NQx*NQy*NQz) = %g\r",NQx,NQy,NQz, NQ
+//		endif
 		Variable Ntot=NQx*NQy*NQz
 		if (Ntot>1e7)													// Q volume has too many voxels, coarsen so only 1e7 voxels
 			Variable factor = 215/(Ntot^0.333333)				// 215 is about 3rd root of 1e7
@@ -6581,17 +6721,23 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			Ntot = NQx*NQy*NQz
 		endif
 
-		Prompt NQx,"no. of Qx points in 3D Q histogram"
-		Prompt NQy,"no. of Qy points in 3D Q histogram"
-		Prompt NQz,"no. of Qz points in 3D Q histogram"
-		DoPrompt "3D Q histogram size",NQx, NQy, NQz
-		if (V_flag)
-			DoWindow/K $progressWin								// done with status window
-			return $""
+		if (!autoGo)
+			Prompt NQx,"no. of Qx points in 3D Q histogram"
+			Prompt NQy,"no. of Qy points in 3D Q histogram"
+			Prompt NQz,"no. of Qz points in 3D Q histogram"
+			DoPrompt "3D Q histogram size",NQx, NQy, NQz
+			if (V_flag)
+				DoWindow/K $progressWin
+				return $""
+			endif
+			printIt = 1
 		endif
 		NQx = round(NQx)
 		NQy = round(NQy)
 		NQz = round(NQz)
+		if (printIt)
+			printf "NQ = {%g, %g, %g},   (NQx*NQy*NQz) = %g\r",NQx,NQy,NQz, NQ
+		endif
 	elseif (numtype(NQx+NQy+NQz))								// Qbox was passed, and NQx,NQy,NQz not given
 		if (QxLo > Qbox.xhi || QxHi < Qbox.xlo || QyLo > Qbox.yhi || QyHi < Qbox.ylo || QzLo > Qbox.zhi || QzHi < Qbox.zlo)
 			print "Requested Q-volume does not contain any data"
@@ -6942,9 +7088,12 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	Make/N=(3,Ni,Nj)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
 
 	// for each pixel in image, compute sin(theta) and save it in Qvecs1keV[][]
-	MatrixOP/FREE recipInv = Inv(recip)
-	MatrixOP/FREE diff = sum(magsqr(recipInv - recip^t))
-	Variable useMat = diff[0]>1e-9						// only use recip when it is not an identity matrix
+	Variable useMat = 0										// only use recip when it is not an identity matrix
+	if (WaveExists(recip))
+		MatrixOP/FREE recipInv = Inv(recip)
+		MatrixOP/FREE diff = sum(magsqr(recipInv - recip^t))
+		useMat = diff[0]>1e-9					// only use recip when it is not an identity matrix
+	endif
 	Make/N=3/D/FREE qhat, qij, hkl
 
 	Make/N=(N,2)/I/FREE pxpy								// all the pixels in the image, these will be un-binned & zero based
