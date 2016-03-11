@@ -862,7 +862,7 @@ ThreadSafe Function/C q2pixel(d,qvec,[depth])	// returns pixel position as a com
 	STRUCT detectorGeometry &d
 	Wave qvec										// qvec need not be normalized
 	Variable depth									// sample depth measured along the beam
-	depth = ParamIsDefault(depth) ? 0 : depth		// default is 0, the origin
+	depth = ParamIsDefault(depth) ? NaN : depth	// default is NaN, XYZ2pixel() will handle this properly
 
 	Make/N=3/D/FREE kout, qhat=qvec, ki={0,0,1}	// ki = geo.ki[p],  incident beam direction
 	normalize(qhat)
@@ -875,11 +875,7 @@ ThreadSafe Function/C q2pixel(d,qvec,[depth])	// returns pixel position as a com
 	kout = qhat*qLen + ki						// kf - ki = q
 
 	Variable px,py									// final pixel position, full chip unbinned 0 based pixels
-	if (ParamIsDefault(depth))
-		XYZ2pixel(d,kout,px,py)
-	else
-		XYZ2pixel(d,kout,px,py,depth=depth)
-	endif
+	XYZ2pixel(d,kout,px,py,depth=depth)
 
 	return cmplx(px,py)
 End
@@ -959,7 +955,7 @@ ThreadSafe Function pixel2q(d,px,py,qhat,[depth])	// returns theta (rad)
 
 	Make/N=3/D/FREE kout ,ki={0,0,1}		//	ki = geo.ki[p],  incident beam direction
 	pixel2XYZ(d,px,py,kout)					// kout is in direction of pixel in beam line coords
-	if (!ParamIsDefault(depth))				// a depth was passed, offset the sample position by depth*ki[]
+	if (!ParamIsDefault(depth) && numtype(depth)==0)	// a depth was passed, offset the sample position by depth*ki[]
 		kout -= depth*ki							// koutDepth = d*ki + koutZero
 	endif
 	normalize(kout)

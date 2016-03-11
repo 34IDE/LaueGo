@@ -3223,7 +3223,7 @@ Static Function/C thetaRange(geo,image,[maskIN,depth])		// returns the range of 
 	groupx = NumberByKey("groupx", wnote,"=")
 	groupy = NumberByKey("groupy", wnote,"=")
 	depth = numtype(depth) ? NumberByKey("depth", wnote,"=") : depth	// if depth not passed, try wavenote
-	depth = numtype(depth) ? 0 : depth
+//	depth = numtype(depth) ? 0 : depth
 	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
 	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
 	if (!(dNum>=0 && dNum<=2))

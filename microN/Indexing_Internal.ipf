@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.19
+#pragma version = 0.20
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2472,7 +2472,7 @@ Static Function/WAVE MakeZoneLinesForGraph(d,axes,[dAngle,depth])
 	Variable dAngle			// angular step size along lines (degree)
 	Variable depth				// depth of sample (rarely if ever used), probably 0
 	dAngle = ParamIsDefault(dAngle) || numtype(dAngle) || dAngle<0 ? NaN : dAngle
-	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+	depth = ParamIsDefault(depth) ? NaN : depth
 	if (!WaveExists(axes))
 		return $""
 	endif
@@ -2823,7 +2823,6 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable depth = NumberByKey("depth",wnotePeak,"="), i
-	depth = numtype(depth) ? 0 : depth
 
 	Make/N=(N0,2)/D/FREE pxpy
 	pxpy[][0] = (startx-FIRST_PIXEL) + groupx*FullPeakList[p][0] + (groupx-1)/2		// change to un-binned pixels
@@ -2858,7 +2857,6 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 
 		N1 = min(N1,maxSpots-N)							// ensure that N1 fits in what is left, can add at most maxSpots-N
 		Redimension/N=(N1,2) pxpy
@@ -2896,7 +2894,6 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 
 		N2 = min(N2,maxSpots-N)							// ensure that N2 fits in what is left, can add at most maxSpots-N
 		Redimension/N=(N2,2) pxpy
@@ -3027,7 +3024,6 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable depth = NumberByKey("depth",wnotePeak,"=")
-	depth = numtype(depth) ? 0 : depth
 
 	Variable i, px,py
 	for (i=0,N=0;i<min(maxSpots,N0);i+=1)
@@ -3054,7 +3050,6 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 		for (i=0; i<N1 && N<maxSpots; i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -3080,7 +3075,6 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 		for (i=0; i<N2 && N<maxSpots; i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based

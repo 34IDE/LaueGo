@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.81
+#pragma version = 4.82
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -312,6 +312,10 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		return $""
 	endif
 	String wnote = note(FullPeakIndexed)
+	Variable depth=NumberByKey("depth",note(FullPeakList0),"=")
+	if (numtype(depth)==0)									// transfer valid depth to FullPeakIndexed wave note
+		Note/K FullPeakIndexed, ReplaceNumberByKey("depth",wnote,depth,"=")
+	endif
 	Variable NpatternsFound = NumberByKey("NpatternsFound",wnote,"=")
 	Variable Nindexed = NumberByKey("Nindexed",wnote,"=")
 	Variable NiData = NumberByKey("NiData",wnote,"=")
@@ -500,7 +504,6 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 	Variable angleTolerance = NumberByKey("angleTolerance",indexNote,"=")
 	angleTolerance = 2*( numtype(angleTolerance) ? 0.1 : angleTolerance )
 	Variable depth = NumberByKey("depth",indexNote,"=")
-	depth = numtype(depth) ? 0 : depth
 
 	if (perfect)
 		Make/N=3/D/FREE axis={-2.2256407716336,-0.884037203122317,-0.38914203759791}	// length is radians
@@ -1066,7 +1069,6 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		Variable pxUnb = (startx-FIRST_PIXEL) + groupx*px + (groupx-1)/2	// change to un-binned pixels
 		Variable pyUnb = (starty-FIRST_PIXEL) + groupy*py + (groupy-1)/2	// pixels are still zero based
 		Variable depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 		if (numtype(keV) || keV<=0)		// try to get the energy
 			if (StringMatch(StringByKey("MonoMode",wnote,"="),"monochromatic"))	// mono mode, try to get keV from wnote
 				keV = NumberByKey("keV",wnote,"=")
@@ -1326,7 +1328,7 @@ Function AddMissingReflections(FullPeakIndexed,[pattern,detector])	// calculate 
 
 	String gName=WinName(0,1)					// name of top graph
 	Wave image = ImageNameToWaveRef(gName, StringFromLIst(0,ImageNameList(gName,";")) )
-	pattern = ParamIsDefault(pattern) ? NaN : pattern
+	pattern = ParamIsDefault(pattern) || numtype(pattern) || pattern<0 ? NaN : pattern
 	if (!(pattern>=0))
 		pattern = NumberByKey("patternNum",GetUserData(gName,"","Indexing"),"=")
 	endif
@@ -1423,7 +1425,7 @@ Static Function/T CalcMissingReflections(FullPeakIndexed,roi,xtal,keVmax,[patter
 	Variable keVmax
 	Variable pattern									// defaults to 0
 	Variable detector									// defaults to 0, probably never use this
-	pattern = ParamIsDefault(pattern) ? 0 : round(pattern)
+	pattern = ParamIsDefault(pattern) || numtype(pattern) ? 0 : round(pattern)
 	detector = ParamIsDefault(detector) ? 0 : round(detector)
 	if (!(pattern>=0) || !(detector>=0) || !WaveInClass(FullPeakIndexed,"IndexedPeakList*"))
 		return ""
@@ -1434,10 +1436,7 @@ Static Function/T CalcMissingReflections(FullPeakIndexed,roi,xtal,keVmax,[patter
 		return ""
 	endif
 
-	Make/N=(3,3)/FREE/D recip=NaN
-	recip[0][0]=xtal.as0;	recip[0][1]=xtal.bs0;	recip[0][2]=xtal.cs0
-	recip[1][0]=xtal.as1;	recip[1][1]=xtal.bs1;	recip[1][2]=xtal.cs1
-	recip[2][0]=xtal.as2;	recip[2][1]=xtal.bs2;	recip[2][2]=xtal.cs2
+	Wave recip = recipFrom_xtal(xtal)			// returns a FREE wave with reciprocal lattice
 
 	STRUCT microGeometry g	
 	FillGeometryStructDefault(g)					//fill the geometry structure with current values
@@ -1448,7 +1447,6 @@ Static Function/T CalcMissingReflections(FullPeakIndexed,roi,xtal,keVmax,[patter
 	xhi = (roi.endx-(roi.startx-FIRST_PIXEL)-(roi.groupx-1)/2)/roi.groupx
 	yhi = (roi.endy-(roi.starty-FIRST_PIXEL)-(roi.groupy-1)/2)/roi.groupy
 	Variable depth = NumberByKey("depth",note(FullPeakIndexed),"=")
-	depth = numtype(depth) ? 0 : depth
 
 	// find Qvector to center of roi, and max cone angle
 	Variable px=(roi.startx+roi.endx)/2, py=(roi.starty+roi.endy)/2
@@ -1533,9 +1531,13 @@ Static Function/T CalcMissingReflections(FullPeakIndexed,roi,xtal,keVmax,[patter
 	if (!ParamIsDefault(detector))
 		noteStr=ReplaceNumberByKey("detectorNum",noteStr,detector,"=")
 	endif
+	if (numtype(depth)==0)
+		noteStr=ReplaceNumberByKey("depth",noteStr,depth,"=")
+	endif
 	str = ReplaceString(";",xtal.desc, "_")
 	str = ReplaceString("=",xtal.desc, "_")
 	noteStr=ReplaceStringByKey("xtalDesc", noteStr, str,"=")
+	noteStr=ReplaceStringByKey("recip", noteStr, encodeMatAsStr(recip),"=")
 	Note/K Missing, noteStr
 
 	Make/N=3/FREE/D hkli,hklt
@@ -2177,7 +2179,6 @@ Function/WAVE runIndexingEulerCommand(args)
 	endif
 	return readIndexFile(indexFile,"EulerCalcFolder")	// read an index file and create an array to hold the results, return array name
 End
-//
 //
 // 
 Static Function/WAVE readIndexFile(indexFile,path)
@@ -4513,7 +4514,6 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable depth = NumberByKey("depth",wnote,"=")
-	depth = numtype(depth) ? 0 : depth
 
 	Variable i, px,py
 	for (i=0,N=0;i<N0;i+=1)
@@ -4539,7 +4539,6 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 		for (i=0;i<N1;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -4564,7 +4563,6 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
-		depth = numtype(depth) ? 0 : depth
 		for (i=0;i<N2;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -4588,7 +4586,6 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	depth = NumberByKey("depth",wnote,"=")
-	depth = numtype(depth) ? 0 : depth
 
 	Variable refNum
 	Open/C="R*ch"/P=$pathName/T="TEXT" refNum as fname
@@ -5562,7 +5559,6 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	depth = NumberByKey("depth",wnote,"=")
-	depth = numtype(depth) ? 0 : depth
 	px = (startx-FIRST_PIXEL) + groupx*px0 + (groupx-1)/2		// change to un-binned pixels
 	py = (starty-FIRST_PIXEL) + groupy*py0 + (groupy-1)/2		// pixels are still zero based
 	pixel2q(geo.d[dNum],px,py,qhat0,depth=depth)						// in Beam LIne Coord system
@@ -5578,7 +5574,6 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	depth = NumberByKey("depth",wnote,"=")
-	depth = numtype(depth) ? 0 : depth
 	px = (startx-FIRST_PIXEL) + groupx*px1 + (groupx-1)/2		// change to un-binned pixels
 	py = (starty-FIRST_PIXEL) + groupy*py1 + (groupy-1)/2		// pixels are still zero based
 	pixel2q(geo.d[dNum],px,py,qhat1,depth=depth)						// in Beam Line Coord system
@@ -7128,7 +7123,6 @@ Static Function/WAVE FullPeakList2Qwave(FullPeakList) // convert fitted peaks to
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable depth = NumberByKey("depth",wnote,"=")
-	depth = numtype(depth) ? 0 : depth
 
 	Variable i, m, px,py
 	for (i=0,m=0;i<N;i+=1)
@@ -7310,7 +7304,6 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetector
 	Variable startx=NumberByKey("startx",wnote,"="), endx=NumberByKey("endx",wnote,"=")
 	Variable starty=NumberByKey("starty",wnote,"="), endy=NumberByKey("endy",wnote,"=")
 	Variable depth = NumberByKey("depth",wnote,"=")
-	depth = numtype(depth) ? 0 : depth
 
 	Variable sufNormal=NaN
 	if (stringmatch(centerType,"Surface*") || numtype(startx+endx+starty+endy))

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.88
+#pragma version=1.89
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -183,7 +183,6 @@ Static Function xmlPixelinfoForMovies(FullFileName,imageName,waveXY)		// returns
 
 	Variable px,py,i, dnum=detectorNumFromID(xmlTagContents("detectorID",step))
 	Variable depth=str2num(xmlTagContents("depth",step))
-	depth = numtype(depth) ? 0 : depth
 	String sROI=XMLattibutes2KeyList("ROI",step)
 	Variable startx=NumberByKey("startx",sROI,"=")
 	Variable starty=NumberByKey("starty",sROI,"=")
@@ -5219,7 +5218,6 @@ Static Function FillStepStructure(step,FullPeakIndex)
 	step.Zsample = NumberByKey("Z1",wnote,"=")
 	Variable depth = NumberByKey("depth",wnote,"=")
 	step.depth = depth
-	depth = numtype(depth) ? 0 : depth			// use this later when calculating Qxyz
 	str = StringByKey("monoMode",wnote,"=")
 	step.monoMode = str
 	if (strsearch(str,"white",0,2)==0)
