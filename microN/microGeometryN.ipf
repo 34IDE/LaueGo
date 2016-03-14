@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.86
+#pragma version = 1.88
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -907,7 +907,15 @@ ThreadSafe Function/WAVE pixel2qVEC(d,pxpy,[depth,DeltaPixelCorrect])	// returns
 		MatrixOP/FREE/O kf = NormalizeRows(kf - rowRepeat(depthVec,N))	// kf(depth) = d*ki + kf(depth=0)
 	endif
 
-	MatrixOP/FREE qhat = NormalizeRows(kf - rowRepeat(ki,N))									// qhat bisects kf and -ki
+	if (N==1)
+		Make/N=3/D/FREE qhat
+		Redimension/N=3 kf
+		qhat = kf - ki
+		normalize(qhat)
+		Redimension/N=(1,3) qhat
+	else
+		MatrixOP/FREE qhat = NormalizeRows(kf - rowRepeat(ki,N))									// qhat bisects kf and -ki
+	endif
 	WaveClear ki,kf, depthVec
 	return qhat										// q-vectors in beam line coords
 End
@@ -919,6 +927,15 @@ ThreadSafe Function/WAVE pixel2XYZVEC(d,pxpy,[DeltaPixelCorrect])	// convert pix
 	Wave DeltaPixelCorrect			// contains optional pixel corrections dimensions are [N][2]
 
 	Variable N=DimSize(pxpy,0), Nx=d.Nx, Ny=d.Ny
+	if (N<1)
+		return $""
+	elseif (N==1)
+		Make/N=(3)/FREE xyz				// array of 3-vector to receive the result, position in beam line coords (mm)
+		pixel2XYZ(d,pxpy[0][0],pxpy[0][1],xyz)	// convert pixel position to the beam line coordinate system
+		Redimension/N=(N,3) xyz				// array of 3-vector to receive the result, position in beam line coords (mm)
+		return xyz
+	endif
+
 	Variable ixc=(Nx-1)/2,  iyc=(Ny-1)/2		// center of detector (pixels)
 
 	Make/N=3/D/FREE Pw, dxyz, ixyzc={ixc,iyc,0}
