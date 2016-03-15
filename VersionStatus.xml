@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, March 15, 2016" time="04:08:50 PM CDT" isoTime="2016-03-15T16:08:50"></written>
+	<written date="Tuesday, March 15, 2016" time="05:27:39 PM CDT" isoTime="2016-03-15T17:27:39"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>1fbd24fc75042dd7fe35e0c40a05f06e2167f476</gitHash>
+	<gitHash>808d81c169bd8c7e29f35bac4b550f43a250dbd9</gitHash>
 	<fileCount>225</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -202,7 +202,7 @@
 	<file version="nan" time="2014-10-30T13:09:45" md5="534339af256eb873c39304c8cc593eff" sha256="6060302a5225a5473a5c948b8d9cb756136a55a4b1b2c1f91e3484c8a73d9e87" ext=".mtl">materials/mtl files/water.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" sha256="70f592f0217679888c33725f784e1ba49a98fe79c4672b0c7b49cc8e571f03ec" ext="">micro/indexAll_i386</file>
 	<file version="nan" time="2016-03-03T14:40:29" md5="60bb072049b4250fe12f9252d10e3f5c" sha256="2d016691e03456661877799efd0dc96fb0f055e276b3e9b3a6af8c028cadcbcc" ext=".rtf">materials/structure xml desctiption.rtf</file>
-	<file version="1.7" time="2014-04-30T10:24:17" md5="ed03c9cd4579b0431e8c504bd8afe3a6" sha256="75832dd215e153ae7c49095e4f10a58be19c89f57acb6555fa3da07e2bcaa0a3" ext=".ipf">APS/epics.ipf</file>
+	<file version="1.8" time="2016-03-15T17:20:10" md5="d43c9a0d0744682bbdf9c53afab53a9f" sha256="6cf7032b6b3bda1cad742207b0815a4d9c314670d15420435c6f64703344ea38" ext=".ipf">APS/epics.ipf</file>
 	<file version="nan" time="2014-10-30T13:10:03" md5="f8ad18774e169a20fef847e88612a0b3" sha256="f2b4ec7bad2d5bd41607f549ba1cf976f44b76b12ab3db5b358ae42a3a1fa4a9" ext=".mtl">materials/mtl files/LiF.mtl</file>
 	<file version="2.07" time="2016-03-07T11:27:17" md5="dbe0706506d982518d5d8c4b3f6ebe20" sha256="83efc5053db56743d886d1d4d0c2de69ba482019b9f3633d6075e2021b077c90" ext=".ipf">General/ImageDisplayScaling.ipf</file>
 	<file version="2.04" time="2013-10-28T11:28:48" md5="7937e08585179b84a3ca9d1d53c2eca7" sha256="5f3915e8e7e16ae19609158b4716ffa27366b68fdf159e3ce6d2dc284fd9f040" ext=".ipf">General/ColorNames.ipf</file>
