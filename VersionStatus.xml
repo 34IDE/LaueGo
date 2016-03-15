@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, March 15, 2016" time="09:36:15 AM CDT" isoTime="2016-03-15T09:36:15"></written>
+	<written date="Tuesday, March 15, 2016" time="10:35:18 AM CDT" isoTime="2016-03-15T10:35:18"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>4713aa4019693b09c4f3f6c1dc452d4aea98029b</gitHash>
+	<gitHash>eda3bbbaf277ac2ca63801a02f3c9b09e227f772</gitHash>
 	<fileCount>225</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -42,7 +42,7 @@
 	<file version="nan" time="2014-10-30T13:09:49" md5="2cfb4947d5ae60c5c895d35ae3e9013c" sha256="0d3c79af3765f1b651bb3e4340999d3824968efa07d868a961a993650f3e0aa9" ext=".mtl">materials/mtl files/SrTiO3.mtl</file>
 	<file version="nan" time="2016-01-25T12:51:32" md5="0f83ee7c2a5abc30a1b0217a0fbd5957" sha256="f245ff4952fd93e74eec689489ae98e6bc56e776112b1bcb89de1a226d0803d5" ext=".xml">materials/standard xtals/FeO.xml</file>
 	<file version="nan" time="2016-02-19T11:52:54" md5="c13fe4e452f2d1f3cb7cfbfdefb9b27f" sha256="830f19e4c65fc47ea97a3a2ade426b9575dcd85adf6eeb6686a96e6441b68848" ext=".xml">General/data/elementData.xml</file>
-	<file version="1.89" time="2016-03-11T10:30:40" md5="9f372a35f02bd2ce4e12189717952683" sha256="7c6b6db19d1b51ebc2d3334b63e190c7da9130e00f15b8119db7a849db6d4f96" ext=".ipf">microN/xmlMultiIndex.ipf</file>
+	<file version="1.9" time="2016-03-15T09:48:38" md5="2dcc61dfdd20e8013d50e826f7dc87df" sha256="1bfbe962e489debb8fe39d0b827addc7133d8cf2d134ccedbbfad05bbd40957b" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" sha256="0b6abd4c56e4c6d47569bf63e059ba6eed35847565e373287820bb4eb31b5323" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="nan" time="2014-10-30T13:10:29" md5="366332e943ad5e1f37edd6b38fd973e3" sha256="0b8315f12a94090594332577522e1117bb66d140f14ff4f2120b76bda2dd771e" ext=".mtl">materials/mtl files/CaF2.mtl</file>
 	<file version="nan" time="2016-01-25T13:06:32" md5="2d17dce485816c42417bf34658be39f1" sha256="c903992eb47deacdb64ade5a60b1e9fe80d4f7c967287b1aac5fc4fb799ad79f" ext=".xml">materials/standard xtals/VO2_rutile.xml</file>
