@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.31
+#pragma version = 3.32
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.95
@@ -8,6 +8,7 @@
 #if (IgorVersion()<7)
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
+	JZTgeneral#PeriodicCheckLaueGoVersion()
 	if(exists("NewGizmo")==4)			// If the Gizmo XOP is available, alwalys put in this menu item.
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpSize,\"Square Up Gizmo\", \"SquareUpGizmo(\\\"\\\")\"}"
 	endif
@@ -16,6 +17,11 @@ End
 #else
 Menu "Gizmo"
 	"Square Up Gizmo", SquareUpGizmo("")
+End
+Static Function IgorStartOrNewHook(IgorApplicationNameStr)
+	String IgorApplicationNameStr
+	JZTgeneral#PeriodicCheckLaueGoVersion()
+	return 0
 End
 #endif
 
@@ -169,7 +175,8 @@ Menu "Help"
 	"-"
 	SubMenu "LaueGo"
 		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
-		"   LaueGo Version Info Deep Check...", /Q, DeepCheckActualFiles("")
+		"   LaueGo Version Info Deep Check...", /Q, JZTgeneral#DeepCheckActualFiles("")
+		"   Schedule Regular Update Checks...", JZTgeneral#SetPeriodicCheckLaueGoVersion(NaN,printIt=1)
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Roman"
@@ -185,7 +192,8 @@ Menu "Help"
 	"-"
 	SubMenu "LaueGo"
 		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
-		"   LaueGo Version Info Deep Check...", /Q, DeepCheckActualFiles("")
+		"   LaueGo Version Info Deep Check...", /Q, JZTgeneral#DeepCheckActualFiles("")
+		"   Schedule Regular Update Checks...", JZTgeneral#SetPeriodicCheckLaueGoVersion(NaN,printIt=1)
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Characters"
@@ -228,55 +236,58 @@ Function BrowseHelpFile(urlStr)
 End
 
 
+Static Structure LaueGoVersion2Struct
+	int16		valid				// all are valid
+	int16		days				// how freqently to auto-chceck for updates (use <0 to suppress checking)
+	int16		match				// disk matches web (True or False)
+	double	lastChecked		// epoch of last check
+	STRUCT LaueGoVersionStruct disk
+	STRUCT LaueGoVersionStruct web
+EndStructure
+//
+Static Structure LaueGoVersionStruct
+	int16		valid				// values are valid
+	double	epoch				// the Igor epoch (seconds)
+	int32		count				// number of files
+	char		hash[40]			// python hash from VersionStatus.xml
+EndStructure
+//
 Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
-	Variable alert			// also put up the alert dialog
+	Variable alert								// also put up the alert dialog
 
-	String thisVers = VersionStatusFromDisk("")		// the entire VersionStatus.xml
-	thisVers = VSbuf2infoStr(thisVers)
-	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)+"VersionStatus.xml"
-	thisVers = ReplaceStringByKey("VersionStatus",thisVers,VersionStatusPath,"=")
-
-	if (strlen(thisVers)<1)
+	STRUCT LaueGoVersion2Struct ss
+	FillLaueGoVersionStructUpdate(ss)	// get basic version info from local file and web
+	if (!(ss.valid))
 		String str
 		sprintf str, "ERROR -- Could not find VersionStatus.xml"
 		printf "\r  "+str+"\r"
 		DoAlert 0, str
 	endif
-	String dateStr, timeStr, out, thisHash, latestVers, latestHash
-	Variable fileCount, thisEpoch, latestEpoch
-	dateStr = StringByKey("date",thisVers,"=")
-	timeStr = StringByKey("time",thisVers,"=")
-	fileCount = NumberByKey("fileCount",thisVers,"=")
-	thisEpoch = NumberByKey("epoch",thisVers,"=")
-	thisHash = StringByKey("gitHash",thisVers,"=")
+	String diskHash = ss.disk.hash
+	String webHash = ss.web.hash
 
-	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files,  commit %s\r",dateStr,timeStr,fileCount,thisHash[0,6]
-	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
-	out = str
+	String dateStr = Secs2Date(ss.disk.epoch,1)
+	String timeStr = Secs2Time(ss.disk.epoch,1)
+	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files,  commit %s\r",dateStr,timeStr,ss.disk.count,diskHash[0,6]
+	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",ss.disk.count,dateStr,timeStr
+	String out = str
 
-	latestVers = VersionStatusFromWeb()			// the entire VersionStatus.xml
-	latestVers = VSbuf2infoStr(latestVers)
-	latestVers = ReplaceStringByKey("VersionStatus",latestVers,"Web","=")
-	latestEpoch = NumberByKey("epoch",latestVers,"=")
-	latestHash = StringByKey("gitHash",latestVers,"=")
-
-	if (strlen(latestVers)<1)
-		print "\r  Unable to find most recent version info from Web"
-		out += "\r  Unable to find most recent version info from Web,\r  check your network connection."
-	elseif (StringMatch(thisHash,latestHash))
-			str = "  an exact match to the most recent version."
+	if (strlen(webHash)<1)
+		print "\r  Unable to find most recent distribution info from Web"
+		out += "\r  Unable to find most recent distribution info from Web,\r  check your network connection."
+	elseif (StringMatch(diskHash,webHash))
+			str = "  an exact match to the most recent distribution."
 			print str
 			out += "\r"+str
-	elseif (abs(latestEpoch-thisEpoch) <= 1)
-			str = "The hashes do not match, but the most recent version has the same date & time."
+	elseif (abs(ss.web.epoch - ss.disk.epoch) <= 1)
+			str = "The hashes do not match, but the most recent distribution has the same date & time."
 			print str
 			out += "\r"+str
 	else
-		dateStr = StringByKey("date",latestVers,"=")
-		timeStr = StringByKey("time",latestVers,"=")
-		fileCount = NumberByKey("fileCount",latestVers,"=")
-		printf "The most recent version was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
-		sprintf str, "\rThe most recent version with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
+		dateStr = Secs2Date(ss.web.epoch,1)
+		timeStr = Secs2Time(ss.web.epoch,1)
+		printf "The most recent distribution was created:  %s,  %s,   %g files\r",dateStr,timeStr,ss.web.count
+		sprintf str, "\rThe most recent distribution with %g files was created:\r  %s,  %s\r",ss.web.count,dateStr,timeStr
 		out += str
 	endif
 	print " "
@@ -286,7 +297,147 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 End
 
 
-Function/T DeepCheckActualFiles(source,[printIt])
+// set the frequency for checking for LaueGo updates.
+Static Function SetPeriodicCheckLaueGoVersion(days,[printIt])
+	Variable days
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	STRUCT LaueGoVersion2Struct ss
+	if (numtype(days) || days <=0)
+		LoadPackagePreferences/MIS=1 "LaueGo","VersionInfo",0,ss
+		days = ss.days
+		Prompt days, "Days between Auto update check (0 or -1 means never)"
+		DoPrompt "Days",days
+		if (V_flag)
+			return 1
+		endif
+	endif
+	days = numtype(days) || days <=0 ? -1 : days
+	ss.days = days
+	SavePackagePreferences/FLSH=1 "LaueGo","VersionInfo",0,ss
+End
+
+
+// If last check was more than 30 days ago, check for updates, notify user if new update available.
+// call this when Igor restarts to see if updates are available
+Static Function PeriodicCheckLaueGoVersion()
+	STRUCT LaueGoVersion2Struct ss
+	LoadPackagePreferences/MIS=1 "LaueGo","VersionInfo",0,ss
+	Variable days = ss.days
+	days = numtype(days) || days <=0 ? Inf : days
+	if ((datetime - ss.lastChecked) > days*24*3600)		// last checked more than "days" ago
+		FillLaueGoVersionStructUpdate(ss)
+		if (ss.valid && !(ss.match))								// does not match, notify user
+			CheckLaueGoVersion(1)
+		endif
+	endif
+End
+//
+Static Function FillLaueGoVersionStructUpdate(ss)		// get basic version info from local file and web
+	STRUCT LaueGoVersion2Struct &ss
+	LoadPackagePreferences/MIS=1 "LaueGo","VersionInfo",0,ss
+	Variable days = ss.days
+	FillLaueGoVersionStruct(ss.disk,"disk")					// get basic version info from local LaueGo folder
+	FillLaueGoVersionStruct(ss.web,"web")						// get basic version info from web site
+	ss.lastChecked = datetime
+	ss.match = StringMatch(ss.disk.hash,ss.web.hash)
+	ss.valid = ss.disk.valid && ss.web.valid
+	if (ss.valid)														// if values are valid, then update
+		SavePackagePreferences/FLSH=1 "LaueGo","VersionInfo",0,ss		// update the saved structure
+	endif
+	return 0
+End
+//
+Static Function FillLaueGoVersionStruct(s1,source)		// get basic version info from local file and web
+	STRUCT LaueGoVersionStruct &s1
+	String source														// should be "web" or "disk"
+
+	String Version=""
+	if (StringMatch(source,"disk"))
+		Version = JZTgeneral#VersionStatusFromDisk("")	// the entire VersionStatus.xml from local LaueGo folder
+	elseif (StringMatch(source,"web"))
+		Version = JZTgeneral#VersionStatusFromWeb()		// the entire VersionStatus.xml from web site
+	else
+		Version = ""
+	endif
+	Version = JZTgeneral#VSbuf2infoStr(Version)
+
+	Variable count = NumberByKey("fileCount",Version,"=")
+	Variable epoch = NumberByKey("epoch",Version,"=")
+	String hashStr = StringByKey("gitHash",Version,"=")
+	if (numtype(count+epoch)==0 && count>0 && epoch>0 && strlen(hashStr)==40)
+		s1.count = count
+		s1.epoch = epoch
+		s1.hash = hashStr
+		s1.valid = 1
+	else
+		s1.valid = 0
+	endif
+	return 0
+End
+
+
+
+//Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
+//	Variable alert			// also put up the alert dialog
+//
+//	String thisVers = VersionStatusFromDisk("")		// the entire VersionStatus.xml
+//	thisVers = VSbuf2infoStr(thisVers)
+//	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)+"VersionStatus.xml"
+//	thisVers = ReplaceStringByKey("VersionStatus",thisVers,VersionStatusPath,"=")
+//
+//	if (strlen(thisVers)<1)
+//		String str
+//		sprintf str, "ERROR -- Could not find VersionStatus.xml"
+//		printf "\r  "+str+"\r"
+//		DoAlert 0, str
+//	endif
+//	String dateStr, timeStr, out, thisHash, latestVers, latestHash
+//	Variable fileCount, thisEpoch, latestEpoch
+//	dateStr = StringByKey("date",thisVers,"=")
+//	timeStr = StringByKey("time",thisVers,"=")
+//	fileCount = NumberByKey("fileCount",thisVers,"=")
+//	thisEpoch = NumberByKey("epoch",thisVers,"=")
+//	thisHash = StringByKey("gitHash",thisVers,"=")
+//
+//	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files,  commit %s\r",dateStr,timeStr,fileCount,thisHash[0,6]
+//	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
+//	out = str
+//
+//	latestVers = VersionStatusFromWeb()			// the entire VersionStatus.xml
+//	latestVers = VSbuf2infoStr(latestVers)
+//	latestVers = ReplaceStringByKey("VersionStatus",latestVers,"Web","=")
+//	latestEpoch = NumberByKey("epoch",latestVers,"=")
+//	latestHash = StringByKey("gitHash",latestVers,"=")
+//
+//	if (strlen(latestVers)<1)
+//		print "\r  Unable to find most recent version info from Web"
+//		out += "\r  Unable to find most recent version info from Web,\r  check your network connection."
+//	elseif (StringMatch(thisHash,latestHash))
+//			str = "  an exact match to the most recent version."
+//			print str
+//			out += "\r"+str
+//	elseif (abs(latestEpoch-thisEpoch) <= 1)
+//			str = "The hashes do not match, but the most recent version has the same date & time."
+//			print str
+//			out += "\r"+str
+//	else
+//		dateStr = StringByKey("date",latestVers,"=")
+//		timeStr = StringByKey("time",latestVers,"=")
+//		fileCount = NumberByKey("fileCount",latestVers,"=")
+//		printf "The most recent version was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
+//		sprintf str, "\rThe most recent version with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
+//		out += str
+//	endif
+//	print " "
+//	if (alert)
+//		DoAlert 0,out
+//	endif
+//End
+
+
+Static Function/T DeepCheckActualFiles(source,[printIt])
 	// check each of  the actual (local) files against contents of VersionStatus.xml
 	// this runs slowly since it must read and compute the hash for every file in VersionStatus.xml
 	String source		// must be "Web" or "Local" (source of VersionStatus.xml)
