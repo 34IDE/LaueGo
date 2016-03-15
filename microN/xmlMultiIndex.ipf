@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.89
+#pragma version=1.90
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -2202,6 +2202,7 @@ Function MakeGizmo_xmlData(scatt)
 	Execute "ModifyGizmo startRecMacro"
 
 	if (strlen(title))
+		title = ReplaceString("\"",title,"'")
 		Execute "AppendToGizmo string=\""+title+"\",strFont=\""+GenevaEquivFont+"\",name=Title"
 	endif
 	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendFunc0"
