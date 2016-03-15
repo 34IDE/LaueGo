@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.11
+#pragma version = 2.12
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=3.51		// supplies:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), placesOfPrecision(a), roundSignificant(val,N)
 Static StrConstant PhysicalConstantServerURL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -60,6 +60,7 @@ Menu "Analysis"
 		"<I  update your local copy [Rarely needed]",PhysicalConstants#UpdateLocalCopyOfConstants()
 		"  (constants updated:  "+PhysicalConstants#DateOfLastUpdate()
 		//	"  date of your local copy",PhysicalConstants#DateOfLocalPhysicalConstants()
+		"Remove PhysicalContants.ipf from this experiment", Execute/P "DELETEINCLUDE  \"PhysicalConstants\"";Execute/P "COMPILEPROCEDURES "
 	End
 End
 Static Function/T DateOfLastUpdate()	// provides dynamic text for menu item
