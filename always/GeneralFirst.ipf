@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.32
+#pragma version = 3.33
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=3.95
@@ -203,9 +203,11 @@ Menu "Help"
 End
 #endif
 
-//  ====================================================================================  //
-//  ========================== Start of Help & Version Info  ===========================  //
 
+
+//  ====================================================================================  //
+//  ================================== Start of Help ===================================  //
+//
 // This is used to put up a help file (either http: or file:) using the user's web browser
 Function BrowseHelpFile(urlStr)
 	// search order: User/Docs/WaveMetrics/LocalPackages/doc, User/Docs/WaveMetrics/LaueGo/doc, Applications/Igor Pro/LaueGo/doc
@@ -234,8 +236,15 @@ Function BrowseHelpFile(urlStr)
 		printf "ERROR -- BrowseHelpFile, unable to open   \"%s\"\r",urlStr
 	endif
 End
+//
+//  =================================== End of Help ====================================  //
+//  ====================================================================================  //
 
 
+
+//  ====================================================================================  //
+//  ============================== Start of Version Info  ==============================  //
+//
 Static Structure LaueGoVersion2Struct
 	int16		valid				// all are valid
 	int16		days				// how freqently to auto-chceck for updates (use <0 to suppress checking)
@@ -377,64 +386,17 @@ Static Function FillLaueGoVersionStruct(s1,source)		// get basic version info fr
 	return 0
 End
 
-
-
-//Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
-//	Variable alert			// also put up the alert dialog
-//
-//	String thisVers = VersionStatusFromDisk("")		// the entire VersionStatus.xml
-//	thisVers = VSbuf2infoStr(thisVers)
-//	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#VersionStatusFromDisk"),":",1,1)+"VersionStatus.xml"
-//	thisVers = ReplaceStringByKey("VersionStatus",thisVers,VersionStatusPath,"=")
-//
-//	if (strlen(thisVers)<1)
-//		String str
-//		sprintf str, "ERROR -- Could not find VersionStatus.xml"
-//		printf "\r  "+str+"\r"
-//		DoAlert 0, str
-//	endif
-//	String dateStr, timeStr, out, thisHash, latestVers, latestHash
-//	Variable fileCount, thisEpoch, latestEpoch
-//	dateStr = StringByKey("date",thisVers,"=")
-//	timeStr = StringByKey("time",thisVers,"=")
-//	fileCount = NumberByKey("fileCount",thisVers,"=")
-//	thisEpoch = NumberByKey("epoch",thisVers,"=")
-//	thisHash = StringByKey("gitHash",thisVers,"=")
-//
-//	printf "\r  This version of LaueGo was created:  %s,  %s,   %g files,  commit %s\r",dateStr,timeStr,fileCount,thisHash[0,6]
-//	sprintf str, "This version of LaueGo with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
-//	out = str
-//
-//	latestVers = VersionStatusFromWeb()			// the entire VersionStatus.xml
-//	latestVers = VSbuf2infoStr(latestVers)
-//	latestVers = ReplaceStringByKey("VersionStatus",latestVers,"Web","=")
-//	latestEpoch = NumberByKey("epoch",latestVers,"=")
-//	latestHash = StringByKey("gitHash",latestVers,"=")
-//
-//	if (strlen(latestVers)<1)
-//		print "\r  Unable to find most recent version info from Web"
-//		out += "\r  Unable to find most recent version info from Web,\r  check your network connection."
-//	elseif (StringMatch(thisHash,latestHash))
-//			str = "  an exact match to the most recent version."
-//			print str
-//			out += "\r"+str
-//	elseif (abs(latestEpoch-thisEpoch) <= 1)
-//			str = "The hashes do not match, but the most recent version has the same date & time."
-//			print str
-//			out += "\r"+str
-//	else
-//		dateStr = StringByKey("date",latestVers,"=")
-//		timeStr = StringByKey("time",latestVers,"=")
-//		fileCount = NumberByKey("fileCount",latestVers,"=")
-//		printf "The most recent version was created:  %s,  %s,   %g files\r",dateStr,timeStr,fileCount
-//		sprintf str, "\rThe most recent version with %g files was created:\r  %s,  %s\r",fileCount,dateStr,timeStr
-//		out += str
-//	endif
-//	print " "
-//	if (alert)
-//		DoAlert 0,out
-//	endif
-//End
+Static Function printLaueGoVersionStruct()
+	STRUCT LaueGoVersion2Struct ss
+	LoadPackagePreferences/MIS=1 "LaueGo","VersionInfo",0,ss
+	Variable epoch = ss.lastChecked
+	printf "at last check:  valid=%g, days=%g, match=%g,  epoch=%d,   %s   %s\r", ss.valid, ss.days, ss.match, ss.lastChecked,Secs2Time(epoch,1),Secs2Date(epoch,1)
+	printf "Info at last check  (ocured:  %s ago):\r",ElapsedTime2Str(datetime - ss.lastChecked)
+	epoch = ss.disk.epoch
+	printf "  disk: valid=%g, count=%g, epoch=%d,   %s   %s   %s\r", ss.disk.valid, ss.disk.count, ss.disk.epoch, Secs2Time(epoch,1),Secs2Date(epoch,1), ss.disk.hash
+	epoch = ss.web.epoch
+	printf "  web:  valid=%g, count=%g, epoch=%d,   %s   %s   %s\r", ss.web.valid, ss.web.count, ss.web.epoch, Secs2Time(epoch,1),Secs2Date(epoch,1), ss.web.hash
+End
 
 
 Static Function/T DeepCheckActualFiles(source,[printIt])
@@ -542,40 +504,6 @@ Static Function CheckOneFile(list,fileName)		// returns 1 on mismatch
 End
 
 
-
-//Static Function/T LaueGoLatestVersionInfo()// get latest verion info from web site
-//	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
-//	String vs = FetchURL(VersionStatusURL)
-//	if (GetRTError(0))
-//		print "***",GetRTErrMessage(), "  Check your network connection."
-//		Variable err = GetRTError(1)		// clears the error
-//	endif
-//	if (!(strlen(vs)>0))
-//		return ""
-//	elseif (strsearch(vs,"404",0)>0 && strsearch(vs,"Not Found",0,2)>0)
-//		return ""
-//	endif
-//	vs = VSbuf2infoStr(vs)
-//	vs = ReplaceStringByKey("VersionStatus",vs,"Web","=")
-//	return vs
-//End
-//
-//Static Function/T ThisLaueGoVersion()			// returns info from the Users VersionStatus.xml file
-//	String VersionStatusPath = ParseFilePath(1,FunctionPath("JZTgeneral#ThisLaueGoVersion"),":",1,1)+"VersionStatus.xml"
-//	Variable f
-//	Open/R/Z=1 f as VersionStatusPath			// read top of VersionStatus.xml
-//	if (V_flag)
-//		return ""
-//	endif
-//	FStatus f
-//	String buf=PadString("",V_logEOF,0x20)	// buf set to full size of file
-//	FBinRead f, buf
-//	Close f
-//	String out = VSbuf2infoStr(buf)
-//	out = ReplaceStringByKey("VersionStatus",out,VersionStatusPath,"=")
-//	return out
-//End
-//
 Static Function/T VSbuf2infoStr(buf)	// convert VersionStatus.xml to a key=value string
 	String buf									// input xml
 
@@ -606,61 +534,7 @@ Static Function/T VSbuf2infoStr(buf)	// convert VersionStatus.xml to a key=value
 	endif
 	return out
 End
-//Static Function/T VS2infoStr(buf)		// convert top part of VersionStatus.xml to a key=value string
-//	String buf									// input xml
 //
-//	// extract date & time info from buf
-//	Variable i=strsearch(buf,"<written ",0,2)
-//	if (i<0)
-//		return ""
-//	endif
-//	buf = buf[i+9,Inf]
-//	String dateStr = getDelimitedString(buf[strsearch(buf,"date=\"",0,2),Inf])
-//	String timeStr = getDelimitedString(buf[strsearch(buf,"time=\"",0,2),Inf])
-//	String isoStr = getDelimitedString(buf[strsearch(buf,"isoTime=\"",0,2),Inf])
-//	Variable epoch = ISOtime2IgorEpoch(isoStr)
-//
-//	// extract fileCount from buf
-//	Variable fileCount=str2num(buf[strsearch(buf,"<fileCount>",0,2)+11,Inf])
-//
-//	i = strsearch(buf,"<gitHash>",0,2)	// extract gitHash from top of xml
-//	String gitHash = buf[i+9,i+200]
-//	i = strsearch(gitHash,"<",0,2)
-//	gitHash = gitHash[0,i-1]
-//
-//	String out=""
-//	out = ReplaceStringByKey("date",out,dateStr,"=")
-//	out = ReplaceStringByKey("time",out,timeStr,"=")
-//	out = ReplaceStringByKey("isoTime",out,isoStr,"=")
-//	out = ReplaceNumberByKey("fileCount",out,fileCount,"=")
-//	if (numtype(epoch)==0 && epoch>0)
-//		out = ReplaceNumberByKey("epoch",out,epoch,"=")
-//	endif
-//	if (strlen(gitHash))
-//		out = ReplaceStringByKey("gitHash",out,gitHash,"=")
-//	endif
-//	return out
-//End
-//
-//Static Function/T getDelimitedString(buf,[delim])		// returns first occurance of a string delimited by delim in buf
-//	//	so, getDelimitedString("date=\"Monday, March 23, 2015\" "), returns "Monday, March 23, 2015"
-//	//	or, getDelimitedString("date=_Monday, March 23, 2015_ ",delim="_"), returns "Monday, March 23, 2015"
-//	// or, getDelimitedString("date=_Monday, March 23, 2015_ "), returns ""
-//	String buf			// input string
-//	String delim		// delimiter, defaults to double-quote
-//	delim = SelectString(ParamIsDefault(delim),delim,"\"")
-//	delim = SelectString(strlen(delim),"\"",delim)
-//
-//	Variable i0,i1
-//	i0 = strsearch(buf,delim,0,2)
-//	i1 = strsearch(buf,delim,i0+1,2)
-//	if (i0<0 || i1<=i0 || strlen(buf)<=2)
-//		return ""
-//	endif
-//	return buf[i0+1,i1-1]
-//End
-
-
 Static Function/T VersionStatusFromWeb()
 	// return the full body of VersionStatus.xml from the web site
 	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
@@ -695,16 +569,15 @@ Static Function/T VersionStatusFromDisk(VersionStatusPath)
 	Close f
 	return buf
 End
-
-
-//  =========================== End of Help & Version Info  ============================  //
+//
 //  ====================================================================================  //
+//  =============================== End of Version Info  ===============================  //
 
 
 
 //  ====================================================================================  //
 //  ========================== Start of User Procedures Menu  ==========================  //
-
+//
 //	This provides for an easy way to load any package in the folder "Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures/LocalPackages"
 //	just put the ipf file in there and it will be available to this function for loading.
 //	if the first 50 lines of the file contain a line such as   "#requiredPackages "HDF5images;microGeometryN;", then it will only load that file if the 
