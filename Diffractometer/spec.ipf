@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.46
+#pragma version = 2.47
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -117,6 +117,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Jun 22, 2015, added "#UQn" kludge for Herix files
 //
 // Jun 24, 2015, changed the "#UQn" kludge to just skip all lines starting with a "#" embedded in the scan data.
+//
+// Mar 18, 2016, in ReadDataColumns(), used /O on the Make in case the column name is repeated
 
 Menu "Data"
 	"-"
@@ -1865,9 +1867,9 @@ Function ReadDataColumns(fileVar,nameList)
 		name = StringFromList(i,wavesList, ";")
 		if (strlen(name)>0)
 			if (stringmatch(name,"Time_"))
-				Make/D/N=(waveLength) $name = NaN	// must use double precision for a time wave
+				Make/D/N=(waveLength)/O $name = NaN	// must use double precision for a time wave
 			else
-				Make/N=(waveLength) $name = NaN		// start with waveLength points
+				Make/N=(waveLength)/O $name = NaN		// start with waveLength points
 			endif
 		endif
 		i += 1
