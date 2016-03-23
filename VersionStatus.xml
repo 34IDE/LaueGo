@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, March 18, 2016" time="10:52:45 AM CDT" isoTime="2016-03-18T10:52:45"></written>
+	<written date="Monday, March 21, 2016" time="06:33:50 PM CDT" isoTime="2016-03-21T18:33:50"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>f5c99b70b5b60a374ed61fb00dab14ec82045283</gitHash>
+	<gitHash>38cbf8ce8f9298911a40d01a7c31ca68cf0ffbab</gitHash>
 	<fileCount>225</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -19,7 +19,7 @@
 	<file version="0.83" time="2015-08-25T10:55:32" md5="9da2b82334ed449daa6a9857ec46670a" sha256="e263d5331a737ee4a2ab21ce12ccc19bbb21e09cd2ea6a14196723288838d82e" ext=".ipf">microN/DetectorCalibration.ipf</file>
 	<file version="2.03" time="2015-08-18T16:16:26" md5="2ef66d840057712ed1fe6bbcf459328f" sha256="1672736d318e9fd2e3c98438a42ef0f566d5abc707c8de40999296741a08cda7" ext=".ipf">General/GizmoClip.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" sha256="822fd56a1f37923f54410eac72306f005c8c37dd7b54104eaa8ab0dc741998dd" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.46" time="2015-10-23T14:43:26" md5="87948bddbcd1aa2002c1b1684d380191" sha256="a663e7eea82f1b1c8596557d48cbdfba9d351ae91b9e3603f515cedf7f6e0664" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.47" time="2016-03-21T18:32:01" md5="9027c41c1cadf134befa24da1e4221d9" sha256="7b8551f1b2ca5462feb6f4f478d6ebf896baeac11f51e23804ae4af18d0bb223" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" sha256="93ec0b54c4c2a1e3a276fbb5ed400d5126aca93ebbd6d9096fe52d18e9e211dc" ext=".ipf">General/absorption.ipf</file>
 	<file version="2.06" time="2015-10-27T11:37:29" md5="01903dc19180cc9b80143063b67cf55a" sha256="56e868517b10991e400793806f3fc04e113829aaa6dcb9b546d5bd63e8a00d1d" ext=".ipf">General/GizmoMovies.ipf</file>
 	<file version="0.04" time="2013-10-28T11:28:49" md5="2596730c5c9139e078980e8f00e36fd2" sha256="fa5451e20c5e55cd4cd564d15bce444eb2f6f4aa2a2b66c4f831796f28214795" ext=".ipf">microN/FlyImageExtract.ipf</file>
