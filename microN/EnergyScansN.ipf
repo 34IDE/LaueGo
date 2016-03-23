@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.31
+#pragma version = 2.33
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6811,13 +6811,16 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable sec3 = stopMSTimer(-2)/1e6 - timer3
 	Qspace3D = Qspace3D / Qspace3DNorm							// do the normalization
 	Qspace3D = Qspace3DNorm ? Qspace3D : 0					// fix divide by zeros
-	Variable Ntotal = sum(Qspace3DNorm)
-	WaveClear Qspace3DNorm
-	TrimZerosOff3D(Qspace3D)										// trim off zeros on outside
-	if (printIt)
-		printf "Processed %d pixels\r",Ntotal
-	endif
+	TrimZerosOff3D(Qspace3D)										// trim off zeros on outside of histogram
 
+	Variable NusedPixels = sum(Qspace3DNorm)				// number of pixels that contributed to this histogram
+	Qspace3DNorm = Qspace3DNorm ? 1 : 0
+	Variable NusedVoxels = sum(Qspace3DNorm)				// number of voxels in Qspace that were filled (some don't get used)
+	WaveClear Qspace3DNorm
+
+	if (printIt)
+		printf "Processed %d pixels into %d voxels\r",NusedPixels,NusedVoxels
+	endif
 	if (useDistortion)
 		Note/K DistortionMap, "use=0"
 	endif
@@ -6833,6 +6836,8 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1,sep=","),"=")
 	wnote = ReplaceStringByKey("range",wnote,range,"=")
 	wnote = ReplaceStringByKey("nameFmt",wnote,nameFmt,"=")
+	wnote = ReplaceNumberByKey("NusedPixels",wnote,NusedPixels,"=")
+	wnote = ReplaceNumberByKey("NusedVoxels",wnote,NusedVoxels,"=")
 	if (WaveExists(mask))
 		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
 	endif

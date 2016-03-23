@@ -1,8 +1,9 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.19
+#pragma version = 1.20
 #include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
+#include "Stats3D" version>= 0.05
 #include "GizmoUtility" version>= 2.15
 
 Menu "Qspace"
@@ -1434,146 +1435,5 @@ End
 //End
 
 //  ============================= End of QGizmo Enhancements =============================  //
-//  ======================================================================================  //
-
-
-
-//  ======================================================================================  //
-//  ========================= Start of Bounding Volume Structure =========================  //
-
-Structure boundingVolume			// a generic bounding volume, probably in k-space
-	double	xlo, xhi					// range of x, these 6 form the corners of a box
-	double	ylo, yhi					// range of y
-	double	zlo, zhi					// range of z
-	double	xW, yW, zW				// box size is xW x yW x zW
-	int16		Nx, Ny, Nz				// dimensions of the array
-	double	dx, dy, dz				// step size along box
-	double	vol						// volume of box = xW*yW*zW
-EndStructure
-//Structure boundingVolume				// a generic bounding volume, probably in k-space
-//	Variable xlo,xhi, ylo,yhi,zlo,zhi		// corners of a box
-//	Variable dx,dy,dz					// box size is dx x dy x dz
-//	Variable vol
-//EndStructure
-//
-//ThreadSafe Function initBoundingVolumeStruct(v)
-Function initBoundingVolumeStruct(v)
-	STRUCT boundingVolume &v
-	v.xlo = Inf  ;	v.ylo = Inf ;	v.zlo = Inf
-	v.xhi = -Inf ;	v.yhi = -Inf ;	v.zhi = -Inf
-	v.Nx = 0     ;	v.Ny = 0 ;		v.Nz = 0			// default dimension
-	updateBoundingVolumeStruct(v)
-End
-//
-//ThreadSafe Function updateBoundingVolumeStruct(v)
-Function updateBoundingVolumeStruct(v)
-	STRUCT boundingVolume &v
-	v.xW = abs(v.xhi - v.xlo)
-	v.yW = abs(v.yhi - v.ylo)
-	v.zW = abs(v.zhi - v.zlo)
-	v.vol = v.xW * v.yW * v.zW
-
-	if (v.Nx > 1)					// prefer to use Nx
-		v.dx = v.xW / (v.Nx - 1)
-	elseif (v.dx > 0)				// N not good, try to use dx
-		v.Nx = ceil(v.xW / v.dx) + 1
-	endif
-
-	if (v.Ny > 1)					// prefer to use Ny
-		v.dy = v.yW / (v.Ny - 1)
-	elseif (v.dy > 0)				// N not good, try to use dy
-		v.Ny = ceil(v.yW / v.dy) + 1
-	endif
-
-	if (v.Nz > 1)					// prefer to use Nz
-		v.dz = v.zW / (v.Nz - 1)
-	elseif (v.dz > 0)				// N not good, try to use dz
-		v.Nz = ceil(v.zW / v.dz) + 1
-	endif
-
-	v.dx = v.Nx>1 ? v.xW / (v.Nx - 1) : 0		// re-update the dx
-	v.dy = v.Ny>1 ? v.yW / (v.Ny - 1) : 0
-	v.dz = v.Nz>1 ? v.zW / (v.Nz - 1) : 0
-End
-//
-//ThreadSafe Function/S boundingVolumeStruct2str(v)
-Function/S boundingVolumeStruct2str(v)
-	STRUCT boundingVolume &v
-	String str
-//	sprintf str,"Vol = X=[%g, %g] ÆX=%g,  Y=[%g, %g] ÆY=%g,  Z=[%g, %g] ÆZ=%g,  Vol=%g\r",v.xlo,v.xhi,v.xW, v.ylo,v.yhi,v.yW, v.zlo,v.zhi,v.zW,v.vol
-	sprintf str,"Vol = X=[%g, %g] Nx=%g,  Y=[%g, %g] Ny=%g,  Z=[%g, %g] Nz=%g,  Vol=%g\r",v.xlo,v.xhi,v.Nx, v.ylo,v.yhi,v.Ny, v.zlo,v.zhi,v.Nz,v.vol
-	return str
-End
-//
-//ThreadSafe Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
-Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
-	STRUCT boundingVolume &vin, &vout
-	vout.xlo = vin.xlo ;	vout.ylo = vin.ylo ;	vout.zlo = vin.zlo
-	vout.xhi = vin.xhi ;	vout.yhi = vin.yhi ;	vout.zhi = vin.zhi
-	vout.xW = vin.xW   ;	vout.yW = vin.yW   ;	vout.zW = vin.zW
-	vout.Nx = vin.Nx   ;	vout.Ny = vin.Ny   ;	vout.Nz = vin.Nz
-	vout.dx = vin.dx   ;	vout.dy = vin.dy   ;	vout.dz = vin.dz
-	vout.vol = vin.vol
-End
-//
-//ThreadSafe Function extendBoundingVolumeStruct(v,vec)
-Function extendBoundingVolumeStruct(v,vec)
-	// extend v to include the vector vec, maintain the dx,dy,dz when doing this
-	STRUCT boundingVolume &v
-	Wave vec
-
-	updateBoundingVolumeStruct(v)									// ensure that dx,dy,dz are calculated
-	Variable xlo = min(xlo,vec[0]), xhi = max(xhi,vec[0])	// new ranges
-	Variable ylo = min(ylo,vec[1]), yhi = max(yhi,vec[1])
-	Variable zlo = min(zlo,vec[2]), zhi = max(zhi,vec[2])
-	Variable Nx,Ny,Nz
-	Nx = ceil(abs(xhi-xlo) / v.dx) + 1							// new Nx,Ny,Nz
-	Ny = ceil(abs(yhi-ylo) / v.dy) + 1
-	Nz = ceil(abs(zhi-zlo) / v.dz) + 1
-	v.Nx = Nx>0 && numtype(Nx)==0 ? Nx : 0
-	v.Ny = Ny>0 && numtype(Ny)==0 ? Ny : 0
-	v.Nz = Nz>0 && numtype(Nz)==0 ? Nz : 0
-
-	v.xlo = xlo ;		v.xhi = xhi
-	v.ylo = ylo ;		v.yhi = yhi
-	v.zlo = zlo ;		v.zhi = zhi
-	updateBoundingVolumeStruct(v)
-End
-//
-//ThreadSafe Function insideBoundingVolumeStruct(v,vec)		// returns TRUE if vec is inside v
-Function insideBoundingVolumeStruct(v,vec)		// returns TRUE if vec is inside v
-	STRUCT boundingVolume &v
-	Wave vec
-	Variable inside = v.xlo <= vec[0] && vec[0] <= v.xhi
-	inside = inside && (v.ylo <= vec[1] && vec[1] <= v.yhi)
-	inside = inside && (v.zlo <= vec[2] && vec[2] <= v.zhi)
-	return inside
-End
-//
-//ThreadSafe Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
-Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
-	STRUCT boundingVolume &v1, &v2, &vall
-
-	updateBoundingVolumeStruct(v1)
-	updateBoundingVolumeStruct(v2)
-
-	Variable xlo=min(v1.xlo, v2.xlo), xhi=max(v1.xhi, v2.xhi)
-	Variable ylo=min(v1.ylo, v2.ylo), yhi=max(v1.yhi, v2.yhi)
-	Variable zlo=min(v1.zlo, v2.zlo), zhi=max(v1.zhi, v2.zhi)
-	Variable dx=max(v1.dx, v2.dx), dy=max(v1.dy, v2.dy), dz=max(v1.dz, v2.dz)
-	Variable Nx,Ny,Nz
-	Nx = ceil(abs(xhi-xlo) / dx) + 1						// new Nx,Ny,Nz
-	Ny = ceil(abs(yhi-ylo) / dy) + 1
-	Nz = ceil(abs(zhi-zlo) / dz) + 1
-	vall.Nx = Nx>0 && numtype(Nx)==0 ? Nx : 0
-	vall.Ny = Ny>0 && numtype(Ny)==0 ? Ny : 0
-	vall.Nz = Nz>0 && numtype(Nz)==0 ? Nz : 0
-	vall.xlo = xlo ;		vall.xhi = xhi
-	vall.ylo = ylo ;		vall.yhi = yhi
-	vall.zlo = zlo ;		vall.zhi = zhi
-	updateBoundingVolumeStruct(vall)
-End
-
-//  ========================== End of Bounding Volume Structure ==========================  //
 //  ======================================================================================  //
 

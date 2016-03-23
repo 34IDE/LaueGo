@@ -1,11 +1,11 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.03
+#pragma version = 0.05
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
 
 
-Function/T PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
+Function/S PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
 	Wave vol
 	Variable HW										// HW used for the fit
 	Variable printIt
@@ -38,7 +38,39 @@ Function/T PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
 End
 
 
-Function/T FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
+Function IntegralOfVolume(subVol,[bkg])
+	// returns the Integral of a volume, Integral{ f(x,y,z) dx dy dz }
+	// this can optionally remove a bkg value from all the valid points
+	Wave subVol
+	Variable bkg
+	bkg = ParamIsDefault(bkg) || numtype(bkg) ? 0 : bkg	// default bkg is zero, bkg=0 integrates everything
+	//	Sometimes, a large part of subVol may be zero because no pixels correspond to that voxel, 
+	//	they should not be included in this integral. 
+	//	So to subtract the bkg, I need to know the number of voxels actually used.
+	//	If bkg==0, then none is subtracted, so it all becomes simple again.
+
+	Variable NusedVoxels=NumberByKey("NusedVoxels",note(subVol),"=")
+	NusedVoxels = NusedVoxels<=0 ? NaN : NusedVoxels
+
+
+	if (bkg && numtype(NusedVoxels))							// a bkg was passed, but cannot find NusedVoxels
+		// did not provide NusedVoxels, but have bkg, ignore all voxels that are < (1/5 bkg)
+		Duplicate/FREE subVol, measuredVol
+		measuredVol = measuredVol<=(bkg/5) ? NaN : measuredVol
+		WaveStats/M=1/Q measuredVol
+		NusedVoxels = V_npnts
+		WaveClear measuredVol
+	else																	// bkg is zero or NusedVoxels was passed
+		WaveStats/M=1/Q subVol
+		NusedVoxels = numtype(NusedVoxels) ? V_npnts : NusedVoxels
+	endif
+	Variable total = V_Sum - (NusedVoxels*bkg)				// sum of desired voxels
+	total *= DimDelta(subVol,0)*DimDelta(subVol,1)*DimDelta(subVol,2)	// convert sum to integral
+	return total
+End
+
+
+Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 	Wave space3D
 	Wave startXYZ						// starting xyz for the fit
 	Variable HWx,HWy,HWz			// starting half widths dx, dy, dz for the fit
@@ -168,7 +200,7 @@ End
 
 
 
-Function/T XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
+Function/S XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	Wave space3D
 	Wave Qc								// center of sub-volume to fit
 	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
@@ -552,6 +584,233 @@ Function isPointInVolume(vol,vec)	// verify if point is in a volume, works for t
 
 	return 1
 End
+
+
+
+//  ======================================================================================  //
+//  ========================= Start of Bounding Volume Structure =========================  //
+
+Structure boundingVolume			// a generic bounding volume, probably in k-space
+	double	xlo, xhi					// range of x, these 6 form the corners of a box
+	double	ylo, yhi					// range of y
+	double	zlo, zhi					// range of z
+	double	xW, yW, zW				// box size is xW x yW x zW
+	int16		Nx, Ny, Nz				// dimensions of the array
+	double	dx, dy, dz				// step size along box
+	double	vol						// volume of box = xW*yW*zW
+EndStructure
+//
+//ThreadSafe Function initBoundingVolumeStruct(v)
+Function initBoundingVolumeStruct(v)
+	STRUCT boundingVolume &v
+	v.xlo = Inf  ;	v.ylo = Inf ;	v.zlo = Inf
+	v.xhi = -Inf ;	v.yhi = -Inf ;	v.zhi = -Inf
+	v.Nx = 0     ;	v.Ny = 0 ;		v.Nz = 0			// default dimension
+	updateBoundingVolumeStruct(v)
+End
+//
+//ThreadSafe Function updateBoundingVolumeStruct(v)
+Function updateBoundingVolumeStruct(v)
+	STRUCT boundingVolume &v
+	v.xW = abs(v.xhi - v.xlo)
+	v.yW = abs(v.yhi - v.ylo)
+	v.zW = abs(v.zhi - v.zlo)
+	v.vol = v.xW * v.yW * v.zW
+
+	if (v.Nx > 1)					// prefer to use Nx
+		v.dx = v.xW / (v.Nx - 1)
+	elseif (v.dx > 0)				// N not good, try to use dx
+		v.Nx = ceil(v.xW / v.dx) + 1
+	endif
+
+	if (v.Ny > 1)					// prefer to use Ny
+		v.dy = v.yW / (v.Ny - 1)
+	elseif (v.dy > 0)				// N not good, try to use dy
+		v.Ny = ceil(v.yW / v.dy) + 1
+	endif
+
+	if (v.Nz > 1)					// prefer to use Nz
+		v.dz = v.zW / (v.Nz - 1)
+	elseif (v.dz > 0)				// N not good, try to use dz
+		v.Nz = ceil(v.zW / v.dz) + 1
+	endif
+
+	v.dx = v.Nx>1 ? v.xW / (v.Nx - 1) : 0		// re-update the dx
+	v.dy = v.Ny>1 ? v.yW / (v.Ny - 1) : 0
+	v.dz = v.Nz>1 ? v.zW / (v.Nz - 1) : 0
+End
+
+
+//ThreadSafe Function/S boundingVolumeStruct2str(v)
+Function/S boundingVolumeStruct2str(v)
+	STRUCT boundingVolume &v
+	String str
+//	sprintf str,"Vol = X=[%g, %g] ÆX=%g,  Y=[%g, %g] ÆY=%g,  Z=[%g, %g] ÆZ=%g,  Vol=%g\r",v.xlo,v.xhi,v.xW, v.ylo,v.yhi,v.yW, v.zlo,v.zhi,v.zW,v.vol
+	sprintf str,"Vol = X=[%g, %g] Nx=%g,  Y=[%g, %g] Ny=%g,  Z=[%g, %g] Nz=%g,  Vol=%g\r",v.xlo,v.xhi,v.Nx, v.ylo,v.yhi,v.Ny, v.zlo,v.zhi,v.Nz,v.vol
+	return str
+End
+
+
+//ThreadSafe Function/S boundingVolumeStructEncode(v)
+Function/S boundingVolumeStructEncode(v)		// convert v --> str
+	STRUCT boundingVolume &v
+
+	String str
+	String fmt = "xlo:%.15g,xhi:%.15g,ylo:%.15g,yhi:%.15g,zlo:%.15g,zhi:%.15g,xW:%.15g,yW:%.15g,zW:%.15g,Nx:%.15g,Ny:%.15g,Nz:%.15g,dx:%.15g,dy:%.15g,dz:%.15g,vol:%.15g"
+	sprintf str,fmt, v.xlo,v.xhi,v.ylo,v.yhi,v.zlo,v.zhi,v.xW,v.yW,v.zW,v.Nx,v.Ny,v.Nz,v.dx,v.dy,v.dz,v.vol
+	return str
+End
+
+
+//ThreadSafe Function boundingVolumeStructDecode(str,v)
+Function boundingVolumeStructDecode(str,v)		// convert str --> v
+	STRUCT boundingVolume &v
+	String str
+
+	String fmt = "xlo:%g,xhi:%g,ylo:%g,yhi:%g,zlo:%g,zhi:%g,xW:%g,yW:%g,zW:%g,Nx:%g,Ny:%g,Nz:%g,dx:%g,dy:%g,dz:%g,vol:%g"
+	Variable xlo,xhi,ylo,yhi,zlo,zhi,xW,yW,zW,Nx,Ny,Nz,dx,dy,dz,vol
+	sscanf str, fmt, xlo,xhi,ylo,yhi,zlo,zhi,xW,yW,zW,Nx,Ny,Nz,dx,dy,dz,vol
+	Variable i = V_flag
+	if (i!=16)
+		initBoundingVolumeStruct(v)
+		return 1
+	endif
+	v.xlo = xlo	;	v.xhi = xhi	;	v.xW = xW	;	v.Nx = Nx	;	v.dx = dx
+	v.ylo = ylo	;	v.yhi = yhi	;	v.yW = yW	;	v.Ny = Ny	;	v.dy = dy
+	v.zlo = zlo	;	v.zhi = zhi	;	v.zW = zW	;	v.Nz = Nz	;	v.dz = dz
+	v.vol = vol
+	return 0
+End
+
+
+//ThreadSafe Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
+Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
+	STRUCT boundingVolume &vin, &vout
+	vout.xlo = vin.xlo ;	vout.ylo = vin.ylo ;	vout.zlo = vin.zlo
+	vout.xhi = vin.xhi ;	vout.yhi = vin.yhi ;	vout.zhi = vin.zhi
+	vout.xW = vin.xW   ;	vout.yW = vin.yW   ;	vout.zW = vin.zW
+	vout.Nx = vin.Nx   ;	vout.Ny = vin.Ny   ;	vout.Nz = vin.Nz
+	vout.dx = vin.dx   ;	vout.dy = vin.dy   ;	vout.dz = vin.dz
+	vout.vol = vin.vol
+End
+//
+//ThreadSafe Function extendBoundingVolumeStruct(v,vec)
+Function extendBoundingVolumeStruct(v,vec)
+	// extend v to include the vector vec, maintain the dx,dy,dz when doing this
+	STRUCT boundingVolume &v
+	Wave vec
+
+	updateBoundingVolumeStruct(v)									// ensure that dx,dy,dz are calculated
+	Variable xlo = min(xlo,vec[0]), xhi = max(xhi,vec[0])	// new ranges
+	Variable ylo = min(ylo,vec[1]), yhi = max(yhi,vec[1])
+	Variable zlo = min(zlo,vec[2]), zhi = max(zhi,vec[2])
+	Variable Nx,Ny,Nz
+	Nx = ceil(abs(xhi-xlo) / v.dx) + 1							// new Nx,Ny,Nz
+	Ny = ceil(abs(yhi-ylo) / v.dy) + 1
+	Nz = ceil(abs(zhi-zlo) / v.dz) + 1
+	v.Nx = Nx>0 && numtype(Nx)==0 ? Nx : 0
+	v.Ny = Ny>0 && numtype(Ny)==0 ? Ny : 0
+	v.Nz = Nz>0 && numtype(Nz)==0 ? Nz : 0
+
+	v.xlo = xlo ;		v.xhi = xhi
+	v.ylo = ylo ;		v.yhi = yhi
+	v.zlo = zlo ;		v.zhi = zhi
+	updateBoundingVolumeStruct(v)
+End
+
+
+//ThreadSafe Function insideBoundingVolumeStruct(v,vec)		// returns TRUE if vec is inside v
+Function insideBoundingVolumeStruct(v,vec)		// returns TRUE if vec is inside v
+	STRUCT boundingVolume &v
+	Wave vec		// either a simple vec[3], or vec[N][3], (actually it only uses the first 3 values, so 3 could be 4)
+
+	Variable dim=WaveDims(vec), inside=0
+	if (dim==1)
+		if (DimSize(vec,0)<3)
+			return 0
+		endif
+		inside = v.xlo <= vec[0] && vec[0] <= v.xhi
+		inside = inside && (v.ylo <= vec[1] && vec[1] <= v.yhi)
+		inside = inside && (v.zlo <= vec[2] && vec[2] <= v.zhi)
+	elseif (dim==2)						// list of vectors
+		if (DimSize(vec,1)<3)
+			return 0
+		endif
+		Variable lo = v.xlo, hi = v.xhi
+		MatrixOP/FREE outside0 = maxVal( greater(lo,col(vec,0)) || greater(col(vec,0),hi) )
+
+		lo = v.ylo	;	hi = v.yhi
+		MatrixOP/FREE outside1 = maxVal( greater(lo,col(vec,1)) || greater(col(vec,1),hi ) )
+
+		lo = v.zlo	;	hi = v.zhi
+		MatrixOP/FREE outside2 = maxVal( greater(lo,col(vec,2)) || greater(col(vec,2),hi) )
+		inside = !(outside0[0] || outside1[0] || outside2[0])
+	else
+		inside = 0							// vec cannot be 3D
+	endif
+	return inside
+End
+
+
+//ThreadSafe Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
+Function combineBoundingVolumeStructs(v1,v2,vall)	// note, vall may be v1 or v2
+	STRUCT boundingVolume &v1, &v2, &vall
+
+	updateBoundingVolumeStruct(v1)
+	updateBoundingVolumeStruct(v2)
+
+	Variable xlo=min(v1.xlo, v2.xlo), xhi=max(v1.xhi, v2.xhi)
+	Variable ylo=min(v1.ylo, v2.ylo), yhi=max(v1.yhi, v2.yhi)
+	Variable zlo=min(v1.zlo, v2.zlo), zhi=max(v1.zhi, v2.zhi)
+	Variable dx=max(v1.dx, v2.dx), dy=max(v1.dy, v2.dy), dz=max(v1.dz, v2.dz)
+	Variable Nx,Ny,Nz
+	Nx = ceil(abs(xhi-xlo) / dx) + 1						// new Nx,Ny,Nz
+	Ny = ceil(abs(yhi-ylo) / dy) + 1
+	Nz = ceil(abs(zhi-zlo) / dz) + 1
+	vall.Nx = Nx>0 && numtype(Nx)==0 ? Nx : 0
+	vall.Ny = Ny>0 && numtype(Ny)==0 ? Ny : 0
+	vall.Nz = Nz>0 && numtype(Nz)==0 ? Nz : 0
+	vall.xlo = xlo ;		vall.xhi = xhi
+	vall.ylo = ylo ;		vall.yhi = yhi
+	vall.zlo = zlo ;		vall.zhi = zhi
+	updateBoundingVolumeStruct(vall)
+End
+
+
+// set a boundingVolume structure from the dimensions of a 3D wave
+Function Fill_boundingVolume_from_3Dwave(v,w3D)
+	STRUCT boundingVolume &v
+	Wave w3D
+
+	Variable lo,hi
+	lo = DimOffset(w3D,0)
+	hi = lo + DimDelta(w3D,0)*(DimSize(w3D,0)-1)
+	OrderValues(lo,hi)	
+	v.xlo = lo
+	v.xhi = hi
+
+	lo = DimOffset(w3D,1)
+	hi = lo + DimDelta(w3D,1)*(DimSize(w3D,1)-1)
+	OrderValues(lo,hi)	
+	v.ylo = lo
+	v.yhi = hi
+
+	lo = DimOffset(w3D,2)
+	hi = lo + DimDelta(w3D,2)*(DimSize(w3D,2)-1)
+	OrderValues(lo,hi)	
+	v.zlo = lo
+	v.zhi = hi
+
+	v.Nx = DimSize(w3D,0)
+	v.Ny = DimSize(w3D,1)
+	v.Nz = DimSize(w3D,2)
+	updateBoundingVolumeStruct(v)
+End
+
+//  ========================== End of Bounding Volume Structure ==========================  //
+//  ======================================================================================  //
+
+
 
 //  ======================================================================================  //
 //  =================================== Start of Init ====================================  //
