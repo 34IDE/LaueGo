@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.33
+#pragma version = 2.34
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -2793,7 +2793,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 
 	String darkList = WaveListClass("imageDark;rawImageDark","*","")
 	if (!WaveExists(dark) && ItemsInList(darkList)>0)
-		String darkName
+		String darkName=""
 		Prompt darkName,"Background Image",popup,"-none-;"+darkList
 		DoPrompt "Background",darkName
 		if (V_flag)
@@ -2821,8 +2821,8 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 		if (maskNorm>0)
 			printf ", maskNorm=%g",maskNorm
 		endif
-		if (!ParamIsDefault(I0normalize))
-			printf ", I0normalize=%g",I0normalize
+		if (WaveExists(dark))
+			printf ", dark=%s",NameOfWave(dark)
 		endif
 		if (!ParamIsDefault(I0normalize))
 			printf ", I0normalize=%g",I0normalize
@@ -6252,7 +6252,7 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, doConvex,FilterFunc,roi,autoGo,printIt])	// does not assume depth in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, I0normalize,doConvex,FilterFunc,roi,autoGo,printIt])	// does not assume depth in image
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
@@ -6262,6 +6262,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Wave dark					// OPTIONAL, an optional background wave
 	STRUCT boundingVolume &Qbox	// OPTIONAL, do not specify both Qbox AND {NQx,NQy,NQz}
 	Variable NQx,NQy,NQz	// OPTIONAL, dmensions of final Qspace3D array
+	Variable I0normalize 	// a Flag, if True then normalize data (default is True)
 	Variable doConvex			// if True, make the convex hull
 	String FilterFunc			// OPTIONAL, name of a filter for the image
 	STRUCT ImageROIstruct &roi
@@ -6273,6 +6274,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	NQx = ParamIsDefault(NQx) || NQx<=0 ? NaN : NQx		// default to NaN, the program figures it out
 	NQy = ParamIsDefault(NQy) || NQy<=0 ? NaN : NQy
 	NQz = ParamIsDefault(NQz) || NQz<=0 ? NaN : NQz
+	I0normalize = ParamIsDefault(I0normalize) || numtype(I0normalize) ? 1 : I0normalize
 	doConvex = ParamIsDefault(doConvex) || numtype(doConvex) ? 0 : !(!doConvex)
 	FilterFunc = SelectString(ParamIsDefault(FilterFunc),FilterFunc,"")
 	autoGo = ParamIsDefault(autoGo) || numtype(autoGo) ? 0 : !(!autoGo)
@@ -6530,6 +6532,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable N = ItemsInRange(range)							// number of images to be processed
 	Make/N=(N)/FREE/D keV_FillQvsPositions=NaN				// hold the Energies
 	Make/N=(N)/FREE/U/I m_Fill_QHistAt1Depth=0
+	Make/N=(N)/FREE/D Ic0_FillQvsPositions=NaN				// hold the I0 for normalizations
 	Make/N=(N)/FREE/S currents=NaN, normalization=NaN	// save for possible normalizations
 	// for all the N files (go over range), store the energies, X position, H position, and indicies
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N)+" image headers",resetClock=1)
@@ -6555,11 +6558,13 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		endif
 		keV_FillQvsPositions[i] = keV							// list of energies
 		m_Fill_QHistAt1Depth[i] = m								// file id number for each image
+		Ic0_FillQvsPositions = NumberByKey("I0", wnote,"=")	// Ic0 for normalization
 		currents[i] = NumberByKey("ringCurrent",wnote,"=")
 	endfor
-	Make/N=(N,2)/O/D Qspace3DIndexEnergy
+	Make/N=(N,3)/O/D Qspace3DIndexEnergy
 	Qspace3DIndexEnergy[][0] = m_Fill_QHistAt1Depth[p]	// permanently store the index & energy for evey image
 	Qspace3DIndexEnergy[][1] = keV_FillQvsPositions[p]
+	Qspace3DIndexEnergy[][1] = Ic0_FillQvsPositions[p]	// also store I0 for reference
 	Variable useNormalization=0
 	WaveStats/Q/M=1 currents
 	if (V_numNans==0 && V_numINFs==0 && V_min>1)			// valid currents, so create normalization[]
@@ -6589,19 +6594,25 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		Prompt depth,"depth to use (µm)"
 		Prompt dkeV,"step size in E (eV)"
 //		Prompt NkeV,"# of points (NOT intervals) in E "
+		Prompt I0normalize,"Normalize the Q-hists",popup,"Do NOT Normalize to Io or exposure;Normalize to Io & exposure"
 		Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
 		doConvex += 1
 		dkeV *= 1000
-		DoPrompt "scan sizes",dkeV,depth,doConvex
+		I0normalize += 1
+		DoPrompt "scan sizes",dkeV,depth,doConvex,I0normalize
 		if (V_flag)
 			DoWindow/K $progressWin								// done with status window
 			return $""
 		endif
+		I0normalize -= 1
 		dkeV = abs(dkeV/1000)										// sign is not used
 		doConvex -= 1
 	endif
 	depth = numtype(depth) ? 0 : depth							// 0 is better than NaN
-
+	I0normalize = numtype(I0normalize) ? 1 : I0normalize	// default is to normalize
+	if (printIt && I0normalize)
+		print "Normalizing to Io & exposure"
+	endif
 	WaveStats/M=1/Q keV_FillQvsPositions
 	Variable ikeVlo=V_minloc, ikeVhi=V_maxloc				// save location of min and max energies
 	if (V_numNans)
@@ -6797,7 +6808,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
 			keV = gap2keV_Func(NumberByKey("undulatorGap",note(image),"="))
 			Note/K dimage, ReplaceNumberByKey("keV",note(image),keV,"=")
-			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
+			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark,I0normalize=I0normalize,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z i0												// delete old "previous" image
 			Wave i0 = image											// save current image as i0, the new "previous" image
 		else
@@ -6838,6 +6849,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	wnote = ReplaceStringByKey("nameFmt",wnote,nameFmt,"=")
 	wnote = ReplaceNumberByKey("NusedPixels",wnote,NusedPixels,"=")
 	wnote = ReplaceNumberByKey("NusedVoxels",wnote,NusedVoxels,"=")
+	wnote = ReplaceNumberByKey("I0normalize",wnote,I0normalize,"=")
 	if (WaveExists(mask))
 		wnote = ReplaceStringByKey("maskWave",wnote,GetWavesDataFolder(mask,2),"=")
 	endif
@@ -6886,16 +6898,18 @@ Function Median_ImageFilter(image)				// this one is good for removing random ho
 	return 0
 End
 //
-Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,printIt])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
+Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,I0normalize,printIt])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
 	Wave image
 	Wave Qvecs1keV										// pre-computed array of sin(theta)'s that is same size as the image to be loaded
 	Wave Qhist											// wave of Q vectors (at 1keV), accumulate into here
 	Wave QhistNorm										// array that contains number of pixels contributing to each bin in Qhist
 	Wave mask											// optional mask to limit the pixels that get processed (use pixel when mask true)
-	Wave dark											// an optional background wave
+	Wave dark											// optional background wave
+	Variable I0normalize							// optional Flag, if True then normalize data (default is True)
 	Variable printIt
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? ItemsInList(GetRTStackInfo(0))<3 : !(!printIt)
+	I0normalize = ParamIsDefault(I0normalize) || numtype(I0normalize) ? 1 : I0normalize	// to Normalize
 
 	Variable timer = stopMSTimer(-2)/1e6			// start timer for initial processing
 	if (!WaveExists(image))
@@ -6928,6 +6942,25 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,p
 		wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
 		return wnote										// image is empty, do not waste time adding zeros
 	endif
+
+	if (I0normalize)									// normalize by intenstiy & exposure time
+		Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling, inorm=1
+		I0gainBase = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_GAIN",DEFAULT_I0_GAIN)
+		I0cnts = NumberByKey("I0",wnote,"=")
+		I0gain = NumberByKey("I0gain",wnote,"=")
+		I0gain = numtype(I0gain) ? I0gainBase : I0gain
+		ScalerCountTime = NumberByKey("ScalerCountTime",wnote,"=")
+		exposure = NumberByKey("exposure",wnote,"=")
+		exposure = (numtype(exposure)==0 && exposure>0) ? exposure : 1
+		I0scaling = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_SCALING",DEFAULT_I0_SCALING)
+		I0scaling = (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
+		if (numtype(I0cnts+I0gain+ScalerCountTime)==0 && I0cnts>0 && I0gain>0 && ScalerCountTime>0)
+			inorm *= (ScalerCountTime/I0cnts) * (I0gainBase/I0gain)
+		endif
+		inorm *= I0scaling/exposure
+		I0normalize = (numtype(inorm)==0) && (inorm>0)
+	endif
+
 	MatrixOP/FREE Qvecs = Qvecs1keV * keV			// actual Q-vector for each pixel
 
 	// for each point in image, sort into Q vector
@@ -6940,7 +6973,7 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,p
 				i = round((Qvecs[0][ip][jp] - Qx0) / dQx)
 				j = round((Qvecs[1][ip][jp] - Qy0) / dQy)
 				k = round((Qvecs[2][ip][jp] - Qz0) / dQz)
-				Qhist[i][j][k] += image[ip][jp]
+				Qhist[i][j][k] += image[ip][jp] * inorm
 				QhistNorm[i][j][k] += 1
 			endif
 		endfor
