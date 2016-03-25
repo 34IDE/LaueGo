@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.34
+#pragma version = 2.35
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -1726,10 +1726,7 @@ Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNo
 		return wnote									// image is empty, do not waste time adding zeros
 	endif
 
-	Variable inorm=NaN
-	if (I0normalize)									// normalize by intenstiy & exposure time
-		inorm = I0normalizationFromNote(wnote)
-	endif
+	Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
 
 	NVAR secExtra=secExtra, secExtra1=secExtra1
 	if (NVAR_Exists(secExtra))
@@ -1786,7 +1783,7 @@ Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNo
 	if (NVAR_Exists(secExtra))
 		secExtra += stopMSTimer(timeExtra)/1e6
 	endif
-	if (numtype(inorm)==0)
+	if (inorm!=1)
 		Qhist *= inorm									// apply the normalization
 	endif
 	Variable seconds = stopMSTimer(timer)/1e6	// stop timer here
@@ -1800,20 +1797,21 @@ End
 Static Function I0normalizationFromNote(wnote)	// normalization by intenstiy & exposure time
 	String wnote
 
-	Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling, inorm=1
+	Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling
 	I0gainBase = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_GAIN",DEFAULT_I0_GAIN)
 	I0cnts = NumberByKey("I0",wnote,"=")
 	I0gain = NumberByKey("I0gain",wnote,"=")
 	I0gain = numtype(I0gain) ? I0gainBase : I0gain
 	ScalerCountTime = NumberByKey("ScalerCountTime",wnote,"=")
 	exposure = NumberByKey("exposure",wnote,"=")
+	exposure = (numtype(exposure)==0 && exposure>0) ? exposure : 1
 	I0scaling = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_SCALING",DEFAULT_I0_SCALING)
+	I0scaling = (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
+	Variable inorm = I0scaling/exposure
 	if (numtype(I0cnts+I0gain+ScalerCountTime)==0 && I0cnts>0 && I0gain>0 && ScalerCountTime>0)
 		inorm *= (ScalerCountTime/I0cnts) * (I0gainBase/I0gain)
 	endif
-	inorm /= (numtype(exposure)==0 && exposure>0) ? exposure : 1
-	inorm *= (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
-	inorm = (numtype(inorm)==0) && (inorm>0) ? inorm : NaN	// returns NaN for bad inorm
+	inorm = numtype(inorm)==0 && inorm>0 ? inorm : 1	// always return a valid inorm
 	return inorm
 End
 
@@ -3062,22 +3060,7 @@ Static Function/S FillQhist1image(imageIn,sinTheta,indexWaveQ,Qhist,QhistNorm,ma
 		return wnote									// image is empty, do not waste time adding zeros
 	endif
 
-	if (I0normalize)									// normalize by intenstiy & exposure time
-		Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling, inorm=1
-		I0gainBase = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_GAIN",DEFAULT_I0_GAIN)
-		I0cnts = NumberByKey("I0",wnote,"=")
-		I0gain = NumberByKey("I0gain",wnote,"=")
-		I0gain = numtype(I0gain) ? I0gainBase : I0gain
-		ScalerCountTime = NumberByKey("ScalerCountTime",wnote,"=")
-		exposure = NumberByKey("exposure",wnote,"=")
-		I0scaling = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_SCALING",DEFAULT_I0_SCALING)
-		if (numtype(I0cnts+I0gain+ScalerCountTime)==0 && I0cnts>0 && I0gain>0 && ScalerCountTime>0)
-			inorm *= (ScalerCountTime/I0cnts) * (I0gainBase/I0gain)
-		endif
-		inorm /= (numtype(exposure)==0 && exposure>0) ? exposure : 1
-		inorm *= (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
-		I0normalize = (numtype(inorm)==0) && (inorm>0)
-	endif
+	Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
 
 	Variable timer = startMSTimer							// start timer for initial processing
 	Variable i, j, Ni=DimSize(image,0), Nj=DimSize(image,1)
@@ -3120,7 +3103,7 @@ Static Function/S FillQhist1image(imageIn,sinTheta,indexWaveQ,Qhist,QhistNorm,ma
 		i0 = I1 + 1													// reset start point of region
 		k = i0<N ? kQimage[i0] : NQ							// do not index kQimage out of its range
 	endfor
-	if (I0normalize)
+	if (inorm!=1)
 		Qhist *= inorm												// apply the normalization
 	endif
 	Variable seconds = stopMSTimer(timer)/1e6			// stop timer here
@@ -6558,13 +6541,13 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		endif
 		keV_FillQvsPositions[i] = keV							// list of energies
 		m_Fill_QHistAt1Depth[i] = m								// file id number for each image
-		Ic0_FillQvsPositions = NumberByKey("I0", wnote,"=")	// Ic0 for normalization
+		Ic0_FillQvsPositions[i] = NumberByKey("I0", wnote,"=")	// Ic0 for normalization
 		currents[i] = NumberByKey("ringCurrent",wnote,"=")
 	endfor
 	Make/N=(N,3)/O/D Qspace3DIndexEnergy
 	Qspace3DIndexEnergy[][0] = m_Fill_QHistAt1Depth[p]	// permanently store the index & energy for evey image
 	Qspace3DIndexEnergy[][1] = keV_FillQvsPositions[p]
-	Qspace3DIndexEnergy[][1] = Ic0_FillQvsPositions[p]	// also store I0 for reference
+	Qspace3DIndexEnergy[][2] = Ic0_FillQvsPositions[p]	// also store I0 for reference
 	Variable useNormalization=0
 	WaveStats/Q/M=1 currents
 	if (V_numNans==0 && V_numINFs==0 && V_min>1)			// valid currents, so create normalization[]
@@ -6942,24 +6925,7 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,I
 		wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
 		return wnote										// image is empty, do not waste time adding zeros
 	endif
-
-	if (I0normalize)									// normalize by intenstiy & exposure time
-		Variable I0cnts,I0gain,I0gainBase,ScalerCountTime,exposure,I0scaling, inorm=1
-		I0gainBase = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_GAIN",DEFAULT_I0_GAIN)
-		I0cnts = NumberByKey("I0",wnote,"=")
-		I0gain = NumberByKey("I0gain",wnote,"=")
-		I0gain = numtype(I0gain) ? I0gainBase : I0gain
-		ScalerCountTime = NumberByKey("ScalerCountTime",wnote,"=")
-		exposure = NumberByKey("exposure",wnote,"=")
-		exposure = (numtype(exposure)==0 && exposure>0) ? exposure : 1
-		I0scaling = NumVarOrDefault("root:Packages:micro:DEFAULT_I0_SCALING",DEFAULT_I0_SCALING)
-		I0scaling = (numtype(I0scaling)==0 && I0scaling>0) ? I0scaling : 1
-		if (numtype(I0cnts+I0gain+ScalerCountTime)==0 && I0cnts>0 && I0gain>0 && ScalerCountTime>0)
-			inorm *= (ScalerCountTime/I0cnts) * (I0gainBase/I0gain)
-		endif
-		inorm *= I0scaling/exposure
-		I0normalize = (numtype(inorm)==0) && (inorm>0)
-	endif
+	Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
 
 	MatrixOP/FREE Qvecs = Qvecs1keV * keV			// actual Q-vector for each pixel
 
