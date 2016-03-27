@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.05
+#pragma version = 0.06
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -501,6 +501,34 @@ Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets a
 		WAVE center = $""
 	endif
 	return center
+End
+
+
+Function/WAVE CenterOfMass3D(w3D)	// returns a 3-vector with the center of mass
+	Wave w3D									// a 3D wave (with scaling)
+
+	WaveStats/M=1/Q w3D					// using WaveStats instead of WaveSum() avoids problems with NaN's
+	Variable mass = V_sum
+	Make/N=3/D/FREE com
+
+	Duplicate/FREE w3D, oneComp
+	Redimension/D oneComp
+
+	oneComp *= x
+	WaveStats/M=1/Q oneComp
+	com[0] = V_sum / mass				// x-component of com
+
+	oneComp = w3D
+	oneComp *= y
+	WaveStats/M=1/Q oneComp
+	com[1] = V_sum / mass				// y-component of com
+
+	oneComp = w3D
+	oneComp *= z
+	WaveStats/M=1/Q oneComp
+	com[2] = V_sum / mass				// z-component of com
+
+	return com
 End
 
 
