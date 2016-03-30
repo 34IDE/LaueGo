@@ -2142,7 +2142,7 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 	d0 = ParamIsDefault(d0) ? NaN : d0
 	d0 = numtype(d0) || d0<=0 ? NumVarOrDefault("d0",NaN) : d0
 	WaveStats/M=1/Q Qhist
-	if (V_npnts<10)
+	if (V_npnts<6)
 		return ""
 	endif
 	String fldrSav= GetDataFolder(1)
@@ -3520,19 +3520,24 @@ End
 Static Function MoveWinToTopRight(win,tt,rr)			// returns left edge of window
 	String win
 	Variable tt,rr													// top right corner of window (use NaN for screen edge)
-	if (strlen(win))
-		win = StringFromList(0,WinList("*",";", "WIN:4183"))
-	endif
-	String str = StringByKey("SCREEN1", IgorInfo(0))	// RECT=left,top,right,bottom
-	Variable i = strsearch(str,"RECT=",0)+5
 	Variable left,top,right,bottom
-	sscanf str[i,inf], "%d,%d,%d,%d",left,top,right,bottom	// get screen size
-	if (V_flag!=4)
-		return NaN
+	if (cmpstr(IgorInfo(2),"Windows") == 0)
+		GetWindow kwFrameInner, wsize  // get main frame size in Windows
+		left = V_left; right = V_right; top = V_top; bottom = V_bottom
+	else   // get screen size on Mac
+		if (strlen(win))
+			win = StringFromList(0,WinList("*",";", "WIN:4183"))
+		endif
+		String str = StringByKey("SCREEN1", IgorInfo(0))	// RECT=left,top,right,bottom
+		Variable i = strsearch(str,"RECT=",0)+5
+		sscanf str[i,inf], "%d,%d,%d,%d",left,top,right,bottom	// get screen size
+		if (V_flag!=4)
+			return NaN
+		endif
 	endif
 	right = !(rr>0) ? right : rr								// desired right side
 	top = max(!(tt>52) ? top : tt,45)						// desired top
-	GetWindow $win, wsize										// get current window size
+	GetWindow $win, wsize									// get current window size
 	left = max(0,right-V_right+V_left)						// try to preserve width
 	bottom = top+V_bottom-V_top
 	MoveWindow/W=$win left,top,right,bottom
