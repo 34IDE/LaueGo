@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.15
+#pragma version = 2.16
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -106,7 +106,7 @@ Static Function/WAVE FindMakeCubeCornerWaves([GizmoName,forceCalc])		// finds (o
 	String gizmoScatterList=GizmoListScatterWaves(gizmo=GizmoName)
 	String gizmoIsoSurfaceList=GizmoListIsoSurfaceWaves(gizmo=GizmoName)		// get list of all iso surface waves
 	String gizmoSurfaceList=GizmoListSurfaceWaves(gizmo=GizmoName)		// get list of all surface waves
-	String gizmoListAll = gizmoScatterList+gizmoSurfaceList
+	String gizmoListAll = gizmoScatterList+gizmoIsoSurfaceList+gizmoSurfaceList
 
 	String str, list3Dobjects=""
 	Variable i
