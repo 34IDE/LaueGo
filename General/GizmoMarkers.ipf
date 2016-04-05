@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.15
+#pragma version = 2.16
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -1115,8 +1115,25 @@ Static Function/WAVE centerOf3Ddata(ww)	// finds center of data, works for tripl
 	endif
 
 	if (WaveDims(ww)==2 && DimSize(ww,1)==3 && DimSize(ww,0)>0)	// triplets
-		MatrixOP/FREE center = sumCols(ww)/numRows(ww)
-		Redimension/N=3 center
+		if (numtype(sum(ww))==0)												// no NaNs present
+			MatrixOP/FREE center = sumCols(ww)/numRows(ww)
+			Redimension/N=3 center
+		else
+			Make/N=3/D/FREE ccc
+			Variable N=DimSize(ww,0)
+			Make/N=(N)/D/FREE vec
+			vec = ww[p][0]
+			WaveStats/M=1/Q vec
+			ccc[0] = V_avg
+			vec = ww[p][1]
+			WaveStats/M=1/Q vec
+			ccc[0] = V_avg
+			vec = ww[p][2]
+			WaveStats/M=1/Q vec
+			ccc[2] = V_avg
+			Wave center = ccc
+		endif
+
 	elseif (WaveDims(ww)==3 && numpnts(ww)>0)							// 3D array
 		Make/N=3/D/FREE ccc
 		ccc = DimOffset(ww,p) + DimDelta(ww,p)*DimSize(ww,p)/2
