@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.16
+#pragma version = 2.17
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -427,7 +427,8 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 		if (WaveDims(scatter)==3)							// this only works for 3D waves (NO triplit xyz)
 			Make/N=3/D/FREE fitXYZ
 			fitXYZ = marker[MarkerNum][p]
-			FitPeakAt3Dmarker(scatter,fitXYZ,NaN,printIt=1)
+			STRUCT Gaussian3DPeakStructure GP			// holds result of fitting, but not used
+			FitPeakAt3Dmarker(scatter,GP,fitXYZ,NaN,printIt=1)
 		endif
 
 	elseif (stringmatch(ba.ctrlName,"removeMarkerButton"))
@@ -1146,8 +1147,9 @@ End
 
 
 
-Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
+Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
 	Wave space3D
+	STRUCT Gaussian3DPeakStructure &GP	// holds result of fitting
 	Wave Qc								// center of sub-volume to fit
 	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
 	Variable printIt
@@ -1157,12 +1159,12 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	QzHW = ParamIsDefault(QzHW) ? NaN : QzHW
 	if (WaveExists(space3D))
 		if (WaveDims(space3D)!=3)
-			return ""					// quit if really bad input passed
+			return 1						// quit if really bad input passed
 		endif
 	endif
 	if (WaveExists(Qc))
 		if (numpnts(Qc)!=3)
-			return ""					// quit if really bad input passed
+			return 1						// quit if really bad input passed
 		endif
 	endif
 	String spaceList = WaveListClass("GizmoXYZ;Qspace3D*","*","DIMS:3")
@@ -1170,7 +1172,7 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		if (ItemsInList(spaceList)==1)		// only 1 choice, use it
 			Wave space3D = $StringFromList(0,spaceList)
 		elseif (ItemsInList(spaceList)<1)	// no acceptable choices, quit
-			return ""
+			return 1
 		endif
 	endif
 	String QcList=WaveList("*",";","DIMS:2,MAXROWS:1,MINROWS:1,MAXCOLS:3,MINCOLS:3" )+WaveList("*",";","DIMS:1,MAXROWS:3,MINROWS:3" )
@@ -1178,7 +1180,7 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		if (ItemsInList(QcList)==1)			// only 1 choice, use it
 			Wave Qc = $StringFromList(0,QcList)
 		elseif (ItemsInList(QcList)<1)		// no acceptable choices, quit
-			return ""
+			return 1
 		endif
 	endif
 	if (numpnts(Qc)==3 && WaveType(Qc,2)==2)	// a free wave was passed, deal with it
@@ -1197,7 +1199,7 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 		Prompt QzHW,"Z-HW in Volume to Use (NaN defaults to X-HW)"
 		DoPrompt "Fit 3D Peak",spaceName,QcName,QxHW,QyHW,QzHW
 		if (V_flag)
-			return ""
+			return 1
 		endif
 		printf "FitPeakAt3Dmarker(%s, %s, %g",spaceName,QcName,QxHW
 		if (QyHW>0)
@@ -1215,19 +1217,19 @@ Function/T FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	QyHW = QyHW>0 ? QyHW : QxHW
 	QzHW = QzHW>0 ? QzHW : QxHW
 	if (!WaveExists(space3D) || !WaveExists(Qc) || !(QxHW>0) || !(QyHW>0) || !(QzHW>0))
-		return ""
+		return 1
 	endif
 
 	Make/N=3/D/FREE Qhw={QxHW,QyHW,QzHW}	// half widths dQz, dQy, dQz for the sub volume
 	if (!WaveExists(space3D) || !WaveExists(Qc))
-		return ""
+		return 1
 	elseif (numtype(sum(Qhw)+sum(Qc)))
-		return ""
+		return 1
 	endif
 
 	Wave sub3D = ExtractSubVolume(space3D,Qc,QxHW,HWy=QyHW,HWz=QzHW)	// get sub-volume centered on Qc
-	String list = PeakMax3D(sub3D, printIt=printIt)				// find & fit peak in sub3D, returns result
-	return list
+	Variable err = FitPeakIn3D(space3D,GP,QxHW,HWy=QyHW,HWz=QzHW, printIt=1)
+	return err
 End
 
 

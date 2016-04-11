@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.04
+#pragma version = 0.05
 #include "HDF5images"
 
 // readin Flyscan HDF images, extract single images and export into single files
@@ -29,7 +29,7 @@ Function FlyImageExtract()
 	endif
 	
 	// get slice range
-	STRUCT HDF5DataInfo di
+	STRUCT HDF5DataInfoLaueGo di
 	HDF5images#InitHDF5DataInfo(di)
 	HDF5OpenFile/R fid as S_fileName
 	HDF5DatasetInfo(fid,"/entry1/data/data",0,di)

@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.33
+#pragma version = 0.34
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -12,6 +12,7 @@
 //												also added NewImageGraphHDF5proto(), in cases where ImageDisplayScaling.ipf has not been included
 //	Apr  5, 2015, version 0.32		NewImageGraph() now has withButtons as an optional parameter
 //	Mar  5, 2016, version 0.33		LoadHDF5imageFile(...), supports read of an roi, also, ReadHDF5header(...) & HDF5ReadROI(...), will work too
+//	Apr 11, 2016, version 0.34		renamed HDF5DataInfo to HDF5DataInfoLaueGo
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -30,26 +31,26 @@ Strconstant HDF5_MetaUnits ="X1:µm;Y1:µm;Z1:µm;H1:µm;F1:µm;X2:µm;Y2:µm;Z2:µm;H2:
 Static Constant H5S_MAX_RANK = 32
 Static Constant kHDF5DataInfoVersion = 1000		// 1000 means 1.000.
 //Static Structure HDF5DataInfo					// Use with HDF5DatasetInfo and HDF5AttributeInfo functions
-Structure HDF5DataInfo //rxadd
+Structure HDF5DataInfoLaueGo			//rxadd
 	// Input fields (inputs to HDF5 XOP)
 	uint32 version							// Must be set to kHDF5DataInfoVersion
-	char structName[16]						// Must be "HDF5DataInfo".
+	char structName[16]					// Must be "HDF5DataInfo".
 
 	// Output fields (outputs from HDF5 XOP)
 	double datatype_class;				// e.g., H5T_INTEGER, H5T_FLOAT.
 	char datatype_class_str[32];		// String with class spelled out. e.g., "H5T_INTEGER", "H5T_FLOAT".
-	double datatype_size;					// Size in bytes of one element.
-	double datatype_sign;					// H5T_SGN_NONE (unsigned), H5T_SGN_2 (signed), H5T_SGN_ERROR (this type does not have a sign, i.e., it is not an integer type).
+	double datatype_size;				// Size in bytes of one element.
+	double datatype_sign;				// H5T_SGN_NONE (unsigned), H5T_SGN_2 (signed), H5T_SGN_ERROR (this type does not have a sign, i.e., it is not an integer type).
 	double datatype_order;				// H5T_ORDER_LE, H5T_ORDER_BE, H5T_ORDER_VAX
 	char datatype_str[64];				// Human-readable string, e.g., "16-bit unsigned integer"
 	double dataspace_type;				// H5S_NO_CLASS (-1), H5S_SCALAR (0), H5S_SIMPLE (1), H5S_COMPLEX (2).
-	double ndims;								// Zero for H5S_SCALAR. Number of dimensions in the dataset for H5S_SIMPLE.
-	double dims[H5S_MAX_RANK];			// Size of each dimension.
-	double maxdims[H5S_MAX_RANK];		// Maximum size of each dimension.
+	double ndims;							// Zero for H5S_SCALAR. Number of dimensions in the dataset for H5S_SIMPLE.
+	double dims[H5S_MAX_RANK];		// Size of each dimension.
+	double maxdims[H5S_MAX_RANK];	// Maximum size of each dimension.
 EndStructure
 //
-Static Function InitHDF5DataInfo(di)				// Sets input fields.
-	STRUCT HDF5DataInfo &di
+Static Function InitHDF5DataInfo(di)		// Sets input fields.
+	STRUCT HDF5DataInfoLaueGo &di
 	// HDF5XOP uses these fields to make sure the structure passed in to it is compatible.
 	di.version = kHDF5DataInfoVersion
 	di.structName = "HDF5DataInfo"
@@ -86,7 +87,7 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		return ""
 	endif
 
-	STRUCT HDF5DataInfo di			// Defined in HDF5 Browser.ipf.
+	STRUCT HDF5DataInfoLaueGo di	// Defined in HDF5 Browser.ipf.
 	InitHDF5DataInfo(di)			// Initialize structure.
 	HDF5OpenFile/R f as fName
 	HDF5DatasetInfo(f,"/entry1/data/data",0,di)
@@ -459,7 +460,7 @@ Function/T ReadHDF5header(fName,[extras])
 		return ""
 	endif
 
-	STRUCT HDF5DataInfo di			// Defined in HDF5 Browser.ipf.
+	STRUCT HDF5DataInfoLaueGo di	// Defined in HDF5 Browser.ipf.
 	InitHDF5DataInfo(di)			// Initialize structure.
 	HDF5DatasetInfo(f,"/entry1/data/data",0,di)
 	Variable Nslices = (di.ndims == 3) ? di.dims[0] : 0	// 0 means 2-d data

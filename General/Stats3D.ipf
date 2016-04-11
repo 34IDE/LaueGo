@@ -1,41 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.06
+#pragma version = 0.07
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
 
-
-Function/S PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
-	Wave vol
-	Variable HW										// HW used for the fit
-	Variable printIt
-	HW = ParamIsDefault(HW) || numtype(HW) || HW<=0 ? NaN : HW
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRtStackInfo(2))==0 : printIt
-	if (!(WaveDims(vol)==3 && numpnts(vol)>0))						// 3D volume array
-		return ""
-	endif
-
-	WaveStats/M=1/Q vol
-	Variable maxVal = V_max
-	Make/D/FREE xyzMax={V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
-	Make/N=3/I/FREE ijk = round( (xyzMax[p] - DimOffset(vol,p)) / DimDelta(vol,p) )
-	Variable npnt = ijk[2]*DimSize(vol,1)*DimSize(vol,0) + ijk[1]*DimSize(vol,0) + ijk[0]
-	if (numtype(HW) || HW<=0)
-		Make/N=(3)/D/FREE sizes = (DimSize(vol,p)-1) * DimDelta(vol,p)
-		HW = WaveMin(sizes)/2
-	endif
-
-	if (printIt)
-		String name=SelectString(WaveType(vol,2)==1, "", NameOfWave(vol))
-		printf "max = %g   @ %s,  %s[%d][%d][%d],  pnt#=%d\r",maxVal, vec2str(xyzMax,sep=", "), NameOfWave(vol),ijk[0],ijk[1],ijk[2],npnt
-	endif
-
-	String list=FitPeakIn3D(vol,xyzMax,HW,printIt=printIt)
-	list = ReplaceNumberByKey("iStart",list,ijk[0],"=")
-	list = ReplaceNumberByKey("jStart",list,ijk[1],"=")
-	list = ReplaceNumberByKey("kStart",list,ijk[2],"=")
-	return list
-End
 
 
 Function IntegralOfVolume(subVol,[bkg])
@@ -70,22 +38,36 @@ Function IntegralOfVolume(subVol,[bkg])
 End
 
 
-Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
+Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 	Wave space3D
-	Wave startXYZ						// starting xyz for the fit
+	STRUCT Gaussian3DPeakStructure &GP	// holds result of fitting
 	Variable HWx,HWy,HWz			// starting half widths dx, dy, dz for the fit
+	Wave startXYZ						// starting xyz for the fit (defaults to position of peak)
 	Wave stdDev							// errors in space3D, standard deviation of each value in space3D
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy	// HWy & HWz default to HWx
 	HWz = ParamIsDefault(HWz) || numtype(HWz) || HWz<=0 ? HWx : HWz
+	initGaussian3DPeakStructure(GP)
 
-	if (!WaveExists(space3D) || !WaveExists(startXYZ))
-		return ""
-	elseif (WaveDims(space3D)!=3 || numpnts(startXYZ)!=3 || numtype(sum(startXYZ)))
-		return ""
+	if (!WaveExists(space3D))		// is space3D valid?
+		return 1
+	elseif (WaveDims(space3D)!=3)
+		return 1
+	endif
+
+	if (!WaveExists(startXYZ))
+		WaveStats/M=1/Q space3D	// set starting point to the position of max value
+		Make/D/FREE xyz0 = {V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
+	else
+		Wave xyz0 = startXYZ
+	endif
+	if (!WaveExists(xyz0))
+		return 1
+	elseif (numpnts(xyz0)!=3 || numtype(sum(xyz0)))
+		return 1
 	elseif (numtype(HWx+HWy+HWz) || HWx<=0 || HWy<=0 || HWz<=0)
-		return ""
+		return 1
 	endif
 
 	Make/N=3/D/FREE HW={HWx,HWy,HWz}			// half widths in x, y, & z for start of fit
@@ -98,7 +80,7 @@ Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 
 	// set the starting point for the fit
 	Variable maxVal=WaveMax(space3D),minVal=WaveMin(space3D)
-	Make/N=8/D/O W_coef = {NaN,NaN,startXYZ[0],HW[0]/4,startXYZ[1],HW[1]/4,startXYZ[2],HW[2]/4}
+	Make/N=8/D/O W_coef = {NaN,NaN,xyz0[0],HW[0]/4,xyz0[1],HW[1]/4,xyz0[2],HW[2]/4}
 	if (maxVal>-minVal)			// a positive peak
 		W_coef[1] = maxVal
 		W_coef[0] = minVal==0 ? 1 : minVal
@@ -117,11 +99,10 @@ Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 
 	Variable err=V_FitError, swap
 	err = err || !isPointInVolume(space3D,xyzFit)	// verify if point is in a volume, works for triplets and for a 3D array
-
 	if (err)
 		print "ERROR -- Fit failed, peak not inside of fitting volume"
 		print FitErrorString(V_FitError,V_FitQuitReason)
-		return ""
+		return 1
 	endif
 
 	Wave hkl=$""
@@ -140,6 +121,10 @@ Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 		endif
 	endif
 
+	Make/N=3/I/FREE ijk, Nxyz=DimSize(space3D,p)
+	ijk = round( (xyzFit[p]-DimOffset(space3D,p)) / DimDelta(space3D,p) )
+	ijk = limit(round(ijk[p]),0,Nxyz[p]-1)
+
 	if (printIt)
 		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
 		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
@@ -153,9 +138,6 @@ Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 			printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),units[0]
 		endif
 
-		Make/N=3/I/FREE ijk, Nxyz=DimSize(space3D,p)
-		ijk = round( (xyzFit[p]-DimOffset(space3D,p)) / DimDelta(space3D,p) )
-		ijk = limit(round(ijk[p]),0,Nxyz[p]-1)
 		Variable i=ijk[0], j=ijk[1], k=ijk[2]
 		Variable N = k*Nxyz[0]*Nxyz[1] + j*Nxyz[0] + i
 		printf "  Closest point to peak is the %s[%g, %g, %g] or [%d] = %g\r",NameOfWave(space3D),i,j,k,N,space3D[i][j][k]
@@ -165,37 +147,67 @@ Function/S FitPeakIn3D(space3D,startXYZ,HWx,[HWy,HWz, stdDev, printIt])
 		endif
 	endif
 
-	String keyVals=""
-	keyVals = ReplaceNumberByKey("offset",keyVals,W_coef[0],"=")
-	keyVals = ReplaceNumberByKey("offsetErr",keyVals,W_sigma[0],"=")
-	keyVals = ReplaceNumberByKey("amp",keyVals,W_coef[1],"=")
-	keyVals = ReplaceNumberByKey("ampErr",keyVals,W_sigma[1],"=")
-	keyVals = ReplaceNumberByKey("Xc",keyVals,W_coef[2],"=")
-	keyVals = ReplaceNumberByKey("XcErr",keyVals,W_sigma[2],"=")
-	keyVals = ReplaceNumberByKey("Yc",keyVals,W_coef[4],"=")
-	keyVals = ReplaceNumberByKey("YcErr",keyVals,W_sigma[4],"=")
-	keyVals = ReplaceNumberByKey("Zc",keyVals,W_coef[6],"=")
-	keyVals = ReplaceNumberByKey("ZcErr",keyVals,W_sigma[6],"=")
-	keyVals = ReplaceNumberByKey("FWX",keyVals,W_coef[3],"=")
-	keyVals = ReplaceNumberByKey("FWXErr",keyVals,W_sigma[3],"=")
-	keyVals = ReplaceNumberByKey("FWY",keyVals,W_coef[5],"=")
-	keyVals = ReplaceNumberByKey("FWYErr",keyVals,W_sigma[5],"=")
-	keyVals = ReplaceNumberByKey("FWZ",keyVals,W_coef[7],"=")
-	keyVals = ReplaceNumberByKey("FWZErr",keyVals,W_sigma[7],"=")
-	keyVals = ReplaceNumberByKey("chisq",keyVals,V_chisq,"=")
-	if (strlen(units[0]))
-		keyVals = ReplaceStringByKey("Xunit",keyVals,units[0],"=")
-	endif
-	if (strlen(units[1]))
-		keyVals = ReplaceStringByKey("Yunit",keyVals,units[1],"=")
-	endif
-	if (strlen(units[2]))
-		keyVals = ReplaceStringByKey("Zunit",keyVals,units[2],"=")
-	endif
+	GP.OK = 1
+	GP.bkg = W_coef[0]		;		GP.bkgErr = W_sigma[0]
+	GP.amp = W_coef[1]		;		GP.ampErr = W_sigma[1]
+	GP.x = W_coef[2]			;		GP.xErr = W_sigma[2]
+	GP.y = W_coef[4]			;		GP.yErr = W_sigma[4]
+	GP.z = W_coef[6]			;		GP.zErr = W_sigma[6]
+	GP.FWx = W_coef[3]		;		GP.FWxErr = W_sigma[3]
+	GP.FWy = W_coef[5]		;		GP.FWyErr = W_sigma[5]
+	GP.FWz = W_coef[7]		;		GP.FWzErr = W_sigma[7]
+	GP.chisq = V_chisq
+
+	GP.Cxy = W_coef[8]		;		GP.CxyErr = W_sigma[8]
+	GP.Cxz = W_coef[9]		;		GP.CxzErr = W_sigma[9]
+	GP.Cyz = W_coef[10]		;		GP.CyzErr = W_sigma[10]
+	GP.ix = ijk[0]				;		GP.iy = ijk[1]		;	GP.iz = ijk[2]
+	GP.maxValue = space3D[ijk[0]][ijk[1]][ijk[2]]
+
+	GP.Xunit = SelectString(strlen(units[0]),"", units[0])
+	GP.Yunit = SelectString(strlen(units[1]),"", units[1])
+	GP.Zunit = SelectString(strlen(units[2]),"", units[2])
+	GP.name = SelectString(WaveType(space3D,2)==1, "", NameOfWave(space3D))
+
 	if (WaveExists(hkl))
-		keyVals = ReplaceStringByKey("hklPeakCenter",keyVals,vec2str(hkl,sep=","),"=")
+		GP.hkl[0] = hkl[0]
+		GP.hkl[1] = hkl[1]
+		GP.hkl[2] = hkl[2]
 	endif
-	return keyVals
+
+	return 0				// no error
+
+//	String keyVals=""
+//	keyVals = ReplaceNumberByKey("offset",keyVals,W_coef[0],"=")
+//	keyVals = ReplaceNumberByKey("offsetErr",keyVals,W_sigma[0],"=")
+//	keyVals = ReplaceNumberByKey("amp",keyVals,W_coef[1],"=")
+//	keyVals = ReplaceNumberByKey("ampErr",keyVals,W_sigma[1],"=")
+//	keyVals = ReplaceNumberByKey("Xc",keyVals,W_coef[2],"=")
+//	keyVals = ReplaceNumberByKey("XcErr",keyVals,W_sigma[2],"=")
+//	keyVals = ReplaceNumberByKey("Yc",keyVals,W_coef[4],"=")
+//	keyVals = ReplaceNumberByKey("YcErr",keyVals,W_sigma[4],"=")
+//	keyVals = ReplaceNumberByKey("Zc",keyVals,W_coef[6],"=")
+//	keyVals = ReplaceNumberByKey("ZcErr",keyVals,W_sigma[6],"=")
+//	keyVals = ReplaceNumberByKey("FWX",keyVals,W_coef[3],"=")
+//	keyVals = ReplaceNumberByKey("FWXErr",keyVals,W_sigma[3],"=")
+//	keyVals = ReplaceNumberByKey("FWY",keyVals,W_coef[5],"=")
+//	keyVals = ReplaceNumberByKey("FWYErr",keyVals,W_sigma[5],"=")
+//	keyVals = ReplaceNumberByKey("FWZ",keyVals,W_coef[7],"=")
+//	keyVals = ReplaceNumberByKey("FWZErr",keyVals,W_sigma[7],"=")
+//	keyVals = ReplaceNumberByKey("chisq",keyVals,V_chisq,"=")
+//	if (strlen(units[0]))
+//		keyVals = ReplaceStringByKey("Xunit",keyVals,units[0],"=")
+//	endif
+//	if (strlen(units[1]))
+//		keyVals = ReplaceStringByKey("Yunit",keyVals,units[1],"=")
+//	endif
+//	if (strlen(units[2]))
+//		keyVals = ReplaceStringByKey("Zunit",keyVals,units[2],"=")
+//	endif
+//	if (WaveExists(hkl))
+//		keyVals = ReplaceStringByKey("hklPeakCenter",keyVals,vec2str(hkl,sep=","),"=")
+//	endif
+//	return keyVals
 End
 
 
@@ -616,6 +628,130 @@ End
 
 
 //  ======================================================================================  //
+//  ========================== Start of 3D Peak Shape Structure ==========================  //
+
+Static Constant PeakShapeUnitMaxLen = 50
+Structure Gaussian3DPeakStructure	// describes the Gaussian fit to a 3D peak
+	int32		OK								// values are OK, 1==OK, 0==BAD
+	double	bkg, bkgErr					// background and error
+	double	amp, ampErr					// amplitude and error
+	double	x, xErr						// x-center and error
+	double	y, yErr						// y-center and error
+	double	z, zErr						// z-center and error
+	double	FWx, FWxErr					// FWHM in x-direction and error
+	double	FWy, FWyErr					// FWHM in y-direction and error
+	double	FWz, FWzErr					// FWHM in z-direction and error
+	double	chisq							// chisq for the fit
+	double	Cxy, CxyErr					// OPTIONAL, xy cross term and error, use NaN if cross-term not fit
+	double	Cxz, CxzErr					// OPTIONAL, xz cross term and error
+	double	Cyz, CyzErr					// OPTIONAL, yz cross term and error
+	char		Xunit[PeakShapeUnitMaxLen]	// OPTIONAL, name of x-units
+	char		Yunit[PeakShapeUnitMaxLen]	// OPTIONAL, name of y-units
+	char		Zunit[PeakShapeUnitMaxLen]	// OPTIONAL, name of z-units
+	double	hkl[3]						// OPTIONAL, contains possible hkl
+	int32		ix,iy,iz						// closest points in 3d volume to {x,y,z}
+	double	maxValue						// value at [ix,iy,iz]
+	char		name[50]						// OPTIONAL, name of wave that was fit
+EndStructure
+
+
+//ThreadSafe Function updateGaussian3DPeakStructure(GP)
+//	STRUCT Gaussian3DPeakStructure &GP
+//	Variable bad = numtype(GP.bkg + GP.amp)
+//	bad = bad || numtype(GP.x + GP.y + GP.z)
+//	bad = bad || numtype(GP.FWx + GP.FWy + GP.FWz)
+//	GP.OK = bad ? 0 : 1
+//End
+
+
+ThreadSafe Function initGaussian3DPeakStructure(GP)
+	STRUCT Gaussian3DPeakStructure &GP
+	GP.OK = 0							// BAD values
+	GP.bkg = NaN	;	GP.bkgErr = NaN
+	GP.amp = NaN	;	GP.ampErr = NaN
+	GP.x = NaN		;	GP.xErr = NaN
+	GP.y = NaN		;	GP.yErr = NaN
+	GP.z = NaN		;	GP.zErr = NaN
+	GP.FWx = NaN	;	GP.FWxErr = NaN
+	GP.FWy = NaN	;	GP.FWyErr = NaN
+	GP.FWz = NaN	;	GP.FWzErr = NaN
+	GP.chisq = NaN
+	GP.Cxy = NaN	;	GP.CxyErr = NaN
+	GP.Cxz = NaN	;	GP.CxzErr = NaN
+	GP.Cyz = NaN	;	GP.CyzErr = NaN
+	GP.ix = 0		;	GP.iy = 0		; GP.iz = 0
+	GP.maxValue = NaN
+	GP.name = ""
+	GP.Xunit = ""	;	GP.Yunit = ""	;	GP.Zunit = ""
+	GP.hkl[0] = NaN;	GP.hkl[1] = NaN;	GP.hkl[2] = NaN
+End
+
+
+ThreadSafe Function copyGaussian3DPeakStructure(in,dest)
+	STRUCT Gaussian3DPeakStructure &in, &dest
+
+	dest.OK		= in.OK
+	dest.bkg		= in.bkg		;	dest.bkgErr	= in.bkgErr
+	dest.amp		= in.amp		;	dest.ampErr	= in.ampErr
+	dest.x		= in.x		;	dest.xErr	= in.xErr
+	dest.y		= in.y		;	dest.yErr	= in.yErr
+	dest.z		= in.z		;	dest.zErr	= in.zErr
+	dest.FWx		= in.FWx		;	dest.FWxErr	= in.FWxErr
+	dest.FWy		= in.FWy		;	dest.FWyErr	= in.FWyErr
+	dest.FWz		= in.FWz		;	dest.FWzErr	= in.FWzErr
+	dest.chisq	= in.chisq
+	dest.Cxy		= in.Cxy		;	dest.CxyErr	= in.CxyErr
+	dest.Cxz		= in.Cxz		;	dest.CxzErr	= in.CxzErr
+	dest.Cyz		= in.Cyz		;	dest.CyzErr	= in.CyzErr
+	dest.ix		= in.ix		;	dest.iy		= in.iy		;	dest.iz = in.iz
+	dest.maxValue = in.maxValue
+	dest.name	= in.name
+
+	dest.Xunit = in.Xunit
+	dest.Yunit = in.Yunit
+	dest.Zunit = in.Zunit
+	dest.hkl[0] = in.hkl[0];	dest.hkl[1] = in.hkl[1]	;	dest.hkl[2] = in.hkl[2]
+End
+
+
+Function printGaussian3DPeakStructure(GP)
+	STRUCT Gaussian3DPeakStructure &GP
+
+	if (!(GP.OK))
+		print "Gaussian3DPeakStructure is INVALID"
+		return 1
+	endif
+
+	Make/N=3/T/FREE units = {GP.Xunit, GP.Yunit, GP.Zunit}
+	units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
+	units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
+	Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
+
+	printf "Gaussian Fit has offset = %s,  amp = %s,  chisq = %g\r",ValErrStr(GP.bkg,GP.bkgErr,sp=1),ValErrStr(GP.amp,GP.ampErr,sp=1), GP.chisq
+	printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(GP.x,GP.xErr,sp=1),units[0],ValErrStr(GP.FWx,GP.FWxErr,sp=1),units[0]
+	printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[0],ValErrStr(GP.y,GP.yErr,sp=1),units[0],ValErrStr(GP.FWy,GP.FWyErr,sp=1),units[0]
+	printf "  <%sz> = %s%s,   FWHMz = %s%s\r",Qstr[0],ValErrStr(GP.z,GP.zErr,sp=1),units[0],ValErrStr(GP.FWz,GP.FWzErr,sp=1),units[0]
+
+	if (stringmatch(units[0],units[1]) && stringmatch(units[0],units[2]))
+		Variable xyzMag=sqrt((GP.x)^2 + (GP.y)^2 + (GP.z)^2)
+		Variable dxyzMag=sqrt((GP.xErr)^2 + (GP.yErr)^2 + (GP.zErr)^2)
+		printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),units[0]
+	endif
+	printf "  Closest point to peak is the %s[%g, %g, %g] = %g\r",GP.name,GP.ix,GP.iy,GP.iz,GP.maxValue
+
+	Make/N=3/D/FREE hkl = GP.hkl[p]
+	if (numtype(sum(hkl))==0)
+		printf "hkl Peak Center = %s\r",vec2str(hkl)
+	endif
+	return 1
+End
+
+//  =========================== End of 3D Peak Shape Structure ===========================  //
+//  ======================================================================================  //
+
+
+
+//  ======================================================================================  //
 //  ========================= Start of Bounding Volume Structure =========================  //
 
 Structure boundingVolume			// a generic bounding volume, probably in k-space
@@ -837,6 +973,98 @@ End
 
 //  ========================== End of Bounding Volume Structure ==========================  //
 //  ======================================================================================  //
+
+
+//	*************************************************************************************
+//	***** DEPRECATED ********* DEPRECATED ********* DEPRECATED ********* DEPRECATED *****
+//	****************************** PeakMax3D is DEPRECATED ******************************
+//		PeakMax3D is deprecated, use FitPeakIn3D() directly instead.
+Function/S PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
+	Wave vol
+	Variable HW										// HW used for the fit
+	Variable printIt
+	HW = ParamIsDefault(HW) || numtype(HW) || HW<=0 ? NaN : HW
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRtStackInfo(2))==0 : printIt
+	if (!(WaveDims(vol)==3 && numpnts(vol)>0))						// 3D volume array
+		return ""
+	endif
+
+	WaveStats/M=1/Q vol
+	Variable maxVal = V_max
+	Make/D/FREE xyzMax={V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
+	Make/N=3/I/FREE ijk = round( (xyzMax[p] - DimOffset(vol,p)) / DimDelta(vol,p) )
+	Variable npnt = ijk[2]*DimSize(vol,1)*DimSize(vol,0) + ijk[1]*DimSize(vol,0) + ijk[0]
+	if (numtype(HW) || HW<=0)
+		Make/N=(3)/D/FREE sizes = (DimSize(vol,p)-1) * DimDelta(vol,p)
+		HW = WaveMin(sizes)/2
+	endif
+
+	if (printIt)
+		String name=SelectString(WaveType(vol,2)==1, "", NameOfWave(vol))
+		printf "max = %g   @ %s,  %s[%d][%d][%d],  pnt#=%d\r",maxVal, vec2str(xyzMax,sep=", "), NameOfWave(vol),ijk[0],ijk[1],ijk[2],npnt
+	endif
+
+	STRUCT Gaussian3DPeakStructure GP	// holds result of fitting
+	Variable err = FitPeakIn3D(vol,GP,HW,startXYZ=xyzMax,printIt=printIt)
+	if (err)
+		return ""
+	endif
+
+	String keyVals=""
+	keyVals = ReplaceNumberByKey("offset",keyVals,GP.bkg,"=")
+	keyVals = ReplaceNumberByKey("offsetErr",keyVals,GP.bkgErr,"=")
+	keyVals = ReplaceNumberByKey("amp",keyVals,GP.amp,"=")
+	keyVals = ReplaceNumberByKey("ampErr",keyVals,GP.ampErr,"=")
+	keyVals = ReplaceNumberByKey("Xc",keyVals,GP.x,"=")
+	keyVals = ReplaceNumberByKey("XcErr",keyVals,GP.xErr,"=")
+	keyVals = ReplaceNumberByKey("Yc",keyVals,GP.y,"=")
+	keyVals = ReplaceNumberByKey("YcErr",keyVals,GP.yErr,"=")
+	keyVals = ReplaceNumberByKey("Zc",keyVals,GP.z,"=")
+	keyVals = ReplaceNumberByKey("ZcErr",keyVals,GP.zErr,"=")
+
+
+	keyVals = ReplaceNumberByKey("FWX",keyVals,GP.FWx,"=")
+	keyVals = ReplaceNumberByKey("FWXErr",keyVals,GP.FWxErr,"=")
+	keyVals = ReplaceNumberByKey("FWY",keyVals,GP.FWy,"=")
+	keyVals = ReplaceNumberByKey("FWYErr",keyVals,GP.FWyErr,"=")
+	keyVals = ReplaceNumberByKey("FWZ",keyVals,GP.FWz,"=")
+	keyVals = ReplaceNumberByKey("FWZErr",keyVals,GP.FWzErr,"=")
+	keyVals = ReplaceNumberByKey("chisq",keyVals,GP.chisq,"=")
+
+	if (numtype(GP.Cxy + GP.Cxz + GP.Cxz)==0)
+		keyVals = ReplaceNumberByKey("Cxy",keyVals,GP.Cxy,"=")
+		keyVals = ReplaceNumberByKey("CxyErr",keyVals,GP.CxyErr,"=")
+		keyVals = ReplaceNumberByKey("Cxz",keyVals,GP.Cxz,"=")
+		keyVals = ReplaceNumberByKey("CxzErr",keyVals,GP.CxzErr,"=")
+		keyVals = ReplaceNumberByKey("Cyz",keyVals,GP.Cyz,"=")
+		keyVals = ReplaceNumberByKey("CyzErr",keyVals,GP.CyzErr,"=")
+	endif
+
+	if (strlen(GP.Xunit))
+		keyVals = ReplaceStringByKey("Xunit",keyVals,GP.Xunit,"=")
+	endif
+	if (strlen(GP.Yunit))
+		keyVals = ReplaceStringByKey("Yunit",keyVals,GP.Yunit,"=")
+	endif
+	if (strlen(GP.Zunit))
+		keyVals = ReplaceStringByKey("Zunit",keyVals,GP.Zunit,"=")
+	endif
+
+	if ( numtype(GP.hkl[0] + GP.hkl[1] + GP.hkl[2])==0 )
+		Make/N=3/D/FREE hkl = GP.hkl[p]
+		keyVals = ReplaceStringByKey("hklPeakCenter",keyVals,vec2str(hkl,sep=","),"=")
+	endif
+
+	keyVals = ReplaceNumberByKey("iStart",keyVals,ijk[0],"=")
+	keyVals = ReplaceNumberByKey("jStart",keyVals,ijk[1],"=")
+	keyVals = ReplaceNumberByKey("kStart",keyVals,ijk[2],"=")
+	return keyVals
+End
+//	****************************** PeakMax3D is DEPRECATED ******************************
+//	***** DEPRECATED ********* DEPRECATED ********* DEPRECATED ********* DEPRECATED *****
+//	*************************************************************************************
+
+
 
 
 
