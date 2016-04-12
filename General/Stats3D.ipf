@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.07
+#pragma version = 0.08
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -94,6 +94,9 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, space3D/W=errWave/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
+	W_coef[3] = abs(W_coef[3])		// FWx, FWy, FWz, must be >=0
+	W_coef[5] = abs(W_coef[5])
+	W_coef[7] = abs(W_coef[7])
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
 	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
 
@@ -161,7 +164,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 	GP.Cxy = W_coef[8]		;		GP.CxyErr = W_sigma[8]
 	GP.Cxz = W_coef[9]		;		GP.CxzErr = W_sigma[9]
 	GP.Cyz = W_coef[10]		;		GP.CyzErr = W_sigma[10]
-	GP.ix = ijk[0]				;		GP.iy = ijk[1]		;	GP.iz = ijk[2]
+	GP.ix = ijk[0]				;		GP.iy = ijk[1]				;	GP.iz = ijk[2]
 	GP.maxValue = space3D[ijk[0]][ijk[1]][ijk[2]]
 
 	GP.Xunit = SelectString(strlen(units[0]),"", units[0])
@@ -703,7 +706,7 @@ ThreadSafe Function copyGaussian3DPeakStructure(in,dest)
 	dest.Cxy		= in.Cxy		;	dest.CxyErr	= in.CxyErr
 	dest.Cxz		= in.Cxz		;	dest.CxzErr	= in.CxzErr
 	dest.Cyz		= in.Cyz		;	dest.CyzErr	= in.CyzErr
-	dest.ix		= in.ix		;	dest.iy		= in.iy		;	dest.iz = in.iz
+	dest.ix		= in.ix		;	dest.iy		= in.iy	;	dest.iz = in.iz
 	dest.maxValue = in.maxValue
 	dest.name	= in.name
 
