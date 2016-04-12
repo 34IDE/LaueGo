@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.17
+#pragma version = 2.18
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -427,7 +427,7 @@ Static Function GizmoScatterMarkerButtonProc(ba) : ButtonControl
 		if (WaveDims(scatter)==3)							// this only works for 3D waves (NO triplit xyz)
 			Make/N=3/D/FREE fitXYZ
 			fitXYZ = marker[MarkerNum][p]
-			STRUCT Gaussian3DPeakStructure GP			// holds result of fitting, but not used
+			STRUCT Generic3DPeakStructure GP			// holds result of fitting, but not used
 			FitPeakAt3Dmarker(scatter,GP,fitXYZ,NaN,printIt=1)
 		endif
 
@@ -1149,7 +1149,7 @@ End
 
 Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
 	Wave space3D
-	STRUCT Gaussian3DPeakStructure &GP	// holds result of fitting
+	STRUCT Generic3DPeakStructure &GP	// holds result of fitting
 	Wave Qc								// center of sub-volume to fit
 	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
 	Variable printIt

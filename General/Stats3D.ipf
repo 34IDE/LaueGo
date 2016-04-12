@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.08
+#pragma version = 0.09
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -38,21 +38,29 @@ Function IntegralOfVolume(subVol,[bkg])
 End
 
 
-Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
+Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt])
 	Wave space3D
-	STRUCT Gaussian3DPeakStructure &GP	// holds result of fitting
+	STRUCT Generic3DPeakStructure &GP	// holds result of fitting
 	Variable HWx,HWy,HWz			// starting half widths dx, dy, dz for the fit
 	Wave startXYZ						// starting xyz for the fit (defaults to position of peak)
 	Wave stdDev							// errors in space3D, standard deviation of each value in space3D
+	String func3D						// name of 3D peak fitting function, defaults to "Gaussian3DFitFunc"
 	Variable printIt
+	func3D = SelectString(strlen(func3D), "Gaussian3DFitFunc", func3D)
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy	// HWy & HWz default to HWx
 	HWz = ParamIsDefault(HWz) || numtype(HWz) || HWz<=0 ? HWx : HWz
-	initGaussian3DPeakStructure(GP)
+
+	initGeneric3DPeakStructure(GP)
+	FUNCREF Peak3DFitFuncProto FitFunc = $func3D
+	func3D = StringByKey("NAME",FuncRefInfo(FitFunc))
+	func3D = SelectString(strlen(func3D), "Gaussian3DFitFunc", func3D)
 
 	if (!WaveExists(space3D))		// is space3D valid?
 		return 1
 	elseif (WaveDims(space3D)!=3)
+		return 1
+	elseif (strlen(func3D)<1)
 		return 1
 	endif
 
@@ -91,7 +99,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
-	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, space3D/W=errWave/I=1
+	FuncFitMD/Q FitFunc, W_coef, space3D/W=errWave/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	W_coef[3] = abs(W_coef[3])		// FWx, FWy, FWz, must be >=0
@@ -128,28 +136,6 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 	ijk = round( (xyzFit[p]-DimOffset(space3D,p)) / DimDelta(space3D,p) )
 	ijk = limit(round(ijk[p]),0,Nxyz[p]-1)
 
-	if (printIt)
-		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
-		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
-		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
-		printf "Gaussian Fit has offset = %s,  amp = %s,  chisq = %g\r",ValErrStr(W_coef[0],W_sigma[0],sp=1),ValErrStr(W_coef[1],W_sigma[1],sp=1),chisq
-		printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(xyzFit[0],W_sigma[2],sp=1),units[0],ValErrStr(W_coef[3],W_sigma[3],sp=1),units[0]
-		printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[1],ValErrStr(xyzFit[1],W_sigma[4],sp=1),units[1],ValErrStr(W_coef[5],W_sigma[5],sp=1),units[1]
-		printf "  <%sz> = %s%s,   FWHMz = %s%s\r",Qstr[2],ValErrStr(xyzFit[2],W_sigma[6],sp=1),units[1],ValErrStr(W_coef[7],W_sigma[7],sp=1),units[2]
-		if (stringmatch(units[0],units[1]) && stringmatch(units[0],units[2]))
-			Variable xyzMag=norm(xyzFit), dxyzMag=sqrt(W_sigma[2]^2 + W_sigma[4]^2 + W_sigma[6]^2)
-			printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),units[0]
-		endif
-
-		Variable i=ijk[0], j=ijk[1], k=ijk[2]
-		Variable N = k*Nxyz[0]*Nxyz[1] + j*Nxyz[0] + i
-		printf "  Closest point to peak is the %s[%g, %g, %g] or [%d] = %g\r",NameOfWave(space3D),i,j,k,N,space3D[i][j][k]
-
-		if (WaveExists(hkl))
-			printf "hkl Peak Center = %s\r",vec2str(hkl)
-		endif
-	endif
-
 	GP.OK = 1
 	GP.bkg = W_coef[0]		;		GP.bkgErr = W_sigma[0]
 	GP.amp = W_coef[1]		;		GP.ampErr = W_sigma[1]
@@ -161,16 +147,20 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 	GP.FWz = W_coef[7]		;		GP.FWzErr = W_sigma[7]
 	GP.chisq = V_chisq
 
-	GP.Cxy = W_coef[8]		;		GP.CxyErr = W_sigma[8]
-	GP.Cxz = W_coef[9]		;		GP.CxzErr = W_sigma[9]
-	GP.Cyz = W_coef[10]		;		GP.CyzErr = W_sigma[10]
 	GP.ix = ijk[0]				;		GP.iy = ijk[1]				;	GP.iz = ijk[2]
 	GP.maxValue = space3D[ijk[0]][ijk[1]][ijk[2]]
 
 	GP.Xunit = SelectString(strlen(units[0]),"", units[0])
 	GP.Yunit = SelectString(strlen(units[1]),"", units[1])
 	GP.Zunit = SelectString(strlen(units[2]),"", units[2])
-	GP.name = SelectString(WaveType(space3D,2)==1, "", NameOfWave(space3D))
+	GP.wname = SelectString(WaveType(space3D,2)==1, "", NameOfWave(space3D))
+	GP.funcName = func3D
+
+	if (numpnts(W_coef)>10)
+		GP.Cxy = W_coef[8]		;		GP.CxyErr = W_sigma[8]
+		GP.Cxz = W_coef[9]		;		GP.CxzErr = W_sigma[9]
+		GP.Cyz = W_coef[10]		;		GP.CyzErr = W_sigma[10]
+	endif
 
 	if (WaveExists(hkl))
 		GP.hkl[0] = hkl[0]
@@ -178,39 +168,20 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, printIt])
 		GP.hkl[2] = hkl[2]
 	endif
 
-	return 0				// no error
+	if (printIt)
+		printGeneric3DPeakStructure(GP)
+	endif
 
-//	String keyVals=""
-//	keyVals = ReplaceNumberByKey("offset",keyVals,W_coef[0],"=")
-//	keyVals = ReplaceNumberByKey("offsetErr",keyVals,W_sigma[0],"=")
-//	keyVals = ReplaceNumberByKey("amp",keyVals,W_coef[1],"=")
-//	keyVals = ReplaceNumberByKey("ampErr",keyVals,W_sigma[1],"=")
-//	keyVals = ReplaceNumberByKey("Xc",keyVals,W_coef[2],"=")
-//	keyVals = ReplaceNumberByKey("XcErr",keyVals,W_sigma[2],"=")
-//	keyVals = ReplaceNumberByKey("Yc",keyVals,W_coef[4],"=")
-//	keyVals = ReplaceNumberByKey("YcErr",keyVals,W_sigma[4],"=")
-//	keyVals = ReplaceNumberByKey("Zc",keyVals,W_coef[6],"=")
-//	keyVals = ReplaceNumberByKey("ZcErr",keyVals,W_sigma[6],"=")
-//	keyVals = ReplaceNumberByKey("FWX",keyVals,W_coef[3],"=")
-//	keyVals = ReplaceNumberByKey("FWXErr",keyVals,W_sigma[3],"=")
-//	keyVals = ReplaceNumberByKey("FWY",keyVals,W_coef[5],"=")
-//	keyVals = ReplaceNumberByKey("FWYErr",keyVals,W_sigma[5],"=")
-//	keyVals = ReplaceNumberByKey("FWZ",keyVals,W_coef[7],"=")
-//	keyVals = ReplaceNumberByKey("FWZErr",keyVals,W_sigma[7],"=")
-//	keyVals = ReplaceNumberByKey("chisq",keyVals,V_chisq,"=")
-//	if (strlen(units[0]))
-//		keyVals = ReplaceStringByKey("Xunit",keyVals,units[0],"=")
-//	endif
-//	if (strlen(units[1]))
-//		keyVals = ReplaceStringByKey("Yunit",keyVals,units[1],"=")
-//	endif
-//	if (strlen(units[2]))
-//		keyVals = ReplaceStringByKey("Zunit",keyVals,units[2],"=")
-//	endif
-//	if (WaveExists(hkl))
-//		keyVals = ReplaceStringByKey("hklPeakCenter",keyVals,vec2str(hkl,sep=","),"=")
-//	endif
-//	return keyVals
+	return 0				// no error
+End
+
+
+Function Peak3DFitFuncProto(w,xx,yy,zz) : FitFunc
+	Wave w
+	Variable xx
+	Variable yy
+	Variable zz
+	return Gaussian3DFitFunc(w,xx,yy,zz)
 End
 
 
@@ -634,7 +605,7 @@ End
 //  ========================== Start of 3D Peak Shape Structure ==========================  //
 
 Static Constant PeakShapeUnitMaxLen = 50
-Structure Gaussian3DPeakStructure	// describes the Gaussian fit to a 3D peak
+Structure Generic3DPeakStructure	// describes the Generic fit to a 3D peak
 	int32		OK								// values are OK, 1==OK, 0==BAD
 	double	bkg, bkgErr					// background and error
 	double	amp, ampErr					// amplitude and error
@@ -654,12 +625,13 @@ Structure Gaussian3DPeakStructure	// describes the Gaussian fit to a 3D peak
 	double	hkl[3]						// OPTIONAL, contains possible hkl
 	int32		ix,iy,iz						// closest points in 3d volume to {x,y,z}
 	double	maxValue						// value at [ix,iy,iz]
-	char		name[50]						// OPTIONAL, name of wave that was fit
+	char		wname[50]					// OPTIONAL, name of wave that was fit
+	char		funcName[50]				// OPTIONAL, name of function used to fit
 EndStructure
 
 
-//ThreadSafe Function updateGaussian3DPeakStructure(GP)
-//	STRUCT Gaussian3DPeakStructure &GP
+//ThreadSafe Function updateGeneric3DPeakStructure(GP)
+//	STRUCT Generic3DPeakStructure &GP
 //	Variable bad = numtype(GP.bkg + GP.amp)
 //	bad = bad || numtype(GP.x + GP.y + GP.z)
 //	bad = bad || numtype(GP.FWx + GP.FWy + GP.FWz)
@@ -667,8 +639,8 @@ EndStructure
 //End
 
 
-ThreadSafe Function initGaussian3DPeakStructure(GP)
-	STRUCT Gaussian3DPeakStructure &GP
+ThreadSafe Function initGeneric3DPeakStructure(GP)
+	STRUCT Generic3DPeakStructure &GP
 	GP.OK = 0							// BAD values
 	GP.bkg = NaN	;	GP.bkgErr = NaN
 	GP.amp = NaN	;	GP.ampErr = NaN
@@ -684,14 +656,15 @@ ThreadSafe Function initGaussian3DPeakStructure(GP)
 	GP.Cyz = NaN	;	GP.CyzErr = NaN
 	GP.ix = 0		;	GP.iy = 0		; GP.iz = 0
 	GP.maxValue = NaN
-	GP.name = ""
+	GP.wname = ""
+	GP.funcName = ""
 	GP.Xunit = ""	;	GP.Yunit = ""	;	GP.Zunit = ""
 	GP.hkl[0] = NaN;	GP.hkl[1] = NaN;	GP.hkl[2] = NaN
 End
 
 
-ThreadSafe Function copyGaussian3DPeakStructure(in,dest)
-	STRUCT Gaussian3DPeakStructure &in, &dest
+ThreadSafe Function copyGeneric3DPeakStructure(in,dest)
+	STRUCT Generic3DPeakStructure &in, &dest
 
 	dest.OK		= in.OK
 	dest.bkg		= in.bkg		;	dest.bkgErr	= in.bkgErr
@@ -708,7 +681,8 @@ ThreadSafe Function copyGaussian3DPeakStructure(in,dest)
 	dest.Cyz		= in.Cyz		;	dest.CyzErr	= in.CyzErr
 	dest.ix		= in.ix		;	dest.iy		= in.iy	;	dest.iz = in.iz
 	dest.maxValue = in.maxValue
-	dest.name	= in.name
+	dest.funcName	= in.funcName
+	dest.wname	= in.wname
 
 	dest.Xunit = in.Xunit
 	dest.Yunit = in.Yunit
@@ -717,11 +691,11 @@ ThreadSafe Function copyGaussian3DPeakStructure(in,dest)
 End
 
 
-Function printGaussian3DPeakStructure(GP)
-	STRUCT Gaussian3DPeakStructure &GP
+Function printGeneric3DPeakStructure(GP)
+	STRUCT Generic3DPeakStructure &GP
 
 	if (!(GP.OK))
-		print "Gaussian3DPeakStructure is INVALID"
+		print "Generic3DPeakStructure is INVALID"
 		return 1
 	endif
 
@@ -730,7 +704,8 @@ Function printGaussian3DPeakStructure(GP)
 	units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
 	Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
 
-	printf "Gaussian Fit has offset = %s,  amp = %s,  chisq = %g\r",ValErrStr(GP.bkg,GP.bkgErr,sp=1),ValErrStr(GP.amp,GP.ampErr,sp=1), GP.chisq
+	String funcName = SelectString(strlen(GP.funcName), "Generic", GP.funcName)
+	printf "%s Fit has offset = %s,  amp = %s,  chisq = %g\r",funcName,ValErrStr(GP.bkg,GP.bkgErr,sp=1),ValErrStr(GP.amp,GP.ampErr,sp=1), GP.chisq
 	printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(GP.x,GP.xErr,sp=1),units[0],ValErrStr(GP.FWx,GP.FWxErr,sp=1),units[0]
 	printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[0],ValErrStr(GP.y,GP.yErr,sp=1),units[0],ValErrStr(GP.FWy,GP.FWyErr,sp=1),units[0]
 	printf "  <%sz> = %s%s,   FWHMz = %s%s\r",Qstr[0],ValErrStr(GP.z,GP.zErr,sp=1),units[0],ValErrStr(GP.FWz,GP.FWzErr,sp=1),units[0]
@@ -740,7 +715,7 @@ Function printGaussian3DPeakStructure(GP)
 		Variable dxyzMag=sqrt((GP.xErr)^2 + (GP.yErr)^2 + (GP.zErr)^2)
 		printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),units[0]
 	endif
-	printf "  Closest point to peak is the %s[%g, %g, %g] = %g\r",GP.name,GP.ix,GP.iy,GP.iz,GP.maxValue
+	printf "  Closest point to peak is the %s[%g, %g, %g] = %g\r",GP.wname,GP.ix,GP.iy,GP.iz,GP.maxValue
 
 	Make/N=3/D/FREE hkl = GP.hkl[p]
 	if (numtype(sum(hkl))==0)
@@ -1007,7 +982,7 @@ Function/S PeakMax3D(vol, [HW,printIt])	// finds max of data in a 3D volume
 		printf "max = %g   @ %s,  %s[%d][%d][%d],  pnt#=%d\r",maxVal, vec2str(xyzMax,sep=", "), NameOfWave(vol),ijk[0],ijk[1],ijk[2],npnt
 	endif
 
-	STRUCT Gaussian3DPeakStructure GP	// holds result of fitting
+	STRUCT Generic3DPeakStructure GP	// holds result of fitting
 	Variable err = FitPeakIn3D(vol,GP,HW,startXYZ=xyzMax,printIt=printIt)
 	if (err)
 		return ""
