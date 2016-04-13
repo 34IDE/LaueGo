@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.09
+#pragma version = 0.10
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -46,7 +46,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	Wave stdDev							// errors in space3D, standard deviation of each value in space3D
 	String func3D						// name of 3D peak fitting function, defaults to "Gaussian3DFitFunc"
 	Variable printIt
-	func3D = SelectString(strlen(func3D), "Gaussian3DFitFunc", func3D)
+	func3D = SelectString(ParamIsDefault(func3D), func3D, "Gaussian3DFitFunc")
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy	// HWy & HWz default to HWx
 	HWz = ParamIsDefault(HWz) || numtype(HWz) || HWz<=0 ? HWx : HWz
@@ -54,7 +54,9 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	initGeneric3DPeakStructure(GP)
 	FUNCREF Peak3DFitFuncProto FitFunc = $func3D
 	func3D = StringByKey("NAME",FuncRefInfo(FitFunc))
-	func3D = SelectString(strlen(func3D), "Gaussian3DFitFunc", func3D)
+	if (strlen(func3D)<1)
+		return 1							// no fit function
+	endif
 
 	if (!WaveExists(space3D))		// is space3D valid?
 		return 1
@@ -83,7 +85,15 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 		Wave errWave = stdDev
 	else
 		Duplicate/FREE space3D, errWave		// this assumes that one count in detector == 1 photon
-		errWave = sqrt(space3D)				// this is shot noise weighting
+		errWave = sqrt(abs(errWave))			// this is shot noise weighting
+		if (WaveMin(errWave)==0)
+			Duplicate/FREE errWave, test0
+			Redimension/N=(numpnts(errWave)) test0
+			test0 = test0==0 ? Inf : test0
+			Variable minErrVal = min(WaveMin(test0),1)
+			WaveClear test0
+			errWave = errWave==0 ? minErrVal : errWave
+		endif
 	endif
 
 	// set the starting point for the fit
@@ -100,6 +110,10 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
 	FuncFitMD/Q FitFunc, W_coef, space3D/W=errWave/I=1
+	if (V_FitError)
+		print "ERROR -- Fit failed with "+FitErrorString(V_FitError,V_FitQuitReason)
+		return 1
+	endif
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	W_coef[3] = abs(W_coef[3])		// FWx, FWy, FWz, must be >=0
@@ -107,12 +121,8 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	W_coef[7] = abs(W_coef[7])
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
 	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
-
-	Variable err=V_FitError, swap
-	err = err || !isPointInVolume(space3D,xyzFit)	// verify if point is in a volume, works for triplets and for a 3D array
-	if (err)
+	if (!isPointInVolume(space3D,xyzFit))	// verify if point is in a volume, works for triplets and for a 3D array
 		print "ERROR -- Fit failed, peak not inside of fitting volume"
-		print FitErrorString(V_FitError,V_FitQuitReason)
 		return 1
 	endif
 
@@ -124,6 +134,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
 	Wave hkl = diffractometer#sample2crystal(sa,xyzFit)	// rotate qvec from sample-location frame into crystal based frame, the hkl
 #endif
+#if exists("getRLfrom3DWaveProto")
 	if (!WaveExists(hkl))
 		FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
 		Wave RL = getRl(space3D,NaN)
@@ -131,6 +142,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 			MatrixOP/FREE hkl = Inv(RL) x xyzFit
 		endif
 	endif
+#endif
 
 	Make/N=3/I/FREE ijk, Nxyz=DimSize(space3D,p)
 	ijk = round( (xyzFit[p]-DimOffset(space3D,p)) / DimDelta(space3D,p) )
@@ -171,7 +183,6 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	if (printIt)
 		printGeneric3DPeakStructure(GP)
 	endif
-
 	return 0				// no error
 End
 
@@ -304,7 +315,7 @@ Function/S XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 
 //	Variable V_FitOptions=2, V_FitError=0, V_FitQuitReason=0		// V_FitOptions=2 means robust fitting
 	Variable V_FitError=0, V_FitQuitReason=0
-	FuncFitMD/Q Stats3D#Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
+	FuncFitMD/Q Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
 	Variable chisq = V_chisq
 	Wave W_sigma=W_sigma
 	Make/N=3/T/FREE units=WaveUnits(space3D,p)
@@ -328,6 +339,7 @@ Function/S XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
 	Wave hkl = diffractometer#sample2crystal(sa,Qo)		// rotate qvec from sample-location frame into crystal based frame, the hkl
 #endif
+#if exists("getRLfrom3DWaveProto")
 	if (!WaveExists(hkl))
 		FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
 		Wave RL = getRl(space3D,NaN)
@@ -335,6 +347,7 @@ Function/S XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 			MatrixOP/FREE hkl = Inv(RL) x Qo
 		endif
 	endif
+#endif
 
 	if (printIt)
 		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
@@ -395,7 +408,7 @@ Function/S XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
 	return keyVals
 End
 //
-Static Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
+Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	Wave w
 	Variable xx
 	Variable yy
@@ -430,7 +443,7 @@ Static Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 End
 
 
-Static Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
+Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 	Wave w
 	Variable xx
 	Variable yy
