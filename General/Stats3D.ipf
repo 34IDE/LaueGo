@@ -14,7 +14,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 	String func3D						// name of 3D peak fitting function, defaults to "Gaussian3DFitFunc"
 	Wave coefs							// fitting coefficients filled with initial values
 	Variable printIt
-	func3D = SelectString(ParamIsDefault(func3D), func3D, "Gaussian3DFitFunc")
+	func3D = SelectString(ParamIsDefault(func3D) || strlen(func3D)<1, func3D, "Gaussian3DFitFunc")
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	HWy = ParamIsDefault(HWy) || numtype(HWy) || HWy<=0 ? HWx : HWy	// HWy & HWz default to HWx
 	HWz = ParamIsDefault(HWz) || numtype(HWz) || HWz<=0 ? HWx : HWz
@@ -34,16 +34,10 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 		return 1
 	endif
 
-	if (!WaveExists(startXYZ))
-		WaveStats/M=1/Q space3D	// set starting point to the position of max value
-		Make/D/FREE xyz0 = {V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
-	else
-		Wave xyz0 = startXYZ
-	endif
-	if (!WaveExists(xyz0))
-		return 1
-	elseif (numpnts(xyz0)!=3 || numtype(sum(xyz0)))
-		return 1
+	if (WaveExists(startXYZ))
+		if (numpnts(startXYZ)!=3 || numtype(sum(startXYZ)))
+			return 1
+		endif
 	elseif (numtype(HWx+HWy+HWz) || HWx<=0 || HWy<=0 || HWz<=0)
 		return 1
 	endif
@@ -79,11 +73,13 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 		if (strlen(StringByKey("NAME",FuncRefInfo(funcCoef)))<1)
 			return 1							// no function for getting coefficients
 		endif
-		Wave W_coef = funcCoef(space3D,xyz0,HW)	// calculate the starting coefficients
+		Wave W_coef = funcCoef(space3D,startXYZ,HW)	// calculate the starting coefficients
 	endif
 	if (!WaveExists(W_coef))
 		return 1
 	endif
+printf "starting with coef = %s\r",vec2str(W_coef)
+
 
 	// do the fit
 	Variable V_FitOptions = (printIt ? 0 : 4)
@@ -94,6 +90,7 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 		return 1
 	endif
 	Note/K W_coef, ReplaceNumberByKey("V_chisq",note(W_coef),V_chisq,"=")	// store chisq in wave note
+printf "ended with coef = %s\r",vec2str(W_coef)
 
 	// only accept peaks that are within the original volume
 	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
@@ -185,6 +182,8 @@ Function/WAVE Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for f
 	if (!WaveExists(startXYZ))
 		WaveStats/M=1/Q w3D	// set starting point to the position of max value
 		Make/D/FREE xyz0 = {V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
+		Make/N=3/D/FREE delta = abs(DimDelta(w3D,p))
+		xyz0 += abs(xyz0[p])<(delta[p]/10) ? delta[p]/5 : 0
 	else
 		Wave xyz0 = startXYZ
 	endif
@@ -197,7 +196,7 @@ Function/WAVE Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for f
 	endif
 
 	Variable maxVal=WaveMax(w3D),minVal=WaveMin(w3D)
-	Make/N=8/D/O W_coef = {NaN,NaN,xyz0[0],HW0[0]/4,xyz0[1],HW0[1]/4,xyz0[2],HW0[2]/4}
+	Make/N=8/D/FREE W_coef = {NaN,NaN,xyz0[0],HW0[0]/4,xyz0[1],HW0[1]/4,xyz0[2],HW0[2]/4}
 	Note/K W_coef, ReplaceStringByKey("func3D","","Gaussian3DFitFunc","=")
 
 	if (maxVal>-minVal)			// a positive peak
@@ -310,8 +309,8 @@ Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 	//CurveFitDialog/ w[10] = Cyz
 
 	xx -= w[2]
-	yy -= w[3]
-	zz -= w[4]
+	yy -= w[4]
+	zz -= w[6]
 	Variable ss = (xx/w[3])^2 + (yy/w[5])^2 + (zz/w[7])^2 + xx*yy/w[8] + xx*zz/w[9] + yy*zz/w[10]
 	ss *= 4*ln(2)
 	ss = max(-500,ss)
@@ -621,21 +620,25 @@ Function printGeneric3DPeakStructure(GP)
 		return 1
 	endif
 
-	Make/N=3/T/FREE units = {GP.Xunit, GP.Yunit, GP.Zunit}
+	Make/N=3/T/FREE units={GP.Xunit, GP.Yunit, GP.Zunit}, unitsP
 	units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
-	units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
+	unitsP = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
 	Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
 
 	String funcName = SelectString(strlen(GP.funcName), "Generic", GP.funcName)
 	printf "%s Fit has offset = %s,  amp = %s,  chisq = %g\r",funcName,ValErrStr(GP.bkg,GP.bkgErr,sp=1),ValErrStr(GP.amp,GP.ampErr,sp=1), GP.chisq
-	printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(GP.x,GP.xErr,sp=1),units[0],ValErrStr(GP.FWx,GP.FWxErr,sp=1),units[0]
-	printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[0],ValErrStr(GP.y,GP.yErr,sp=1),units[0],ValErrStr(GP.FWy,GP.FWyErr,sp=1),units[0]
-	printf "  <%sz> = %s%s,   FWHMz = %s%s\r",Qstr[0],ValErrStr(GP.z,GP.zErr,sp=1),units[0],ValErrStr(GP.FWz,GP.FWzErr,sp=1),units[0]
-
-	if (stringmatch(units[0],units[1]) && stringmatch(units[0],units[2]))
+	printf "  <%sx> = %s%s,\t\tFWHMx = %s%s\r",Qstr[0],ValErrStr(GP.x,GP.xErr,sp=1),unitsP[0],ValErrStr(GP.FWx,GP.FWxErr,sp=1),unitsP[0]
+	printf "  <%sy> = %s%s,\t\tFWHMy = %s%s\r",Qstr[0],ValErrStr(GP.y,GP.yErr,sp=1),unitsP[1],ValErrStr(GP.FWy,GP.FWyErr,sp=1),unitsP[1]
+	printf "  <%sz> = %s%s,\t\tFWHMz = %s%s\r",Qstr[0],ValErrStr(GP.z,GP.zErr,sp=1),unitsP[2],ValErrStr(GP.FWz,GP.FWzErr,sp=1),unitsP[2]
+	if (numtype(GP.Cxy + GP.Cxz + GP.Cyz)==0)
+		printf "  Cxy = %s (%s*%s)\r",ValErrStr(GP.Cxy,GP.CxyErr,sp=1),units[0],units[1]
+		printf "  Cxz = %s (%s*%s)\r",ValErrStr(GP.Cxz,GP.CxzErr,sp=1),units[0],units[2]
+		printf "  Cyz = %s (%s*%s)\r",ValErrStr(GP.Cyz,GP.CyzErr,sp=1),units[1],units[2]
+	endif
+	if (stringmatch(units[0],units[1]) && stringmatch(units[0],units[2]) && strlen(units[0]))
 		Variable xyzMag=sqrt((GP.x)^2 + (GP.y)^2 + (GP.z)^2)
 		Variable dxyzMag=sqrt((GP.xErr)^2 + (GP.yErr)^2 + (GP.zErr)^2)
-		printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),units[0]
+		printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),unitsP[0]
 	endif
 	printf "  Closest point to peak is the %s[%g, %g, %g] = %g\r",GP.wname,GP.ix,GP.iy,GP.iz,GP.maxValue
 
