@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, April 13, 2016" time="03:25:29 PM CDT" isoTime="2016-04-13T15:25:29"></written>
+	<written date="Friday, April 15, 2016" time="03:10:28 PM CDT" isoTime="2016-04-15T15:10:28"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>3f7c5bd4265608f7a988381de9966c1f7ae86766</gitHash>
+	<gitHash>a46076ad3de4ede1446b81ca3450978e08a0c57f</gitHash>
 	<fileCount>225</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -25,7 +25,7 @@
 	<file version="0.05" time="2016-04-11T14:22:35" md5="2b043d1f21b6c80fdf5f392b17519803" sha256="0d576ff66b8e15ebdea6b3f50ba582a1096a8f035f6bfacb9c94a48a3d36cc70" ext=".ipf">microN/FlyImageExtract.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:54" md5="fa636622c6ca0cafbe43be0bda30771b" sha256="2e604afd90d24b28f2631b72d6ed089cdf7942ae0b3edb43eac53946ff67eb75" ext=".xml">materials/standard xtals/Pu-alpha.xml</file>
 	<file version="2.13" time="2016-02-18T13:01:31" md5="d0df121d794c3ab42c959221d34cd49d" sha256="0aa165b5ab7220fb1440845088e3e9136f20f1ac33107aacdac0f72b9c7fac57" ext=".ipf">General/FWHM.ipf</file>
-	<file version="0.1" time="2016-04-13T14:59:44" md5="72c1e1ac426145ea033f63eb64363790" sha256="b7131a95566274dc2706b3249178e569e874e2fa2f400638bb173bb898c5e707" ext=".ipf">General/Stats3D.ipf</file>
+	<file version="0.11" time="2016-04-15T14:59:20" md5="029d91efeb9a4afab5cd2a62b320b687" sha256="345a9ca4bef42e35421a551f8fce020afbbd6d04d82d75660081e4281f31cd35" ext=".ipf">General/Stats3D.ipf</file>
 	<file version="2.02" time="2015-04-06T12:28:50" md5="71f7c816b78fa886768eeeff46b720f6" sha256="d52e433d5bb230dded7db6d885a6d920d920fad8724ab99e87d029a7d7b480b3" ext=".ipf">Lattice/Reorient.ipf</file>
 	<file version="nan" time="2016-02-17T12:51:39" md5="61af7611a6ee88e43e39612091d08c06" sha256="81613bb62898bcebec52ab1e2e2aa72566b1f5c71fa2119112f8f23d1bebd7f0" ext=".xml">materials/standard xtals/Ga.xml</file>
 	<file version="nan" time="2015-03-16T13:55:50" md5="cd77de6db2098b618af02ccb19324887" sha256="77dfac712a4d10a7588117f23b7dd8f5bcb575cad795d26aed3f9e68e8a713a2" ext=".html">doc/microDiffraction.html</file>
