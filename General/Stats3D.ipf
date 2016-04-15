@@ -1,50 +1,18 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.10
+#pragma version = 0.11
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
 
 
-
-Function IntegralOfVolume(subVol,[bkg])
-	// returns the Integral of a volume, Integral{ f(x,y,z) dx dy dz }
-	// this can optionally remove a bkg value from all the valid points
-	Wave subVol
-	Variable bkg
-	bkg = ParamIsDefault(bkg) || numtype(bkg) ? 0 : bkg	// default bkg is zero, bkg=0 integrates everything
-	//	Sometimes, a large part of subVol may be zero because no pixels correspond to that voxel, 
-	//	they should not be included in this integral. 
-	//	So to subtract the bkg, I need to know the number of voxels actually used.
-	//	If bkg==0, then none is subtracted, so it all becomes simple again.
-
-	Variable NusedVoxels=NumberByKey("NusedVoxels",note(subVol),"=")
-	NusedVoxels = NusedVoxels<=0 ? NaN : NusedVoxels
-
-
-	if (bkg && numtype(NusedVoxels))							// a bkg was passed, but cannot find NusedVoxels
-		// did not provide NusedVoxels, but have bkg, ignore all voxels that are < (1/5 bkg)
-		Duplicate/FREE subVol, measuredVol
-		measuredVol = measuredVol<=(bkg/5) ? NaN : measuredVol
-		WaveStats/M=1/Q measuredVol
-		NusedVoxels = V_npnts
-		WaveClear measuredVol
-	else																	// bkg is zero or NusedVoxels was passed
-		WaveStats/M=1/Q subVol
-		NusedVoxels = numtype(NusedVoxels) ? V_npnts : NusedVoxels
-	endif
-	Variable total = V_Sum - (NusedVoxels*bkg)				// sum of desired voxels
-	total *= DimDelta(subVol,0)*DimDelta(subVol,1)*DimDelta(subVol,2)	// convert sum to integral
-	return total
-End
-
-
-Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt])
+Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, printIt])
 	Wave space3D
 	STRUCT Generic3DPeakStructure &GP	// holds result of fitting
 	Variable HWx,HWy,HWz			// starting half widths dx, dy, dz for the fit
 	Wave startXYZ						// starting xyz for the fit (defaults to position of peak)
 	Wave stdDev							// errors in space3D, standard deviation of each value in space3D
 	String func3D						// name of 3D peak fitting function, defaults to "Gaussian3DFitFunc"
+	Wave coefs							// fitting coefficients filled with initial values
 	Variable printIt
 	func3D = SelectString(ParamIsDefault(func3D), func3D, "Gaussian3DFitFunc")
 	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
@@ -80,6 +48,12 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 		return 1
 	endif
 
+	// set function that will copy fit results from W_coef & W_sigma into GP after the fit
+	FUNCREF Peak3DFitSetGPProto funcSetGP = $ReplaceString("Func",func3D,"GP",1,1)
+	if (strlen(StringByKey("NAME",FuncRefInfo(funcSetGP)))<1)
+		return 1							// no function to set GP
+	endif
+
 	Make/N=3/D/FREE HW={HWx,HWy,HWz}			// half widths in x, y, & z for start of fit
 	if (WaveExists(stdDev))
 		Wave errWave = stdDev
@@ -96,17 +70,22 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 		endif
 	endif
 
-	// set the starting point for the fit
-	Variable maxVal=WaveMax(space3D),minVal=WaveMin(space3D)
-	Make/N=8/D/O W_coef = {NaN,NaN,xyz0[0],HW[0]/4,xyz0[1],HW[1]/4,xyz0[2],HW[2]/4}
-	if (maxVal>-minVal)			// a positive peak
-		W_coef[1] = maxVal
-		W_coef[0] = minVal==0 ? 1 : minVal
-	else								// a negative peak
-		W_coef[1] = minVal
-		W_coef[0] = maxVal==0 ? 1 : maxVal
+	// set W_coef to the starting values of the coefficients
+	if (WaveExists(coefs))				// starting coefficients were passed 
+		Wave W_coef = coefs
+		Note/K W_coef, ReplaceStringByKey("func3D",note(W_coef),func3D,"=")
+	else
+		FUNCREF Peak3DFitSetCoefProto funcCoef = $ReplaceString("Func",func3D,"Coef",1,1)
+		if (strlen(StringByKey("NAME",FuncRefInfo(funcCoef)))<1)
+			return 1							// no function for getting coefficients
+		endif
+		Wave W_coef = funcCoef(space3D,xyz0,HW)	// calculate the starting coefficients
+	endif
+	if (!WaveExists(W_coef))
+		return 1
 	endif
 
+	// do the fit
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
 	FuncFitMD/Q FitFunc, W_coef, space3D/W=errWave/I=1
@@ -114,71 +93,18 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 		print "ERROR -- Fit failed with "+FitErrorString(V_FitError,V_FitQuitReason)
 		return 1
 	endif
-	Variable chisq = V_chisq
-	Wave W_sigma=W_sigma
-	W_coef[3] = abs(W_coef[3])		// FWx, FWy, FWz, must be >=0
-	W_coef[5] = abs(W_coef[5])
-	W_coef[7] = abs(W_coef[7])
-	Make/N=3/T/FREE units=WaveUnits(space3D,p)
+	Note/K W_coef, ReplaceNumberByKey("V_chisq",note(W_coef),V_chisq,"=")	// store chisq in wave note
+
+	// only accept peaks that are within the original volume
 	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
 	if (!isPointInVolume(space3D,xyzFit))	// verify if point is in a volume, works for triplets and for a 3D array
 		print "ERROR -- Fit failed, peak not inside of fitting volume"
 		return 1
 	endif
 
-	Wave hkl=$""
-#if exists("diffractometer#sample2crystal")
-	STRUCT sampleStructure sa	
-	String str = ParseFilePath(1,GetWavesDataFolder(space3D,1),":",1,0)+"sampleStructStr"
-	String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
-	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
-	Wave hkl = diffractometer#sample2crystal(sa,xyzFit)	// rotate qvec from sample-location frame into crystal based frame, the hkl
-#endif
-#if exists("getRLfrom3DWaveProto")
-	if (!WaveExists(hkl))
-		FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
-		Wave RL = getRl(space3D,NaN)
-		if (WaveExists(RL))
-			MatrixOP/FREE hkl = Inv(RL) x xyzFit
-		endif
-	endif
-#endif
-
-	Make/N=3/I/FREE ijk, Nxyz=DimSize(space3D,p)
-	ijk = round( (xyzFit[p]-DimOffset(space3D,p)) / DimDelta(space3D,p) )
-	ijk = limit(round(ijk[p]),0,Nxyz[p]-1)
-
-	GP.OK = 1
-	GP.bkg = W_coef[0]		;		GP.bkgErr = W_sigma[0]
-	GP.amp = W_coef[1]		;		GP.ampErr = W_sigma[1]
-	GP.x = W_coef[2]			;		GP.xErr = W_sigma[2]
-	GP.y = W_coef[4]			;		GP.yErr = W_sigma[4]
-	GP.z = W_coef[6]			;		GP.zErr = W_sigma[6]
-	GP.FWx = W_coef[3]		;		GP.FWxErr = W_sigma[3]
-	GP.FWy = W_coef[5]		;		GP.FWyErr = W_sigma[5]
-	GP.FWz = W_coef[7]		;		GP.FWzErr = W_sigma[7]
-	GP.chisq = V_chisq
-
-	GP.ix = ijk[0]				;		GP.iy = ijk[1]				;	GP.iz = ijk[2]
-	GP.maxValue = space3D[ijk[0]][ijk[1]][ijk[2]]
-
-	GP.Xunit = SelectString(strlen(units[0]),"", units[0])
-	GP.Yunit = SelectString(strlen(units[1]),"", units[1])
-	GP.Zunit = SelectString(strlen(units[2]),"", units[2])
-	GP.wname = SelectString(WaveType(space3D,2)==1, "", NameOfWave(space3D))
-	GP.funcName = func3D
-
-	if (numpnts(W_coef)>10)
-		GP.Cxy = W_coef[8]		;		GP.CxyErr = W_sigma[8]
-		GP.Cxz = W_coef[9]		;		GP.CxzErr = W_sigma[9]
-		GP.Cyz = W_coef[10]		;		GP.CyzErr = W_sigma[10]
-	endif
-
-	if (WaveExists(hkl))
-		GP.hkl[0] = hkl[0]
-		GP.hkl[1] = hkl[1]
-		GP.hkl[2] = hkl[2]
-	endif
+	// copy fit results from W_coef & W_sigma into GP
+	Wave W_sigma=W_sigma
+	funcSetGP(space3D,GP,W_coef,W_sigma)	// set GP from values in W_coef, W_sigma, & space3D
 
 	if (printIt)
 		printGeneric3DPeakStructure(GP)
@@ -186,228 +112,36 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, printIt
 	return 0				// no error
 End
 
-
-Function Peak3DFitFuncProto(w,xx,yy,zz) : FitFunc
+// prototype of a 3D peak fitting function
+Function Peak3DFitFuncProto(w,xx,yy,zz)
 	Wave w
 	Variable xx
 	Variable yy
 	Variable zz
-	return Gaussian3DFitFunc(w,xx,yy,zz)
+	return NaN
+End
+
+// prototype function to set starting coefs for 3D peak fit
+Function/WAVE Peak3DFitSetCoefProto(w3D,wxyz,HWxyz)
+	Wave w3D
+	Wave wxyz
+	Wave HWxyz
+	return $""
+End
+
+// prototype function to move values from coefs --> GP after a 3D peak fit
+Function Peak3DFitSetGPProto(w3D,GP,coefs,sigma)
+	Wave w3D
+	STRUCT Generic3DPeakStructure &GP
+	Wave coefs
+	Wave sigma
+	initGeneric3DPeakStructure(GP)
+	return 1
 End
 
 
 
-Function/S XX_FitPeakAt3Dmarker(space3D,Qc,QxHW,[QyHW,QzHW,printIt])
-	Wave space3D
-	Wave Qc								// center of sub-volume to fit
-	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
-	Variable printIt
 
-	printIt = ParamIsDefault(printIt) ? 0 : !(!printIt)
-	QyHW = ParamIsDefault(QyHW) ? NaN : QyHW	// QyHW & QzHW default to QwhX
-	QzHW = ParamIsDefault(QzHW) ? NaN : QzHW
-	if (WaveExists(space3D))
-		if (WaveDims(space3D)!=3)
-			return ""					// quit if really bad input passed
-		endif
-	endif
-	if (WaveExists(Qc))
-		if (numpnts(Qc)!=3)
-			return ""					// quit if really bad input passed
-		endif
-	endif
-	String spaceList = WaveListClass("GizmoXYZ;Qspace3D*","*","DIMS:3")
-	if (!WaveExists(space3D))					// no space3D passed
-		if (ItemsInList(spaceList)==1)		// only 1 choice, use it
-			Wave space3D = $StringFromList(0,spaceList)
-		elseif (ItemsInList(spaceList)<1)	// no acceptable choices, quit
-			return ""
-		endif
-	endif
-	String QcList=WaveList("*",";","DIMS:2,MAXROWS:1,MINROWS:1,MAXCOLS:3,MINCOLS:3" )+WaveList("*",";","DIMS:1,MAXROWS:3,MINROWS:3" )
-	if (!WaveExists(Qc))						// no Qc passed
-		if (ItemsInList(QcList)==1)			// only 1 choice, use it
-			Wave Qc = $StringFromList(0,QcList)
-		elseif (ItemsInList(QcList)<1)		// no acceptable choices, quit
-			return ""
-		endif
-	endif
-	if (numpnts(Qc)==3 && WaveType(Qc,2)==2)	// a free wave was passed, deal with it
-		QcList = "_free_;"+QcList
-	endif
-
-	if (!WaveExists(space3D) || !WaveExists(Qc) || !(QxHW>0))
-		printIt = 1
-		String QcName=NameOfWave(Qc), spaceName = NameOfWave(space3D)
-		QcName = SelectString(strlen(QcName),"gizmoScatterMarker",QcName)
-		QxHW = QxHW>0 ? QxHW : 1
-		Prompt spaceName,"3D space",popup,spaceList
-		Prompt QcName,"Center of 3D space",popup,QcList
-		Prompt QxHW,"X-HW in Volume to Use"
-		Prompt QyHW,"Y-HW in Volume to Use (NaN defaults to X-HW)"
-		Prompt QzHW,"Z-HW in Volume to Use (NaN defaults to X-HW)"
-		DoPrompt "Fit 3D Peak",spaceName,QcName,QxHW,QyHW,QzHW
-		if (V_flag)
-			return ""
-		endif
-		printf "FitPeakAt3Dmarker(%s, %s, %g",spaceName,QcName,QxHW
-		if (QyHW>0)
-			printf ", QyHW=%g",QyHW
-		endif
-		if (QzHW>0)
-			printf ", QzHW=%g",QzHW
-		endif
-		printf ")\r"
-		Wave space3D=$spaceName
-		if (!stringmatch(QcName,"_free_"))
-			Wave Qc=$QcName						// this is for a free wave which does not have a name
-		endif
-	endif
-	QyHW = QyHW>0 ? QyHW : QxHW
-	QzHW = QzHW>0 ? QzHW : QxHW
-	if (!WaveExists(space3D) || !WaveExists(Qc) || !(QxHW>0) || !(QyHW>0) || !(QzHW>0))
-		return ""
-	endif
-
-	Make/N=3/D/FREE Qhw={QxHW,QyHW,QzHW}	// half widths dQz, dQy, dQz for the sub volume
-	if (!WaveExists(space3D) || !WaveExists(Qc))
-		return ""
-	elseif (numtype(sum(Qhw)+sum(Qc)))
-		return ""
-	endif
-
-	Make/N=3/D/FREE Qlo, Qhi, iLo,iHi,Np
-	Qlo = Qc[p]-Qhw[p]
-	Qhi = Qc[p]+Qhw[p]
-	Np = DimSize(space3D,p)
-	iLo = (Qlo[p]-DimOffSet(space3D,p))/DimDelta(space3D,p)
-	iHi = (QHi[p]-DimOffSet(space3D,p))/DimDelta(space3D,p)
-	iLo = limit(floor(iLo),0,Np-1)
-	iHi = limit(ceil(iHi),0,Np-1)
-	Np = iHi[p]-iLo[p]+1
-	if (0 && printIt)
-		printWave(Qlo,Name="Qlo")
-		printWave(Qhi,Name="Qhi")
-		printWave(iLo,Name="iLo")
-		printWave(iHi,Name="iHi")
-		printWave(Np,Name="Np")
-	endif
-	if (WaveMin(Np)<=0)
-		return ""
-	endif
-	Make/N=(Np[0],Np[1],Np[2])/FREE/D sub3D, stdDev
-	sub3D = space3D[iLo[0]+p][iLo[1]+q][iLo[2]+r]
-	SetScale/P x, iLo[0]*DimDelta(space3D,0)+DimOffset(space3D,0), DimDelta(space3D,0),"",sub3D
-	SetScale/P y, iLo[1]*DimDelta(space3D,1)+DimOffset(space3D,1), DimDelta(space3D,1),"",sub3D
-	SetScale/P z, iLo[2]*DimDelta(space3D,2)+DimOffset(space3D,2), DimDelta(space3D,2),"",sub3D
-	stdDev = sub3D					// this assumes that one count in detector == 1 photon
-
-	// set the starting point for the fit
-	Variable maxVal=WaveMax(sub3D),minVal=WaveMin(sub3D)
-	Make/N=8/D/O W_coef = {NaN,NaN,Qc[0],Qhw[0]/4,Qc[1],Qhw[1]/4,Qc[2],Qhw[2]/4}
-	if (maxVal>-minVal)			// a positive peak
-		W_coef[1] = maxVal
-		W_coef[0] = minVal==0 ? 1 : minVal
-	else								// a negative peak
-		W_coef[1] = minVal
-		W_coef[0] = maxVal==0 ? 1 : maxVal
-	endif
-
-//	Variable V_FitOptions=2, V_FitError=0, V_FitQuitReason=0		// V_FitOptions=2 means robust fitting
-	Variable V_FitError=0, V_FitQuitReason=0
-	FuncFitMD/Q Gaussian3DFitFunc, W_coef, sub3D/W=stdDev/I=1
-	Variable chisq = V_chisq
-	Wave W_sigma=W_sigma
-	Make/N=3/T/FREE units=WaveUnits(space3D,p)
-	Make/N=3/D/FREE Qo=W_coef[2*p + 2]
-
-	Variable err = V_FitError
-	err = err || !( abs(Qc[0]-Qo[0]) < Qhw[0] )
-	err = err || !( abs(Qc[1]-Qo[1]) < Qhw[0] )
-	err = err || !( abs(Qc[2]-Qo[2]) < Qhw[0] )
-	if (err)
-		print "ERROR -- Fit failed, peak not inside of fitting volume"
-		print FitErrorString(V_FitError,V_FitQuitReason)
-		return ""
-	endif
-
-	Wave hkl=$""
-#if exists("diffractometer#sample2crystal")
-	STRUCT sampleStructure sa	
-	String str = ParseFilePath(1,GetWavesDataFolder(space3D,1),":",1,0)+"sampleStructStr"
-	String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
-	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
-	Wave hkl = diffractometer#sample2crystal(sa,Qo)		// rotate qvec from sample-location frame into crystal based frame, the hkl
-#endif
-#if exists("getRLfrom3DWaveProto")
-	if (!WaveExists(hkl))
-		FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
-		Wave RL = getRl(space3D,NaN)
-		if (WaveExists(RL))
-			MatrixOP/FREE hkl = Inv(RL) x Qo
-		endif
-	endif
-#endif
-
-	if (printIt)
-		units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
-		units = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
-		Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
-		printf "Gaussian Fit has offset = %s,  amp = %s,  chisq = %g\r",ValErrStr(W_coef[0],W_sigma[0],sp=1),ValErrStr(W_coef[1],W_sigma[1],sp=1),chisq
-		printf "  <%sx> = %s%s,   FWHMx = %s%s\r",Qstr[0],ValErrStr(Qo[0],W_sigma[2],sp=1),units[0],ValErrStr(W_coef[3],W_sigma[3],sp=1),units[0]
-		printf "  <%sy> = %s%s,   FWHMy = %s%s\r",Qstr[1],ValErrStr(Qo[1],W_sigma[4],sp=1),units[1],ValErrStr(W_coef[5],W_sigma[5],sp=1),units[1]
-		printf "  <%sz> = %s%s,   FWHMz = %s%s\r",Qstr[2],ValErrStr(Qo[2],W_sigma[6],sp=1),units[1],ValErrStr(W_coef[7],W_sigma[7],sp=1),units[2]
-		if (stringmatch(units[0],units[1]) && stringmatch(units[0],units[2]))
-			Variable Qmag=norm(Qo), dQmag=sqrt(W_sigma[2]^2 + W_sigma[4]^2 + W_sigma[6]^2)
-			printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(Qmag,dQmag,sp=1),units[0]
-		endif
-		if (WaveDims(space3D)==3)
-			Np = DimSize(space3D,p)
-			Make/N=3/D/FREE ijk
-			ijk = (Qo[p]-DimOffset(space3D,p)) / DimDelta(space3D,p)
-			ijk = limit(round(ijk[p]),0,Np[p]-1)
-			Variable i=ijk[0], j=ijk[1], k=ijk[2]
-			Variable N = k*Np[0]*Np[1] + j*Np[0] + i
-			printf "  Closest point to peak is the %s[%g, %g, %g] or [%d] = %g\r",NameOfWave(space3D),i,j,k,N,space3D[i][j][k]
-		endif
-		if (WaveExists(hkl))
-			printf "hkl Peak Center = %s\r",vec2str(hkl)
-		endif
-	endif
-
-	String keyVals=""
-	keyVals = ReplaceNumberByKey("offset",keyVals,W_coef[0],"=")
-	keyVals = ReplaceNumberByKey("offsetErr",keyVals,W_sigma[0],"=")
-	keyVals = ReplaceNumberByKey("amp",keyVals,W_coef[1],"=")
-	keyVals = ReplaceNumberByKey("ampErr",keyVals,W_sigma[1],"=")
-	keyVals = ReplaceNumberByKey("Xc",keyVals,W_coef[2],"=")
-	keyVals = ReplaceNumberByKey("XcErr",keyVals,W_sigma[2],"=")
-	keyVals = ReplaceNumberByKey("Yc",keyVals,W_coef[4],"=")
-	keyVals = ReplaceNumberByKey("YcErr",keyVals,W_sigma[4],"=")
-	keyVals = ReplaceNumberByKey("Zc",keyVals,W_coef[6],"=")
-	keyVals = ReplaceNumberByKey("ZcErr",keyVals,W_sigma[6],"=")
-	keyVals = ReplaceNumberByKey("FWX",keyVals,W_coef[3],"=")
-	keyVals = ReplaceNumberByKey("FWXErr",keyVals,W_sigma[3],"=")
-	keyVals = ReplaceNumberByKey("FWY",keyVals,W_coef[5],"=")
-	keyVals = ReplaceNumberByKey("FWYErr",keyVals,W_sigma[5],"=")
-	keyVals = ReplaceNumberByKey("FWZ",keyVals,W_coef[7],"=")
-	keyVals = ReplaceNumberByKey("FWZErr",keyVals,W_sigma[7],"=")
-	keyVals = ReplaceNumberByKey("chisq",keyVals,V_chisq,"=")
-	if (strlen(units[0]))
-		keyVals = ReplaceStringByKey("Xunit",keyVals,units[0],"=")
-	endif
-	if (strlen(units[1]))
-		keyVals = ReplaceStringByKey("Yunit",keyVals,units[1],"=")
-	endif
-	if (strlen(units[2]))
-		keyVals = ReplaceStringByKey("Zunit",keyVals,units[2],"=")
-	endif
-	if (WaveExists(hkl))
-		keyVals = ReplaceStringByKey("hklPeakCenter",keyVals,vec2str(hkl,sep=","),"=")
-	endif
-	return keyVals
-End
-//
 Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	Wave w
 	Variable xx
@@ -441,6 +175,108 @@ Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	ss = max(-500,ss)
 	return w[0] + w[1]*exp(-ss)
 End
+// returns starting coefs for fit filled with initial guess
+//
+Function/WAVE Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for fit
+	Wave w3D
+	Wave startXYZ				// OPTIONAL, scaled center of starting point, defaults to max
+	Wave HW						// OPTIONAL, starting HW[3]
+
+	if (!WaveExists(startXYZ))
+		WaveStats/M=1/Q w3D	// set starting point to the position of max value
+		Make/D/FREE xyz0 = {V_maxRowLoc,V_maxColLoc, V_maxLayerLoc}
+	else
+		Wave xyz0 = startXYZ
+	endif
+
+	if (!WaveExists(HW))
+		Make/D/FREE HW0		// HW not passed, set to 1/4 width of volume
+		HW0 = abs( DimDelta(w3D,p)*(DimSize(w3D,p)-1) )/4
+	else
+		Wave HW0 = HW
+	endif
+
+	Variable maxVal=WaveMax(w3D),minVal=WaveMin(w3D)
+	Make/N=8/D/O W_coef = {NaN,NaN,xyz0[0],HW0[0]/4,xyz0[1],HW0[1]/4,xyz0[2],HW0[2]/4}
+	Note/K W_coef, ReplaceStringByKey("func3D","","Gaussian3DFitFunc","=")
+
+	if (maxVal>-minVal)			// a positive peak
+		W_coef[1] = maxVal
+		W_coef[0] = minVal==0 ? 1 : minVal
+	else								// a negative peak
+		W_coef[1] = minVal
+		W_coef[0] = maxVal==0 ? 1 : maxVal
+	endif
+	return W_coef
+End
+//
+Function Gaussian3DFitGP(w3D,GP,coefs,sigma)	// fills GP from values in w3D and coefs after fit
+	Wave w3D
+	STRUCT Generic3DPeakStructure &GP
+	Wave coefs		// isually just W_coef
+	Wave sigma		// OPTIONAL, usually just W_sigma
+
+	Make/N=3/D/FREE xyz0 = {coefs[2], coefs[4], coefs[6]}
+	Wave hkl=$""
+#if exists("diffractometer#sample2crystal")
+	STRUCT sampleStructure sa	
+	String str = ParseFilePath(1,GetWavesDataFolder(w3D,1),":",1,0)+"sampleStructStr"
+	String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
+	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
+	Wave hkl = diffractometer#sample2crystal(sa,xyz0)	// rotate qvec from sample-location frame into crystal based frame, the hkl
+#endif
+#if exists("getRLfrom3DWaveProto")
+	if (!WaveExists(hkl))
+		FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
+		Wave RL = getRl(w3D,NaN)
+		if (WaveExists(RL))
+			MatrixOP/FREE hkl = Inv(RL) x xyz0
+		endif
+	endif
+#endif
+
+	Make/N=3/I/FREE ijk, Nxyz=DimSize(w3D,p)
+	ijk = round( (xyz0[p]-DimOffset(w3D,p)) / DimDelta(w3D,p) )
+	ijk = limit(round(ijk[p]),0,Nxyz[p]-1)
+
+	initGeneric3DPeakStructure(GP)
+
+	GP.OK = 1
+	GP.bkg = coefs[0]		;	GP.amp = coefs[1]
+	GP.x = coefs[2]		;	GP.FWx = abs(coefs[3])		// FW is always positive
+	GP.y = coefs[4]		;	GP.FWy = abs(coefs[5])
+	GP.z = coefs[6]		;	GP.FWz = abs(coefs[7])
+
+	GP.ix = ijk[0]			;		GP.iy = ijk[1]			;	GP.iz = ijk[2]
+	GP.maxValue = w3D[ijk[0]][ijk[1]][ijk[2]]
+	GP.chisq = NumberByKey("V_chisq",note(coefs),"=")
+
+	GP.Xunit = WaveUnits(w3D,0)
+	GP.Yunit = WaveUnits(w3D,1)
+	GP.Zunit = WaveUnits(w3D,2)
+	GP.wname = SelectString(WaveType(w3D,2)==1, "", NameOfWave(w3D))
+	GP.funcName = StringByKey("func3D",note(coefs),"=")
+
+	if (WaveExists(hkl))
+		GP.hkl[0] = hkl[0]
+		GP.hkl[1] = hkl[1]
+		GP.hkl[2] = hkl[2]
+	endif
+
+	if (WaveExists(sigma))
+		GP.bkgErr = sigma[0]
+		GP.ampErr = sigma[1]
+		GP.xErr = sigma[2]
+		GP.yErr = sigma[4]
+		GP.zErr = sigma[6]
+		GP.FWxErr = sigma[3]
+		GP.FWyErr = sigma[5]
+		GP.FWzErr = sigma[7]
+	endif
+	return 0
+End
+
+
 
 
 Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
@@ -481,6 +317,79 @@ Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 	ss = max(-500,ss)
 	return w[0] + w[1]*exp(-ss)
 End
+//
+// returns starting coefs for fit filled with initial guess
+Function/WAVE GaussianCross3DFitCoef(w3D,startXYZ,HW)
+	Wave w3D
+	Wave startXYZ				// OPTIONAL, scaled center of starting point, defaults to max
+	Wave HW						// OPTIONAL, starting HW[3]
+
+	Wave W_coef = Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for fit
+	Redimension/N=11 W_coef
+	Note/K W_coef, ReplaceStringByKey("func3D",note(W_coef),"GaussianCross3DFitFunc","=")
+	W_coef[8]  = sqrt(abs(W_coef[3]*W_coef[5]))/4
+	W_coef[9]  = sqrt(abs(W_coef[3]*W_coef[7]))/4
+	W_coef[10] = sqrt(abs(W_coef[5]*W_coef[7]))/4
+	return W_coef
+End
+//
+Function GaussianCross3DFitGP(w3D,GP,coefs,sigma)	// fills GP from values in w3D and coefs after fit
+	Wave w3D
+	STRUCT Generic3DPeakStructure &GP
+	Wave coefs		// isually just W_coef
+	Wave sigma		// OPTIONAL, usually just W_sigma
+
+	Gaussian3DFitGP(w3D,GP,coefs,sigma)	// fills GP from values in w3D and coefs after fit
+
+	GP.Cxy = coefs[8]		
+	GP.Cxz = coefs[9]		
+	GP.Cyz = coefs[10]	
+	if (WaveExists(sigma))
+		GP.CxyErr = sigma[8]
+		GP.CxzErr = sigma[9]
+		GP.CyzErr = sigma[10]
+	endif
+	return 0
+End
+
+
+
+
+
+Function IntegralOfVolume(subVol,[bkg])
+	// returns the Integral of a volume, Integral{ f(x,y,z) dx dy dz }
+	// this can optionally remove a bkg value from all the valid points
+	Wave subVol
+	Variable bkg
+	bkg = ParamIsDefault(bkg) || numtype(bkg) ? 0 : bkg	// default bkg is zero, bkg=0 integrates everything
+	//	Sometimes, a large part of subVol may be zero because no pixels correspond to that voxel, 
+	//	they should not be included in this integral. 
+	//	So to subtract the bkg, I need to know the number of voxels actually used.
+	//	If bkg==0, then none is subtracted, so it all becomes simple again.
+
+	Variable NusedVoxels=NumberByKey("NusedVoxels",note(subVol),"=")
+	NusedVoxels = NusedVoxels<=0 ? NaN : NusedVoxels
+
+
+	if (bkg && numtype(NusedVoxels))							// a bkg was passed, but cannot find NusedVoxels
+		// did not provide NusedVoxels, but have bkg, ignore all voxels that are < (1/5 bkg)
+		Duplicate/FREE subVol, measuredVol
+		measuredVol = measuredVol<=(bkg/5) ? NaN : measuredVol
+		WaveStats/M=1/Q measuredVol
+		NusedVoxels = V_npnts
+		WaveClear measuredVol
+	else																	// bkg is zero or NusedVoxels was passed
+		WaveStats/M=1/Q subVol
+		NusedVoxels = numtype(NusedVoxels) ? V_npnts : NusedVoxels
+	endif
+	Variable total = V_Sum - (NusedVoxels*bkg)				// sum of desired voxels
+	total *= DimDelta(subVol,0)*DimDelta(subVol,1)*DimDelta(subVol,2)	// convert sum to integral
+	return total
+End
+
+
+
+
 
 
 Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets and for a 3D array
