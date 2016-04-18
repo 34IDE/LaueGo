@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.97
+#pragma version = 3.98
 // #pragma hide = 1
 
 Menu "Graph"
@@ -56,6 +56,7 @@ Constant GIZMO_WIN_BIT = 65536
 //		xy2saturatedColors(), computes saturated colors for and RGB wheel on an xy graph
 //		reverseList(), reverses a list, handy for prompt,popups
 //		monotonic(a), checks if a wave is monotonic
+//		isWaveConstant(), returns 1 if all elements of wav are the same
 //		isdigit(c) & isletter(c), handy utilities
 //		angleVec2Vec(a,b), finds angle between two vectors (degree)
 //		perp2Vector(a), returns a free vector that is perpendicular to a, the direction around a is unspecified.
@@ -2522,6 +2523,72 @@ End
 //		i += 1
 //	while (i<n)
 //	return 1
+
+
+ThreadSafe Function isWaveConstant(wav,[places,checkCase])
+	// returns 1 if all elements of wav are the same
+	Wave wav
+	Variable places								// used to compare floating point waves
+	Variable checkCase							// only used for text waves, defaults to 1
+
+	Variable N=numpnts(wav), i,j, x0
+
+	if (WaveType(wav,1)==0)					// bad input wave, null wave
+		return 0
+	elseif (N<=1)									// empty or only 1 item, must be constant
+		return 1
+
+	elseif (WaveType(wav,1)==2)										// text wave
+		checkCase = ParamIsDefault(checkCase) || numtype(checkCase) ? 1 : !(!checkCase)
+		Wave/T wt = wav
+		String str=wt[0]
+		for (i=1; i<N; i+=1)
+			if (cmpstr(wt[i],str,checkCase))
+				return 0
+			endif
+		endfor
+		return 1
+
+	elseif (WaveType(wav,1)==1 && WaveType(wav,0) & 0x78)	// integer wave
+		x0 = wav[0]
+		MatrixOP/FREE delta = maxVal( Abs(wav - x0) )
+		return (delta[0] < 0.05)
+
+	elseif (WaveType(wav,1)==1 && WaveType(wav,0) & 0x07)	// floating point wave
+		places = ParamIsDefault(places) || numtype(places) || places<=0 ? 0 : !(!places)
+		if (places==0)
+			places = WaveType(wav,0) & 0x02 ? 5 : 15			// 32bit-->5 places,  64bit-->15 places
+		endif
+		x0 = max(WaveMax(wav),-WaveMin(wav))
+		MatrixOP/FREE delta = maxVal( Abs(wav - x0) )
+		if (delta[0]==0)
+			return 1
+		endif
+		return (delta[0]/abs(x0)) < (10^(-places))
+
+	elseif (WaveType(wav,1)==3)										// wav holds data folder references
+		Wave/DF wd = wav
+		DFREF DFR = wd[0]
+		for (i=1;i<N;i+=1)
+			if (!DataFolderRefsEqual(wd[i],DFR))
+				return 0
+			endif
+		endfor
+		return 1
+
+	elseif (WaveType(wav,1)==3)										// wav holds wave references
+		Wave/WAVE ww = wav
+		Wave/WAVE w0 = ww[0]
+		for (i=1;i<N;i+=1)
+			if (!WaveRefsEqual(ww[i],w0))
+				return 0
+			endif
+		endfor
+		return 1
+	endif
+
+	return 0					// wav is not known
+End
 
 
 ThreadSafe Function isdigit(c)				// returns 1 if c is a digit, 0-9 (otherwise returns 0)

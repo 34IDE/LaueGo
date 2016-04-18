@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.12
+#pragma version = 0.11
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -78,18 +78,19 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 	if (!WaveExists(W_coef))
 		return 1
 	endif
+printf "starting with coef = %s\r",vec2str(W_coef)
+
 
 	// do the fit
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
-printf "before fit, W_coef = %s\r",vec2str(W_coef)
 	FuncFitMD/Q FitFunc, W_coef, space3D/W=errWave/I=1
-printf "after fit, W_coef  = %s\r",vec2str(W_coef)
 	if (V_FitError)
 		print "ERROR -- Fit failed with "+FitErrorString(V_FitError,V_FitQuitReason)
 		return 1
 	endif
 	Note/K W_coef, ReplaceNumberByKey("V_chisq",note(W_coef),V_chisq,"=")	// store chisq in wave note
+printf "ended with coef = %s\r",vec2str(W_coef)
 
 	// only accept peaks that are within the original volume
 	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
@@ -138,7 +139,6 @@ End
 
 
 
-//	https://en.wikipedia.org/wiki/Gaussian_function
 Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	Wave w
 	Variable xx
@@ -168,7 +168,8 @@ Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 	//CurveFitDialog/ w[7] = zFWHM
 
 	Variable ss = ((xx-w[2])/w[3])^2 + ((yy-w[4])/w[5])^2 + ((zz-w[6])/w[7])^2
-	ss = limit(ss*4*ln(2),-500,500)
+	ss *= 4*ln(2)
+	ss = max(-500,ss)
 	return w[0] + w[1]*exp(-ss)
 End
 // returns starting coefs for fit filled with initial guess
@@ -277,7 +278,6 @@ End
 
 
 
-//	https://en.wikipedia.org/wiki/Gaussian_function
 Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 	Wave w
 	Variable xx
@@ -288,7 +288,7 @@ Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
 	//CurveFitDialog/ Equation:
 	//CurveFitDialog/ x0 -= w[2]  ;  y0 -= w[3]  ;  z0 -= w[4]
-	//CurveFitDialog/ Variable ss = (x0/xFWHM)^2 + (y0/yFWHM)^2 + (z0/zFWHM)^2 + x0*y0*Cxy + x0*z0*Cxz + y0*z0*Cyz
+	//CurveFitDialog/ Variable ss = (x0/xFWHM)^2 + (y0/yFWHM)^2 + (z0/zFWHM)^2 + x0*y0/Cxy + x0*z0/Cxz + y0*z0/Cyz
 	//CurveFitDialog/ f(x0,y0,z0) = bkg + amp * exp(-ss)
 	//CurveFitDialog/ End of Equation
 	//CurveFitDialog/ Independent Variables 3
@@ -311,8 +311,9 @@ Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 	xx -= w[2]
 	yy -= w[4]
 	zz -= w[6]
-	Variable ss = (xx/w[3])^2 + (yy/w[5])^2 + (zz/w[7])^2 + xx*yy*w[8] + xx*zz*w[9] + yy*zz*w[10]
-	ss = limit(ss*4*ln(2),-500,500)
+	Variable ss = (xx/w[3])^2 + (yy/w[5])^2 + (zz/w[7])^2 + xx*yy/w[8] + xx*zz/w[9] + yy*zz/w[10]
+	ss *= 4*ln(2)
+	ss = max(-500,ss)
 	return w[0] + w[1]*exp(-ss)
 End
 //
@@ -325,9 +326,9 @@ Function/WAVE GaussianCross3DFitCoef(w3D,startXYZ,HW)
 	Wave W_coef = Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for fit
 	Redimension/N=11 W_coef
 	Note/K W_coef, ReplaceStringByKey("func3D",note(W_coef),"GaussianCross3DFitFunc","=")
-	W_coef[8]  = 1/sqrt(abs(W_coef[3]*W_coef[5]))/10
-	W_coef[9]  = 1/sqrt(abs(W_coef[3]*W_coef[7]))/10
-	W_coef[10] = 1/sqrt(abs(W_coef[5]*W_coef[7]))/10
+	W_coef[8]  = sqrt(abs(W_coef[3]*W_coef[5]))/4
+	W_coef[9]  = sqrt(abs(W_coef[3]*W_coef[7]))/4
+	W_coef[10] = sqrt(abs(W_coef[5]*W_coef[7]))/4
 	return W_coef
 End
 //
@@ -619,28 +620,25 @@ Function printGeneric3DPeakStructure(GP)
 		return 1
 	endif
 
-	Make/N=3/T/FREE units={GP.Xunit, GP.Yunit, GP.Zunit}
+	Make/N=3/T/FREE units={GP.Xunit, GP.Yunit, GP.Zunit}, unitsP
+	units = SelectString(stringmatch(units[p],"nm\\S-1*"),units[p],"1/nm")		// two different ways of writing 1/nm
+	unitsP = SelectString(strlen(units[p]),""," ("+units[p]+")")						// add () when something present
 	Make/N=3/T/FREE Qstr=SelectString(strsearch(units[p],"1/nm",0)>=0,"","Q")	// is it Q?
 
-	String funcName = SelectString(strlen(GP.funcName), "Generic", GP.funcName), uStr
+	String funcName = SelectString(strlen(GP.funcName), "Generic", GP.funcName)
 	printf "%s Fit has offset = %s,  amp = %s,  chisq = %g\r",funcName,ValErrStr(GP.bkg,GP.bkgErr,sp=1),ValErrStr(GP.amp,GP.ampErr,sp=1), GP.chisq
-	uStr = units2str(1,GP.Xunit,"","")
-	printf "  <%sx> = %s%s,\t\tFWHMx = %s%s\r",Qstr[0],ValErrStr(GP.x,GP.xErr,sp=1),uStr,ValErrStr(GP.FWx,GP.FWxErr,sp=1),uStr
-	uStr = units2str(1,GP.Yunit,"","")
-	printf "  <%sy> = %s%s,\t\tFWHMy = %s%s\r",Qstr[1],ValErrStr(GP.y,GP.yErr,sp=1),uStr,ValErrStr(GP.FWy,GP.FWyErr,sp=1),uStr
-	uStr = units2str(1,GP.Zunit,"","")
-	printf "  <%sz> = %s%s,\t\tFWHMz = %s%s\r",Qstr[2],ValErrStr(GP.z,GP.zErr,sp=1),uStr,ValErrStr(GP.FWz,GP.FWzErr,sp=1),uStr
+	printf "  <%sx> = %s%s,\t\tFWHMx = %s%s\r",Qstr[0],ValErrStr(GP.x,GP.xErr,sp=1),unitsP[0],ValErrStr(GP.FWx,GP.FWxErr,sp=1),unitsP[0]
+	printf "  <%sy> = %s%s,\t\tFWHMy = %s%s\r",Qstr[0],ValErrStr(GP.y,GP.yErr,sp=1),unitsP[1],ValErrStr(GP.FWy,GP.FWyErr,sp=1),unitsP[1]
+	printf "  <%sz> = %s%s,\t\tFWHMz = %s%s\r",Qstr[0],ValErrStr(GP.z,GP.zErr,sp=1),unitsP[2],ValErrStr(GP.FWz,GP.FWzErr,sp=1),unitsP[2]
 	if (numtype(GP.Cxy + GP.Cxz + GP.Cyz)==0)
-		printf "  Cxy = %s %s\r",ValErrStr(GP.Cxy,GP.CxyErr,sp=1),units2str(1,GP.Xunit,GP.Yunit,"")
-		printf "  Cxz = %s %s\r",ValErrStr(GP.Cxz,GP.CxzErr,sp=1),units2str(1,GP.Xunit,GP.Zunit,"")
-		printf "  Cyz = %s %s\r",ValErrStr(GP.Cyz,GP.CyzErr,sp=1),units2str(1,GP.Yunit,GP.Zunit,"")
+		printf "  Cxy = %s (%s*%s)\r",ValErrStr(GP.Cxy,GP.CxyErr,sp=1),units[0],units[1]
+		printf "  Cxz = %s (%s*%s)\r",ValErrStr(GP.Cxz,GP.CxzErr,sp=1),units[0],units[2]
+		printf "  Cyz = %s (%s*%s)\r",ValErrStr(GP.Cyz,GP.CyzErr,sp=1),units[1],units[2]
 	endif
-
-	if (isWaveConstant(units,checkCase=1))		// all units the same, so also print radius
+	if (stringmatch(units[0],units[1]) && stringmatch(units[0],units[2]) && strlen(units[0]))
 		Variable xyzMag=sqrt((GP.x)^2 + (GP.y)^2 + (GP.z)^2)
 		Variable dxyzMag=sqrt((GP.xErr)^2 + (GP.yErr)^2 + (GP.zErr)^2)
-		String rStr=SelectString(strlen(Qstr[0]),"xyz",Qstr[0])
-		printf "  <|%s|> = %s%s\r",rStr,ValErrStr(xyzMag,dxyzMag,sp=1),units2str(1,GP.Xunit,"","")
+		printf "  <|%s|> = %s%s\r",Qstr[0],ValErrStr(xyzMag,dxyzMag,sp=1),unitsP[0]
 	endif
 	printf "  Closest point to peak is the %s[%g, %g, %g] = %g\r",GP.wname,GP.ix,GP.iy,GP.iz,GP.maxValue
 
@@ -649,40 +647,6 @@ Function printGeneric3DPeakStructure(GP)
 		printf "hkl Peak Center = %s\r",vec2str(hkl)
 	endif
 	return 1
-End
-
-
-Function/T units2str(paren,u1,u2,u3)
-	Variable paren			// if true, enclose in "()" when there are some units
-	String u1, u2, u3		// up to three units
-
-	if (strlen(u1+u2+u3)<1)
-		return ""
-	endif
-
-	Make/N=3/T/FREE units={u1,u2,u3}
-	String u0=SelectString(strlen(u1),u2,u1), out
-	units = SelectString(strlen(units[p]),u0,units[p])
-	Variable power=0
-	if (isWaveConstant(units))
-		power = (strlen(u1) > 0) + (strlen(u2) > 0) + (strlen(u3) > 0)
-	endif
-	if (power>1)
-		sprintf out, "(%s)^%d", u0,power
-		return out
-	endif
-
-	out = u1
-	if (strlen(u2))
-		out += SelectString(strlen(out),"","*") + u2	// combine with separator
-	endif
-	if (strlen(u3))
-		out += SelectString(strlen(out),"","*") + u3	// combine with separator
-	endif
-	out = SelectString(paren && strlen(out), out, "("+out+")")
-
-	out = ReplaceString("nm\\S-1",out,"1/nm")
-	return out
 End
 
 //  =========================== End of 3D Peak Shape Structure ===========================  //
