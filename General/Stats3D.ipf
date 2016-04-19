@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.13
+#pragma version = 0.14
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -113,11 +113,17 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 	// do the fit
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
-printf "before fit, W_coef = %s\r",vec2str(W_coef)
+if (StringMatch(func3D,"GaussianCross3DFitFunc") && printIt)
+	printf "before fit, W_coef = %s\r",vec2str(W_coef)
+endif
 	FuncFitMD/Q FitFunc, W_coef, space3D/W=errWave/I=1
-printf "after fit, W_coef  = %s\r",vec2str(W_coef)
+if (StringMatch(func3D,"GaussianCross3DFitFunc") && printIt)
+	printf "after fit, W_coef  = %s\r",vec2str(W_coef)
+endif
 	if (V_FitError)
-		print "ERROR -- Fit failed with "+FitErrorString(V_FitError,V_FitQuitReason)
+		if (printIt)
+			print "ERROR -- Fit failed with "+FitErrorString(V_FitError,V_FitQuitReason)
+		endif
 		return 1
 	endif
 	Note/K W_coef, ReplaceNumberByKey("V_chisq",note(W_coef),V_chisq,"=")	// store chisq in wave note
@@ -125,7 +131,9 @@ printf "after fit, W_coef  = %s\r",vec2str(W_coef)
 	// only accept peaks that are within the original volume
 	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
 	if (!isPointInVolume(space3D,xyzFit))	// verify if point is in a volume, works for triplets and for a 3D array
-		print "ERROR -- Fit failed, peak not inside of fitting volume"
+		if (printIt)
+			print "ERROR -- Fit failed, peak not inside of fitting volume"
+		endif
 		return 1
 	endif
 
