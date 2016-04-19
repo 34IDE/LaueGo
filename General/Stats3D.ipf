@@ -1,8 +1,39 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.12
+#pragma version = 0.13
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
+
+
+
+
+//  ======================================================================================  //
+//  ================================ Start of 3D Fitting =================================  //
+
+// fitting function intended to be use by user:
+//		STRUCT Generic3DPeakStructure GP
+//		FitPeakIn3D(...)
+//		printGeneric3DPeakStructure(GP)
+//		Set3Darray2GP(w3D,GP),  using parameters in GP, set all values of w3D
+//		GP2coefs(GP)		return a coefs wave using values in GP (you probably will not need this)
+//
+//	EXAMPLE:
+//		Function test_FitPeakIn3D()
+//			Make/N=(25,25,25)/O test3D
+//			SetScale/I x -5,5,"1/nm", test3D
+//			SetScale/I y -5,5,"1/nm", test3D
+//			SetScale/I z -5,5,"1/nm", test3D
+//			test3D = 1.2*exp(-(x^2 + y^2 + z^2 + 0.6*x*y)/3)+gnoise(0.02)
+//		
+//			STRUCT Generic3DPeakStructure GP
+//			Variable err = FitPeakIn3D(test3D,GP,1.0, func3D="Gaussian3DFitFunc", printIt=1)
+//			Duplicate/O test3D, calc3D
+//			if (err)
+//				calc3D = NaN
+//			else
+//				Set3Darray2GP(calc3D,GP)
+//			endif
+//		End
 
 
 Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, printIt])
@@ -69,11 +100,11 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 		Wave W_coef = coefs
 		Note/K W_coef, ReplaceStringByKey("func3D",note(W_coef),func3D,"=")
 	else
-		FUNCREF Peak3DFitSetCoefProto funcCoef = $ReplaceString("Func",func3D,"Coef",1,1)
-		if (strlen(StringByKey("NAME",FuncRefInfo(funcCoef)))<1)
+		FUNCREF Peak3DFitSetCoefProto funcCoefs = $ReplaceString("Func",func3D,"Coefs",1,1)
+		if (strlen(StringByKey("NAME",FuncRefInfo(funcCoefs)))<1)
 			return 1							// no function for getting coefficients
 		endif
-		Wave W_coef = funcCoef(space3D,startXYZ,HW)	// calculate the starting coefficients
+		Wave W_coef = funcCoefs(space3D,startXYZ,HW)	// calculate the starting coefficients
 	endif
 	if (!WaveExists(W_coef))
 		return 1
@@ -108,6 +139,24 @@ printf "after fit, W_coef  = %s\r",vec2str(W_coef)
 	return 0				// no error
 End
 
+Function Set3Darray2GP(w3D,GP)	// using parameters in GP, set all values of w3D
+	Wave w3D
+	STRUCT Generic3DPeakStructure &GP
+	if (!WaveExists(w3D))
+		return 1
+	elseif(WaveDims(w3D)!=3)
+		return 1
+	elseif (!(GP.OK))
+		return 1
+	endif
+
+	FUNCREF Peak3DFitFuncProto FitFunc = $(GP.funcName)
+	Wave coef = GP2coefs(GP)
+	if (WaveExists(coef))
+		w3D = FitFunc(coef,x,y,z)
+	endif
+End
+
 // prototype of a 3D peak fitting function
 Function Peak3DFitFuncProto(w,xx,yy,zz)
 	Wave w
@@ -133,6 +182,22 @@ Function Peak3DFitSetGPProto(w3D,GP,coefs,sigma)
 	Wave sigma
 	initGeneric3DPeakStructure(GP)
 	return 1
+End
+
+// prototype function to produce coefs wave from Generic3DPeakStructure
+Function/WAVE GP2coefs(GP)
+	STRUCT Generic3DPeakStructure &GP
+
+	if (!(GP.OK))
+		return $""
+	endif
+	String funcName = ReplaceString("FitFunc", GP.funcName,"FitGP2Coefs")
+	FUNCREF GP2coefs funcCoefs = $funcName
+	if (strlen(StringByKey("NAME",FuncRefInfo(funcCoefs)))<1)
+		return $""						// no function for getting coefficients
+	endif
+	Wave coefs = funcCoefs(GP)
+	return coefs
 End
 
 
@@ -173,7 +238,7 @@ Function Gaussian3DFitFunc(w,xx,yy,zz) : FitFunc
 End
 // returns starting coefs for fit filled with initial guess
 //
-Function/WAVE Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for fit
+Function/WAVE Gaussian3DFitCoefs(w3D,startXYZ,HW)	// returns starting coefs for fit
 	Wave w3D
 	Wave startXYZ				// OPTIONAL, scaled center of starting point, defaults to max
 	Wave HW						// OPTIONAL, starting HW[3]
@@ -273,6 +338,21 @@ Function Gaussian3DFitGP(w3D,GP,coefs,sigma)	// fills GP from values in w3D and 
 	endif
 	return 0
 End
+//
+Function/WAVE Gaussian3DFitGP2Coefs(GP)	// returns coef wave from GP
+	STRUCT Generic3DPeakStructure &GP
+	if (!(GP.OK))
+		return $""
+	endif
+
+	Make/N=8/FREE/D coefs
+	coefs[0] = GP.bkg
+	coefs[1] = GP.amp
+	coefs[2] = GP.x		;	coefs[3] = GP.FWx
+	coefs[4] = GP.y		;	coefs[5] = GP.FWy
+	coefs[6] = GP.z		;	coefs[7] = GP.FWz
+	return coefs
+End
 
 
 
@@ -317,12 +397,12 @@ Function GaussianCross3DFitFunc(w,xx,yy,zz) : FitFunc
 End
 //
 // returns starting coefs for fit filled with initial guess
-Function/WAVE GaussianCross3DFitCoef(w3D,startXYZ,HW)
+Function/WAVE GaussianCross3DFitCoefs(w3D,startXYZ,HW)
 	Wave w3D
 	Wave startXYZ				// OPTIONAL, scaled center of starting point, defaults to max
 	Wave HW						// OPTIONAL, starting HW[3]
 
-	Wave W_coef = Gaussian3DFitCoef(w3D,startXYZ,HW)	// returns starting coefs for fit
+	Wave W_coef = Gaussian3DFitCoefs(w3D,startXYZ,HW)	// returns starting coefs for fit
 	Redimension/N=11 W_coef
 	Note/K W_coef, ReplaceStringByKey("func3D",note(W_coef),"GaussianCross3DFitFunc","=")
 	W_coef[8]  = 1/sqrt(abs(W_coef[3]*W_coef[5]))/10
@@ -349,46 +429,30 @@ Function GaussianCross3DFitGP(w3D,GP,coefs,sigma)	// fills GP from values in w3D
 	endif
 	return 0
 End
+//
+Function/WAVE GaussianCross3DFitGP2Coefs(GP)	// returns coefs wave from GP
+	STRUCT Generic3DPeakStructure &GP
 
-
-
-
-
-Function IntegralOfVolume(subVol,[bkg])
-	// returns the Integral of a volume, Integral{ f(x,y,z) dx dy dz }
-	// this can optionally remove a bkg value from all the valid points
-	Wave subVol
-	Variable bkg
-	bkg = ParamIsDefault(bkg) || numtype(bkg) ? 0 : bkg	// default bkg is zero, bkg=0 integrates everything
-	//	Sometimes, a large part of subVol may be zero because no pixels correspond to that voxel, 
-	//	they should not be included in this integral. 
-	//	So to subtract the bkg, I need to know the number of voxels actually used.
-	//	If bkg==0, then none is subtracted, so it all becomes simple again.
-
-	Variable NusedVoxels=NumberByKey("NusedVoxels",note(subVol),"=")
-	NusedVoxels = NusedVoxels<=0 ? NaN : NusedVoxels
-
-
-	if (bkg && numtype(NusedVoxels))							// a bkg was passed, but cannot find NusedVoxels
-		// did not provide NusedVoxels, but have bkg, ignore all voxels that are < (1/5 bkg)
-		Duplicate/FREE subVol, measuredVol
-		measuredVol = measuredVol<=(bkg/5) ? NaN : measuredVol
-		WaveStats/M=1/Q measuredVol
-		NusedVoxels = V_npnts
-		WaveClear measuredVol
-	else																	// bkg is zero or NusedVoxels was passed
-		WaveStats/M=1/Q subVol
-		NusedVoxels = numtype(NusedVoxels) ? V_npnts : NusedVoxels
+	Wave coefs = Gaussian3DFitGP2Coefs(GP)
+	if (!WaveExists(coefs))
+		return $""
 	endif
-	Variable total = V_Sum - (NusedVoxels*bkg)				// sum of desired voxels
-	total *= DimDelta(subVol,0)*DimDelta(subVol,1)*DimDelta(subVol,2)	// convert sum to integral
-	return total
+
+	Redimension/N=11 coefs
+	coefs[8]  = GP.Cxy
+	coefs[9]  = GP.Cxz
+	coefs[10] = GP.Cyz
+
+	return coefs
 End
 
+//  ================================= End of 3D Fitting ==================================  //
+//  ======================================================================================  //
 
 
 
-
+//  ======================================================================================  //
+//  =========================== Start of Simple 3D Statistics ============================  //
 
 Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets and for a 3D array
 	Wave ww3D
@@ -435,6 +499,38 @@ Function/WAVE CenterOfMass3D(w3D)	// returns a 3-vector with the center of mass
 	com[2] = V_sum / mass				// z-component of com
 
 	return com
+End
+
+
+Function IntegralOfVolume(subVol,[bkg])
+	// returns the Integral of a volume, Integral{ f(x,y,z) dx dy dz }
+	// this can optionally remove a bkg value from all the valid points
+	Wave subVol
+	Variable bkg
+	bkg = ParamIsDefault(bkg) || numtype(bkg) ? 0 : bkg	// default bkg is zero, bkg=0 integrates everything
+	//	Sometimes, a large part of subVol may be zero because no pixels correspond to that voxel, 
+	//	they should not be included in this integral. 
+	//	So to subtract the bkg, I need to know the number of voxels actually used.
+	//	If bkg==0, then none is subtracted, so it all becomes simple again.
+
+	Variable NusedVoxels=NumberByKey("NusedVoxels",note(subVol),"=")
+	NusedVoxels = NusedVoxels<=0 ? NaN : NusedVoxels
+
+
+	if (bkg && numtype(NusedVoxels))							// a bkg was passed, but cannot find NusedVoxels
+		// did not provide NusedVoxels, but have bkg, ignore all voxels that are < (1/5 bkg)
+		Duplicate/FREE subVol, measuredVol
+		measuredVol = measuredVol<=(bkg/5) ? NaN : measuredVol
+		WaveStats/M=1/Q measuredVol
+		NusedVoxels = V_npnts
+		WaveClear measuredVol
+	else																	// bkg is zero or NusedVoxels was passed
+		WaveStats/M=1/Q subVol
+		NusedVoxels = numtype(NusedVoxels) ? V_npnts : NusedVoxels
+	endif
+	Variable total = V_Sum - (NusedVoxels*bkg)				// sum of desired voxels
+	total *= DimDelta(subVol,0)*DimDelta(subVol,1)*DimDelta(subVol,2)	// convert sum to integral
+	return total
 End
 
 
@@ -518,6 +614,9 @@ Function isPointInVolume(vol,vec)	// verify if point is in a volume, works for t
 
 	return 1
 End
+
+//  ============================ End of Simple 3D Statistics =============================  //
+//  ======================================================================================  //
 
 
 
