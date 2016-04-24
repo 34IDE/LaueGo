@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.47
+#pragma version = 2.48
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -10,7 +10,6 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 
 
 // written by Jon Tischler.
-// last modified February 7, 2005
 //		with thanks to Jan Ilavsky and Andrei Tkachuk for comments & bug reports
 //
 // For users who wish to include additional information from the data file in
@@ -119,6 +118,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Jun 24, 2015, changed the "#UQn" kludge to just skip all lines starting with a "#" embedded in the scan data.
 //
 // Mar 18, 2016, in ReadDataColumns(), used /O on the Make in case the column name is repeated
+//
+// Apr 23 2016, cleaned up specInfo() and specinfoT()
 
 Menu "Data"
 	"-"
@@ -2633,137 +2634,54 @@ End
 
 //
 //		This is the spec info routines
+//			specInfo  returns a NUNBER
+//			specInfoT returns a STRING
+//			specInformation(scanNum) is INTERACTIVE
 //
 
-ThreadSafe Function specInfo(scanNum,key)
+// retrieve a specific PV or motor position from a loaded spec data file
+// set global variable V_flag > 0 if there is an error (0=no error)
+// values for V_flag are:
+//		0=(no error)
+//		1=(scan number must be >0)
+//		2=(Scan not found)
+//		3=(Scan information not found)
+//		4=(value is not a valid number)
+//
+ThreadSafe Function specInfo(scanNum,key)	// returns a NUMBER
 	Variable scanNum
-	String key			// pv name to retrieve
-		// retrieve a specific PV or motor position from a loaded spec data file
-		// set global variable V_flag > 0 if there is an error (0=no error)
-		// values for V_flag are:
-		//		0=(no error)
-		//		1=(scan number must be >0)
-		//		2=(Scan not found)
-		//		3=(Scan information not found)
-		//		4=(value is a string, not a number)
+	String key										// key of value to retrieve
 
-	Variable/G V_flag = 0
-	if (scanNum<1 || numtype(scanNum))
-		V_flag = 1											// scan number must be > 0
+	String str = specInfoT(scanNum,key)	// get text verion of value
+	NVAR V_flag = V_flag
+	if (V_flag)										// could not even get key as text
 		return NaN
 	endif
 
-	String folderName = Find_specDataFolder(scanNum)	// get the folder for the spec scan
-	if (!cmpstr(folderName,"bad dir"))
-				V_flag = 2									// data folder does not exist
-				return NaN									// finally give up
-	endif
-
-	String list=""
-	list += StrVarOrDefault(folderName+"specMotors","")
-	list += StrVarOrDefault(folderName+"EPICS_PVs","")
-	list += StrVarOrDefault(folderName+"specValues","")
-
-	String str = StringByKey(key, list)
-	if (strlen(str)>0)		// found something in the list
-		Variable value=str2num(str)
-		if (numtype(value))
-			V_flag = 4			// found something, but it is not a number
-		else
-			return value
-		endif
-
-	elseif (stringmatch(key,"duration"))
-		return DurationOf1specScans(scanNum)
-	else
-		V_flag = 3				// that key was not found
-	endif
-
-	return NaN
+	Variable num=str2num(str)
+	V_flag = (numtype(num)==2) ? 4 : V_flag	// value is not a valid number
+	return num
 End
-//Function specInfo(scanNum,key)
-//	Variable scanNum
-//	String key			// pv name to retrieve
-//		// retrieve a specific PV or motor position from a loaded spec data file
-//		// set global variable V_flag > 0 if there is an error (0=no error)
-//		// values for V_flag are:
-//		//		0=(no error)
-//		//		1=(scan number must be >0)
-//		//		2=(Scan not found)
-//		//		3=(Scan information not found)
-//		//		4=(value is a string, not a number)
-//
-//	Variable/G V_flag = 0
-//	if (scanNum<1 || numtype(scanNum))
-////		Print "scan number must be >0"
-//		V_flag = 1
-//		return NaN
-//	endif
-//
-//	String folderName = Find_specDataFolder(scanNum)	// get the folder for the spec scan
-//	if (!cmpstr(folderName,"bad dir"))
-//				V_flag = 2									// data folder does not exist
-//				return NaN									// finally give up
-//	endif
-//
-//	String list=""
-//	if (exists(folderName+"specMotors")==2)
-//		SVAR specMotors=$(folderName+"specMotors")
-//		list += specMotors
-//	endif
-//	if (exists(folderName+"EPICS_PVs")==2)
-//		SVAR EPICS_PVs=$(folderName+"EPICS_PVs")
-//		list += EPICS_PVs
-//	endif
-//	if (exists(folderName+"specValues")==2)
-//		SVAR spec_Values=$(folderName+"specValues")
-//		list += spec_Values
-//	endif
-//
-//	String str = StringByKey(key, list)
-//
-//	if (strlen(str)>0)		// found something in the list
-//		Variable value=str2num(str)
-//		if (numtype(value))
-//			V_flag = 4
-////			Print "value = '"+str+"',  which is not a number"
-//		else
-//			return value
-//		endif
-//
-//	elseif (stringmatch(key,"duration"))
-//		return DurationOf1specScans(scanNum)
-//	else
-//		V_flag = 3
-////		Print "key = '"+key+"'  not found"
-//	endif
-//
-//	return NaN
-//End
 
-ThreadSafe Function/T specInfoT(scanNum,key)
+
+ThreadSafe Function/T specInfoT(scanNum,key)	// returns a STRING
 	Variable scanNum
-	String key			// pv name to retrieve
-		// retrieve a specific PV or motor position from a loaded spec data file
-		// set global variable V_flag > 0 if there is an error (0=no error)
-		// values for V_flag are:
-		//		0=(no error)
-		//		1=(scan number must be >0)
-		//		2=(Scan not found)
-		//		3=(Scan information not found)
-		//		4=(value is a string, not a number)
+	String key										// key of value to retrieve
 
 	Variable/G V_flag = 0
 	if (scanNum<1 || numtype(scanNum))
-//		Print "scan number must be >0"
-		V_flag = 1
+		V_flag = 1									// scan number must be > 0
 		return ""
 	endif
 
 	String folderName = Find_specDataFolder(scanNum)	// get the folder for the spec scan
 	if (!cmpstr(folderName,"bad dir"))
-			V_flag = 2									// data folder does not exist
-			return ""										// finally give up
+		V_flag = 2									// data folder does not exist
+		return ""									// finally give up
+	endif
+
+	if (stringmatch(key,"duration"))
+		return num2str(DurationOf1specScans(scanNum))
 	endif
 
 	String str
@@ -2780,38 +2698,12 @@ ThreadSafe Function/T specInfoT(scanNum,key)
 	list += StrVarOrDefault(folderName+"specMotors","")
 	list += StrVarOrDefault(folderName+"EPICS_PVs","")
 	list += StrVarOrDefault(folderName+"specValues","")
-	return StringByKey(key, list)
 
-//		if (exists(folderName+key)==2)
-//			return StrVarOrDefault(folderName+key,"")
-//	//		SVAR spec_str=$(folderName+key)
-//	//		return spec_str
-//		endif
-//		if (exists(folderName+"spec"+key)==2)
-//			return StrVarOrDefault(folderName+"spec"+key,"")
-//	//		SVAR spec_str=$(folderName+"spec"+key)
-//	//		return spec_str
-//		endif
-//
-//	String list=""
-//
-//		if (exists(folderName+"specMotors")==2)
-//			list += StrVarOrDefault(folderName+"specMotors","")
-//	//		SVAR specMotors=$(folderName+"specMotors")
-//	//		list += specMotors
-//		endif
-//		if (exists(folderName+"EPICS_PVs")==2)
-//			list += StrVarOrDefault(folderName+"EPICS_PVs","")
-//	//		SVAR EPICS_PVs=$(folderName+"EPICS_PVs")
-//	//		list += EPICS_PVs
-//		endif
-//		if (exists(folderName+"specValues")==2)
-//			list += StrVarOrDefault(folderName+"specValues","")
-//	//		SVAR spec_Values=$(folderName+"specValues")
-//	//		list += spec_Values
-//		endif
-//
-//	return StringByKey(key, list)
+	if (!keyInList(key,list,":",";"))
+		V_flag = 3									// Scan information not found
+		return ""
+	endif
+	return StringByKey(key,list)
 End
 
 
@@ -2856,36 +2748,6 @@ ThreadSafe Function DurationOf1specScans(scanNum)
 	Variable secs = epoch[last] - epoch[0] + seconds[last]	// elapsed time in seconds
 	return secs
 End
-//Function DurationOfspecScans(range)				// returns duration of the spec scans
-//	String range									// a range of spec scan numbers
-//	Variable topOfStack = (ItemsInList(GetRTStackInfo(0))<2
-//	if (numtype(str2num(range))==2 && topOfStack)
-//		Prompt range, "range of spec scan"
-//		DoPrompt "scan range", range
-//		if (V_flag)
-//			return NaN
-//		endif
-//	endif
-//
-//	Variable sec=0									// elapsed time in seconds
-//	Variable last=-1, i
-//	String fldr
-//	for (i=NextInRange(range,-Inf); i==i; i=NextInRange(range,i))
-//		fldr = Find_specDataFolder(i)				// folder with scan
-//		Wave epoch = $(fldr+"Epoch")
-//		Wave seconds = $(fldr+"seconds")
-//		if (!WaveExists(epoch) || !WaveExists(seconds))
-//			continue
-//		endif
-//		last = numpnts(epoch)-1
-//		sec += epoch[last] - epoch[0] + seconds[last]
-//	endfor
-//	sec = (last<0) ? NaN : round(sec)
-//	if (topOfStack)
-//		printf "scans in range [%s]  took  %s  (= %g sec)\r",range,Secs2Time(sec,5,0),sec
-//	endif
-//	return sec
-//End
 
 
 
