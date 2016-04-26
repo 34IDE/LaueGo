@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.16
+#pragma version = 2.17
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -19,7 +19,7 @@ Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -0.95	// left edge of scale bar on a
 //	setGizmoAxisLabels()			set the three axis labels
 //
 //	isGizmoObjectDisplayed()		returns -1 if object no found on displayList, if found return place in displayList
-//	GetGizmoObjects()				returns list of objects of type "type", from top gizmo or named gizmo
+//	GetGizmoObjects()					returns list of objects of type "type", from top gizmo or named gizmo
 //	GizmoListScatterWaves()		return list of all scatter plots, except 'scatterMarker0, scatterMarker1, ...
 //	GizmoListIsoSurfaceWaves()	return list of all iso surface waves
 //	GizmoListSurfaceWaves([gizmo])	return list of all Surface plots on gizmo
@@ -1568,44 +1568,27 @@ End
 //  ======================================================================================  //
 //  =================== Start of Examining things Displayed in a Gizmo ===================  //
 
-Function isGizmoObjectDisplayed(object,[gizmo])		// returns -1 if object no found on displayList, if found return place in displayList
-	String object						// name of a gizmo object
+// returns -1 if object not found on displayList, if found return place in displayList
+Function isGizmoObjectDisplayed(objectName,[gizmo])
+	String objectName
 	String gizmo
 	gizmo = SelectString(ParamIsDefault(gizmo),gizmo,"")
-
 	if (strlen(gizmo))
 		if (WinType(gizmo)!=GIZMO_WIN_TYPE)
 			return -1
 		endif
 	endif
 
-#if (IgorVersion()<7)
-	String Nswitch = SelectString(strlen(gizmo),"","/N="+gizmo)
-	Execute "GetGizmo/Z"+Nswitch+" displayList"
-	String displayList=StrVarOrDefault("S_DisplayList","")
-	KillWaves/Z TW_DisplayList
-	KillStrings/Z S_DisplayList
+#if (IgorVersion()>=7)
+	GetGizmo/N=$gizmo displayNameList
+	String list = S_DisplayNames
 #else
-	GetGizmo/Z/N=$gizmo displayList
-	String displayList=S_DisplayList
-	KillWaves/Z TW_DisplayList
+	String cmd = "GetGizmo" + SelectString(strlen(gizmo)>0,"","/N="+gizmo) + " displayNameList"
+	Execute cmd
+	String list=StrVarOrDefault("S_DisplayNames","")
+	KillStrings/Z S_DisplayNames
 #endif
-
-	String item, find="*, object="+object
-	Variable i,i0, num=-1
-	for (i=0;i<ItemsInList(displayList);i+=1)
-		item = StringFromList(i,displayList)
-		if (stringmatch(item,find))
-			i0 = strsearch(item," setDisplayList=",0,2)
-			if (i0>0)
-				i0 += strlen(" setDisplayList=")
-				num = str2num(item[i0,Inf])
-			endif
-			break
-		endif
-	endfor
-	num = num>=0 ? num : -1
-	return num
+	return WhichListItem(objectName,list)
 End
 
 
