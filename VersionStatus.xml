@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, April 19, 2016" time="04:59:46 PM CDT" isoTime="2016-04-19T16:59:46"></written>
+	<written date="Monday, April 25, 2016" time="07:44:33 PM CDT" isoTime="2016-04-25T19:44:33"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>b6ae73d11cc161ce16e737c0a1898ab31aeef04f</gitHash>
+	<gitHash>957ab8ebbb66ffad217f295e106720f61017c55f</gitHash>
 	<fileCount>225</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -19,7 +19,7 @@
 	<file version="0.83" time="2015-08-25T10:55:32" md5="9da2b82334ed449daa6a9857ec46670a" sha256="e263d5331a737ee4a2ab21ce12ccc19bbb21e09cd2ea6a14196723288838d82e" ext=".ipf">microN/DetectorCalibration.ipf</file>
 	<file version="2.03" time="2015-08-18T16:16:26" md5="2ef66d840057712ed1fe6bbcf459328f" sha256="1672736d318e9fd2e3c98438a42ef0f566d5abc707c8de40999296741a08cda7" ext=".ipf">General/GizmoClip.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" sha256="822fd56a1f37923f54410eac72306f005c8c37dd7b54104eaa8ab0dc741998dd" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.47" time="2016-03-21T18:32:01" md5="9027c41c1cadf134befa24da1e4221d9" sha256="7b8551f1b2ca5462feb6f4f478d6ebf896baeac11f51e23804ae4af18d0bb223" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.48" time="2016-04-23T23:17:18" md5="95a101ba6c0565af70ccbf077f8e7e85" sha256="b0d14292118f0abc6ecb105d926eba92f1617149f1c92272400234f19fae0d51" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" sha256="93ec0b54c4c2a1e3a276fbb5ed400d5126aca93ebbd6d9096fe52d18e9e211dc" ext=".ipf">General/absorption.ipf</file>
 	<file version="2.06" time="2015-10-27T11:37:29" md5="01903dc19180cc9b80143063b67cf55a" sha256="56e868517b10991e400793806f3fc04e113829aaa6dcb9b546d5bd63e8a00d1d" ext=".ipf">General/GizmoMovies.ipf</file>
 	<file version="0.05" time="2016-04-11T14:22:35" md5="2b043d1f21b6c80fdf5f392b17519803" sha256="0d576ff66b8e15ebdea6b3f50ba582a1096a8f035f6bfacb9c94a48a3d36cc70" ext=".ipf">microN/FlyImageExtract.ipf</file>
@@ -63,7 +63,7 @@
 	<file version="nan" time="2016-02-17T12:52:23" md5="dc11aa71904a996102699a6e3a2c6c8c" sha256="9ccf6a1d49d35d40883ace295ad9938aa04602133b5f85cae14b37754610fe6d" ext=".xml">materials/standard xtals/MgO.xml</file>
 	<file version="nan" time="2014-10-30T13:10:06" md5="5c5fe7747d3108467bdd6fb4f80881a1" sha256="198a282c972e2d45609cd82ea8243af6af5b878726371b661dfabc93f309ba00" ext=".mtl">materials/mtl files/LaMnO3.mtl</file>
 	<file version="nan" time="2016-02-17T12:50:16" md5="b200fa6dd09832fb5e2d13c3da806645" sha256="81d6aa2369b9a7747e4214dccc62a654fa21ba890b0b7ed42b99385f98221553" ext=".xml">materials/standard xtals/Al2O3.xml</file>
-	<file version="2.16" time="2016-03-31T14:09:11" md5="3042bdb3c59449b2338ac67c689c3c6f" sha256="905e41b1bfaa3970112d9fea81f6affb9ce0b6e4ef8520cbf374caa6bccda3c0" ext=".ipf">General/GizmoUtility.ipf</file>
+	<file version="2.17" time="2016-04-25T19:43:02" md5="930b9c7aee8a83257a07f2c80ae75c2d" sha256="ff8c76b56cedb015b54f4fa5291d9bf654afe336a5441333f825427c465f5e9d" ext=".ipf">General/GizmoUtility.ipf</file>
 	<file version="nan" time="2016-02-11T11:22:51" md5="f02823b8fd764fda5361e10b448778b9" sha256="ade95be0b6586c14bb3794b91a0f4959d2109f2962f346c43da321b29c19971a" ext=".mtl">materials/mtl files/CuO.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="41f22bdd051094e103403c08886fb3bf" sha256="48e9aae126bf8a0be7c92f11baedfb8cefc8a4c95cb6ee0a3030e44c642ef036" ext=".xml">geometrys/geoN_2011-10-20_21-35-02.xml</file>
 	<file version="nan" time="2016-02-17T12:54:04" md5="3910bdc2431615e4e0617b7037359389" sha256="df632f3b4f27c268a67da3fd26155e14d41d35b8979672a8be25092d15f5014a" ext=".xml">materials/standard xtals/WC.xml</file>
