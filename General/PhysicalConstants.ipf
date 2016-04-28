@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.12
+#pragma version = 2.13
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=3.51		// supplies:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), placesOfPrecision(a), roundSignificant(val,N)
 Static StrConstant PhysicalConstantServerURL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -205,8 +205,8 @@ Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
 	if (V_bytesRead != V_structSize || V_flag)
 		DoAlert/T="Physical Constants" 1, "Update Physical Constants from NIST web site?"
-		if (V_flag==1)									// could not load from Preferences, goto web
-			UpdateLocalCopyOfConstants()			// get constants from NIST web site, and try again
+		if (V_flag==1)										// could not load from Preferences, goto web
+			UpdateLocalCopyOfConstants(printIt=1)	// get constants from NIST web site, and try again
 			LoadPackagePreferences "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAll
 		else
 			return NaN
@@ -331,18 +331,35 @@ End
 
 
 // Creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServerURL
-Static Function UpdateLocalCopyOfConstants()
+// This only actually updates your local values if the new ones differ from your current values
+Static Function UpdateLocalCopyOfConstants([printIt])
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : 0
 	String buf = getFullASCIIfromWeb()		// ascii buffer with all of the constants info, must have a terminating "\n"
 	if (strlen(buf)<200)
 		print buf
 		return 1
 	endif
 
-	STRUCT PhysicalConstantStructureAll cAll
-	Variable N = FillConstantStucturesFromBuf(buf, cAll)
-	SavePackagePreferences/FLSH=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0 , cAll
-	printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServerURL
-//	String fileName = ParseFilePath(1,FunctionPath("UpdateLocalCopyOfConstants"),":",1,0)+"Physical Constants.txt"
+	STRUCT PhysicalConstantStructureAll cAllNEW
+	Variable N=FillConstantStucturesFromBuf(buf,cAllNEW)
+
+	// check if downloaded constants differ from current constants, first get current structure
+	STRUCT PhysicalConstantStructureAll cAllCurrent
+	LoadPackagePreferences/MIS=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0, cAllCurrent
+	Variable differ = (V_bytesRead != V_structSize || V_flag)	// problem reading, so differ is TRUE
+	if (!differ)
+		differ = PhysicalConstantStructAllDiffer(cAllCurrent,cAllNEW)	// TRUE if cAllCurrent differs from cAllNEW
+	endif
+
+	if (differ)				// only if the new one is different, save it to Package Preferences
+		SavePackagePreferences/FLSH=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0 , cAllNEW
+	endif
+	if (printIt && differ)
+		printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServerURL
+	elseif (printIt)
+		printf "Your local copy of 'Physical Constants' is the same as that from '%s',  Nothing done.\r",PhysicalConstantServerURL
+	endif
 End
 //
 // Return the ascii buffer with all of the constants info from web (the NIST web server)
@@ -571,4 +588,47 @@ ThreadSafe Static Function getStruct_i(cAll,i,ci)
 	else
 		initPhysicalConstantStructure(ci)
 	endif
+End
+//
+//	Compare two cAll, return TRUE if they differ (ignore a difference in updateEpoch)
+ThreadSafe Function PhysicalConstantStructAllDiffer(cAll1,cAll2)
+	STRUCT PhysicalConstantStructureAll &cAll1, &cAll2
+	// do NOT report difference if ONLY the updateEpoch is different
+
+	Variable differ = (cAll1.N1 != cAll2.N1) || (cAll1.N2 != cAll2.N2) || (cAll1.N3 != cAll2.N3) || (cAll1.N4 != cAll2.N4)
+	if (differ)
+		return 1
+	endif
+
+	Make/N=100/U/B/FREE differ1=0, differ2=0, differ3=0, differ4=0
+	Variable n
+	n = cAll1.N1 - 1
+	differ1[0,n] = PhysicalConstantStructDiffer(cAll1.c1[p],cAll2.c1[p])
+
+	n = cAll1.N2 - 1
+	differ2[0,n] = PhysicalConstantStructDiffer(cAll1.c2[p],cAll2.c2[p])
+
+	n = cAll1.N3 - 1
+	differ3[0,n] = PhysicalConstantStructDiffer(cAll1.c3[p],cAll2.c3[p])
+
+	n = cAll1.N4 - 1
+	differ4[0,n] = PhysicalConstantStructDiffer(cAll1.c4[p],cAll2.c4[p])
+
+	return ( WaveMax(differ1) || WaveMax(differ2) || WaveMax(differ3) || WaveMax(differ4) )
+End
+//
+//	Compare c1 & c2, return TRUE if they differ
+ThreadSafe Static Function PhysicalConstantStructDiffer(c1,c2)	// TRUE if c1 differs from c2
+	STRUCT PhysicalConstantStructure &c1, &c2
+	Variable differ
+	differ = differ || (c1.valid != c2.valid)
+	differ = differ || (c1.value != c2.value)
+	differ = differ || (c1.exact != c2.exact)
+	if (!(c1.exact))
+		differ = differ || (c1.err != c2.err)			// only check .err if not exact (because then err is NaN)
+	endif
+	differ = differ || cmpstr(c1.name,c2.name)
+	differ = differ || cmpstr(c1.unit,c2.unit)
+	differ = differ || cmpstr(c1.symbol,c2.symbol)
+	return differ
 End
