@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, April 25, 2016" time="07:44:33 PM CDT" isoTime="2016-04-25T19:44:33"></written>
+	<written date="Thursday, April 28, 2016" time="02:23:08 PM CDT" isoTime="2016-04-28T14:23:08"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>957ab8ebbb66ffad217f295e106720f61017c55f</gitHash>
+	<gitHash>a413b77ad2d85eb5ba64c9ae2c978f5ff04d554a</gitHash>
 	<fileCount>225</fileCount>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
@@ -34,7 +34,7 @@
 	<file version="nan" time="2016-02-17T12:54:23" md5="ef10b7bb01c0e7379c7f05e064760951" sha256="b80479b32f1ab5767df96f8725726fdadeb1be86af3b75359bbae511de81cce1" ext=".xml">materials/standard xtals/IN625.xml</file>
 	<file version="nan" time="2016-02-17T12:54:40" md5="ec157453ecbaf20ee137541bc93feb13" sha256="141166b8e2bac0dcc8bb555b921339df1529d7d08f3dec4348e58cecd2e3f90d" ext=".xml">materials/standard xtals/YBCO/YBa2Cu3O7.xml</file>
 	<file version="1.11" time="2013-11-27T13:00:02" md5="295406f0234817e7f9b02a99a95682c2" sha256="a459fe8878eb737a10ba72b3712379ccbb011530bc386d5f85aa00475285dc1a" ext=".ipf">APS/mdaFiles.ipf</file>
-	<file version="2.12" time="2016-03-15T16:02:04" md5="0923ea3be1418c030f876b51dcf3e729" sha256="456d8948efadd5adfe565af267d97d6de2f85d09668af0dab446b41dd0e901b6" ext=".ipf">General/PhysicalConstants.ipf</file>
+	<file version="2.13" time="2016-04-28T14:20:24" md5="d088c887327516664ce05f886e46f9de" sha256="0f6a3f09e8c9e1fc2ca90d1acb0a22a38fe5bf3435c3e88a43d5c706b652d1cc" ext=".ipf">General/PhysicalConstants.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="3dda90a250836b5ea6408c1dfc55da10" sha256="9c6c829aea6709cf1cb96a902abb8b0d08e1de353feb88e175fed365e4bd7706" ext="">microN/peaksearch_i386</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" sha256="79b9998e9e4a53be517fc9be4bf9e54586f9ac9a7fa98db0666c5eba47caa333" ext="">micro/Euler_Debug_ppc</file>
 	<file version="2" time="2016-01-08T10:13:18" md5="422f6a96eb0d40cc58391319010fe5ab" sha256="96c882280be5851b21b5fce994b6526f06276208da15c626d5aa7ba48aad9003" ext=".ipf">General/CromerLiberman.ipf</file>
