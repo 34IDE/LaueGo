@@ -693,15 +693,15 @@ Function printDetector(d)							// print the details for passed detector geometr
 	Make/N=3/D/FREE mvec
 	mvec = d.m1[p]
 	if (numtype(sum(mvec))==0 && norm(mvec)>0)
-		printf "	m1 = {%s}					// direction of translator 1\r",vec2str(mvec,bare=1,zeroThresh=1e-8,sep=", ")
+		printf "	m1 = {%s}					// direction of translator 1\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
 	endif
 	mvec = d.m2[p]
 	if (numtype(sum(mvec))==0 && norm(mvec)>0)
-		printf "	m2 = {%s}					// direction of translator 2\r",vec2str(mvec,bare=1,zeroThresh=1e-8,sep=", ")
+		printf "	m2 = {%s}					// direction of translator 2\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
 	endif
 	mvec = d.m3[p]
 	if (numtype(sum(mvec))==0 && norm(mvec)>0)
-		printf "	m3 = {%s}					// direction of translator 3\r",vec2str(mvec,bare=1,zeroThresh=1e-8,sep=", ")
+		printf "	m3 = {%s}					// direction of translator 3\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
 	endif
 
 	printf "	geometry measured on  '%s'\r",d.timeMeasured
@@ -1739,7 +1739,8 @@ Function UpdateDefaultGeometryStruct(g,[local])		// Update the default location 
 	SVAR geoStructStr = root:Packages:geometry:geoStructStr
 	GeometryUpdateCalc(g)
 	StructPut/S/B=2 g, geoStructStr
-	SavePackagePreferences/FLSH=1 "microGeo","microGeoNPrefs",0,g
+	SavePackagePreferences/FLSH=1 "microGeo","microGeoNPrefs",2,g		// changed recordID from 0 --> 2, with addition of m1,m2,m3
+	// Note, recordID=1 is used in LaueGoFirst.ipf to hold the image prefs
 
 	if (exists(":geoStructStr")==2 && local)			// if geoStructStr also exists in current folder, update it too
 		SVAR geoStructStr = :geoStructStr
@@ -1751,18 +1752,23 @@ End
 Function FillGeometryStructDefault(g)				//fill the geometry structure with current values
 	STRUCT microGeometry &g							// returns 0 if something set, 0 is nothing done
 
-	String strStruct=StrVarOrDefault(":geoStructStr","")	// set to values in current directory
+	String strStruct=StrVarOrDefault(":geoStructStr","")							// 1st try, uses values in current directory
 	if (strlen(strStruct)<1)
-		strStruct=StrVarOrDefault("root:Packages:geometry:geoStructStr","")	// try the default values
+		strStruct=StrVarOrDefault("root:Packages:geometry:geoStructStr","")	// 2nd try, the default values
 	endif
 	if (strlen(strStruct)>1)
-		SetGeoStructFromString(g,strStruct)		// found structure information, load into g
+		SetGeoStructFromString(g,strStruct)												// found structure information, load into g
 	else
-		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,g
-		if (V_flag)
-			return 1											// did nothing, nothing found
+		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",2,g			// 3rd try, goto the the Package Prefs (with m1,m2,m3)
+		if (V_flag || V_structSize!=V_bytesRead)
+			STRUCT microGeometryOLD gOld
+			LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,gOld	// 4th try, goto the the Package Prefs withOUT m1,m2,m3
+			CopyOldGeoStruct2New(g,gOld)
 		endif
-		StructPut/S/B=2 g, strStruct					// keep a local copy
+		if (V_flag)
+			return 1																					// did nothing, nothing found
+		endif
+		StructPut/S/B=2 g, strStruct															// keep a local copy in the Packages area
 		String/G root:Packages:geometry:geoStructStr = strStruct
 	endif
 	GeometryUpdateCalc(g)
@@ -3901,6 +3907,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 	Variable m1Use = (numtype(sum(mvec1))==0 && norm(mvec1)>0)
 	Variable m2Use = (numtype(sum(mvec2))==0 && norm(mvec2)>0)
 	Variable m3Use = (numtype(sum(mvec3))==0 && norm(mvec3)>0)
+m1Use = 1
 
 	SetWindow kwTopWin,userdata(GeoPanelName)=hostWin+"#geoPanel"
 	NewPanel/K=1/W=(left,top,left+221,top+603+3*18)/HOST=$hostWin
@@ -4610,7 +4617,8 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 	GeometryUpdateCalc(g)
 	StructPut/S/B=2 g, geoStructStr
 	GeoPanelDirtyUpdate(B_Struct.win,0)			// set dirty = 0
-	SavePackagePreferences/FLSH=1 "microGeo","microGeoNPrefs",0,g
+	SavePackagePreferences/FLSH=1 "microGeo","microGeoNPrefs",2,g		// changed recordID from 0 --> 2, with addition of m1,m2,m3
+	// Note, recordID=1 is used in LaueGoFirst.ipf to hold the image prefs
 End
 //
 Function fileTime2EpochProto(fileTime,[UTC])
@@ -5180,7 +5188,7 @@ End
 //
 //	if (V_bytesRead==3600 && V_structSize==4032)		// try to fix things up
 //		STRUCT microGeometryOLD gOld
-//		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,gOld
+//		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",2,gOld
 //		CopyOldGeoStruct2New(g,gOld)
 //	elseif (V_flag)									// did nothing, nothing found
 //		return 1											// did nothing, nothing found
