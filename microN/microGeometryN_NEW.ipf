@@ -820,7 +820,7 @@ ThreadSafe Function CopyDetectorGeometry(f,i)	// copy a detector structure
 	STRUCT detectorGeometry &f, &i				// f is the destination, i is source
 	f.used = i.used
 	f.Nx = i.Nx;			f.Ny = i.Ny
-	f.sizeX = i.sizeX;		f.sizeY = i.sizeY
+	f.sizeX = i.sizeX;	f.sizeY = i.sizeY
 	f.R[0]=i.R[0];			f.R[1]=i.R[1];			f.R[2]=i.R[2];
 	f.P[0]=i.P[0];			f.P[1]=i.P[1];			f.P[2]=i.P[2];
 	f.m1[0]=i.m1[0];		f.m1[1]=i.m1[1];		f.m1[2]=i.m1[2];
@@ -841,7 +841,7 @@ ThreadSafe Function CopyWireGeometry(f,i)	// copy a wire geometry structure, set
 	f.F = i.F
 	f.dia = i.dia
 	f.knife = i.knife
-	f.axis[0]=i.axis[0];		f.axis[1]=i.axis[1];		f.axis[2]=i.axis[2];
+	f.axis[0]=i.axis[0];	f.axis[1]=i.axis[1];	f.axis[2]=i.axis[2];
 	f.axisR[0]=i.axisR[0];	f.axisR[1]=i.axisR[1];	f.axisR[2]=i.axisR[2];
 	f.R[0] = i.R[0];			f.R[1] = i.R[1];			f.R[2] = i.R[2]
 	f.Rmag = i.Rmag
@@ -875,10 +875,10 @@ End
 ThreadSafe Static Function initialize_detectorStruct(d)
 	STRUCT detectorGeometry &d					// set all values in a detector structure to "empty"
 	d.used = 0
-	d.Nx = 0		;		d.Ny = 0
-	d.sizeX = NaN	;		d.sizeY = NaN
-	d.R[0] = NaN;			d.R[1] = NaN;			d.R[2] = NaN
-	d.P[0] = NaN;			d.P[1] = NaN;			d.P[2] = NaN
+	d.Nx = 0;			d.Ny = 0
+	d.sizeX = NaN;		d.sizeY = NaN
+	d.R[0] = NaN;		d.R[1] = NaN;		d.R[2] = NaN
+	d.P[0] = NaN;		d.P[1] = NaN;		d.P[2] = NaN
 	d.m1[0] = NaN;		d.m1[1] = NaN;		d.m1[2] = NaN
 	d.m2[0] = NaN;		d.m2[1] = NaN;		d.m2[2] = NaN
 	d.m3[0] = NaN;		d.m3[1] = NaN;		d.m3[2] = NaN
@@ -1558,7 +1558,7 @@ ThreadSafe Static Function SampleUpdateCalc(sa)	// update all internally calcula
 
 	Variable Rx, Ry, Rz									// used to make the rotation matrix rho from vector R
 	Variable theta, c, s, c1
-	Rx=sa.R[0];	Ry=sa.R[1];	Rz=sa.R[2]
+	Rx=sa.R[0];		Ry=sa.R[1];		Rz=sa.R[2]
 	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)					// angle in radians
 
 	if (numtype(theta) || theta==0)					// rotation of sample stage
@@ -1585,9 +1585,9 @@ ThreadSafe Static Function WireUpdateCalc(w)
 	// normalize wire.axis
 	Variable len = sqrt(w.axis[0]*w.axis[0] + w.axis[1]*w.axis[1] + w.axis[2]*w.axis[2])
 	if (numtype(len)==0 && len>0)
-		w.axis[0] /= len ;		w.axis[1] /= len;		w.axis[2] /= len
+		w.axis[0] /= len ;	w.axis[1] /= len;		w.axis[2] /= len
 	else
-		w.axis[0] = 1 ; 		w.axis[1] = 0 ;		w.axis[2] = 0
+		w.axis[0] = 1 ;		w.axis[1] = 0 ;		w.axis[2] = 0
 	endif
 
 	// compute wire coordinates that would put wire center at the Si position (micron)
@@ -1599,7 +1599,7 @@ ThreadSafe Static Function WireUpdateCalc(w)
 //	w.xyz0[2] = (H0+F)*ir2
 //
 //	w.xyzSi[2] = (Hyc+F)*ir2						// Z of the Si position in wire units & beam line coordinates (micron)
-//	dZ = (Hyc-H0)*ir2 								// dist (along z) from where wire intersects beam to Si
+//	dZ = (Hyc-H0)*ir2								// dist (along z) from where wire intersects beam to Si
 
 ////		***********************************************************************************
 //// NEEDS WORK, THIS IS WRONG!!!
@@ -1633,7 +1633,7 @@ ThreadSafe Static Function WireUpdateCalc(w)
 		Rx /= theta;	Ry /= theta;	Rz /= theta	// make |{Rx,Ry,Rz}| = 1
 		w.R00 = c + Rx*Rx*c1;			w.R01 = Rx*Ry*c1 - Rz*s;	w.R02 = Ry*s + Rx*Rz*c1	// this is the Rodrigues formula from:
 		w.R10 = Rz*s + Rx*Ry*c1;		w.R11 = c + Ry*Ry*c1;		w.R12 = -Rx*s + Ry*Rz*c1	// http://mathworld.wolfram.com/RodriguesRotationFormula.html
-		w.R20 = -Ry*s + Rx*Rz*c1;	w.R21 = Rx*s + Ry*Rz*c1;	w.R22 = c + Rz*Rz*c1
+		w.R20 = -Ry*s + Rx*Rz*c1;		w.R21 = Rx*s + Ry*Rz*c1;	w.R22 = c + Rz*Rz*c1
 
 		Variable xx=w.axis[0], yy=w.axis[1], zz=w.axis[2]
 		w.axisR[0] = w.R00*xx + w.R01*yy + w.R02*zz	// axisR = w.Rij x axis,   rotate by R (a small rotation)
@@ -1746,7 +1746,7 @@ End
 //	geo.wire.xyz0[2] = (H0+F)*ir2
 //
 //	geo.wire.xyzSi[2] = (Hyc+F)*ir2					// Z of the Si position in wire units & beam line coordinates (µm)
-//	dZ = (Hyc-H0)*ir2 								// dist (along z) from where wire intersects beam to Si
+//	dZ = (Hyc-H0)*ir2								// dist (along z) from where wire intersects beam to Si
 //	geo.wire.xyzSi[1] = (H0-F)*ir2 - dZ*ki[2]/ki[1]	// Y of the Si in wire units & beam line coordinates (µm)
 //	geo.wire.xyzSi[0] = geo.wire.X - dZ*ki[0]/ki[1]	// X of the Si in wire units & beam line coordinates (µm)
 //
@@ -1972,8 +1972,8 @@ Static Function/T Geo2KeyValueStr(g,fileNote)
 		sprintf str,"$%sNx			%d						// number of un-binned pixels in full detector\n",pre,g.d[i].Nx;	out += str
 		sprintf str,"$%sNy			%d\n",pre,g.d[i].Ny;	out += str
 		sprintf str,"$%ssizeX		%.3f						// size of CCD (mm)\n",pre,(g.d[i].sizeX)/1000;	out += str
-		sprintf str,"$%ssizeY		%.3f\n",pre,(g.d[i].sizeY/1000); 		out += str
-		sprintf str,"$%sR			{%.8f,%.8f,%.8f}	// rotation vector (length is angle in radians)\n",pre,g.d[i].R[0],g.d[i].R[1],g.d[i].R[2]; 		out += str
+		sprintf str,"$%ssizeY		%.3f\n",pre,(g.d[i].sizeY/1000);		out += str
+		sprintf str,"$%sR			{%.8f,%.8f,%.8f}	// rotation vector (length is angle in radians)\n",pre,g.d[i].R[0],g.d[i].R[1],g.d[i].R[2];		out += str
 		sprintf str,"$%sP			{%.3f,%.3f,%.3f}		// translation vector (mm)\n",pre,(g.d[i].P[0]/1000),(g.d[i].P[1]/1000),(g.d[i].P[2]/1000);  out += str
 		if (strlen(g.d[i].timeMeasured))
 			sprintf str,"$%stimeMeasured	%s	// when this geometry was calculated\n",pre,g.d[i].timeMeasured; out += str
@@ -1991,7 +1991,7 @@ Static Function/T Geo2KeyValueStr(g,fileNote)
 
 	if (!WireBad(g.wire))
 		out += "\n// Wire\n"
-		sprintf str,"$wireDia		%.2f						// diameter of wire (micron)\n",g.wire.dia;	 out += str
+		sprintf str,"$wireDia		%.2f						// diameter of wire (micron)\n",g.wire.dia;	out += str
 		sprintf str,"$wireKnife		%g							// true if wire on a knife edge, false for free-standing wire\n",g.wire.knife; out += str
 		sprintf str,"$wireOrigin		{%.2f,%.2f,%.2f}			// wire origin in raw PM500 frame (micron)\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]; out += str
 		if (g.wire.Rmag>0)
@@ -2074,13 +2074,13 @@ Static Function GeoFromKeyValueList(list,g)
 		endif
 		sscanf StringByKey(pre+"P",list,"="),"{%g,%g,%g}",xx,yy,zz
 		if (numtype(xx+yy+zz)==0 && V_flag==3)
-			g.d[i].P[0] = xx*1e3				 	// file uses mm, I need µm
+			g.d[i].P[0] = xx*1e3					// file uses mm, I need µm
 			g.d[i].P[1] = yy*1e3
 			g.d[i].P[2] = zz*1e3
 		endif
-		str = StringByKey(pre+"timeMeasured",list,"=");		g.d[i].timeMeasured = SelectString(strlen(str),g.d[i].timeMeasured,str)
-		str = StringByKey(pre+"geoNote",list,"=");				g.d[i].geoNote = SelectString(strlen(str),g.d[i].geoNote,str)
-		str = StringByKey(pre+"detectorID",list,"=");			g.d[i].detectorID = SelectString(strlen(str),g.d[i].detectorID,str)
+		str = StringByKey(pre+"timeMeasured",list,"=");			g.d[i].timeMeasured = SelectString(strlen(str),g.d[i].timeMeasured,str)
+		str = StringByKey(pre+"geoNote",list,"=");					g.d[i].geoNote = SelectString(strlen(str),g.d[i].geoNote,str)
+		str = StringByKey(pre+"detectorID",list,"=");				g.d[i].detectorID = SelectString(strlen(str),g.d[i].detectorID,str)
 		str = StringByKey(pre+"distortionMapFile",list,"=");	g.d[i].distortionMapFile = SelectString(strlen(str),g.d[i].distortionMapFile,str)
 	endfor
 
@@ -2091,17 +2091,17 @@ Static Function GeoFromKeyValueList(list,g)
 	if (numtype(xx+yy+zz)==0 && V_flag==3)
 		g.wire.origin[0]=xx;	g.wire.origin[1]=yy;	g.wire.origin[2]=zz
 	else
-		g.wire.origin[0]=0;	g.wire.origin[1]=0;	g.wire.origin[2]=0
+		g.wire.origin[0]=0;		g.wire.origin[1]=0;		g.wire.origin[2]=0
 	endif
 	sscanf StringByKey("wireAxis",list,"="),"{%g,%g,%g}",xx,yy,zz
 	if (numtype(xx+yy+zz)==0 && V_flag==3)
-		g.wire.axis[0]=xx;	g.wire.axis[1]=yy;	g.wire.axis[2]=zz
+		g.wire.axis[0]=xx;		g.wire.axis[1]=yy;		g.wire.axis[2]=zz
 	endif
 	sscanf StringByKey("wireRot",list,"="),"{%g,%g,%g}",xx,yy,zz
 	if (numtype(xx+yy+zz)==0 && V_flag==3)
-		g.wire.R[0] = xx;		g.wire.R[1] = yy;		g.wire.R[2] = zz
+		g.wire.R[0] = xx;			g.wire.R[1] = yy;			g.wire.R[2] = zz
 	else
-		g.wire.R[0] = 0;		g.wire.R[1] = 0;		g.wire.R[2] = 0
+		g.wire.R[0] = 0;			g.wire.R[1] = 0;			g.wire.R[2] = 0
 	endif
 
 	GeometryUpdateCalc(g)							// calculate other values
@@ -2217,7 +2217,7 @@ Static Function/T Geo2xmlStr(g,fileNote)
 	if (!SampleBad(g.s))
 		out += "\n	<Sample>\n"
 		sprintf str, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>	<!-- sample origin in raw PM500 units (micron) -->\n",g.s.O[0],g.s.O[1],g.s.O[2] ; out += str
-		sprintf str, "		<R unit=\"radian\">%.9g %.9g %.9g</R>\n",g.s.R[0],g.s.R[1],g.s.R[2]; 	out += str
+		sprintf str, "		<R unit=\"radian\">%.9g %.9g %.9g</R>\n",g.s.R[0],g.s.R[1],g.s.R[2];		out += str
 		out += "	</Sample>\n"
 	endif
 
@@ -2513,7 +2513,7 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	// define Detector 0, located 500mm directly above sample (Orange)
 	g.d[0].used = 1
 	g.d[0].Nx = 2048 ;			g.d[0].Ny = 2048				// number of un-binned pixels in whole detector
-	g.d[0].sizeX = 409.6e3;		g.d[0].sizeY = 409.6e3	// outside size of detector (micron)
+	g.d[0].sizeX = 409.6e3;	g.d[0].sizeY = 409.6e3		// outside size of detector (micron)
 	Variable Rval = -2/3*PI/sqrt(3)
 	g.d[0].R[0]=Rval;			g.d[0].R[1]=Rval;		g.d[0].R[2]=Rval		// angle of detector, theta = -120¡ about (111)
 	g.d[0].P[0]=25e3;			g.d[0].P[1]=0;			g.d[0].P[2]=510e3		// offset to detector (micron)
@@ -2526,11 +2526,11 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	// define Detector 1, located ~400mm from sample, out along +X direction and up from horizontal by 45¡ (Yellow)
 	g.d[1].used = 1
 	g.d[1].Nx = 1024 ;			g.d[1].Ny = 1024				// number of un-binned pixels in whole detector
-	g.d[1].sizeX = 204.8e3;		g.d[1].sizeY = 204.8e3	// outside size of detector (micron)
+	g.d[1].sizeX = 204.8e3;	g.d[1].sizeY = 204.8e3		// outside size of detector (micron)
 	g.d[1].R[0] = -1.77549569095761								// angle of detector
 	g.d[1].R[1] = -0.735434395129632
 	g.d[1].R[2] = -1.74815646188668
-	g.d[1].P[0]=-144e3;		g.d[1].P[1]=-1e3;		g.d[1].P[2]=410e3	// offset to detector (micron)
+	g.d[1].P[0]=-144e3;			g.d[1].P[1]=-1e3;		g.d[1].P[2]=410e3	// offset to detector (micron)
 	g.d[1].timeMeasured = "Dec 5, 2008, 11:00am"
 	g.d[1].geoNote = "reference orientation"
 	g.d[1].detectorID = "PE0820 763-1807"
@@ -2539,22 +2539,22 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	// define Detector 2, located ~400mm from sample, out along -X direction and up from horizontal by 45¡ (Purple)
 	g.d[2].used = 1
 	g.d[2].Nx = 1024 ;			g.d[2].Ny = 1024				// number of un-binned pixels in whole detector
-	g.d[2].sizeX = 204.8e3;		g.d[2].sizeY = 204.8e3	// outside size of detector (micron)
- 	g.d[2].R[0] = -0.619944391960603		 					// angle of detector
- 	g.d[2].R[1] = -1.49667815898843
- 	g.d[2].R[2] = -0.610398437087624
-	g.d[2].P[0]=-187e3;		g.d[2].P[1]=0;			g.d[2].P[2]=400e3		// offset to detector (micron)
+	g.d[2].sizeX = 204.8e3;	g.d[2].sizeY = 204.8e3		// outside size of detector (micron)
+	g.d[2].R[0] = -0.619944391960603							// angle of detector
+	g.d[2].R[1] = -1.49667815898843
+	g.d[2].R[2] = -0.610398437087624
+	g.d[2].P[0]=-187e3;			g.d[2].P[1]=0;			g.d[2].P[2]=400e3	// offset to detector (micron)
 	g.d[2].timeMeasured = "Dec 5, 2008, 11:00am"
 	g.d[2].geoNote = "reference orientation"
 	g.d[2].detectorID = "PE0820 763-1850"
 	g.d[2].distortionMapFile = ""
 
 	// define Wire
-	g.wire.origin[0] = 0;			g.wire.origin[1] = 0;		g.wire.origin[2] = 0
+	g.wire.origin[0] = 0;		g.wire.origin[1] = 0;	g.wire.origin[2] = 0
 	g.wire.dia = 52.
 	g.wire.knife = 1													// true if wire on  a knife edge, false for free-standing wire
 	g.wire.axis[0] = 1;			g.wire.axis[1] = 0;		g.wire.axis[2] = 0
-	g.wire.R[0] = -0.006;		g.wire.R[1] = 0.006;		g.wire.R[2] = -1.8e-5	// 6mrad in X and Y (from the mirrors)
+	g.wire.R[0] = -0.006;		g.wire.R[1] = 0.006;	g.wire.R[2] = -1.8e-5	// 6mrad in X and Y (from the mirrors)
 	g.wire.F = 3200													// this should be ~200µm above sample surface
 
 	// define Sample
@@ -2877,9 +2877,9 @@ ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire th
 	Rvec *= theta
 	rotationMatFromAxis(Rvec,NaN,rho)				// rotation matrix makes wire axis lie along {1,0,0}
 
-	rhoW[0][0]=g.wire.R00;	rhoW[0][1]=g.wire.R01;	rhoW[0][2]=g.wire.R02
-	rhoW[1][0]=g.wire.R10;	rhoW[1][1]=g.wire.R11;	rhoW[1][2]=g.wire.R12
-	rhoW[2][0]=g.wire.R20;	rhoW[2][1]=g.wire.R21;	rhoW[2][2]=g.wire.R22
+	rhoW[0][0]=g.wire.R00;		rhoW[0][1]=g.wire.R01;		rhoW[0][2]=g.wire.R02
+	rhoW[1][0]=g.wire.R10;		rhoW[1][1]=g.wire.R11;		rhoW[1][2]=g.wire.R12
+	rhoW[2][0]=g.wire.R20;		rhoW[2][1]=g.wire.R21;		rhoW[2][2]=g.wire.R22
 
 	MatrixOp/O pixel = rho x xyzPixel				// rotate pxiel to new coordinate system
 
@@ -3711,7 +3711,7 @@ End
 //		String path=GetWavesDataFolder(scatter,1)
 //		Wave RX = $(path+"RX"), RY = $(path+"RY"), RZ = $(path+"RZ")					// Use Rx,Ry,Rz,   NOT gm
 //		if (WaveExists(RX) && WaveExists(RY) && WaveExists(RZ))
-//			Make/N=3/D/FREE 	Rvec = {RX[point], RY[point], RZ[point]}
+//			Make/N=3/D/FREE Rvec = {RX[point], RY[point], RZ[point]}
 //			Make/N=(3,3)/D/FREE rot
 //			rotationMatAboutAxis(Rvec,NaN,rot)			// rotation of reference recip to this point
 //			Wave RL = matString2mat33(StringByKey("recipRef",note(RX),"="))	// starts as reference recip
@@ -3841,7 +3841,7 @@ ThreadSafe Function rotationAboutY(theta,rot)	// make a rotation matrix about Y 
 	Wave rot								// a 3x3 matrix
 	Variable c=cos(theta), s=sin(theta)
 	rot[0][0] = c;			rot[0][1] = 0;		rot[0][2] = s
-	rot[1][0] = 0;		rot[1][1] = 1;		rot[1][2] = 0
+	rot[1][0] = 0;			rot[1][1] = 1;		rot[1][2] = 0
 	rot[2][0] = -s;		rot[2][1] = 0;		rot[2][2] = c
 End
 //
@@ -3851,7 +3851,7 @@ ThreadSafe Function rotationAboutZ(theta,rot)	// make a rotation matrix about Z 
 	Variable c=cos(theta), s=sin(theta)
 	rot[0][0] = c;			rot[0][1] = -s;		rot[0][2] = 0
 	rot[1][0] = s;			rot[1][1] = c;			rot[1][2] = 0
-	rot[2][0] = 0;		rot[2][1] = 0;		rot[2][2] = 1
+	rot[2][0] = 0;			rot[2][1] = 0;			rot[2][2] = 1
 End
 
 // ==================================== End of Math Items =====================================
@@ -3862,34 +3862,34 @@ End
 // ============================================================================================
 // =============================== Start of Geometry Sub-Panel ================================
 
-//	Function 			MakeGeometryParametersPanel(strStruct)							// entry used by a Menu
+//	Function			MakeGeometryParametersPanel(strStruct)							// entry used by a Menu
 //	Function/T			FillGeometryParametersPanel(strStruct,hostWin,left,top)	// the main entry, makes the controls
 //	Static Function	GeoDetectorPopMenuProc(pa) : PopupMenuControl
 //	Static Function/T	detectorPopMenuStr(g)					// re-make the string of detector names for detectorPopup
-//	Static Function 	UpDatePanelValuesFromStruct(win,iDetector)	// reads geoPanelStructStr and sets Panel values
-//	Static Function 	GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
-//	Static Function 	GeoKnifePopMenuProc(pa) : PopupMenuControl
-//	Static Function 	GeoPanelVarChangedProc(sva) : SetVariableControl
-//	Static Function	SetDetectorColor(win,id)
-//	Function/T 			detectorID2color(detectorID)
-//	Static Function 	GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
-//	Function 			SetGeoPanelHook(s)						// provides for saving changed values if panel killed
-//	Static Function 	GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and update buttons to reflect dirty status
-//	Static Function 	GeoSaveFilePopMenuProc(pa) : PopupMenuControl
-//	Static Function 	GeometryPanelButtonProc(B_Struct) : ButtonControl
-//	Function 			fileTime2EpochProto(fileTime,[UTC])
-//	Static Function 	SetGeoStructFromPanelValues(g)		// set structure g the values in geoPanelStructStr
+//	Static Function		UpDatePanelValuesFromStruct(win,iDetector)	// reads geoPanelStructStr and sets Panel values
+//	Static Function		GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
+//	Static Function		GeoKnifePopMenuProc(pa) : PopupMenuControl
+//	Static Function		GeoPanelVarChangedProc(sva) : SetVariableControl
+//	Static Function		SetDetectorColor(win,id)
+//	Function/T			detectorID2color(detectorID)
+//	Static Function		GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
+//	Function			SetGeoPanelHook(s)						// provides for saving changed values if panel killed
+//	Static Function		GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and update buttons to reflect dirty status
+//	Static Function		GeoSaveFilePopMenuProc(pa) : PopupMenuControl
+//	Static Function		GeometryPanelButtonProc(B_Struct) : ButtonControl
+//	Function			fileTime2EpochProto(fileTime,[UTC])
+//	Static Function		SetGeoStructFromPanelValues(g)		// set structure g the values in geoPanelStructStr
 //	
 //	============================================================================================
 //	
-//	Function 			GeoFromWeb(epoch,gIn)
-//	Function 			GeoFromEPICS(gIn)					// fill the geometry structure from EPICS (uses caget)
-//	Function/S 			protoEPICS_geo(str)				// proto function for get_mult_PV(), also contains default values for testing
+//	Function			GeoFromWeb(epoch,gIn)
+//	Function			GeoFromEPICS(gIn)					// fill the geometry structure from EPICS (uses caget)
+//	Function/S			protoEPICS_geo(str)				// proto function for get_mult_PV(), also contains default values for testing
 //	Static Function	putGeo2EPICS(gIn)					// put the geometry structure to EPICS (uses caput)
 //	Static Function	putDetector2EPICS(d,dnum)		// put detector values into EPICS, does not check d.used
 //	Static Function	geoLocal_putNum(pv,value)		// utility function for EPICS_put_PV_num()
 //	Static Function	geoLocal_putStr(pv,value)		// EPICS_put_PV_num function for EPICS_put_PV_str()
-//	Function/S 			protoEPICS_putNum(pv,value)	// proto function for EPICS_put_PV_num()
+//	Function/S			protoEPICS_putNum(pv,value)	// proto function for EPICS_put_PV_num()
 //	Function/S			protoEPICS_putStr(pv,str)		// proto function for EPICS_put_PV_str()
 
 Function MakeGeometryParametersPanel(strStruct)
@@ -4787,7 +4787,7 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 	g.s.R[1] = NumberByKey("SampleRotY",pvList,"=")
 	g.s.R[2] = NumberByKey("SampleRotZ",pvList,"=")
 	if (numtype(g.s.R[0] + g.s.R[1] + g.s.R[2]))
-		g.s.R[0] = 0;	g.s.R[1] = 0;	g.s.R[2] = 0
+		g.s.R[0] = 0;		g.s.R[1] = 0;		g.s.R[2] = 0
 	endif
 	g.s.O[0] = NumberByKey("SampleOriginX",pvList,"=")
 	g.s.O[1] = NumberByKey("SampleOriginY",pvList,"=")
@@ -4858,7 +4858,7 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 	g.wire.R[1]		= NumberByKey("wireRotY",pvList,"=")
 	g.wire.R[2]		= NumberByKey("wireRotZ",pvList,"=")
 	if (numtype(g.wire.R[0] + g.wire.R[1] + g.wire.R[2]))	// for bad (or no) results, use zero rotation
-		g.wire.R[0] = 0;	g.wire.R[1] = 0;	g.wire.R[2] = 0
+		g.wire.R[0] = 0;		g.wire.R[1] = 0;		g.wire.R[2] = 0
 	endif
 
 	if (MicroGeometryBad(g))
