@@ -6,10 +6,12 @@
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 //
+//	with version 1.64, made many more ThreadSafe, deleted a lot of obsolete funcs, and cleaned up formatting. Change many predefined waves to FREE
+//
 //	with version 2.00, added the provision for a detector positions (a translator)
-//		this added the vectors m1[3], m2[3] m3[3] to the detectorGeometry structure
+//		this added the vectors m1[3], m2[3], m3[3] to the detectorGeometry structure
 
-Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
+Constant USE_DISTORTION_DEFAULT = 0				// default is TO USE distortion
 // Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
 Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;Mar-165:Gray;"
@@ -25,15 +27,14 @@ Strconstant EPICS_PREFIX="34ide:geometryN:"// prefix for the geometry PVs
 Constant FIRST_PIXEL=0								// use for zero-based pixels
 StrConstant defaultGeoTagName="geoN"			// default start of name for geometry files
 
-//Static StrConstant GeoWebServer = "www.uni.aps.anl.gov/34ide"
-//Static StrConstant GeoWebServer = "top.uni.aps.anl.gov/34ide"
 //Static StrConstant GeoWebServer = "www.aps.anl.gov/Sectors/33_34/34ide"
 Static StrConstant GeoWebServer = "sector34.xray.aps.anl.gov/34ide"
 
 
-// with version 1.64, made many more ThreadSafe, deleted a lot of obsolete funcs, and cleaned up formatting. Change many predefined waves to FREE
+// Beam line corodinate system (X=out door, Y=up, Z=downstream), theta is the angle between Z and H
+// definition of of angle: H wire scan is horiz at angle=0,   at angle=0,  F=-Y, H=+Z
 
-// All my calculations assume that an image has zero based pixels, both in the image, and in specifying the ROI
+// All calculations assume that an image has zero based pixels, both in the image, and in specifying the ROI
 //
 // to convert from a ROI pixel (zero based) to full unbinned chip use:
 //
@@ -41,7 +42,32 @@ Static StrConstant GeoWebServer = "sector34.xray.aps.anl.gov/34ide"
 //	py = starty + py*groupy + (groupy-1)/2	// groupx=1 is un-binned
 //
 //  kf^ = ki^ - 2*(ki^ . q^)*q^
+//
 
+//	with version 2.00, added m1[3],m2[3],m3[3] to the structure detectorGeometry
+//	now the position of the center of the detector is:
+//
+//		xBL[3] = d.R x ( d.P + t1 * d.m1 + t2 * d.m2 + t3 * d.m3 )
+//
+//
+//	So the complete calculation of a full chip unbinned pixel (no binning, no roi) position in BL coordinates is:
+//
+//		The base location/orientation of a detector is:
+//			1) The detector is oriented with x-pixels increasing in the x-BL direction, 
+//				and with y-pixels increasing in the y-BL direction.
+//			2) The exact center of the detector is coincident with the origin
+//
+//			xpixel = (px - 0.5*(d.Nx-1)) * d.sizeX/d.Nx		// (x,y,z) coordinates of a pixel on detector in base location/orientaton
+//			ypixel = (py - 0.5*(d.Ny-1)) * d.sizeY/d.Ny
+//			zpixel = 0										// note that z=0 as a result of the definition of the base orientaton
+//			using:   xyzPixel[3] = {xpixel, ypixel, zpixel}
+//
+//			Translate by d.P[3] + t1 * d.m1[3] + t2 * d.m2[3] + t3 * d.m3[3]
+//			Followed by a rotion about d.R[3]
+//
+//			xyzBL = rho x ( xyzPixel + d.P[3] + t1 * d.m1[3] + t2 * d.m2[3] + t3 * d.m3[3] )
+//
+//			where rho is the rotation matrix pre-computed from the vector d.R[3],  see pixel2XYZ(...)
 
 // ============================================================================================
 // ====================================== Start of Menus ======================================
@@ -508,7 +534,6 @@ End
 //	Sleep/B/S delay
 //	DoWindow/K testWindow
 //End
-
 
 // ==================================== End of micro Panel ====================================
 // ============================================================================================
@@ -4269,7 +4294,7 @@ End
 
 //	This is called by all of the SetVariable controls,
 //	it updates the geoPanelStructStr for this variable change
-// and sets the dirty flag for the panel
+//	and sets the dirty flag for the panel
 Static Function GeoPanelVarChangedProc(sva) : SetVariableControl
 	STRUCT WMSetVariableAction &sva
 	if ( sva.eventCode == 3 || sva.eventCode<1)// return unless number changed
@@ -5112,6 +5137,7 @@ End
 // ============================================================================================
 
 
+
 // ============================================================================================
 // ============================= Start of OLD detectorGeometryOLD =============================
 
@@ -5202,7 +5228,6 @@ End
 
 // ============================== End of OLD detectorGeometryOLD ==============================
 // ============================================================================================
-
 
 
 
