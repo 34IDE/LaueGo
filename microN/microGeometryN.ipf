@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.88
+#pragma version = 1.89
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -1341,13 +1341,12 @@ ThreadSafe Static Function SampleUpdateCalc(sa)	// update all internally calcula
 	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)					// angle in radians
 
 	if (numtype(theta) || theta==0)					// rotation of sample stage
+		theta = 0
 		sa.R[0] = 0;	sa.R[1] = 0;	sa.R[2] = 0;
-		sa.Rmag = 0
 		sa.R00 = 1;		sa.R01 = 0;		sa.R02 = 0	// matrix is identity
 		sa.R10 = 0;		sa.R11 = 1;		sa.R12 = 0
 		sa.R20 = 0;		sa.R21 = 0;		sa.R22 = 1
 	else
-		sa.Rmag = theta * 180/PI
 		c=cos(theta)
 		s=sin(theta)
 		c1 = 1-c
@@ -1356,6 +1355,7 @@ ThreadSafe Static Function SampleUpdateCalc(sa)	// update all internally calcula
 		sa.R10 = Rz*s + Rx*Ry*c1;		sa.R11 = c + Ry*Ry*c1;		sa.R12 = -Rx*s + Ry*Rz*c1	// http://mathworld.wolfram.com/RodriguesRotationFormula.html
 		sa.R20 = -Ry*s + Rx*Rz*c1;	sa.R21 = Rx*s + Ry*Rz*c1;	sa.R22 = c + Rz*Rz*c1
 	endif
+	sa.Rmag = theta * 180/PI
 End
 //
 ThreadSafe Static Function WireUpdateCalc(w)
@@ -1393,11 +1393,11 @@ ThreadSafe Static Function WireUpdateCalc(w)
 	Variable Rx, Ry, Rz								// used to make the rotation matrix rho from vector R
 	Variable theta, c, s, c1
 	Rx=w.R[0];	Ry=w.R[1];	Rz=w.R[2]
-	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)			// angle in radians
+	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)				// angle in radians
 
-	if (numtype(w.Rmag) || theta==0)				// rotation of wire stage
+	if (numtype(theta) || theta==0)				// rotation of wire stage
+		theta = 0
 		w.R[0] = 0;		w.R[1] = 0;		w.R[2] = 0;
-		w.Rmag = 0
 		w.R00 = 1;		w.R01 = 0;		w.R02 = 0	// matrix is identity
 		w.R10 = 0;		w.R11 = 1;		w.R12 = 0
 		w.R20 = 0;		w.R21 = 0;		w.R22 = 1
@@ -1405,7 +1405,6 @@ ThreadSafe Static Function WireUpdateCalc(w)
 		w.axisR[1] = w.axis[1]
 		w.axisR[2] = w.axis[2]
 	else
-		w.Rmag = theta * 180/PI
 		c=cos(theta)
 		s=sin(theta)
 		c1 = 1-c
@@ -1419,6 +1418,7 @@ ThreadSafe Static Function WireUpdateCalc(w)
 		w.axisR[1] = w.R10*xx + w.R11*yy + w.R12*zz
 		w.axisR[2] = w.R20*xx + w.R21*yy + w.R22*zz
 	endif
+	w.Rmag = theta * 180/PI
 End
 
 

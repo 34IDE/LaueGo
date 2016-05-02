@@ -51,6 +51,11 @@ In the <Detector N="0"> group, the tags are:
 					The reason that the R is along the -(111) rather than a 90° about the (001), is to get the orientation
 					of the pixels at the final location correct.  In this example the x pixels will increase along the Z direction.
 
+	<m1> <m2> <m3>	Three unit vectors giving the direction of the three possible detector translators.  Unused translations are
+					indicated by m1 being either all 0, or containing a NaN.
+					The translation is in the direction of m1 by a distance t1 (which is given elsewhere)
+					These 3 are optional.
+
 	============================================================================================================
 
 Note on the detector orientation.  
@@ -74,6 +79,7 @@ first convert a binned ROI to full chip un-binned pixels:
 second convert un-binned pixels (px,py) to xy on the detector (xd, yd) in real units:
 	xd = (px - 0.5*(Nx-1)) * sizeX/Nx
 	yd = (py - 0.5*(Ny-1)) * sizeY/Ny
+	zd = 0
 	here, Nx,Ny, ans sizeX,sizeY come from the <Npixels> and <size> for this detector
 	we now have (xd,yd) of the pixel, z of the pixel is still z=0, since the base detector position is at the origin
 	and perpendicular to the z-direction.
@@ -83,7 +89,10 @@ third translate (xd,yd) by the vector P to get (xd,yd,zd):
 	y = yd + P[1]
 	z = 0 + P[2]			// remember zd=0
 
-and fourth and last, rotate about R:
+fourth translate by m1,m2,m3 if they are given
+	x += (t1 * d.m1  +  t2 * d.m2  +  t3*dm3)
+
+and fifth and last, rotate about R:
 	This is the full equation, (XYZ) = rho x [(xd,yd,zd) + P ], where XYZ in beamline coordinates
 	X = rho00*x + rho01*y + rho02*z		// rho[i][j] is the rotation matrix computed from R below
 	Y = rho10*x + rho11*y + rho12*z
@@ -159,19 +168,22 @@ An example of a geoN xml file:
 	<fileNote>all three</fileNote>
 
 	<Sample>
-		<Origin unit="micron">8200 -4758.83 -4476</Origin>	<-- sample origin in raw PM500 units (micron) -->
+		<Origin unit="micron">8200 -4758.83 -4476</Origin>	<!-- sample origin in raw PM500 units (micron) -->
 		<R unit="radian">-0.006 0.006 -1.8e-05</R>
 	</Sample>
 
-	<Detectors Ndetectors="3">			<-- Ndetectors, number of detectors in use, must be <= MAX_Ndetectors -->
+	<Detectors Ndetectors="3">					<!-- Ndetectors, number of detectors in use, must be <= MAX_Ndetectors -->
 		<Detector N="0">
-			<Npixels>2048 2048</Npixels>		<-- Nx,Ny is number of un-binned pixels in full detector -->
-			<size unit="mm">409.6 409.6</size>	<-- sizeX,sizeY otuside size of full detector -->
-			<R unit="radian">-1.20070183 -1.21233328 -1.21883792</R>		<-- Rotation and translation vector -->
+			<Npixels>2048 2048</Npixels>		<!-- Nx,Ny is number of un-binned pixels in full detector -->
+			<size unit="mm">409.6 409.6</size>	<!-- sizeX,sizeY otuside size of full detector -->
+			<R unit="radian">-1.20070183 -1.21233328 -1.21883792</R>	<!-- Rotation and translation vector -->
 			<P unit="mm">25.200 -2.876 510.882</P>
-			<timeMeasured>Thu, Oct 20, 2011, 21:35:01 (-5)</timeMeasured>	<-- when this geometry was calculated -->
+			<m1>0 0 1</m1>						<!-- Optional unit vectors giving the direction of the detector translations -->
+			<m2>1 0 0</m2>
+			<m3>0 1 0</m3>
+			<timeMeasured>Thu, Oct 20, 2011, 21:35:01 (-5)</timeMeasured>	<!-- when this geometry was calculated -->
 			<note>Optimized using CalibrationListOrange0</note>
-			<ID>PE1621 723-3335</ID>				<-- unique detector ID -->
+			<ID>PE1621 723-3335</ID>			<!-- unique detector ID -->
 		</Detector>
 		<Detector N="1">
 			<Npixels>1024 1024</Npixels>
@@ -195,10 +207,10 @@ An example of a geoN xml file:
 
 	<Wire>
 		<dia unit="micron">52</dia>
-		<Knife>0</Knife>				<-- true if wire on a knife edge, false for free-standing wire -->
-		<Origin unit="micron">2.5 0 0</Origin>		<-- wire origin in raw PM500 frame (micron) -->
+		<Knife>0</Knife>						<!-- true if wire on a knife edge, false for free-standing wire -->
+		<Origin unit="micron">2.5 0 0</Origin>	<!-- wire origin in raw PM500 frame (micron) -->
 		<R unit="radian">0.0045 -0.00684 -3.375e-05</R>
-		<Axis>1 0 0</Axis>		<-- unit vector along wire axis, usually close to (1,0,0) -->
-		<F unit="micron">0</F>		<-- F of wire for a constant F wire scan (raw PM500 units) -->
+		<Axis>1 0 0</Axis>						<!-- unit vector along wire axis, usually close to (1,0,0) -->
+		<F unit="micron">0</F>					<!-- F of wire for a constant F wire scan (raw PM500 units) -->
 	</Wire>
 </geoN>

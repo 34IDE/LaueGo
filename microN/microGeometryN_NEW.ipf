@@ -11,11 +11,9 @@
 //	with version 2.00, added the provision for a detector positions (a translator)
 //		this added the vectors m1[3], m2[3], m3[3] to the detectorGeometry structure
 
-Constant USE_DISTORTION_DEFAULT = 0				// default is TO USE distortion
-// Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
+Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
 Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;Mar-165:Gray;"
-//Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:55000,55000,55000;"
 Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:65535,49344,52171;"
 // 3 detectors from ORNL are: PE1621 723-3335, PE0820 763-1807, PE0820 763-1850
 // 2 detectors from NIST are: PE0822 883-4841, PE0822 883-4843
@@ -1562,13 +1560,12 @@ ThreadSafe Static Function SampleUpdateCalc(sa)	// update all internally calcula
 	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)					// angle in radians
 
 	if (numtype(theta) || theta==0)					// rotation of sample stage
+		theta = 0
 		sa.R[0] = 0;	sa.R[1] = 0;	sa.R[2] = 0;
-		sa.Rmag = 0
 		sa.R00 = 1;		sa.R01 = 0;		sa.R02 = 0	// matrix is identity
 		sa.R10 = 0;		sa.R11 = 1;		sa.R12 = 0
 		sa.R20 = 0;		sa.R21 = 0;		sa.R22 = 1
 	else
-		sa.Rmag = theta * 180/PI
 		c=cos(theta)
 		s=sin(theta)
 		c1 = 1-c
@@ -1577,9 +1574,11 @@ ThreadSafe Static Function SampleUpdateCalc(sa)	// update all internally calcula
 		sa.R10 = Rz*s + Rx*Ry*c1;		sa.R11 = c + Ry*Ry*c1;		sa.R12 = -Rx*s + Ry*Rz*c1	// http://mathworld.wolfram.com/RodriguesRotationFormula.html
 		sa.R20 = -Ry*s + Rx*Rz*c1;	sa.R21 = Rx*s + Ry*Rz*c1;	sa.R22 = c + Rz*Rz*c1
 	endif
+	sa.Rmag = theta * 180/PI
 End
 //
-ThreadSafe Static Function WireUpdateCalc(w)
+//	ThreadSafe 
+Static Function WireUpdateCalc(w)
 	STRUCT wireGeometry &w
 
 	// normalize wire.axis
@@ -1599,7 +1598,7 @@ ThreadSafe Static Function WireUpdateCalc(w)
 //	w.xyz0[2] = (H0+F)*ir2
 //
 //	w.xyzSi[2] = (Hyc+F)*ir2						// Z of the Si position in wire units & beam line coordinates (micron)
-//	dZ = (Hyc-H0)*ir2								// dist (along z) from where wire intersects beam to Si
+//	dZ = (Hyc-H0)*ir2									// dist (along z) from where wire intersects beam to Si
 
 ////		***********************************************************************************
 //// NEEDS WORK, THIS IS WRONG!!!
@@ -1614,11 +1613,11 @@ ThreadSafe Static Function WireUpdateCalc(w)
 	Variable Rx, Ry, Rz								// used to make the rotation matrix rho from vector R
 	Variable theta, c, s, c1
 	Rx=w.R[0];	Ry=w.R[1];	Rz=w.R[2]
-	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)			// angle in radians
+	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)				// angle in radians
 
-	if (numtype(w.Rmag) || theta==0)				// rotation of wire stage
+	if (numtype(theta) || theta==0)				// rotation of wire stage
+		theta = 0
 		w.R[0] = 0;		w.R[1] = 0;		w.R[2] = 0;
-		w.Rmag = 0
 		w.R00 = 1;		w.R01 = 0;		w.R02 = 0	// matrix is identity
 		w.R10 = 0;		w.R11 = 1;		w.R12 = 0
 		w.R20 = 0;		w.R21 = 0;		w.R22 = 1
@@ -1626,7 +1625,6 @@ ThreadSafe Static Function WireUpdateCalc(w)
 		w.axisR[1] = w.axis[1]
 		w.axisR[2] = w.axis[2]
 	else
-		w.Rmag = theta * 180/PI
 		c=cos(theta)
 		s=sin(theta)
 		c1 = 1-c
@@ -1640,6 +1638,7 @@ ThreadSafe Static Function WireUpdateCalc(w)
 		w.axisR[1] = w.R10*xx + w.R11*yy + w.R12*zz
 		w.axisR[2] = w.R20*xx + w.R21*yy + w.R22*zz
 	endif
+	w.Rmag = theta * 180/PI
 End
 
 
@@ -2459,7 +2458,7 @@ Static Function GeoFromXML(buf,g)
 			g.d[N].m2[1] = str2num(StringFromList(1,list))
 			g.d[N].m2[2] = str2num(StringFromList(2,list))
 		endif
-		list =  XMLtagContents2List("m2",detector)
+		list =  XMLtagContents2List("m3",detector)
 		if (ItemsInList(list)==3)
 			g.d[N].m3[0] = str2num(StringFromList(0,list))
 			g.d[N].m3[1] = str2num(StringFromList(1,list))
@@ -3932,7 +3931,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 	Variable m1Use = (numtype(sum(mvec1))==0 && norm(mvec1)>0)
 	Variable m2Use = (numtype(sum(mvec2))==0 && norm(mvec2)>0)
 	Variable m3Use = (numtype(sum(mvec3))==0 && norm(mvec3)>0)
-m1Use = 1
+//m1Use = 1
 
 	SetWindow kwTopWin,userdata(GeoPanelName)=hostWin+"#geoPanel"
 	NewPanel/K=1/W=(left,top,left+221,top+603+3*18)/HOST=$hostWin
