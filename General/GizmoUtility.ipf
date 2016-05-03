@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.17
+#pragma version = 2.18
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -23,6 +23,8 @@ Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -0.95	// left edge of scale bar on a
 //	GizmoListScatterWaves()		return list of all scatter plots, except 'scatterMarker0, scatterMarker1, ...
 //	GizmoListIsoSurfaceWaves()	return list of all iso surface waves
 //	GizmoListSurfaceWaves([gizmo])	return list of all Surface plots on gizmo
+//	AddCustomAxesGroup(...)		adds a custom set of axes
+
 
 //Questionable:
 
@@ -1336,6 +1338,186 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 	endif
 #endif
 End
+
+
+#if (IgorVersion()>=7)
+
+Function/T AddCustomAxesGroup(groupName,ain,bin,cin,[font,namesWave,namesScatterWave,rgba,insert])
+	String groupName			// probably "CustomAxesGroup0", If this is empty, then a unique name will be assigned
+	Wave ain,bin,cin
+	String font					// OPTIONAL, name of font
+	Wave/T namesWave			// OPTIONAL, if it exists, use it to show the names dim(N)
+	Wave namesScatterWave		// OPTIONAL, positions for the strings in namesWave, dim(N,3), otherwise use ends of a,b,cin
+	Wave rgba						// OPTIONAL, colors for the axis labels, defaults to all green
+	Variable insert				// if true, also insert this group
+	font = SelectString(ParamIsDefault(font),font,GenevaEquivFont)
+	font = SelectString(strlen(font),GenevaEquivFont,font)
+	insert = ParamIsDefault(insert) || numtype(insert) ? 0 : insert
+
+	if (numpnts(ain)!=3 || numpnts(bin)!=3 || numpnts(cin)!=3)
+		return ""
+	endif
+	Duplicate/FREE ain,a
+	Duplicate/FREE bin,b
+	Duplicate/FREE cin,c
+	Variable len=max(norm(a),norm(b))
+	len = max(len,norm(c))
+	a /= len
+	b /= len
+	c /= len
+
+	if (CheckName(groupName,5))						// invalid groupName passed, create one
+		if (strlen(groupName)<1)						// create a unique group name
+			NewDataFolder/O root:Packages				// ensure Packages exists
+			NewDataFolder/O root:Packages:JZT_GizmoUtility	// ensure geometry exists
+			if (exists("root:Packages:JZT_GizmoUtility:CustomAxesNumber")!=2)
+				Variable/G root:Packages:JZT_GizmoUtility:CustomAxesNumber=-1
+			endif
+			NVAR CustomAxesNumber = root:Packages:JZT_GizmoUtility:CustomAxesNumber
+			CustomAxesNumber = numtype(CustomAxesNumber) ? -1 : limit(round(CustomAxesNumber),-1,Inf)
+			CustomAxesNumber += 1
+			groupName = "CustomAxesGroup"+num2istr(CustomAxesNumber)
+		endif
+		groupName = CleanupName(groupName,0)
+	endif
+	if (CheckName(groupName,5))						// invalid groupName passed, give up
+		return ""
+	endif
+
+	Variable showNames = WaveType(namesWave,1)==2
+	if (showNames && WaveExists(namesScatterWave))
+		showNames = (numpnts(namesWave) == DimSize(namesScatterWave,0)) && (DimSize(namesScatterWave,1)==3)
+	elseif (showNames)
+		showNames = (DimSize(namesWave,0)==3)
+		if (showNames)
+			String name = CleanupName(groupName+"Scatter",0)
+			Make/N=(3,3)/O/D $name
+			Wave namesScatterWave=$name
+			namesScatterWave[0][] = ain[q]
+			namesScatterWave[1][] = bin[q]
+			namesScatterWave[2][] = cin[q]
+		endif
+	endif
+
+	Variable useRGBA=0
+	if (showNames && WaveExists(rgba))
+		useRGBA = DimSize(rgba,0)==numpnts(namesWave) && DimSize(rgba,1)==4
+	endif
+
+	// ************************* Group Object Start *******************
+	AppendToGizmo group,name=$groupName
+	ModifyGizmo currentGroupObject=groupName
+
+	AppendToGizmo line={0,0,0,a[0],a[1],a[2]}, name=lineX
+	Modifygizmo modifyobject=lineX,objectType=line,property={colorType,2}
+	Modifygizmo modifyobject=lineX,objectType=line,property={colorValue,0,1,0,0,1}
+	Modifygizmo modifyobject=lineX,objectType=line,property={colorValue,1,1,0,0,1}
+	Modifygizmo modifyobject=lineX,objectType=line,property={arrowMode,2}
+	Modifygizmo modifyobject=lineX,objectType=line,property={endArrowHeight,0.1}
+	Modifygizmo modifyobject=lineX,objectType=line,property={endArrowBase,0.03}
+
+	AppendToGizmo line={0,0,0,b[0],b[1],b[2]}, name=lineY
+	Modifygizmo modifyobject=lineY,objectType=line,property={colorType,2}
+	Modifygizmo modifyobject=lineY,objectType=line,property={colorValue,0,0,1,0,1}
+	Modifygizmo modifyobject=lineY,objectType=line,property={colorValue,1,0,1,0,1}
+	Modifygizmo modifyobject=lineY,objectType=line,property={arrowMode,2}
+	Modifygizmo modifyobject=lineY,objectType=line,property={endArrowHeight,0.1}
+	Modifygizmo modifyobject=lineY,objectType=line,property={endArrowBase,0.03}
+
+	AppendToGizmo line={0,0,0,c[0],c[1],c[2]}, name=lineZ
+	Modifygizmo modifyobject=lineZ,objectType=line,property={colorType,2}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={colorValue,0,0,0,1,1}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={colorValue,1,0,0,1,1}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={arrowMode,2}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={endArrowHeight,0.1}
+	Modifygizmo modifyobject=lineZ,objectType=line,property={endArrowBase,0.03}
+
+	if (showNames)
+		AppendToGizmo Scatter=namesScatterWave,name=scatterLetters
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ markerType,0}
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ sizeType,0}
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ rotationType,0}
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ Shape,8}
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ size,2}
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ TextWave,namesWave}
+		ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ fontName,font}
+		if (useRGBA)
+			ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ scatterColorType,1}
+			ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ colorWave,rgba}
+		else
+			ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ scatterColorType,0}
+			ModifyGizmo ModifyObject=scatterLetters,objectType=scatter,property={ color,0.399863,0.8,0,1}
+		endif
+	endif
+	AppendToGizmo attribute lineWidth=2, name=lineWidthArrow
+	AppendToGizmo attribute specular={0,0,0,1,1032},name=specularOFF
+	AppendToGizmo attribute shininess={0,1032},name=shininessOFF
+	ModifyGizmo setDisplayList=0, attribute=shininessOFF
+	ModifyGizmo setDisplayList=1, attribute=lineWidthArrow
+	ModifyGizmo setDisplayList=2, object=lineX
+	ModifyGizmo setDisplayList=3, object=lineY
+	ModifyGizmo setDisplayList=4, object=lineZ
+	if (showNames)
+		ModifyGizmo setDisplayList=5, object=scatterLetters
+	endif
+
+	ModifyGizmo currentGroupObject="::"
+	// ************************* Group Object End *******************
+
+	if (insert)
+		if ( isGizmoObjectDisplayed(groupName) < 0 )	// skip if groupName already displayed
+			Variable i = index1stObjectDisplayed()		// find insertion point, before first object
+			i = max(0,i)
+			ModifyGizmo insertDisplayList=i, object=$groupName
+		endif
+	endif
+
+	return groupName
+End
+//
+Static Function index1stObjectDisplayed([win,groupName])	// finds index to first displayed object, -1 if none found
+	String win
+	String groupName
+	win = SelectString(ParamIsDefault(win),win,"")
+	groupName = SelectString(ParamIsDefault(groupName),groupName,"")
+
+	if (strlen(groupName))
+		ModifyGizmo/N=$win currentGroupObject=groupName
+	endif
+	GetGizmo/N=$win displayList
+	Wave/T TW_DisplayList=TW_DisplayList
+	Variable N=numpnts(TW_DisplayList)
+	Variable index, i
+	for (i=0,index=-1; i<N; i+=1)
+		if (strsearch(TW_DisplayList[i]," object=",2)>0)
+			index = i
+			break
+		endif
+	endfor
+	if (strlen(groupName))
+		ModifyGizmo/N=$win currentGroupObject="::"
+	endif
+	KillWaves/Z TW_DisplayList
+	return index
+End
+//
+//	Function test_AddCustomAxesGroup()
+//		STRUCT crystalStructure xtal
+//		FillCrystalStructDefault(xtal)
+//		Wave recip = recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal lattice
+//		Make/N=3/D/FREE a=recip[p][0], b=recip[p][1], c=recip[p][2]
+//		Make/N=3/O/T CustomAxesGroup0Letters={"a*","b*","c*"}
+//		Make/N=(3,4)/O CustomAxesGroup0RGBA=(p==q)
+//		CustomAxesGroup0RGBA[][3] = 1
+//	
+//		String groupName = AddCustomAxesGroup("",a,b,c,namesWave=CustomAxesGroup0Letters, rgba=CustomAxesGroup0RGBA,insert=1)
+//		printf "Added \"%s\" to the gizmo\r", groupName
+//	End
+//
+#endif
+
+
+
 
 
 //	for clipPlane,  equation is:		A*x + B*y + C*z = D
