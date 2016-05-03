@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.23
-#include "Elements", version>=1.76
+#pragma version = 2.24
+#include "Elements", version>=2.00
 #include "CromerLiberman", version>=1.9
 
 //	Sept 14, 2005
@@ -10,9 +10,11 @@
 //		added the USE_OBSOLETE, added some comments, changed line termination to CR -> LF
 //	June 4, 2014
 //		updated a few things
+//	May 3, 2016
+//		added the calls to ElementDataInitPackage()
 
 
-//	#define USE_OBSOLETE		// use this define to use the obsolete functions later in this procedure
+//	#define USE_OBSOLETE		// use this define to use the obsolete functions at the end of this procedure file
 
 
 Menu "Analysis"
@@ -43,6 +45,9 @@ Function Get_MuFormula(formula,keV)			// get mu (1/µm)
 	String formula_In = formula
 	if (strlen(formula)<1 || numtype(keV) || keV<1e-3)
 		return NaN
+	endif
+	if (Exists("root:Packages:Elements:name")!=1)
+		ElementDataInitPackage()
 	endif
 
 	Variable density
@@ -88,6 +93,9 @@ Function MuOverRhoFormula(formula,keV)	// returns mu/rho  (cm^2/g) the given mat
 	String formula_In = formula
 	if (strlen(formula)<1 || numtype(keV) || keV<1e-3)
 		return NaN
+	endif
+	if (Exists("root:Packages:Elements:name")!=1)
+		ElementDataInitPackage()
 	endif
 
 	String symb						// element symbol
