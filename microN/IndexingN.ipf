@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.82
+#pragma version = 4.83
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -1864,7 +1864,7 @@ End
 Function/T pickIndexingFunction(path)
 	String path						// path to folder on disk to be searched
 	if (strlen(path)<1)
-		path = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// default path to the executables
+		path = getBinaryPath()								// default path to the executables
 	endif
 
 	String defaultExe
@@ -1876,7 +1876,7 @@ Function/T pickIndexingFunction(path)
 		defaultExe = "Euler_i386"
 		isMac = 2
 	else
-		defaultExe = "Euler.exe"	// default for MSWindows
+		defaultExe = "Euler.exe"						// default for MSWindows
 	endif
 	String str = GetIndexingFuncOrExec()			// = "indexingIgorFunc;indexingExecutable;"
 	String indexFuncOld=StringFromList(0,str), exeOld=StringFromList(1,str)
@@ -2000,7 +2000,7 @@ Static Function/T GetIndexingFuncOrExec()		// returns "indexingIgorFunc;indexing
 
 	funcExists = ItemsInList(FunctionList(indexingIgorFunc,";", "KIND:2,VALTYPE:8,NPARAMS:1"))>0
 	indexingIgorFunc = SelectString(funcExists, "", indexingIgorFunc)
-	String EulerPath = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// path to the Euler executable
+	String EulerPath = getBinaryPath()						// path to the Euler executable
 	GetFileFolderInfo/Q/Z EulerPath+indexingExecutable
 	indexingExecutable = SelectString(V_Flag==0 && V_isFile, "", indexingExecutable)
 
@@ -2082,7 +2082,7 @@ Function/WAVE runIndexingEulerCommand(args)
 	endif
 
 	// find the full path name of the Euler executable
-	String exe,EulerPath = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// path to the Euler executable
+	String exe, EulerPath=getBinaryPath()					// path to the Euler executable
 	if (isMac && stringmatch(igorinfo(4),"PowerPC"))	// find the default name for this architecture
 		exe = "Euler_ppc"
 	elseif (isMac && stringmatch(igorinfo(4),"Intel"))
@@ -2923,7 +2923,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 	String peakFile="generic_XY.txt"			// name of file to receive result
 
 	// find the full path name of the peaksearch executable
-	String name,PeakSearchPath = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// path to the peaksearch executable
+	String name,PeakSearchPath=getBinaryPath()	// path to the peaksearch executables
 
 	if (isMac && stringmatch(igorinfo(4),"PowerPC"))	// find the default name for this architecture
 		name = "peaksearch_ppc"
@@ -2934,7 +2934,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 	else
 		name = "peaksearch"
 	endif
-	name = StrVarOrDefault("root:Packages:micro:PeakFit:PeakSearchExecutableMac",name)// over ride default if PeakSearchExecutableMac is set
+	name = StrVarOrDefault("root:Packages:micro:PeakFit:PeakSearchExecutableMac",name)	// override default if PeakSearchExecutableMac is set
 	GetFileFolderInfo/Q/Z PeakSearchPath+name
 	PeakSearchPath += SelectString(V_Flag==0 && V_isFile,"peaksearch",name)	// use just plane peaksearch if peaksearch_ppc or peaksearch_i386 does not exist
 	if (isMac)												// RX, JZT,  only on Mac, convert paths from HFS to POSIX
@@ -8150,3 +8150,14 @@ Function/S MacToWindows(MacPath)
 	endfor
 	return WinPath
 End
+
+Static Function/S getBinaryPath()
+	// returns path to the binaries.
+	// looks for folder inside of folder containing runIndexingEulerCommand()
+	// if "/binary" does not exist, just return path to runIndexingEulerCommand()
+	String path = ParseFilePath(1,FunctionPath("runIndexingEulerCommand"),":",1,0)// default path to the executables
+	GetFileFolderInfo/Q/Z=1 path+"binary:"
+	path = SelectString(V_isFolder && !V_Flag, path, S_Path)
+	return path
+End
+
