@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.98
+#pragma version = 3.99
 // #pragma hide = 1
 
 Menu "Graph"
@@ -47,6 +47,7 @@ Constant GIZMO_WIN_BIT = 65536
 //		WavesWithMatchingKeyVals(), further filter a list of waves, look for those with matching key=value pairs
 //		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
 //		joinLists(a,b,[sep]) returns lists a & b joined together in one list
+//		intersectionOfLists(a,b,[sep]) returns intersection of two lists a & b
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
 //		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
@@ -1977,6 +1978,28 @@ Function/T joinLists(a,b,[sep])
 	else							// join a & b
 		return RemoveEnding(a,sep)+ sep + b
 	endif
+End
+
+
+Function/T intersectionOfLists(a,b,[sep])
+	// return intersection of two lists using separator sep.  This takes care of terminated or un-terminated lists
+	String a,b			// two list with sep as separator
+	String sep			// defaults to ";"
+	sep = SelectString(ParamIsDefault(sep), sep, ";")	// not given, use ";"
+	sep = SelectString(strlen(sep)<1, sep, ";")			// empty string, use ";"
+
+	if (strlen(a)<1 || strlen(b)<1)		// if a or b is empty, so is intersection
+		return ""
+	endif
+	String out="", item
+	Variable i
+	for (i=0;i<ItemsInList(a);i+=1)
+		item = StringFromList(i,a,sep)
+		if (WhichListItem(item,b,sep)>=0)
+			out += item+sep
+		endif
+	endfor
+	return out
 End
 
 
