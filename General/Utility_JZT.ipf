@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.00
+#pragma version = 4.01
 // #pragma hide = 1
 
 Menu "Graph"
@@ -48,6 +48,7 @@ Constant GIZMO_WIN_BIT = 65536
 //		keyInList(), MergeKeywordLists(), & keysInList() "key=value" list utilities
 //		joinLists(a,b,[sep]) returns lists a & b joined together in one list
 //		intersectionOfLists(a,b,[sep]) returns intersection of two lists a & b
+//		RemoveDuplicatesFromList(list,[listSepStr,matchCase]), return list with duplicate items removed
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
 //		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
@@ -1791,20 +1792,31 @@ Function/T FoldersWithWaveClass(fldrPath,waveClassList,search,options,[all,win,f
 End
 
 
-Function/T TraceNamesInClass(waveClassList,win,[optionsFlag])
+Function/T TraceNamesInClass(waveClassList,win,[optionsFlag,Xwaves])
 	// like TraceNameList(), but limit result to a list of wave classes
 	// returns a list of acceptable trace names, use TraceNameToWaveRef() to get wave ref.
 	String waveClassList			// list of classes, semi-colon separated
 	String win
 	Variable optionsFlag
+	Variable	Xwaves					// flag, if true, also include Xwaves
 	optionsFlag = ParamIsDefault(optionsFlag) || numtype(optionsFlag) ? 1 : optionsFlag	// only normal graph traces (exclude contours & hidden)
+	Xwaves = ParamIsDefault(Xwaves) || numtype(Xwaves) ? 0 : !(!Xwaves)
 	String listAll=TraceNameList(win,";",optionsFlag), list="", trName
 
 	Variable i, N=ItemsInlist(listAll)
 	for (i=0;i<N;i+=1)			// for each trace, check if it is in waveClassList
 		trName = StringFromList(i,listAll)
 		Wave ww = TraceNameToWaveRef(win, trName)
-		list += SelectString(WaveInClass(ww,waveClassList), "", trName+";")
+		if (WhichListItem(trName,list)<0)		// not already in list, add it
+			list += SelectString(WaveInClass(ww,waveClassList), "", trName+";")
+		endif
+		if (Xwaves)
+			Wave ww = XWaveRefFromTrace(win, trName)
+			trName = NameOfWave(ww)
+			if (WhichListItem(trName,list)<0)		// not already in list, add it
+				list += SelectString(WaveInClass(ww,waveClassList), "", trName+";")
+			endif
+		endif
 	endfor
 	return list
 End
@@ -2021,6 +2033,28 @@ Function/T intersectionOfLists(a,b,[sep])
 		endif
 	endfor
 	return out
+End
+
+
+// remove duplicate items in list
+Function/T RemoveDuplicatesFromList(list,[listSepStr,matchCase])
+	String list
+	String listSepStr				// separates key value pairs, defaults to semicolon
+	Variable matchCase			// if true, match the case too (default is MATCH CASE)
+	listSepStr = SelectString(ParamIsDefault(listSepStr),listSepStr,";")	// default to semicolon
+	listSepStr = SelectString(strlen(listSepStr),";",listSepStr)	// default to semicolon
+	matchCase = ParamIsDefault(matchCase) || numtype(matchCase) ? 1 : matchCase
+
+	String item
+	Variable i, m
+	for (i=0;i<ItemsInList(list);i+=1)
+		item = StringFromList(i,list)
+		m = WhichListItem(item,list,listSepStr,i+1,matchCase)
+		if (m>0)
+			list = RemoveListItem(m,list,listSepStr)
+		endif
+	endfor
+	return list
 End
 
 
