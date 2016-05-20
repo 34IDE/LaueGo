@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 3.99
+#pragma version = 4.00
 // #pragma hide = 1
 
 Menu "Graph"
@@ -36,7 +36,7 @@ Constant GIZMO_WIN_BIT = 65536
 //	5	Progress panels
 //	6	Generic XML support
 //	7	WaveListClass() & WaveInClass(), used for handling the "waveClass=ccccc;" in wave notes
-//		  also AddClassToWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
+//		  also AddClassToWaveNote(), RemoveClassFromWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
 //		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
 //		  FoldersWithWaveClass(), returns list of sub-folders with wave of a certain class
 //		  TraceNamesInClass(), like TraceNameList(), but limit result to a list of wave classes
@@ -1712,6 +1712,27 @@ ThreadSafe Function/T AddClassToWaveNote(wnote,addClass)
 			waveClasses = AddListItem(oneClass,waveClasses,",",Inf)
 		endif
 	endfor
+	wnote = ReplaceStringByKey("waveClass",wnote,waveClasses,"=")	// fix up wave note
+	return wnote
+End
+
+
+// Remove a class(s) from the waveClass in a wavenote
+Function/T RemoveClassFromWaveNote(wnote,removeClass)
+	String wnote							// existing wavenote with key=value parirs
+	String removeClass					// class is a COMMA separated list of wave classes (or just one) to remove
+
+	String waveClasses=StringByKey("waveClass",wnote,"=")	// get current list of wave classes
+	String oneClass								// one of the classes from removeClass
+	Variable i
+	for (i=0;i<ItemsInList(removeClass,",");i+=1)
+		oneClass = StringFromList(i,removeClass)	// each class in removeClass
+		waveClasses = RemoveFromList(oneClass,waveClasses,",")
+	endfor
+
+	for (i=strlen(waveClasses)-1; char2num(waveClasses[i])==44 && i>=0; i-=1)	// find last not comma
+	endfor											// trim off trailing commas
+	waveClasses = waveClasses[0,i]
 	wnote = ReplaceStringByKey("waveClass",wnote,waveClasses,"=")	// fix up wave note
 	return wnote
 End
