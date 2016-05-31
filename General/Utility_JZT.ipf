@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.01
+#pragma version = 4.02
 // #pragma hide = 1
 
 Menu "Graph"
@@ -97,7 +97,9 @@ Constant GIZMO_WIN_BIT = 65536
 //		encodeMatAsStr(mat,[places]), convert mat to a string interpretable by decodeMatFromStr(), used for wave notes
 //		decodeMatFromStr(str), returns a FREE wave defined by str, inverse of encodeMatAsStr()
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
-//		str2cmplx(str), 	this is like str2num, but for complex
+//		str2cmplx(str), this is like str2num, but for complex
+//		vec2MINstr(vecIN), similar to hkl2str(), convert vecIN to a string of acceptable minimal length
+//		minStr2Vec(inStr,Nreq), similar to str2hkl(), convert a string of numbers to a wave of Nreq values, pretty forgiving about format
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
 //		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
@@ -4032,6 +4034,100 @@ ThreadSafe Function/C str2cmplx(str)	// this is like str2num, but for complex
 	endif
 	return cmplx(NaN,NaN)					// fail
 End
+
+
+ThreadSafe Function/S vec2MINstr(vecIN)		// a replacement for hkl2str()
+	// format values in vecIN into a string of acceptable minimal length
+	Wave vecIN
+	if (numtype(sum(vecIN)))
+		return ""
+	elseif (numpnts(vecIN)>50)
+		return ""
+	endif
+
+	Variable tooSmall = 0.5				// 1+tooSmall == 1,  (0.5 works for integer waves)
+	tooSmall = (WaveType(vecIN) & 0x02) ? 1e-7 : tooSmall	// 32 bit float
+	tooSmall = (WaveType(vecIN) & 0x04) ? 1e-15 : tooSmall	// 64 bit float
+
+	Duplicate/FREE vecIN, vec
+	vec = abs(vec)<tooSmall ? 0 : vec
+	MatrixOP/FREE deltas = maxVal(Abs(round(vec)-vec))
+	Variable isInts = deltas[0] < tooSmall
+	MatrixOP/FREE biggest = maxVal(Abs(vec))
+
+	if (isInts && biggest[0]<10)			// just single digit ints, no separator needed
+		return vec2str(vec,fmt="%d",bare=1,maxPrint=50,sep="")
+	endif
+	return vec2str(vec,places=6,bare=1,maxPrint=50,zeroThresh=1e-6,sep=" ")
+End
+//
+//	Function test_vec2MINstr()
+//		Make/FREE vec={9,2,3,2e-8}
+//		printf "%s --> %s     (hkl2str = %s)\r", vec2str(vec), vec2MINstr(vec), hkl2str(vec[0],vec[1],vec[2])
+//	End
+
+
+ThreadSafe Function/WAVE minStr2Vec(inStr,Nreq)		// a replacement for str2hkl()
+	// returns the integer values from a string, pretty forgiving about format in string
+	// moved to here from Dynamical.ipf versions <=1.14
+	// moved to here from LatticeSym.ipf, 5.16
+	String inStr
+	Variable Nreq				// rquired number of numbers to find
+
+	inStr = ReplaceString("+",inStr," ")		// change all '+' to space
+	inStr = ReplaceString("-",inStr," -")		// change all '-' to space+'-'
+	inStr = ReplaceString(" ",inStr,";")		// change all ' ' to semi-colon
+	inStr = ReplaceString(",",inStr,";")		// change all ',' to semi-colon
+	inStr = ReplaceString(":",inStr,";")		// change all ':' to semi-colon
+	String digits = "0123456789"
+	Variable semicolon = 0x3B, period = 0x2E
+	String skips = "-.;"
+
+	inStr = TrimFrontBackWhiteSpace(inStr)	// trim off leading & trailing white
+	Wave wN = str2vec(inStr)						// try to interpret
+	Variable NwN=numpnts(wN)
+
+	if (NwN<Nreq)										// too few values, add separators
+		Variable i
+		i = strlen(inStr)-1
+		inStr = SelectString(char2num(inStr[i])==semicolon, inStr, inStr[0,i-1])	// remove trailing ';'
+		i = strlen(inStr)-1
+		inStr = SelectString(char2num(inStr[i])==period, inStr, inStr[0,i-1])		// remove trailing '.'
+		String ch										// one character
+		for (i=0;i<(strlen(inStr)-1);i+=1)
+			ch = inStr[i]
+			if (strsearch(skips,ch,0)>=0)		// a "." or "-"
+				continue
+			elseif (strsearch(digits,ch,0)>=0)	// a digit type of character
+				i += 1
+				inStr[i] = ";"
+			else
+				return $""
+			endif
+		endfor
+		do
+			inStr = ReplaceString(";;",inStr,";")	// remove all double ';;' --> ';'
+		while(strsearch(inStr,";;",0)>=0)
+		Wave wN = str2vec(inStr)					// try to interpret again
+	endif
+
+	if (numpnts(wN)==Nreq && numtype(sum(wN))==0)
+		return wN
+	endif
+	return $""
+End
+//
+//	Function test_minStr2Vec(str,N)
+//		String str
+//		Variable N
+//		Wave vint = minStr2Vec(str,N)
+//			if (WaveExists(vint))
+//			printf "'%s' --> %s\r",str,vec2str(vint)
+//		else
+//			printf "'%s' --> ****** ERROR *****\r",str
+//		endif
+//	End
+
 
 
 ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
