@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.16
+#pragma version = 5.17
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -139,6 +139,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.12, can now also get name from _chemical_name_mineral
 //	with version 5.13, can now also get name from _chemical_name_mineral working correctly
 //	with version 5.16, added print_crystalStructStr()
+//	with version 5.17, ARING should be "\201",  NOT "\305"
 
 // Rhombohedral Transformation:
 //
@@ -212,17 +213,17 @@ Static Constant c = 299792458				// speed of light (m/sec)
 
 #if (IgorVersion()<7)
 	strConstant DEGREESIGN = "\241"			// option-shift-8
-	strConstant BULLET = "\245"					// option-8
-	strConstant ARING = "\305"					// Angstrom sign
+	strConstant BULLET = "\245"				// option-8
+	strConstant ARING = "\201"				// Angstrom sign, option-shift-A
 #if StringMatch(IgorInfo(2),"Windows")
 	strConstant BCHAR = "\257"
 #else
 	strConstant BCHAR = "\321"
 #endif
 #else
-	strConstant DEGREESIGN = "\xC2\xB0"		// UTF8, DEGREE SIGN
+	strConstant DEGREESIGN = "\xC2\xB0"	// UTF8, DEGREE SIGN
 	strConstant BULLET = "\xE2\x80\xA2"
-	strConstant ARING = "\xC3\x85"				// Aring, Angstrom sign
+	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
 	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
 #endif
 
@@ -858,7 +859,7 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 				if (itemp==5)
 					printf "    U12=%+g, U13=%+g, U23=%+g",(xtal.atom[i].U12 *100),(xtal.atom[i].U13 *100),(xtal.atom[i].U23 *100)
 				endif
-				printf " (nm^2)"
+				printf " ("+ARING+"^2)"
 			endif
 			printf "\r"
 		endfor
