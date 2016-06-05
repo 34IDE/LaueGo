@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.02
+#pragma version = 4.03
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1442,12 +1442,13 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	Variable startLocal = ParamIsDefault(start) ? 0 : start
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
 
-	Variable i0,i1
-	if (startLocal>0)
-		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
-	else
-		i0 = startOfxmltag(xmltag,buf,occurance)
-	endif
+	Variable i1, i0=startOfxmltag(xmltag,buf,occurance,start=startLocal)
+//	if (startLocal>0)
+////		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
+//		i0 = startOfxmltag(xmltag,buf,occurance,start=startLocal)
+//	else
+//		i0 = startOfxmltag(xmltag,buf,occurance)
+//	endif
 	if (i0<0)
 		return ""
 	endif
@@ -1514,12 +1515,13 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// retur
 	Variable startLocal = ParamIsDefault(start) ? 0 : start
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
 
-	Variable i0,i1
-	if (startLocal>0)
-		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
-	else
-		i0 = startOfxmltag(xmltag,buf,occurance)
-	endif
+	Variable i1, i0=startOfxmltag(xmltag,buf,occurance, start=startLocal)
+//	if (startLocal>0)
+////		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
+//		i0 = startOfxmltag(xmltag,buf,occurance, start=startLocal)
+//	else
+//		i0 = startOfxmltag(xmltag,buf,occurance)
+//	endif
 	if (i0<0)
 		return ""
 	endif
@@ -1572,15 +1574,17 @@ ThreadSafe Function/T XMLremoveComments(str)	// remove all xml comments from str
 	return str
 End
 //
-ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance)	// returns the index into buf pointing to the start of xmltag
+ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance,[start])	// returns the index into buf pointing to the start of xmltag
 	String xmltag, buf
 	Variable occurance									// use 0 for first occurance, 1 for second, ...
+	Variable start
+	start = ParamIsDefault(start) || start<=0 || numtype(start) ? 0 : round(start)
 
-	Variable i0,i1, i, start
-	for (i=0,i0=0;i<=occurance;i+=1)
-		start = i0
-		i0 = strsearch(buf,"<"+xmltag+" ",start)	// find start of a tag with attributes
-		i1 = strsearch(buf,"<"+xmltag+">",start)	// find start of a tag without attributes
+	Variable i0,i1, i, starti
+	for (i=0,i0=start;i<=occurance;i+=1)
+		starti = i0
+		i0 = strsearch(buf,"<"+xmltag+" ",starti)	// find start of a tag with attributes
+		i1 = strsearch(buf,"<"+xmltag+">",starti)	// find start of a tag without attributes
 		i0 = i0<0 ? Inf : i0
 		i1 = i1<0 ? Inf : i1
 		i0 = min(i0,i1)
@@ -3709,9 +3713,9 @@ End
 
 
 Function/T ElapsedTime2Str(seconds,[showSec,fracDigits])	// convert seconds to a nice time interval string
-	Variable seconds
-	Variable showSec
-	Variable fracDigits
+	Variable seconds			// number of seconds
+	Variable showSec			// flag, if True, show seconds
+	Variable fracDigits		// number of fractional seconds to show
 
 	if (ParamIsDefault(showSec) && ParamIsDefault(fracDigits))
 		if (seconds < 5*60)
@@ -3725,11 +3729,10 @@ Function/T ElapsedTime2Str(seconds,[showSec,fracDigits])	// convert seconds to a
 			fracDigits = 0
 		endif
 	else
-		showSec = ParamIsDefault(showSec) || numtype(showSec) ? 0 : showSec
+		showSec = ParamIsDefault(showSec) || numtype(showSec) ? 0 : !(!showSec)
 		fracDigits = ParamIsDefault(fracDigits) || numtype(fracDigits) ? 0 : fracDigits
-		fracDigits = fracDigits<=0 || showSec<5 ? 0 : round(fracDigits)
+		fracDigits = fracDigits<=0 || !showSec ? 0 : round(fracDigits)
 	endif
-	showSec = showSec ? 5 : 4
 
 	Variable years=trunc(seconds/(365*24*3600))	// integer number of years (365.0 days/year)
 	seconds -= years * (365*24*3600)
@@ -3749,6 +3752,7 @@ Function/T ElapsedTime2Str(seconds,[showSec,fracDigits])	// convert seconds to a
 		str += num2istr(days)+" d,  "
 	endif
 	if (seconds>0)
+		showSec = showSec ? 5 : 4
 		str += Secs2Time(seconds,showSec,fracDigits)
 	endif
 	str = RemoveEnding(str,",  ")
