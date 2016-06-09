@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.03
+#pragma version = 4.04
 // #pragma hide = 1
 
 Menu "Graph"
@@ -68,6 +68,7 @@ Constant GIZMO_WIN_BIT = 65536
 //		SquareUpMatrix(rot), turns rot from almost a rotation matrix to a true rotation matrix
 //		smallestNonZeroValue(vec,[tol]), returns the abs( smallest non-zero element ), e.g. {0, -0.1, 3} returns 0.1
 //		MedianOfWave(), returns median (or other percentile) of a wave, useful for picking scaling ranges
+//		rangeOfVec(wav,[row,col,layer,chunk]), returns the max and min number in the specified vector
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -2914,6 +2915,74 @@ End
 //		printf "%4.2f,   %4.2f,   %4.2f,\t\t%s, p1=%d, p2=%d\r",MedianOfWave(tw,0.5,p1=p1,p2=p2),MedianOfWave(tw,0,p1=p1,p2=p2),MedianOfWave(tw,1,p1=p1,p2=p2),vec2str(tw), p1,p2
 //	endif
 //End
+
+
+ThreadSafe Function/C rangeOfVec(wav,[row,col,layer,chunk])		// returns the max and min number in the specified vector
+	Wave wav						// a 1D array (if more than 1D, must specify appropriate row, col, layer, chunk)
+	Variable row,col,layer,chunk	// for selecting out a vector at a specific row, col, or layer, chunk
+	if (WaveType(wav,1)!=1)				// only understand numeric
+		return cmplx(NaN,NaN)
+	endif
+
+	Variable rowGiven=!ParamIsDefault(row), colGiven=!ParamIsDefault(col)
+	Variable layerGiven=!ParamIsDefault(layer), chunkGiven=!ParamIsDefault(chunk)
+	Variable dims = WaveDims(wav), type=WaveType(wav), N
+
+	Wave vec = $""
+	if (dims==1)
+		Wave vec = wav
+	elseif (dims==2)
+		if (colGiven)							// want the row
+			N = DimSize(wav,0)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[p][col]
+		endif
+		if (rowGiven)							// want the column
+			N = DimSize(wav,1)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[row][p]
+		endif
+	elseif (dims==3)
+		if (colGiven && layerGiven)			// want the row
+			N = DimSize(wav,0)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[p][col][layer]
+		elseif (rowGiven && layerGiven)		// want the column
+			N = DimSize(wav,1)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[row][p][layer]
+		elseif (rowGiven && layerGiven)		// want the layer
+			N = DimSize(wav,2)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[row][col][p]
+		endif
+	elseif (dims==4)
+		if (colGiven && layerGiven && chunkGiven)		// want the row
+			N = DimSize(wav,0)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[p][col][layer][chunk]
+		elseif (rowGiven && layerGiven && chunkGiven)	// want the column
+			N = DimSize(wav,1)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[row][p][layer][chunk]
+		elseif (rowGiven && colGiven && chunkGiven)	// want the layer
+			N = DimSize(wav,2)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[row][col][p][chunk]
+		elseif (rowGiven && colGiven && layerGiven)	// want the chunk
+			N = DimSize(wav,3)
+			Make/N=(N)/Y=(type)/FREE vec
+			vec = wav[row][col][layer][p]
+		endif
+	endif
+	if (!WaveExists(vec))
+		return cmplx(NaN,NaN)
+	endif
+
+	WaveStats/M=1/Q vec
+	WaveClear vec
+	return cmplx(V_min,V_max)
+End
 
 
 
