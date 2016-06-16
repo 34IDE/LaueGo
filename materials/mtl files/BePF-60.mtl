@@ -13,10 +13,10 @@
 	<part symbol="Cr" fraction="0.0001"></part>
 	<part symbol="Co" fraction="0.00001"></part>
 	<part symbol="Cu" fraction="0.0001"></part>
-	<part symbol="Fe" fraction="0.0007"></part>
+	<part symbol="Fe" fraction="0.0008"></part>
 	<part symbol="Pb" fraction="0.00002"></part>
 	<part symbol="Li" fraction="0.000003"></part>
-	<part symbol="Mg" fraction="0.0005"></part>
+	<part symbol="Mg" fraction="0.00049"></part>
 	<part symbol="Mn" fraction="0.00012"></part>
 	<part symbol="Mo" fraction="0.00002"></part>
 	<part symbol="Ni" fraction="0.0002"></part>
