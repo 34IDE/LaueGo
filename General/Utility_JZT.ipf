@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.04
+#pragma version = 4.05
 // #pragma hide = 1
 
 Menu "Graph"
@@ -83,7 +83,8 @@ Constant GIZMO_WIN_BIT = 65536
 //		FitErrorString(FitError,FitQuitReason), return a string representation of the fitting error
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
-//		TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
+//		strip(str,[chars,ignoreCase]), lstrip(), & rstrip(),  trim white space or given set of characters
+//		use stip above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
 //		StopAllTimers(), stops all the Igor timers
@@ -3425,6 +3426,59 @@ End
 
 
 
+// Theese three funcitons are nicer than the TrimFrontBackWhiteSpace() functions that follow
+ThreadSafe Function/S strip(str,[chars,ignoreCase])
+	String str					// string to process
+	String chars				// a set of characters to strip, defaults to white space if not given
+	Variable ignoreCase		// True means NOT case sensitive, default is ignore case
+	chars = SelectString(ParamIsDefault(chars), chars, "--WHITE SPACE--")
+	ignoreCase = ParamIsDefault(ignoreCase) || numtype(ignoreCase) ? 2 : ignoreCase
+	ignoreCase = ignoreCase ? 2 : 0
+	str = lstrip(str,chars=chars,ignoreCase=ignoreCase)
+	str = rstrip(str,chars=chars,ignoreCase=ignoreCase)
+	return str
+End
+//
+ThreadSafe Function/S lstrip(str,[chars,ignoreCase])		// remove specified leading chars
+	String str					// string to process
+	String chars				// a set of characters to strip, defaults to white space if not given
+	Variable ignoreCase		// True means NOT case sensitive, default is ignore case
+	chars = SelectString(ParamIsDefault(chars), chars, "--WHITE SPACE--")
+
+	Variable i, N=strlen(str)
+	if (StringMatch(chars,"--WHITE SPACE--"))
+		for (i=0; char2num(str[i])<=32 && i<N; i+=1)	// find first non-white space
+		endfor
+	else
+		ignoreCase = ParamIsDefault(ignoreCase) || numtype(ignoreCase) ? 2 : ignoreCase
+		ignoreCase = ignoreCase ? 2 : 0
+		for (i=0; strsearch(chars,str[i],0,ignoreCase)>=0 && i<N; i+=1)	// find first char not in chars
+		endfor
+	endif
+	return str[i,Inf]
+End
+//
+ThreadSafe Function/S rstrip(str,[chars,ignoreCase])		// remove specified trailing chars
+	String str					// string to process
+	String chars				// a set of characters to strip, defaults to white space if not given
+	Variable ignoreCase		// True means NOT case sensitive, default is ignore case
+	chars = SelectString(ParamIsDefault(chars), chars, "--WHITE SPACE--")
+
+	Variable i, N=strlen(str)
+	if (StringMatch(chars,"--WHITE SPACE--"))
+		for (i=N-1; char2num(str[i])<=32 && i>=0; i-=1)	// find last non-white space
+		endfor
+	else
+		ignoreCase = ParamIsDefault(ignoreCase) || numtype(ignoreCase) ? 2 : ignoreCase
+		ignoreCase = ignoreCase ? 2 : 0
+		for (i=N-1; strsearch(chars,str[i],0,ignoreCase)>=0 && i>=0; i-=1)	// find first char not in chars
+		endfor
+	endif
+	return str[0,i]
+End
+//
+//	DEPRECATED,  use the above three stip, rstrip, & lstrip instead
+//
 //		These three functions have been moved here from from LoadJZTtaggedData.ipf, BeamProcedures, LoadEPICSscans.ipf, and oldJZTdataLoad.ipf.
 //			spec.ipf uses its own version of these so it is stand-alone
 //
@@ -3450,6 +3504,7 @@ ThreadSafe Function/T TrimTrailingWhiteSpace(str)
 	endfor
 	return str[0,i]
 End
+
 
 
 ThreadSafe Function/T IgorFileTypeString(itype)		// string associated with NUMTYPE from WaveInfo() function, or a WaveType() function
