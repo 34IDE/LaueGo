@@ -83,7 +83,7 @@ Constant GIZMO_WIN_BIT = 65536
 //		FitErrorString(FitError,FitQuitReason), return a string representation of the fitting error
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
-//		strip(str,[chars,ignoreCase]), lstrip(), & rstrip(),  trim white space or given set of characters
+//		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
 //		use stip above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
@@ -3427,19 +3427,19 @@ End
 
 
 // Theese three funcitons are nicer than the TrimFrontBackWhiteSpace() functions that follow
-ThreadSafe Function/S strip(str,[chars,ignoreCase])
+ThreadSafe Function/S TrimBoth(str,[chars,ignoreCase])
 	String str					// string to process
 	String chars				// a set of characters to strip, defaults to white space if not given
 	Variable ignoreCase		// True means NOT case sensitive, default is ignore case
 	chars = SelectString(ParamIsDefault(chars), chars, "--WHITE SPACE--")
 	ignoreCase = ParamIsDefault(ignoreCase) || numtype(ignoreCase) ? 2 : ignoreCase
 	ignoreCase = ignoreCase ? 2 : 0
-	str = lstrip(str,chars=chars,ignoreCase=ignoreCase)
-	str = rstrip(str,chars=chars,ignoreCase=ignoreCase)
+	str = TrimFront(str,chars=chars,ignoreCase=ignoreCase)
+	str = TrimEnd(str,chars=chars,ignoreCase=ignoreCase)
 	return str
 End
 //
-ThreadSafe Function/S lstrip(str,[chars,ignoreCase])		// remove specified leading chars
+ThreadSafe Function/S TrimFront(str,[chars,ignoreCase])		// remove specified leading chars
 	String str					// string to process
 	String chars				// a set of characters to strip, defaults to white space if not given
 	Variable ignoreCase		// True means NOT case sensitive, default is ignore case
@@ -3458,7 +3458,7 @@ ThreadSafe Function/S lstrip(str,[chars,ignoreCase])		// remove specified leadin
 	return str[i,Inf]
 End
 //
-ThreadSafe Function/S rstrip(str,[chars,ignoreCase])		// remove specified trailing chars
+ThreadSafe Function/S TrimEnd(str,[chars,ignoreCase])		// remove specified trailing chars
 	String str					// string to process
 	String chars				// a set of characters to strip, defaults to white space if not given
 	Variable ignoreCase		// True means NOT case sensitive, default is ignore case
@@ -3477,7 +3477,7 @@ ThreadSafe Function/S rstrip(str,[chars,ignoreCase])		// remove specified traili
 	return str[0,i]
 End
 //
-//	DEPRECATED,  use the above three stip, rstrip, & lstrip instead
+//	DEPRECATED,  use the above three TrimBoth, TrimEnd, & TrimFront instead
 //
 //		These three functions have been moved here from from LoadJZTtaggedData.ipf, BeamProcedures, LoadEPICSscans.ipf, and oldJZTdataLoad.ipf.
 //			spec.ipf uses its own version of these so it is stand-alone
