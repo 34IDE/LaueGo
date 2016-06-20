@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.05
+#pragma version = 4.06
 // #pragma hide = 1
 
 Menu "Graph"
