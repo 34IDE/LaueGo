@@ -2282,7 +2282,7 @@ Static Function/C titleStrLength(str)
 	Variable i=0, isize=sizes[0]
 	for (i=0; i<numpnts(sizes); i+=1)
 		isize=sizes[i]
-		MeasureStyledText/F="Geneva"/SIZE=(isize) str
+		MeasureStyledText/F=GenevaEquivFont/SIZE=(isize) str
 		if (i==0 && V_width < 194)
 			break
 		elseif (V_width < 214)

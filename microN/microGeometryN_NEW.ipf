@@ -1559,6 +1559,11 @@ ThreadSafe Function DetectorUpdateCalc(d)	// update all internally calculated th
 		d.m3[0] = mvec[0]	;	d.m3[1] = mvec[1]	;	d.m3[2] = mvec[2]
 	endif
 
+	// reduce mUseShow to fit the d.mi[]
+	mUseShow = numtype(d.m3[0]) ? min(2,mUseShow) : mUseShow
+	mUseShow = numtype(d.m2[0]) ? min(1,mUseShow) : mUseShow
+	mUseShow = numtype(d.m1[0]) ? min(0,mUseShow) : mUseShow
+
 	theta = sqrt(Rx*Rx+Ry*Ry+Rz*Rz)
 	if (theta==0)										// no rotation, set to identity matrix
 		d.rho00 = 1;		d.rho01 = 0;		d.rho02 = 0
