@@ -2,7 +2,7 @@
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
 #pragma version = 2.00
-#include  "LatticeSym", version>=4.29
+#include  "LatticeSym", version>=5.17
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 //
@@ -610,6 +610,7 @@ Structure detectorGeometry		// structure definition for a detector
 	double P[3]							// translation vector (micron)
 
 	double m1[3], m2[3], m3[3]	// direction of three possible translators holding this detector
+	int16 mUseShow						// number of m's to show for a detector (0=no none, 1=show m1, 2=m1 & m2, 3=m1 & m2 & m3)
 
 	uchar timeMeasured[100]		// when this geometry was calculated
 	uchar geoNote[100]				// note
@@ -702,8 +703,12 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 	endif
 End
 //
-Function printDetector(d)							// print the details for passed detector geometry to the history window
+Function printDetector(d,[t1,t2,t3])				// print the details for passed detector geometry to the history window
 	STRUCT detectorGeometry &d
+	Variable t1,t2,t3						// OPTIONAL, position of detector translators
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 	if (!(d.used))
 		return 1
 	endif
@@ -713,18 +718,21 @@ Function printDetector(d)							// print the details for passed detector geometr
 	printf "	R = {%.7g, %.7g, %.7g}, a rotation of %.7g¡	// rotation vector\r",d.R[0],d.R[1],d.R[2],sqrt(d.R[0]*d.R[0] + d.R[1]*d.R[1] + d.R[2]*d.R[2])*180/PI
 	printf "	P = {%g, %g, %g}					// translation vector (mm)\r",(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000
 
-	Make/N=3/D/FREE mvec
-	mvec = d.m1[p]
-	if (numtype(sum(mvec))==0 && norm(mvec)>0)
-		printf "	m1 = {%s}					// direction of translator 1\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
-	endif
-	mvec = d.m2[p]
-	if (numtype(sum(mvec))==0 && norm(mvec)>0)
-		printf "	m2 = {%s}					// direction of translator 2\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
-	endif
-	mvec = d.m3[p]
-	if (numtype(sum(mvec))==0 && norm(mvec)>0)
-		printf "	m3 = {%s}					// direction of translator 3\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
+	Variable mUseShow = d.mUseShow
+	if (mUseShow)
+		Make/N=3/D/FREE mvec
+		mvec = d.m1[p]
+		if (numtype(sum(mvec))==0 && norm(mvec)>0 && mUseShow>=1)
+			printf "	m1 = {%s}					// direction of translator 1\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
+		endif
+		mvec = d.m2[p]
+		if (numtype(sum(mvec))==0 && norm(mvec)>0 && mUseShow>=2)
+			printf "	m2 = {%s}					// direction of translator 2\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
+		endif
+		mvec = d.m3[p]
+		if (numtype(sum(mvec))==0 && norm(mvec)>0 && mUseShow>=3)
+			printf "	m3 = {%s}					// direction of translator 3\r",vec2str(mvec,places=8,bare=1,zeroThresh=1e-9,sep=", ")
+		endif
 	endif
 
 	printf "	geometry measured on  '%s'\r",d.timeMeasured
@@ -742,10 +750,10 @@ Function printDetector(d)							// print the details for passed detector geometr
 	endif
 	Variable chiMin, chiMax, tthMin, tthMax
 	Variable/C chiZ, tthZ
-	chiZ = chiRange(d)
+	chiZ = chiRange(d,t1=t1,t2=t2,t3=t3)
 	chiMin = min(chiMin,real(chiZ))
 	chiMax = max(chiMax,imag(chiZ))
-	tthZ =  tthRange(d)
+	tthZ =  tthRange(d,t1=t1,t2=t2,t3=t3)
 	tthMin = min(tthMin,real(tthZ))
 	tthMax = max(tthMax,imag(tthZ))
 	printf "\tangle ranges:  chi = [%g, %g¡],  2th = [%g, %g¡]\r", real(chiZ),imag(chiZ),real(tthZ),imag(tthZ)
@@ -755,9 +763,9 @@ End
 ThreadSafe Static Function/C chiRange(d,[t1,t2,t3])	// chi is rotation about the z-axis
 	STRUCT detectorGeometry &d
 	Variable t1,t2,t3						// OPTIONAL, position of detector translators
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	Make/N=3/D/FREE xyz, perp, ki={0,0,1}
 	normalize(ki)
@@ -778,9 +786,9 @@ End
 ThreadSafe Static Function/C tthRange(d,[t1,t2,t3])	// tth is the usual 2-theta
 	STRUCT detectorGeometry &d
 	Variable t1,t2,t3						// OPTIONAL, position of detector translators
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	Make/N=3/D/FREE xyz, ki={0,0,1}
 	Make/N=8/D/FREE pxw={0,0.5,1, 0,1, 0,0.5,1}, pyw={0,0,0, 0.5,0.5, 1,1,1}
@@ -821,6 +829,8 @@ ThreadSafe Function CopyDetectorGeometry(f,i)	// copy a detector structure
 	f.sizeX = i.sizeX;	f.sizeY = i.sizeY
 	f.R[0]=i.R[0];			f.R[1]=i.R[1];			f.R[2]=i.R[2];
 	f.P[0]=i.P[0];			f.P[1]=i.P[1];			f.P[2]=i.P[2];
+
+	f.mUseShow = i.mUseShow
 	f.m1[0]=i.m1[0];		f.m1[1]=i.m1[1];		f.m1[2]=i.m1[2];
 	f.m2[0]=i.m2[0];		f.m2[1]=i.m2[1];		f.m2[2]=i.m2[2];
 	f.m3[0]=i.m3[0];		f.m3[1]=i.m3[1];		f.m3[2]=i.m3[2];
@@ -877,6 +887,7 @@ ThreadSafe Static Function initialize_detectorStruct(d)
 	d.sizeX = NaN;		d.sizeY = NaN
 	d.R[0] = NaN;		d.R[1] = NaN;		d.R[2] = NaN
 	d.P[0] = NaN;		d.P[1] = NaN;		d.P[2] = NaN
+	d.mUseShow = 0
 	d.m1[0] = NaN;		d.m1[1] = NaN;		d.m1[2] = NaN
 	d.m2[0] = NaN;		d.m2[1] = NaN;		d.m2[2] = NaN
 	d.m3[0] = NaN;		d.m3[1] = NaN;		d.m3[2] = NaN
@@ -979,9 +990,9 @@ ThreadSafe Function/C q2pixel(d,qvec,[depth,t1,t2,t3])	// returns pixel position
 	Variable depth									// OPTIONAL, sample depth measured along the beam
 	Variable t1,t2,t3						// OPTIONAL, position of detector translators
 	depth = ParamIsDefault(depth) ? NaN : depth	// default is NaN, XYZ2pixel() will handle this properly
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	Make/N=3/D/FREE kout, qhat=qvec, ki={0,0,1}	// ki = geo.ki[p],  incident beam direction
 	normalize(qhat)
@@ -1011,9 +1022,9 @@ ThreadSafe Function/WAVE pixel2qVEC(d,pxpy,[depth,DeltaPixelCorrect,t1,t2,t3])	/
 	Wave DeltaPixelCorrect				// OPTIONAL, pixel corrections dimensions are [N][2]
 	Variable t1,t2,t3						// OPTIONAL, position of detector translators
 	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	if (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,1)==2)
 		Wave kf = pixel2XYZVEC(d,pxpy, DeltaPixelCorrect=DeltaPixelCorrect, t1=t1,t2=t2,t3=t3)
@@ -1049,9 +1060,9 @@ ThreadSafe Function/WAVE pixel2XYZVEC(d,pxpy,[DeltaPixelCorrect,t1,t2,t3])	// co
 	Wave pxpy							// list of pixels to use (must be in raw un-binned pixels), perhaps an ROI, first dimension is number of pixels, second is x,y
 	Wave DeltaPixelCorrect			// OPTIONAL, pixel corrections dimensions are [N][2]
 	Variable t1,t2,t3					// OPTIONAL, position of detector translators
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) || numtype(t1) || t1==0 ? NaN : t1
+	t2 = ParamIsDefault(t2) || numtype(t2) || t2==0 ? NaN : t2
+	t3 = ParamIsDefault(t3) || numtype(t3) || t3==0 ? NaN : t3
 
 	Variable N=DimSize(pxpy,0), Nx=d.Nx, Ny=d.Ny
 	if (N<1)
@@ -1069,23 +1080,26 @@ ThreadSafe Function/WAVE pixel2XYZVEC(d,pxpy,[DeltaPixelCorrect,t1,t2,t3])	// co
 	dxyz = {d.sizeX/Nx, d.sizeY/Ny, 0}			// pixel size
 	Pw = d.P[p]
 
-	Make/N=3/D/FREE mvec
-	if (!ParamIsDefault(t1) && numtype(t1)==0 && t1!=0)
-		mvec = d.m1[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			Pw += t1 * mvec[p]
+	Variable mUseShow = d.mUseShow
+	if (mUseShow)
+		Make/N=3/D/FREE mvec
+		if (numtype(t1)==0)
+			mvec = d.m1[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				Pw += t1 * mvec[p]
+			endif
 		endif
-	endif
-	if (!ParamIsDefault(t2) && numtype(t2)==0 && t2!=0)
-		mvec = d.m2[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			Pw += t2 * mvec[p]
+		if (numtype(t2)==0 && mUseShow>=2)
+			mvec = d.m2[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				Pw += t2 * mvec[p]
+			endif
 		endif
-	endif
-	if (!ParamIsDefault(t3) && numtype(t3)==0 && t3!=0)
-		mvec = d.m3[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			Pw += t3 * mvec[p]
+		if (numtype(t3)==0 && mUseShow>=3)
+			mvec = d.m3[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				Pw += t3 * mvec[p]
+			endif
 		endif
 	endif
 
@@ -1117,9 +1131,9 @@ ThreadSafe Function pixel2q(d,px,py,qhat,[depth,t1,t2,t3])	// returns theta (rad
 	Wave qhat										// q-vector in beam line coords (optional)
 	Variable depth									// OPTIONAL, sample depth measured along the beam
 	Variable t1,t2,t3								// OPTIONAL, position of detector translators
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	Make/N=3/D/FREE kout ,ki={0,0,1}		//	ki = geo.ki[p],  incident beam direction
 	pixel2XYZ(d,px,py,kout, t1=t1,t2=t2,t3=t3)		// kout is in direction of pixel in beam line coords
@@ -1142,6 +1156,9 @@ ThreadSafe Function pixel2XYZ(d,px,py,xyz,[t1,t2,t3])	// convert pixel position 
 	Variable px,py						// pixel position on detector (full chip & zero based)
 	Wave xyz								// 3-vector to receive the result, position in beam line coords (micron)
 	Variable t1,t2,t3					// OPTIONAL, position of detector translators
+	t1 = ParamIsDefault(t1) || numtype(t1) ||  t1==0 ? NaN : t1
+	t2 = ParamIsDefault(t2) || numtype(t2) ||  t2==0 ? NaN : t2
+	t3 = ParamIsDefault(t3) || numtype(t3) ||  t3==0 ? NaN : t3
 
 	peakCorrect(d,px,py)							// convert pixel on detector to an undistorted distance in pixels (takes zero based pixels)
 
@@ -1153,29 +1170,32 @@ ThreadSafe Function pixel2XYZ(d,px,py,xyz,[t1,t2,t3])	// convert pixel position 
 	yp += d.P[1]
 	zp = d.P[2]
 
-	Make/N=3/D/FREE mvec
-	if (!ParamIsDefault(t1) && numtype(t1)==0 && t1!=0)
-		mvec = d.m1[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			xp += t1 * mvec[0]
-			yp += t1 * mvec[1]
-			zp += t1 * mvec[2]
+	Variable mUseShow = d.mUseShow
+	if (mUseShow)
+		Make/N=3/D/FREE mvec
+		if (numtype(t1)==0)
+			mvec = d.m1[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				xp += t1 * mvec[0]
+				yp += t1 * mvec[1]
+				zp += t1 * mvec[2]
+			endif
 		endif
-	endif
-	if (!ParamIsDefault(t2) && numtype(t2)==0 && t2!=0)
-		mvec = d.m2[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			xp += t2 * mvec[0]
-			yp += t2 * mvec[1]
-			zp += t2 * mvec[2]
+		if (numtype(t2)==0 && mUseShow>=2)
+			mvec = d.m2[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				xp += t2 * mvec[0]
+				yp += t2 * mvec[1]
+				zp += t2 * mvec[2]
+			endif
 		endif
-	endif
-	if (!ParamIsDefault(t3) && numtype(t3)==0 && t3!=0)
-		mvec = d.m3[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			xp += t3 * mvec[0]
-			yp += t3 * mvec[1]
-			zp += t3 * mvec[2]
+		if (numtype(t3)==0 && mUseShow>=3)
+			mvec = d.m3[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				xp += t3 * mvec[0]
+				yp += t3 * mvec[1]
+				zp += t3 * mvec[2]
+			endif
 		endif
 	endif
 
@@ -1192,6 +1212,9 @@ ThreadSafe Function/C XYZ2pixel(d,xyz,px,py,[depth,t1,t2,t3])	// find pixel posi
 	Variable depth					// OPTIONAL, sample depth measured along the beam
 	Variable t1,t2,t3				// OPTIONAL, position of detector translators
 	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth	// default is 0, the origin
+	t1 = ParamIsDefault(t1) || numtype(t1) ||  t1==0 ? NaN : t1
+	t2 = ParamIsDefault(t2) || numtype(t2) ||  t2==0 ? NaN : t2
+	t3 = ParamIsDefault(t3) || numtype(t3) ||  t3==0 ? NaN : t3
 
 	Make/N=3/D/FREE xyzp, dxyzP
 	Variable xx=xyz[0], yy=xyz[1], zz=xyz[2]				// remember (xyz) = rho x [ (x' y' z') + P ]
@@ -1199,23 +1222,26 @@ ThreadSafe Function/C XYZ2pixel(d,xyz,px,py,[depth,t1,t2,t3])	// find pixel posi
 	xyzp[1] = d.rho01*xx + d.rho11*yy + d.rho21*zz -d.P[1]	// this is now the coordinate of the pixel transformed into detector (i.e. prime) space
 	xyzp[2] = d.rho02*xx + d.rho12*yy + d.rho22*zz -d.P[2]
 
-	Make/N=3/D/FREE mvec
-	if (!ParamIsDefault(t1) && numtype(t1)==0 && t1!=0)
-		mvec = d.m1[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			xyzp += t1 * mvec[p]
+	Variable mUseShow = d.mUseShow
+	if (mUseShow)
+		Make/N=3/D/FREE mvec
+		if (numtype(t1)==0)
+			mvec = d.m1[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				xyzp += t1 * mvec[p]
+			endif
 		endif
-	endif
-	if (!ParamIsDefault(t2) && numtype(t2)==0 && t2!=0)
-		mvec = d.m2[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			xyzp += t2 * mvec[p]
+		if (numtype(t2)==0 && mUseShow>=2)
+			mvec = d.m2[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				xyzp += t2 * mvec[p]
+			endif
 		endif
-	endif
-	if (!ParamIsDefault(t3) && numtype(t3)==0 && t3!=0)
-		mvec = d.m3[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			xyzp += t3 * mvec[p]
+		if (numtype(t3)==0 && mUseShow>=3)
+			mvec = d.m3[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0)
+				xyzp += t3 * mvec[p]
+			endif
 		endif
 	endif
 
@@ -1509,23 +1535,24 @@ ThreadSafe Function DetectorUpdateCalc(d)	// update all internally calculated th
 	Variable i
 	Rx=d.R[0]; Ry=d.R[1]; Rz=d.R[2]				// make the rotation matrix rho from vector R
 
+	Variable mUseShow = d.mUseShow
 	Make/N=3/D/FREE mvec
 	mvec = d.m1[p]
-	if (norm(mvec)==0 || numtype(sum(mvec)))	// set translation directions to NaN if they are zero
+	if (norm(mvec)==0 || numtype(sum(mvec)) || mUseShow<1)	// set translation directions to NaN if they are zero
 		d.m1[0] = NaN	;		d.m1[1] = NaN	;		d.m1[2] = NaN
 	else
 		normalize(mvec)									// want m1,m2,m3 to be normalized
 		d.m1[0] = mvec[0]	;	d.m1[1] = mvec[1]	;	d.m1[2] = mvec[2]
 	endif
 	mvec = d.m2[p]
-	if (norm(mvec)==0 || numtype(sum(mvec)))
+	if (norm(mvec)==0 || numtype(sum(mvec)) || mUseShow<2)
 		d.m2[0] = NaN	;		d.m2[1] = NaN	;		d.m2[2] = NaN
 	else
 		normalize(mvec)
 		d.m2[0] = mvec[0]	;	d.m2[1] = mvec[1]	;	d.m2[2] = mvec[2]
 	endif
 	mvec = d.m3[p]
-	if (norm(mvec)==0 || numtype(sum(mvec)))
+	if (norm(mvec)==0 || numtype(sum(mvec)) || mUseShow<3)
 		d.m3[0] = NaN	;		d.m3[1] = NaN	;		d.m3[2] = NaN
 	else
 		normalize(mvec)
@@ -2239,21 +2266,24 @@ Static Function/T Geo2xmlStr(g,fileNote)
 		sprintf str, "			<P unit=\"mm\">%.3f %.3f %.3f</P>\n",(g.d[i].P[0]/1000),(g.d[i].P[1]/1000),(g.d[i].P[2]/1000)
 		out += str
 
-		Make/N=3/D/FREE mvec
-		mvec = g.d[i].m1[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			sprintf str, "			<m1>%.8f %.8f %.8f</m1>\n",mvec[0],mvec[1],mvec[2]
-			out += str
-		endif
-		mvec = g.d[i].m2[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			sprintf str, "			<m2>%.8f %.8f %.8f</m2>\n",mvec[0],mvec[1],mvec[2]
-			out += str
-		endif
-		mvec = g.d[i].m3[p]
-		if (numtype(sum(mvec))==0 && norm(mvec)>0)
-			sprintf str, "			<m3>%.8f %.8f %.8f</m3>\n",mvec[0],mvec[1],mvec[2]
-			out += str
+		Variable mUseShow = g.d[i].mUseShow
+		if (mUseShow)
+			Make/N=3/D/FREE mvec
+			mvec = g.d[i].m1[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0 && mUseShow>=1)
+				sprintf str, "			<m1>%.8f %.8f %.8f</m1>\n",mvec[0],mvec[1],mvec[2]
+				out += str
+			endif
+			mvec = g.d[i].m2[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0 && mUseShow>=2)
+				sprintf str, "			<m2>%.8f %.8f %.8f</m2>\n",mvec[0],mvec[1],mvec[2]
+				out += str
+			endif
+			mvec = g.d[i].m3[p]
+			if (numtype(sum(mvec))==0 && norm(mvec)>0 && mUseShow>=3)
+				sprintf str, "			<m3>%.8f %.8f %.8f</m3>\n",mvec[0],mvec[1],mvec[2]
+				out += str
+			endif
 		endif
 
 		if (strlen(g.d[i].timeMeasured))
@@ -2446,24 +2476,29 @@ Static Function GeoFromXML(buf,g)
 		g.d[N].P[1] = str2num(StringFromList(1,list))*1e3
 		g.d[N].P[2] = str2num(StringFromList(2,list))*1e3
 
+		Variable mUseShow=0
 		list =  XMLtagContents2List("m1",detector)
 		if (ItemsInList(list)==3)
 			g.d[N].m1[0] = str2num(StringFromList(0,list))
 			g.d[N].m1[1] = str2num(StringFromList(1,list))
 			g.d[N].m1[2] = str2num(StringFromList(2,list))
+			mUseShow = 1
 		endif
 		list =  XMLtagContents2List("m2",detector)
 		if (ItemsInList(list)==3)
 			g.d[N].m2[0] = str2num(StringFromList(0,list))
 			g.d[N].m2[1] = str2num(StringFromList(1,list))
 			g.d[N].m2[2] = str2num(StringFromList(2,list))
+			mUseShow = 2
 		endif
 		list =  XMLtagContents2List("m3",detector)
 		if (ItemsInList(list)==3)
 			g.d[N].m3[0] = str2num(StringFromList(0,list))
 			g.d[N].m3[1] = str2num(StringFromList(1,list))
 			g.d[N].m3[2] = str2num(StringFromList(2,list))
+			mUseShow = 3
 		endif
+		g.d[N].mUseShow = mUseShow
 	endfor
 
 	GeometryUpdateCalc(g)							// calculate other values
@@ -3341,9 +3376,9 @@ Static Function calcHofWire(win,whoChanged,[t1,t2,t3])
 	String win
 	Variable whoChanged				// who changed, 0=none, 1=px, 2=depth, 4=Hwire
 	Variable t1,t2,t3					// OPTIONAL, position of detector translators
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	Variable i0=NaN, i1=NaN
 	if (strlen(win) && whoChanged>0)
@@ -3425,9 +3460,9 @@ ThreadSafe Static Function WireDepth2Pixel(g,dnum,py,Xw,depth,edge, [t1,t2,t3])	
 	Variable depth						// distance along incident beam from origin (the Si positino) (µm)
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
 	Variable t1,t2,t3					// OPTIONAL, position of detector translators
-	t1 = ParamIsDefault(t1) || numtype(t1) ? NaN : t1
-	t2 = ParamIsDefault(t2) || numtype(t2) ? NaN : t2
-	t3 = ParamIsDefault(t3) || numtype(t3) ? NaN : t3
+	t1 = ParamIsDefault(t1) ? NaN : t1
+	t2 = ParamIsDefault(t2) ? NaN : t2
+	t3 = ParamIsDefault(t3) ? NaN : t3
 
 	Make/N=3/D/FREE xyz=NaN
 	Variable px = g.d[dnum].Nx / 2		// start with px = d.Nx/2, center of image
@@ -3927,14 +3962,9 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
 	StructPut/S/B=2 g, geoPanelStructStr					// fill geoPanelStructStr with values from g
 
-	Make/N=3/D/FREE mvec1=g.d[iDetector].m1[p], mvec2=g.d[iDetector].m2[p], mvec3=g.d[iDetector].m3[p]
-	Variable m1Use = (numtype(sum(mvec1))==0 && norm(mvec1)>0)
-	Variable m2Use = (numtype(sum(mvec2))==0 && norm(mvec2)>0)
-	Variable m3Use = (numtype(sum(mvec3))==0 && norm(mvec3)>0)
-//m1Use = 1
-
 	SetWindow kwTopWin,userdata(GeoPanelName)=hostWin+"#geoPanel"
-	NewPanel/K=1/W=(left,top,left+221,top+603+3*18)/HOST=$hostWin
+//	NewPanel/K=1/W=(left,top,left+221,top+603+3*18)/HOST=$hostWin
+	NewPanel/K=1/W=(left,top,left+245,top+603+3*18)/HOST=$hostWin
 	ModifyPanel frameStyle=0, frameInset=0
 	RenameWindow #,geoPanel
 	SetDrawLayer UserBack
@@ -3985,7 +4015,8 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 	SetVariable Pz,help={"z-component of Position translation for detector (mm)"},format="%.3f"
 	SetVariable Pz,limits={-1000,1000,0}, bodyWidth=50
 
-	if (m1Use)
+	Variable mUseShow = g.d[iDetector].mUseShow
+	if (mUseShow>=1)
 		v += 18					// advance by 18
 		SetVariable m1x,pos={8,76+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="m1"
 		SetVariable m1x,help={"x direction of detector translator 1 (unit vector)"},format="%.5f"
@@ -3997,7 +4028,9 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 		SetVariable m1z,help={"z direction of detector translator 1 (unit vector)"},format="%.5f"
 		SetVariable m1z,limits={-1,1,0}, bodyWidth=50
 	endif
-	if (m2Use)
+	PopupMenu mUsePopup,pos={203,76-2+v}, size={40,20}, title="m", mode=0
+	PopupMenu mUsePopup proc=microGeo#mUsePopMenuProc, value= #"\"0;1;2;3\""
+	if (mUseShow>=2)
 		v += 18					// advance by 18
 		SetVariable m2x,pos={8,76+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="m2"
 		SetVariable m2x,help={"x direction of detector translator 2 (unit vector)"},format="%.5f"
@@ -4009,7 +4042,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 		SetVariable m2z,help={"z direction of detector translator 2 (unit vector)"},format="%.5f"
 		SetVariable m2z,limits={-1,1,0}, bodyWidth=50
 	endif
-	if (m3Use)
+	if (mUseShow>=3)
 		v += 18					// advance by 18
 		SetVariable m3x,pos={8,76+v},size={75,15},proc=microGeo#GeoPanelVarChangedProc,title="m3"
 		SetVariable m3x,help={"x direction of detector translator 3 (unit vector)"},format="%.5f"
@@ -4033,7 +4066,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 
 	// Wire Controls
 	v = 253
-	v += 18*(m1Use + m2Use + m3Use)
+	v += 18*mUseShow
 	SetDrawEnv linethick= 2
 	DrawLine 0,v-20,220,v-20
 	SetDrawEnv fname= "Lucida Grande",fsize= 16
@@ -4071,7 +4104,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 
 	// Sample Controls
 	v = 374
-	v += 18*(m1Use + m2Use + m3Use)
+	v += 18*mUseShow
 	SetDrawEnv linethick= 2
 	DrawLine 0,v-20,220,v-20
 	SetDrawEnv fname= "Lucida Grande",fsize= 16
@@ -4096,7 +4129,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 
 	// Buttons
 	v = 435
-	v += 18*(m1Use + m2Use + m3Use)
+	v += 18*mUseShow
 	SetDrawEnv linethick= 2
 	DrawLine 0,v,220,v
 	Button buttonSaveDefault,pos={35,v+5},size={150,20},proc=microGeo#GeometryPanelButtonProc,title="Save as Default"
@@ -4157,6 +4190,27 @@ Static Function/T detectorPopMenuStr(g,[bare])	// re-make the string of detector
 	endif
 	return popStr
 End
+//
+// this is called by the mUsePopup pop up menu to select number of m1,m2,m3 to show
+Static Function mUsePopMenuProc(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+	if (pa.eventCode != 2)
+		return 0
+	endif
+	Variable mUseShow = pa.popNum - 1
+
+	STRUCT microGeometry g								// geo that holds panels current values
+	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
+	SetGeoStructFromString(g,geoPanelStructStr)// fill temporary g, local to this function
+
+	Variable iDetector = NumVarOrDefault("root:Packages:geometry:PanelValues:iDetector",0)
+	iDetector = numtype(iDetector) ? 0 : limit(round(iDetector),0,MAX_Ndetectors-1)
+	g.d[iDetector].mUseShow = mUseShow
+
+	StructPut/S/B=2 g, geoPanelStructStr			// convert updated g back to a string, and put string into geoPanelStructStr
+	GeoPanelDirtyUpdate(pa.win,1)					// set dirty = 1
+	return 0
+End
 
 
 // take values from the geoPanelStructStr, and put them into the Panel Controls
@@ -4186,16 +4240,13 @@ Static Function UpDatePanelValuesFromStruct(win,iDetector)
 	SetVariable Py, win=$win, value = _NUM:(g.d[iDetector].P[1] / 1e3)
 	SetVariable Pz, win=$win, value = _NUM:(g.d[iDetector].P[2] / 1e3)
 
+	Variable mUseShow = g.d[iDetector].mUseShow
 	ControlInfo/W=$win m1x
-	Variable m1Use = (abs(V_flag)==5)
+	Variable m1Use = (abs(V_flag)==5) && mUseShow>=1
 	ControlInfo/W=$win m2x
-	Variable m2Use = (abs(V_flag)==5)
+	Variable m2Use = (abs(V_flag)==5) && mUseShow>=2
 	ControlInfo/W=$win m3x
-	Variable m3Use = (abs(V_flag)==5)
-	Make/N=3/D/FREE mvec1=g.d[iDetector].m1[p], mvec2=g.d[iDetector].m2[p], mvec3=g.d[iDetector].m3[p]
-	mvec1 = m1Use ? mvec1[p] : NaN
-	mvec2 = m2Use ? mvec2[p] : NaN
-	mvec3 = m3Use ? mvec3[p] : NaN
+	Variable m3Use = (abs(V_flag)==5) && mUseShow>=3
 	if (m1Use)
 		SetVariable m1x, win=$win, value = _NUM:g.d[iDetector].m1[0]
 		SetVariable m1y, win=$win, value = _NUM:g.d[iDetector].m1[1]
@@ -4818,6 +4869,7 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 			g.d[i].m1[0] = mvec[0]
 			g.d[i].m1[1] = mvec[1]
 			g.d[i].m1[2] = mvec[2]
+			g.d[i].mUseShow = 1
 		endif
 
 		mvec[0] = NumberByKey("m2x"+si,pvList,"=")
@@ -4827,6 +4879,7 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 			g.d[i].m2[0] = mvec[0]
 			g.d[i].m2[1] = mvec[1]
 			g.d[i].m2[2] = mvec[2]
+			g.d[i].mUseShow = 2
 		endif
 
 		mvec[0] = NumberByKey("m3x"+si,pvList,"=")
@@ -4836,6 +4889,7 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 			g.d[i].m3[0] = mvec[0]
 			g.d[i].m3[1] = mvec[1]
 			g.d[i].m3[2] = mvec[2]
+			g.d[i].mUseShow = 3
 		endif
 
 		g.d[i].timeMeasured = StringByKey("timeMeasured"+si,pvList,"=")
@@ -5186,6 +5240,7 @@ Static Function CopyOldGeoStruct2New(gNew,gOld)
 		gNew.d[i].rho10=gOld.d[i].rho10;	gNew.d[i].rho11=gOld.d[i].rho11;		gNew.d[i].rho12=gOld.d[i].rho12
 		gNew.d[i].rho20=gOld.d[i].rho20;	gNew.d[i].rho21=gOld.d[i].rho21;		gNew.d[i].rho22=gOld.d[i].rho22
 
+		gNew.d[i].mUseShow = 0
 		gNew.d[i].m1[0]=0;						gNew.d[i].m1[1]=0;							gNew.d[i].m1[2]=0;		
 		gNew.d[i].m2[0]=0;						gNew.d[i].m2[1]=0;							gNew.d[i].m2[2]=0;		
 		gNew.d[i].m3[0]=0;						gNew.d[i].m3[1]=0;							gNew.d[i].m3[2]=0;		

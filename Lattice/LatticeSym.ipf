@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.17
+#pragma version = 5.18
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -140,6 +140,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.13, can now also get name from _chemical_name_mineral working correctly
 //	with version 5.16, added print_crystalStructStr()
 //	with version 5.17, ARING should be "\201",  NOT "\305"
+//	with version 5.18, structureTitle, now adjusts font size to show all of the string
 
 // Rhombohedral Transformation:
 //
@@ -2254,7 +2255,8 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 	endif
 	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroup)
 	titleStr = minus2bar(titleStr)								// change all minuses to a bar over following character
-	TitleBox structureTitle,title=titleStr,win=$subWin
+	Variable/C sizeLeft = titleStrLength(titleStr)
+	TitleBox structureTitle,pos={imag(sizeLeft),63},title=titleStr, fSize=real(sizeLeft), win=$subWin
 	SetVariable T_LatticeVar disable=(numtype(T_C)>0),win=$subWin
 
 	if (exists("Init_AtomViewLattice")==6)
@@ -2272,6 +2274,23 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		PopupMenu popupPowderPattern,win=$subWin,disable=1	// hide the popup
 	endif
 	return 0
+End
+//
+Static Function/C titleStrLength(str)
+	String str
+	Make/FREE/I sizes={14,12,11,10,9}
+	Variable i=0, isize=sizes[0]
+	for (i=0; i<numpnts(sizes); i+=1)
+		isize=sizes[i]
+		MeasureStyledText/F="Geneva"/SIZE=(isize) str
+		if (i==0 && V_width < 194)
+			break
+		elseif (V_width < 214)
+			break
+		endif
+	endfor
+	Variable left = isize>=14 ? 24 : 4
+	return cmplx(isize,left)
 End
 //
 Function LatticePanelParamProc(sva) : SetVariableControl
