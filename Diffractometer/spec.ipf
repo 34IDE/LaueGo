@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.48
+#pragma version = 2.49
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -120,6 +120,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Mar 18, 2016, in ReadDataColumns(), used /O on the Make in case the column name is repeated
 //
 // Apr 23 2016, cleaned up specInfo() and specinfoT()
+//
+// Jun 23 2016, changed DisplaySpecScan() and DisplayRangeOfSpecScans(), added Kflag to make graphs that don't ask to save
 
 Menu "Data"
 	"-"
@@ -158,7 +160,7 @@ End
 
 
 
-Function DisplayRangeOfSpecScans(range,fileName,path,overlay,[printIt])
+Function DisplayRangeOfSpecScans(range,fileName,path,overlay,[Kflag,printIt])
 	// Calls the correct routine to display many types of scans.
 	// It also will read in the data if necessary
 	// it returns number of scans processed, or 0 if failed
@@ -166,7 +168,9 @@ Function DisplayRangeOfSpecScans(range,fileName,path,overlay,[printIt])
 	String fileName
 	String path
 	String overlay								// new; append; new+append
+	Variable Kflag								// on Display command, /K=Kflag, default is 0
 	Variable printIt
+	Kflag = ParamIsDefault(Kflag) || numtype(Kflag) ? 0 : limit(round(Kflag),0,3)
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))<1 : !(!printIt)
 
@@ -258,7 +262,7 @@ Function DisplayRangeOfSpecScans(range,fileName,path,overlay,[printIt])
 			if (!cmpstr(Find_specDataFolder(sn),"bad dir"))	// data folder does not exist, read it
 				specRead(fileName,sn,path)
 			endif
-			snum=DisplaySpecScan(sn,overlay)	// a default spec scan types, for "new+append" does a "new"
+			snum=DisplaySpecScan(sn,overlay,Kflag=Kflag)	// a default spec scan types, for "new+append" does a "new"
 		endif
 		if (snum>0)										// successfully displayed scan sn, change "new+append" -> "append"
 			overlay = SelectString(StringMatch(overlay,"new+append"),overlay,"append")
@@ -463,9 +467,11 @@ End
 
 
 // returns scan number if successfully displayed, NaN on failure
-Function DisplaySpecScan(scanNum,overlay)
+Function DisplaySpecScan(scanNum,overlay,[Kflag])
 	Variable scanNum
 	String overlay											// ="new"
+	Variable Kflag											// on Display command, /K=Kflag, default is 0
+	Kflag = ParamIsDefault(Kflag) || numtype(Kflag) ? 0 : limit(round(Kflag),0,3)
 	Variable interactive=0
 	specInitPackage()										// create Packages:spec folder
 
@@ -589,14 +595,14 @@ Function DisplaySpecScan(scanNum,overlay)
 	Variable oldPrefState
 	Preferences 1; oldPrefState=V_flag		// remember prefs setting
 	if (scanDim==2)
-		Display
+		Display/K=(Kflag)
 		AppendImage $zname
 	elseif (exists(xname)!=1)
-		Display $yname
+		Display/K=(Kflag) $yname
 		yTraceName = yname
 		funcTrace()
 	else
-		Display $yname vs $xname
+		Display/K=(Kflag) $yname vs $xname
 		yTraceName = yname
 		funcTrace()
 	endif
