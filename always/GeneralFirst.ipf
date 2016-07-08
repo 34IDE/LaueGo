@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.33
+#pragma version = 3.34
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=3.95
+#include "Utility_JZT", version>=4.07
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 #if (IgorVersion()<7)
@@ -23,12 +23,6 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	JZTgeneral#PeriodicCheckLaueGoVersion()
 	return 0
 End
-#endif
-
-#if StringMatch(IgorInfo(2)"Windows")
-strConstant GenevaEquivFont = "Verdana"			// on windows, this is the Geneva equivalent
-#else
-strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 #endif
 
 

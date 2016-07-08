@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.06
+#pragma version = 4.07
 // #pragma hide = 1
 
 Menu "Graph"
@@ -25,6 +25,11 @@ Constant GIZMO_WIN_BIT = 4096
 #else
 Constant GIZMO_WIN_TYPE = 17			// numbers for Igor 7
 Constant GIZMO_WIN_BIT = 65536	
+#endif
+#if StringMatch(IgorInfo(2)"Windows")
+strConstant GenevaEquivFont = "Verdana"			// on windows, this is the Geneva equivalent
+#else
+strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 #endif
 
 
