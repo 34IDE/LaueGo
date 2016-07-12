@@ -5302,7 +5302,7 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 	elseif(StringMatch(unit,"*mp")) 			// proton mass
 		value = 1.672621898e-27
 		prefix = unit[0,strlen(unit)-3]
-	elseif(StringMatch(unit,"*mp")) 			// neutron mass
+	elseif(StringMatch(unit,"*mn")) 			// neutron mass
 		value = 1.674927471e-27
 		prefix = unit[0,strlen(unit)-3]
 	elseif(StringMatch(unit,"*grain") || StringMatch(unit,"*gr"))
