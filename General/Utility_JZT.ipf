@@ -5234,16 +5234,16 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 	//
 	//	kg, kilogram			1 kg
 	//	g, gram					0.001 kg
-	//	carat, ct				2e-4 kg						Metrical carat, 200 mg
+	//	carat, ct				2e-4 kg						metric carat, 200 mg
 	//	gr, grain				kgPerPound/7000.0
 	//	fir, firkin				90.0*kgPerPound
 	//	lb, lbm, #, pound		0.45359237 kg				Avoirdupois pound
 	//	oz, ounce				kgPerPound/16.0			Avoirdupois ounce
 	//	slug						kgPerPound*gEarth/(12.0*0.0254)
 	//	st, stone				14.0*kgPerPound
-	//	t, tonne					1000 kg						metric ton
+	//	t, tonne, metricton 1000 kg						metric ton
+	//	t.short, shortton	, ton	2000*kgPerPound		short ton (2000 pounds)
 	//	t.long, long			2240.0*kgPerPound			long ton (2240 pounds)
-	//	t.short					2000*kgPerPound			short ton (2000 pounds)
 	//	tlb, troyPound			5.760*0.06479891 kg		Troy pound
 	//	toz, troyOunce			5.760*0.06479891/12.0 kg	Troy ounce
 	//	amu, dalton				1.66053904e-27 kg			atomic mass unit
@@ -5264,55 +5264,38 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 		unit = unit[0,ipow-1]						// string before "^"
 	endif
 
-	unit = TrimEnd(unit,chars="s")				// none of the units end in 's'
+	unit = RemoveEnding(unit,"s")				// none of the units end in 's'
 
 	// alternate spellings:
-	unit = ChangeStrEnding("sun",unit,"sol")
-	unit = ChangeStrEnding("solar",unit,"sol")
-	unit = ChangeStrEnding("sun",unit,"sol")
-	unit = ChangeStrEnding("dalton",unit,"amu")
-	unit = ChangeStrEnding("stone",unit,"st")
-	unit = ChangeStrEnding("firkin",unit,"fir")
-	unit = ChangeStrEnding("gram",unit,"g")
-	unit = ChangeStrEnding("grain",unit,"gr")
-	unit = ChangeStrEnding("carat",unit,"ct")
-	unit = ChangeStrEnding("troyPound",unit,"tlb")
-	unit = ChangeStrEnding("troyOunce",unit,"toz")
-	unit = ChangeStrEnding("pound",unit,"lb")
-	unit = ChangeStrEnding("lbm",unit,"lb")
-	unit = ChangeStrEnding("#",unit,"lb")
-	unit = ChangeStrEnding("ounce",unit,"oz")
-	unit = ChangeStrEnding("longton",unit,"long")
-	unit = ChangeStrEnding("t.long",unit,"long")
-	unit = ChangeStrEnding("t.short",unit,"ton")
-	unit = ChangeStrEnding("shortton",unit,"ton")
 	unit = ChangeStrEnding("metricton",unit,"t")
-	unit = ChangeStrEnding("tonne",unit,"t")
-	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
 
 	String prefix
 	Variable value=NaN, i = max(0,strlen(unit)-1)
-	if (strsearch(unit,"*amu",i)==i)			// ends in 'amu', means amu
+	if(StringMatch(unit,"*Planck")) 			// Planck mass
+		value = 2.1764702e-08
+		prefix = unit[0,strlen(unit)-7]
+	elseif(StringMatch(unit,"*amu") || StringMatch(unit,"*dalton"))
 		value = 1.66053904e-27
-		prefix = unit[0,strlen(unit)-4]
-	elseif(StringMatch(unit,"*sol"))	 		// solar mass
-		value = 1.9891E30
-		prefix = unit[0,strlen(unit)-4]
+		i = StringMatch(unit,"*dalton") ? 7 : 4
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*sun") || StringMatch(unit,"*sol") || StringMatch(unit,"*solar"))
+		value = 1.9891E30								// solar mass
+		i = StringMatch(unit,"*solar") ? 6 : 4
+		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*mmu"))	 		// muon mass
 		value = 1.883531594e-28
 		prefix = unit[0,strlen(unit)-4]
-	elseif(StringMatch(unit,"*Planck")) 		// Planck mass
-		value = 2.1764702e-08
-		prefix = unit[0,strlen(unit)-7]
-	elseif(StringMatch(unit,"*st")) 			// stone
-		value = 14.0*kgPerPound
-		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*stone") || StringMatch(unit,"*st"))
+		value = 14.0*kgPerPound					// stone
+		i = StringMatch(unit,"*stone") ? 6 : 3
+		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*slug")) 			// slug, acceleration at earth surface is 9.80665 N
 		value = kgPerPound*9.80665/(12.0*0.0254)
 		prefix = unit[0,strlen(unit)-5]
-	elseif(StringMatch(unit,"*fir")) 			// firkin
-		value = 90.0*kgPerPound
-		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*fir") || StringMatch(unit,"*firkin"))
+		value = 90.0*kgPerPound 					// firkin
+		i = StringMatch(unit,"*firkin") ? 7 : 4
+		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*me")) 			// electron mass
 		value = 9.10938356e-31
 		prefix = unit[0,strlen(unit)-3]
@@ -5322,36 +5305,54 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 	elseif(StringMatch(unit,"*mp")) 			// neutron mass
 		value = 1.674927471e-27
 		prefix = unit[0,strlen(unit)-3]
-	elseif(StringMatch(unit,"*gr")) 			// grain
-		value = kgPerPound/7000.0
-		prefix = unit[0,strlen(unit)-3]
-	elseif(StringMatch(unit,"*ct")) 			// carat
-		value = 2e-4
-		prefix = unit[0,strlen(unit)-3]
-	elseif(StringMatch(unit,"*tlb")) 			// troy pound
-		value = 5.760*0.06479891
-		prefix = unit[0,strlen(unit)-4]
-	elseif(StringMatch(unit,"*tlb")) 			// troy ounce
-		value = 5.760*0.06479891/12.0
-		prefix = unit[0,strlen(unit)-4]
-	elseif(StringMatch(unit,"*oz")) 			// Avoirdupois ounce
-		value = kgPerPound/16.0
-		prefix = unit[0,strlen(unit)-3]
-	elseif(StringMatch(unit,"*lb")) 			// Avoirdupois pound
-		value = kgPerPound
-		prefix = unit[0,strlen(unit)-3]
-	elseif(StringMatch(unit,"*long"))	 		// long ton, (2240 pounds)
-		value = 2240.0*kgPerPound
-		prefix = unit[0,strlen(unit)-5]
-	elseif(StringMatch(unit,"*ton")) 			// short ton, (2000 pounds)
-		value = 2000*kgPerPound
-		prefix = unit[0,strlen(unit)-4]
-	elseif(StringMatch(unit,"*t")) 				// metric ton, (1000 kg)
-		value = 1000
-		prefix = unit[0,strlen(unit)-2]
-	elseif(StringMatch(unit,"*g")) 				// gram
-		value = 0.001
-		prefix = unit[0,strlen(unit)-2]
+	elseif(StringMatch(unit,"*grain") || StringMatch(unit,"*gr"))
+		value = kgPerPound/7000.0					// grain
+		i = StringMatch(unit,"*grain") ? 6 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*carat") || StringMatch(unit,"*ct"))
+		value = 2e-4									// metric carat
+		i = StringMatch(unit,"*carat") ? 6 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*troypound") || StringMatch(unit,"*tlb"))
+		value = 5.760*0.06479891					// Troy pound
+		i = StringMatch(unit,"*troypound") ? 10 : 4
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*troyounce") || StringMatch(unit,"*toz"))
+		value = 5.760*0.06479891/12.0			// Troy ounce
+		i = StringMatch(unit,"*troyounce") ? 10 : 4
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*ounce") || StringMatch(unit,"*oz"))
+		value = kgPerPound/16.0					// Avoirdupois ounce
+		i = StringMatch(unit,"*ounce") ? 6 : 3
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*pound") || StringMatch(unit,"*lbm") || StringMatch(unit,"*lb") || StringMatch(unit,"*#"))
+		value = kgPerPound							// Avoirdupois pound
+		i = StringMatch(unit,"*#") ? 2 : NaN
+		i = StringMatch(unit,"*lb") ? 3 : i
+		i = StringMatch(unit,"*lbm") ? 4 : i
+		i = StringMatch(unit,"*pound") ? 6 : i
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*longton") || StringMatch(unit,"*long") || StringMatch(unit,"*t.long"))
+		value = 2240.0*kgPerPound					// long ton, (2240 pounds)
+		i = StringMatch(unit,"*long") ? 5 : NaN
+		i = StringMatch(unit,"*t.long") ? 7 : i
+		i = StringMatch(unit,"*longton") ? 8 : i
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*shortton") || StringMatch(unit,"*t.short") || StringMatch(unit,"*short") || StringMatch(unit,"*ton"))
+		value = 2000*kgPerPound					// short ton, (2000 pounds)
+		i = StringMatch(unit,"*ton") ? 4 : NaN
+		i = StringMatch(unit,"*short") ? 6 : i
+		i = StringMatch(unit,"*t.short") ? 8 : i
+		i = StringMatch(unit,"*shortton") ? 9 : i
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*tonne") || StringMatch(unit,"*t"))
+		value = 1000									// metric ton, (1000 kg)
+		i = StringMatch(unit,"*tonne") ? 6 : 2
+		prefix = unit[0,strlen(unit)-i]
+	elseif(StringMatch(unit,"*gram") || StringMatch(unit,"*g"))
+		value = 0.001									// gram
+		i = StringMatch(unit,"*gram") ? 5 : 2
+		prefix = unit[0,strlen(unit)-i]
 	else
 		return defaultMass							// cannot find base value
 	endif
