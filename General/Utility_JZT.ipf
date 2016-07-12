@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.07
+#pragma version = 4.08
 // #pragma hide = 1
 
 Menu "Graph"
@@ -121,6 +121,7 @@ strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 //		ConvertNumWithUnitsLength(in,outUnit,[rnd,space])  can convert "2in" to "0.0508 m"
 //		SplitNumAndUnits(in)  take string such as "-9.3e2 mi" --> "-9.3e2;mi",  or "2 nm^-1" --> "2;nm^-1"
 //		ConvertUnits2seconds(unit,[defaultLen])  returns conversion factor from time unit to seconds
+//		ConvertUnits2kg(unit,[defaultMass])  returns conversion factor from unit to killo-grams
 //		RomanNumeral(j) converts a number to a Roman Numeral string, NO upper limit, so watch out for string length
 //		RomanNumeral2Int(str) convert a Roman Numeral string to an integer
 //	9	Old legacy or deprecated functions
@@ -5223,6 +5224,141 @@ End
 //		endfor
 //		return 0
 //	End
+
+
+ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
+	// returns conversion factor from unit to killo-grams
+	String unit
+	Variable defaultMass
+	defaultMass = ParamIsDefault(defaultMass) ? NaN : defaultMass
+	//
+	//	kg, kilogram			1 kg
+	//	g, gram					0.001 kg
+	//	carat, ct				2e-4 kg						Metrical carat, 200 mg
+	//	gr, grain				kgPerPound/7000.0
+	//	fir, firkin				90.0*kgPerPound
+	//	lb, lbm, #, pound		0.45359237 kg				Avoirdupois pound
+	//	oz, ounce				kgPerPound/16.0			Avoirdupois ounce
+	//	slug						kgPerPound*gEarth/(12.0*0.0254)
+	//	st, stone				14.0*kgPerPound
+	//	t, tonne					1000 kg						metric ton
+	//	t.long, long			2240.0*kgPerPound			long ton (2240 pounds)
+	//	t.short					2000*kgPerPound			short ton (2000 pounds)
+	//	tlb, troyPound			5.760*0.06479891 kg		Troy pound
+	//	toz, troyOunce			5.760*0.06479891/12.0 kg	Troy ounce
+	//	amu, dalton				1.66053904e-27 kg			atomic mass unit
+	//	mP, Planck				sqrt(hbar*cLight/GN)	Planck mass
+	//	sun, sol, solar		1.9891E30 kg				solar mass
+	//	me							9.10938356e-31 kg			electron mass
+	//	mp							1.672621898e-27 kg		proton mass
+	//	mn							1.674927471e-27 kg		neutron mass
+	//	mmu						1.883531594e-28 kg		muon mass
+
+	Variable kgPerPound = 0.45359237			// 1 pound = 0.45359237 kgm [definition of pound]
+	unit = ReplaceString(" ",unit,"")			// no spaces
+
+	// check for powers  "^N"
+	Variable ipow=strsearch(unit,"^",0), power=1
+	if (ipow>=0)										// found a power
+		power = str2num(unit[ipow+1,Inf])		// number after "^"
+		unit = unit[0,ipow-1]						// string before "^"
+	endif
+
+	unit = TrimEnd(unit,chars="s")				// none of the units end in 's'
+
+	// alternate spellings:
+	unit = ChangeStrEnding("sun",unit,"sol")
+	unit = ChangeStrEnding("solar",unit,"sol")
+	unit = ChangeStrEnding("sun",unit,"sol")
+	unit = ChangeStrEnding("dalton",unit,"amu")
+	unit = ChangeStrEnding("stone",unit,"st")
+	unit = ChangeStrEnding("firkin",unit,"fir")
+	unit = ChangeStrEnding("gram",unit,"g")
+	unit = ChangeStrEnding("grain",unit,"gr")
+	unit = ChangeStrEnding("carat",unit,"ct")
+	unit = ChangeStrEnding("troyPound",unit,"tlb")
+	unit = ChangeStrEnding("troyOunce",unit,"toz")
+	unit = ChangeStrEnding("pound",unit,"lb")
+	unit = ChangeStrEnding("lbm",unit,"lb")
+	unit = ChangeStrEnding("#",unit,"lb")
+	unit = ChangeStrEnding("ounce",unit,"oz")
+	unit = ChangeStrEnding("longton",unit,"long")
+	unit = ChangeStrEnding("t.long",unit,"long")
+	unit = ChangeStrEnding("t.short",unit,"ton")
+	unit = ChangeStrEnding("shortton",unit,"ton")
+	unit = ChangeStrEnding("metricton",unit,"t")
+	unit = ChangeStrEnding("tonne",unit,"t")
+	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
+
+	String prefix
+	Variable value=NaN, i = max(0,strlen(unit)-1)
+	if (strsearch(unit,"*amu",i)==i)			// ends in 'amu', means amu
+		value = 1.66053904e-27
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*sol"))	 		// solar mass
+		value = 1.9891E30
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*mmu"))	 		// muon mass
+		value = 1.883531594e-28
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*Planck")) 		// Planck mass
+		value = 2.1764702e-08
+		prefix = unit[0,strlen(unit)-7]
+	elseif(StringMatch(unit,"*st")) 			// stone
+		value = 14.0*kgPerPound
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*slug")) 			// slug, acceleration at earth surface is 9.80665 N
+		value = kgPerPound*9.80665/(12.0*0.0254)
+		prefix = unit[0,strlen(unit)-5]
+	elseif(StringMatch(unit,"*fir")) 			// firkin
+		value = 90.0*kgPerPound
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*me")) 			// electron mass
+		value = 9.10938356e-31
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*mp")) 			// proton mass
+		value = 1.672621898e-27
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*mp")) 			// neutron mass
+		value = 1.674927471e-27
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*gr")) 			// grain
+		value = kgPerPound/7000.0
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*ct")) 			// carat
+		value = 2e-4
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*tlb")) 			// troy pound
+		value = 5.760*0.06479891
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*tlb")) 			// troy ounce
+		value = 5.760*0.06479891/12.0
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*oz")) 			// Avoirdupois ounce
+		value = kgPerPound/16.0
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*lb")) 			// Avoirdupois pound
+		value = kgPerPound
+		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*long"))	 		// long ton, (2240 pounds)
+		value = 2240.0*kgPerPound
+		prefix = unit[0,strlen(unit)-5]
+	elseif(StringMatch(unit,"*ton")) 			// short ton, (2000 pounds)
+		value = 2000*kgPerPound
+		prefix = unit[0,strlen(unit)-4]
+	elseif(StringMatch(unit,"*t")) 				// metric ton, (1000 kg)
+		value = 1000
+		prefix = unit[0,strlen(unit)-2]
+	elseif(StringMatch(unit,"*g")) 				// gram
+		value = 0.001
+		prefix = unit[0,strlen(unit)-2]
+	else
+		return defaultMass							// cannot find base value
+	endif
+
+	value *= SIprefix2factor(prefix)
+	return (power==1) ? value : (value ^ power)
+End
 
 
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
