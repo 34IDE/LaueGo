@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.18
+#pragma version = 0.19
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -730,7 +730,7 @@ Function TablePowderLines(w)
 		endif
 	endif
 
-	String table = FindTableWithWave(w)
+	String table = StringFromList(0,FindTablesWithWave(w))
 	if (strlen(table)>0)
 		DoWindow/F $table
 		return 0
@@ -745,37 +745,6 @@ Function TablePowderLines(w)
 		AppendToTable hklStr.y
 		ModifyTable width(hklStr.y)=122, title(hklStr.d)="hkl's"
 	endif
-End
-
-
-// MOVE this to JZT_Utility ???
-//
-Static Function/S FindTableWithWave(w)	// find the graph window which contains the specified wave
-	Wave w
-	if (!WaveExists(w))
-		return ""
-	endif
-	String name0=GetWavesDataFolder(w,2), out=""
-	String win,wlist = WinList("*",";","WIN:2"), clist, cwin
-	Variable i,m,Nm=ItemsInList(wlist)
-	for (m=0;m<Nm;m+=1)
-		win = StringFromList(m,wlist)
-		CheckDisplayed/W=$win w
-		if (V_flag>0)
-			out += win+";"
-		else
-			clist = ChildWindowList(win)
-			for (i=0;i<ItemsInLIst(clist);i+=1)
-				cwin = StringFromList(i,clist)
-				CheckDisplayed/W=$(win+"#"+cwin) w
-				if (V_flag>0)
-					out += win+"#"+cwin+";"
-					break
-				endif
-			endfor
-		endif
-	endfor
-	return out
 End
 
 
