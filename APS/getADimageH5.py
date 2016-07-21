@@ -10,7 +10,7 @@ import h5py
 import epics
 from epics import caget
 
-VERSION = 1.01
+VERSION = 1.02
 NEXUS_VERSION = '4.2.1'
 
 
@@ -62,7 +62,8 @@ def getImage(imagePVroot):
 		raise ValueError('Nx = %r and Ny = %r is not allowed' % (Nx,Ny))
 	try:
 		imagePV = epics.PV(imagePVroot+'ArrayData')
-		image = imagePV.get()
+#		image = imagePV.get()
+		image = imagePV.get(timeout=40.0)
 #		print 'type of image is', image.dtype
 	except:
 		raise ValueError('could not get the image to %s' % imagePVroot+'ArrayData')
