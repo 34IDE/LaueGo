@@ -10,9 +10,9 @@ import h5py
 import epics
 from epics import caget
 
-VERSION = 1.02
+VERSION = 1.04
 NEXUS_VERSION = '4.2.1'
-
+IMAGE_GET_TIMEOUT = 40.0			# timeout for getting the image
 
 def getImageDebug(imagePVroot):
 	image = numpy.zeros((100, 100), dtype='i2')
@@ -37,6 +37,8 @@ def getAllPVsDebug(PVroot):
 
 
 def getImage(imagePVroot):
+	global IMAGE_GET_TIMEOUT
+
 	try:	port = caget(imagePVroot+'PortName_RBV')
 	except:	raise NameError('Could not find \"%r\"' % (imagePVroot+'PortName_RBV',))
 	if len(port)<1: raise NameError('Could not find \"%r\"' % (imagePVroot+'PortName_RBV',))
@@ -62,8 +64,7 @@ def getImage(imagePVroot):
 		raise ValueError('Nx = %r and Ny = %r is not allowed' % (Nx,Ny))
 	try:
 		imagePV = epics.PV(imagePVroot+'ArrayData')
-#		image = imagePV.get()
-		image = imagePV.get(timeout=40.0)
+		image = imagePV.get(timeout=IMAGE_GET_TIMEOUT)
 #		print 'type of image is', image.dtype
 	except:
 		raise ValueError('could not get the image to %s' % imagePVroot+'ArrayData')
@@ -98,8 +99,8 @@ def getAllPVs(PVroot):
 	pvValues['sizeY'] = caget(PVroot+':ROI1:SizeY')
 	pvValues['detectorModel'] = caget(PVroot+':cam1:Model_RBV')
 	pvValues['exposure'] = caget(PVroot+':cam1:AcquireTime_RBV')
-	pvValues['gain'] = float(caget(PVroot+':cam1:PEGain'))
-#	pvValues['gain'] = caget('34ide:userTran3.J')
+	try:	pvValues['gain'] = float(caget(PVroot+':cam1:PEGain'))
+	except:	pass
 
 	pvValues['title'] = caget('34ide:title')
 	pvValues['userName'] = caget('34ide:userName')
@@ -223,7 +224,8 @@ def writeHDF5(image,destFile,pvValues):
 	detector.create_dataset('binx', data=pvValues['binx'], dtype='i4')
 	detector.create_dataset('biny', data=pvValues['biny'], dtype='i4')
 	detector.create_dataset('exposure', data=pvValues['exposure'])
-	dest = detector.create_dataset('gain', data=pvValues['gain'])
+	try:	dest = detector.create_dataset('gain', data=pvValues['gain'])
+	except:	pass	;		# not all detectors have a gain
 	dest.attrs.create('units', data='pF')
 	detector.create_dataset('make', data='Perkin Elmer')
 	detector.create_dataset('model', data=pvValues['detectorModel'])
@@ -326,6 +328,7 @@ if __name__ == '__main__':
 	except:
 		print 'No pv name given for the image, '
 		print '  usage: getADimage.py 34idePE2:image1 [detination folder]'
+		print '     or: getADimage.py dp_pilatus3:image1 [detination folder]'
 		raise NameError('No pv name given')
 
 	try:

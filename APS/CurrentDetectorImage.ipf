@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3
-#pragma version = 0.04
+#pragma version = 0.05
 #pragma ModuleName=CurrentDetector
 #include "ImageDisplayScaling"
 #include "HDF5images"
@@ -37,6 +37,7 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		return $""
 	endif
 
+	detID = RemoveEnding(detID,":")		// if the user supplied a trailing ":", remove it
 	str=ad_from_color(detID)				// if detID is a color, then this convert to AreaDetector image PV
 	detID = SelectString(strlen(str), detID, str)
 	if (strlen(detID)<1)
@@ -48,10 +49,8 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		detID = StringFromList(0,detID," ")
 	endif
 	String color = StringByKey(detID,KNOWN_ADs,"=")
-
-	if (strlen(color)<1)
-		return $""
-	endif
+	color = SelectString(strlen(color),StringFromList(0,detID,":"),color)
+	color = CleanupName(color,0)
 
 	String pythonScript = FunctionPath("LoadCurrentDetector")
 	pythonScript = ParseFilePath(1,pythonScript,":",1,0)+"getADimageH5.py"
@@ -83,7 +82,12 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 	fileName = Posix2HFS(fileName)		// done with posix file paths, switch to Mac style
 	GetFileFolderInfo/Q/Z=1 fileName	// check that hdf5 file exists
 	err = err || (V_Flag || !V_isFile)
+	printIt = printIt || err
+	if (printIt)
+		printf "LoadCurrentDetector(\"%s\")",detID
+	endif
 	if (err)
+		printf "\r"
 		str = "Failed to load latest image from "+detID
 		str += SelectString(unAvailable, "", "\r  '"+detID+"' cannot be reached, is it on?")
 		DoAlert 0, str
@@ -101,18 +105,12 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		NewDataFolder/O/S $fldrName
 	endif
 	Wave image = $LoadGenericImageFile(fileName)
-	if (!WaveExists(image))
-		print "Unable to load image from disk"
-		return $""
-	endif
-
 	SetDataFolder fldrSav					// and restore to original data folder
-	if (printIt)
-		printf "LoadCurrentDetector(\"%s\"",detID
-		if (!ParamIsDefault(printIt))
-			printf ", printIt=%g", printIt
-		endif
-		printf ")\t\t// Loaded iamge to %s\r",GetWavesDataFolder(image,2)
+	if (!WaveExists(image))
+		printf "\r\t\tUnable to load image from disk"
+		return $""
+	elseif (printIt)
+		printf "\t\t// Loaded image to %s\r",GetWavesDataFolder(image,2)
 	endif
 
 	String win = StringFromList(0,FindGraphsWithWave(image))
