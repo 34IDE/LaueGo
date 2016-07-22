@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, July 21, 2016" time="05:09:19 PM CDT" isoTime="2016-07-21T17:09:19"></written>
+	<written date="Friday, July 22, 2016" time="05:30:46 PM CDT" isoTime="2016-07-22T17:30:46"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>6171e42cb50da027e9bcb9dfb34ae0c8c0b3f7b6</gitHash>
+	<gitHash>b252d2ce9330881424686faf1f067a33f54456bc</gitHash>
 	<fileCount>228</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -90,7 +90,7 @@
 	<file version="nan" time="2014-10-30T13:10:16" md5="8fddde97769c5cfba2aefcdae05c9228" sha256="775b2a0bc102ed07e2cf591bec59ac7c2aef1e3d5a6b53b05cdb1fda1f37a276" ext=".mtl">materials/mtl files/EggShell.mtl</file>
 	<file version="0.03" time="2016-02-11T11:22:51" md5="7de35d508ba74011d688d9349676086d" sha256="729627fd71392d0611e9305f305087888ef30985079c0caf3b48aa0d42e1b38a" ext=".ipf">materials/standard xtals/xtl_Locate.ipf</file>
 	<file version="nan" time="2016-02-17T12:53:59" md5="a33410abe4c840123e69159775578699" sha256="dc2f0caae7c35c7ec7aa90451a87fb97deacd5cda7dc85eeaf3e0ede76b5a37b" ext=".xml">materials/standard xtals/ZnO.xml</file>
-	<file version="nan" time="2016-07-21T16:43:49" md5="18c77475ed03ce8b16fa78cfc8233022" sha256="722c64e335fd2fa4678370a6ea5283e60119f140f94b1d9ce01d41ce135a9a1c" ext=".py">APS/getADimageH5.py</file>
+	<file version="nan" time="2016-07-22T16:34:49" md5="4acddb4de3a1598a0782a795e39c3fe2" sha256="e7bfd0edaa4f884827d03b07a73755ce6ef5b6d55ee08f7cac319802b4559423" ext=".py">APS/getADimageH5.py</file>
 	<file version="nan" time="2016-02-17T12:54:55" md5="ca90ec38dba522f4b680a5f07ec446ac" sha256="fe67ffcca253f9afb3f3b9b1addc25153e3a2220c60e2c6227adc03357e41a2d" ext=".xml">materials/standard xtals/LaAlO3/LaAlO3_Hex.xml</file>
 	<file version="nan" time="2016-02-17T12:53:56" md5="2c3f0cfa55f3e38b8122c9dd26fc552e" sha256="b8f061e9d4cdfc6499aa8bf2368e26aa20ad76596cea79d779c0764d661f30b5" ext=".xml">materials/standard xtals/ZnS_Wurtzite.xml</file>
 	<file version="nan" time="2015-08-07T15:10:20" md5="2e65e8f8d8537be5043e811f53ead827" sha256="ad47caa7654fe030adae49860973159d6438108cc4b853a907141987c56caeb3" ext=".ihf">doc/microDiffraction.ihf</file>
@@ -131,7 +131,7 @@
 	<file version="nan" time="2015-03-07T20:16:43" md5="de5d175054f11d16b08a38843714d4a4" sha256="2f04278a18a7dcfe236d49be57092e8585f0908a42fae52a11bf99126cea97b7" ext=".py">APS/burt_tool.py</file>
 	<file version="0.02" time="2014-04-30T10:31:04" md5="b0f908fc7fa668858c9a43e746ae2da0" sha256="bfb93dd1f19e95fd746c4d8de010df19366d8e4f79256b8d9dc69fcbd0d4e989" ext=".ipf">micro/BudaiExtra.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:25" md5="5cc7e51b0e9653d342a048db952748fd" sha256="3b0dec3e5732b477f0ed10b3d666e869c77a78c62c89aa8e8b0799aab8030b4e" ext=".xml">materials/standard xtals/MgAl2O4_spinel.xml</file>
-	<file version="0.04" time="2015-10-20T14:00:43" md5="abc4d100328e738a1de18062f193d457" sha256="2f62e0b6210b5d5e886767b00e9d08a5835881de0d0990b8543e8bcb008fc23c" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
+	<file version="0.05" time="2016-07-22T17:05:41" md5="e152dbd0e5cd01aea47cced47d752f8f" sha256="9f50e3f8d2f9282332b29eee8a969932b0c391e19e288e5b6b907a2c3db7f6c5" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
 	<file version="2.05" time="2015-06-24T17:32:33" md5="075dfb846271e99950a84a449db7bfa9" sha256="05d0795d91ace7fd7ca9013b0bce5961cb62bfab514ad40c1cda7df45c104851" ext=".ipf">General/Images/WinView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" sha256="84d27f78ad9abdeaf06f07412fe8294dbaf22ba3efa428e723a6c495214be982" ext="">micro/Euler_i386</file>
 	<file version="0.19" time="2016-07-21T15:01:18" md5="5eeefee36f1c0b7329b4dca79144dbc5" sha256="4c0b812089b5e096c5dadad8d3ff9dfc0e4f87bdbb281b52bef1096c48a395d7" ext=".ipf">Lattice/PowderPatterns.ipf</file>
