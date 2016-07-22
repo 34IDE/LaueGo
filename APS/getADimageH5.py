@@ -10,7 +10,7 @@ import h5py
 import epics
 from epics import caget
 
-VERSION = 1.04
+VERSION = 1.05
 NEXUS_VERSION = '4.2.1'
 IMAGE_GET_TIMEOUT = 40.0			# timeout for getting the image
 
@@ -70,9 +70,9 @@ def getImage(imagePVroot):
 		raise ValueError('could not get the image to %s' % imagePVroot+'ArrayData')
 
 	try:
-		image = image.astype('u2')
+#		image = image.astype('u2')
 #		print 'type of image is', image.dtype
-		image.resize(Nx,Ny, refcheck=False)
+		image.resize((Ny,Nx), refcheck=False)
 	except:
 		raise ValueError('could not resize the image to %d x %d' % (Nx,Ny))
 
