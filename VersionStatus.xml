@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, July 22, 2016" time="05:30:46 PM CDT" isoTime="2016-07-22T17:30:46"></written>
+	<written date="Friday, July 22, 2016" time="06:58:50 PM CDT" isoTime="2016-07-22T18:58:50"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>b252d2ce9330881424686faf1f067a33f54456bc</gitHash>
+	<gitHash>cd7858bd9636690a4f04fda875c0b782ff6fda77</gitHash>
 	<fileCount>228</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -90,7 +90,7 @@
 	<file version="nan" time="2014-10-30T13:10:16" md5="8fddde97769c5cfba2aefcdae05c9228" sha256="775b2a0bc102ed07e2cf591bec59ac7c2aef1e3d5a6b53b05cdb1fda1f37a276" ext=".mtl">materials/mtl files/EggShell.mtl</file>
 	<file version="0.03" time="2016-02-11T11:22:51" md5="7de35d508ba74011d688d9349676086d" sha256="729627fd71392d0611e9305f305087888ef30985079c0caf3b48aa0d42e1b38a" ext=".ipf">materials/standard xtals/xtl_Locate.ipf</file>
 	<file version="nan" time="2016-02-17T12:53:59" md5="a33410abe4c840123e69159775578699" sha256="dc2f0caae7c35c7ec7aa90451a87fb97deacd5cda7dc85eeaf3e0ede76b5a37b" ext=".xml">materials/standard xtals/ZnO.xml</file>
-	<file version="nan" time="2016-07-22T16:34:49" md5="4acddb4de3a1598a0782a795e39c3fe2" sha256="e7bfd0edaa4f884827d03b07a73755ce6ef5b6d55ee08f7cac319802b4559423" ext=".py">APS/getADimageH5.py</file>
+	<file version="nan" time="2016-07-22T18:53:14" md5="49b256ae96a12326ce4b1b6d8f2a8077" sha256="3e5879b2fdf836a3928cd3774c8fc4df53badc778bc0eda3757276dd64e4f7d4" ext=".py">APS/getADimageH5.py</file>
 	<file version="nan" time="2016-02-17T12:54:55" md5="ca90ec38dba522f4b680a5f07ec446ac" sha256="fe67ffcca253f9afb3f3b9b1addc25153e3a2220c60e2c6227adc03357e41a2d" ext=".xml">materials/standard xtals/LaAlO3/LaAlO3_Hex.xml</file>
 	<file version="nan" time="2016-02-17T12:53:56" md5="2c3f0cfa55f3e38b8122c9dd26fc552e" sha256="b8f061e9d4cdfc6499aa8bf2368e26aa20ad76596cea79d779c0764d661f30b5" ext=".xml">materials/standard xtals/ZnS_Wurtzite.xml</file>
 	<file version="nan" time="2015-08-07T15:10:20" md5="2e65e8f8d8537be5043e811f53ead827" sha256="ad47caa7654fe030adae49860973159d6438108cc4b853a907141987c56caeb3" ext=".ihf">doc/microDiffraction.ihf</file>
