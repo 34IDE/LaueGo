@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.90
+#pragma version=1.91
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1665,6 +1665,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	String xmlFileFull			// full path name to xml file
 	Variable printIt				// force full print out of results
 	xmlFileFull = SelectString(ParamIsDefault(xmlFileFull),xmlFileFull,"")
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	pattern = 0						// do not yet handle other patterns
 
 	Wave/T imageNames=imageNames
@@ -1698,9 +1699,20 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 		if (V_flag)
 			return ""
 		endif
+		printIt = 1
 	endif
 	if (numtype(m) || m<0 || m>=N)
 		return ""
+	endif
+	if (printIt)
+		printf "DeviatoricStrainRefineXML(%g, %g, \"%s\"", m,pattern,constrain
+		if (!ParamIsDefault(coords))
+			printf ", coords=%g",coords
+		endif
+		if (strlen(xmlFileFull))
+			printf ", xmlFileFull=\"%s\"",xmlFileFull
+		endif
+		printf ")\r"
 	endif
 
 	String imageName = imageNames[m]
@@ -1795,9 +1807,9 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	SetDimLabel 1,10,pixelY,FullPeakIndexed	;	SetDimLabel 1,11,detNum,FullPeakIndexed
 
 	if (ParamIsDefault(coords))
-		return DeviatoricStrainRefine(pattern,constrain,printIt=0)
+		return DeviatoricStrainRefine(pattern,constrain,printIt=printIt)
 	else
-		return DeviatoricStrainRefine(pattern,constrain,coords=coords,printIt=0)
+		return DeviatoricStrainRefine(pattern,constrain,coords=coords,printIt=printIt)
 	endif
 End
 //
