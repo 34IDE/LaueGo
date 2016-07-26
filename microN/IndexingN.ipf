@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.84
+#pragma version = 4.85
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -5746,14 +5746,14 @@ End
 Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakIndexed1,FullPeakIndexed2,hklEmeasured,printIt])
 	Variable pattern											// pattern number, usually 0
 	String constrain											// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
-	Variable coords												// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
+	Variable coords											// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
 	Wave FullPeakIndexed
-	Wave FullPeakIndexed1, FullPeakIndexed2					// from other (Yellow and Purple) detectors)
+	Wave FullPeakIndexed1, FullPeakIndexed2			// from other (Yellow and Purple) detectors)
 	Wave hklEmeasured											// measured energies, contains h,k,l,keV, any following columns such as px,py,detectorNum are ignored
 	Variable printIt
 
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-	coords = ParamIsDefault(coords) ? 1 : round(coords)		// Beam Line system is the default
+	coords = ParamIsDefault(coords) || numtype(coords) ? 1 : round(coords)		// Beam Line system is the default
 	if (coords<0 || coords>3)									// coords must be 0, 1, 2, or 3
 		return ""
 	endif
@@ -6306,13 +6306,13 @@ End
 Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPeakIndexed,printIt])
 	Variable pattern											// pattern number, usually 0
 	String constrain											// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
-	Variable coords												// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
+	Variable coords											// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
 	Wave FullPeakList,FullPeakIndexed
-	Variable printIt												// force full print out of results
+	Variable printIt											// force full print out of results
 	printIt = ParamIsDefault(printIt) ? 0 : !(!printIt)
 	printIt = numtype(printIt) ? 0 : printIt
-	coords = ParamIsDefault(coords) ? 1 : round(coords)		// Beam Line system is the default
-	if (coords<0 || coords>3)									// coords must be 0, 1, 2, or 3
+	coords = ParamIsDefault(coords) || numtype(coords) ? 1 : round(coords)		// Beam Line system is the default
+	if (coords<0 || coords>3)								// coords must be 0, 1, 2, or 3
 		return ""
 	endif
 	if (!ParamIsDefault(FullPeakList))

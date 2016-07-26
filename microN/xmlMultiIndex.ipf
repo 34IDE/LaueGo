@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.92
+#pragma version=1.93
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1665,6 +1665,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	String xmlFileFull			// full path name to xml file
 	Variable printIt				// force full print out of results
 	xmlFileFull = SelectString(ParamIsDefault(xmlFileFull),xmlFileFull,"")
+	coords = ParamIsDefault(coords) || numtype(coords) ? 1 : coords
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	pattern = 0						// do not yet handle other patterns
 
@@ -1806,11 +1807,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	SetDimLabel 1,8,angleErr,FullPeakIndexed	;	SetDimLabel 1,9,pixelX,FullPeakIndexed
 	SetDimLabel 1,10,pixelY,FullPeakIndexed	;	SetDimLabel 1,11,detNum,FullPeakIndexed
 
-	if (ParamIsDefault(coords))
-		return DeviatoricStrainRefine(pattern,constrain,printIt=printIt)
-	else
-		return DeviatoricStrainRefine(pattern,constrain,coords=coords,printIt=printIt)
-	endif
+	return DeviatoricStrainRefine(pattern,constrain,coords=coords,FullPeakList=FullPeakList,FullPeakIndexed=FullPeakIndexed,printIt=printIt)
 End
 //
 //Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords])
