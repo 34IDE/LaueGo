@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.33
+#pragma version = 2.35
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -124,7 +124,6 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? 0 : !(!printIt)
 	if (ParamIsDefault(FitPeaksFunc))
-//		FUNCREF FitPeaksProto FitPeaksFunc=FitPeaksWithSeedFill
 		FUNCREF FitPeaksProtoE FitPeaksFunc=FitPeaksWithExternal
 	endif
 	String funcName = FitPeaksFunc($"",NaN,NaN,NaN,NaN,whoami=1)		// get name of FitPeaksFunc
@@ -163,7 +162,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 		Prompt doStrain, "also compute the strain",popup,"NO Strain;Beam LIne coords;* XHF coords;Sample (outward normal)"
 		doStrain += 1
 		String funcList = FunctionList("Fit*", ";", "KIND:2;NPARAMS:7;VALTYPE:4")
-		funcList = RemoveFromList("FitPeaksProto",funcList)
+//		funcList = RemoveFromList("FitPeaksProto",funcList)
 		Prompt funcName,"peak fitting function",popup,funcList
 		DoPrompt "(hkl) for indxing",hklStr,cone,keVmaxCalc,angleTolerance,doStrain,threshAboveAvg,funcName
 		if (V_flag)
@@ -402,7 +401,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 	endif
 End
 //
-Function/S FitPeaksProtoE(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[mask,whoami,peakShape,smoothing,thresholdRatio,maxNum])
+Function/S FitPeaksProtoE(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[mask,whoami,peakShape,smoothing,thresholdRatio,maxNum,printIt])
 	Wave image						// the image from the file
 	Variable minPeakWidth		// minimum width for an acceptable peak (pixels)
 	Variable boxSize				// maximum width for an acceptable peak (pixels)
@@ -414,6 +413,7 @@ Function/S FitPeaksProtoE(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[
 	Variable smoothing			// if TRUE, do a smoothing operation before peak search
 	Variable thresholdRatio	// set threshold to (ratio*[std dev] + avg) if threshold passed as NaN (optional)
 	Variable maxNum				// maximum number of peaks to fit (defaults to unlimited)
+	Variable printIt
 
 	return ""
 End

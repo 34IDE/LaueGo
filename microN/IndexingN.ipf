@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.83
+#pragma version = 4.84
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -50,8 +50,8 @@ Menu LaueGoMainMenuName
 	MenuItemIfWaveClassExists("   TESTING, Fit Peaks step-wise on Image...","speImageNoBkg;speImage;rawImageNoBkg;rawImage","DIMS:2"), FitPeaksStepWise($"",NaN,NaN,NaN,NaN)
 	help={"Identify peaks in an Image, does not do any background removal, uses a simple threshold to find peaks"}
 	MenuItemIfWaveClassExists("   TESTING, Fit Peaks on Image...","speImageNoBkg;speImage;rawImageNoBkg;rawImage","DIMS:2"),FitPeaksNew($"",NaN,NaN)
-	help={"Identify peaks in an Image, does not do any background removal, uses a simple threshold to find peaks"}
-	     MenuItemIfWaveClassExists("   OLD Remove Bkg & Fit Peaks on Image...","speImage;rawImage","DIMS:2"),OLD_removeBkg_FitPeaks($"",NaN,NaN)
+//	help={"Identify peaks in an Image, does not do any background removal, uses a simple threshold to find peaks"}
+//	     MenuItemIfWaveClassExists("   OLD Remove Bkg & Fit Peaks on Image...","speImage;rawImage","DIMS:2"),OLD_removeBkg_FitPeaks($"",NaN,NaN)
 	help={"removes bkg and then finds and fits peaks, do not use anymore"}
 //	  pkLIstImageMenuItem("   Reset Fitted Peak list from boxes"),setFittedPeaksFromList($"",NaN,pkList)
 //	  help={"reset list of peaks for fitting to the boxes on an image plot"}
@@ -470,7 +470,6 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 		endif
 		dNum = !(dNum==limit(round(dNum),0,2)) ? 1 : dNum
 		if (!WaveExists(peakList))
-//			Wave peakList = $StringByKey("FullPeakList",GetUserData(win,"","FitPeaks"),"=")
 			Wave peakList = FindPeakListForImage(image)
 		endif
 		if (WaveExists(peakList))
@@ -2439,11 +2438,12 @@ End
 
 
 // remove bkg from an image, identify the peaks, and fit them all
-Function/S RemoveBackgroundImage(rawImage,fractionBkg)
+Function/S RemoveBackgroundImage(rawImage,fractionBkg,[printIt])
 	Wave rawImage				// the raw image from the image file
 	Variable fractionBkg		// fraction of image that is background, use something like 0.99 or 0.995 (even 0.7 works OK)
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(rawImage) || WaveDims(rawImage)!=2 || !(fractionBkg==limit(fractionBkg,1e-3,1)))
 		String imageName = SelectString(WaveExists(rawImage),"",NameOfWave(rawImage))
 		fractionBkg = fractionBkg==limit(fractionBkg,1e-3,1) ? fractionBkg : 0.8
@@ -2552,15 +2552,16 @@ End
 
 
 
-Function/T MakeMaskThreshold(image,threshold,[dilate])
+Function/T MakeMaskThreshold(image,threshold,[dilate,printIt])
 	Wave image						// the image from the image file
 	Variable threshold				// mask off all pixels with values above threshold
 	Variable dilate
+	Variable printIt
 	dilate = ParamIsDefault(dilate) ? 0 : dilate
 	dilate = dilate>=0 ? dilate : 0
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	String imageName
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(image) || WaveDims(image)!=2 || !(threshold>0))
 		imageName = SelectString(WaveExists(image),"",NameOfWave(image))
 		threshold = threshold>0 ? threshold : NaN
@@ -2678,7 +2679,7 @@ End
 //	-S smooth the image if present
 //	-T threshold ratio, set threshold to (ratio*[std dev] + avg) (optional)
 //	-K mask_file_name (use pixels with mask==0)
-Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[mask,whoami,peakShape,smoothing,thresholdRatio,maxNum])
+Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAboveAvg,[mask,whoami,peakShape,smoothing,thresholdRatio,maxNum,printIt])
 	Wave image						// the image from the file
 	Variable minPeakWidth		// minimum width for an acceptable peak (pixels)
 	Variable boxSize				// maximum width for an acceptable peak (pixels)
@@ -2690,10 +2691,12 @@ Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAbov
 	Variable smoothing			// if TRUE, do a smoothing operation before peak search
 	Variable thresholdRatio	// set threshold to (ratio*[std dev] + avg) if threshold passed as NaN (optional)
 	Variable maxNum				// maximum number of peaks to fit (defaults to unlimited)
+	Variable printIt
 	if (!ParamIsDefault(whoami))
 		return GetRTStackInfo(1)
 	endif
 	maxNum = ParamIsDefault(maxNum) ? -1 : maxNum
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	if (exists("root:Packages:micro:PeakFit:minPeakWidthLast")!=2)
 		initPeaksPart()
@@ -2719,7 +2722,6 @@ Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAbov
 	thresholdRatio = thresholdRatio>0 ? thresholdRatio : NaN
 
 	String imageName, line=""
-	Variable printIt = strlen(GetRTStackInfo(2))==0 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(image) || WaveDims(image)!=2 || !(minPeakWidth>0) || !(boxSize>0) || !(threshAboveAvg>0) || !(maxRfactor>0))
 		imageName = SelectString(WaveExists(image),"",NameOfWave(image))
 		minPeakWidth = minPeakWidth>.05 ? minPeakWidth : minPeakWidthLast
@@ -3184,15 +3186,17 @@ End
 //	and median filter (only 5) and gauss smooth to get rid of specks
 //	Thresold this image to generate a mask of regions that represent the peak locations (an ROI)
 //	Examine each region in the ROI separately, fitting a gaussian
-Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,[mask,maxNum,whoami])
+Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,[mask,maxNum,whoami,printIt])
 	Wave image						// the image from the image file
-	Variable minPeakWidth			// minimum width for an acceptable peak (pixels)
-	Variable maxPeakWidth			// maximum width for an acceptable peak (pixels)
+	Variable minPeakWidth		// minimum width for an acceptable peak (pixels)
+	Variable maxPeakWidth		// maximum width for an acceptable peak (pixels)
 	Variable minSep				// minimum separation between two peaks (pixels)
-	Variable threshAboveAvg		// threshold above average value,  use 25
+	Variable threshAboveAvg	// threshold above average value,  use 25
 	Wave mask						// starting mask for the fit (this mask is unchanged by this routine)
 	Variable maxNum				// maximum number of peaks to find, normally goes to completion
 	Variable whoami				// if passed, then just return the name of this routine
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	if (!ParamIsDefault(whoami))
 		return GetRTStackInfo(1)
 	endif
@@ -3212,7 +3216,6 @@ Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAbo
 	endif
 
 	String imageName, line=""
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(image) || WaveDims(image)!=2 || !(minPeakWidth>0) || !(maxPeakWidth>0) || !(minSep>3) || !(threshAboveAvg>0))
 		imageName = SelectString(WaveExists(image),"",NameOfWave(image))
 		minPeakWidth = minPeakWidth>.5 ? minPeakWidth : minPeakWidthLast
@@ -3487,7 +3490,7 @@ End
 
 
 // identify the peaks, and fit them all (no background removal), a lot like FitPeaksNew(), but proceeds in a more step wise fashion
-Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,[mask,maxNum,whoami])
+Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,[mask,maxNum,whoami,printIt])
 	Wave image						// the image from the image file
 	Variable minPeakWidth			// minimum width for an acceptable peak (pixels)
 	Variable maxPeakWidth			// maximum width for an acceptable peak (pixels)
@@ -3496,13 +3499,14 @@ Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAv
 	Wave mask						// starting mask for the fit (this mask is unchanged by this routine)
 	Variable maxNum				// maximum number of peaks to find, normally goes to completion
 	Variable whoami				// if passed, then just return the name of this routine
+	Variable printIt
 	if (!ParamIsDefault(whoami))
 		return GetRTStackInfo(1)
 	endif
 	maxNum = ParamIsDefault(maxNum) ? Inf : maxNum
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	String imageName
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(image) || WaveDims(image)!=2 || !(minPeakWidth>0) || !(maxPeakWidth>0) || !(minSep>3) || !(threshAboveAvg>0))
 		imageName = SelectString(WaveExists(image),"",NameOfWave(image))
 		minPeakWidth = minPeakWidth>.5 ? minPeakWidth : 1.2
@@ -3685,17 +3689,19 @@ Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAv
 	return GetWavesDataFolder(FullPeakList,2)
 End
 //
-Function/S FitPeaksProto(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,[mask,maxNum,whoami])
-	Wave image						// the image from the image file
-	Variable minPeakWidth			// minimum width for an acceptable peak (pixels)
-	Variable maxPeakWidth			// maximum width for an acceptable peak (pixels)
-	Variable minSep				// minimum separation between two peaks (pixels)
-	Variable threshAboveAvg		// threshold above average value,  use 25
-	Wave mask						// starting mask for the fit (this mask is unchanged by this routine)
-	Variable maxNum				// maximum number of peaks to find, normally goes to completion
-	Variable whoami				// if passed, then just return the name of this routine
-	return ""
-End
+// this function does not appear to be used anywhere.
+//		Function/S FitPeaksProto(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg,[mask,maxNum,whoami,printIt])
+//			Wave image						// the image from the image file
+//			Variable minPeakWidth		// minimum width for an acceptable peak (pixels)
+//			Variable maxPeakWidth		// maximum width for an acceptable peak (pixels)
+//			Variable minSep				// minimum separation between two peaks (pixels)
+//			Variable threshAboveAvg	// threshold above average value,  use 25
+//			Wave mask						// starting mask for the fit (this mask is unchanged by this routine)
+//			Variable maxNum				// maximum number of peaks to find, normally goes to completion
+//			Variable whoami				// if passed, then just return the name of this routine
+//			Variable printIt
+//			return ""
+//		End
 // 
 Static Function FitGaussianPeak(image,left,right,bottom,top,[weight])	// returns 1 if error,  0 is OK
 	// the result is passed to calling function by W_coef or {K0, K1, ... K6}
@@ -3792,12 +3798,13 @@ End
 //End
 
 // identify the peaks, and fit them all (no background removal)
-Function/S FitPeaksNew(image,threshAboveAvg,dist)
+Function/S FitPeaksNew(image,threshAboveAvg,dist,[printIt])
 	Wave image						// the image from the image file
 	Variable threshAboveAvg		// threshold above average value
 	Variable dist					// minimum distance between spots, spots have to be at least this far apart (pixels)
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(image) || WaveDims(image)!=2 || !(threshAboveAvg>0) || !(dist>3))
 		String imageName = SelectString(WaveExists(image),"",NameOfWave(image))
 		threshAboveAvg = threshAboveAvg>0 ? threshAboveAvg : 100
@@ -3943,12 +3950,13 @@ End
 
 
 // remove bkg from an image, identify the peaks, and fit them all
-Function/S FitPeaks(image,fractionBkg,dist)
+Function/S FitPeaks(image,fractionBkg,dist,[printIt])
 	Wave image					// the image from the image file (with or without bkg removed)
 	Variable fractionBkg			// fraction of image that is background, use something like 0.99 or 0.995 (even 0.7 works OK)
 	Variable dist					// minimum distance between spots, spots have to be at least this far apart (pixels)
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc")
 	if (!WaveExists(image) || WaveDims(image)!=2 || !(fractionBkg==limit(fractionBkg,1e-3,1) || !(dist>0)))
 		String imageName = SelectString(WaveExists(image),"",NameOfWave(image))
 		fractionBkg = fractionBkg==limit(fractionBkg,1e-3,1) ? fractionBkg : 0.9
@@ -4018,166 +4026,166 @@ End
 
 
 
-// remove bkg from an image, identify the peaks, and fit them all
-Function/S OLD_removeBkg_FitPeaks(rawImage,fractionBkg,dist)
-	Wave rawImage					// the raw image from the image file
-	Variable fractionBkg			// fraction of image that is background, use something like 0.99 or 0.995 (even 0.7 works OK)
-	Variable dist					// minimum distance between spots, spots have to be at least this far apart (pixels)
-
-	Variable printIt = ItemsInList(GetRTStackInfo(0))<2
-	if (!WaveExists(rawImage) || WaveDims(rawImage)!=2 || !(fractionBkg==limit(fractionBkg,1e-3,1) || !(dist>0)))
-		String imageName = SelectString(WaveExists(rawImage),"",NameOfWave(rawImage))
-		fractionBkg = fractionBkg==limit(fractionBkg,1e-3,1) ? fractionBkg : 0.8
-		dist = dist>0 ? dist : 30
-//		Prompt imageName,"name of image with peaks to find",popup,WaveList("*",";","DIMS:2")
-//		Prompt imageName,"name of image with peaks to find",popup,WaveList_Tags("imageFileName","rawIgorImage","*","DIMS:2")
-		Prompt imageName,"name of image with peaks to find",popup,reverseList(WaveListClass("speImage;rawImage*","*","DIMS:2"))
-		Prompt fractionBkg,"fraction of image that is background, usually in range [0.7, 0.995]"
-		Prompt dist, "minimum distance (pixels) between any two peaks (use ~30 for unbinned Si)"
-		DoPrompt/Help="3D-Xray Diffraction[Fit Peaks]" "peak fitting",imageName,fractionBkg,dist
-		if (V_flag)
-			return ""
-		endif
-		Wave rawImage = $imageName
-		printf "FitPeaks(%s,%g,%g)\r",imageName,fractionBkg,dist
-		printIt = 1
-	endif
-	if (!WaveExists(rawImage) || WaveDims(rawImage)!=2 || !(fractionBkg==limit(fractionBkg,1e-3,1) || !(dist>0)))
-		return ""
-	endif
-//	Variable timer=startMSTimer
-	Variable timer0=startMSTimer
-	Variable thresh = numpnts(rawImage)*fractionBkg
-
-	WaveStats/Q/M=1 rawImage
-	Make/N=200/D/O FitPeaks_Hist
-	Variable i
-	for (i=-1;i<10 || numtype(i);)							// keep expanding the histogram range while i<10,   I want i to be bigger than 10
-		SetScale/I x,V_min,V_max,"",FitPeaks_Hist			// lower high end of histogram to zoom in around zero
-		Histogram/B=2 rawImage,FitPeaks_Hist
-		Integrate/P FitPeaks_Hist/D=FitPeaks_Hist_INT	// integrate the histogram
-		i=BinarySearchInterp(FitPeaks_Hist_INT,thresh)	// find point where FitPeaks_Hist_INT[i] == thresh
-		V_max = numtype(i) ? V_max/2 : pnt2x(FitPeaks_Hist_INT,i+4)
-	endfor
-//	print "first part took ",stopMSTimer(timer)/1e6,"sec"
-//	timer = startMSTimer
-
-	thresh = DimDelta(FitPeaks_Hist,0)*i + DimOffset(FitPeaks_Hist,0)
-	ImageThreshold/Q/T=(thresh)/M=0 rawImage					// create M_ImageThresh
-	Wave M_ImageThresh=M_ImageThresh
-
-	ImageStats/M=1 M_ImageThresh
-	Variable fracBlack = V_avg*V_npnts/255/V_npnts
-	//	printf "number of points in peak is %d out of %d points (%.2f%%)\r",fracBlack*V_npnts,V_npnts,fracBlack*100
-	Make/N=(9,9)/O/B/U black
-	black = 255
-	for(;fracBlack<0.10;)											// loop until fracBlack is atleast 10%
-		Imagemorphology/S=black/O BinaryDilation M_ImageThresh
-		ImageThreshold/Q/T=(2)/M=0 M_ImageThresh
-		ImageStats/M=1 M_ImageThresh
-		fracBlack = V_avg*V_npnts/255/V_npnts
-		//	printf "number of points in peak is %d out of %d points (%.2f%%)\r",fracBlack*V_npnts,V_npnts,fracBlack*100
-	endfor
-	ImageTransform/O invert M_ImageThresh						//	M_ImageThresh = !M_ImageThresh
-
-//	print "second part took ",stopMSTimer(timer)/1e6,"sec"
-//	timer = startMSTimer
-
-//	Variable timer2 = startMSTimer
-	ImageInterpolate /f={.125,.125} bilinear rawImage
-	Redimension/S M_InterpolatedImage
-
-	KillWaves/Z FitPeaks_rawImage_smaller
-	Rename M_InterpolatedImage FitPeaks_rawImage_smaller		// make a source image using fewer pixels
-//	print "\t\t1st interpolate part took ",stopMSTimer(timer2)/1e6,"sec"
-
-//	timer2 = startMSTimer
- 	ImageInterpolate /f={.125,.125} bilinear M_ImageThresh		// make a mask with fewer pixels
-	KillWaves/Z FitPeaks_mask_smaller
-	Rename M_InterpolatedImage FitPeaks_mask_smaller
-	Redimension/B/U FitPeaks_mask_smaller
-	ImageRemoveBackground/F/R=FitPeaks_mask_smaller/P=2/W FitPeaks_rawImage_smaller	// creates M_RemovedBackground, uses 3rd order polynomial
-	Wave W_BackgroundCoeff=W_BackgroundCoeff
-	//	print W_BackgroundCoeff
-//	print "\t\t2nd interpolate part took ",stopMSTimer(timer2)/1e6,"sec"
-
-//	timer2 = startMSTimer
-	ImageInterpolate /f={8,8} bilinear M_RemovedBackground		// creates M_InterpolatedImage, a bkg with full number of pixels
-	Wave M_InterpolatedImage=M_InterpolatedImage
-
-	String outName = NameOfWave(rawImage)+"NoBkg"
-	String fldr = GetWavesDataFolder(rawImage,1)
-	if (CheckName(fldr+outName,1))
-		outName = CleanupName(outName,0)
-	endif
-	outName = fldr+outName
-	Duplicate/O rawImage $outName
-	Wave noBkg = $outName
-
-	String wnote=ReplaceStringByKey("rawIgorImage",note(rawImage),GetWavesDataFolder(rawImage,2),"=")
-	wnote = ReplaceNumberByKey("fractionBkg",wnote,fractionBkg,"=")
-	wnote = ReplaceNumberByKey("minSpotSeparation",wnote,dist,"=")
-	wnote = ReplaceStringByKey("waveClass",wnote,"rawImageNoBkg","=")
-	Note/K noBkg, wnote
-	Redimension/I noBkg											// signed int32 version of rawImage
-	noBkg = rawImage - M_InterpolatedImage[p][q]					// p,q because M_InterpolatedImage is smaller
-//	print "\t\t",DimSize(rawImage,0),DimSize(rawImage,1)
-//	print "\t\t",DimSize(noBkg,0),DimSize(noBkg,1)
-//	print "\t\t",DimSize(M_InterpolatedImage,0),DimSize(M_InterpolatedImage,1)
-//	print "\t\t3rd interpolate part took ",stopMSTimer(timer2)/1e6,"sec"
-
-
-//	timer2 = startMSTimer
-	Make/N=100/O hist_
-	SetScale/P x 0,2,"", hist_
-	Histogram/B=2 noBkg,hist_
-//	print "\t\tHistogram part took ",stopMSTimer(timer2)/1e6,"sec"
-
-	i = BinarySearchInterp(hist_, hist_(0)/10)
-	i = numtype(i) ? numpnts(hist_)/2 : i
- 	Variable cutOff = pnt2x(hist_,i)
-// 	Variable cutOff = pnt2x(hist_,BinarySearchInterp(hist_, hist_(0)/10))
-	printf "after background removal search for peaks above a threshold of %g\r",cutOff
-//	print "cutOff=",cutOff											// threshold in NoBkg wave for finding peaks
-//	timer2 = startMSTimer
-	Duplicate/O noBkg,FitPeaks_mask_bigger
-
-	ImageThreshold/O/Q/I/T=(cutOff)/M=0 FitPeaks_mask_bigger
-//	print "\t\tmaking mask part took ",stopMSTimer(timer2)/1e6,"sec"
-
-	DoUpdate
-//	timer2 = startMSTimer
-	Variable id = dist>20 ? 5 : 1
-//	Imagemorphology/O/E=5 BinaryDilation FitPeaks_mask_bigger
-	Imagemorphology/O/E=(id) BinaryDilation FitPeaks_mask_bigger
-//	print "\t\tImagemorphology part took ",stopMSTimer(timer2)/1e6,"sec"
-
-//	timer2 = startMSTimer
-	ImageAnalyzeParticles/A=5/M=3/Q stats FitPeaks_mask_bigger
-	KillWaves/Z M_RawMoments,M_Particle
-	Sort/R W_ImageObjArea,W_ImageObjArea,W_SpotX,W_SpotY,W_circularity,W_rectangularity,W_ImageObjPerimeter,W_xmin,W_xmax,W_ymin,W_ymax
-//	print "\t\tImageAnalyzeParticles part took ",stopMSTimer(timer2)/1e6,"sec"
-
-//	timer2 = startMSTimer
-	i = reFit_GaussianPkList(noBkg,dist)
-
-//	print "\t\t refitting the peaks took ",stopMSTimer(timer2)/1e6,"sec"
-
-//	print "fancy part took ",stopMSTimer(timer)/1e6,"sec"	
-	Variable sec0=stopMSTimer(timer0)/1e6
-	if (printIt)
-		printf "found and fitted %d peaks,  this all took %g sec\r",i,sec0
-//		print "peak finding and fitting all took ",sec0,"sec"	
-		printf "  result stored in the wave '%s'\r", GetWavesDataFolder(noBkg,2)
-	endif
-//	Wave FullPeakList=FullPeakList
-
-	KillWaves/Z hist_, W_sigma,W_coef,W_ParamConfidenceInterval
-	KillWaves/Z FitPeaks_rawImage_smaller,FitPeaks_mask_smaller, M_ImageThresh, M_RemovedBackground, M_InterpolatedImage, W_BackgroundCoeff
-	KillWaves/Z FitPeaks_Hist_INT,FitPeaks_Hist, black, FitPeaks_mask_bigger
-	KillWaves/Z W_xmin,W_xmax,W_ymin,W_ymax,W_circularity,W_rectangularity,W_ImageObjPerimeter,W_ImageObjArea,W_SpotX,W_SpotY
-	return GetWavesDataFolder(noBkg,2)
-End
+//		// remove bkg from an image, identify the peaks, and fit them all
+//		Function/S OLD_removeBkg_FitPeaks(rawImage,fractionBkg,dist)
+//			Wave rawImage					// the raw image from the image file
+//			Variable fractionBkg			// fraction of image that is background, use something like 0.99 or 0.995 (even 0.7 works OK)
+//			Variable dist					// minimum distance between spots, spots have to be at least this far apart (pixels)
+//		
+//			Variable printIt = ItemsInList(GetRTStackInfo(0))<2
+//			if (!WaveExists(rawImage) || WaveDims(rawImage)!=2 || !(fractionBkg==limit(fractionBkg,1e-3,1) || !(dist>0)))
+//				String imageName = SelectString(WaveExists(rawImage),"",NameOfWave(rawImage))
+//				fractionBkg = fractionBkg==limit(fractionBkg,1e-3,1) ? fractionBkg : 0.8
+//				dist = dist>0 ? dist : 30
+//		//		Prompt imageName,"name of image with peaks to find",popup,WaveList("*",";","DIMS:2")
+//		//		Prompt imageName,"name of image with peaks to find",popup,WaveList_Tags("imageFileName","rawIgorImage","*","DIMS:2")
+//				Prompt imageName,"name of image with peaks to find",popup,reverseList(WaveListClass("speImage;rawImage*","*","DIMS:2"))
+//				Prompt fractionBkg,"fraction of image that is background, usually in range [0.7, 0.995]"
+//				Prompt dist, "minimum distance (pixels) between any two peaks (use ~30 for unbinned Si)"
+//				DoPrompt/Help="3D-Xray Diffraction[Fit Peaks]" "peak fitting",imageName,fractionBkg,dist
+//				if (V_flag)
+//					return ""
+//				endif
+//				Wave rawImage = $imageName
+//				printf "FitPeaks(%s,%g,%g)\r",imageName,fractionBkg,dist
+//				printIt = 1
+//			endif
+//			if (!WaveExists(rawImage) || WaveDims(rawImage)!=2 || !(fractionBkg==limit(fractionBkg,1e-3,1) || !(dist>0)))
+//				return ""
+//			endif
+//		//	Variable timer=startMSTimer
+//			Variable timer0=startMSTimer
+//			Variable thresh = numpnts(rawImage)*fractionBkg
+//		
+//			WaveStats/Q/M=1 rawImage
+//			Make/N=200/D/O FitPeaks_Hist
+//			Variable i
+//			for (i=-1;i<10 || numtype(i);)							// keep expanding the histogram range while i<10,   I want i to be bigger than 10
+//				SetScale/I x,V_min,V_max,"",FitPeaks_Hist			// lower high end of histogram to zoom in around zero
+//				Histogram/B=2 rawImage,FitPeaks_Hist
+//				Integrate/P FitPeaks_Hist/D=FitPeaks_Hist_INT	// integrate the histogram
+//				i=BinarySearchInterp(FitPeaks_Hist_INT,thresh)	// find point where FitPeaks_Hist_INT[i] == thresh
+//				V_max = numtype(i) ? V_max/2 : pnt2x(FitPeaks_Hist_INT,i+4)
+//			endfor
+//		//	print "first part took ",stopMSTimer(timer)/1e6,"sec"
+//		//	timer = startMSTimer
+//		
+//			thresh = DimDelta(FitPeaks_Hist,0)*i + DimOffset(FitPeaks_Hist,0)
+//			ImageThreshold/Q/T=(thresh)/M=0 rawImage					// create M_ImageThresh
+//			Wave M_ImageThresh=M_ImageThresh
+//		
+//			ImageStats/M=1 M_ImageThresh
+//			Variable fracBlack = V_avg*V_npnts/255/V_npnts
+//			//	printf "number of points in peak is %d out of %d points (%.2f%%)\r",fracBlack*V_npnts,V_npnts,fracBlack*100
+//			Make/N=(9,9)/O/B/U black
+//			black = 255
+//			for(;fracBlack<0.10;)											// loop until fracBlack is atleast 10%
+//				Imagemorphology/S=black/O BinaryDilation M_ImageThresh
+//				ImageThreshold/Q/T=(2)/M=0 M_ImageThresh
+//				ImageStats/M=1 M_ImageThresh
+//				fracBlack = V_avg*V_npnts/255/V_npnts
+//				//	printf "number of points in peak is %d out of %d points (%.2f%%)\r",fracBlack*V_npnts,V_npnts,fracBlack*100
+//			endfor
+//			ImageTransform/O invert M_ImageThresh						//	M_ImageThresh = !M_ImageThresh
+//		
+//		//	print "second part took ",stopMSTimer(timer)/1e6,"sec"
+//		//	timer = startMSTimer
+//		
+//		//	Variable timer2 = startMSTimer
+//			ImageInterpolate /f={.125,.125} bilinear rawImage
+//			Redimension/S M_InterpolatedImage
+//		
+//			KillWaves/Z FitPeaks_rawImage_smaller
+//			Rename M_InterpolatedImage FitPeaks_rawImage_smaller		// make a source image using fewer pixels
+//		//	print "\t\t1st interpolate part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//		//	timer2 = startMSTimer
+//		 	ImageInterpolate /f={.125,.125} bilinear M_ImageThresh		// make a mask with fewer pixels
+//			KillWaves/Z FitPeaks_mask_smaller
+//			Rename M_InterpolatedImage FitPeaks_mask_smaller
+//			Redimension/B/U FitPeaks_mask_smaller
+//			ImageRemoveBackground/F/R=FitPeaks_mask_smaller/P=2/W FitPeaks_rawImage_smaller	// creates M_RemovedBackground, uses 3rd order polynomial
+//			Wave W_BackgroundCoeff=W_BackgroundCoeff
+//			//	print W_BackgroundCoeff
+//		//	print "\t\t2nd interpolate part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//		//	timer2 = startMSTimer
+//			ImageInterpolate /f={8,8} bilinear M_RemovedBackground		// creates M_InterpolatedImage, a bkg with full number of pixels
+//			Wave M_InterpolatedImage=M_InterpolatedImage
+//		
+//			String outName = NameOfWave(rawImage)+"NoBkg"
+//			String fldr = GetWavesDataFolder(rawImage,1)
+//			if (CheckName(fldr+outName,1))
+//				outName = CleanupName(outName,0)
+//			endif
+//			outName = fldr+outName
+//			Duplicate/O rawImage $outName
+//			Wave noBkg = $outName
+//		
+//			String wnote=ReplaceStringByKey("rawIgorImage",note(rawImage),GetWavesDataFolder(rawImage,2),"=")
+//			wnote = ReplaceNumberByKey("fractionBkg",wnote,fractionBkg,"=")
+//			wnote = ReplaceNumberByKey("minSpotSeparation",wnote,dist,"=")
+//			wnote = ReplaceStringByKey("waveClass",wnote,"rawImageNoBkg","=")
+//			Note/K noBkg, wnote
+//			Redimension/I noBkg											// signed int32 version of rawImage
+//			noBkg = rawImage - M_InterpolatedImage[p][q]					// p,q because M_InterpolatedImage is smaller
+//		//	print "\t\t",DimSize(rawImage,0),DimSize(rawImage,1)
+//		//	print "\t\t",DimSize(noBkg,0),DimSize(noBkg,1)
+//		//	print "\t\t",DimSize(M_InterpolatedImage,0),DimSize(M_InterpolatedImage,1)
+//		//	print "\t\t3rd interpolate part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//		
+//		//	timer2 = startMSTimer
+//			Make/N=100/O hist_
+//			SetScale/P x 0,2,"", hist_
+//			Histogram/B=2 noBkg,hist_
+//		//	print "\t\tHistogram part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//			i = BinarySearchInterp(hist_, hist_(0)/10)
+//			i = numtype(i) ? numpnts(hist_)/2 : i
+//		 	Variable cutOff = pnt2x(hist_,i)
+//		// 	Variable cutOff = pnt2x(hist_,BinarySearchInterp(hist_, hist_(0)/10))
+//			printf "after background removal search for peaks above a threshold of %g\r",cutOff
+//		//	print "cutOff=",cutOff											// threshold in NoBkg wave for finding peaks
+//		//	timer2 = startMSTimer
+//			Duplicate/O noBkg,FitPeaks_mask_bigger
+//		
+//			ImageThreshold/O/Q/I/T=(cutOff)/M=0 FitPeaks_mask_bigger
+//		//	print "\t\tmaking mask part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//			DoUpdate
+//		//	timer2 = startMSTimer
+//			Variable id = dist>20 ? 5 : 1
+//		//	Imagemorphology/O/E=5 BinaryDilation FitPeaks_mask_bigger
+//			Imagemorphology/O/E=(id) BinaryDilation FitPeaks_mask_bigger
+//		//	print "\t\tImagemorphology part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//		//	timer2 = startMSTimer
+//			ImageAnalyzeParticles/A=5/M=3/Q stats FitPeaks_mask_bigger
+//			KillWaves/Z M_RawMoments,M_Particle
+//			Sort/R W_ImageObjArea,W_ImageObjArea,W_SpotX,W_SpotY,W_circularity,W_rectangularity,W_ImageObjPerimeter,W_xmin,W_xmax,W_ymin,W_ymax
+//		//	print "\t\tImageAnalyzeParticles part took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//		//	timer2 = startMSTimer
+//			i = reFit_GaussianPkList(noBkg,dist)
+//		
+//		//	print "\t\t refitting the peaks took ",stopMSTimer(timer2)/1e6,"sec"
+//		
+//		//	print "fancy part took ",stopMSTimer(timer)/1e6,"sec"	
+//			Variable sec0=stopMSTimer(timer0)/1e6
+//			if (printIt)
+//				printf "found and fitted %d peaks,  this all took %g sec\r",i,sec0
+//		//		print "peak finding and fitting all took ",sec0,"sec"	
+//				printf "  result stored in the wave '%s'\r", GetWavesDataFolder(noBkg,2)
+//			endif
+//		//	Wave FullPeakList=FullPeakList
+//		
+//			KillWaves/Z hist_, W_sigma,W_coef,W_ParamConfidenceInterval
+//			KillWaves/Z FitPeaks_rawImage_smaller,FitPeaks_mask_smaller, M_ImageThresh, M_RemovedBackground, M_InterpolatedImage, W_BackgroundCoeff
+//			KillWaves/Z FitPeaks_Hist_INT,FitPeaks_Hist, black, FitPeaks_mask_bigger
+//			KillWaves/Z W_xmin,W_xmax,W_ymin,W_ymax,W_circularity,W_rectangularity,W_ImageObjPerimeter,W_ImageObjArea,W_SpotX,W_SpotY
+//			return GetWavesDataFolder(noBkg,2)
+//		End
 
 
 
@@ -5287,7 +5295,7 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l,[printIt])
 	Variable keV = hc/(2*d*sineTheta)			// energy
 	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
 
-	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
+	if (printIt)
 		Variable px=NaN, py=NaN
 		STRUCT microGeometry geo
 		if (!FillGeometryStructDefault(geo))	//fill the geometry structure with test values
@@ -5735,14 +5743,16 @@ End
 //	Start of Index strain refinement
 
 #ifdef USE_ENERGY_STRAIN_REFINE
-Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakIndexed1,FullPeakIndexed2,hklEmeasured])
+Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakIndexed1,FullPeakIndexed2,hklEmeasured,printIt])
 	Variable pattern											// pattern number, usually 0
 	String constrain											// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
 	Variable coords												// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
 	Wave FullPeakIndexed
 	Wave FullPeakIndexed1, FullPeakIndexed2					// from other (Yellow and Purple) detectors)
 	Wave hklEmeasured											// measured energies, contains h,k,l,keV, any following columns such as px,py,detectorNum are ignored
+	Variable printIt
 
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	coords = ParamIsDefault(coords) ? 1 : round(coords)		// Beam Line system is the default
 	if (coords<0 || coords>3)									// coords must be 0, 1, 2, or 3
 		return ""
@@ -5801,7 +5811,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		DoAlert 0, "no geometry structure found, did you forget to set it?"
 		return ""
 	endif
-	Variable printIt=0, Npatterns=DimSize(FullPeakIndexed,2)
+	Variable Npatterns=DimSize(FullPeakIndexed,2)
 	if (WaveExists(FullPeakIndexed1))
 		Npatterns = min(Npatterns,DimSize(FullPeakIndexed1,2))
 	endif
@@ -5860,7 +5870,6 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		endif
 	endfor
 	String funcName = "Indexing#latticeMismatch"+num2istr(Nfit+3)	// need 3 extra for the rotation, which is always there
-	printIt = printIt || ((ItemsInList(GetRTStackInfo(0))<2) || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 	KillWaves/Z epsilon,epsilonBL,epsilonXHF,epsilonSample
 	//
 	// done with I/O, now setup the calculation
@@ -5894,7 +5903,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Make/N=(3,3)/FREE/D Ameas, Astart						// Vcartesian = A x Vcell,   used to make the strain tensor
 	Astart = DL													// the starting direct lattice
 	if (printIt)
-		if ( stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
+		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 			printf "¥"
 		endif
 		printf "TotalStrainRefine(%d,\"%d%d%d%d%d%d\"",pattern,aFit,bFit,cFit,alphaFit,betFit,gamFit
@@ -6394,7 +6403,6 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	sprintf constrain "%d%d%d%d%d%d", aFit,bFit,cFit,alphaFit,betFit,gamFit		// constrain is for {a,b,c,alpha,beta,gamma}
 
 	Variable N=DimSize(FullPeakIndexed,0)
-//	printIt = printIt || ((ItemsInList(GetRTStackInfo(0))<2) || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 	KillWaves/Z epsilon,epsilonBL,epsilonXHF,epsilonSample
 	if ((Nfit+3)>=(2*N))										// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations)
 		return ""												// each measured spot provides 2 values
@@ -6438,7 +6446,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Wave Ameas=Ameas_Deviatoric, Astart=Astart_Deviatoric
 	Astart = DL												// the starting direct lattice
 	if (printIt)
-		if ( stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
+		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 			printf "¥"
 		endif
 		printf "DeviatoricStrainRefine(%d,\"%d%d%d%d%d%d\"",pattern,aFit,bFit,cFit,alphaFit,betFit,gamFit
@@ -7240,22 +7248,21 @@ End
 // =========================================================================
 //	Start of Stereographic projection
 
-Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetectors])
+Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetectors,printIt])
 	Wave FullPeakIndexed							// provides the reciprocal lattice
 	Variable pattern									// in case more than one, default is 0
 	String centerType									// choice for center of stereographic projections, "Surface Normal" or "Detector Center"
 	Variable showDetectors							// flag, show detector outlines on seterographic projection
-	if (ParamIsDefault(centerType))
-		centerType = ""
-	endif
+	Variable printIt
+	centerType = SelectString(ParamIsDefault(centerType), centerType, "")
 	showDetectors = ParamIsDefault(showDetectors) ? NaN : showDetectors
 	showDetectors = numtype(showDetectors) ? 1 : !(!showDetectors)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	if (exists("MakeStereo")!=6)
 		print "Loading Stereographic package"
 		Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.83";Execute/P "COMPILEPROCEDURES "
 		return 1
 	endif
-	Variable printIt=0
 	if (!WaveExists(FullPeakIndexed))
 		String wList=WaveListClass("IndexedPeakList*","*","")
 		String wName=StringFromList(0,wList)
@@ -7284,7 +7291,6 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetector
 		pattern -= 1
 		printIt = 1
 	endif
-	printIt = printIt || ((ItemsInList(GetRTStackInfo(0))<2) || stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 
 	Make/N=3/O/D/FREE vec
 	Make/N=(3,3)/O/D/FREE RL
@@ -7796,11 +7802,11 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 //		NewImageGraph($"",withButtons=1)
 //		Graph_imageMake($"",1)
 	elseif (stringmatch(ctrlName,"buttonMakeMask") && strlen(WaveListClass("speImage;rawImage*","*","DIMS:2")))
-		MakeMaskThreshold($"",NaN)
+		MakeMaskThreshold($"",NaN,printIt=1)
 	elseif (stringmatch(ctrlName,"buttonEditMask") && strlen(WaveListClass("imageMask*","*","DIMS:2,BYTE:1,UNSIGNED:1")))
 		MakeMask($"")
 	elseif (stringmatch(ctrlName,"buttonBkgRemove") && strlen(WaveListClass("speImage;rawImage","*","DIMS:2")))
-		RemoveBackgroundImage($"",NaN)
+		RemoveBackgroundImage($"",NaN,printIt=1)
 	elseif (stringmatch(ctrlName,"buttonFitPeaks") && strlen(WaveListClass("speImage*;rawImage*","*","DIMS:2")))
 		// FitPeaks($"",NaN,NaN)
 		//		FunctionList("FitPeak*",";" , "WIN:[Indexing]")
@@ -7809,19 +7815,19 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		endif
 		SVAR fitPeakFuncLast = root:Packages:micro:PeakFit:fitPeakFuncLast
 		String fitPeakFunc=fitPeakFuncLast
-		Prompt fitPeakFunc,"peak fitting method",popup,"FitPeaksWithExternal;FitPeaksWithSeedFill;FitPeaks;FitPeaksNew;FitPeaksStepWise;FitPeaksFast"
+		Prompt fitPeakFunc,"peak fitting method",popup,"FitPeaksWithExternal;FitPeaksWithSeedFill;FitPeaks;FitPeaksNew;FitPeaksStepWise"
 		DoPrompt "Peak Fit",fitPeakFunc
 		if (!V_flag)
 			if (stringmatch(fitPeakFunc,"FitPeaks"))
-				FitPeaks($"",NaN,NaN)
+				FitPeaks($"",NaN,NaN,printIt=1)
 			elseif (stringmatch(fitPeakFunc,"FitPeaksNew"))
-				FitPeaksNew($"",NaN,NaN)
+				FitPeaksNew($"",NaN,NaN,printIt=1)
 			elseif (stringmatch(fitPeakFunc,"FitPeaksStepWise"))
-				FitPeaksStepWise($"",NaN,NaN,NaN,NaN)
+				FitPeaksStepWise($"",NaN,NaN,NaN,NaN,printIt=1)
 			elseif (stringmatch(fitPeakFunc,"FitPeaksWithSeedFill"))
-				FitPeaksWithSeedFill($"",NaN,NaN,NaN,NaN)
+				FitPeaksWithSeedFill($"",NaN,NaN,NaN,NaN,printIt=1)
 			elseif (stringmatch(fitPeakFunc,"FitPeaksWithExternal"))
-				FitPeaksWithExternal($"",NaN,NaN,NaN,NaN)
+				FitPeaksWithExternal($"",NaN,NaN,NaN,NaN,printIt=1)
 			endif
 			fitPeakFuncLast = fitPeakFunc
 		endif
@@ -7839,7 +7845,7 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 		DeviatoricStrainRefine(NaN,"",printit=1)
 #endif
 	elseif (stringmatch(ctrlName,"buttonStereographic"))
-		StereoOfIndexedPattern($"",NaN)
+		StereoOfIndexedPattern($"",NaN,printIt=1)
 		if (exists("MakeStereo")!=6)
 			Button buttonStereographic,win=$(B_Struct.win),title="Stereographic..."
 		endif
