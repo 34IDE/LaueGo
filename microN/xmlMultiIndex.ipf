@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.91
+#pragma version=1.92
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1694,7 +1694,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	Variable N = DimSize(imageNames,0)
 	if (numtype(m) || m<0 || m>=N)
 		m = 1
-		Prompt m,"point index from xml file [0,"+num2str(N)+"]"
+		Prompt m,"point index from xml file [0,"+num2str(N-1)+"]"
 		DoPrompt "index",m
 		if (V_flag)
 			return ""
