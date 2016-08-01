@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.08
+#pragma version = 4.09
 // #pragma hide = 1
 
 Menu "Graph"
@@ -89,7 +89,7 @@ strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
-//		use stip above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
+//		use funcions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
 //		StopAllTimers(), stops all the Igor timers
@@ -202,29 +202,6 @@ Function/S MenuItemsWaveClassOnGraph(item,classes,graphName,[csr])
 	endfor
 	return "("+item						// top graph does not contain a wave of desired class
 End
-//Function/S MenuItemsWaveClassOnGraph(item,classes,graphName)
-//	String item					// item name to return, or "(item" to disable
-//	String classes					// list of classes to check for (semi-colon separated)
-//	String graphName				// name of graph, use "" for top graph
-//
-//	Variable i
-//	String list = imageNameList("",";")	// first check the images
-//	for (i=0;i<ItemsInList(list);i+=1)
-//		Wave ww = ImageNameToWaveRef(graphName, StringFromList(i,list))
-//		if (WaveInClass(ww,classes))
-//			return item
-//		endif
-//	endfor
-//
-//	list = TraceNameList("",";",3)		// second check ordinary traces and contours
-//	for (i=0;i<ItemsInList(list);i+=1)
-//		Wave ww = TraceNameToWaveRef(graphName, StringFromList(i,list))
-//		if (WaveInClass(ww,classes))
-//			return item
-//		endif
-//	endfor
-//	return "("+item						// top graph does not contain a wave of desired class
-//End
 
 
 // This is for when we want to check if any folder under the current folder contains wave with a certain class
@@ -266,13 +243,6 @@ Function/S MenuItemIfWindowHidden(item,win)		// Shows menu item if win NOT prese
 	GetWindow/Z $win, hide
 	return SelectString(V_flag,"(","")+item
 End
-//Function/S MenuItemIfWindowAbsent(item,win)		// Shows menu item if win NOT present
-//	String item
-//	String win
-//
-//	GetWindow/Z $win, hide
-//	return SelectString(V_flag,"(","")+item
-//End
 
 // only show menu item when a single specific wave exists
 Function/S MenuItemIfWaveExists(item,wname)
@@ -1286,86 +1256,6 @@ Static Function CountProgressWindows()			// returns number of open ProgressWindo
 	endfor
 	return N
 End
-
-
-//Function/T ProgressPanelStart(percentName,[stop,showTime])	// display a progress bar
-////	if the user does a "DoUpdate/W=$wname", then V_flag will be set to 2 if the stop button was pushed
-//	String percentName									// name of global value to use, if not a global variable then set value to 0
-//	Variable stop											// if true, include a stop button
-//	Variable showTime									// if true, include the ending time on panel
-//	stop = ParamIsDefault(stop) ? 0 : stop
-//	stop = NumberByKey("IGORVERS",IgorInfo(0))>=6.10 ? stop : 0	// stop feature requires version 6.10 or above
-//	showTime = ParamIsDefault(showTime) ? 0 : showTime
-//
-//	Variable right = stop ? 695 : 630,  bottom = showTime ? 137 : 117
-//	NewPanel/K=1/W=(330,87,right,bottom)/N=Progress
-//	String wname = S_name								// save the name of the window
-//	ValDisplay progressValdisp, win=$wname, pos={5,5},size={288,25},font="Helvetica",fSize=18,format="%d%%"
-//	ValDisplay progressValdisp, win=$wname, limits={0,100,0},barmisc={0,50},highColor= (19368,32650,65196)
-//	if (exists(percentName)==2)						// the global exists, use it
-//		NVAR percent = $percentName
-//		percent = limit(percent,0,100)
-//		ValDisplay progressValdisp,win=$wname, value= #percentName
-//	else													// no global, just set to zero
-//		ValDisplay progressValdisp,win=$wname, value= #"0"
-//	endif
-//
-//	if (stop)
-//		Button stopButton,pos={299,4},size={50,20},title="Break"
-//	endif
-//	if (showTime)
-//		TitleBox timeTitle,pos={1,29},size={213,16},fSize=12,frame=0,title=" "
-//	endif
-//#if NumberByKey("IGORVERS",IgorInfo(0))>=6.10
-//	DoUpdate/W=$wname/E=1							// mark as a progress window
-//#else
-//	DoUpdate
-//#endif
-//
-//	String str = num2istr(DateTime)
-//	SetWindow $wname userdata(startTimeSec)=str
-//	SetWindow $wname userdata(lastTimeSec)=str		// last time updated
-//	SetWindow $wname userdata(showTime)=num2istr(showTime)
-//	SetWindow $wname userdata(stop)=num2istr(stop)
-//	SetWindow $wname userdata(percent)=num2str(percent)
-//	return wname
-//End
-////
-//Function ProgressPanelUpdate(wname,percent)		// update a progress bar
-//	String wname											// window name
-//	Variable percent										// percent done (% !!)
-//
-//	ValDisplay progressValdisp,win=$wname, value= #num2istr(floor(limit(percent,0,100)))
-//	Variable showTime = str2num(GetUserData(wname,"","showTime"))
-//	if (showTime && percent>0)
-//		Variable start = str2num(GetUserData(wname,"","startTimeSec"))
-//		Variable last = str2num(GetUserData(wname,"","lastTimeSec"))
-//		Variable now = DateTime
-//		if (now-last > 2)
-//			Variable remain = (now-start) * (100-percent)/percent
-//			String str
-//			if (remain < 5*60)							// under 10 min
-//				sprintf str, "should end in %s,   at    %s",Secs2Time(remain,5),Secs2Time(now+remain,1)
-//			else
-//				sprintf str, "should end in %s,   at    %s",Secs2Time(remain,4),Secs2Time(now+remain,0)
-//			endif
-//			str += SelectString(remain > 24*3600,"","  on  "+Secs2Date(now+remain,2))	// more than 1 day
-//			TitleBox timeTitle,title=str
-//			SetWindow $wname userdata(lastTimeSec)=num2istr(now)	// last time updated, is now
-//		endif
-//	endif
-//
-//	Variable done=0
-//#if NumberByKey("IGORVERS",IgorInfo(0))>=6.10
-//	DoUpdate/W=$wname									// update only progress window
-//	done = V_Flag == 2									// stop button on progress window was pushed
-//#else
-//	DoUpdate												// update all windows, no stop button
-//#endif
-//	return done
-//End
-//
-
 //Function testProgress()
 //	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="starting")	// display a progress bar
 //	Variable i,N=300
@@ -2606,15 +2496,6 @@ ThreadSafe Function monotonic(a,[printIt])
 	WaveStats/M=1/Q delta
 	return !(V_min<0 || V_numNans)
 End
-//	Variable n=numpnts(a)
-//	Variable i=1
-//	do
-//		if (a[i-1]>a[i])
-//			return 0
-//		endif
-//		i += 1
-//	while (i<n)
-//	return 1
 
 
 ThreadSafe Function isWaveConstant(wav,[places,checkCase])
@@ -3067,12 +2948,6 @@ ThreadSafe Function normalize(a)	// normalize a and return the initial magnitude
 	endif
 	return norm_a
 End
-//Function normalize(a)	// normalize a and return the initial magnitude
-//	Wave a
-//	Variable norm_a = norm(a)
-//	a /= norm_a
-//	return norm_a
-//End
 
 
 
@@ -3148,35 +3023,6 @@ Function/S GetCursorRangeFromGraph(gName)
 	out = ReplaceNumberByKey("xHi",out,xHi,"=")
 	return out
 End
-//Function/C GetCursorRangeFromGraph(gName,Xvals)
-//	String gName				// name of graph, use "" for top graph
-//	Variable Xvals				// True=Xvalues, False=Point values
-//
-//	String infoA=CsrInfo(A,gName), infoB=CsrInfo(B,gName)
-//	if (strlen(infoA)<1 || strlen(infoB)<1)
-//		return cmplx(NaN,NaN)
-//	endif
-//
-//	Variable lo,hi				// the output values
-//
-//	if (Xvals)
-//		lo = hcsr(A,gName)
-//		hi = hcsr(B,gName)
-//	else
-//		lo = pcsr(A,gName)
-//		hi = pcsr(B,gName)
-//	endif
-//	if (numtype(lo+hi))
-//		return cmplx(NaN,NaN)
-//	endif
-//
-//	if (lo>hi)					// in case order is reversed
-//		Variable swap=lo
-//		lo = hi
-//		hi = swap
-//	endif
-//	return cmplx(lo,hi)
-//End
 
 
 // These next three functions convert Igor Peak fitting parameters to useful numbers
@@ -3432,7 +3278,7 @@ End
 
 
 
-// Theese three funcitons are nicer than the TrimFrontBackWhiteSpace() functions that follow
+// These three funcitons are replacements for TrimFrontBackWhiteSpace() functions that are now DEPRECATED (see bottom of file)
 ThreadSafe Function/S TrimBoth(str,[chars,ignoreCase])
 	String str					// string to process
 	String chars				// a set of characters to strip, defaults to white space if not given
@@ -3483,34 +3329,7 @@ ThreadSafe Function/S TrimEnd(str,[chars,ignoreCase])		// remove specified trail
 	return str[0,i]
 End
 //
-//	DEPRECATED,  use the above three TrimBoth, TrimEnd, & TrimFront instead
-//
-//		These three functions have been moved here from from LoadJZTtaggedData.ipf, BeamProcedures, LoadEPICSscans.ipf, and oldJZTdataLoad.ipf.
-//			spec.ipf uses its own version of these so it is stand-alone
-//
-ThreadSafe Function/T TrimFrontBackWhiteSpace(str)
-	String str
-	str = TrimLeadingWhiteSpace(str)
-	str = TrimTrailingWhiteSpace(str)
-	return str
-End
-//
-ThreadSafe Function/T TrimLeadingWhiteSpace(str)
-	String str
-	Variable i, N=strlen(str)
-	for (i=0;char2num(str[i])<=32 && i<N;i+=1)	// find first non-white space
-	endfor
-	return str[i,Inf]
-End
-//
-ThreadSafe Function/T TrimTrailingWhiteSpace(str)
-	String str
-	Variable i
-	for (i=strlen(str)-1; char2num(str[i])<=32 && i>=0; i-=1)	// find last non-white space
-	endfor
-	return str[0,i]
-End
-
+//	DEPRECATED, the old functions: TrimFrontBackWhiteSpace(), TrimLeadingWhiteSpace(), and TrimTrailingWhiteSpace() are DEPRECATED
 
 
 ThreadSafe Function/T IgorFileTypeString(itype)		// string associated with NUMTYPE from WaveInfo() function, or a WaveType() function
@@ -5560,6 +5379,36 @@ End
 //		endfor
 //	return 0
 //End
+
+
+//	DEPRECATED,  use the above three TrimBoth, TrimEnd, & TrimFront instead
+//
+//		These three functions have been moved here from from LoadJZTtaggedData.ipf, BeamProcedures, LoadEPICSscans.ipf, and oldJZTdataLoad.ipf.
+//			spec.ipf uses its own version of these so it is stand-alone
+//
+ThreadSafe Function/T TrimFrontBackWhiteSpace(str)
+	String str
+	str = TrimLeadingWhiteSpace(str)
+	str = TrimTrailingWhiteSpace(str)
+	return str
+End
+//
+ThreadSafe Function/T TrimLeadingWhiteSpace(str)
+	String str
+	Variable i, N=strlen(str)
+	for (i=0;char2num(str[i])<=32 && i<N;i+=1)	// find first non-white space
+	endfor
+	return str[i,Inf]
+End
+//
+ThreadSafe Function/T TrimTrailingWhiteSpace(str)
+	String str
+	Variable i
+	for (i=strlen(str)-1; char2num(str[i])<=32 && i>=0; i-=1)	// find last non-white space
+	endfor
+	return str[0,i]
+End
+
 
 ThreadSafe Function compareWaves(a,b)		// DEPRECATED,  just use EqualWaves(a,b,1)
 	WAVE a,b
