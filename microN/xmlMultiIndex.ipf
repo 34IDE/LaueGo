@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.93
+#pragma version=1.94
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1329,10 +1329,11 @@ End
 // *****************************************************************************************
 // *********************************  Start of Histograms **********************************
 
-Static Function HistogramOf3dArray(w3d,[,normType,visible])
-	Wave w3d
+Static Function HistogramOf3dArray(w3d,[normType,visible,tight])
+	Wave w3d						// a 3D array of values (NOT a list of values attached to xyz triplets)
 	String normType			// must be "peak" or "area" or "integral" or "none"  (integral and area are the same)
 	Wave visible				// flag for each point indicating which points to use (1=use, 0=ignore)
+	Variable tight				// make the volume of points tighter (default is NOT tight)
 	if (ParamIsDefault(visible))
 		Wave visible=$""
 	endif
@@ -1343,6 +1344,8 @@ Static Function HistogramOf3dArray(w3d,[,normType,visible])
 	endif
 	normType = SelectString(ParamIsDefault(normType),normType,"")
 	normType = LowerStr(normType)
+	tight = ParamIsDefault(tight) || numtype(tight) ? 0 : tight
+
 	Variable askNorm = !stringmatch(normType,"peak") && !stringmatch(normType,"area") && !stringmatch(normType,"integral") && !stringmatch(normType,"*none*")
 	if (!WaveExists(w3d) || askVisible || askNorm)
 		String wList = WaveListClass("Interpolated3dArrays","*",""), wName
@@ -1393,18 +1396,27 @@ Static Function HistogramOf3dArray(w3d,[,normType,visible])
 	Variable Nmax=V_npnts							// maximum possible number of points in the histogram
 	Make/N=(Nmax)/FREE values=NaN				// will hold values to be histogramed
 	Variable Nx=DimSize(w3d,0),Ny=DimSize(w3d,1), Nz=DimSize(w3d,2), xStart,yStart,zStart
-	Nx = numtype(xhi) ? Nx : min(Nx,ceil((xhi-x0)/dx))	// sets volume to loop over
-	xStart = numtype(xlo) ? 0 : max(0,floor((xlo-x0)/dx))
-	Ny = numtype(yhi) ? Ny : min(Ny,ceil((yhi-y0)/dy))
-	yStart = numtype(ylo) ? 0 : max(0,floor((ylo-y0)/dy))
-	Nz = numtype(zhi) ? Nz : min(Nz,ceil((zhi-z0)/dz))
-	zStart = numtype(zlo) ? 0 : max(0,floor((zlo-z0)/dz))
+	if (tight)
+		xStart = numtype(xlo) ? 0 : max(0,ceil((xlo-x0)/dx))// sets volume to loop over, NEW
+		Nx = numtype(xhi) ? Nx : min(Nx,floor(xhi-x0)/dx+1)
+		yStart = numtype(ylo) ? 0 : max(0,ceil((ylo-y0)/dy))
+		Ny = numtype(yhi) ? Ny : min(Ny,floor(yhi-y0)/dy+1)
+		zStart = numtype(zlo) ? 0 : max(0,ceil((zlo-z0)/dz))
+		Nz = numtype(zhi) ? Nz : min(Nz,floor(zhi-z0)/dz+1)
+	else
+		Nx = numtype(xhi) ? Nx : min(Nx,ceil((xhi-x0)/dx))	// sets volume to loop over, OLD & default
+		xStart = numtype(xlo) ? 0 : max(0,floor((xlo-x0)/dx))
+		Ny = numtype(yhi) ? Ny : min(Ny,ceil((yhi-y0)/dy))
+		yStart = numtype(ylo) ? 0 : max(0,floor((ylo-y0)/dy))
+		Nz = numtype(zhi) ? Nz : min(Nz,ceil((zhi-z0)/dz))
+		zStart = numtype(zlo) ? 0 : max(0,floor((zlo-z0)/dz))
+	endif
 	Variable ix,iy,iz, N, val
 	for(iz=zStart,N=0;iz<Nz;iz+=1)				// loop over all points in w3d
 		for(iy=yStart;iy<Ny;iy+=1)
 			for(ix=xStart;ix<Nx;ix+=1)
 				val = w3d[ix][iy][iz]
-				if (numtype(val)==0)				// only histogram good values
+				if (numtype(val)==0)				// only histogram valid values
 					values[N] = val
 					N += 1
 				endif
@@ -1416,7 +1428,7 @@ Static Function HistogramOf3dArray(w3d,[,normType,visible])
 	String units=""
 	if (stringmatch(NameOfWave(w3d),"R3*"))
 		values = 2*atan(values) * 180/PI					// convert Rodriques vectors to degrees
-		units = "¡"
+		units = DEGREESIGN
 	elseif (stringmatch(NameOfWave(w3d),"GND*"))
 		units = "dislocations/cm\S2\M"
 	endif
@@ -1435,8 +1447,8 @@ Static Function HistogramOf3dArray(w3d,[,normType,visible])
 	Variable maxmax=max(abs(V_min),abs(V_max)), bipolar=(V_min<0)
 	SetScale/I x, (bipolar ? -maxmax : 0), maxmax,units, Hout
 	Histogram/B=2 values, Hout
-	Variable PeakValue=WaveMax(Hout)					// normalize to a peak value of 1
-	Variable Harea=area(Hout)
+	Variable PeakValue=WaveMax(Hout)					// used to normalize to a peak value of 1
+	Variable Harea=area(Hout)					// used to normalize to an area of 1
 	Variable Hnorm=1
 	if (stringmatch(normType,"peak"))
 		Hnorm = PeakValue
@@ -1460,9 +1472,9 @@ Static Function HistogramOf3dArray(w3d,[,normType,visible])
 	Hnote = ReplaceStringByKey("normType",Hnote,normType,"=")
 	Note/K Hout, Hnote
 
-	printf "Histogramed values from '%s' into '%s'\r",NameOfWave(w3d), hName
+	printf "Histogramed values from '%s' into '%s',  used %g points\r",NameOfWave(w3d), hName, N
 	if ((numtype(xlo)+numtype(xhi) + numtype(ylo)+numtype(yhi) + numtype(zlo)+numtype(zhi))<6)
-		printf "   Only using points in volume (%g, %g)  (%g, %g)  (%g, %g)%s\r",xlo,xhi, ylo,yhi, zlo,zhi,WaveUnits(w3d,0)
+		printf "   Only using points in volume (%g, %g)  (%g, %g)  (%g, %g)%s,   size = (%g x %g x %g)%s\r",xlo,xhi, ylo,yhi, zlo,zhi,WaveUnits(w3d,0),xhi-xlo,yhi-ylo,zhi-zlo,WaveUnits(w3d,0)
 	endif
 	DisplayHistogramFrom3d(Hout)
 	return 0

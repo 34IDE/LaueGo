@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.63	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.64	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -276,6 +276,9 @@ Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
 //	look in more places when finding the cylindrical coordinate axis & center
 //
 // Nov 11, 2014,  version 2.61
+//	changed SlicePlaneIn3d() so that the phiZ slice works with cylindrical too.
+//
+// Aug 15, 2016,  version 2.64
 //	changed SlicePlaneIn3d() so that the phiZ slice works with cylindrical too.
 
 // modified read3dRecipLatticesFile() to deal with multiple reference matricies
@@ -2669,7 +2672,7 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	SetScale d 0,0,SliceWaveUnit, sliceWave
 
 	// next fill the sliceWave
-	Variable i,j, xx,yy, angle, GND, magGrad, peakIntensity
+	Variable i,j, xx,yy, angle, GND, alphaij, magGrad, peakIntensity
 	Make/N=3/FREE/D gradR
 	for (j=0;j<nsy;j+=1)
 		yy = DimOffset(sliceWave,1) + j*DimDelta(sliceWave,1)
@@ -2742,13 +2745,15 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 				else
 					Wave alpha = dislocationTensorFromRods3d(xhf[0],xhf[1],xhf[2],exx3d,eyy3d,ezz3d,exy3d,exz3d,eyz3d,kappa)
 				endif
-				GND = NumberByKey("GND", note(alpha),"=")
-				sliceWave[i][j] = (i0<0 || j0<0) ? GND : alpha[i0][j0]	// component of alpha(i0,j0) or GND
+				GND = WaveExists(alpha) ? NumberByKey("GND", note(alpha),"=") : NaN
+				alphaij = WaveExists(alpha) ? alpha[i0][j0] : NaN
+				sliceWave[i][j] = (i0<0 || j0<0) ? GND : alphaij	// component of alpha(i0,j0) or GND
 
 			elseif (ctensor)															// kappa, a lattice curvature tensor component
 				Wave kappa = curvatureTensorFromRods3d(xhf[0],xhf[1],xhf[2],R3dX,R3dH,R3dF) // this GND assumes no strain
 				GND = NumberByKey("GND", note(kappa),"=")
 				sliceWave[i][j] = (i0<0 || j0<0) ? GND : kappa[i0][j0]	// component of kappa(i0,j0) or GND (GND, without strain part)
+
 			elseif (strain)
 				sliceWave[i][j] = Interp3d(e3d, xhf[0],xhf[1],xhf[2])
 
