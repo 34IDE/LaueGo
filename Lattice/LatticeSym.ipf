@@ -1,10 +1,11 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.18
+#pragma version = 5.19
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
+//	#define DO_HEXAGONAL_EXTRA							// If this is used, then Hex & Trigonal F's are too big
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
@@ -141,6 +142,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.16, added print_crystalStructStr()
 //	with version 5.17, ARING should be "\201",  NOT "\305"
 //	with version 5.18, structureTitle, now adjusts font size to show all of the string
+//	with version 5.19, added DO_HEXAGONAL_EXTRA, Fstruct was too big by factor of 2
 
 // Rhombohedral Transformation:
 //
@@ -4264,7 +4266,7 @@ End
 
 
 Function/C Fstruct(xtal,h,k,l,[keV,T_K])
-	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
+	STRUCT crystalStructure &xtal				// sruct defining the crystal, not changed here
 	Variable h,k,l
 	Variable keV
 	Variable T_K										// Temperature (K), used to calculate Debye-Waller factor
@@ -4386,9 +4388,10 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		Fc += Fcm[0]										// accumulate for this atom
 	endfor
 
-	Variable Fr, Fi, arg
+	Variable Fr, Fi
+#ifdef DO_HEXAGONAL_EXTRA
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
-		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
+		Variable arg = 2*PI*((h+2*k)/3 + l*0.5)	// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
 		Fr = 1. + cos(arg)
 		Fi = sin(arg)
 		Variable rr=real(Fc), ii=imag(Fc)
@@ -4399,6 +4402,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		//	h+2k=3n±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
+#endif
 
 	Fr = abs(real(Fc))<1e-8 ? 0 : real(Fc)		// set tiny values to zero
 	Fi = abs(imag(Fc))<1e-8 ? 0 : imag(Fc)
@@ -4652,7 +4656,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
 
-	Variable fatomMag, m, Fr, Fi
+	Variable fatomMag, m
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
 	Make/N=3/D/FREE hkl={h,k,l}
@@ -4671,8 +4675,9 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		endif
 	endfor
 
+#ifdef DO_HEXAGONAL_EXTRA
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
-		Variable arg
+		Variable arg, Fr, Fi
 		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
 		Fr = 1. + cos(arg)
 		Fi = sin(arg)
@@ -4684,6 +4689,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		//	h+2k=3n±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
+#endif
 
 	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
 End

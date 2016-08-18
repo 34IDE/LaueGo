@@ -4,9 +4,9 @@
 	<chemical_name_common>ZnO crystal (hexagonal axis)</chemical_name_common>
 	<space_group_IT_number>186</space_group_IT_number>
 	<cell>
-		<a unit="nm">0.3251</a>
-		<b unit="nm">0.3251</b>
-		<c unit="nm">0.5209</c>
+		<a unit="nm">0.32494</a>
+		<b unit="nm">0.32494</b>
+		<c unit="nm">0.52038</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
@@ -16,13 +16,13 @@
 		<symbol>Zn</symbol>
 		<fract_x>0.33333</fract_x>
 		<fract_y>0.66667</fract_y>
-		<fract_z>0.75</fract_z>
+		<fract_z>0</fract_z>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_x>0.66667</fract_x>
-		<fract_y>0.33333</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract_x>0.33333</fract_x>
+		<fract_y>0.66667</fract_y>
+		<fract_z>0.3821</fract_z>
 	</atom_site>
 </cif>

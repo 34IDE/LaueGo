@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Hematite (Fe2O3) Rhom</chemical_name_common>
+	<space_group_IT_number>167</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.54268</a>
+		<b unit="nm">0.54268</b>
+		<c unit="nm">0.54268</c>
+		<alpha>55.2842346</alpha>
+		<beta>55.2842346</beta>
+		<gamma>55.2842346</gamma>
+	</cell>
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract_xyz0.35522 0.35522 0.35522</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<!--   <fract_xyz>0.69395 0 0.25</fract_xyz>	x, -x + 1/2, 1/4 -->
+		<fract_xyz>0.135379 0.64203 0.310888</fract_xyz>
+		<!--   <fract_xyz>0.135379 0.364621 0.25</fract_xyz> -->
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+	<citation>Maslen E N, Streltsov V A, Streltsova N R, Ishizawa N, Acta Crystallographica B50 (1994) 435-441
+	_database_code_amcsd 0017806
+	</citation>
+</cif>
