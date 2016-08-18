@@ -14,15 +14,14 @@
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
-		<fract_xyz0.35522 0.35522 0.35522</fract_xyz>
+		<fract_xyz>0.35522 0.35522 0.35522</fract_xyz>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<!--   <fract_xyz>0.69395 0 0.25</fract_xyz>	x, -x + 1/2, 1/4 -->
-		<fract_xyz>0.135379 0.64203 0.310888</fract_xyz>
-		<!--   <fract_xyz>0.135379 0.364621 0.25</fract_xyz> -->
+		<fract_xyz>0.9567 0.94395 0.84935</fract_xyz>
+		<!--   x, -x + 1/2, 1/4 -->
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
 	<citation>Maslen E N, Streltsov V A, Streltsova N R, Ishizawa N, Acta Crystallographica B50 (1994) 435-441
