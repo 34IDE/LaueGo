@@ -20,8 +20,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.9567 0.94395 0.84935</fract_xyz>
-		<!--   x, -x + 1/2, 1/4 -->
+		<fract_xyz>0.94395 0.55605 0.25</fract_xyz>
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
 	<citation>Maslen E N, Streltsov V A, Streltsova N R, Ishizawa N, Acta Crystallographica B50 (1994) 435-441
