@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma ModuleName=LatticeSym
-#pragma version = 5.19
+#pragma version = 5.20
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -143,6 +143,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.17, ARING should be "\201",  NOT "\305"
 //	with version 5.18, structureTitle, now adjusts font size to show all of the string
 //	with version 5.19, added DO_HEXAGONAL_EXTRA, Fstruct was too big by factor of 2
+//	with version 5.20, added muOfXtal() and get_muOfXtal(), MenuItemIfCromerPresent(), and Hex2RhomFractionalFractonal()
 
 // Rhombohedral Transformation:
 //
@@ -188,6 +189,8 @@ Menu "Analysis"
 		help={"show d-spacing for the hkl reflection"}
 		"Fstructure [hkl]", /Q ,getFstruct(NaN,NaN,NaN)
 		help={"Crude Structure Factor using current lattice"}
+		LatticeSym#MenuItemIfCromerPresent("calculate mu..."), get_muOfXtal(NaN)
+		help={"Calculate mu (absorption factor) using current lattice structure"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
 		"\\M0Space Group number <--> symmetry",symmtry2SG("")
@@ -214,6 +217,9 @@ Static Constant hbar = 6.58211928e-16		// reduced Plank constant (eV - sec)
 Static Constant kB = 8.6173324e-5			// Boltzman constant (eV / K)
 Static Constant c = 299792458				// speed of light (m/sec)
 
+Static Constant hc_keVnm = 1.2398419739		// h*c (keV-nm),  these two used to calculate mu in muOfXtal
+Static Constant re_nm = 2.8179403227e-06	// Thompson radius (nm)
+
 #if (IgorVersion()<7)
 	strConstant DEGREESIGN = "\241"			// option-shift-8
 	strConstant BULLET = "\245"				// option-8
@@ -229,6 +235,13 @@ Static Constant c = 299792458				// speed of light (m/sec)
 	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
 	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
 #endif
+
+Static Function/S MenuItemIfCromerPresent(item)		// Shows menu item if CromerLiberman is present
+	String item			// the string that appears in the menu
+	Variable present = strlen(WinList("CromerLiberman.ipf","","WIN:129"))>0
+	return SelectString(present,"(","")+item
+End
+
 
 // =========================================================================
 // =========================================================================
@@ -4480,7 +4493,67 @@ Static Function PhiIntegrand(xx)		// this function should never be called with x
 	Variable xx
 	return xx>0 ? xx/(exp(xx)-1) : 1
 End
+
+
+// to calculate mu, you need the CromerLiberman file
+Function get_muOfXtal(keV, [printIt])					// returns mu of xtal (1/micron)
+	Variable keV
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (strlen(WinList("CromerLiberman.ipf","","WIN:129"))<1)
+		print "You must include the CromerLiberman.ipf to calculate mu"
+		return NaN
+	endif
+
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
+		DoAlert 0, "ERROR findClosestHKL()\rno lattice structure found"
+		return NaN
+	endif
+
+	if (numtype(keV) || keV<=0)
+		keV = 10
+		Prompt keV, "x-ray energy (keV)"
+		DoPrompt "keV", keV
+		if (V_flag)
+			return NaN
+		endif
+		printIt = 1
+	endif
+	if (printIt)
+		printf "get_muOfXtal(%g)\r", keV
+	endif
+
+	Variable mu = muOfXtal(xtal, keV)		// returns mu of xtal (1/micron)
+	if (printIt)
+		printf  "   mu['%s', %g keV] = %g (1/µm)  -->  absorption length %g (micron)\r",xtal.desc,keV,mu,1/mu
+	endif
+	return mu
+End
 //
+Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
+	STRUCT crystalStructure &xtal
+	Variable keV
+	if (numtype(keV) || keV<=0)
+		return NaN
+	endif
+
+	//	Variable numDensity = 1/Vc
+	// f' = sigma / (2 * re * lambda)
+	// sigma = f' * (2 * re * lambda)
+	// sigma = mu/n = mu*Vc		// 1/V = number density
+	// mu = 2*re*lambda*f' / Vc
+	Variable Fpp = imag(Fstruct(xtal,0,0,0,keV=keV))
+	if (Fpp<=0)
+		return NaN
+	endif
+
+	Variable mu = 2*re_nm*(hc_keVnm/keV)*Fpp / (xtal.Vc)
+	mu *= 1000			// convert 1/nm --> 1/µm
+	return mu
+End
+
+
 ThreadSafe Static Function Element_amu(Z)
 	Variable Z
 	String amuList
@@ -5362,6 +5435,36 @@ ThreadSafe Function/C Rhom2Hex(aR,alpha)		// convert lattice constants
 	aH  = sqrt( (3*aR)^2/(ca2 + 3) )
 	cH = aH*sqrt(ca2)
 	return cmplx(aH,cH)
+End
+
+
+// This is just a demonstration, change it to make it useful
+Static Function Hex2RhomFractionalFractonal()	// converts hexagonal --> rhombohedral, fractional coordinates
+	STRUCT crystalStructure xtal
+	FillCrystalStructDefault(xtal)
+	Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
+
+	Variable/C a_alpha = Hex2Rhom(xtal.a, xtal.c)
+	printf "aRhom = %g nm,   alphaRhom = %g°\r",real(a_alpha), imag(a_alpha)
+
+	Make/N=(3,3)/D/FREE H2Ctrans = {{2,1,1}, {-1,1,1}, {-1,-2,1}}
+	H2Ctrans /= 3
+	MatrixOP/FREE directR = directH x H2Ctrans	// Obverse Rhombohedral direct lattice from Hexagonal
+
+	Make/N=3/D/FREE xyzH								// fractional hexagonal coordinates
+	xyzH = {xtal.atom[0].x, xtal.atom[0].y, xtal.atom[0].z}
+	MatrixOP/FREE xyzR = Inv(directR) x directH x xyzH
+	xyzR = mod(xyzR[p]+2,1)							// fractional rhombohedral coordinates
+	printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
+
+	xyzH = {xtal.atom[1].x, xtal.atom[1].y, xtal.atom[1].z}
+	MatrixOP/FREE xyzR = Inv(directR) x directH x xyzH
+	xyzR = mod(xyzR[p]+2,1)
+	printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
+
+	// 	to convert back the other way
+	//	MatrixOP/FREE directH = directR x Inv(H2Ctrans)	// Obverse Rhombohedral direct lattice from Hexagonal
+	//	MatrixOP/FREE xyzH = Inv(directH) x directR x xyzR
 End
 
 
