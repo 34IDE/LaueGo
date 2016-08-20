@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.21
+#pragma version = 5.22
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -4354,12 +4354,12 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	if (!(xtal.N>=1))
 		return cmplx(1,0)
 	endif
+	FUNCREF Get_f_proto fa = $"Get_f"				// if Get_f() does not exist, then Get_f_proto() will be used
 
 	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
 		name="root:Packages:Lattices:atom"+num2istr(m)
 		valence = numtype(xtal.atom[m].valence) ? 0 : xtal.atom[m].valence
 		Wave ww = $name
-		FUNCREF Get_f_proto fa= $"Get_f"			// if Get_f() does not exist, then Get_f_proto() will be used
 		if (valence==0 )
 			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Qmag/10, keV)
 		else
@@ -4508,7 +4508,7 @@ Function get_muOfXtal(keV, [printIt])					// returns mu of xtal (1/micron)
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
-		DoAlert 0, "ERROR findClosestHKL()\rno lattice structure found"
+		DoAlert 0, "ERROR get_muOfXtal()\rno lattice structure found"
 		return NaN
 	endif
 
@@ -4535,23 +4535,27 @@ End
 Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 	STRUCT crystalStructure &xtal
 	Variable keV
-	if (numtype(keV) || keV<=0)
+
+	FUNCREF Get_f_proto fa = $"Get_f"	// if Get_f() does not exist, then cannot calc mu
+	if (numtype(keV) || keV<=0 || NumberByKey("ISPROTO",FuncRefInfo(fa)))
+		return NaN								// return NaN if no Cromer or invalid energy
+	endif
+	// f" = sigma / (2 * re * lambda)
+	// sigma = f" * (2 * re * lambda)
+	// sigma = mu/n = mu*Vc		// 1/Vc = n, number density
+	// mu = (2 * re * lambda * f") / Vc
+
+	Variable/C fatomC
+	Variable m, Fpp
+	for (m=0,Fpp=0; m<xtal.N; m+=1)		// loop over the defined atoms, accumulate f"
+		fatomC = fa(LatticeSym#Z2symbol(xtal.atom[m].Zatom),0, keV,valence=(xtal.atom[m].valence))
+		Fpp += imag(fatomC) * (xtal.atom[m].mult) * (xtal.atom[m].occ)
+	endfor
+	if (!(Fpp>=0))								// if Fpp is negative or NaN, then invalid
 		return NaN
 	endif
-
-	//	Variable numDensity = 1/Vc
-	// f' = sigma / (2 * re * lambda)
-	// sigma = f' * (2 * re * lambda)
-	// sigma = mu/n = mu*Vc		// 1/V = number density
-	// mu = 2*re*lambda*f' / Vc
-	Variable Fpp = imag(Fstruct(xtal,0,0,0,keV=keV))
-	if (Fpp<=0)
-		return NaN
-	endif
-
 	Variable mu = 2*re_nm*(hc_keVnm/keV)*Fpp / (xtal.Vc)
-	mu *= 1000			// convert 1/nm --> 1/µm
-	return mu
+	return (mu * 1000)						// convert mu from 1/nm --> 1/µm
 End
 
 
