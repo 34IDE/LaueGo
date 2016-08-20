@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Saturday, August 20, 2016" time="12:02:18 PM CDT" isoTime="2016-08-20T12:02:18"></written>
+	<written date="Saturday, August 20, 2016" time="04:55:14 PM CDT" isoTime="2016-08-20T16:55:14"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>8f6a4b207bd6f08efa49c266c5ca079d13b4da6b</gitHash>
+	<gitHash>44508cacecdfca680227b7ccde56bfa9468d6cc2</gitHash>
 	<fileCount>230</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -82,7 +82,7 @@
 	<file version="nan" time="2016-02-17T12:50:21" md5="6322fea572f91f50836f6c7434f46cee" sha256="3da51fb01e96429d9cb29ba7fb2d1c95a9411d43ccf55d20b36885f3ebcbe70a" ext=".xml">materials/standard xtals/Ag.xml</file>
 	<file version="nan" time="2016-02-17T12:51:09" md5="183c8e8c0e097872e115ac8a6c72e972" sha256="20aa8c7cbf1699df6f0724d56dec5e458cb2f8301e90d773c2de7c0a3ab8dd61" ext=".xml">materials/standard xtals/CdTe.xml</file>
 	<file version="nan" time="2016-02-17T12:54:11" md5="43c1c98b07ef8f1ac041f0c5ffac4129" sha256="ed3f6993d2d5d90bc384c85ad7f27565cabdefaff8c5dbad8f3e4fb5dbfc8f2a" ext=".xml">materials/standard xtals/Sn.xml</file>
-	<file version="5.22" time="2016-08-20T11:59:57" md5="779590f70ef42a648b22175cef46e6d8" sha256="dc6506e9122a7b798f4e5c1d8cd4a754e94215c887b3613d31f0989266a0fe67" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="5.23" time="2016-08-20T16:53:00" md5="7fc572dca5fa25b9110e133f646d3afa" sha256="072d8323d92ef1e74f373720cc331e94b95449e80bf9ffc56daa301e7319efcb" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="2.18" time="2016-04-12T14:55:00" md5="f3f896cbab812c14725bf0ac4633c3c8" sha256="564926d54a8ddfb264888e28a53d19ea321e490bee8f161a2e296a484f3255f7" ext=".ipf">General/Gizmo/GizmoMarkers.ipf</file>
 	<file version="nan" time="2013-11-21T13:44:26" md5="388c81e71a971fb4dd5c53304089aa48" sha256="418ab8556758b40aba34cbc92056ec10a620de115505e2bd68e9805be929f968" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" sha256="98f1c8c454a199ff6ee8d24fced76dea00d6d8a33bad14957640e1e8da441f5e" ext="">micro/Euler_ppc</file>
