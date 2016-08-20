@@ -1,6 +1,7 @@
-#pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
+#pragma TextEncoding = "MacRoman"
+#pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.20
+#pragma version = 5.21
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
