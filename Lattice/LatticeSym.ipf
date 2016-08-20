@@ -4411,8 +4411,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 		//  for hexagonal:
 		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3nÂ±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3nÂ±1,	l=even;		F = f			1/4
+		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+		//	h+2k=3n±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
 #endif
@@ -4526,7 +4526,7 @@ Function get_muOfXtal(keV, [printIt])					// returns mu of xtal (1/micron)
 
 	Variable mu = muOfXtal(xtal, keV)		// returns mu of xtal (1/micron)
 	if (printIt)
-		printf  "   mu['%s', %g keV] = %g (1/Âµm)  -->  absorption length %g (micron)\r",xtal.desc,keV,mu,1/mu
+		printf  "   mu['%s', %g keV] = %g (1/µm)  -->  absorption length %g (µm)\r",xtal.desc,keV,mu,1/mu
 	endif
 	return mu
 End
@@ -4549,7 +4549,7 @@ Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 	endif
 
 	Variable mu = 2*re_nm*(hc_keVnm/keV)*Fpp / (xtal.Vc)
-	mu *= 1000			// convert 1/nm --> 1/Âµm
+	mu *= 1000			// convert 1/nm --> 1/µm
 	return mu
 End
 
@@ -4758,8 +4758,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 		//  for hexagonal:
 		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3nÂ±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3nÂ±1,	l=even;		F = f			1/4
+		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+		//	h+2k=3n±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
 #endif
@@ -5445,7 +5445,7 @@ Static Function Hex2RhomFractionalFractonal()	// converts hexagonal --> rhombohe
 	Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
 
 	Variable/C a_alpha = Hex2Rhom(xtal.a, xtal.c)
-	printf "aRhom = %g nm,   alphaRhom = %gÂ°\r",real(a_alpha), imag(a_alpha)
+	printf "aRhom = %g nm,   alphaRhom = %g¡\r",real(a_alpha), imag(a_alpha)
 
 	Make/N=(3,3)/D/FREE H2Ctrans = {{2,1,1}, {-1,1,1}, {-1,-2,1}}
 	H2Ctrans /= 3
@@ -6045,7 +6045,7 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroup)		// make the symmetry operati
 	String symOperations=setSymLine(SpaceGroup)			// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
 	Variable i,N=ItemsInList(symOperations)
 	String wName = "root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup)
-	Make/N=(N,3,3)/O/B $wName										// this only holds 0 or Â±1
+	Make/N=(N,3,3)/O/B $wName										// this only holds 0 or ±1
 	Wave equivM = $wName
 	wName = "root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SpaceGroup)
 	Make/N=(N,3)/O/D $wName
