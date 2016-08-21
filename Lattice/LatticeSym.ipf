@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.23
+#pragma version = 5.24
 #include "Utility_JZT" version>=3.78
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -145,6 +145,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.18, structureTitle, now adjusts font size to show all of the string
 //	with version 5.19, added DO_HEXAGONAL_EXTRA, Fstruct was too big by factor of 2
 //	with version 5.20, added muOfXtal() and get_muOfXtal(), MenuItemIfCromerPresent(), and Hex2RhomFractionalFractonal()
+//	with version 5.24, cleaned up Hex2Rhom(), Rhom2Hex(), Rhom2HexFractonal(), Hex2RhomFractonal(), and test_Hex_Rhom()
 
 // Rhombohedral Transformation:
 //
@@ -5426,19 +5427,18 @@ End
 ThreadSafe Function/C Hex2Rhom(aH,cH)			// convert lattice constants
 	Variable aH,cH					// Hexagonal lattice constants
 	Variable aR,alpha				// Rhombohedral lattice constants
-	aR = (1/3) * sqrt(3*aH^2 + cH^2)
-	alpha = asin( 3/2 / sqrt(3+(cH/aH)^2) ) * 2 * 180/PI
-	return cmplx(aR,alpha)
+	aR = sqrt(3*aH*aH + cH*cH) / 3
+	alpha = 2 * asin( 1.5 / sqrt(3+(cH/aH)^2) )
+	return cmplx(aR, alpha * 180/PI)
 End
 
 
 ThreadSafe Function/C Rhom2Hex(aR,alpha)		// convert lattice constants
-	Variable aR, alpha				// Rhombohedral lattice constants
+	Variable aR, alpha			// Rhombohedral lattice constants
 	Variable aH,cH					// Hexagonal lattice constants
-	Variable  ca2					// (cH/aH)^2
-	ca2 = (3/2 / sin(alpha*PI/180/2))^2 - 3
-	aH  = sqrt( (3*aR)^2/(ca2 + 3) )
-	cH = aH*sqrt(ca2)
+	alpha *= PI / 180.0			// convert degree --> radian
+	aH = 2 * aR * sin(alpha/2)
+	cH = aR * sqrt( 3.0 + 6.0 * cos(alpha) )
 	return cmplx(aH,cH)
 End
 
