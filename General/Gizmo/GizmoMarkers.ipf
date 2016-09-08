@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.18
+#pragma version = 2.19
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -1228,7 +1228,7 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
 	endif
 
 	Wave sub3D = ExtractSubVolume(space3D,Qc,QxHW,HWy=QyHW,HWz=QzHW)	// get sub-volume centered on Qc
-	Variable err = FitPeakIn3D(space3D,GP,QxHW,HWy=QyHW,HWz=QzHW, printIt=1)
+	Variable err = FitPeakIn3D(sub3D,GP,QxHW,HWy=QyHW,HWz=QzHW, printIt=1)
 	return err
 End
 
