@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.14
+#pragma version = 0.15
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -461,6 +461,100 @@ End
 
 //  ======================================================================================  //
 //  =========================== Start of Simple 3D Statistics ============================  //
+
+Static Function SimplePeakIn3Dstats(space3D,GP, [printIt])
+	// fills GP with simple stats of peak, amp, bkg, COM, ...
+	Wave space3D
+	STRUCT Generic3DPeakStructure &GP	// holds result of fitting
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt)? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+
+	initGeneric3DPeakStructure(GP)
+	GP.funcName = "simple3D"
+
+	if (!WaveExists(space3D))		// is space3D valid?
+		return 1
+	elseif (WaveDims(space3D)!=3)
+		return 1
+	endif
+	Make/N=3/I/FREE ijk, Nxyz=DimSize(space3D,p)
+
+	GP.Xunit = WaveUnits(space3D,0)
+	GP.Yunit = WaveUnits(space3D,1)
+	GP.Zunit = WaveUnits(space3D,2)
+	GP.wname = NameOfWave(space3D)
+	Variable amp = WaveMax(space3D)
+	GP.maxValue = amp
+	GP.amp = amp
+	Variable bkg = space3D[0][0][0] + space3D[Nxyz[0]-1][0][0] + space3D[0][Nxyz[1]-1][0] + space3D[Nxyz[0]-1][Nxyz[1]-1][0]
+	bkg += space3D[0][0][Nxyz[2]-1] + space3D[Nxyz[0]-1][0][Nxyz[2]-1] + space3D[0][Nxyz[1]-1][Nxyz[2]-1] + space3D[Nxyz[0]-1][Nxyz[1]-1][Nxyz[2]-1]
+	bkg /= 8
+	GP.bkg = bkg
+
+	Wave xyz0 = CenterOfMass3D(space3D)
+	GP.x = xyz0[0]	;	GP.y = xyz0[1]	;	GP.z = xyz0[2]
+	if (numtype(sum(xyz0)))
+		return 1
+	endif
+	ijk = round( (xyz0[p]-DimOffset(space3D,p)) / DimDelta(space3D,p) )
+	ijk = limit(round(ijk[p]),0,Nxyz[p]-1)
+	GP.ix = ijk[0]			;		GP.iy = ijk[1]			;	GP.iz = ijk[2]
+
+	Variable i=ijk[0], n=Nxyz[0], p0,p1, level
+	level = (2*amp - space3D[0][ijk[1]][ijk[2]] - space3D[n-1][ijk[1]][ijk[2]])/4
+	Make/N=(i+1)/D/FREE walk = space3D[p][ijk[1]][ijk[2]]
+	p0 = BinarySearchInterp(walk,level)
+	Redimension/N=(n-i) walk
+	walk = space3D[p+i][ijk[1]][ijk[2]]
+	p1 = BinarySearchInterp(walk,level) + i
+	GP.FWx = (p1-p0) * DimDelta(space3D,0)
+
+	i = ijk[1]
+	n = Nxyz[1]
+	level = (2*amp - space3D[ijk[0]][0][ijk[2]] - space3D[ijk[0]][n-1][ijk[2]])/4
+	Redimension/N=(i+1) walk
+	walk = space3D[ijk[0]][p][ijk[2]]
+	p0 = BinarySearchInterp(walk,level)
+	Redimension/N=(n-i) walk
+	walk = space3D[ijk[0]][p+i][ijk[2]]
+	p1 = BinarySearchInterp(walk,level) + i
+	GP.FWy = (p1-p0) * DimDelta(space3D,1)
+
+	i = ijk[2]
+	n = Nxyz[2]
+	level = (2*amp - space3D[ijk[0]][ijk[1]][0] - space3D[ijk[0]][ijk[1]][n-1])/4
+	Redimension/N=(i+1) walk
+	walk = space3D[ijk[0]][ijk[1]][p]
+	p0 = BinarySearchInterp(walk,level)
+	Redimension/N=(n-i) walk
+	walk = space3D[ijk[0]][ijk[1]][p+i]
+	p1 = BinarySearchInterp(walk,level) + i
+	GP.FWz = (p1-p0) * DimDelta(space3D,2)
+
+#if exists("diffractometer#sample2crystal")
+	STRUCT sampleStructure sa	
+	String str = ParseFilePath(1,GetWavesDataFolder(space3D,1),":",1,0)+"sampleStructStr"
+	String strStruct=StrVarOrDefault(str,"")				// fill the sample structure with values in spec scan directory
+	StructGet/S/B=2 sa, strStruct								// found structure information, load into s
+	Wave hkl = diffractometer#sample2crystal(sa,xyz0)	// rotate qvec from sample-location frame into crystal based frame, the hkl
+#elif exists("getRLfrom3DWaveProto")
+	FUNCREF getRLfrom3DWaveProto getRL=$"getRLfrom3DWave"
+	Wave RL = getRl(space3D,NaN)
+	if (WaveExists(RL))
+		MatrixOP/FREE hkl = Inv(RL) x xyz0
+	endif
+#endif
+	if (WaveExists(hkl))
+		GP.hkl[0] = hkl[0]	;		GP.hkl[1] = hkl[1]	;		GP.hkl[2] = hkl[2]
+	endif
+
+	GP.OK = 1
+	if (printIt)
+		printGeneric3DPeakStructure(GP)
+	endif
+	return 0				// no error
+End
+
 
 Function/WAVE centerOf3Ddata(ww3D)	// finds center of data, works for triplets and for a 3D array
 	Wave ww3D
