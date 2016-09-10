@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.60
+#pragma version = 1.61
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -29,7 +29,7 @@ Menu LaueGoMainMenuName
 		"Load recontruction 'summary' file", LoadIntegralFile("")
 		"  Re-Display intensity from summary",DisplayReconstructionIntegral($"",$"")
 		"Sum a ROI in many Images",SumInManyROIs("","","",$"")
-		"Make Waves With Metadata from Image Range",ImageMetaData2Waves("","","","")	
+		"Make Waves With Metadata from Image Ranges",ImageMetaData2Waves("","","","","")
 		"-"
 		MenuItemIfWaveClassExists("Re-Scale Movie Pixel Intensities","PixelIntensities","Dims:2"), RescaleMoviePixelIntensities($"")
 		MenuItemIfWaveClassExists("Graph Movie Pixel Intensities","PixelIntensities*","Dims:2"), GraphMoviePixelIntensities($"")
@@ -228,7 +228,7 @@ Function/T FillDetailParametersPanel(strStruct,hostWin,left,top)
 	Button buttonSumImages,pos={29,135},size={160,20},proc=depthResolve#DetailButtonProc,title="Sum Many Images"
 	Button buttonSumImages,help={"Sum a set of images with the option of using an ROI"}
 
-	Button buttonMetaDataImages,pos={29,170},size={190,20},proc=depthResolve#DetailButtonProc,title="Metadata from Image Range"
+	Button buttonMetaDataImages,pos={29,170},size={190,20},proc=depthResolve#DetailButtonProc,title="Metadata from Image Ranges"
 	Button buttonMetaDataImages,help={"Extract header information from a range of images"}
 
 	//rxadd
@@ -275,7 +275,7 @@ Static Function DetailButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonSumImages"))
 		SumInManyROIs("","","",$"")
 	elseif (stringmatch(ctrlName,"buttonMetaDataImages"))
-		ImageMetaData2Waves("","","","")
+		ImageMetaData2Waves("","","","","")
 	//rxadd
 	elseif (stringmatch(ctrlName,"buttonFlyExtract"))
 #if (Exists("HDF5OpenFile")==4)
@@ -1555,7 +1555,7 @@ Function SumInManyROIs(pathName,namePart,range,mask,[dark])
 		endif
 		if (!stringmatch(pathPart,S_path))		// path was changed
 			if (stringmatch(pathName,"imagePath"))
-				NewPath/O/M="path to reconstructed image files" imagePath pathPart	// for iamgePath, automatically reassign
+				NewPath/O/M="path to reconstructed image files" imagePath pathPart	// for imagePath, automatically reassign
 			else
 				NewPath/M="path to reconstructed image files" $pathName pathPart	// for other names, ask
 			endif
@@ -1737,7 +1737,43 @@ Static Function/T requestFileRoot(pathName,suffixes)
 End
 
 
-//	********** This next routine is really good, use it for all new stuff (and old stuff too) **********
+//	********** These next two routine is really good, use it for all new stuff (and old stuff too) **********
+//
+// This takes a full path name, and parses the first N suffixes, it returns the list:
+//	numberOfSuffixesFound  ;  path  ;  nameFmt
+//	If suffixes is not a positive number, then is auto determines the number of suffixes,  example:
+//	findFileFmt("hd:folder:abc_123_666.h5",nan) -->   "22;hd:folder:;abc_%d_%d.h5;"
+//
+// This is the probably replacement for findFileRoot()
+Static Function/T findFileFmt(fullFilePath,suffixes)
+	String fullFilePath
+	Variable suffixes				// maximum number of suffixes to find, each suffix looks like "_12", leave the underscore, use NaN for auto-determine
+										// suffixes are ALWAYS preceeded with an "_"
+	String path = ParseFilePath(1,fullFilePath,":",1,0)
+	String bareFile = ParseFilePath(3,fullFilePath,":",0,0)
+	String extension = ParseFilePath(4,fullFilePath,":",0,0)
+
+	// search to find number of suffixes
+	suffixes = suffixes>=0.5 ? round(suffixes) : Inf
+	Variable i0,i1, ns=0						// i1 points to last char in group to check
+	i1 = strlen(bareFile)-1					// position of end
+	do
+		i0 = strsearch(bareFile, "_",i1-1,1)
+		if (i0<0)
+			break
+		endif
+		Make/N=(i1-i0)/FREE/O flags=1	// check if last part is an integer
+		flags = !isdigit(bareFile[p+I0+1])
+		if (sum(flags))
+			break
+		endif
+		ns += 1
+		bareFile[i0,i1] = "_%d"
+		i1 = i0-1
+	while (ns<suffixes)
+	String nameFmt = bareFile + SelectString(strlen(extension), "", "."+extension)
+	return num2istr(ns)+";" + path+";" +  nameFmt+";"
+End
 //
 // This takes a full path name, and parses the first N suffixes, it returns the list:
 //	path  ;  root  ;  s1  ;  s2  ;  extenstion  ;  numberOfsuffixes
@@ -2146,51 +2182,76 @@ Function AllParams2Waves(range)
 End
 
 
-
-Function/T ImageMetaData2Waves(path,imageRoot,range,keyList,[mask,dark])	// returns list of wave names with the meta data from many images
-	String path												// optional path
-	String imageRoot										// root of image file
-	String range											// a range of number to go with imageRoot
+Function/T ImageMetaData2Waves(path,imageFmt,r1,r2,keyList,[mask,dark,printIt])	// returns list of wave names with the meta data from many images
+	String path												// optional path name
+	String imageFmt										// format string for the image files
+	String r1,r2											// the range, or two ranges of numbers to go with imageFmt
 	String keyList											// space, comma, or semicolon separated key names
 	Wave mask
 	Wave dark												// an optional background wave
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (strlen(r1)<1)												// never want r2 without something in r1
+		r1 = r2
+		r2 = ""
+	endif
+	path = SelectString(strlen(path),"imagePath",path)	// like to use (and set here) "imagePath"
 
+	imageFmt = ReplaceString("%g",imageFmt,"%d")
 	String ImageFileFilters=StrVarOrDefault("root:Packages:imageDisplay:ImageFileFilters","Image Files:.*;")
-	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
-	String fName=imageRoot+num2str(str2num(range))+imageExtension
-	Variable f=0, printIt=0
-	GetFileFolderInfo/P=$path/Q/Z fName
-	if (V_Flag || !V_isFile)									// file not found
+	Variable Nfmt=countOccurancesOfStr(imageFmt,"%d")// number of "%d" formats present
+	if (strlen(imageFmt)<1)									// nothing passed
+		Variable f
+		PathInfo $path
+		if (V_flag==0)												// path does not exist, just set it to home
+			PathInfo $StringFromList(0,PathList("*",";",""))
+			NewPath/O/Q $path, S_path
+		endif
 		Open/D/R/P=$path/F=ImageFileFilters/M="Select ANY image file in range" f
 		if (strlen(S_fileName)<1)
 			return ""
 		endif
-		String str = findFileRoot(S_fileName,1)
-		imageRoot = StringFromList(1,str)+StringFromList(2,str)
-		String extension = StringFromList(3,str)
+		if (stringmatch(path,"imagePath"))					// path is imagePath CHANGE it.
+			NewPath/O/Q imagePath, ParseFilePath(1,S_fileName,":",1,0)	// reset imagePath to this folder
+			imageFmt = ParseFilePath(0,S_fileName,":",1,0)	// name relative to imagePath
+		elseif (strlen(path))									// path is not imagePath, use it, but DON'T change it
+			PathInfo $path
+			if (V_flag)
+				imageFmt = ReplaceString(S_path,S_fileName,"",0,1)
+			endif
+		else															// forget about path, just use full path name
+			imageFmt = S_fileName
+		endif
 		printIt = 1
+		Nfmt = 0
 	endif
+	if (Nfmt < 1)
+		String str = findFileFmt(imageFmt,2)				// convert imageFmt to an actual format string
+		Nfmt = str2num(StringFromList(0,str))
+		imageFmt = StringFromList(1,str) + StringFromList(2,str)
+	endif
+	if (Nfmt<1 || Nfmt>2)
+		if (printIt)
+			printf "ERROR -- found %g format specifiers in \"%s\", only 1 or 2 are allowed\r", Nfmt,imageFmt
+		endif
+		return ""
+	endif
+
 	keyList = TrimFrontBackWhiteSpace(keyList)			// trim leading white space
-	if (ItemsInRange(range)<1 || ItemsInList(keyList)<1)	// no range or no keys
-		Prompt range,"range  e.g. 1-200"
+	if (Nfmt==1 && ItemsInRange(r1)<1 || Nfmt==2 && ItemsInRange(r2)<1 || ItemsInList(keyList)<1)	// no range or no keys
+		Prompt r1, "first range  e.g. 1-200"
+		Prompt r2, "second range  e.g. 1-200 (optional)"
 		Prompt keyList,"list of keys (use spaces commas or semi-colons"
-		DoPrompt "Range & Keys",range,keyList
+		DoPrompt "Range(s) & Keys",r1,r2,keyList
 		if (V_flag)
 			return ""
 		endif
 		printIt = 1
 	endif
 	keyList = TrimFrontBackWhiteSpace(keyList)			// trim leading white space
-	keyList = ReplaceString(" ",keyList,";")				// change sapces to semicolons
-	keyList = ReplaceString(",",keyList,";")				// change commas to semicolons
-	if (ItemsInList(keyList)<1)								// no keys, quit
-		return ""
-	endif
-	fName=imageRoot+num2str(str2num(range))+imageExtension
-	GetFileFolderInfo/P=$path/Q/Z fName
-	if (V_Flag || !V_isFile)									// file not found, this is a test for range too
-		return ""
-	endif
+	keyList = ReplaceString(" ",keyList,";")			// change sapces to semicolons
+	keyList = ReplaceString(",",keyList,";")			// change commas to semicolons
+
 	String maskList = WaveListClass("imageMask","*","")
 	if (!WaveExists(mask) && ItemsInList(maskList)>0)
 		String maskName
@@ -2219,8 +2280,9 @@ Function/T ImageMetaData2Waves(path,imageRoot,range,keyList,[mask,dark])	// retu
 			Wave dark = $""
 		endif
 	endif
+
 	if (printit)
-		printf "ImageMetaData2Waves(\"%s\",\"%s\",\"%s\",\"%s\"",path,imageRoot,range,keyList
+		printf "ImageMetaData2Waves(\"%s\",\"%s\", \"%s\",\"%s\", \"%s\"",path,imageFmt,r1,r2,keyList
 		if (WaveExists(mask))
 			printf ",mask=%s",NameOfWave(mask)
 		endif
@@ -2230,22 +2292,129 @@ Function/T ImageMetaData2Waves(path,imageRoot,range,keyList,[mask,dark])	// retu
 		printf ")\r"
 	endif
 
-	String key, wName, wList="",wListFull="", wnote, unit
-	Variable N=ItemsInRange(range)
-	Variable m,Nkeys = ItemsInList(keyList)
-	Make/N=(Nkeys)/Wave/FREE keyWaves				// this holds the list of wave names
+	if (ItemsInList(keyList)<1 || ItemsInRange(r1)<1 || Nfmt>1 && ItemsInRange(r1)<1)
+		if (printIt)
+			print "keyList is empty or the rangees are wrong"
+		endif
+		return ""	// no keys or empty ranges, quit
+	endif
+
+	String fName
+	if (Nfmt==1)
+		sprintf fName, imageFmt, str2num(r1)
+	else
+		sprintf fName, imageFmt, str2num(r1), str2num(r2)
+	endif
+	GetFileFolderInfo/P=$path/Q/Z fName
+	if (V_Flag || !V_isFile)									// file not found, this is a test for ranges too
+		if (printIt)
+			printf "ERROR -- the file \"%s\" in the path \"%s\" was not found\r", fName, path
+		endif
+		return ""
+	endif
+
+	String list, short=""
+	if (WaveExists(mask) || WaveExists(dark))
+		list = ImageMetaData2Waves_R1R2(path,imageFmt,r1,r2,keyList, mask=mask, dark=dark)
+	else
+		list = ImageMetaData2Waves_R1R2(path,imageFmt,r1,r2,keyList)
+	endif
+	if (printIt && ItemsInList(list))
+		Variable i
+		for (i=0;i<ItemsInList(list);i+=1)		// short has wave names without the path
+			short += ParseFilePath(0,StringFromList(i,list),":",1,0)+";"
+		endfor
+		printf "Created & Filled waves:   %s\r",short
+	elseif (printIt)
+		print "WARNING -- NO Waves created or filled"
+	endif
+	return list											// return list of waves with keys
+End
+//
+Static Function/T ImageMetaData2Waves_R1R2(path,imageFmt,r1,r2,keyList,[mask,dark,printIt])
+	// collects the specified keys from the image files
+	//		The images files are specified by path,imageFmt,r1,r2
+	//			if r2 or r1 is "", then only a single '%d' is expected in imageFmt
+	//		the keys are in keyList
+	// returns a list of wave names with the meta data from many images
+	String path												// optional path
+	String imageFmt										// format for image name
+	String r1,r2											// ranges to use with imageFmt,  r1 comes first, r2 is second
+	String keyList											// space, comma, or semicolon separated key names
+	Wave mask
+	Wave dark												// an optional background wave
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	String ImageFileFilters=StrVarOrDefault("root:Packages:imageDisplay:ImageFileFilters","Image Files:.*;"), fName
+	if (ItemsInRange(r1)==0)							// when only one range, use r1 (and r2 is empty)
+		r1 = r2
+		r2 = ""
+	endif
+	if (ItemsInRange(r1)==0)							// both ranges empty, nothing to do
+		return ""
+	endif
+
+	String fullFmt=TrimFront(imageFmt,chars=":")
+	PathInfo $path
+	if (V_flag)												// path exists
+		fullFmt = S_path + imageFmt					// make full format from:  path + imageFmt
+	endif
+	Variable oneRange = ItemsInRange(r2)<1
+	if (oneRange)
+		sprintf fName, fullFmt, str2num(r1)
+	else
+		sprintf fName, fullFmt, str2num(r1), str2num(r2)
+	endif
+	GetFileFolderInfo/Q/Z fName						// check if a file is there
+	if (V_Flag || !V_isFile)							// file not found
+		return ""
+	endif
+
+	if (printit)
+		printf "ImageMetaData2Waves_R1R2(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"",path,imageFmt,r1,r2,keyList
+		if (WaveExists(mask))
+			printf ",mask=%s",NameOfWave(mask)
+		endif
+		if (WaveExists(dark))
+			printf ",dark=%s",NameOfWave(dark)
+		endif
+		printf ")\r"
+	endif
+	Variable N1=ItemsInRange(r1), N2=ItemsInRange(r2), Ntotal=N1*max(1,N2)
+	if (Ntotal<1)
+		return ""
+	endif
+	keyList = TrimBoth(keyList)						// trim leading & trailing white space
+	keyList = ReplaceString(" ",keyList,";")	// change sapces to semicolons
+	keyList = ReplaceString(",",keyList,";")	// change commas to semicolons
+	if (ItemsInList(keyList)<1)						// no keys, quit
+		return ""
+	endif
+
+	imageFmt = ReplaceString("%g",imageFmt,"%d")
+	Variable i = (strlen(imageFmt)-strlen(ReplaceString("%d",imageFmt,"")))/2
+	if ( (oneRange && i!=1) || (!oneRange && i!=2) )// compare number of occurances of %d
+		return ""
+	endif
+
+	String key, wName, wList="",wListFull="", wnote, unit, MetaUnits=""
+#if Exists("LoadHDF5imageFile")==6
+	MetaUnits = HDF5_MetaUnits
+#elif Exists("LoadWinViewFile")==6
+	MetaUnits = WinView_MetaUnits
+#else
+	MetaUnits = localKeyUnits
+#endif
+	Variable m, Nkeys=ItemsInList(keyList)
+	Make/N=(Nkeys)/Wave/FREE keyWaves				// this holds the list of wave references
 	for (m=0;m<Nkeys;m+=1)								// create and assign new waves
 		key = StringFromList(m,keyList)
-		wName = CleanupName(key+"_"+num2str(N),0)
-		Make/N=(N)/D/O $wName
+		wName = key+"_"+num2str(N1) + SelectString(oneRange, "_"+num2str(N2), "")
+		wName = CleanupName(wName,0)
+		Make/N=(N1,max(N2,1))/D/O $wName			// always a 2D wave at this point
 		Wave ww = $wName
-#if Exists("LoadHDF5imageFile")==6
-		unit = StringByKey(key,HDF5_MetaUnits)
-#elif Exists("LoadWinViewFile")==6
-		unit = StringByKey(key,WinView_MetaUnits)
-#else
-		unit = StringByKey(key,localKeyUnits)
-#endif
+		unit = StringByKey(key,MetaUnits)
 		if (strlen(unit)>1)
 			SetScale d 0,0,unit, ww
 		endif
@@ -2254,66 +2423,271 @@ Function/T ImageMetaData2Waves(path,imageRoot,range,keyList,[mask,dark])	// retu
 		wList += NameOfWave(ww)+";"
 		wnote = ""											// set wave note for each of the keys wave
 		wnote = ReplaceStringByKey("keyName", wnote, key,"=")
-		wnote = ReplaceStringByKey("range", wnote, range,"=")
-		wnote = ReplaceStringByKey("imageRoot", wnote, imageRoot,"=")
+		wnote = ReplaceStringByKey("range1", wnote, r1,"=")
+		if (N1>0)
+			wnote = ReplaceStringByKey("range2", wnote, r2,"=")
+		endif
+		wnote = ReplaceStringByKey("imageFmt", wnote, imageFmt,"=")
 		if (strlen(path))
 			wnote = ReplaceStringByKey("path", wnote, path,"=")
 		endif
 		Note/K ww, wnote
 	endfor
-	if (WaveExists(mask))									// set up wave to store integral of mask
+
+	if (WaveExists(mask))								// set up wave to store integral of mask
 		wName = CleanupName("ROI_"+NameoFWave(mask),0)
-		Make/N=(N)/D/O $wName=NaN						// store sum of roi in here
+		Make/N=(N1,max(1,N2))/D/O $wName=NaN		// store sum of roi in here
 		Wave roi = $wName
 		wListFull += GetWavesDataFolder(roi,2)+";"
 		wList += NameOfWave(roi)+";"
-		Duplicate/FREE mask, maskInvert					// do this because ImageStats only evaluates pixels=0
+		Duplicate/FREE mask, maskInvert				// do this because ImageStats only evaluates pixels=0
 		maskInvert = !mask
 	else
 		Wave maskInvert=$""
 	endif
 
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)
-	Variable i,j, Nmod=max(N/200,2)
-	for (i=0,j=-Inf; i<N; i+=1)							// for each of the images
-		if (mod(i,Nmod)==0)
-			if (ProgressPanelUpdate(progressWin,i/N*100))
-				break
-			endif
-		endif
-		j = NextInRange(range,j)
-		fName=imageRoot+num2str(j)+imageExtension
-		if (WaveExists(maskInvert))						// a mask, get header info AND image
-			Wave image = $LoadGenericImageFile(fName)
-			if (WaveExists(image))
-				wnote = note(image)
-				if (WaveExists(dark))
-					Redimension/I image
-					MatrixOP/O image = image - dark
+	String rtemp=SelectString(N2>0, "0", r2)
+	Variable i1,i2, j1,j2, Nmod=ceil(max(Ntotal/200,2)), n
+
+	for (i1=0, j1=str2num(r1), n=0; numtype(j1)==0; i1+=1, j1=NextInRange(r1,j1))
+		for (i2=0, j2=str2num(rtemp); numtype(j2)==0; i2+=1, j2=NextInRange(rtemp,j2), n+=1)
+			if (mod(n,Nmod)==0)
+				if (ProgressPanelUpdate(progressWin,n/Ntotal*100))
+					break
 				endif
-				ImageStats/M=1/R=maskInvert image
-				roi[i] = V_avg*V_npnts
-				KillWaves/Z image
-			else
-				wnote = ""
 			endif
-		else
-			wnote = ReadGenericHeader(fName)				// get all header info from image
-//			wnote = ReadHDF5header(fName)				// get all header info from image
-		endif
-		for (m=0;m<Nkeys;m+=1)							// for each of the keys
-			Wave ww = keyWaves[m]						// wave to hold key value
-			ww[i] = NumberByKey(StringFromList(m,keyList),wnote,"=")
+			if (oneRange)
+				sprintf fName, fullFmt, j1
+			else
+				sprintf fName, fullFmt, j1, j2
+			endif
+
+			if (WaveExists(maskInvert))				// a mask, get header info AND image
+				Wave image = $LoadGenericImageFile(fName)
+				if (WaveExists(image))
+					wnote = note(image)
+					if (WaveExists(dark))
+						Redimension/I image
+						MatrixOP/O image = image - dark
+					endif
+					ImageStats/M=1/R=maskInvert image
+					roi[i1][i2] = V_avg*V_npnts
+					KillWaves/Z image
+				else
+					wnote = ""
+				endif
+			else
+				wnote = ReadGenericHeader(fName)	// get all header info from image
+			endif
+
+			for (m=0;m<Nkeys;m+=1)						// for each of the keys
+				Wave ww = keyWaves[m]					// wave to hold key value
+				ww[i1][i2] = NumberByKey(StringFromList(m,keyList),wnote,"=")
+			endfor
 		endfor
 	endfor
+	if (oneRange)
+		for (m=0;m<Nkeys;m+=1)							// for each of the keys
+			Wave ww = keyWaves[m]						// wave to hold key value
+			Redimension/N=(N1) ww
+		endfor
+	endif
 	printf "total execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
 	DoWindow/K $progressWin
-	if (printIt ||1)
+
+	// remove wave that are ALL NaN's
+	String wNameFull
+	for (m=Nkeys-1; m>=0;m-=1)					// for each of the keys, work backwards
+		Wave ww = keyWaves[m]						// wave with one key value
+		WaveStats/M=1/Q ww
+		if ((V_npnts+V_numINFs)<1)				// ww is all NaN's
+			wNameFull = GetWavesDataFolder(ww,2)
+			wName = NameOfWave(ww)
+			KillWaves/Z ww
+			if (!WaveExists(ww))
+				wListFull = RemoveFromList(wNameFull,wListFull)
+				wList = RemoveFromList(wName,wList)
+			endif
+		endif
+	endfor
+
+	if (printIt && ItemsInList(wList))
 		printf "Created & Filled waves:   %s\r",wList
+	elseif (printIt)
+		print "WARNING -- NO Waves created or filled"
 	endif
 	return wListFull										// return list of waves with keys
 End
 
+
+//	// This Function is ****** DEPRECATED ******, use the one above for all future work
+//	Function/T ImageMetaData2Waves(path,imageRoot,range,keyList,[mask,dark])	// returns list of wave names with the meta data from many images
+//		String path												// optional path
+//		String imageRoot										// root of image file
+//		String range											// a range of number to go with imageRoot
+//		String keyList											// space, comma, or semicolon separated key names
+//		Wave mask
+//		Wave dark												// an optional background wave
+//	
+//		String ImageFileFilters=StrVarOrDefault("root:Packages:imageDisplay:ImageFileFilters","Image Files:.*;")
+//		String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
+//		String fName=imageRoot+num2str(str2num(range))+imageExtension
+//		Variable f=0, printIt=0
+//		GetFileFolderInfo/P=$path/Q/Z fName
+//		if (V_Flag || !V_isFile)									// file not found
+//			Open/D/R/P=$path/F=ImageFileFilters/M="Select ANY image file in range" f
+//			if (strlen(S_fileName)<1)
+//				return ""
+//			endif
+//			String str = findFileRoot(S_fileName,1)
+//			imageRoot = StringFromList(1,str)+StringFromList(2,str)
+//			String extension = StringFromList(3,str)
+//			printIt = 1
+//		endif
+//		keyList = TrimFrontBackWhiteSpace(keyList)			// trim leading white space
+//		if (ItemsInRange(range)<1 || ItemsInList(keyList)<1)	// no range or no keys
+//			Prompt range,"range  e.g. 1-200"
+//			Prompt keyList,"list of keys (use spaces commas or semi-colons"
+//			DoPrompt "Range & Keys",range,keyList
+//			if (V_flag)
+//				return ""
+//			endif
+//			printIt = 1
+//		endif
+//		keyList = TrimFrontBackWhiteSpace(keyList)			// trim leading white space
+//		keyList = ReplaceString(" ",keyList,";")				// change sapces to semicolons
+//		keyList = ReplaceString(",",keyList,";")				// change commas to semicolons
+//		if (ItemsInList(keyList)<1)								// no keys, quit
+//			return ""
+//		endif
+//		fName=imageRoot+num2str(str2num(range))+imageExtension
+//		GetFileFolderInfo/P=$path/Q/Z fName
+//		if (V_Flag || !V_isFile)									// file not found, this is a test for range too
+//			return ""
+//		endif
+//		String maskList = WaveListClass("imageMask","*","")
+//		if (!WaveExists(mask) && ItemsInList(maskList)>0)
+//			String maskName
+//			Prompt maskName,"Mask",popup,"_none_;"+maskList
+//			DoPrompt "Mask",maskName
+//			if (V_flag)
+//				return ""
+//			endif
+//			if (cmpstr(maskName,"_none_"))
+//				Wave mask = $maskName
+//			else
+//				Wave mask = $""
+//			endif
+//		endif
+//		String darkList = WaveListClass("imageDark;rawImageDark","*","")
+//		if (WaveExists(mask) && !WaveExists(dark) && ItemsInList(darkList)>0)
+//			String darkName
+//			Prompt darkName,"Background Image",popup,"_none_;"+darkList
+//			DoPrompt "Background",darkName
+//			if (V_flag)
+//				return ""
+//			endif
+//			if (cmpstr(darkName,"_none_"))
+//				Wave dark = $darkName
+//			else
+//				Wave dark = $""
+//			endif
+//		endif
+//		if (printit)
+//			printf "ImageMetaData2Waves(\"%s\",\"%s\",\"%s\",\"%s\"",path,imageRoot,range,keyList
+//			if (WaveExists(mask))
+//				printf ",mask=%s",NameOfWave(mask)
+//			endif
+//			if (WaveExists(dark))
+//				printf ",dark=%s",NameOfWave(dark)
+//			endif
+//			printf ")\r"
+//		endif
+//	
+//		String key, wName, wList="",wListFull="", wnote, unit
+//		Variable N=ItemsInRange(range)
+//		Variable m,Nkeys = ItemsInList(keyList)
+//		Make/N=(Nkeys)/Wave/FREE keyWaves				// this holds the list of wave names
+//		for (m=0;m<Nkeys;m+=1)								// create and assign new waves
+//			key = StringFromList(m,keyList)
+//			wName = CleanupName(key+"_"+num2str(N),0)
+//			Make/N=(N)/D/O $wName
+//			Wave ww = $wName
+//	#if Exists("LoadHDF5imageFile")==6
+//			unit = StringByKey(key,HDF5_MetaUnits)
+//	#elif Exists("LoadWinViewFile")==6
+//			unit = StringByKey(key,WinView_MetaUnits)
+//	#else
+//			unit = StringByKey(key,localKeyUnits)
+//	#endif
+//			if (strlen(unit)>1)
+//				SetScale d 0,0,unit, ww
+//			endif
+//			keyWaves[m] = ww
+//			wListFull += GetWavesDataFolder(ww,2)+";"
+//			wList += NameOfWave(ww)+";"
+//			wnote = ""											// set wave note for each of the keys wave
+//			wnote = ReplaceStringByKey("keyName", wnote, key,"=")
+//			wnote = ReplaceStringByKey("range", wnote, range,"=")
+//			wnote = ReplaceStringByKey("imageRoot", wnote, imageRoot,"=")
+//			if (strlen(path))
+//				wnote = ReplaceStringByKey("path", wnote, path,"=")
+//			endif
+//			Note/K ww, wnote
+//		endfor
+//		if (WaveExists(mask))									// set up wave to store integral of mask
+//			wName = CleanupName("ROI_"+NameoFWave(mask),0)
+//			Make/N=(N)/D/O $wName=NaN						// store sum of roi in here
+//			Wave roi = $wName
+//			wListFull += GetWavesDataFolder(roi,2)+";"
+//			wList += NameOfWave(roi)+";"
+//			Duplicate/FREE mask, maskInvert					// do this because ImageStats only evaluates pixels=0
+//			maskInvert = !mask
+//		else
+//			Wave maskInvert=$""
+//		endif
+//	
+//		String progressWin = ProgressPanelStart("",stop=1,showTime=1)
+//		Variable i,j, Nmod=max(N/200,2)
+//		for (i=0,j=-Inf; i<N; i+=1)							// for each of the images
+//			if (mod(i,Nmod)==0)
+//				if (ProgressPanelUpdate(progressWin,i/N*100))
+//					break
+//				endif
+//			endif
+//			j = NextInRange(range,j)
+//			fName=imageRoot+num2str(j)+imageExtension
+//			if (WaveExists(maskInvert))						// a mask, get header info AND image
+//				Wave image = $LoadGenericImageFile(fName)
+//				if (WaveExists(image))
+//					wnote = note(image)
+//					if (WaveExists(dark))
+//						Redimension/I image
+//						MatrixOP/O image = image - dark
+//					endif
+//					ImageStats/M=1/R=maskInvert image
+//					roi[i] = V_avg*V_npnts
+//					KillWaves/Z image
+//				else
+//					wnote = ""
+//				endif
+//			else
+//				wnote = ReadGenericHeader(fName)				// get all header info from image
+//	//			wnote = ReadHDF5header(fName)				// get all header info from image
+//			endif
+//			for (m=0;m<Nkeys;m+=1)							// for each of the keys
+//				Wave ww = keyWaves[m]						// wave to hold key value
+//				ww[i] = NumberByKey(StringFromList(m,keyList),wnote,"=")
+//			endfor
+//		endfor
+//		printf "total execution time = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+//		DoWindow/K $progressWin
+//		if (printIt ||1)
+//			printf "Created & Filled waves:   %s\r",wList
+//		endif
+//		return wListFull										// return list of waves with keys
+//	End
 
 
 // ==============================================================================================

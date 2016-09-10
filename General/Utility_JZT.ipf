@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.09
+#pragma version = 4.10
 // #pragma hide = 1
 
 Menu "Graph"
@@ -65,6 +65,7 @@ strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 //		monotonic(a), checks if a wave is monotonic
 //		isWaveConstant(), returns 1 if all elements of wav are the same
 //		isdigit(c) & isletter(c), handy utilities
+//		countOccurancesOfStr(main,find), count number of times find occurs in main
 //		angleVec2Vec(a,b), finds angle between two vectors (degree)
 //		perp2Vector(a), returns a free vector that is perpendicular to a, the direction around a is unspecified.
 //		rotationAngleOfMat(rot)  finds the total rotation angle of a matrix 'rot'
@@ -2575,6 +2576,19 @@ ThreadSafe Function isletter(c)				// returns 1 if c is an upper or lower case l
 	String c
 	Variable i=char2num(c)
 	return (65<=i && i<=90) || (97<=i && i<=122)
+End
+
+
+
+ThreadSafe Function countOccurancesOfStr(main,find)	// count number of times find occurs in main
+	String main				// main string
+	String find				// count occurances of find in main
+	Variable n=0, i0=0, len=strlen(find)
+	do
+		i0 = strsearch(main,find,i0+len,2)
+		n += 1
+	while (i0>=0)
+	return (n-1)
 End
 
 

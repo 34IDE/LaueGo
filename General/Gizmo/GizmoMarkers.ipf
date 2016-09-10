@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.20
+#pragma version = 2.21
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -1188,7 +1188,9 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
 		printIt = 1
 		String QcName=NameOfWave(Qc), spaceName = NameOfWave(space3D)
 		QcName = SelectString(strlen(QcName),"gizmoScatterMarker",QcName)
-		QxHW = QxHW>0 ? QxHW : 1
+		QxHW = QxHW>0 ? QxHW : NumVarOrDefault("root:Packages:GizmoMarkers:DefaultFitHWx",1)
+		QyHW = ParamIsDefault(QyHW) || numtype(QyHW) ? NumVarOrDefault("root:Packages:GizmoMarkers:DefaultFitHWy",NaN) : QyHW
+		QzHW = ParamIsDefault(QzHW) || numtype(QzHW) ? NumVarOrDefault("root:Packages:GizmoMarkers:DefaultFitHWz",NaN) : QzHW
 		Prompt spaceName,"3D space",popup,spaceList
 		Prompt QxHW,"X-HW in Volume to Use"
 		Prompt QyHW,"Y-HW in Volume to Use (NaN defaults to X-HW)"
@@ -1217,14 +1219,21 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
 			Wave Qc=$QcName						// this is for a free wave which does not have a name
 		endif
 	endif
-	QyHW = QyHW>0 ? QyHW : QxHW
-	QzHW = QzHW>0 ? QzHW : QxHW
+
 	if (!WaveExists(space3D) || !WaveExists(Qc))
 		return 1
-	elseif (numtype(sum(Qc)+QxHW+QyHW+QzHW) || !(QxHW>0) || !(QyHW>0) || !(QzHW>0))
+	elseif (numtype(sum(Qc)+QxHW) || !(QxHW>0))
 		return 1
 	endif
 
+	if (QxHW>0 && numtype(QxHW)==0)			// re-set defaults for next time
+		Variable/G root:Packages:GizmoMarkers:DefaultFitHWx = QxHW
+		Variable/G root:Packages:GizmoMarkers:DefaultFitHWy = QyHW
+		Variable/G root:Packages:GizmoMarkers:DefaultFitHWz = QzHW
+	endif
+
+	QyHW = QyHW>0 && numtype(QyHW)==0 ? QyHW : QxHW
+	QzHW = QzHW>0 && numtype(QzHW)==0 ? QzHW : QxHW
 	Wave sub3D = ExtractSubVolume(space3D,Qc,QxHW,HWy=QyHW,HWz=QzHW)	// get sub-volume centered on Qc
 	Variable err = FitPeakIn3D(sub3D,GP,QxHW,HWy=QyHW,HWz=QzHW, printIt=1)	// uses "Gaussian3DFitFunc"
 //	Variable err = FitPeakIn3D(sub3D,GP,QxHW,HWy=QyHW,HWz=QzHW, func3D="GaussianCross3DFitFunc", printIt=1)
@@ -1575,6 +1584,8 @@ Static Function InitGizmoMarkers()
 	Execute/Q/Z "GizmoMenu AppendItem={JZTm0,\"Marker Panel\", \"MakeGizmoScatterMarkerPanel()\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZTm1,\"   Marker Info\", \"PrintGizmoMarkerInfoAll()\"}"
 #endif
+	NewDataFolder/O root:Packages
+	NewDataFolder/O root:Packages:GizmoMarkers
 End
 
 //  ==================================== End of Init =====================================  //
