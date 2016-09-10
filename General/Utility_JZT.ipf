@@ -2579,7 +2579,6 @@ ThreadSafe Function isletter(c)				// returns 1 if c is an upper or lower case l
 End
 
 
-
 ThreadSafe Function countOccurancesOfStr(main,find)	// count number of times find occurs in main
 	String main				// main string
 	String find				// count occurances of find in main
