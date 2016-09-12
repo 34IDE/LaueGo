@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.61
+#pragma version = 1.62
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -2242,10 +2242,17 @@ Function/T ImageMetaData2Waves(path,imageFmt,r1,r2,keyList,[mask,dark,printIt])	
 		Prompt r1, "first range  e.g. 1-200"
 		Prompt r2, "second range  e.g. 1-200 (optional)"
 		Prompt keyList,"list of keys (use spaces commas or semi-colons"
-		DoPrompt "Range(s) & Keys",r1,r2,keyList
+		Prompt imageFmt, "Image format string"
+		DoPrompt "Range(s) & Keys",imageFmt,r1,r2,keyList
 		if (V_flag)
 			return ""
 		endif
+		if (strlen(r1)<1)											// never want r2 without something in r1
+			r1 = r2
+			r2 = ""
+		endif
+		imageFmt = ReplaceString("%g",imageFmt,"%d")
+		Nfmt = countOccurancesOfStr(imageFmt,"%d")		// number of "%d" formats present
 		printIt = 1
 	endif
 	keyList = TrimFrontBackWhiteSpace(keyList)			// trim leading white space
@@ -2294,7 +2301,7 @@ Function/T ImageMetaData2Waves(path,imageFmt,r1,r2,keyList,[mask,dark,printIt])	
 
 	if (ItemsInList(keyList)<1 || ItemsInRange(r1)<1 || Nfmt>1 && ItemsInRange(r1)<1)
 		if (printIt)
-			print "keyList is empty or the rangees are wrong"
+			print "keyList is empty or the ranges are wrong"
 		endif
 		return ""	// no keys or empty ranges, quit
 	endif
