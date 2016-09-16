@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.65	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.64	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -4001,12 +4001,6 @@ End
 Static Function interpolate3dRodFromXHFSheets(resolution)
 	Variable resolution	// resolution in final array (µm)
 
-
-
-Wave clipWave=Nindexed
-Variable clipValueMin
-
-
 	Wave XX=XX,HH=HH,FF=FF		// positions (beamline coords) for the (RX,RH,RF)
 	Wave RX=RX,RH=RH,RF=RF		// three components of the Rodriques vector
 	if (!WaveExists(XX) || !WaveExists(HH) || !WaveExists(FF) || !WaveExists(RX) || !WaveExists(RH) || !WaveExists(RF))
@@ -4171,21 +4165,12 @@ Variable clipValueMin
 		Make/N=(NH,NF)/O alphaLo, alphaHi, betaLo, betaHi, gammaLo, gammaHi
 	endif
 
-Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
-
-
 	Variable hiX=Xvalues[0]								// current X value of the to measured planes
 	Variable ihiX=0										// index into Xvalues[] of current hiX
 	Make/N=(N)/O/D indexWave=NaN					// only used in this routine
 	Variable ix, mx
 	for (i=0,mx=0;i<N;i+=1)							// find all of the raw data points with this X, and save location in indexWave[]
-
-		if (useIntensClip)							// reject points that are too low
-			if (clipWave[i] >= clipValueMin)
-				continue
-			endif
-		endif
-
+//		if (abs(hiX-XX[i])<threshold)
 		if (abs(hiX-XX[i])<threshold && numtype(RX[i])==0)
 			indexWave[mx] = i
 			mx += 1
