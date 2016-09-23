@@ -2013,9 +2013,15 @@ End
 
 
 
-Function/S WindowsWithWave(w,flag)	// return list of all graph or table windows containing the wave
+Function/S WindowsWithWave(w,flag,[deep])	// return list of all graph or table windows containing the wave
 	Wave w										// wave to look for
 	Variable flag								// use: 1=graphs, 2=tables, 4=gizmos, or any sum of 1,2,4, 7 gives all
+	Variable deep								// if true, then look at all the waves associated with a window, color...
+	deep = ParamIsDefault(deep) || numtype(deep) ? 0 : deep
+	if (deep)
+		DoAlert 0, "ERROR -- WindowsWithWave()\rparameter deep is not yet implemented"
+		return ""
+	endif
 	flag = round(flag) & 7					// flag is a bit mask
 	if (!WaveExists(w) || numtype(flag) || flag==0)
 		return ""
