@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.10
+#pragma version = 4.11
 // #pragma hide = 1
 
 Menu "Graph"
@@ -56,7 +56,7 @@ strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 //		RemoveDuplicatesFromList(list,[listSepStr,matchCase]), return list with duplicate items removed
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
 //		AxisLabelFromGraph(), gets the axis label
-//		FindGraphsWithWave() & FindGizmosWithWave(), FindTablesWithWave() finds an existing graph or gizmo with a particular wave
+//		FindWindowsWithWave(w,flag)	// return list of all windows with w, flag: graph=1, table=2, gizmo=4
 //		DisplayTableOfWave(...), display table taking into account any col/row labels
 //		getListOfTypesInFile(), returns file type (using the $filetype) in my old standard files (trying to start only using xml)
 //		DrawMarker(), draw a marker
@@ -1820,7 +1820,7 @@ Function/T OnlyWavesThatAreDisplayed(inList,[not])
 	for (m=0, name=StringFromList(0,inList); strlen(name); m+=1,name=StringFromList(m,inList))
 		Wave ww=$name
 		if (WaveExists(ww))
-			use = strlen(FindGraphsWithWave(ww)) > 0
+			use = strlen(FindWindowsWithWave(ww,1)) > 0
 			use = not ? !use : use
 			out += SelectString(use,"",name+";")
 		endif
@@ -1980,7 +1980,7 @@ Function/T AxisLabelFromGraph(gName,w,axis)	// returns specified axis label for 
 			return ""
 		endif
 	endif
-	gName = SelectString(strlen(gName),StringFromList(0,FindGraphsWithWave(w)),gName)
+	gName = SelectString(strlen(gName),StringFromList(0,FindWindowsWithWave(w,1)),gName)
 	String infoStr=""
 	if (WaveExists(w))
 		infoStr=ImageInfo(gName,NameOfWave(w),0)
@@ -2013,13 +2013,21 @@ End
 
 
 
-Function/S FindGraphsWithWave(w)	// find the graph window which contains the specified wave
-	Wave w
-	if (!WaveExists(w))
+Function/S FindWindowsWithWave(w,flag)	// return list of all graph or table windows containing the wave
+	Wave w										// wave to look for
+	Variable flag								// use: 1=graphs, 2=tables, 4=gizmos, or any sum of 1,2,4, 7 gives all
+	flag = round(flag) & 7					// flag is a bit mask
+	if (!WaveExists(w) || numtype(flag) || flag==0)
 		return ""
 	endif
-	String name0=GetWavesDataFolder(w,2), out=""
-	String win,wlist = WinList("*",";","WIN:1"), clist, cwin
+	String out=""
+	if (flag & 4)							// flag includes Gizmos
+		out = FindGizmosWithWave(w)
+	endif
+	if ((flag&3) == 0)					// no Graphs or Tables, so done
+		return out
+	endif
+	String win,wlist = WinList("*",";","WIN:"+num2istr(flag)), clist, cwin
 	Variable i,m,Nm=ItemsInList(wlist)
 	for (m=0;m<Nm;m+=1)
 		win = StringFromList(m,wlist)
@@ -2027,7 +2035,7 @@ Function/S FindGraphsWithWave(w)	// find the graph window which contains the spe
 		if (V_flag>0)
 			out += win+";"
 		else
-			clist = ChildWindowList(win)
+			clist = ChildWindowList(win)	// check for sub-windows
 			for (i=0;i<ItemsInLIst(clist);i+=1)
 				cwin = StringFromList(i,clist)
 				CheckDisplayed/W=$(win+"#"+cwin) w
@@ -2040,8 +2048,21 @@ Function/S FindGraphsWithWave(w)	// find the graph window which contains the spe
 	endfor
 	return out
 End
+//
 
-
+//		********** This Funciton is DEPRECATED **********
+Function/S FindGraphsWithWave(w)	// find the graph window which contains the specified wave
+	Wave w
+	return FindWindowsWithWave(w,1)
+End
+//
+//		********** This Funciton is DEPRECATED **********
+Function/S FindTablesWithWave(w)	// find the table windows which contains the specified wave
+	Wave w
+	return FindWindowsWithWave(w,2)
+End
+//
+//		********** Do not directly call this, use: FindWindowsWithWave(w,4) **********
 Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specified wave
 	Wave w
 	if (!WaveExists(w) || exists("NewGizmo")!=4)
@@ -2084,36 +2105,62 @@ Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specifi
 	KillWaves/Z TW_gizmoObjectList
 	return list
 End
-
-
-
-Function/T FindTablesWithWave(w)	// find the table windows which contains the specified wave
-	Wave w
-	if (!WaveExists(w))
-		return ""
-	endif
-	String name0=GetWavesDataFolder(w,2), out=""
-	String win,wlist = WinList("*",";","WIN:2"), clist, cwin
-	Variable i,m,Nm=ItemsInList(wlist)
-	for (m=0;m<Nm;m+=1)
-		win = StringFromList(m,wlist)
-		CheckDisplayed/W=$win w
-		if (V_flag>0)
-			out += win+";"
-		else
-			clist = ChildWindowList(win)
-			for (i=0;i<ItemsInLIst(clist);i+=1)
-				cwin = StringFromList(i,clist)
-				CheckDisplayed/W=$(win+"#"+cwin) w
-				if (V_flag>0)
-					out += win+"#"+cwin+";"
-					break
-				endif
-			endfor
-		endif
-	endfor
-	return out
-End
+//
+//Function/S FindGraphsWithWave(w)	// find the graph window which contains the specified wave
+//	Wave w
+//	if (!WaveExists(w))
+//		return ""
+//	endif
+//	String name0=GetWavesDataFolder(w,2), out=""
+//	String win,wlist = WinList("*",";","WIN:1"), clist, cwin
+//	Variable i,m,Nm=ItemsInList(wlist)
+//	for (m=0;m<Nm;m+=1)
+//		win = StringFromList(m,wlist)
+//		CheckDisplayed/W=$win w
+//		if (V_flag>0)
+//			out += win+";"
+//		else
+//			clist = ChildWindowList(win)
+//			for (i=0;i<ItemsInLIst(clist);i+=1)
+//				cwin = StringFromList(i,clist)
+//				CheckDisplayed/W=$(win+"#"+cwin) w
+//				if (V_flag>0)
+//					out += win+"#"+cwin+";"
+//					break
+//				endif
+//			endfor
+//		endif
+//	endfor
+//	return out
+//End
+//
+//Function/T FindTablesWithWave(w)	// find the table windows which contains the specified wave
+//	Wave w
+//	if (!WaveExists(w))
+//		return ""
+//	endif
+//	String name0=GetWavesDataFolder(w,2), out=""
+//	String win,wlist = WinList("*",";","WIN:2"), clist, cwin
+//	Variable i,m,Nm=ItemsInList(wlist)
+//	for (m=0;m<Nm;m+=1)
+//		win = StringFromList(m,wlist)
+//		CheckDisplayed/W=$win w
+//		if (V_flag>0)
+//			out += win+";"
+//		else
+//			clist = ChildWindowList(win)
+//			for (i=0;i<ItemsInLIst(clist);i+=1)
+//				cwin = StringFromList(i,clist)
+//				CheckDisplayed/W=$(win+"#"+cwin) w
+//				if (V_flag>0)
+//					out += win+"#"+cwin+";"
+//					break
+//				endif
+//			endfor
+//		endif
+//	endfor
+//	return out
+//End
 
 
 
@@ -2153,7 +2200,7 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 	if (!WaveExists(ww))
 		return $""
 	endif
-	String win=StringFromList(0,FindTablesWithWave(ww))	// find an existing table windows containing ww
+	String win=StringFromList(0,FindWindowsWithWave(ww,2))	// find an existing table windows containing ww
 	if (strlen(win))
 		DoWindow/F $win								// Table already exists, just bring it to front
 		return ww
