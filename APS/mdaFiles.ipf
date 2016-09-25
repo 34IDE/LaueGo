@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.11
+#pragma version = 1.12
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -283,7 +283,7 @@ Static Function/T DisplayMDAresult2D(image)
 		return ""
 	endif
 
-	String win = StringFromList(0,FindGraphsWithWave(image))
+	String win = StringFromList(0,WindowsWithWave(image,1))
 	if (strlen(win))
 		DoWindow/F $win			// bring window with image to the top
 		return GetWavesDataFolder(image,2)
@@ -351,7 +351,7 @@ Static Function/T DisplayMDAresult1D(line)
 		return ""
 	endif
 
-	String win = StringFromList(0,FindGraphsWithWave(line))
+	String win = StringFromList(0,WindowsWithWave(line,1))
 	if (strlen(win))
 		DoWindow/F $win			// bring window with line to the top
 		return GetWavesDataFolder(line,2)

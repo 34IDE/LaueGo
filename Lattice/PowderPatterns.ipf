@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.19
+#pragma version = 0.20
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -511,7 +511,7 @@ Function GraphPowderPattern(ww)
 		endif
 	endif
 
-	String graph = StringFromList(0,FindGraphsWithWave(ww))
+	String graph = StringFromList(0,WindowsWithWave(ww,1))
 	if (strlen(graph)>0)
 		DoWindow/F $graph
 		return 0
@@ -598,7 +598,7 @@ Function GraphPowderLines(ww,[theta])
 		endif
 	endif
 
-	String graph = StringFromList(0,FindGraphsWithWave(ww))
+	String graph = StringFromList(0,WindowsWithWave(ww,1))
 	if (strlen(graph)>0)
 		DoWindow/F $graph
 		return 0
@@ -730,7 +730,7 @@ Function TablePowderLines(w)
 		endif
 	endif
 
-	String table = StringFromList(0,FindTablesWithWave(w))
+	String table = StringFromList(0,WindowsWithWave(w,2))
 	if (strlen(table)>0)
 		DoWindow/F $table
 		return 0

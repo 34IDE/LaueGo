@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.94
+#pragma version=1.95
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -593,7 +593,7 @@ Function MakColorHexagon()
 		endfor
 	endfor
 
-	String gName = StringFromList(0,FindGraphsWithWave(colorHexagon))
+	String gName = StringFromList(0,WindowsWithWave(colorHexagon,1))
  	if (strlen(gName))
 		DoWindow/F $gName
 		return 0
@@ -793,7 +793,7 @@ Function GraphColorTriangle(image3)
 		return 1							// wave must have 3 layers (r,g,b)
 	endif
 
-	String win=StringFromList(0,FindGraphsWithWave(image3))
+	String win=StringFromList(0,WindowsWithWave(image3,1))
 	if (strlen(win))						// already on a grapgh, bring to front
 		DoWinDow/F $win
 		return 0
@@ -851,7 +851,7 @@ Function Make_GraphPoles(poleXY)				// makes (or fixes up) a pole figure graph
 	if (!WaveInClass(poleXY,"poleXYpoints"))
 		return 1
 	endif
-	String gName = StringFromList(0,FindGraphsWithWave(poleXY))
+	String gName = StringFromList(0,WindowsWithWave(poleXY,1))
 	String wnote=note(poleXY)
 	String hkl = "("+StringByKey("hklStr",wnote,"=")+")"
  	if (strlen(gName))
@@ -1496,7 +1496,7 @@ Static Function/WAVE DisplayHistogramFrom3d(hist)
 	endif
 	hName = NameOfWave(hist)
 
-	String gName = StringFromList(0,FindGraphsWithWave(hist))
+	String gName = StringFromList(0,WindowsWithWave(hist,1))
 	if (strlen(gName)>0)						// hist alreay plotted, just bring the plot to the front
 		DoWindow/F $gName
 		return hist
@@ -3021,7 +3021,7 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	endif
 	Variable N = DimSize(Xw,0)
 
-	String win=StringFromList(0,FindGraphsWithWave(Yw))
+	String win=StringFromList(0,WindowsWithWave(Yw,1))
 	if (!ForceNew && strlen(win))			// plot exists, bring it to front
 		DoWindow/F $win
 		return win

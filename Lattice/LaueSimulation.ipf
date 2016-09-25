@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.12
+#pragma version = 1.13
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -307,7 +307,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	SetDimLabel 1,10,pixelY,PeakIndexed	;	SetDimLabel 1,11,detNum,PeakIndexed	
 
 	if (printIt && Nspots>0)
-		String gName = StringFromLIst(0,FindGraphsWithWave(PeakIndexed))
+		String gName = StringFromLIst(0,WindowsWithWave(PeakIndexed,1))
 		if (strlen(gName))
 			DoWindow/F $gName
 		else
@@ -351,7 +351,7 @@ Function DisplaySimulatedLauePattern(FullPeakIndexed)
 	if (!WaveExists(FullPeakIndexed))
 		return 1
 	endif
-	String win = StringFromList(0,FindGraphsWithWave(FullPeakIndexed))
+	String win = StringFromList(0,WindowsWithWave(FullPeakIndexed,1))
 	if (strlen(win))
 		DoWindow/F $win
 		return 0

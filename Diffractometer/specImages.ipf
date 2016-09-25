@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.52
+#pragma version = 0.53
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -1111,7 +1111,7 @@ Static Function/T GraphDiffractometerImage(image)
 	if (!WaveExists(image))
 		return ""
 	endif
-	String win=StringFromList(0,FindGraphsWithWave(image))
+	String win=StringFromList(0,WindowsWithWave(image,1))
 	if (strlen(win))												// image is already on graph, just bring graph to front
 		DoWindow/F $win
 		return win

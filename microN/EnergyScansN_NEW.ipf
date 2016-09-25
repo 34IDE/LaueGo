@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.37
+#pragma version = 2.38
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -1137,7 +1137,7 @@ Function/WAVE Q_SumAllPositions(Qwav)			// sum over all the positions in a Q vs 
 	wnote = ReplaceStringByKey("waveClass",wnote,class,"=")
 	Note/K ww,wnote
 
-	String graphName=StringFromList(0,FindGraphsWithWave(ww))
+	String graphName=StringFromList(0,WindowsWithWave(ww,1))
 	if (strlen(graphName))									// bring graph with ww to the front
 		DoWindow/F $graphName
 		return ww
@@ -2275,7 +2275,7 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 	Note/K Qhist, wnote
 
 	// if Qhist is on a graph, update textbox and line, so find a plot (if one exists, containing Qhist)
-	String win = StringFromList(0,FindGraphsWithWave(Qhist))	// find top most graph containing Qhist
+	String win = StringFromList(0,WindowsWithWave(Qhist,1))	// find top most graph containing Qhist
 	if (!quiet && strlen(win))
 		if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc"))
 			DoWindow/F $win
@@ -3452,7 +3452,7 @@ Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index i
 	endif
 	Variable N=numpnts(pkWave)-1
 
-	String win = StringFromList(0,FindGraphsWithWave(pkWave))	// find top most graph containing pkWave
+	String win = StringFromList(0,WindowsWithWave(pkWave,1))	// find top most graph containing pkWave
 	if (strlen(win))
 		lo = NumberByKey("POINT",CsrInfo(A,win))
 		hi = NumberByKey("POINT",CsrInfo(B,win))
@@ -5264,7 +5264,7 @@ Function/T Q_SumAllDepths(image)			// sum all the depths in a Q vs Depth image
 	Wave ww=$wname
 	Note/K ww,wnote
 
-	String graphName=StringFromList(0,FindGraphsWithWave(ww))
+	String graphName=StringFromList(0,WindowsWithWave(ww,1))
 	if (strlen(graphName))									// bring graph with ww to the front
 		DoWindow/F $graphName
 		return GetWavesDataFolder(ww,2)
@@ -6867,7 +6867,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			beep
 		endif
 
-		String wName=StringFromlist(0,FindGizmosWithWave(Qspace3d))
+		String wName=StringFromlist(0,WindowsWithWave(Qspace3d,4))
 		if (strlen(wName)==0)
 			MakeGizmoQspace3d(Qspace3D)
 		endif

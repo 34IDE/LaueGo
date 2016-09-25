@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3
-#pragma version = 0.05
+#pragma version = 0.06
 #pragma ModuleName=CurrentDetector
 #include "ImageDisplayScaling"
 #include "HDF5images"
@@ -113,7 +113,7 @@ Function/WAVE LoadCurrentDetector(detID,[printIt])
 		printf "\t\t// Loaded image to %s\r",GetWavesDataFolder(image,2)
 	endif
 
-	String win = StringFromList(0,FindGraphsWithWave(image))
+	String win = StringFromList(0,WindowsWithWave(image,1))
 	if (strlen(win))
 		DoWindow/F $win							// bring graph with image to front
 	else

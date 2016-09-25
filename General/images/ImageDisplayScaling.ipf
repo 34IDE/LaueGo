@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.07
+#pragma version = 2.08
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -523,7 +523,7 @@ Function/S NewImageGraph(image,[withButtons,kill])
 		return ""
 	endif
 
-	String win=StringFromList(0,FindGraphsWithWave(image))
+	String win=StringFromList(0,WindowsWithWave(image,1))
 	if (strlen(win))
 		DoWindow/F $win
 		return ""
@@ -1364,7 +1364,7 @@ Function imagePlaneDisplayed(win,image)		// returns plane displayed when showing
 	Variable found=0
 	if (WaveExists(image))
 		if (strlen(win)<1)
-			win = StringFromList(0,FindGraphsWithWave(image))
+			win = StringFromList(0,WindowsWithWave(image,1))
 		endif
 		if (strlen(win)<1)						// image was specified, but it is not displayed
 			return NaN

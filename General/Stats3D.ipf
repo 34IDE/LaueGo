@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.15
+#pragma version = 0.16
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -542,7 +542,11 @@ Static Function SimplePeakIn3Dstats(space3D,GP, [printIt])
 	Wave RL = getRl(space3D,NaN)
 	if (WaveExists(RL))
 		MatrixOP/FREE hkl = Inv(RL) x xyz0
+	else
+		Wave hkl=$""
 	endif
+#else
+	Wave hkl=$""
 #endif
 	if (WaveExists(hkl))
 		GP.hkl[0] = hkl[0]	;		GP.hkl[1] = hkl[1]	;		GP.hkl[2] = hkl[2]

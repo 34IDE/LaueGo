@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.57
+#pragma version = 0.58
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -427,7 +427,7 @@ Static Function/S MakeGraphMovieFrame()
 		return ""
 	endif
 
-	String gList=FindGraphsWithWave(movieFrame)
+	String gList=WindowsWithWave(movieFrame,1)
 	String gName=StringFromList(0,gList)
 	if (ItemsInList(gList)>1)
 		String item

@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.20
+#pragma version = 0.21
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2457,7 +2457,7 @@ Function/WAVE PutZoneLinesOnGraph(FullPeakList,[Nmin,tolAngle,printIt])
 	endif
 
 	Wave image = $StringByKey("fittedIgorImage",note(FullPeakList),"=")
-	String win = StringFromList(0,FindGraphsWithWave(image))
+	String win = StringFromList(0,WindowsWithWave(image,1))
 	CheckDisplayed/W=$win zOut
 	if (strlen(win) && !V_flag)		// image displayed, but zOut NOT on image
 		AppendToGraph/W=$win zOut[*][1] vs zOut[*][0]
@@ -4548,7 +4548,7 @@ Function GraphTestPattern(FullPeakList,FullPeakIndexed,[pattern])
 			Wave FullPeakList = $name
 		endif
 	endif
-	String win = StringFromList(0,FindGraphsWithWave(FullPeakList))
+	String win = StringFromList(0,WindowsWithWave(FullPeakList,1))
 	if (strlen(win))
 		DoWindow/F $win
 		return 0

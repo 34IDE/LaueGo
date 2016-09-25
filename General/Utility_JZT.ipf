@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.11
+#pragma version = 4.12
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2013,24 +2013,19 @@ End
 
 
 
-Function/S WindowsWithWave(w,flag,[deep])	// return list of all graph or table windows containing the wave
-	Wave w										// wave to look for
+Function/S WindowsWithWave(w,flag)
+	// returns a list of all graph, table or gizmo windows that make use of w in any way, x,y,color,...
+	Wave w										// wave to look for, checks is wave y or x or image or used to set color...
 	Variable flag								// use: 1=graphs, 2=tables, 4=gizmos, or any sum of 1,2,4, 7 gives all
-	Variable deep								// if true, then look at all the waves associated with a window, color...
-	deep = ParamIsDefault(deep) || numtype(deep) ? 0 : deep
-	if (deep)
-		DoAlert 0, "ERROR -- WindowsWithWave()\rparameter deep is not yet implemented"
-		return ""
-	endif
 	flag = round(flag) & 7					// flag is a bit mask
 	if (!WaveExists(w) || numtype(flag) || flag==0)
 		return ""
 	endif
 	String out=""
-	if (flag & 4)							// flag includes Gizmos
+	if (flag & 4)								// flag includes Gizmos
 		out = FindGizmosWithWave(w)
 	endif
-	if ((flag&3) == 0)					// no Graphs or Tables, so done
+	if ((flag&3) == 0)						// if no Graphs or Tables, we are done
 		return out
 	endif
 	String win,wlist = WinList("*",";","WIN:"+num2istr(flag)), clist, cwin
@@ -2055,14 +2050,13 @@ Function/S WindowsWithWave(w,flag,[deep])	// return list of all graph or table w
 	return out
 End
 //
-
-//		********** This Funciton is DEPRECATED **********
+//		********** This Funciton is DEPRECATED, just call WindowsWithWave(w,1) directly **********
 Function/S FindGraphsWithWave(w)	// find the graph window which contains the specified wave
 	Wave w
 	return WindowsWithWave(w,1)
 End
 //
-//		********** This Funciton is DEPRECATED **********
+//		********** This Funciton is DEPRECATED, just call WindowsWithWave(w,2) directly **********
 Function/S FindTablesWithWave(w)	// find the table windows which contains the specified wave
 	Wave w
 	return WindowsWithWave(w,2)
@@ -2070,6 +2064,7 @@ End
 //
 //		********** Do not directly call this, use: WindowsWithWave(w,4) **********
 Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specified wave
+	// the wave may be ANY wave that shows up in the objectList, this includes RGBA, line size...
 	Wave w
 	if (!WaveExists(w) || exists("NewGizmo")!=4)
 		return ""

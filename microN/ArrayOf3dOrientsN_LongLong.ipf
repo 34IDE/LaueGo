@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.52	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.53	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -1216,7 +1216,7 @@ Function MakeGraphOfSliceWaveRGB()			// create the standard surface cut through 
 		DoAlert 0, "MakeGraphOfSliceWaveRGB(), cannot find 'sliceWaveRGB'"
 		return 1
 	endif
-	String gName = StringFromList(0,FindGraphsWithWave(sliceWaveRGB))
+	String gName = StringFromList(0,WindowsWithWave(sliceWaveRGB,1))
 	if (strlen(gName))
 		DoWindow/F $gName
 		return 1
@@ -1370,7 +1370,7 @@ Function showCubicTriangleColors(Np,saturate)
 		endfor
 	endfor
 
-	if (strlen(FindGraphsWithWave(CubicColors))<1)		// make the plot
+	if (strlen(WindowsWithWave(CubicColors,1))<1)		// make the plot
 		// Display/K=1/W=(1004,56,1424,322)
 		Display/K=1/W=(650,57,1151,372)
 		AppendImage CubicColors
@@ -1965,7 +1965,7 @@ Function SurfacePlotStyle(gName)
 	String fldr = GetWavesDataFolder(image,1)
 	Variable rgbWave = WaveDims(image)==3 && DimSize(image,2)==3
 
-	String str = WinRecreation(StringFromList(0,FindGraphsWithWave(image)),0)
+	String str = WinRecreation(StringFromList(0,WindowsWithWave(image,1)),0)
 	Variable newColorScale = strsearch(str,"ColorScale/C/N=colorScale1",0)<0
 	if (WhichListItem(SliceAngleAxis,"a;b;c;alpha;beta;gamma")>=0)	// display full auto-scale
 		ModifyImage $NameOfWave(image) ctab= {*,*,Rainbow,0}
@@ -2697,7 +2697,7 @@ Static Function sliceWave2RGB(sliceWave,SliceWaveIntens)
 	// get angle range
 	Variable trim = 0.015						// trim off bottom 1% and top 1% to make colors brighter (not whiter)
 	Variable rmin, rmax=NaN					// rotation range to map to color table (i.e. saturate at [rmin,rmax]
-	String gName = StringFromList(0,FindGraphsWithWave(sliceWave))
+	String gName = StringFromList(0,WindowsWithWave(sliceWave,1))
 	if (strlen(gName)<1)						// no graph, do not make the rgb wave
 		return 1
 	endif

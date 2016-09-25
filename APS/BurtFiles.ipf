@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.20
-#pragma version = 0.03
+#pragma version = 0.04
 #pragma ModuleName=BurtFiles
 
 Menu "Load Waves"
@@ -57,7 +57,7 @@ Function/T DisplayBurtResult(burt)
 	Note/K epoch, AddClassToWaveNote(wnote,"BurtXvalues")
 	Note/K pv, AddClassToWaveNote(wnote,"BurtYvalues")
 
-	String gName=StringFromLIst(0,FindGraphsWithWave(pv))
+	String gName=StringFromLIst(0,WindowsWithWave(pv,1))
 	if (strlen(gName)>0)
 		DoWindow/F $gName
 		return gName

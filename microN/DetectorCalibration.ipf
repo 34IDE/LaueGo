@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.83
+#pragma version = 0.84
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -2348,7 +2348,7 @@ Function/WAVE TableOfPixelTurnOffs(PixelTurnOffs,[printIt])
 		printf ")\r"
 	endif
 
-	String win=StringFromList(0,FindTablesWithWave(PixelTurnOffs))
+	String win=StringFromList(0,WindowsWithWave(PixelTurnOffs,2))
 	if (strlen(win))
 		DoWindow/F $win
 	else

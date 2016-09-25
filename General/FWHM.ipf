@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.13
+#pragma version = 2.14
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -297,7 +297,7 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,pLo,pHi,printIt,peakStruct])
 
 	String S_Info=""
 	Variable V_FitError=0, V_FitQuitReason=0
-	if (ItemsInLIst(FindGraphsWithWave(yw)))
+	if (ItemsInLIst(WindowsWithWave(yw,1)))
 		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw[pLo,pHi]/X=xw/NWOK/D /STRC=fs
 	else
 		FuncFit fwhm#fitUsingPeakWaveFunc, cw, yw[pLo,pHi]/X=xw/NWOK /STRC=fs

@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.85
+#pragma version = 4.86
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -464,7 +464,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 	if (!WaveInClass(indexedList,"IndexedPeakList*") || !WaveInClass(peakList,"FittedPeakList*") || !(dNum==limit(round(dNum),0,2)))
 		String indexName="", peakListName=""
 		Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";" )))
-		String win=StringFromList(0,FindGraphsWithWave(image))
+		String win=StringFromList(0,WindowsWithWave(image,1))
 		if (!(dNum == limit(round(dNum),0,2)))				// invalid dNum
 			dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
 		endif
@@ -2839,7 +2839,7 @@ Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAbov
 	endif
 	Variable Nu = DimSize(FullPeakList,0)
 
-	String win = StringFromList(0,FindGraphsWithWave(image))
+	String win = StringFromList(0,WindowsWithWave(image,1))
 	if (strlen(win))
 		SetWindow $win userdata(FitPeaks) = "FullPeakList="+GetWavesDataFolder(FullPeakList,2)
 	endif
@@ -5478,12 +5478,12 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 		endif
 		return 1
 	endif
-	String gName0 = StringFromList(0,FindGraphsWithWave(image0)), gName1
+	String gName0 = StringFromList(0,WindowsWithWave(image0,1)), gName1
 	if (strlen(gName0)<1)
 		return 1
 	endif
 	if (WaveExists(image1))
-		gName1 = StringFromList(0,FindGraphsWithWave(image1))
+		gName1 = StringFromList(0,WindowsWithWave(image1,1))
 	else
 		gName1 = gName0
 		Wave image1 = image0
@@ -5512,8 +5512,8 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 		Wave image0 = $iname0
 		Wave image1 = $iname1
 	endif
-	gName0 = StringFromList(0,FindGraphsWithWave(image0))
-	gName1 = StringFromList(0,FindGraphsWithWave(image1))
+	gName0 = StringFromList(0,WindowsWithWave(image0,1))
+	gName1 = StringFromList(0,WindowsWithWave(image1,1))
 	if (strlen(gName0)==0 || strlen(gName1)==0)
 		return 1
 	endif
@@ -7975,7 +7975,7 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 	withButtons = ParamIsDefault(withButtons) ? NaN : withButtons
 	withButtons = numtype(withButtons) ? 1 : !(!withButtons)
 
-	String win=StringFromList(0,FindGraphsWithWave(image))
+	String win=StringFromList(0,WindowsWithWave(image,1))
 	if (strlen(win))
 		DoWindow/F $win
 		return GetWavesDataFolder(image,2)

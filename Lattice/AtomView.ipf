@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.39
+#pragma version = 0.40
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1069,7 +1069,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		return ""
 	endif
 
-	String gizName = StringFromlist(0,FindGizmosWithWave(xyz))		// find the Gizmo which contains the specified wave
+	String gizName = StringFromlist(0,WindowsWithWave(xyz,4))		// find the Gizmo which contains the specified wave
 	if (strlen(gizName))
 		DoWindow/F $gizName
 		return gizName

@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.62
+#pragma version = 1.63
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -1284,7 +1284,7 @@ Static Function/T FindMovieGraph()
 	// Find name of suitable graph with imageOnMovie, and bring it to top
 	Variable printIt = (ItemsInList(GetRTStackInfo(0))<2)
 	Wave imageOnMovie=imageOnMovie
-	String gList=FindGraphsWithWave(imageOnMovie), gName=""
+	String gList=WindowsWithWave(imageOnMovie,1), gName=""
 	if (strlen(gList)<1)
 		if (printIt)
 			DoAlert 0, "No window ready for making the movie, first run\r'MakeMovieWindow()'"
@@ -1448,7 +1448,7 @@ Function/T IntensityVsDepth(pathName,filePrefix,positions,depths,i0,i1,j0,j1)
 	endif
 	DoWindow/K DisplayLoopStatus
 	if(ItemsInList(GetRTStackInfo(0))<2)		// only display result if called from command line or menu
-		String win = StringFromList(0,FindGraphsWithWave(intensVsDepth))
+		String win = StringFromList(0,WindowsWithWave(intensVsDepth,1))
 		if (strlen(win)<1)
 			if (DimSize(intensVsDepth,1)<2)
 				Display /W=(5,44,497,346) intensVsDepth
@@ -1687,7 +1687,7 @@ Function MakeROIsumPlot()
 		DoAlert 0, "You must run SumInManyROIs() with a mask first"
 		return 1
 	endif
-	String wName = FindGraphsWithWave(sumIntensDepthROI)
+	String wName = WindowsWithWave(sumIntensDepthROI,1)
 	if (strlen(wName))
 		wName = StringFromList(0,wName)
 		DoWindow/F $wName
@@ -1939,7 +1939,7 @@ Function/T LoadIntegralFile(fName)
 		wnote = ReplaceStringByKey("Xwave",wnote,GetWavesDataFolder(wx,2),"=")
 		Note/K wy, wnote
 	endif
-	if (printIt && strlen(FindGraphsWithWave(wy))<1)
+	if (printIt && strlen(WindowsWithWave(wy,1))<1)
 		DoAlert 1, "Display the integral for this reconstruction?"
 		if (V_flag==1)
 			DisplayReconstructionIntegral(wy,wx)
@@ -2041,7 +2041,7 @@ Function DisplayReconstructionIntegral(wy,wx)
 	if (!WaveExists(wy))
 		return 1
 	endif
-	String win = StringFromList(0,FindGraphsWithWave(wy))		// wave already plotted, bring to front
+	String win = StringFromList(0,WindowsWithWave(wy,1))		// wave already plotted, bring to front
  	if (strlen(win))
 		DoWindow/F $win
 		return 0
