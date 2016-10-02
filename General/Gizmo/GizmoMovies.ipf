@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.06
+#pragma version = 2.07
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
@@ -323,7 +323,7 @@ Static Function AddGizmoFrames2Movie(gm,N)
 	Execute "ExportGizmo wave as \""+gm.imageName+"\""	// get a picture of the gizmo
 #else
 	ModifyGizmo/N=$(gm.gizmoName) update = 1
-	ExportGizmo wave as $(gm.imageName)						// get a picture of the gizmo
+	ExportGizmo wave=gm.imageName								// get a picture of the gizmo
 #endif
 	DoWindow/F $(gm.graphName)									// bring graph with new picture to front
 	DoUpdate/W=$(gm.graphName)									// update graph to show picture
@@ -401,7 +401,7 @@ Function RemoveGizmoMovieClipPlane(gm)	// remove gizmo movie clip plane group fr
 	sprintf cmd, "RemoveFromGizmo/N=%s/U=2/Z object=%s",gm.gizmoName,gm.clipPlaneGroupName
 	Execute cmd
 #else
-	ModifyGizmo/N=$(gm.gizmoName) userString={gm.clipPlaneGroupName,""}
+	ModifyGizmo/N=$(gm.gizmoName) userString={$gm.clipPlaneGroupName,""}
 	RemoveFromGizmo/N=$(gm.gizmoName)/U=2/Z object=$(gm.clipPlaneGroupName)
 #endif
 	gm.clipPlaneGroupName = ""			// flags that clip plane group is gone
@@ -1105,23 +1105,23 @@ Static Function MakeGizmoMovieTestGizmo()	// show the test data in a Gizmo
 	NewGizmo/K=1/N=GizmoMovieTest0/T="GizmoMovieTest0" /W=(151,297,746,892)
 	ModifyGizmo startRecMacro
 	AppendToGizmo Scatter=root:xyzTestGizmoMovie,name=scatter0
-	ModifyGizmo ModifyObject=scatter0 property={ scatterColorType,1}
-	ModifyGizmo ModifyObject=scatter0 property={ Shape,2}
-	ModifyGizmo ModifyObject=scatter0 property={ size,3}
-	ModifyGizmo ModifyObject=scatter0 property={ colorWave,root:rgbaTestGizmoMovie}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ scatterColorType,1}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ Shape,2}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ size,3}
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ colorWave,root:rgbaTestGizmoMovie}
 	AppendToGizmo Axes=boxAxes,name=axes0
-	ModifyGizmo ModifyObject=axes0,property={-1,axisScalingMode,1}
-	ModifyGizmo ModifyObject=axes0,property={-1,axisColor,0,0,0,1}
-	ModifyGizmo ModifyObject=axes0,property={0,ticks,3}
-	ModifyGizmo ModifyObject=axes0,property={1,ticks,3}
-	ModifyGizmo ModifyObject=axes0,property={2,ticks,3}
-	ModifyGizmo ModifyObject=axes0,property={0,axisLabel,1}
-	ModifyGizmo ModifyObject=axes0,property={1,axisLabel,1}
-	ModifyGizmo ModifyObject=axes0,property={2,axisLabel,1}
-	ModifyGizmo ModifyObject=axes0,property={0,axisLabelText,"X"}
-	ModifyGizmo ModifyObject=axes0,property={1,axisLabelText,"Y"}
-	ModifyGizmo ModifyObject=axes0,property={2,axisLabelText,"Z"}
-	ModifyGizmo modifyObject=axes0 property={Clipped,0}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={-1,axisScalingMode,1}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={-1,axisColor,0,0,0,1}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={0,ticks,3}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={1,ticks,3}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={2,ticks,3}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelText,"X"}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelText,"Y"}
+	ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelText,"Z"}
+//	ModifyGizmo modifyObject=axes0, objectType=axes property={Clipped,0}
 	ModifyGizmo setDisplayList=0, object=axes0
 	ModifyGizmo setDisplayList=1, object=scatter0
 	ModifyGizmo SETQUATERNION={-0.708885,-0.338485,0.298854,0.541845}
