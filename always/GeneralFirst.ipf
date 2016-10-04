@@ -1,10 +1,13 @@
 #pragma rtGlobals= 2
-#pragma version = 3.34
+#pragma version = 3.35
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
+strConstant TEST_TEST="test test"
+
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 2		// want to include Gizmo support
 #if (IgorVersion()<7)
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
@@ -24,8 +27,10 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	return 0
 End
 #endif
+#endif
 
 
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 1
 Menu "Analysis"
 	Submenu "Packages"
 		"-"
@@ -35,6 +40,14 @@ Menu "Analysis"
 		help = {"Load commands for getting FWHM."}
 		"Image Display Range", Execute/P "INSERTINCLUDE \"ImageDisplayScaling\"" ; 	Execute/P "COMPILEPROCEDURES "
 		help = {"Load procedures that set range of color table based on a Marquee region"}
+		"Elements Data",Execute/P "INSERTINCLUDE  \"Elements\", version>=1.69";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
+		help = {"Load procedures for providing data on the elements"}
+	End
+End
+#endif
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 2
+Menu "Analysis"
+	Submenu "Packages"
 		Submenu "Gizmo"
 			"Gizmo Zoom & Translate", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GZoomTrans#InitGizmoZoomTranslate()"
 			help = {"Provide support of Zooming and translating Gizmos"}
@@ -46,25 +59,9 @@ Menu "Analysis"
 			help = {"Provide support of making movies of a Gizmo"}
 			"  Load All of the above Gizmo Utiliites",JZTgeneral#LoadAllGizmoUtilities()
 		End
-
-		SubMenu "Scattering..."
-			"X-ray Data",Execute/P "INSERTINCLUDE  \"Xray\", version>=2.21";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
-			help = {"Load procedures for providing X-ray data"}
-			"  Elements Data",Execute/P "INSERTINCLUDE  \"Elements\", version>=1.69";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
-			help = {"Load procedures for providing data on the elements"}
-			"  Cromer-Liberman",Execute/P "INSERTINCLUDE  \"CromerLiberman\", version>=1.7";Execute/P "COMPILEPROCEDURES "
-			help = {"Load procedures for providing Cromer-Liberman"}
-			"Ion Chamber",Execute/P "INSERTINCLUDE  \"IonChamber\", version>=3.2";Execute/P "COMPILEPROCEDURES ";Execute/P "ionChamberInitPackage()"
-			help = {"Load procedures for evaluating ion chamber output"}
-			"Lattices",Execute/P "INSERTINCLUDE  \"LatticeSym\", version>=3.77";Execute/P "COMPILEPROCEDURES ";Execute/P "InitLatticeSymPackage(showPanel=1)"
-			help = {"Load lattice symmetry procedures"}
-			"-"
-			"Neutron Scattering Data",Execute/P "INSERTINCLUDE  \"Neutron\", version>=1.1";Execute/P "COMPILEPROCEDURES ";Execute/P "NeutronDataInitPackage()"
-			help = {"Load procedures for providing Neutron Scattering Data"}
-		End
-		"-"
 	End
 End
+#endif
 
 
 Menu "File"
@@ -97,31 +94,6 @@ Menu "Misc"
 End
 
 
-Menu "Analysis"
-	Submenu "Packages"
-		"(APS specific"
-		Submenu "spec"
-			"spec with images",Execute/P "INSERTINCLUDE  \"specImages\", version>=0.44";Execute/P "COMPILEPROCEDURES ";Execute/P "init_specImage(\"\")"
-			help = {"Support for spec files plus support for spec with image files (like a Pilatus)."}
-			"spec files",Execute/P "INSERTINCLUDE  \"spec\", version>=2.27";Execute/P "COMPILEPROCEDURES ";Execute/P "specInitPackage()"
-			help = {"Load everything for reading spec files."}
-		End
-		"MDA files",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
-		help = {"Load mda files (from APS)."}
-		SubMenu "EPICS"
-			"EPICS("
-			"PV I\O", Execute/P "INSERTINCLUDE \"epics\"" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "epicsInitPackage()"
-			help = {"Load procedures for talking to PVs via EPICS (only useful at APS)"}
-			"Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
-			help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
-		End
-		"BURT Files",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
-		help = {"Load Burt files (from APS)."}
-		"WinView Reader", Execute/P "INSERTINCLUDE \"WinView\", version>=2.01"
-		help = {"Load procedures reading and looking at WinView images"}
-	End
-End
-
 Menu "Data"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
@@ -132,6 +104,7 @@ Menu "Data"
 		help = {"Load Burt files (from APS)."}
 	End
 End
+
 
 Menu "Load Waves"
 	SubMenu "Packages"

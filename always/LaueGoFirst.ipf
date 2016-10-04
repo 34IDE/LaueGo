@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 2.06
+#pragma version = 2.07
 #pragma ModuleName = LaueGoFirst
 #pragma hide = 1
 //Static Constant JZTalwaysFirst_Version_Min=2.4	// minimum required vesion of "always first.ipf"
@@ -10,6 +10,51 @@ StrConstant MICRO_GEOMETRY_VERSION_PATH = "root:Packages:MICRO_GEOMETRY_VERSION"
 //			1 -> HDF5
 //			2 -> TIFF
 //			4 -> SPE
+
+
+
+Menu "Analysis"
+	Submenu "Packages"
+		"-"
+		SubMenu "Scattering..."
+			"X-ray Data",Execute/P "INSERTINCLUDE  \"Xray\", version>=2.21";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
+			help = {"Load procedures for providing X-ray data"}
+			"  Elements Data",Execute/P "INSERTINCLUDE  \"Elements\", version>=1.69";Execute/P "COMPILEPROCEDURES ";Execute/P "ElementDataInitPackage()"
+			help = {"Load procedures for providing data on the elements"}
+			"  Cromer-Liberman",Execute/P "INSERTINCLUDE  \"CromerLiberman\", version>=1.7";Execute/P "COMPILEPROCEDURES "
+			help = {"Load procedures for providing Cromer-Liberman"}
+			"Ion Chamber",Execute/P "INSERTINCLUDE  \"IonChamber\", version>=3.2";Execute/P "COMPILEPROCEDURES ";Execute/P "ionChamberInitPackage()"
+			help = {"Load procedures for evaluating ion chamber output"}
+			"Lattices",Execute/P "INSERTINCLUDE  \"LatticeSym\", version>=3.77";Execute/P "COMPILEPROCEDURES ";Execute/P "InitLatticeSymPackage(showPanel=1)"
+			help = {"Load lattice symmetry procedures"}
+			"-"
+			"Neutron Scattering Data",Execute/P "INSERTINCLUDE  \"Neutron\", version>=1.1";Execute/P "COMPILEPROCEDURES ";Execute/P "NeutronDataInitPackage()"
+			help = {"Load procedures for providing Neutron Scattering Data"}
+		End
+
+		"(APS specific"
+		Submenu "spec"
+			"spec with images",Execute/P "INSERTINCLUDE  \"specImages\", version>=0.44";Execute/P "COMPILEPROCEDURES ";Execute/P "init_specImage(\"\")"
+			help = {"Support for spec files plus support for spec with image files (like a Pilatus)."}
+			"spec files",Execute/P "INSERTINCLUDE  \"spec\", version>=2.27";Execute/P "COMPILEPROCEDURES ";Execute/P "specInitPackage()"
+			help = {"Load everything for reading spec files."}
+		End
+		"MDA files",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
+		help = {"Load mda files (from APS)."}
+		SubMenu "EPICS"
+			"EPICS("
+			"PV I\O", Execute/P "INSERTINCLUDE \"epics\"" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "epicsInitPackage()"
+			help = {"Load procedures for talking to PVs via EPICS (only useful at APS)"}
+			"Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
+			help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
+		End
+		"BURT Files",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
+		help = {"Load Burt files (from APS)."}
+		"WinView Reader", Execute/P "INSERTINCLUDE \"WinView\", version>=2.01"
+		help = {"Load procedures reading and looking at WinView images"}
+	End
+End
+
 
 
 //Strconstant browserLeadJZT="\r--> moved to ", browserTailJZT="\r\r"
