@@ -1,18 +1,18 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.72
+#pragma version = 2.73
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",0) > 0
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
 #include "GeneralFirst", version>=3.35
 #endif
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",0) & (4+8+16)	// LauGo or Scattering or APS Specific
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & (4+8+16)	// LauGo or Scattering or APS Specific
 #include "LaueGoFirst", version>=2.07
 #endif
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",0) & 32
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32
 #include "LocalPackagesFirst", version>=2.07
 #endif
 
@@ -102,7 +102,7 @@ Static Function SetStartUpPrefsJZT()	// run the dialog to change the startup pre
 		prefs.Gizmo = 1
 		prefs.LaueGo = 1
 		prefs.Scattering = 1
-		prefs.APSspecific = 0
+		prefs.APSspecific = 1
 		prefs.LocalPackages = 1
 	endif
 	prefs.General = (prefs.Gizmo || prefs.LaueGo || prefs.Scattering || prefs.APSspecific || prefs.LocalPackages) ? 1 : prefs.General

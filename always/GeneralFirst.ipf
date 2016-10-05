@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.36
+#pragma version = 3.37
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -7,7 +7,7 @@
 
 strConstant TEST_TEST="test test"
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 2		// want to include Gizmo support
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
 #if (IgorVersion()<7)
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
@@ -30,7 +30,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 1
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
 Menu "Analysis"
 	Submenu "Packages"
 		"-"
@@ -46,7 +46,7 @@ Menu "Analysis"
 End
 #endif
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 2
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2
 Menu "Analysis"
 	Submenu "Packages"
 		Submenu "Gizmo"
@@ -65,7 +65,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 32
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32
 Menu "File"
 	"-"
 	SubMenu "Add Local User Package -->"
@@ -75,7 +75,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) > 0
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
 Menu "Graph"
 	"Set Aspect Ratio to Get Square Pixels \ Range",SetAspectToSquarePixels("")
 End
@@ -97,7 +97,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 16
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 16
 Menu "Data"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
@@ -123,7 +123,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 2		// want to include Gizmo support
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
 Static Function LoadAllGizmoUtilities()
 	Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00"
 	Execute/P "COMPILEPROCEDURES "
@@ -559,7 +559,7 @@ End
 //	if the package contains the line "#excludeFromPackageMenu", then it will not show up in the list of packages to load (useful for subroutines)
 //	Note if the ipf file contains both #requiredPackages and #excludeFromPackageMenu, then the behavior depends upon order, but that situation is stupid.
 //
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 32		// want to include support for User LocalPackages
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32		// want to include support for User LocalPackages
 Function/T JZTgeneral_CheckForUserPackages(dirPath)
 	String dirPath				// full path to a directory
 
