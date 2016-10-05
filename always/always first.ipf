@@ -1,21 +1,19 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.71
+#pragma version = 2.72
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
 #if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) >= 1
 #include "GeneralFirst", version>=3.35
 #endif
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & (4+8+16)	// LauGo or Scattering or APS Specific
 #include "LaueGoFirst", version>=2.07
 #endif
 
 #if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 32
 #include "LocalPackagesFirst", version>=2.07
 #endif
-
-
 
 
 
@@ -76,7 +74,7 @@ Static Structure StartUpPrefsJZT		// the packages available after startup
 	uchar General			// General: math and string functions
 	uchar Gizmo				// Gizmo: Zoom&Translate, Clip planes, Markers, and Movies
 	uchar LaueGo			// LaueGo: Lattices, X-ray, and all of the LaueGo capabilities
-	uchar Xray				// X-ray Data functions
+	uchar Scattering		// X-ray Data and other scattering related functions, includes Lattice
 	uchar APSspecific		// APS Specific: MDA files, BURT files, EPICS functions, and spec files
 	uchar LocalPackages	// menus showing Local Packages
 EndStructure
@@ -103,38 +101,38 @@ Static Function SetStartUpPrefsJZT()	// run the dialog to change the startup pre
 		prefs.General = 1						// Default statup settings (for a new installation)
 		prefs.Gizmo = 1
 		prefs.LaueGo = 1
-		prefs.Xray = 1
+		prefs.Scattering = 1
 		prefs.APSspecific = 0
 		prefs.LocalPackages = 1
-
 	endif
-	prefs.General = (prefs.Gizmo || prefs.LaueGo || prefs.Xray || prefs.APSspecific || prefs.LocalPackages) ? 1 : prefs.General
+	prefs.General = (prefs.Gizmo || prefs.LaueGo || prefs.Scattering || prefs.APSspecific || prefs.LocalPackages) ? 1 : prefs.General
+	prefs.Scattering = prefs.LaueGo ? 1 : prefs.Scattering
 
-	Variable General, Gizmo, LaueGo, Xray, APSspecific, LocalPackages
+	Variable General, Gizmo, LaueGo, Scattering, APSspecific, LocalPackages
 	General = !(! prefs.General) + 1	// set values for pop-up menus
 	Gizmo = !(! prefs.Gizmo) + 1
 	LaueGo = !(! prefs.LaueGo) + 1
-	Xray = !(! prefs.Xray) + 1
+	Scattering = !(! prefs.Scattering) + 1
 	APSspecific = !(! prefs.APSspecific) + 1
 	LocalPackages = !(! prefs.LocalPackages) + 1
 	Prompt General,"General purpose Functions",popup,"--;General purpose functions"
 	Prompt Gizmo,"Gimzo Functions",popup,"--;Gizmo functions"
 	Prompt LaueGo,"Laue Go Functions",popup,"--;LauGo system"
-	Prompt Xray,"Xray Data Functions",popup,"--;X-ray data"
+	Prompt Scattering,"X-ray Data Functions & Lattice",popup,"--;Scattering & X-ray data"
 	Prompt APSspecific,"APS Specific functions",popup,"--;APS specific functions"
 	Prompt LocalPackages,"Local Packages menu",popup,"--;Show Local Packages Menu"
-
-	DoPrompt "Capabilities to have available",General,Gizmo,LaueGo,Xray,APSspecific,LocalPackages
+	DoPrompt "Capabilities to have available",General,Gizmo,LaueGo,Scattering,APSspecific,LocalPackages
 	if (V_flag)
-		DoAlert 0, "You must choose something"
+		return -1
 	endif
 	prefs.General = General == 2			// set values from pop-up menus
 	prefs.Gizmo = Gizmo == 2
 	prefs.LaueGo = LaueGo == 2
-	prefs.Xray = Xray == 2
+	prefs.Scattering = Scattering == 2
 	prefs.APSspecific = APSspecific == 2
 	prefs.LocalPackages = LocalPackages == 2
-	prefs.General = (prefs.Gizmo || prefs.LaueGo || prefs.Xray || prefs.APSspecific || prefs.LocalPackages) ? 1 : prefs.General
+	prefs.General = (prefs.Gizmo || prefs.LaueGo || prefs.Scattering || prefs.APSspecific || prefs.LocalPackages) ? 1 : prefs.General
+	prefs.Scattering = prefs.LaueGo ? 1 : prefs.Scattering
 
 	SavePackagePreferences/FLSH=1 "JZT","startup",0,prefs
 	PrintStartUpPrefsJZT(prefs)
@@ -148,7 +146,7 @@ Static Function SetMaskFromPrefsStruct(prefs)
 	Variable mask = prefs.General		// make sure that local copy of mask is correctly set.
 	mask += 2*(prefs.Gizmo)
 	mask += 4*(prefs.LaueGo)
-	mask += 8*(prefs.Xray)
+	mask += 8*(prefs.Scattering)
 	mask += 16*(prefs.APSspecific)
 	mask += 32*(prefs.LocalPackages)
 	NewDataFolder/O root:Packages
@@ -165,12 +163,12 @@ Static Function PrintStartUpPrefsJZT(prefs)
 
 	String labels = "General:General, includes math and string functions.;"
 	labels += "Gizmo:Gizmo, includes Zoom&Translate, Clip planes, Markers, and Movies.;"
-	labels += "Xray:X-ray Data, includes X-ray data capabilities.;"
+	labels += "Scattering:X-ray Data & Lattice, includes X-ray data capabilities & Lattice;"
 	labels += "LaueGo:LaueGo: includes Lattices, X-ray, and all of the LaueGo capabilities.;"
 	labels += "APS:APS Specific, includes MDA file, BURT file, EPICS, and spec file capabilities.;"
 	labels += "LocalPackages:Show Menus for Local Packages.;"
-	Variable someOn  = (prefs.General || prefs.Gizmo || prefs.LaueGo || prefs.Xray || prefs.APSspecific || prefs.LocalPackages)
-	Variable someOff = !(prefs.General && prefs.Gizmo && prefs.LaueGo && prefs.Xray && prefs.APSspecific && prefs.LocalPackages)
+	Variable someOn  = (prefs.General || prefs.Gizmo || prefs.LaueGo || prefs.Scattering || prefs.APSspecific || prefs.LocalPackages)
+	Variable someOff = !(prefs.General && prefs.Gizmo && prefs.LaueGo && prefs.Scattering && prefs.APSspecific && prefs.LocalPackages)
 
 	if (someOn)
 		print " "
@@ -184,8 +182,8 @@ Static Function PrintStartUpPrefsJZT(prefs)
 		if (prefs.LaueGo)
 			print StringByKey("LaueGo",labels)
 		endif
-		if (prefs.Xray)
-			print StringByKey("Xray",labels)
+		if (prefs.Scattering)
+			print StringByKey("Scattering",labels)
 		endif
 		if (prefs.APSspecific)
 			print StringByKey("APS",labels)
@@ -207,8 +205,8 @@ Static Function PrintStartUpPrefsJZT(prefs)
 		if (! prefs.LaueGo)
 			print "NO ",StringByKey("LaueGo",labels)
 		endif
-		if (! prefs.Xray)
-			print "NO ",StringByKey("Xray",labels)
+		if (! prefs.Scattering)
+			print "NO ",StringByKey("Scattering",labels)
 		endif
 		if (! prefs.APSspecific)
 			print "NO ",StringByKey("APS",labels)

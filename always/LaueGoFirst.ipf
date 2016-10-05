@@ -1,18 +1,20 @@
 #pragma rtGlobals= 2
-#pragma version = 2.07
+#pragma version = 2.08
 #pragma ModuleName = LaueGoFirst
 #pragma hide = 1
 //Static Constant JZTalwaysFirst_Version_Min=2.4	// minimum required vesion of "always first.ipf"
 
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4		// LaueGo
 StrConstant MICRO_GEOMETRY_VERSION_PATH = "root:Packages:MICRO_GEOMETRY_VERSION"
 //		bit flags for MICRO_GEOMETRY_VERSION
 //			0 -> OLD
 //			1 -> HDF5
 //			2 -> TIFF
 //			4 -> SPE
+#endif
 
 
-
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 8		// Scattering
 Menu "Analysis"
 	Submenu "Packages"
 		"-"
@@ -31,7 +33,13 @@ Menu "Analysis"
 			"Neutron Scattering Data",Execute/P "INSERTINCLUDE  \"Neutron\", version>=1.1";Execute/P "COMPILEPROCEDURES ";Execute/P "NeutronDataInitPackage()"
 			help = {"Load procedures for providing Neutron Scattering Data"}
 		End
+	End
+End
+#endif
 
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 16	// APS Specific
+Menu "Analysis"
+	Submenu "Packages"
 		"(APS specific"
 		Submenu "spec"
 			"spec with images",Execute/P "INSERTINCLUDE  \"specImages\", version>=0.44";Execute/P "COMPILEPROCEDURES ";Execute/P "init_specImage(\"\")"
@@ -54,9 +62,9 @@ Menu "Analysis"
 		help = {"Load procedures reading and looking at WinView images"}
 	End
 End
+#endif
 
-
-
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4		// LaueGo
 //Strconstant browserLeadJZT="\r--> moved to ", browserTailJZT="\r\r"
 //ModifyBrowser echoCommands=0, command3="print browserLeadJZT,GetDataFolder(1),browserTailJZT"
 Menu "Analysis",dynamic
@@ -115,15 +123,20 @@ Menu "Analysis",dynamic
 		End
 	End
 End
+#endif
 
 
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 8		// Scattering
 Menu "Analysis"
 	Submenu "Packages"
 		// "µ beam, Sector 34" SubMenu gets insterted below
 		"Stereographic Projections",Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.81";Execute/P "COMPILEPROCEDURES ";Execute/P "InitStereoGraphicPackage()"
 	End
 End
-//
+#endif
+
+
+#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4		// LaueGo
 Function/T microMenuShowN(str)
 	String str
 	return SelectString(NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,256)&5,"",str)		// for both spe AND hdf5
@@ -257,6 +270,7 @@ Static Function/T arrow(fmt)
 	out += "ÐÐ> "
 	return out
 End
+#endif
 
 // The following were moved to Utility_JZT.ipf  on Dec 10, 2014
 //
