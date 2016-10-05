@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.35
+#pragma version = 3.36
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -7,7 +7,7 @@
 
 strConstant TEST_TEST="test test"
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 2		// want to include Gizmo support
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 2		// want to include Gizmo support
 #if (IgorVersion()<7)
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
@@ -30,7 +30,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 1
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 1
 Menu "Analysis"
 	Submenu "Packages"
 		"-"
@@ -45,7 +45,8 @@ Menu "Analysis"
 	End
 End
 #endif
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 2
+
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 2
 Menu "Analysis"
 	Submenu "Packages"
 		Submenu "Gizmo"
@@ -64,18 +65,20 @@ End
 #endif
 
 
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 32
 Menu "File"
 	"-"
 	SubMenu "Add Local User Package -->"
 		JZTgeneral_CheckForUserPackages(""), /Q,JZTgeneral#JZTgeneral_StartUpLocalPackage()
 	End
 End
+#endif
 
 
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) > 0
 Menu "Graph"
 	"Set Aspect Ratio to Get Square Pixels \ Range",SetAspectToSquarePixels("")
 End
-
 
 Menu "Edit"
 	JZTgeneral#MenuItemIfWindowTypes("Copy Window Info",1+2+64+GIZMO_WIN_BIT), /Q,  JZTgeneral#GetWindowInfo2Scrap()
@@ -88,12 +91,13 @@ Menu "Edit"
 	End
 End
 
-
 Menu "Misc"
 	"StopAllTimers",StopAllTimers()
 End
+#endif
 
 
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 16
 Menu "Data"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
@@ -116,8 +120,10 @@ Menu "Load Waves"
 		help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
 	End
 End
+#endif
 
 
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 2		// want to include Gizmo support
 Static Function LoadAllGizmoUtilities()
 	Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00"
 	Execute/P "COMPILEPROCEDURES "
@@ -135,6 +141,7 @@ Static Function LoadAllGizmoUtilities()
 	Execute/P "COMPILEPROCEDURES "
 	Execute/P "GizmoMovies#InitGizmoMovies()"
 End
+#endif
 
 
 #if (IgorVersion()<7)
@@ -543,7 +550,7 @@ End
 
 
 //  ====================================================================================  //
-//  ========================== Start of User Procedures Menu  ==========================  //
+//  =========================== Start of User Packages Menu  ===========================  //
 //
 //	This provides for an easy way to load any package in the folder "Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures/LocalPackages"
 //	just put the ipf file in there and it will be available to this function for loading.
@@ -552,6 +559,7 @@ End
 //	if the package contains the line "#excludeFromPackageMenu", then it will not show up in the list of packages to load (useful for subroutines)
 //	Note if the ipf file contains both #requiredPackages and #excludeFromPackageMenu, then the behavior depends upon order, but that situation is stupid.
 //
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 32		// want to include support for User LocalPackages
 Function/T JZTgeneral_CheckForUserPackages(dirPath)
 	String dirPath				// full path to a directory
 
@@ -713,8 +721,9 @@ Static Function/T getInitFunctionsName(ipf)
 	KillPath/Z $pathName
 	return initFunc
 End
+#endif
 //
-//  =========================== End of User Procedures Menu  ===========================  //
+//  ============================ End of User Packages Menu  ============================  //
 //  ====================================================================================  //
 
 

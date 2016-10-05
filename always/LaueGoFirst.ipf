@@ -4,7 +4,7 @@
 #pragma hide = 1
 //Static Constant JZTalwaysFirst_Version_Min=2.4	// minimum required vesion of "always first.ipf"
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4		// LaueGo
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 4		// LaueGo
 StrConstant MICRO_GEOMETRY_VERSION_PATH = "root:Packages:MICRO_GEOMETRY_VERSION"
 //		bit flags for MICRO_GEOMETRY_VERSION
 //			0 -> OLD
@@ -14,7 +14,7 @@ StrConstant MICRO_GEOMETRY_VERSION_PATH = "root:Packages:MICRO_GEOMETRY_VERSION"
 #endif
 
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 8		// Scattering
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 8		// Scattering
 Menu "Analysis"
 	Submenu "Packages"
 		"-"
@@ -37,7 +37,7 @@ Menu "Analysis"
 End
 #endif
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 16	// APS Specific
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 16	// APS Specific
 Menu "Analysis"
 	Submenu "Packages"
 		"(APS specific"
@@ -64,7 +64,7 @@ Menu "Analysis"
 End
 #endif
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4		// LaueGo
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 4		// LaueGo
 //Strconstant browserLeadJZT="\r--> moved to ", browserTailJZT="\r\r"
 //ModifyBrowser echoCommands=0, command3="print browserLeadJZT,GetDataFolder(1),browserTailJZT"
 Menu "Analysis",dynamic
@@ -126,7 +126,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 8		// Scattering
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 8		// Scattering
 Menu "Analysis"
 	Submenu "Packages"
 		// "µ beam, Sector 34" SubMenu gets insterted below
@@ -136,7 +136,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 4		// LaueGo
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",3) & 4		// LaueGo
 Function/T microMenuShowN(str)
 	String str
 	return SelectString(NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,256)&5,"",str)		// for both spe AND hdf5

@@ -4,14 +4,15 @@
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) >= 1
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",0) > 0
 #include "GeneralFirst", version>=3.35
 #endif
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & (4+8+16)	// LauGo or Scattering or APS Specific
+
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",0) & (4+8+16)	// LauGo or Scattering or APS Specific
 #include "LaueGoFirst", version>=2.07
 #endif
 
-#if NumVarOrDefault("root:Packages:STARTUP_MASK_JZT",3) & 32
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",0) & 32
 #include "LocalPackagesFirst", version>=2.07
 #endif
 
@@ -40,7 +41,6 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	printf "%s  %s  starting new Untitled Igor Experiment on '%s'\r\r",date(),time(),getHostName(1)
 
 	CheckStartupPrefs()
-
 	ExperimentModified 0				// mark this experiment as still unmodified
 	return 0
 	//	GetWindow kwCmdHist wsize
@@ -81,7 +81,7 @@ EndStructure
 
 
 Static Function CheckStartupPrefs()
-	if (exists("root:Packages:STARTUP_MASK_JZT"))
+	if (exists("root:Packages:SHOW_PACKAGES_MASK_JZT"))
 		return 0									// nothing to do
 	endif
 	STRUCT StartUpPrefsJZT prefs
@@ -137,7 +137,6 @@ Static Function SetStartUpPrefsJZT()	// run the dialog to change the startup pre
 	SavePackagePreferences/FLSH=1 "JZT","startup",0,prefs
 	PrintStartUpPrefsJZT(prefs)
 	Variable mask = SetMaskFromPrefsStruct(prefs)
-
 	return mask
 End
 
@@ -150,11 +149,11 @@ Static Function SetMaskFromPrefsStruct(prefs)
 	mask += 16*(prefs.APSspecific)
 	mask += 32*(prefs.LocalPackages)
 	NewDataFolder/O root:Packages
-	Variable/G root:Packages:STARTUP_MASK_JZT = mask
+	Variable/G root:Packages:SHOW_PACKAGES_MASK_JZT = mask
 
-	Execute/P/Q/Z "SetIgorOption poundDefine=DOESNTMATTER"		// mark all procedures as needing compile 
-	Execute/P/Q/Z "SetIgorOption poundUnDefine=DOESNTMATTER"	// don't leave this defined.
-	Execute/P/Q/Z "COMPILEPROCEDURES "									// re-compile (all)
+	Execute "SetIgorOption poundDefine=DOESNTMATTER"		// mark all procedures as needing compile
+	Execute "SetIgorOption poundUnDefine=DOESNTMATTER"	// don't leave this defined. note, DOESNTMATTER is an arbitrary string
+	Execute/P/Q/Z "COMPILEPROCEDURES "				// re-compile (all)
 	return mask
 End
 
