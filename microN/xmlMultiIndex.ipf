@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.95
+#pragma version=1.96
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -12,7 +12,7 @@
 #include "GizmoMarkers", version>=2.07
 
 Static Constant NindexedMIN = 4
-Static StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"
+//Static StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"	// moved to Utility_JZT.ipf
 Static Constant hc = 1.239841857		// keV-nm
 
 

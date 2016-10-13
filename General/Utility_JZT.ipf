@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.12
+#pragma version = 4.13
 // #pragma hide = 1
 
 Menu "Graph"
@@ -31,6 +31,8 @@ strConstant GenevaEquivFont = "Verdana"			// on windows, this is the Geneva equi
 #else
 strConstant GenevaEquivFont = "Geneva"			// Geneva is for Mac
 #endif
+StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"
+StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 
 
 // Sections:
