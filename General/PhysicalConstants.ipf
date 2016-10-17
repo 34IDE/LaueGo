@@ -1,9 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.13
+#pragma version = 2.14
 #pragma IgorVersion = 6.3
-#include "Utility_JZT", version>=3.51		// supplies:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), placesOfPrecision(a), roundSignificant(val,N)
-Static StrConstant PhysicalConstantServerURL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
+#include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
+Static StrConstant NISTserverASCII_URL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
 //
@@ -71,7 +71,7 @@ End
 
 // Browse the NIST cPhysical Constants web site"
 Static Function BrowseConstantWebSite()
-	String url = ReplaceString("Table/allascii.txt",PhysicalConstantServerURL,"")
+	String url = ReplaceString("Table/allascii.txt",NISTserverASCII_URL,"")
 	BrowseURL url
 End
 
@@ -330,19 +330,19 @@ Static Function DateOfLocalPhysicalConstants([printIt])
 End
 
 
-// Creates (or overwrites) the Igor Package Prefs file containing all of the constants from PhysicalConstantServerURL
+// Creates (or overwrites) the Igor Package Prefs file containing all of the constants from NISTserverASCII_URL
 // This only actually updates your local values if the new ones differ from your current values
 Static Function UpdateLocalCopyOfConstants([printIt])
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : 0
-	String buf = getFullASCIIfromWeb()		// ascii buffer with all of the constants info, must have a terminating "\n"
-	if (strlen(buf)<200)
-		print buf
+	String lists = getFullASCIIfromWeb()		// ascii lists with all of the constants info, must have a terminating "\n"
+	if (ItemsInList(lists)<20)
+		print lists
 		return 1
 	endif
 
 	STRUCT PhysicalConstantStructureAll cAllNEW
-	Variable N=FillConstantStucturesFromBuf(buf,cAllNEW)
+	Variable N=FillConstantStucturesFromLists(lists,cAllNEW)
 
 	// check if downloaded constants differ from current constants, first get current structure
 	STRUCT PhysicalConstantStructureAll cAllCurrent
@@ -356,53 +356,77 @@ Static Function UpdateLocalCopyOfConstants([printIt])
 		SavePackagePreferences/FLSH=1 "PhysicalConstantsJZT" , "PhysicalConstantsPrefs", 0 , cAllNEW
 	endif
 	if (printIt && differ)
-		printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",PhysicalConstantServerURL
+		printf "Your local copy of 'Physical Constants' has been updated from '%s'\r",NISTserverASCII_URL
 	elseif (printIt)
-		printf "Your local copy of 'Physical Constants' is the same as that from '%s',  Nothing done.\r",PhysicalConstantServerURL
+		printf "Your local copy of 'Physical Constants' is the same as that from '%s',  Nothing done.\r",NISTserverASCII_URL
 	endif
 End
 //
-// Return the ascii buffer with all of the constants info from web (the NIST web server)
 Static Function/T getFullASCIIfromWeb()
-	String buf=""
-	String sValue = FetchURL(PhysicalConstantServerURL)
+	String ascii = FetchURL(NISTserverASCII_URL)
 	String errMsg = GetRTErrMessage()
 	if (GetRTError(1))
 		printf "ERROR -- Could not get information from web, '%s'\r",errMsg
 		return ""
 	endif
 
-	Variable i1 = char2num(sValue[0])==char2num("\"") ? 1 : 0
-	Variable i2=strlen(sValue)-1
-	i2 = char2num(sValue[i2])==char2num("\"") ? i2-1 : i2
-	if (strsearch(sValue,"Fundamental Physical Constants",0)<0)
+	Variable i1 = char2num(ascii[0])==char2num("\"") ? 1 : 0
+	Variable i2=strlen(ascii)-1
+	i2 = char2num(ascii[i2])==char2num("\"") ? i2-1 : i2
+	if (strsearch(ascii,"Fundamental Physical Constants",0)<0)
 		printf "Could not get information from web, '%s'\r",errMsg
 		return ""
 	endif
-	buf = sValue[i1,i2]
-	if (strsearch(buf,"Fundamental Physical Constants",0)<0)
+	ascii = ascii[i1,i2]
+	if (strsearch(ascii,"Fundamental Physical Constants",0)<0)
 		return "ERROR -- Downloaded 'allascii.txt' file is INVALID"
 	endif
 
-	buf = ReplaceString("\r\n",buf,"\n")
-	buf = ReplaceString("\n\r",buf,"\n")
-	buf = ReplaceString("\r",buf,"\n")
-	Variable i=strsearch(buf,"----------------------------------",0)
+	ascii = ReplaceString("\r\n",ascii,"\n")
+	ascii = ReplaceString("\n\r",ascii,"\n")
+	ascii = ReplaceString("\r",ascii,"\n")
+	Variable i=strsearch(ascii,"-----------",0)
 	if (i<0)
 		return "ERROR -- 'allascii.txt' file is INVALID"
 	endif
-	i = strsearch(buf,"\n",i+1)
+	i = strsearch(ascii,"\n",i+1)
 	if (i<0)
 		return "ERROR -- 'allascii.txt' file is INVALID"
 	endif
-	buf = TrimFrontBackWhiteSpace(buf[i+1,Inf])
-	buf += "\n"				// ensure terminating <NL>
-	return buf
+	ascii = TrimFrontBackWhiteSpace(ascii[i+1,Inf])
+	ascii += "\n"				// ensure terminating <NL>
+	
+	if (strsearch(ascii,"\nmolar mass constant ",0)<0)
+		return "ERROR -- 'allascii.txt' could not find 'molar mass constant', file is INVALID"
+	endif
+
+	// change all occurance of two or more spaces to a single ":"
+	ascii = ReplaceString("  ",ascii,":")
+	ascii = ReplaceString(": ",ascii,"")
+	do
+		ascii = ReplaceString("::",ascii,":")
+	while (strsearch(ascii, "::",0)>=0)
+	ascii = ReplaceString("\n",ascii,";")		// concatenate lines with a ";"
+
+	// build a new list of lists
+	String name, value, uncertainty, unit, item, out=""
+	for (i=0;i<ItemsInList(ascii);i+=1)
+		item = StringFromList(i,ascii)					// one physical constant
+		name = StringFromList(0,item,":")				// name of constant
+		value = StringFromList(1,item,":")				// value of constant
+		uncertainty = StringFromList(2,item,":")	// uncertainty of constant
+		unit = StringFromList(3,item,":")				// units of constant
+		value = ReplaceString(" ",value,"")			// remove extra spaces in value
+		uncertainty = ReplaceString(" ",uncertainty,"")	// remove extra spaces in uncertainty
+		if (strlen(name)>0 && strlen(value)>0)		// an item with data, append to out
+			out += name +":"+ value +":"+ uncertainty +":"+ unit +";"	
+		endif 
+	endfor
+	return out
 End
 //
-// take ASCII result from web server and fill cAll
-Static Function FillConstantStucturesFromBuf(buf,cAll)
-	String buf
+Static Function FillConstantStucturesFromLists(lists,cAll)	// returns number of constants found
+	String lists
 	STRUCT PhysicalConstantStructureAll &cAll
 
 	String symbols = "speed of light in vacuum:c;inverse meter-electron volt relationship:hc;"
@@ -414,36 +438,14 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 	symbols += "Newtonian constant of gravitation:G;standard acceleration of gravity:g;proton mass:mp;"
 	symbols += "Rydberg constant:Ry;standard atmosphere:atm;{220} lattice spacing of silicon:aSi220;"
 
-	Variable val0=NaN, err0=NaN, unit0=NaN
 	// This routine is really stupid, but that is because the text file that I download from NIST is really stupid.  It has no rules,
 	//	and there is little about the file that is standard.  If you can find either a more standard text file or an xml file that would be better.
-	Variable i = strsearch(buf,"\nmolar mass constant ",0)
-	if (i<0)
-		return 0
-	endif
-	String line=buf[i+1,i+300]
-	i = strsearch(line,"\n",0)-1
-	if (i<0)
-		return 0
-	endif
-	line = line[0,i]
 
-	// assuming fixed format lengths for name, value, error, & units
-	val0 = nextNonSpace(line,strlen("molar mass constant "))
-	err0 = nextNonSpace(line,val0+6)
-	unit0 = nextNonSpace(line,err0+8)
-	if (numtype(val0+err0+unit0))
-		return 0
-	endif
-
-	STRUCT PhysicalConstantStructure clocal
-	String strVal, strErr, unit, name
-	Variable N=ItemsInList(buf,"\n")
-	Variable nConstants=0, j,m
 	cAll.N1 = 0
 	cAll.N2 = 0
 	cAll.N3 = 0
 	cAll.N4 = 0
+	Variable i
 	for (i=0;i<100;i+=1)
 		initPhysicalConstantStructure(call.c1[i])
 		initPhysicalConstantStructure(call.c2[i])
@@ -451,31 +453,32 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 		initPhysicalConstantStructure(call.c4[i])
 	endfor
 
-	for (i=0,line="xxx"; i<N && strlen(line); i+=1)
-		line = TrimFrontBackWhiteSpace(StringFromList(i,buf,"\n"))
-		if (strlen(line)<2)
-			continue
+	Variable j,m, nConstants=0
+	Variable N=ItemsInList(lists)
+	STRUCT PhysicalConstantStructure clocal
+	String name, strVal, strErr, unit, item
+	for (i=0; i<N; i+=1)
+		item = StringFromList(i,lists)
+		if (strlen(item)<1)
+			continue												// skip empty entries
 		endif
-		initPhysicalConstantStructure(clocal)
-		strVal = line[val0,err0-1]
-		strVal = ReplaceString("...",strVal,"")	// sometimes used with "exact" constants
-		strVal = ReplaceString(" ",strVal,"")		// no spaces allowed in value
-		clocal.value = str2num(strVal)
 
-		strErr = line[err0,unit0-1]
-		clocal.exact = stringmatch(strErr,"*(exact)*")
-		strErr = ReplaceString(" ",strErr,"")
-		clocal.err = str2num(strErr)
-
-		unit = TrimFrontBackWhiteSpace(line[unit0,Inf])
-		clocal.unit = unit[0,PhysicalConstantMaxStrLen]
-
-		name = TrimFrontBackWhiteSpace(line[0,val0-1])
+		name = StringFromlist(0,item,":")
 		name = ReplaceString("mom.",name,"moment")	// remove abbreviations
 		name = ReplaceString("mag.",name,"magnetic")
+		strVal = StringFromlist(1,item,":")
+		strVal = ReplaceString("...",strVal,"")		// sometimes used with "exact" constants
+		strErr = StringFromlist(2,item,":")
+		unit = StringFromlist(3,item,":")
+
+		initPhysicalConstantStructure(clocal)
+		clocal.value = str2num(strVal)
+		clocal.exact = stringmatch(strErr,"*(exact)*")
+		clocal.err = str2num(strErr)
+		clocal.unit = unit[0,PhysicalConstantMaxStrLen]
 		clocal.name = name[0,PhysicalConstantMaxStrLen]
 		clocal.symbol = StringByKey(clocal.name,symbols)
-		clocal.valid = 1									// set valid to true
+		clocal.valid = 1										// set valid to true
 
 		j = mod(nConstants,100)
 		m = floor(nConstants/100)
@@ -498,18 +501,6 @@ Static Function FillConstantStucturesFromBuf(buf,cAll)
 	endfor
 	cAll.updateEpoch = DateTime
 	return nConstants
-End
-//
-Static Function nextNonSpace(str,start)
-	String str
-	Variable start
-	Variable i,N=strlen(str)
-	for (i=start;i<N;i+=1)
-		if (char2num(str[i])>32)
-			return i
-		endif
-	endfor
-	return i
 End
 
 
