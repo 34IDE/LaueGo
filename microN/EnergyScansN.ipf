@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.37
+#pragma version = 2.38
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6581,7 +6581,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		// correct the scan ranges as necessary
 		Prompt depth,"depth to use (µm)"
 		Prompt dkeV,"step size in E (eV)"
-//		Prompt NkeV,"# of points (NOT intervals) in E "
 		Prompt I0normalize,"Normalize the Q-hists",popup,"Do NOT Normalize to Io or exposure;Normalize to Io & exposure"
 		Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
 		doConvex += 1
@@ -6941,9 +6940,12 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,I
 	for (jp=0;jp<Nj;jp+=1)								// for each pixel in the detector
 		for (ip=0;ip<Ni;ip+=1)
 			if (maskIn[ip][jp])
-				i = round((Qvecs[0][ip][jp] - Qx0) / dQx)
-				j = round((Qvecs[1][ip][jp] - Qy0) / dQy)
-				k = round((Qvecs[2][ip][jp] - Qz0) / dQz)
+//				i = round((Qvecs[0][ip][jp] - Qx0) / dQx)
+//				j = round((Qvecs[1][ip][jp] - Qy0) / dQy)
+//				k = round((Qvecs[2][ip][jp] - Qz0) / dQz)
+				i = round((Qvecs[ip][jp][0] - Qx0) / dQx)
+				j = round((Qvecs[ip][jp][1] - Qy0) / dQy)
+				k = round((Qvecs[ip][jp][2] - Qz0) / dQz)
 				Qhist[i][j][k] += image[ip][jp] * inorm
 				QhistNorm[i][j][k] += 1
 			endif
@@ -7094,9 +7096,10 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 		return $""
 	endif
 
-	Make/N=(3,Ni,Nj)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
+//	Make/N=(3,Ni,Nj)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
+	Make/N=(Ni,Nj,3)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
 
-	// for each pixel in image, compute sin(theta) and save it in Qvecs1keV[][]
+	// for each pixel in image, compute sin(theta) and save it in Qvecs1keV[][][3]
 	Variable useMat = 0										// only use recip when it is not an identity matrix
 	if (WaveExists(recip))
 		MatrixOP/FREE recipInv = Inv(recip)
@@ -7114,7 +7117,8 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	Variable factor = 4*PI/hc
 	MatrixOP/FREE qLens = -(qvecs x ki) * factor	// length of each q-vector, qvecs^ x ki == -sin(theta)
 	qvecs *= qLens[p]											// re-scale qhats to real q-vectors
-	Qvecs1keV = qvecs[q+r*Ni][p]							// Qvectors at 1keV, just multiply by E to get Q
+//	Qvecs1keV = qvecs[q+r*Ni][p]							// Qvectors at 1keV, just multiply by E to get Q
+	Qvecs1keV = qvecs[p+q*Ni][r]							// Qvectors at 1keV, just multiply by E to get Q
 	WaveClear qLens
 
 	// find range of Qx,Qy,Qz
