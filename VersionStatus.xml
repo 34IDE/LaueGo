@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, October 17, 2016" time="04:04:15 PM CDT" isoTime="2016-10-17T16:04:15"></written>
+	<written date="Thursday, October 20, 2016" time="12:35:47 PM CDT" isoTime="2016-10-20T12:35:47"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>f7260923e31af4f41b19a042345f9fd61f9720c9</gitHash>
+	<gitHash>e371d5e44e9c2b3805195067dadafe026437a306</gitHash>
 	<fileCount>230</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -118,7 +118,7 @@
 	<file version="nan" time="2016-01-26T11:12:02" md5="36bbe0a240f6e8e9cc15eabeafe2a04f" sha256="986987fba55219569afff22b1688d1d75ea304207fdb513763419a5dfa841dff" ext=".xml">materials/standard xtals/TiO2 Rutile.xml</file>
 	<file version="2.85" time="2015-10-12T17:36:07" md5="7df27807f7d67e01d7aedc2d75558b66" sha256="33db027c58c46f3a58e0f6f1d6d178cecd6ee6eed1c62629bc59eb25b2e97221" ext=".ipf">Lattice/StereographicProjection.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:09" md5="f9f6aa5365b9cf0a140799f3e26fb387" sha256="8f619a92c49e68c879f109a3e4c4536a18227c73dfa098e0d5e32b873b258186" ext=".xml">materials/standard xtals/Ni3Al.xml</file>
-	<file version="2.37" time="2016-09-26T10:10:34" md5="f6816bce8a7c33117c2053c6c5797e0a" sha256="22ed0d3dd1e8245b29cec521bf0a2a98ea95f78ad61cbf34078a78ff8ed22dc0" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.38" time="2016-10-20T12:27:15" md5="70905709c96784f782a47edc736864f5" sha256="94352a033e52bf85ee744cc7948ef33ab9a8ebc1ce1dc65e559c38603ea5d110" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="nan" time="2016-02-11T11:22:51" md5="503c9653b72ec792233bdc6e313be059" sha256="178f1ac73d1746d276e19c019451c9d7ce60f465f7eec1b71fa1cf350da8a269" ext=".mtl">materials/mtl files/CoO.mtl</file>
 	<file version="nan" time="2016-05-02T09:27:55" md5="729b5692c1f5df3f25a2f44758c5b5a0" sha256="7043bba7ca48fe97908d42d2e5c59c2eb432900232f99a68b6977926e06e3611" ext=".txt">geometrys/geometry description.txt</file>
 	<file version="nan" time="2016-02-17T12:53:24" md5="dac45efbed137041aac7b4fa914715d9" sha256="f7aef1f790b52923bc7c73c60f83fb4aed5548e88cc63680b1f2be47352bd515" ext=".xml">materials/standard xtals/SrTiO3.xml</file>
