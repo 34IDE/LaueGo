@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.13
+#pragma version = 4.14
 // #pragma hide = 1
 
 Menu "Graph"
@@ -82,6 +82,8 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
 //		normalize(a), normalizes a if it is a vector or square matrix
 //		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
+//		maxValueOfType(w), returns largest number that can be stored in a wave of specified type
+//		DefaultZeroThresh(w), returns a smallest number that the wave type can store, useful for printing zeros.
 //		OrderValues(x0,x1), x0 and x1 are optionally swapped so that x0<x1 (x0 & x1 are passed by reference)
 //		GetCursorRangeFromGraph(), get the cursor range from a graph (returns key=value string)
 //		FWHM of fitted peaks: GaussianFWHM(W_coef), LorentzianFWHM(W_coef)
@@ -3039,6 +3041,114 @@ ThreadSafe Function isPositiveInts(ww,[tol])
 End
 
 
+ThreadSafe Function maxValueOfType(ww)		// returns largest number that can be stored in a wave of specified type
+	Wave ww
+
+	if (WaveType(ww,1) != 1)		// returns NaN for non-numeric waves
+		return NaN
+	endif
+
+	Variable maxVal=NaN, type=WaveType(ww)
+
+	if (type & 0x02)				// single float
+		return 3.40282356e+38
+	elseif (type & 0x04)		// double float
+		return 1.79769313486231e+308
+	endif
+
+	if (type & 0x08)				// 8 bit int, 2^7 - 1
+		maxVal = 127
+	elseif (type & 0x10)		// 16 bit int, 2^15 - 1
+		maxVal = 32767
+	elseif (type & 0x20)		// 32 bit int, 2^31 - 1
+		maxVal = 2147483647
+	endif
+
+	if (type & 0x40)				// unsigned int
+		maxVal = 2*(maxVal+1) - 1
+	endif
+	return maxVal
+End
+//Function FindMaxValueOfDouble()
+//	Variable current, lastOK=1e307, step=lastOK
+//	do
+//		current = lastOK + step
+//		if (numtype(current)==0)
+//			lastOK = current
+//		else
+//			step /= 2
+//		endif
+//	while (step/lastOK > 1e-15)
+//	print/D lastOK, current, step, step/lastOK
+//End
+//
+//Function FindMaxValueOfSingle()
+//	Make/N=1/FREE single
+//	Variable small=0, big=1e50, mid
+//	do
+//		mid = (small+big)/2
+//		single[0] = mid
+//
+//		if (numtype(single[0]))
+//			big = (small+big)/2
+//		else
+//			small = mid
+//		endif
+//	while ((big-small)/small > 1e-15)
+//	print/D small,mid,big,single[0]
+//	single[0] = small
+//	print/D mid,single[0]
+//End
+
+
+ThreadSafe Static Function DefaultZeroThresh(ww)
+	Wave ww
+	switch(WaveType(ww) & 0x3E)
+		case 0x02:						// 32 bit float
+			return Smallest32bitFloat
+		case 0x04:						// 64 bit float
+			return Smallest64bitFloat
+		default:							// all integer types
+			return 0
+	endswitch
+End
+//Function FindSmallestFloatMachine()
+//	Variable last
+//	Make/N=1/D/FREE double=1
+//	do
+//		last = double[0]
+//		double[0] /= 2
+//	while(double[0]!=0)
+//	print/d last
+//
+//	Variable mult=0.9999999, factor=mult
+//	double[0] = last
+//	do
+//		last = double[0]
+//		double[0] *= factor
+//		factor *= mult
+//	while(double[0]!=0)
+//	print/d last
+//
+//	print " "
+//	Make/N=1/FREE single=1
+//	do
+//		last = single[0]
+//		single[0] /= 2
+//	while(single[0]!=0)
+//	print/d last
+//
+//	factor=mult
+//	single[0] = last
+//	do
+//		last = single[0]
+//		single[0] *= factor
+//		factor *= mult
+//	while(single[0]!=0)
+//	print/d last
+//End
+
+
 ThreadSafe Function OrderValues(x0,x1)
 	// on return, x0 and x1 are optionally swapped so that x0<x1
 	Variable &x0, &x1
@@ -3852,53 +3962,6 @@ ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// 
 	endif
 	return out
 End
-//
-ThreadSafe Static Function DefaultZeroThresh(ww)
-	Wave ww
-	switch(WaveType(ww) & 0x3E)
-		case 0x02:						// 32 bit float
-			return Smallest32bitFloat
-		case 0x04:						// 64 bit float
-			return Smallest64bitFloat
-		default:							// all integer types
-			return 0
-	endswitch
-End
-//Function FindSmallestFloatMachine()
-//	Variable last
-//	Make/N=1/D/FREE double=1
-//	do
-//		last = double[0]
-//		double[0] /= 2
-//	while(double[0]!=0)
-//	print/d last
-//
-//	Variable mult=0.9999999, factor=mult
-//	double[0] = last
-//	do
-//		last = double[0]
-//		double[0] *= factor
-//		factor *= mult
-//	while(double[0]!=0)
-//	print/d last
-//
-//	print " "
-//	Make/N=1/FREE single=1
-//	do
-//		last = single[0]
-//		single[0] /= 2
-//	while(single[0]!=0)
-//	print/d last
-//
-//	factor=mult
-//	single[0] = last
-//	do
-//		last = single[0]
-//		single[0] *= factor
-//		factor *= mult
-//	while(single[0]!=0)
-//	print/d last
-//End
 
 
 ThreadSafe Function/WAVE str2vec(str,[sep])// returns a free vector based on the string

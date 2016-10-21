@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.38
+#pragma version = 2.39
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -6240,12 +6240,13 @@ End
 //	Process many images all at one position, same depth and same x-y (actually X-H) positions.
 //	There is no wire scan or any positioners looked at. It is assumed that the images are all from same volume element.
 //	No scanning in x, and all at one depth (probably from a thin sample).
-Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, I0normalize,doConvex,FilterFunc,roi,autoGo,printIt])	// does not assume depth in image
+// does not require that depth be in image
+Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark,Qbox, NQx,NQy,NQz, I0normalize,doConvex,FilterFunc,roi,autoGo,printIt])
 	Variable recipSource	// 0=beam-line,  1=rceip from an indexation
 	String pathName			// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt				// the first part of file name, something like  "EW5_%d.h5"
 	String range				// range of file indicies to use
-	Variable depth				// OPTIONAL, in case image does not contain depth
+	Variable depth				// OPTIONAL, in case image does not contain depth, default is 0
 	Wave mask					// OPTIONAL, optional mask to limit the pixels that get processed (use pixel when mask true)
 	Wave dark					// OPTIONAL, an optional background wave
 	STRUCT boundingVolume &Qbox	// OPTIONAL, do not specify both Qbox AND {NQx,NQy,NQz}
@@ -6258,7 +6259,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
 	depth = numtype(depth) ? NaN : depth
-	Variable Qask = ParamIsDefault(Qbox)		// if Qbox not passed, then ask
 	NQx = ParamIsDefault(NQx) || NQx<=0 ? NaN : NQx		// default to NaN, the program figures it out
 	NQy = ParamIsDefault(NQy) || NQy<=0 ? NaN : NQy
 	NQz = ParamIsDefault(NQz) || NQz<=0 ? NaN : NQz
@@ -6577,7 +6577,10 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	FindScalingFromVec(keV_FillQvsPositions,2e-4,off,dkeV,NkeV)		// get step size and number of points for the energy scan
 	dkeV = abs(dkeV)													// sign is not used
 
-	if (printIt || strlen(GetRTStackInfo(2))==0)			// if called from command line, always do this
+	Variable ask = (printIt || strlen(GetRTStackInfo(2))==0)	// ask if called from command line
+	ask = ask && !autoGo											// don't ask when autoGo=True
+	ask = ask || numtype(dkeV)>0									// always ask for invalid dkeV
+	if (ask)
 		// correct the scan ranges as necessary
 		Prompt depth,"depth to use (µm)"
 		Prompt dkeV,"step size in E (eV)"
@@ -6680,15 +6683,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	ProgressPanelUpdate(progressWin,0,status="pre-computing Qvecs array, may take 90 sec.",resetClock=1)
 	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
 	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=mask,depth=depth,printIt=printIt)
-	if (mono)
-		KillWaves/Z image												// for mono scans, this image not needed
-	else
-		Wave i0 = image												// save for use as "previous" image in undulator scans
-		if (useNormalization)										// using normalized images (by beam current)
-			Redimension/S i0											// change i0 to float
-			i0 *= normalization[0]
-		endif
-	endif
+	KillWaves/Z image													// done looking at first image
 
 	// make 3D volume to hold  the 3D q-histogram
 
@@ -6700,16 +6695,28 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	if (printIt)
 		printf "Q data range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
 	endif
-	Qask = numtype(NQx+NQy+NQz) ? Qask : 0					// do not ask if NQx,NQy,NQz were given
-	if (Qask)															// Qbox NOT passed, ask for Q range
+
+	if (!ParamIsDefault(Qbox))									// Qbox was passed, use it. Qbox overrides any passed NQx, NQy, or NQz
+		if (QxLo > Qbox.xhi || QxHi < Qbox.xlo || QyLo > Qbox.yhi || QyHi < Qbox.ylo || QzLo > Qbox.zhi || QzHi < Qbox.zlo)
+			print "Requested Q-volume (Qbox) does not contain any data"
+			printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
+			print "Requested Qbox = ",boundingVolumeStruct2str(Qbox)
+			DoWindow/K $progressWin								// done with status window
+			return $""
+		endif
+		QxLo = Qbox.xlo ;		QxHi = Qbox.xhi
+		QyLo = Qbox.ylo ;		QyHi = Qbox.yhi
+		QzLo = Qbox.zlo ;		QzHi = Qbox.zhi
+		NQx = Qbox.Nx
+		NQy = Qbox.Ny
+		NQz = Qbox.Nz
+
+	elseif (numtype(NQx+NQy+NQz))								// don't have valid NQx,NQy,NQz
 		dQ *= 4
-		NQx = floor((QxHi-QxLo)/dQ)
+		NQx = floor((QxHi-QxLo)/dQ)								// calculate size of 3D histogram
 		NQy = floor((QyHi-QyLo)/dQ)
 		NQz = floor((QzHi-QzLo)/dQ)
 		Variable NQ = NQx*NQy*NQz
-//		if (printIt)
-//			printf "NQ = {%g, %g, %g},   (NQx*NQy*NQz) = %g\r",NQx,NQy,NQz, NQ
-//		endif
 		Variable Ntot=NQx*NQy*NQz
 		if (Ntot>1e7)													// Q volume has too many voxels, coarsen so only 1e7 voxels
 			Variable factor = 215/(Ntot^0.333333)				// 215 is about 3rd root of 1e7
@@ -6736,26 +6743,12 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		if (printIt)
 			printf "NQ = {%g, %g, %g},   (NQx*NQy*NQz) = %g\r",NQx,NQy,NQz, NQ
 		endif
-	elseif (numtype(NQx+NQy+NQz))								// Qbox was passed, and NQx,NQy,NQz not given
-		if (QxLo > Qbox.xhi || QxHi < Qbox.xlo || QyLo > Qbox.yhi || QyHi < Qbox.ylo || QzLo > Qbox.zhi || QzHi < Qbox.zlo)
-			print "Requested Q-volume does not contain any data"
-			printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
-			print "Requested Qbox = ",boundingVolumeStruct2str(Qbox)
-			DoWindow/K $progressWin								// done with status window
-			return $""
-		endif
-		QxLo = Qbox.xlo ;		QxHi = Qbox.xhi
-		QyLo = Qbox.ylo ;		QyHi = Qbox.yhi
-		QzLo = Qbox.zlo ;		QzHi = Qbox.zhi
-		NQx = Qbox.Nx
-		NQy = Qbox.Ny
-		NQz = Qbox.Nz
 	endif
-	if (!(NQx>0 && NQy>0 && NQz>0))
+
+	if (!(NQx>0 && NQy>0 && NQz>0))								// test for valid NQ's
 		DoWindow/K $progressWin									// done with status window
 		return $""
-	endif
-	if (printIt)
+	elseif (printIt)
 		printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
 		printf "Make array Qspace3D[%g][%g][%g] to hold Q-space\r",NQx,NQy,NQz
 	endif
@@ -6771,36 +6764,49 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	// Starting bulk of processing"
 	// for all the N files (go over range), accumulate Qhist from all images
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N)+" images",resetClock=1)	// update progress bar
-	Variable ipnt, timer3=stopMSTimer(-2)/1e6, skipUpdate=1		// was 10
+	Wave i0=$""															// "previous" image in undulator scans
+	Variable lowThresh=15, maxPixel=NaN						// only used by undulator gap scan
+	Variable ipnt, timer3=stopMSTimer(-2)/1e6, skipUpdate=1	// was 10
 	for (m=str2num(range),ipnt=0; numtype(m)==0; m=NextInRange(range,m),ipnt+=1)	// loop over range, all the images
 		if (mod(ipnt,skipUpdate)==0)
-			if (ProgressPanelUpdate(progressWin,ipnt/N*100))	// update progress bar every 100 images
+			if (ProgressPanelUpdate(progressWin,ipnt/N*100))		// update progress bar every 100 images
 				break														//   and break out of loop
 			endif
 		endif
 		sprintf name, fileRootFmt, m
 		Wave image = $(LoadGenericImageFile(name,extras=extras))
 		Local_ImageFilter(image)
-		if (mono && WaveExists(image))							// monochromator scan (not undulator gap)
+
+		if (!WaveExists(image))
+			printf "could not load image named '%s'\r",name
+			continue
+
+		// monochromator scan (not undulator gap)
+		elseif (mono)
 			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z image
-		elseif (StringMatch(GetWavesDataFolder(i0,2),GetWavesDataFolder(image,2)))
-			continue														// skip first image in undulator gap scan
-		elseif (WaveExists(image))
-			Variable lowThresh=15, maxPixel=65535				// regular undulator gap scan, use difference between this image and previous image
+
+		// undulator scan (monochromator not used)
+		elseif (!WaveExists(i0))									// first image cannot be processed since there is no "previous" image yet
+			Wave i0 = image											// save for use as "previous" image in undulator scans
+			maxPixel = maxValueOfType(image)					// set max value that a pixel can be
+			if (useNormalization)									// using normalized images (by beam current)
+				Redimension/S i0										// change i0 to float
+				i0 *= normalization[0]
+			endif
+		else																// undulator gap scan, use difference between this image and "previous" image
 			if (useNormalization)									// valid normalization, so normalize
 				Redimension/S image
 				image *= normalization[ipnt]
 			endif
+			// dimage is (image-i0), but zero out any pixels greater than maxPixel or pixels in image less than lowThresh
+			// then clip dimage to the range [0,maxPixel], 
 			MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
 			keV = gap2keV_Func(NumberByKey("undulatorGap",note(image),"="))
 			Note/K dimage, ReplaceNumberByKey("keV",note(image),keV,"=")
 			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark,I0normalize=I0normalize,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z i0												// delete old "previous" image
 			Wave i0 = image											// save current image as i0, the new "previous" image
-		else
-			printf "could not load image named '%s'\r",name
-			continue
 		endif
 	endfor
 	KillWaves/Z i0, image											// delete left overs
@@ -7339,7 +7345,7 @@ Function FillMovieMoreGapScan(image,initStr)	// finds pixel intensities along a 
 	Wave image
 	String initStr												// not used, output from FillMovieMoreGapScan_Init()
 
-	Variable lowThresh=15, maxPixel=65535				// regular undulator gap scan, use difference between this image and previous image
+	Variable lowThresh=15, maxPixel=maxValueOfType(image)	// regular undulator gap scan, use difference between this image and previous image
 	String wnote = note(image)
 	Variable index = NumberByKey("movieIndex",wnote,"=")		// movie frame index
 	if (index<1)												// the first time through frame, save it to start differences
