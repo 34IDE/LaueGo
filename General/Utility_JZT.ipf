@@ -3043,31 +3043,31 @@ End
 
 ThreadSafe Function maxValueOfType(ww)		// returns largest number that can be stored in a wave of specified type
 	Wave ww
-
 	if (WaveType(ww,1) != 1)		// returns NaN for non-numeric waves
 		return NaN
 	endif
 
-	Variable maxVal=NaN, type=WaveType(ww)
-
-	if (type & 0x02)				// single float
-		return 3.40282356e+38
-	elseif (type & 0x04)		// double float
-		return 1.79769313486231e+308
-	endif
-
-	if (type & 0x08)				// 8 bit int, 2^7 - 1
-		maxVal = 127
-	elseif (type & 0x10)		// 16 bit int, 2^15 - 1
-		maxVal = 32767
-	elseif (type & 0x20)		// 32 bit int, 2^31 - 1
-		maxVal = 2147483647
-	endif
-
-	if (type & 0x40)				// unsigned int
-		maxVal = 2*(maxVal+1) - 1
-	endif
-	return maxVal
+	switch(WaveType(ww))
+		case 0x02:					// single float
+		case 0x03:					// include complex
+			return 3.40282356e+38
+		case 0x04:					// double float
+		case 0x05:					// include complex
+			return 1.79769313486231e+308
+		case 0x08:					// 8 bit int, 2^7 - 1
+			return 127
+		case 0x48:					// 8 bit unsigned int, 2^8 - 1
+			return 255
+		case 0x10:					// 16 bit int, 2^15 - 1
+			return 32767
+		case 0x50:					// 16 bit unsigned int, 2^16 - 1
+			return 65535
+		case 0x20:					// 32 bit int, 2^31 - 1
+			return 2147483647
+		case 0x60:					// 32 bit unsigned int, 2^32 - 1
+			return 4294967295
+	endswitch
+	return NaN
 End
 //Function FindMaxValueOfDouble()
 //	Variable current, lastOK=1e307, step=lastOK
