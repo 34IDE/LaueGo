@@ -1,8 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.24
-#include "Utility_JZT" version>=3.78
+#pragma version = 5.25
+#include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -89,49 +89,49 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 4.14, fixed up how thermal info is handled, changes to:
 //		atomThermalInfo(), SetAtomEditPanelValues(), AtomPanel2PanelStruct(), print_crystalStructure(), atomThermalInfo(), 
 //		crystalStructure2xml(), Fstruct(),  and added CleanOutCrystalStructure()
-// with version 4.15, more changes along with vers 4.14, changed: setLattice(), FillLatticeParametersPanel(), readFileXML(),
+//	with version 4.15, more changes along with vers 4.14, changed: setLattice(), FillLatticeParametersPanel(), readFileXML(),
 //		LatticePanelButtonProc(), readCrystalStructure_xtl(), readCrystalStructureXML(), CIF_interpret(), read_cri_fileOLD()
-// with version 4.16, added OverOccupyList() and OverOccupyList2Str(), and changed other routines to print a warning when occupy>1
+//	with version 4.16, added OverOccupyList() and OverOccupyList2Str(), and changed other routines to print a warning when occupy>1
 //		changed: print_crystalStructure(), readCrystalStructure90, LatticePanelButtonProc()
-// with version 4.17, changed MinimalChemFormula(), it better removes common factors
-// with version 4.18, fixed an ERROR in Fstruct, it now properly checks for valid xtal.SpaceGroup
+//	with version 4.17, changed MinimalChemFormula(), it better removes common factors
+//	with version 4.18, fixed an ERROR in Fstruct, it now properly checks for valid xtal.SpaceGroup
 //		also added recipFrom_xtal(), a little utility that make a free recip matrix from xtal
-// with version 4.19, small change in reMakeAtomXYZs(), avoids error when debug on "NVAR SVAR WAVE Checking" is on
-// with version 4.20, the xtl file is now carried along in the crystalStructure structure
-// with version 4.21, added directFrom_xtal(), which is a lot like recipFrom_xtal()
-// with version 4.23, added str2hkl(hklStr,h,k,l)
-// with version 4.24, moved ConvertUnits2meters(), ConvertTemperatureUnits() , and placesOfPrecision() to Utility_JZT.ipf
+//	with version 4.19, small change in reMakeAtomXYZs(), avoids error when debug on "NVAR SVAR WAVE Checking" is on
+//	with version 4.20, the xtl file is now carried along in the crystalStructure structure
+//	with version 4.21, added directFrom_xtal(), which is a lot like recipFrom_xtal()
+//	with version 4.23, added str2hkl(hklStr,h,k,l)
+//	with version 4.24, moved ConvertUnits2meters(), ConvertTemperatureUnits() , and placesOfPrecision() to Utility_JZT.ipf
 //		also added NearestAllowedHKL(xtal,hkl)
-// with version 4.25, added equivalentHKLs(xtal,hkl0,[noNeg]), get list of hkl's symmetry equivalent to hkl0
-// with version 4.26, added bond info to the AtomView menu
-// with version 4.27, when writing files, use "\n" instead of "\r" for line termination. 
+//	with version 4.25, added equivalentHKLs(xtal,hkl0,[noNeg]), get list of hkl's symmetry equivalent to hkl0
+//	with version 4.26, added bond info to the AtomView menu
+//	with version 4.27, when writing files, use "\n" instead of "\r" for line termination. 
 //		also changed crystalStructure2xml() and convertOneXTL2XML() to take a new line argument.
-// with version 4.28, in positionsOfOneAtomType() duplicate atoms are now within 50pm (in x,y,&z) not just 1e-3
+//	with version 4.28, in positionsOfOneAtomType() duplicate atoms are now within 50pm (in x,y,&z) not just 1e-3
 //		also positionsOfOneAtomType() uses free waves rather than real temp waves
-// with version 4.30, in str2recip(str), now handles both "}{" and "},{" type strings
+//	with version 4.30, in str2recip(str), now handles both "}{" and "},{" type strings
 //		also added some helpful comments about convert recip <--> direct using MatrixOP
-// with version 4.31, added wave note info in directFrom_xtal(xtal) and in recipFrom_xtal(xtal)
-// with version 4.32, added direct2LatticeConstants(direct)
-// with version 4.33, added isValidLatticeConstants(direct), and imporved formatting in print_crystalStructure()
-// with version 4.34, added DescribeSymOps(direct), CheckDirectRecip()
-// with version 4.35, MatrixOP in Fstruct(), change variable Q --> Qmag, and calc of F uses complex math now.
+//	with version 4.31, added wave note info in directFrom_xtal(xtal) and in recipFrom_xtal(xtal)
+//	with version 4.32, added direct2LatticeConstants(direct)
+//	with version 4.33, added isValidLatticeConstants(direct), and imporved formatting in print_crystalStructure()
+//	with version 4.34, added DescribeSymOps(direct), CheckDirectRecip()
+//	with version 4.35, MatrixOP in Fstruct(), change variable Q --> Qmag, and calc of F uses complex math now.
 //		also in positionsOfOneAtomType, make condition based on true atom distances, & use MatrixOP too.
-// with version 4.37, changed allowedHKL(), now a ThreadSafe version of allowedHKL()
+//	with version 4.37, changed allowedHKL(), now a ThreadSafe version of allowedHKL()
 //		allowedHKL() now cannot use Cromer, but it is ThreadSafe (done for indexing routines).
 //		to use allowedHKL() with MultiThread you MUST pass the wave refs to the atomN waves
 //		also added isValidSpaceGroup()
-// with version 4.38, added ELEMENT_Symbols and changed Get_f_proto() to be a better.
-// with version 4.39, Fixed ERROR in Fstruct()
-// with version 4.40, Get_f_proto() was ThreadSafe, it must NOT be ThreadSafe (since Get_F is not)
-// with version 4.41, removed ELEMENT_Symbols (it is now in Utility_JZT.ipf)
-// with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
-// with version 4.43, added showPanel to InitLatticeSymPackage()
-// with version 4.44, definition of MenuItemIfWindowAbsent() was changed
-// with version 4.45, added SetToDummyXTAL() for use by FillCrystalStructDefault() for startup bug found by Jan
-// with version 4.46, added SetToDummyATOM() and cleaned up v4.45
-// with version 4.48, fixed a bug in positionsOfOneAtomType() & equivalentHKLs() occured when rowRepeat(vec,1)
+//	with version 4.38, added ELEMENT_Symbols and changed Get_f_proto() to be a better.
+//	with version 4.39, Fixed ERROR in Fstruct()
+//	with version 4.40, Get_f_proto() was ThreadSafe, it must NOT be ThreadSafe (since Get_F is not)
+//	with version 4.41, removed ELEMENT_Symbols (it is now in Utility_JZT.ipf)
+//	with version 4.42, fixed problem with Rhombohedal lattices & GetLatticeConstants()
+//	with version 4.43, added showPanel to InitLatticeSymPackage()
+//	with version 4.44, definition of MenuItemIfWindowAbsent() was changed
+//	with version 4.45, added SetToDummyXTAL() for use by FillCrystalStructDefault() for startup bug found by Jan
+//	with version 4.46, added SetToDummyATOM() and cleaned up v4.45
+//	with version 4.48, fixed a bug in positionsOfOneAtomType() & equivalentHKLs() occured when rowRepeat(vec,1)
 //
-// with version 5.00, changed definition of direct lattice to a||x and c*|| z (was b||y), added #define OLD_LATTICE_ORIENTATION to get old way
+//	with version 5.00, changed definition of direct lattice to a||x and c*|| z (was b||y), added #define OLD_LATTICE_ORIENTATION to get old way
 //	with version 5.04, changed readFileXML()
 //	with version 5.05, changed setDirectRecip() so that Rhombohedral sytems orient a,b,c about the 111
 //	with version 5.06, small menu fix
@@ -146,10 +146,11 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.19, added DO_HEXAGONAL_EXTRA, Fstruct was too big by factor of 2
 //	with version 5.20, added muOfXtal() and get_muOfXtal(), MenuItemIfCromerPresent(), and Hex2RhomFractionalFractonal()
 //	with version 5.24, cleaned up Hex2Rhom(), Rhom2Hex(), Rhom2HexFractonal(), Hex2RhomFractonal(), and test_Hex_Rhom()
+//	with verison 5.25, added RhomLatticeFromHex(directH), and HexLatticeFromRhom(directR)
 
-// Rhombohedral Transformation:
+//	Rhombohedral Transformation:
 //
-// for Rhombohedral (hkl), and Hexagonal (HKL)
+//	for Rhombohedral (hkl), and Hexagonal (HKL)
 //		h = (2H+K+L)/3
 //		k = (-H+K+L)/3
 //		l = (-H-2K+L)/3
@@ -165,7 +166,7 @@ Static Constant ELEMENT_Zmax = 116
 //	These equations are implented in the routines:  Hex2Rhom(aH,cH)  &  Rhom2Hex(aR,alpha)
 //
 //
-// Although not used here, note that the following also works:
+//	Although not used here, note that the following also works:
 //		NOTE Inv(A^t) = Inv(A)^t, so the order of Inv() and ^t do not matter
 //		MatrixOP recipLatice   = 2*PI * (Inv(directLattice))^t
 //		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
@@ -5424,6 +5425,31 @@ ThreadSafe Function/S getSymString(SpaceGroup)	// returns short Hermann-Mauguin 
 End
 
 
+
+//		=========================================================================
+//		===================== Start Hex to Rhom Conversions =====================
+
+// Convert direct lattices back and forth between Hexagonal & Rhombohedral
+// see:  https://quantumwise.com/support/tutorials/item/510-rhombohedral-and-hexagonal-settings-of-trigonal-crystals
+ThreadSafe Function/WAVE RhomLatticeFromHex(directH)			// returns a Rhombohedral direct lattice
+	Wave directH												// Hexagonal direct lattice
+	// should only be used for Space Groups, {146, 148, 155,160, 161, 166, 167}
+	Make/N=(3,3)/D/FREE HexRhomMat = {{2,1,1}, {-1,1,1}, {-1,-2,1}}
+	HexRhomMat /= 3
+	MatrixOP/FREE directR = directH x HexRhomMat	// Obverse Rhombohedral direct lattice from Hexagonal
+	return directR
+End
+
+
+ThreadSafe Function/WAVE HexLatticeFromRhom(directR)			// returns a Hexagonal direct lattice
+	Wave directR												// Rhombohedral direct lattice
+	// should only be used for Space Groups, {146, 148, 155,160, 161, 166, 167}
+	Make/N=(3,3)/D/FREE RhomHexMat = { {1,-1,0}, {0,1,-1}, {1,1,1} }
+	MatrixOP/FREE directH = directR x RhomHexMat	// Hexgonal direct lattice from Obverse Rhombohedral
+	return directH
+End
+
+
 ThreadSafe Function/C Hex2Rhom(aH,cH)			// convert lattice constants
 	Variable aH,cH					// Hexagonal lattice constants
 	Variable aR,alpha				// Rhombohedral lattice constants
@@ -5443,60 +5469,6 @@ ThreadSafe Function/C Rhom2Hex(aR,alpha)		// convert lattice constants
 End
 
 
-Static Function test_Hex_Rhom()
-	STRUCT crystalStructure xtal
-
-	//	FillCrystalStructDefault(xtal)
- 	// ************************ set xtal to Hexagonal values *************************
-	xtal.desc = "Al2O3 Sapphire (hexagonal)"
-	xtal.a = 0.4758	;	xtal.b = 0.4758	;	xtal.c = 1.2991
-	xtal.alpha = 90	;	xtal.beta = 90		;	xtal.gam = 120
-	xtal.SpaceGroup = 167
-	xtal.a0 = 0.4758	;	xtal.b0 = -0.2379					;	xtal.c0 = 0
-	xtal.a1 = 0			;	xtal.b1 = 0.41205488712064	;	xtal.c1 = 0
-	xtal.a2 = 0			;	xtal.b2 = 0							;	xtal.c2 = 1.2991
-	xtal.as0 = 13.205517669566	;	xtal.bs0 = 0		;	xtal.cs0 = 0
-	xtal.as1 = 7.6242091813124	;	xtal.bs1 = 15.248418362625	;	xtal.cs1 = -0
-	xtal.as2 = 0						;	xtal.bs2 = 0		;	xtal.cs2 = 4.8365678601952
-	xtal.Vc = 0.25469597973584	;	xtal.density = 3.9885352190818
-	xtal.Temperature = 22.5		;	xtal.alphaT = nan
-
-	xtal.N = 2
-	xtal.atom[0].name = "Al"
-	xtal.atom[0].Zatom = 13
-	xtal.atom[0].x = 0				;	xtal.atom[0].y = 0	;	xtal.atom[0].z = 0.3523
-	xtal.atom[0].mult = 12			;	xtal.atom[0].occ = 1;	xtal.atom[0].WyckoffSymbol = "c"
-	xtal.atom[0].valence = 0		;	xtal.atom[0].DebyeT = 1047
-
-	xtal.atom[1].name = "O"
-	xtal.atom[1].Zatom = 8
-	xtal.atom[1].x = 0.3064		;	xtal.atom[1].y = 0	;	xtal.atom[1].z = 0.25
-	xtal.atom[1].mult = 18			;	xtal.atom[1].occ = 1;	xtal.atom[1].WyckoffSymbol = "e"
-	xtal.atom[1].valence = 0		;	xtal.atom[1].DebyeT = 1047
-
-	Hex2RhomFractonal(xtal)				// *********************************
-
-
- 	// *********************** set xtal to Rhombohedral values ***********************
-	xtal.a = 0.512815510469192		;	xtal.b = 0.512815510469192	;	xtal.c = 0.512815510469192
-	xtal.alpha = 55.2793424027957	;	xtal.beta = 55.2793424027957	;	xtal.gam = 55.2793424027957
-
-	Make/N=(3,3)/D/FREE DR
-	DR[0][0]= {0.2379,0.137351629040212,0.433033333333333}
-	DR[0][1]= {-0.2379,0.137351629040212,0.433033333333333}
-	DR[0][2]= {-5.6751082567348e-17,-0.274703258080424,0.433033333333333}
-	xtal.a0 = DR[0][0]	;	xtal.b0 = DR[0][1]	;		xtal.c0 = DR[0][2]
-	xtal.a1 = DR[1][0]	;	xtal.b1 = DR[1][1]	;		xtal.c1 = DR[1][2]
-	xtal.a2 = DR[2][0]	;	xtal.b2 = DR[2][1]	;		xtal.c2 = DR[2][2]
-
-	xtal.atom[0].x = 0.3523	;	xtal.atom[0].y = 0.3523	;	xtal.atom[0].z = 0.3523
-	xtal.atom[1].x = 0.5564	;	xtal.atom[1].y = 0.9436	;	xtal.atom[1].z = 0.25
-	xtal.atom[1].y -= 1
-	print " "
-
-	Rhom2HexFractonal(xtal)				// *********************************
-End
-//
 // This is just a demonstration, change it to make it useful
 Static Function Rhom2HexFractonal(xtal)					// converts hexagonal --> rhombohedral, fractional coordinates
 	STRUCT crystalStructure &xtal
@@ -5505,10 +5477,8 @@ Static Function Rhom2HexFractonal(xtal)					// converts hexagonal --> rhombohedr
 	print "   Starting from Rhombohedral"
 	printf "aHex = %g nm,   cHex = %g nm\r",real(a_c), imag(a_c)
 
-	Make/N=(3,3)/D/FREE H2Ctrans = {{2,1,1}, {-1,1,1}, {-1,-2,1}}
-	H2Ctrans /= 3
 	Wave directR = directFrom_xtal(xtal)			// Obverse Rhombohedral direct lattice
-	MatrixOP/FREE directH = directR x Inv(H2Ctrans)	// Hexagonal direct lattice from Obverse Rhombohedral
+	Wave directH = HexLatticeFromRhom(directR)	// returns a Hexagonal direct lattice
 
 	Make/N=3/D/FREE xyzR								// fractional rhombohedral coordinates
 	Variable i
@@ -5528,10 +5498,8 @@ Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral
 	print "   Starting from Hexagonal"
 	printf "aRhom = %g nm,   alphaRhom = %g¡\r",real(a_alpha), imag(a_alpha)
 
-	Make/N=(3,3)/D/FREE H2Ctrans = {{2,1,1}, {-1,1,1}, {-1,-2,1}}
-	H2Ctrans /= 3
 	Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
-	MatrixOP/FREE directR = directH x H2Ctrans	// Obverse Rhombohedral direct lattice from Hexagonal
+	Wave directR = RhomLatticeFromHex(directH)	// Obverse Rhombohedral direct lattice from Hexagonal
 
 	Make/N=3/D/FREE xyzH								// fractional hexagonal coordinates
 	Variable i
@@ -5542,6 +5510,63 @@ Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral
 		printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
 	endfor
 End
+//
+//	Static Function test_Hex_Rhom()
+//		STRUCT crystalStructure xtal
+//	
+//		//	FillCrystalStructDefault(xtal)
+//	 	// ************************ set xtal to Hexagonal values *************************
+//		xtal.desc = "Al2O3 Sapphire (hexagonal)"
+//		xtal.a = 0.4758	;	xtal.b = 0.4758	;	xtal.c = 1.2991
+//		xtal.alpha = 90	;	xtal.beta = 90		;	xtal.gam = 120
+//		xtal.SpaceGroup = 167
+//		xtal.a0 = 0.4758	;	xtal.b0 = -0.2379					;	xtal.c0 = 0
+//		xtal.a1 = 0			;	xtal.b1 = 0.41205488712064	;	xtal.c1 = 0
+//		xtal.a2 = 0			;	xtal.b2 = 0							;	xtal.c2 = 1.2991
+//		xtal.as0 = 13.205517669566	;	xtal.bs0 = 0		;	xtal.cs0 = 0
+//		xtal.as1 = 7.6242091813124	;	xtal.bs1 = 15.248418362625	;	xtal.cs1 = -0
+//		xtal.as2 = 0						;	xtal.bs2 = 0		;	xtal.cs2 = 4.8365678601952
+//		xtal.Vc = 0.25469597973584	;	xtal.density = 3.9885352190818
+//		xtal.Temperature = 22.5		;	xtal.alphaT = nan
+//	
+//		xtal.N = 2
+//		xtal.atom[0].name = "Al"
+//		xtal.atom[0].Zatom = 13
+//		xtal.atom[0].x = 0				;	xtal.atom[0].y = 0	;	xtal.atom[0].z = 0.3523
+//		xtal.atom[0].mult = 12			;	xtal.atom[0].occ = 1;	xtal.atom[0].WyckoffSymbol = "c"
+//		xtal.atom[0].valence = 0		;	xtal.atom[0].DebyeT = 1047
+//	
+//		xtal.atom[1].name = "O"
+//		xtal.atom[1].Zatom = 8
+//		xtal.atom[1].x = 0.3064		;	xtal.atom[1].y = 0	;	xtal.atom[1].z = 0.25
+//		xtal.atom[1].mult = 18			;	xtal.atom[1].occ = 1;	xtal.atom[1].WyckoffSymbol = "e"
+//		xtal.atom[1].valence = 0		;	xtal.atom[1].DebyeT = 1047
+//	
+//		Hex2RhomFractonal(xtal)				// *********************************
+//	
+//	
+//	 	// *********************** set xtal to Rhombohedral values ***********************
+//		xtal.a = 0.512815510469192		;	xtal.b = 0.512815510469192	;	xtal.c = 0.512815510469192
+//		xtal.alpha = 55.2793424027957	;	xtal.beta = 55.2793424027957	;	xtal.gam = 55.2793424027957
+//	
+//		Make/N=(3,3)/D/FREE DR
+//		DR[0][0]= {0.2379,0.137351629040212,0.433033333333333}
+//		DR[0][1]= {-0.2379,0.137351629040212,0.433033333333333}
+//		DR[0][2]= {-5.6751082567348e-17,-0.274703258080424,0.433033333333333}
+//		xtal.a0 = DR[0][0]	;	xtal.b0 = DR[0][1]	;		xtal.c0 = DR[0][2]
+//		xtal.a1 = DR[1][0]	;	xtal.b1 = DR[1][1]	;		xtal.c1 = DR[1][2]
+//		xtal.a2 = DR[2][0]	;	xtal.b2 = DR[2][1]	;		xtal.c2 = DR[2][2]
+//	
+//		xtal.atom[0].x = 0.3523	;	xtal.atom[0].y = 0.3523	;	xtal.atom[0].z = 0.3523
+//		xtal.atom[1].x = 0.5564	;	xtal.atom[1].y = 0.9436	;	xtal.atom[1].z = 0.25
+//		xtal.atom[1].y -= 1
+//		print " "
+//	
+//		Rhom2HexFractonal(xtal)				// *********************************
+//	End
+
+//		====================== End Hex to Rhom Conversions ======================
+//		=========================================================================
 
 
 

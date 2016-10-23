@@ -14,11 +14,16 @@
 // These Constant values can be OverRidden by adding the line in your Main Procedure window.  Don't change this file.
 Constant AtomView_GrayBkg = 0.75		// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
 Constant AtomView_BondLineWidth = 5	// Can OverRide with :OverRide Constant AtomView_BondLineWidth=3
-StrConstant AtomView_CellOutLineColor = "0.733333,0.733333,0.733333,1"
-Constant AtomView_CellOutLineColorR = 0.733333
-Constant AtomView_CellOutLineColorG = 0.733333
-Constant AtomView_CellOutLineColorB = 0.733333
-Constant AtomView_CellOutLineColorA = 1
+StrConstant AtomView_CellOutlineRGBA = "0.733333,0.733333,0.733333,1"
+Constant AtomView_CellOutlineR = 0.733333
+Constant AtomView_CellOutlineG = 0.733333
+Constant AtomView_CellOutlineB = 0.733333
+Constant AtomView_CellOutlineA = 1
+StrConstant AtomView_RhomOutLineRGBA = "0.65,0.65,0.6,1"
+Constant AtomView_RhomOutLineR = 0.65
+Constant AtomView_RhomOutLineG = 0.65
+Constant AtomView_RhomOutLineB = 0.6
+Constant AtomView_RhomOutLineA = 1
 
 
 #if (IgorVersion()<7)
@@ -328,10 +333,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	Wave cell = MakeCellOutline(prefix,direct,Na=Na,Nb=Nb,Nc=Nc)
 	Wave cell0 = MakeCellOutline(prefix,direct,name=NameOfWave(cell)+"0")
 	if (isRhombohedral(xtal.SpaceGroup))
-		// see:  https://quantumwise.com/support/tutorials/item/510-rhombohedral-and-hexagonal-settings-of-trigonal-crystals
-		Make/N=(3,3)/D/FREE Hex2RhomMat = { {-1,1,1}, {2,1,1}, {-1,-2,1} }
-		Hex2RhomMat /= 3
-		MatrixOP/FREE rhomLat = direct x Hex2RhomMat
+		Wave rhomLat = RhomLatticeFromHex(direct)	// returns a Rhombohedral direct lattice
 		Wave rhomCell0 = AtomView#MakeCellOutline("",rhomLat,name=prefix+"_RhomOutline0")
 	else
 		Wave rhomCell0=$""
@@ -1315,13 +1317,13 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColorType,1}"
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ lineWidthType,1}"
 		Execute "ModifyGizmo ModifyObject=cellOutline property={ lineWidth,0.5}"
-		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColor,"+AtomView_CellOutLineColor+"}"
+		Execute "ModifyGizmo ModifyObject=cellOutline property={ pathColor,"+AtomView_CellOutlineRGBA+"}"
 #else
 		AppendToGizmo Path=$GetWavesDataFolder(cell,2),name=cellOutline
 		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ pathColorType,1}
 		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ lineWidthType,1}
 		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ lineWidth,0.5}
-		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ pathColor, AtomView_CellOutLineColorR,AtomView_CellOutLineColorG,AtomView_CellOutLineColorB,AtomView_CellOutLineColorA}
+		ModifyGizmo ModifyObject=cellOutline objectType=path, property={ pathColor, AtomView_CellOutlineR,AtomView_CellOutlineG,AtomView_CellOutlineB,AtomView_CellOutlineA}
 #endif
 	endif
 	if (WaveExists(cell0))
@@ -1331,13 +1333,13 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColorType,1}"
 		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidthType,1}"
 		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ lineWidth,"+num2str(AtomView_BondLineWidth)+"}"
-		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColor,"+AtomView_CellOutLineColor+"}"
+		Execute "ModifyGizmo ModifyObject=cellOutline0 property={ pathColor,"+AtomView_CellOutlineRGBA+"}"
 #else
 		AppendToGizmo Path=$GetWavesDataFolder(cell0,2),name=cellOutline0
 		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ pathColorType,1}
 		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ lineWidthType,1}
 		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ lineWidth,AtomView_BondLineWidth}
-		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ pathColor,AtomView_CellOutLineColorR,AtomView_CellOutLineColorG,AtomView_CellOutLineColorB,AtomView_CellOutLineColorA}
+		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ pathColor,AtomView_CellOutlineR,AtomView_CellOutlineG,AtomView_CellOutlineB,AtomView_CellOutlineA}
 #endif
 	endif
 
@@ -1348,13 +1350,13 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ pathColorType,1}"
 		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ lineWidthType,1}"
 		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ lineWidth,"+num2str(AtomView_BondLineWidth)+"}"
-		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ pathColor,0.65,0.65,0.6,1}"
+		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ pathColor,"+AtomView_RhomOutLineRGBA+"}"
 #else
 		AppendToGizmo Path=$GetWavesDataFolder(rhomCell0,2),name=rhomCellOutline0
 		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ pathColorType,1}
 		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ lineWidthType,1}
 		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ lineWidth,AtomView_BondLineWidth}
-		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ pathColor,0.65,0.65,0.6,1}
+		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ pathColor,AtomView_RhomOutLineR,AtomView_RhomOutLineG,AtomView_RhomOutLineB,AtomView_RhomOutLineA}
 #endif
 	endif
 
