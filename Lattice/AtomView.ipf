@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.40
+#pragma version = 0.41
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -236,10 +236,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		return $""
 	endif
 
-	Make/N=(3,3)/D/FREE direct
-	direct[0][0] = xtal.a0;		direct[0][1] = xtal.b0;		direct[0][2] = xtal.c0
-	direct[1][0] = xtal.a1;		direct[1][1] = xtal.b1;		direct[1][2] = xtal.c1
-	direct[2][0] = xtal.a2;		direct[2][1] = xtal.b2;		direct[2][2] = xtal.c2
+	Wave direct = directFrom_xtal(xtal)
 	Make/N=3/D/FREE Ns={ceil(Na),ceil(Nb),ceil(Nc)}
 	MatrixOp/FREE/O maxSize0 = maxVal(abs((direct x Ns)))		// find biggest size
 	Variable maxSize=maxSize0[0]
@@ -328,11 +325,17 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		Wave bonds = MakeBondList_blen(prefix,xyz,blen=blen)
 	endif
 
-	Wave cell = MakeCellOutline(prefix,xtal,Na=Na,Nb=Nb,Nc=Nc)
-	Wave cell0 = MakeCellOutline(prefix,xtal,name=NameOfWave(cell)+"0")
-//	if ((Na>1 || Nb >1 || Nc>1) && WaveExists(cell))
-//		Wave cell0 = MakeCellOutline(prefix,xtal,name=NameOfWave(cell)+"0")
-//	endif
+	Wave cell = MakeCellOutline(prefix,direct,Na=Na,Nb=Nb,Nc=Nc)
+	Wave cell0 = MakeCellOutline(prefix,direct,name=NameOfWave(cell)+"0")
+	if (isRhombohedral(xtal.SpaceGroup))
+		// see:  https://quantumwise.com/support/tutorials/item/510-rhombohedral-and-hexagonal-settings-of-trigonal-crystals
+		Make/N=(3,3)/D/FREE Hex2RhomMat = { {-1,1,1}, {2,1,1}, {-1,-2,1} }
+		Hex2RhomMat /= 3
+		MatrixOP/FREE rhomLat = direct x Hex2RhomMat
+		Wave rhomCell0 = AtomView#MakeCellOutline("",rhomLat,name=prefix+"_RhomOutline0")
+	else
+		Wave rhomCell0=$""
+	endif
 	Wave corners = MakeGizmocubeCorners(xyz)
 
 	SetDataFolder fldrSav
@@ -377,6 +380,9 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	endif
 	if (WaveExists(cell0))
 		wNote = ReplaceStringByKey("cellOutlineWave0",wNote,GetWavesDataFolder(cell0,2),"=")
+	endif
+	if (WaveExists(rhomCell0))
+		wNote = ReplaceStringByKey("rhomOutlineWave0",wNote,GetWavesDataFolder(rhomCell0,2),"=")
 	endif
 	Note/K xyz, wNote
 
@@ -429,9 +435,9 @@ Static Function/WAVE RepeatOneAtomSet(atomi,Na,Nb,Nc)
 End
 
 
-Static Function/WAVE MakeCellOutline(prefix,xtal,[Na,Nb,Nc,name])	// makes a gizmo path wave that outlines conventional cell
+Static Function/WAVE MakeCellOutline(prefix,direct,[Na,Nb,Nc,name])	// makes a gizmo path wave that outlines conventional cell
 	String prefix
-	STRUCT crystalStructure &xtal
+	Wave direct							// contains the three direct lattice vectors {a,b,c}
 	Variable Na,Nb,Nc					// number of cells in each direction
 	String name							// name of wave to make
 	Na = ParamIsDefault(Na) ? 1 : Na
@@ -443,9 +449,9 @@ Static Function/WAVE MakeCellOutline(prefix,xtal,[Na,Nb,Nc,name])	// makes a giz
 	name = SelectString(ParamIsDefault(name),name,"")
 
 	Make/N=3/FREE/D a,b,c			// the lattice vectors
-	a = {xtal.a0, xtal.a1, xtal.a2}
-	b = {xtal.b0, xtal.b1, xtal.b2}
-	c = {xtal.c0, xtal.c1, xtal.c2}
+	a = direct[p][0]
+	b = direct[p][1]
+	c = direct[p][2]
 
 	name = SelectString(strlen(name),prefix+"_CellOutline",name)
 	Make/N=(23,3)/D/O $name/WAVE=cell = NaN
@@ -1093,6 +1099,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Wave corners = $StringByKey("cornersWave",wNote,"=")
 	Wave cell = $StringByKey("cellOutlineWave",wNote,"=")
 	Wave cell0 = $StringByKey("cellOutlineWave0",wNote,"=")
+	Wave rhomCell0 = $StringByKey("rhomOutlineWave0",wNote,"=")
 	Variable bondLenMax = NumberByKey("bondLenMax",wNote,"=")
 	String sourceFldr=StringByKey("sourceFldr",wNote,"=")
 	String desc=StringByKey("desc",wNote,"=")
@@ -1331,6 +1338,23 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ lineWidthType,1}
 		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ lineWidth,AtomView_BondLineWidth}
 		ModifyGizmo ModifyObject=cellOutline0 objectType=path, property={ pathColor,AtomView_CellOutLineColorR,AtomView_CellOutLineColorG,AtomView_CellOutLineColorB,AtomView_CellOutLineColorA}
+#endif
+	endif
+
+	if (WaveExists(rhomCell0))
+		objectList += "rhomCellOutline0;"
+#if (IgorVersion()<7)
+		Execute "AppendToGizmo Path="+GetWavesDataFolder(rhomCell0,2)+",name=rhomCellOutline0"
+		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ pathColorType,1}"
+		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ lineWidthType,1}"
+		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ lineWidth,"+num2str(AtomView_BondLineWidth)+"}"
+		Execute "ModifyGizmo ModifyObject=rhomCellOutline0 property={ pathColor,0.65,0.65,0.6,1}"
+#else
+		AppendToGizmo Path=$GetWavesDataFolder(rhomCell0,2),name=rhomCellOutline0
+		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ pathColorType,1}
+		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ lineWidthType,1}
+		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ lineWidth,AtomView_BondLineWidth}
+		ModifyGizmo ModifyObject=rhomCellOutline0 objectType=path, property={ pathColor,0.65,0.65,0.6,1}
 #endif
 	endif
 
