@@ -1,17 +1,13 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.18
+#pragma version = 2.19
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
 Static Constant GIZMO_MARKER_END_TYPE = 1			// 0=box on ends of lines, 1=sphere on ends of lines (you can OverRide this in the Main procedure)
-Static Constant MAX_N_OBJECTS=500					// maximum number of objects that can be created using these routines (such as scatter, groups, titles, ...)
-#if (IgorVersion()<7)
+Static Constant MAX_N_OBJECTS=500						// maximum number of objects that can be created using these routines (such as scatter, groups, titles, ...)
 Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a Gizmo
-#else
-Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -0.95	// left edge of scale bar on a Gizmo
-#endif
 
 
 //	MakeGizmocubeCorners(xyz)	Make a scatter wave that contains xyz and is CUBICAL
@@ -559,90 +555,6 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	// ************************* Group Object End *******************
 	return groupName
 End
-//Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
-//	String groupName			// probably "ScaleBarGroup0", If this is empty, then a unique name will be assigned
-//	Variable maxLength		// maximum length in Gizmo, scale bar will be less than this
-//	String units				// units for maxLength and used in scale bar label
-//	Variable scaleFactor
-//	String font
-//	scaleFactor = ParamIsDefault(scaleFactor) ? 1 : scaleFactor
-//	scaleFactor = numtype(scaleFactor) || scaleFactor<=0 ? 1 : scaleFactor
-//	font = SelectString(ParamIsDefault(font),font,GenevaEquivFont)
-//	font = SelectString(strlen(font),GenevaEquivFont,font)
-//	if (maxLength<=0 || numtype(maxLength))
-//		return ""
-//	endif
-//
-//	// for scale bar use multipliers of 1, 2, or 5 ONLY
-//	Variable BarLength = 10^floor(log(maxLength))
-//	if (5*BarLength < maxLength)
-//		BarLength = 5*BarLength
-//	elseif (2*BarLength < maxLength)
-//		BarLength = 2*BarLength
-//	endif
-//	String unitStr = num2str(BarLength)+" "+units
-//	Variable dxGizmoLine = BarLength/maxLength * scaleFactor * 2
-//
-//	if (CheckName(groupName,5))						// invalid groupName passed, create one
-//		if (strlen(groupName)<1)						// create a unique group name
-//			NewDataFolder/O root:Packages			// ensure Packages exists
-//			NewDataFolder/O root:Packages:JZT_GizmoUtility	// ensure geometry exists
-//			if (exists("root:Packages:JZT_GizmoUtility:ScaleBarNumber")!=2)
-//				Variable/G root:Packages:JZT_GizmoUtility:ScaleBarNumber=-1
-//			endif
-//			NVAR ScaleBarNumber = root:Packages:JZT_GizmoUtility:ScaleBarNumber
-//			ScaleBarNumber = numtype(ScaleBarNumber) ? -1 : limit(round(ScaleBarNumber),-1,Inf)
-//			ScaleBarNumber += 1
-//			groupName = "ScaleBarGroup"+num2istr(ScaleBarNumber)
-//		endif
-//		groupName = CleanupName(groupName,0)
-//	endif
-//	if (CheckName(groupName,5))						// invalid groupName passed, give up
-//		return ""
-//	endif
-//
-//	// ************************* Group Object Start *******************
-//#if (IgorVersion()<7)
-//	Execute "AppendToGizmo group,name="+groupName
-//	Execute "ModifyGizmo currentGroupObject=\""+groupName+"\""
-//	String cmd
-//	sprintf cmd "AppendToGizmo string=\"%s\",strFont=\"%s\",name=stringScaleBar",unitStr,font
-//	Execute cmd
-//	Execute "ModifyGizmo modifyObject=stringScaleBar property={Clipped,0}"
-//	sprintf cmd "AppendToGizmo line={%g,-1.9,0,%g,-1.9,0}, name=line0",GIZMO_SCALE_BAR_LEFT_EDGE,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE
-//	Execute cmd
-//	Execute "AppendToGizmo attribute lineWidth=5, name=lineWidth0"
-//	Execute "ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix"
-//	Execute "ModifyGizmo setDisplayList=1, attribute=lineWidth0"
-//	Execute "ModifyGizmo setDisplayList=2, object=line0"
-//	Execute "ModifyGizmo setDisplayList=3, opName=translateScaleBarText, operation=translate, data={"+num2str(GIZMO_SCALE_BAR_LEFT_EDGE)+",-1.85,0}"
-//	Execute "ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}"
-//	Execute "ModifyGizmo setDisplayList=5, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}"
-//	Execute "ModifyGizmo setDisplayList=6, object=stringScaleBar"
-//	Execute "ModifyGizmo setDisplayList=7, opName=popMatrix0, operation=popMatrix"
-//	Execute "ModifyGizmo currentGroupObject=\"::\""
-//#else
-//	AppendToGizmo group,name=$groupName
-//	ModifyGizmo currentGroupObject=groupName
-//	AppendToGizmo string=unitStr,strFont=font,name=stringScaleBar
-//// xxxxxxxxxxxxxxxxxxxxxxxxxxx
-////	ModifyGizmo modifyObject=stringScaleBar objectType=string, property={Clipped,0}
-//	AppendToGizmo line={GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}, name=line0
-//	AppendToGizmo attribute lineWidth=5, name=lineWidth0
-//	ModifyGizmo setDisplayList=0, opName=pushMatrix0, operation=pushMatrix
-//	ModifyGizmo setDisplayList=1, attribute=lineWidth0
-//	ModifyGizmo setDisplayList=2, object=line0
-//	ModifyGizmo setDisplayList=3, opName=translateScaleBarText, operation=translate, data={GIZMO_SCALE_BAR_LEFT_EDGE,-1.85,0}
-////	ModifyGizmo setDisplayList=4, opName=scaleScaleBarText, operation=scale, data={0.1,0.1,0.1}
-//	ModifyGizmo setDisplayList=4, opName=rotateScaleBarText, operation=rotate, data={180,1,0,0}
-//	ModifyGizmo setDisplayList=5, object=stringScaleBar
-//	ModifyGizmo setDisplayList=6, opName=popMatrix0, operation=popMatrix
-//	ModifyGizmo currentGroupObject="::"
-//#endif
-//	// ************************* Group Object End *******************
-//	return groupName
-//End
-//
 
 
 #if (IgorVersion()<7)
@@ -826,154 +738,7 @@ Function ResetScaleBarLength([units,scaleFactor,font,fontSize,win])
 	TextBox/C/N=textScaleBar/F=0/B=1/A=LB/X=3/Y=3 str
 	return BarLength
 End
-
 #endif
-//Static Function GzimoReSetScaleBarHookProc(s)
-//	STRUCT WMGizmoHookStruct &s
-//	if (!StringMatch(s.eventName,"scale"))
-//		return 0
-//	endif
-//
-//	Variable scaleFactor=1
-//	String units = "nm"
-//	String win=s.winName
-//	String scaleBarName="", str, font=GenevaEquivFont
-//#if (IgorVersion()<7)
-//	Execute "GetGizmo/N="+win+"/Z objectNameList"
-//	String listObjectNames=StrVarOrDefault("S_ObjectNames","")
-//	KillStrings/Z S_ObjectNames
-//#else
-//	GetGizmo/N=$win/Z objectNameList
-//	String listObjectNames=S_ObjectNames
-//#endif
-//	Variable i
-//	for (i=0;i<ItemsInList(listObjectNames);i+=1)
-//		if (StringMatch(StringFromList(i,listObjectNames),"ScaleBarGroup*"))
-//			scaleBarName = StringFromList(i,listObjectNames)
-//			break
-//		endif
-//	endfor
-//	if (strlen(scaleBarName)<1)						// no scale bar, do nothing
-//		return 0
-//	endif
-//
-//#if (IgorVersion()<7)
-//	Execute "GetGizmo/N="+win+"/Z displayItemExists=scaleBase"
-//	Variable Vflag = (NumVarOrDefault("V_flag",0))
-//	KillVariables/Z V_Flag
-//#else
-//	GetGizmo/N=$win/Z displayItemExists=scaleBase
-//	Variable Vflag = V_flag
-//#endif
-//	if (Vflag)
-//#if (IgorVersion()<7)
-//		Execute "GetGizmo/N="+win+"/Z displayList"
-//		KillStrings/Z S_DisplayList
-//#else
-//		GetGizmo/N=$win/Z displayList
-//#endif
-//		Wave/T TW_DisplayList=TW_DisplayList
-//
-//		for (i=0;i<numpnts(TW_DisplayList);i+=1)
-//			if (strsearch(TW_DisplayList[i],"opName=scaleBase, operation=scale,",0,2)>0)
-//				str = TW_DisplayList[i]
-//  					i = strsearch(str,"data={",0,2)
-// 					scaleFactor = str2num(str[i+6,Inf])
-// 					scaleFactor = numtype(scaleFactor) ? 1 : scaleFactor
-//				break
-//			endif
-//
-//		endfor
-//		KillWaves/Z TW_DisplayList
-//	endif
-//
-//#if (IgorVersion()<7)
-//	Execute "GetGizmo/N="+win+"/Z dataLimits"
-//	Variable dx = NumVarOrDefault("GizmoXmax",1)-NumVarOrDefault("GizmoXmin",1)
-//	Variable dy = NumVarOrDefault("GizmoYmax",1)-NumVarOrDefault("GizmoYmin",1)
-//	Variable dz = NumVarOrDefault("GizmoZmax",1)-NumVarOrDefault("GizmoZmin",1)
-//	KillVariables/Z GizmoXmin,GizmoXmax,GizmoYmin,GizmoYmax,GizmoZmin,GizmoZmax
-//#else
-//	GetGizmo/N=$win/Z dataLimits
-//	Variable dx=GizmoXmax-GizmoXmin, dy=GizmoYmax-GizmoYmin, dz=GizmoZmax-GizmoZmin
-//#endif
-//
-//	Variable maxLength = max(max(dx,dy),dz)
-//	Variable BarLength = 10^floor(log(maxLength))
-//	if (5*BarLength < maxLength)					// for scale bar use multipliers of 1, 2, or 5 ONLY
-//		BarLength = 5*BarLength
-//	elseif (2*BarLength < maxLength)
-//		BarLength = 2*BarLength
-//	endif
-//	Variable dxGizmoLine = BarLength/maxLength * scaleFactor * 2
-//	//	printf "maxLength = %g,  BarLength = %g,   dxGizmoLine = %g,  dxGizmoLine-1.75 = %g\r",maxLength,BarLength,dxGizmoLine, dxGizmoLine-1.75
-//
-//#if (IgorVersion()<7)
-//	Execute "GetGizmo/N="+win+"/Z objectList"
-//	KillStrings/Z S_gizmoObjectList
-//#else
-//	GetGizmo/N=$win/Z objectList
-//#endif
-//	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
-//
-//	Variable i0,i1
-//	for (i0=0,i=0; i<numpnts(TW_gizmoObjectList); i+=1)
-//		if (strsearch(TW_gizmoObjectList[i], "AppendToGizmo group,name="+scaleBarName,0,2)>0)
-//			i0 = i
-//			break
-//		endif
-//	endfor
-//	for (i1=0,i=i0; i<numpnts(TW_gizmoObjectList); i+=1)
-//		if (strsearch(TW_gizmoObjectList[i], "ModifyGizmo currentGroupObject=\"::\"",0,2)>0)
-//			i1 = i
-//			break
-//		endif
-//	endfor
-//
-//	for (i=i0;i<i1; i+=1)
-//		if (strsearch(TW_gizmoObjectList[i], "name=stringScaleBar",0,2)>0)
-//			str = TW_gizmoObjectList[i]
-//			i = strsearch(str, "AppendToGizmo string=\"",0,2)
-//			if (i<0)
-//				break
-//			endif
-//			str = str[i+22,Inf]
-//			i = strsearch(str,"\",",0)
-//			if (i<0)
-//				break
-//			endif
-//			str = str[0,i-1]
-//			i = strsearch(str," ",Inf,1)
-//			if (i<0)
-//				break
-//			endif
-//			str = str[i+1,Inf]
-//			units = str
-//			break
-//		endif
-//	endfor
-//	//	printf "units = '%s'\r",units
-//	KillWaves/Z TW_gizmoObjectList
-//	String unitStr = num2str(BarLength)+" "+units
-//
-//#if (IgorVersion()<7)
-//	Execute "ModifyGizmo/N="+win+"/Z startRecMacro"
-//	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\""+scaleBarName+"\""
-//	Execute "ModifyGizmo/N="+win+"/Z modifyObject=stringScaleBar, property={string,\""+unitStr+"\"}"
-//	sprintf str "ModifyGizmo/N=%s/Z modifyObject=line0, property={vertex,%g,-1.9,0,%g,-1.9,0}", win,GIZMO_SCALE_BAR_LEFT_EDGE,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE
-//	Execute str
-//	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
-//	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
-//#else
-//	ModifyGizmo/N=$win/Z startRecMacro
-//	ModifyGizmo/N=$win/Z currentGroupObject=scaleBarName
-//	ModifyGizmo/N=$win/Z modifyObject=stringScaleBar, objectType=string, property={string,unitStr}
-//	ModifyGizmo/N=$win/Z modifyObject=line0, objectType=line property={vertex,GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0,dxGizmoLine+GIZMO_SCALE_BAR_LEFT_EDGE,-1.9,0}
-//	ModifyGizmo/N=$win/Z currentGroupObject="::"
-//	ModifyGizmo/N=$win/Z endRecMacro
-//#endif
-//	return 0	 
-//End
 
 
 
@@ -1343,10 +1108,10 @@ End
 #if (IgorVersion()>=7)
 
 Function/T AddCustomAxesGroup(groupName,ain,bin,cin,[font,namesWave,namesScatterWave,rgba,insert])
-	String groupName			// probably "CustomAxesGroup0", If this is empty, then a unique name will be assigned
+	String groupName				// probably "CustomAxesGroup0", If this is empty, then a unique name will be assigned
 	Wave ain,bin,cin
-	String font					// OPTIONAL, name of font
-	Wave/T namesWave			// OPTIONAL, if it exists, use it to show the names dim(N)
+	String font						// OPTIONAL, name of font
+	Wave/T namesWave				// OPTIONAL, if it exists, use it to show the names dim(N)
 	Wave namesScatterWave		// OPTIONAL, positions for the strings in namesWave, dim(N,3), otherwise use ends of a,b,cin
 	Wave rgba						// OPTIONAL, colors for the axis labels, defaults to all green
 	Variable insert				// if true, also insert this group
@@ -1368,7 +1133,7 @@ Function/T AddCustomAxesGroup(groupName,ain,bin,cin,[font,namesWave,namesScatter
 
 	if (CheckName(groupName,5))						// invalid groupName passed, create one
 		if (strlen(groupName)<1)						// create a unique group name
-			NewDataFolder/O root:Packages				// ensure Packages exists
+			NewDataFolder/O root:Packages			// ensure Packages exists
 			NewDataFolder/O root:Packages:JZT_GizmoUtility	// ensure geometry exists
 			if (exists("root:Packages:JZT_GizmoUtility:CustomAxesNumber")!=2)
 				Variable/G root:Packages:JZT_GizmoUtility:CustomAxesNumber=-1
@@ -1582,9 +1347,9 @@ End
 Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 	String groupName			// probably "groupClipPlane", If this is empty, then a unique name will be assigned
 	String action				// "add;delete;remove;+X;-X;+Y;-Y;+Z;-Z;update"
-	Variable clipVal				// value of clip plane, only used when adding planes (if valid when removeX, then can be used to select which Xplane gets removed)
+	Variable clipVal			// value of clip plane, only used when adding planes (if valid when removeX, then can be used to select which Xplane gets removed)
 
-	String groupList=GetGizmoObjects("group")					// list of current group objects
+	String groupList=GetGizmoObjects("group")				// list of current group objects
 	if (WhichListItem(groupName,groupList)<0)				// group must already exists 
 		return 1
 	endif
