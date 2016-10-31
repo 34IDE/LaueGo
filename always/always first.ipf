@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.73
+#pragma version = 2.74
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -13,7 +13,8 @@
 #endif
 
 #if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32
-#include "LocalPackagesFirst", version>=2.07
+//#include "LocalPackagesFirst", version>=2.07
+#include "LocalPackagesFirst", optional
 #endif
 
 
