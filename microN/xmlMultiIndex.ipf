@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.96
+#pragma version=1.97
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -3318,7 +3318,7 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 		if (geo.d[i].used)
 			Ndetectors += 1
 			detector = numtype(detector) ? i : detector
-			color = detectorID2color(geo.d[i].detectorID)
+			color = geo.d[i].color
 			dList += num2istr(i)+SelectString(strlen(color),";"," ("+color+");")
 		endif
 	endfor
@@ -3383,7 +3383,7 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 
 	STRUCT detectorGeometry ds
 	CopyDetectorGeometry(ds,geo.d[detector])
-	color = detectorID2color(ds.detectorID)
+	color = ds.color
 	if (printIt)
 		printf "SimulatedLauePatternFromGM(%s, %g,%g", NameOfWave(gm),Elo,Ehi
 		if (!ParamIsDefault(detector) || !(detector==0))
@@ -3411,7 +3411,7 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 			printf ", printIt=%g",printIt
 		endif
 		if (strlen(color))
-			printf ")		// simulating the %s detector\r",detectorID2color(ds.detectorID)
+			printf ")		// simulating the %s detector\r",color
 		else
 			printf ")\r"
 		endif

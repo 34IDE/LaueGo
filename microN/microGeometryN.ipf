@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.89
+#pragma version = 1.90
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -10,8 +10,8 @@ Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
 // Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
 Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;Mar-165:Gray;"
-//Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:55000,55000,55000;"
 Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:65535,49344,52171;"
+Static StrConstant DefaultDetColorRGBs = "65535;49344;52171"		// default color for an unknown or unspecified detector
 // 3 detectors from ORNL are: PE1621 723-3335, PE0820 763-1807, PE0820 763-1850
 // 2 detectors from NIST are: PE0822 883-4841, PE0822 883-4843
 //   Mar-165 CCD, use Gray
@@ -586,6 +586,8 @@ Structure detectorGeometry		// structure definition for a detector
 	uchar timeMeasured[100]		// when this geometry was calculated
 	uchar geoNote[100]				// note
 	uchar detectorID[100]			// unique detector ID
+	uchar color[30]					// name of color, e.g. "orange" "yellow", ...
+	uint16 rgb[3]						// rgb of color, based on 65535 = full, color is optional, it will be assigned if it is not specified.
 	uchar distortionMapFile[100]	// name of file with distortion map
 
 	double rho00, rho01, rho02	// rotation matrix internally calculated from R[3]
@@ -634,7 +636,7 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 	printf "current geomery parameters  (using %d detectors)\r",g.Ndetectors
 	if (!SampleBad(g.s))
 		printf "Sample\r"
-		printf "	Origin = {%g, %g, %g}					// raw PM500 coordinates where sample is at origin (micron)\r",g.s.O[0],g.s.O[1],g.s.O[2]
+		printf "	Origin = {%g, %g, %g}				// raw poistioner coordinates where sample is at origin (micron)\r",g.s.O[0],g.s.O[1],g.s.O[2]
 		printf "	R = {%g, %g, %g}	// (= %g¡) sample positioner rotation vector (radian)\r",g.s.R[0],g.s.R[1],g.s.R[2],g.s.Rmag
 		if (NumVarOrDefault("root:Packages:geometry:printVerbose",0))
 			printf "			{%+.6f, %+.6f, %+.6f}	// rotation matrix from sample R\r",g.s.R00, g.s.R01, g.s.R02
@@ -643,11 +645,12 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 		endif
 	endif
 
-	Variable i
+	Variable i, first=1
 	for (i=0;i<MAX_Ndetectors;i+=1)				// info about all of the detectors
 		if (g.d[i].used)
 			printf "Detector %d\r",i
-			printDetector(g.d[i])
+			printDetector(g.d[i],brief=first)
+			first = 0
 		endif
 	endfor
 
@@ -655,7 +658,7 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 		printf "Wire UN-Defined *****\r"		// info about the wire
 	else
 		printf "Wire:\r"								// info about the wire
-		printf "	Origin = {%.2f, %.2f, %.2f}	// raw PM500 coordinates to put wire at Origin (Si position) (µm)\r",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
+		printf "	Origin = {%.2f, %.2f, %.2f}	// raw positioner coordinates to put wire at Origin (Si position) (µm)\r",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
 		printf "	diameter=%.2f				// diameter of wire (µm)\r",g.wire.dia
 		print "\t"+SelectString(g.wire.knife,"free standing wire","wire mounted on a knife edge")
 		printf "	wire axis direction = {%.6f, %.6f, %.6f}	// direction of wire axis in PM500 wire coordinates (µm)\r",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]
@@ -674,17 +677,18 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 	endif
 End
 //
-Function printDetector(d)							// print the details for passed detector geometry to the history window
+Function printDetector(d,[brief])			// print the details for passed detector geometry to the history window
 	STRUCT detectorGeometry &d
+	Variable brief									// if true supress comments
+	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : brief
 	if (!(d.used))
 		return 1
 	endif
 
-	printf "	Nx=%d, Ny=%d			// number of un-binned pixels in detector\r",d.Nx,d.Ny
-	printf "	sizeX=%g, sizeY=%g		// size of detector (mm)\r",(d.sizeX/1000), (d.sizeY/1000)
-	printf "	R = {%.7g, %.7g, %.7g}, a rotation of %.7g¡	// rotation vector\r",d.R[0],d.R[1],d.R[2],sqrt(d.R[0]*d.R[0] + d.R[1]*d.R[1] + d.R[2]*d.R[2])*180/PI
-	printf "	P = {%g, %g, %g}					// translation vector (mm)\r",(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000
-
+	printf "	Nx=%d, Ny=%d%s\r",d.Nx,d.Ny, SelectString(brief,"","					// number of un-binned pixels in detector")
+	printf "	sizeX=%g, sizeY=%g%s\r",(d.sizeX/1000), (d.sizeY/1000), SelectString(brief,"","		// size of detector (mm)r")
+	printf "	R = {%.7g, %.7g, %.7g}, a rotation of %.7g¡%s\r",d.R[0],d.R[1],d.R[2],sqrt(d.R[0]*d.R[0] + d.R[1]*d.R[1] + d.R[2]*d.R[2])*180/PI, SelectString(brief,"","	// rotation vector")
+	printf "	P = {%g, %g, %g}%s/r",(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000, SelectString(brief,"","					// translation vector (mm)")
 	printf "	geometry measured on  '%s'\r",d.timeMeasured
 	if (strlen(d.geoNote))
 		printf "	detector note = '%s'\r",d.geoNote
@@ -692,9 +696,10 @@ Function printDetector(d)							// print the details for passed detector geometr
 	if (strlen(d.distortionMapFile))
 		printf "	detector distortion file = '%s'\r",d.distortionMapFile
 	endif
-	printf "	detector ID = '%s'\r"d.detectorID
+//	printf "	detector ID = '%s'   (%s = %d,%d,%d)\r"d.detectorID, d.color, d.rgb[0], d.rgb[1], d.rgb[2]
+	printf "	detector ID = '%s'   (%s)\r"d.detectorID, d.color
 	if (NumVarOrDefault("root:Packages:geometry:printVerbose",0))
-		printf "			{%+.6f, %+.6f, %+.6f}	// rotation matrix from R\r",d.rho00, d.rho01, d.rho02
+		printf "			{%+.6f, %+.6f, %+.6f}%s\r",d.rho00, d.rho01, d.rho02, SelectString(brief,"","	// rotation matrix from R")
 		printf "	rho =	{%+.6f, %+.6f, %+.6f}\r",d.rho10, d.rho11, d.rho12
 		printf "			{%+.6f, %+.6f, %+.6f}\r",d.rho20, d.rho21, d.rho22
 	endif
@@ -772,6 +777,8 @@ ThreadSafe Function CopyDetectorGeometry(f,i)	// copy a detector structure
 	f.timeMeasured = i.timeMeasured
 	f.geoNote = i.geoNote
 	f.detectorID = i.detectorID
+	f.color = i.color	
+	f.rgb[0] = i.rgb[0]	;	f.rgb[1] = i.rgb[1]	;	f.rgb[2] = i.rgb[2]
 	f.distortionMapFile = i.distortionMapFile
 	f.rho00=i.rho00;		f.rho01=i.rho01;		f.rho02=i.rho02
 	f.rho10=i.rho10;		f.rho11=i.rho11;		f.rho12=i.rho12
@@ -784,7 +791,7 @@ ThreadSafe Function CopyWireGeometry(f,i)	// copy a wire geometry structure, set
 	f.F = i.F
 	f.dia = i.dia
 	f.knife = i.knife
-	f.axis[0]=i.axis[0];		f.axis[1]=i.axis[1];		f.axis[2]=i.axis[2];
+	f.axis[0]=i.axis[0];	f.axis[1]=i.axis[1];	f.axis[2]=i.axis[2];
 	f.axisR[0]=i.axisR[0];	f.axisR[1]=i.axisR[1];	f.axisR[2]=i.axisR[2];
 	f.R[0] = i.R[0];			f.R[1] = i.R[1];			f.R[2] = i.R[2]
 	f.Rmag = i.Rmag
@@ -801,6 +808,99 @@ ThreadSafe Function CopySampleGeometry(f,i)// copy a Sample geometry structure, 
 	f.R10=i.R10;			f.R11=i.R11;			f.R12=i.R12
 	f.R20=i.R20;			f.R21=i.R21;			f.R22=i.R22
 End
+
+
+
+// set geo whether or not strStruct has color info, useful when strStruct may be from an old experiment
+Function FillGeoFromStrStruct(g,strStruct)
+	STRUCT microGeometry &g					// struct to fill
+	String strStruct								// string with structure information
+
+	Variable i, len0=2							// start len0 with 2 bytes (for Ndetector)
+	String str
+	STRUCT wireGeometry wire
+	StructPut/S wire str
+	len0 += strlen(str)							// increment length of wire structure
+
+	STRUCT sampleGeometry sample
+	StructPut/S sample str
+	len0 += strlen(str)							// increment length of sample structure
+
+	STRUCT detectorGeometry0 det0
+	StructPut/S det0 str
+	Variable dOldLen=strlen(str)
+	Variable Nold = abs(strlen(strStruct)-len0)/strlen(str)
+
+	STRUCT detectorGeometry det
+	StructPut/S det str
+	Variable Nnew = abs(strlen(strStruct)-len0)/strlen(str)
+	// printf "Nold = %g,   Nnew = %g\r",Nold,Nnew
+
+	if (mod(Nnew,1)<1e-5)
+		StructGet/S g, strStruct				// simply load strStruct into geo
+		return 0
+	elseif (mod(Nold,1)<1e-5)
+		Nold = min(Nold,MAX_Ndetectors)
+		String colorName
+		STRUCT microGeometry0 g0
+		StructGet/S g0, strStruct				// first load strStruct into old geo
+		g.Ndetectors = g0.Ndetectors			// copy g0 --> g
+		CopyWireGeometry(g.wire,g0.wire)	// copy wire
+		CopySampleGeometry(g.s,g0.s)			// copy sample
+		for (i=0;i<Nold;i+=1)
+			g.d[i].used = g0.d[i].used		// copy the detectors (but not the color info)
+			g.d[i].Nx = g0.d[i].Nx;			g.d[i].Ny = g0.d[i].Ny
+			g.d[i].sizeX = g0.d[i].sizeX;	g.d[i].sizeY = g0.d[i].sizeY
+			g.d[i].R[0]=g0.d[i].R[0];			g.d[i].R[1]=g0.d[i].R[1];			g.d[i].R[2]=g0.d[i].R[2]
+			g.d[i].P[0]=g0.d[i].P[0];			g.d[i].P[1]=g0.d[i].P[1];			g.d[i].P[2]=g0.d[i].P[2]
+			g.d[i].timeMeasured = g0.d[i].timeMeasured
+			g.d[i].geoNote = g0.d[i].geoNote
+			g.d[i].detectorID = g0.d[i].detectorID
+
+			// figure out the color information, it is not in the g0 structure
+			colorName = StringByKey(g.d[i].detectorID, DetIDcolors)
+			str = StringByKey(colorName,DetColorRGBs)				// try to get color from detectorID
+			g.d[i].color = colorName					// empty string allowed
+			g.d[i].rgb[0] = str2num(StringFromList(0,str))
+			g.d[i].rgb[1] = str2num(StringFromList(1,str))
+			g.d[i].rgb[2] = str2num(StringFromList(2,str))
+
+			g.d[i].distortionMapFile = g0.d[i].distortionMapFile
+			g.d[i].rho00=g0.d[i].rho00;		g.d[i].rho01=g0.d[i].rho01;		g.d[i].rho02=g0.d[i].rho02
+			g.d[i].rho10=g0.d[i].rho10;		g.d[i].rho11=g0.d[i].rho11;		g.d[i].rho12=g0.d[i].rho12
+			g.d[i].rho20=g0.d[i].rho20;		g.d[i].rho21=g0.d[i].rho21;		g.d[i].rho22=g0.d[i].rho22
+		endfor
+		return 0
+	else
+		DoAlert 0, "ERROR -- trying to set geo structure, strStruct is invalid length"
+		return 1
+	endif
+End
+
+
+Structure microGeometry0								// structure definition
+	int16	Ndetectors										// number of detectors in use, must be <= MAX_Ndetectors
+	STRUCT detectorGeometry0 d[MAX_Ndetectors]	// geometry parameters for each detector
+	STRUCT wireGeometry wire
+	STRUCT sampleGeometry s
+EndStructure
+//
+Structure detectorGeometry0		// structure definition for a detector
+	int16 used							// TRUE=detector used, FALSE=detector un-used
+	int32 Nx, Ny						// # of un-binned pixels in full detector
+	double sizeX,sizeY				// outside size of detector (sizeX = Nx*pitchX), measured to outer edge of outer pixels (micron)
+	double R[3]							// rotation vector (length is angle in radians)
+	double P[3]							// translation vector (micron)
+	uchar timeMeasured[100]		// when this geometry was calculated
+	uchar geoNote[100]				// note
+	uchar detectorID[100]			// unique detector ID
+	uchar distortionMapFile[100]	// name of file with distortion map
+	double rho00, rho01, rho02	// rotation matrix internally calculated from R[3]
+	double rho10, rho11, rho12
+	double rho20, rho21, rho22
+EndStructure
+
+
 
 ThreadSafe Function MicroGeometryBad(g)		// check for a valid or Invalid structure
 	STRUCT microGeometry &g						// f is the destination, i is source
@@ -1560,7 +1660,7 @@ Function FillGeometryStructDefault(g)				//fill the geometry structure with curr
 		strStruct=StrVarOrDefault("root:Packages:geometry:geoStructStr","")	// try the default values
 	endif
 	if (strlen(strStruct)>1)
-		StructGet/S/B=2 g, strStruct					// found structure information, load into g
+		FillGeoFromStrStruct(g,strStruct)			// set g using strStruct
 	else
 		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,g
 		if (V_flag)
@@ -1600,6 +1700,22 @@ Function detectorNumFromID(ID)							// returns detector number {0,1,2} or -1 fo
 		endif
 	endfor
 	return -1													// nothing matched, return error
+End
+
+
+
+Function/T DetectorMenuList(g)
+	STRUCT microGeometry &g
+
+	String str, out=""
+	Variable i, N = g.Ndetectors
+	for (i=0;i<N;i+=1)
+		if (g.d[i].used)
+			sprintf str, "Detector %d (%s);",i,g.d[i].color
+			out += str
+		endif
+	endfor
+	return out
 End
 
 
@@ -1855,6 +1971,13 @@ Static Function GeoFromKeyValueList(list,g)
 		str = StringByKey(pre+"geoNote",list,"=");				g.d[i].geoNote = SelectString(strlen(str),g.d[i].geoNote,str)
 		str = StringByKey(pre+"detectorID",list,"=");			g.d[i].detectorID = SelectString(strlen(str),g.d[i].detectorID,str)
 		str = StringByKey(pre+"distortionMapFile",list,"=");	g.d[i].distortionMapFile = SelectString(strlen(str),g.d[i].distortionMapFile,str)
+
+		String colorName = StringByKey(g.d[i].detectorID, DetIDcolors)
+		str = StringByKey(colorName,DetColorRGBs)
+		g.d[i].color = colorName					// empty string allowed
+		g.d[i].rgb[0] = str2num(StringFromList(0,str))
+		g.d[i].rgb[1] = str2num(StringFromList(1,str))
+		g.d[i].rgb[2] = str2num(StringFromList(2,str))
 	endfor
 
 	value = NumberByKey("wireDia",list,"=");	g.wire.dia = numtype(value) ? g.wire.dia : value
@@ -2024,6 +2147,9 @@ Static Function/T Geo2xmlStr(g,fileNote)
 			sprintf str, "			<ID>%s</ID>%s\n",g.d[i].detectorID,SelectString(comment,"","				<!-- unique detector ID -->")
 			out += str
 		endif
+		if (numtype(g.d[i].rgb[0] + g.d[i].rgb[1] + g.d[i].rgb[2])==0)
+			sprintf str, "			<color name=\"%s\">%d %d %d</color>\n",g.d[i].color, g.d[i].rgb[0],g.d[i].rgb[1],g.d[i].rgb[2]
+		endif
 		if (strlen(g.d[i].distortionMapFile))
 			sprintf str, "			<distortionMap>%s</distortionMap>%s\n",g.d[i].distortionMapFile,SelectString(comment,"","				<!-- file with distortion map -->")
 			out += str
@@ -2166,7 +2292,7 @@ Static Function GeoFromXML(buf,g)
 	endif
 
 	Variable N
-	String detector, detectors=XMLtagContents("Detectors",buf)
+	String detector, detectors=XMLtagContents("Detectors",buf), detectorID
 	for (i=0;i<Ndetectors;i+=1)
 		N = NumberByKey("N",XMLattibutes2KeyList("Detector",detectors,occurance=i),"=")
 		if (N>=MAX_Ndetectors)
@@ -2180,7 +2306,8 @@ Static Function GeoFromXML(buf,g)
 		g.d[N].used = 1
 		g.d[N].timeMeasured = XMLtagContents("timeMeasured",detector)
 		g.d[N].geoNote = XMLtagContents("note",detector)
-		g.d[N].detectorID = XMLtagContents("ID",detector)
+		detectorID = XMLtagContents("ID",detector)
+		g.d[N].detectorID = detectorID
 		g.d[N].distortionMapFile = XMLtagContents("distortionMap",detector)
 
 		list =  XMLtagContents2List("Npixels",detector)
@@ -2200,6 +2327,31 @@ Static Function GeoFromXML(buf,g)
 		g.d[N].P[0] = str2num(StringFromList(0,list))*1e3	// file uses mm, I need µm
 		g.d[N].P[1] = str2num(StringFromList(1,list))*1e3
 		g.d[N].P[2] = str2num(StringFromList(2,list))*1e3
+
+		String colorName = StringByKey("name",XMLattibutes2KeyList("color",detector),"=")
+		list =  XMLtagContents2List("color",detector)
+		Make/N=3/D/FREE rgb=str2num(StringFromList(p,list))
+		if (numtype(sum(rgb)) || WaveMin(rgb)<0)				// bad or no color provided, try using ID
+			colorName = StringByKey(detectorID,DetIDcolors)
+			str = StringByKey(colorName,DetColorRGBs)				// try to get color from detectorID
+			rgb = str2num(StringFromList(p,str,","))
+		endif
+		if (numtype(sum(rgb)) || WaveMin(rgb)<0)				// give up, just set to default
+			rgb = str2num(StringFromList(p,DefaultDetColorRGBs))
+			colorName = ""
+		endif
+		if (WaveMax(rgb)<=1)											// rgb range is only [0,1] change to [0,65535]
+			rgb *= 65535
+		endif
+		if (WaveMax(rgb)>65535)										// rgb range is too big, this is VERY unlikely
+			Variable mm = 65535 / WaveMax(rgb)
+			rgb *= mm
+		endif
+		rgb = limit(round(rgb),0,65535)
+		g.d[N].rgb[0] = rgb[0]
+		g.d[N].rgb[1] = rgb[1]
+		g.d[N].rgb[2] = rgb[2]
+		g.d[N].color = colorName										// empty string allowed
 	endfor
 
 	GeometryUpdateCalc(g)							// calculate other values
@@ -2253,6 +2405,8 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	g.d[0].timeMeasured = "Dec 4, 2008, 3:33pm"
 	g.d[0].geoNote = "reference orientation"
 	g.d[0].detectorID = "PE1621 723-3335"
+	g.d[0].color = "Orange"
+	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 43688	;	g.d[0].rgb[0] = 32768
 	g.d[0].distortionMapFile = ""
 
 	// define Detector 1, located ~400mm from sample, out along +X direction and up from horizontal by 45¡ (Yellow)
@@ -2266,6 +2420,8 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	g.d[1].timeMeasured = "Dec 5, 2008, 11:00am"
 	g.d[1].geoNote = "reference orientation"
 	g.d[1].detectorID = "PE0820 763-1807"
+	g.d[0].color = "Yellow"
+	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 0
 	g.d[1].distortionMapFile = ""
 
 	// define Detector 2, located ~400mm from sample, out along -X direction and up from horizontal by 45¡ (Purple)
@@ -2279,6 +2435,8 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	g.d[2].timeMeasured = "Dec 5, 2008, 11:00am"
 	g.d[2].geoNote = "reference orientation"
 	g.d[2].detectorID = "PE0820 763-1850"
+	g.d[0].color = "Purple"
+	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 30000	;	g.d[0].rgb[0] = 65535
 	g.d[2].distortionMapFile = ""
 
 	// define Wire
@@ -3104,14 +3262,10 @@ Static Function calcHofWire(win,whoChanged)
 	String detectorID = StringFromList(V_Value-1,GetUserData(win,"","detectorList"))
 	dNum = detectorNumFromID(detectorID)
 
-	String color = detectorID2color(ReplaceString(",",detectorID,""))
-	Wave rgb=str2vec(StringByKey(color,DetColorRGBs,":"))
-	if (!WaveExists(rgb))
-		Wave rgb=str2vec(StringByKey("default",DetColorRGBs,":"))
-	endif
-
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
+
+	Wave rgb = detectorRGBwave(g,dnum)
 	edge = edge==0 ? 0 : 1					// default for bad input is leading
 	g.wire.F = numtype(Fwire) ? g.wire.F : Fwire
 	Make/N=3/D/FREE xyz=NaN
@@ -3592,8 +3746,7 @@ End
 //	Static Function 	GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
 //	Static Function 	GeoKnifePopMenuProc(pa) : PopupMenuControl
 //	Static Function 	GeoPanelVarChangedProc(sva) : SetVariableControl
-//	Static Function	SetDetectorColor(win,id)
-//	Function/T 			detectorID2color(detectorID)
+//	Static Function	SetDetectorColor(sva.win,g,iDetector)
 //	Static Function 	GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
 //	Function 			SetGeoPanelHook(s)						// provides for saving changed values if panel killed
 //	Static Function 	GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and update buttons to reflect dirty status
@@ -3636,7 +3789,7 @@ Function/T FillGeometryParametersPanel(strStruct,hostWin,left,top)	// populate t
 
 	STRUCT microGeometry g
 	if (strlen(strStruct)>0)
-		StructGet/S/B=2 g, strStruct							// found structure information, load into geo
+		FillGeoFromStrStruct(g,strStruct)					// found structure information, load into geo
 		Variable/G root:Packages:geometry:PanelValues:dirty=1	// for passed structure
 	else
 		FillGeometryStructDefault(g)							//fill the geometry structure with current values
@@ -3889,8 +4042,9 @@ Static Function UpDatePanelValuesFromStruct(win,iDetector)
 	SetVariable sRotY, win=$win, value = _NUM:g.s.R[1]
 	SetVariable sRotZ, win=$win, value = _NUM:g.s.R[2]
 
-	ControlInfo/W=$win detectorID									// get detctor ID, used to set color
-	SetDetectorColor(win,S_Value)									// set detector color
+//	ControlInfo/W=$win detectorID									// get detctor ID, used to set color
+//	SetDetectorColor(win,S_Value)									// set detector color
+	SetDetectorColor(win,g,iDetector)								// set detector color
 
 	PopupMenu detectorPopup,win=$win,value=#detectorPopMenuStr(g)	// re-set popup menu values
 	return 0
@@ -3906,7 +4060,7 @@ Static Function GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
 	NVAR iDetector = root:Packages:geometry:PanelValues:iDetector	
 	STRUCT microGeometry g								// geo that holds panels current values
 	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
-	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
+	FillGeoFromStrStruct(g,geoPanelStructStr)	// fill temporary g, local to this function
 	g.d[iDetector].used = cba.checked
 
 	g.Ndetectors = 0										// re-calculate the number of detectors used
@@ -3931,7 +4085,7 @@ Static Function GeoKnifePopMenuProc(pa) : PopupMenuControl
 
 	STRUCT microGeometry g								// geo that holds panels current values
 	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
-	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
+	FillGeoFromStrStruct(g,geoPanelStructStr)	// fill temporary g, local to this function
 	g.wire.knife = pa.popNum - 1						// 0=free-standing,  1=knife-edge
 	StructPut/S/B=2 g, geoPanelStructStr			// convert updated g back to a string, and put string into geoPanelStructStr
 
@@ -3951,7 +4105,7 @@ Static Function GeoPanelVarChangedProc(sva) : SetVariableControl
 
 	STRUCT microGeometry g								// geo that holds panels current values
 	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
-	StructGet/S g, geoPanelStructStr				// fill temporary g, local to this function
+	FillGeoFromStrStruct(g,geoPanelStructStr)	// fill temporary g, local to this function
 
 	NVAR iDetector = root:Packages:geometry:PanelValues:iDetector	
 
@@ -3986,7 +4140,7 @@ Static Function GeoPanelVarChangedProc(sva) : SetVariableControl
 		g.d[iDetector].distortionMapFile = sva.sval
 	elseif (StringMatch(sva.ctrlName,"detectorID"))
 		g.d[iDetector].detectorID = sva.sval
-		SetDetectorColor(sva.win,sva.sval)
+		SetDetectorColor(sva.win,g,iDetector)
 	elseif (StringMatch(sva.ctrlName,"dia"))	// wire
 		g.wire.dia = sva.dval
 	elseif (StringMatch(sva.ctrlName,"wireAxisX"))
@@ -4027,31 +4181,57 @@ Static Function GeoPanelVarChangedProc(sva) : SetVariableControl
 	return 0
 End
 //
-Static Function SetDetectorColor(win,id)
+Static Function SetDetectorColor(win,g,dnum)
 	String win							// window name
-	String id							// a detector ID
+	STRUCT microGeometry &g		// full detector structure
+	Variable dnum
 
-	String color = detectorID2color(ReplaceString(",",id,""))
-	Wave rgb=str2vec(StringByKey(color,DetColorRGBs,":"))
-	if (!WaveExists(rgb))
-		Wave rgb=str2vec(StringByKey("default",DetColorRGBs,":"))
-		print rgb
-	endif
-
+	Wave rgb = detectorRGBwave(g,dnum)
 	SetDrawLayer/W=$win/K ProgBack
 	SetVariable detectorID win=$win, labelBack=(rgb[0],rgb[1],rgb[2])
-	if (strlen(color))
+	if (WaveExists(rgb))
 		SetDrawEnv/W=$win linethick=8, linefgc= (rgb[0],rgb[1],rgb[2])
 		DrawLine/W=$win 1,30,1,230
 	endif
 	return 0
 End
 //
-Function/T detectorID2color(detectorID)
-	String detectorID
-	// DetIDcolors is a static string constant set at the top of this file
-	return StringByKey(detectorID,DetIDcolors)
+Function/WAVE detectorRGBwave(g,dnum)
+	STRUCT microGeometry &g	// full detector structure
+	Variable dnum					// detector number
+
+	dnum = round(dnum)
+	if (dnum>=0 && dnum<MAX_Ndetectors)
+		Make/N=3/U/W/FREE rgb
+		rgb = g.d[dnum].rgb[p]
+		return rgb
+	else
+		Wave rgb=str2vec(DefaultDetColorRGBs)		// bad dnum, retrurn default
+	endif
+	return rgb
 End
+//
+Function/T detectorID2color(detectorID)		// returns color from the detector ID
+	String detectorID									// detector ID input, (something like "PE0820, 763-1807")
+
+	Variable i = detectorNumFromID(detectorID)			// returns detector number {0,1,2} or -1 for an error, given the detector ID string
+	String color = ""
+	if (i>=0)
+		STRUCT microGeometry g
+		FillGeometryStructDefault(g)
+		color = g.d[i].color
+	endif
+	if (strlen(color)<1)										// did not find color
+		color = StringByKey(detectorID,DetIDcolors)	// DetIDcolors is a static string constant set at the top of this file
+	endif
+	return color
+End
+//
+//Function/T detectorID2color(detectorID)
+//	String detectorID
+//	// DetIDcolors is a static string constant set at the top of this file
+//	return StringByKey(detectorID,DetIDcolors)
+//End
 //
 Static Function GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
 	String win
@@ -4269,7 +4449,7 @@ End
 Static Function SetGeoStructFromPanelValues(g)	// set structure g to the values on the geo panel
 	STRUCT microGeometry &g								// connect to the globals
 	SVAR geoPanelStructStr = root:Packages:geometry:PanelValues:geoPanelStructStr
-	StructGet/S g, geoPanelStructStr					// fill g with the values stored in geoPanelStructStr ( the PanelValues)
+	FillGeoFromStrStruct(g,geoPanelStructStr)		// fill g with the values stored in geoPanelStructStr ( the PanelValues)
 	return 0
 End
 

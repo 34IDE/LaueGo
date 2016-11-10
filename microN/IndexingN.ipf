@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.86
+#pragma version = 4.87
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -481,7 +481,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 		if (WaveExists(indexedList))
 			indexName = NameOfWave(indexedList)
 		endif
-		Prompt dNum,"Detector Number (probably 1 or)",popup,"Detector 0 (Orange);Detector 1 (Yellow);Detector 2 (Purple);"
+		Prompt dNum,"Detector Number (probably 1 or)",popup,DetectorMenuList(g)
 		String ilist = reverseList(WaveListClass("IndexedPeakList*","*",""))+"perfect Si;"
 		Prompt indexName, "FullPeakIndexed List to provide sample rotation",popup,ilist
 		Prompt peakListName, "Fitted Peaks List",popup,flist
@@ -7336,23 +7336,15 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetector
 		// format of outlines is detctorOutline0;detctorOutline1;detctorOutline2;
 		// detctorOutline0 = "r=65535:g=43688:b=32768:hkl0=-0.2 0.5 -0.8:hkl1=-0.3 0.7 -0.5:hkl2=0.3 0.8 -0.5:hkl3=0.2 0.5 -0.8:;
 		// each of the hkli are a normalized hkl vector
-		String str, color
+		String str
 		Make/N=3/FREE rgb
 		Variable i, Nx,Ny
 		for (i=0;i<MAX_Ndetectors;i+=1)
 			if (geo.d[i].used)								// this detector is used, display it
 				Nx = geo.d[i].Nx
 				Ny = geo.d[i].Ny
-				color = detectorID2color(geo.d[i].detectorID)
-				if (stringmatch(color,"Orange"))
-					rgb = {65535, 43688, 32768}			// Orange
-				elseif (stringmatch(color,"Yellow"))
-					rgb = {65535, 65535, 0}			// Yellow
-				elseif (stringmatch(color,"Purple"))
-					rgb = {65535, 30000, 65535}		// Purple
-				else
-					rgb = {20000, 20000, 20000}		// Gray
-				endif
+
+				Wave rgb = detectorRGBwave(geo,i)
 				str = ReplaceStringByKey("rgb","",vec2str(rgb,bare=1,sep=" "),"=",":")
 
 				if (!(pixel2q(geo.d[i],0,0, vec,depth=depth)))

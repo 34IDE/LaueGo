@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.21
+#pragma version = 0.22
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -3976,6 +3976,12 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	dNum = ParamIsDefault(dNum) || numtype(dNum) || dNum<=0 ? 0 : dNum
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
+	STRUCT microGeometry geo							// note, dd and yc are reset from wave note below if it exists
+	if (FillGeometryStructDefault(geo))			//fill the geometry structure with default values
+		DoAlert 0, "no geometry structure found, did you forget to set it?"
+		return $""
+	endif
+
 	Wave axis3 = str2vec(axis)
 	if (Nreq<=0 || numtype(Nreq))
 		Nreq = 98
@@ -3986,7 +3992,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 			axis="1,2,3"
 		endif
 		Prompt axis, "axis of test rotation applied to lattice"
-		Prompt dNum, "Detector Number", popup, "Orange;Yellow;Purple;MAR-165"
+		Prompt dNum, "Detector Number", popup, DetectorMenuList(geo)
 		DoPrompt "Number of G's",Nreq,lattice,angle,axis, dNum
 		if (V_flag)
 			return $""
@@ -4115,11 +4121,6 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	MakeSymmetryOps(xtal)					// make a wave with the symmetry operation
 	UpdateCrystalStructureDefaults(xtal)
 
-	STRUCT microGeometry geo							// note, dd and yc are reset from wave note below if it exists
-	if (FillGeometryStructDefault(geo))			//fill the geometry structure with default values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
-		return $""
-	endif
 	if (dNum<0 || dNum>= geo.Ndetectors)
 		DoAlert 0, "dNum="+num2str(dNum)+" is out of the allowed range [0,"+num2str(geo.Ndetectors -1)+"]"
 		return $""
