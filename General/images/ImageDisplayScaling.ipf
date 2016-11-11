@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.08
+#pragma version = 2.09
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -531,20 +531,12 @@ Function/S NewImageGraph(image,[withButtons,kill])
 		Display/W=(345,44,822,440)/K=(kill)
 		AppendImage image
 		if (withButtons && !NOButtons)
-			String command
 			Button boxes,pos={0,25},size={60,21},proc=ButtonBoxesProc,title="±boxes"
-			FUNCREF detectorID2colorProto  func  = $"detectorID2color"
-			strswitch(func(StringByKey("detectorID",note(image),"=")))
-				case "Orange":
-					Button boxes fColor=(35723,17733,0)		// color the button Orange
-					break
-				case "Yellow":
-					Button boxes fColor=(50000,50000,0)		// color the button Yellow
-					break
-				case "Purple":
-					Button boxes fColor=(65535,30000,65535)	// color the button Purple
-					break
-			endswitch
+			FUNCREF ImageButtonRGBproto  func = $"ImageButtonRGB"
+			Wave rgb = func(image)
+			if (WaveExists(rgb))
+				Button boxes fColor=(rgb[0],rgb[1],rgb[2])		// allow other routines to color the button
+			endif
 			SetWindow kwTopWin,userdata(boxes)=  "boxesOn=0;"
 		endif
 		if (exists("getFittedPeakInfoHook")==6)
@@ -556,9 +548,9 @@ Function/S NewImageGraph(image,[withButtons,kill])
 	return GetWavesDataFolder(image,2)
 End
 //
-Function/T detectorID2colorProto(id)
-	String id
-	return ""
+Function/WAVE ImageButtonRGBproto(image)	// used by NewImageGraph() in ImageDisplayScaling.ipf
+	Wave image											// default is none
+	return $""
 End
 
 

@@ -11,7 +11,7 @@ Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
 Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;Mar-165:Gray;"
 Static StrConstant DetColorRGBs = "Orange:65535,43688,32768;Yellow:65535,65535,0;Purple:65535,30000,65535;Green:0,65535,0;Gray:40000,40000,40000;default:65535,49344,52171;"
-Static StrConstant DefaultDetColorRGBs = "65535;49344;52171"		// default color for an unknown or unspecified detector
+Static StrConstant DefaultDetColorRGBs = "65535;49344;52171"		// default color for an unknown or unspecified detector (pink)
 // 3 detectors from ORNL are: PE1621 723-3335, PE0820 763-1807, PE0820 763-1850
 // 2 detectors from NIST are: PE0822 883-4841, PE0822 883-4843
 //   Mar-165 CCD, use Gray
@@ -625,10 +625,11 @@ Function DetectorGeometryLocate()		// This only used by FunctionPath("DetectorGe
 End
 
 
-Function PrintCurrentGeometry()			// prints the current default geometry to the history
+Function PrintCurrentGeometry()						// prints the current default geometry to the history
 	STRUCT microGeometry g
-	FillGeometryStructDefault(g)			//fill the geometry structure with current values
-	printGeometry(g)
+	if (!FillGeometryStructDefault(g,alert=1))	//fill the geometry structure with current values
+		printGeometry(g)
+	endif
 End
 //
 Function printGeometry(g)					// print the details for passed geometry to the history window
@@ -861,9 +862,9 @@ Function FillGeoFromStrStruct(g,strStruct)
 			colorName = StringByKey(g.d[i].detectorID, DetIDcolors)
 			str = StringByKey(colorName,DetColorRGBs)				// try to get color from detectorID
 			g.d[i].color = colorName					// empty string allowed
-			g.d[i].rgb[0] = str2num(StringFromList(0,str))
-			g.d[i].rgb[1] = str2num(StringFromList(1,str))
-			g.d[i].rgb[2] = str2num(StringFromList(2,str))
+			g.d[i].rgb[0] = str2num(StringFromList(0,str,","))
+			g.d[i].rgb[1] = str2num(StringFromList(1,str,","))
+			g.d[i].rgb[2] = str2num(StringFromList(2,str,","))
 
 			g.d[i].distortionMapFile = g0.d[i].distortionMapFile
 			g.d[i].rho00=g0.d[i].rho00;		g.d[i].rho01=g0.d[i].rho01;		g.d[i].rho02=g0.d[i].rho02
@@ -876,16 +877,15 @@ Function FillGeoFromStrStruct(g,strStruct)
 		return 1
 	endif
 End
-
-
-Structure microGeometry0								// structure definition
+//
+Static Structure microGeometry0						// structure definition
 	int16	Ndetectors										// number of detectors in use, must be <= MAX_Ndetectors
 	STRUCT detectorGeometry0 d[MAX_Ndetectors]	// geometry parameters for each detector
 	STRUCT wireGeometry wire
 	STRUCT sampleGeometry s
 EndStructure
 //
-Structure detectorGeometry0		// structure definition for a detector
+Static Structure detectorGeometry0	// structure definition for a detector
 	int16 used							// TRUE=detector used, FALSE=detector un-used
 	int32 Nx, Ny						// # of un-binned pixels in full detector
 	double sizeX,sizeY				// outside size of detector (sizeX = Nx*pitchX), measured to outer edge of outer pixels (micron)
@@ -1652,8 +1652,10 @@ Function UpdateDefaultGeometryStruct(g,[local])			// Update the default location
 	return 0
 End
 
-Function FillGeometryStructDefault(g)				//fill the geometry structure with current values
+Function FillGeometryStructDefault(g,[alert])	//fill the geometry structure with current values
 	STRUCT microGeometry &g							// returns 0 if something set, 0 is nothing done
+	Variable alert
+	alert = ParamIsDefault(alert) || numtype(alert) ? 0 : alert
 
 	String strStruct=StrVarOrDefault(":geoStructStr","")	// set to values in current directory
 	if (strlen(strStruct)<1)
@@ -1664,6 +1666,9 @@ Function FillGeometryStructDefault(g)				//fill the geometry structure with curr
 	else
 		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,g
 		if (V_flag)
+			if (alert)											// put up an alert
+				DoAlert 0, "no geometry structure found, did you forget to set it?"
+			endif
 			return 1											// did nothing, nothing found
 		endif
 		StructPut/S/B=2 g, strStruct					// keep a local copy
@@ -1674,7 +1679,8 @@ Function FillGeometryStructDefault(g)				//fill the geometry structure with curr
 End
 
 
-Function detectorNumFromID(ID)							// returns detector number {0,1,2} or -1 for an error, given the detector ID string
+Function detectorNumFromID(g,ID)						// returns detector number {0,1,2} or -1 for an error, given the detector ID string
+	STRUCT microGeometry &g
 	String ID													// detector ID input, (something like "PE0820, 763-1807")
 	if (strlen(ID)<1)
 		return -1
@@ -1686,8 +1692,6 @@ Function detectorNumFromID(ID)							// returns detector number {0,1,2} or -1 fo
 	ID = ReplaceString(" ", ID, "")
 	String IDi
 
-	STRUCT microGeometry g
-	FillGeometryStructDefault(g)
 	Variable i
 	for (i=0;i<MAX_Ndetectors;i+=1)						// search each of the g.d[i].detectorID and return at the first match
 		IDi = g.d[i].detectorID
@@ -1701,6 +1705,33 @@ Function detectorNumFromID(ID)							// returns detector number {0,1,2} or -1 fo
 	endfor
 	return -1													// nothing matched, return error
 End
+//Function detectorNumFromID(ID)						// returns detector number {0,1,2} or -1 for an error, given the detector ID string
+//	String ID													// detector ID input, (something like "PE0820, 763-1807")
+//	if (strlen(ID)<1)
+//		return -1
+//	endif
+//
+//	ID = ReplaceString(",", ID, "")
+//	ID = ReplaceString("_", ID, "")
+//	ID = ReplaceString("-", ID, "")
+//	ID = ReplaceString(" ", ID, "")
+//	String IDi
+//
+//	STRUCT microGeometry g
+//	FillGeometryStructDefault(g)
+//	Variable i
+//	for (i=0;i<MAX_Ndetectors;i+=1)						// search each of the g.d[i].detectorID and return at the first match
+//		IDi = g.d[i].detectorID
+//		IDi = ReplaceString(",", IDi, "")
+//		IDi = ReplaceString("_", IDi, "")
+//		IDi = ReplaceString("-", IDi, "")
+//		IDi = ReplaceString(" ", IDi, "")
+//		if (strsearch(IDi,ID,0)==0)						// does g.d[i].detectorID start with the passed ID?
+//			return i
+//		endif
+//	endfor
+//	return -1													// nothing matched, return error
+//End
 
 
 
@@ -3177,10 +3208,12 @@ Function PanelHwireMake() : Panel
 	endif
 
 	STRUCT microGeometry g
-	FillGeometryStructDefault(g)
+	if (FillGeometryStructDefault(g,alert=1))	//fill the geometry structure with current values
+		return 1
+	endif
 
 	String detectorList = detectorPopMenuStr(g,bare=1)
-	Variable dNum = detectorNumFromID(StringFromList(0,detectorList))
+	Variable dNum = detectorNumFromID(g,StringFromList(0,detectorList))
 	Variable py = g.d[dnum].Ny/2
 
 	NewPanel /W=(128,166,455,253)/K=1/N=PanelWireH as "H wire calculator"
@@ -3260,10 +3293,10 @@ Static Function calcHofWire(win,whoChanged)
 	ControlInfo/W=$win popupEdge		;	edge = V_Value==1 ? 1 : 0
 	ControlInfo/W=$win detectorNum
 	String detectorID = StringFromList(V_Value-1,GetUserData(win,"","detectorList"))
-	dNum = detectorNumFromID(detectorID)
-
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
+	dNum = detectorNumFromID(g,detectorID)
+
 
 	Wave rgb = detectorRGBwave(g,dnum)
 	edge = edge==0 ? 0 : 1					// default for bad input is leading
@@ -4196,9 +4229,11 @@ Static Function SetDetectorColor(win,g,dnum)
 	return 0
 End
 //
-Function/WAVE detectorRGBwave(g,dnum)
+Function/WAVE detectorRGBwave(g,dnum,[defaultRGB])
 	STRUCT microGeometry &g	// full detector structure
 	Variable dnum					// detector number
+	String defaultRGB				// default color, semi-colon separated
+	defaultRGB = SelectString(ParamIsDefault(defaultRGB) || ItemsInList(defaultRGB)<3, defaultRGB, DefaultDetColorRGBs)
 
 	dnum = round(dnum)
 	if (dnum>=0 && dnum<MAX_Ndetectors)
@@ -4206,7 +4241,7 @@ Function/WAVE detectorRGBwave(g,dnum)
 		rgb = g.d[dnum].rgb[p]
 		return rgb
 	else
-		Wave rgb=str2vec(DefaultDetColorRGBs)		// bad dnum, retrurn default
+		Wave rgb=str2vec(defaultRGB)				// bad dnum, retrurn default
 	endif
 	return rgb
 End
@@ -4214,11 +4249,11 @@ End
 Function/T detectorID2color(detectorID)		// returns color from the detector ID
 	String detectorID									// detector ID input, (something like "PE0820, 763-1807")
 
-	Variable i = detectorNumFromID(detectorID)			// returns detector number {0,1,2} or -1 for an error, given the detector ID string
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)
+	Variable i = detectorNumFromID(g,detectorID)		// returns detector number {0,1,2} or -1 for an error, given the detector ID string
 	String color = ""
 	if (i>=0)
-		STRUCT microGeometry g
-		FillGeometryStructDefault(g)
 		color = g.d[i].color
 	endif
 	if (strlen(color)<1)										// did not find color
@@ -4227,11 +4262,17 @@ Function/T detectorID2color(detectorID)		// returns color from the detector ID
 	return color
 End
 //
-//Function/T detectorID2color(detectorID)
-//	String detectorID
-//	// DetIDcolors is a static string constant set at the top of this file
-//	return StringByKey(detectorID,DetIDcolors)
-//End
+Function/WAVE ImageButtonRGB(image)			// used by NewImageGraph() in ImageDisplayScaling.ipf to set the button color
+	Wave image
+
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)
+	String detectorID = StringByKey("detectorID",note(image),"=")
+	Variable dnum = detectorNumFromID(g,detectorID)	// returns detector number {0,1,2} or -1 for an error, given the detector ID string
+	Wave rgb = detectorRGBwave(g,dnum,defaultRGB="0,0,0")
+print "rgb = ",vec2str(rgb)
+	return rgb
+End
 //
 Static Function GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
 	String win

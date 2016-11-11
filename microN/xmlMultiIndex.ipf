@@ -181,7 +181,11 @@ Static Function xmlPixelinfoForMovies(FullFileName,imageName,waveXY)		// returns
 		waveXYmarker = 5						// set initial marker shape to open-square
 	endif
 
-	Variable px,py,i, dnum=detectorNumFromID(xmlTagContents("detectorID",step))
+	STRUCT microGeometry g
+	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current default values
+		return 0
+	endif
+	Variable px,py,i, dnum=detectorNumFromID(g, xmlTagContents("detectorID",step))
 	Variable depth=str2num(xmlTagContents("depth",step))
 	String sROI=XMLattibutes2KeyList("ROI",step)
 	Variable startx=NumberByKey("startx",sROI,"=")
@@ -196,8 +200,6 @@ Static Function xmlPixelinfoForMovies(FullFileName,imageName,waveXY)		// returns
 	Variable x1,x2,x3
 	Variable/C pz
 	String hvec,kvec,lvec
-	STRUCT microGeometry g
-	FillGeometryStructDefault(g)
 	Variable ipattern, Nindexed, marker
 	for (ipattern=0;ipattern<10;ipattern+=1)		// loop over all identified patterns
 		Nindexed=NumberByKey("Nindexed",XMLattibutes2KeyList("pattern",sindex,occurance=ipattern),"=")
@@ -3307,8 +3309,7 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 	printIt = numtype(printIt) ? 0 : !(!printIt)
 
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))					//fill the geometry structure with current default values
-		DoAlert 0,"Unable to load geometry"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with current default values
 		return $""
 	endif
 

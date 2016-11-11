@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.84
+#pragma version = 0.85
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -294,8 +294,12 @@ Function/T MakeCalibData(dNum)					// Make the calibration list needed by Optimi
 	String peakListName = StringFromList(0,wlist)
 	Wave FullPeakList = $peakListName
 	Variable getPeakList = (!WaveInClass(FullPeakList,"FittedPeakList") || ItemsInList(wlist)!=1)
+
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)										//fill the geometry structure with current values
+
 	if (numtype(dNum) || getpeakList)
-		Prompt dNum,"detector number",popup,"Detector 0, Orange;Detector1, Yellow;Detector 2, Purple"
+		Prompt dNum,"detector number",popup, DetectorMenuList(g)
 		Prompt peakListName, "List of Fitted Peaks",popup,wlist
 		if (!getpeakList)
 			DoPrompt "detector",dNum
@@ -385,9 +389,6 @@ Function/T MakeCalibData(dNum)					// Make the calibration list needed by Optimi
 		endif
 	endif
 	printf "	using sample rotation of  {%g, %g, %g}\r",rhox,rhoy,rhoz
-
-	STRUCT microGeometry g
-	FillGeometryStructDefault(g)										//fill the geometry structure with current values
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))									// fill the lattice structure with test values
@@ -1435,21 +1436,21 @@ End
 Function WriteDetectorGeo2EPICS(dNum)
 	Variable dNum
 
+	STRUCT microGeometry g
+	if (FillGeometryStructDefault(g, alert=1))		//fill the geometry structure with current values
+		return 1
+	endif
+
 	if (Exists("EPICS_put_PV_num")!=6)
 		DoAlert 0,"EPICS not available"
 		return 1
 	elseif (dNum!=0 && dNum!=1 && dNum!=2)			// dNum must be 0, 1, or 2
-		Prompt dNum,"detector number",popup,"0 (Orange);1 (Yellow);2 (Purple);"
+		Prompt dNum,"detector number",popup, DetectorMenuList(g)
 		DoPrompt "Detector Number",dNum
 		if (V_flag)
 			return 1
 		endif
 		dNum -= 1
-	endif
-	STRUCT microGeometry g
-	if (FillGeometryStructDefault(g))						//fill the geometry structure with current values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
-		return 1
 	endif
 	String si=num2istr(dNum),pv
 	printf "Writing values for detector %d to EPICS\r",dNum
@@ -1551,11 +1552,11 @@ Function findPxPyFromPixel(detNum,px,py)			// For Detector in the beam, find P f
 	Variable detNum									// detector number, usually 0
 	Variable px,py										// pixel at center
 	STRUCT microGeometry g
-	FillGeometryStructDefault(g)						//fill the geometry structure with current values
+	FillGeometryStructDefault(g)					//fill the geometry structure with current values
 	STRUCT detectorGeometry d
 	Variable detNumMax = (g.Ndetectors)-1
 
-	if (!(detNum>=0 && px>=0 && py>=0))			// need to prompt
+	if (!(detNum>=0 && px>=0 && py>=0))		// need to prompt
 		String str,popStr
 		sprintf str, "Detector Number [0, %d]", detNumMax
 		detNum += 1
@@ -2061,7 +2062,12 @@ Function/WAVE MakeWireFittingTable(PixelIntensities,[printIt])
 	Variable NpIN=DimSize(PixelIntensities,1), i
 	String pxList=StringByKey("PixelPositions",wnote,"="), str
 	String X2list=StringByKey("X2",wnote,"="), Y2list=StringByKey("Y2",wnote,"="), Z2list=StringByKey("Z2",wnote,"=")
-	Variable detNum=detectorNumFromID(StringByKey("detectorID",wnote,"="))
+
+	STRUCT microGeometry geo
+	if (FillGeometryStructDefault(geo))			//fill the geometry structure with test values
+		return $""
+	endif
+	Variable detNum=detectorNumFromID(geo,StringByKey("detectorID",wnote,"="))
 
 	Make/N=(NpIN)/FREE/D iTurnOffs=NaN
 	Variable N=DimSize(PixelIntensities,0), i0,i1, NpGood=0

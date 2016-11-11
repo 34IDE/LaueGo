@@ -269,8 +269,7 @@ AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
 
 	// find rms error between Ghats and the predicted hkl directions
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))	//fill the geometry structure with current values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo,alert=1))	//fill the geometry structure with current values
 		return $""
 	endif
 
@@ -1451,8 +1450,7 @@ Function/WAVE runIndexingQs(args)
 
 	// find rms error between Ghats and the predicted hkl directions
 	STRUCT microGeometry g
-	if (FillGeometryStructDefault(g))		//fill the geometry structure with current values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current values
 		return $""
 	endif
 
@@ -1983,8 +1981,7 @@ endif
 
 	// find rms error of the Ghats to predicted hkl directions
 	STRUCT microGeometry g
-	if (FillGeometryStructDefault(g))	//fill the geometry structure with current values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current values
 		return $""
 	endif
 
@@ -2380,8 +2377,7 @@ Function/WAVE PutZoneLinesOnGraph(FullPeakList,[Nmin,tolAngle,printIt])
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	STRUCT microGeometry g
-	if (FillGeometryStructDefault(g))	//fill the geometry structure with current values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current values
 		return $""
 	endif
 	String FullPeakName=""
@@ -2795,8 +2791,7 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 	N2 = min(maxSpots,N2)
 
 	STRUCT microGeometry geo							// note, dd and yc are reset from wave note below if it exists
-	if (FillGeometryStructDefault(geo))			//fill the geometry structure with default values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo,alert=1))//fill the geometry structure with default values
 		return $""
 	endif
 	STRUCT crystalStructure xtal
@@ -2812,7 +2807,7 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 //	SetDimLabel 1,3,dNum,kfs
 
 	String wnotePeak=note(FullPeakList), wnote
-	Variable dNum=limit(detectorNumFromID(StringByKey("detectorID",wnotePeak,"=")),0,MAX_Ndetectors)
+	Variable dNum=limit(detectorNumFromID(geo, StringByKey("detectorID",wnotePeak,"=")),0,MAX_Ndetectors)
 	Variable startx,groupx, starty,groupy			// ROI of the original image
 	startx = NumberByKey("startx",wnotePeak,"=")
 	groupx = NumberByKey("groupx",wnotePeak,"=")
@@ -2847,7 +2842,7 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 
 	if (WaveExists(FullPeakList1) && N<maxSpots)
 		wnote = note(FullPeakList1)
-		dNum = limit(detectorNumFromID(StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
+		dNum = limit(detectorNumFromID(geo, StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
 		startx = NumberByKey("startx",wnote,"=")
 		groupx = NumberByKey("groupx",wnote,"=")
 		starty = NumberByKey("starty",wnote,"=")
@@ -2884,7 +2879,7 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 
 	if (WaveExists(FullPeakList2) && N<maxSpots)
 		wnote = note(FullPeakList2)
-		dNum = limit(detectorNumFromID(StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
+		dNum = limit(detectorNumFromID(geo, StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
 		startx = NumberByKey("startx",wnote,"=")
 		groupx = NumberByKey("groupx",wnote,"=")
 		starty = NumberByKey("starty",wnote,"=")
@@ -2996,8 +2991,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	endif
 
 	STRUCT microGeometry geo							// note, dd and yc are reset from wave note below if it exists
-	if (FillGeometryStructDefault(geo))			//fill the geometry structure with default values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo,alert=1))//fill the geometry structure with default values
 		return $""
 	endif
 	STRUCT crystalStructure xtal
@@ -3013,7 +3007,8 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 
 	Make/N=3/D/FREE qhat
 	String wnotePeak=note(FullPeakList), wnote
-	Variable dNum=limit(detectorNumFromID(StringByKey("detectorID",wnotePeak,"=")),0,MAX_Ndetectors)
+
+	Variable dNum=limit(detectorNumFromID(geo, StringByKey("detectorID",wnotePeak,"=")),0,MAX_Ndetectors)
 	Variable startx,groupx, starty,groupy			// ROI of the original image
 	startx = NumberByKey("startx",wnotePeak,"=")
 	groupx = NumberByKey("groupx",wnotePeak,"=")
@@ -3040,7 +3035,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 
 	if (WaveExists(FullPeakList1) && N<maxSpots)
 		wnote = note(FullPeakList1)
-		dNum = limit(detectorNumFromID(StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
+		dNum = limit(detectorNumFromID(geo, StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
 		startx = NumberByKey("startx",wnote,"=")
 		groupx = NumberByKey("groupx",wnote,"=")
 		starty = NumberByKey("starty",wnote,"=")
@@ -3065,7 +3060,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 
 	if (WaveExists(FullPeakList2) && N<maxSpots)
 		wnote = note(FullPeakList2)
-		dNum = limit(detectorNumFromID(StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
+		dNum = limit(detectorNumFromID(geo, StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
 		startx = NumberByKey("startx",wnote,"=")
 		groupx = NumberByKey("groupx",wnote,"=")
 		starty = NumberByKey("starty",wnote,"=")
@@ -3977,8 +3972,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	STRUCT microGeometry geo							// note, dd and yc are reset from wave note below if it exists
-	if (FillGeometryStructDefault(geo))			//fill the geometry structure with default values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo,alert=1))//fill the geometry structure with default values
 		return $""
 	endif
 
@@ -4569,35 +4563,36 @@ Function GraphTestPattern(FullPeakList,FullPeakIndexed,[pattern])
 	endif
 
 	String wnote=note(FullPeakList)
-	Variable dNum=limit(detectorNumFromID(StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
+	STRUCT microGeometry geo
+	if (FillGeometryStructDefault(geo,alert=1))//fill the geometry structure with default values
+		return 1
+	endif
+	Variable dNum=limit(detectorNumFromID(geo, StringByKey("detectorID",wnote,"=")),0,MAX_Ndetectors)
 	Variable startx=NumberByKey("startx",wnote,"="), starty=NumberByKey("starty",wnote,"=")
 	Variable groupx=NumberByKey("groupx",wnote,"="), groupy=NumberByKey("groupy",wnote,"=")
 	Variable Nx=NumberByKey("xdim",wnote,"="), Ny=NumberByKey("ydim",wnote,"=")
 	SetAxis/R left Nx,starty
 	SetAxis bottom startx,Ny
 
-	STRUCT microGeometry geo						// note, dd and yc are reset from wave note below if it exists
-	if (!FillGeometryStructDefault(geo))		// fill the geometry structure with default values
-		Variable px,py
-		Make/N=3/D/FREE xyz, xyzAbs				// xyz points to detector center
-		pixel2XYZ(geo.d[dNum],0.5*(geo.d[dNum].Nx - 1),0.5*(geo.d[dNum].Ny - 1),xyz)
-		xyzAbs = abs(xyz)
-		WaveStats/M=1/Q xyzAbs						// need to find which value in xyz has the largest magnitude
-		xyz = p==V_maxloc ? sign(xyz[p]) : 0	// xyz is now the closest orthogonal direction that points to the detector
-		XYZ2pixel(geo.d[dNum],xyz,px,py)		// set pixel where xyz hits detector
-		if (px>=0 && px <= geo.d[dNum].Nx && py>=0 && py <= geo.d[dNum].Ny)	// (px,py) IS on detector, draw cross
-			Variable NxFW=Nx/10, NyFW=Ny/10							// size of cross
-			if (numtype(startx+starty+groupx+groupy)==0 && (groupx>1 || groupy>1))	// binned image
-				px = round(( px-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
-				py = round(( py-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
-				NxFW /= groupx
-				NyFW /= groupy
-			endif
-			DrawMarker(px,py,round(NxFW),round(NyFW),"cross gap",dash=2,layer="UserAxes")
-			String str
-			sprintf str,"%g,%g",px,py
-			SetWindow kwTopWin, userdata(pixelCenter)=str
+	Variable px,py
+	Make/N=3/D/FREE xyz, xyzAbs				// xyz points to detector center
+	pixel2XYZ(geo.d[dNum],0.5*(geo.d[dNum].Nx - 1),0.5*(geo.d[dNum].Ny - 1),xyz)
+	xyzAbs = abs(xyz)
+	WaveStats/M=1/Q xyzAbs						// need to find which value in xyz has the largest magnitude
+	xyz = p==V_maxloc ? sign(xyz[p]) : 0	// xyz is now the closest orthogonal direction that points to the detector
+	XYZ2pixel(geo.d[dNum],xyz,px,py)		// set pixel where xyz hits detector
+	if (px>=0 && px <= geo.d[dNum].Nx && py>=0 && py <= geo.d[dNum].Ny)	// (px,py) IS on detector, draw cross
+		Variable NxFW=Nx/10, NyFW=Ny/10							// size of cross
+		if (numtype(startx+starty+groupx+groupy)==0 && (groupx>1 || groupy>1))	// binned image
+			px = round(( px-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
+			py = round(( py-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
+			NxFW /= groupx
+			NyFW /= groupy
 		endif
+		DrawMarker(px,py,round(NxFW),round(NyFW),"cross gap",dash=2,layer="UserAxes")
+		String str
+		sprintf str,"%g,%g",px,py
+		SetWindow kwTopWin, userdata(pixelCenter)=str
 	endif
 
 	String list = GetUserData("","","Indexing")

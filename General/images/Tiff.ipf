@@ -105,7 +105,7 @@ Function/T TiffSaveImage(fileName,image)
 	if (exists("Init_microGeo")==6)				// test for presence of micro geometry
 		STRUCT microGeometry g
 		FillGeometryStructDefault(g)				//fill the geometry structure with current values
-		Variable id=detectorNumFromID("Photonic Sciences")
+		Variable id=detectorNumFromID(g, "Photonic Sciences")
 		id = id<0 ? 0 : id								// when no id, just use the first one, zero
 		Variable dx = (g.d[id].sizeX)/(g.d[id].Nx)	// pixel size (micron)
 		Variable dy = (g.d[id].sizeY)/(g.d[id].Ny)

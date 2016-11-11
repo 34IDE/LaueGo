@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.39
+#pragma version = 2.40
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -567,7 +567,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ			// get range of Q
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVlo],m2_Fill_QHistAt1Depth[ikeVlo],NaN)	// load one image to get its size & Q range
 	Wave image = $(LoadGenericImageFile(name))				// load image
-	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
+	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		DoWindow/K $progressWin									// done with status window
@@ -2872,7 +2872,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 
 	// note that Q range only depends upon image size and energy
 	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ				// get range of Q
-	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
+	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+imageName+"' using detector ID"
 		return 1
@@ -3144,7 +3144,7 @@ Static Function/S MakeSinThetaArray(fullName,geo,[depth])	// make an array the s
 		depth = NumberByKey("depth", wnote,"=")		// depth for this image
 	endif
 	depth = numtype(depth) ? 0 : depth					// default depth to zero
-	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		return ""
@@ -3207,7 +3207,7 @@ Static Function/C thetaRange(geo,image,[maskIN,depth])		// returns the range of 
 	groupy = NumberByKey("groupy", wnote,"=")
 	depth = numtype(depth) ? NumberByKey("depth", wnote,"=") : depth	// if depth not passed, try wavenote
 //	depth = numtype(depth) ? 0 : depth
-	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
@@ -4801,7 +4801,7 @@ Function Fill_QvsDepth_OLD(d0,pathName,namePart,range1,range2,mask,[depth])
 	String wnote = note(image)
 	KillWaves/Z image
 	Variable keV, startx, endx, starty, endy, groupx, groupy, dNum
-	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	keV = NumberByKey("keV", wnote,"=")				// energy for this image
 	depth = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
 	if (!(dNum>=0 && dNum<=2))
@@ -5632,7 +5632,7 @@ Function Fill_Q_PositionsOLD(d0,pathName,namePart,range,mask,[depth,maskNorm,dar
 	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ			// get range of Q
 	sprintf name, "%s%d%s",fileRoot,m_Fill_QHistAt1Depth[ikeVlo],imageExtension	// load one image to get its size & Q range
 	Wave image = $(LoadGenericImageFile(name))			// load image
-	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
+	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		DoWindow/K $progressWin							// done with status window
@@ -6613,7 +6613,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	sprintf name, fileRootFmt, m_Fill_QHistAt1Depth[ikeVlo]	// load one image to get its size & Q range
 	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
 	Local_ImageFilter(image)
-	Variable dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
+	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		DoWindow/K $progressWin									// done with status window
@@ -7004,7 +7004,7 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 		depth = NumberByKey("depth", wnote,"=")		// depth for this image
 	endif
 	depth = numtype(depth) ? 0 : depth					// default depth to zero
-	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		return $""
@@ -7093,7 +7093,7 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 		depth = NumberByKey("depth", wnote,"=")		// depth for this image
 	endif
 	depth = numtype(depth) ? 0 : depth					// default depth to zero
-	dNum = detectorNumFromID(StringByKey("detectorID", wnote,"="))
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		return $""

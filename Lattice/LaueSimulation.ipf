@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.13
+#pragma version = 1.14
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -43,8 +43,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		return $""
 	endif
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))					//fill the geometry structure with current default values
-		DoAlert 0,"Unable to load geometry"
+	if (FillGeometryStructDefault(geo,alert=1))	//fill the geometry structure with current default values
 		return $""
 	endif
 
@@ -505,7 +504,7 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 		Variable pxUnb = (startx-FIRST_PIXEL) + groupx*px + (groupx-1)/2	// change to un-binned pixels
 		Variable pyUnb = (starty-FIRST_PIXEL) + groupy*py + (groupy-1)/2	// pixels are still zero based
 		if (numtype(pxUnb+pyUnb)==0)
-			Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+			Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 			theta = pixel2q(geo.d[dNum],pxUnb,pyUnb,qBL)*180/PI				// get theta, and q^ in Beam Line system
 		endif
 		KillWaves/Z PeakInfoHook_qhatBL

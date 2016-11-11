@@ -454,8 +454,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 	Wave/Z indexedList								// the FullPeakIndexed wave, only used to get the reciprocal lattice
 
 	STRUCT microGeometry g
-	if (FillGeometryStructDefault(g))								//fill the geometry structure with current values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current values
 		return ""
 	endif
 
@@ -466,7 +465,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 		Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";" )))
 		String win=StringFromList(0,WindowsWithWave(image,1))
 		if (!(dNum == limit(round(dNum),0,2)))				// invalid dNum
-			dNum = detectorNumFromID(StringByKey("detectorID", note(image),"="))
+			dNum = detectorNumFromID(g, StringByKey("detectorID", note(image),"="))
 		endif
 		dNum = !(dNum==limit(round(dNum),0,2)) ? 1 : dNum
 		if (!WaveExists(peakList))
@@ -737,7 +736,9 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	ButtonBoxesProc(B_Struct)
 	ClearhklOffGraph("")
 
-	Variable dNum = detectorNumFromID(StringByKey("detectorID",note(image),"="))
+	STRUCT microGeometry g
+	FillGeometryStructDefault(g)		//fill the geometry structure with current values
+	Variable dNum = detectorNumFromID(g, StringByKey("detectorID",note(image),"="))
 	dNum = max(0,dNum)					// default to 0
 
 	String peakListName = StringByKey("peakListWave", wnote,"=")
@@ -933,8 +934,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	endif
 
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))	//fill the geometry structure with test values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
 		return 1
 	endif
 
@@ -948,7 +948,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 
-	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 	Make/N=3/D/FREE Pvec = geo.d[dNum].P[p]	// get theta resolution from detector (resolution to 1/2 pixel in theta)
 	Variable perpDist = norm(Pvec)
 	Variable dangleX = groupx * geo.d[dNum].sizeX / geo.d[dNum].Nx
@@ -1344,7 +1344,11 @@ Function AddMissingReflections(FullPeakIndexed,[pattern,detector])	// calculate 
 
 	detector = ParamIsDefault(detector) ? NaN : detector
 	if (!(detector>=0))
-		detector = detectorNumFromID(StringByKey("detectorID",wnote,"="))
+		STRUCT microGeometry geo
+		if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
+			return 1
+		endif
+		detector = detectorNumFromID(geo, StringByKey("detectorID",wnote,"="))
 	endif
 	detector = detector>=0 ? detector : 0
 
@@ -2202,8 +2206,7 @@ Static Function/WAVE readIndexFile(indexFile,path)
 	Variable Nbuf = strlen(buffer)
 
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))					//fill the geometry structure with test values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo, alert=1))		//fill the geometry structure with test values
 		return $""													// can not compute (px,py), but still a valid result
 	endif
 
@@ -2228,7 +2231,6 @@ Static Function/WAVE readIndexFile(indexFile,path)
 	groupy = numtype(groupy) ? 1 : groupy
 
 	Make/N=3/O/D/FREE qBL, qvec
-//	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
 	Variable dNum											// can have multiple detectors at once
 	String list1
 	Variable/C pz
@@ -4498,8 +4500,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	endif
 
 	STRUCT microGeometry geo								// note, dd and yc are reset from wave note below if it exists
-	if (FillGeometryStructDefault(geo))					//fill the geometry structure with default values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with default values
 		return 1
 	endif
 	STRUCT crystalStructure xtal
@@ -4511,7 +4512,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	Make/N=(N,4)/O/FREE Qs								// temporary waves for the q info, holds Qhat and intensity
 	Make/N=3/D/FREE qhat
 	String wnote = note(FullPeakList)
-	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 	Variable startx,groupx, starty,groupy					// ROI of the original image
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
@@ -4537,7 +4538,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 
 	if (WaveExists(FullPeakList1))
 		wnote = note(FullPeakList1)
-		dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+		dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 		startx = NumberByKey("startx",wnote,"=")
 		groupx = NumberByKey("groupx",wnote,"=")
 		starty = NumberByKey("starty",wnote,"=")
@@ -4561,7 +4562,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 
 	if (WaveExists(FullPeakList2))
 		wnote = note(FullPeakList2)
-		dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+		dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 		startx = NumberByKey("startx",wnote,"=")
 		groupx = NumberByKey("groupx",wnote,"=")
 		starty = NumberByKey("starty",wnote,"=")
@@ -4925,7 +4926,12 @@ Function Complete_hklEmeasured(hklEmeasured)
 		if (!WaveExists(peaks))
 			continue
 		endif
-		detNum = detectorNumFromID(StringByKey("detectorID",note(peaks),"="))
+
+		STRUCT microGeometry geo
+		if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
+			return 1
+		endif
+		detNum = detectorNumFromID(geo, StringByKey("detectorID",note(peaks),"="))
 		if (col_detNum>=0 && detNum>=0)
 			hklEmeasured[m][col_detNum]=detNum
 		endif
@@ -5293,12 +5299,11 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l,[printIt])
 		return NaN
 	endif
 	Variable keV = hc/(2*d*sineTheta)			// energy
-	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
-
 	if (printIt)
 		Variable px=NaN, py=NaN
 		STRUCT microGeometry geo
 		if (!FillGeometryStructDefault(geo))	//fill the geometry structure with test values
+			Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 			Variable startx,groupx, starty,groupy, ddLocal, ycLocal
 			startx = NumberByKey("startx",wnote,"=")
 			groupx = NumberByKey("groupx",wnote,"=")
@@ -5345,7 +5350,7 @@ Function EstimateConeAngle(dnum, [image, printIt])
 		if (!WaveExists(image))
 			Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
 		endif
-		dNum = WaveExists(image) ? detectorNumFromID(StringByKey("detectorID",note(image),"=")) : NaN
+		dNum = WaveExists(image) ? detectorNumFromID(g, StringByKey("detectorID",note(image),"=")) : NaN
 	endif
 
 	if (dnum==limit(round(dnum),0,MAX_Ndetectors))	// test for a valid dnum
@@ -5544,10 +5549,7 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 		return 1
 	endif
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))					//fill the geometry structure with test values
-		if (printIt)
-			DoAlert 0, "no geometry structure found, did you forget to set it?"
-		endif
+	if (FillGeometryStructDefault(geo, alert=printIt))	//fill the geometry structure with test values
 		return 1
 	endif
 
@@ -5557,7 +5559,7 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 	Variable startx,groupx, starty,groupy					// ROI of the original image
 
 	String wnote = note(image0)
-	dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
 	starty = NumberByKey("starty",wnote,"=")
@@ -5572,7 +5574,7 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 	pixel2q(geo.d[dNum],px,py,qhat0,depth=depth)						// in Beam LIne Coord system
 
 	wnote = note(image1)
-	dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
 	starty = NumberByKey("starty",wnote,"=")
@@ -5807,8 +5809,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		return ""
 	endif
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))						//fill the geometry structure with test values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
 		return ""
 	endif
 	Variable Npatterns=DimSize(FullPeakIndexed,2)
@@ -5865,7 +5866,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 			if (!WaveExists(Qs))
 				return ""
 			endif
-			dNums[idetector] = max(detectorNumFromID(StringByKey("detectorID", note(FullPeakList),"=")),0)
+			dNums[idetector] = max(detectorNumFromID(geo, StringByKey("detectorID", note(FullPeakList),"=")),0)
 			Qwaves[idetector] = Qs
 		endif
 	endfor
@@ -6375,8 +6376,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		return ""
 	endif
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))						//fill the geometry structure with test values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
 		return ""
 	endif
 	Variable Npatterns=DimSize(FullPeakIndexed,2)
@@ -6631,7 +6631,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable/C pz
 	Variable sine, d, keV
-	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 	Make/N=3/O/D fithat_PeaksForStrain
 	Wave fithat = fithat_PeaksForStrain
 	for (i=0;i<N;i+=1)
@@ -7112,15 +7112,14 @@ Static Function/WAVE FullPeakList2Qwave(FullPeakList) // convert fitted peaks to
 		return $""
 	endif
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))			//fill the geometry structure with test values
-		DoAlert 0, "no geometry structure found, did you forget to set it?"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
 		return $""
 	endif
 
 	Make/N=(N,4)/FREE/D Qs=NaN					// create temp waves for the q + intensity
 	Make/N=3/FREE/D qhat
 	String wnote = note(FullPeakList)
-	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+	Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
 	Variable startx,groupx, starty,groupy			// ROI of the original image
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
@@ -7174,7 +7173,7 @@ End
 //	Make/N=3/O/D FullPeakList2Qfile_qhat
 //	Wave qhat=FullPeakList2Qfile_qhat
 //	String wnote = note(FullPeakList)
-//	Variable dNum = max(detectorNumFromID(StringByKey("detectorID", wnote,"=")),0)
+//	Variable dNum = max(detectorNumFromID(StringByKey(geo, "detectorID", wnote,"=")),0)
 //	Variable startx,groupx, starty,groupy			// ROI of the original image
 //	startx = NumberByKey("startx",wnote,"=")
 //	groupx = NumberByKey("groupx",wnote,"=")
@@ -7303,8 +7302,7 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetector
 
 	// find (hkl) at center of detector and make that the center of the stereographic pattern
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo))				//fill the geometry structure with current default values
-		DoAlert 0,"Unable to load geometry"
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with current default values
 		return 1
 	endif
 	Variable startx=NumberByKey("startx",wnote,"="), endx=NumberByKey("endx",wnote,"=")
@@ -7988,7 +7986,7 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)				//fill the geometry structure with current values
-	Variable dnum = detectorNumFromID(StringByKey("detectorID",note(image),"="))
+	Variable dnum = detectorNumFromID(g, StringByKey("detectorID",note(image),"="))
 	if (dnum<0)
 		return result
 	endif
