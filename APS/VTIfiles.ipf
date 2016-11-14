@@ -20,6 +20,8 @@ Static StrConstant VTIfilters = "VTI Files (*.vti):.vti,;All Files:.*;"
 //  ======================================================================================  //
 //  ============================== Start of VTI file loading =============================  //
 
+//	http://www.cacr.caltech.edu/~slombey/asci/vtk/vtk_formats.simple.html
+
 Function/WAVE LoadVTIfile(fileNameFull,[printIt])
 	String fileNameFull
 	Variable printIt
@@ -128,6 +130,36 @@ Function/WAVE LoadVTIfile(fileNameFull,[printIt])
 	Note/K wav, wnote
 	return wav
 End
+
+	//		# Alternative python code
+	//		import vtk
+	//		from vtk.util.numpy_support import vtk_to_numpy
+	//
+	//		import sys
+	//		import numpy as np
+	//
+	//		if sys.argv < 3:
+	//			print "Usage python vti2txt inputVtiName outputTxtName"
+	//			exit(0)
+	//		filename = sys.argv[1]
+	//		outfilename = sys.argv[2]
+	//
+	//		reader = vtk.vtkXMLImageDataReader()
+	//		reader.SetFileName(filename)
+	//		reader.Update()
+	//
+	//		output = reader.GetOutput()
+	//
+	//		dataOrigin = output.GetOrigin()
+	//		dataSpacing = output.GetSpacing()
+	//		dataExtent = output.GetExtent()
+	//
+	//		vtkData = output.GetPointData().GetScalars()
+	//
+	//		npData = vtk_to_numpy(vtkData)
+	//
+	//		header = "origin: " + str(dataOrigin) + "\nspacing: " + str(dataSpacing) + "\nextent: " + str(dataExtent)
+	//		np.savetxt(outfilename, npData, header=header)
 
 //  =============================== End of VTI file loading ==============================  //
 //  ======================================================================================  //
