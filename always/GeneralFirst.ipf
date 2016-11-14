@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.37
+#pragma version = 3.38
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -102,6 +102,8 @@ Menu "Data"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load mda files (from APS)."}
+		"VTI files from APS",Execute/P "INSERTINCLUDE  \"VTIfiles\"";Execute/P "COMPILEPROCEDURES "
+		help = {"Load vti files (from APS)."}
 		"EPICS Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
 		help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
 		"BURT files from APS",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
@@ -114,6 +116,8 @@ Menu "Load Waves"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load mda files (from APS)."}
+		"VTI files from APS",Execute/P "INSERTINCLUDE  \"VTIfiles\"";Execute/P "COMPILEPROCEDURES "
+		help = {"Load vti files (from APS)."}
 		"BURT files from APS",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load Burt files (from APS)."}
 		"EPICS Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "

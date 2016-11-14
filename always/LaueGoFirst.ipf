@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 2.09
+#pragma version = 2.10
 #pragma ModuleName = LaueGoFirst
 #pragma hide = 1
 //Static Constant JZTalwaysFirst_Version_Min=2.4	// minimum required vesion of "always first.ipf"
@@ -41,14 +41,16 @@ End
 Menu "Analysis"
 	Submenu "Packages"
 		"(APS specific"
-		Submenu "spec"
-			"spec with images",Execute/P "INSERTINCLUDE  \"specImages\", version>=0.44";Execute/P "COMPILEPROCEDURES ";Execute/P "init_specImage(\"\")"
-			help = {"Support for spec files plus support for spec with image files (like a Pilatus)."}
-			"spec files",Execute/P "INSERTINCLUDE  \"spec\", version>=2.27";Execute/P "COMPILEPROCEDURES ";Execute/P "specInitPackage()"
-			help = {"Load everything for reading spec files."}
+		Submenu "File Loaders"
+			"MDA files",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
+			help = {"Load mda files (from APS)."}
+			"VTI files",Execute/P "INSERTINCLUDE  \"VTIfiles\"";Execute/P "COMPILEPROCEDURES "
+			help = {"Load vti files (from APS)."}
+			"BURT Files",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
+			help = {"Load Burt files (from APS)."}
+			"WinView Reader", Execute/P "INSERTINCLUDE \"WinView\", version>=2.01"
+			help = {"Load procedures reading and looking at WinView images"}
 		End
-		"MDA files",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
-		help = {"Load mda files (from APS)."}
 		SubMenu "EPICS"
 			"EPICS("
 			"PV I\O", Execute/P "INSERTINCLUDE \"epics\"" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "epicsInitPackage()"
@@ -56,10 +58,12 @@ Menu "Analysis"
 			"Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
 			help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
 		End
-		"BURT Files",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
-		help = {"Load Burt files (from APS)."}
-		"WinView Reader", Execute/P "INSERTINCLUDE \"WinView\", version>=2.01"
-		help = {"Load procedures reading and looking at WinView images"}
+		Submenu "spec"
+			"spec with images",Execute/P "INSERTINCLUDE  \"specImages\", version>=0.44";Execute/P "COMPILEPROCEDURES ";Execute/P "init_specImage(\"\")"
+			help = {"Support for spec files plus support for spec with image files (like a Pilatus)."}
+			"spec files",Execute/P "INSERTINCLUDE  \"spec\", version>=2.27";Execute/P "COMPILEPROCEDURES ";Execute/P "specInitPackage()"
+			help = {"Load everything for reading spec files."}
+		End
 	End
 End
 #endif

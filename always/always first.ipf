@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.74
+#pragma version = 2.75
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -76,7 +76,7 @@ Static Structure StartUpPrefsJZT		// the packages available after startup
 	uchar Gizmo				// Gizmo: Zoom&Translate, Clip planes, Markers, and Movies
 	uchar LaueGo			// LaueGo: Lattices, X-ray, and all of the LaueGo capabilities
 	uchar Scattering		// X-ray Data and other scattering related functions, includes Lattice
-	uchar APSspecific		// APS Specific: MDA files, BURT files, EPICS functions, and spec files
+	uchar APSspecific		// APS Specific: MDA files, BURT files, VTI files, EPICS functions, and spec files
 	uchar LocalPackages	// menus showing Local Packages
 EndStructure
 
@@ -165,7 +165,7 @@ Static Function PrintStartUpPrefsJZT(prefs)
 	labels += "Gizmo:Gizmo, includes Zoom&Translate, Clip planes, Markers, and Movies.;"
 	labels += "Scattering:X-ray Data & Lattice, includes X-ray data capabilities & Lattice;"
 	labels += "LaueGo:LaueGo: includes Lattices, X-ray, and all of the LaueGo capabilities.;"
-	labels += "APS:APS Specific, includes MDA file, BURT file, EPICS, and spec file capabilities.;"
+	labels += "APS:APS Specific, includes MDA file, BURT file, VTI file, EPICS, and spec file capabilities.;"
 	labels += "LocalPackages:Show Menus for Local Packages.;"
 	Variable someOn  = (prefs.General || prefs.Gizmo || prefs.LaueGo || prefs.Scattering || prefs.APSspecific || prefs.LocalPackages)
 	Variable someOff = !(prefs.General && prefs.Gizmo && prefs.LaueGo && prefs.Scattering && prefs.APSspecific && prefs.LocalPackages)
