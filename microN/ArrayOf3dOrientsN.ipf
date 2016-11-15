@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.66	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.67	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -280,6 +280,9 @@ Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
 //
 // Aug 15, 2016,  version 2.64
 //	changed SlicePlaneIn3d() so that the phiZ slice works with cylindrical too.
+//
+// Nov 15, 2016,  version 2.67
+//	removed all explicit mention of old positioner names (except right here).
 
 // modified read3dRecipLatticesFile() to deal with multiple reference matricies
 // and added SetMatrixFromString() to help with this task.
@@ -3074,7 +3077,7 @@ Function InterpolateRodriquesFromXHF(resolution,[method,Xoff,Xwidth,Hoff,Hwidth,
 		return 1
 	endif
 
-	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 	Variable X0,dX, dimX=1								// for setting scaling in X-dimension
 	FindScalingFromVec(XX,threshold,X0,dX,dimX)
 	if (strlen(method)<1)
@@ -3160,7 +3163,7 @@ End
 //		return 1
 //	endif
 //
-//	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+//	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 //	Variable Xoff,dX, dimX=1							// for setting scaling in X-dimension
 //	FindScalingFromVec(XX,threshold,Xoff,dX,dimX)
 //	if (dimX==1)
@@ -3212,7 +3215,7 @@ Static Function Interpolate3dRodriquesFromXHF(resolution,[Xoff,Xwidth,Hoff,Hwidt
 		return 1
 	endif
 
-	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 	Variable dX, dimX=1								// for setting scaling in X-dimension
 	Variable dH, dimH=1
 	Variable dF, dimF=1
@@ -3376,7 +3379,7 @@ End
 //		return 1
 //	endif
 //
-//	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+//	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 //	Variable Xoff,dX, dimX=1							// for setting scaling in X-dimension
 //	Variable Hoff,dH, dimH=1
 //	Variable Foff,dF, dimF=1
@@ -3517,7 +3520,7 @@ Static Function Interpolate2dRodriquesFromXHF(resolution)
 		return 1
 	endif
 
-	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 	Variable Xoff,dX, dimX=1							// for setting scaling in X-dimension
 	Variable Hoff,dH, dimH=1
 	Variable Foff,dF, dimF=1
@@ -3650,7 +3653,7 @@ Static Function Interpolate3dRodriquesClosest(resolution,[Xoff,Xwidth,Hoff,Hwidt
 		return 1
 	endif
 
-	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 	Variable dX, dimX=1								// for setting scaling in X-dimension
 	Variable dH, dimH=1
 	Variable dF, dimF=1
@@ -3836,7 +3839,7 @@ End
 //		return 1
 //	endif
 //
-//	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+//	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 //	Variable Xoff,dX, dimX=1								// for setting scaling in X-dimension
 //	Variable Hoff,dH, dimH=1
 //	Variable Foff,dF, dimF=1
@@ -4031,7 +4034,7 @@ Variable clipValueMin
 		return 1
 	endif
 
-	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 	Variable Xoff,dX, dimX=1								// for setting scaling in X-dimension
 	Variable Hoff,dH, dimH=1
 	Variable Foff,dF, dimF=1
@@ -4716,7 +4719,7 @@ Function/T readInRodriquesDataFile(FullFileName,maxAngle)
 	NewDataFolder/O/S $fldrName
 	noteStr = ReplaceStringByKey("fldrName",noteStr,GetDataFolder(1),"=")
 
-	// 1st three columns are X Y Z		X is PM500, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
+	// 1st three columns are X Y Z		X is positioner, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
 	// matij are in Wenge sample coordinates (X, -H, -F).  So negate the H and F coordinates when computing Rodriques vector
 	String columnInfoStr = ""
 	columnInfoStr += "N=XX;N=YY;N=ZZ;"
@@ -4726,7 +4729,7 @@ Function/T readInRodriquesDataFile(FullFileName,maxAngle)
 		SetDataFolder fldrSav
 		return ""
 	endif
-	Wave XX=XX,YY=YY,ZZ=ZZ					// PM500 positions (µm)
+	Wave XX=XX,YY=YY,ZZ=ZZ					// positioner positions (µm)
 	Wave RX=RX, RH=RH, RF=RF
 	Variable N=numpnts(XX)
 	Make/N=(N) totalAngles
@@ -4784,14 +4787,14 @@ Function/T readInRodriquesDataFile(FullFileName,maxAngle)
 		WaveStats/Q FF
 		F0 = V_avg
 	else
-		//	X0 = -X0								//	X0 in file is PM500 posiition
+		//	X0 = -X0								//	X0 in file is positioner posiition
 		H0 = YZ2H(Y0,Z0)						// Y0 and Z0 are already sample frame
 		F0 = YZ2F(Y0,Z0)
 	endif
 	dX = NumberByKey("dX",noteStr,"=")
 	dY = NumberByKey("dY",noteStr,"=")
 	dZ = NumberByKey("dZ",noteStr,"=")
-	//	dX = -dX									// in file dX is PM500 position, so reverse
+	//	dX = -dX									// in file dX is positioner position, so reverse
 	dH = YZ2H(dY,dZ)								// dY and dZ are in sample system in file
 	dF = YZ2F(dY,dZ)
 	Make/N=3/O/D vec3 = {dX,dH,dF}
@@ -4930,7 +4933,7 @@ Function/T read3dRecipLatticesFile(FullFileName,maxAngle)
 	for (i=0;i<ItemsInLIst(inWaves);i+=1)
 		columnInfoStr += "N="+StringFromList(i,inWaves)+";"
 	endfor
-	// 1st three columns are X Y Z		X is PM500, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
+	// 1st three columns are X Y Z		X is positioner, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
 	// matij are in Wenge sample coordinates (X, -H, -F).  So negate the H and F coordinates when computing Rodriques vector
 //	String columnInfoStr = ""
 //	columnInfoStr += "N=XX;N=YY;N=ZZ;"
@@ -4943,7 +4946,7 @@ Function/T read3dRecipLatticesFile(FullFileName,maxAngle)
 		SetDataFolder fldrSav
 		return ""
 	endif
-	Wave XX=XX,YY=YY,ZZ=ZZ							// PM500 positions (µm)
+	Wave XX=XX,YY=YY,ZZ=ZZ							// positioner positions (µm)
 	Wave mat11=mat11,mat12=mat12,mat13=mat13
 	Wave mat21=mat21,mat22=mat22,mat23=mat23
 	Wave mat31=mat31,mat32=mat32,mat33=mat33
@@ -5050,14 +5053,14 @@ Function/T read3dRecipLatticesFile(FullFileName,maxAngle)
 		WaveStats/Q FF
 		F0 = V_avg
 	else
-		//	X0 = -X0									//	X0 in file is PM500 posiition
+		//	X0 = -X0									//	X0 in file is positioner posiition
 		H0 = YZ2H(Y0,Z0)								// Y0 and Z0 are already sample frame
 		F0 = YZ2F(Y0,Z0)
 	endif
 	dX = NumberByKey("dX",noteStr,"=")
 	dY = NumberByKey("dY",noteStr,"=")
 	dZ = NumberByKey("dZ",noteStr,"=")
-	//	dX = -dX										// in file dX is PM500 position, so reverse
+	//	dX = -dX										// in file dX is positioner position, so reverse
 	dH = YZ2H(dY,dZ)									// dY and dZ are in sample system in file
 	dF = YZ2F(dY,dZ)
 	vec3 = {dX,dH,dF}
@@ -5222,7 +5225,7 @@ End
 //	NewDataFolder/O/S $fldrName
 //	noteStr = ReplaceStringByKey("fldrName",noteStr,GetDataFolder(1),"=")
 //
-//	// 1st three columns are X Y Z		X is PM500, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
+//	// 1st three columns are X Y Z		X is positioner, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
 //	// matij are in Wenge sample coordinates (X, -H, -F).  So negate the H and F coordinates when computing Rodriques vector
 //	String columnInfoStr = ""
 //	columnInfoStr += "N=XX;N=YY;N=ZZ;"
@@ -5234,7 +5237,7 @@ End
 //		SetDataFolder fldrSav
 //		return ""
 //	endif
-//	Wave XX=XX,YY=YY,ZZ=ZZ					// PM500 positions (µm)
+//	Wave XX=XX,YY=YY,ZZ=ZZ					// positioner positions (µm)
 //	Wave mat11=mat11,mat12=mat12,mat13=mat13
 //	Wave mat21=mat21,mat22=mat22,mat23=mat23
 //	Wave mat31=mat31,mat32=mat32,mat33=mat33
@@ -5318,14 +5321,14 @@ End
 //		WaveStats/Q FF
 //		F0 = V_avg
 //	else
-//		//	X0 = -X0								//	X0 in file is PM500 posiition
+//		//	X0 = -X0								//	X0 in file is positioner posiition
 //		H0 = YZ2H(Y0,Z0)						// Y0 and Z0 are already sample frame
 //		F0 = YZ2F(Y0,Z0)
 //	endif
 //	dX = NumberByKey("dX",noteStr,"=")
 //	dY = NumberByKey("dY",noteStr,"=")
 //	dZ = NumberByKey("dZ",noteStr,"=")
-//	//	dX = -dX									// in file dX is PM500 position, so reverse
+//	//	dX = -dX									// in file dX is positioner position, so reverse
 //	dH = YZ2H(dY,dZ)								// dY and dZ are in sample system in file
 //	dF = YZ2F(dY,dZ)
 //	vec3 = {dX,dH,dF}
@@ -5413,7 +5416,7 @@ End
 ////	endif
 ////	NewDataFolder/O/S $fldrName
 ////
-////	// 1st three columns are X Y Z		X is PM500, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
+////	// 1st three columns are X Y Z		X is positioner, so change X -> -X, Y and Z are in sample coordinates, so no negative signs
 ////	// matij are in Wenge sample coordinates (X, -H, -F).  So negate the H and F coordinates when computing Rodriques vector
 ////	String columnInfoStr = ""
 ////	columnInfoStr += "N=XX;N=YY;N=ZZ;"
@@ -5425,7 +5428,7 @@ End
 ////		SetDataFolder fldrSav
 ////		return ""
 ////	endif
-////	Wave XX=XX,YY=YY,ZZ=ZZ					// PM500 positions (µm)
+////	Wave XX=XX,YY=YY,ZZ=ZZ					// positioner positions (µm)
 ////	Wave mat11=mat11,mat12=mat12,mat13=mat13
 ////	Wave mat21=mat21,mat22=mat22,mat23=mat23
 ////	Wave mat31=mat31,mat32=mat32,mat33=mat33
@@ -5496,14 +5499,14 @@ End
 ////		WaveStats/Q FF
 ////		F0 = V_avg
 ////	else
-////		//	X0 = -X0								//	X0 in file is PM500 posiition
+////		//	X0 = -X0								//	X0 in file is positioner posiition
 ////		H0 = YZ2H(Y0,Z0)						// Y0 and Z0 are already sample frame
 ////		F0 = YZ2F(Y0,Z0)
 ////	endif
 ////	dX = NumberByKey("dX",noteStr,"=")
 ////	dY = NumberByKey("dY",noteStr,"=")
 ////	dZ = NumberByKey("dZ",noteStr,"=")
-////	//	dX = -dX									// in file dX is PM500 position, so reverse
+////	//	dX = -dX									// in file dX is positioner position, so reverse
 ////	dH = YZ2H(dY,dZ)								// dY and dZ are in sample system in file
 ////	dF = YZ2F(dY,dZ)
 ////	vec3 = {dX,dH,dF}
@@ -5603,7 +5606,7 @@ End
 //Function testFindScalingFromVec(ww)
 //	Wave ww
 //	String name = NameOfWave(ww)
-//	Variable threshold = 0.18							// (µm) a motion of the PM500 greater than this is intentional (less is jitter)
+//	Variable threshold = 0.18							// (µm) a motion of the positioner greater than this is intentional (less is jitter)
 //	Variable off,d, dim, err
 //	err = FindScalingFromVec(ww,threshold,off,d,dim)
 //	printf "err=%d,   %s=[%g,%g], dim%s=%d,   Æ%s=%g\r",err,name,off,off+d*(dim-1),name,dim,name,d

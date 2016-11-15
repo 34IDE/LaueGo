@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.35
+#pragma version = 2.36
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -295,7 +295,7 @@ Function IndexLots(pathName,filePrefix,positions,depths, threshAboveAvg, h,k,l,c
 			if (numtype(depth))
 	 			depth = NumberByKey("depthSi", wnote,"=")				// old style name
 			endif
-			X1 = NumberByKey("X1", wnote,"=")								// PM500 positions
+			X1 = NumberByKey("X1", wnote,"=")								// positioner positions
 			Y1 = NumberByKey("Y1", wnote,"=")
 			Z1 = NumberByKey("Z1", wnote,"=")
 			if (abs(sum(image))<2)												// image is empty (try to process when negative)
@@ -798,7 +798,7 @@ Function Write3dOrientsFile(IndexingList,irefList)
 	Variable exx,eyy,ezz,exy,exz,eyz
 	Variable a,b,c,alpha,bet,gam
 	String list=IndexingList[0]
-	xo = NumberByKey("X1",list,"=")									// position of sample PM500
+	xo = NumberByKey("X1",list,"=")									// position of sample positioner
 	yo = NumberByKey("Y1",list,"=")
 	zo = NumberByKey("Z1",list,"=")
 	Variable angle,minA=Inf,maxA=-Inf, angleMin,irefMin

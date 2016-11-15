@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.85
+#pragma version = 0.86
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -78,9 +78,9 @@ Function/T calcWireOrigin(H0,Hyc,F0,px,py)
 
 	Variable printIt = strlen(GetRTStackInfo(2))==0
 	if (numtype(H0+Hyc+F0+px+py))
-		Prompt H0,"H0, PM500 wire H when wire splits incident beam"
-		Prompt Hyc,"Hyc, PM500 wire H when wire nearly over sample origin"
-		Prompt F0,"F, PM500 wire F for both points"
+		Prompt H0,"H0, positioner wire H when wire splits incident beam"
+		Prompt Hyc,"Hyc, positioner wire H when wire nearly over sample origin"
+		Prompt F0,"F, positioner wire F for both points"
 		Prompt px,"pixel X (used to get Hyc)"
 		Prompt py,"pixel Y (used to get Hyc)"
 		DoPrompt "Wire Coordinates",H0,Hyc,F0,px,py
@@ -130,10 +130,10 @@ Function/T calcWireOrigin(H0,Hyc,F0,px,py)
 		depth /= 2											// This is Z of the beam from origin
 
 		xyz0 = {X0,Y0,Z0}
-		PM500X2toBeamLineX2(g.wire,xyz0)				// beam goes through xyz0 along (001)
+		PositionerX2_toBeamLineX2(g.wire,xyz0)		// beam goes through xyz0 along (001)
 
-		origin[0] = {xyz0[0], xyz0[1], depth}				// in beam line system, just need to rotate back to PM500 system
-		MatrixOp/O origin = Inv(rhoW) x origin			// (xyz) = (wire.Rij) x (xyz),   rotate wire position from PM500 coords to beam line coords
+		origin[0] = {xyz0[0], xyz0[1], depth}				// in beam line system, just need to rotate back to positioner system
+		MatrixOp/O origin = Inv(rhoW) x origin			// (xyz) = (wire.Rij) x (xyz),   rotate wire position from positioner coords to beam line coords
 		i += 1												// count number of iterations
 	while (norm(origin)>1e-9 && i<20)
 	if (i>=20)
@@ -143,9 +143,9 @@ Function/T calcWireOrigin(H0,Hyc,F0,px,py)
 	origin += g.wire.origin[p]								// Final value
 
 	if (printIt)
-		printf "wire at beam	= {%.2f, %.2f, %.2f} (PM500 frame)\r",X0,Y0,Z0
-		printf "wire above		= {%.2f, %.2f, %.2f} (PM500 frame)\r",Xyc,Yyc,Zyc
-		printf "desired wire Origin	= {%.3f, %.3f, %.3f} (PM500 frame)\r",origin[0],origin[1],origin[2]
+		printf "wire at beam	= {%.2f, %.2f, %.2f} (positioner frame)\r",X0,Y0,Z0
+		printf "wire above		= {%.2f, %.2f, %.2f} (positioner frame)\r",Xyc,Yyc,Zyc
+		printf "desired wire Origin	= {%.3f, %.3f, %.3f} (positioner frame)\r",origin[0],origin[1],origin[2]
 	endif
 	String str
 	sprintf str,"%.3f;%.3f;%.3f",origin[0],origin[1],origin[2]
@@ -178,10 +178,10 @@ End
 //
 //	Variable printIt = strlen(GetRTStackInfo(2))==0
 //	if (numtype(H0+Hyc1+Hyc2+F0+px+py))
-//		Prompt H0,"H0, PM500 wire H when wire splits incident beam"
-//		Prompt Hyc1,"Hyc Leading Edge, PM500 wire H when wire nearly over sample origin"
-//		Prompt Hyc2,"Hyc Trailing Edge, PM500 wire H when wire nearly over sample origin"
-//		Prompt F0,"F, PM500 wire F for both points"
+//		Prompt H0,"H0, positioner wire H when wire splits incident beam"
+//		Prompt Hyc1,"Hyc Leading Edge, positioner wire H when wire nearly over sample origin"
+//		Prompt Hyc2,"Hyc Trailing Edge, positioner wire H when wire nearly over sample origin"
+//		Prompt F0,"F, positioner wire F for both points"
 //		Prompt px,"pixel X (used to get Hyc)"
 //		Prompt py,"pixel Y (used to get Hyc)"
 //		DoPrompt "Wire Coordinates",H0,Hyc1,Hyc2,F0,px,py
@@ -239,19 +239,19 @@ End
 //		depth = (depth1+depth2)/2							// This is Z of the beam from origin
 //
 //		xyz0 = {X0,Y0,Z0}
-//		PM500X2toBeamLineX2(g.wire,xyz0)				// beam goes through xyz0 along (001)
+//		PositionerX2_toBeamLineX2(g.wire,xyz0)			// beam goes through xyz0 along (001)
 //
-//		origin[0] = {xyz0[0], xyz0[1], depth}				// in beam line system, just need to rotate back to PM500 system
-//		MatrixOp/O origin = Inv(rhoW) x origin			// (xyz) = (wire.Rij) x (xyz),   rotate wire position from PM500 coords to beam line coords
+//		origin[0] = {xyz0[0], xyz0[1], depth}				// in beam line system, just need to rotate back to positioner system
+//		MatrixOp/O origin = Inv(rhoW) x origin			// (xyz) = (wire.Rij) x (xyz),   rotate wire position from positioner coords to beam line coords
 //	while (norm(origin)>1e-9)
 //
 //	origin += g.wire.origin[p]								// Final value
 //
 //	if (printIt)
-//		printf "wire at beam	= {%.2f, %.2f, %.2f} (PM500 frame)\r",X0,Y0,Z0
-//		printf "wire above		= {%.2f, %.2f, %.2f} (PM500 frame) Leading Edge\r",Xyc,Yyc1,Zyc1
-//		printf "wire above		= {%.2f, %.2f, %.2f} (PM500 frame) Trailing Edge\r",Xyc,Yyc2,Zyc2
-//		printf "desired wire Origin	= {%.3f, %.3f, %.3f} (PM500 frame)\r",origin[0],origin[1],origin[2]
+//		printf "wire at beam	= {%.2f, %.2f, %.2f} (positioner frame)\r",X0,Y0,Z0
+//		printf "wire above		= {%.2f, %.2f, %.2f} (positioner frame) Leading Edge\r",Xyc,Yyc1,Zyc1
+//		printf "wire above		= {%.2f, %.2f, %.2f} (positioner frame) Trailing Edge\r",Xyc,Yyc2,Zyc2
+//		printf "desired wire Origin	= {%.3f, %.3f, %.3f} (positioner frame)\r",origin[0],origin[1],origin[2]
 //	endif
 //	String str
 //	sprintf str,"%.3f;%.3f;%.3f",origin[0],origin[1],origin[2]

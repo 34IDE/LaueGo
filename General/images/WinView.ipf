@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.05
+#pragma version = 2.06
 #pragma ModuleName=WinViewProc
 #include "ImageDisplayScaling", version>=1.98
 //
@@ -1193,7 +1193,7 @@ Function/T WinViewReadHeader(fileName,[extras])
 	endfor
 	KillWaves/Z userString
 
-	// this section is special for PM500's,  if Y1 & Z1 present, then add H1 & F1 (ditto for Y2 & Z2)
+	// this section is special for Sample & Wire positioner's,  if Y1 & Z1 present, then add H1 & F1 (ditto for Y2 & Z2)
 	Variable Y1,Z1,H1,F1, Y2,Z2,H2,F2
 	Y1 = NumberByKey("Y1",wnote,"=")
 	Z1 = NumberByKey("Z1",wnote,"=")

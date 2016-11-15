@@ -1,12 +1,14 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.91
+#pragma version = 1.92
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
 
-Constant USE_DISTORTION_DEFAULT = 0			// default is TO USE distortion
+//	#define USING_PM00_SAMPLE						// define this in your experiment if using the PM500 and need its corrections
+
+Constant USE_DISTORTION_DEFAULT = 0			// default is to NOT use distortion
 // Constant MAX_Ndetectors = 3					// maximum number of detectors to permitted
 Constant MAX_Ndetectors = 6						// maximum number of detectors to permitted
 Static StrConstant DetIDcolors = "PE1621 723-3335:Orange;PE0820 763-1807:Yellow;PE0820 763-1850:Purple;PE0822 883-4841:Yellow;PE0822 883-4843:Purple;Mar-165:Gray;"
@@ -596,10 +598,10 @@ Structure detectorGeometry		// structure definition for a detector
 EndStructure
 //
 Structure wireGeometry		// structure definition
-	double origin[3]			// raw PM500 coordinates that would put wire center at Origin, (the Si position), (micron)
+	double origin[3]			// raw wire positioner coordinates that would put wire center at Origin, (the Si position), (micron)
 	double dia					// diameter of wire (micron)
 	int16 knife					// true if wire on a knife edge, false for free-standing wire
-	double F						// F of the wire for the wire scan in raw PM500 units (not very important) (micron)
+	double F						// F of the wire for the wire scan in raw positioner units (not very important) (micron)
 	double axis[3]				// unit vector in direction of wire afis in positioner frame, e.g. (0,0,1) is along positioner x-axis
 	double axisR[3]			// vector axis rotated by R, now direction of wire in beam line frame (calculated internally)
 	double R[3]					// rotation vector for the wire positioner (length is angle in radians)
@@ -610,7 +612,7 @@ Structure wireGeometry		// structure definition
 EndStructure
 //
 Structure sampleGeometry
-	double O[3]					// raw PM500 coordinates where sample is at origin, (the Si position), (micron)
+	double O[3]					// raw sample positioner coordinates where sample is at origin, (the Si position), (micron)
 	double R[3]					// rotation vector for the sample positioner (length is angle in radians)
 	double Rmag					// magnitude of | Rs[3] |, in degrees (computed internally)
 	double R00, R01, R02	// rotation matrix from R[3] internally calculated
@@ -662,7 +664,7 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 		printf "	Origin = {%.2f, %.2f, %.2f}	// raw positioner coordinates to put wire at Origin (Si position) (µm)\r",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
 		printf "	diameter=%.2f				// diameter of wire (µm)\r",g.wire.dia
 		print "\t"+SelectString(g.wire.knife,"free standing wire","wire mounted on a knife edge")
-		printf "	wire axis direction = {%.6f, %.6f, %.6f}	// direction of wire axis in PM500 wire coordinates (µm)\r",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]
+		printf "	wire axis direction = {%.6f, %.6f, %.6f}	// direction of wire axis in positioner wire coordinates (µm)\r",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]
 		if (g.wire.Rmag > 0)
 			printf "	R = {%g, %g, %g}, a rotation of %g¡	// wire positioner rotation vector\r",g.wire.R[0],g.wire.R[1],g.wire.R[2],g.wire.Rmag
 			if (NumVarOrDefault("root:Packages:geometry:printVerbose",0))
@@ -673,7 +675,7 @@ Function printGeometry(g)					// print the details for passed geometry to the hi
 			endif
 		endif
 		if (!numtype(g.wire.F))
-			printf "	F=%.2f						// F of wire for a wire scan raw PM500 units (µm)\r",g.wire.F
+			printf "	F=%.2f						// F of wire for a wire scan raw wire positioner units (µm)\r",g.wire.F
 		endif
 	endif
 End
@@ -1876,7 +1878,7 @@ Static Function/T Geo2KeyValueStr(g,fileNote)
 
 	if (!SampleBad(g.s))
 		out += "\n// Sample\n"
-		sprintf str,"$SampleOrigin	{%.2f,%.2f,%.2f}			// sample origin in raw PM500 units (micron)\n",g.s.O[0],g.s.O[1],g.s.O[2];	out += str
+		sprintf str,"$SampleOrigin	{%.2f,%.2f,%.2f}			// sample origin in raw sample positioner units (micron)\n",g.s.O[0],g.s.O[1],g.s.O[2];	out += str
 		sprintf str,"$SampleRot		{%.8f,%.8f,%.8f}	// sample positioner rotation vector (length is angle in radians)\n",g.s.R[0],g.s.R[1],g.s.R[2]; out += str
 	endif
 
@@ -1913,13 +1915,13 @@ Static Function/T Geo2KeyValueStr(g,fileNote)
 		out += "\n// Wire\n"
 		sprintf str,"$wireDia		%.2f						// diameter of wire (micron)\n",g.wire.dia;	 out += str
 		sprintf str,"$wireKnife		%g							// true if wire on a knife edge, false for free-standing wire\n",g.wire.knife; out += str
-		sprintf str,"$wireOrigin		{%.2f,%.2f,%.2f}			// wire origin in raw PM500 frame (micron)\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]; out += str
+		sprintf str,"$wireOrigin		{%.2f,%.2f,%.2f}			// wire origin in raw positioner frame (micron)\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]; out += str
 		if (g.wire.Rmag>0)
 			sprintf str,"$wireRot		{%.8f,%.8f,%.8f}	// wire positioner rotation vector (length is angle in radians)\n",g.wire.R[0],g.wire.R[1],g.wire.R[2]; out += str
 		endif
 		sprintf str,"$wireAxis		{%.6f,%.6f,%.6f}	// unit vector along wire axis, usually close to (1,0,0)\n",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]; out += str
 		if (!numtype(g.wire.F))
-			sprintf str,"$wireF			%.2f						// F of wire for a constant F wire scan (raw PM500 units)\n",g.wire.F; out += str
+			sprintf str,"$wireF			%.2f						// F of wire for a constant F wire scan (raw positioner units)\n",g.wire.F; out += str
 		endif
 	endif
 	return out
@@ -2143,7 +2145,7 @@ Static Function/T Geo2xmlStr(g,fileNote)
 
 	if (!SampleBad(g.s))
 		out += "\n	<Sample>\n"
-		sprintf str, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>	<!-- sample origin in raw PM500 units (micron) -->\n",g.s.O[0],g.s.O[1],g.s.O[2] ; out += str
+		sprintf str, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>	<!-- sample origin in raw positioner units (micron) -->\n",g.s.O[0],g.s.O[1],g.s.O[2] ; out += str
 		sprintf str, "		<R unit=\"radian\">%.9g %.9g %.9g</R>\n",g.s.R[0],g.s.R[1],g.s.R[2]; 	out += str
 		out += "	</Sample>\n"
 	endif
@@ -2196,7 +2198,7 @@ Static Function/T Geo2xmlStr(g,fileNote)
 		out += str
 		sprintf str, "		<Knife>%g</Knife>				<!-- true if wire on a knife edge, false for free-standing wire -->\n",g.wire.knife
 		out += str
-		sprintf str, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>		<!-- wire origin in raw PM500 frame (micron) -->\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
+		sprintf str, "		<Origin unit=\"micron\">%.8g %.8g %.8g</Origin>		<!-- wire origin in raw positioner frame (micron) -->\n",g.wire.origin[0],g.wire.origin[1],g.wire.origin[2]
 		out += str
 		if (g.wire.Rmag>0)
 			sprintf str,"		<R unit=\"radian\">%.9g %.9g %.9g</R>\n",g.wire.R[0],g.wire.R[1],g.wire.R[2]
@@ -2205,7 +2207,7 @@ Static Function/T Geo2xmlStr(g,fileNote)
 		sprintf str, "		<Axis>%.8g %.8g %.8g</Axis>		<!-- unit vector along wire axis, usually close to (1,0,0) -->\n",g.wire.axis[0],g.wire.axis[1],g.wire.axis[2]
 		out += str
 		if (!numtype(g.wire.F))
-			sprintf str, "		<F unit=\"micron\">%.8g</F>		<!-- F of wire for a constant F wire scan (raw PM500 units) -->\n",g.wire.F
+			sprintf str, "		<F unit=\"micron\">%.8g</F>		<!-- F of wire for a constant F wire scan (raw positioner units) -->\n",g.wire.F
 			out += str
 		endif
 		out += "	</Wire>\n"
@@ -2629,18 +2631,18 @@ End
 // ======================= Start of Sample & Wire Positioner Correction =======================
 
 // Sample Position
-ThreadSafe Function PM500X1toBeamLineX1(s,XYZ1)	// change from Sample PM500 numbers to Beam Line coords
+ThreadSafe Function PositionerX1_toBeamLineX1(s,XYZ1)	// change from Sample positioner values to Beam Line coords
 	STRUCT sampleGeometry &s
-	Wave XYZ1								// a 3-vector, PM500 coords on input, change to BeamLine on output
+	Wave XYZ1												// a 3-vector, positioner coords on input, change to BeamLine on output
 
 	Variable X1, Y1, Z1
-	X1 = X1correctedKeyence(XYZ1[0])				// first correct of errors in the encoder
-	Y1 = Y1correctedKeyence(XYZ1[1])
-	Z1 = Z1correctedKeyence(XYZ1[2])
+	X1 = X1correctPositioner(XYZ1[0])				// first correct of errors in the encoder
+	Y1 = Y1correctPositioner(XYZ1[1])
+	Z1 = Z1correctPositioner(XYZ1[2])
 
-	X1 -= X1correctedKeyence(s.O[0])				// translate to origin, subtract off sample origin
-	Y1 -= Y1correctedKeyence(s.O[1])	
-	Z1 -= Z1correctedKeyence(s.O[2])	
+	X1 -= X1correctPositioner(s.O[0])				// translate to origin, subtract off sample origin
+	Y1 -= Y1correctPositioner(s.O[1])	
+	Z1 -= Z1correctPositioner(s.O[2])	
 
 	XYZ1[0] = s.R00*X1 + s.R01*Y1 + s.R02*Z1	// XYZ1 = s.Rij x {X1,Y1,Z1},   rotate by R (a small rotation)
 	XYZ1[1] = s.R10*X1 + s.R11*Y1 + s.R12*Z1
@@ -2649,14 +2651,14 @@ End
 
 
 // Wire Position
-ThreadSafe Function PM500X2toBeamLineX2(w,XYZ2)	// change Wire position from raw PM500 numbers to Beam Line coords
+ThreadSafe Function PositionerX2_toBeamLineX2(w,XYZ2)	// change Wire position from raw positioner numbers to Beam Line coords
 	STRUCT wireGeometry &w
-	Wave XYZ2								// a 3-vector, PM500 coords on input, change to BeamLine on output
+	Wave XYZ2												// a 3-vector, positioner coords on input, change to BeamLine on output
 
 	Variable X2, Y2, Z2
-	X2 = X2correctedKeyence(XYZ2[0])				// first correct of errors in the encoder
-	Y2 = Y2correctedKeyence(XYZ2[1])
-	Z2 = Z2correctedKeyence(XYZ2[2])
+	X2 = X2correctPositioner(XYZ2[0])				// first correct of errors in the encoder
+	Y2 = Y2correctPositioner(XYZ2[1])
+	Z2 = Z2correctPositioner(XYZ2[2])
 
 	X2 -= w.origin[0]										// translate to origin (distance of wire from origin)
 	Y2 -= w.origin[1]
@@ -2667,16 +2669,13 @@ ThreadSafe Function PM500X2toBeamLineX2(w,XYZ2)	// change Wire position from raw
 	XYZ2[2] = w.R20*X2 + w.R21*Y2 + w.R22*Z2
 End
 
-// ==================================== Keyence Correction ====================================
-
-//	Make/O root:Packages:micro:X1correctionWave={0.31,0.32,0.2,0.09,-0.1,-0.3,-0.44,-0.47,-0.42,-0.37,-0.32,-0.19,-0.12,-0.07,0.01,0.17,0.35,0.52,0.67,0.73,0.69,0.53,0.32,0.13,-0.01,-0.13,-0.18,-0.18,-0.18,-0.16,-0.26,-0.25,-0.29,-0.38,-0.41,-0.38,-0.33,-0.18,0.01,0.23,0.42}
-//	Make/O root:Packages:micro:Y1correctionWave={0.37,0.38,0.35,0.26,0.1,-0.06,-0.22,-0.31,-0.36,-0.35,-0.62,-0.51,-0.39,-0.28,-0.19,-0.03,0.11,0.25,0.34,0.38,0.38,0.34,0.28,0.17,0.04,-0.09,-0.22,-0.33,-0.4,-0.41,-0.39,-0.36,-0.28,-0.19,-0.08,0.06,0.2,0.3,0.4,0.54,0.66}
-//	Make/O root:Packages:micro:Z1correctionWave={-0.09,-0.17,-0.21,-0.24,-0.25,-0.22,-0.14,-0.01,0.16,0.28,0.34,0.38,0.37,0.33,0.3,0.27,0.23,0.1,-0.05,-0.22,-0.18,-0.24,-0.28,-0.29,-0.28,-0.25,-0.18,-0.09,0,0.1,0.28,0.34,0.33,0.32,0.32,0.32,0.31,0.26,0.19,0.09,-0.02}
-//	SetScale/P x 0,1,"µm", root:Packages:micro:X1correctionWave,root:Packages:micro:Y1correctionWave,root:Packages:micro:Z1correctionWave
-//	SetScale d 0,0,"µm", root:Packages:micro:X1correctionWave,root:Packages:micro:Y1correctionWave,root:Packages:micro:Z1correctionWave
+// ================================== Keyence Corrections (for PM500) ==================================
 //
-ThreadSafe Static Function X1correctedKeyence(X1)		// takes PM500 X1 and returns the "real" X1
-	Variable X1									// input the PM500 X1 reading
+
+
+#ifdef USING_PM00_SAMPLE							// define this in your experiment if using the PM500 and need its corrections
+ThreadSafe Static Function X1correctPositioner(X1)		// takes X1 positioner and returns the "real" X1
+	Variable X1															// input the positioner X1 reading
 	Wave deltaW=root:Packages:micro:X1correctionWave
 	Variable zWidth = DimDelta(deltaW,0)*(numpnts(deltaW)-1)	// width of the correction wave (µm)
 	Variable dX1
@@ -2685,8 +2684,8 @@ ThreadSafe Static Function X1correctedKeyence(X1)		// takes PM500 X1 and returns
 	return deltaW(dX1)+X1					// return corrected X1, this should be the true X1 value
 End
 //
-ThreadSafe Static Function Y1correctedKeyence(Y1)		// takes PM500 Y1 and returns the "real" Y1
-	Variable Y1									// input the PM500 Y1 reading
+ThreadSafe Static Function Y1correctPositioner(Y1)		// takes Y1 positioner and returns the "real" Y1
+	Variable Y1															// input the positioner Y1 reading
 	Wave deltaW=root:Packages:micro:Y1correctionWave
 	Variable zWidth = DimDelta(deltaW,0)*(numpnts(deltaW)-1)	// width of the correction wave (µm)
 	Variable dY1
@@ -2695,8 +2694,8 @@ ThreadSafe Static Function Y1correctedKeyence(Y1)		// takes PM500 Y1 and returns
 	return deltaW(dY1)+Y1					// return corrected Y1, this should be the true Y1 value
 End
 //
-ThreadSafe Static Function Z1correctedKeyence(Z1)		// takes PM500 Z1 and returns the "real" Z1
-	Variable Z1									// input the PM500 Z1 reading
+ThreadSafe Static Function Z1correctPositioner(Z1)		// takes Z1 positioner and returns the "real" Z1
+	Variable Z1															// input the positioner Z1 reading
 	Wave deltaW=root:Packages:micro:Z1correctionWave
 	Variable zWidth = DimDelta(deltaW,0)*(numpnts(deltaW)-1)	// width of the correction wave (µm)
 	Variable dZ1
@@ -2704,19 +2703,34 @@ ThreadSafe Static Function Z1correctedKeyence(Z1)		// takes PM500 Z1 and returns
 	dZ1 = dZ1 < 0 ? dZ1+zWidth : dZ1
 	return deltaW(dZ1)+Z1					// return corrected Z1, this should be the true Z1 value
 End
-
-
-ThreadSafe Static Function X2correctedKeyence(X2)		// takes PM500 X2 and returns the "real" X2	****	DUMMY	DUMMY	DUMMY	****
-	Variable X2									// input the PM500 X2 reading
-	return X2									// return corrected X2, this should be the true X2 value
+#else
+ThreadSafe Static Function X1correctPositioner(X1)	// takes X1 positioner and returns the "real" X1
+	Variable X1														// input the positioner X1 reading
+	return X1														// return corrected X1, this should be the true X1 value
 End
-ThreadSafe Static Function Y2correctedKeyence(Y2)		// takes PM500 Y2 and returns the "real" Y2	****	DUMMY	DUMMY	DUMMY	****
-	Variable Y2									// input the PM500 Y2 reading
-	return Y2									// return corrected Y2, this should be the true Y2 value
+//
+ThreadSafe Static Function Y1correctPositioner(Y1)	// takes Y1 positioner and returns the "real" Y1
+	Variable Y1														// input the positioner Y1 reading
+	return Y1														// return corrected Y1, this should be the true Y1 value
 End
-ThreadSafe Static Function Z2correctedKeyence(Z2)		// takes PM500 Z2 and returns the "real" Z2	****	DUMMY	DUMMY	DUMMY	****
-	Variable Z2									// input the PM500 Z2 reading
-	return Z2									// return corrected Z2, this should be the true Z2 value
+//
+ThreadSafe Static Function Z1correctPositioner(Z1)	// takes Z1 positioner and returns the "real" Z1
+	Variable Z1														// input the positioner Z1 reading
+	return Z1														// return corrected Z1, this should be the true Z1 value
+End
+#endif
+//
+ThreadSafe Static Function X2correctPositioner(X2)	// takes positioner X2 and returns the "real" X2	****	DUMMY	DUMMY	DUMMY	****
+	Variable X2														// input the positioner X2 reading
+	return X2														// return corrected X2, this should be the true X2 value
+End
+ThreadSafe Static Function Y2correctPositioner(Y2)	// takes positioner Y2 and returns the "real" Y2	****	DUMMY	DUMMY	DUMMY	****
+	Variable Y2														// input the positioner Y2 reading
+	return Y2														// return corrected Y2, this should be the true Y2 value
+End
+ThreadSafe Static Function Z2correctPositioner(Z2)	// takes positioner Z2 and returns the "real" Z2	****	DUMMY	DUMMY	DUMMY	****
+	Variable Z2														// input the positioner Z2 reading
+	return Z2														// return corrected Z2, this should be the true Z2 value
 End
 
 // ======================== End of Sample & Wire Positioner Correction ========================
@@ -2784,7 +2798,7 @@ ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire th
 	Make/N=3/D/FREE nhat								// normal to plane
 	Make/N=3/D/FREE wo									// point on the plane of the wire center (beam line coords)
 	Make/N=3/D/FREE C										// constant term in linear equation (beam line coords)
-	Make/N=(3,3)/D/FREE rhoW							// rotation of wire PM500
+	Make/N=(3,3)/D/FREE rhoW							// rotation of wire positioner
 	Make/N=(3,3)/D/FREE mat							// matrix sent to linear solver
 
 	Variable R=(g.wire.dia)/2							// wire radius
@@ -2816,7 +2830,7 @@ ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire th
 	nhat = {0, sigma[2], -sigma[1]}					// perpendicular to sigma, pointing in +Z direction (rotated frame)
 	normalize(nhat)
 
-	delta[0] = {0, sinTheta, cosTheta}				// direction of wire motion (PM500 coords)
+	delta[0] = {0, sinTheta, cosTheta}				// direction of wire motion (positioner coords)
 	MatrixOp/O delta = rho x rhoW x delta			// delta = wire.Rij x {0, sinTheta, cosTheta},   rotate delta to beam line coords, then to rotated frame
 
 	a = g.wire.axis[p]
@@ -2837,7 +2851,7 @@ ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire th
 	if (V_flag)
 		return NaN
 	endif
-	return C[1]												// the H in PM500 coords
+	return C[1]												// the H in positioner coords
 End
 
 
@@ -2847,7 +2861,7 @@ End
 ThreadSafe Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
 	STRUCT microGeometry &g		// g.wire.F provides the F
 	Wave xyzPixel						// location of pixel in beam line coordinates, origin at Si (µm)
-	Wave Xw								// center of wire in raw PM500 coordinates (µm)
+	Wave Xw								// center of wire in raw positioner coordinates (µm)
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
 	Make/N=3/D/FREE Rvec								// rotation vector that puts axis of wire along {1,0,0}
@@ -2863,7 +2877,7 @@ ThreadSafe Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
 	rotationMatFromAxis(Rvec,NaN,rho)				// rotation matrix makes wire axis lie along {1,0,0}
 
 	wc = Xw
-	PM500X2toBeamLineX2(g.wire,wc)					// transform Xw into Beam Line coords (subtract origin & rotate)
+	PositionerX2_toBeamLineX2(g.wire,wc)			// transform Xw into Beam Line coords (subtract origin & rotate)
 	MatrixOp/O wc = rho x wc							// rotate wire center to new coordinate
 	MatrixOp/O pixel = rho x xyzPixel				// rotate pxiel to new coordinate system
 	ki = {0,0,1}											// ki must be normalized
@@ -3334,7 +3348,7 @@ ThreadSafe Static Function WireDepth2Pixel(g,dnum,py,Xw,depth,edge)	// find px, 
 	STRUCT microGeometry &g		// g.wire.F provides the F
 	Variable dnum						// detector number, {0, 1, 2}
 	Variable py							// y pixel position on detector
-	Wave Xw								// center of wire in raw PM500 coordinates (µm)
+	Wave Xw								// center of wire in raw positioner coordinates (µm)
 	Variable depth						// distance along incident beam from origin (the Si positino) (µm)
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
@@ -4962,12 +4976,13 @@ Function Init_microGeo()
 	Variable/G root:Packages:geometry:geoInited=0	// flag that initialization was called successsfully
 	NVAR geoInited=root:Packages:geometry:geoInited
 
+#ifdef USING_PM00_SAMPLE
 	Make/O root:Packages:micro:X1correctionWave={0.31,0.32,0.2,0.09,-0.1,-0.3,-0.44,-0.47,-0.42,-0.37,-0.32,-0.19,-0.12,-0.07,0.01,0.17,0.35,0.52,0.67,0.73,0.69,0.53,0.32,0.13,-0.01,-0.13,-0.18,-0.18,-0.18,-0.16,-0.26,-0.25,-0.29,-0.38,-0.41,-0.38,-0.33,-0.18,0.01,0.23,0.42}
 	Make/O root:Packages:micro:Y1correctionWave={0.37,0.38,0.35,0.26,0.1,-0.06,-0.22,-0.31,-0.36,-0.35,-0.62,-0.51,-0.39,-0.28,-0.19,-0.03,0.11,0.25,0.34,0.38,0.38,0.34,0.28,0.17,0.04,-0.09,-0.22,-0.33,-0.4,-0.41,-0.39,-0.36,-0.28,-0.19,-0.08,0.06,0.2,0.3,0.4,0.54,0.66}
 	Make/O root:Packages:micro:Z1correctionWave={-0.09,-0.17,-0.21,-0.24,-0.25,-0.22,-0.14,-0.01,0.16,0.28,0.34,0.38,0.37,0.33,0.3,0.27,0.23,0.1,-0.05,-0.22,-0.18,-0.24,-0.28,-0.29,-0.28,-0.25,-0.18,-0.09,0,0.1,0.28,0.34,0.33,0.32,0.32,0.32,0.31,0.26,0.19,0.09,-0.02}
 	SetScale/P x 0,1,"µm", root:Packages:micro:X1correctionWave,root:Packages:micro:Y1correctionWave,root:Packages:micro:Z1correctionWave
 	SetScale d 0,0,"µm", root:Packages:micro:X1correctionWave,root:Packages:micro:Y1correctionWave,root:Packages:micro:Z1correctionWave
-
+#endif
 	if (exists("root:Packages:geometry:useDistortion")!=2)	// create global, it does not exist
 		Variable/G root:Packages:geometry:useDistortion=USE_DISTORTION_DEFAULT
 	endif
