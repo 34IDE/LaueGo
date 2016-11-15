@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.90
+#pragma version = 1.91
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -2426,14 +2426,14 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	g.Ndetectors = 3					// defining 3 detectors
 	simple = ParamIsDefault(simple) ? 0 : simple
 
-	// define Detector 0, located 500mm directly above sample (Orange)
+	// define Detector 0, located 510mm directly above sample (Orange)
 	g.d[0].used = 1
 	g.d[0].Nx = 2048 ;			g.d[0].Ny = 2048				// number of un-binned pixels in whole detector
 	g.d[0].sizeX = 409.6e3;		g.d[0].sizeY = 409.6e3	// outside size of detector (micron)
 	Variable Rval = -2/3*PI/sqrt(3)
 	g.d[0].R[0]=Rval;			g.d[0].R[1]=Rval;		g.d[0].R[2]=Rval		// angle of detector, theta = -120¡ about (111)
 	g.d[0].P[0]=25e3;			g.d[0].P[1]=0;			g.d[0].P[2]=510e3		// offset to detector (micron)
-	g.d[0].timeMeasured = "Dec 4, 2008, 3:33pm"
+	g.d[0].timeMeasured = "Dec 4, 2015, 3:33pm"
 	g.d[0].geoNote = "reference orientation"
 	g.d[0].detectorID = "PE1621 723-3335"
 	g.d[0].color = "Orange"
@@ -2448,9 +2448,9 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
 	g.d[1].R[1] = -0.735434395129632
 	g.d[1].R[2] = -1.74815646188668
 	g.d[1].P[0]=-144e3;		g.d[1].P[1]=-1e3;		g.d[1].P[2]=410e3	// offset to detector (micron)
-	g.d[1].timeMeasured = "Dec 5, 2008, 11:00am"
+	g.d[1].timeMeasured = "Dec 5, 2015, 11:00am"
 	g.d[1].geoNote = "reference orientation"
-	g.d[1].detectorID = "PE0820 763-1807"
+	g.d[1].detectorID = "PE0822 883-4841"
 	g.d[0].color = "Yellow"
 	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 0
 	g.d[1].distortionMapFile = ""
@@ -2463,15 +2463,15 @@ Function GeoReferenceOrientation(g[,simple])	// sets g to the reference orientat
  	g.d[2].R[1] = -1.49667815898843
  	g.d[2].R[2] = -0.610398437087624
 	g.d[2].P[0]=-187e3;		g.d[2].P[1]=0;			g.d[2].P[2]=400e3		// offset to detector (micron)
-	g.d[2].timeMeasured = "Dec 5, 2008, 11:00am"
+	g.d[2].timeMeasured = "Dec 5, 2015, 11:00am"
 	g.d[2].geoNote = "reference orientation"
-	g.d[2].detectorID = "PE0820 763-1850"
+	g.d[2].detectorID = "PE0822 883-4843"
 	g.d[0].color = "Purple"
 	g.d[0].rgb[0] = 65535	;	g.d[0].rgb[0] = 30000	;	g.d[0].rgb[0] = 65535
 	g.d[2].distortionMapFile = ""
 
 	// define Wire
-	g.wire.origin[0] = 0;			g.wire.origin[1] = 0;		g.wire.origin[2] = 0
+	g.wire.origin[0] = 0;		g.wire.origin[1] = 0;		g.wire.origin[2] = 0
 	g.wire.dia = 52.
 	g.wire.knife = 1													// true if wire on  a knife edge, false for free-standing wire
 	g.wire.axis[0] = 1;			g.wire.axis[1] = 0;		g.wire.axis[2] = 0
@@ -3296,7 +3296,6 @@ Static Function calcHofWire(win,whoChanged)
 	STRUCT microGeometry g
 	FillGeometryStructDefault(g)
 	dNum = detectorNumFromID(g,detectorID)
-
 
 	Wave rgb = detectorRGBwave(g,dnum)
 	edge = edge==0 ? 0 : 1					// default for bad input is leading
@@ -4578,9 +4577,9 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 	STRUCT microGeometry &gIn
 
 	String geoList= "Ndetectors.RVAL;"
-	geoList += "used0;Nx0;Ny0;sizeX0;sizeY0;Rx0;Ry0;Rz0;Px0;Py0;Pz0;timeMeasured0;geoNote0;detectorID0;distortionMapFile0;"
-	geoList += "used1;Nx1;Ny1;sizeX1;sizeY1;Rx1;Ry1;Rz1;Px1;Py1;Pz1;timeMeasured1;geoNote1;detectorID1;distortionMapFile1;"
-	geoList += "used2;Nx2;Ny2;sizeX2;sizeY2;Rx2;Ry2;Rz2;Px2;Py2;Pz2;timeMeasured2;geoNote2;detectorID2;distortionMapFile2;"
+	geoList += "used0;Nx0;Ny0;sizeX0;sizeY0;Rx0;Ry0;Rz0;Px0;Py0;Pz0;timeMeasured0;geoNote0;detectorID0;distortionMapFile0;color0;red0;green0;blue0;"
+	geoList += "used1;Nx1;Ny1;sizeX1;sizeY1;Rx1;Ry1;Rz1;Px1;Py1;Pz1;timeMeasured1;geoNote1;detectorID1;distortionMapFile1;color1;red1;green1;blue1;"
+	geoList += "used2;Nx2;Ny2;sizeX2;sizeY2;Rx2;Ry2;Rz2;Px2;Py2;Pz2;timeMeasured2;geoNote2;detectorID2;distortionMapFile2;color2;red2;green2;blue2;"
 	geoList += "wireDia;wireOriginX;wireOriginY;wireOriginZ;wireKnife;wireAxisX;wireAxisY;wireAxisZ;"
 	geoList += "wireRotX;wireRotY;wireRotZ;wireF;"
 	geoList += "SampleRotX;SampleRotY;SampleRotZ;SampleOriginX;SampleOriginY;SampleOriginZ;"
@@ -4607,12 +4606,13 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 			item = item[n,Inf]
 		endif
 		item = ReplaceString(".RVAL=",item,"=")
+		item = ReplaceString("*** not connected",item,"")
 		pvList += item+";"
 	endfor
 
-	Variable xx,yy,zz
-	String si
-	STRUCT microGeometry g
+	Variable xx,yy,zz, red,green,blue
+	String si, colorName
+	STRUCT microGeometry g											// temporary copy of geoN
 	g.s.R[0] = NumberByKey("SampleRotX",pvList,"=")
 	g.s.R[1] = NumberByKey("SampleRotY",pvList,"=")
 	g.s.R[2] = NumberByKey("SampleRotZ",pvList,"=")
@@ -4644,6 +4644,35 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 		g.d[i].geoNote = StringByKey("geoNote"+si,pvList,"=")
 		g.d[i].detectorID = StringByKey("detectorID"+si,pvList,"=")
 		g.d[i].distortionMapFile = StringByKey("distortionMapFile"+si,pvList,"=")
+
+		colorName = StringByKey("color"+si,pvList,"=")
+		red = NumberByKey("red"+si,pvList,"=")
+		green = NumberByKey("green"+si,pvList,"=")
+		blue = NumberByKey("blue"+si,pvList,"=")
+		Make/N=3/D/FREE rgb = {red,green,blue}
+		if (strlen(colorName)<1)
+			colorName = StringByKey(g.d[i].detectorID,DetIDcolors)	// DetIDcolors is a static string constant set at the top of this file
+		endif
+		if (numtype(sum(rgb)) || WaveMin(rgb)<0)				// rgb is bad, try to use colorName
+			String str = StringByKey(colorName,DetColorRGBs)
+			rgb = str2num(StringFromList(p,str,","))
+		endif
+		if (numtype(sum(rgb)) || WaveMin(rgb)<0)				// give up, just set to default
+			rgb = str2num(StringFromList(p,DefaultDetColorRGBs))
+			colorName = ""
+		endif
+		if (WaveMax(rgb)<=1)											// rgb range is only [0,1] change to [0,65535]
+			rgb *= 65535
+		endif
+		if (WaveMax(rgb)>65535)										// rgb range is too big, this is VERY unlikely
+			Variable mm = 65535 / WaveMax(rgb)
+			rgb *= mm
+		endif
+		rgb = limit(round(rgb),0,65535)
+		g.d[i].color = colorName
+		g.d[i].rgb[0] = rgb[0]
+		g.d[i].rgb[1] = rgb[1]
+		g.d[i].rgb[2] = rgb[2]
 	endfor
 
 	g.wire.dia			= NumberByKey("wireDia",pvList,"=")
@@ -4651,13 +4680,13 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 	g.wire.origin[1]	= NumberByKey("wireOriginY",pvList,"=")
 	g.wire.origin[2]	= NumberByKey("wireOriginZ",pvList,"=")
 	g.wire.knife		= NumberByKey("wireKnife",pvList,"=")
-	g.wire.F			= NumberByKey("wireF",pvList,"=")
+	g.wire.F				= NumberByKey("wireF",pvList,"=")
 	g.wire.axis[0]		= NumberByKey("wireAxisX",pvList,"=")
 	g.wire.axis[1]		= NumberByKey("wireAxisY",pvList,"=")
 	g.wire.axis[2]		= NumberByKey("wireAxisZ",pvList,"=")
-	g.wire.R[0]		= NumberByKey("wireRotX",pvList,"=")
-	g.wire.R[1]		= NumberByKey("wireRotY",pvList,"=")
-	g.wire.R[2]		= NumberByKey("wireRotZ",pvList,"=")
+	g.wire.R[0]			= NumberByKey("wireRotX",pvList,"=")
+	g.wire.R[1]			= NumberByKey("wireRotY",pvList,"=")
+	g.wire.R[2]			= NumberByKey("wireRotZ",pvList,"=")
 	if (numtype(g.wire.R[0] + g.wire.R[1] + g.wire.R[2]))	// for bad (or no) results, use zero rotation
 		g.wire.R[0] = 0;	g.wire.R[1] = 0;	g.wire.R[2] = 0
 	endif
@@ -4667,8 +4696,8 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 		DoAlert 0, "Not loading geometry from EPICS, values are invalid"
 		return 1
 	else
-		GeometryUpdateCalc(g)									// calculate other values
-		CopymicroGeometry(gIn,g)								// new geometry is valid, so copy it in
+		GeometryUpdateCalc(g)										// calculate other values
+		CopymicroGeometry(gIn,g)									// new geometry is valid, so copy it in
 		if (ItemsInList(GetRTStackInfo(0))<3)					// print everything if run from command line
 			printf "Loaded geometry information from EPICS on  %s,  %s\r",date(),time()
 		endif
@@ -4715,25 +4744,10 @@ Static Function putGeo2EPICS(gIn)	// put the geometry structure to EPICS (uses c
 		return 1
 	endif
 
-	if (geoLocal_putNum(EPICS_PREFIX+"used0",g.d[0].used))
-		return 1
-	endif
-	if (geoLocal_putNum(EPICS_PREFIX+"used1",g.d[1].used))
-		return 1
-	endif
-	if (geoLocal_putNum(EPICS_PREFIX+"used2",g.d[2].used))
-		return 1
-	endif
-
-	if (g.d[0].used)						// Detector 0 parameters
-		putDetector2EPICS(g.d[0],0)	// put detector 0 values
-	endif
-	if (g.d[1].used)						// Detector 1 parameters
-		putDetector2EPICS(g.d[1],1)	// put detector 1 values
-	endif
-	if (g.d[2].used)						// Detector 2 parameters
-		putDetector2EPICS(g.d[2],2)	// put detector 2 values
-	endif
+	// Detectors parameters for all detectors
+	for (i=0; i < g.Ndetectors ; i+=1)
+		putDetector2EPICS(g.d[i],i)	// put detector i values
+	endfor
 
 	// Wire parameters
 	if (geoLocal_putNum(EPICS_PREFIX+"wireDia",g.wire.dia))
@@ -4757,7 +4771,7 @@ Static Function putGeo2EPICS(gIn)	// put the geometry structure to EPICS (uses c
 	if (geoLocal_putNum(EPICS_PREFIX+"wireAxisZ",g.wire.axis[2]))
 		return 1
 	endif
-	if (geoLocal_putNum(EPICS_PREFIX+"wireKnife",g.wire.knife))
+	if (geoLocal_putNum(EPICS_PREFIX+"wireKnife",g.wire.knife, fmt="%d"))
 		return 1
 	endif
 	if (geoLocal_putNum(EPICS_PREFIX+"wireRotX",g.wire.R[0]))
@@ -4796,15 +4810,22 @@ Static Function putGeo2EPICS(gIn)	// put the geometry structure to EPICS (uses c
 	return 0
 End
 //
-Static Function putDetector2EPICS(d,dnum)	// put detector values into EPICS, does not check d.used
+Static Function putDetector2EPICS(d,dnum)	// put detector values into EPICS
 	STRUCT detectorGeometry &d
-	Variable dnum		// 0, 1, or 2
+	Variable dnum		// 0, 1, 2, ...
 
 	String sd=num2istr(dnum)
-	if (geoLocal_putNum(EPICS_PREFIX+"Nx"+sd,d.Nx))
+	if (geoLocal_putNum(EPICS_PREFIX+"used"+sd,d.used, fmt="%d"))
 		return 1
 	endif
-	if (geoLocal_putNum(EPICS_PREFIX+"Ny"+sd,d.Ny))
+	if ( !(d.used) )									// detector not used, values probably bad
+		return 0
+	endif
+
+	if (geoLocal_putNum(EPICS_PREFIX+"Nx"+sd,d.Nx, fmt="%d"))
+		return 1
+	endif
+	if (geoLocal_putNum(EPICS_PREFIX+"Ny"+sd,d.Ny, fmt="%d"))
 		return 1
 	endif
 	if (geoLocal_putNum(EPICS_PREFIX+"sizeX"+sd,d.sizeX * 1e-3))
@@ -4843,17 +4864,40 @@ Static Function putDetector2EPICS(d,dnum)	// put detector values into EPICS, doe
 	if (geoLocal_putStr(EPICS_PREFIX+"distortionMapFile"+sd,d.distortionMapFile))
 		return 1
 	endif
+
+	if (geoLocal_putStr(EPICS_PREFIX+"color"+sd,d.color))
+		return 1
+	endif
+	if (geoLocal_putNum(EPICS_PREFIX+"red"+sd,d.rgb[0], fmt="%d"))
+		return 1
+	endif
+	if (geoLocal_putNum(EPICS_PREFIX+"green"+sd,d.rgb[1], fmt="%d"))
+		return 1
+	endif
+	if (geoLocal_putNum(EPICS_PREFIX+"blue"+sd,d.rgb[2], fmt="%d"))
+		return 1
+	endif
+
+	return 0
 End
 //
-Static Function  geoLocal_putNum(pv,value)	// utility function for EPICS_put_PV_num()
+Static Function  geoLocal_putNum(pv,value,[fmt])	// utility function for EPICS_put_PV_num()
 	String pv								// full PV name
 	Variable value							// new number to set
+	String fmt
+	fmt = SelectString(ParamIsDefault(fmt) || strlen(fmt)<2, fmt, "")
 	if (exists("EPICS_put_PV_num")!=6)
 		DoAlert 0, "EPICS_put_PV_num not available, nothing changed"
 		return 1
 	endif
 	FUNCREF protoEPICS_putNum  func=$"EPICS_put_PV_num"	//	Function/T EPICS_put_PV_num(pv,value)
-	String errStr = func(pv,value)
+
+	String errStr=""
+	if (strlen(fmt))
+		errStr = func(pv,value,fmt=fmt)
+	else
+		errStr = func(pv,value)
+	endif
 	if (strlen(errStr))
 		DoAlert 0, errStr
 		print errStr
@@ -4879,9 +4923,10 @@ Static Function geoLocal_putStr(pv,value)	// EPICS_put_PV_num function for EPICS
 	return 0
 End
 //
-Function/S protoEPICS_putNum(pv,value)						// proto function for EPICS_put_PV_num()
+Function/S protoEPICS_putNum(pv,value,[fmt])				// proto function for EPICS_put_PV_num()
 	String pv							// full PV name
 	Variable value						// new number to set
+	String fmt
 	DoAlert 0, "EPICS not available, nothing changed"
 	return "ERROR -- EPICS not available, nothing changed"
 End
