@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.92
+#pragma version = 1.93
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -566,9 +566,9 @@ End
 
 Structure microGeometry								// structure definition
 	int16	Ndetectors										// number of detectors in use, must be <= MAX_Ndetectors
-	STRUCT detectorGeometry d[MAX_Ndetectors]	// geometry parameters for each detector
 	STRUCT wireGeometry wire
 	STRUCT sampleGeometry s
+	STRUCT detectorGeometry d[MAX_Ndetectors]	// geometry parameters for each detector
 EndStructure
 //
 // Reference position for detector has its face lying in the Z=0 plane exactly centered on the origin, and the X & Y directions on the detector are along the X & Y axes.
@@ -819,38 +819,21 @@ Function FillGeoFromStrStruct(g,strStruct)
 	STRUCT microGeometry &g					// struct to fill
 	String strStruct								// string with structure information
 
-	Variable i, len0=2							// start len0 with 2 bytes (for Ndetector)
-	String str
-	STRUCT wireGeometry wire
-	StructPut/S wire str
-	len0 += strlen(str)							// increment length of wire structure
-
-	STRUCT sampleGeometry sample
-	StructPut/S sample str
-	len0 += strlen(str)							// increment length of sample structure
-
-	STRUCT detectorGeometry0 det0
-	StructPut/S det0 str
-	Variable dOldLen=strlen(str)
-	Variable Nold = abs(strlen(strStruct)-len0)/strlen(str)
-
-	STRUCT detectorGeometry det
-	StructPut/S det str
-	Variable Nnew = abs(strlen(strStruct)-len0)/strlen(str)
-	// printf "Nold = %g,   Nnew = %g\r",Nold,Nnew
-
-	if (mod(Nnew,1)<1e-5)
+	Variable Ndets = GuessNdetectorsInGeoStructure(strlen(strStruct))	// negative means microGeometry0, positive means microGeometry
+	if (Ndets>0)
 		StructGet/S g, strStruct				// simply load strStruct into geo
 		return 0
-	elseif (mod(Nold,1)<1e-5)
-		Nold = min(Nold,MAX_Ndetectors)
+	elseif (Ndets<0)
+		Variable i
+		String str
+		Ndets = min(abs(Ndets),MAX_Ndetectors)
 		String colorName
 		STRUCT microGeometry0 g0
 		StructGet/S g0, strStruct				// first load strStruct into old geo
 		g.Ndetectors = g0.Ndetectors			// copy g0 --> g
 		CopyWireGeometry(g.wire,g0.wire)	// copy wire
 		CopySampleGeometry(g.s,g0.s)			// copy sample
-		for (i=0;i<Nold;i+=1)
+		for (i=0;i<Ndets;i+=1)
 			g.d[i].used = g0.d[i].used		// copy the detectors (but not the color info)
 			g.d[i].Nx = g0.d[i].Nx;			g.d[i].Ny = g0.d[i].Ny
 			g.d[i].sizeX = g0.d[i].sizeX;	g.d[i].sizeY = g0.d[i].sizeY
@@ -875,7 +858,7 @@ Function FillGeoFromStrStruct(g,strStruct)
 		endfor
 		return 0
 	else
-		DoAlert 0, "ERROR -- trying to set geo structure, strStruct is invalid length"
+		DoAlert 0, "ERROR -- trying to set geo structure, strStruct has an invalid length = "+num2str(strlen(strStruct))
 		return 1
 	endif
 End
@@ -1668,16 +1651,59 @@ Function FillGeometryStructDefault(g,[alert])	//fill the geometry structure with
 	else
 		LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,g
 		if (V_flag)
-			if (alert)											// put up an alert
+			if (alert)										// put up an alert
 				DoAlert 0, "no geometry structure found, did you forget to set it?"
 			endif
 			return 1											// did nothing, nothing found
+		endif
+		Variable Ndets = GuessNdetectorsInGeoStructure(V_bytesRead)	// negative means microGeometry0), positive means microGeometry
+		if (Ndets<0)										// probably an old structue found, re-read as old and convert
+			STRUCT microGeometry0 g0
+			LoadPackagePreferences/MIS=1 "microGeo","microGeoNPrefs",0,g0
+			StructPut/S/B=2 g0, strStruct
+			print "  2nd try:  with g0,     V_bytesRead =",V_bytesRead, "    V_structSize =",V_structSize
+			FillGeoFromStrStruct(g,strStruct)		// set g using info in strStruct
 		endif
 		StructPut/S/B=2 g, strStruct					// keep a local copy
 		String/G root:Packages:geometry:geoStructStr = strStruct
 	endif
 	GeometryUpdateCalc(g)
 	return 0
+End
+//
+Static Function GuessNdetectorsInGeoStructure(lenIn)
+	// returns number of detectors:
+	//	negative means microGeometry0 (OLD)
+	//	positive means microGeometry (NEW)
+	// NaN means unable to figure it out, or lenIn is <= 0
+	Variable lenIn									// length given (bytes)
+
+	if (numtype(lenIn) || lenIn<1)
+		return NaN									// total failure
+	endif
+
+	String str
+	Variable len0=2								// start len0 with 2 bytes (for Ndetector)
+	STRUCT wireGeometry wire
+	StructPut/S wire str
+	len0 += strlen(str)							// increment length of wire structure
+
+	STRUCT sampleGeometry sample
+	StructPut/S sample str
+	len0 += strlen(str)							// increment length of sample structure
+
+	STRUCT detectorGeometry0 det0
+	StructPut/S det0 str
+	Variable NdetOld = abs(lenIn-len0)/strlen(str)
+
+	STRUCT detectorGeometry det
+	StructPut/S det str
+	Variable NdetNew = abs(lenIn-len0)/strlen(str)
+
+	Variable Ndetectors = NaN
+	Ndetectors = (mod(NdetNew,1)<1e-5) ?  NdetNew : Ndetectors
+	Ndetectors = (mod(NdetOld,1)<1e-5) ? -NdetOld : Ndetectors
+	return Ndetectors
 End
 
 
