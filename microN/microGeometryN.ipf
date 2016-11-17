@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.93
+#pragma version = 1.94
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -1787,7 +1787,7 @@ Function WriteGeoToFile(fileName,path,g,fileNote,type)
 	Variable type						// 0=key file,  1=xml file
 
 	if ( !(type==0 || type==1) )
-		type = 1							// currently default to old style "$key value" files
+		type = 2							// currently default to new style xml files
 		Prompt type, "type of geometry file",popup,"key file (old);xml file (new)"
 		DoPrompt "geometry file",type
 		if (V_flag)
@@ -1932,6 +1932,10 @@ Static Function/T Geo2KeyValueStr(g,fileNote)
 		if (strlen(g.d[i].detectorID))
 			sprintf str,"$%sdetectorID	%s			// unique detector ID\n",pre,g.d[i].detectorID; out += str
 		endif
+		if (strlen(g.d[i].color))
+			sprintf str,"$%scolor		%s\n",pre,g.d[i].color; out += str
+			sprintf str,"$%srgb			{%d, %d, %d}\n",pre,g.d[i].rgb[0],g.d[i].rgb[1],g.d[i].rgb[2]; out += str
+		endif
 		if (strlen(g.d[i].distortionMapFile))
 			sprintf str,"$%sdistortionMapFile	%s			// name of file with distortion map\n",pre,g.d[i].distortionMapFile; out += str
 		endif
@@ -1964,11 +1968,12 @@ Static Function ReadGeoFromKeyFile(fileName,path,g)
 	Variable err = GeoFromKeyValueList(list,g)
 	if (err==0)
 		printf "Loaded geometry information from '%s'\r",StringByKey("keyStrFileName",list,"=")
-		printf "   geometry file was set on  %s, %s\r",StringByKey("dateWritten",list,"="),StringByKey("timeWritten",list,"=")
+		printf "   geometry file was set on  %s, %s",StringByKey("dateWritten",list,"="),StringByKey("timeWritten",list,"=")
 		String str = StringByKey("fileNote",list,"=")
 		if (strlen(str))
 			printf ",   file note='%s'\r",str
 		endif
+		printf "\r"
 	endif
 	return err
 End
@@ -2002,7 +2007,7 @@ Static Function GeoFromKeyValueList(list,g)
 	endif
 
 	g.Ndetectors = 0
-	String pre, str
+	String pre, str, colorName
 	for (i=0;i<MAX_Ndetectors;i+=1)
 		sprintf pre,"d%d_",i
 		g.d[i].used = !numtype(NumberByKey(pre+"sizeX",list,"="))	// if no di_sizeX, then invalid
@@ -2031,12 +2036,43 @@ Static Function GeoFromKeyValueList(list,g)
 		str = StringByKey(pre+"detectorID",list,"=");			g.d[i].detectorID = SelectString(strlen(str),g.d[i].detectorID,str)
 		str = StringByKey(pre+"distortionMapFile",list,"=");	g.d[i].distortionMapFile = SelectString(strlen(str),g.d[i].distortionMapFile,str)
 
-		String colorName = StringByKey(g.d[i].detectorID, DetIDcolors)
-		str = StringByKey(colorName,DetColorRGBs)
-		g.d[i].color = colorName					// empty string allowed
-		g.d[i].rgb[0] = str2num(StringFromList(0,str))
-		g.d[i].rgb[1] = str2num(StringFromList(1,str))
-		g.d[i].rgb[2] = str2num(StringFromList(2,str))
+		colorName = StringByKey(pre+"color",list,"=")
+		colorName = SelectString(strlen(colorName), "", colorName)
+		if (strlen(colorName)<1)										// try to get color from detector ID
+			colorName = StringByKey(g.d[i].detectorID,DetIDcolors)
+		endif
+		g.d[i].color = colorName
+
+		sscanf StringByKey(pre+"rgb",list,"="),"{%g,%g,%g}",xx,yy,zz
+		Make/N=3/D/FREE rgb={xx,yy,zz}
+		if (V_flag!=3 || numtype(sum(rgb)) || WaveMin(rgb)<0)// rgb is bad
+			rgb = NaN														// this will cause a hunt for rgb later
+		endif
+		if (WaveMax(rgb)<=1)											// rgb range is only [0,1] change to [0,65535]
+			rgb *= 65535
+		endif
+		if (WaveMax(rgb)>65535)										// rgb range is too big, this is VERY unlikely
+			Variable mm = 65535 / WaveMax(rgb)
+			rgb *= mm
+		endif
+		rgb = limit(round(rgb),0,65535)
+		if (numtype(sum(rgb))==0)										// rgb is OK
+			g.d[i].rgb[0] = rgb[0]
+			g.d[i].rgb[1] = rgb[1]
+			g.d[i].rgb[2] = rgb[2]
+		else																	// invalid rgb
+			str = StringByKey(colorName,DetColorRGBs)			// try to get rgb based on colorName
+			str = ReplaceString(",",str,";")
+			if (ItemsInList(str)<3)
+				str = DefaultDetColorRGBs
+			endif
+			g.d[i].rgb[0] = str2num(StringFromList(0,str))
+			g.d[i].rgb[1] = str2num(StringFromList(1,str))
+			g.d[i].rgb[2] = str2num(StringFromList(2,str))
+		endif
+		if (strlen(g.d[i].color)<1)
+			g.d[i].color = colorName
+		endif
 	endfor
 
 	value = NumberByKey("wireDia",list,"=");	g.wire.dia = numtype(value) ? g.wire.dia : value
@@ -4593,22 +4629,6 @@ Function GeoFromWeb(epoch,gIn)
 	else
 		GeometryUpdateCalc(g)									// calculate other values
 		CopymicroGeometry(gIn,g)								// new geometry is valid, so copy it in
-//		if (ItemsInList(GetRTStackInfo(0))<3)					// print everything if run from command line
-//			if (strlen(list))
-//				printf "     this geometry created on   %s  %s\r",StringByKey("dateWritten",list,"="),StringByKey("timeWritten",list,"=")
-//				printf "     geometry file was set on  %s, %s\r",StringByKey("dateWritten",list,"="),StringByKey("timeWritten",list,"=")
-//				String	str = StringByKey("fileNote",list,"=")
-//				if (strlen(str))
-//					printf "     file note='%s'\r",str
-//				endif
-//			else
-//				printf "     detector0 was set on  %s\r",g.d[0].timeMeasured
-//				str = g.d[0].geoNote
-//				if (strlen(str))
-//					printf "     with detector note='%s'\r",str
-//				endif
-//			endif
-//		endif
 	endif
 	return 0
 End
