@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.14
+#pragma version = 4.15
 // #pragma hide = 1
 
 Menu "Graph"
@@ -13,6 +13,23 @@ End
 Menu "Data"
 	"Generic Wave Note Info", GenericWaveNoteInfo($"","")
 End
+
+
+#if (IgorVersion()<7)
+	strConstant DEGREESIGN = "\241"			// option-shift-8
+	strConstant BULLET = "\245"				// option-8
+	strConstant ARING = "\201"				// Angstrom sign, option-shift-A
+#if StringMatch(IgorInfo(2),"Windows")
+	strConstant BCHAR = "\257"
+#else
+	strConstant BCHAR = "\321"
+#endif
+#else
+	strConstant DEGREESIGN = "\xC2\xB0"	// UTF8, DEGREE SIGN
+	strConstant BULLET = "\xE2\x80\xA2"
+	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
+	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
+#endif
 
 
 StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;;Fl;;Lv"

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.53
+#pragma version = 0.54
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -13,8 +13,6 @@
 #include "Masking", version>=1.01
 
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
-//Static StrConstant degreeSign = "\\F'Symbol'°\\]0"
-Static StrConstant degreeSign = "¡"
 
 // #define USE_EXTRA_PILATUS_SPEC_FILE			// put this in your procedure file to use the funky file extra with extra Pilatus info
 
@@ -106,7 +104,7 @@ End
 //		endif
 //		maskName = SelectString(stringmatch(maskName,"_none_"),maskName,"")
 //		Wave mask = $maskName
-//		printf "â€¢MakeQspaceVolumeSpec(\"%s\"", scanRange
+//		printf "%sMakeQspaceVolumeSpec(\"%s\"", BULLET,scanRange
 //		if (strlen(maskName))
 //			printf ", mask=%s",maskName
 //		endif
@@ -447,7 +445,7 @@ Function/WAVE MakeQspaceVolumeSpec(scanRange,[mask,Nthreads,doConvex])
 		maskName = ""
 	endif
 	if (printIt)
-		printf "â€¢MakeQspaceVolumeSpec(\"%s\"", scanRange
+		printf "%SMakeQspaceVolumeSpec(\"%s\"", BULLET,scanRange
 		if (strlen(maskName))
 			printf ", mask=%s",maskName
 		endif
@@ -1159,7 +1157,7 @@ Static Function/T GraphDiffractometerImage(image)
 			aName = StringFromList(i,DiffractometerAxisNames)
 			angle = NumberByKey(aName,wnote,"=")				// first check wavenote for angle
 			angle = numtype(angle) ? specInfo(scanNum,aName) : angle	// angle is not in wavenote, so check specInfo()
-			sprintf str1, "%s = %.3f%s",aName,angle,degreeSign
+			sprintf str1, "%s = %.3f%s",aName,angle,DEGREESIGN
 			str += SelectString(i>0,"",", ")+str1					// accumulate the "name=angle, "
 		endfor
 		title += "\r\\Zr070"+str+"\\M"
@@ -1276,7 +1274,7 @@ Static Function getQofImageHook(s)									// Shift-mouseDown=follow mouse and s
 		sprintf str,"\r\f01hkl\f00 = [%.3f, %.3f, %.3f]",hkl[0],hkl[1],hkl[2]
 		tagStr += str
 	endif
-	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f%s",px,py,2*theta*180/PI,degreeSign
+	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f%s",px,py,2*theta*180/PI,DEGREESIGN
 	tagStr += str
 
 	px = limit(px,0,DimSize(image,0)-1)							// needed in case (px,py) is outside the image

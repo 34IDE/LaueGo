@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.25
+#pragma version = 5.26
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -147,6 +147,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.20, added muOfXtal() and get_muOfXtal(), MenuItemIfCromerPresent(), and Hex2RhomFractionalFractonal()
 //	with version 5.24, cleaned up Hex2Rhom(), Rhom2Hex(), Rhom2HexFractonal(), Hex2RhomFractonal(), and test_Hex_Rhom()
 //	with verison 5.25, added RhomLatticeFromHex(directH), and HexLatticeFromRhom(directR)
+//	with verison 5.26, moved DEGREESIGN, BULLET, ARING, BCHAR to Utility_JZT.ipf
 
 //	Rhombohedral Transformation:
 //
@@ -223,21 +224,22 @@ Static Constant c = 299792458				// speed of light (m/sec)
 Static Constant hc_keVnm = 1.2398419739		// h*c (keV-nm),  these two used to calculate mu in muOfXtal
 Static Constant re_nm = 2.8179403227e-06	// Thompson radius (nm)
 
-#if (IgorVersion()<7)
-	strConstant DEGREESIGN = "\241"			// option-shift-8
-	strConstant BULLET = "\245"				// option-8
-	strConstant ARING = "\201"				// Angstrom sign, option-shift-A
-#if StringMatch(IgorInfo(2),"Windows")
-	strConstant BCHAR = "\257"
-#else
-	strConstant BCHAR = "\321"
-#endif
-#else
-	strConstant DEGREESIGN = "\xC2\xB0"	// UTF8, DEGREE SIGN
-	strConstant BULLET = "\xE2\x80\xA2"
-	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
-	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
-#endif
+// These constants have been moved to Utility_JZT.ipf
+//	#if (IgorVersion()<7)
+//		strConstant DEGREESIGN = "\241"			// option-shift-8
+//		strConstant BULLET = "\245"				// option-8
+//		strConstant ARING = "\201"				// Angstrom sign, option-shift-A
+//	#if StringMatch(IgorInfo(2),"Windows")
+//		strConstant BCHAR = "\257"
+//	#else
+//		strConstant BCHAR = "\321"
+//	#endif
+//	#else
+//		strConstant DEGREESIGN = "\xC2\xB0"	// UTF8, DEGREE SIGN
+//		strConstant BULLET = "\xE2\x80\xA2"
+//		strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
+//		strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
+//	#endif
 
 Static Function/S MenuItemIfCromerPresent(item)		// Shows menu item if CromerLiberman is present
 	String item			// the string that appears in the menu
