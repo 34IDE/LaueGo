@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.97
+#pragma version=1.98
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -3127,6 +3127,9 @@ Function/T Make2Dplot_xmlData(fldr,[minRange,printIt,ForceNew])
 	endif
 	title = TrimFrontBackWhiteSpace(title)
 	TextBox/N=titleText/F=0/B=1/A=LB/X=2/Y=2 title
+	DoUpdate
+	String gName = StringFromList(0,WinList("*",";","WIN:1"))
+	TextBox/C/N=text0/F=0/X=2.00/Y=2.00 "\\{multiIndex#RGBsource(\""+gName+"\")}"
 
 	Variable sliceVal = NumVarOrDefault(fldr+"sliceValue",NaN)
 	String sliceName = StrVarOrDefault(fldr+"sliceName","")
@@ -3285,6 +3288,18 @@ Static Function/T getDirectionOfSlice(gName)
 	endif
 
 	return sliceName+";"+GetWavesDataFolder(wSlice,2)
+End
+//
+Static Function/S RGBsource(gName)
+	String gName
+	String str = StringByKey("zColor(x)",StringByKey("RECREATION",TraceInfo(gName,"",0)),"=")
+	str = TrimBoth(str)
+	str = TrimFront(str,chars="{")
+	str = TrimEnd(str,chars="}")
+	str = StringFromList(0,str,",")
+		Wave RR = $str
+		str = SelectString(WaveExists(RR), "", NameOfWave(RR))
+	return str
 End
 
 

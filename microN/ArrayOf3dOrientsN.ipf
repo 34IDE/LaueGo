@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.67	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.68	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -4001,14 +4001,15 @@ End
 // The big interpolation from random (XYZ)&Rodriques, to three grids of RX, RH, RF
 // this is only a 2-d inerpolation followed by a 1d linear interpolation
 // this routine assumes that the X coord is the on the OUTER most loop
-Static Function interpolate3dRodFromXHFSheets(resolution)
-	Variable resolution	// resolution in final array (µm)
-
-
-
-Wave clipWave=Nindexed
-Variable clipValueMin
-
+Static Function interpolate3dRodFromXHFSheets(resolution,[clipWave,clipValueMin])
+	Variable resolution			// resolution in final array (µm)
+	Wave clipWave
+	Variable clipValueMin		// only use points where clipWave[i] > clipValueMin
+	if (ParamIsDefault(clipWave))
+		Wave clipWave=Nindexed
+	endif
+	clipValueMin = ParamIsDefault(clipValueMin) || numtype(clipValueMin)==2 ? NaN : clipValueMin
+	Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
 
 	Wave XX=XX,HH=HH,FF=FF		// positions (beamline coords) for the (RX,RH,RF)
 	Wave RX=RX,RH=RH,RF=RF		// three components of the Rodriques vector
@@ -4063,6 +4064,7 @@ Variable clipValueMin
 	Fhi = Flo + (NF-1)*resolution
 
 	String noteStr = note(RX)
+	noteStr = ReplaceStringByKey("waveClass",noteStr,"Interpolated3dArrays","=")
 	noteStr = ReplaceNumberByKey("Xlo",noteStr,Xlo,"=")
 	noteStr = ReplaceNumberByKey("Xhi",noteStr,Xhi,"=")
 	noteStr = ReplaceNumberByKey("Hlo",noteStr,Hlo,"=")
@@ -4070,7 +4072,10 @@ Variable clipValueMin
 	noteStr = ReplaceNumberByKey("Flo",noteStr,Flo,"=")
 	noteStr = ReplaceNumberByKey("Fhi",noteStr,Fhi,"=")
 	noteStr = ReplaceNumberByKey("resolution",noteStr,resolution,"=")
-	noteStr = ReplaceStringByKey("waveClass",noteStr,"Interpolated3dArrays","=")
+	if (useIntensClip)
+		noteStr = ReplaceStringByKey("clipWave",noteStr,NameOfWave(clipWave),"=")
+		noteStr = ReplaceNumberByKey("clipValueMin",noteStr,clipValueMin,"=")
+	endif
 
 	Variable N3 = NX*NH*NF								// total number of points
 	printf "Interpolating Rodriques vectors, with resolution = %gµm\r",resolution
@@ -4145,7 +4150,7 @@ Variable clipValueMin
 			continue
 		endif
 		xval = XX[m]
-		for (i=0;i<nXval;i+=1)							// check if xval is different than existing values in Xvalues[]
+		for (i=0;i<nXval;i+=1)								// check if xval is different than existing values in Xvalues[]
 			if (abs(Xvalues[i]-xval)<threshold)
 				break
 			endif
@@ -4158,8 +4163,8 @@ Variable clipValueMin
 	Sort Xvalues, Xvalues
 	Redimension/N=(nXval) Xvalues						// sorted (increasing) list of valid measured X-values
 
-	Make/N=(NH,NF)/O RXlo, RXhi						// planes of RX, interpolate between these two planes
-	Make/N=(NH,NF)/O RHlo, RHhi						//  RH, etc.
+	Make/N=(NH,NF)/O RXlo, RXhi							// planes of RX, interpolate between these two planes
+	Make/N=(NH,NF)/O RHlo, RHhi							//  RH, etc.
 	Make/N=(NH,NF)/O RFlo, RFhi
 	if (WaveExists(totalPeakIntensity))
 		Make/N=(NH,NF)/O totalPeakIntensityLo, totalPeakIntensityHi
@@ -4174,17 +4179,14 @@ Variable clipValueMin
 		Make/N=(NH,NF)/O alphaLo, alphaHi, betaLo, betaHi, gammaLo, gammaHi
 	endif
 
-Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
-
-
 	Variable hiX=Xvalues[0]								// current X value of the to measured planes
-	Variable ihiX=0										// index into Xvalues[] of current hiX
-	Make/N=(N)/O/D indexWave=NaN					// only used in this routine
+	Variable ihiX=0											// index into Xvalues[] of current hiX
+	Make/N=(N)/O/D indexWave=NaN							// only used in this routine
 	Variable ix, mx
-	for (i=0,mx=0;i<N;i+=1)							// find all of the raw data points with this X, and save location in indexWave[]
+	for (i=0,mx=0;i<N;i+=1)								// find all of the raw data points with this X, and save location in indexWave[]
 
-		if (useIntensClip)							// reject points that are too low
-			if (clipWave[i] >= clipValueMin)
+		if (useIntensClip)									// reject points that are too low
+			if (clipWave[i] < clipValueMin)
 				continue
 			endif
 		endif
@@ -4209,7 +4211,7 @@ Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
 	indexNote = ReplaceNumberByKey("Xval",indexNote,hiX,"=")
 	Note/K indexWave, indexNote
 
-	Make/N=(mx,3)/O/D myTripletWave				// interpolate all sheets at this measured X = hiX
+	Make/N=(mx,3)/O/D myTripletWave						// interpolate all sheets at this measured X = hiX
 	myTripletWave[][2] = 0
 	myTripletWave[][0] = HH[indexWave[p]]
 	myTripletWave[][1] = FF[indexWave[p]]
@@ -4234,23 +4236,23 @@ Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
 		interpOneDataSheetValue(exz,indexWave,exzHi) ; 		CopyWave(exxLo,exxHi)
 		interpOneDataSheetValue(eyz,indexWave,eyzHi) ;		CopyWave(exxLo,exxHi)
 
-		interpOneDataSheetValue(a_nm,indexWave,aHi) ;		CopyWave(aLo,aHi)
-		interpOneDataSheetValue(b_nm,indexWave,bHi) ;		CopyWave(bLo,bHi)
-		interpOneDataSheetValue(c_nm,indexWave,cHi) ;		CopyWave(cLo,cHi)
-		interpOneDataSheetValue(alpha,indexWave,alphaHi);	CopyWave(alphaLo,alphaHi)
+		interpOneDataSheetValue(a_nm,indexWave,aHi) ;			CopyWave(aLo,aHi)
+		interpOneDataSheetValue(b_nm,indexWave,bHi) ;			CopyWave(bLo,bHi)
+		interpOneDataSheetValue(c_nm,indexWave,cHi) ;			CopyWave(cLo,cHi)
+		interpOneDataSheetValue(alpha,indexWave,alphaHi) ;	CopyWave(alphaLo,alphaHi)
 		interpOneDataSheetValue(bet,indexWave,betaHi)	 ;		CopyWave(betaLo,betaHi)
-		interpOneDataSheetValue(gam,indexWave,gammaHi) ;	CopyWave(gammaLo,gammaHi)
+		interpOneDataSheetValue(gam,indexWave,gammaHi) ;		CopyWave(gammaLo,gammaHi)
 	endif
 
-	for (ix=0;ix<NX;ix+=1)								// for each of the X-planes in R3dX,R3dH,R3dF, ...
+	for (ix=0;ix<NX;ix+=1)									// for each of the X-planes in R3dX,R3dH,R3dF, ...
 		if (ProgressPanelUpdate(progressWin,ix/Nx*100	))	// update progress bar
-			break											//   and break out of loop
+			break													//   and break out of loop
 		endif
 		xval = xlo + ix*DimDelta(R3dX,0)				// x value for the ix plane
 		if (xval > hiX)										// need to increment data sheets (set hi=lo, and compte new hi)
-			ihiX += 1										// set new hiX
+			ihiX += 1											// set new hiX
 			hiX = Xvalues[ihiX]
-			for (i=0,mx=0;i<N;i+=1)					// find all of the raw data points with this X, and save location in indexWave[]
+			for (i=0,mx=0;i<N;i+=1)						// find all of the raw data points with this X, and save location in indexWave[]
 //				if (abs(hiX-XX[i])<threshold)
 				if (abs(hiX-XX[i])<threshold && numtype(RX[i])==0)
 					indexWave[mx] = i
@@ -4264,7 +4266,7 @@ Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
 			indexNote = ReplaceNumberByKey("mx",indexNote,mx,"=")
 			indexNote = ReplaceNumberByKey("Xval",indexNote,hiX,"=")
 			Note/K indexWave, indexNote
-			Make/N=(mx,3)/O/D myTripletWave		// interpolate all sheets at this measured X = hiX
+			Make/N=(mx,3)/O/D myTripletWave				// interpolate all sheets at this measured X = hiX
 			myTripletWave[][2] = 0
 			myTripletWave[][0] = HH[indexWave[p]]
 			myTripletWave[][1] = FF[indexWave[p]]
@@ -4298,7 +4300,7 @@ Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
 				interpOneDataSheetValue(bet,indexWave,betaHi)
 				interpOneDataSheetValue(gam,indexWave,gammaHi)
 			endif
-		endif												// have all of the lo and hi sheets
+		endif														// have all of the lo and hi sheets
 
 		// now actually interp the 3d arrays
 		interpBetweenTwoSheetsInto3d(RXlo,RXhi,xval,R3dX,ix)
@@ -4330,7 +4332,7 @@ Variable useIntensClip = WaveExists(clipWave) && numtype(clipValueMin)<2
 	Variable elapsed = stopMSTimer(timer)*1e-6
 	beep
 	printf "the whole interpolation process took %s\r",Secs2Time(elapsed,5,0)
-	if (elapsed>10*60)									// if execution took more than 10 min, automatically save
+	if (elapsed>10*60)										// if execution took more than 10 min, automatically save
 		print "This took more than 10min, so save the experiment"
 		SaveExperiment
 	endif
