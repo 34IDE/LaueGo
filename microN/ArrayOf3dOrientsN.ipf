@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.68	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.69	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -283,16 +283,19 @@ Static StrConstant uniPolarCtab = "SeaLandAndFire", biPolarCtab = "RedWhiteBlue"
 //
 // Nov 15, 2016,  version 2.67
 //	removed all explicit mention of old positioner names (except right here).
+//
+// Dec 3, 2016,  version 2.69
+//	removed all references to GND_DislocationDensity_Al, you must specify or calculate the GND_DislocationDensity, no defaults
 
 // modified read3dRecipLatticesFile() to deal with multiple reference matricies
 // and added SetMatrixFromString() to help with this task.
 //
 //	 e.g. Variable/G GND_DislocationDensity=2e10
 //
-Constant GND_DislocationDensity_Al = 77.92e10	// converts from (rad/µm) to (dislocations/cm^2)
-	// I was told (1°/µm) = 1.36e10 (dislocations/cm^2) which should be 1.36e10*180/π = 77.92e10 for (rad/µm)
-	// for Al with a=4.05Å, I would guess that GND_DislocationDensity_Al=1e4/4.05e-8 = 24.691e10,  so where does 77.92e10 come from?
-	// for more information, see comments in the Change_GND_DislocationDensity() routine.
+//Constant GND_DislocationDensity_Al = 77.92e10	// converts from (rad/µm) to (dislocations/cm^2)
+//	// I was told (1°/µm) = 1.36e10 (dislocations/cm^2) which should be 1.36e10*180/π = 77.92e10 for (rad/µm)
+//	// for Al with a=4.05Å, I would guess that GND_DislocationDensity_Al=1e4/4.05e-8 = 24.691e10,  so where does 77.92e10 come from?
+//	// for more information, see comments in the Change_GND_DislocationDensity() routine.
 
 Static Constant GRAY = 55000			// used to set color for points that did not index gray = {GRAY,GRAY,GRAY}}
 
@@ -451,7 +454,8 @@ Function/WAVE dislocationTensorFromRods3d(xx,hh,ff,exx,eyy,ezz,exy,exz,eyz,kappa
 	alpha[2][1] = kappa[1][2] - (deyy_dx - dexy_dy)
 
 	MatrixOP/FREE temp = sqrt(sum(magSqr(alpha)))	// magnitude of tensor
-	Variable GND_Density=GetGNDdensity()					// conversion factor from dislocation tensor to dislocation density
+//	Variable GND_Density=GetGNDdensity()					// conversion factor from dislocation tensor to dislocation density
+	Variable GND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)	// conversion factor from dislocation tensor to dislocation density
 	Variable GND = temp[0] * GND_Density
 
 	String wNote
@@ -508,7 +512,8 @@ ThreadSafe Static Function/WAVE curvatureTensorFromRods3d(xx,hh,ff,R3dX,R3dH,R3d
 	SetScale d 0,0,"radian / µm",kappa
 	MatrixOP/FREE temp = sqrt(sum(magSqr(kappa - (Identity(3)*Trace(kappa)))))	// magnitude of tensor
 
-	Variable GND_Density=GetGNDdensity()					// conversion factor from dislocation tensor to dislocation density
+//	Variable GND_Density=GetGNDdensity()					// conversion factor from dislocation tensor to dislocation density
+	Variable GND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)	// conversion factor from dislocation tensor to dislocation density
 	Variable GND = temp[0] * GND_Density					// the sum |kappa_ij - I*Tr(kappa)|, proportional to GND
 
 	String wnote=ReplaceNumberByKey("GND_Density","",GND_Density,"=")
@@ -921,37 +926,35 @@ End
 
 // for K (curvature tensor),  K [rad/µm] = 1e-11 * b[nm] * rho[1/cm^2]
 //	so GND_Density = 1e12/b[Å] = dislocations/cm^2 = 1e11/b[nm] = dislocations/cm^2 = 1e15/b[nm] = dislocations/m^2
-Function Change_GND_DislocationDensity(GND_Density)		// used to set the GND dislocation denstiy conversion factor
-	Variable GND_Density							// if value < 1e5 assume burgers vector was entered
+Function Change_GND_DislocationDensity(GND_Density)	// used to set the GND dislocation denstiy conversion factor
+	Variable GND_Density										// if value < 1e7 assume burgers vector (nm) was entered
 
-	Variable ask = GND_Density<1e5 || numtype(GND_Density)
-	GND_Density = numtype(GND_Density) || GND_Density<0 ? NumVarOrDefault("GND_DislocationDensity",NaN) : GND_Density	// if nothing passed, try existing value
-	if (numtype(GND_Density))
+	Variable currentGND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)
+	Variable ask = GND_Density<=0 || numtype(GND_Density)	// too small or invalid
+	GND_Density = ask ? NaN : GND_Density							// too small or invalid
+
+	if (numtype(GND_Density))									// calculate the probable GND density
 		ask = 1
 		// see:		http://en.wikipedia.org/wiki/Burgers_vector
 		// or:		http://mpdc.mae.cornell.edu/Courses/MAE212/Lecture12.pdf    pg. 17
 		STRUCT crystalStructure xtal
-		if (!FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
-			Make/N=(3,3)/FREE/D DL
-			DL[0][0] = {xtal.a0, xtal.a1, xtal.a2}	// direct lattice { a[], b[], c[] }
-			DL[0][1] = {xtal.b0, xtal.b1, xtal.b2}
-			DL[0][2] = {xtal.c0, xtal.c1, xtal.c2}
-			Make/N=3/D/FREE v3=NaN				// coefficients of the Burgers vector
-			if (xtal.SpaceGroup>=195)				// cubic
+		if (!FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
+			Wave DL = directFrom_xtal(xtal)					// direct lattice { a[], b[], c[] }
+			Make/N=3/D/FREE v3=NaN								// coefficients of the Burgers vector
+			if (xtal.SpaceGroup>=195)							// cubic
 				String sym=getSymString(xtal.SpaceGroup)
-				if (strsearch(sym,"F",0)==0)		// FCC
-					v3 = {1,1,0}					// (<110> lattice vector)/2
-				elseif (strsearch(sym,"I",0)==0)	// BCC
-					v3 = {1,1,1}					// (<111> lattice vector)/2
+				if (strsearch(sym,"F",0)==0)					// FCC
+					v3 = {1,1,0}									// (<110> lattice vector)/2
+				elseif (strsearch(sym,"I",0)==0)			// BCC
+					v3 = {1,1,1}									// (<111> lattice vector)/2
 				endif
-			elseif(xtal.SpaceGroup<=194)			// assume HCP slip
-				v3 = {2/3, 2/3, 0}					// (<11(-2)0> lattice vector)/3
+			elseif(xtal.SpaceGroup<=194)						// assume HCP slip
+				v3 = {2/3, 2/3, 0}								// (<11(-2)0> lattice vector)/3
 			endif
 			MatrixOP/FREE b = DL x v3 / 2
 			GND_Density = 1e11/norm(b)
 		endif
 	endif
-	GND_Density = numtype(GND_Density) ? GND_DislocationDensity_Al : GND_Density	// give up, just use Al value, which I do not know where it comes from!
 
 	Variable burgers = (GND_Density>0 && GND_Density<20) ? 2 : 1		// input was probably a Burgers vector length
 	if (!(GND_Density>0) || ask)					// invalid input given
@@ -962,23 +965,26 @@ Function Change_GND_DislocationDensity(GND_Density)		// used to set the GND disl
 			return NaN
 		endif
 		GND_Density = (burgers==2) ? 1e11/GND_Density : GND_Density
-		if (!(GND_Density>0))
-			DoAlert 0,"Invalid input, setting GND_Density to the Aluminum value, 77.92e10"
-			GND_Density = GND_DislocationDensity_Al
-		endif
+	else
+		GND_Density *= (burgers==2) ? 1e11 : 1
 	endif
 
-	Variable/G GND_DislocationDensity=GND_Density
-	printf "setting the GND Dislocation Density converion factor to %g, (converts rad/µm -> dislocations/cm^2),   |Burgers| = %g nm\r",GND_Density,1e11/GND_Density
+	if (GND_Density>1e9 && numtype(GND_Density)==0)	// valid looking GND_Density
+		Variable/G GND_DislocationDensity=GND_Density
+		printf "setting the GND Dislocation Density converion factor to %g, (converts rad/µm -> dislocations/cm^2),   |Burgers| = %g nm\r",GND_Density,1e11/GND_Density
+	else
+		printf "WARNING -- the given GND density of %g looks invalid input, nothing changed, still using GND_Density = %g\r",GND_Density, NumVarOrDefault("GND_DislocationDensity",NaN)
+	endif
 	return GND_Density
 End
 
 
+// ***** DEPRECATED  DEPRECATED  DEPRECATED      DEPRECATED  DEPRECATED  DEPRECATED *****
+//		just use: Variable GND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)
+// 
 ThreadSafe Function GetGNDdensity()		// gets the best guess at the GND_Density
 	Variable GND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)	// conversion factor from dislocation tensor to dislocation density
-	if (numtype(GND_Density))
-		GND_Density = NumVarOrDefault("root:GND_DislocationDensity",GND_DislocationDensity_Al)
-	endif
+	GND_Density = (GND_Density>1e9 && numtype(GND_Density)==0) ? GND_Density : NaN 	// valid looking GND_Density
 	return GND_Density
 End
 
