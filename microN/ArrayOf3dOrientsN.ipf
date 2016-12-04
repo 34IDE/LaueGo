@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.69	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
+#pragma version=2.70	// removed all of the old stuff, for 1.6 added the tensor parts, 2.0 changed surfer->gizmo
 #pragma ModuleName=ArrayOf3dOrients
 //#include "DepthResolvedQuery",version>=1.16
 #include "DepthResolvedQueryN",version>=1.16
@@ -2517,6 +2517,12 @@ Function/S SlicePlaneIn3d(resolution,normalW,SliceNormal,SliceValue,rotation,eps
 	Variable aRotation=0									// flags, just a plain rotation
 	Variable i0,j0											// specifies a particular component
 	if (stringmatch(rotation,"GND"))
+		Variable GND_Density=NumVarOrDefault("GND_DislocationDensity",NaN)
+		if (numtype(GND_Density) || GND_Density<1e9)
+			String str = "ERROR -- SlicePlaneIn3d(), request for GNDs, but GND_DislocationDensity was not set, use:  Change_GND_DislocationDensity(NaN)"
+			print str
+			Abort str
+		endif
 		ctensor = 1											// need the curvature tensor
 		strain = 1											// needs alpha, so needs both kappa and epsilon
 		ddtensor = 1										// and needs the dislocation density tensor
