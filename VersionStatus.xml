@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, December 01, 2016" time="05:18:20 PM CST" isoTime="2016-12-01T17:18:20"></written>
+	<written date="Sunday, December 04, 2016" time="12:16:23 AM CST" isoTime="2016-12-04T00:16:23"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>c166620c5528d25bed9c3b0fb39ec53905a22e5d</gitHash>
+	<gitHash>ff26ac9de9c3957c2a3c9550f5094538550f195e</gitHash>
 	<fileCount>231</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -77,7 +77,7 @@
 	<file version="3" time="2015-08-31T09:26:29" md5="e2e271adc4ce38e80ccae9f89c3f94b1" sha256="ab38cc7b5ac79d5214577e69d0714c38e84fc05c8fef42db536c89d1f40153a9" ext=".ipf">microN/Indexing_InternalQZ_Gizmo.ipf</file>
 	<file version="nan" time="2016-02-17T12:51:25" md5="c5f825029efce5645d1358b7d079f410" sha256="fbb1714b403dc435f290c5f3454f54f33e055ccb12b3eb776236dcf4ecb9e1a2" ext=".xml">materials/standard xtals/H2O2.xml</file>
 	<file version="nan" time="2016-02-11T11:22:51" md5="b8cea4a21f2535f419bbe4e482163f99" sha256="880be039a6ccfb77d4af25f9aebd60adb49eda23acc1d50ffea662535c3c599e" ext=".xml">materials/standard xtals/SrLaGaO4.xml</file>
-	<file version="2.68" time="2016-12-01T13:02:34" md5="40cbe41f781f25123fbb3bb7abbfafde" sha256="1b99e3dc386600f600d0162c9bfc0f90cd692a3f69965517629e69b675859e8e" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
+	<file version="2.7" time="2016-12-03T23:49:35" md5="0f2e1ab0d42227da7c765d34dfa62443" sha256="c84117be2f8c331e4cca1c2581343833dc550a99ced070ad7f42d16ece85c4ef" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" sha256="79b9998e9e4a53be517fc9be4bf9e54586f9ac9a7fa98db0666c5eba47caa333" ext="">micro/Euler_Debug_ppc</file>
 	<file version="nan" time="2016-02-17T12:50:21" md5="6322fea572f91f50836f6c7434f46cee" sha256="3da51fb01e96429d9cb29ba7fb2d1c95a9411d43ccf55d20b36885f3ebcbe70a" ext=".xml">materials/standard xtals/Ag.xml</file>
 	<file version="nan" time="2016-02-17T12:51:09" md5="183c8e8c0e097872e115ac8a6c72e972" sha256="20aa8c7cbf1699df6f0724d56dec5e458cb2f8301e90d773c2de7c0a3ab8dd61" ext=".xml">materials/standard xtals/CdTe.xml</file>
