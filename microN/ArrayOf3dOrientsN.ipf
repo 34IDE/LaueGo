@@ -453,17 +453,15 @@ Function/WAVE dislocationTensorFromRods3d(xx,hh,ff,exx,eyy,ezz,exy,exz,eyz,kappa
 	alpha[2][0] = kappa[0][2] - (deyx_dx - dexx_dy)
 	alpha[2][1] = kappa[1][2] - (deyy_dx - dexy_dy)
 
-	MatrixOP/FREE temp = sqrt(sum(magSqr(alpha)))	// magnitude of tensor
-//	Variable GND_Density=GetGNDdensity()					// conversion factor from dislocation tensor to dislocation density
 	Variable GND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)	// conversion factor from dislocation tensor to dislocation density
+	MatrixOP/FREE temp = sqrt(sum(magSqr(alpha)))					// magnitude of tensor
 	Variable GND = temp[0] * GND_Density
-
-	String wNote
-	wNote=ReplaceNumberByKey("GND_Density","",GND_Density,"=")
-	wNote = ReplaceNumberByKey("GND",wNote,GND,"=")
-	Note/K alpha, wNote
+	if (numtype(GND_Density+GND)==0 && GND_Density>1e5 && GND>=0)
+		String wNote=ReplaceNumberByKey("GND_Density","",GND_Density,"=")
+		wNote = ReplaceNumberByKey("GND",wNote,GND,"=")
+		Note/K alpha, wNote
+	endif
 	return alpha
-//	return GND			// return the GND
 End
 
 
@@ -482,10 +480,10 @@ ThreadSafe Static Function/WAVE curvatureTensorFromRods3d(xx,hh,ff,R3dX,R3dH,R3d
 	// so get the gradients, and then fill kappa
 
 	Variable dX=DimDelta(R3dX,0), dY=DimDelta(R3dX,1), dZ=DimDelta(R3dX,2)
-	if (xx+dX == DimOffset(R3dX,0) + (DimSize(R3dX,0)-1)*DimDelta(R3dX,0))// if xx at high edge, reduce tiny bit
-		dX -= DimDelta(R3dX,0)*1e-9												// This section needed so Interp3d does not clip off the last plane
+	if (xx+dX == DimOffset(R3dX,0) + (DimSize(R3dX,0)-1)*DimDelta(R3dX,0))	// if xx at high edge, reduce tiny bit
+		dX -= DimDelta(R3dX,0)*1e-9															// This section needed so Interp3d does not clip off the last plane
 	endif
-	if (hh+dY == DimOffset(R3dX,1) + (DimSize(R3dX,1)-1)*DimDelta(R3dX,1))// and ditto for dimensions 1 and 2
+	if (hh+dY == DimOffset(R3dX,1) + (DimSize(R3dX,1)-1)*DimDelta(R3dX,1))	// and ditto for dimensions 1 and 2
 		dY -= DimDelta(R3dX,1)*1e-9
 	endif
 	if (ff+dZ == DimOffset(R3dX,2) + (DimSize(R3dX,2)-1)*DimDelta(R3dX,2))
@@ -506,19 +504,19 @@ ThreadSafe Static Function/WAVE curvatureTensorFromRods3d(xx,hh,ff,R3dX,R3dH,R3d
 	kappa[1][2] = (Interp3d(R3dF, xx,hh+dY,ff) - Rz)/dY
 	kappa[2][2] = (Interp3d(R3dF, xx,hh,ff+dZ) - Rz)/dZ
 
-	Variable Rmag = sqrt(Rx^2+Ry^2+Rz^2)				// magnitude of Rodriques vector
-	Variable Rod2radian = 2*atan(Rmag)/Rmag				// converts Rodriques length to angle (radian)
-	kappa *= Rod2radian									// convert to radian/µm
+	Variable Rmag = sqrt(Rx^2+Ry^2+Rz^2)						// magnitude of Rodriques vector
+	Variable Rod2radian = 2*atan(Rmag)/Rmag					// converts Rodriques length to angle (radian)
+	kappa *= Rod2radian												// convert to radian/µm
 	SetScale d 0,0,"radian / µm",kappa
-	MatrixOP/FREE temp = sqrt(sum(magSqr(kappa - (Identity(3)*Trace(kappa)))))	// magnitude of tensor
 
-//	Variable GND_Density=GetGNDdensity()					// conversion factor from dislocation tensor to dislocation density
 	Variable GND_Density = NumVarOrDefault("GND_DislocationDensity",NaN)	// conversion factor from dislocation tensor to dislocation density
-	Variable GND = temp[0] * GND_Density					// the sum |kappa_ij - I*Tr(kappa)|, proportional to GND
-
-	String wnote=ReplaceNumberByKey("GND_Density","",GND_Density,"=")
-	wnote=ReplaceNumberByKey("GND",wnote,GND,"=")	// return the sum |kappa_ij - I*Tr(kappa)|, proportional to GND
-	Note/K kappa, wnote
+	MatrixOP/FREE temp = sqrt(sum(magSqr(kappa - (Identity(3)*Trace(kappa)))))	// magnitude of tensor
+	Variable GND = temp[0] * GND_Density						// the sum |kappa_ij - I*Tr(kappa)|, proportional to GND
+	if (numtype(GND_Density+GND)==0 && GND_Density>1e5 && GND>=0)
+		String wnote=ReplaceNumberByKey("GND_Density","",GND_Density,"=")
+		wnote=ReplaceNumberByKey("GND",wnote,GND,"=")		// return the sum |kappa_ij - I*Tr(kappa)|, proportional to GND
+		Note/K kappa, wnote
+	endif
 	return kappa
 End
 //
