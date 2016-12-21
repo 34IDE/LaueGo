@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Sunday, December 04, 2016" time="12:16:23 AM CST" isoTime="2016-12-04T00:16:23"></written>
+	<written date="Wednesday, December 21, 2016" time="01:51:55 PM CST" isoTime="2016-12-21T13:51:55"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>ff26ac9de9c3957c2a3c9550f5094538550f195e</gitHash>
+	<gitHash>de08dd7c87054f5eb630aafb1f890d489f3b55d5</gitHash>
 	<fileCount>231</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="860dba713f291fdb3119651ce0a675ee" sha256="f9e43903aae34893dbeff2e1c5f1d5a95973b8b235a6d0a14fff4bd8e1a79053" ext="">micro/indexAll_ppc</file>
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" sha256="59a4b79a1667e89196e69ee368ca60bcd2f8160f79a2319e883678d124f78f60" ext=".ipf">micro/monoCalibrate.ipf</file>
-	<file version="1.63" time="2016-09-26T10:10:34" md5="2ad1aa9992618a0e3a8110ecfa49f17f" sha256="a8ca96a0a68df0e3b900008f92dc5a238a470c19dc9c2b3d35fb6a96c73c4c46" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
+	<file version="1.64" time="2016-12-21T13:50:09" md5="690e069a584654bbf5de7825adfe2668" sha256="e1a38e51396d5278f2a8176ed9b4c799ca23668d00d6c2e9012bf140688a4d0f" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
 	<file version="nan" time="2016-02-19T14:01:32" md5="6d2b6b0f362cb5763df99155c64406fe" sha256="015776fc7639c2ef9f23fee482575e5f54702287fdb23b1cb5140bb3cc2e7596" ext=".xml">materials/standard xtals/Forsterite_Pnma.xml</file>
 	<file version="nan" time="2016-02-17T12:54:16" md5="60a36ceedd3ac2eb34fbd5667b2c02d8" sha256="c635705a96777b8233f43b82af34d5e7a5511163ae3a00ded5f7d7d6947651bf" ext=".xml">materials/standard xtals/Rene-41.xml</file>
 	<file version="1.98" time="2016-12-01T16:17:44" md5="ec70194277370366f6bfd8b589cc6220" sha256="e41ef3e1490bbafe48f088c6b028e15d543187e968dfed785570f9976dcee3e2" ext=".ipf">microN/xmlMultiIndex.ipf</file>
