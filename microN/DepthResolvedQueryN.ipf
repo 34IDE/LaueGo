@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.63
+#pragma version = 1.64
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -383,33 +383,40 @@ Function/T MakeMovieWindow()
 	return WinName(0,1,1)
 End
 //
-Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,[makeSum,movieName,flatten,skipZeros,moreFunc,NoMovie])
+Function FillMovieOfOneScan(pathName,fileFmt,range,surface,absorpLength,type,[flyIndex,makeSum,movieName,flatten,skipZeros,moreFunc,NoMovie,printIt])
 	String pathName					// name of path to use
-	String filePrefix					// first part of file name, e.g. "WH_4174_"
-	String range						// range of files to use
+	String fileFmt						// fmt for file name, e.g. "WH_%d.h5"
+	String range						// range of files or images to use
 	Variable surface					// depth of surface relative to depthSi(µm), used to calculate boost
 	Variable absorpLength			// absorption length (µm)
 	String type							// type of movie, images of a wire scan, sequenial images, first image of each wire scan
+	Variable flyIndex					// used with itype==2, movie of flyIndex_th image in each flyscan
 	Variable makeSum
 	String movieName					// name to use for movie (optional)
 	Variable flatten					// flag, TRUE make flat movie for Windows
 	Variable skipZeros				// flat, TRUE means skip empty images, default is TRUE
 	String moreFunc					// name of FillMovieMore function
 	Variable NoMovie					// suppress actual creation of Movie
+	Variable printIt
+	flyIndex = ParamIsDefault(flyIndex) || flyIndex<0 || numtype(flyIndex) ? 0 : round(flyIndex)
 	makeSum = ParamIsDefault(makeSum) ? 0 : (numtype(makeSum)==0 && makeSum != 0)
 	movieName = SelectString(ParamIsDefault(movieName),movieName,"")
 	flatten = ParamIsDefault(flatten) ? 0 : (numtype(flatten)==0 && flatten != 0)
 	skipZeros = ParamIsDefault(skipZeros) ? 1 : (numtype(skipZeros)==0 && skipZeros != 0)
 	moreFunc = SelectString(ParamIsDefault(moreFunc),moreFunc,"")
 	NoMovie = ParamIsDefault(NoMovie) ? 0 : (numtype(NoMovie)==0 && NoMovie)
-	String typeList="single wire scan;sequential images;first image of each wirescan;first white image of each flyScan;all of one flyScan"
-	Variable useLog=0
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	String gName = FindMovieGraph()						// name of suitable graph with imageOnMovie
-	DoWindow/F $gName											// and bring it to the front
+	String typeList="sequential images;first image of each wire step-scan;single white image of each flyScan;range of one flyScan"
+	Variable useLog=0
+	pathName = SelectString(strlen(pathName),"imagePath",pathName)	// use "imagePath" as the default path name, if none passed
+
+	String fileName=""
+	String gName = depthResolve#FindMovieGraph()			// name of suitable graph with imageOnMovie
+	DoWindow/F $gName													// and bring it to the front
 
 	Variable itype = WhichListItem(type, typeList)
-	if (itype<0)												// no type passed, or invalid
+	if (itype<0)														// no type passed, or invalid
 		Prompt type, "type of movie to make", popup, typeList
 		Prompt makeSum,"Also make a sum image",popup,"No Sum;Make Sum Too"
 		Prompt flatten,"Flatten movie for windows",popup,"Regular;Flatten for Windows"
@@ -428,66 +435,89 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		skipZeros = skipZeros==2
 		NoMovie = NoMovie == 2
 		moreFunc = SelectString(StringMatch(moreFunc,"-none-"),moreFunc,"")
+		printIt = 1
 	endif
 	itype = WhichListItem(type, typeList)
 
-	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
-	GetFileFolderInfo/P=$pathName/Q/Z filePrefix			// this may be a single flyscan file, itype==4
-	if (!V_isFile)
-		GetFileFolderInfo/P=$pathName/Q/Z filePrefix+num2istr(str2num(range))+imageExtension
+	Variable ifmt = CountFormaters(fileFmt)					// number of "%d" in fileFmt
+	if (ifmt>1)
+		if (printIt)
+			print "ERROR -- FillMovieOfOneScan(), file format can have at most ONE \"%d\""
+		endif
+		return 1															// cannot have multiple "%d" in fileFmt
 	endif
-	if (!V_isFile)
-		GetFileFolderInfo/P=$pathName/Q filePrefix+num2istr(str2num(range))+imageExtension
+	GetFileFolderInfo/P=$pathName/Q/Z fileFmt				// itype==3, range of one flyScan (fileFmt must be an actual file name)
+	if (!V_isFile && ifmt==1)
+		sprintf fileName, fileFmt, str2num(range)			// check for the first file in range
+		GetFileFolderInfo/P=$pathName/Q/Z fileName
 	endif
-	if (!V_isFile)
-		return 1
+	if (!V_isFile)														// the passed fileFmt & range do not point to a file, time to ask the user
+		GetFileFolderInfo/P=$pathName/Q Hash("a",1)		// this puts up a dialog, asks user to find the file. the Hash forces a dialog
+		if (!V_isFile)
+			return 1														// user canceled out
+		endif
+		printIt = 1
 	endif
-	pathName = SelectString(strlen(pathName),"reconPath",pathName)	// use reconPath as the default path name, if none passed
-	String fname=S_Path
-	String path = ParseFilePath(1,S_Path,":",1,0)
-	NewPath/O/Q $pathName, ParseFilePath(1,S_Path,":",1,0)
-	filePrefix = ParseFilePath(3,S_Path,":",1,0)			// remove fle extension
-	Variable i
-	for (i=strlen(filePrefix)-1; i>0 && isdigit(filePrefix[i,i]) ; i-=1)// remove trailing digits
-	endfor
-	filePrefix = filePrefix[0,i]
-	String fileRoot = path+filePrefix
+	String fname=S_Path												// full path to file from the last GetFileFolderInfo
 
-	String header=ReadGenericHeader(fname)
-	Variable epoch=DateTime, Nslices=NumberByKey("Nslices",header,"=")
+	if (strlen(fileFmt)<1)											// file format was not passed, get from user
+		fileFmt = ParseFilePath(0,fname,":",1,0)			// get the name part (with extension)
+		Prompt fileFmt,"file format string, e.g. \"WW_%d.h5\""
+		DoPrompt "Set File Format", fileFmt
+		if (V_flag)
+			return 1
+		endif
+		ifmt = CountFormaters(fileFmt)							// number of "%d" in fileFmt
+		printIt = 1
+	endif
+
+	String path = ParseFilePath(1,S_Path,":",1,0)					// get the path part
+	NewPath/O/Q $pathName, ParseFilePath(1,S_Path,":",1,0)		//   and use path to reset pathName to S_Path
+	String fullFileFmt = path+fileFmt
+
+	String str, header=ReadGenericHeader(fname)
+	Variable epoch=DateTime, totalTime=0, Nslices=NumberByKey("Nslices",header,"=")
 	Nslices = Nslices>=2 ? Nslices : 0
-	if (strlen(range)<1)											// find the range here
-		if (itype==4)													// one whole flyscan, itype==4
-			if (Nslices<2)
-				print "asked for a movie of a fly scan, but only one image!"
-				return 1
+	if (strlen(range)<1)											// range not given, find it
+		if (itype==0)													// itype==0, "sequential images"
+			range = get_FilesIndexRanges(pathName,fileFmt)
+		elseif (itype==1)												// itype==1, "FIRST image of each wire step-scan"
+			range = get_FirstWhiteFilesIndexRange(pathName,fileFmt)
+		elseif (itype==2)												// itype==2, indexth image of a range of FLY SCANS
+			range = get_FilesIndexRanges(pathName,fileFmt)
+			flyIndex = limit(flyIndex, 0,Nslices-1)			// restrict flyIndex to the images in fly scan file
+			if (ParamIsDefault(flyIndex))
+				sprintf str, "index in each fly scan to use [0, %d]",(Nslices-1)
+				Prompt flyIndex,str
+				DoPrompt "Which image in Fly Scans?",flyIndex
+				flyIndex = round(flyIndex)
+				if (V_flag || numtype(flyIndex) || flyIndex<0 || flyIndex>=Nslices)
+					return 1
+				endif
+				printIt = 1
 			endif
-			range = "0-"+num2istr(Nslices-1)
-			Prompt range,"range in fly scan"
-			DoPrompt "Range of Fly Scan",range
-			if (V_flag)
-				return 1
-			endif
-			if (lastInRange(range)>=Nslices || str2num(range)<0)
-				DoAlert 0, "You CANNOT ask for more images than there are in fly scan"
-				return 1
-			endif
-		elseif (itype <=1 && itype>=0 || itype==3)			// for itype == 0 or 1 or 3
-			range = get_FilesIndexRange(pathName,filePrefix)
-		elseif (itype ==2 )											// first image of each wirescan, itype==2
-			range = get_FirstWhiteFilesIndexRange(pathName,filePrefix)
+		elseif (itype==3)												// itype==3, "range of one flyScan"
+			range = "0-"+num2istr(Nslices-1)					// default is all of the images
 		else
-			DoAlert 0, "in FillMovieOfOneScan() itype = "+num2str(itype)
-			print "ERROR -- in FillMovieOfOneScan() itype = "+num2str(itype)
+			if (printIt)
+				printf str, "ERROR -- in FillMovieOfOneScan() itype %g,  is must be in [0,4]", itype
+			endif
 			return 1
 		endif
 	endif
-	Variable totalTime = DateTime-epoch						// time to figure out which scan numbers to use
-	Variable Nimages = ItemsInRange(range)					// number of images to put in movie
-	if (Nimages<1)
-		return 1
+	totalTime = DateTime-epoch									// time to figure out which scan numbers to use
+
+	if (strlen(range)<58 && printIt)							// do not try to ask user when range is really long
+		Prompt range, "range of " + SelectString(itype==3, "image files", "images in the fly scan")
+		DoPrompt "range", range
+		printIt = 1
+		if (V_flag)
+			return 1
+		endif
 	endif
-	if ((numtype(surface)==2 || !(absorpLength>0)) && itype==0)
+	Variable Nimages = ItemsInRange(range)					// number of images to put in movie
+
+	if ((numtype(surface)==2 || !(absorpLength>0)) && itype==0 && printIt)	// only itype==0 can have a depth
 		absorpLength = !(absorpLength>0) ? 15 : absorpLength
 		Prompt surface, "depth of surface relative to depthSi(µm), (use NaN to ignore)"
 		Prompt absorpLength, "absorption length in material (µm), (use NaN to ignore)"
@@ -510,34 +540,68 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		FUNCREF MoreInFillMovieCleanUpProto funcCleanUp=MoreInFillMovieCleanUpProto
 	endif
 
-	String ff = SelectString(itype==4,filePrefix,ParseFilePath(0,fname,":",1,0))
-	printf "FillMovieOfOneScan(\"%s\",\"%s\",\"%s\",%g,%g,\"%s\"",pathName,ff,range[0,100],surface,absorpLength,type
-	if (!ParamIsDefault(makeSum) || makeSum)
-		printf ", makeSum=%g",makeSum
+	if (printIt)
+		String ff = SelectString(itype==3,fileFmt,ParseFilePath(0,fname,":",1,0))
+		printf "FillMovieOfOneScan(\"%s\",\"%s\",\"%s\",%g,%g,\"%s\"",pathName,ff,range[0,100],surface,absorpLength,type
+		if (itype==2)
+			printf ", flyIndex=%g",flyIndex
+		endif
+		if (!ParamIsDefault(makeSum) || makeSum)
+			printf ", makeSum=%g",makeSum
+		endif
+		if (!ParamIsDefault(movieName) && strlen(movieName))
+			printf ", movieName=\"%s\"",movieName
+		endif
+		if (!ParamIsDefault(flatten) || flatten)
+			printf ", flatten=%g",flatten
+		endif
+		if (!ParamIsDefault(skipZeros) || !skipZeros)
+			printf ", skipZeros=%g",skipZeros
+		endif
+		if (strlen(moreFunc))
+			printf ", moreFunc=\"%s\"",moreFunc
+		endif
+		if (NoMovie)
+			printf ", NoMovie=1"
+		endif
+		printf ")\r"
+		printf "running in data folder  '%s',    %g images in range\r",GetDataFolder(1),Nimages
 	endif
-	if (!ParamIsDefault(movieName) && strlen(movieName))
-		printf ", movieName=\"%s\"",movieName
+
+	if ((itype==3 && ifmt>0) || (itype<=2 && ifmt!=1))	// for itype=3, ifmt must be 0.  For {0,1,2}, ifmt must be 1
+		printf "ERROR -- FillMovieOfOneScan(),  type=\"%s\", but number of formats in file name is %d\r",StringFromList(itype,typeList),ifmt
+		return 1
 	endif
-	if (!ParamIsDefault(flatten) || flatten)
-		printf ", flatten=%g",flatten
+
+	if (Nimages<1)
+		if (printIt)
+			printf "ERROR -- FillMovieOfOneScan(), the range \"%s\"  is empty.",range
+		endif
+		return 1
+	elseif (itype==3)
+		if (Nslices<2)
+			if (printIt)
+				print "ERROR -- FillMovieOfOneScan(), asked for a movie of a fly scan, but file only has one image!"
+			endif
+			return 1
+		elseif (str2num(range)<0 || lastInRange(range)>=Nslices)
+			if (printIt)
+				print "ERROR -- FillMovieOfOneScan(), You CANNOT ask for more images than there are in fly scan"
+			endif
+			return 1
+		endif
 	endif
-	if (!ParamIsDefault(skipZeros) || !skipZeros)
-		printf ", skipZeros=%g",skipZeros
-	endif
-	if (strlen(moreFunc))
-		printf ", moreFunc=\"%s\"",moreFunc
-	endif
-	if (NoMovie)
-		printf ", NoMovie=1"
-	endif
-	printf ")\r"
-	printf "running in data folder  '%s',    %g images in range\r",GetDataFolder(1),Nimages
+
 	String inputs=""
 	inputs = ReplaceStringByKey("pathName",inputs,pathName,"=")
-	inputs = ReplaceStringByKey("filePrefix",inputs,filePrefix,"=")
+	inputs = ReplaceStringByKey("fileFmt",inputs,fileFmt,"=")
 	inputs = ReplaceStringByKey("range",inputs,range,"=")
-	inputs = ReplaceStringByKey("fileRoot",inputs,fileRoot,"=")
+	inputs = ReplaceStringByKey("fullFileFmt",inputs,fullFileFmt,"=")
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	inputs = ReplaceStringByKey("imageExtension",inputs,imageExtension,"=")
+	if (itype==2)
+		inputs = ReplaceNumberByKey("flyIndex",inputs,flyIndex,"=")
+	endif
 	inputs = ReplaceNumberByKey("surface",inputs,surface,"=")
 	inputs = ReplaceNumberByKey("absorpLength",inputs,absorpLength,"=")
 	inputs = ReplaceNumberByKey("itype",inputs,itype,"=")
@@ -546,7 +610,7 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 	inputs = ReplaceNumberByKey("skipZeros",inputs,skipZeros,"=")
 	
 	epoch = DateTime
-	Variable boost														// boost factor from absorption
+	Variable boost=1													// boost factor from absorption
 	Variable depthSi,integral
 	Variable X1,H1,keV, X10,H10,keV0
 	Wave imageOnMovie=imageOnMovie
@@ -560,22 +624,17 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		j0 = j0>0 ? j0 : 0
 		i1 = i0 + DimSize(imageOnMovie,0) - 1
 		j1 = j0 + DimSize(imageOnMovie,1) - 1
-		printf "using a sub-region of the images [%d, %d] [%d, %d]\r",i0,i1,j0,j1
+		if (printIt)
+			printf "using a sub-region of the images [%d, %d] [%d, %d]\r",i0,i1,j0,j1
+		endif
 	endif
 	inputs = ReplaceNumberByKey("i0",inputs,i0,"=")
 	inputs = ReplaceNumberByKey("j0",inputs,j0,"=")
 	inputs = ReplaceNumberByKey("i1",inputs,i1,"=")
 	inputs = ReplaceNumberByKey("j1",inputs,j1,"=")
-
-	Make/N=(Nimages)/O MovieIntegral=NaN						// holds the integral for each frame of the movie
-	Variable ii
-
-	String str,textStr, imageName
-	//	sprintf fname, "%s%d%s",fileRoot,str2num(range),imageExtension
-	// Variable Nslices = NumberByKey("Nslices",ReadGenericHeader(fname),"=")
-	//	Nslices = Nslices>=2 ? Nslices : 0
 	inputs = ReplaceNumberByKey("Nslices",inputs,Nslices,"=")
 	totalTime += DateTime-epoch
+
 	String moreFuncInitStr = funcInit(inputs)
 	if (StringMatch(moreFuncInitStr,"**Quit**"))
 		return 1
@@ -589,18 +648,18 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		Execute cmd														// start the movie
 	endif
 
+	Make/N=(Nimages)/O MovieIntegral=NaN						// holds the integral for each frame of the movie
+	String textStr, imageName
+	Variable i, ii
 	for (i=str2num(range),ii=0; !numtype(i); i=NextInRange(range,i),ii+=1)
-		if (itype==4)
-			imageName = ReadGenericROI(fname,i0,i1,j0,j1,extras="slice:"+num2istr(i))	// load one image from the file
-		elseif (itype==3)
-			sprintf fname, "%s%d%s",fileRoot,i,imageExtension
-			imageName = ReadGenericROI(fname,i0,i1,j0,j1,extras="slice:0")	// only load the first image in file
-		elseif (Nslices==0)
-			sprintf fname, "%s%d%s",fileRoot,i,imageExtension
-			imageName = ReadGenericROI(fname,i0,i1,j0,j1)	// returns full path name to loaded image wave
-		else																// get all images from one multi image file
-			sprintf fname, "%s%d%s",fileRoot,str2num(range),imageExtension
-			imageName = ReadGenericROI(fname,i0,i1,j0,j1,extras=ReplaceNumberByKey("slice","",i))	// returns full path name to loaded image wave
+		if (itype==3)
+			imageName = ReadGenericROI(fname,i0,i1,j0,j1,extras="slice:"+num2istr(i))				// load images from a single flyscan file
+		elseif (itype==2)
+			sprintf fname, fullFileFmt,i
+			imageName = ReadGenericROI(fname,i0,i1,j0,j1,extras="slice:"+num2istr(flyIndex))	// load flyIndex frame from ith flyscan file
+		else																// itype 0 or 1, a simple range of files
+			sprintf fname, fullFileFmt,i
+			imageName = ReadGenericROI(fname,i0,i1,j0,j1)	// load a simple image
 		endif
 		if (exists(imageName)!=1)
 			continue
@@ -625,18 +684,23 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		H1 = NumberByKey("H1", wnote,"=")
 		keV = NumberByKey("keV", wnote,"=")
 		if (ii==0)														// save first values for comparison
-			X10=X1 ;  H10=H1 ;  keV0=KeV
+			X10 = numtype(X1) ? NaN : X1
+			H10 = numtype(H1) ? NaN : H1
+			keV0 = numtype(keV) || keV<=0 ? NaN : H1
 		endif
 		integral = sum(image)
 		if (integral==0 && skipZeros)							// image is empty, skip it
-			printf "skipping '%s',  slice = %g,   it is empty\r",imageName,i
+			if (printIt)
+				printf "skipping '%s',  slice = %g,   it is empty\r",imageName,i
+			endif
 			KillWaves/Z image
 			continue
 		endif
 		MovieIntegral[ii] = integral
-		boost = exp(max(depthSi-surface,0)/absorpLength)
-		boost = numtype(boost) ? 1 : boost
-		boost = itype==0 ? boost : 1
+		if (itype==0)													// only itype==0 can have a depth
+			boost = exp(max(depthSi-surface,0)/absorpLength)
+			boost = numtype(boost) || boost<=0 ? 1 : boost
+		endif
 		imageOnMovie = image
 		if (makeSum)
 			imageOnMovieSum += imageOnMovie
@@ -646,29 +710,38 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		wnote = ReplaceNumberByKey("movieFileIndex",wnote,i,"=")	// index from range
 		wnote = ReplaceNumberByKey("movieLength",wnote,Nimages,"=")
 		Note/K imageOnMovie, wnote
-
 		KillWaves/Z image												// done with image
 
 		textStr = ""
 		if (numtype(depthSi)==0)
 			sprintf textStr, "%+.1f µm"+SelectString(useLog,"","\rLog")+"\r",depthSi
 		endif
-		if (numtype(X1+H1+keV)==0 && (itype>0 || ii==0))
-			sprintf str, "X1 = %.2f\rH1 = %.2f\rkeV = %.4f\r",X1,H1,keV
-			textStr += str
+		if (ii==0 || abs(X10-X1)>0.01 || abs(H10-H1)>0.01 || abs(keV0-keV)>0.0001)
+			if (numtype(X1+H1)==0)
+				sprintf str, "X1 = %.2f\rH1 = %.2f\r",X1,H1
+				textStr += str
+			endif
+			if (numtype(keV)==0)
+				sprintf str, "keV = %.4f\r", keV
+				textStr += str
+			endif
 			str = ""
 		endif
 		if (integral==0)
 			sprintf str, "\\Zr070(%d), º=0",i
-		elseif (boost>1)
+		elseif (boost>0)
 			sprintf str, "\\Zr070(%d), º=%.2fE6\rboost=%.1f",i,integral/1e6,boost
 		else
 			sprintf str, "\\Zr070(%d), º=%.2fE6",i,integral/1e6
 		endif
 		textStr += str
 		TextBox/C/N=textParameters textStr
-	 	str = StringByKey("imageFileName", wnote,"=")
-		textStr = SelectString(strlen(str),"",str)
+		textStr = StringByKey("imageFileName", wnote,"=")
+		if (strlen(textStr) && itype==3)
+			textStr += "\rslice: "+num2istr(i)
+		elseif (strlen(textStr) && itype==2)
+			textStr += "\rslice: "+num2istr(flyIndex)
+		endif
 	 	str = StringByKey("imageFilePath", wnote,"=")
 		if (strlen(str))
 			textStr += SelectString(strlen(textStr),"","\r") + "\\Zr070" + str
@@ -689,9 +762,22 @@ Function FillMovieOfOneScan(pathName,filePrefix,range,surface,absorpLength,type,
 		CloseMovie
 	endif
 	totalTime += DateTime-epoch
-	print "done, total execution time is  ",Secs2Time(totalTime,5,0)
+	if (printIt)
+		print "done, total execution time is  ",Secs2Time(totalTime,5,0)
+	endif
 	return 0
 End
+//
+Static Function CountFormaters(fmt)	// counts the number of times "%d" occurs in fmt
+	String fmt									//	 = "abc%dxyz_%d.h5",   note that "*" is allowed
+
+	Variable i0, nReq							// number of ranges requested, allowed values are 1 or 2
+	for (i0=0,nReq=-1; i0>=0; i0=strsearch(fmt,"%d",i0+1))
+		nReq += 1
+	endfor
+	return nReq
+End
+
 
 Function MoreInFillMovieProto(image,initStr)
 	Wave image
@@ -1099,76 +1185,71 @@ End
 // get the range of file index numbers by looking at all of the files in a directory
 
 
-///
-// get range of file numbers that are the first image of each wire scan
-// the range of file index numbers by looking at all of the files in a directory
-Static Function/T get_FirstWhiteFilesIndexRange(pathName,namePart)
+// This is NOT for fly scans, this is ONLY when the original wire scan used separate images
+// Search through all the files in path that match with nameFmt, and return a list of file
+// numbers that correspond to the first image from each wire scan.
+// This routine needs to get header info from lots of image files.
+Static Function/T get_FirstWhiteFilesIndexRange(pathName,nameFmt,[printIt])
 	String pathName					// probably 'imagePath'
-	String namePart					// name part of file = "WH_4174__"
+	String nameFmt						// name format of file = "WH_4174_%d_.h5"
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printit
 
-	String list = directory(pathName)
-	Variable i,m,N = ItemsInList(list)
+	String dlist = depthResolve#directory(pathName)
+	Variable N=ItemsInList(dlist)
 	if (N<1)
 		return ""
+	elseif (CountFormaters(nameFmt) != 1)
+		return ""
 	endif
-	Make/N=(N)/O/T fileList_get_FilesIndexRange
-	Wave/T fileList = fileList_get_FilesIndexRange
-	String name
-	for (i=0,m=0;i<N;i+=1)
-		name = StringFromList(i,list)
-		if (strsearch(name,namePart,0)==0)
-			fileList[m] = name						// file starts with namePart, save it in list
-			m += 1									// increment pointer into fileList[]
+
+	Make/N=(N)/D/FREE nums=NaN
+	Variable i, k, m
+	for (i=0,m=0; i<N; i+=1)
+		sscanf StringFromList(i,dlist), nameFmt, k
+		if (V_flag==1 && numtype(k)==0 && k>=0)
+			nums[m] = k
+			m += 1
 		endif
 	endfor
 	N = m
-	Redimension/N=(N) fileList						// set to correct length
-	Make/N=(N)/I/O nw_get_FilesIndexRange
-	Wave nw=nw_get_FilesIndexRange
-	Variable k = strlen(namePart)
-	for (m=0;m<N;m+=1)							// get wave with the file numbers
-		name = fileList[m]
-		name = name[k,100]
-		nw[m] = str2num(name)
-		i = strsearch(name,"_",0)
-	endfor
-	Sort nw,nw										// Sort the file numbers
-	for (m=N-1;m>0;m-=1)						// remove duplicate numbers
-		if (nw[m]==nw[m-1] && nw[m]<2.1e9)	// a duplicate, so delete it
-			DeletePoints m,1,nw
-		endif
-	endfor
-	N = numpnts(nw)
+	if (N<1)
+		return ""
+	endif
+	Redimension/N=(N) nums						// all file nums that match nameFmt 
+	Sort nums, nums
 
-	// find which ones are first images of each wire scan, this is a lot of reading of headers, mark by changing new[m] to -1
+	// find which nums are FIRST images of each wire scan, this is a lot of reading of headers, mark by changing new[m] to -1
 	PathInfo $pathName
-	String wnote, fileRoot=S_path+namePart
+	String str, wnote, fname, fullFileFmt=S_path+nameFmt
 	Variable X1,H1,keV,H2
 	Variable X1o,H1o,keVo,H2o
-	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
-	wnote=ReadGenericHeader(fileRoot+num2istr(nw[0])+imageExtension)		// wave note to add to file read in
+	sprintf fname, fullFileFmt, nums[0]
+	wnote=ReadGenericHeader(fname)			// wave note of first image file
 	if (!strlen(wnote))
-		DoAlert 0,"file '"+name+"' does not have a complete header"
-		KillWaves/Z fileList_get_FilesIndexRange, nw_get_FilesIndexRange
+		if (printit)
+			printf str, "file \"%s\" does not have a complete header",fname
+		endif
 		return ""
 	endif
 	X1o=NumberByKey("X1", wnote,"=")
 	H1o=NumberByKey("H1", wnote,"=")
 	H2o=NumberByKey("H2", wnote,"=")
 	keVo=NumberByKey("keV", wnote,"=")
-	list = num2istr(nw[0])+";"					// first one is always first one of a scan
-	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="finding first image of each wire scan")
+	String range = num2istr(nums[0])+";"		// first one is always first one of a scan
+	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="finding first images of every wire scan")
 	for (m=1;m<N;m+=1)
 		if (mod(m,100)==0)
 			if (ProgressPanelUpdate(progressWin,m/N*100))
-				break											//   and break out of loop
+				break									//   and break out of loop
 			endif
 		endif
-		name= fileRoot+num2istr(nw[m])+imageExtension
-		wnote=ReadGenericHeader(name)			// wave note to add to file read in
+		sprintf fname, fullFileFmt, nums[0]
+		wnote=ReadGenericHeader(fname)		// wave note to check
 		if (!strlen(wnote))
-			DoAlert 0,"file '"+name+"' does not have a complete header"
-			KillWaves/Z fileList_get_FilesIndexRange, nw_get_FilesIndexRange
+			if (printIt)
+				printf str, "file \"%s\" does not have a complete header",fname
+			endif
 			return ""
 		endif
 		X1=NumberByKey("X1", wnote,"=")
@@ -1180,19 +1261,116 @@ Static Function/T get_FirstWhiteFilesIndexRange(pathName,namePart)
 			H1o = H1
 			H2o = H2
 			keVo = keV
-			list += num2istr(nw[m])+";"
+			range += num2istr(nums[m])+";"
 		endif
 	endfor
-	printf "time to find files = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
-	DoWindow/K $progressWin
-	String range = compressRange(list,";")
-	if (ItemsInList(GetRTStackInfo(0))<2 || stringmatch(StringFromList(0,GetRTStackInfo(0)),"EscanButtonProc"))
-		print "range	",ItemsInRange(range),"		",range
+	range = compressRange(range,";")
+	if (printIt)
+		printf "time to find first files = %s\r",Secs2Time(SecondsInProgressPanel(progressWin),5,0)
+		printf "range has %d items,  \"%s\"\n",ItemsInRange(range), range
 	endif
-	KillWaves/Z fileList_get_FilesIndexRange, nw_get_FilesIndexRange
+	DoWindow/K $progressWin
 	return range
 End
 //
+//
+// get the range of file index numbers by looking at all of the files in a directory
+Static Function/T get_FilesIndexRanges(pathName,nameFmt)
+	String pathName				// probably 'imagePath'
+	String nameFmt					// name part of file, e.g. "WH_%d.h5",  or  "WH_%d_10.h5"
+
+	String dirList = depthResolve#directory(pathName)
+	Variable Nd=ItemsInList(dirList)
+	String matchStr=ReplaceString("%d",nameFmt,"*",0,2)
+	if (Nd<1)
+		return ""
+	endif
+
+	Variable nReq=CountFormaters(nameFmt)		// number of ranges requested, allowed values are 1 or 2
+	if (nReq<1 || nReq>2)
+		return ""
+	endif
+
+	Make/N=(Nd)/T/FREE fileNameList=StringFromList(p,dirList)
+	Make/N=(Nd)/D/FREE nums1=NaN, nums2=NaN
+	String name, list, range1="", range2=""
+	Variable i, j=NaN, k=NaN
+	for (i=0;i<Nd;i+=1)
+		name = fileNameList[i]
+		if (StringMatch(name,matchStr))
+			if (nReq==1)
+				sscanf name, nameFmt, j
+			else
+				sscanf name, nameFmt, j,k
+			endif
+			if (V_flag==1 || V_flag==2)
+				if (numtype(j)==0 && j>=0 && j<4.2e9)
+					nums1[i] = j				// j is valid, save it
+				endif
+				if (V_flag==2 && numtype(k)==0 && k>=0 && k<4.2e9)
+					nums2[i] = k				// k is valid, save it
+				endif
+			endif
+		endif
+	endfor
+	nums1 = (nums1[p]<0 || nums1[p] > 4.2e9 || numtype(nums1[p]))  ? NaN : floor(nums1[p])
+
+	Variable numi, N1=0, N2=0
+	Sort nums1, nums1
+	WaveStats/Q/M=1 nums1
+	N1 = V_npnts
+	Redimension/N=(N1) nums1				// trim off all the NaN's and Inf's
+	if (nReq>1)
+		nums2 = (nums2[p]<0 || nums2[p] > 4.2e9 || numtype(nums2[p]))  ? NaN : floor(nums2[p])
+		Sort nums2, nums2
+		WaveStats/Q/M=1 nums2
+		N2 = V_npnts
+		Redimension/N=(N2) nums2			// trim off all the NaN's and Inf's
+	endif
+
+	if (N1>0)
+		for (i=0;i<(N1-1);i+=1)			// remove duplicates
+			numi = nums1[i]
+			nums1[i+1,N1-1] = nums1[p]==numi ? NaN : nums1[p]
+		endfor
+		Sort nums1, nums1
+		WaveStats/Q/M=1 nums1
+		N1 = V_npnts
+		Redimension/N=(N1) nums1			// trim off all the NaN's and Inf's
+
+		list = ""								// make a list of all of the first numbers (with no repeats)
+		for (i=0;i<N1;i+=1)
+			list += num2istr(nums1[i]) + ";"
+		endfor
+		range1 = compressRange(list,";")
+	endif
+
+	if (N2>0)
+		for (i=0;i<(N2-1);i+=1)			// remove duplicates
+			numi = nums2[i]
+			nums2[i+1,N2-1] = nums2[p]==numi ? NaN : nums2[p]
+		endfor
+		Sort nums2, nums2
+		WaveStats/Q/M=1 nums2
+		N2 = V_npnts
+		Redimension/N=(N2) nums2			// trim off all the NaN's and Inf's
+
+		list = ""								// make a list of all of the first numbers (with no repeats)
+		for (i=0;i<N2;i+=1)
+			list += num2istr(nums2[i]) + ";"
+		endfor
+		range2 = compressRange(list,";")
+	endif
+
+	if (nReq<2)
+		return range1
+	else
+		return range1 + ";" + range2
+	endif
+End
+//
+//		DEPRECATED   -----   DEPRECATED   -----   DEPRECATED   -----   DEPRECATED   -----   DEPRECATED
+// This funciton, get_FilesIndexRange() is DEPRECATED. It uses a file prefix, not a format, use  get_FilesIndexRanges()
 // get the range of file index numbers by looking at all of the files in a directory
 Static Function/T get_FilesIndexRange(pathName,namePart)
 	String pathName					// probably 'imagePath'
