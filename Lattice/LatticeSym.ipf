@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.26
+#pragma version = 5.27
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -148,6 +148,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with version 5.24, cleaned up Hex2Rhom(), Rhom2Hex(), Rhom2HexFractonal(), Hex2RhomFractonal(), and test_Hex_Rhom()
 //	with verison 5.25, added RhomLatticeFromHex(directH), and HexLatticeFromRhom(directR)
 //	with verison 5.26, moved DEGREESIGN, BULLET, ARING, BCHAR to Utility_JZT.ipf
+//	with verison 5.27, remove materialsXML, change path materials to materialsPath
 
 //	Rhombohedral Transformation:
 //
@@ -1368,7 +1369,7 @@ Function densityOfCrystalStructure(xtal)		// returns the density (g/cm^3)
 	return (amuAll/NA)/(xtal.Vc * 1e-21)			// grams / cm^3
 End
 
-Static Function NetChargeCell(xtal)						// find the net charge in a cell (from valences), should be zero
+Static Function NetChargeCell(xtal)				// find the net charge in a cell (from valences), should be zero
 	STRUCT crystalStructure &xtal
 
 	Variable i, mult, occ, valence, netCharge=0
@@ -2559,16 +2560,7 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 	STRUCT crystalStructure &xtal					// this sruct is filled  by this routine
 	String fname
 
-	PathInfo materials
-	if (strlen(S_path)<1)							// make it if it does not exist
-		NewPath/Z materials, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
-	endif
-	PathInfo materials
-	if (strlen(S_path)<1)							// make it if it does not exist
-		PathInfo Igor
-		NewPath/Z materials, S_path+"User Procedures:materials"
-	endif
-	String list = keyStrFromFile(fname,"CrystalStructure","materials")
+	String list = keyStrFromFile(fname,"CrystalStructure","materialsPath")
 	if (strlen(list)<1)								// try old style
 		return read_cri_fileOLD(xtal,fname)
 	endif
@@ -2910,18 +2902,20 @@ Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged 
 	Variable refNum
 	String fullName=""
 
-	PathInfo/S materials
+	PathInfo materialsPath
+	path = SelectString(V_flag, "", path)		// set path="" if it does not exist
+
 	GetFileFolderInfo/P=$path/Q/Z fname
-	fullName = S_Path
+	fullName = SelectString(V_flag,S_Path,"")
 	if (!V_isFile)
 		Open/D/M="file with a lattice keyword list"/P=$path/R/T=".xtl" refNum as fname
-		fullName = S_fileName
+		fullName = SelectString(V_flag,S_fileName,"")
 	endif
 	if (strlen(fullName)<1)
 		return ""
 	else
 		Open/P=$path/R/Z=1 refNum as fullName
-		fullName = S_fileName
+		fullName = SelectString(V_flag,S_fileName,"")
 	endif
 	if (strlen(fullName)<1 || !refNum)
 		return ""
@@ -3026,22 +3020,18 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	printIt = ParamIsDefault(printIt) ? 0 : printIt
 
 	fname = FindMaterialsFile(fname)				// find full path to fname, and optionally set materials path
-//	PathInfo materials
-//	if (strlen(S_path)<1)							// make it if it does not exist
-//		NewPath/Z materials, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
-//	endif
-//	PathInfo materials
-//	if (strlen(S_path)<1)							// make it if it does not exist
-//		PathInfo Igor
-//		NewPath/Z materials, S_path+"User Procedures:materials"
-//	endif
-//	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;old cri Files (*.cri):.cri;All Files:.*;"
-//	Variable f
-//	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materials f as fname
-//	fname = S_fileName
-//	if (strlen(fname)==0)
-//		return 1
-//	endif
+
+	PathInfo materialsPath
+	if (V_flag==0)											// make it if it does not exist
+		NewPath/Z materialsPath, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
+	endif
+	PathInfo materialsPath
+	if (V_flag==0)											// make it if it does not exist
+		NewPath/Z materialsPath, SpecialDirPath("Documents",0,0,0)+"materials"
+		if (V_flag)											// path still does not exist, use Documents folder
+			NewPath/Z materialsPath, SpecialDirPath("Documents",0,0,0)
+		endif
+	endif
 
 	// get extension, and extension to choose the appropriate read crystal function
 	String extension = ParseFilePath(4,fname,":",0,0)
@@ -3062,7 +3052,7 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	return err
 End
 //
-Static Function/S FindMaterialsFile(fname)					// returns full path to a materials file
+Static Function/S FindMaterialsFile(fname)		// returns full path to a materials file
 	String fname
 	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;CIF Files (*.cif):.cif;old cri Files (*.cri):.cri;All Files:.*;"
 
@@ -3071,9 +3061,9 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 		return fname
 	endif
 
-	String dirString, dirList=""							// a list of possible materials directories
-	PathInfo materials
-	String materialsPath = SelectString(V_flag,"__empty__",S_path)			// materials path is already set, the 1st choice
+	String dirString, dirList=""						// a list of possible materials directories
+	PathInfo materialsPath
+	String materialsDir = SelectString(V_flag,"__empty__",S_path)			// materialsPath is already set, the 1st choice
 
 	dirString = SpecialDirPath("Igor Pro User Files",0,0,0)+"materials:"	// user's local copy, 2nd choice
 	GetFileFolderInfo/Q/Z dirString
@@ -3091,20 +3081,20 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 	String appPath = SelectString(V_isFolder && !V_flag,"",dirString)
 
 	String dirKeyList=""
-	if (StringMatch(materialsPath,usersPath))
+	if (StringMatch(materialsDir,usersPath))
 		dirList = "User files;"
-		dirKeyList = ReplaceStringByKey("User files",dirKeyList,materialsPath)
-	elseif (StringMatch(materialsPath,docPath))
+		dirKeyList = ReplaceStringByKey("User files",dirKeyList,materialsDir)
+	elseif (StringMatch(materialsDir,docPath))
 		dirList = "Documents;"
-		dirKeyList = ReplaceStringByKey("Documents",dirKeyList,materialsPath)
-	elseif (StringMatch(materialsPath,stdPath))
+		dirKeyList = ReplaceStringByKey("Documents",dirKeyList,materialsDir)
+	elseif (StringMatch(materialsDir,stdPath))
 		dirList = "Standard Distribution;"
-		dirKeyList = ReplaceStringByKey("Standard Distribution",dirKeyList,materialsPath)
-	elseif (StringMatch(materialsPath,appPath))
+		dirKeyList = ReplaceStringByKey("Standard Distribution",dirKeyList,materialsDir)
+	elseif (StringMatch(materialsDir,appPath))
 		dirList = "Igor application folder;"
-		dirKeyList = ReplaceStringByKey("Igor application folder",dirKeyList,materialsPath)
+		dirKeyList = ReplaceStringByKey("Igor application folder",dirKeyList,materialsDir)
 	else
-		dirList = SelectString(StringMatch(materialsPath,"__empty__"), materialsPath+";","")
+		dirList = SelectString(StringMatch(materialsDir,"__empty__"), materialsDir+";","")
 	endif
 
 	if (WhichListItem("User files",dirList)<0 && strlen(usersPath))
@@ -3149,69 +3139,14 @@ Static Function/S FindMaterialsFile(fname)					// returns full path to a materia
 
 	LatticeSym#UpdateMaterialsPath(StringByKey(dirString,dirKeyList))
 
+
+	PathInfo materialsPath
+	String path=SelectString(V_flag, "", S_path)
 	Variable f
-	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materials f as fname
+	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=$path f as fname
 	fname = S_fileName
 	return fname
 End
-//Static Function/S FindMaterialsFile(fname)					// returns full path to a materials file
-//	String fname
-////	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;old cri Files (*.cri):.cri;All Files:.*;"
-//	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;CIF Files (*.cif):.cif;old cri Files (*.cri):.cri;All Files:.*;"
-//	String dirString, dirList=""							// a list of possible materials directories
-//
-//	PathInfo materials
-//	dirList += SelectString(V_flag,"",S_path+";")							// materials path is already set, the 1st choice
-//
-//	dirString = SpecialDirPath("Igor Pro User Files",0,0,0)+"materials:"	// user's local copy, 2nd choice
-//	GetFileFolderInfo/Q/Z dirString
-//	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
-//
-//	PathInfo Igor
-//	dirString = SelectString(V_flag,"",S_path+"materials:;")				// system local copy, 3rd choice
-//	GetFileFolderInfo/Q/Z dirString
-//	dirList += SelectString(WhichListItem(dirString,dirList)<0 && V_isFolder,"",dirString+";")
-//
-//	dirString=ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)	// the default distribution, 4th choice
-//	dirList += SelectString(WhichListItem(dirString,dirList)<0 && strlen(dirString),"",dirString+";")
-//	// printf "dirList =  '%s'\r",dirList
-//
-//	GetFileFolderInfo/Q/Z fname						// full path name passed, that was east
-//	if (V_isfile)
-//		return fname
-//	endif
-//
-//	fname = ParseFilePath(0,fname,":",1,0)			// check for fname in each of dirList
-//	Variable i
-//	for (i=0;i<ItemsInList(dirList);i+=1)
-//		dirString = StringFromList(i,dirList)
-//		GetFileFolderInfo/Q/Z dirString+fname
-//		if (V_isFile)									// found fname in dirString
-//			UpdateMaterialsPath(dirString)
-//			return dirString+fname 
-//		endif
-//	endfor
-//
-//	// could not find the materials file, time to start asking user for help
-//	dirString = StringFromList(0,dirList)
-//	if (itemsInList(dirList)>1)
-//		Prompt dirString,"Folder with materials",popup,dirList
-//		DoPrompt "Directory",dirString
-//		if (V_flag)
-//			return ""
-//		endif
-//	endif
-//	UpdateMaterialsPath(dirString)
-//
-//	Variable f
-//	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materials f as fname
-//
-//	fname = S_fileName
-//
-//	// printf "dirList =  '%s'\r",dirList
-//	// printf "fname =  '%s'\r",fname
-//	return fname
-//End
 //
 Static Function UpdateMaterialsPath(dirString)
 	String dirString
@@ -3219,12 +3154,12 @@ Static Function UpdateMaterialsPath(dirString)
 	if (!V_isFolder)
 		return 1
 	endif
-	PathInfo materials
+	PathInfo materialsPath
+	S_path = SelectString(V_flag, "", S_path)
 	if (V_flag && stringmatch(S_path,dirString))		// nothing to change, all is OK
 		return 0
 	endif
-//	NewPath/Z materials, dirString
-	NewPath/Z/O materials, dirString
+	NewPath/Z/O materialsPath, dirString
 	return 0
 End
 
@@ -3232,18 +3167,7 @@ Static Function readCrystalStructureXML(xtal,fname)
 	STRUCT crystalStructure &xtal						// this sruct is filled  by this routine
 	String fname
 
-	PathInfo materialsXML
-	if (strlen(S_path)<1)								// make it if it does not exist
-//		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)+"xml"
-		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
-	endif
-	PathInfo materialsXML
-	if (strlen(S_path)<1)								// make it if it does not exist
-		PathInfo Igor
-		NewPath/Z materialsXML, S_path+"User Procedures:materials:xml"
-	endif
-
-	Variable err = readFileXML(xtal,fname,path="materialsXML")
+	Variable err = readFileXML(xtal,fname,path="materialsPath")
 	if (!err)
 		UpdateCrystalStructureDefaults(xtal)
 	endif
@@ -3649,18 +3573,20 @@ End
 Function ConverXTLfile2XMLfile(xtlName)
 	String xtlName
 
-	PathInfo materials
-	if (strlen(S_path)<1)							// make it if it does not exist
-		NewPath/Z materials, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
+	PathInfo materialsPath
+	if (V_flag==0)										// make it if it does not exist
+		NewPath/Z materialsPath, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
 	endif
-	PathInfo materials
-	if (strlen(S_path)<1)							// make it if it does not exist
-		PathInfo Igor
-		NewPath/Z materials, S_path+"User Procedures:materials"
+	PathInfo materialsPath
+	if (V_flag==0)										// make it if it does not exist
+		NewPath/Z materialsPath, SpecialDirPath("Documents",0,0,0)+"materials"
+		if (V_flag)										// path still does not exist, use Documents folder
+			NewPath/Z materialsPath, SpecialDirPath("Documents",0,0,0)
+		endif
 	endif
 	String fileFilters = "XTL Files (*.xtl):.xtl;old cri Files (*.cri):.cri;All Files:.*;"
 	Variable f
-	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materials f as xtlName
+	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=materialsPath f as xtlName
 	xtlName = S_fileName
 	if (strlen(xtlName)==0)
 		return 1
@@ -3910,20 +3836,10 @@ End
 //	Start of CIF read
 
 Static Function readCrystalStructureCIF(xtal,fname)
-	STRUCT crystalStructure &xtal						// this sruct is filled  by this routine
+	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
 	String fname
 
-	PathInfo materialsXML
-	if (strlen(S_path)<1)								// make it if it does not exist
-		NewPath/Z materialsXML, ParseFilePath(1,FunctionPath("CrystalsAreHere"),":",1,0)
-	endif
-	PathInfo materialsXML
-	if (strlen(S_path)<1)								// make it if it does not exist
-		PathInfo Igor
-		NewPath/Z materialsXML, S_path+"User Procedures:materials:xml"
-	endif
-
-	Variable err = readFileCIF(xtal,fname,path="materialsXML")
+	Variable err = readFileCIF(xtal,fname,path="materialsPath")
 	if (!err)
 		UpdateCrystalStructureDefaults(xtal)
 	endif
