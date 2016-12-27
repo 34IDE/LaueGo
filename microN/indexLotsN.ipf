@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.36
+#pragma version = 2.37
 #include  "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -27,6 +27,8 @@ Static StrConstant strainConstraints="110111"
 //	Dec 1,  2009, re-did SymmetryOps, to use symmetry from Space Group, should work for everything
 //
 //	Apr 22, 2014, changed IndexLots to be more modern, also now can write an xml file like the cluster.
+//
+//	Dec 27, 2016, Add2XmlFile() now returns the full path to the xml file, moved the xmlns=... out of <step> into <AllSteps>.
 
 
 Menu "Rotations"
@@ -1332,7 +1334,7 @@ Function/T Add2XmlFile(path,fname,xmlStr)
 
 	FStatus f
 	if (V_logEOF<10)
-		buf = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n\n<AllSteps>\n\n"
+		buf = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n\n<AllSteps xmlns=\"http://sector34.xray.aps.anl.gov/34ide:indexResult\">\n\n"
 		FSetPos f, 0
 		FBinWrite f, buf
 	else
@@ -1342,7 +1344,7 @@ Function/T Add2XmlFile(path,fname,xmlStr)
 	buf = "\n</AllSteps>\n"
 	FBinWrite f, buf
 	Close f
-	return S_fileName
+	return fname
 End
 //
 Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
@@ -1356,8 +1358,7 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 	endif
 	String pnote=note(FullPeakList), str
 
-	String xml="<step xmlns=\"http://sector34.xray.aps.anl.gov/34ide:indexResult\">\n"
-
+	String xml="<step>\n"
 	xml += addXMLstrFromTagVals("title",pnote,"",1)
 	xml += addXMLstrFromTagVals("sampleName",pnote,"",1)
 	xml += addXMLstrFromTagVals("userName",pnote,"",1)

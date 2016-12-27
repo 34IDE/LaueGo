@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.27
+#pragma version = 5.29
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -149,6 +149,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 5.25, added RhomLatticeFromHex(directH), and HexLatticeFromRhom(directR)
 //	with verison 5.26, moved DEGREESIGN, BULLET, ARING, BCHAR to Utility_JZT.ipf
 //	with verison 5.27, remove materialsXML, change path materials to materialsPath
+//	with verison 5.29, fixed bug in FindMaterialsFile() involving materialsPath
 
 //	Rhombohedral Transformation:
 //
@@ -3017,7 +3018,7 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	STRUCT crystalStructure &xtal					// this sruct is filled  by this routine
 	String fname
 	Variable printIt
-	printIt = ParamIsDefault(printIt) ? 0 : printIt
+	printIt = ParamIsDefault(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	fname = FindMaterialsFile(fname)				// find full path to fname, and optionally set materials path
 
@@ -3033,14 +3034,14 @@ Function readCrystalStructure(xtal,fname,[printIt])
 		endif
 	endif
 
-	// get extension, and extension to choose the appropriate read crystal function
-	String extension = ParseFilePath(4,fname,":",0,0)
+	// find the file type, this first looks at the top of the file, if that does not work, it looks at the file name extension
+	String fileType = CrystalFileType(fname)	// "xml", "xtl", "cif", "", or the actual file extension (without the '.')
 	Variable err=1
-	if (stringmatch(extension,"xml"))
+	if (stringmatch(fileType,"xml"))
 		err = readCrystalStructureXML(xtal,fname)
-	elseif (stringmatch(extension,"xtl"))
+	elseif (stringmatch(fileType,"xtl"))
 		err = readCrystalStructure_xtl(xtal,fname)
-	elseif (stringmatch(extension,"cif"))
+	elseif (stringmatch(fileType,"cif"))
 		err = readCrystalStructureCIF(xtal,fname)
 	endif
 	if (printIt)
@@ -3139,9 +3140,8 @@ Static Function/S FindMaterialsFile(fname)		// returns full path to a materials 
 
 	LatticeSym#UpdateMaterialsPath(StringByKey(dirString,dirKeyList))
 
-
 	PathInfo materialsPath
-	String path=SelectString(V_flag, "", S_path)
+	String path=SelectString(V_flag, "", "materialsPath")
 	Variable f
 	Open/D=2/R/F=fileFilters/M="File with Crystal Information"/P=$path f as fname
 	fname = S_fileName
@@ -3162,19 +3162,42 @@ Static Function UpdateMaterialsPath(dirString)
 	NewPath/Z/O materialsPath, dirString
 	return 0
 End
-
-Static Function readCrystalStructureXML(xtal,fname)
-	STRUCT crystalStructure &xtal						// this sruct is filled  by this routine
-	String fname
-
-	Variable err = readFileXML(xtal,fname,path="materialsPath")
-	if (!err)
-		UpdateCrystalStructureDefaults(xtal)
-	endif
-	return err
-End
 //
-Static Function readFileXML(xtal,fileName,[path])
+Static Function/T CrystalFileType(fname,[path])
+	// Return the file type, of a crystal file.
+	//	First look at top of the file, if that doesn't work, look at the file name extension, 
+	//	Returned values are one of: "xml", "xtl", "cif", "", or the actual file extension (without the '.')
+	String fname
+	String path				// name of path, defaults to materialsPath
+	path = SelectString(ParamIsDefault(path), path, "materialsPath")
+
+	PathInfo $path
+	path = SelectString(V_flag, "", path)		// set path="" if it does not exist
+
+	String extension="", line=""
+	Variable f
+	Open/R/P=$path/R/Z=1 f as fname
+	if (V_flag==0)
+		FReadLine/N=100 f, line
+		Close f
+	endif
+
+	// first try to determine the extension by looking at the first line of the file
+	if (strsearch(line,"<?xml",0,2)>=0)
+		extension = "xml"
+	elseif (strsearch(line,"CrystalStructure",0,2)>=0)
+		extension = "xtl"
+	elseif (strsearch(line,"data_",0,2)>=0)
+		extension = "cif"
+	endif
+
+	if (strlen(extension)==0)		// need to actually look at the file name extension
+		extension = ParseFilePath(4,fname,":",0,0)
+	endif
+	return extension
+End
+
+Static Function readCrystalStructureXML(xtal,fileName,[path])
 	STRUCT crystalStructure &xtal
 	String fileName
 	String path
@@ -3375,6 +3398,7 @@ Static Function readFileXML(xtal,fileName,[path])
 	while(Nbond<(2*STRUCTURE_ATOMS_MAX) && i0>0)
 	xtal.Nbonds = Nbond
 	ForceLatticeToStructure(xtal)
+	UpdateCrystalStructureDefaults(xtal)
 	return 0
 End
 //
@@ -3592,9 +3616,8 @@ Function ConverXTLfile2XMLfile(xtlName)
 		return 1
 	endif
 
-	// check extension
+	// check file extension
 	String extension = ParseFilePath(4,xtlName,":",0,0)
-
 	if (!stringmatch(extension,"xtl"))
 		DoAlert 1,"This does not look like an old '*.xtl' file, stop now?"
 		if (V_flag!=2)
@@ -3835,18 +3858,7 @@ End
 // =========================================================================
 //	Start of CIF read
 
-Static Function readCrystalStructureCIF(xtal,fname)
-	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
-	String fname
-
-	Variable err = readFileCIF(xtal,fname,path="materialsPath")
-	if (!err)
-		UpdateCrystalStructureDefaults(xtal)
-	endif
-	return err
-End
-//
-Static Function readFileCIF(xtal,fileName,[path])
+Static Function readCrystalStructureCIF(xtal,fileName,[path])
 	STRUCT crystalStructure &xtal						// this sruct is printed in this routine
 	String fileName
 	String path
@@ -3888,7 +3900,6 @@ Static Function readFileCIF(xtal,fileName,[path])
 		i = strsearch(buf,"\n",0)
 		desc = buf[5,i-1]
 	endif
-//	i = strsearch(buf,"\n",i+1)+1
 	buf = buf[i,Inf]
 
 	i = strsearch(buf,"\ndata_",0)			// check for second data_ section
@@ -3907,6 +3918,7 @@ Static Function readFileCIF(xtal,fileName,[path])
 		i0 = max(0,i1-MAX_FILE_LEN)
 		fullFile = fullFile[i0,i1]
 		xtal.sourceFile = fullFile
+		UpdateCrystalStructureDefaults(xtal)
 	endif
 	return err
 End
