@@ -1427,6 +1427,12 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 	sprintf str,"<Integral>%s</Integral>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
 	xml += "\t\t\t"+str+"\n"
 
+	if (DimSize(FullPeakList,1)>11)
+		ww = FullPeakList[p][11]
+		sprintf str,"<Intens>%s</Intens>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+		xml += "\t\t\t"+str+"\n"
+	endif
+
 	ww = FullPeakList[p][4]
 	ww /= 2										// change FWHM to HWHM
 	sprintf str,"<hwhmX unit=\"pixel\">%s</hwhmX>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
@@ -1444,12 +1450,6 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 	ww = FullPeakList[p][9]
 	sprintf str,"<chisq>%s</chisq>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
 	xml += "\t\t\t"+str+"\n"
-
-	if (DimSize(FullPeakList,1)>11)
-		ww = FullPeakList[p][11]
-		sprintf str,"<amp>%s</amp>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
-		xml += "\t\t\t"+str+"\n"
-	endif
 
 	xml += "\t\t</peaksXY>\n"
 	xml += "\t</detector>\n"
