@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.22
+#pragma version = 0.23
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2760,16 +2760,16 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 	if (!WaveExists(FullPeakList))
 		DoAlert 0, "input wave for FullPeakList2File() does not exists"
 		return $""
-	elseif (DimSize(FullPeakList,1)!=11)
+	elseif (DimSize(FullPeakList,1)<11)
 		DoAlert 0, "the passed full peak list '"+NameOfWave(FullPeakList)+"' is not the right size"
 		return $""
 	elseif (WaveExists(FullPeakList1))
-		if (DimSize(FullPeakList1,1)!=11)
+		if (DimSize(FullPeakList1,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList1)+"' is the wrong size"
 			return $""
 		endif
 	elseif (WaveExists(FullPeakList2))
-		if (DimSize(FullPeakList2,1)!=11)
+		if (DimSize(FullPeakList2,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList2)+"' is the wrong size"
 			return $""
 		endif
@@ -2963,16 +2963,16 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	if (!WaveExists(FullPeakList))
 		DoAlert 0, "input wave for FullPeakList2File() does not exists"
 		return $""
-	elseif (DimSize(FullPeakList,1)!=11)
+	elseif (DimSize(FullPeakList,1)<11)
 		DoAlert 0, "the passed full peak list '"+NameOfWave(FullPeakList)+"' is not the right size"
 		return $""
 	elseif (WaveExists(FullPeakList1))
-		if (DimSize(FullPeakList1,1)!=11)
+		if (DimSize(FullPeakList1,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList1)+"' is the wrong size"
 			return $""
 		endif
 	elseif (WaveExists(FullPeakList2))
-		if (DimSize(FullPeakList2,1)!=11)
+		if (DimSize(FullPeakList2,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList2)+"' is the wrong size"
 			return $""
 		endif
@@ -3027,7 +3027,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 		pixel2q(geo.d[dNum],px,py,qhat,depth=depth)	// was in Wenge-coord system (OLD) or BeamLine(New)
 		if (norm(qhat)>0)											// check for a valid Q
 			GhatMeasured[N][0,2] = qhat[q]
-			GhatMeasured[N][3] = FullPeakList[i][10]	// the intensity
+			GhatMeasured[N][3] = FullPeakList[i][10]	// the integral
 			GhatMeasured[N][4] = dNum							// detector number
 			N += 1
 		endif
@@ -3051,7 +3051,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)	// was in Wenge-coord system (OLD) or BeamLine(New)
 			if (norm(qhat)>0)											// check for a valid Q
 				GhatMeasured[N][0,2] = qhat[q]
-				GhatMeasured[N][3] = FullPeakList1[i][10]	// the intensity
+				GhatMeasured[N][3] = FullPeakList1[i][10]	// the integral
 				GhatMeasured[N][4] = dNum							// detector number
 				N += 1
 			endif
@@ -3076,7 +3076,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)	// was in Wenge-coord system (OLD) or BeamLine(New)
 			if (norm(qhat)>0)											// check for a valid Q
 				GhatMeasured[N][0,2] = qhat[q]
-				GhatMeasured[N][3] = FullPeakList2[i][10]	// the intensity
+				GhatMeasured[N][3] = FullPeakList2[i][10]	// the integral
 				GhatMeasured[N][4] = dNum							// detector number
 				N += 1
 			endif
@@ -4137,7 +4137,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	Make/N=(Nreq,3)/D/FREE kfsFound=0
 
 	Make/N=3/D/FREE hkl
-	Make/N=(Nreq,11)/D/O $FullPeakListName/WAVE=FullPeakListTest = NaN
+	Make/N=(Nreq,12)/D/O $FullPeakListName/WAVE=FullPeakListTest = NaN
 	Variable keV, intens, intensMax=0, hklMax=20
 	Variable/C pz
 
@@ -4188,6 +4188,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	hkl *= 12/small
 	removeCommonFactors(hkl)
 	FullPeakListTest[][10] /= intensMax
+	FullPeakListTest[][11] = FullPeakListTest[p][10]
 
 	String wnote="waveClass=FittedPeakListTest;"
 	wnote = ReplaceStringByKey("direct",wnote,directStr,"=")
@@ -4221,7 +4222,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	SetDimLabel 1,4,fwx,FullPeakListTest				;	SetDimLabel 1,5,fwy,FullPeakListTest
 	SetDimLabel 1,6,fwxErr,FullPeakListTest			;	SetDimLabel 1,7,fwyErr,FullPeakListTest
 	SetDimLabel 1,8,correlation,FullPeakListTest	;	SetDimLabel 1,9,correlationErr,FullPeakListTest
-	SetDimLabel 1,10,area,FullPeakListTest
+	SetDimLabel 1,10,area,FullPeakListTest			;	SetDimLabel 1,11,amp,FullPeakListTest
 	if (printIt)
 		printf "maximum hkl went to (%d %d %d)\r",hklMax,hklMax,hklMax
 		printf "Made %d simulated peaks, stored in '%s'\r",N,NameOfWave(FullPeakListTest)

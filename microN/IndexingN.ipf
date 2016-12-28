@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.87
+#pragma version = 4.88
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -28,6 +28,7 @@ Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your M
 //	with version 4.00, add the ability to use both spe and hdf5 with the new geometry
 //	with version 4.18, changed default name of FullPeakList to something like FullPeakListOrange
 //	with version 4.60, changed how pick_keV_calc() works
+//	with version 4.88, changed number of columns of FullPeakList from 11 to 12
 
 //	#define USE_ENERGY_STRAIN_REFINE		// paste this line (uncommented) in your Procedure Window to use newer strain refinement
 
@@ -55,7 +56,7 @@ Menu LaueGoMainMenuName
 	help={"removes bkg and then finds and fits peaks, do not use anymore"}
 //	  pkLIstImageMenuItem("   Reset Fitted Peak list from boxes"),setFittedPeaksFromList($"",NaN,pkList)
 //	  help={"reset list of peaks for fitting to the boxes on an image plot"}
-	MenuItemIfWaveClassExists("Index and Display...","FittedPeakList*","DIMS:2,MAXCOLS:11,MINCOLS:11"),IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN)
+	MenuItemIfWaveClassExists("Index and Display...","FittedPeakList*","DIMS:2,MAXCOLS:12,MINCOLS:11"),IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN)
 	help={"Index the identified peaks, using the defined lattice, and then show it all on a plot"}
 	   MenuItemIfWaveClassExists("  Refine Strain","IndexedPeakList*",""),Indexing#MenuStrainRefine(NaN,"")
 //	   MenuItemIfWaveClassExists("  Refine Strain","IndexedPeakList*",""),DeviatoricStrainRefine(NaN,"",printit=1)
@@ -153,13 +154,13 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable badWave = !WaveExists(FullPeakList0) && !WaveExists(FullPeakList1) && !WaveExists(FullPeakList2)
 	if (!badWave)
 		if (WaveExists(FullPeakList0))
-			badWave = badWave && (DimSize(FullPeakList0,0)<1 || DimSize(FullPeakList0,1)!=11)
+			badWave = badWave && (DimSize(FullPeakList0,0)<1 || DimSize(FullPeakList0,1)<11)
 		endif
 		if (WaveExists(FullPeakList1))
-			badWave = badWave && (DimSize(FullPeakList1,0)<1 || DimSize(FullPeakList1,1)!=11)
+			badWave = badWave && (DimSize(FullPeakList1,0)<1 || DimSize(FullPeakList1,1)<11)
 		endif
 		if (WaveExists(FullPeakList2))
-			badWave = badWave && (DimSize(FullPeakList2,0)<1 || DimSize(FullPeakList2,1)!=11)
+			badWave = badWave && (DimSize(FullPeakList2,0)<1 || DimSize(FullPeakList2,1)<11)
 		endif
 	endif
 	Variable badNums= !(keVmaxCalc>1 && keVmaxCalc<INDEXING_MAX_CALC) || !(keVmaxTest>1 && keVmaxTest<INDEXING_MAX_TEST)
@@ -183,7 +184,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		sprintf hkl,"%d, %d, %d",hp,kp,lp
 		Prompt hkl,"preferred hkl of center"
 		Prompt cone,"max angle¡ from hkl prefer to spot"
-		String pkList=WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:11,MINCOLS:11")
+		String pkList=WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:12,MINCOLS:11")
 		String peakListStr0="", peakListStr1="", peakListStr2=""
 		Variable multi=0
 		if (WaveExists(FullPeakList0))
@@ -228,15 +229,15 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		Variable N0=0,N1=0,N2=0
 		if (!badWave)
 			if (WaveExists(FullPeakList0))
-				badWave = badWave && (DimSize(FullPeakList0,0)<1 || DimSize(FullPeakList0,1)!=11)
+				badWave = badWave && (DimSize(FullPeakList0,0)<1 || DimSize(FullPeakList0,1)<11)
 				N0 = DimSize(FullPeakList0,0)
 			endif
 			if (WaveExists(FullPeakList1))
-				badWave = badWave && (DimSize(FullPeakList1,0)<1 || DimSize(FullPeakList1,1)!=11)
+				badWave = badWave && (DimSize(FullPeakList1,0)<1 || DimSize(FullPeakList1,1)<11)
 				N1 = DimSize(FullPeakList1,0)
 			endif
 			if (WaveExists(FullPeakList2))
-				badWave = badWave && (DimSize(FullPeakList2,0)<1 || DimSize(FullPeakList2,1)!=11)
+				badWave = badWave && (DimSize(FullPeakList2,0)<1 || DimSize(FullPeakList2,1)<11)
 				N2 = DimSize(FullPeakList2,0)
 			endif
 		endif
@@ -554,9 +555,9 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 				j = Nindexed[ipat]
 				AuxPeakIndexed[j][3,5][ipat] = hkl[q-3]
 				AuxPeakIndexed[j][7][ipat] = hc / (2*get_dhkl(hkl[0],hkl[1],hkl[2])*sin(theta))	//   hc/E = 2 d sin(theta)
-				AuxPeakIndexed[j][6][ipat] = peakList[i][10]		// transfer the intensity
+				AuxPeakIndexed[j][6][ipat] = peakList[i][10]	// transfer the integral
 				AuxPeakIndexed[j][0,2][ipat] = qmeas[q]			// actual measured Q-vector (normalized)
-				AuxPeakIndexed[j][8][ipat] =	errorAng			// angle error (degree)
+				AuxPeakIndexed[j][8][ipat] =	errorAng				// angle error (degree)
 				rmsAng[ipat] += (errorAng)^2
 				pz = q2pixel(g.d[dNum],qcalc)
 				AuxPeakIndexed[j][9][ipat] = real(pz)
@@ -598,8 +599,8 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 	SetDimLabel 1,0,Qx,AuxPeakIndexed			;	SetDimLabel 1,1,Qy,AuxPeakIndexed
 	SetDimLabel 1,2,Qz,AuxPeakIndexed			;	SetDimLabel 1,3,h,AuxPeakIndexed
 	SetDimLabel 1,4,k,AuxPeakIndexed			;	SetDimLabel 1,5,l,AuxPeakIndexed
-	SetDimLabel 1,6,Intensity,AuxPeakIndexed	;	SetDimLabel 1,7,keV,AuxPeakIndexed
-	SetDimLabel 1,8,angleErr,AuxPeakIndexed	 ;	SetDimLabel 1,9,pixelX,AuxPeakIndexed
+	SetDimLabel 1,6,Intensity,AuxPeakIndexed;	SetDimLabel 1,7,keV,AuxPeakIndexed
+	SetDimLabel 1,8,angleErr,AuxPeakIndexed	;	SetDimLabel 1,9,pixelX,AuxPeakIndexed
 	SetDimLabel 1,10,pixelY,AuxPeakIndexed	;	SetDimLabel 1,11,detNum,AuxPeakIndexed
 	String wNote="waveClass=IndexedPeakListAux;"
 	wNote = ReplaceStringByKey("structureDesc",wnote,StringByKey("structureDesc",indexNote,"="),"=")
@@ -652,7 +653,6 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 		badWave = !WaveExists(FullPeakIndexed)
 	endif
 	if (!badWave)
-//		badWave = (DimSize(FullPeakIndexed,0)<1 || DimSize(FullPeakIndexed,1)<11)
 		badWave = (DimSize(FullPeakIndexed,0)<1 || DimSize(FullPeakIndexed,1)<12)
 	endif
 	if (badWave)
@@ -672,7 +672,6 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	endif
 	badWave = !WaveExists(FullPeakIndexed)
 	if (!badWave)
-//		badWave = (DimSize(FullPeakIndexed,0)<1 || DimSize(FullPeakIndexed,1)<11)
 		badWave = (DimSize(FullPeakIndexed,0)<1 || DimSize(FullPeakIndexed,1)<12)
 	endif
 	String wnote = note(FullPeakIndexed)
@@ -1760,7 +1759,7 @@ Function/WAVE MakeEmptyPeakListForImage(image,[ask,keyVals])
 
 	String wnote = note(image)
 	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
-	Make/N=(0,11)/O $peakListName/WAVE=FullPeakList
+	Make/N=(0,12)/O $peakListName/WAVE=FullPeakList
 	wnote = ReplaceStringByKey("fittedIgorImage",wnote,GetWavesDataFolder(image,2),"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"FittedPeakList","=")
 	String item,key,value
@@ -1774,12 +1773,12 @@ Function/WAVE MakeEmptyPeakListForImage(image,[ask,keyVals])
 		endif
 	endfor
 	Note/K FullPeakList,wnote
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,11,amp,FullPeakList
 	return FullPeakList
 End
 
@@ -2046,16 +2045,16 @@ Function/WAVE runIndexingEulerCommand(args)
 	elseif (!WaveExists(FullPeakList))
 		DoAlert 0, "the input wave does not exist in runIndexingEulerCommand()"
 		return $""
-	elseif (DimSize(FullPeakList,0)<1 || DimSize(FullPeakList,1)!=11)
+	elseif (DimSize(FullPeakList,0)<1 || DimSize(FullPeakList,1)<11)
 		DoAlert 0, "Full peak list '"+NameOfWave(FullPeakList)+"' is empty or the wrong size"
 		return $""
 	elseif (WaveExists(FullPeakList1))
-		if (DimSize(FullPeakList1,1)!=11)
+		if (DimSize(FullPeakList1,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList1)+"' is the wrong size"
 			return $""
 		endif
 	elseif (WaveExists(FullPeakList2))
-		if (DimSize(FullPeakList2,1)!=11)
+		if (DimSize(FullPeakList2,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList2)+"' is the wrong size"
 			return $""
 		endif
@@ -3075,7 +3074,7 @@ End
 //#endif //end block commented RX
 //
 Static Function/S readPeakXYfile(peakFile,path,wnote)
-	String peakFile						// name of index file, the output from Euler
+	String peakFile					// name of index file, the output from Euler
 	String path							// name of Igor path to go with peakFile
 	String wnote						// info from image file
 
@@ -3087,7 +3086,7 @@ Static Function/S readPeakXYfile(peakFile,path,wnote)
 	FStatus f
 	String buffer=""
 	buffer = PadString(buffer,V_logEOF-V_filePos,0x20)
-	FBinRead f, buffer					// read entire file into buffer
+	FBinRead f, buffer				// read entire file into buffer
 	Close f
 	buffer = ReplaceString("\r\n",buffer,"\n")				// ensure that line term is a new-line only
 	buffer = ReplaceString("\n\r",buffer,"\n")
@@ -3121,20 +3120,20 @@ Static Function/S readPeakXYfile(peakFile,path,wnote)
 	endif
 	Variable ismooth = NumberByKey("smooth",list,"=")
 	if (ismooth)
-		wnote = ReplaceNumberByKey("smoothed",wnote,ismooth,"=")	// fit to smoohted image
+		wnote = ReplaceNumberByKey("smoothed",wnote,ismooth,"=")	// fit to smoothed image
 	endif
 	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
-	Make/N=(Npeaks,11)/O $peakListName/WAVE=FullPeakList = NaN
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	Make/N=(Npeaks,12)/O $peakListName/WAVE=FullPeakList = NaN
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	if (Ncols==8)
-		SetDimLabel 1,8,tilt_degree,FullPeakList ;	SetDimLabel 1,9,chisq,FullPeakList
+		SetDimLabel 1,8,tilt_degree,FullPeakList	;	SetDimLabel 1,9,chisq,FullPeakList
 	else
-		SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
+		SetDimLabel 1,8,correlation,FullPeakList	;	SetDimLabel 1,9,correlationErr,FullPeakList
 	endif
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList					;	SetDimLabel 1,11,amp,FullPeakList
 	Note/K FullPeakList,wnote
 	if (Npeaks<1)
 		return GetWavesDataFolder(FullPeakList,2)
@@ -3150,7 +3149,7 @@ Static Function/S readPeakXYfile(peakFile,path,wnote)
 			sscanf buffer[i0,i1],"%g %g %g %g",px,py,maxIntens,integral
 			FullPeakList[m][0] = px
 			FullPeakList[m][1] = py
-			FullPeakList[m][10] = integral
+			FullPeakList[m][10] = integral					// actual integral of the peak (from image, not fit func)
 		else
 			sscanf buffer[i0,i1],"%g %g %g %g %g %g %g %g",px,py,maxIntens,integral,hwhmX,hwhmY,tilt,chisq
 			FullPeakList[m][0] = px
@@ -3159,7 +3158,8 @@ Static Function/S readPeakXYfile(peakFile,path,wnote)
 			FullPeakList[m][4] = 2*hwhmX
 			FullPeakList[m][5] = 2*hwhmY
 			FullPeakList[m][8] = tilt
-			FullPeakList[m][9] = chisq							// this is not really right, but do it anyhow
+			FullPeakList[m][9] = chisq						// this is not really right, but do it anyhow
+			FullPeakList[m][11] = maxIntens					// amplitude of the fit function
 		endif
 		i0 = i1+1
 		i1 = strsearch(buffer,"\n",i0)
@@ -3376,19 +3376,19 @@ Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAbo
 	Variable Nu=0, Nlen=50
 	String wnote = note(image)
 	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
-	Make/N=(Nlen,11)/O $peakListName/WAVE=FullPeakList = NaN
+	Make/N=(Nlen,12)/O $peakListName/WAVE=FullPeakList = NaN
 	wnote = ReplaceNumberByKey("minPeakWidth",wnote,minPeakWidth,"=")
 	wnote = ReplaceNumberByKey("maxPeakWidth",wnote,maxPeakWidth,"=")
 	wnote = ReplaceNumberByKey("minSpotSeparation",wnote,minSep,"=")
 	wnote = ReplaceNumberByKey("threshAboveAvg",wnote,threshAboveAvg,"=")
 	wnote = ReplaceStringByKey("fittedIgorImage",wnote,GetWavesDataFolder(image,2),"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"FittedPeakList","=")
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,11,amp,FullPeakList
 	Note/K FullPeakList,wnote
 
 	Variable fw= ( 2*sqrt(2*ln(2)) )							// this factor corrects for 2-d sigma to FWHM, apply to K3, K5, and the corresponding errors
@@ -3442,7 +3442,7 @@ Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAbo
 
 		if (Nu>=Nlen)												// FullPeakList is too short, extend it
 			Nlen += 50
-			Redimension/N=(Nlen,11) FullPeakList
+			Redimension/N=(Nlen,-1) FullPeakList
 		endif
 		FullPeakList[Nu][0]=xx				;	FullPeakList[Nu][1]=yy
 		FullPeakList[Nu][2]=sigX				;	FullPeakList[Nu][3]=sigY
@@ -3450,12 +3450,13 @@ Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAbo
 		FullPeakList[Nu][6]=W_sigma[3]*fw	;	FullPeakList[Nu][7]=W_sigma[5]*fw
 		FullPeakList[Nu][8]=W_coef[6]		;	FullPeakList[Nu][9]=W_sigma[6]
 		FullPeakList[Nu][10]=W_coef[1]*fwx*fwy
+		FullPeakList[Nu][11]=W_coef[1]
 		Nu += 1
 	while(Nu<maxNum)
-	Redimension/N=(Nu,11) FullPeakList						// set to exact length
+	Redimension/N=(Nu,-1) FullPeakList						// set to exact length
 	ImageStats/M=1/G={0,Nu-1,10,10}/Q FullPeakList
 	wnote = ReplaceNumberByKey("totalPeakIntensity",wnote,V_avg*V_npnts,"=")	// total intensity in all fitted peaks
-	wnote = ReplaceNumberByKey("totalIntensity",wnote,sum(image),"=")			// total intensity in the image
+	wnote = ReplaceNumberByKey("totalIntensity",wnote,sum(image),"=")				// total intensity in the image
 	Note/K FullPeakList,wnote
 
 	CheckDisplayed image
@@ -3569,19 +3570,19 @@ Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAv
 	Variable Nu=0, Nlen=50
 	String wnote = note(image)
 	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
-	Make/N=(Nlen,11)/O $peakListName/WAVE=FullPeakList = NaN
+	Make/N=(Nlen,12)/O $peakListName/WAVE=FullPeakList = NaN
 	wnote = ReplaceNumberByKey("minPeakWidth",wnote,minPeakWidth,"=")
 	wnote = ReplaceNumberByKey("maxPeakWidth",wnote,maxPeakWidth,"=")
 	wnote = ReplaceNumberByKey("minSpotSeparation",wnote,minSep,"=")
 	wnote = ReplaceNumberByKey("threshAboveAvg",wnote,threshAboveAvg,"=")
 	wnote = ReplaceStringByKey("fittedIgorImage",wnote,GetWavesDataFolder(image,2),"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"FittedPeakList","=")
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,10,area,FullPeakList
 
 	Variable fw= ( 2*sqrt(2*ln(2)) )							// this factor corrects for 2-d sigma to FWHM, apply to K3, K5, and the corresponding errors
 	Variable xx,yy,fwx,fwy,sigX,sigY,amp,sigAmp				// holds the resutls of gaussian fit
@@ -3657,17 +3658,18 @@ Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAv
 
 		if (Nu>=Nlen)												// FullPeakList is too short, extend it
 			Nlen += 50
-			Redimension/N=(Nlen,11) FullPeakList
+			Redimension/N=(Nlen,-1) FullPeakList
 		endif
-		FullPeakList[Nu][0]=xx				;	FullPeakList[Nu][1]=yy
+		FullPeakList[Nu][0]=xx					;	FullPeakList[Nu][1]=yy
 		FullPeakList[Nu][2]=sigX				;	FullPeakList[Nu][3]=sigY
 		FullPeakList[Nu][4]=fwx				;	FullPeakList[Nu][5]=fwy
 		FullPeakList[Nu][6]=W_sigma[3]*fw	;	FullPeakList[Nu][7]=W_sigma[5]*fw
 		FullPeakList[Nu][8]=W_coef[6]		;	FullPeakList[Nu][9]=W_sigma[6]
 		FullPeakList[Nu][10]=W_coef[1]*fwx*fwy
+		FullPeakList[Nu][11]=W_coef[1]
 		Nu += 1
 	while(Nu<maxNum)
-	Redimension/N=(Nu,11) FullPeakList						// set to exact length
+	Redimension/N=(Nu,-1) FullPeakList						// set to exact length
 	ImageStats/M=1/G={0,Nu-1,10,10}/Q FullPeakList
 	wnote = ReplaceNumberByKey("totalPeakIntensity",wnote,V_avg*V_npnts,"=")	// total intensity in all fitted peaks
 	wnote = ReplaceNumberByKey("totalIntensity",wnote,sum(image),"=")			// total intensity in the image
@@ -3840,7 +3842,7 @@ print "average for the image = ",V_avg
 endif
 	Duplicate/O image, FitPeaks_ImageMask
 	Wave FitPeaks_ImageMask=FitPeaks_ImageMask
-	Redimension/B/U FitPeaks_ImageMask						// make a mask for the image
+	Redimension/B/U FitPeaks_ImageMask					// make a mask for the image
 	FitPeaks_ImageMask = 0									// set to 0, this includes all of the image
 	Variable localAvg											// average of local spots (not including center)
 
@@ -3850,18 +3852,18 @@ endif
 
 	String wnote = note(image)
 	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",wnote,"="))
-	Make/N=(50,11)/O $peakListName/WAVE=FullPeakList = NaN
+	Make/N=(50,12)/O $peakListName/WAVE=FullPeakList = NaN
 	wnote = ReplaceNumberByKey("minSpotSeparation",wnote,dist,"=")
 	wnote = ReplaceNumberByKey("threshAboveAvg",wnote,threshAboveAvg,"=")
 	wnote = ReplaceStringByKey("fittedIgorImage",wnote,GetWavesDataFolder(image,2),"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"FittedPeakList","=")
 	Note/K FullPeakList,wnote
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,11,amp,FullPeakList
 
 	Variable i
 	Variable px,py, left,right,top,bot
@@ -3918,21 +3920,22 @@ endif
 		endif
 		if (Nu>=Nlen)											// FullPeakList is too short, extend it
 			Nlen += 50
-			Redimension/N=(Nlen,11) FullPeakList
+			Redimension/N=(Nlen,-1) FullPeakList
 		endif
 if (printIt)
 printf "found Gaussian start @ (%d, %d)=%d   with left=%.1f,  right=%.1f,  top=%.1f,  bot=%.1f      result=(%.3f, %.3f)\r",px,py,image[px][py],left,right,top,bot,xx,yy
 endif
-		FullPeakList[Nu][0]=xx				;	FullPeakList[Nu][1]=yy
+		FullPeakList[Nu][0]=xx					;	FullPeakList[Nu][1]=yy
 		FullPeakList[Nu][2]=sigX				;	FullPeakList[Nu][3]=sigY
 		FullPeakList[Nu][4]=fwx				;	FullPeakList[Nu][5]=fwy
 		FullPeakList[Nu][6]=W_sigma[3]*fw	;	FullPeakList[Nu][7]=W_sigma[5]*fw
 		FullPeakList[Nu][8]=W_coef[6]		;	FullPeakList[Nu][9]=W_sigma[6]
 		FullPeakList[Nu][10]=W_coef[1]*fwx*fwy
+		FullPeakList[Nu][11]=W_coef[1]
 		Nu += 1
 		FitPeaks_ImageMask[left,right][top,bot] = 255			// extend the FitPeaks_ImageMask to include this spot
 	while(1)
-	Redimension/N=(Nu,11) FullPeakList
+	Redimension/N=(Nu,-1) FullPeakList
 
 //	String/G pkLIst=""
 //	String str
@@ -4192,7 +4195,7 @@ End
 
 
 // Fit every peak from the output of ImageAnalyzeParticles,  it sets the string pkList based on the fits
-// it also sets FullPeakList[][11] which contains the exact info about the fit of each peak
+// it also sets FullPeakList[][10] which contains the exact info about the fit of each peak
 Static Function reFit_GaussianPkList(image,dist)
 	Wave image
 	Variable dist						// minimum distance between spots (pixels)
@@ -4208,16 +4211,16 @@ Static Function reFit_GaussianPkList(image,dist)
 	Variable left,right,top,bot
 
 	String peakListName="FullPeakList"+detectorID2color(StringByKey("detectorID",note(image),"="))
-	Make/N=(N,11)/O $peakListName/WAVE=FullPeakList = NaN
+	Make/N=(N,12)/O $peakListName/WAVE=FullPeakList = NaN
 	String wnote = ReplaceStringByKey("fittedIgorImage",note(image),GetWavesDataFolder(image,2),"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"FittedPeakList","=")
 	Note/K FullPeakList,wnote
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,11,amp,FullPeakList
 	for (i=0;i<N;i+=1)
 		xx = (W_xmin[i]+W_xmax[i])/2
 		yy = (W_ymin[i]+W_ymax[i])/2
@@ -4275,18 +4278,20 @@ Static Function reFit_GaussianPkList(image,dist)
 		if (tooClose)
 			continue
 		endif
-		FullPeakList[Nu][0]=xx				;	FullPeakList[Nu][1]=yy
+		FullPeakList[Nu][0]=xx					;	FullPeakList[Nu][1]=yy
 		FullPeakList[Nu][2]=sigX				;	FullPeakList[Nu][3]=sigY
 		FullPeakList[Nu][4]=fwx				;	FullPeakList[Nu][5]=fwy
 		FullPeakList[Nu][6]=W_sigma[3]*fw	;	FullPeakList[Nu][7]=W_sigma[5]*fw
 		FullPeakList[Nu][8]=W_coef[6]		;	FullPeakList[Nu][9]=W_sigma[6]
 		FullPeakList[Nu][10]=W_coef[1]*fwx*fwy
+		FullPeakList[Nu][11]=W_coef[1]		// amplitude
+//
 //		sprintf str,"%.0f,%.0f;",xx,yy
 //		sprintf str,"%d,%d;",round(xx),round(yy)
 //		pkList += str
 		Nu += 1
 	endfor
-	Redimension/N=(Nu,11) FullPeakList
+	Redimension/N=(Nu,-1) FullPeakList
 	KillWaves/Z W_sigma,W_coef,W_ParamConfidenceInterval
 	return Nu
 End
@@ -4472,16 +4477,16 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	if (!WaveExists(FullPeakList))
 		DoAlert 0, "input wave for FullPeakList2File() does not exists"
 		return 1
-	elseif (DimSize(FullPeakList,1)!=11)
+	elseif (DimSize(FullPeakList,1)<11)
 		DoAlert 0, "the passed full peak list '"+NameOfWave(FullPeakList)+"' is not the right size"
 		return 1
 	elseif (WaveExists(FullPeakList1))
-		if (DimSize(FullPeakList1,1)!=11)
+		if (DimSize(FullPeakList1,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList1)+"' is the wrong size"
 			return 1
 		endif
 	elseif (WaveExists(FullPeakList2))
-		if (DimSize(FullPeakList2,1)!=11)
+		if (DimSize(FullPeakList2,1)<11)
 			DoAlert 0, "Full peak list 1'"+NameOfWave(FullPeakList2)+"' is the wrong size"
 			return 1
 		endif
@@ -4513,7 +4518,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	Make/N=3/D/FREE qhat
 	String wnote = note(FullPeakList)
 	Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
-	Variable startx,groupx, starty,groupy					// ROI of the original image
+	Variable startx,groupx, starty,groupy			// ROI of the original image
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
 	starty = NumberByKey("starty",wnote,"=")
@@ -4531,7 +4536,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		pixel2q(geo.d[dNum],px,py,qhat,depth=depth)		// was in Wenge-coord system (OLD) or BeamLine(New)
 		if (norm(qhat)>0)									// check for a valid Q
 			Qs[N][0,2] = qhat[q]
-			Qs[N][3] = FullPeakList[i][10]					// the intensity
+			Qs[N][3] = FullPeakList[i][10]			// the integral
 			N += 1
 		endif
 	endfor
@@ -4552,9 +4557,9 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
 			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)		// was in Wenge-coord system (OLD) or BeamLine(New)
-			if (norm(qhat)>0)									// check for a valid Q
+			if (norm(qhat)>0)								// check for a valid Q
 				Qs[N][0,2] = qhat[q]
-				Qs[N][3] = FullPeakList1[i][10]				// the intensity
+				Qs[N][3] = FullPeakList1[i][10]		// the integral
 				N += 1
 			endif
 		endfor
@@ -4576,17 +4581,17 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based
 			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)		// was in Wenge-coord system (OLD) or BeamLine(New)
-			if (norm(qhat)>0)									// check for a valid Q
+			if (norm(qhat)>0)								// check for a valid Q
 				Qs[N][0,2] = qhat[q]
-				Qs[N][3] = FullPeakList2[i][10]				// the intensity
+				Qs[N][3] = FullPeakList2[i][10]		// the integral
 				N += 1
 			endif
 		endfor
 	endif
 	// N is now the actual number of Qs to write
 
-	wnote = note(FullPeakList)									// reset wnote to first peak list
-	startx = NumberByKey("startx",wnote,"=")					// and reset the values writting to first peak file too
+	wnote = note(FullPeakList)						// reset wnote to first peak list
+	startx = NumberByKey("startx",wnote,"=")	// and reset the values writting to first peak file too
 	groupx = NumberByKey("groupx",wnote,"=")
 	starty = NumberByKey("starty",wnote,"=")
 	groupy = NumberByKey("groupy",wnote,"=")
@@ -4840,7 +4845,7 @@ Function/T MakeMeasured_hkl_EnergiesWave(N,type)
 		return ""
 	endif
 
-	Make/N=(N,7)/O hklEmeasured								// holds hkl,E,px,py,detNum for points that have the energies measured
+	Make/N=(N,7)/O hklEmeasured							// holds hkl,E,px,py,detNum for points that have the energies measured
 	SetDimLabel 1,0,H,hklEmeasured ;			SetDimLabel 1,1,K,hklEmeasured ;		SetDimLabel 1,2,L,hklEmeasured
 	SetDimLabel 1,3,$(type+"_measured"),hklEmeasured
 	SetDimLabel 1,4,pixelX,hklEmeasured ;		SetDimLabel 1,5,pixelY,hklEmeasured;	SetDimLabel 1,6,detNum,hklEmeasured
@@ -5954,11 +5959,11 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		endif
 	endif
 	Make/N=(N,17)/O/D PeaksForStrain=NaN
-	SetDimLabel 1,0,h,PeaksForStrain ;			SetDimLabel 1,1,k,PeaksForStrain ;				SetDimLabel 1,2,l,PeaksForStrain
-	SetDimLabel 1,3,measQx,PeaksForStrain ;	SetDimLabel 1,4,measQy,PeaksForStrain ;		SetDimLabel 1,5,measQz,PeaksForStrain
-	SetDimLabel 1,6,indexQx,PeaksForStrain ;	SetDimLabel 1,7,indexQy,PeaksForStrain ;		SetDimLabel 1,8,indexQz,PeaksForStrain
-	SetDimLabel 1,9,meas_Intens,PeaksForStrain;	SetDimLabel 1,10,keV,PeaksForStrain
-	SetDimLabel 1,11,pixelX,PeaksForStrain;	SetDimLabel 1,12,pixelY,PeaksForStrain;		SetDimLabel 1,13,err_nm,PeaksForStrain
+	SetDimLabel 1,0,h,PeaksForStrain ;				SetDimLabel 1,1,k,PeaksForStrain ;				SetDimLabel 1,2,l,PeaksForStrain
+	SetDimLabel 1,3,measQx,PeaksForStrain ;		SetDimLabel 1,4,measQy,PeaksForStrain ;		SetDimLabel 1,5,measQz,PeaksForStrain
+	SetDimLabel 1,6,indexQx,PeaksForStrain ;	SetDimLabel 1,7,indexQy,PeaksForStrain ;	SetDimLabel 1,8,indexQz,PeaksForStrain
+	SetDimLabel 1,9,meas_Intens,PeaksForStrain;SetDimLabel 1,10,keV,PeaksForStrain
+	SetDimLabel 1,11,pixelX,PeaksForStrain;		SetDimLabel 1,12,pixelY,PeaksForStrain;		SetDimLabel 1,13,err_nm,PeaksForStrain
 	String measuredTypeColumnStr = SelectString(strlen(measuredType),"none",measuredType)
 	SetDimLabel 1,14,detNum,PeaksForStrain;	SetDimLabel 1,15,$measuredTypeColumnStr,PeaksForStrain;	SetDimLabel 1,16,deV,PeaksForStrain
 	String wnote = ReplaceNumberByKey("patternNum","",pattern,"=")
@@ -6082,7 +6087,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 
 	// Optimization finished, compute the lattice constants and all of the strain tensors
 
-	axis = xWave[p]											// axis = {rx,ry,rz}
+	axis = xWave[p]												// axis = {rx,ry,rz}
 	fillLC(LC,constrain,xWave[3],xWave[4],xWave[5],xWave[6],xWave[7],xWave[8])
 	KillWaves/Z W_OptGradient
 	if (deviatoric)
@@ -6091,30 +6096,30 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)		// 3 rotations and all 6 lattice constants
 
 	angle= norm(axis)
-	rotationMatAboutAxis(axis,angle,rho)						// calculate rho, the rotation matrix from {rx,ry,rz}
+	rotationMatAboutAxis(axis,angle,rho)					// calculate rho, the rotation matrix from {rx,ry,rz}
 	if (deviatoric)
-		RLfromLatticeConstants(LC,DL,RL,Vc=Vc)				// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
+		RLfromLatticeConstants(LC,DL,RL,Vc=Vc)			// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
 	else
-		Vc=RLfromLatticeConstants(LC,DL,RL)					// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
+		Vc=RLfromLatticeConstants(LC,DL,RL)				// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
 	endif
 	MatrixOp/O RL = rho x RL									// rotate the reciprocal lattice by rho, this is the strained RL
 	MatrixOp/O/FREE DL = rho x DL
-	Ameas = DL													// Vcartesian = A x Vcell,   used to make the strain tensor
+	Ameas = DL														// Vcartesian = A x Vcell,   used to make the strain tensor
 
-	MatrixOp/FREE F = Ameas x Inv(Astart)						// transformed un-strained to strained,  Ameas = F x Ao,        F = R x U
+	MatrixOp/FREE F = Ameas x Inv(Astart)					// transformed un-strained to strained,  Ameas = F x Ao,        F = R x U
 	MatrixOp/FREE U = F^t x F									// U is symmetric, so F^t x F = U^t x R^t x R x U = U x R^-1 x R x U = U x U = U^2
 	if (sqrtSymmetricMat(U))									// U starts as F^t x F, and is replaced by sqrt(U^2)
 		KillWaves/Z rho_latticeMismatch
 		return ""
 	endif
-	MatrixOp/O epsilon = U - Identity(3)						// U = I + epsilon
+	MatrixOp/O epsilon = U - Identity(3)					// U = I + epsilon
 
 	Variable trace = MatrixTrace(epsilon)
 	if (deviatoric)
 		epsilon -= (p==q)*trace/3								// only deviatoric part, subtract trace/3 from diagonal
 	endif
 	trace = MatrixTrace(epsilon)								// re-set trace to be just the epsilon part, should be zero
-	trace = abs(trace)<1e-15 ? 0 : trace						// set really small numbers to zero
+	trace = abs(trace)<1e-15 ? 0 : trace					// set really small numbers to zero
 	Make/N=(3,3)/D/FREE epsilonAbs
 	epsilonAbs = abs(epsilon)
 	WaveStats/Q epsilonAbs
@@ -6124,7 +6129,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	epsilonvM += 6*( epsilon[0][1]^2 + epsilon[1][2]^2 + epsilon[2][0]^2 )
 	epsilonvM = sqrt(epsilonvM/2)
 
-	MatrixOp/O epsilonBL = rho x epsilon x Inv(rho)			// epsilon in beam line coordinates
+	MatrixOp/O epsilonBL = rho x epsilon x Inv(rho)	// epsilon in beam line coordinates
 
 	Make/N=(3,3)/D/FREE Rlocal
 	Rlocal = 0
@@ -6132,7 +6137,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Rlocal[1,2][1,2] = 1/sqrt(2)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonXHF = Rlocal x epsilonBL x Inv(Rlocal)	// get epsilon in the XHF coordinate system
-	Rlocal[1,2][1,2] = -1/sqrt(2)								// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45¡)
+	Rlocal[1,2][1,2] = -1/sqrt(2)							// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45¡)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonSample = Rlocal x epsilonBL x Inv(Rlocal)// get epsilon in the Sample coordinate system
 
@@ -6258,7 +6263,7 @@ End
 Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations and all 6 lattice constants (uses MatrixOP for speed)
 	Wave PeaksForStrain
 	Variable rx,ry,rz
-	Wave LC															//	lattice parameters:   LC = {a,b,c,alpha,bet,gam}
+	Wave LC																	//	lattice parameters:   LC = {a,b,c,alpha,bet,gam}
 
 	Wave RL=RL_latticeMismatch, LC=optimize_LatticeConstantsWave
 	if (!WaveExists(RL) || !WaveExists(LC))
@@ -6269,9 +6274,9 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 	Make/N=3/D/FREE axis = {rx,ry,rz}
 	Make/N=(3,3)/D/FREE rho
 	Variable angle= norm(axis)
-	rotationMatAboutAxis(axis,angle,rho)								// calculate rho, the rotation matrix from {rx,ry,rz}
+	rotationMatAboutAxis(axis,angle,rho)							// calculate rho, the rotation matrix from {rx,ry,rz}
 
-	RLfromLatticeConstants(LC,$"",RL,Vc=Vc)							// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
+	RLfromLatticeConstants(LC,$"",RL,Vc=Vc)						// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
 	MatrixOp/O RL = rho x RL											// rotate the reciprocal lattice by rho
 
 	Variable N = DimSize(PeaksForStrain,0)
@@ -6279,14 +6284,14 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 	Make/N=(N)/D/FREE weight=1/(3*N)								// weight for each point, the 3 is because I am weighting 3-vectors
 	Qvecs = PeaksForStrain[p][q+3]									// measured directions (assumed normalized)
 	Gvecs = PeaksForStrain[p][q]										// hkl of reflections (first 3 columns)
-	MatrixOp/O/FREE Gvecs = (RL x Gvecs^t)^t							// calcualted Gvectors from hkls
-	PeaksForStrain[][6,8] = Gvecs[p][q-6]								// save for later checking
-	// weight = sqrt(sqrt(PeaksForStrain[p][9]))						// weakly weight by intensity?
+	MatrixOp/O/FREE Gvecs = (RL x Gvecs^t)^t						// calcualted Gvectors from hkls
+	PeaksForStrain[][6,8] = Gvecs[p][q-6]							// save for later checking
+	// weight = sqrt(sqrt(PeaksForStrain[p][9]))				// weakly weight by intensity?
 
-	Make/N=(N)/FREE measured = PeaksForStrain[p][15]				// measured energies(kev), Q(1/nm), or d(nm).  It is only used to make a flag.
+	Make/N=(N)/FREE measured = PeaksForStrain[p][15]			// measured energies(kev), Q(1/nm), or d(nm).  It is only used to make a flag.
 	WaveStats/M=1/Q measured
-	if (V_npnts>0)														// we have some measured energies, not just spot positions
-		weight = measured>0 ? 5 : 1										// more heavily weight points with measured energies (by x 5)
+	if (V_npnts>0)															// we have some measured energies, not just spot positions
+		weight = measured>0 ? 5 : 1									// more heavily weight points with measured energies (by x 5)
 		Variable m = sum(weight)
 		weight *= 1/(3*m)	
 	endif
@@ -6371,7 +6376,6 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 			Wave FullPeakIndexed = $indexName
 		endif
 	endif
-//	Wave FullPeakList=FullPeakListxy50, FullPeakIndexed=FullPeakIndexedxy50
 	if (!WaveExists(FullPeakList) || !WaveExists(FullPeakIndexed))
 		return ""
 	endif
@@ -6427,24 +6431,24 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	RLmeas[2][0] = as2 ;		RLmeas[2][1] = bs2 ;		RLmeas[2][2] = cs2
 	Make/N=6/O/D optimize_LatticeConstantsWave
 	Wave LC=optimize_LatticeConstantsWave
-	Variable Vc = RL2latticeConstants(RLmeas,LC)			// calc original lattice constants from RL, stored in LC, save original Vc too
+	Variable Vc = RL2latticeConstants(RLmeas,LC)		// calc original lattice constants from RL, stored in LC, save original Vc too
 	forceLattice(LC,NumberByKey("SpaceGroup",note(FullPeakIndexed),"="),Vc=Vc)	// force lattice constants to match Space Group exactly, preserve Vc
 
 	Make/N=(3,3)/O/D DL_latticeMismatch, RL_latticeMismatch, RL0_latticeMismatch, rho_latticeMismatch
 	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, RL0=RL0_latticeMismatch, rho=rho_latticeMismatch
-	RLfromLatticeConstants(LC,DL,RL0)					// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
-	MatrixOp/O rho = RLmeas x Inv(RL0)					// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
+	RLfromLatticeConstants(LC,DL,RL0)						// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
+	MatrixOp/O rho = RLmeas x Inv(RL0)						// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
 	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif
-	axis *= angle											// length of axis is now rotation angle (rad)
+	axis *= angle													// length of axis is now rotation angle (rad)
 	rotationMatAboutAxis(axis,angle,rho)					// forces rho to be a perfect rotation matrix
 	MatrixOp/O RLmeas = rho x RL0							// ensure that starting point perfectly agrees with Space Group
 
 	Make/N=(3,3)/O/D Ameas_Deviatoric, Astart_Deviatoric	// Vcartesian = A x Vcell,   used to make the strain tensor
 	Wave Ameas=Ameas_Deviatoric, Astart=Astart_Deviatoric
-	Astart = DL												// the starting direct lattice
+	Astart = DL														// the starting direct lattice
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 			printf "¥"
@@ -6487,12 +6491,12 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		hkl[0] = PeaksForStrain[i][0]
 		hkl[1] = PeaksForStrain[i][1]
 		hkl[2] = PeaksForStrain[i][2]
-		MatrixOp/O/FREE qhat = RLmeas x hkl				// predicted g^ from each measured hkl
+		MatrixOp/O/FREE qhat = RLmeas x hkl					// predicted g^ from each measured hkl
 		normalize(qhat)
 		PeaksForStrain[i][6,8] = qhat[q-6]
 		cosMax = -4
 		jmax = -1
-		for (j=0;j<Nj;j+=1)								// search fitted peaks to find the closest one
+		for (j=0;j<Nj;j+=1)											// search fitted peaks to find the closest one
 			qhat2 = Qs[j][p]
 			dot = MatrixDot(qhat,qhat2)
 			if (dot>cosMax)
@@ -6501,9 +6505,9 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 			endif
 		endfor
 		if (jmax>=0)
-			qhat2 = Qs[jmax][p]							// closest fitted peak to this hkl
+			qhat2 = Qs[jmax][p]										// closest fitted peak to this hkl
 			normalize(qhat2)
-			PeaksForStrain[m][3,5] = qhat2[q-3]			// store fitted q^, and its intensity
+			PeaksForStrain[m][3,5] = qhat2[q-3]				// store fitted q^, and its intensity
 			PeaksForStrain[m][9] = Qs[jmax][3]
 			m += 1
 		endif
@@ -6517,8 +6521,8 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 
 	KillWaves/Z RL0_latticeMismatch
 	Redimension/N=(N,14) PeaksForStrain
-	if ((Nfit+3)>=(2*N))									// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations),  requires 1 more 
-		return ""											// each measured spot provides 2 values
+	if ((Nfit+3)>=(2*N))											// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations),  requires 1 more 
+		return ""														// each measured spot provides 2 values
 	endif
 
 	Make/N=(Nfit+3)/O/D optimize_typXWave, optimize_xWave
@@ -6551,7 +6555,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	endif
 	KillVariables/Z printOnlyFirstStrainNaN
 
-	if (V_flag)												// Optimization failed
+	if (V_flag)													// Optimization failed
 		if (printIt)
 			printf "Optimize failed with V_flag=%d,   V_OptTermCode=%d,   V_OptNumIters=%d,   V_OptNumFunctionCalls=%d\r",V_flag,V_OptTermCode,V_OptNumIters,V_OptNumFunctionCalls
 		endif
@@ -6569,18 +6573,18 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)		// 3 rotations and all 6 lattice constants
 
 	angle= norm(axis)
-	rotationMatAboutAxis(axis,angle,rho)					// calculate rho, the rotation matrix from {rx,ry,rz}
-	RLfromLatticeConstants(LC,DL,RL,Vc=Vc)				// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
+	rotationMatAboutAxis(axis,angle,rho)				// calculate rho, the rotation matrix from {rx,ry,rz}
+	RLfromLatticeConstants(LC,DL,RL,Vc=Vc)			// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
 	MatrixOp/O RL = rho x RL								// rotate the reciprocal lattice by rho, this is the strained RL
 	MatrixOp/O DL = rho x DL
-	Ameas = DL												// Vcartesian = A x Vcell,   used to make the strain tensor
+	Ameas = DL													// Vcartesian = A x Vcell,   used to make the strain tensor
 
 	String wName = UniqueName("sqrtMat",1,0)
 	Duplicate/O Astart $wName
 	Wave F = $wName											// holds the transformation from Astart to Ameas
 	wName = UniqueName("sqrtMat",1,0)
 	Duplicate/O Astart $wName
-	Wave U = $wName										// holds U,  F = R x U
+	Wave U = $wName											// holds U,  F = R x U
 
 	MatrixOp/O F = Ameas x Inv(Astart)					// transformed un-strained to strained,  Ameas = F x Ao
 	MatrixOp/O U = F^t x F									// U is symmetric, so F^t x F = U^t x R^t x R x U = U x R^-1 x R x U = U x U = U^2
@@ -6591,13 +6595,13 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		KillWaves/Z hkl_latticeMismatch, RLmeas_latticeMismatch
 		return ""
 	endif
-	MatrixOp/O epsilon = U - Identity(3)					// U = I + epsilon
+	MatrixOp/O epsilon = U - Identity(3)				// U = I + epsilon
 	KillWaves/Z U
 
 	Variable trace = MatrixTrace(epsilon)
 	epsilon -= (p==q)*trace/3								// only deviatoric part, subtract trace/3 from diagonal
 	trace = MatrixTrace(epsilon)							// re-set trace to be just the epsilon part, should be zero
-	trace = abs(trace)<1e-15 ? 0 : trace					// set really small numbers to zero
+	trace = abs(trace)<1e-15 ? 0 : trace				// set really small numbers to zero
 	Wave epsilonAbs = $(microGeo#MakeUnique3x3Mat($""))
 	epsilonAbs = abs(epsilon)
 	WaveStats/Q epsilonAbs
@@ -6616,7 +6620,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Rlocal[1,2][1,2] = 1/sqrt(2)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonXHF = Rlocal x epsilonBL x Inv(Rlocal)	// get epsilon in the XHF coordinate system
-	Rlocal[1,2][1,2] = -1/sqrt(2)							// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45¡)
+	Rlocal[1,2][1,2] = -1/sqrt(2)						// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45¡)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonSample = Rlocal x epsilonBL x Inv(Rlocal)// get epsilon in the Sample coordinate system
 
@@ -7103,12 +7107,12 @@ Static Function/WAVE FullPeakList2Qwave(FullPeakList) // convert fitted peaks to
 	if (!WaveExists(FullPeakList))
 		DoAlert 0, "input wave for FullPeakList2File() does not exists"
 		return $""
-	elseif (DimSize(FullPeakList,1)!=11)
+	elseif (DimSize(FullPeakList,1)<11)
 		DoAlert 0, "the passed full peak list '"+NameOfWave(FullPeakList)+"' is not the right size"
 		return $""
 	endif
 	Variable N=DimSize(FullPeakList,0)
-	if (N<1)										// nothing to write
+	if (N<1)												// nothing to write
 		return $""
 	endif
 	STRUCT microGeometry geo
@@ -7120,7 +7124,7 @@ Static Function/WAVE FullPeakList2Qwave(FullPeakList) // convert fitted peaks to
 	Make/N=3/FREE/D qhat
 	String wnote = note(FullPeakList)
 	Variable dNum = max(detectorNumFromID(geo, StringByKey("detectorID", wnote,"=")),0)
-	Variable startx,groupx, starty,groupy			// ROI of the original image
+	Variable startx,groupx, starty,groupy		// ROI of the original image
 	startx = NumberByKey("startx",wnote,"=")
 	groupx = NumberByKey("groupx",wnote,"=")
 	starty = NumberByKey("starty",wnote,"=")
@@ -7136,7 +7140,7 @@ Static Function/WAVE FullPeakList2Qwave(FullPeakList) // convert fitted peaks to
 		px = (startx-FIRST_PIXEL) + groupx*FullPeakList[i][0] + (groupx-1)/2		// change to un-binned pixels
 		py = (starty-FIRST_PIXEL) + groupy*FullPeakList[i][1] + (groupy-1)/2		// pixels are still zero based
 		pixel2q(geo.d[dNum],px,py,qhat,depth=depth)// in Beam Line Coord system
-		if (norm(qhat)>0)							// check for a valid Q
+		if (norm(qhat)>0)								// check for a valid Q
 			normalize(qhat)
 			Qs[m][0,2] = qhat[q]
 			Qs[m][3] = max(FullPeakList[i][10],0) // save intensity too
@@ -7681,11 +7685,10 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 	d = (strlen(WaveListClass("IndexedPeakList*","*","")) && g.Ndetectors>1) ? 0 : 2
 	Button buttonAuxIndex,win=$win,disable= d
 
-//	d = strlen(WaveListClass("FittedPeakList","*","DIMS:2,MAXCOLS:11,MINCOLS:11"))<1 ? 2 : 0
 	d = strlen(WaveListClass("FittedPeakList*","*","MINCOLS:1"))<1 ? 2 : 0
 	Button buttonIndex,win=$win,disable= d
 
-	d = (strlen(WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:11,MINCOLS:11")) && strlen(WaveListClass("IndexedPeakList*","*",""))) ? 0 : 2
+	d = (strlen(WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:12,MINCOLS:11")) && strlen(WaveListClass("IndexedPeakList*","*",""))) ? 0 : 2
 	Button buttonStrainRefine,win=$win,disable= d
 
 	d = (strlen(WaveListClass("IndexedPeakList*","*",""))) ? 0 : 2
@@ -7826,7 +7829,7 @@ Function IndexButtonProc(B_Struct) : ButtonControl
 //	elseif (stringmatch(ctrlName,"buttonPeaksFromBoxes") && strlen(StrVarOrDefault("pkList","")))
 //		SVAR pkList=pkList
 //		setFittedPeaksFromList($"",NaN,pkList)
-	elseif (stringmatch(ctrlName,"buttonIndex") && strlen(WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:11,MINCOLS:11")))
+	elseif (stringmatch(ctrlName,"buttonIndex") && strlen(WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:12,MINCOLS:11")))
 		IndexAndDisplay($"",NaN,NaN,NaN,NaN,NaN,NaN,NaN,printit=1)
 	elseif (stringmatch(ctrlName,"buttonStrainRefine"))
 #ifdef USE_ENERGY_STRAIN_REFINE			//#if (Exists("TotalStrainRefine")==6)

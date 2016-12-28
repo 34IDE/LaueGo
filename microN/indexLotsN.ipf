@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
 #pragma version = 2.37
-#include  "ArrayOf3dOrientsN", version>=2.58
+#include "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
 #include "xmlMultiIndex", version>=1.66
@@ -1444,6 +1444,12 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 	ww = FullPeakList[p][9]
 	sprintf str,"<chisq>%s</chisq>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
 	xml += "\t\t\t"+str+"\n"
+
+	if (DimSize(FullPeakList,1)>11)
+		ww = FullPeakList[p][11]
+		sprintf str,"<amp>%s</amp>", vec2str(ww,maxPrint=1000,bare=1,sep=" ")
+		xml += "\t\t\t"+str+"\n"
+	endif
 
 	xml += "\t\t</peaksXY>\n"
 	xml += "\t</detector>\n"

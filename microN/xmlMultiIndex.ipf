@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.98
+#pragma version=1.99
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1767,25 +1767,27 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	if (Nlen<4)
 		return ""
 	endif
-	Make/N=(Nlen,11)/O FullPeakList
+	Make/N=(Nlen,12)/O FullPeakList
 	FullPeakList = NaN
 	FullPeakList[][0] = str2num(StringFromList(p,svec))
 	svec = ReplaceString(" ",xmlTagContents("Ypixel",step),";")
 	FullPeakList[][1] = str2num(StringFromList(p,svec))
-	svec = ReplaceString(" ",xmlTagContents("Intens",step),";")
+	svec = ReplaceString(" ",xmlTagContents("Integral",step),";")
 	FullPeakList[][10] = str2num(StringFromList(p,svec))
+	svec = ReplaceString(" ",xmlTagContents("Intens",step),";")
+	FullPeakList[][11] = str2num(StringFromList(p,svec))
 
 	String roi = xmlTagKeyVals("ROI",step)
 	roi = RemoveFromList("/",roi)
 	String wnote = ReplaceStringByKey("waveClass","","FittedPeakList","=")
 	wnote += roi
 	wnote = ReplaceStringByKey("detectorID",wnote,xmlTagContents("detectorID",step),"=")
-	SetDimLabel 1,0,x0,FullPeakList		;	SetDimLabel 1,1,y0,FullPeakList
-	SetDimLabel 1,2,x0Err,FullPeakList	;	SetDimLabel 1,3,y0Err,FullPeakList
+	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
+	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
 	SetDimLabel 1,6,fwxErr,FullPeakList	;	SetDimLabel 1,7,fwyErr,FullPeakList
 	SetDimLabel 1,8,correlation,FullPeakList ;	SetDimLabel 1,9,correlationErr,FullPeakList
-	SetDimLabel 1,10,area,FullPeakList
+	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,11,amp,FullPeakList
 	Note/K FullPeakList,wnote
 
 	svec = ReplaceString(" ",xmlTagContents("h",step),";")
@@ -1814,8 +1816,8 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	str += ReplaceString(" ",xmlTagContents("cstar",step),",") + "}}"
 	wnote = ReplaceStringByKey("recip_lattice0",wnote,str,"=")
 	Note/K FullPeakIndexed, wnote
-	SetDimLabel 1,0,Qx,FullPeakIndexed		;	SetDimLabel 1,1,Qy,FullPeakIndexed
-	SetDimLabel 1,2,Qz,FullPeakIndexed		;	SetDimLabel 1,3,h,FullPeakIndexed
+	SetDimLabel 1,0,Qx,FullPeakIndexed			;	SetDimLabel 1,1,Qy,FullPeakIndexed
+	SetDimLabel 1,2,Qz,FullPeakIndexed			;	SetDimLabel 1,3,h,FullPeakIndexed
 	SetDimLabel 1,4,k,FullPeakIndexed			;	SetDimLabel 1,5,l,FullPeakIndexed
 	SetDimLabel 1,6,Intensity,FullPeakIndexed	;	SetDimLabel 1,7,keV,FullPeakIndexed
 	SetDimLabel 1,8,angleErr,FullPeakIndexed	;	SetDimLabel 1,9,pixelX,FullPeakIndexed
@@ -5310,7 +5312,11 @@ Variable id = 0				// detector number
 	for (i=0;i<Npeaks;i+=1)
 		step.d[id].peaks.Xpixel[i] = FullPeakList[i][0]
 		step.d[id].peaks.Ypixel[i] = FullPeakList[i][1]
-		step.d[id].peaks.Intens[i] = FullPeakList[i][10]
+		if (DimSize(FullPeakList,1)>11)
+			step.d[id].peaks.Intens[i] = FullPeakList[i][11]
+		else
+			step.d[id].peaks.Intens[i] = FullPeakList[i][10]
+		endif
 		step.d[id].peaks.Integral[i] = FullPeakList[i][10]
 		step.d[id].peaks.hwhmX[i] = FullPeakList[i][4]/2
 		step.d[id].peaks.hwhmY[i] = FullPeakList[i][5]/2
