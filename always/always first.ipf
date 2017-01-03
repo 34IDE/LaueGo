@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.75
+#pragma version = 2.76
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -92,6 +92,13 @@ Static Function CheckStartupPrefs()
 	else
 		SetMaskFromPrefsStruct(prefs)	// read valid prefs from "~/Library:Preferences/WaveMetrics/JZT/startup"
 	endif
+End
+
+
+Static Function ShowStartUpPrefsJZT()	// load the startup preferences and print them
+	STRUCT StartUpPrefsJZT prefs
+	LoadPackagePreferences/MIS=1 "JZT","startup",0,prefs
+	PrintStartUpPrefsJZT(prefs)
 End
 
 
@@ -217,3 +224,43 @@ Static Function PrintStartUpPrefsJZT(prefs)
 	endif
 End
 
+
+// Set those items that are passed in the funciton
+Static Function ChangeStartupPrefsJZT([General, Gizmo, LaueGo, Scattering, APS, LocalPackages, printIt])
+	Variable General, Gizmo, LaueGo, Scattering, APS, LocalPackages
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : 0
+
+	STRUCT StartUpPrefsJZT prefs
+	LoadPackagePreferences/MIS=1 "JZT","startup",0,prefs
+
+	// make the requested changes
+	if (!ParamIsDefault(General) && numtype(General)==0)
+		prefs.General = !(!General)
+	endif
+	if (!ParamIsDefault(Gizmo) && numtype(Gizmo)==0)
+		prefs.Gizmo = !(!Gizmo)
+	endif
+	if (!ParamIsDefault(LaueGo) && numtype(LaueGo)==0)
+		prefs.LaueGo = !(!LaueGo)
+	endif
+	if (!ParamIsDefault(Scattering) && numtype(Scattering)==0)
+		prefs.Scattering = !(!Scattering)
+	endif
+	if (!ParamIsDefault(APS) && numtype(APS)==0)
+		prefs.APSspecific = !(!APS)
+	endif
+	if (!ParamIsDefault(LocalPackages) && numtype(LocalPackages)==0)
+		prefs.LocalPackages = !(!LocalPackages)
+	endif
+
+	prefs.General = (prefs.Gizmo || prefs.LaueGo || prefs.Scattering || prefs.APSspecific || prefs.LocalPackages) ? 1 : prefs.General
+	prefs.Scattering = prefs.LaueGo ? 1 : prefs.Scattering
+
+	SavePackagePreferences/FLSH=1 "JZT","startup",0,prefs
+	if (printIt)
+		PrintStartUpPrefsJZT(prefs)
+	endif
+	Variable mask = SetMaskFromPrefsStruct(prefs)
+	return mask
+End
