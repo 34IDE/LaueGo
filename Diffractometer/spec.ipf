@@ -2393,8 +2393,6 @@ Function/S WordToGreek(str)	// changes Greek names to the Greek symbol for label
 
 	// Greek letters ordered by length of name
 	String greeks="upsilon;epsilon;omicron;lambda;gamma;alpha;delta;theta;beta;zeta;iota;kappa;sigma;omega;xsi;rho;tau;phi;chi;psi;eta;mu;nu;xi;pi"
-
-	String pre="\\F'Symbol'", post="\\]0"
 	Variable N=strlen(str), Ngreeks=ItemsInList(greeks)
 
 	str = TrimBoth(str,chars="_")					// remove all leading and trailing underscores
@@ -2402,7 +2400,7 @@ Function/S WordToGreek(str)	// changes Greek names to the Greek symbol for label
 		str = str[1,N-1]
 	endif
 
-	String name, letter
+	String name, code
 	Variable i,m
 	for (i=0;i<Ngreeks;i+=1)							// check for presence of each of the names
 		name = StringFromList(i,greeks)
@@ -2411,15 +2409,17 @@ Function/S WordToGreek(str)	// changes Greek names to the Greek symbol for label
 			if (exists(name)>=3)						// probably has a trailing underscore, include underscore with name
 				name += SelectString(strsearch(str,name+"_",0,2)==m,"","_")
 			endif
-			if (char2num(str[m])<96)					// an uppercase letter
-				name = UpperStr(name)
+			if (char2num(str[m])<96 && !StringMatch(name,"theta"))
+				name = UpperStr(name)					// an uppercase letter, but not theta
 			endif
-			letter = Name2SymbolCharacter(name)	// character for this Greek letter
-			str = ReplaceString(name,str,pre+letter+post,0,1)
-			i -= 1											// forces a  check again for this Greek letter, e.g. needed for "2theta - theta"
+			code = Letter2SymbolOrUnicode(name)	// returns either "\F'Symbol'q\]0" or the unicode for theta
+			if (strlen(code))
+				str = ReplaceString(name,str,code,0,1)
+				i -= 1										// forces a  check again for this Greek letter, e.g. needed for "2theta - theta"
+			endif
 		endif
 	endfor
-	str = ReplaceString("\\]0 \\F'Symbol'",str," ")	// remove redundant Symbol fonts
+	str = ReplaceString("\\F]0 \\F'Symbol'",str," ")	// remove redundant Symbol fonts
 
 	m = 0
 	do															// change underscores to space or null as appropriate
