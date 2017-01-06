@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.15
+#pragma version = 4.16
 // #pragma hide = 1
 
 Menu "Graph"
@@ -133,6 +133,8 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
 //		SquareUpGizmo(gName), Used to square up a graph gizmo
+//		Name2SymbolCharacter(name), return character equivalent in Symbol font, "theta" returns "q"
+//		Letter2SymbolOrUnicode(letter), for "theta", returns either unicode or "\F'Symbol'q\F]0"
 //		added LetterName2Unicode(letter), returns unicode version of letter {alpha,Beta,...} and {Alef, bet, gimel...}
 //			for Igor6, returns Mac Roman keyboard characters as well as it can.
 //		num2Ordinal(n), converts integer n to ordinal string, e.g. 1 --> "1st"
@@ -4523,6 +4525,50 @@ End
 
 //  ====================================================================================  //
 //  ============================= Start of Unicode Letters =============================  //
+
+Function/T Name2SymbolCharacter(name)				// returns the character equivalent for the Symbol font
+	String name												// name of a Symbol character, e.g. "theta", or "aleph"
+
+	String symNames="alpha:A;beta:B;gamma:G;delta:D;epsilon:E;zeta:Z;eta:H;theta:Q;iota:I;kappa:K;lambda:L;"
+	symNames += "mu:M;nu:N;xi:X;xsi:X;omicron:O;pi:P;rho:R;sigma:S;tau:T;upsilon:U;phi:F;chi:C;psi:Y;omega:W;"
+	symNames += "forAll:34;Exists:36;EqualTilde:64;therefore:92;perp:94;inf:165;club:167;diamond:168;heart169;spade:170;"
+	symNames += "leftRight:171;left:172;up:173;right:174;down:175;"
+	symNames += "ex:180;proportional:181;partialDif:182;bullet:183;div:184;NotEqual:185;"
+	symNames += "equivalent:186;approx:187;3dot:188;return:191;"
+	symNames += "aleph:192;Imag:193;Real:194;InnerProd:196;InnerSum:197;circleCross:198;"
+	symNames += "Intersection:199;Union:200;subset:201;superset:204;"
+	symNames += "angle:208;del:209;registered:210;copyright:211;TM:212;Product:213;root:214;"
+	symNames += "leftRightDouble:219;leftDouble:220;upDouble:221;rightDouble:222;downDouble:223;"
+	symNames += "bra:225;bar:231;ket:241;Sum:229;"
+
+	String ch = StringByKey(name,symNames)
+	Variable i = str2num(ch)
+
+	if (i>0)
+		ch = num2char(i)
+	else
+		ch = SelectString(char2num(name) < 97 , LowerStr(ch), UpperStr(ch))
+	endif
+	return ch
+End
+
+
+#if (IgorVersion()<7)
+Function/T Letter2SymbolOrUnicode(letter)		// Igor 6 does not support unicode
+	String letter
+	String ch = Name2SymbolCharacter(letter)	
+	if (strlen(ch))
+		return "\\F'Symbol'"+ch+"\\F]0"
+	endif
+	return ""
+End
+#else
+Function/T Letter2SymbolOrUnicode(letter)
+	String letter
+	return LetterName2Unicode(letter)
+End
+#endif
+
 
 #if (IgorVersion()<7)
 Function/T LetterName2Unicode(letter)		// Igor 6 does not support unicode

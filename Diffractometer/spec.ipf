@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.49
+#pragma version = 2.50
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -122,6 +122,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Apr 23 2016, cleaned up specInfo() and specinfoT()
 //
 // Jun 23 2016, changed DisplaySpecScan() and DisplayRangeOfSpecScans(), added Kflag to make graphs that don't ask to save
+//
+// Jan 6 2017, DisplaySpecScan() to the TextBox, I make the text have alpha=0.76295 for Igor 7
 
 Menu "Data"
 	"-"
@@ -650,7 +652,7 @@ Function DisplaySpecScan(scanNum,overlay,[Kflag])
 	String yLabel = StringByKey("GraphAxisLabelVert",note(yw),"=")
 	if (strlen(yLabel)<1)					// yLabel is not in wave note, so make it
 		yLabel = yname
-		yLabel = WordToGreek(yLabel)		// substitute Igor greek for name of greek letter
+		yLabel = WordToGreek(yLabel)		// substitute Igor Greek for name of Greek letter
 		yLabel = SelectString(cmpstr(yLabel,"I00"),"I\\Boo\M",yLabel)
 		yLabel = SelectString(cmpstr(yLabel,"I0"),"I\\Bo\M",yLabel)
 	endif
@@ -660,11 +662,11 @@ Function DisplaySpecScan(scanNum,overlay,[Kflag])
 	if (strlen(xLabel)<1)
 		xLabel = xname
 		if (cmpstr(xLabel,"ttheta")==0 || cmpstr(xLabel,"Two_Theta")==0 || cmpstr(xLabel,"2theta")==0 || cmpstr(xLabel,"X2_theta")==0 || cmpstr(xLabel,"tth")==0)
-			xLabel = "2\\F'Symbol'q\\]0"
+			xLabel = "2" + Letter2SymbolOrUnicode("theta")
 		endif
 		xLabel = SelectString(cmpstr(xLabel,"th"),"theta",xLabel)
 		xLabel = SelectString(cmpstr(xLabel,"Time_"),"time",xLabel)
-		xLabel = WordToGreek(xLabel)		// substitute Igor greek for name of greek letter
+		xLabel = WordToGreek(xLabel)		// substitute Igor Greek for name of Greek letter
 	endif
 	Label bottom xLabel + SelectString(showXunits," \\E","  (\\U)","\\U")
 	if (scanDim==1)
@@ -672,8 +674,12 @@ Function DisplaySpecScan(scanNum,overlay,[Kflag])
 	endif
 
 	SpecGenericGraphStyle()
+#if (IgorVersion()<7)
+	TextBox/F=0/S=3/A=LT/B=1 text2write
+#else
+	TextBox/F=0/S=3/A=LT/B=(65535,65535,65535,50000) text2write
+#endif
 
-	Textbox/F=0/S=3/A=LT/B=1 text2write
 	if (exists("addMoreAnnotation2specPlot")==5)
 		Execute "addMoreAnnotation2specPlot("+num2istr(scanNum)+")"
 	else
@@ -2382,43 +2388,38 @@ End
 
 
 
-Function/S WordToGreek(str)	// changes greek names to the greek symbol for labels.  only supports uppercase where it is unique looking
+Function/S WordToGreek(str)	// changes Greek names to the Greek symbol for labels.  only supports uppercase where it is unique looking
 	String str
 
-	String greeks="alpha,a;beta,b;gamma,g;delta,d;lambda,l;chi,c;phi,f;eta,h;mu,m;nu,n;pi,p;rho,r;sigma,s;tau,t;upsilon,u;omega,w;xsi,x;psi,y;zeta,z;theta,q"
-	String pre="\\F'Symbol'", post="\\]0"
-	Variable N=strlen(str), igreeks=ItemsInList(greeks)
+	// Greek letters ordered by length of name
+	String greeks="upsilon;epsilon;omicron;lambda;gamma;alpha;delta;theta;beta;zeta;iota;kappa;sigma;omega;xsi;rho;tau;phi;chi;psi;eta;mu;nu;xi;pi"
 
-	if (stringmatch(str[0],"_"))						// remove all leading underscores
-		str = WordToGreek(str[1,N-1])
-	endif
-	if (stringmatch(str[N-1],"_"))					// remove all trailing underscores
-		str = WordToGreek(str[0,N-2])
-	endif
+	String pre="\\F'Symbol'", post="\\]0"
+	Variable N=strlen(str), Ngreeks=ItemsInList(greeks)
+
+	str = TrimBoth(str,chars="_")					// remove all leading and trailing underscores
 	if (isdigit(str[1]) && !strsearch(str[0],"X",0))	// e.g.  starts out X2, remove the leading X
-		str = WordToGreek(str[1,N-1])
+		str = str[1,N-1]
 	endif
 
 	String name, letter
 	Variable i,m
-	for (i=0;i<igreeks;i+=1)							// check for presence of each of the names
-		name = StringFromList(0,StringFromList(i,greeks),",")
+	for (i=0;i<Ngreeks;i+=1)							// check for presence of each of the names
+		name = StringFromList(i,greeks)
 		m = FindNextIsolatedWord(str,name,0)		// finds first occurance of name in str, where name is an isolated word
 		if (m>=0)											// found name
-
-			if (exists(name)>=3)							// probably has a trailing underscore, include underscore with name
+			if (exists(name)>=3)						// probably has a trailing underscore, include underscore with name
 				name += SelectString(strsearch(str,name+"_",0,2)==m,"","_")
 			endif
-
-			letter= StringFromList(1,StringFromList(i,greeks),",")
-			if (char2num(str[m])<91)					// an upper case greek letter
-				letter = UpperStr(letter)
-				name[0,0] = UpperStr(name[0])
+			if (char2num(str[m])<96)					// an uppercase letter
+				name = UpperStr(name)
 			endif
-			str = ReplaceString(name,str,pre+letter+post,1,1)
-			i -= 1											// forces a  check again for this greek letter, e.g. needed for "2theta - theta"
+			letter = Name2SymbolCharacter(name)	// character for this Greek letter
+			str = ReplaceString(name,str,pre+letter+post,0,1)
+			i -= 1											// forces a  check again for this Greek letter, e.g. needed for "2theta - theta"
 		endif
 	endfor
+	str = ReplaceString("\\]0 \\F'Symbol'",str," ")	// remove redundant Symbol fonts
 
 	m = 0
 	do															// change underscores to space or null as appropriate
@@ -2433,6 +2434,57 @@ Function/S WordToGreek(str)	// changes greek names to the greek symbol for label
 	while(m>=0)
 	return str
 End
+//Function/S WordToGreek(str)	// changes Greek names to the Greek symbol for labels.  only supports uppercase where it is unique looking
+//	String str
+//
+//	String greeks="alpha,a;beta,b;gamma,g;delta,d;lambda,l;chi,c;phi,f;eta,h;mu,m;nu,n;pi,p;rho,r;sigma,s;tau,t;upsilon,u;omega,w;xsi,x;psi,y;zeta,z;theta,q"
+//	String pre="\\F'Symbol'", post="\\]0"
+//	Variable N=strlen(str), igreeks=ItemsInList(greeks)
+//
+//	if (stringmatch(str[0],"_"))						// remove all leading underscores
+//		str = WordToGreek(str[1,N-1])
+//	endif
+//	if (stringmatch(str[N-1],"_"))					// remove all trailing underscores
+//		str = WordToGreek(str[0,N-2])
+//	endif
+//	if (isdigit(str[1]) && !strsearch(str[0],"X",0))	// e.g.  starts out X2, remove the leading X
+//		str = WordToGreek(str[1,N-1])
+//	endif
+//
+//	String name, letter
+//	Variable i,m
+//	for (i=0;i<igreeks;i+=1)							// check for presence of each of the names
+//		name = StringFromList(0,StringFromList(i,greeks),",")
+//		m = FindNextIsolatedWord(str,name,0)		// finds first occurance of name in str, where name is an isolated word
+//		if (m>=0)											// found name
+//
+//			if (exists(name)>=3)							// probably has a trailing underscore, include underscore with name
+//				name += SelectString(strsearch(str,name+"_",0,2)==m,"","_")
+//			endif
+//
+//			letter= StringFromList(1,StringFromList(i,greeks),",")
+//			if (char2num(str[m])<91)					// an upper case Greek letter
+//				letter = UpperStr(letter)
+//				name[0,0] = UpperStr(name[0])
+//			endif
+//			str = ReplaceString(name,str,pre+letter+post,1,1)
+//			i -= 1											// forces a  check again for this Greek letter, e.g. needed for "2theta - theta"
+//		endif
+//	endfor
+//
+//	m = 0
+//	do															// change underscores to space or null as appropriate
+//		m = strsearch(str,"_",m)
+//		if (m>=0)
+//			if (isdigit(str[m-1]) && isdigit(str[m+1]))
+//				str = ReplaceString("_",str," ",1,1)
+//			else
+//				str = ReplaceString("_",str,"",1,1)
+//			endif
+//		endif
+//	while(m>=0)
+//	return str
+//End
 //
 Static Function FindNextIsolatedWord(str,word,start)	// finds first occurance of word in str, where word is an isolated word
 	String str								// str to search in
@@ -2455,101 +2507,17 @@ Static Function FindNextIsolatedWord(str,word,start)	// finds first occurance of
 End
 //
 // These two should be in JZT_Utility, but I keep duplicates here
-Static Function isletter(c)				// returns 1 if c is an upper or lower case letter (otherwise 0)
+ThreadSafe Static Function isletter(c)			// returns 1 if c is an upper or lower case letter (otherwise 0)
 	String c
 	Variable i=char2num(c)
 	return (65<=i && i<=90) || (97<=i && i<=122)
 End
 //
-Static Function isdigit(c)					// returns 1 if c is a digit, 0-9 (otherwise returns 0)
+ThreadSafe Static Function isdigit(c)				// returns 1 if c is a digit, 0-9 (otherwise returns 0)
 	String c
 	Variable i=char2num(c)
 	return (48<=i && i<=57)
 End
-
-//
-//Function/S WordToGreek(str)
-//	String str
-//
-//	if (cmpstr(str,"alpha")==0)
-//		str = "\\F'Symbol'a\\]0"
-//	elseif (cmpstr(str,"beta")==0)
-//		str = "\\F'Symbol'b\\]0"
-//	elseif (cmpstr(str,"gamma")==0 || cmpstr(str,"gamma_")==0)
-//		str = "\\F'Symbol'g\\]0"
-//	elseif (cmpstr(str,"delta")==0)
-//		str = "\\F'Symbol'd\\]0"
-//	elseif (cmpstr(str,"lambda")==0)
-//		str = "\\F'Symbol'l\\]0"
-//	elseif (cmpstr(str,"chi")==0)
-//		str = "\\F'Symbol'c\\]0"
-//	elseif (cmpstr(str,"phi")==0)
-//		str = "\\F'Symbol'f\\]0"
-//	elseif (cmpstr(str,"eta")==0)
-//		str = "\\F'Symbol'h\\]0"
-//	elseif (cmpstr(str,"mu")==0)
-//		str = "\\F'Symbol'm\\]0"
-//	elseif (cmpstr(str,"nu")==0)
-//		str = "\\F'Symbol'n\\]0"
-//	elseif (cmpstr(str,"pi_")==0)
-//		str = "\\F'Symbol'p\\]0"
-//	elseif (cmpstr(str,"rho")==0)
-//		str = "\\F'Symbol'r\\]0"
-//	elseif (cmpstr(str,"sigma")==0)
-//		str = "\\F'Symbol's\\]0"
-//	elseif (cmpstr(str,"tau")==0)
-//		str = "\\F'Symbol't\\]0"
-//	elseif (cmpstr(str,"upsilon")==0)
-//		str = "\\F'Symbol'u\\]0"
-//	elseif (cmpstr(str,"omega")==0)
-//		str = "\\F'Symbol'w\\]0"
-//	elseif (cmpstr(str,"xsi")==0)
-//		str = "\\F'Symbol'x\\]0"
-//	elseif (cmpstr(str,"psi")==0)
-//		str = "\\F'Symbol'y\\]0"
-//	elseif (cmpstr(str,"zeta")==0)
-//		str = "\\F'Symbol'z\\]0"
-//	elseif (cmpstr(str,"theta")==0 || cmpstr(str,"theta_")==0)
-//		str = "\\F'Symbol'q\\]0"
-//	elseif (cmpstr(str,"2theta")==0 || cmpstr(str,"X2_theta")==0)
-//		str = "\\F'Symbol'2q\\]0"
-//	endif
-//
-//	return str
-//End
-//Function/S WordToGreek(str)
-//	String str
-//
-//	if (cmpstr(str,"alpha")==0)
-//		str = "\\F'Symbol'a\\]0"
-//	endif
-//	if (cmpstr(str,"beta")==0)
-//		str = "\\F'Symbol'b\\]0"
-//	endif
-//	if (cmpstr(str,"gamma")==0)
-//		str = "\\F'Symbol'g\\]0"
-//	endif
-//	if (cmpstr(str,"delta")==0)
-//		str = "\\F'Symbol'd\\]0"
-//	endif
-//	if (cmpstr(str,"lambda")==0)
-//		str = "\\F'Symbol'l\\]0"
-//	endif
-//	if (cmpstr(str,"chi")==0)
-//		str = "\\F'Symbol'c\\]0"
-//	endif
-//	if (cmpstr(str,"phi")==0)
-//		str = "\\F'Symbol'f\\]0"
-//	endif
-//	if (cmpstr(str,"theta")==0 || cmpstr(str,"theta_")==0)
-//		str = "\\F'Symbol'q\\]0"
-//	endif
-//	if (cmpstr(str,"2theta")==0 || cmpstr(str,"X2_theta")==0)
-//		str = "\\F'Symbol'2q\\]0"
-//	endif
-//
-//	return str
-//End
 
 
 
