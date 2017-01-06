@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, January 03, 2017" time="10:00:07 AM CST" isoTime="2017-01-03T10:00:07"></written>
+	<written date="Friday, January 06, 2017" time="04:21:09 PM CST" isoTime="2017-01-06T16:21:09"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>a0b652c7114fe62d0499ea13c5bef6db55c1dce8</gitHash>
+	<gitHash>82c255860dfac9c1ec8a5c8a00a3e04ba77db063</gitHash>
 	<fileCount>231</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -21,7 +21,7 @@
 	<file version="0.86" time="2016-11-15T15:17:53" md5="94f8b63851ffa3524520b282c8d7b84c" sha256="20a9ca891e11857f19d0d95b3d1a2b8efd52ea1e2d3d011a142cb2bec79adeb5" ext=".ipf">microN/DetectorCalibration.ipf</file>
 	<file version="2.03" time="2015-08-18T16:16:26" md5="2ef66d840057712ed1fe6bbcf459328f" sha256="1672736d318e9fd2e3c98438a42ef0f566d5abc707c8de40999296741a08cda7" ext=".ipf">General/Gizmo/GizmoClip.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1f609fa2bf2c5d3e8aa2f2e209ddea33" sha256="822fd56a1f37923f54410eac72306f005c8c37dd7b54104eaa8ab0dc741998dd" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
-	<file version="2.49" time="2016-06-23T20:48:45" md5="af88dce4a2bde5c2961c947a9c154e35" sha256="71c0cf75bc2abe32ef556aa98805bd3343acecd3452404c9dc47324a328e05d9" ext=".ipf">Diffractometer/spec.ipf</file>
+	<file version="2.5" time="2017-01-06T16:18:32" md5="6f2204c82b0e48fb4f1b821228c0d7f9" sha256="a56a338f3be83c5686a8f04c75325be76ae41e05b8ef4491cbdf00250f7f0f91" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" sha256="93ec0b54c4c2a1e3a276fbb5ed400d5126aca93ebbd6d9096fe52d18e9e211dc" ext=".ipf">General/absorption.ipf</file>
 	<file version="2.19" time="2016-10-24T10:09:10" md5="4b611d79eb7c8ba42e0829be562fe585" sha256="1cd3cb500aca21bb709c42a9fbc160f7411f85f7955956bdea3bcfbb64a73f19" ext=".ipf">General/Gizmo/GizmoUtility.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:54" md5="fa636622c6ca0cafbe43be0bda30771b" sha256="2e604afd90d24b28f2631b72d6ed089cdf7942ae0b3edb43eac53946ff67eb75" ext=".xml">materials/standard xtals/Pu-alpha.xml</file>
@@ -148,7 +148,7 @@
 	<file version="nan" time="2014-10-30T13:10:27" md5="f7fc043b1fccd1bc57a8c85bd7119a48" sha256="6ba22b5a6a0483ce16dea9bbd486ba22ee227a5488c8d1b579f23adbb411c466" ext=".mtl">materials/mtl files/CdWO4.mtl</file>
 	<file version="4.88" time="2016-12-31T13:03:50" md5="82f2f09ee1b085e043948d6a30cf81fd" sha256="3a65370333cb86a9c03b59e8796ab06a6ca19c60805952157945d01f3f7fe84f" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="nan" time="2016-02-17T12:51:46" md5="13c43942af99aba470ecb67d8b5b24cb" sha256="07c0d0ad190bcda47e7200e25ef8962f167dcb148b349183b1d100762ac69ee8" ext=".xml">materials/standard xtals/Fe.xml</file>
-	<file version="4.15" time="2016-11-22T13:02:04" md5="e8c28668800dcfe4d9d67b9f862d1360" sha256="4cf6fb43c85907c69522614855bc4e77856f4f00603efc2c9899bec81ad23650" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="4.16" time="2017-01-06T15:18:13" md5="0429c0d1e11b523775d58f47aa0e0a41" sha256="e43455e5a9517bb9a55e5680a4e9eec0b2cb8d29817a6b54c08f5458ac4ba517" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:18" md5="dea0a34450c3db1ed673c6da40c2b2c6" sha256="0a2f75152d14d91bf6c14fd7776904230bdc7a78579ea5d4d7adbff279faaf7f" ext=".xml">materials/standard xtals/Al.xml</file>
 	<file version="nan" time="2016-02-17T12:54:19" md5="c725af52856df9f1797af8ef1529bc02" sha256="4e86c82136ab4f62f7b4ca73b2acd65428c351002f0044a96637156158e00f25" ext=".xml">materials/standard xtals/IN740.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8318859207bfbd615cd77d47bd5cf7aa" sha256="e37b6ebf3de2f280aed777cfcb0c4a772de3f250302c437335237bcb9ece81e9" ext="">micro/Euler</file>
