@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.34
+#pragma version = 0.35
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -13,6 +13,7 @@
 //	Apr  5, 2015, version 0.32		NewImageGraph() now has withButtons as an optional parameter
 //	Mar  5, 2016, version 0.33		LoadHDF5imageFile(...), supports read of an roi, also, ReadHDF5header(...) & HDF5ReadROI(...), will work too
 //	Apr 11, 2016, version 0.34		renamed HDF5DataInfo to HDF5DataInfoLaueGo
+//	Jan 12, 2017, version 0.35		also from /entry1/user, read:  {email, proposal, phone, affiliation, badge}
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -600,10 +601,32 @@ Function/T ReadHDF5header(fName,[extras])
 		if (strlen(str))
 			wnote= ReplaceStringByKey("title",wnote,str,"=")
 		endif
-		str = get1HDF5dataStr(f,"entry1/user/name")
+
+		str = get1HDF5dataStr(f,"entry1/user/name")			// read the "/entry1/user" group
 		if (strlen(str))
 			wnote= ReplaceStringByKey("userName",wnote,str,"=")
 		endif
+		str = get1HDF5dataStr(f,"entry1/user/email")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("email",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/user/proposal")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("proposal",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/user/telephone_number")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("phone",wnote,str,"=")
+		endif
+		str = get1HDF5dataStr(f,"entry1/user/affiliation")
+		if (strlen(str))
+			wnote= ReplaceStringByKey("affiliation",wnote,str,"=")
+		endif
+		value = get1HDF5dataNum(f,"entry1/user/facility_user_id")
+		if (numtype(value)==0)
+			wnote= ReplaceNumberByKey("badge",wnote,round(value),"=")
+		endif
+
 		str = get1HDF5dataStr(f,"entry1/sample/name")
 		if (strlen(str))
 			wnote= ReplaceStringByKey("sampleName",wnote,str,"=")
