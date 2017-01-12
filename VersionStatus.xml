@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, January 06, 2017" time="04:21:09 PM CST" isoTime="2017-01-06T16:21:09"></written>
+	<written date="Thursday, January 12, 2017" time="04:41:56 PM CST" isoTime="2017-01-12T16:41:56"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>82c255860dfac9c1ec8a5c8a00a3e04ba77db063</gitHash>
+	<gitHash>8c48e03f3af7a4c4bb6716269b3ac76757a5e207</gitHash>
 	<fileCount>231</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -211,7 +211,7 @@
 	<file version="nan" time="2016-02-17T12:49:54" md5="01769aec9e974a68c8405930a25c5a80" sha256="0697453ac206bd7a4c4813f76a20ed642d46073865c6d1b77f838ce47b5137d5" ext=".xml">materials/standard xtals/Si.xml</file>
 	<file version="2.04" time="2013-10-28T11:28:48" md5="7937e08585179b84a3ca9d1d53c2eca7" sha256="5f3915e8e7e16ae19609158b4716ffa27366b68fdf159e3ce6d2dc284fd9f040" ext=".ipf">General/ColorNames.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:13" md5="6ba10734b0e27b9149309f62300c9145" sha256="5c1be6ad2ffe66db8c0a45d6fecb903a43573e94b14fe22e6656fcbf3778343e" ext=".xml">materials/standard xtals/Al2O3r.xml</file>
-	<file version="0.34" time="2016-04-11T14:22:30" md5="b0d4f71a00ff4fcc2054bd9615edc21d" sha256="ff22cad4280e47fbc6fe35e02d6fb3598627481838207b172f0db0fd3009edb6" ext=".ipf">General/Images/HDF5images.ipf</file>
+	<file version="0.35" time="2017-01-12T16:39:48" md5="31011ef811e1a65cf32fd30fb651509a" sha256="418fc646c861031a0e6ff00d17a43b059e7e9c78b5c58bd38f44145b94456811" ext=".ipf">General/Images/HDF5images.ipf</file>
 	<file version="nan" time="2014-10-30T13:10:32" md5="f109a5a8d9df6e00eed9d2c1a304d0ce" sha256="0a0d46882480c3182bd61f9290c70026cfa1307d630660dca86f54aaf964f6ef" ext=".mtl">materials/mtl files/air.mtl</file>
 	<file version="2.09" time="2016-11-11T12:40:49" md5="0a83ab28a0939c7ff11f9d98db9d08e3" sha256="635f7db214d79b4a107b335fe9de21616f444bec26246a7a33031878d9e0f57f" ext=".ipf">General/Images/ImageDisplayScaling.ipf</file>
 	<file version="nan" time="2016-01-25T12:51:08" md5="99c29ec2b8b58e6ae65703756120d558" sha256="27076ca5d60c667e3ffb07a1cd803ca848d5ba44c63e79dc0b0c8a0276cfc669" ext=".xml">materials/standard xtals/Er.xml</file>
