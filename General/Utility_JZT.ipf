@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.16
+#pragma version = 4.17
 // #pragma hide = 1
 
 Menu "Graph"
@@ -109,6 +109,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		PowerIntegerScale(), rescale a waves values by ^n or ^(1/n), preserves sign for non-complex values
 //		FitErrorString(FitError,FitQuitReason), return a string representation of the fitting error
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
+//		pingHost(host), returns ping time in seconds, returns NaN CANNOT ping the host
 //		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
 //		use funcions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
@@ -3384,6 +3385,26 @@ Function/T Posix2HFS(posixName,[printIt])	// This is a replacement for PosixToHF
 	return S_value[1,strlen(S_value)-2]		// strip off leading & trailing double-quotes
 End
 
+
+Function pingHost(host)				// returns ping time in seconds, returns NaN CANNOT ping the host
+	String host								// host name to ping
+	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
+		DoAlert 0, "Only know how to ping from a Mac"
+		return NaN								// cannot get answer
+	endif
+	ExecuteScriptText/Z "do shell script \"ping -Q -t 1 -c 1 "+host+"\""
+
+	Variable i = strsearch(S_value,"round-trip min/avg",0,2), Tavg
+	if (i<0)
+		return NaN
+	endif
+	i = strsearch(S_value,"=",i)
+	if (i<0)
+		return NaN
+	endif
+	Tavg = str2num(S_value[i+1,Inf])
+	return Tavg
+End
 
 Function cpuFrequency()		// return the cpu frequency (Hz)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))

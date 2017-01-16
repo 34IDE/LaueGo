@@ -10,7 +10,7 @@ import h5py
 import epics
 from epics import caget
 
-VERSION = 1.05
+VERSION = 1.06
 NEXUS_VERSION = '4.2.1'
 IMAGE_GET_TIMEOUT = 40.0			# timeout for getting the image
 
@@ -28,10 +28,11 @@ def getAllPVsDebug(PVroot):
 	'MonoMode': 'white slitted', 'I0': 1238, 'ScalerClockFreq': 10000000.0, 'sampleDistance': 0.0, 'endy': 99, 'I0_calc': 1238.0, 'endx': 99, \
 	'I_start_calc': 57.0, 'WslitWidth': 0.09993750000000001, 'X1': 509.90000000000003, 'Z1': -3014.5, 'topUp': 1, 'wirebaseY': 707.0855460951844, \
 	'ScalerCountTime': 1.0, 'CCDshutter': 1, 'HutchTemperature': 23.144444444444442, 'sampleName': '', 'I_final': 1.0, 'sizeX': 100, 'sizeY': 100, \
-	'Y1': -1044.4, 'foil': 0, 'I_final_calc': 1.0, 'gain': 2.0, 'wirebaseX': -51999.950000000004, 'AerotechH': 0.0, 'detectorModel': 'XRD0820', \
+	'Y1': -1044.4, 'foil': 0, 'I_final_calc': 1.0, 'gain': 2.0, 'wirebaseX': -51999.950000000004, 'wirescan': 0.0, 'detectorModel': 'XRD0820', \
 	'L32_height': 5.0, 'exposure': 3.0, 'userName': 'Xu', 'startx': 0, 'starty': 0, 'ScalerClock_calc': 10000000.0, 'I_start': 57.0, \
 	'wireX': -51999.950000000004, 'wireY': 707.0855460951844, 'wireZ': -707.1234873607259, 'top_up': 1, 'LightOn': 0.0, \
-	'detectorID': 'PE1621 723-3335', 'biny': 1, 'binx': 1, 'L32_width': 0.20150000000001, 'undulatorGap': 15.290624999999999}
+	'detectorID': 'PE1621 723-3335', 'biny': 1, 'binx': 1, 'L32_width': 0.20150000000001, 'undulatorGap': 15.290624999999999, \
+	'badge': 12345, 'email': 'bob@trump.edu', 'proposal': 'G 12345', 'phone': '630-252-5555', 'affiliation': 'Trump University'}
 	return pvValues
 
 
@@ -107,6 +108,13 @@ def getAllPVs(PVroot):
 	pvValues['sampleName'] = caget('34ide:sampleName')
 	pvValues['scanNum'] = caget('34ide:scanNum')
 
+	# these 5 added January 2017
+	pvValues['badge'] = caget('34ide:userBadge')				# facility_user_id
+	pvValues['email'] = caget('34ide:userEmail')				# email
+	pvValues['proposal'] = caget('34ide:proposal')				# proposal
+	pvValues['phone'] = caget('34ide:userPhone')				# telephone_number
+	pvValues['affiliation'] = caget('34ide:userAffiliation')	# affiliation
+
 	pvValues['RingCurrent'] = caget('S:SRcurrentAI')
 	pvValues['undulatorGap'] = caget('ID34:Gap.VAL')
 	pvValues['undulatorTaper'] = caget('ID34:TaperGap.VAL')
@@ -147,7 +155,7 @@ def getAllPVs(PVroot):
 	pvValues['wireX'] = caget('34ide:wireStages.G')
 	pvValues['wireY'] = caget('34ide:wireStages.H')
 	pvValues['wireZ'] = caget('34ide:wireStages.I')
-	pvValues['AerotechH'] = caget('34ide:aero:c0:m1.RBV')
+	pvValues['wirescan'] = caget('34ide:aero:c0:m1.RBV')
 	pvValues['wirebaseX'] = caget('34ide:t80:c0:m1.RBV')
 	pvValues['wirebaseY'] = caget('34ide:t80:c0:m3.RBV')
 	pvValues['wirebaseZ'] = caget('34ide:t80:c0:m2.RBV')
@@ -206,7 +214,12 @@ def writeHDF5(image,destFile,pvValues):
 
 	user = entry.create_group('user')
 	user.attrs.create('NX_class','NXuser')
-	user.create_dataset('userName', data=pvValues['userName'])
+	user.create_dataset('name', data=pvValues['userName'])
+	user.create_dataset('facility_user_id', data=pvValues['badge'])		# these 5 added January 2017
+	user.create_dataset('email', data=pvValues['email'])
+	user.create_dataset('proposal', data=pvValues['proposal'])
+	user.create_dataset('telephone_number', data=pvValues['phone'])
+	user.create_dataset('affiliation', data=pvValues['affiliation'])
 
 	dataGrp = entry.create_group('data')
 	dataGrp.attrs.create('NX_class','NXdata')
@@ -300,7 +313,7 @@ def writeHDF5(image,destFile,pvValues):
 	wire.create_dataset('wireX', data=pvValues['wireX'])
 	wire.create_dataset('wireY', data=pvValues['wireY'])
 	wire.create_dataset('wireZ', data=pvValues['wireZ'])
-	wire.create_dataset('AerotechH', data=pvValues['AerotechH'])
+	wire.create_dataset('wirescan', data=pvValues['wirescan'])
 	wire.create_dataset('wirebaseX', data=pvValues['wirebaseX'])
 	wire.create_dataset('wirebaseY', data=pvValues['wirebaseY'])
 	wire.create_dataset('wirebaseZ', data=pvValues['wirebaseZ'])
