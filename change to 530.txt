@@ -1,0 +1,44 @@
+Routines to change to accomodate 530 types
+searched for "SpaceGroup" and "crystalStructure"
+
+Legend
+	OK	no change needed
+	?	means needs work
+	-	in progress
+	x	done
+
+
+in LaueGo:
+-	Lattice/LatticeSym.ipf
+OK	Lattice/AtomView.ipf
+?	Lattice/LaueSimulation.ipf
+
+?	microN/IndexingN.ipf
+?	microN/indexLotsN.ipf
+?	microN/Indexing_Internal.ipf
+?	microN/xmlMultiIndex.ipf
+OK	microN/ArrayOf3dOrientsN.ipf
+?	microN/CuteCells.ipf		(SpaceGroup only used to get system)
+
+?	Diffractometer/Diffractometer.ipf
+
+
+OK	General/Gizmo/GizmoUtility.ipf
+?	Lattice/PowderPatterns.ipf (add SpaceGroupID to title)
+?	Lattice/StereographicProjection.ipf
+OK	microN/DetectorCalibration.ipf
+
+================================================
+
+in LocalPackages:
+?	ORNL/EFRC/dsdO_calc.ipf
+OK	ORNL/EFRC/DhirajCalc.ipf
+OK	ORNL/EFRC/pairCorrelations.ipf
+OK	ORNL/EFRC/SingleColumn.ipf
+
+?	inProgress/ODF.ipf
+OK	inProgress/testHKL.ipf
+OK	Diffraction/DiffractometerSim.ipf
+OK	Diffraction/Dynamical.ipf
+OK	Diffraction/ForwardNotches.ipf
+OK	Diffraction/MirrorReflectivity.ipf

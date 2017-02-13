@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#version 1.05
+#version 1.06
 
 from xdrlib import *
 import sys
@@ -382,15 +382,21 @@ def mdaAscii2d_IGOR(d,outFile=None):
 	ny = d[1].curr_pt
 	nx = d[2].npts
 	# for i in range(np): print '%d \t%s \t\t%s  (%s)\n' % (i, d[2].p[i].name,d[2].p[i].desc,d[2].p[i].unit)
-	py = d[1].p[0].data
+
+	try:	py = d[1].p[0].data
+	except:	py = range(ny)
+	try:	yunit = d[1].p[0].unit
+	except: yunit = ''
+	try:	ydesc = d[1].p[0].desc
+	except:	ydesc = ''
+	try:	yPV = d[1].p[0].name
+	except:	yPV = ''
+
 	px = d[2].p[0].data
 	px = px[0]
 	xunit = d[2].p[0].unit
-	yunit = d[1].p[0].unit
 	xdesc = d[2].p[0].desc
-	ydesc = d[1].p[0].desc
 	xPV = d[2].p[0].name
-	yPV = d[1].p[0].name
 
 	fo = open(outFile,"w")
 	fo.write('IGOR'+'\n')

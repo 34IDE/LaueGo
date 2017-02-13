@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 5.29
+#pragma version = 6.00
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -150,6 +150,9 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 5.26, moved DEGREESIGN, BULLET, ARING, BCHAR to Utility_JZT.ipf
 //	with verison 5.27, remove materialsXML, change path materials to materialsPath
 //	with verison 5.29, fixed bug in FindMaterialsFile() involving materialsPath
+//
+//	with verison 6.00, Stop using just SpaceGroup [1-230], switch to using the complete set of 530 types
+//								This is important since some of the space groups have many variants (e.g. SG=15 has 18 different ways of using it)
 
 //	Rhombohedral Transformation:
 //
@@ -259,6 +262,36 @@ Structure crystalStructure	// structure definition for a crystal lattice
 	double a,b,c					// lattice constants, length (nm)
 	double alpha,beta,gam		// angles (degree)
 	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
+	char SpaceGroupID[12]		// id of SpaceGroup, e.g. "15:-b2", not just a number anymore
+	int16 SpaceGroupIDnum		// index to the SpaceGroupID, allowed range is [1, 530]
+	double  a0,  b0,  c0		// direct lattice from constants { a[], b[], c[] }
+	double  a1,  b1,  c1
+	double  a2,  b2,  c2
+	double  as0,  bs0,  cs0	// reciprocal lattice { a*[], b*[], c*[] }
+	double  as1,  bs1,  cs1	// a*,b*,c* already have the 2PI in them
+	double  as2,  bs2,  cs2
+	double Vc						// volume of cell, triple product of (a[]xb[]).c
+	double density					// calculated density (g/cm^3)
+	double Temperature			// Temperature (C)
+	double	alphaT				// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
+	int16 N							// number of atoms described here
+	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
+	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
+	int16 haveDebyeT				// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
+	int16 Nbonds					// number of bonds described here
+	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
+	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
+	double Unconventional10,Unconventional11,Unconventional12
+	double Unconventional20,Unconventional21,Unconventional22
+	char sourceFile[MAX_FILE_LEN]	// name of source file
+	char hashID[HASHID_LEN]	// hash function for this strucutre (needs to hold at least 64 chars), This MUST be the LAST item
+EndStructure
+//
+Structure crystalStructure5	// structure definition for a crystal lattice
+	char desc[100]					// name or decription of this crystal
+	double a,b,c					// lattice constants, length (nm)
+	double alpha,beta,gam		// angles (degree)
+	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
 	double  a0,  b0,  c0		// direct lattice from constants { a[], b[], c[] }
 	double  a1,  b1,  c1
 	double  a2,  b2,  c2
@@ -337,8 +370,8 @@ Function showCrystalStructure()						// prints the structure that is currently b
 		DoAlert 0, "no crystal structure found"
 		return 1
 	endif
-	String str, sym = getHMboth(xtal.SpaceGroup)
-	sprintf str, "'%s'  %d atoms,  #%d   %s\r%.9g, %.9g, %.9gnm,\r%g%s, %g%s, %g%s",xtal.desc,xtal.N,xtal.SpaceGroup,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+	String str, sym = getHMboth(xtal.SpaceGroupID)
+	sprintf str, "'%s'  %d atoms,  %s   %s\r%.9g, %.9g, %.9gnm,\r%g%s, %g%s, %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
 	Variable netCharge = NetChargeCell(xtal)
 	if (netCharge)
 		str += "\r  *** Charge imbalance in cell = "+num2str(netCharge)+" ***"
@@ -347,7 +380,7 @@ Function showCrystalStructure()						// prints the structure that is currently b
 	if (V_flag==1)
 		print_crystalStructure(xtal)					// prints out the value in a crystalStructure structure
 	else
-		printf "currently using  '%s'  lattice is  #%d   %s     %.9gnm, %.9gnm, %.9gnm,   %g%s, %g%s, %g%s",xtal.desc,xtal.SpaceGroup,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+		printf "currently using  '%s'  lattice is  %s   %s     %.9gnm, %.9gnm, %.9gnm,   %g%s, %g%s, %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
 		if (xtal.N > 0)
 			printf ",   %g defined atom types\r",xtal.N
 		else
@@ -399,7 +432,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	STRUCT crystalStructure xtal					// the working copy
 	copy_xtal(xtal,xtal_IN)						// copy xtal_IN to a working copy
 
-	SetSymOpsForSpaceGroup(xtal.SpaceGroup)		// ensure that symmetry ops are right
+	SetSymOpsForSpaceGroup(xtal.SpaceGroupID)	// ensure that symmetry ops are right
 	Variable Natoms = round(xtal.N)				// number of predefined atoms
 	Natoms = numtype(Natoms) ? 0 : limit(Natoms,0,STRUCTURE_ATOMS_MAX)
 	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroup)+"\""
@@ -492,12 +525,13 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetWindow kwTopWin,hook(TableEnter)=LatticeSym#EditAtomPanelHook,userdata(xtalSname)=xtalStrStructName
 	SetWindow kwTopWin,userdata(listWave)=listName
 	DoUpdate
-	PauseForUser $win										// WAIT here for Panel to close then proceed
+	PauseForUser $win											// WAIT here for Panel to close then proceed
 	KillWaves/Z atomNameList
 
 	// user is done entering atom type information, save it
-	StructGet/S/B=2 xtal, strStruct						// retrieve xtal from the global string
-	KillStrings/Z strStruct									// done with this global string
+	StructGet_xtal(strStruct,xtal)						// retrieve xtal from the global string
+//	StructGet/S/B=2 xtal, strStruct						// retrieve xtal from the global string
+	KillStrings/Z strStruct								// done with this global string
 	if (LatticeBad(xtal,atomsToo=1))
 		DoAlert 0, "ERROR -- Invalid Lattice"
 		return NaN
@@ -507,8 +541,8 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	if (V_flag!=1)
 		return NaN
 	endif
-	xtal.Vibrate = xtalVibrates(xtal)						// True if some Thermal vibration info present in xtal
-	xtal.haveDebyeT = xtalHasDebye(xtal)					// True if some one of the atoms has a Debye Temperature
+	xtal.Vibrate = xtalVibrates(xtal)					// True if some Thermal vibration info present in xtal
+	xtal.haveDebyeT = xtalHasDebye(xtal)				// True if some one of the atoms has a Debye Temperature
 	xtal.hashID = xtalHashID(xtal)
 	copy_xtal(xtal_IN,xtal)								// copy working copy to the passed copy
 	return Natoms
@@ -614,7 +648,8 @@ Static Function EditAtomTypeListAction(LB_Struct) : ListboxControl	// proc for t
 		return 0
 	endif
 	STRUCT crystalStructure xtal
-	StructGet/S/B=2 xtal, strStruct
+//	StructGet/S/B=2 xtal, strStruct
+	StructGet_xtal(strStruct,xtal)											// retrieve xtal from the string strStruct
 	SetAtomEditPanelValues(LB_Struct.win,xtal.atom[LB_Struct.row])	// put values from xtal into panel values
 	return 0
 End
@@ -633,7 +668,8 @@ Static Function AtomN_PopMenuProc(pa) : PopupMenuControl		// Called when Number 
 			return 0
 		endif
 		STRUCT crystalStructure xtal
-		StructGet/S/B=2 xtal, strStruct
+//		StructGet/S/B=2 xtal, strStruct
+		StructGet_xtal(strStruct,xtal)							// retrieve xtal from the string strStruct
 		xtal.N = Natoms
 		StructPut/S/B=2 xtal, strStruct							// update a copy with new xtal.N
 		Wave/T atomNameList = $GetUserData(pa.win,"","listWave")	// contains names that are in list box
@@ -718,7 +754,8 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	endif
 
 	STRUCT crystalStructure xtal
-	StructGet/S/B=2 xtal, strStruct
+//	StructGet/S/B=2 xtal, strStruct
+	StructGet_xtal(strStruct,xtal)												// retrieve xtal from the string strStruct
 
 	String symbol
 	Variable Natoms, m, xx,yy,zz, mult=0
@@ -793,7 +830,8 @@ End
 Function print_crystalStructStr(strStruct)	// prints the contents of a crystalStructStr in readable form
 	String strStruct
 	STRUCT crystalStructure xtal					// holds values from strStruct
-	StructGet/S/B=2 xtal, strStruct
+//	StructGet/S/B=2 xtal, strStruct
+	StructGet_xtal(strStruct,xtal)				// retrieve xtal from the string strStruct
 	print_crystalStructure(xtal)
 End
 
@@ -809,8 +847,9 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 	else
 		printf "\t\t\t"
 	endif
-	Variable SG = xtal.SpaceGroup
-	printf "Space Group=%d   %s   %s       Vc = %g (nm^3)",SG,StringFromList(latticeSystem(SG),LatticeSystemNames), getHMboth(SG),xtal.Vc
+	Variable SG = xtal.SpaceGroup, idNum=xtal.SpaceGroupIDnum
+	String id = xtal.SpaceGroupID
+	printf "Space Group=%s   %s   %s       Vc = %g (nm^3)",id,StringFromList(latticeSystem(SG),LatticeSystemNames), getHMboth(idNum),xtal.Vc
 	if (xtal.density>0)
 		printf "       density = %g (g/cm^3)",xtal.density
 	endif
@@ -1455,7 +1494,7 @@ Function dSpacingFromLatticeConstants(h,k,l,a,b,c,alpha,bet,gam)
 	STRUCT crystalStructure xtal						// this sruct is only used locally
 	xtal.a = a			;	xtal.b = b		;	xtal.c = c	// put values into structure
 	xtal.alpha = alpha	;	xtal.beta = bet	;	xtal.gam = gam
-	xtal.SpaceGroup=1
+	xtal.SpaceGroup = 1
 	ForceLatticeToStructure(xtal)
 
 	Variable k0,k1,k2, d					// 	k =  {k0,k1,k2} = h*as + k*bs + l*cs
@@ -1672,7 +1711,8 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 	endif
 
 	if (strlen(strStruct)>1)							// found structure information, load into xtal
-		StructGet/S/B=2 xtal, strStruct
+//		StructGet/S/B=2 xtal, strStruct
+		StructGet_xtal(strStruct,xtal)				// retrieve xtal from the string strStruct
 	else														// last chance, load from generic defaults
 		LoadPackagePreferences/MIS=1 "LatticeSym","LatticeSymPrefs",1,xtal
 		if (V_flag)
@@ -1694,7 +1734,7 @@ End
 Static Function SetToDummyXTAL(xtal)				// fill the crystal structure with valid dummy values
 	STRUCT crystalStructure &xtal
 	xtal.desc = "Dummy Structure"
-	xtal.SpaceGroup=195									// simple cubic
+	xtal.SpaceGroup = 195								// simple cubic
 	xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
 	xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
 	xtal.Vc = 0.125
@@ -2012,6 +2052,8 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	xtal.a = a			;	xtal.b = b		;	xtal.c = c	// put values into structure
 	xtal.alpha = alpha	;	xtal.beta = bet	;	xtal.gam = gam
 	xtal.SpaceGroup=SpaceGroup
+	xtal.SpaceGroupID = FindDefaultIDforSG(SpaceGroup)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
 	xtal.Unconventional00=NaN
 	xtal.sourceFile = ""
 	ForceLatticeToStructure(xtal)
@@ -2035,6 +2077,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	NewDataFolder/O root:Packages:Lattices:PanelValues	// ensure that the needed data folders exist
 	Variable new = !(NumVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroup",-1)>0)
 	String/G root:Packages:Lattices:PanelValues:desc		// create, but don't fill in the values for the panel
+	String/G root:Packages:Lattices:PanelValues:SpaceGroupID
 	Variable/G root:Packages:Lattices:PanelValues:SpaceGroup
 	Variable/G root:Packages:Lattices:PanelValues:a
 	Variable/G root:Packages:Lattices:PanelValues:b
@@ -2046,6 +2089,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Variable/G root:Packages:Lattices:PanelValues:dirty		// =1 (xtal.sourceFile bad too),  =2 (values changed, but xtal.sourceFile is OK)
 	Variable/G root:Packages:Lattices:PanelValues:T_C
 	NVAR SpaceGroup=root:Packages:Lattices:PanelValues:SpaceGroup
+	SVAR SpaceGroupID=root:Packages:Lattices:PanelValues:SpaceGroupID
 	SVAR desc=root:Packages:Lattices:PanelValues:desc
 	NVAR a=root:Packages:Lattices:PanelValues:a
 	NVAR b=root:Packages:Lattices:PanelValues:b
@@ -2068,7 +2112,8 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 
 	STRUCT crystalStructure xtal
 	if (strlen(strStruct))								// start using the passed values
-		StructGet/S/B=2 xtal, strStruct				// found passed structure information, load into xtal
+//		StructGet/S/B=2 xtal, strStruct				// found passed structure information, load into xtal
+		StructGet_xtal(strStruct,xtal)				// found passed structure information, load into xtal
 		CleanOutCrystalStructure(xtal)
 		dirty = 2											// xtal.sourceFile should be OK
 		crystalStructStr = strStruct
@@ -2076,14 +2121,14 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 		FillCrystalStructDefault(xtal)
 		a=xtal.a  ;  b=xtal.b  ;  c=xtal.c
 		alpha=xtal.alpha  ;  bet=xtal.beta  ;  gam=xtal.gam
-		SpaceGroup=xtal.SpaceGroup
+		SpaceGroup = xtal.SpaceGroup
+		SpaceGroupID = xtal.SpaceGroupID
 		alphaT=xtal.alphaT
 		desc=xtal.desc
 		T_C = xtal.Temperature
 		T_C = numtype(T_C) || T_C<-273.14 ? 22.5 : T_C
 		T_C = (xtal.haveDebyeT) ? T_C : NaN		// if no Debye Temperatuers, no temperature needed
 		dirty = 0
-//		StructPut/S xtal, strStruct
 		StructPut/S xtal, crystalStructStr
 	endif
 
@@ -2173,7 +2218,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	ValDisplay Fi_3atticeDisp,help={"imag part of F(hkl) calulated from the lattice"},frame=0
 
 	String subWin = GetUserData("","","LatticePanelName")
-	UpdatePanelLatticeConstControls(subWin,SpaceGroup)
+	UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 
 	STRUCT WMSetVariableAction sva
 	sva.win = subWin
@@ -2182,13 +2227,12 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	return "#LatticePanel"
 End
 //
-Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
+Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	// update a,b,c, alpha,beta,gamma in LatticeSet Panel, changes who is enabled, not the values
 	String subWin
-	Variable SpaceGroup
+	String SpaceGroupID
 
-	SpaceGroup = round(SpaceGroup)
-	if (!isValidSpaceGroup(SpaceGroup))
+	if (!isValidSpaceGroupID(SpaceGroupID))
 		return 1
 	endif
 
@@ -2200,8 +2244,9 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 
-	String titleStr="\\JC#"+num2istr(SpaceGroup)+" "
-	if (SpaceGroup>=195)												// Cubic, a
+	Variable SG = str2num(SpaceGroupID)
+	String titleStr="\\JC"+SpaceGroupID+" "
+	if (SG>=195)															// Cubic, a
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
 		SetVariable set_c_nm,noedit=1,frame=0,win=$subWin
@@ -2210,7 +2255,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		SetVariable set_gamma,noedit=1,frame=0,win=$subWin
 		b=a  ;  c=a  ;  alpha=90 ; bet=90 ; gam=90
 		titleStr += "Cubic"
-	elseif (SpaceGroup>=168)									// Hexagonal, a, c
+	elseif (SG>=168)														// Hexagonal, a, c
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_c_nm,noedit=0,frame=1,win=$subWin
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
@@ -2219,7 +2264,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		SetVariable set_gamma,noedit=1,frame=0,win=$subWin
 		b=a ; alpha=90 ; bet=90 ; gam=120
 		titleStr += "Hexagonal"
-	elseif (isRhombohedral(SpaceGroup) && !((abs(90-alpha)+abs(90-bet)+abs(120-gam))<1e-6))	// Rhombohedral, with rhombohedral cell
+	elseif (isRhombohedral(SG) && !((abs(90-alpha)+abs(90-bet)+abs(120-gam))<1e-6))	// Rhombohedral, with rhombohedral cell
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
@@ -2229,7 +2274,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		b=a  ;  c=a
 		bet=alpha  ;  gam=alpha
 		titleStr += "Rhombohedral"
-	elseif (SpaceGroup>=143)									// Trigonal, with hexagonal cell
+	elseif (SG>=143)														// Trigonal, with hexagonal cell
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_c_nm,noedit=0,frame=1,win=$subWin
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
@@ -2239,7 +2284,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		b=a
 		alpha=90  ;  bet=90  ;  gam=120
 		titleStr += "Trigonal"
-	elseif (SpaceGroup>=75)									// Tetragonal, a, c
+	elseif (SG>=75)														// Tetragonal, a, c
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_c_nm,noedit=0,frame=1,win=$subWin
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
@@ -2248,7 +2293,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		SetVariable set_gamma,noedit=1,frame=0,win=$subWin
 		b=a ; alpha=90 ; bet=90 ; gam=90
 		titleStr += "Tetragonal"
-	elseif (SpaceGroup>=16)									// Orthorhombic, a, b, c
+	elseif (SG>=16)														// Orthorhombic, a, b, c
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_b_nm,noedit=0,frame=1,win=$subWin
 		SetVariable set_c_nm,noedit=0,frame=1,win=$subWin
@@ -2257,7 +2302,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		SetVariable set_gamma,noedit=1,frame=0,win=$subWin
 		alpha=90 ; bet=90 ; gam=90
 		titleStr += "Orthorhombic"
-	elseif (SpaceGroup>=3)										// Monoclinic, a, b, c, gamma
+	elseif (SG>=3)															// Monoclinic, a, b, c, gamma
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_b_nm,noedit=0,frame=1,win=$subWin
 		SetVariable set_c_nm,noedit=0,frame=1,win=$subWin
@@ -2275,7 +2320,8 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroup)
 		SetVariable set_gamma,noedit=0,frame=1,win=$subWin
 		titleStr += "Triclinic"
 	endif
-	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroup)
+	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+
 	titleStr = minus2bar(titleStr)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
 	TitleBox structureTitle,pos={imag(sizeLeft),63},title=titleStr, fSize=real(sizeLeft), win=$subWin
@@ -2361,14 +2407,14 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 	return 0
 End
 //
-Static Function SelectNewSG(find)
+Static Function/T SelectNewSG(find)
 	String find
 	if (strlen(find)<1)
 		find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
 		Prompt find, "Space Group Search, use * for wild card"
 		DoPrompt "Search String", find
 		if (V_flag)
-			return NaN
+			return ""
 		endif
 	endif
 	String/G root:Packages:Lattices:PanelValues:SpaceGroupSearch=find
@@ -2387,32 +2433,33 @@ Static Function SelectNewSG(find)
 		symList += str
 	endfor	
 
-	String list = symmtry2SG(find,type=0,printIt=0)
+	String list = symmtry2SG(find,type=0,printIt=0), sym
 	String system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
-	Variable SG, Nlist=ItemsInList(list)
+	String id, allIDs=MakeAllIDs()
+	Variable Nlist=ItemsInList(list), idNum
 	for (i=0; i<Nlist; i+=1)
-		SG = str2num(StringFromList(i,list))
-		if (isValidSpaceGroup(SG))
-			system = StringFromList(latticeSystem(SG),systemNames)
-			//	sprintf str,"%d  %s  %s;", SG,system,getFullHMSym(SG)
-			sprintf str, "%d  %s  %s  [%s];", SG,system,getFullHMSym(SG),getHallSymbol(SG)
+		idNum = str2num(StringFromList(i,list))
+		if (isValidSpaceGroupIDnum(idNum))
+			id = StringFromList(idNum-1,allIDs)
+			system = StringFromList(latticeSystem(str2num(id)),systemNames)
+			sprintf str, "%s  %s  %s  [%s];", id,system,getHMsym2(idNum),getHallSymbol(idNum)
 			symList += str
 		endif
 	endfor
 	Variable N=ItemsInList(symList)
 	if (N<1)
-		return NaN
+		return ""
 	elseif (N==1)
-		return str2num(symList)
+		sym = StringFromList(0,symList)
+		return StringFromList(0,sym," ")
 	endif
 
-	String sym
 	Prompt sym,"Space Group",popup,symList
 	DoPrompt "Space Group",sym
 	if (V_flag)
-		return NaN
+		return ""
 	endif
-	return str2num(sym)
+	return StringFromList(0,sym," ")
 End
 
 
@@ -2424,6 +2471,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 
 	String ctrlName=ba.ctrlName
 	SVAR desc=root:Packages:Lattices:PanelValues:desc
+	SVAR SpaceGroupID=root:Packages:Lattices:PanelValues:SpaceGroupID
 	NVAR SpaceGroup=root:Packages:Lattices:PanelValues:SpaceGroup
 	NVAR a=root:Packages:Lattices:PanelValues:a
 	NVAR b=root:Packages:Lattices:PanelValues:b
@@ -2436,7 +2484,8 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 	NVAR dirty = root:Packages:Lattices:PanelValues:dirty
 	SVAR crystalStructStr = root:Packages:Lattices:PanelValues:crystalStructStr
 	STRUCT crystalStructure xtal
-	StructGet/S/B=2 xtal, crystalStructStr				// pre-load with current information
+//	StructGet/S/B=2 xtal, crystalStructStr				// pre-load with current information
+	StructGet_xtal(crystalStructStr,xtal)					// pre-load with current information
 	CleanOutCrystalStructure(xtal)
 	STRUCT WMSetVariableAction sva
 	sva.win = ba.win
@@ -2446,19 +2495,21 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		FillCrystalStructDefault(xtal)					//fill the lattice structure with default values
 		a=xtal.a  ;  b=xtal.b  ;  c=xtal.c
 		alpha=xtal.alpha  ;  bet=xtal.beta  ;  gam=xtal.gam
-		SpaceGroup=xtal.SpaceGroup
+		SpaceGroup = xtal.SpaceGroup
+		SpaceGroupID = xtal.SpaceGroupID
 		alphaT = xtal.alphaT
 		desc = xtal.desc
 		T_C = xtal.Temperature
 		dirty = 0
 //		SetVariable set_SpaceGroupSearch, userdata(oldValue)=num2istr(SpaceGroup),win=$ GetUserData("","","LatticePanelName")
-		UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
+		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
 		LatticePanelParamProc(sva)
 		StructPut/S xtal, crystalStructStr
 	elseif (stringmatch(ctrlName,"buttonLatticeSave") && dirty)
 		xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 		xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 		xtal.SpaceGroup = SpaceGroup
+		xtal.SpaceGroupID = SpaceGroupID
 		xtal.alphaT = alphaT
 		xtal.Temperature = T_C
 		xtal.desc = desc[0,99]								// desc is limited to 100 chars
@@ -2468,18 +2519,18 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		ForceLatticeToStructure(xtal)
 		UpdateCrystalStructureDefaults(xtal)
 		dirty = 0
-		UpdatePanelLatticeConstControls(ba.win,SpaceGroup)// change main copy of xtal
+		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)// change main copy of xtal
 		LatticePanelParamProc(sva)
 		StructPut/S xtal, crystalStructStr				// update the local copy too
 		OverOccupyList(xtal,printIt=1)					// print notice if some sites have occ>1
 	elseif (stringmatch(ctrlName,"buttonFindSpaceGroup"))
-		Variable SG = SelectNewSG("")
-		if (numtype(SG))
+		String id = SelectNewSG("")
+		if (strlen(id)<1)
 			return 0
 		endif
-		SpaceGroup = SG
+		SpaceGroupID = id
 		dirty = 1												// source file no longer valid
-		UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
+		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
 		LatticePanelParamProc(sva)
 	elseif (stringmatch(ctrlName,"buttonEditAtomPositions"))
 		if (EditAtomPositions(xtal)>=0)					// xtal has been MODIFIED
@@ -2489,7 +2540,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 			xtal.hashID = xtalHashID(xtal)
 			StructPut/S xtal, crystalStructStr			// update the local copy
 			dirty = 2											// source file still mostly OK
-			UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
+			UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
 			LatticePanelParamProc(sva)
 		endif
 	elseif (stringmatch(ctrlName,"buttonLatticeFromFile"))
@@ -2499,18 +2550,20 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		a = xtal.a  ;  b = xtal.b  ;  c = xtal.c
 		alpha = xtal.alpha  ;  bet = xtal.beta  ;  gam = xtal.gam
 		SpaceGroup = xtal.SpaceGroup
+		SpaceGroupID = xtal.SpaceGroupID
 		desc = xtal.desc
 		alphaT = xtal.alphaT
 		T_C = xtal.Temperature
 		T_C = (xtal.haveDebyeT && numtype(T_C)) ? 22.5 : T_C
 		dirty = 2														// yes, it is dirty, but xtal.sourceFile is valid
 		StructPut/S xtal, crystalStructStr
-		UpdatePanelLatticeConstControls(ba.win,SpaceGroup)
+		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
 		LatticePanelParamProc(sva)
 	elseif (stringmatch(ctrlName,"buttonPrintLattice"))	// print shown lattice parameters to the history
 		xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 		xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 		xtal.SpaceGroup = SpaceGroup
+		xtal.SpaceGroupID = SpaceGroupID
 		xtal.desc = desc[0,99]
 		xtal.alphaT = alphaT
 		xtal.Temperature = T_C
@@ -2521,13 +2574,13 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		writeCrystalStructure2xmlFile("","")
 	elseif (stringmatch(ctrlName,"buttonAtomView"))	// add support for AtomView
 		String cmd
-		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",%g)",ba.win,SpaceGroup
+		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",\"%s\")",ba.win,SpaceGroupID
 		Execute/P "INSERTINCLUDE \"AtomView\", version>=0.17"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P "Init_AtomViewLattice()"
 		Execute/P cmd
 	elseif (stringmatch(ctrlName,"buttonPowderPattern"))	// add support for PowderPatterns
-		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",%g)",ba.win,SpaceGroup
+		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",\"%s\")",ba.win,SpaceGroupID
 		Execute/P "INSERTINCLUDE \"PowderPatterns\", version>=0.10"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P "Init_PowderPatternLattice()"
@@ -2592,6 +2645,9 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 	xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 	xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 	xtal.SpaceGroup = SpaceGroup
+	String id = FindDefaultIDforSG(xtal.SpaceGroup)
+	xtal.SpaceGroupID = id
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1-530]
 	xtal.alphaT = !(alphaT>0) ? 0 : alphaT
 	ForceLatticeToStructure(xtal)
 
@@ -3240,10 +3296,18 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.hashID = ""
 	String str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
-	Variable SG = str2num(XMLtagContents("space_group_IT_number",cif))
-	xtal.SpaceGroup = isValidSpaceGroup(SG) ? SG : 0
 
-	String cell = XMLtagContents("cell",cif)				// cell group
+	String id = XMLtagContents("space_group_ID",cif)
+	xtal.SpaceGroupID = id[0,11]
+	Variable SG = str2num(XMLtagContents("space_group_IT_number",cif))
+	xtal.SpaceGroup = isValidSpaceGroup(SG) ? SG : str2num(id)
+	if (strlen(id)<1)
+		id = FindDefaultIDforSG(xtal.SpaceGroup)
+		xtal.SpaceGroupID = id
+	endif
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1-530]
+
+	String cell = XMLtagContents("cell",cif)			// cell group
 	String unit
 	xtal.a = str2num(XMLtagContents("a",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("a",cell),"=")
@@ -3497,6 +3561,9 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	endif
 	if (numtype(xtal.SpaceGroup)==0)
 		cif += "\t<space_group_IT_number>"+num2istr(xtal.SpaceGroup)+"</space_group_IT_number>"+NL
+	endif
+	if (strlen(xtal.SpaceGroupID)>0)
+		cif += "\t<space_group_ID>"+xtal.SpaceGroupID+"</space_group_ID>"+NL
 	endif
 	Variable alphaT = xtal.alphaT
 	alphaT = alphaT>0 ? alphaT : NaN
@@ -3953,11 +4020,16 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	endif
 
 	Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
-	if (numtype(SG))
-		String SGstr=CIF_readString("_symmetry_space_group_name_H-M",buf)
-		SG = str2num(SymString2SG(SGstr,1))
-	endif
+//	if (numtype(SG))
+//		String SGstr=CIF_readString("_symmetry_space_group_name_H-M",buf)
+//		SG = str2num(SymString2SGtype(SGstr,1))
+//	endif
 	xtal.SpaceGroup = SG > 0 ? SG : 1
+
+	String id = FindDefaultIDforSG(xtal.SpaceGroup)
+	xtal.SpaceGroupID = id
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1-530]
+
 	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
 
 	xtal.N = 0
@@ -4229,7 +4301,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	Variable system = latticeSystem(SpaceGroup)
 
 	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
-		String sym = getHMsym(SpaceGroup)			// get symmetry symbol
+//		String sym = getHMsym(xtal.SpaceGroupIDnum)	// get symmetry symbol
+		String sym = getHMsym2(xtal.SpaceGroupIDnum)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
 				if (!ALLOW_FC(h,k,l))
@@ -4552,7 +4625,8 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 	Wave xyzIN				// result, list of all equiv positions for this atom in fractional coords
 
 	Variable SpaceGroup=xtal.SpaceGroup
-	SetSymOpsForSpaceGroup(SpaceGroup)			// ensure existance of symmetry op mats and vecs
+	String SpaceGroupID=xtal.SpaceGroupID
+	SetSymOpsForSpaceGroup(SpaceGroupID)		// ensure existance of symmetry op mats and vecs
 	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup))
 	Wave bvecs = $("root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SpaceGroup))
 	if (!WaveExists(mats) || !WaveExists(bvecs))
@@ -4624,7 +4698,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	Variable system = LatticeSym#latticeSystem(xtal.SpaceGroup)
 
 	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
-		String sym = getHMsym(xtal.SpaceGroup)	// get symmetry symbol
+//		String sym = getHMsym(xtal.SpaceGroupIDnum)	// get symmetry symbol
+		String sym = getHMsym2(xtal.SpaceGroupIDnum)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
 				if (mod(h+k,2) || mod(k+l,2) )		// face-centered, hkl must be all even or all odd
@@ -4776,7 +4851,7 @@ End
 //	End
 
 
-ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry operation
+ThreadSafe Function/S MakeSymmetryOps(xtal)			// make a wave with the symmetry operation
 	STRUCT crystalStructure &xtal
 
 	String SG = num2istr(xtal.SpaceGroup)
@@ -4784,7 +4859,7 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry 
 	if (!WaveExists(equivXYZM))
 		return ""
 	endif
-	Variable Nequiv=DimSize(equivXYZM,0)				// number of all symmetry operations for this space group
+	Variable Nequiv=DimSize(equivXYZM,0)					// number of all symmetry operations for this space group
 	String/G root:Packages:Lattices:SymOps:SymmetryOpsPath="root:Packages:Lattices:SymOps:SymmetryOps"+SG
 
 	String wName = "root:Packages:Lattices:SymOps:SymmetryOps"+SG
@@ -4798,11 +4873,11 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry 
 	Variable i, N=0, Nproper=0
 	for (i=0;i<Nequiv;i+=1)									// loop through all Nequiv, rejecting duplicates, and only accepting proper rotations
 		mat = equivXYZM[i][p][q]
-		MatrixOp/O/FREE mat = direct x mat x directI		// convert to cartesian, similarity transform
+		MatrixOp/O/FREE mat = direct x mat x directI	// convert to cartesian, similarity transform
 		if (isMatInMats(mat,ops) ||MatrixDet(mat)<0)	// skip duplicates and improper rotations
 			continue
 		endif
-		ops[N][][] = mat[q][r]								// save this mat
+		ops[N][][] = mat[q][r]									// save this mat
 		Nproper += MatrixDet(mat)>0 ? 1 : 0
 		N += 1
 	endfor
@@ -4810,11 +4885,11 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry 
 	// go through list again, this time only taking unique IMproper rotations
 	for (i=0;i<Nequiv;i+=1)									// again, loop through all Nequiv, rejecting duplicates
 		mat = equivXYZM[i][p][q]
-		MatrixOp/O/FREE mat = direct x mat x directI		// convert to cartesian, similarity transform
-		if (isMatInMats(mat,ops))							// skip duplicates
+		MatrixOp/O/FREE mat = direct x mat x directI	// convert to cartesian, similarity transform
+		if (isMatInMats(mat,ops))								// skip duplicates
 			continue
 		endif
-		ops[N][][] = mat[q][r]								// save this mat
+		ops[N][][] = mat[q][r]									// save this mat
 		N += 1
 	endfor
 	Redimension/N=(N,-1,-1) ops
@@ -4826,6 +4901,7 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)				// make a wave with the symmetry 
 	String wnote="waveClass=SymmetryOperations;"
 	wnote = ReplaceNumberByKey("Nproper",wnote,Nproper,"=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	wnote = ReplaceNumberByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
 	Note/K ops, wnote
 	return GetWavesDataFolder(ops,2)
 End
@@ -4921,19 +4997,23 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 		String SymmetryOpsPath=StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
 		Wave SymOps = $StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
 		Variable SGw = WaveExists(SymOps) ? NumberByKey("SpaceGroup",note(SymOps),"=") : 0
+		String id=""
+		if (WaveExists(SymOps))
+			id = StringByKey("SpaceGroupID",note(SymOps),"=")
+		endif
 		STRUCT crystalStructure xtal
 		if (FillCrystalStructDefault(xtal) && !WaveExists(SymOps))
 			return ""
 		endif
 
 		Variable useWave=0, useXtal=0
-		if (isValidSpaceGroup(SGw) && isValidSpaceGroup(xtal.SpaceGroup) && xtal.SpaceGroup == SGw)
+		if (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID) && StringMatch(xtal.SpaceGroupID,id))
 			useWave = 1
-		elseif (isValidSpaceGroup(SGw) && !isValidSpaceGroup(xtal.SpaceGroup))		// use wave
+		elseif (isValidSpaceGroupID(id) && !isValidSpaceGroupID(xtal.SpaceGroupID))		// use wave
 			useWave = 1
-		elseif (!isValidSpaceGroup(SGw) && isValidSpaceGroup(xtal.SpaceGroup))		// use xtal
+		elseif (!isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// use xtal
 			useXtal = 1
-		elseif (isValidSpaceGroup(SGw) && isValidSpaceGroup(xtal.SpaceGroup))		// ask
+		elseif (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// ask
 			DoAlert 2, "SymmetryOpsPath and Lattice Panel Disagree,\r  Remake SymmetryOps"+num2istr(SGw)+" to match Panel?"
 			if (V_flag>2)
 				return ""
@@ -4953,19 +5033,22 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 		return ""
 	endif
 	Variable Nproper = NumberByKey("Nproper",note(SymOps),"=")
-	Variable SpaceGroup = NumberByKey("SpaceGroup",note(SymOps),"=")
+	Variable SG = NumberByKey("SpaceGroup",note(SymOps),"=")
+	String SpaceGroupID = StringByKey("SpaceGroupID",note(SymOps),"=")
 	if (!(Nproper>0))
 		return ""
 	endif
 	if (printIt)
-		String system = StringFromList(latticeSystem(SpaceGroup),LatticeSystemNames)
-		printf "For Space Group %g  (%s) %s,  %g proper rotations\r",SpaceGroup,system,getFullHMSym(SpaceGroup),Nproper
+		String system = StringFromList(latticeSystem(SG),LatticeSystemNames)
+		Variable idNum = SpaceGroupID2num(SpaceGroupID)
+		printf "For Space Group %s  (%s) %s,  %g proper rotations\r",SpaceGroupID,system,getHMsym2(idNum),Nproper
 	endif
 
 	Make/N=3/D/FREE axis, v3
 	Make/N=(3,3)/D/FREE sym
 	String out = ReplaceNumberByKey("Nproper","",Nproper,"=")
-	out = ReplaceNumberByKey("SpaceGroup",out,SpaceGroup,"=")
+	out = ReplaceNumberByKey("SpaceGroup",out,SG,"=")
+	out = ReplaceStringByKey("SpaceGroupID",out,SpaceGroupID,"=")
 	String str, name								// name of axis
 	Variable i, angle, div
 	for (i=0;i<Nproper;i+=1)
@@ -5006,9 +5089,121 @@ Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry o
 	return out
 End
 
+
 ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
 	Variable SG
 	return ( SG == limit(round(SG), 1, 230) )
+End
+
+
+ThreadSafe Static Function isValidSpaceGroupID(id)		// returns TRUE if id is valid
+	String id															// a space group id, e.g. "15" or "15:-b2"
+	String allIDs=MakeAllIDs()
+	return WhichListItem(id,allIDs)>=0
+End
+
+
+ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
+	Variable idNum
+	return ( idNum == limit(round(idNum), 1, 530) )
+End
+
+
+Function SpaceGroupID2num(id)
+	String id									// a space group id, e.g. "15" or "15:-b2"
+
+	String allIDs=MakeAllIDs()
+	Variable idNum = 1+WhichListItem(id,allIDs)
+	idNum = LatticeSym#isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	if (numtype(idNum))
+		idNum = FindDefaultIDnumForSG(round(str2num(id)))
+	endif
+	idNum = LatticeSym#isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	return idNum
+End
+
+
+ThreadSafe Static Function/T FindDefaultIDforSG(SG)
+	Variable SG					// space group number [1-230]
+	if (!LatticeSym#isValidSpaceGroup(SG))		// invalid
+		return ""
+	endif
+
+	// find first space group starting with "id:"
+	string str = num2istr(SG)+":*"
+	String allIDs=MakeAllIDs()
+	Variable i
+	for (i=0;i<ItemsInList(allIDs);i+=1)
+		if (StringMatch(StringFromList(i,allIDs),str))
+			return StringFromList(i,allIDs)
+		endif	
+	endfor
+	return ""
+End
+
+
+ThreadSafe Static Function FindDefaultIDnumForSG(SG)
+	Variable SG					// space group number [1-230]
+	if (!LatticeSym#isValidSpaceGroup(SG))		// invalid
+		return NaN
+	endif
+
+	// find first space group starting with "id:"
+	string str = num2istr(SG)+":*"
+	String allIDs=MakeAllIDs()
+	Variable i
+	for (i=0;i<ItemsInList(allIDs);i+=1)
+		if (StringMatch(StringFromList(i,allIDs),str))
+			return i+1
+		endif	
+	endfor
+	return NaN
+End
+
+
+
+
+ThreadSafe Static Function/T MakeAllIDs()
+	String allIDs = "1;2;3:b;3:c;3:a;4:b;4:c;4:a;5:b1;5:b2;5:b3;5:c1;5:c2;5:c3;5:a1;5:a2;"
+	allIDs += "5:a3;6:b;6:c;6:a;7:b1;7:b2;7:b3;7:c1;7:c2;7:c3;7:a1;7:a2;7:a3;8:b1;8:b2;8:b3;"
+	allIDs += "8:c1;8:c2;8:c3;8:a1;8:a2;8:a3;9:b1;9:b2;9:b3;9:-b1;9:-b2;9:-b3;9:c1;9:c2;"
+	allIDs += "9:c3;9:-c1;9:-c2;9:-c3;9:a1;9:a2;9:a3;9:-a1;9:-a2;9:-a3;10:b;10:c;10:a;11:b;"
+	allIDs += "11:c;11:a;12:b1;12:b2;12:b3;12:c1;12:c2;12:c3;12:a1;12:a2;12:a3;13:b1;13:b2;"
+	allIDs += "13:b3;13:c1;13:c2;13:c3;13:a1;13:a2;13:a3;14:b1;14:b2;14:b3;14:c1;14:c2;14:c3;"
+	allIDs += "14:a1;14:a2;14:a3;15:b1;15:b2;15:b3;15:-b1;15:-b2;15:-b3;15:c1;15:c2;15:c3;"
+	allIDs += "15:-c1;15:-c2;15:-c3;15:a1;15:a2;15:a3;15:-a1;15:-a2;15:-a3;16;17;17:cab;17:bca;"
+	allIDs += "18;18:cab;18:bca;19;20;20:cab;20:bca;21;21:cab;21:bca;22;23;24;25;25:cab;25:bca;"
+	allIDs += "26;26:ba-c;26:cab;26:-cba;26:bca;26:a-cb;27;27:cab;27:bca;28;28:ba-c;28:cab;"
+	allIDs += "28:-cba;28:bca;28:a-cb;29;29:ba-c;29:cab;29:-cba;29:bca;29:a-cb;30;30:ba-c;"
+	allIDs += "30:cab;30:-cba;30:bca;30:a-cb;31;31:ba-c;31:cab;31:-cba;31:bca;31:a-cb;32;"
+	allIDs += "32:cab;32:bca;33;33:ba-c;33:cab;33:-cba;33:bca;33:a-cb;34;34:cab;34:bca;35;"
+	allIDs += "35:cab;35:bca;36;36:ba-c;36:cab;36:-cba;36:bca;36:a-cb;37;37:cab;37:bca;38;"
+	allIDs += "38:ba-c;38:cab;38:-cba;38:bca;38:a-cb;39;39:ba-c;39:cab;39:-cba;39:bca;39:a-cb;"
+	allIDs += "40;40:ba-c;40:cab;40:-cba;40:bca;40:a-cb;41;41:ba-c;41:cab;41:-cba;41:bca;"
+	allIDs += "41:a-cb;42;42:cab;42:bca;43;43:cab;43:bca;44;44:cab;44:bca;45;45:cab;45:bca;"
+	allIDs += "46;46:ba-c;46:cab;46:-cba;46:bca;46:a-cb;47;48:1;48:2;49;49:cab;49:bca;50:1;"
+	allIDs += "50:2;50:1cab;50:2cab;50:1bca;50:2bca;51;51:ba-c;51:cab;51:-cba;51:bca;51:a-cb;"
+	allIDs += "52;52:ba-c;52:cab;52:-cba;52:bca;52:a-cb;53;53:ba-c;53:cab;53:-cba;53:bca;"
+	allIDs += "53:a-cb;54;54:ba-c;54:cab;54:-cba;54:bca;54:a-cb;55;55:cab;55:bca;56;56:cab;"
+	allIDs += "56:bca;57;57:ba-c;57:cab;57:-cba;57:bca;57:a-cb;58;58:cab;58:bca;59:1;59:2;"
+	allIDs += "59:1cab;59:2cab;59:1bca;59:2bca;60;60:ba-c;60:cab;60:-cba;60:bca;60:a-cb;61;"
+	allIDs += "61:ba-c;62;62:ba-c;62:cab;62:-cba;62:bca;62:a-cb;63;63:ba-c;63:cab;63:-cba;"
+	allIDs += "63:bca;63:a-cb;64;64:ba-c;64:cab;64:-cba;64:bca;64:a-cb;65;65:cab;65:bca;66;"
+	allIDs += "66:cab;66:bca;67;67:ba-c;67:cab;67:-cba;67:bca;67:a-cb;68:1;68:2;68:1ba-c;"
+	allIDs += "68:2ba-c;68:1cab;68:2cab;68:1-cba;68:2-cba;68:1bca;68:2bca;68:1a-cb;68:2a-cb;"
+	allIDs += "69;70:1;70:2;71;72;72:cab;72:bca;73;73:ba-c;74;74:ba-c;74:cab;74:-cba;74:bca;"
+	allIDs += "74:a-cb;75;76;77;78;79;80;81;82;83;84;85:1;85:2;86:1;86:2;87;88:1;88:2;89;90;"
+	allIDs += "91;92;93;94;95;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;112;"
+	allIDs += "113;114;115;116;117;118;119;120;121;122;123;124;125:1;125:2;126:1;126:2;127;"
+	allIDs += "128;129:1;129:2;130:1;130:2;131;132;133:1;133:2;134:1;134:2;135;136;137:1;137:2;"
+	allIDs += "138:1;138:2;139;140;141:1;141:2;142:1;142:2;143;144;145;146:H;146:R;147;148:H;"
+	allIDs += "148:R;149;150;151;152;153;154;155:H;155:R;156;157;158;159;160:H;160:R;161:H;"
+	allIDs += "161:R;162;163;164;165;166:H;166:R;167:H;167:R;168;169;170;171;172;173;174;175;"
+	allIDs += "176;177;178;179;180;181;182;183;184;185;186;187;188;189;190;191;192;193;194;"
+	allIDs += "195;196;197;198;199;200;201:1;201:2;202;203:1;203:2;204;205;206;207;208;209;"
+	allIDs += "210;211;212;213;214;215;216;217;218;219;220;221;222:1;222:2;223;224:1;224:2;"
+	allIDs += "225;226;227:1;227:2;228:1;228:2;229;230"
+	return allIDs
 End
 
 
@@ -5036,11 +5231,11 @@ End
 //    Trigonal		:H	hexagonal    axes
 //						:R	rhombohedral axes
 
-ThreadSafe Function/S getHMboth(SpaceGroup)	// returns short and (full) Hermann-Mauguin symbol
-	Variable SpaceGroup						//Space Group number, from International Tables
+ThreadSafe Function/S getHMboth(SpaceGroupIDnum)	// returns short and (full) Hermann-Mauguin symbol
+	Variable SpaceGroupIDnum								//Space Group number, from International Tables
 
-	String short = getHMsym(SpaceGroup)
-	String full = getFullHMSym(SpaceGroup)
+	String short = getHMsym(SpaceGroupIDnum)
+	String full = getHMsym2(SpaceGroupIDnum)
 	if (StringMatch(short,full))
 		return short
 	else
@@ -5049,144 +5244,219 @@ ThreadSafe Function/S getHMboth(SpaceGroup)	// returns short and (full) Hermann-
 End
 
 
-ThreadSafe Function/S getHMsym(SpaceGroup)	// returns short Hermann-Mauguin symbol
-	Variable SpaceGroup						//Space Group number, from International Tables
-	if (!isValidSpaceGroup(SpaceGroup))
-		return ""								// invalid SpaceGroup number
+ThreadSafe Function/T getHMsym(idNum)		// returns short Hermann-Mauguin symbol
+	Variable idNum									// index into the SpaceGroup IDs [1-530]
+	if (!isValidSpaceGroupIDnum(idNum))
+		return ""									// invalid SpaceGroup ID number
 	endif
 
-	// there are 230 items in this list
-	String symms="P1;P-1;P2:b;P21:b;C2:b1;Pm:b;Pc:b1;"
-	symms += "Cm:b1;Cc:b1;P2/m:b;P21/m:b;C2/m:b1;P2/c:b1;"
-	symms += "P21/c:b1;C2/c:b1;P222;P2221;P21212;P212121;"
-	symms += "C2221;C222;F222;I222;I212121;Pmm2;Pmc21;"
-	symms += "Pcc2;Pma2;Pca21;Pnc2;Pmn21;Pba2;Pna21;"
-	symms += "Pnn2;Cmm2;Cmc21;Ccc2;Amm2;Abm2;Ama2;Aba2;"
-	symms += "Fmm2;Fdd2;Imm2;Iba2;Ima2;Pmmm;Pnnn:1;Pccm;"
-	symms += "Pban:1;Pmma;Pnna;Pmna;Pcca;Pbam;Pccn;Pbcm;"
-	symms += "Pnnm;Pmmn:1;Pbcn;Pbca;Pnma;Cmcm;Cmca;Cmmm;"
-	symms += "Cccm;Cmma;Ccca:1;Fmmm;Fddd:1;Immm;Ibam;Ibca;"
-	symms += "Imma;P4;P41;P42;P43;I4;I41;P-4;I-4;"
-	symms += "P4/m;P42/m;P4/n:1;P42/n:1;I4/m;I41/a:1;P422;"
-	symms += "P4212;P4122;P41212;P4222;P42212;P4322;P43212;"
-	symms += "I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;"
-	symms += "P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;"
-	symms += "P-42m;P-42c;P-421m;P-421c;P-4m2;P-4c2;P-4b2;"
-	symms += "P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;"
-	symms += "P4/nbm:1;P4/nnc:1;P4/mbm;P4/mnc;P4/nmm:1;P4/ncc:1;"
-	symms += "P42/mmc;P42/mcm;P42/nbc:1;P42/nnm:1;P42/mbc;P42/mnm;"
-	symms += "P42/nmc:1;P42/ncm:1;I4/mmm;I4/mcm;I41/amd:1;"
-	symms += "I41/acd:1;P3;P31;P32;R3:H;P-3;R-3:H;P312;"
-	symms += "P321;P3112;P3121;P3212;P3221;R32:H;P3m1;P31m;"
-	symms += "P3c1;P31c;R3m:H;R3c:H;P-31m;P-31c;P-3m1;P-3c1;"
-	symms += "R-3m:H;R-3c:H;P6;P61;P65;P62;P64;P63;P-6;"
-	symms += "P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;"
-	symms += "P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;"
-	symms += "P6/mmm;P6/mcc;P63/mcm;P63/mmc;P23;F23;I23;P213;"
-	symms += "I213;Pm-3;Pn-3:1;Fm-3;Fd-3:1;Im-3;Pa-3;Ia-3;"
-	symms += "P432;P4232;F432;F4132;I432;P4332;P4132;I4132;"
-	symms += "P-43m;F-43m;I-43m;P-43n;F-43c;I-43d;Pm-3m;"
-	symms += "Pn-3n:1;Pm-3n;Pn-3m:1;Fm-3m;Fm-3c;Fd-3m:1;Fd-3c:1;"
-	symms += "Im-3m;Ia-3d;"
-	return StringFromList(SpaceGroup-1,symms)	// set the symmetry symbol
+	String HM1=""									// there are 530 items in this list
+	HM1  = "P1;P-1;P2:b;P2:c;P2:a;P21:b;P21:c;P21:a;C2:b1;C2:b2;C2:b3;C2:c1;C2:c2;C2:c3;C2:a1;C2:a2;C2:a3;Pm:b;Pm:c;Pm:a;Pc:b1;Pc:b2;Pc:b3;"
+	HM1 += "Pc:c1;Pc:c2;Pc:c3;Pc:a1;Pc:a2;Pc:a3;Cm:b1;Cm:b2;Cm:b3;Cm:c1;Cm:c2;Cm:c3;Cm:a1;Cm:a2;Cm:a3;Cc:b1;Cc:b2;Cc:b3;Cc:-b1;Cc:-b2;Cc:-b3;"
+	HM1 += "Cc:c1;Cc:c2;Cc:c3;Cc:-c1;Cc:-c2;Cc:-c3;Cc:a1;Cc:a2;Cc:a3;Cc:-a1;Cc:-a2;Cc:-a3;P2/m:b;P2/m:c;P2/m:a;P21/m:b;P21/m:c;P21/m:a;C2/m:b1;"
+	HM1 += "C2/m:b2;C2/m:b3;C2/m:c1;C2/m:c2;C2/m:c3;C2/m:a1;C2/m:a2;C2/m:a3;P2/c:b1;P2/c:b2;P2/c:b3;P2/c:c1;P2/c:c2;P2/c:c3;P2/c:a1;P2/c:a2;"
+	HM1 += "P2/c:a3;P21/c:b1;P21/c:b2;P21/c:b3;P21/c:c1;P21/c:c2;P21/c:c3;P21/c:a1;P21/c:a2;P21/c:a3;C2/c:b1;C2/c:b2;C2/c:b3;C2/c:-b1;C2/c:-b2;"
+	HM1 += "C2/c:-b3;C2/c:c1;C2/c:c2;C2/c:c3;C2/c:-c1;C2/c:-c2;C2/c:-c3;C2/c:a1;C2/c:a2;C2/c:a3;C2/c:-a1;C2/c:-a2;C2/c:-a3;P222;P2221;P2122;"
+	HM1 += "P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;Pcm21;P21ma;P21am;Pb21m;"
+	HM1 += "Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;Pb2n;Pn2b;Pmn21;Pnm21;"
+	HM1 += "P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;Cmc21;Ccm21;A21ma;A21am;"
+	HM1 += "Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;Cc2m;Am2a;Aba2;Bba2;"
+	HM1 += "B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;Pmmm;Pnnn:1;Pnnn:2;"
+	HM1 += "Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;Pnan;Pmna;Pnmb;"
+	HM1 += "Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;Pmnn;Pnmn;"
+	HM1 += "Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;Ccmm;Amma;"
+	HM1 += "Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;Cccb:1;"
+	HM1 += "Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;Ibmm;"
+	HM1 += "Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;P41212;"
+	HM1 += "P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;P-421c;"
+	HM1 += "P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;P4/nmm:2;"
+	HM1 += "P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;P42/ncm:2;"
+	HM1 += "I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;P3221;R32:H;"
+	HM1 += "R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;P64;P63;P-6;"
+	HM1 += "P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;P63/mmc;P23;F23;"
+	HM1 += "I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;P-43m;F-43m;I-43m;"
+	HM1 += "P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;Ia-3d;"
+	return StringFromList(idNum-1,HM1)
+End
+
+ThreadSafe Function/T getHMsym2(idNum)	// returns short Hermann-Mauguin symbol
+	Variable idNum									// index into the SpaceGroup IDs [1-530]
+	if (!isValidSpaceGroupIDnum(idNum))
+		return ""									// invalid SpaceGroup ID number
+	endif
+
+	String HM2=""									// there are 530 items in this list
+	HM2  = "P1;P-1;P121;P112;P211;P1211;P1121;P2111;C121;A121;I121;A112;B112;I112;B211;C211;I211;P1m1;P11m;Pm11;P1c1;P1n1;P1a1;P11a;P11n;P11b;"
+	HM2 += "Pb11;Pn11;Pc11;C1m1;A1m1;I1m1;A11m;B11m;I11m;Bm11;Cm11;Im11;C1c1;A1n1;I1a1;A1a1;C1n1;I1c1;A11a;B11n;I11b;B11b;A11n;I11a;Bb11;Cn11;"
+	HM2 += "Ic11;Cc11;Bn11;Ib11;P12/m1;P112/m;P2/m11;P121/m1;P1121/m;P21/m11;C12/m1;A12/m1;I12/m1;A112/m;B112/m;I112/m;B2/m11;C2/m11;I2/m11;"
+	HM2 += "P12/c1;P12/n1;P12/a1;P112/a;P112/n;P112/b;P2/b11;P2/n11;P2/c11;P121/c1;P121/n1;P121/a1;P1121/a;P1121/n;P1121/b;P21/b11;P21/n11;"
+	HM2 += "P21/c11;C12/c1;A12/n1;I12/a1;A12/a1;C12/n1;I12/c1;A112/a;B112/n;I112/b;B112/b;A112/n;I112/a;B2/b11;C2/n11;I2/c11;C2/c11;B2/n11;"
+	HM2 += "I2/b11;P222;P2221;P2122;P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;"
+	HM2 += "Pcm21;P21ma;P21am;Pb21m;Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;"
+	HM2 += "Pb2n;Pn2b;Pmn21;Pnm21;P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;"
+	HM2 += "Cmc21;Ccm21;A21ma;A21am;Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;"
+	HM2 += "Cc2m;Am2a;Aba2;Bba2;B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;"
+	HM2 += "Pmmm;Pnnn:1;Pnnn:2;Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;"
+	HM2 += "Pnan;Pmna;Pnmb;Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;"
+	HM2 += "Pmnn;Pnmn;Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;"
+	HM2 += "Ccmm;Amma;Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;"
+	HM2 += "Cccb:1;Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;"
+	HM2 += "Ibmm;Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;"
+	HM2 += "P41212;P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
+	HM2 += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;"
+	HM2 += "P4/nmm:2;P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;"
+	HM2 += "P42/ncm:2;I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;"
+	HM2 += "P3221;R32:H;R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;"
+	HM2 += "P64;P63;P-6;P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
+	HM2 += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;"
+	HM2 += "P-43m;F-43m;I-43m;P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;"
+	HM2 += "Ia-3d;"
+	return StringFromList(idNum-1,HM2)
 End
 
 
-// Full H-M symbols only differ from the regular ones (in getHMsym) for Space Groups: 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-ThreadSafe Function/S getFullHMSym(SpaceGroup)	// returns full Hermann-Mauguin symbol
-	Variable SpaceGroup					//Space Group number, from International Tables
-	if (!isValidSpaceGroup(SpaceGroup))
-		return ""							// invalid SpaceGroup number
+//// Full H-M symbols only differ from the regular ones (in getHMsym) for Space Groups: 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+//ThreadSafe Function/S getFullHMSym(SpaceGroup)	// returns full Hermann-Mauguin symbol
+//	Variable SpaceGroup					//Space Group number, from International Tables
+//	if (!isValidSpaceGroup(SpaceGroup))
+//		return ""							// invalid SpaceGroup number
+//	endif
+//
+//	// there are 230 items in this list
+//	String fullSymms="P1;P-1;P121:b;P1211:b;C121:b1;P1m1:b;"
+//	fullSymms += "P1c1:b1;C1m1:b1;C1c1:b1;P12/m1:b;P121/m1:b;"
+//	fullSymms += "C12/m1:b1;P12/c1:b1;P121/c1:b1;C12/c1:b1;P222;"
+//	fullSymms += "P2221;P21212;P212121;C2221;C222;F222;I222;I212121;"
+//	fullSymms += "Pmm2;Pmc21;Pcc2;Pma2;Pca21;Pnc2;Pmn21;Pba2;Pna21;"
+//	fullSymms += "Pnn2;Cmm2;Cmc21;Ccc2;Amm2;Abm2;Ama2;Aba2;Fmm2;"
+//	fullSymms += "Fdd2;Imm2;Iba2;Ima2;Pmmm;Pnnn:1;Pccm;Pban:1;Pmma;"
+//	fullSymms += "Pnna;Pmna;Pcca;Pbam;Pccn;Pbcm;Pnnm;Pmmn:1;Pbcn;"
+//	fullSymms += "Pbca;Pnma;Cmcm;Cmca;Cmmm;Cccm;Cmma;Ccca:1;Fmmm;"
+//	fullSymms += "Fddd:1;Immm;Ibam;Ibca;Imma;P4;P41;P42;P43;I4;I41"
+//	fullSymms += ";P-4;I-4;P4/m;P42/m;P4/n:1;P42/n:1;I4/m;I41/a:1;"
+//	fullSymms += "P422;P4212;P4122;P41212;P4222;P42212;P4322;P43212;"
+//	fullSymms += "I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;"
+//	fullSymms += "P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
+//	fullSymms += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;"
+//	fullSymms += "I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nnc:1;P4/mbm;P4/mnc;"
+//	fullSymms += "P4/nmm:1;P4/ncc:1;P42/mmc;P42/mcm;P42/nbc:1;P42/nnm:1;"
+//	fullSymms += "P42/mbc;P42/mnm;P42/nmc:1;P42/ncm:1;I4/mmm;I4/mcm;"
+//	fullSymms += "I41/amd:1;I41/acd:1;P3;P31;P32;R3:H;P-3;R-3:H;P312;"
+//	fullSymms += "P321;P3112;P3121;P3212;P3221;R32:H;P3m1;P31m;P3c1;"
+//	fullSymms += "P31c;R3m:H;R3c:H;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;"
+//	fullSymms += "R-3c:H;P6;P61;P65;P62;P64;P63;P-6;P6/m;P63/m;P622;"
+//	fullSymms += "P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;"
+//	fullSymms += "P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
+//	fullSymms += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Fm-3;"
+//	fullSymms += "Fd-3:1;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;"
+//	fullSymms += "P4332;P4132;I4132;P-43m;F-43m;I-43m;P-43n;F-43c;"
+//	fullSymms += "I-43d;Pm-3m;Pn-3n:1;Pm-3n;Pn-3m:1;Fm-3m;Fm-3c;"
+//	fullSymms += "Fd-3m:1;Fd-3c:1;Im-3m;Ia-3d"
+//	return StringFromList(SpaceGroup-1,fullSymms)	// set the symmetry symbol
+//End
+
+
+ThreadSafe Function/S getHallSymbol(idNum)
+	Variable idNum									// index into the SpaceGroup IDs [1-530]
+	if (!isValidSpaceGroupIDnum(idNum))
+		return ""									// invalid SpaceGroup ID number
 	endif
 
-	// there are 230 items in this list
-	String fullSymms="P1;P-1;P121:b;P1211:b;C121:b1;P1m1:b;"
-	fullSymms += "P1c1:b1;C1m1:b1;C1c1:b1;P12/m1:b;P121/m1:b;"
-	fullSymms += "C12/m1:b1;P12/c1:b1;P121/c1:b1;C12/c1:b1;P222;"
-	fullSymms += "P2221;P21212;P212121;C2221;C222;F222;I222;I212121;"
-	fullSymms += "Pmm2;Pmc21;Pcc2;Pma2;Pca21;Pnc2;Pmn21;Pba2;Pna21;"
-	fullSymms += "Pnn2;Cmm2;Cmc21;Ccc2;Amm2;Abm2;Ama2;Aba2;Fmm2;"
-	fullSymms += "Fdd2;Imm2;Iba2;Ima2;Pmmm;Pnnn:1;Pccm;Pban:1;Pmma;"
-	fullSymms += "Pnna;Pmna;Pcca;Pbam;Pccn;Pbcm;Pnnm;Pmmn:1;Pbcn;"
-	fullSymms += "Pbca;Pnma;Cmcm;Cmca;Cmmm;Cccm;Cmma;Ccca:1;Fmmm;"
-	fullSymms += "Fddd:1;Immm;Ibam;Ibca;Imma;P4;P41;P42;P43;I4;I41"
-	fullSymms += ";P-4;I-4;P4/m;P42/m;P4/n:1;P42/n:1;I4/m;I41/a:1;"
-	fullSymms += "P422;P4212;P4122;P41212;P4222;P42212;P4322;P43212;"
-	fullSymms += "I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;"
-	fullSymms += "P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
-	fullSymms += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;"
-	fullSymms += "I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nnc:1;P4/mbm;P4/mnc;"
-	fullSymms += "P4/nmm:1;P4/ncc:1;P42/mmc;P42/mcm;P42/nbc:1;P42/nnm:1;"
-	fullSymms += "P42/mbc;P42/mnm;P42/nmc:1;P42/ncm:1;I4/mmm;I4/mcm;"
-	fullSymms += "I41/amd:1;I41/acd:1;P3;P31;P32;R3:H;P-3;R-3:H;P312;"
-	fullSymms += "P321;P3112;P3121;P3212;P3221;R32:H;P3m1;P31m;P3c1;"
-	fullSymms += "P31c;R3m:H;R3c:H;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;"
-	fullSymms += "R-3c:H;P6;P61;P65;P62;P64;P63;P-6;P6/m;P63/m;P622;"
-	fullSymms += "P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;"
-	fullSymms += "P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
-	fullSymms += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Fm-3;"
-	fullSymms += "Fd-3:1;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;"
-	fullSymms += "P4332;P4132;I4132;P-43m;F-43m;I-43m;P-43n;F-43c;"
-	fullSymms += "I-43d;Pm-3m;Pn-3n:1;Pm-3n;Pn-3m:1;Fm-3m;Fm-3c;"
-	fullSymms += "Fd-3m:1;Fd-3c:1;Im-3m;Ia-3d"
-	return StringFromList(SpaceGroup-1,fullSymms)	// set the symmetry symbol
+	String Hall=""									// there are 530 items in this list
+	Hall  = "P 1;-P 1;P 2y;P 2;P 2x;P 2yb;P 2c;P 2xa;C 2y;A 2y;I 2y;A 2;B 2;I 2;B 2x;C 2x;I 2x;P -2y;P -2;P -2x;P -2yc;P -2yac;P -2ya;P -2a;"
+	Hall += "P -2ab;P -2b;P -2xb;P -2xbc;P -2xc;C -2y;A -2y;I -2y;A -2;B -2;I -2;B -2x;C -2x;I -2x;C -2yc;A -2yac;I -2ya;A -2ya;C -2ybc;I -2yc;"
+	Hall += "A -2a;B -2bc;I -2b;B -2b;A -2ac;I -2a;B -2xb;C -2xbc;I -2xc;C -2xc;B -2xbc;I -2xb;-P 2y;-P 2;-P 2x;-P 2yb;-P 2c;-P 2xa;-C 2y;"
+	Hall += "-A 2y;-I 2y;-A 2;-B 2;-I 2;-B 2x;-C 2x;-I 2x;-P 2yc;-P 2yac;-P 2ya;-P 2a;-P 2ab;-P 2b;-P 2xb;-P 2xbc;-P 2xc;-P 2ybc;-P 2yn;"
+	Hall += "-P 2yab;-P 2ac;-P 2n;-P 2bc;-P 2xab;-P 2xn;-P 2xac;-C 2yc;-A 2yac;-I 2ya;-A 2ya;-C 2ybc;-I 2yc;-A 2a;-B 2bc;-I 2b;-B 2b;-A 2ac;"
+	Hall += "-I 2a;-B 2xb;-C 2xbc;-I 2xc;-C 2xc;-B 2xbc;-I 2xb;P 2 2;P 2c 2;P 2a 2a;P 2 2b;P 2 2ab;P 2bc 2;P 2ac 2ac;P 2ac 2ab;C 2c 2;A 2a 2a;"
+	Hall += "B 2 2b;C 2 2;A 2 2;B 2 2;F 2 2;I 2 2;I 2b 2c;P 2 -2;P -2 2;P -2 -2;P 2c -2;P 2c -2c;P -2a 2a;P -2 2a;P -2 -2b;P -2b -2;P 2 -2c;"
+	Hall += "P -2a 2;P -2b -2b;P 2 -2a;P 2 -2b;P -2b 2;P -2c 2;P -2c -2c;P -2a -2a;P 2c -2ac;P 2c -2b;P -2b 2a;P -2ac 2a;P -2bc -2c;P -2a -2ab;"
+	Hall += "P 2 -2bc;P 2 -2ac;P -2ac 2;P -2ab 2;P -2ab -2ab;P -2bc -2bc;P 2ac -2;P 2bc -2bc;P -2ab 2ab;P -2 2ac;P -2 -2bc;P -2ab -2;P 2 -2ab;"
+	Hall += "P -2bc 2;P -2ac -2ac;P 2c -2n;P 2c -2ab;P -2bc 2a;P -2n 2a;P -2n -2ac;P -2ac -2n;P 2 -2n;P -2n 2;P -2n -2n;C 2 -2;A -2 2;B -2 -2;"
+	Hall += "C 2c -2;C 2c -2c;A -2a 2a;A -2 2a;B -2 -2b;B -2b -2;C 2 -2c;A -2a 2;B -2b -2b;A 2 -2;B 2 -2;B -2 2;C -2 2;C -2 -2;A -2 -2;A 2 -2c;"
+	Hall += "B 2 -2c;B -2c 2;C -2b 2;C -2b -2b;A -2c -2c;A 2 -2a;B 2 -2b;B -2b 2;C -2c 2;C -2c -2c;A -2a -2a;A 2 -2ac;B 2 -2bc;B -2bc 2;"
+	Hall += "C -2bc 2;C -2bc -2bc;A -2ac -2ac;F 2 -2;F -2 2;F -2 -2;F 2 -2d;F -2d 2;F -2d -2d;I 2 -2;I -2 2;I -2 -2;I 2 -2c;I -2a 2;I -2b -2b;"
+	Hall += "I 2 -2a;I 2 -2b;I -2b 2;I -2c 2;I -2c -2c;I -2a -2a;-P 2 2;P 2 2 -1n;-P 2ab 2bc;-P 2 2c;-P 2a 2;-P 2b 2b;P 2 2 -1ab;-P 2ab 2b;"
+	Hall += "P 2 2 -1bc;-P 2b 2bc;P 2 2 -1ac;-P 2a 2c;-P 2a 2a;-P 2b 2;-P 2 2b;-P 2c 2c;-P 2c 2;-P 2 2a;-P 2a 2bc;-P 2b 2n;-P 2n 2b;-P 2ab 2c;"
+	Hall += "-P 2ab 2n;-P 2n 2bc;-P 2ac 2;-P 2bc 2bc;-P 2ab 2ab;-P 2 2ac;-P 2 2bc;-P 2ab 2;-P 2a 2ac;-P 2b 2c;-P 2a 2b;-P 2ac 2c;-P 2bc 2b;"
+	Hall += "-P 2b 2ab;-P 2 2ab;-P 2bc 2;-P 2ac 2ac;-P 2ab 2ac;-P 2ac 2bc;-P 2bc 2ab;-P 2c 2b;-P 2c 2ac;-P 2ac 2a;-P 2b 2a;-P 2a 2ab;-P 2bc 2c;"
+	Hall += "-P 2 2n;-P 2n 2;-P 2n 2n;P 2 2ab -1ab;-P 2ab 2a;P 2bc 2 -1bc;-P 2c 2bc;P 2ac 2ac -1ac;-P 2c 2a;-P 2n 2ab;-P 2n 2c;-P 2a 2n;"
+	Hall += "-P 2bc 2n;-P 2ac 2b;-P 2b 2ac;-P 2ac 2ab;-P 2bc 2ac;-P 2ac 2n;-P 2bc 2a;-P 2c 2ab;-P 2n 2ac;-P 2n 2a;-P 2c 2n;-C 2c 2;-C 2c 2c;"
+	Hall += "-A 2a 2a;-A 2 2a;-B 2 2b;-B 2b 2;-C 2bc 2;-C 2bc 2bc;-A 2ac 2ac;-A 2 2ac;-B 2 2bc;-B 2bc 2;-C 2 2;-A 2 2;-B 2 2;-C 2 2c;-A 2a 2;"
+	Hall += "-B 2b 2b;-C 2b 2;-C 2b 2b;-A 2c 2c;-A 2 2c;-B 2 2c;-B 2c 2;C 2 2 -1bc;-C 2b 2bc;C 2 2 -1bc;-C 2b 2c;A 2 2 -1ac;-A 2a 2c;"
+	Hall += "A 2 2 -1ac;-A 2ac 2c;B 2 2 -1bc;-B 2bc 2b;B 2 2 -1bc;-B 2b 2bc;-F 2 2;F 2 2 -1d;-F 2uv 2vw;-I 2 2;-I 2 2c;-I 2a 2;-I 2b 2b;"
+	Hall += "-I 2b 2c;-I 2a 2b;-I 2b 2;-I 2a 2a;-I 2c 2c;-I 2 2b;-I 2 2a;-I 2c 2;P 4;P 4w;P 4c;P 4cw;I 4;I 4bw;P -4;I -4;-P 4;-P 4c;P 4ab -1ab;"
+	Hall += "-P 4a;P 4n -1n;-P 4bc;-I 4;I 4bw -1bw;-I 4ad;P 4 2;P 4ab 2ab;P 4w 2c;P 4abw 2nw;P 4c 2;P 4n 2n;P 4cw 2c;P 4nw 2abw;I 4 2;"
+	Hall += "I 4bw 2bw;P 4 -2;P 4 -2ab;P 4c -2c;P 4n -2n;P 4 -2c;P 4 -2n;P 4c -2;P 4c -2ab;I 4 -2;I 4 -2c;I 4bw -2;I 4bw -2c;P -4 2;P -4 2c;"
+	Hall += "P -4 2ab;P -4 2n;P -4 -2;P -4 -2c;P -4 -2ab;P -4 -2n;I -4 -2;I -4 -2c;I -4 2;I -4 2bw;-P 4 2;-P 4 2c;P 4 2 -1ab;-P 4a 2b;"
+	Hall += "P 4 2 -1n;-P 4a 2bc;-P 4 2ab;-P 4 2n;P 4ab 2ab -1ab;-P 4a 2a;P 4ab 2n -1ab;-P 4a 2ac;-P 4c 2;-P 4c 2c;P 4n 2c -1n;-P 4ac 2b;"
+	Hall += "P 4n 2 -1n;-P 4ac 2bc;-P 4c 2ab;-P 4n 2n;P 4n 2n -1n;-P 4ac 2a;P 4n 2ab -1n;-P 4ac 2ac;-I 4 2;-I 4 2c;I 4bw 2bw -1bw;-I 4bd 2;"
+	Hall += "I 4bw 2aw -1bw;-I 4bd 2c;P 3;P 31;P 32;R 3;P 3*;-P 3;-R 3;-P 3*;P 3 2;P 3 2\";P 31 2c (0 0 1);P 31 2\";P 32 2c (0 0 -1);P 32 2\";"
+	Hall += "R 3 2\";P 3* 2;P 3 -2\";P 3 -2;P 3 -2\"c;P 3 -2c;R 3 -2\";P 3* -2;R 3 -2\"c;P 3* -2n;-P 3 2;-P 3 2c;-P 3 2\";-P 3 2\"c;-R 3 2\";"
+	Hall += "-P 3* 2;-R 3 2\"c;-P 3* 2n;P 6;P 61;P 65;P 62;P 64;P 6c;P -6;-P 6;-P 6c;P 6 2;P 61 2 (0 0 -1);P 65 2 (0 0 1);P 62 2c (0 0 1);"
+	Hall += "P 64 2c (0 0 -1);P 6c 2c;P 6 -2;P 6 -2c;P 6c -2;P 6c -2c;P -6 2;P -6c 2;P -6 -2;P -6c -2c;-P 6 2;-P 6 2c;-P 6c 2;-P 6c 2c;P 2 2 3;"
+	Hall += "F 2 2 3;I 2 2 3;P 2ac 2ab 3;I 2b 2c 3;-P 2 2 3;P 2 2 3 -1n;-P 2ab 2bc 3;-F 2 2 3;F 2 2 3 -1d;-F 2uv 2vw 3;-I 2 2 3;-P 2ac 2ab 3;"
+	Hall += "-I 2b 2c 3;P 4 2 3;P 4n 2 3;F 4 2 3;F 4d 2 3;I 4 2 3;P 4acd 2ab 3;P 4bd 2ab 3;I 4bd 2c 3;P -4 2 3;F -4 2 3;I -4 2 3;P -4n 2 3;"
+	Hall += "F -4c 2 3;I -4bd 2c 3;-P 4 2 3;P 4 2 3 -1n;-P 4a 2bc 3;-P 4n 2 3;P 4n 2 3 -1n;-P 4bc 2bc 3;-F 4 2 3;-F 4c 2 3;F 4d 2 3 -1d;"
+	Hall += "-F 4vw 2vw 3;F 4d 2 3 -1cd;-F 4cvw 2vw 3;-I 4 2 3;-I 4bd 2c 3;"
+	return StringFromList(idNum-1,Hall)
 End
 
 
-ThreadSafe Function/S getHallSymbol(SpaceGroup)
-	Variable SpaceGroup					//Space Group number, from International Tables
-	if (!isValidSpaceGroup(SpaceGroup))
-		return ""							// invalid SpaceGroup number
-	endif
-
-	// there are 230 items in this list
-	String Hall="P 1;-P 1;P 2y:b;P 2yb:b;C 2y:b1;P -2y:b;P -2yc:b1;"
-	Hall += "C -2y:b1;C -2yc:b1;-P 2y:b;-P 2yb:b;-C 2y:b1;-P 2yc:b1;"
-	Hall += "-P 2ybc:b1;-C 2yc:b1;P 2 2;P 2c 2;P 2 2ab;P 2ac 2ab;"
-	Hall += "C 2c 2;C 2 2;F 2 2;I 2 2;I 2b 2c;P 2 -2;P 2c -2;"
-	Hall += "P 2 -2c;P 2 -2a;P 2c -2ac;P 2 -2bc;P 2ac -2;P 2 -2ab;"
-	Hall += "P 2c -2n;P 2 -2n;C 2 -2;C 2c -2;C 2 -2c;A 2 -2;A 2 -2c;"
-	Hall += "A 2 -2a;A 2 -2ac;F 2 -2;F 2 -2d;I 2 -2;I 2 -2c;I 2 -2a;"
-	Hall += "-P 2 2;P 2 2 -1n:1;-P 2 2c;P 2 2 -1ab:1;-P 2a 2a;"
-	Hall += "-P 2a 2bc;-P 2ac 2;-P 2a 2ac;-P 2 2ab;-P 2ab 2ac;"
-	Hall += "-P 2c 2b;-P 2 2n;P 2 2ab -1ab:1;-P 2n 2ab;-P 2ac 2ab;"
-	Hall += "-P 2ac 2n;-C 2c 2;-C 2bc 2;-C 2 2;-C 2 2c;-C 2b 2;"
-	Hall += "C 2 2 -1bc:1;-F 2 2;F 2 2 -1d:1;-I 2 2;-I 2 2c;-I 2b 2c;"
-	Hall += "-I 2b 2;P 4;P 4w;P 4c;P 4cw;I 4;I 4bw;P -4;I -4;-P 4;"
-	Hall += "-P 4c;P 4ab -1ab:1;P 4n -1n:1;-I 4;I 4bw -1bw:1;P 4 2;"
-	Hall += "P 4ab 2ab;P 4w 2c;P 4abw 2nw;P 4c 2;P 4n 2n;P 4cw 2c;"
-	Hall += "P 4nw 2abw;I 4 2;I 4bw 2bw;P 4 -2;P 4 -2ab;P 4c -2c;"
-	Hall += "P 4n -2n;P 4 -2c;P 4 -2n;P 4c -2;P 4c -2ab;I 4 -2;"
-	Hall += "I 4 -2c;I 4bw -2;I 4bw -2c;P -4 2;P -4 2c;P -4 2ab;"
-	Hall += "P -4 2n;P -4 -2;P -4 -2c;P -4 -2ab;P -4 -2n;I -4 -2;"
-	Hall += "I -4 -2c;I -4 2;I -4 2bw;-P 4 2;-P 4 2c;P 4 2 -1ab:1;"
-	Hall += "P 4 2 -1n:1;-P 4 2ab;-P 4 2n;P 4ab 2ab -1ab:1;"
-	Hall += "P 4ab 2n -1ab:1;-P 4c 2;-P 4c 2c;P 4n 2c -1n:1;"
-	Hall += "P 4n 2 -1n:1;-P 4c 2ab;-P 4n 2n;P 4n 2n -1n:1;"
-	Hall += "P 4n 2ab -1n:1;-I 4 2;-I 4 2c;I 4bw 2bw -1bw:1;"
-	Hall += "I 4bw 2aw -1bw:1;P 3;P 31;P 32;R 3:H;-P 3;-R 3:H;"
-	Hall += "P 3 2;P 3 2'';P 31 2c (0 0 1);P 31 2'';P 32 2c (0 0 -1);"
-	Hall += "P 32 2'';R 3 2'':H;P 3 -2'';P 3 -2;P 3 -2''c;P 3 -2c;R 3 -2'':H;"
-	Hall += "R 3 -2''c:H;-P 3 2;-P 3 2c;-P 3 2'';-P 3 2''c;-R 3 2'':H;"
-	Hall += "-R 3 2''c:H;P 6;P 61;P 65;P 62;P 64;P 6c;P -6;-P 6;-P 6c;"
-	Hall += "P 6 2;P 61 2 (0 0 -1);P 65 2 (0 0 1);P 62 2c (0 0 1);"
-	Hall += "P 64 2c (0 0 -1);P 6c 2c;P 6 -2;P 6 -2c;P 6c -2;P 6c -2c;"
-	Hall += "P -6 2;P -6c 2;P -6 -2;P -6c -2c;-P 6 2;-P 6 2c;-P 6c 2;"
-	Hall += "-P 6c 2c;P 2 2 3;F 2 2 3;I 2 2 3;P 2ac 2ab 3;I 2b 2c 3;"
-	Hall += "-P 2 2 3;P 2 2 3 -1n:1;-F 2 2 3;F 2 2 3 -1d:1;-I 2 2 3;"
-	Hall += "-P 2ac 2ab 3;-I 2b 2c 3;P 4 2 3;P 4n 2 3;F 4 2 3;F 4d 2 3;"
-	Hall += "I 4 2 3;P 4acd 2ab 3;P 4bd 2ab 3;I 4bd 2c 3;P -4 2 3;"
-	Hall += "F -4 2 3;I -4 2 3;P -4n 2 3;F -4c 2 3;I -4bd 2c 3;-P 4 2 3;"
-	Hall += "P 4 2 3 -1n:1;-P 4n 2 3;P 4n 2 3 -1n:1;-F 4 2 3;-F 4c 2 3;"
-	Hall += "F 4d 2 3 -1d:1;F 4d 2 3 -1cd:1;-I 4 2 3;-I 4bd 2c 3;"
-	return StringFromList(SpaceGroup-1,Hall)	// set the Hall symbol
-End
+//ThreadSafe Function/S getHallSymbol(SpaceGroup)
+//	Variable SpaceGroup					//Space Group number, from International Tables
+//	if (!isValidSpaceGroup(SpaceGroup))
+//		return ""							// invalid SpaceGroup number
+//	endif
+//
+//	// there are 230 items in this list
+//	String Hall="P 1;-P 1;P 2y:b;P 2yb:b;C 2y:b1;P -2y:b;P -2yc:b1;"
+//	Hall += "C -2y:b1;C -2yc:b1;-P 2y:b;-P 2yb:b;-C 2y:b1;-P 2yc:b1;"
+//	Hall += "-P 2ybc:b1;-C 2yc:b1;P 2 2;P 2c 2;P 2 2ab;P 2ac 2ab;"
+//	Hall += "C 2c 2;C 2 2;F 2 2;I 2 2;I 2b 2c;P 2 -2;P 2c -2;"
+//	Hall += "P 2 -2c;P 2 -2a;P 2c -2ac;P 2 -2bc;P 2ac -2;P 2 -2ab;"
+//	Hall += "P 2c -2n;P 2 -2n;C 2 -2;C 2c -2;C 2 -2c;A 2 -2;A 2 -2c;"
+//	Hall += "A 2 -2a;A 2 -2ac;F 2 -2;F 2 -2d;I 2 -2;I 2 -2c;I 2 -2a;"
+//	Hall += "-P 2 2;P 2 2 -1n:1;-P 2 2c;P 2 2 -1ab:1;-P 2a 2a;"
+//	Hall += "-P 2a 2bc;-P 2ac 2;-P 2a 2ac;-P 2 2ab;-P 2ab 2ac;"
+//	Hall += "-P 2c 2b;-P 2 2n;P 2 2ab -1ab:1;-P 2n 2ab;-P 2ac 2ab;"
+//	Hall += "-P 2ac 2n;-C 2c 2;-C 2bc 2;-C 2 2;-C 2 2c;-C 2b 2;"
+//	Hall += "C 2 2 -1bc:1;-F 2 2;F 2 2 -1d:1;-I 2 2;-I 2 2c;-I 2b 2c;"
+//	Hall += "-I 2b 2;P 4;P 4w;P 4c;P 4cw;I 4;I 4bw;P -4;I -4;-P 4;"
+//	Hall += "-P 4c;P 4ab -1ab:1;P 4n -1n:1;-I 4;I 4bw -1bw:1;P 4 2;"
+//	Hall += "P 4ab 2ab;P 4w 2c;P 4abw 2nw;P 4c 2;P 4n 2n;P 4cw 2c;"
+//	Hall += "P 4nw 2abw;I 4 2;I 4bw 2bw;P 4 -2;P 4 -2ab;P 4c -2c;"
+//	Hall += "P 4n -2n;P 4 -2c;P 4 -2n;P 4c -2;P 4c -2ab;I 4 -2;"
+//	Hall += "I 4 -2c;I 4bw -2;I 4bw -2c;P -4 2;P -4 2c;P -4 2ab;"
+//	Hall += "P -4 2n;P -4 -2;P -4 -2c;P -4 -2ab;P -4 -2n;I -4 -2;"
+//	Hall += "I -4 -2c;I -4 2;I -4 2bw;-P 4 2;-P 4 2c;P 4 2 -1ab:1;"
+//	Hall += "P 4 2 -1n:1;-P 4 2ab;-P 4 2n;P 4ab 2ab -1ab:1;"
+//	Hall += "P 4ab 2n -1ab:1;-P 4c 2;-P 4c 2c;P 4n 2c -1n:1;"
+//	Hall += "P 4n 2 -1n:1;-P 4c 2ab;-P 4n 2n;P 4n 2n -1n:1;"
+//	Hall += "P 4n 2ab -1n:1;-I 4 2;-I 4 2c;I 4bw 2bw -1bw:1;"
+//	Hall += "I 4bw 2aw -1bw:1;P 3;P 31;P 32;R 3:H;-P 3;-R 3:H;"
+//	Hall += "P 3 2;P 3 2'';P 31 2c (0 0 1);P 31 2'';P 32 2c (0 0 -1);"
+//	Hall += "P 32 2'';R 3 2'':H;P 3 -2'';P 3 -2;P 3 -2''c;P 3 -2c;R 3 -2'':H;"
+//	Hall += "R 3 -2''c:H;-P 3 2;-P 3 2c;-P 3 2'';-P 3 2''c;-R 3 2'':H;"
+//	Hall += "-R 3 2''c:H;P 6;P 61;P 65;P 62;P 64;P 6c;P -6;-P 6;-P 6c;"
+//	Hall += "P 6 2;P 61 2 (0 0 -1);P 65 2 (0 0 1);P 62 2c (0 0 1);"
+//	Hall += "P 64 2c (0 0 -1);P 6c 2c;P 6 -2;P 6 -2c;P 6c -2;P 6c -2c;"
+//	Hall += "P -6 2;P -6c 2;P -6 -2;P -6c -2c;-P 6 2;-P 6 2c;-P 6c 2;"
+//	Hall += "-P 6c 2c;P 2 2 3;F 2 2 3;I 2 2 3;P 2ac 2ab 3;I 2b 2c 3;"
+//	Hall += "-P 2 2 3;P 2 2 3 -1n:1;-F 2 2 3;F 2 2 3 -1d:1;-I 2 2 3;"
+//	Hall += "-P 2ac 2ab 3;-I 2b 2c 3;P 4 2 3;P 4n 2 3;F 4 2 3;F 4d 2 3;"
+//	Hall += "I 4 2 3;P 4acd 2ab 3;P 4bd 2ab 3;I 4bd 2c 3;P -4 2 3;"
+//	Hall += "F -4 2 3;I -4 2 3;P -4n 2 3;F -4c 2 3;I -4bd 2c 3;-P 4 2 3;"
+//	Hall += "P 4 2 3 -1n:1;-P 4n 2 3;P 4n 2 3 -1n:1;-F 4 2 3;-F 4c 2 3;"
+//	Hall += "F 4d 2 3 -1d:1;F 4d 2 3 -1cd:1;-I 4 2 3;-I 4bd 2c 3;"
+//	return StringFromList(SpaceGroup-1,Hall)	// set the Hall symbol
+//End
 
 
 ThreadSafe Static Function latticeSystem(SpaceGroup)
-	Variable SpaceGroup				//Space Group number, from International Tables
+	Variable SpaceGroup				//Space Group number, from International Tables [1-230]
 	if (SpaceGroup>230)
-		return -1					  	 // invalid
+		return -1					  	// invalid
 	elseif (SpaceGroup>=195)
 		return CUBIC
 	elseif (SpaceGroup>=168)
@@ -5208,7 +5478,7 @@ End
 
 Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from the symmetry string
 	String strIN
-	Variable type						// 0=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 3=Hall, 4=Lattice System, 5=SpaceGroup Number, 
+	Variable type						// 0=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 3=Hall, 4=Lattice System, 5=SpaceGroupID
 	Variable printIt
 	type = ParamIsDefault(type) ? 0 : round(type)
 	type = type<0 || type>5 ? NaN : type
@@ -5217,7 +5487,7 @@ Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from 
 
 	if (strlen(strIN)<1 || numtype(type))
 		Prompt strIN, "Symmetry Symbol or Space Group Number, (e.g. \"Pmm*\"), wild cards allowed"
-		Prompt type,"Symbol Type",popup,"Check All Symbol Types;Hermann-Mauguin;Full Hermann-Mauguin;Hall;Lattice System;SpaceGroup Number"
+		Prompt type,"Symbol Type",popup,"Check All Symbol Types;Hermann-Mauguin;Full Hermann-Mauguin;Hall;Lattice System;SpaceGroup ID"
 		type += 1
 		DoPrompt "Symmetry Symbol",strIN,type
 		if (V_flag)
@@ -5231,26 +5501,22 @@ Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from 
 	endif
 	type = round(type)
 
-	String list="", name=StringFromList(type,"any type of;Hermann-Mauguin;FULL Hermann-Mauguin;Hall;Lattice System;")
-	Variable SG
-	if (type==5 || type==0)
-		SG = round(str2num(strIN))
-		SG = (SG>=1 && SG<=230) ? SG : NaN
-		if (numtype(SG)==0)
-			sprintf list,"%d;",SG
-		endif
-	endif
+	String list="", name=StringFromList(type,"any type of;Hermann-Mauguin;FULL Hermann-Mauguin;Hall;Lattice System;SpaceGroup ID")
+	Variable idNum
 	if (type==1 || type==0)
-		list += SymString2SG(strIn,1)
+		list += SymString2SGtype(strIn,1)
 	endif
 	if (type==2 || type==0)
-		list += SymString2SG(strIn,2)
+		list += SymString2SGtype(strIn,2)
 	endif
 	if (type==3 || type==0)
-		list += SymString2SG(strIn,3)
+		list += SymString2SGtype(strIn,3)
 	endif
 	if (type==4 || type==0)
-		list += SymString2SG(strIn,4)
+		list += SymString2SGtype(strIn,4)
+	endif
+	if (type==5 || type==0)
+		list += SymString2SGtype(strIn,5)
 	endif
 
 	Variable i,Nlist=ItemsInList(list), last, now
@@ -5275,17 +5541,22 @@ Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from 
 		elseif (Nlist>1)
 			printf "There are %g possible matches of  \"%s\"  to %s symbol\r",Nlist,strIN,name
 		endif
-		printf "SG\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\r"
-		String tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
+		String allIDs=MakeAllIDs()
+		Variable SG
+		printf "SG\t\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\r"
+		String id, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
-			SG = str2num(StringFromList(i,list))
-			if (isValidSpaceGroup(SG))
-				fullHM = getFullHMSym(SG)			// usually fullHM is the same as HM
-				HM = getHMSym(SG)
+			idNum = str2num(StringFromList(i,list))
+			if (isValidSpaceGroupIDnum(idNum))
+				fullHM = getHMsym2(idNum)			// usually fullHM is the same as HM
+				HM = getHMSym(idNum)
 				fullHM = SelectString(StringMatch(fullHM,HM),"\t\tfull H-M = ["+fullHM+"]","")
-				tab = SelectString(strlen(getFullHMSym(SG))>5,"\t","")
+				tab = SelectString(strlen(getHMsym2(idNum))>5,"\t","")
+
+				id = StringFromList(idNum-1,allIDs)
+				SG = str2num(id)
 				system = StringFromList(latticeSystem(SG),systemNames)
-				printf "%d   \t-->\t\t%s\t\t%s\t\t%s%s%s\r", SG,system,HM,tab,getHallSymbol(SG),fullHM
+				printf "%s\t-->\t\t%s\t\t%s\t\t%s%s%s\r", id,system,HM,tab,getHallSymbol(idNum),fullHM
 			endif
 		endfor
 	endif
@@ -5293,18 +5564,19 @@ Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from 
 End
 
 
-Static Function/S SymString2SG(symIN,type)	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed
+Static Function/S SymString2SGtype(symIN,type)	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed
 	String symIN						// requested symbol, if empty, then a dialog will come up
-	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 3=Hall, 4=Lattice System
+	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 3=Hall, 4=Lattice System, 5=space group type
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
 	String list=""
 
+	Variable idNum
 	type = round(type)
 	if (type==1)
 		FUNCREF getHMsym symbolFunc = getHMsym
 	elseif (type==2)
-		FUNCREF getHMsym symbolFunc = getFullHMSym
+		FUNCREF getHMsym symbolFunc = getHMsym2
 	elseif (type==3)
 		FUNCREF getHMsym symbolFunc = getHallSymbol
 	elseif (type==4)
@@ -5331,16 +5603,22 @@ Static Function/S SymString2SG(symIN,type)	// finds space group of a Hermann-Mau
 		if (StringMatch("Cubic",find))
 			list += expandRange("195-230",";")+";"
 		endif
+	elseif (type==5)
+		String allIDs=MakeAllIDs()
+		for (idNum=1; idNum<=530; idNum+=1)
+			if (StringMatch(StringFromList(idNum-1,allIDs), find))// ignore spaces
+				list += num2istr(idNum)+";"			// found a match, save it
+			endif
+		endfor
 	else
 		return ""
 	endif
 
 	String sym
-	Variable SG
-	for (SG=1;SG<=230;SG+=1)					// check all 230 space goups
-		sym = symbolFunc(SG)
+	for (idNum=1;idNum<=530;idNum+=1)				// check all 530 space group types
+		sym = symbolFunc(idNum)
 		if (StringMatch(ReplaceString(" ",sym,"")	,find))// ignore spaces
-			list += num2istr(SG)+";"				// found a match, save it
+			list += num2istr(idNum)+";"				// found a match, save it
 		endif
 	endfor
 	return list
@@ -5349,10 +5627,10 @@ End
 
 //	DEPRECATED	DEPRECATED	DEPRECATED	DEPRECATED
 // This function is DEPRECATED, it is just left here for old stuff, use getHMsym() instead
-ThreadSafe Function/S getSymString(SpaceGroup)	// returns short Hermann-Mauguin symbol
-	Variable SpaceGroup							//Space Group number, from International Tables
-	return getHMsym(SpaceGroup)
-End
+//	ThreadSafe Function/S getSymString(SpaceGroup)	// returns short Hermann-Mauguin symbol
+//		Variable SpaceGroup							//Space Group number, from International Tables
+//		return getHMsym(SpaceGroup)
+//	End
 
 
 
@@ -5564,7 +5842,7 @@ End
 ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells in conventional cell, or number of atoms in conventional cell
 	STRUCT crystalStructure &xtal
 
-	String sym = getHMsym(xtal.SpaceGroup)		// symmetry string
+	String sym = getHMsym(xtal.SpaceGroupIDnum)	// symmetry string
 	strswitch(sym[0,0])
 		case "F":										// Face Centered
 			return 4
@@ -5775,6 +6053,7 @@ Function/WAVE recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal la
 	endif
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
 	String str
 	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
@@ -5793,6 +6072,7 @@ Function/WAVE directFrom_xtal(xtal)				// returns a FREE wave with real lattice
 	endif
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
 	String str
 	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
@@ -5928,6 +6208,8 @@ Function copy_xtal(target,source)						// copy a crystalStructure source to targ
 	target.gam = source.gam
 
 	target.SpaceGroup = source.SpaceGroup
+	target.SpaceGroupID = source.SpaceGroupID
+	target.SpaceGroupIDnum = source.SpaceGroupIDnum
 	target.Vc = source.Vc
 	target.density = source.density
 	target.alphaT = source.alphaT
@@ -6020,6 +6302,77 @@ Static Function copy_bondType(target,source)		// copy a bondTypeStructure source
 	endfor
 End
 
+
+Function StructGet_xtal(strStruct,xtal6)		// take value of strStruct, and fill xtal6, whether strStruct was v5 or v6
+	String strStruct										// pre vers 6.0 len=25672, after 6.0 it is 25686
+	STRUCT crystalStructure &xtal6					// structure that will be filled
+
+	if (strlen(strStruct)>=25686)					// string is for a version 6 xtal
+		StructGet/S/B=2 xtal6, strStruct
+	else														// assume string is a version 5 xtal
+		STRUCT crystalStructure5 xtal5
+		StructGet/S/B=2 xtal5, strStruct
+		copy_xtal56(xtal6,xtal5)						// copy xtal5 --> xtal
+	endif
+End
+//
+Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --> xtal6
+	STRUCT crystalStructure &xtal6
+	STRUCT crystalStructure5 &xtal5
+
+	xtal6.desc = xtal5.desc
+	xtal6.a = xtal5.a				;	xtal6.b = xtal5.b				;	xtal6.c = xtal5.c
+	xtal6.alpha = xtal5.alpha	;	xtal6.beta = xtal5.beta	;	xtal6.gam = xtal5.gam
+	xtal6.SpaceGroup = xtal5.SpaceGroup						// in range [1-230]
+
+	String id = FindDefaultIDforSG(xtal5.SpaceGroup)
+	xtal6.SpaceGroupID = id										// change SG number to id string
+	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id)			// change id to id number in [1-530]
+
+	xtal6.Vc = xtal5.Vc
+	xtal6.density = xtal5.density
+	xtal6.alphaT = xtal5.alphaT
+
+	xtal6.Temperature = xtal5.Temperature
+	xtal6.Vibrate = xtal5.Vibrate
+	xtal6.haveDebyeT = xtal5.haveDebyeT
+	xtal6.hashID = xtal5.hashID
+
+	xtal6.N = xtal5.N
+	Variable i, N=xtal5.N
+	for (i=0;i<N;i+=1)
+		LatticeSym#copy_atomType(xtal6.atom[i],xtal5.atom[i])
+	endfor
+
+	xtal6.Nbonds = xtal5.Nbonds
+	N = xtal6.Nbonds
+	for (i=0;i<N;i+=1)
+		LatticeSym#copy_bondType(xtal6.bond[i],xtal5.bond[i])
+	endfor
+
+	xtal6.a0 = xtal5.a0	;	xtal6.b0 = xtal5.b0	;	xtal6.c0 = xtal5.c0
+	xtal6.a1 = xtal5.a1	;	xtal6.b1 = xtal5.b1	;	xtal6.c1 = xtal5.c1
+	xtal6.a2 = xtal5.a2	;	xtal6.b2 = xtal5.b2	;	xtal6.c2 = xtal5.c2
+
+	xtal6.as0 = xtal5.as0	;	xtal6.bs0 = xtal5.bs0	;	xtal6.cs0 = xtal5.cs0
+	xtal6.as1 = xtal5.as1	;	xtal6.bs1 = xtal5.bs1	;	xtal6.cs1 = xtal5.cs1
+	xtal6.as2 = xtal5.as2	;	xtal6.bs2 = xtal5.bs2	;	xtal6.cs2 = xtal5.cs2
+
+	xtal6.Unconventional00 = xtal5.Unconventional00
+	xtal6.Unconventional01 = xtal5.Unconventional01
+	xtal6.Unconventional02 = xtal5.Unconventional02
+	xtal6.Unconventional10 = xtal5.Unconventional10
+	xtal6.Unconventional11 = xtal5.Unconventional11
+	xtal6.Unconventional12 = xtal5.Unconventional12
+	xtal6.Unconventional20 = xtal5.Unconventional20
+	xtal6.Unconventional21 = xtal5.Unconventional21
+	xtal6.Unconventional22 = xtal5.Unconventional22
+
+	String fullFile = xtal5.sourceFile
+	fullFile = fullFile[0,MAX_FILE_LEN-1]
+	xtal6.sourceFile = fullFile
+End
+
 //	End of utility
 // =========================================================================
 // =========================================================================
@@ -6054,17 +6407,18 @@ End
 
 
 
-Static Function SetSymOpsForSpaceGroup(SpaceGroup)		// make the symmetry operations mats and vecs (if needed), returns number of operations
-	Variable SpaceGroup
-	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup))
-	Wave bvecs = $("root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SpaceGroup))
+Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
+	String SpaceGroupID
+	Variable SG=str2num(SpaceGroupID)
+	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SG))
+	Wave bvecs = $("root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SG))
 	Variable numSymOps
 	if (WaveExists(mats) && WaveExists(bvecs))				// check if they exist
 		numSymOps = NumberByKey("numSymOps",note(mats),"=")
 		return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
 	endif
-	if (!isValidSpaceGroup(SpaceGroup))						// Space Group must be in range [1, 230]
-		DoAlert 0, "Bad Space Group = "+num2str(SpaceGroup)+", in SetSymOpsForSpaceGroup"
+	if (!isValidSpaceGroup(SG))								// Space Group must be in range [1, 230]
+		DoAlert 0, "Bad Space Group = "+SpaceGroupID+", in SetSymOpsForSpaceGroup"
 		return 1
 	endif
 	if (!DataFolderExists("root:Packages:Lattices:SymOps:"))
@@ -6073,12 +6427,13 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroup)		// make the symmetry operati
 		return 0
 	endif
 
-	String symOperations=setSymLine(SpaceGroup)			// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+	String symOperations=setSymLineID(SpaceGroupID)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+
 	Variable i,N=ItemsInList(symOperations)
-	String wName = "root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup)
-	Make/N=(N,3,3)/O/B $wName										// this only holds 0 or ±1
+	String wName = "root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SG)
+	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
 	Wave equivM = $wName
-	wName = "root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SpaceGroup)
+	wName = "root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SG)
 	Make/N=(N,3)/O/D $wName
 	Wave equivB = $wName
 
@@ -6095,8 +6450,13 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroup)		// make the symmetry operati
 	if (err)
 		Abort "error making symmetry matricies in SetSymOpsForSpaceGroup()"
 	endif
-	Note/K equivM, ReplaceNumberByKey("numSymOps","",N,"=")
-	Note/K equivB, ReplaceNumberByKey("numSymOps","",N,"=")
+
+	String wnote="waveClass=SymmetryOperations;"
+	wnote = ReplaceNumberByKey("numSymOps",wnote,N,"=")
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,str2num(SpaceGroupID),"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+	Note/K equivM, wnote
+	Note/K equivB, wnote
 	return N
 End
 //
@@ -6192,676 +6552,1080 @@ End
 //	ModifyTable width(numOps.x)=48,alignment(numOps.d)=1,width(numOps.d)=54
 //EndMacro
 //
-Static Function/T setSymLine(SpaceGroup)
-	Variable SpaceGroup								// Space Group number [1,230]
-	if (!isValidSpaceGroup(SpaceGroup))		// invalid
-		return ""
+
+
+
+
+Static Function/T setSymLineID(id)
+	String id									// a space group id, e.g. "15" or "15:-b2"
+
+	if (!LatticeSym#isValidSpaceGroupID(id))		// perhaps only a number was passed
+		Variable SG
+		SG = str2num(id)
+		SG = strsearch(id,":",0)>0 ? NaN : SG
+		id = LatticeSym#FindDefaultIDforSG(SG)		// find first space group starting with "id:"
 	endif
-	Make/N=230/O/T symLines_temp__
-	Wave/T symLines = symLines_temp__
-	// Triclinic [1,2]  lines 0-1
-	symLines[0]  = "x,y,z"
-	symLines[1]  = "x,y,z;-x,-y,-z"
-	// Monoclinic [3,15]  lines 2-14
-	symLines[2]  = "x,y,z;-x,y,-z"
-	symLines[3]  = "x,y,z;-x,y+1/2,-z"
-	symLines[4]  = "x,y,z;-x,y,-z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z"
-	symLines[5]  = "x,y,z;x,-y,z"
-	symLines[6]  = "x,y,z;x,-y,z+1/2"
-	symLines[7]  = "x,y,z;x,-y,z;x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[8]  = "x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
-	symLines[9]  = "x,y,z;-x,y,-z;-x,-y,-z;x,-y,z"
-	symLines[10]  = "x,y,z;-x,y+1/2,-z;-x,-y,-z;x,-y+1/2,z"
-	symLines[11]  = "x,y,z;-x,y,-z;-x,-y,-z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,-y+1/2,z"
-	symLines[12]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2"
-	symLines[13]  = "x,y,z;-x,y+1/2,-z+1/2;-x,-y,-z;x,-y+1/2,z+1/2"
-	symLines[14]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,-y+1/2,z+1/2"
-	// Orthorhombic [16,74]  lines 15-73
-	symLines[15]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z"
-	symLines[16]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2"
-	symLines[17]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
-	symLines[18]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
-	symLines[19]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2"
-	symLines[20]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
-	symLines[21]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y,z+1/2;"
-	symLines[21] += "-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
-	symLines[22]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2"
-	symLines[23]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x+1/2,y,-z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
-	symLines[24]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z"
-	symLines[25]  = "x,y,z;-x,-y,z+1/2;-x,y,z;x,-y,z+1/2"
-	symLines[26]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2"
-	symLines[27]  = "x,y,z;-x,-y,z;-x+1/2,y,z;x+1/2,-y,z"
-	symLines[28]  = "x,y,z;-x,-y,z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z"
-	symLines[29]  = "x,y,z;-x,-y,z;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
-	symLines[30]  = "x,y,z;-x+1/2,-y,z+1/2;-x,y,z;x+1/2,-y,z+1/2"
-	symLines[31]  = "x,y,z;-x,-y,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[32]  = "x,y,z;-x,-y,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
-	symLines[33]  = "x,y,z;-x,-y,z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[34]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[35]  = "x,y,z;-x,-y,z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
-	symLines[36]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[37]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
-	symLines[38]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,y+1/2,z;x,-y+1/2,z"
-	symLines[39]  = "x,y,z;-x,-y,z;-x+1/2,y,z;x+1/2,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[40]  = "x,y,z;-x,-y,z;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[41]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
-	symLines[41] += "-x+1/2,-y,z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[42]  = "x,y,z;-x,-y,z;-x+1/4,y+1/4,z+1/4;x+1/4,-y+1/4,z+1/4;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/4,y+3/4,z+3/4;"
-	symLines[42] += "x+1/4,-y+3/4,z+3/4;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x+3/4,y+1/4,z+3/4;x+3/4,-y+1/4,z+3/4;x+1/2,y+1/2,z;"
-	symLines[42] += "-x+1/2,-y+1/2,z;-x+3/4,y+3/4,z+1/4;x+3/4,-y+3/4,z+1/4"
-	symLines[43]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[44]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[45]  = "x,y,z;-x,-y,z;-x+1/2,y,z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
-	symLines[46]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z"
-	symLines[47]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[48]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2"
-	symLines[49]  = "x,y,z;-x+1/2,-y+1/2,-z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[50]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z;x,-y,z"
-	symLines[51]  = "x,y,z;-x+1/2,-y,z;x,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[52]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y,-z;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;-x,y,z;x+1/2,-y,z+1/2"
-	symLines[53]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z+1/2;x,-y,z+1/2"
-	symLines[54]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x,-y,-z;x,y,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[55]  = "x,y,z;-x+1/2,-y+1/2,z;x+1/2,-y,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z;-x+1/2,y,z+1/2;x,-y+1/2,z+1/2"
-	symLines[56]  = "x,y,z;-x,-y,z+1/2;x,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y+1/2,z;x,-y+1/2,z+1/2"
-	symLines[57]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x,y,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[58]  = "x,y,z;-x+1/2,-y+1/2,-z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y+1/2,-z;-x,y,z;x,-y,z"
-	symLines[59]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x,y,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x,-y,z+1/2"
-	symLines[60]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
-	symLines[61]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z+1/2;-x,y+1/2,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x,-y+1/2,z"
-	symLines[62]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;"
-	symLines[62] += "x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
-	symLines[63]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y,z;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
-	symLines[63] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y,z+1/2"
-	symLines[64]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;"
-	symLines[64] += "-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[65]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;"
-	symLines[65] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[66]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z;x+1/2,y+1/2,z;-x+1/2,-y,z;"
-	symLines[66] += "x+1/2,-y+1/2,-z;-x+1/2,y,-z;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y+1/2,z;x+1/2,-y,z"
-	symLines[67]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
-	symLines[67] += "-x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
-	symLines[68]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;"
-	symLines[68] += "-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;"
-	symLines[68] += "x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x+1/2,y+1/2,z;"
-	symLines[68] += "-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[69]  = "x,y,z;-x+1/4,-y+1/4,-z+1/4;-x,-y,z;x,-y,-z;-x,y,-z;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;x+1/4,-y+1/4,z+1/4;"
-	symLines[69] += "x,y+1/2,z+1/2;-x+1/4,-y+3/4,-z+3/4;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/4,y+3/4,-z+3/4;"
-	symLines[69] += "-x+1/4,y+3/4,z+3/4;x+1/4,-y+3/4,z+3/4;x+1/2,y,z+1/2;-x+3/4,-y+1/4,-z+3/4;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;"
-	symLines[69] += "-x+1/2,y,-z+1/2;x+3/4,y+1/4,-z+3/4;-x+3/4,y+1/4,z+3/4;x+3/4,-y+1/4,z+3/4;x+1/2,y+1/2,z;-x+3/4,-y+3/4,-z+1/4;"
-	symLines[69] += "-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+3/4,y+3/4,-z+1/4;-x+3/4,y+3/4,z+1/4;x+3/4,-y+3/4,z+1/4"
-	symLines[70]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
-	symLines[70] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;"
-	symLines[70] += "x+1/2,-y+1/2,z+1/2"
-	symLines[71]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;"
-	symLines[71] += "-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;"
-	symLines[71] += "x+1/2,-y+1/2,z"
-	symLines[72]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z+1/2;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;"
-	symLines[72] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;"
-	symLines[72] += "x,-y+1/2,z+1/2"
-	symLines[73]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;"
-	// Tetragonal [75,142]  lines 74-141
-	symLines[73] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
-	symLines[74]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z"
-	symLines[75]  = "x,y,z;-y,x,z+1/4;-x,-y,z+1/2;y,-x,z+3/4"
-	symLines[76]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2"
-	symLines[77]  = "x,y,z;-y,x,z+3/4;-x,-y,z+1/2;y,-x,z+1/4"
-	symLines[78]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2"
-	symLines[79]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4"
-	symLines[80]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z"
-	symLines[81]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2"
-	symLines[82]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z"
-	symLines[83]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x,-y,-z;y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2"
-	symLines[84]  = "x,y,z;-x+1/2,-y+1/2,-z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;y,-x,-z;-y,x,-z;x+1/2,y+1/2,-z"
-	symLines[85]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x+1/2,y+1/2,-z+1/2"
-	symLines[86]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;"
-	symLines[86] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;"
-	symLines[86] += "-y+1/2,x+1/2,-z+1/2"
-	symLines[87]  = "x,y,z;-x,-y+1/2,-z+1/4;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;y,-x,-z;-y,x,-z;x,y+1/2,-z+1/4;x+1/2,y+1/2,z+1/2;"
-	symLines[87] += "-x+1/2,-y,-z+3/4;-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;"
-	symLines[87] += "x+1/2,y,-z+3/4"
-	symLines[88]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z"
-	symLines[89]  = "x,y,z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y,x,-z;-y,-x,-z"
-	symLines[90]  = "x,y,z;-y,x,z+1/4;-x,-y,z+1/2;y,-x,z+3/4;x,-y,-z+1/2;-x,y,-z;y,x,-z+3/4;-y,-x,-z+1/4"
-	symLines[91]  = "x,y,z;-y+1/2,x+1/2,z+1/4;-x,-y,z+1/2;y+1/2,-x+1/2,z+3/4;x+1/2,-y+1/2,-z+3/4;-x+1/2,y+1/2,-z+1/4;y,x,-z;-y,-x,-z+1/2"
-	symLines[92]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-y,-z;-x,y,-z;y,x,-z+1/2;-y,-x,-z+1/2"
-	symLines[93]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y,x,-z;-y,-x,-z"
-	symLines[94]  = "x,y,z;-y,x,z+3/4;-x,-y,z+1/2;y,-x,z+1/4;x,-y,-z+1/2;-x,y,-z;y,x,-z+1/4;-y,-x,-z+3/4"
-	symLines[95]  = "x,y,z;-y+1/2,x+1/2,z+3/4;-x,-y,z+1/2;y+1/2,-x+1/2,z+1/4;x+1/2,-y+1/2,-z+1/4;-x+1/2,y+1/2,-z+3/4;y,x,-z;-y,-x,-z+1/2"
-	symLines[96]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;"
-	symLines[96] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;"
-	symLines[96] += "-y+1/2,-x+1/2,-z+1/2"
-	symLines[97]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;x,-y+1/2,-z+1/4;-x,y+1/2,-z+1/4;y,x,-z;-y,-x,-z;x+1/2,y+1/2,z+1/2;"
-	symLines[97] += "-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;x+1/2,-y,-z+3/4;-x+1/2,y,-z+3/4;y+1/2,x+1/2,-z+1/2;"
-	symLines[97] += "-y+1/2,-x+1/2,-z+1/2"
-	symLines[98]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z;x,-y,z;-y,-x,z;y,x,z"
-	symLines[99]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[100]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z;y,x,z"
-	symLines[101]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z"
-	symLines[102]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2"
-	symLines[103]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[104]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x,y,z;x,-y,z;-y,-x,z+1/2;y,x,z+1/2"
-	symLines[105]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[106]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z;x,-y,z;-y,-x,z;y,x,z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;"
-	symLines[106] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;"
-	symLines[106] += "y+1/2,x+1/2,z+1/2"
-	symLines[107]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;"
-	symLines[107] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[108]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;-x,y,z;x,-y,z;-y,-x+1/2,z+1/4;y,x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;"
-	symLines[108] += "-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x,z+3/4;"
-	symLines[108] += "y+1/2,x,z+3/4"
-	symLines[109]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x,z+1/4;y+1/2,x,z+1/4;"
-	symLines[109] += "x+1/2,y+1/2,z+1/2;-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;"
-	symLines[109] += "-y,-x+1/2,z+3/4;y,x+1/2,z+3/4"
-	symLines[110]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y,-z;-x,y,-z;-y,-x,z;y,x,z"
-	symLines[111]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y,-z+1/2;-x,y,-z+1/2;-y,-x,z+1/2;y,x,z+1/2"
-	symLines[112]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[113]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[114]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z;-y,-x,-z;-x,y,z;x,-y,z"
-	symLines[115]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z+1/2;-y,-x,-z+1/2;-x,y,z+1/2;x,-y,z+1/2"
-	symLines[116]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[117]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[118]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z;-y,-x,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;"
-	symLines[118] += "-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;"
-	symLines[118] += "x+1/2,-y+1/2,z+1/2"
-	symLines[119]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z+1/2;-y,-x,-z+1/2;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;"
-	symLines[119] += "y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,y+1/2,z;"
-	symLines[119] += "x+1/2,-y+1/2,z"
-	symLines[120]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y,-z;-x,y,-z;-y,-x,z;y,x,z;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;"
-	symLines[120] += "-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-y+1/2,-x+1/2,z+1/2;"
-	symLines[120] += "y+1/2,x+1/2,z+1/2"
-	symLines[121]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y+1/2,-z+1/4;-x,y+1/2,-z+1/4;-y,-x+1/2,z+1/4;y,x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;"
-	symLines[121] += "y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;x+1/2,-y,-z+3/4;-x+1/2,y,-z+3/4;-y+1/2,-x,z+3/4;"
-	symLines[121] += "y+1/2,x,z+3/4"
-	symLines[122]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,y,z;x,-y,z;-y,-x,z;y,x,z"
-	symLines[123]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z+1/2;-x,y,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;"
-	symLines[123] += "-x,y,z+1/2;x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2"
-	symLines[124]  = "x,y,z;-x+1/2,-y+1/2,-z;-y,x,z;-x,-y,z;y,-x,z;y+1/2,-x+1/2,-z;-y+1/2,x+1/2,-z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;"
-	symLines[124] += "x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[125]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y,x,z;-x,-y,z;y,-x,z;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;x,-y,-z;-x,y,-z;"
-	symLines[125] += "y,x,-z;-y,-x,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[126]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x,-y,-z;y,-x,-z;"
-	symLines[126] += "x,y,-z;-y,x,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[127]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;"
-	symLines[127] += "-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[128]  = "x,y,z;-x+1/2,-y+1/2,-z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;"
-	symLines[128] += "y,x,-z;-y,-x,-z;x+1/2,y+1/2,-z;-x,y,z;x,-y,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[129]  = "x,y,z;-x+1/2,-y+1/2,-z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z+1/2;"
-	symLines[129] += "-x+1/2,y+1/2,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;x+1/2,y+1/2,-z;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x+1/2,z+1/2;"
-	symLines[129] += "y+1/2,x+1/2,z+1/2"
-	symLines[130]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-y,-z;-x,y,-z;y,x,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;y,-x,-z+1/2;x,y,-z;"
-	symLines[130] += "-y,x,-z+1/2;-x,y,z;x,-y,z;-y,-x,z+1/2;y,x,z+1/2"
-	symLines[131]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-y,-z+1/2;-x,y,-z+1/2;y,x,-z;-y,-x,-z;-x,-y,-z;y,-x,-z+1/2;x,y,-z;"
-	symLines[131] += "-y,x,-z+1/2;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z;y,x,z"
-	symLines[132]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x,-y,-z+1/2;"
-	symLines[132] += "-x,y,-z+1/2;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y,-x,z+1/2;"
-	symLines[132] += "y,x,z+1/2"
-	symLines[133]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x,-y,-z;-x,y,-z;"
-	symLines[133] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z"
-	symLines[134]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;"
-	symLines[134] += "-x,-y,-z;y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[135]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y,x,-z;-y,-x,-z;"
-	symLines[135] += "-x,-y,-z;y+1/2,-x+1/2,-z+1/2;x,y,-z;-y+1/2,x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z"
-	symLines[136]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z+1/2;"
-	symLines[136] += "-x+1/2,y+1/2,-z+1/2;y,x,-z;-y,-x,-z;x+1/2,y+1/2,-z+1/2;-x,y,z;x,-y,z;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
-	symLines[137]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z;"
-	symLines[137] += "-x+1/2,y+1/2,-z;y,x,-z+1/2;-y,-x,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
-	symLines[138]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,y,z;x,-y,z;"
-	symLines[138] += "-y,-x,z;y,x,z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;"
-	symLines[138] += "-x+1/2,y+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;"
-	symLines[138] += "x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;"
-	symLines[138] += "y+1/2,x+1/2,z+1/2"
-	symLines[139]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z+1/2;-x,y,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;"
-	symLines[139] += "-x,y,z+1/2;x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
-	symLines[139] += "y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,-y+1/2,-z+1/2;"
-	symLines[139] += "y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;"
-	symLines[139] += "y+1/2,x+1/2,z"
-	symLines[140]  = "x,y,z;-x,-y+1/2,-z+1/4;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;y,-x,-z;-y,x,-z;x,-y+1/2,-z+1/4;-x,y+1/2,-z+1/4;"
-	symLines[140] += "y,x,-z;-y,-x,-z;x,y+1/2,-z+1/4;-x,y,z;x,-y,z;-y,-x+1/2,z+1/4;y,x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;-x+1/2,-y,-z+3/4;"
-	symLines[140] += "-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;x+1/2,-y,-z+3/4;"
-	symLines[140] += "-x+1/2,y,-z+3/4;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;x+1/2,y,-z+3/4;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;"
-	symLines[140] += "-y+1/2,-x,z+3/4;y+1/2,x,z+3/4"
-	symLines[141]  = "x,y,z;-x,-y+1/2,-z+1/4;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;y,-x,-z;-y,x,-z;x+1/2,-y,-z+1/4;-x+1/2,y,-z+1/4;"
-	symLines[141] += "y,x,-z+1/2;-y,-x,-z+1/2;x,y+1/2,-z+1/4;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x,z+1/4;y+1/2,x,z+1/4;x+1/2,y+1/2,z+1/2;"
-	symLines[141] += "-x+1/2,-y,-z+3/4;-y+1/2,x,z+3/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z+3/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;"
-	symLines[141] += "x,-y+1/2,-z+3/4;-x,y+1/2,-z+3/4;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;x+1/2,y,-z+3/4;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;"
-	symLines[141] += "-y,-x+1/2,z+3/4;y,x+1/2,z+3/4"
-	// Trigonal [143,167]  lines 142-166
-	symLines[142]  = "x,y,z;-y,x-y,z;-x+y,-x,z"
-	symLines[143]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z+2/3"
-	symLines[144]  = "x,y,z;-y,x-y,z+2/3;-x+y,-x,z+1/3"
-	symLines[145]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;-x+y+2/3,-x+1/3,z+1/3;x+1/3,y+2/3,z+2/3;"
-	symLines[145] += "-y+1/3,x-y+2/3,z+2/3;-x+y+1/3,-x+2/3,z+2/3"
-	symLines[146]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x,-y,-z;y,-x+y,-z;x-y,x,-z"
-	symLines[147]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;"
-	symLines[147] += "-x+y+2/3,-x+1/3,z+1/3;-x+2/3,-y+1/3,-z+1/3;y+2/3,-x+y+1/3,-z+1/3;x-y+2/3,x+1/3,-z+1/3;x+1/3,y+2/3,z+2/3;"
-	symLines[147] += "-y+1/3,x-y+2/3,z+2/3;-x+y+1/3,-x+2/3,z+2/3;-x+1/3,-y+2/3,-z+2/3;y+1/3,-x+y+2/3,-z+2/3;x-y+1/3,x+2/3,-z+2/3"
-	symLines[148]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-y,-x,-z;-x+y,y,-z;x,x-y,-z"
-	symLines[149]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z"
-	symLines[150]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z+2/3;-y,-x,-z+2/3;-x+y,y,-z+1/3;x,x-y,-z"
-	symLines[151]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z+2/3;x-y,-y,-z+2/3;-x,-x+y,-z+1/3;y,x,-z"
-	symLines[152]  = "x,y,z;-y,x-y,z+2/3;-x+y,-x,z+1/3;-y,-x,-z+1/3;-x+y,y,-z+2/3;x,x-y,-z"
-	symLines[153]  = "x,y,z;-y,x-y,z+2/3;-x+y,-x,z+1/3;x-y,-y,-z+1/3;-x,-x+y,-z+2/3;y,x,-z"
-	symLines[154]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;"
-	symLines[154] += "-x+y+2/3,-x+1/3,z+1/3;x-y+2/3,-y+1/3,-z+1/3;-x+2/3,-x+y+1/3,-z+1/3;y+2/3,x+1/3,-z+1/3;x+1/3,y+2/3,z+2/3;"
-	symLines[154] += "-y+1/3,x-y+2/3,z+2/3;-x+y+1/3,-x+2/3,z+2/3;x-y+1/3,-y+2/3,-z+2/3;-x+1/3,-x+y+2/3,-z+2/3;y+1/3,x+2/3,-z+2/3"
-	symLines[155]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z;x,x-y,z;-y,-x,z"
-	symLines[156]  = "x,y,z;-y,x-y,z;-x+y,-x,z;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[157]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2"
-	symLines[158]  = "x,y,z;-y,x-y,z;-x+y,-x,z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	symLines[159]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z;x,x-y,z;-y,-x,z;x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;-x+y+2/3,-x+1/3,z+1/3;"
-	symLines[159] += "-x+y+2/3,y+1/3,z+1/3;x+2/3,x-y+1/3,z+1/3;-y+2/3,-x+1/3,z+1/3;x+1/3,y+2/3,z+2/3;-y+1/3,x-y+2/3,z+2/3;"
-	symLines[159] += "-x+y+1/3,-x+2/3,z+2/3;-x+y+1/3,y+2/3,z+2/3;x+1/3,x-y+2/3,z+2/3;-y+1/3,-x+2/3,z+2/3"
-	symLines[160]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;"
-	symLines[160] += "-x+y+2/3,-x+1/3,z+1/3;-x+y+2/3,y+1/3,z+5/6;x+2/3,x-y+1/3,z+5/6;-y+2/3,-x+1/3,z+5/6;x+1/3,y+2/3,z+2/3;"
-	symLines[160] += "-y+1/3,x-y+2/3,z+2/3;-x+y+1/3,-x+2/3,z+2/3;-x+y+1/3,y+2/3,z+1/6;x+1/3,x-y+2/3,z+1/6;-y+1/3,-x+2/3,z+1/6"
-	symLines[161]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[162]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-y,-x,-z+1/2;-x+y,y,-z+1/2;x,x-y,-z+1/2;-x,-y,-z;y,-x+y,-z;x-y,x,-z;y,x,z+1/2;"
-	symLines[162] += "x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	symLines[163]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z;x,x-y,z;-y,-x,z"
-	symLines[164]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z+1/2;"
-	symLines[164] += "x,x-y,z+1/2;-y,-x,z+1/2"
-	symLines[165]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z;x,x-y,z;-y,-x,z;"
-	symLines[165] += "x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;-x+y+2/3,-x+1/3,z+1/3;x-y+2/3,-y+1/3,-z+1/3;-x+2/3,-x+y+1/3,-z+1/3;"
-	symLines[165] += "y+2/3,x+1/3,-z+1/3;-x+2/3,-y+1/3,-z+1/3;y+2/3,-x+y+1/3,-z+1/3;x-y+2/3,x+1/3,-z+1/3;-x+y+2/3,y+1/3,z+1/3;"
-	symLines[165] += "x+2/3,x-y+1/3,z+1/3;-y+2/3,-x+1/3,z+1/3;x+1/3,y+2/3,z+2/3;-y+1/3,x-y+2/3,z+2/3;-x+y+1/3,-x+2/3,z+2/3;"
-	symLines[165] += "x-y+1/3,-y+2/3,-z+2/3;-x+1/3,-x+y+2/3,-z+2/3;y+1/3,x+2/3,-z+2/3;-x+1/3,-y+2/3,-z+2/3;y+1/3,-x+y+2/3,-z+2/3;"
-	symLines[165] += "x-y+1/3,x+2/3,-z+2/3;-x+y+1/3,y+2/3,z+2/3;x+1/3,x-y+2/3,z+2/3;-y+1/3,-x+2/3,z+2/3"
-	symLines[166]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z+1/2;"
-	symLines[166] += "x,x-y,z+1/2;-y,-x,z+1/2;x+2/3,y+1/3,z+1/3;-y+2/3,x-y+1/3,z+1/3;-x+y+2/3,-x+1/3,z+1/3;x-y+2/3,-y+1/3,-z+5/6;"
-	symLines[166] += "-x+2/3,-x+y+1/3,-z+5/6;y+2/3,x+1/3,-z+5/6;-x+2/3,-y+1/3,-z+1/3;y+2/3,-x+y+1/3,-z+1/3;x-y+2/3,x+1/3,-z+1/3;"
-	symLines[166] += "-x+y+2/3,y+1/3,z+5/6;x+2/3,x-y+1/3,z+5/6;-y+2/3,-x+1/3,z+5/6;x+1/3,y+2/3,z+2/3;-y+1/3,x-y+2/3,z+2/3;"
-	symLines[166] += "-x+y+1/3,-x+2/3,z+2/3;x-y+1/3,-y+2/3,-z+1/6;-x+1/3,-x+y+2/3,-z+1/6;y+1/3,x+2/3,-z+1/6;-x+1/3,-y+2/3,-z+2/3;"
-	symLines[166] += "y+1/3,-x+y+2/3,-z+2/3;x-y+1/3,x+2/3,-z+2/3;-x+y+1/3,y+2/3,z+1/6;x+1/3,x-y+2/3,z+1/6;-y+1/3,-x+2/3,z+1/6"
-	// Hexagonal [168,194]  lines 167-193
-	symLines[167]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z"
-	symLines[168]  = "x,y,z;x-y,x,z+1/6;-y,x-y,z+1/3;-x,-y,z+1/2;-x+y,-x,z+2/3;y,-x+y,z+5/6"
-	symLines[169]  = "x,y,z;x-y,x,z+5/6;-y,x-y,z+2/3;-x,-y,z+1/2;-x+y,-x,z+1/3;y,-x+y,z+1/6"
-	symLines[170]  = "x,y,z;x-y,x,z+1/3;-y,x-y,z+2/3;-x,-y,z;-x+y,-x,z+1/3;y,-x+y,z+2/3"
-	symLines[171]  = "x,y,z;x-y,x,z+2/3;-y,x-y,z+1/3;-x,-y,z;-x+y,-x,z+2/3;y,-x+y,z+1/3"
-	symLines[172]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2"
-	symLines[173]  = "x,y,z;-x+y,-x,-z;-y,x-y,z;x,y,-z;-x+y,-x,z;-y,x-y,-z"
-	symLines[174]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;-x,-y,-z;-x+y,-x,-z;y,-x+y,-z;x,y,-z;x-y,x,-z;-y,x-y,-z"
-	symLines[175]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;"
-	symLines[175] += "x-y,x,-z;-y,x-y,-z+1/2"
-	symLines[176]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z;-x+y,y,-z;x,x-y,-z"
-	symLines[177]  = "x,y,z;x-y,x,z+1/6;-y,x-y,z+1/3;-x,-y,z+1/2;-x+y,-x,z+2/3;y,-x+y,z+5/6;x-y,-y,-z;-x,-x+y,-z+2/3;y,x,-z+1/3;"
-	symLines[177] += "-y,-x,-z+5/6;-x+y,y,-z+1/2;x,x-y,-z+1/6"
-	symLines[178]  = "x,y,z;x-y,x,z+5/6;-y,x-y,z+2/3;-x,-y,z+1/2;-x+y,-x,z+1/3;y,-x+y,z+1/6;x-y,-y,-z;-x,-x+y,-z+1/3;y,x,-z+2/3;"
-	symLines[178] += "-y,-x,-z+1/6;-x+y,y,-z+1/2;x,x-y,-z+5/6"
-	symLines[179]  = "x,y,z;x-y,x,z+1/3;-y,x-y,z+2/3;-x,-y,z;-x+y,-x,z+1/3;y,-x+y,z+2/3;x-y,-y,-z;-x,-x+y,-z+1/3;y,x,-z+2/3;"
-	symLines[179] += "-y,-x,-z+2/3;-x+y,y,-z;x,x-y,-z+1/3"
-	symLines[180]  = "x,y,z;x-y,x,z+2/3;-y,x-y,z+1/3;-x,-y,z;-x+y,-x,z+2/3;y,-x+y,z+1/3;x-y,-y,-z;-x,-x+y,-z+2/3;y,x,-z+1/3;"
-	symLines[180] += "-y,-x,-z+1/3;-x+y,y,-z;x,x-y,-z+2/3"
-	symLines[181]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z+1/2;"
-	symLines[181] += "-x+y,y,-z+1/2;x,x-y,-z+1/2"
-	symLines[182]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[183]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	symLines[184]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[185]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	symLines[186]  = "x,y,z;-x+y,-x,-z;-y,x-y,z;x,y,-z;-x+y,-x,z;-y,x-y,-z;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x+y,y,z;x,x-y,z;-y,-x,z"
-	symLines[187]  = "x,y,z;-x+y,-x,-z+1/2;-y,x-y,z;x,y,-z+1/2;-x+y,-x,z;-y,x-y,-z+1/2;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x+y,y,z+1/2;"
-	symLines[187] += "x,x-y,z+1/2;-y,-x,z+1/2"
-	symLines[188]  = "x,y,z;-x+y,-x,-z;-y,x-y,z;x,y,-z;-x+y,-x,z;-y,x-y,-z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[189]  = "x,y,z;-x+y,-x,-z+1/2;-y,x-y,z;x,y,-z+1/2;-x+y,-x,z;-y,x-y,-z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;y,x,z+1/2;"
-	symLines[189] += "x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	symLines[190]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z;-x+y,y,-z;x,x-y,-z;"
-	symLines[190] += "-x,-y,-z;-x+y,-x,-z;y,-x+y,-z;x,y,-z;x-y,x,-z;-y,x-y,-z;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[191]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;"
-	symLines[191] += "-x+y,y,-z+1/2;x,x-y,-z+1/2;-x,-y,-z;-x+y,-x,-z;y,-x+y,-z;x,y,-z;x-y,x,-z;-y,x-y,-z;-x+y,y,z+1/2;x,x-y,z+1/2;"
-	symLines[191] += "-y,-x,z+1/2;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	symLines[192]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-y,-x,-z;"
-	symLines[192] += "-x+y,y,-z;x,x-y,-z;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2;-x+y,y,z+1/2;"
-	symLines[192] += "x,x-y,z+1/2;-y,-x,z+1/2;y,x,z;x-y,-y,z;-x,-x+y,z"
-	symLines[193]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z+1/2;"
-	symLines[193] += "-x+y,y,-z+1/2;x,x-y,-z+1/2;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2;-x+y,y,z;"
-	symLines[193] += "x,x-y,z;-y,-x,z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	// Cubic [195,230]  lines 194-229
-	symLines[194]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z"
-	symLines[195]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;"
-	symLines[195] += "z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;"
-	symLines[195] += "y,-z+1/2,-x+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y,z+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;"
-	symLines[195] += "-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;"
-	symLines[195] += "-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,z;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;"
-	symLines[195] += "z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-x+1/2,-y+1/2,z;"
-	symLines[195] += "x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
-	symLines[196]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,z+1/2;"
-	symLines[196] += "z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;"
-	symLines[196] += "-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;"
-	symLines[196] += "-x+1/2,y+1/2,-z+1/2"
-	symLines[197]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;"
-	symLines[197] += "y+1/2,-z+1/2,-x;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
-	symLines[198]  = "x,y,z;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;-z+1/2,x,-y;y,-z,-x+1/2;-x,-y+1/2,z;"
-	symLines[198] += "x,-y,-z+1/2;-x+1/2,y,-z;x+1/2,y+1/2,z+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;"
-	symLines[198] += "-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
-	symLines[199]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;-z,-x,-y;"
-	symLines[199] += "-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;x,y,-z;-x,y,z;x,-y,z"
-	symLines[200]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/2,-x+1/2,-y+1/2;"
-	symLines[200] += "-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;"
-	symLines[200] += "z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;"
-	symLines[200] += "x+1/2,-y+1/2,z+1/2"
-	symLines[201]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;-z,-x,-y;"
-	symLines[201] += "-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;x,y,-z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;z,x+1/2,y+1/2;"
-	symLines[201] += "y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;"
-	symLines[201] += "-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;"
-	symLines[201] += "y,z+1/2,-x+1/2;-z,x+1/2,y+1/2;y,-z+1/2,x+1/2;z,x+1/2,-y+1/2;z,-x+1/2,y+1/2;-y,z+1/2,x+1/2;x,y+1/2,-z+1/2;"
-	symLines[201] += "-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;"
-	symLines[201] += "-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;"
-	symLines[201] += "-x+1/2,y,-z+1/2;-x+1/2,-y,-z+1/2;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;y+1/2,z,-x+1/2;-z+1/2,x,y+1/2;"
-	symLines[201] += "y+1/2,-z,x+1/2;z+1/2,x,-y+1/2;z+1/2,-x,y+1/2;-y+1/2,z,x+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;"
-	symLines[201] += "x+1/2,y+1/2,z;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;"
-	symLines[201] += "-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;"
-	symLines[201] += "-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/2,z+1/2,-x;-z+1/2,x+1/2,y;y+1/2,-z+1/2,x;z+1/2,x+1/2,-y;z+1/2,-x+1/2,y;"
-	symLines[201] += "-y+1/2,z+1/2,x;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[202]  = "x,y,z;-x+1/4,-y+1/4,-z+1/4;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/4,-x+1/4,-y+1/4;"
-	symLines[202] += "-y+1/4,-z+1/4,-x+1/4;y+1/4,z+1/4,-x+1/4;-z+1/4,x+1/4,y+1/4;y+1/4,-z+1/4,x+1/4;z+1/4,x+1/4,-y+1/4;"
-	symLines[202] += "z+1/4,-x+1/4,y+1/4;-y+1/4,z+1/4,x+1/4;-x,-y,z;x,-y,-z;-x,y,-z;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;"
-	symLines[202] += "x+1/4,-y+1/4,z+1/4;x,y+1/2,z+1/2;-x+1/4,-y+3/4,-z+3/4;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;"
-	symLines[202] += "z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-z+1/4,-x+3/4,-y+3/4;"
-	symLines[202] += "-y+1/4,-z+3/4,-x+3/4;y+1/4,z+3/4,-x+3/4;-z+1/4,x+3/4,y+3/4;y+1/4,-z+3/4,x+3/4;z+1/4,x+3/4,-y+3/4;"
-	symLines[202] += "z+1/4,-x+3/4,y+3/4;-y+1/4,z+3/4,x+3/4;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/4,y+3/4,-z+3/4;"
-	symLines[202] += "-x+1/4,y+3/4,z+3/4;x+1/4,-y+3/4,z+3/4;x+1/2,y,z+1/2;-x+3/4,-y+1/4,-z+3/4;z+1/2,x,y+1/2;y+1/2,z,x+1/2;"
-	symLines[202] += "-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;"
-	symLines[202] += "-z+3/4,-x+1/4,-y+3/4;-y+3/4,-z+1/4,-x+3/4;y+3/4,z+1/4,-x+3/4;-z+3/4,x+1/4,y+3/4;y+3/4,-z+1/4,x+3/4;"
-	symLines[202] += "z+3/4,x+1/4,-y+3/4;z+3/4,-x+1/4,y+3/4;-y+3/4,z+1/4,x+3/4;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;"
-	symLines[202] += "x+3/4,y+1/4,-z+3/4;-x+3/4,y+1/4,z+3/4;x+3/4,-y+1/4,z+3/4;x+1/2,y+1/2,z;-x+3/4,-y+3/4,-z+1/4;z+1/2,x+1/2,y;"
-	symLines[202] += "y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;"
-	symLines[202] += "-z+3/4,-x+3/4,-y+1/4;-y+3/4,-z+3/4,-x+1/4;y+3/4,z+3/4,-x+1/4;-z+3/4,x+3/4,y+1/4;y+3/4,-z+3/4,x+1/4;"
-	symLines[202] += "z+3/4,x+3/4,-y+1/4;z+3/4,-x+3/4,y+1/4;-y+3/4,z+3/4,x+1/4;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;"
-	symLines[202] += "x+3/4,y+3/4,-z+1/4;-x+3/4,y+3/4,z+1/4;x+3/4,-y+3/4,z+1/4"
-	symLines[203]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;-z,-x,-y;"
-	symLines[203] += "-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;x,y,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;z+1/2,x+1/2,y+1/2;"
-	symLines[203] += "y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;"
-	symLines[203] += "-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;"
-	symLines[203] += "-x+1/2,-y+1/2,-z+1/2;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;"
-	symLines[203] += "y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;x+1/2,y+1/2,-z+1/2;"
-	symLines[203] += "-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[204]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;"
-	symLines[204] += "y+1/2,-z+1/2,-x;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y,-z;-z,-x,-y;-y,-z,-x;y+1/2,z,-x+1/2;"
-	symLines[204] += "-z+1/2,x+1/2,y;y,-z+1/2,x+1/2;z+1/2,x,-y+1/2;z,-x+1/2,y+1/2;-y+1/2,z+1/2,x;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;"
-	symLines[204] += "x,-y+1/2,z+1/2"
-	symLines[205]  = "x,y,z;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;-z+1/2,x,-y;y,-z,-x+1/2;-x,-y+1/2,z;"
-	symLines[205] += "x,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;-z,-x,-y;-y,-z,-x;y,z+1/2,-x;-z,x,y+1/2;y+1/2,-z,x;z,x+1/2,-y;z+1/2,-x,y;"
-	symLines[205] += "-y,z,x+1/2;x,y+1/2,-z;-x,y,z+1/2;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;"
-	symLines[205] += "-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;"
-	symLines[205] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;"
-	symLines[205] += "y+1/2,z,-x+1/2;-z+1/2,x+1/2,y;y,-z+1/2,x+1/2;z+1/2,x,-y+1/2;z,-x+1/2,y+1/2;-y+1/2,z+1/2,x;x+1/2,y,-z+1/2;"
-	symLines[205] += "-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
-	symLines[206]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
-	symLines[206] += "-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x"
-	symLines[207]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x,-y,-z;x+1/2,z+1/2,-y+1/2;"
-	symLines[207] += "z+1/2,y+1/2,-x+1/2;-x,y,-z;-z+1/2,y+1/2,x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;"
-	symLines[207] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;"
-	symLines[207] += "-z+1/2,-y+1/2,-x+1/2"
-	symLines[208]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
-	symLines[208] += "-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;x,y+1/2,z+1/2;-y,x+1/2,z+1/2;"
-	symLines[208] += "-x,-y+1/2,z+1/2;y,-x+1/2,z+1/2;x,-z+1/2,y+1/2;x,-y+1/2,-z+1/2;x,z+1/2,-y+1/2;z,y+1/2,-x+1/2;-x,y+1/2,-z+1/2;"
-	symLines[208] += "-z,y+1/2,x+1/2;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;"
-	symLines[208] += "-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;y,x+1/2,-z+1/2;-y,-x+1/2,-z+1/2;-x,z+1/2,y+1/2;-x,-z+1/2,-y+1/2;z,-y+1/2,x+1/2;"
-	symLines[208] += "-z,-y+1/2,-x+1/2;x+1/2,y,z+1/2;-y+1/2,x,z+1/2;-x+1/2,-y,z+1/2;y+1/2,-x,z+1/2;x+1/2,-z,y+1/2;x+1/2,-y,-z+1/2;"
-	symLines[208] += "x+1/2,z,-y+1/2;z+1/2,y,-x+1/2;-x+1/2,y,-z+1/2;-z+1/2,y,x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;"
-	symLines[208] += "z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;y+1/2,x,-z+1/2;"
-	symLines[208] += "-y+1/2,-x,-z+1/2;-x+1/2,z,y+1/2;-x+1/2,-z,-y+1/2;z+1/2,-y,x+1/2;-z+1/2,-y,-x+1/2;x+1/2,y+1/2,z;-y+1/2,x+1/2,z;"
-	symLines[208] += "-x+1/2,-y+1/2,z;y+1/2,-x+1/2,z;x+1/2,-z+1/2,y;x+1/2,-y+1/2,-z;x+1/2,z+1/2,-y;z+1/2,y+1/2,-x;-x+1/2,y+1/2,-z;"
-	symLines[208] += "-z+1/2,y+1/2,x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;"
-	symLines[208] += "-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,z+1/2,y;-x+1/2,-z+1/2,-y;z+1/2,-y+1/2,x;"
-	symLines[208] += "-z+1/2,-y+1/2,-x"
-	symLines[209]  = "x,y,z;-y+1/4,x+1/4,z+1/4;-x,-y,z;y+1/4,-x+1/4,z+1/4;x+1/4,-z+1/4,y+1/4;x,-y,-z;x+1/4,z+1/4,-y+1/4;"
-	symLines[209] += "z+1/4,y+1/4,-x+1/4;-x,y,-z;-z+1/4,y+1/4,x+1/4;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;"
-	symLines[209] += "y+1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;-x+1/4,z+1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;z+1/4,-y+1/4,x+1/4;"
-	symLines[209] += "-z+1/4,-y+1/4,-x+1/4;x,y+1/2,z+1/2;-y+1/4,x+3/4,z+3/4;-x,-y+1/2,z+1/2;y+1/4,-x+3/4,z+3/4;x+1/4,-z+3/4,y+3/4;"
-	symLines[209] += "x,-y+1/2,-z+1/2;x+1/4,z+3/4,-y+3/4;z+1/4,y+3/4,-x+3/4;-x,y+1/2,-z+1/2;-z+1/4,y+3/4,x+3/4;z,x+1/2,y+1/2;"
-	symLines[209] += "y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;"
-	symLines[209] += "y+1/4,x+3/4,-z+3/4;-y+1/4,-x+3/4,-z+3/4;-x+1/4,z+3/4,y+3/4;-x+1/4,-z+3/4,-y+3/4;z+1/4,-y+3/4,x+3/4;"
-	symLines[209] += "-z+1/4,-y+3/4,-x+3/4;x+1/2,y,z+1/2;-y+3/4,x+1/4,z+3/4;-x+1/2,-y,z+1/2;y+3/4,-x+1/4,z+3/4;x+3/4,-z+1/4,y+3/4;"
-	symLines[209] += "x+1/2,-y,-z+1/2;x+3/4,z+1/4,-y+3/4;z+3/4,y+1/4,-x+3/4;-x+1/2,y,-z+1/2;-z+3/4,y+1/4,x+3/4;z+1/2,x,y+1/2;"
-	symLines[209] += "y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;"
-	symLines[209] += "y+3/4,x+1/4,-z+3/4;-y+3/4,-x+1/4,-z+3/4;-x+3/4,z+1/4,y+3/4;-x+3/4,-z+1/4,-y+3/4;z+3/4,-y+1/4,x+3/4;"
-	symLines[209] += "-z+3/4,-y+1/4,-x+3/4;x+1/2,y+1/2,z;-y+3/4,x+3/4,z+1/4;-x+1/2,-y+1/2,z;y+3/4,-x+3/4,z+1/4;x+3/4,-z+3/4,y+1/4;"
-	symLines[209] += "x+1/2,-y+1/2,-z;x+3/4,z+3/4,-y+1/4;z+3/4,y+3/4,-x+1/4;-x+1/2,y+1/2,-z;-z+3/4,y+3/4,x+1/4;z+1/2,x+1/2,y;"
-	symLines[209] += "y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;"
-	symLines[209] += "y+3/4,x+3/4,-z+1/4;-y+3/4,-x+3/4,-z+1/4;-x+3/4,z+3/4,y+1/4;-x+3/4,-z+3/4,-y+1/4;z+3/4,-y+3/4,x+1/4;"
-	symLines[209] += "-z+3/4,-y+3/4,-x+1/4"
-	symLines[210]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
-	symLines[210] += "-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;"
-	symLines[210] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,z+1/2,-y+1/2;"
-	symLines[210] += "z+1/2,y+1/2,-x+1/2;-x+1/2,y+1/2,-z+1/2;-z+1/2,y+1/2,x+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;"
-	symLines[210] += "-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;"
-	symLines[210] += "y+1/2,-z+1/2,-x+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;"
-	symLines[210] += "z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2"
-	symLines[211]  = "x,y,z;-y+3/4,x+1/4,z+3/4;-x+1/2,-y,z+1/2;y+3/4,-x+3/4,z+1/4;x+3/4,-z+3/4,y+1/4;x+1/2,-y+1/2,-z;"
-	symLines[211] += "x+1/4,z+3/4,-y+3/4;z+1/4,y+3/4,-x+3/4;-x,y+1/2,-z+1/2;-z+3/4,y+1/4,x+3/4;z,x,y;y,z,x;-y+1/2,-z,x+1/2;"
-	symLines[211] += "z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;y+1/4,x+3/4,-z+3/4;"
-	symLines[211] += "-y+1/4,-x+1/4,-z+1/4;-x+3/4,z+1/4,y+3/4;-x+1/4,-z+1/4,-y+1/4;z+3/4,-y+3/4,x+1/4;-z+1/4,-y+1/4,-x+1/4"
-	symLines[212]  = "x,y,z;-y+1/4,x+3/4,z+1/4;-x+1/2,-y,z+1/2;y+1/4,-x+1/4,z+3/4;x+1/4,-z+1/4,y+3/4;x+1/2,-y+1/2,-z;"
-	symLines[212] += "x+3/4,z+1/4,-y+1/4;z+3/4,y+1/4,-x+1/4;-x,y+1/2,-z+1/2;-z+1/4,y+3/4,x+1/4;z,x,y;y,z,x;-y+1/2,-z,x+1/2;"
-	symLines[212] += "z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;y+3/4,x+1/4,-z+1/4;"
-	symLines[212] += "-y+3/4,-x+3/4,-z+3/4;-x+1/4,z+3/4,y+1/4;-x+3/4,-z+3/4,-y+3/4;z+1/4,-y+1/4,x+3/4;-z+3/4,-y+3/4,-x+3/4"
-	symLines[213]  = "x,y,z;-y+1/4,x+3/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z+3/4;x+1/4,-z+1/4,y+3/4;x,-y,-z+1/2;x+3/4,z+1/4,-y+1/4;"
-	symLines[213] += "z+3/4,y+1/4,-x+1/4;-x+1/2,y,-z;-z+1/4,y+3/4,x+1/4;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;"
-	symLines[213] += "-z+1/2,x,-y;y,-z,-x+1/2;y+3/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;-x+1/4,z+3/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;"
-	symLines[213] += "z+1/4,-y+1/4,x+3/4;-z+1/4,-y+1/4,-x+1/4;x+1/2,y+1/2,z+1/2;-y+3/4,x+1/4,z+3/4;-x+1/2,-y,z+1/2;"
-	symLines[213] += "y+3/4,-x+3/4,z+1/4;x+3/4,-z+3/4,y+1/4;x+1/2,-y+1/2,-z;x+1/4,z+3/4,-y+3/4;z+1/4,y+3/4,-x+3/4;-x,y+1/2,-z+1/2;"
-	symLines[213] += "-z+3/4,y+1/4,x+3/4;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;"
-	symLines[213] += "-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;y+1/4,x+3/4,-z+3/4;-y+3/4,-x+3/4,-z+3/4;-x+3/4,z+1/4,y+3/4;"
-	symLines[213] += "-x+3/4,-z+3/4,-y+3/4;z+3/4,-y+3/4,x+1/4;-z+3/4,-y+3/4,-x+3/4"
-	symLines[214]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;-x,z,-y;x,-y,-z;-x,-z,y;-z,-y,x;-x,y,-z;z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;"
-	symLines[214] += "-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x"
-	symLines[215]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;-x,z,-y;x,-y,-z;-x,-z,y;-z,-y,x;-x,y,-z;z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;"
-	symLines[215] += "-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x,y+1/2,z+1/2;y,-x+1/2,-z+1/2;"
-	symLines[215] += "-x,-y+1/2,z+1/2;-y,x+1/2,-z+1/2;-x,z+1/2,-y+1/2;x,-y+1/2,-z+1/2;-x,-z+1/2,y+1/2;-z,-y+1/2,x+1/2;"
-	symLines[215] += "-x,y+1/2,-z+1/2;z,-y+1/2,-x+1/2;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;"
-	symLines[215] += "-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-y,-x+1/2,z+1/2;y,x+1/2,z+1/2;x,-z+1/2,-y+1/2;x,z+1/2,y+1/2;"
-	symLines[215] += "-z,y+1/2,-x+1/2;z,y+1/2,x+1/2;x+1/2,y,z+1/2;y+1/2,-x,-z+1/2;-x+1/2,-y,z+1/2;-y+1/2,x,-z+1/2;-x+1/2,z,-y+1/2;"
-	symLines[215] += "x+1/2,-y,-z+1/2;-x+1/2,-z,y+1/2;-z+1/2,-y,x+1/2;-x+1/2,y,-z+1/2;z+1/2,-y,-x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;"
-	symLines[215] += "-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;"
-	symLines[215] += "-y+1/2,-x,z+1/2;y+1/2,x,z+1/2;x+1/2,-z,-y+1/2;x+1/2,z,y+1/2;-z+1/2,y,-x+1/2;z+1/2,y,x+1/2;x+1/2,y+1/2,z;"
-	symLines[215] += "y+1/2,-x+1/2,-z;-x+1/2,-y+1/2,z;-y+1/2,x+1/2,-z;-x+1/2,z+1/2,-y;x+1/2,-y+1/2,-z;-x+1/2,-z+1/2,y;"
-	symLines[215] += "-z+1/2,-y+1/2,x;-x+1/2,y+1/2,-z;z+1/2,-y+1/2,-x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;"
-	symLines[215] += "-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z;x+1/2,-z+1/2,-y;"
-	symLines[215] += "x+1/2,z+1/2,y;-z+1/2,y+1/2,-x;z+1/2,y+1/2,x"
-	symLines[216]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;-x,z,-y;x,-y,-z;-x,-z,y;-z,-y,x;-x,y,-z;z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;"
-	symLines[216] += "-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x+1/2,y+1/2,z+1/2;"
-	symLines[216] += "y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;x+1/2,-y+1/2,-z+1/2;"
-	symLines[216] += "-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;-x+1/2,y+1/2,-z+1/2;z+1/2,-y+1/2,-x+1/2;z+1/2,x+1/2,y+1/2;"
-	symLines[216] += "y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;"
-	symLines[216] += "-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;"
-	symLines[216] += "x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[217]  = "x,y,z;y+1/2,-x+1/2,-z+1/2;-x,-y,z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;x,-y,-z;-x+1/2,-z+1/2,y+1/2;"
-	symLines[217] += "-z+1/2,-y+1/2,x+1/2;-x,y,-z;z+1/2,-y+1/2,-x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;"
-	symLines[217] += "-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;"
-	symLines[217] += "z+1/2,y+1/2,x+1/2"
-	symLines[218]  = "x,y,z;y,-x,-z+1/2;-x,-y,z;-y,x,-z+1/2;-x,z,-y+1/2;x,-y,-z;-x,-z,y+1/2;-z,-y,x+1/2;-x,y,-z;z,-y,-x+1/2;z,x,y;"
-	symLines[218] += "y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z+1/2;y,x,z+1/2;x,-z,-y+1/2;x,z,y+1/2;-z,y,-x+1/2;"
-	symLines[218] += "z,y,x+1/2;x,y+1/2,z+1/2;y,-x+1/2,-z;-x,-y+1/2,z+1/2;-y,x+1/2,-z;-x,z+1/2,-y;x,-y+1/2,-z+1/2;-x,-z+1/2,y;"
-	symLines[218] += "-z,-y+1/2,x;-x,y+1/2,-z+1/2;z,-y+1/2,-x;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;"
-	symLines[218] += "-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-y,-x+1/2,z;y,x+1/2,z;x,-z+1/2,-y;x,z+1/2,y;"
-	symLines[218] += "-z,y+1/2,-x;z,y+1/2,x;x+1/2,y,z+1/2;y+1/2,-x,-z;-x+1/2,-y,z+1/2;-y+1/2,x,-z;-x+1/2,z,-y;x+1/2,-y,-z+1/2;"
-	symLines[218] += "-x+1/2,-z,y;-z+1/2,-y,x;-x+1/2,y,-z+1/2;z+1/2,-y,-x;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;"
-	symLines[218] += "z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-y+1/2,-x,z;y+1/2,x,z;"
-	symLines[218] += "x+1/2,-z,-y;x+1/2,z,y;-z+1/2,y,-x;z+1/2,y,x;x+1/2,y+1/2,z;y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z;"
-	symLines[218] += "-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;x+1/2,-y+1/2,-z;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;"
-	symLines[218] += "-x+1/2,y+1/2,-z;z+1/2,-y+1/2,-x+1/2;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;"
-	symLines[218] += "-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;"
-	symLines[218] += "x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[219]  = "x,y,z;y+1/4,-x+3/4,-z+1/4;-x,-y+1/2,z;-y+1/4,x+1/4,-z+3/4;-x+1/4,z+1/4,-y+3/4;x,-y,-z+1/2;-x+3/4,-z+1/4,y+1/4;"
-	symLines[219] += "-z+3/4,-y+1/4,x+1/4;-x+1/2,y,-z;z+1/4,-y+3/4,-x+1/4;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;"
-	symLines[219] += "-z,-x+1/2,y;-z+1/2,x,-y;y,-z,-x+1/2;-y+3/4,-x+1/4,z+1/4;y+1/4,x+1/4,z+1/4;x+1/4,-z+3/4,-y+1/4;"
-	symLines[219] += "x+1/4,z+1/4,y+1/4;-z+1/4,y+1/4,-x+3/4;z+1/4,y+1/4,x+1/4;x+1/2,y+1/2,z+1/2;y+3/4,-x+1/4,-z+3/4;-x+1/2,-y,z+1/2;"
-	symLines[219] += "-y+3/4,x+3/4,-z+1/4;-x+3/4,z+3/4,-y+1/4;x+1/2,-y+1/2,-z;-x+1/4,-z+3/4,y+3/4;-z+1/4,-y+3/4,x+3/4;"
-	symLines[219] += "-x,y+1/2,-z+1/2;z+3/4,-y+1/4,-x+3/4;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;"
-	symLines[219] += "-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;-y+1/4,-x+3/4,z+3/4;y+3/4,x+3/4,z+3/4;"
-	symLines[219] += "x+3/4,-z+1/4,-y+3/4;x+3/4,z+3/4,y+3/4;-z+3/4,y+3/4,-x+1/4;z+3/4,y+3/4,x+3/4"
-	symLines[220]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
-	symLines[220] += "-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;"
-	symLines[220] += "-x,z,-y;-x,y,z;-x,-z,y;-z,-y,x;x,-y,z;z,-y,-x;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;"
-	symLines[220] += "-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x"
-	symLines[221]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;"
-	symLines[221] += "y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;"
-	symLines[221] += "z+1/2,-y+1/2,-x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/2,-x+1/2,-y+1/2;"
-	symLines[221] += "-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;"
-	symLines[221] += "z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;x+1/2,y+1/2,-z+1/2;"
-	symLines[221] += "-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;"
-	symLines[221] += "x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[222]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x,-y,-z;x+1/2,z+1/2,-y+1/2;"
-	symLines[222] += "z+1/2,y+1/2,-x+1/2;-x,y,-z;-z+1/2,y+1/2,x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;"
-	symLines[222] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;"
-	symLines[222] += "-z+1/2,-y+1/2,-x+1/2;-x,-y,-z;y+1/2,-x+1/2,-z+1/2;x,y,-z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x,y,z;"
-	symLines[222] += "-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;x,-y,z;z+1/2,-y+1/2,-x+1/2;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;"
-	symLines[222] += "z,x,-y;z,-x,y;-y,z,x;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;"
-	symLines[222] += "-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[223]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x,-y,-z;"
-	symLines[223] += "x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;-x,y,-z;-z+1/2,y+1/2,x+1/2;y,-x,-z;-y,x,-z;-x,z,-y;-x,-z,y;-z,-y,x;"
-	symLines[223] += "z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;"
-	symLines[223] += "y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;"
-	symLines[223] += "-y+1/2,z+1/2,x+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;"
-	symLines[223] += "z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z;"
-	symLines[223] += "x,-z,-y;x,z,y;-z,y,-x;z,y,x"
-	symLines[224]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
-	symLines[224] += "-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;"
-	symLines[224] += "-x,z,-y;-x,y,z;-x,-z,y;-z,-y,x;x,-y,z;z,-y,-x;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;"
-	symLines[224] += "-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x,y+1/2,z+1/2;-y,x+1/2,z+1/2;-x,-y+1/2,z+1/2;y,-x+1/2,z+1/2;"
-	symLines[224] += "x,-z+1/2,y+1/2;x,-y+1/2,-z+1/2;x,z+1/2,-y+1/2;z,y+1/2,-x+1/2;-x,y+1/2,-z+1/2;-z,y+1/2,x+1/2;z,x+1/2,y+1/2;"
-	symLines[224] += "y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;"
-	symLines[224] += "y,x+1/2,-z+1/2;-y,-x+1/2,-z+1/2;-x,z+1/2,y+1/2;-x,-z+1/2,-y+1/2;z,-y+1/2,x+1/2;-z,-y+1/2,-x+1/2;"
-	symLines[224] += "-x,-y+1/2,-z+1/2;y,-x+1/2,-z+1/2;x,y+1/2,-z+1/2;-y,x+1/2,-z+1/2;-x,z+1/2,-y+1/2;-x,y+1/2,z+1/2;-x,-z+1/2,y+1/2;"
-	symLines[224] += "-z,-y+1/2,x+1/2;x,-y+1/2,z+1/2;z,-y+1/2,-x+1/2;-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;y,z+1/2,-x+1/2;-z,x+1/2,y+1/2;"
-	symLines[224] += "y,-z+1/2,x+1/2;z,x+1/2,-y+1/2;z,-x+1/2,y+1/2;-y,z+1/2,x+1/2;-y,-x+1/2,z+1/2;y,x+1/2,z+1/2;x,-z+1/2,-y+1/2;"
-	symLines[224] += "x,z+1/2,y+1/2;-z,y+1/2,-x+1/2;z,y+1/2,x+1/2;x+1/2,y,z+1/2;-y+1/2,x,z+1/2;-x+1/2,-y,z+1/2;y+1/2,-x,z+1/2;"
-	symLines[224] += "x+1/2,-z,y+1/2;x+1/2,-y,-z+1/2;x+1/2,z,-y+1/2;z+1/2,y,-x+1/2;-x+1/2,y,-z+1/2;-z+1/2,y,x+1/2;z+1/2,x,y+1/2;"
-	symLines[224] += "y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;"
-	symLines[224] += "y+1/2,x,-z+1/2;-y+1/2,-x,-z+1/2;-x+1/2,z,y+1/2;-x+1/2,-z,-y+1/2;z+1/2,-y,x+1/2;-z+1/2,-y,-x+1/2;"
-	symLines[224] += "-x+1/2,-y,-z+1/2;y+1/2,-x,-z+1/2;x+1/2,y,-z+1/2;-y+1/2,x,-z+1/2;-x+1/2,z,-y+1/2;-x+1/2,y,z+1/2;-x+1/2,-z,y+1/2;"
-	symLines[224] += "-z+1/2,-y,x+1/2;x+1/2,-y,z+1/2;z+1/2,-y,-x+1/2;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;y+1/2,z,-x+1/2;-z+1/2,x,y+1/2;"
-	symLines[224] += "y+1/2,-z,x+1/2;z+1/2,x,-y+1/2;z+1/2,-x,y+1/2;-y+1/2,z,x+1/2;-y+1/2,-x,z+1/2;y+1/2,x,z+1/2;x+1/2,-z,-y+1/2;"
-	symLines[224] += "x+1/2,z,y+1/2;-z+1/2,y,-x+1/2;z+1/2,y,x+1/2;x+1/2,y+1/2,z;-y+1/2,x+1/2,z;-x+1/2,-y+1/2,z;y+1/2,-x+1/2,z;"
-	symLines[224] += "x+1/2,-z+1/2,y;x+1/2,-y+1/2,-z;x+1/2,z+1/2,-y;z+1/2,y+1/2,-x;-x+1/2,y+1/2,-z;-z+1/2,y+1/2,x;z+1/2,x+1/2,y;"
-	symLines[224] += "y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;"
-	symLines[224] += "y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,z+1/2,y;-x+1/2,-z+1/2,-y;z+1/2,-y+1/2,x;-z+1/2,-y+1/2,-x;"
-	symLines[224] += "-x+1/2,-y+1/2,-z;y+1/2,-x+1/2,-z;x+1/2,y+1/2,-z;-y+1/2,x+1/2,-z;-x+1/2,z+1/2,-y;-x+1/2,y+1/2,z;-x+1/2,-z+1/2,y;"
-	symLines[224] += "-z+1/2,-y+1/2,x;x+1/2,-y+1/2,z;z+1/2,-y+1/2,-x;-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/2,z+1/2,-x;-z+1/2,x+1/2,y;"
-	symLines[224] += "y+1/2,-z+1/2,x;z+1/2,x+1/2,-y;z+1/2,-x+1/2,y;-y+1/2,z+1/2,x;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z;x+1/2,-z+1/2,-y;"
-	symLines[224] += "x+1/2,z+1/2,y;-z+1/2,y+1/2,-x;z+1/2,y+1/2,x"
-	symLines[225]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-z,y+1/2;x,-y,-z;x,z,-y+1/2;z,y,-x+1/2;-x,y,-z;-z,y,x+1/2;z,x,y;y,z,x;"
-	symLines[225] += "-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z+1/2;-y,-x,-z+1/2;-x,z,y+1/2;-x,-z,-y+1/2;z,-y,x+1/2;"
-	symLines[225] += "-z,-y,-x+1/2;-x,-y,-z;y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2;-x,z,-y+1/2;-x,y,z;-x,-z,y+1/2;-z,-y,x+1/2;x,-y,z;"
-	symLines[225] += "z,-y,-x+1/2;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;-y,-x,z+1/2;y,x,z+1/2;x,-z,-y+1/2;"
-	symLines[225] += "x,z,y+1/2;-z,y,-x+1/2;z,y,x+1/2;x,y+1/2,z+1/2;-y,x+1/2,z;-x,-y+1/2,z+1/2;y,-x+1/2,z;x,-z+1/2,y;x,-y+1/2,-z+1/2;"
-	symLines[225] += "x,z+1/2,-y;z,y+1/2,-x;-x,y+1/2,-z+1/2;-z,y+1/2,x;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;"
-	symLines[225] += "-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;y,x+1/2,-z;-y,-x+1/2,-z;-x,z+1/2,y;"
-	symLines[225] += "-x,-z+1/2,-y;z,-y+1/2,x;-z,-y+1/2,-x;-x,-y+1/2,-z+1/2;y,-x+1/2,-z;x,y+1/2,-z+1/2;-y,x+1/2,-z;-x,z+1/2,-y;"
-	symLines[225] += "-x,y+1/2,z+1/2;-x,-z+1/2,y;-z,-y+1/2,x;x,-y+1/2,z+1/2;z,-y+1/2,-x;-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;"
-	symLines[225] += "y,z+1/2,-x+1/2;-z,x+1/2,y+1/2;y,-z+1/2,x+1/2;z,x+1/2,-y+1/2;z,-x+1/2,y+1/2;-y,z+1/2,x+1/2;-y,-x+1/2,z;"
-	symLines[225] += "y,x+1/2,z;x,-z+1/2,-y;x,z+1/2,y;-z,y+1/2,-x;z,y+1/2,x;x+1/2,y,z+1/2;-y+1/2,x,z;-x+1/2,-y,z+1/2;y+1/2,-x,z;"
-	symLines[225] += "x+1/2,-z,y;x+1/2,-y,-z+1/2;x+1/2,z,-y;z+1/2,y,-x;-x+1/2,y,-z+1/2;-z+1/2,y,x;z+1/2,x,y+1/2;y+1/2,z,x+1/2;"
-	symLines[225] += "-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;y+1/2,x,-z;"
-	symLines[225] += "-y+1/2,-x,-z;-x+1/2,z,y;-x+1/2,-z,-y;z+1/2,-y,x;-z+1/2,-y,-x;-x+1/2,-y,-z+1/2;y+1/2,-x,-z;x+1/2,y,-z+1/2;"
-	symLines[225] += "-y+1/2,x,-z;-x+1/2,z,-y;-x+1/2,y,z+1/2;-x+1/2,-z,y;-z+1/2,-y,x;x+1/2,-y,z+1/2;z+1/2,-y,-x;-z+1/2,-x,-y+1/2;"
-	symLines[225] += "-y+1/2,-z,-x+1/2;y+1/2,z,-x+1/2;-z+1/2,x,y+1/2;y+1/2,-z,x+1/2;z+1/2,x,-y+1/2;z+1/2,-x,y+1/2;-y+1/2,z,x+1/2;"
-	symLines[225] += "-y+1/2,-x,z;y+1/2,x,z;x+1/2,-z,-y;x+1/2,z,y;-z+1/2,y,-x;z+1/2,y,x;x+1/2,y+1/2,z;-y+1/2,x+1/2,z+1/2;"
-	symLines[225] += "-x+1/2,-y+1/2,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x+1/2,-y+1/2,-z;x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;"
-	symLines[225] += "-x+1/2,y+1/2,-z;-z+1/2,y+1/2,x+1/2;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;"
-	symLines[225] += "-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;"
-	symLines[225] += "-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2;-x+1/2,-y+1/2,-z;y+1/2,-x+1/2,-z+1/2;"
-	symLines[225] += "x+1/2,y+1/2,-z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x+1/2,y+1/2,z;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;"
-	symLines[225] += "x+1/2,-y+1/2,z;z+1/2,-y+1/2,-x+1/2;-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/2,z+1/2,-x;-z+1/2,x+1/2,y;"
-	symLines[225] += "y+1/2,-z+1/2,x;z+1/2,x+1/2,-y;z+1/2,-x+1/2,y;-y+1/2,z+1/2,x;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;"
-	symLines[225] += "x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[226]  = "x,y,z;-x+1/4,-y+1/4,-z+1/4;-y+1/4,x+1/4,z+1/4;-x,-y,z;y+1/4,-x+1/4,z+1/4;x+1/4,-z+1/4,y+1/4;x,-y,-z;"
-	symLines[226] += "x+1/4,z+1/4,-y+1/4;z+1/4,y+1/4,-x+1/4;-x,y,-z;-z+1/4,y+1/4,x+1/4;y,-x,-z;-y,x,-z;-x,z,-y;-x,-z,y;-z,-y,x;"
-	symLines[226] += "z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/4,-x+1/4,-y+1/4;-y+1/4,-z+1/4,-x+1/4;"
-	symLines[226] += "y+1/4,z+1/4,-x+1/4;-z+1/4,x+1/4,y+1/4;y+1/4,-z+1/4,x+1/4;z+1/4,x+1/4,-y+1/4;z+1/4,-x+1/4,y+1/4;"
-	symLines[226] += "-y+1/4,z+1/4,x+1/4;y+1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;-x+1/4,z+1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;"
-	symLines[226] += "z+1/4,-y+1/4,x+1/4;-z+1/4,-y+1/4,-x+1/4;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;x+1/4,-y+1/4,z+1/4;-y,-x,z;y,x,z;"
-	symLines[226] += "x,-z,-y;x,z,y;-z,y,-x;z,y,x;x,y+1/2,z+1/2;-x+1/4,-y+3/4,-z+3/4;-y+1/4,x+3/4,z+3/4;-x,-y+1/2,z+1/2;"
-	symLines[226] += "y+1/4,-x+3/4,z+3/4;x+1/4,-z+3/4,y+3/4;x,-y+1/2,-z+1/2;x+1/4,z+3/4,-y+3/4;z+1/4,y+3/4,-x+3/4;-x,y+1/2,-z+1/2;"
-	symLines[226] += "-z+1/4,y+3/4,x+3/4;y,-x+1/2,-z+1/2;-y,x+1/2,-z+1/2;-x,z+1/2,-y+1/2;-x,-z+1/2,y+1/2;-z,-y+1/2,x+1/2;"
-	symLines[226] += "z,-y+1/2,-x+1/2;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;"
-	symLines[226] += "-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-z+1/4,-x+3/4,-y+3/4;-y+1/4,-z+3/4,-x+3/4;y+1/4,z+3/4,-x+3/4;"
-	symLines[226] += "-z+1/4,x+3/4,y+3/4;y+1/4,-z+3/4,x+3/4;z+1/4,x+3/4,-y+3/4;z+1/4,-x+3/4,y+3/4;-y+1/4,z+3/4,x+3/4;"
-	symLines[226] += "y+1/4,x+3/4,-z+3/4;-y+1/4,-x+3/4,-z+3/4;-x+1/4,z+3/4,y+3/4;-x+1/4,-z+3/4,-y+3/4;z+1/4,-y+3/4,x+3/4;"
-	symLines[226] += "-z+1/4,-y+3/4,-x+3/4;x+1/4,y+3/4,-z+3/4;-x+1/4,y+3/4,z+3/4;x+1/4,-y+3/4,z+3/4;-y,-x+1/2,z+1/2;y,x+1/2,z+1/2;"
-	symLines[226] += "x,-z+1/2,-y+1/2;x,z+1/2,y+1/2;-z,y+1/2,-x+1/2;z,y+1/2,x+1/2;x+1/2,y,z+1/2;-x+3/4,-y+1/4,-z+3/4;"
-	symLines[226] += "-y+3/4,x+1/4,z+3/4;-x+1/2,-y,z+1/2;y+3/4,-x+1/4,z+3/4;x+3/4,-z+1/4,y+3/4;x+1/2,-y,-z+1/2;x+3/4,z+1/4,-y+3/4;"
-	symLines[226] += "z+3/4,y+1/4,-x+3/4;-x+1/2,y,-z+1/2;-z+3/4,y+1/4,x+3/4;y+1/2,-x,-z+1/2;-y+1/2,x,-z+1/2;-x+1/2,z,-y+1/2;"
-	symLines[226] += "-x+1/2,-z,y+1/2;-z+1/2,-y,x+1/2;z+1/2,-y,-x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;"
-	symLines[226] += "-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-z+3/4,-x+1/4,-y+3/4;-y+3/4,-z+1/4,-x+3/4;"
-	symLines[226] += "y+3/4,z+1/4,-x+3/4;-z+3/4,x+1/4,y+3/4;y+3/4,-z+1/4,x+3/4;z+3/4,x+1/4,-y+3/4;z+3/4,-x+1/4,y+3/4;"
-	symLines[226] += "-y+3/4,z+1/4,x+3/4;y+3/4,x+1/4,-z+3/4;-y+3/4,-x+1/4,-z+3/4;-x+3/4,z+1/4,y+3/4;-x+3/4,-z+1/4,-y+3/4;"
-	symLines[226] += "z+3/4,-y+1/4,x+3/4;-z+3/4,-y+1/4,-x+3/4;x+3/4,y+1/4,-z+3/4;-x+3/4,y+1/4,z+3/4;x+3/4,-y+1/4,z+3/4;"
-	symLines[226] += "-y+1/2,-x,z+1/2;y+1/2,x,z+1/2;x+1/2,-z,-y+1/2;x+1/2,z,y+1/2;-z+1/2,y,-x+1/2;z+1/2,y,x+1/2;x+1/2,y+1/2,z;"
-	symLines[226] += "-x+3/4,-y+3/4,-z+1/4;-y+3/4,x+3/4,z+1/4;-x+1/2,-y+1/2,z;y+3/4,-x+3/4,z+1/4;x+3/4,-z+3/4,y+1/4;x+1/2,-y+1/2,-z;"
-	symLines[226] += "x+3/4,z+3/4,-y+1/4;z+3/4,y+3/4,-x+1/4;-x+1/2,y+1/2,-z;-z+3/4,y+3/4,x+1/4;y+1/2,-x+1/2,-z;-y+1/2,x+1/2,-z;"
-	symLines[226] += "-x+1/2,z+1/2,-y;-x+1/2,-z+1/2,y;-z+1/2,-y+1/2,x;z+1/2,-y+1/2,-x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;"
-	symLines[226] += "z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-z+3/4,-x+3/4,-y+1/4;"
-	symLines[226] += "-y+3/4,-z+3/4,-x+1/4;y+3/4,z+3/4,-x+1/4;-z+3/4,x+3/4,y+1/4;y+3/4,-z+3/4,x+1/4;z+3/4,x+3/4,-y+1/4;"
-	symLines[226] += "z+3/4,-x+3/4,y+1/4;-y+3/4,z+3/4,x+1/4;y+3/4,x+3/4,-z+1/4;-y+3/4,-x+3/4,-z+1/4;-x+3/4,z+3/4,y+1/4;"
-	symLines[226] += "-x+3/4,-z+3/4,-y+1/4;z+3/4,-y+3/4,x+1/4;-z+3/4,-y+3/4,-x+1/4;x+3/4,y+3/4,-z+1/4;-x+3/4,y+3/4,z+1/4;"
-	symLines[226] += "x+3/4,-y+3/4,z+1/4;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z;x+1/2,-z+1/2,-y;x+1/2,z+1/2,y;-z+1/2,y+1/2,-x;z+1/2,y+1/2,x"
-	symLines[227]  = "x,y,z;-x+1/4,-y+1/4,-z+3/4;-y+1/4,x+1/4,z+1/4;-x,-y,z;y+1/4,-x+1/4,z+1/4;x+1/4,-z+1/4,y+1/4;x,-y,-z;"
-	symLines[227] += "x+1/4,z+1/4,-y+1/4;z+1/4,y+1/4,-x+1/4;-x,y,-z;-z+1/4,y+1/4,x+1/4;y,-x,-z+1/2;-y,x,-z+1/2;-x,z,-y+1/2;"
-	symLines[227] += "-x,-z,y+1/2;-z,-y,x+1/2;z,-y,-x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;"
-	symLines[227] += "-z+1/4,-x+1/4,-y+3/4;-y+1/4,-z+1/4,-x+3/4;y+1/4,z+1/4,-x+3/4;-z+1/4,x+1/4,y+3/4;y+1/4,-z+1/4,x+3/4;"
-	symLines[227] += "z+1/4,x+1/4,-y+3/4;z+1/4,-x+1/4,y+3/4;-y+1/4,z+1/4,x+3/4;y+1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;"
-	symLines[227] += "-x+1/4,z+1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;z+1/4,-y+1/4,x+1/4;-z+1/4,-y+1/4,-x+1/4;x+1/4,y+1/4,-z+3/4;"
-	symLines[227] += "-x+1/4,y+1/4,z+3/4;x+1/4,-y+1/4,z+3/4;-y,-x,z+1/2;y,x,z+1/2;x,-z,-y+1/2;x,z,y+1/2;-z,y,-x+1/2;z,y,x+1/2;"
-	symLines[227] += "x,y+1/2,z+1/2;-x+1/4,-y+3/4,-z+1/4;-y+1/4,x+3/4,z+3/4;-x,-y+1/2,z+1/2;y+1/4,-x+3/4,z+3/4;x+1/4,-z+3/4,y+3/4;"
-	symLines[227] += "x,-y+1/2,-z+1/2;x+1/4,z+3/4,-y+3/4;z+1/4,y+3/4,-x+3/4;-x,y+1/2,-z+1/2;-z+1/4,y+3/4,x+3/4;y,-x+1/2,-z;"
-	symLines[227] += "-y,x+1/2,-z;-x,z+1/2,-y;-x,-z+1/2,y;-z,-y+1/2,x;z,-y+1/2,-x;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;"
-	symLines[227] += "z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-z+1/4,-x+3/4,-y+1/4;"
-	symLines[227] += "-y+1/4,-z+3/4,-x+1/4;y+1/4,z+3/4,-x+1/4;-z+1/4,x+3/4,y+1/4;y+1/4,-z+3/4,x+1/4;z+1/4,x+3/4,-y+1/4;"
-	symLines[227] += "z+1/4,-x+3/4,y+1/4;-y+1/4,z+3/4,x+1/4;y+1/4,x+3/4,-z+3/4;-y+1/4,-x+3/4,-z+3/4;-x+1/4,z+3/4,y+3/4;"
-	symLines[227] += "-x+1/4,-z+3/4,-y+3/4;z+1/4,-y+3/4,x+3/4;-z+1/4,-y+3/4,-x+3/4;x+1/4,y+3/4,-z+1/4;-x+1/4,y+3/4,z+1/4;"
-	symLines[227] += "x+1/4,-y+3/4,z+1/4;-y,-x+1/2,z;y,x+1/2,z;x,-z+1/2,-y;x,z+1/2,y;-z,y+1/2,-x;z,y+1/2,x;x+1/2,y,z+1/2;"
-	symLines[227] += "-x+3/4,-y+1/4,-z+1/4;-y+3/4,x+1/4,z+3/4;-x+1/2,-y,z+1/2;y+3/4,-x+1/4,z+3/4;x+3/4,-z+1/4,y+3/4;x+1/2,-y,-z+1/2;"
-	symLines[227] += "x+3/4,z+1/4,-y+3/4;z+3/4,y+1/4,-x+3/4;-x+1/2,y,-z+1/2;-z+3/4,y+1/4,x+3/4;y+1/2,-x,-z;-y+1/2,x,-z;-x+1/2,z,-y;"
-	symLines[227] += "-x+1/2,-z,y;-z+1/2,-y,x;z+1/2,-y,-x;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;"
-	symLines[227] += "-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-z+3/4,-x+1/4,-y+1/4;-y+3/4,-z+1/4,-x+1/4;"
-	symLines[227] += "y+3/4,z+1/4,-x+1/4;-z+3/4,x+1/4,y+1/4;y+3/4,-z+1/4,x+1/4;z+3/4,x+1/4,-y+1/4;z+3/4,-x+1/4,y+1/4;"
-	symLines[227] += "-y+3/4,z+1/4,x+1/4;y+3/4,x+1/4,-z+3/4;-y+3/4,-x+1/4,-z+3/4;-x+3/4,z+1/4,y+3/4;-x+3/4,-z+1/4,-y+3/4;"
-	symLines[227] += "z+3/4,-y+1/4,x+3/4;-z+3/4,-y+1/4,-x+3/4;x+3/4,y+1/4,-z+1/4;-x+3/4,y+1/4,z+1/4;x+3/4,-y+1/4,z+1/4;-y+1/2,-x,z;"
-	symLines[227] += "y+1/2,x,z;x+1/2,-z,-y;x+1/2,z,y;-z+1/2,y,-x;z+1/2,y,x;x+1/2,y+1/2,z;-x+3/4,-y+3/4,-z+3/4;-y+3/4,x+3/4,z+1/4;"
-	symLines[227] += "-x+1/2,-y+1/2,z;y+3/4,-x+3/4,z+1/4;x+3/4,-z+3/4,y+1/4;x+1/2,-y+1/2,-z;x+3/4,z+3/4,-y+1/4;z+3/4,y+3/4,-x+1/4;"
-	symLines[227] += "-x+1/2,y+1/2,-z;-z+3/4,y+3/4,x+1/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;"
-	symLines[227] += "-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;z+1/2,-y+1/2,-x+1/2;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;"
-	symLines[227] += "z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-z+3/4,-x+3/4,-y+3/4;"
-	symLines[227] += "-y+3/4,-z+3/4,-x+3/4;y+3/4,z+3/4,-x+3/4;-z+3/4,x+3/4,y+3/4;y+3/4,-z+3/4,x+3/4;z+3/4,x+3/4,-y+3/4;"
-	symLines[227] += "z+3/4,-x+3/4,y+3/4;-y+3/4,z+3/4,x+3/4;y+3/4,x+3/4,-z+1/4;-y+3/4,-x+3/4,-z+1/4;-x+3/4,z+3/4,y+1/4;"
-	symLines[227] += "-x+3/4,-z+3/4,-y+1/4;z+3/4,-y+3/4,x+1/4;-z+3/4,-y+3/4,-x+1/4;x+3/4,y+3/4,-z+3/4;-x+3/4,y+3/4,z+3/4;"
-	symLines[227] += "x+3/4,-y+3/4,z+3/4;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;"
-	symLines[227] += "-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[228]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
-	symLines[228] += "-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;"
-	symLines[228] += "-x,z,-y;-x,y,z;-x,-z,y;-z,-y,x;x,-y,z;z,-y,-x;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;"
-	symLines[228] += "-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
-	symLines[228] += "y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;"
-	symLines[228] += "-x+1/2,y+1/2,-z+1/2;-z+1/2,y+1/2,x+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;"
-	symLines[228] += "z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;"
-	symLines[228] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;"
-	symLines[228] += "-z+1/2,-y+1/2,-x+1/2;-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;"
-	symLines[228] += "-x+1/2,z+1/2,-y+1/2;-x+1/2,y+1/2,z+1/2;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;x+1/2,-y+1/2,z+1/2;"
-	symLines[228] += "z+1/2,-y+1/2,-x+1/2;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;"
-	symLines[228] += "y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;-y+1/2,-x+1/2,z+1/2;"
-	symLines[228] += "y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
-	symLines[229]  = "x,y,z;-y+1/4,x+3/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z+3/4;x+1/4,-z+1/4,y+3/4;x,-y,-z+1/2;x+3/4,z+1/4,-y+1/4;"
-	symLines[229] += "z+3/4,y+1/4,-x+1/4;-x+1/2,y,-z;-z+1/4,y+3/4,x+1/4;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;"
-	symLines[229] += "-z+1/2,x,-y;y,-z,-x+1/2;y+3/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;-x+1/4,z+3/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;"
-	symLines[229] += "z+1/4,-y+1/4,x+3/4;-z+1/4,-y+1/4,-x+1/4;-x,-y,-z;y+3/4,-x+1/4,-z+3/4;x,y+1/2,-z;-y+3/4,x+3/4,-z+1/4;"
-	symLines[229] += "-x+3/4,z+3/4,-y+1/4;-x,y,z+1/2;-x+1/4,-z+3/4,y+3/4;-z+1/4,-y+3/4,x+3/4;x+1/2,-y,z;z+3/4,-y+1/4,-x+3/4;-z,-x,-y;"
-	symLines[229] += "-y,-z,-x;y,z+1/2,-x;-z,x,y+1/2;y+1/2,-z,x;z,x+1/2,-y;z+1/2,-x,y;-y,z,x+1/2;-y+1/4,-x+3/4,z+3/4;"
-	symLines[229] += "y+3/4,x+3/4,z+3/4;x+3/4,-z+1/4,-y+3/4;x+3/4,z+3/4,y+3/4;-z+3/4,y+3/4,-x+1/4;z+3/4,y+3/4,x+3/4;"
-	symLines[229] += "x+1/2,y+1/2,z+1/2;-y+3/4,x+1/4,z+3/4;-x+1/2,-y,z+1/2;y+3/4,-x+3/4,z+1/4;x+3/4,-z+3/4,y+1/4;x+1/2,-y+1/2,-z;"
-	symLines[229] += "x+1/4,z+3/4,-y+3/4;z+1/4,y+3/4,-x+3/4;-x,y+1/2,-z+1/2;-z+3/4,y+1/4,x+3/4;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;"
-	symLines[229] += "-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;"
-	symLines[229] += "y+1/4,x+3/4,-z+3/4;-y+3/4,-x+3/4,-z+3/4;-x+3/4,z+1/4,y+3/4;-x+3/4,-z+3/4,-y+3/4;z+3/4,-y+3/4,x+1/4;"
-	symLines[229] += "-z+3/4,-y+3/4,-x+3/4;-x+1/2,-y+1/2,-z+1/2;y+1/4,-x+3/4,-z+1/4;x+1/2,y,-z+1/2;-y+1/4,x+1/4,-z+3/4;"
-	symLines[229] += "-x+1/4,z+1/4,-y+3/4;-x+1/2,y+1/2,z;-x+3/4,-z+1/4,y+1/4;-z+3/4,-y+1/4,x+1/4;x,-y+1/2,z+1/2;z+1/4,-y+3/4,-x+1/4;"
-	symLines[229] += "-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z,-x+1/2;-z+1/2,x+1/2,y;y,-z+1/2,x+1/2;z+1/2,x,-y+1/2;"
-	symLines[229] += "z,-x+1/2,y+1/2;-y+1/2,z+1/2,x;-y+3/4,-x+1/4,z+1/4;y+1/4,x+1/4,z+1/4;x+1/4,-z+3/4,-y+1/4;x+1/4,z+1/4,y+1/4;"
-	symLines[229] += "-z+1/4,y+1/4,-x+3/4;z+1/4,y+1/4,x+1/4"
-	String str = symLines[SpaceGroup-1]
-	KillWaves/Z symLines_temp__
-	return str
+	if (!LatticeSym#isValidSpaceGroupID(id))
+		return ""								// invalid
+	endif
+
+	return setSymLineIDnum(LatticeSym#SpaceGroupID2num(id))
 End
+//
+Static Function/T setSymLineIDnum(idNum)
+	Variable idNum								// Space Group ID number [1,530]
+	if (!LatticeSym#isValidSpaceGroupIDnum(idNum))
+		return ""								// invalid
+	endif
+
+	Make/N=531/T/FREE symLines=""
+	symLines[0] = ""
+	// Triclinic SG[1,2]  SG_idNum 1-2
+	symLines[1]  = "x,y,z"
+	symLines[2]  = "x,y,z;-x,-y,-z"
+	// Monoclinic SG[3,15]  SG_idNum 3-107
+	symLines[3]  = "x,y,z;-x,y,-z"
+	symLines[4]  = "x,y,z;-x,-y,z"
+	symLines[5]  = "x,y,z;x,-y,-z"
+	symLines[6]  = "x,y,z;-x,y+1/2,-z"
+	symLines[7]  = "x,y,z;-x,-y,z+1/2"
+	symLines[8]  = "x,y,z;x+1/2,-y,-z"
+	symLines[9]  = "x,y,z;-x,y,-z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z"
+	symLines[10]  = "x,y,z;-x,y,-z;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2"
+	symLines[11]  = "x,y,z;-x,y,-z;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2"
+	symLines[12]  = "x,y,z;-x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2"
+	symLines[13]  = "x,y,z;-x,-y,z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2"
+	symLines[14]  = "x,y,z;-x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2"
+	symLines[15]  = "x,y,z;x,-y,-z;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2"
+	symLines[16]  = "x,y,z;x,-y,-z;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z"
+	symLines[17]  = "x,y,z;x,-y,-z;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2"
+	symLines[18]  = "x,y,z;x,-y,z"
+	symLines[19]  = "x,y,z;x,y,-z"
+	symLines[20]  = "x,y,z;-x,y,z"
+	symLines[21]  = "x,y,z;x,-y,z+1/2"
+	symLines[22]  = "x,y,z;x+1/2,-y,z+1/2"
+	symLines[23]  = "x,y,z;x+1/2,-y,z"
+	symLines[24]  = "x,y,z;x+1/2,y,-z"
+	symLines[25]  = "x,y,z;x+1/2,y+1/2,-z"
+	symLines[26]  = "x,y,z;x,y+1/2,-z"
+	symLines[27]  = "x,y,z;-x,y+1/2,z"
+	symLines[28]  = "x,y,z;-x,y+1/2,z+1/2"
+	symLines[29]  = "x,y,z;-x,y,z+1/2"
+	symLines[30]  = "x,y,z;x,-y,z;x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[31]  = "x,y,z;x,-y,z;x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[32]  = "x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[33]  = "x,y,z;x,y,-z;x,y+1/2,z+1/2;x,y+1/2,-z+1/2"
+	symLines[34]  = "x,y,z;x,y,-z;x+1/2,y,z+1/2;x+1/2,y,-z+1/2"
+	symLines[35]  = "x,y,z;x,y,-z;x+1/2,y+1/2,z+1/2;x+1/2,y+1/2,-z+1/2"
+	symLines[36]  = "x,y,z;-x,y,z;x+1/2,y,z+1/2;-x+1/2,y,z+1/2"
+	symLines[37]  = "x,y,z;-x,y,z;x+1/2,y+1/2,z;-x+1/2,y+1/2,z"
+	symLines[38]  = "x,y,z;-x,y,z;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[39]  = "x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[40]  = "x,y,z;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[41]  = "x,y,z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[42]  = "x,y,z;x+1/2,-y,z;x,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[43]  = "x,y,z;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;x+1/2,-y,z+1/2"
+	symLines[44]  = "x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[45]  = "x,y,z;x+1/2,y,-z;x,y+1/2,z+1/2;x+1/2,y+1/2,-z+1/2"
+	symLines[46]  = "x,y,z;x,y+1/2,-z+1/2;x+1/2,y,z+1/2;x+1/2,y+1/2,-z"
+	symLines[47]  = "x,y,z;x,y+1/2,-z;x+1/2,y+1/2,z+1/2;x+1/2,y,-z+1/2"
+	symLines[48]  = "x,y,z;x,y+1/2,-z;x+1/2,y,z+1/2;x+1/2,y+1/2,-z+1/2"
+	symLines[49]  = "x,y,z;x+1/2,y,-z+1/2;x,y+1/2,z+1/2;x+1/2,y+1/2,-z"
+	symLines[50]  = "x,y,z;x+1/2,y,-z;x+1/2,y+1/2,z+1/2;x,y+1/2,-z+1/2"
+	symLines[51]  = "x,y,z;-x,y+1/2,z;x+1/2,y,z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[52]  = "x,y,z;-x,y+1/2,z+1/2;x+1/2,y+1/2,z;-x+1/2,y,z+1/2"
+	symLines[53]  = "x,y,z;-x,y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,z"
+	symLines[54]  = "x,y,z;-x,y,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,z+1/2"
+	symLines[55]  = "x,y,z;-x,y+1/2,z+1/2;x+1/2,y,z+1/2;-x+1/2,y+1/2,z"
+	symLines[56]  = "x,y,z;-x,y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,y,z+1/2"
+	symLines[57]  = "x,y,z;-x,y,-z;-x,-y,-z;x,-y,z"
+	symLines[58]  = "x,y,z;-x,-y,z;-x,-y,-z;x,y,-z"
+	symLines[59]  = "x,y,z;x,-y,-z;-x,-y,-z;-x,y,z"
+	symLines[60]  = "x,y,z;-x,y+1/2,-z;-x,-y,-z;x,-y+1/2,z"
+	symLines[61]  = "x,y,z;-x,-y,z+1/2;-x,-y,-z;x,y,-z+1/2"
+	symLines[62]  = "x,y,z;x+1/2,-y,-z;-x,-y,-z;-x+1/2,y,z"
+	symLines[63]  = "x,y,z;-x,y,-z;-x,-y,-z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[64]  = "x,y,z;-x,y,-z;-x,-y,-z;x,-y,z;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[65]  = "x,y,z;-x,y,-z;-x,-y,-z;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[66]  = "x,y,z;-x,-y,z;-x,-y,-z;x,y,-z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2"
+	symLines[67]  = "x,y,z;-x,-y,z;-x,-y,-z;x,y,-z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2"
+	symLines[68]  = "x,y,z;-x,-y,z;-x,-y,-z;x,y,-z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2"
+	symLines[69]  = "x,y,z;x,-y,-z;-x,-y,-z;-x,y,z;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,-y,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[70]  = "x,y,z;x,-y,-z;-x,-y,-z;-x,y,z;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,-y+1/2,-z;-x+1/2,y+1/2,z"
+	symLines[71]  = "x,y,z;x,-y,-z;-x,-y,-z;-x,y,z;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[72]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2"
+	symLines[73]  = "x,y,z;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,-y,z+1/2"
+	symLines[74]  = "x,y,z;-x+1/2,y,-z;-x,-y,-z;x+1/2,-y,z"
+	symLines[75]  = "x,y,z;-x+1/2,-y,z;-x,-y,-z;x+1/2,y,-z"
+	symLines[76]  = "x,y,z;-x+1/2,-y+1/2,z;-x,-y,-z;x+1/2,y+1/2,-z"
+	symLines[77]  = "x,y,z;-x,-y+1/2,z;-x,-y,-z;x,y+1/2,-z"
+	symLines[78]  = "x,y,z;x,-y+1/2,-z;-x,-y,-z;-x,y+1/2,z"
+	symLines[79]  = "x,y,z;x,-y+1/2,-z+1/2;-x,-y,-z;-x,y+1/2,z+1/2"
+	symLines[80]  = "x,y,z;x,-y,-z+1/2;-x,-y,-z;-x,y,z+1/2"
+	symLines[81]  = "x,y,z;-x,y+1/2,-z+1/2;-x,-y,-z;x,-y+1/2,z+1/2"
+	symLines[82]  = "x,y,z;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x+1/2,-y+1/2,z+1/2"
+	symLines[83]  = "x,y,z;-x+1/2,y+1/2,-z;-x,-y,-z;x+1/2,-y+1/2,z"
+	symLines[84]  = "x,y,z;-x+1/2,-y,z+1/2;-x,-y,-z;x+1/2,y,-z+1/2"
+	symLines[85]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;-x,-y,-z;x+1/2,y+1/2,-z+1/2"
+	symLines[86]  = "x,y,z;-x,-y+1/2,z+1/2;-x,-y,-z;x,y+1/2,-z+1/2"
+	symLines[87]  = "x,y,z;x+1/2,-y+1/2,-z;-x,-y,-z;-x+1/2,y+1/2,z"
+	symLines[88]  = "x,y,z;x+1/2,-y+1/2,-z+1/2;-x,-y,-z;-x+1/2,y+1/2,z+1/2"
+	symLines[89]  = "x,y,z;x+1/2,-y,-z+1/2;-x,-y,-z;-x+1/2,y,z+1/2"
+	symLines[90]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,-y+1/2,z+1/2"
+	symLines[91]  = "x,y,z;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;-x+1/2,y+1/2,-z;-x,-y+1/2,-z+1/2;x+1/2,-y+1/2,z"
+	symLines[92]  = "x,y,z;-x+1/2,y,-z;-x,-y,-z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[93]  = "x,y,z;-x+1/2,y,-z;-x,-y,-z;x+1/2,-y,z;x,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[94]  = "x,y,z;-x,y+1/2,-z+1/2;-x,-y,-z;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,-y,z+1/2"
+	symLines[95]  = "x,y,z;-x,y,-z+1/2;-x,-y,-z;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;x+1/2,-y+1/2,z"
+	symLines[96]  = "x,y,z;-x+1/2,-y,z;-x,-y,-z;x+1/2,y,-z;x,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2"
+	symLines[97]  = "x,y,z;-x,-y+1/2,z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;x+1/2,y,z+1/2;-x+1/2,-y+1/2,z;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z"
+	symLines[98]  = "x,y,z;-x,-y+1/2,z;-x,-y,-z;x,y+1/2,-z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2"
+	symLines[99]  = "x,y,z;-x,-y+1/2,z;-x,-y,-z;x,y+1/2,-z;x+1/2,y,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z+1/2"
+	symLines[100]  = "x,y,z;-x+1/2,-y,z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;x,y+1/2,z+1/2;-x+1/2,-y+1/2,z;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z"
+	symLines[101]  = "x,y,z;-x+1/2,-y,z;-x,-y,-z;x+1/2,y,-z;x+1/2,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/2,-y+1/2,-z+1/2;x,y+1/2,-z+1/2"
+	symLines[102]  = "x,y,z;x,-y+1/2,-z;-x,-y,-z;-x,y+1/2,z;x+1/2,y,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,-y,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[103]  = "x,y,z;x,-y+1/2,-z+1/2;-x,-y,-z;-x,y+1/2,z+1/2;x+1/2,y+1/2,z;x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,-z;-x+1/2,y,z+1/2"
+	symLines[104]  = "x,y,z;x,-y,-z+1/2;-x,-y,-z;-x,y,z+1/2;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,z"
+	symLines[105]  = "x,y,z;x,-y,-z+1/2;-x,-y,-z;-x,y,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;-x+1/2,y+1/2,z+1/2"
+	symLines[106]  = "x,y,z;x,-y+1/2,-z+1/2;-x,-y,-z;-x,y+1/2,z+1/2;x+1/2,y,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,-y,-z+1/2;-x+1/2,y+1/2,z"
+	symLines[107]  = "x,y,z;x,-y+1/2,-z;-x,-y,-z;-x,y+1/2,z;x+1/2,y+1/2,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,-z+1/2;-x+1/2,y,z+1/2"
+	// Orthorhombic SG[16,74]  SG_idNum 108-239
+	symLines[108]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z"
+	symLines[109]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2"
+	symLines[110]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z"
+	symLines[111]  = "x,y,z;-x,-y,z;x,-y+1/2,-z;-x,y+1/2,-z"
+	symLines[112]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
+	symLines[113]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y,-z;-x,y+1/2,-z+1/2"
+	symLines[114]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x,y,-z"
+	symLines[115]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
+	symLines[116]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2"
+	symLines[117]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z;x,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2"
+	symLines[118]  = "x,y,z;-x,-y,z;x,-y+1/2,-z;-x,y+1/2,-z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2"
+	symLines[119]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
+	symLines[120]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2"
+	symLines[121]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2"
+	symLines[122]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y,z+1/2;"
+	symLines[122] += "-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
+	symLines[123]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2"
+	symLines[124]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x+1/2,y,-z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
+	symLines[125]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z"
+	symLines[126]  = "x,y,z;x,-y,-z;x,y,-z;x,-y,z"
+	symLines[127]  = "x,y,z;-x,y,-z;x,y,-z;-x,y,z"
+	symLines[128]  = "x,y,z;-x,-y,z+1/2;-x,y,z;x,-y,z+1/2"
+	symLines[129]  = "x,y,z;-x,-y,z+1/2;-x,y,z+1/2;x,-y,z"
+	symLines[130]  = "x,y,z;x+1/2,-y,-z;x+1/2,y,-z;x,-y,z"
+	symLines[131]  = "x,y,z;x+1/2,-y,-z;x,y,-z;x+1/2,-y,z"
+	symLines[132]  = "x,y,z;-x,y+1/2,-z;x,y,-z;-x,y+1/2,z"
+	symLines[133]  = "x,y,z;-x,y+1/2,-z;x,y+1/2,-z;-x,y,z"
+	symLines[134]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2"
+	symLines[135]  = "x,y,z;x,-y,-z;x+1/2,y,-z;x+1/2,-y,z"
+	symLines[136]  = "x,y,z;-x,y,-z;x,y+1/2,-z;-x,y+1/2,z"
+	symLines[137]  = "x,y,z;-x,-y,z;-x+1/2,y,z;x+1/2,-y,z"
+	symLines[138]  = "x,y,z;-x,-y,z;-x,y+1/2,z;x,-y+1/2,z"
+	symLines[139]  = "x,y,z;x,-y,-z;x,y+1/2,-z;x,-y+1/2,z"
+	symLines[140]  = "x,y,z;x,-y,-z;x,y,-z+1/2;x,-y,z+1/2"
+	symLines[141]  = "x,y,z;-x,y,-z;x,y,-z+1/2;-x,y,z+1/2"
+	symLines[142]  = "x,y,z;-x,y,-z;x+1/2,y,-z;-x+1/2,y,z"
+	symLines[143]  = "x,y,z;-x,-y,z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z"
+	symLines[144]  = "x,y,z;-x,-y,z+1/2;-x,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[145]  = "x,y,z;x+1/2,-y,-z;x,y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[146]  = "x,y,z;x+1/2,-y,-z;x+1/2,y,-z+1/2;x,-y,z+1/2"
+	symLines[147]  = "x,y,z;-x,y+1/2,-z;x,y+1/2,-z+1/2;-x,y,z+1/2"
+	symLines[148]  = "x,y,z;-x,y+1/2,-z;x+1/2,y,-z;-x+1/2,y+1/2,z"
+	symLines[149]  = "x,y,z;-x,-y,z;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[150]  = "x,y,z;-x,-y,z;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[151]  = "x,y,z;x,-y,-z;x+1/2,y,-z+1/2;x+1/2,-y,z+1/2"
+	symLines[152]  = "x,y,z;x,-y,-z;x+1/2,y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[153]  = "x,y,z;-x,y,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z"
+	symLines[154]  = "x,y,z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2"
+	symLines[155]  = "x,y,z;-x+1/2,-y,z+1/2;-x,y,z;x+1/2,-y,z+1/2"
+	symLines[156]  = "x,y,z;-x,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y,z"
+	symLines[157]  = "x,y,z;x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;x,-y,z"
+	symLines[158]  = "x,y,z;x+1/2,-y,-z+1/2;x,y,-z;x+1/2,-y,z+1/2"
+	symLines[159]  = "x,y,z;-x,y+1/2,-z+1/2;x,y,-z;-x,y+1/2,z+1/2"
+	symLines[160]  = "x,y,z;-x+1/2,y+1/2,-z;x+1/2,y+1/2,-z;-x,y,z"
+	symLines[161]  = "x,y,z;-x,-y,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[162]  = "x,y,z;x,-y,-z;x,y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[163]  = "x,y,z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[164]  = "x,y,z;-x,-y,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[165]  = "x,y,z;-x,-y,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[166]  = "x,y,z;x+1/2,-y,-z;x,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[167]  = "x,y,z;x+1/2,-y,-z;x+1/2,y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[168]  = "x,y,z;-x,y+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[169]  = "x,y,z;-x,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[170]  = "x,y,z;-x,-y,z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[171]  = "x,y,z;x,-y,-z;x+1/2,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[172]  = "x,y,z;-x,y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[173]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[174]  = "x,y,z;x,-y,-z;x,y,-z;x,-y,z;x,y+1/2,z+1/2;x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[175]  = "x,y,z;-x,y,-z;x,y,-z;-x,y,z;x+1/2,y,z+1/2;-x+1/2,y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[176]  = "x,y,z;-x,-y,z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[177]  = "x,y,z;-x,-y,z+1/2;-x,y,z+1/2;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[178]  = "x,y,z;x+1/2,-y,-z;x+1/2,y,-z;x,-y,z;x,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[179]  = "x,y,z;x+1/2,-y,-z;x,y,-z;x+1/2,-y,z;x,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[180]  = "x,y,z;-x,y+1/2,-z;x,y,-z;-x,y+1/2,z;x+1/2,y,z+1/2;-x+1/2,y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[181]  = "x,y,z;-x,y+1/2,-z;x,y+1/2,-z;-x,y,z;x+1/2,y,z+1/2;-x+1/2,y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[182]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[183]  = "x,y,z;x,-y,-z;x+1/2,y,-z;x+1/2,-y,z;x,y+1/2,z+1/2;x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[184]  = "x,y,z;-x,y,-z;x,y+1/2,-z;-x,y+1/2,z;x+1/2,y,z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[185]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[186]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[187]  = "x,y,z;x,-y,-z;x,y,-z;x,-y,z;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;x+1/2,-y,z+1/2"
+	symLines[188]  = "x,y,z;x,-y,-z;x,y,-z;x,-y,z;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[189]  = "x,y,z;-x,y,-z;x,y,-z;-x,y,z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z"
+	symLines[190]  = "x,y,z;-x,y,-z;x,y,-z;-x,y,z;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2"
+	symLines[191]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,y+1/2,z;x,-y+1/2,z"
+	symLines[192]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x+1/2,y,z;x+1/2,-y,z"
+	symLines[193]  = "x,y,z;x,-y,-z;x,y,-z+1/2;x,-y,z+1/2;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;x+1/2,y,-z;x+1/2,-y,z"
+	symLines[194]  = "x,y,z;x,-y,-z;x,y+1/2,-z;x,-y+1/2,z;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;x+1/2,y,-z;x+1/2,-y,z"
+	symLines[195]  = "x,y,z;-x,y,-z;x,y+1/2,-z;-x,y+1/2,z;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,y,-z;-x+1/2,y,z"
+	symLines[196]  = "x,y,z;-x,y,-z;x,y,-z+1/2;-x,y,z+1/2;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;x,y+1/2,-z;-x,y+1/2,z"
+	symLines[197]  = "x,y,z;-x,-y,z;-x+1/2,y,z;x+1/2,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[198]  = "x,y,z;-x,-y,z;-x,y+1/2,z;x,-y+1/2,z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[199]  = "x,y,z;x,-y,-z;x,y+1/2,-z;x,-y+1/2,z;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[200]  = "x,y,z;x,-y,-z;x,y,-z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[201]  = "x,y,z;-x,y,-z;x,y,-z+1/2;-x,y,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[202]  = "x,y,z;-x,y,-z;x+1/2,y,-z;-x+1/2,y,z;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[203]  = "x,y,z;-x,-y,z;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[204]  = "x,y,z;-x,-y,z;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[205]  = "x,y,z;x,-y,-z;x,y+1/2,-z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[206]  = "x,y,z;x,-y,-z;x,y+1/2,-z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;x+1/2,y,-z+1/2;x+1/2,-y,z+1/2"
+	symLines[207]  = "x,y,z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[208]  = "x,y,z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z"
+	symLines[209]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;"
+	symLines[209] += "-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[210]  = "x,y,z;x,-y,-z;x,y,-z;x,-y,z;x,y+1/2,z+1/2;x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;"
+	symLines[210] += "x+1/2,y,-z+1/2;x+1/2,-y,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[211]  = "x,y,z;-x,y,-z;x,y,-z;-x,y,z;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x+1/2,y,z+1/2;-x+1/2,y,-z+1/2;"
+	symLines[211] += "x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z"
+	symLines[212]  = "x,y,z;-x,-y,z;-x+1/4,y+1/4,z+1/4;x+1/4,-y+1/4,z+1/4;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;-x+1/4,y-1/4,z-1/4;x+1/4,-y-1/4,z-1/4;"
+	symLines[212] += "x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;-x-1/4,y+1/4,z-1/4;x-1/4,-y+1/4,z-1/4;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x-1/4,y-1/4,z+1/4;x-1/4,-y-1/4,z+1/4"
+	symLines[213]  = "x,y,z;x,-y,-z;x+1/4,y+1/4,-z+1/4;x+1/4,-y+1/4,z+1/4;x,y+1/2,z+1/2;x,-y+1/2,-z+1/2;x+1/4,y-1/4,-z-1/4;x+1/4,-y-1/4,z-1/4;"
+	symLines[213] += "x+1/2,y,z+1/2;x+1/2,-y,-z+1/2;x-1/4,y+1/4,-z-1/4;x-1/4,-y+1/4,z-1/4;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z;x-1/4,y-1/4,-z+1/4;x-1/4,-y-1/4,z+1/4"
+	symLines[214]  = "x,y,z;-x,y,-z;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;x,y+1/2,z+1/2;-x,y+1/2,-z+1/2;x+1/4,y-1/4,-z-1/4;-x+1/4,y-1/4,z-1/4;"
+	symLines[214] += "x+1/2,y,z+1/2;-x+1/2,y,-z+1/2;x-1/4,y+1/4,-z-1/4;-x-1/4,y+1/4,z-1/4;x+1/2,y+1/2,z;-x+1/2,y+1/2,-z;x-1/4,y-1/4,-z+1/4;-x-1/4,y-1/4,z+1/4"
+	symLines[215]  = "x,y,z;-x,-y,z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[216]  = "x,y,z;x,-y,-z;x,y,-z;x,-y,z;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[217]  = "x,y,z;-x,y,-z;x,y,-z;-x,y,z;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2"
+	symLines[218]  = "x,y,z;-x,-y,z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[219]  = "x,y,z;x,-y,-z;x+1/2,y,-z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;x,-y+1/2,z+1/2"
+	symLines[220]  = "x,y,z;-x,y,-z;x,y+1/2,-z;-x,y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2"
+	symLines[221]  = "x,y,z;-x,-y,z;-x+1/2,y,z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[222]  = "x,y,z;-x,-y,z;-x,y+1/2,z;x,-y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[223]  = "x,y,z;x,-y,-z;x,y+1/2,-z;x,-y+1/2,z;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;x+1/2,-y,z+1/2"
+	symLines[224]  = "x,y,z;x,-y,-z;x,y,-z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;x+1/2,-y+1/2,z"
+	symLines[225]  = "x,y,z;-x,y,-z;x,y,-z+1/2;-x,y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z"
+	symLines[226]  = "x,y,z;-x,y,-z;x+1/2,y,-z;-x+1/2,y,z;x+1/2,y+1/2,z+1/2;-x+1/2,y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2"
+	symLines[227]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z"
+	symLines[228]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[229]  = "x,y,z;-x+1/2,-y+1/2,z;x,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z;-x,y+1/2,z+1/2;x+1/2,-y,z+1/2"
+	symLines[230]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2"
+	symLines[231]  = "x,y,z;-x+1/2,-y,z;x,-y,-z;-x+1/2,y,-z;-x,-y,-z;x+1/2,y,-z;-x,y,z;x+1/2,-y,z"
+	symLines[232]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z;-x,y,-z;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z;x,-y,z"
+	symLines[233]  = "x,y,z;-x+1/2,-y+1/2,-z;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[234]  = "x,y,z;-x+1/2,-y+1/2,z;x,-y+1/2,-z;-x+1/2,y,-z;-x,-y,-z;x+1/2,y+1/2,-z;-x,y+1/2,z;x+1/2,-y,z"
+	symLines[235]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[236]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z+1/2;x,-y,z+1/2"
+	symLines[237]  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[238]  = "x,y,z;-x+1/2,-y,z;x,-y,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[239]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z;x,-y,z"
+	// Tetragonal SG[75,142]  SG_idNum 240-429
+	symLines[240]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z"
+	symLines[241]  = "x,y,z;-x,-y,z;x,-y+1/2,-z;-x,y+1/2,-z;-x,-y,-z;x,y,-z;-x,y+1/2,z;x,-y+1/2,z"
+	symLines[242]  = "x,y,z;-x,-y,z+1/2;x,-y,-z+1/2;-x,y,-z;-x,-y,-z;x,y,-z+1/2;-x,y,z+1/2;x,-y,z"
+	symLines[243]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2"
+	symLines[244]  = "x,y,z;-x,-y,z;x+1/2,-y,-z;-x+1/2,y,-z;-x,-y,-z;x,y,-z;-x+1/2,y,z;x+1/2,-y,z"
+	symLines[245]  = "x,y,z;-x+1/2,-y,z;x,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[246]  = "x,y,z;-x,-y+1/2,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
+	symLines[247]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x,-y+1/2,-z;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z;x+1/2,-y,z+1/2"
+	symLines[248]  = "x,y,z;-x+1/2,-y+1/2,z;x,-y,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z;-x,y,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[249]  = "x,y,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x,-y,z+1/2"
+	symLines[250]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x+1/2,-y,z"
+	symLines[251]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y,-z;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;-x,y,z;x+1/2,-y,z+1/2"
+	symLines[252]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y,-z;-x,-y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y,z"
+	symLines[253]  = "x,y,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x,y,-z;-x,-y,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x,-y,z"
+	symLines[254]  = "x,y,z;-x,-y,z;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x,y,-z;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[255]  = "x,y,z;-x,-y,z;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x,y,-z;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[256]  = "x,y,z;-x+1/2,-y+1/2,z;x,-y,-z;-x+1/2,y+1/2,-z;-x,-y,-z;x+1/2,y+1/2,-z;-x,y,z;x+1/2,-y+1/2,z"
+	symLines[257]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z+1/2;x,-y,z+1/2"
+	symLines[258]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y,z+1/2;x,-y+1/2,z+1/2"
+	symLines[259]  = "x,y,z;-x+1/2,-y,z;x,-y+1/2,-z;-x+1/2,y+1/2,-z;-x,-y,-z;x+1/2,y,-z;-x,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[260]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x,y,z+1/2;x+1/2,-y,z"
+	symLines[261]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y+1/2,-z;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z;x,-y,z+1/2"
+	symLines[262]  = "x,y,z;-x,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y,-z;-x,-y,-z;x,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y,z"
+	symLines[263]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x,-y,-z;x,y,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[264]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y,z;x,-y+1/2,z+1/2"
+	symLines[265]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x,y,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x,-y,z"
+	symLines[266]  = "x,y,z;-x+1/2,-y+1/2,z;x+1/2,-y,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z;-x+1/2,y,z+1/2;x,-y+1/2,z+1/2"
+	symLines[267]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[268]  = "x,y,z;-x,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y,z+1/2"
+	symLines[269]  = "x,y,z;-x,-y,z+1/2;x,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[270]  = "x,y,z;-x,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z"
+	symLines[271]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y,-z;-x,y,-z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z;x,-y,z+1/2"
+	symLines[272]  = "x,y,z;-x,-y+1/2,z;x+1/2,-y,-z;-x+1/2,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x+1/2,y,z;x+1/2,-y+1/2,z"
+	symLines[273]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y+1/2,-z;-x,y+1/2,-z;-x,-y,-z;x+1/2,y,-z;-x+1/2,y+1/2,z;x,-y+1/2,z"
+	symLines[274]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y,-z+1/2;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z+1/2;-x,y,z+1/2;x,-y+1/2,z"
+	symLines[275]  = "x,y,z;-x,-y,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x,y,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[276]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x,-y,-z;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x,y,z;x+1/2,-y+1/2,z+1/2"
+	symLines[277]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x,y,-z;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x,-y,z"
+	symLines[278]  = "x,y,z;-x+1/2,-y+1/2,-z;-x,-y,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y+1/2,-z;-x,y,z;x,-y,z"
+	symLines[279]  = "x,y,z;-x+1/2,-y+1/2,z;x+1/2,-y,-z;-x,y+1/2,-z;-x,-y,-z;x+1/2,y+1/2,-z;-x+1/2,y,z;x,-y+1/2,z"
+	symLines[280]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y+1/2,z+1/2;x,-y,-z;-x,y+1/2,-z+1/2;x,y,-z;-x,y+1/2,z+1/2;x,-y,z"
+	symLines[281]  = "x,y,z;-x,-y,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z;-x,-y,-z;x,y,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z"
+	symLines[282]  = "x,y,z;-x+1/2,-y,-z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x,y,-z;x,y,-z;-x,y,z;x+1/2,-y,z+1/2"
+	symLines[283]  = "x,y,z;-x,-y,z+1/2;x+1/2,-y,-z;-x+1/2,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x+1/2,y,z;x+1/2,-y,z+1/2"
+	symLines[284]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x,y,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x,-y,z+1/2"
+	symLines[285]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x,-y,-z+1/2;-x+1/2,y+1/2,-z;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x,y,z+1/2;x+1/2,-y+1/2,z"
+	symLines[286]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x+1/2,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[287]  = "x,y,z;-x,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z"
+	symLines[288]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;-x,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[289]  = "x,y,z;-x,-y+1/2,z;x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[290]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[291]  = "x,y,z;-x,-y+1/2,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z;-x,-y,-z;x,y+1/2,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z"
+	symLines[292]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z+1/2;-x,y+1/2,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x,-y+1/2,z"
+	symLines[293]  = "x,y,z;-x,-y+1/2,z+1/2;x+1/2,-y,-z;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x+1/2,y,z;x+1/2,-y+1/2,z+1/2"
+	symLines[294]  = "x,y,z;-x,-y,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[295]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y,-z+1/2;-x,y+1/2,-z;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y,z+1/2;x,-y+1/2,z"
+	symLines[296]  = "x,y,z;-x+1/2,-y+1/2,z+1/2;x+1/2,-y,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y,z;x,-y+1/2,z+1/2"
+	symLines[297]  = "x,y,z;-x,-y,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z;-x,-y,-z;x,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[298]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;"
+	symLines[298] += "x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[299]  = "x,y,z;-x,-y,z+1/2;x,-y,-z+1/2;-x,y,-z;-x,-y,-z;x,y,-z+1/2;-x,y,z+1/2;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z+1/2;"
+	symLines[299] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[300]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z;x,-y,z;x,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[300] += "x+1/2,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[301]  = "x,y,z;-x,-y,z;x+1/2,-y,-z;-x+1/2,y,-z;-x,-y,-z;x,y,-z;-x+1/2,y,z;x+1/2,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;"
+	symLines[301] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[302]  = "x,y,z;-x,-y,z;x,-y+1/2,-z;-x,y+1/2,-z;-x,-y,-z;x,y,-z;-x,y+1/2,z;x,-y+1/2,z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;"
+	symLines[302] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[303]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z;x+1/2,y,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[303] += "x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[304]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y,z;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
+	symLines[304] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y,z+1/2"
+	symLines[305]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y,-z;-x,-y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y,z;x+1/2,y+1/2,z;"
+	symLines[305] += "-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z"
+	symLines[306]  = "x,y,z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x,y,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x,-y,z;x,y+1/2,z+1/2;"
+	symLines[306] += "-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[307]  = "x,y,z;-x,-y,z;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x,y,-z;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
+	symLines[307] += "-x,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[308]  = "x,y,z;-x,-y,z;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x,y,-z;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
+	symLines[308] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[309]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y,-z;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y,z;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
+	symLines[309] += "-x+1/2,-y+1/2,z;x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z"
+	symLines[310]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;"
+	symLines[310] += "-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[311]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;"
+	symLines[311] += "-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[312]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;"
+	symLines[312] += "-x+1/2,y,-z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[313]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;"
+	symLines[313] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[314]  = "x,y,z;-x+1/2,-y,z;x,-y,-z;-x+1/2,y,-z;-x,-y,-z;x+1/2,y,-z;-x,y,z;x+1/2,-y,z;x,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[314] += "x,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[315]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z;-x,y,-z;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z;x,-y,z;x+1/2,y,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[315] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
+	symLines[316]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z;x+1/2,y+1/2,z;-x+1/2,-y,z;x+1/2,-y+1/2,-z;"
+	symLines[316] += "-x+1/2,y,-z;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y+1/2,z;x+1/2,-y,z"
+	symLines[317]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z;-x,y,-z;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z;x,-y,z;x+1/2,y+1/2,z;-x+1/2,-y,z;x+1/2,-y,-z;"
+	symLines[317] += "-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y,z;x+1/2,-y+1/2,z"
+	symLines[318]  = "x,y,z;-x,-y,z+1/2;x,-y,-z+1/2;-x,y,-z;-x,-y,-z;x,y,-z+1/2;-x,y,z+1/2;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z;x,-y+1/2,-z;"
+	symLines[318] += "-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x,y+1/2,-z;-x,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[319]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z;"
+	symLines[319] += "-x,y+1/2,-z;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z;x,-y+1/2,z"
+	symLines[320]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;x+1/2,-y,-z;"
+	symLines[320] += "-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z;x+1/2,-y,z"
+	symLines[321]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z;x+1/2,-y,-z+1/2;"
+	symLines[321] += "-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y,-z;-x+1/2,y,z+1/2;x+1/2,-y,z"
+	symLines[322]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
+	symLines[322] += "-x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[323]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y,z;"
+	symLines[323] += "x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[324]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
+	symLines[324] += "-x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[325]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y,z;"
+	symLines[325] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
+	symLines[326]  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
+	symLines[326] += "-x+1/2,-y+1/2,-z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[327]  = "x,y,z;-x+1/2,-y,z;x,-y,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
+	symLines[327] += "-x+1/2,-y+1/2,z+1/2;x,-y+1/2,-z;-x+1/2,y+1/2,-z;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[328]  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
+	symLines[328] += "-x+1/2,-y+1/2,-z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[329]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x,y,z+1/2;x+1/2,-y,z;x,y+1/2,z+1/2;"
+	symLines[329] += "-x+1/2,-y+1/2,z;x,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[330]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
+	symLines[330] += "-x+1/2,-y+1/2,-z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[331]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y+1/2,-z;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z;x,-y,z+1/2;x+1/2,y,z+1/2;"
+	symLines[331] += "-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z"
+	symLines[332]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
+	symLines[332] += "-x+1/2,-y+1/2,-z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[333]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z+1/2;x,-y,z+1/2;x+1/2,y,z+1/2;"
+	symLines[333] += "-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y,z"
+	symLines[334]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;"
+	symLines[334] += "-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z+1/2;"
+	symLines[334] += "x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x+1/2,y+1/2,z;"
+	symLines[334] += "-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[335]  = "x,y,z;-x+1/4,-y+1/4,-z+1/4;-x,-y,z;x,-y,-z;-x,y,-z;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;x+1/4,-y+1/4,z+1/4;"
+	symLines[335] += "x,y+1/2,z+1/2;-x+1/4,-y-1/4,-z-1/4;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/4,y-1/4,-z-1/4;-x+1/4,y-1/4,z-1/4;"
+	symLines[335] += "x+1/4,-y-1/4,z-1/4;x+1/2,y,z+1/2;-x-1/4,-y+1/4,-z-1/4;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x-1/4,y+1/4,-z-1/4;"
+	symLines[335] += "-x-1/4,y+1/4,z-1/4;x-1/4,-y+1/4,z-1/4;x+1/2,y+1/2,z;-x-1/4,-y-1/4,-z+1/4;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;"
+	symLines[335] += "x-1/4,y-1/4,-z+1/4;-x-1/4,y-1/4,z+1/4;x-1/4,-y-1/4,z+1/4"
+	symLines[336]  = "x,y,z;-x+1/4,-y+1/4,z;x,-y+1/4,-z+1/4;-x+1/4,y,-z+1/4;-x,-y,-z;x-1/4,y-1/4,-z;-x,y-1/4,z-1/4;x-1/4,-y,z-1/4;"
+	symLines[336] += "x,y+1/2,z+1/2;-x+1/4,-y-1/4,z+1/2;x,-y-1/4,-z-1/4;-x+1/4,y+1/2,-z-1/4;-x,-y+1/2,-z+1/2;x-1/4,y+1/4,-z+1/2;-x,y+1/4,z+1/4;"
+	symLines[336] += "x-1/4,-y+1/2,z+1/4;x+1/2,y,z+1/2;-x-1/4,-y+1/4,z+1/2;x+1/2,-y+1/4,-z-1/4;-x-1/4,y,-z-1/4;-x+1/2,-y,-z+1/2;"
+	symLines[336] += "x+1/4,y-1/4,-z+1/2;-x+1/2,y-1/4,z+1/4;x+1/4,-y,z+1/4;x+1/2,y+1/2,z;-x-1/4,-y-1/4,z;x+1/2,-y-1/4,-z+1/4;"
+	symLines[336] += "-x-1/4,y+1/2,-z+1/4;-x+1/2,-y+1/2,-z;x+1/4,y+1/4,-z;-x+1/2,y+1/4,z-1/4;x+1/4,-y+1/2,z-1/4"
+	symLines[337]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;"
+	symLines[337] += "-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[338]  = "x,y,z;-x,-y,z;x,-y,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y,-z;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[338] += "x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[339]  = "x,y,z;-x+1/2,-y,z;x,-y,-z;-x+1/2,y,-z;-x,-y,-z;x+1/2,y,-z;-x,y,z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;-x,-y+1/2,z+1/2;"
+	symLines[339] += "x+1/2,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[340]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z;-x,y,-z;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;"
+	symLines[340] += "x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[341]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z+1/2;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;"
+	symLines[341] += "x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[342]  = "x,y,z;-x+1/2,-y,z;x,-y+1/2,-z;-x,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y+1/2,z;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x,-y+1/2,z+1/2;"
+	symLines[342] += "x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z"
+	symLines[343]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y,z+1/2;"
+	symLines[343] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
+	symLines[344]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;-x,-y+1/2,z+1/2;"
+	symLines[344] += "x,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[345]  = "x,y,z;-x,-y,z+1/2;x,-y,-z+1/2;-x,y,-z;-x,-y,-z;x,y,-z+1/2;-x,y,z+1/2;x,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z;"
+	symLines[345] += "x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z+1/2"
+	symLines[346]  = "x,y,z;-x,-y,z;x,-y+1/2,-z;-x,y+1/2,-z;-x,-y,-z;x,y,-z;-x,y+1/2,z;x,-y+1/2,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[346] += "x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[347]  = "x,y,z;-x,-y,z;x+1/2,-y,-z;-x+1/2,y,-z;-x,-y,-z;x,y,-z;-x+1/2,y,z;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[347] += "x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
+	symLines[348]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z;"
+	symLines[348] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	symLines[349]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z"
+	symLines[350]  = "x,y,z;-y,x,z+1/4;-x,-y,z+1/2;y,-x,z-1/4"
+	symLines[351]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2"
+	symLines[352]  = "x,y,z;-y,x,z-1/4;-x,-y,z+1/2;y,-x,z+1/4"
+	symLines[353]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2"
+	symLines[354]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;-y+1/2,x,z-1/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4"
+	symLines[355]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z"
+	symLines[356]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2"
+	symLines[357]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z"
+	symLines[358]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x,-y,-z;y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2"
+	symLines[359]  = "x,y,z;-x+1/2,-y+1/2,-z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;y,-x,-z;-y,x,-z;x+1/2,y+1/2,-z"
+	symLines[360]  = "x,y,z;-y+1/2,x,z;-x+1/2,-y+1/2,z;y,-x+1/2,z;-x,-y,-z;y+1/2,-x,-z;x+1/2,y+1/2,-z;-y,x+1/2,-z"
+	symLines[361]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x+1/2,y+1/2,-z+1/2"
+	symLines[362]  = "x,y,z;-y,x+1/2,z+1/2;-x+1/2,-y+1/2,z;y+1/2,-x,z+1/2;-x,-y,-z;y,-x+1/2,-z+1/2;x+1/2,y+1/2,-z;-y+1/2,x,-z+1/2"
+	symLines[363]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[363] += "y+1/2,-x+1/2,z+1/2;-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2"
+	symLines[364]  = "x,y,z;-x,-y+1/2,-z+1/4;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;y,-x,-z;-y,x,-z;x,y+1/2,-z+1/4;x+1/2,y+1/2,z+1/2;"
+	symLines[364] += "-x+1/2,-y,-z-1/4;-y+1/2,x,z-1/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;x+1/2,y,-z-1/4"
+	symLines[365]  = "x,y,z;-y-1/4,x+1/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z+1/4;-x,-y,-z;y+1/4,-x-1/4,-z-1/4;x,y+1/2,-z;-y-1/4,x-1/4,-z-1/4;"
+	symLines[365] += "x+1/2,y+1/2,z+1/2;-y+1/4,x-1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x-1/4,z-1/4;-x+1/2,-y+1/2,-z+1/2;y-1/4,-x+1/4,-z+1/4;"
+	symLines[365] += "x+1/2,y,-z+1/2;-y+1/4,x+1/4,-z+1/4"
+	symLines[366]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z"
+	symLines[367]  = "x,y,z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y,x,-z;-y,-x,-z"
+	symLines[368]  = "x,y,z;-y,x,z+1/4;-x,-y,z+1/2;y,-x,z-1/4;x,-y,-z+1/2;-x,y,-z;y,x,-z-1/4;-y,-x,-z+1/4"
+	symLines[369]  = "x,y,z;-y+1/2,x+1/2,z+1/4;-x,-y,z+1/2;y+1/2,-x+1/2,z-1/4;x+1/2,-y+1/2,-z-1/4;-x+1/2,y+1/2,-z+1/4;y,x,-z;-y,-x,-z+1/2"
+	symLines[370]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-y,-z;-x,y,-z;y,x,-z+1/2;-y,-x,-z+1/2"
+	symLines[371]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y,x,-z;-y,-x,-z"
+	symLines[372]  = "x,y,z;-y,x,z-1/4;-x,-y,z+1/2;y,-x,z+1/4;x,-y,-z+1/2;-x,y,-z;y,x,-z+1/4;-y,-x,-z-1/4"
+	symLines[373]  = "x,y,z;-y+1/2,x+1/2,z-1/4;-x,-y,z+1/2;y+1/2,-x+1/2,z+1/4;x+1/2,-y+1/2,-z+1/4;-x+1/2,y+1/2,-z-1/4;y,x,-z;-y,-x,-z+1/2"
+	symLines[374]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[374] += "y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2"
+	symLines[375]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;x,-y+1/2,-z+1/4;-x,y+1/2,-z+1/4;y,x,-z;-y,-x,-z;x+1/2,y+1/2,z+1/2;"
+	symLines[375] += "-y+1/2,x,z-1/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4;x+1/2,-y,-z-1/4;-x+1/2,y,-z-1/4;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2"
+	symLines[376]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z;x,-y,z;-y,-x,z;y,x,z"
+	symLines[377]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[378]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z;y,x,z"
+	symLines[379]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z"
+	symLines[380]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2"
+	symLines[381]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[382]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x,y,z;x,-y,z;-y,-x,z+1/2;y,x,z+1/2"
+	symLines[383]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[384]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z;x,-y,z;-y,-x,z;y,x,z;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[384] += "y+1/2,-x+1/2,z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[385]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;-x,y,z+1/2;x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;"
+	symLines[385] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[386]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;-x,y,z;x,-y,z;-y,-x+1/2,z+1/4;y,x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;-y+1/2,x,z-1/4;"
+	symLines[386] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x,z-1/4;y+1/2,x,z-1/4"
+	symLines[387]  = "x,y,z;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x,z+1/4;y+1/2,x,z+1/4;x+1/2,y+1/2,z+1/2;"
+	symLines[387] += "-y+1/2,x,z-1/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y,-x+1/2,z-1/4;y,x+1/2,z-1/4"
+	symLines[388]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y,-z;-x,y,-z;-y,-x,z;y,x,z"
+	symLines[389]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y,-z+1/2;-x,y,-z+1/2;-y,-x,z+1/2;y,x,z+1/2"
+	symLines[390]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[391]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[392]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z;-y,-x,-z;-x,y,z;x,-y,z"
+	symLines[393]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z+1/2;-y,-x,-z+1/2;-x,y,z+1/2;x,-y,z+1/2"
+	symLines[394]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[395]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[396]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z;-y,-x,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[396] += "-y+1/2,x+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[397]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;y,x,-z+1/2;-y,-x,-z+1/2;-x,y,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;"
+	symLines[397] += "-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[398]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y,-z;-x,y,-z;-y,-x,z;y,x,z;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[398] += "-y+1/2,x+1/2,-z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[399]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;x,-y+1/2,-z+1/4;-x,y+1/2,-z+1/4;-y,-x+1/2,z+1/4;y,x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;"
+	symLines[399] += "y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;x+1/2,-y,-z-1/4;-x+1/2,y,-z-1/4;-y+1/2,-x,z-1/4;y+1/2,x,z-1/4"
+	symLines[400]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,y,z;x,-y,z;-y,-x,z;y,x,z"
+	symLines[401]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z+1/2;-x,y,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,y,z+1/2;"
+	symLines[401] += "x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2"
+	symLines[402]  = "x,y,z;-x+1/2,-y+1/2,-z;-y,x,z;-x,-y,z;y,-x,z;y+1/2,-x+1/2,-z;-y+1/2,x+1/2,-z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;"
+	symLines[402] += "x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[403]  = "x,y,z;-y+1/2,x,z;-x+1/2,-y+1/2,z;y,-x+1/2,z;x,-y+1/2,-z;-x+1/2,y,-z;y,x,-z;-y+1/2,-x+1/2,-z;-x,-y,-z;y+1/2,-x,-z;"
+	symLines[403] += "x+1/2,y+1/2,-z;-y,x+1/2,-z;-x,y+1/2,z;x+1/2,-y,z;-y,-x,z;y+1/2,x+1/2,z"
+	symLines[404]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y,x,z;-x,-y,z;y,-x,z;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;"
+	symLines[404] += "x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[405]  = "x,y,z;-y+1/2,x,z;-x+1/2,-y+1/2,z;y,-x+1/2,z;x,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;y,x,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x,-y,-z;"
+	symLines[405] += "y+1/2,-x,-z;x+1/2,y+1/2,-z;-y,x+1/2,-z;-x,y+1/2,z+1/2;x+1/2,-y,z+1/2;-y,-x,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[406]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x,-y,-z;y,-x,-z;x,y,-z;"
+	symLines[406] += "-y,x,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[407]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x,-y,-z;"
+	symLines[407] += "y,-x,-z;x,y,-z;-y,x,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[408]  = "x,y,z;-x+1/2,-y+1/2,-z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y,x,-z;"
+	symLines[408] += "-y,-x,-z;x+1/2,y+1/2,-z;-x,y,z;x,-y,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[409]  = "x,y,z;-y+1/2,x,z;-x+1/2,-y+1/2,z;y,-x+1/2,z;x+1/2,-y,-z;-x,y+1/2,-z;y+1/2,x+1/2,-z;-y,-x,-z;-x,-y,-z;y+1/2,-x,-z;"
+	symLines[409] += "x+1/2,y+1/2,-z;-y,x+1/2,-z;-x+1/2,y,z;x,-y+1/2,z;-y+1/2,-x+1/2,z;y,x,z"
+	symLines[410]  = "x,y,z;-x+1/2,-y+1/2,-z;-y+1/2,x+1/2,z;-x,-y,z;y+1/2,-x+1/2,z;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;"
+	symLines[410] += "y,x,-z+1/2;-y,-x,-z+1/2;x+1/2,y+1/2,-z;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[411]  = "x,y,z;-y+1/2,x,z;-x+1/2,-y+1/2,z;y,-x+1/2,z;x+1/2,-y,-z+1/2;-x,y+1/2,-z+1/2;y+1/2,x+1/2,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;"
+	symLines[411] += "y+1/2,-x,-z;x+1/2,y+1/2,-z;-y,x+1/2,-z;-x+1/2,y,z+1/2;x,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y,x,z+1/2"
+	symLines[412]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-y,-z;-x,y,-z;y,x,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2;"
+	symLines[412] += "-x,y,z;x,-y,z;-y,-x,z+1/2;y,x,z+1/2"
+	symLines[413]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-y,-z+1/2;-x,y,-z+1/2;y,x,-z;-y,-x,-z;-x,-y,-z;y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2;"
+	symLines[413] += "-x,y,z+1/2;x,-y,z+1/2;-y,-x,z;y,x,z"
+	symLines[414]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x,-y,-z+1/2;-x,y,-z+1/2;"
+	symLines[414] += "y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y,-x,z+1/2;y,x,z+1/2"
+	symLines[415]  = "x,y,z;-y+1/2,x,z+1/2;-x+1/2,-y+1/2,z;y,-x+1/2,z+1/2;x,-y+1/2,-z;-x+1/2,y,-z;y,x,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x,-y,-z;"
+	symLines[415] += "y+1/2,-x,-z+1/2;x+1/2,y+1/2,-z;-y,x+1/2,-z+1/2;-x,y+1/2,z;x+1/2,-y,z;-y,-x,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[416]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x,-y,-z;-x,y,-z;"
+	symLines[416] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z"
+	symLines[417]  = "x,y,z;-y+1/2,x,z+1/2;-x+1/2,-y+1/2,z;y,-x+1/2,z+1/2;x,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;y,x,-z;-y+1/2,-x+1/2,-z;-x,-y,-z;"
+	symLines[417] += "y+1/2,-x,-z+1/2;x+1/2,y+1/2,-z;-y,x+1/2,-z+1/2;-x,y+1/2,z+1/2;x+1/2,-y,z+1/2;-y,-x,z;y+1/2,x+1/2,z"
+	symLines[418]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x,-y,-z;"
+	symLines[418] += "y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[419]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;y,x,-z;-y,-x,-z;-x,-y,-z;"
+	symLines[419] += "y+1/2,-x+1/2,-z+1/2;x,y,-z;-y+1/2,x+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z"
+	symLines[420]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z+1/2;"
+	symLines[420] += "-x+1/2,y+1/2,-z+1/2;y,x,-z;-y,-x,-z;x+1/2,y+1/2,-z+1/2;-x,y,z;x,-y,z;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[421]  = "x,y,z;-y+1/2,x,z+1/2;-x+1/2,-y+1/2,z;y,-x+1/2,z+1/2;x+1/2,-y,-z;-x,y+1/2,-z;y+1/2,x+1/2,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;"
+	symLines[421] += "y+1/2,-x,-z+1/2;x+1/2,y+1/2,-z;-y,x+1/2,-z+1/2;-x+1/2,y,z;x,-y+1/2,z;-y+1/2,-x+1/2,z+1/2;y,x,z+1/2"
+	symLines[422]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;y,-x,-z;-y,x,-z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;"
+	symLines[422] += "y,x,-z+1/2;-y,-x,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[423]  = "x,y,z;-y+1/2,x,z+1/2;-x+1/2,-y+1/2,z;y,-x+1/2,z+1/2;x+1/2,-y,-z+1/2;-x,y+1/2,-z+1/2;y+1/2,x+1/2,-z;-y,-x,-z;-x,-y,-z;"
+	symLines[423] += "y+1/2,-x,-z+1/2;x+1/2,y+1/2,-z;-y,x+1/2,-z+1/2;-x+1/2,y,z+1/2;x,-y+1/2,z+1/2;-y+1/2,-x+1/2,z;y,x,z"
+	symLines[424]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z;-x,y,-z;y,x,-z;-y,-x,-z;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,y,z;x,-y,z;-y,-x,z;y,x,z;"
+	symLines[424] += "x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;"
+	symLines[424] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;"
+	symLines[424] += "-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2"
+	symLines[425]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-y,-z+1/2;-x,y,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,y,z+1/2;"
+	symLines[425] += "x,-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;"
+	symLines[425] += "x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;"
+	symLines[425] += "x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z"
+	symLines[426]  = "x,y,z;-x,-y+1/2,-z+1/4;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;y,-x,-z;-y,x,-z;x,-y+1/2,-z+1/4;-x,y+1/2,-z+1/4;y,x,-z;"
+	symLines[426] += "-y,-x,-z;x,y+1/2,-z+1/4;-x,y,z;x,-y,z;-y,-x+1/2,z+1/4;y,x+1/2,z+1/4;x+1/2,y+1/2,z+1/2;-x+1/2,-y,-z-1/4;-y+1/2,x,z-1/4;"
+	symLines[426] += "-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;x+1/2,-y,-z-1/4;-x+1/2,y,-z-1/4;"
+	symLines[426] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;x+1/2,y,-z-1/4;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x,z-1/4;y+1/2,x,z-1/4"
+	symLines[427]  = "x,y,z;-y+1/4,x-1/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z-1/4;x,-y,-z;-x,y+1/2,-z;y+1/4,x-1/4,-z+1/4;-y+1/4,-x+1/4,-z-1/4;"
+	symLines[427] += "-x,-y,-z;y-1/4,-x+1/4,-z-1/4;x,y+1/2,-z;-y-1/4,x-1/4,-z+1/4;-x,y,z;x,-y+1/2,z;-y-1/4,-x+1/4,z-1/4;y-1/4,x-1/4,z+1/4;"
+	symLines[427] += "x+1/2,y+1/2,z+1/2;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x-1/4,z+1/4;x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;"
+	symLines[427] += "y-1/4,x+1/4,-z-1/4;-y-1/4,-x-1/4,-z+1/4;-x+1/2,-y+1/2,-z+1/2;y+1/4,-x-1/4,-z+1/4;x+1/2,y,-z+1/2;-y+1/4,x+1/4,-z-1/4;"
+	symLines[427] += "-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2;-y+1/4,-x-1/4,z+1/4;y+1/4,x+1/4,z-1/4"
+	symLines[428]  = "x,y,z;-x,-y+1/2,-z+1/4;-y,x+1/2,z+1/4;-x,-y,z;y,-x+1/2,z+1/4;y,-x,-z;-y,x,-z;x+1/2,-y,-z+1/4;-x+1/2,y,-z+1/4;y,x,-z+1/2;"
+	symLines[428] += "-y,-x,-z+1/2;x,y+1/2,-z+1/4;-x,y,z+1/2;x,-y,z+1/2;-y+1/2,-x,z+1/4;y+1/2,x,z+1/4;x+1/2,y+1/2,z+1/2;-x+1/2,-y,-z-1/4;"
+	symLines[428] += "-y+1/2,x,z-1/4;-x+1/2,-y+1/2,z+1/2;y+1/2,-x,z-1/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;x,-y+1/2,-z-1/4;"
+	symLines[428] += "-x,y+1/2,-z-1/4;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;x+1/2,y,-z-1/4;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z;-y,-x+1/2,z-1/4;y,x+1/2,z-1/4"
+	symLines[429]  = "x,y,z;-y+1/4,x-1/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z-1/4;x,-y,-z+1/2;-x+1/2,y,-z;y-1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;"
+	symLines[429] += "-x,-y,-z;y-1/4,-x+1/4,-z-1/4;x,y+1/2,-z;-y-1/4,x-1/4,-z+1/4;-x,y,z+1/2;x+1/2,-y,z;-y+1/4,-x-1/4,z-1/4;y-1/4,x-1/4,z-1/4;"
+	symLines[429] += "x+1/2,y+1/2,z+1/2;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x-1/4,z+1/4;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;"
+	symLines[429] += "y+1/4,x-1/4,-z-1/4;-y-1/4,-x-1/4,-z-1/4;-x+1/2,-y+1/2,-z+1/2;y+1/4,-x-1/4,-z+1/4;x+1/2,y,-z+1/2;-y+1/4,x+1/4,-z-1/4;"
+	symLines[429] += "-x+1/2,y+1/2,z;x,-y+1/2,z+1/2;-y-1/4,-x+1/4,z+1/4;y+1/4,x+1/4,z+1/4"
+	// Trigonal SG[143,167]  SG_idNum 430-461
+	symLines[430]  = "x,y,z;-y,x-y,z;-x+y,-x,z"
+	symLines[431]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z-1/3"
+	symLines[432]  = "x,y,z;-y,x-y,z-1/3;-x+y,-x,z+1/3"
+	symLines[433]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;-x+y-1/3,-x+1/3,z+1/3;x+1/3,y-1/3,z-1/3;"
+	symLines[433] += "-y+1/3,x-y-1/3,z-1/3;-x+y+1/3,-x-1/3,z-1/3"
+	symLines[434]  = "x,y,z;z,x,y;y,z,x"
+	symLines[435]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x,-y,-z;y,-x+y,-z;x-y,x,-z"
+	symLines[436]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;-x+y-1/3,-x+1/3,z+1/3;"
+	symLines[436] += "-x-1/3,-y+1/3,-z+1/3;y-1/3,-x+y+1/3,-z+1/3;x-y-1/3,x+1/3,-z+1/3;x+1/3,y-1/3,z-1/3;-y+1/3,x-y-1/3,z-1/3;"
+	symLines[436] += "-x+y+1/3,-x-1/3,z-1/3;-x+1/3,-y-1/3,-z-1/3;y+1/3,-x+y-1/3,-z-1/3;x-y+1/3,x-1/3,-z-1/3"
+	symLines[437]  = "x,y,z;z,x,y;y,z,x;-x,-y,-z;-z,-x,-y;-y,-z,-x"
+	symLines[438]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-y,-x,-z;-x+y,y,-z;x,x-y,-z"
+	symLines[439]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z"
+	symLines[440]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z-1/3;-y,-x,-z-1/3;-x+y,y,-z+1/3;x,x-y,-z"
+	symLines[441]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z-1/3;x-y,-y,-z-1/3;-x,-x+y,-z+1/3;y,x,-z"
+	symLines[442]  = "x,y,z;-y,x-y,z-1/3;-x+y,-x,z+1/3;-y,-x,-z+1/3;-x+y,y,-z-1/3;x,x-y,-z"
+	symLines[443]  = "x,y,z;-y,x-y,z-1/3;-x+y,-x,z+1/3;x-y,-y,-z+1/3;-x,-x+y,-z-1/3;y,x,-z"
+	symLines[444]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;-x+y-1/3,-x+1/3,z+1/3;"
+	symLines[444] += "x-y-1/3,-y+1/3,-z+1/3;-x-1/3,-x+y+1/3,-z+1/3;y-1/3,x+1/3,-z+1/3;x+1/3,y-1/3,z-1/3;-y+1/3,x-y-1/3,z-1/3;"
+	symLines[444] += "-x+y+1/3,-x-1/3,z-1/3;x-y+1/3,-y-1/3,-z-1/3;-x+1/3,-x+y-1/3,-z-1/3;y+1/3,x-1/3,-z-1/3"
+	symLines[445]  = "x,y,z;z,x,y;y,z,x;-y,-x,-z;-x,-z,-y;-z,-y,-x"
+	symLines[446]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z;x,x-y,z;-y,-x,z"
+	symLines[447]  = "x,y,z;-y,x-y,z;-x+y,-x,z;y,x,z;x-y,-y,z;-x,-x+y,z"
+	symLines[448]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2"
+	symLines[449]  = "x,y,z;-y,x-y,z;-x+y,-x,z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	symLines[450]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z;x,x-y,z;-y,-x,z;x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;-x+y-1/3,-x+1/3,z+1/3;"
+	symLines[450] += "-x+y-1/3,y+1/3,z+1/3;x-1/3,x-y+1/3,z+1/3;-y-1/3,-x+1/3,z+1/3;x+1/3,y-1/3,z-1/3;-y+1/3,x-y-1/3,z-1/3;"
+	symLines[450] += "-x+y+1/3,-x-1/3,z-1/3;-x+y+1/3,y-1/3,z-1/3;x+1/3,x-y-1/3,z-1/3;-y+1/3,-x-1/3,z-1/3"
+	symLines[451]  = "x,y,z;z,x,y;y,z,x;y,x,z;x,z,y;z,y,x"
+	symLines[452]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;"
+	symLines[452] += "-x+y-1/3,-x+1/3,z+1/3;-x+y-1/3,y+1/3,z-1/6;x-1/3,x-y+1/3,z-1/6;-y-1/3,-x+1/3,z-1/6;x+1/3,y-1/3,z-1/3;"
+	symLines[452] += "-y+1/3,x-y-1/3,z-1/3;-x+y+1/3,-x-1/3,z-1/3;-x+y+1/3,y-1/3,z+1/6;x+1/3,x-y-1/3,z+1/6;-y+1/3,-x-1/3,z+1/6"
+	symLines[453]  = "x,y,z;z,x,y;y,z,x;y+1/2,x+1/2,z+1/2;x+1/2,z+1/2,y+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[454]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;y,x,z;x-y,-y,z;-x,-x+y,z"
+	symLines[455]  = "x,y,z;-y,x-y,z;-x+y,-x,z;-y,-x,-z+1/2;-x+y,y,-z+1/2;x,x-y,-z+1/2;-x,-y,-z;y,-x+y,-z;x-y,x,-z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	symLines[456]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z;x,x-y,z;-y,-x,z"
+	symLines[457]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2"
+	symLines[458]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z;x,x-y,z;-y,-x,z;"
+	symLines[458] += "x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;-x+y-1/3,-x+1/3,z+1/3;x-y-1/3,-y+1/3,-z+1/3;-x-1/3,-x+y+1/3,-z+1/3;"
+	symLines[458] += "y-1/3,x+1/3,-z+1/3;-x-1/3,-y+1/3,-z+1/3;y-1/3,-x+y+1/3,-z+1/3;x-y-1/3,x+1/3,-z+1/3;-x+y-1/3,y+1/3,z+1/3;"
+	symLines[458] += "x-1/3,x-y+1/3,z+1/3;-y-1/3,-x+1/3,z+1/3;x+1/3,y-1/3,z-1/3;-y+1/3,x-y-1/3,z-1/3;-x+y+1/3,-x-1/3,z-1/3;"
+	symLines[458] += "x-y+1/3,-y-1/3,-z-1/3;-x+1/3,-x+y-1/3,-z-1/3;y+1/3,x-1/3,-z-1/3;-x+1/3,-y-1/3,-z-1/3;y+1/3,-x+y-1/3,-z-1/3;"
+	symLines[458] += "x-y+1/3,x-1/3,-z-1/3;-x+y+1/3,y-1/3,z-1/3;x+1/3,x-y-1/3,z-1/3;-y+1/3,-x-1/3,z-1/3"
+	symLines[459]  = "x,y,z;z,x,y;y,z,x;-y,-x,-z;-x,-z,-y;-z,-y,-x;-x,-y,-z;-z,-x,-y;-y,-z,-x;y,x,z;x,z,y;z,y,x"
+	symLines[460]  = "x,y,z;-y,x-y,z;-x+y,-x,z;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-x,-y,-z;y,-x+y,-z;x-y,x,-z;-x+y,y,z+1/2;x,x-y,z+1/2;"
+	symLines[460] += "-y,-x,z+1/2;x-1/3,y+1/3,z+1/3;-y-1/3,x-y+1/3,z+1/3;-x+y-1/3,-x+1/3,z+1/3;x-y-1/3,-y+1/3,-z-1/6;-x-1/3,-x+y+1/3,-z-1/6;"
+	symLines[460] += "y-1/3,x+1/3,-z-1/6;-x-1/3,-y+1/3,-z+1/3;y-1/3,-x+y+1/3,-z+1/3;x-y-1/3,x+1/3,-z+1/3;-x+y-1/3,y+1/3,z-1/6;"
+	symLines[460] += "x-1/3,x-y+1/3,z-1/6;-y-1/3,-x+1/3,z-1/6;x+1/3,y-1/3,z-1/3;-y+1/3,x-y-1/3,z-1/3;-x+y+1/3,-x-1/3,z-1/3;"
+	symLines[460] += "x-y+1/3,-y-1/3,-z+1/6;-x+1/3,-x+y-1/3,-z+1/6;y+1/3,x-1/3,-z+1/6;-x+1/3,-y-1/3,-z-1/3;y+1/3,-x+y-1/3,-z-1/3;"
+	symLines[460] += "x-y+1/3,x-1/3,-z-1/3;-x+y+1/3,y-1/3,z+1/6;x+1/3,x-y-1/3,z+1/6;-y+1/3,-x-1/3,z+1/6"
+	symLines[461]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-x+1/2,-z+1/2;-x+1/2,-z+1/2,-y+1/2;-z+1/2,-y+1/2,-x+1/2;-x,-y,-z;-z,-x,-y;-y,-z,-x;"
+	symLines[461] += "y+1/2,x+1/2,z+1/2;x+1/2,z+1/2,y+1/2;z+1/2,y+1/2,x+1/2"
+	// Hexagonal SG[168,194]  SG_idNum 462-488
+	symLines[462]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z"
+	symLines[463]  = "x,y,z;x-y,x,z+1/6;-y,x-y,z+1/3;-x,-y,z+1/2;-x+y,-x,z-1/3;y,-x+y,z-1/6"
+	symLines[464]  = "x,y,z;x-y,x,z-1/6;-y,x-y,z-1/3;-x,-y,z+1/2;-x+y,-x,z+1/3;y,-x+y,z+1/6"
+	symLines[465]  = "x,y,z;x-y,x,z+1/3;-y,x-y,z-1/3;-x,-y,z;-x+y,-x,z+1/3;y,-x+y,z-1/3"
+	symLines[466]  = "x,y,z;x-y,x,z-1/3;-y,x-y,z+1/3;-x,-y,z;-x+y,-x,z-1/3;y,-x+y,z+1/3"
+	symLines[467]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2"
+	symLines[468]  = "x,y,z;-x+y,-x,-z;-y,x-y,z;x,y,-z;-x+y,-x,z;-y,x-y,-z"
+	symLines[469]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;-x,-y,-z;-x+y,-x,-z;y,-x+y,-z;x,y,-z;x-y,x,-z;-y,x-y,-z"
+	symLines[470]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2"
+	symLines[471]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z;-x+y,y,-z;x,x-y,-z"
+	symLines[472]  = "x,y,z;x-y,x,z+1/6;-y,x-y,z+1/3;-x,-y,z+1/2;-x+y,-x,z-1/3;y,-x+y,z-1/6;x-y,-y,-z;-x,-x+y,-z-1/3;y,x,-z+1/3;-y,-x,-z-1/6;"
+	symLines[472] += "-x+y,y,-z+1/2;x,x-y,-z+1/6"
+	symLines[473]  = "x,y,z;x-y,x,z-1/6;-y,x-y,z-1/3;-x,-y,z+1/2;-x+y,-x,z+1/3;y,-x+y,z+1/6;x-y,-y,-z;-x,-x+y,-z+1/3;y,x,-z-1/3;-y,-x,-z+1/6;"
+	symLines[473] += "-x+y,y,-z+1/2;x,x-y,-z-1/6"
+	symLines[474]  = "x,y,z;x-y,x,z+1/3;-y,x-y,z-1/3;-x,-y,z;-x+y,-x,z+1/3;y,-x+y,z-1/3;x-y,-y,-z;-x,-x+y,-z+1/3;y,x,-z-1/3;-y,-x,-z-1/3;"
+	symLines[474] += "-x+y,y,-z;x,x-y,-z+1/3"
+	symLines[475]  = "x,y,z;x-y,x,z-1/3;-y,x-y,z+1/3;-x,-y,z;-x+y,-x,z-1/3;y,-x+y,z+1/3;x-y,-y,-z;-x,-x+y,-z-1/3;y,x,-z+1/3;-y,-x,-z+1/3;"
+	symLines[475] += "-x+y,y,-z;x,x-y,-z-1/3"
+	symLines[476]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z+1/2;-x+y,y,-z+1/2;x,x-y,-z+1/2"
+	symLines[477]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z;x-y,-y,z;-x,-x+y,z"
+	symLines[478]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	symLines[479]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;y,x,z;x-y,-y,z;-x,-x+y,z"
+	symLines[480]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	symLines[481]  = "x,y,z;-x+y,-x,-z;-y,x-y,z;x,y,-z;-x+y,-x,z;-y,x-y,-z;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x+y,y,z;x,x-y,z;-y,-x,z"
+	symLines[482]  = "x,y,z;-x+y,-x,-z+1/2;-y,x-y,z;x,y,-z+1/2;-x+y,-x,z;-y,x-y,-z+1/2;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2"
+	symLines[483]  = "x,y,z;-x+y,-x,-z;-y,x-y,z;x,y,-z;-x+y,-x,z;-y,x-y,-z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;y,x,z;x-y,-y,z;-x,-x+y,z"
+	symLines[484]  = "x,y,z;-x+y,-x,-z+1/2;-y,x-y,z;x,y,-z+1/2;-x+y,-x,z;-y,x-y,-z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;y,x,z+1/2;x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	symLines[485]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z;-x+y,y,-z;x,x-y,-z;-x,-y,-z;"
+	symLines[485] += "-x+y,-x,-z;y,-x+y,-z;x,y,-z;x-y,x,-z;-y,x-y,-z;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z;x-y,-y,z;-x,-x+y,z"
+	symLines[486]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-y,-x,-z+1/2;-x+y,y,-z+1/2;"
+	symLines[486] += "x,x-y,-z+1/2;-x,-y,-z;-x+y,-x,-z;y,-x+y,-z;x,y,-z;x-y,x,-z;-y,x-y,-z;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;y,x,z+1/2;"
+	symLines[486] += "x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	symLines[487]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z+1/2;-x,-x+y,-z+1/2;y,x,-z+1/2;-y,-x,-z;-x+y,y,-z;"
+	symLines[487] += "x,x-y,-z;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2;-x+y,y,z+1/2;x,x-y,z+1/2;-y,-x,z+1/2;y,x,z;"
+	symLines[487] += "x-y,-y,z;-x,-x+y,z"
+	symLines[488]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z+1/2;-x+y,y,-z+1/2;"
+	symLines[488] += "x,x-y,-z+1/2;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z+1/2;"
+	symLines[488] += "x-y,-y,z+1/2;-x,-x+y,z+1/2"
+	// Cubic SG[195,230]  SG_idNum 489-530
+	symLines[489]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z"
+	symLines[490]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;z,x+1/2,y+1/2;"
+	symLines[490] += "y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;"
+	symLines[490] += "-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y,z+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;"
+	symLines[490] += "z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;"
+	symLines[490] += "-x+1/2,y,-z+1/2;x+1/2,y+1/2,z;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;"
+	symLines[490] += "-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z"
+	symLines[491]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,z+1/2;"
+	symLines[491] += "z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;"
+	symLines[491] += "-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2"
+	symLines[492]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;"
+	symLines[492] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
+	symLines[493]  = "x,y,z;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;-z+1/2,x,-y;y,-z,-x+1/2;-x,-y+1/2,z;x,-y,-z+1/2;"
+	symLines[493] += "-x+1/2,y,-z;x+1/2,y+1/2,z+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;"
+	symLines[493] += "-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2"
+	symLines[494]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;-z,-x,-y;-y,-z,-x;"
+	symLines[494] += "y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;x,y,-z;-x,y,z;x,-y,z"
+	symLines[495]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/2,-x+1/2,-y+1/2;"
+	symLines[495] += "-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;"
+	symLines[495] += "-y+1/2,z+1/2,x+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[496]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-z+1/2,x;z,-x+1/2,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x+1/2,y;-z+1/2,x,-y+1/2;y,-z+1/2,-x+1/2;"
+	symLines[496] += "-x+1/2,-y+1/2,z;x,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;-z,-x,-y;-y,-z,-x;y+1/2,z+1/2,-x;-z,x+1/2,y+1/2;y+1/2,-z,x+1/2;"
+	symLines[496] += "z+1/2,x+1/2,-y;z+1/2,-x,y+1/2;-y,z+1/2,x+1/2;x+1/2,y+1/2,-z;-x,y+1/2,z+1/2;x+1/2,-y,z+1/2"
+	symLines[497]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;-z,-x,-y;-y,-z,-x;"
+	symLines[497] += "y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;x,y,-z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;"
+	symLines[497] += "z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;"
+	symLines[497] += "-x,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;y,z+1/2,-x+1/2;-z,x+1/2,y+1/2;y,-z+1/2,x+1/2;"
+	symLines[497] += "z,x+1/2,-y+1/2;z,-x+1/2,y+1/2;-y,z+1/2,x+1/2;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;z+1/2,x,y+1/2;"
+	symLines[497] += "y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;"
+	symLines[497] += "-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y,-z+1/2;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;y+1/2,z,-x+1/2;"
+	symLines[497] += "-z+1/2,x,y+1/2;y+1/2,-z,x+1/2;z+1/2,x,-y+1/2;z+1/2,-x,y+1/2;-y+1/2,z,x+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;"
+	symLines[497] += "x+1/2,y+1/2,z;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;"
+	symLines[497] += "-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z;-z+1/2,-x+1/2,-y;"
+	symLines[497] += "-y+1/2,-z+1/2,-x;y+1/2,z+1/2,-x;-z+1/2,x+1/2,y;y+1/2,-z+1/2,x;z+1/2,x+1/2,-y;z+1/2,-x+1/2,y;-y+1/2,z+1/2,x;"
+	symLines[497] += "x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[498]  = "x,y,z;-x+1/4,-y+1/4,-z+1/4;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/4,-x+1/4,-y+1/4;"
+	symLines[498] += "-y+1/4,-z+1/4,-x+1/4;y+1/4,z+1/4,-x+1/4;-z+1/4,x+1/4,y+1/4;y+1/4,-z+1/4,x+1/4;z+1/4,x+1/4,-y+1/4;z+1/4,-x+1/4,y+1/4;"
+	symLines[498] += "-y+1/4,z+1/4,x+1/4;-x,-y,z;x,-y,-z;-x,y,-z;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;x+1/4,-y+1/4,z+1/4;x,y+1/2,z+1/2;"
+	symLines[498] += "-x+1/4,-y-1/4,-z-1/4;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;"
+	symLines[498] += "-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-z+1/4,-x-1/4,-y-1/4;-y+1/4,-z-1/4,-x-1/4;y+1/4,z-1/4,-x-1/4;-z+1/4,x-1/4,y-1/4;"
+	symLines[498] += "y+1/4,-z-1/4,x-1/4;z+1/4,x-1/4,-y-1/4;z+1/4,-x-1/4,y-1/4;-y+1/4,z-1/4,x-1/4;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;"
+	symLines[498] += "-x,y+1/2,-z+1/2;x+1/4,y-1/4,-z-1/4;-x+1/4,y-1/4,z-1/4;x+1/4,-y-1/4,z-1/4;x+1/2,y,z+1/2;-x-1/4,-y+1/4,-z-1/4;"
+	symLines[498] += "z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;"
+	symLines[498] += "y+1/2,-z,-x+1/2;-z-1/4,-x+1/4,-y-1/4;-y-1/4,-z+1/4,-x-1/4;y-1/4,z+1/4,-x-1/4;-z-1/4,x+1/4,y-1/4;y-1/4,-z+1/4,x-1/4;"
+	symLines[498] += "z-1/4,x+1/4,-y-1/4;z-1/4,-x+1/4,y-1/4;-y-1/4,z+1/4,x-1/4;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;"
+	symLines[498] += "x-1/4,y+1/4,-z-1/4;-x-1/4,y+1/4,z-1/4;x-1/4,-y+1/4,z-1/4;x+1/2,y+1/2,z;-x-1/4,-y-1/4,-z+1/4;z+1/2,x+1/2,y;y+1/2,z+1/2,x;"
+	symLines[498] += "-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-z-1/4,-x-1/4,-y+1/4;"
+	symLines[498] += "-y-1/4,-z-1/4,-x+1/4;y-1/4,z-1/4,-x+1/4;-z-1/4,x-1/4,y+1/4;y-1/4,-z-1/4,x+1/4;z-1/4,x-1/4,-y+1/4;z-1/4,-x-1/4,y+1/4;"
+	symLines[498] += "-y-1/4,z-1/4,x+1/4;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x-1/4,y-1/4,-z+1/4;-x-1/4,y-1/4,z+1/4;x-1/4,-y-1/4,z+1/4"
+	symLines[499]  = "x,y,z;z,x,y;y,z,x;-y+1/4,-z+1/4,x;z,-x+1/4,-y+1/4;-y+1/4,z,-x+1/4;-z+1/4,-x+1/4,y;-z+1/4,x,-y+1/4;y,-z+1/4,-x+1/4;"
+	symLines[499] += "-x+1/4,-y+1/4,z;x,-y+1/4,-z+1/4;-x+1/4,y,-z+1/4;-x,-y,-z;-z,-x,-y;-y,-z,-x;y-1/4,z-1/4,-x;-z,x-1/4,y-1/4;y-1/4,-z,x-1/4;"
+	symLines[499] += "z-1/4,x-1/4,-y;z-1/4,-x,y-1/4;-y,z-1/4,x-1/4;x-1/4,y-1/4,-z;-x,y-1/4,z-1/4;x-1/4,-y,z-1/4;x,y+1/2,z+1/2;z,x+1/2,y+1/2;"
+	symLines[499] += "y,z+1/2,x+1/2;-y+1/4,-z-1/4,x+1/2;z,-x-1/4,-y-1/4;-y+1/4,z+1/2,-x-1/4;-z+1/4,-x-1/4,y+1/2;-z+1/4,x+1/2,-y-1/4;"
+	symLines[499] += "y,-z-1/4,-x-1/4;-x+1/4,-y-1/4,z+1/2;x,-y-1/4,-z-1/4;-x+1/4,y+1/2,-z-1/4;-x,-y+1/2,-z+1/2;-z,-x+1/2,-y+1/2;"
+	symLines[499] += "-y,-z+1/2,-x+1/2;y-1/4,z+1/4,-x+1/2;-z,x+1/4,y+1/4;y-1/4,-z+1/2,x+1/4;z-1/4,x+1/4,-y+1/2;z-1/4,-x+1/2,y+1/4;"
+	symLines[499] += "-y,z+1/4,x+1/4;x-1/4,y+1/4,-z+1/2;-x,y+1/4,z+1/4;x-1/4,-y+1/2,z+1/4;x+1/2,y,z+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;"
+	symLines[499] += "-y-1/4,-z+1/4,x+1/2;z+1/2,-x+1/4,-y-1/4;-y-1/4,z,-x-1/4;-z-1/4,-x+1/4,y+1/2;-z-1/4,x,-y-1/4;y+1/2,-z+1/4,-x-1/4;"
+	symLines[499] += "-x-1/4,-y+1/4,z+1/2;x+1/2,-y+1/4,-z-1/4;-x-1/4,y,-z-1/4;-x+1/2,-y,-z+1/2;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;"
+	symLines[499] += "y+1/4,z-1/4,-x+1/2;-z+1/2,x-1/4,y+1/4;y+1/4,-z,x+1/4;z+1/4,x-1/4,-y+1/2;z+1/4,-x,y+1/4;-y+1/2,z-1/4,x+1/4;"
+	symLines[499] += "x+1/4,y-1/4,-z+1/2;-x+1/2,y-1/4,z+1/4;x+1/4,-y,z+1/4;x+1/2,y+1/2,z;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y-1/4,-z-1/4,x;"
+	symLines[499] += "z+1/2,-x-1/4,-y+1/4;-y-1/4,z+1/2,-x+1/4;-z-1/4,-x-1/4,y;-z-1/4,x+1/2,-y+1/4;y+1/2,-z-1/4,-x+1/4;-x-1/4,-y-1/4,z;"
+	symLines[499] += "x+1/2,-y-1/4,-z+1/4;-x-1/4,y+1/2,-z+1/4;-x+1/2,-y+1/2,-z;-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/4,z+1/4,-x;"
+	symLines[499] += "-z+1/2,x+1/4,y-1/4;y+1/4,-z+1/2,x-1/4;z+1/4,x+1/4,-y;z+1/4,-x+1/2,y-1/4;-y+1/2,z+1/4,x-1/4;x+1/4,y+1/4,-z;"
+	symLines[499] += "-x+1/2,y+1/4,z-1/4;x+1/4,-y+1/2,z-1/4"
+	symLines[500]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;-z,-x,-y;-y,-z,-x;"
+	symLines[500] += "y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;x,y,-z;-x,y,z;x,-y,z;x+1/2,y+1/2,z+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;"
+	symLines[500] += "-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;"
+	symLines[500] += "-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;-z+1/2,-x+1/2,-y+1/2;"
+	symLines[500] += "-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;"
+	symLines[500] += "-y+1/2,z+1/2,x+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2"
+	symLines[501]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;"
+	symLines[501] += "-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;-x,-y,-z;-z,-x,-y;-y,-z,-x;y+1/2,z,-x+1/2;-z+1/2,x+1/2,y;y,-z+1/2,x+1/2;"
+	symLines[501] += "z+1/2,x,-y+1/2;z,-x+1/2,y+1/2;-y+1/2,z+1/2,x;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[502]  = "x,y,z;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;-z+1/2,x,-y;y,-z,-x+1/2;-x,-y+1/2,z;x,-y,-z+1/2;"
+	symLines[502] += "-x+1/2,y,-z;-x,-y,-z;-z,-x,-y;-y,-z,-x;y,z+1/2,-x;-z,x,y+1/2;y+1/2,-z,x;z,x+1/2,-y;z+1/2,-x,y;-y,z,x+1/2;x,y+1/2,-z;"
+	symLines[502] += "-x,y,z+1/2;x+1/2,-y,z;x+1/2,y+1/2,z+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;"
+	symLines[502] += "-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;-x+1/2,-y,z+1/2;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;"
+	symLines[502] += "-x+1/2,-y+1/2,-z+1/2;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z,-x+1/2;-z+1/2,x+1/2,y;y,-z+1/2,x+1/2;"
+	symLines[502] += "z+1/2,x,-y+1/2;z,-x+1/2,y+1/2;-y+1/2,z+1/2,x;x+1/2,y,-z+1/2;-x+1/2,y+1/2,z;x,-y+1/2,z+1/2"
+	symLines[503]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;"
+	symLines[503] += "-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x"
+	symLines[504]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x,-y,-z;x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;"
+	symLines[504] += "-x,y,-z;-z+1/2,y+1/2,x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;y+1/2,x+1/2,-z+1/2;"
+	symLines[504] += "-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2"
+	symLines[505]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;"
+	symLines[505] += "-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;x,y+1/2,z+1/2;-y,x+1/2,z+1/2;-x,-y+1/2,z+1/2;"
+	symLines[505] += "y,-x+1/2,z+1/2;x,-z+1/2,y+1/2;x,-y+1/2,-z+1/2;x,z+1/2,-y+1/2;z,y+1/2,-x+1/2;-x,y+1/2,-z+1/2;-z,y+1/2,x+1/2;z,x+1/2,y+1/2;"
+	symLines[505] += "y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;"
+	symLines[505] += "y,x+1/2,-z+1/2;-y,-x+1/2,-z+1/2;-x,z+1/2,y+1/2;-x,-z+1/2,-y+1/2;z,-y+1/2,x+1/2;-z,-y+1/2,-x+1/2;x+1/2,y,z+1/2;"
+	symLines[505] += "-y+1/2,x,z+1/2;-x+1/2,-y,z+1/2;y+1/2,-x,z+1/2;x+1/2,-z,y+1/2;x+1/2,-y,-z+1/2;x+1/2,z,-y+1/2;z+1/2,y,-x+1/2;"
+	symLines[505] += "-x+1/2,y,-z+1/2;-z+1/2,y,x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;"
+	symLines[505] += "-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;y+1/2,x,-z+1/2;-y+1/2,-x,-z+1/2;-x+1/2,z,y+1/2;-x+1/2,-z,-y+1/2;"
+	symLines[505] += "z+1/2,-y,x+1/2;-z+1/2,-y,-x+1/2;x+1/2,y+1/2,z;-y+1/2,x+1/2,z;-x+1/2,-y+1/2,z;y+1/2,-x+1/2,z;x+1/2,-z+1/2,y;"
+	symLines[505] += "x+1/2,-y+1/2,-z;x+1/2,z+1/2,-y;z+1/2,y+1/2,-x;-x+1/2,y+1/2,-z;-z+1/2,y+1/2,x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;"
+	symLines[505] += "z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;"
+	symLines[505] += "-x+1/2,z+1/2,y;-x+1/2,-z+1/2,-y;z+1/2,-y+1/2,x;-z+1/2,-y+1/2,-x"
+	symLines[506]  = "x,y,z;-y+1/4,x+1/4,z+1/4;-x,-y,z;y+1/4,-x+1/4,z+1/4;x+1/4,-z+1/4,y+1/4;x,-y,-z;x+1/4,z+1/4,-y+1/4;z+1/4,y+1/4,-x+1/4;"
+	symLines[506] += "-x,y,-z;-z+1/4,y+1/4,x+1/4;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;y+1/4,x+1/4,-z+1/4;"
+	symLines[506] += "-y+1/4,-x+1/4,-z+1/4;-x+1/4,z+1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;z+1/4,-y+1/4,x+1/4;-z+1/4,-y+1/4,-x+1/4;x,y+1/2,z+1/2;"
+	symLines[506] += "-y+1/4,x-1/4,z-1/4;-x,-y+1/2,z+1/2;y+1/4,-x-1/4,z-1/4;x+1/4,-z-1/4,y-1/4;x,-y+1/2,-z+1/2;x+1/4,z-1/4,-y-1/4;"
+	symLines[506] += "z+1/4,y-1/4,-x-1/4;-x,y+1/2,-z+1/2;-z+1/4,y-1/4,x-1/4;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;"
+	symLines[506] += "-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;y+1/4,x-1/4,-z-1/4;-y+1/4,-x-1/4,-z-1/4;"
+	symLines[506] += "-x+1/4,z-1/4,y-1/4;-x+1/4,-z-1/4,-y-1/4;z+1/4,-y-1/4,x-1/4;-z+1/4,-y-1/4,-x-1/4;x+1/2,y,z+1/2;-y-1/4,x+1/4,z-1/4;"
+	symLines[506] += "-x+1/2,-y,z+1/2;y-1/4,-x+1/4,z-1/4;x-1/4,-z+1/4,y-1/4;x+1/2,-y,-z+1/2;x-1/4,z+1/4,-y-1/4;z-1/4,y+1/4,-x-1/4;"
+	symLines[506] += "-x+1/2,y,-z+1/2;-z-1/4,y+1/4,x-1/4;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;"
+	symLines[506] += "-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;y-1/4,x+1/4,-z-1/4;-y-1/4,-x+1/4,-z-1/4;-x-1/4,z+1/4,y-1/4;"
+	symLines[506] += "-x-1/4,-z+1/4,-y-1/4;z-1/4,-y+1/4,x-1/4;-z-1/4,-y+1/4,-x-1/4;x+1/2,y+1/2,z;-y-1/4,x-1/4,z+1/4;-x+1/2,-y+1/2,z;"
+	symLines[506] += "y-1/4,-x-1/4,z+1/4;x-1/4,-z-1/4,y+1/4;x+1/2,-y+1/2,-z;x-1/4,z-1/4,-y+1/4;z-1/4,y-1/4,-x+1/4;-x+1/2,y+1/2,-z;"
+	symLines[506] += "-z-1/4,y-1/4,x+1/4;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;"
+	symLines[506] += "-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;y-1/4,x-1/4,-z+1/4;-y-1/4,-x-1/4,-z+1/4;-x-1/4,z-1/4,y+1/4;-x-1/4,-z-1/4,-y+1/4;"
+	symLines[506] += "z-1/4,-y-1/4,x+1/4;-z-1/4,-y-1/4,-x+1/4"
+	symLines[507]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;"
+	symLines[507] += "-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;"
+	symLines[507] += "y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x+1/2,-y+1/2,-z+1/2;x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;-x+1/2,y+1/2,-z+1/2;"
+	symLines[507] += "-z+1/2,y+1/2,x+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;"
+	symLines[507] += "-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;"
+	symLines[507] += "-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2"
+	symLines[508]  = "x,y,z;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x-1/4,z+1/4;x-1/4,-z-1/4,y+1/4;x+1/2,-y+1/2,-z;x+1/4,z-1/4,-y-1/4;"
+	symLines[508] += "z+1/4,y-1/4,-x-1/4;-x,y+1/2,-z+1/2;-z-1/4,y+1/4,x-1/4;z,x,y;y,z,x;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;"
+	symLines[508] += "-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;y+1/4,x-1/4,-z-1/4;-y+1/4,-x+1/4,-z+1/4;-x-1/4,z+1/4,y-1/4;"
+	symLines[508] += "-x+1/4,-z+1/4,-y+1/4;z-1/4,-y-1/4,x+1/4;-z+1/4,-y+1/4,-x+1/4"
+	symLines[509]  = "x,y,z;-y+1/4,x-1/4,z+1/4;-x+1/2,-y,z+1/2;y+1/4,-x+1/4,z-1/4;x+1/4,-z+1/4,y-1/4;x+1/2,-y+1/2,-z;x-1/4,z+1/4,-y+1/4;"
+	symLines[509] += "z-1/4,y+1/4,-x+1/4;-x,y+1/2,-z+1/2;-z+1/4,y-1/4,x+1/4;z,x,y;y,z,x;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;"
+	symLines[509] += "-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;y-1/4,x+1/4,-z+1/4;-y-1/4,-x-1/4,-z-1/4;-x+1/4,z-1/4,y+1/4;"
+	symLines[509] += "-x-1/4,-z-1/4,-y-1/4;z+1/4,-y+1/4,x-1/4;-z-1/4,-y-1/4,-x-1/4"
+	symLines[510]  = "x,y,z;-y+1/4,x-1/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z-1/4;x+1/4,-z+1/4,y-1/4;x,-y,-z+1/2;x-1/4,z+1/4,-y+1/4;"
+	symLines[510] += "z-1/4,y+1/4,-x+1/4;-x+1/2,y,-z;-z+1/4,y-1/4,x+1/4;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;"
+	symLines[510] += "-z+1/2,x,-y;y,-z,-x+1/2;y-1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;-x+1/4,z-1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;"
+	symLines[510] += "z+1/4,-y+1/4,x-1/4;-z+1/4,-y+1/4,-x+1/4;x+1/2,y+1/2,z+1/2;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x-1/4,z+1/4;"
+	symLines[510] += "x-1/4,-z-1/4,y+1/4;x+1/2,-y+1/2,-z;x+1/4,z-1/4,-y-1/4;z+1/4,y-1/4,-x-1/4;-x,y+1/2,-z+1/2;-z-1/4,y+1/4,x-1/4;"
+	symLines[510] += "z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;"
+	symLines[510] += "y+1/2,-z+1/2,-x;y+1/4,x-1/4,-z-1/4;-y-1/4,-x-1/4,-z-1/4;-x-1/4,z+1/4,y-1/4;-x-1/4,-z-1/4,-y-1/4;z-1/4,-y-1/4,x+1/4;-z-1/4,-y-1/4,-x-1/4"
+	symLines[511]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;-x,z,-y;x,-y,-z;-x,-z,y;-z,-y,x;-x,y,-z;z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
+	symLines[511] += "-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x"
+	symLines[512]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;-x,z,-y;x,-y,-z;-x,-z,y;-z,-y,x;-x,y,-z;z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
+	symLines[512] += "-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x,y+1/2,z+1/2;y,-x+1/2,-z+1/2;-x,-y+1/2,z+1/2;"
+	symLines[512] += "-y,x+1/2,-z+1/2;-x,z+1/2,-y+1/2;x,-y+1/2,-z+1/2;-x,-z+1/2,y+1/2;-z,-y+1/2,x+1/2;-x,y+1/2,-z+1/2;z,-y+1/2,-x+1/2;"
+	symLines[512] += "z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;"
+	symLines[512] += "y,-z+1/2,-x+1/2;-y,-x+1/2,z+1/2;y,x+1/2,z+1/2;x,-z+1/2,-y+1/2;x,z+1/2,y+1/2;-z,y+1/2,-x+1/2;z,y+1/2,x+1/2;x+1/2,y,z+1/2;"
+	symLines[512] += "y+1/2,-x,-z+1/2;-x+1/2,-y,z+1/2;-y+1/2,x,-z+1/2;-x+1/2,z,-y+1/2;x+1/2,-y,-z+1/2;-x+1/2,-z,y+1/2;-z+1/2,-y,x+1/2;"
+	symLines[512] += "-x+1/2,y,-z+1/2;z+1/2,-y,-x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;"
+	symLines[512] += "-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-y+1/2,-x,z+1/2;y+1/2,x,z+1/2;x+1/2,-z,-y+1/2;x+1/2,z,y+1/2;"
+	symLines[512] += "-z+1/2,y,-x+1/2;z+1/2,y,x+1/2;x+1/2,y+1/2,z;y+1/2,-x+1/2,-z;-x+1/2,-y+1/2,z;-y+1/2,x+1/2,-z;-x+1/2,z+1/2,-y;"
+	symLines[512] += "x+1/2,-y+1/2,-z;-x+1/2,-z+1/2,y;-z+1/2,-y+1/2,x;-x+1/2,y+1/2,-z;z+1/2,-y+1/2,-x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;"
+	symLines[512] += "-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-y+1/2,-x+1/2,z;"
+	symLines[512] += "y+1/2,x+1/2,z;x+1/2,-z+1/2,-y;x+1/2,z+1/2,y;-z+1/2,y+1/2,-x;z+1/2,y+1/2,x"
+	symLines[513]  = "x,y,z;y,-x,-z;-x,-y,z;-y,x,-z;-x,z,-y;x,-y,-z;-x,-z,y;-z,-y,x;-x,y,-z;z,-y,-x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;"
+	symLines[513] += "-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x+1/2,y+1/2,z+1/2;y+1/2,-x+1/2,-z+1/2;"
+	symLines[513] += "-x+1/2,-y+1/2,z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;x+1/2,-y+1/2,-z+1/2;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;"
+	symLines[513] += "-x+1/2,y+1/2,-z+1/2;z+1/2,-y+1/2,-x+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;"
+	symLines[513] += "-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;"
+	symLines[513] += "x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[514]  = "x,y,z;y+1/2,-x+1/2,-z+1/2;-x,-y,z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;x,-y,-z;-x+1/2,-z+1/2,y+1/2;"
+	symLines[514] += "-z+1/2,-y+1/2,x+1/2;-x,y,-z;z+1/2,-y+1/2,-x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;"
+	symLines[514] += "-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[515]  = "x,y,z;y,-x,-z+1/2;-x,-y,z;-y,x,-z+1/2;-x,z,-y+1/2;x,-y,-z;-x,-z,y+1/2;-z,-y,x+1/2;-x,y,-z;z,-y,-x+1/2;z,x,y;y,z,x;"
+	symLines[515] += "-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-y,-x,z+1/2;y,x,z+1/2;x,-z,-y+1/2;x,z,y+1/2;-z,y,-x+1/2;z,y,x+1/2;"
+	symLines[515] += "x,y+1/2,z+1/2;y,-x+1/2,-z;-x,-y+1/2,z+1/2;-y,x+1/2,-z;-x,z+1/2,-y;x,-y+1/2,-z+1/2;-x,-z+1/2,y;-z,-y+1/2,x;"
+	symLines[515] += "-x,y+1/2,-z+1/2;z,-y+1/2,-x;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;"
+	symLines[515] += "-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-y,-x+1/2,z;y,x+1/2,z;x,-z+1/2,-y;x,z+1/2,y;-z,y+1/2,-x;z,y+1/2,x;x+1/2,y,z+1/2;"
+	symLines[515] += "y+1/2,-x,-z;-x+1/2,-y,z+1/2;-y+1/2,x,-z;-x+1/2,z,-y;x+1/2,-y,-z+1/2;-x+1/2,-z,y;-z+1/2,-y,x;-x+1/2,y,-z+1/2;z+1/2,-y,-x;"
+	symLines[515] += "z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;"
+	symLines[515] += "y+1/2,-z,-x+1/2;-y+1/2,-x,z;y+1/2,x,z;x+1/2,-z,-y;x+1/2,z,y;-z+1/2,y,-x;z+1/2,y,x;x+1/2,y+1/2,z;y+1/2,-x+1/2,-z+1/2;"
+	symLines[515] += "-x+1/2,-y+1/2,z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;x+1/2,-y+1/2,-z;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;"
+	symLines[515] += "-x+1/2,y+1/2,-z;z+1/2,-y+1/2,-x+1/2;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;"
+	symLines[515] += "-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;"
+	symLines[515] += "x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[516]  = "x,y,z;y+1/4,-x-1/4,-z+1/4;-x,-y+1/2,z;-y+1/4,x+1/4,-z-1/4;-x+1/4,z+1/4,-y-1/4;x,-y,-z+1/2;-x-1/4,-z+1/4,y+1/4;"
+	symLines[516] += "-z-1/4,-y+1/4,x+1/4;-x+1/2,y,-z;z+1/4,-y-1/4,-x+1/4;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;"
+	symLines[516] += "-z+1/2,x,-y;y,-z,-x+1/2;-y-1/4,-x+1/4,z+1/4;y+1/4,x+1/4,z+1/4;x+1/4,-z-1/4,-y+1/4;x+1/4,z+1/4,y+1/4;-z+1/4,y+1/4,-x-1/4;"
+	symLines[516] += "z+1/4,y+1/4,x+1/4;x+1/2,y+1/2,z+1/2;y-1/4,-x+1/4,-z-1/4;-x+1/2,-y,z+1/2;-y-1/4,x-1/4,-z+1/4;-x-1/4,z-1/4,-y+1/4;"
+	symLines[516] += "x+1/2,-y+1/2,-z;-x+1/4,-z-1/4,y-1/4;-z+1/4,-y-1/4,x-1/4;-x,y+1/2,-z+1/2;z-1/4,-y+1/4,-x-1/4;z+1/2,x+1/2,y+1/2;"
+	symLines[516] += "y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;"
+	symLines[516] += "-y+1/4,-x-1/4,z-1/4;y-1/4,x-1/4,z-1/4;x-1/4,-z+1/4,-y-1/4;x-1/4,z-1/4,y-1/4;-z-1/4,y-1/4,-x+1/4;z-1/4,y-1/4,x-1/4"
+	symLines[517]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;"
+	symLines[517] += "-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,z,-y;-x,y,z;-x,-z,y;"
+	symLines[517] += "-z,-y,x;x,-y,z;z,-y,-x;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x"
+	symLines[518]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;y+1/2,-x+1/2,-z+1/2;"
+	symLines[518] += "-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;z+1/2,-y+1/2,-x+1/2;z,x,y;y,z,x;-y,-z,x;"
+	symLines[518] += "z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;"
+	symLines[518] += "y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;"
+	symLines[518] += "-z,-y,-x;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z+1/2;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;"
+	symLines[518] += "x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[519]  = "x,y,z;-y+1/2,x,z;-x+1/2,-y+1/2,z;y,-x+1/2,z;x,-z+1/2,y;x,-y+1/2,-z+1/2;x,z,-y+1/2;z,y,-x+1/2;-x+1/2,y,-z+1/2;-z+1/2,y,x;"
+	symLines[519] += "z,x,y;y,z,x;-y+1/2,-z+1/2,x;z,-x+1/2,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x+1/2,y;-z+1/2,x,-y+1/2;y,-z+1/2,-x+1/2;y,x,-z+1/2;"
+	symLines[519] += "-y+1/2,-x+1/2,-z+1/2;-x+1/2,z,y;-x+1/2,-z+1/2,-y+1/2;z,-y+1/2,x;-z+1/2,-y+1/2,-x+1/2;-x,-y,-z;y+1/2,-x,-z;x+1/2,y+1/2,-z;"
+	symLines[519] += "-y,x+1/2,-z;-x,z+1/2,-y;-x,y+1/2,z+1/2;-x,-z,y+1/2;-z,-y,x+1/2;x+1/2,-y,z+1/2;z+1/2,-y,-x;-z,-x,-y;-y,-z,-x;"
+	symLines[519] += "y+1/2,z+1/2,-x;-z,x+1/2,y+1/2;y+1/2,-z,x+1/2;z+1/2,x+1/2,-y;z+1/2,-x,y+1/2;-y,z+1/2,x+1/2;-y,-x,z+1/2;y+1/2,x+1/2,z+1/2;"
+	symLines[519] += "x+1/2,-z,-y;x+1/2,z+1/2,y+1/2;-z,y+1/2,-x;z+1/2,y+1/2,x+1/2"
+	symLines[520]  = "x,y,z;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x,-y,-z;x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;"
+	symLines[520] += "-x,y,-z;-z+1/2,y+1/2,x+1/2;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;y+1/2,x+1/2,-z+1/2;"
+	symLines[520] += "-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2;-x,-y,-z;"
+	symLines[520] += "y+1/2,-x+1/2,-z+1/2;x,y,-z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x,y,z;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;x,-y,z;"
+	symLines[520] += "z+1/2,-y+1/2,-x+1/2;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;"
+	symLines[520] += "x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[521]  = "x,y,z;-x+1/2,-y+1/2,-z+1/2;-y+1/2,x+1/2,z+1/2;-x,-y,z;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x,-y,-z;x+1/2,z+1/2,-y+1/2;"
+	symLines[521] += "z+1/2,y+1/2,-x+1/2;-x,y,-z;-z+1/2,y+1/2,x+1/2;y,-x,-z;-y,x,-z;-x,z,-y;-x,-z,y;-z,-y,x;z,-y,-x;z,x,y;y,z,x;-y,-z,x;"
+	symLines[521] += "z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;"
+	symLines[521] += "y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;"
+	symLines[521] += "-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z+1/2;"
+	symLines[521] += "x+1/2,-y+1/2,z+1/2;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x"
+	symLines[522]  = "x,y,z;-y,x+1/2,z+1/2;-x+1/2,-y+1/2,z;y+1/2,-x,z+1/2;x+1/2,-z,y+1/2;x,-y+1/2,-z+1/2;x+1/2,z+1/2,-y;z+1/2,y+1/2,-x;"
+	symLines[522] += "-x+1/2,y,-z+1/2;-z,y+1/2,x+1/2;z,x,y;y,z,x;-y+1/2,-z+1/2,x;z,-x+1/2,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x+1/2,y;"
+	symLines[522] += "-z+1/2,x,-y+1/2;y,-z+1/2,-x+1/2;y+1/2,x+1/2,-z;-y,-x,-z;-x,z+1/2,y+1/2;-x,-z,-y;z+1/2,-y,x+1/2;-z,-y,-x;-x,-y,-z;"
+	symLines[522] += "y,-x+1/2,-z+1/2;x+1/2,y+1/2,-z;-y+1/2,x,-z+1/2;-x+1/2,z,-y+1/2;-x,y+1/2,z+1/2;-x+1/2,-z+1/2,y;-z+1/2,-y+1/2,x;"
+	symLines[522] += "x+1/2,-y,z+1/2;z,-y+1/2,-x+1/2;-z,-x,-y;-y,-z,-x;y+1/2,z+1/2,-x;-z,x+1/2,y+1/2;y+1/2,-z,x+1/2;z+1/2,x+1/2,-y;"
+	symLines[522] += "z+1/2,-x,y+1/2;-y,z+1/2,x+1/2;-y+1/2,-x+1/2,z;y,x,z;x,-z+1/2,-y+1/2;x,z,y;-z+1/2,y,-x+1/2;z,y,x"
+	symLines[523]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;"
+	symLines[523] += "-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,z,-y;-x,y,z;-x,-z,y;"
+	symLines[523] += "-z,-y,x;x,-y,z;z,-y,-x;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;"
+	symLines[523] += "z,y,x;x,y+1/2,z+1/2;-y,x+1/2,z+1/2;-x,-y+1/2,z+1/2;y,-x+1/2,z+1/2;x,-z+1/2,y+1/2;x,-y+1/2,-z+1/2;x,z+1/2,-y+1/2;"
+	symLines[523] += "z,y+1/2,-x+1/2;-x,y+1/2,-z+1/2;-z,y+1/2,x+1/2;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;"
+	symLines[523] += "-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;y,x+1/2,-z+1/2;-y,-x+1/2,-z+1/2;-x,z+1/2,y+1/2;"
+	symLines[523] += "-x,-z+1/2,-y+1/2;z,-y+1/2,x+1/2;-z,-y+1/2,-x+1/2;-x,-y+1/2,-z+1/2;y,-x+1/2,-z+1/2;x,y+1/2,-z+1/2;-y,x+1/2,-z+1/2;"
+	symLines[523] += "-x,z+1/2,-y+1/2;-x,y+1/2,z+1/2;-x,-z+1/2,y+1/2;-z,-y+1/2,x+1/2;x,-y+1/2,z+1/2;z,-y+1/2,-x+1/2;-z,-x+1/2,-y+1/2;"
+	symLines[523] += "-y,-z+1/2,-x+1/2;y,z+1/2,-x+1/2;-z,x+1/2,y+1/2;y,-z+1/2,x+1/2;z,x+1/2,-y+1/2;z,-x+1/2,y+1/2;-y,z+1/2,x+1/2;"
+	symLines[523] += "-y,-x+1/2,z+1/2;y,x+1/2,z+1/2;x,-z+1/2,-y+1/2;x,z+1/2,y+1/2;-z,y+1/2,-x+1/2;z,y+1/2,x+1/2;x+1/2,y,z+1/2;-y+1/2,x,z+1/2;"
+	symLines[523] += "-x+1/2,-y,z+1/2;y+1/2,-x,z+1/2;x+1/2,-z,y+1/2;x+1/2,-y,-z+1/2;x+1/2,z,-y+1/2;z+1/2,y,-x+1/2;-x+1/2,y,-z+1/2;"
+	symLines[523] += "-z+1/2,y,x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;"
+	symLines[523] += "-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;y+1/2,x,-z+1/2;-y+1/2,-x,-z+1/2;-x+1/2,z,y+1/2;-x+1/2,-z,-y+1/2;z+1/2,-y,x+1/2;"
+	symLines[523] += "-z+1/2,-y,-x+1/2;-x+1/2,-y,-z+1/2;y+1/2,-x,-z+1/2;x+1/2,y,-z+1/2;-y+1/2,x,-z+1/2;-x+1/2,z,-y+1/2;-x+1/2,y,z+1/2;"
+	symLines[523] += "-x+1/2,-z,y+1/2;-z+1/2,-y,x+1/2;x+1/2,-y,z+1/2;z+1/2,-y,-x+1/2;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;y+1/2,z,-x+1/2;"
+	symLines[523] += "-z+1/2,x,y+1/2;y+1/2,-z,x+1/2;z+1/2,x,-y+1/2;z+1/2,-x,y+1/2;-y+1/2,z,x+1/2;-y+1/2,-x,z+1/2;y+1/2,x,z+1/2;x+1/2,-z,-y+1/2;"
+	symLines[523] += "x+1/2,z,y+1/2;-z+1/2,y,-x+1/2;z+1/2,y,x+1/2;x+1/2,y+1/2,z;-y+1/2,x+1/2,z;-x+1/2,-y+1/2,z;y+1/2,-x+1/2,z;x+1/2,-z+1/2,y;"
+	symLines[523] += "x+1/2,-y+1/2,-z;x+1/2,z+1/2,-y;z+1/2,y+1/2,-x;-x+1/2,y+1/2,-z;-z+1/2,y+1/2,x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;"
+	symLines[523] += "z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;y+1/2,x+1/2,-z;-y+1/2,-x+1/2,-z;"
+	symLines[523] += "-x+1/2,z+1/2,y;-x+1/2,-z+1/2,-y;z+1/2,-y+1/2,x;-z+1/2,-y+1/2,-x;-x+1/2,-y+1/2,-z;y+1/2,-x+1/2,-z;x+1/2,y+1/2,-z;"
+	symLines[523] += "-y+1/2,x+1/2,-z;-x+1/2,z+1/2,-y;-x+1/2,y+1/2,z;-x+1/2,-z+1/2,y;-z+1/2,-y+1/2,x;x+1/2,-y+1/2,z;z+1/2,-y+1/2,-x;"
+	symLines[523] += "-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/2,z+1/2,-x;-z+1/2,x+1/2,y;y+1/2,-z+1/2,x;z+1/2,x+1/2,-y;z+1/2,-x+1/2,y;"
+	symLines[523] += "-y+1/2,z+1/2,x;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z;x+1/2,-z+1/2,-y;x+1/2,z+1/2,y;-z+1/2,y+1/2,-x;z+1/2,y+1/2,x"
+	symLines[524]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2;x,-z,y+1/2;x,-y,-z;x,z,-y+1/2;z,y,-x+1/2;-x,y,-z;-z,y,x+1/2;z,x,y;y,z,x;-y,-z,x;"
+	symLines[524] += "z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;y,x,-z+1/2;-y,-x,-z+1/2;-x,z,y+1/2;-x,-z,-y+1/2;z,-y,x+1/2;-z,-y,-x+1/2;-x,-y,-z;"
+	symLines[524] += "y,-x,-z+1/2;x,y,-z;-y,x,-z+1/2;-x,z,-y+1/2;-x,y,z;-x,-z,y+1/2;-z,-y,x+1/2;x,-y,z;z,-y,-x+1/2;-z,-x,-y;-y,-z,-x;y,z,-x;"
+	symLines[524] += "-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;-y,-x,z+1/2;y,x,z+1/2;x,-z,-y+1/2;x,z,y+1/2;-z,y,-x+1/2;z,y,x+1/2;x,y+1/2,z+1/2;"
+	symLines[524] += "-y,x+1/2,z;-x,-y+1/2,z+1/2;y,-x+1/2,z;x,-z+1/2,y;x,-y+1/2,-z+1/2;x,z+1/2,-y;z,y+1/2,-x;-x,y+1/2,-z+1/2;-z,y+1/2,x;"
+	symLines[524] += "z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;"
+	symLines[524] += "y,-z+1/2,-x+1/2;y,x+1/2,-z;-y,-x+1/2,-z;-x,z+1/2,y;-x,-z+1/2,-y;z,-y+1/2,x;-z,-y+1/2,-x;-x,-y+1/2,-z+1/2;y,-x+1/2,-z;"
+	symLines[524] += "x,y+1/2,-z+1/2;-y,x+1/2,-z;-x,z+1/2,-y;-x,y+1/2,z+1/2;-x,-z+1/2,y;-z,-y+1/2,x;x,-y+1/2,z+1/2;z,-y+1/2,-x;"
+	symLines[524] += "-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;y,z+1/2,-x+1/2;-z,x+1/2,y+1/2;y,-z+1/2,x+1/2;z,x+1/2,-y+1/2;z,-x+1/2,y+1/2;"
+	symLines[524] += "-y,z+1/2,x+1/2;-y,-x+1/2,z;y,x+1/2,z;x,-z+1/2,-y;x,z+1/2,y;-z,y+1/2,-x;z,y+1/2,x;x+1/2,y,z+1/2;-y+1/2,x,z;"
+	symLines[524] += "-x+1/2,-y,z+1/2;y+1/2,-x,z;x+1/2,-z,y;x+1/2,-y,-z+1/2;x+1/2,z,-y;z+1/2,y,-x;-x+1/2,y,-z+1/2;-z+1/2,y,x;z+1/2,x,y+1/2;"
+	symLines[524] += "y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;y+1/2,x,-z;"
+	symLines[524] += "-y+1/2,-x,-z;-x+1/2,z,y;-x+1/2,-z,-y;z+1/2,-y,x;-z+1/2,-y,-x;-x+1/2,-y,-z+1/2;y+1/2,-x,-z;x+1/2,y,-z+1/2;-y+1/2,x,-z;"
+	symLines[524] += "-x+1/2,z,-y;-x+1/2,y,z+1/2;-x+1/2,-z,y;-z+1/2,-y,x;x+1/2,-y,z+1/2;z+1/2,-y,-x;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;"
+	symLines[524] += "y+1/2,z,-x+1/2;-z+1/2,x,y+1/2;y+1/2,-z,x+1/2;z+1/2,x,-y+1/2;z+1/2,-x,y+1/2;-y+1/2,z,x+1/2;-y+1/2,-x,z;y+1/2,x,z;"
+	symLines[524] += "x+1/2,-z,-y;x+1/2,z,y;-z+1/2,y,-x;z+1/2,y,x;x+1/2,y+1/2,z;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z;y+1/2,-x+1/2,z+1/2;"
+	symLines[524] += "x+1/2,-z+1/2,y+1/2;x+1/2,-y+1/2,-z;x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;-x+1/2,y+1/2,-z;-z+1/2,y+1/2,x+1/2;"
+	symLines[524] += "z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;"
+	symLines[524] += "y+1/2,-z+1/2,-x;y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;"
+	symLines[524] += "-z+1/2,-y+1/2,-x+1/2;-x+1/2,-y+1/2,-z;y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;"
+	symLines[524] += "-x+1/2,y+1/2,z;-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;x+1/2,-y+1/2,z;z+1/2,-y+1/2,-x+1/2;-z+1/2,-x+1/2,-y;"
+	symLines[524] += "-y+1/2,-z+1/2,-x;y+1/2,z+1/2,-x;-z+1/2,x+1/2,y;y+1/2,-z+1/2,x;z+1/2,x+1/2,-y;z+1/2,-x+1/2,y;-y+1/2,z+1/2,x;"
+	symLines[524] += "-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[525]  = "x,y,z;-x+1/4,-y+1/4,-z+1/4;-y+1/4,x+1/4,z+1/4;-x,-y,z;y+1/4,-x+1/4,z+1/4;x+1/4,-z+1/4,y+1/4;x,-y,-z;x+1/4,z+1/4,-y+1/4;"
+	symLines[525] += "z+1/4,y+1/4,-x+1/4;-x,y,-z;-z+1/4,y+1/4,x+1/4;y,-x,-z;-y,x,-z;-x,z,-y;-x,-z,y;-z,-y,x;z,-y,-x;z,x,y;y,z,x;-y,-z,x;"
+	symLines[525] += "z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/4,-x+1/4,-y+1/4;-y+1/4,-z+1/4,-x+1/4;y+1/4,z+1/4,-x+1/4;-z+1/4,x+1/4,y+1/4;"
+	symLines[525] += "y+1/4,-z+1/4,x+1/4;z+1/4,x+1/4,-y+1/4;z+1/4,-x+1/4,y+1/4;-y+1/4,z+1/4,x+1/4;y+1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;"
+	symLines[525] += "-x+1/4,z+1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;z+1/4,-y+1/4,x+1/4;-z+1/4,-y+1/4,-x+1/4;x+1/4,y+1/4,-z+1/4;-x+1/4,y+1/4,z+1/4;"
+	symLines[525] += "x+1/4,-y+1/4,z+1/4;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;z,y,x;x,y+1/2,z+1/2;-x+1/4,-y-1/4,-z-1/4;-y+1/4,x-1/4,z-1/4;"
+	symLines[525] += "-x,-y+1/2,z+1/2;y+1/4,-x-1/4,z-1/4;x+1/4,-z-1/4,y-1/4;x,-y+1/2,-z+1/2;x+1/4,z-1/4,-y-1/4;z+1/4,y-1/4,-x-1/4;"
+	symLines[525] += "-x,y+1/2,-z+1/2;-z+1/4,y-1/4,x-1/4;y,-x+1/2,-z+1/2;-y,x+1/2,-z+1/2;-x,z+1/2,-y+1/2;-x,-z+1/2,y+1/2;-z,-y+1/2,x+1/2;"
+	symLines[525] += "z,-y+1/2,-x+1/2;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;"
+	symLines[525] += "-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-z+1/4,-x-1/4,-y-1/4;-y+1/4,-z-1/4,-x-1/4;y+1/4,z-1/4,-x-1/4;-z+1/4,x-1/4,y-1/4;"
+	symLines[525] += "y+1/4,-z-1/4,x-1/4;z+1/4,x-1/4,-y-1/4;z+1/4,-x-1/4,y-1/4;-y+1/4,z-1/4,x-1/4;y+1/4,x-1/4,-z-1/4;-y+1/4,-x-1/4,-z-1/4;"
+	symLines[525] += "-x+1/4,z-1/4,y-1/4;-x+1/4,-z-1/4,-y-1/4;z+1/4,-y-1/4,x-1/4;-z+1/4,-y-1/4,-x-1/4;x+1/4,y-1/4,-z-1/4;-x+1/4,y-1/4,z-1/4;"
+	symLines[525] += "x+1/4,-y-1/4,z-1/4;-y,-x+1/2,z+1/2;y,x+1/2,z+1/2;x,-z+1/2,-y+1/2;x,z+1/2,y+1/2;-z,y+1/2,-x+1/2;z,y+1/2,x+1/2;"
+	symLines[525] += "x+1/2,y,z+1/2;-x-1/4,-y+1/4,-z-1/4;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x+1/4,z-1/4;x-1/4,-z+1/4,y-1/4;"
+	symLines[525] += "x+1/2,-y,-z+1/2;x-1/4,z+1/4,-y-1/4;z-1/4,y+1/4,-x-1/4;-x+1/2,y,-z+1/2;-z-1/4,y+1/4,x-1/4;y+1/2,-x,-z+1/2;-y+1/2,x,-z+1/2;"
+	symLines[525] += "-x+1/2,z,-y+1/2;-x+1/2,-z,y+1/2;-z+1/2,-y,x+1/2;z+1/2,-y,-x+1/2;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;"
+	symLines[525] += "z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;y+1/2,-z,-x+1/2;-z-1/4,-x+1/4,-y-1/4;"
+	symLines[525] += "-y-1/4,-z+1/4,-x-1/4;y-1/4,z+1/4,-x-1/4;-z-1/4,x+1/4,y-1/4;y-1/4,-z+1/4,x-1/4;z-1/4,x+1/4,-y-1/4;z-1/4,-x+1/4,y-1/4;"
+	symLines[525] += "-y-1/4,z+1/4,x-1/4;y-1/4,x+1/4,-z-1/4;-y-1/4,-x+1/4,-z-1/4;-x-1/4,z+1/4,y-1/4;-x-1/4,-z+1/4,-y-1/4;z-1/4,-y+1/4,x-1/4;"
+	symLines[525] += "-z-1/4,-y+1/4,-x-1/4;x-1/4,y+1/4,-z-1/4;-x-1/4,y+1/4,z-1/4;x-1/4,-y+1/4,z-1/4;-y+1/2,-x,z+1/2;y+1/2,x,z+1/2;"
+	symLines[525] += "x+1/2,-z,-y+1/2;x+1/2,z,y+1/2;-z+1/2,y,-x+1/2;z+1/2,y,x+1/2;x+1/2,y+1/2,z;-x-1/4,-y-1/4,-z+1/4;-y-1/4,x-1/4,z+1/4;"
+	symLines[525] += "-x+1/2,-y+1/2,z;y-1/4,-x-1/4,z+1/4;x-1/4,-z-1/4,y+1/4;x+1/2,-y+1/2,-z;x-1/4,z-1/4,-y+1/4;z-1/4,y-1/4,-x+1/4;"
+	symLines[525] += "-x+1/2,y+1/2,-z;-z-1/4,y-1/4,x+1/4;y+1/2,-x+1/2,-z;-y+1/2,x+1/2,-z;-x+1/2,z+1/2,-y;-x+1/2,-z+1/2,y;-z+1/2,-y+1/2,x;"
+	symLines[525] += "z+1/2,-y+1/2,-x;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;-z+1/2,-x+1/2,y;"
+	symLines[525] += "-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-z-1/4,-x-1/4,-y+1/4;-y-1/4,-z-1/4,-x+1/4;y-1/4,z-1/4,-x+1/4;-z-1/4,x-1/4,y+1/4;"
+	symLines[525] += "y-1/4,-z-1/4,x+1/4;z-1/4,x-1/4,-y+1/4;z-1/4,-x-1/4,y+1/4;-y-1/4,z-1/4,x+1/4;y-1/4,x-1/4,-z+1/4;-y-1/4,-x-1/4,-z+1/4;"
+	symLines[525] += "-x-1/4,z-1/4,y+1/4;-x-1/4,-z-1/4,-y+1/4;z-1/4,-y-1/4,x+1/4;-z-1/4,-y-1/4,-x+1/4;x-1/4,y-1/4,-z+1/4;-x-1/4,y-1/4,z+1/4;"
+	symLines[525] += "x-1/4,-y-1/4,z+1/4;-y+1/2,-x+1/2,z;y+1/2,x+1/2,z;x+1/2,-z+1/2,-y;x+1/2,z+1/2,y;-z+1/2,y+1/2,-x;z+1/2,y+1/2,x"
+	symLines[526]  = "x,y,z;-y,x+1/4,z+1/4;-x+1/4,-y+1/4,z;y+1/4,-x,z+1/4;x+1/4,-z,y+1/4;x,-y+1/4,-z+1/4;x+1/4,z+1/4,-y;z+1/4,y+1/4,-x;"
+	symLines[526] += "-x+1/4,y,-z+1/4;-z,y+1/4,x+1/4;z,x,y;y,z,x;-y+1/4,-z+1/4,x;z,-x+1/4,-y+1/4;-y+1/4,z,-x+1/4;-z+1/4,-x+1/4,y;"
+	symLines[526] += "-z+1/4,x,-y+1/4;y,-z+1/4,-x+1/4;y+1/4,x+1/4,-z;-y,-x,-z;-x,z+1/4,y+1/4;-x,-z,-y;z+1/4,-y,x+1/4;-z,-y,-x;-x,-y,-z;"
+	symLines[526] += "y,-x-1/4,-z-1/4;x-1/4,y-1/4,-z;-y-1/4,x,-z-1/4;-x-1/4,z,-y-1/4;-x,y-1/4,z-1/4;-x-1/4,-z-1/4,y;-z-1/4,-y-1/4,x;"
+	symLines[526] += "x-1/4,-y,z-1/4;z,-y-1/4,-x-1/4;-z,-x,-y;-y,-z,-x;y-1/4,z-1/4,-x;-z,x-1/4,y-1/4;y-1/4,-z,x-1/4;z-1/4,x-1/4,-y;"
+	symLines[526] += "z-1/4,-x,y-1/4;-y,z-1/4,x-1/4;-y-1/4,-x-1/4,z;y,x,z;x,-z-1/4,-y-1/4;x,z,y;-z-1/4,y,-x-1/4;z,y,x;x,y+1/2,z+1/2;"
+	symLines[526] += "-y,x-1/4,z-1/4;-x+1/4,-y-1/4,z+1/2;y+1/4,-x+1/2,z-1/4;x+1/4,-z+1/2,y-1/4;x,-y-1/4,-z-1/4;x+1/4,z-1/4,-y+1/2;"
+	symLines[526] += "z+1/4,y-1/4,-x+1/2;-x+1/4,y+1/2,-z-1/4;-z,y-1/4,x-1/4;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y+1/4,-z-1/4,x+1/2;z,-x-1/4,-y-1/4;"
+	symLines[526] += "-y+1/4,z+1/2,-x-1/4;-z+1/4,-x-1/4,y+1/2;-z+1/4,x+1/2,-y-1/4;y,-z-1/4,-x-1/4;y+1/4,x-1/4,-z+1/2;-y,-x+1/2,-z+1/2;"
+	symLines[526] += "-x,z-1/4,y-1/4;-x,-z+1/2,-y+1/2;z+1/4,-y+1/2,x-1/4;-z,-y+1/2,-x+1/2;-x,-y+1/2,-z+1/2;y,-x+1/4,-z+1/4;x-1/4,y+1/4,-z+1/2;"
+	symLines[526] += "-y-1/4,x+1/2,-z+1/4;-x-1/4,z+1/2,-y+1/4;-x,y+1/4,z+1/4;-x-1/4,-z+1/4,y+1/2;-z-1/4,-y+1/4,x+1/2;x-1/4,-y+1/2,z+1/4;"
+	symLines[526] += "z,-y+1/4,-x+1/4;-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;y-1/4,z+1/4,-x+1/2;-z,x+1/4,y+1/4;y-1/4,-z+1/2,x+1/4;"
+	symLines[526] += "z-1/4,x+1/4,-y+1/2;z-1/4,-x+1/2,y+1/4;-y,z+1/4,x+1/4;-y-1/4,-x+1/4,z+1/2;y,x+1/2,z+1/2;x,-z+1/4,-y+1/4;x,z+1/2,y+1/2;"
+	symLines[526] += "-z-1/4,y+1/2,-x+1/4;z,y+1/2,x+1/2;x+1/2,y,z+1/2;-y+1/2,x+1/4,z-1/4;-x-1/4,-y+1/4,z+1/2;y-1/4,-x,z-1/4;x-1/4,-z,y-1/4;"
+	symLines[526] += "x+1/2,-y+1/4,-z-1/4;x-1/4,z+1/4,-y+1/2;z-1/4,y+1/4,-x+1/2;-x-1/4,y,-z-1/4;-z+1/2,y+1/4,x-1/4;z+1/2,x,y+1/2;y+1/2,z,x+1/2;"
+	symLines[526] += "-y-1/4,-z+1/4,x+1/2;z+1/2,-x+1/4,-y-1/4;-y-1/4,z,-x-1/4;-z-1/4,-x+1/4,y+1/2;-z-1/4,x,-y-1/4;y+1/2,-z+1/4,-x-1/4;"
+	symLines[526] += "y-1/4,x+1/4,-z+1/2;-y+1/2,-x,-z+1/2;-x+1/2,z+1/4,y-1/4;-x+1/2,-z,-y+1/2;z-1/4,-y,x-1/4;-z+1/2,-y,-x+1/2;-x+1/2,-y,-z+1/2;"
+	symLines[526] += "y+1/2,-x-1/4,-z+1/4;x+1/4,y-1/4,-z+1/2;-y+1/4,x,-z+1/4;-x+1/4,z,-y+1/4;-x+1/2,y-1/4,z+1/4;-x+1/4,-z-1/4,y+1/2;"
+	symLines[526] += "-z+1/4,-y-1/4,x+1/2;x+1/4,-y,z+1/4;z+1/2,-y-1/4,-x+1/4;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;y+1/4,z-1/4,-x+1/2;"
+	symLines[526] += "-z+1/2,x-1/4,y+1/4;y+1/4,-z,x+1/4;z+1/4,x-1/4,-y+1/2;z+1/4,-x,y+1/4;-y+1/2,z-1/4,x+1/4;-y+1/4,-x-1/4,z+1/2;y+1/2,x,z+1/2;"
+	symLines[526] += "x+1/2,-z-1/4,-y+1/4;x+1/2,z,y+1/2;-z+1/4,y,-x+1/4;z+1/2,y,x+1/2;x+1/2,y+1/2,z;-y+1/2,x-1/4,z+1/4;-x-1/4,-y-1/4,z;"
+	symLines[526] += "y-1/4,-x+1/2,z+1/4;x-1/4,-z+1/2,y+1/4;x+1/2,-y-1/4,-z+1/4;x-1/4,z-1/4,-y;z-1/4,y-1/4,-x;-x-1/4,y+1/2,-z+1/4;"
+	symLines[526] += "-z+1/2,y-1/4,x+1/4;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y-1/4,-z-1/4,x;z+1/2,-x-1/4,-y+1/4;-y-1/4,z+1/2,-x+1/4;-z-1/4,-x-1/4,y;"
+	symLines[526] += "-z-1/4,x+1/2,-y+1/4;y+1/2,-z-1/4,-x+1/4;y-1/4,x-1/4,-z;-y+1/2,-x+1/2,-z;-x+1/2,z-1/4,y+1/4;-x+1/2,-z+1/2,-y;"
+	symLines[526] += "z-1/4,-y+1/2,x+1/4;-z+1/2,-y+1/2,-x;-x+1/2,-y+1/2,-z;y+1/2,-x+1/4,-z-1/4;x+1/4,y+1/4,-z;-y+1/4,x+1/2,-z-1/4;"
+	symLines[526] += "-x+1/4,z+1/2,-y-1/4;-x+1/2,y+1/4,z-1/4;-x+1/4,-z+1/4,y;-z+1/4,-y+1/4,x;x+1/4,-y+1/2,z-1/4;z+1/2,-y+1/4,-x-1/4;"
+	symLines[526] += "-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/4,z+1/4,-x;-z+1/2,x+1/4,y-1/4;y+1/4,-z+1/2,x-1/4;z+1/4,x+1/4,-y;z+1/4,-x+1/2,y-1/4;"
+	symLines[526] += "-y+1/2,z+1/4,x-1/4;-y+1/4,-x+1/4,z;y+1/2,x+1/2,z;x+1/2,-z+1/4,-y-1/4;x+1/2,z+1/2,y;-z+1/4,y+1/2,-x-1/4;z+1/2,y+1/2,x"
+	symLines[527]  = "x,y,z;-x+1/4,-y+1/4,-z-1/4;-y+1/4,x+1/4,z+1/4;-x,-y,z;y+1/4,-x+1/4,z+1/4;x+1/4,-z+1/4,y+1/4;x,-y,-z;x+1/4,z+1/4,-y+1/4;"
+	symLines[527] += "z+1/4,y+1/4,-x+1/4;-x,y,-z;-z+1/4,y+1/4,x+1/4;y,-x,-z+1/2;-y,x,-z+1/2;-x,z,-y+1/2;-x,-z,y+1/2;-z,-y,x+1/2;z,-y,-x+1/2;"
+	symLines[527] += "z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-z+1/4,-x+1/4,-y-1/4;-y+1/4,-z+1/4,-x-1/4;y+1/4,z+1/4,-x-1/4;"
+	symLines[527] += "-z+1/4,x+1/4,y-1/4;y+1/4,-z+1/4,x-1/4;z+1/4,x+1/4,-y-1/4;z+1/4,-x+1/4,y-1/4;-y+1/4,z+1/4,x-1/4;y+1/4,x+1/4,-z+1/4;"
+	symLines[527] += "-y+1/4,-x+1/4,-z+1/4;-x+1/4,z+1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;z+1/4,-y+1/4,x+1/4;-z+1/4,-y+1/4,-x+1/4;x+1/4,y+1/4,-z-1/4;"
+	symLines[527] += "-x+1/4,y+1/4,z-1/4;x+1/4,-y+1/4,z-1/4;-y,-x,z+1/2;y,x,z+1/2;x,-z,-y+1/2;x,z,y+1/2;-z,y,-x+1/2;z,y,x+1/2;x,y+1/2,z+1/2;"
+	symLines[527] += "-x+1/4,-y-1/4,-z+1/4;-y+1/4,x-1/4,z-1/4;-x,-y+1/2,z+1/2;y+1/4,-x-1/4,z-1/4;x+1/4,-z-1/4,y-1/4;x,-y+1/2,-z+1/2;"
+	symLines[527] += "x+1/4,z-1/4,-y-1/4;z+1/4,y-1/4,-x-1/4;-x,y+1/2,-z+1/2;-z+1/4,y-1/4,x-1/4;y,-x+1/2,-z;-y,x+1/2,-z;-x,z+1/2,-y;-x,-z+1/2,y;"
+	symLines[527] += "-z,-y+1/2,x;z,-y+1/2,-x;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;"
+	symLines[527] += "-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;-z+1/4,-x-1/4,-y+1/4;-y+1/4,-z-1/4,-x+1/4;y+1/4,z-1/4,-x+1/4;-z+1/4,x-1/4,y+1/4;"
+	symLines[527] += "y+1/4,-z-1/4,x+1/4;z+1/4,x-1/4,-y+1/4;z+1/4,-x-1/4,y+1/4;-y+1/4,z-1/4,x+1/4;y+1/4,x-1/4,-z-1/4;-y+1/4,-x-1/4,-z-1/4;"
+	symLines[527] += "-x+1/4,z-1/4,y-1/4;-x+1/4,-z-1/4,-y-1/4;z+1/4,-y-1/4,x-1/4;-z+1/4,-y-1/4,-x-1/4;x+1/4,y-1/4,-z+1/4;-x+1/4,y-1/4,z+1/4;"
+	symLines[527] += "x+1/4,-y-1/4,z+1/4;-y,-x+1/2,z;y,x+1/2,z;x,-z+1/2,-y;x,z+1/2,y;-z,y+1/2,-x;z,y+1/2,x;x+1/2,y,z+1/2;-x-1/4,-y+1/4,-z+1/4;"
+	symLines[527] += "-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x+1/4,z-1/4;x-1/4,-z+1/4,y-1/4;x+1/2,-y,-z+1/2;x-1/4,z+1/4,-y-1/4;"
+	symLines[527] += "z-1/4,y+1/4,-x-1/4;-x+1/2,y,-z+1/2;-z-1/4,y+1/4,x-1/4;y+1/2,-x,-z;-y+1/2,x,-z;-x+1/2,z,-y;-x+1/2,-z,y;-z+1/2,-y,x;"
+	symLines[527] += "z+1/2,-y,-x;z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x,-y+1/2;-y+1/2,z,-x+1/2;-z+1/2,-x,y+1/2;-z+1/2,x,-y+1/2;"
+	symLines[527] += "y+1/2,-z,-x+1/2;-z-1/4,-x+1/4,-y+1/4;-y-1/4,-z+1/4,-x+1/4;y-1/4,z+1/4,-x+1/4;-z-1/4,x+1/4,y+1/4;y-1/4,-z+1/4,x+1/4;"
+	symLines[527] += "z-1/4,x+1/4,-y+1/4;z-1/4,-x+1/4,y+1/4;-y-1/4,z+1/4,x+1/4;y-1/4,x+1/4,-z-1/4;-y-1/4,-x+1/4,-z-1/4;-x-1/4,z+1/4,y-1/4;"
+	symLines[527] += "-x-1/4,-z+1/4,-y-1/4;z-1/4,-y+1/4,x-1/4;-z-1/4,-y+1/4,-x-1/4;x-1/4,y+1/4,-z+1/4;-x-1/4,y+1/4,z+1/4;x-1/4,-y+1/4,z+1/4;"
+	symLines[527] += "-y+1/2,-x,z;y+1/2,x,z;x+1/2,-z,-y;x+1/2,z,y;-z+1/2,y,-x;z+1/2,y,x;x+1/2,y+1/2,z;-x-1/4,-y-1/4,-z-1/4;-y-1/4,x-1/4,z+1/4;"
+	symLines[527] += "-x+1/2,-y+1/2,z;y-1/4,-x-1/4,z+1/4;x-1/4,-z-1/4,y+1/4;x+1/2,-y+1/2,-z;x-1/4,z-1/4,-y+1/4;z-1/4,y-1/4,-x+1/4;"
+	symLines[527] += "-x+1/2,y+1/2,-z;-z-1/4,y-1/4,x+1/4;y+1/2,-x+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x+1/2,-z+1/2,y+1/2;"
+	symLines[527] += "-z+1/2,-y+1/2,x+1/2;z+1/2,-y+1/2,-x+1/2;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y+1/2,-z+1/2,x;z+1/2,-x+1/2,-y;-y+1/2,z+1/2,-x;"
+	symLines[527] += "-z+1/2,-x+1/2,y;-z+1/2,x+1/2,-y;y+1/2,-z+1/2,-x;-z-1/4,-x-1/4,-y-1/4;-y-1/4,-z-1/4,-x-1/4;y-1/4,z-1/4,-x-1/4;"
+	symLines[527] += "-z-1/4,x-1/4,y-1/4;y-1/4,-z-1/4,x-1/4;z-1/4,x-1/4,-y-1/4;z-1/4,-x-1/4,y-1/4;-y-1/4,z-1/4,x-1/4;y-1/4,x-1/4,-z+1/4;"
+	symLines[527] += "-y-1/4,-x-1/4,-z+1/4;-x-1/4,z-1/4,y+1/4;-x-1/4,-z-1/4,-y+1/4;z-1/4,-y-1/4,x+1/4;-z-1/4,-y-1/4,-x+1/4;x-1/4,y-1/4,-z-1/4;"
+	symLines[527] += "-x-1/4,y-1/4,z-1/4;x-1/4,-y-1/4,z-1/4;-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;"
+	symLines[527] += "-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[528]  = "x,y,z;-y,x+1/4,z-1/4;-x+1/4,-y+1/4,z;y+1/4,-x,z-1/4;x+1/4,-z,y-1/4;x,-y+1/4,-z+1/4;x+1/4,z-1/4,-y;z+1/4,y-1/4,-x;"
+	symLines[528] += "-x+1/4,y,-z+1/4;-z,y+1/4,x-1/4;z,x,y;y,z,x;-y+1/4,-z+1/4,x;z,-x+1/4,-y+1/4;-y+1/4,z,-x+1/4;-z+1/4,-x+1/4,y;"
+	symLines[528] += "-z+1/4,x,-y+1/4;y,-z+1/4,-x+1/4;y+1/4,x-1/4,-z;-y,-x,-z+1/2;-x,z+1/4,y-1/4;-x,-z,-y+1/2;z+1/4,-y,x-1/4;-z,-y,-x+1/2;"
+	symLines[528] += "-x,-y,-z;y,-x-1/4,-z+1/4;x-1/4,y-1/4,-z;-y-1/4,x,-z+1/4;-x-1/4,z,-y+1/4;-x,y-1/4,z-1/4;-x-1/4,-z+1/4,y;-z-1/4,-y+1/4,x;"
+	symLines[528] += "x-1/4,-y,z-1/4;z,-y-1/4,-x+1/4;-z,-x,-y;-y,-z,-x;y-1/4,z-1/4,-x;-z,x-1/4,y-1/4;y-1/4,-z,x-1/4;z-1/4,x-1/4,-y;"
+	symLines[528] += "z-1/4,-x,y-1/4;-y,z-1/4,x-1/4;-y-1/4,-x+1/4,z;y,x,z+1/2;x,-z-1/4,-y+1/4;x,z,y+1/2;-z-1/4,y,-x+1/4;z,y,x+1/2;"
+	symLines[528] += "x,y+1/2,z+1/2;-y,x-1/4,z+1/4;-x+1/4,-y-1/4,z+1/2;y+1/4,-x+1/2,z+1/4;x+1/4,-z+1/2,y+1/4;x,-y-1/4,-z-1/4;"
+	symLines[528] += "x+1/4,z+1/4,-y+1/2;z+1/4,y+1/4,-x+1/2;-x+1/4,y+1/2,-z-1/4;-z,y-1/4,x+1/4;z,x+1/2,y+1/2;y,z+1/2,x+1/2;-y+1/4,-z-1/4,x+1/2;"
+	symLines[528] += "z,-x-1/4,-y-1/4;-y+1/4,z+1/2,-x-1/4;-z+1/4,-x-1/4,y+1/2;-z+1/4,x+1/2,-y-1/4;y,-z-1/4,-x-1/4;y+1/4,x+1/4,-z+1/2;"
+	symLines[528] += "-y,-x+1/2,-z;-x,z-1/4,y+1/4;-x,-z+1/2,-y;z+1/4,-y+1/2,x+1/4;-z,-y+1/2,-x;-x,-y+1/2,-z+1/2;y,-x+1/4,-z-1/4;"
+	symLines[528] += "x-1/4,y+1/4,-z+1/2;-y-1/4,x+1/2,-z-1/4;-x-1/4,z+1/2,-y-1/4;-x,y+1/4,z+1/4;-x-1/4,-z-1/4,y+1/2;-z-1/4,-y-1/4,x+1/2;"
+	symLines[528] += "x-1/4,-y+1/2,z+1/4;z,-y+1/4,-x-1/4;-z,-x+1/2,-y+1/2;-y,-z+1/2,-x+1/2;y-1/4,z+1/4,-x+1/2;-z,x+1/4,y+1/4;"
+	symLines[528] += "y-1/4,-z+1/2,x+1/4;z-1/4,x+1/4,-y+1/2;z-1/4,-x+1/2,y+1/4;-y,z+1/4,x+1/4;-y-1/4,-x-1/4,z+1/2;y,x+1/2,z;x,-z+1/4,-y-1/4;"
+	symLines[528] += "x,z+1/2,y;-z-1/4,y+1/2,-x-1/4;z,y+1/2,x;x+1/2,y,z+1/2;-y+1/2,x+1/4,z+1/4;-x-1/4,-y+1/4,z+1/2;y-1/4,-x,z+1/4;"
+	symLines[528] += "x-1/4,-z,y+1/4;x+1/2,-y+1/4,-z-1/4;x-1/4,z-1/4,-y+1/2;z-1/4,y-1/4,-x+1/2;-x-1/4,y,-z-1/4;-z+1/2,y+1/4,x+1/4;"
+	symLines[528] += "z+1/2,x,y+1/2;y+1/2,z,x+1/2;-y-1/4,-z+1/4,x+1/2;z+1/2,-x+1/4,-y-1/4;-y-1/4,z,-x-1/4;-z-1/4,-x+1/4,y+1/2;-z-1/4,x,-y-1/4;"
+	symLines[528] += "y+1/2,-z+1/4,-x-1/4;y-1/4,x-1/4,-z+1/2;-y+1/2,-x,-z;-x+1/2,z+1/4,y+1/4;-x+1/2,-z,-y;z-1/4,-y,x+1/4;-z+1/2,-y,-x;"
+	symLines[528] += "-x+1/2,-y,-z+1/2;y+1/2,-x-1/4,-z-1/4;x+1/4,y-1/4,-z+1/2;-y+1/4,x,-z-1/4;-x+1/4,z,-y-1/4;-x+1/2,y-1/4,z+1/4;"
+	symLines[528] += "-x+1/4,-z+1/4,y+1/2;-z+1/4,-y+1/4,x+1/2;x+1/4,-y,z+1/4;z+1/2,-y-1/4,-x-1/4;-z+1/2,-x,-y+1/2;-y+1/2,-z,-x+1/2;"
+	symLines[528] += "y+1/4,z-1/4,-x+1/2;-z+1/2,x-1/4,y+1/4;y+1/4,-z,x+1/4;z+1/4,x-1/4,-y+1/2;z+1/4,-x,y+1/4;-y+1/2,z-1/4,x+1/4;"
+	symLines[528] += "-y+1/4,-x+1/4,z+1/2;y+1/2,x,z;x+1/2,-z-1/4,-y-1/4;x+1/2,z,y;-z+1/4,y,-x-1/4;z+1/2,y,x;x+1/2,y+1/2,z;-y+1/2,x-1/4,z-1/4;"
+	symLines[528] += "-x-1/4,-y-1/4,z;y-1/4,-x+1/2,z-1/4;x-1/4,-z+1/2,y-1/4;x+1/2,-y-1/4,-z+1/4;x-1/4,z+1/4,-y;z-1/4,y+1/4,-x;"
+	symLines[528] += "-x-1/4,y+1/2,-z+1/4;-z+1/2,y-1/4,x-1/4;z+1/2,x+1/2,y;y+1/2,z+1/2,x;-y-1/4,-z-1/4,x;z+1/2,-x-1/4,-y+1/4;"
+	symLines[528] += "-y-1/4,z+1/2,-x+1/4;-z-1/4,-x-1/4,y;-z-1/4,x+1/2,-y+1/4;y+1/2,-z-1/4,-x+1/4;y-1/4,x+1/4,-z;-y+1/2,-x+1/2,-z+1/2;"
+	symLines[528] += "-x+1/2,z-1/4,y-1/4;-x+1/2,-z+1/2,-y+1/2;z-1/4,-y+1/2,x-1/4;-z+1/2,-y+1/2,-x+1/2;-x+1/2,-y+1/2,-z;y+1/2,-x+1/4,-z+1/4;"
+	symLines[528] += "x+1/4,y+1/4,-z;-y+1/4,x+1/2,-z+1/4;-x+1/4,z+1/2,-y+1/4;-x+1/2,y+1/4,z-1/4;-x+1/4,-z-1/4,y;-z+1/4,-y-1/4,x;"
+	symLines[528] += "x+1/4,-y+1/2,z-1/4;z+1/2,-y+1/4,-x+1/4;-z+1/2,-x+1/2,-y;-y+1/2,-z+1/2,-x;y+1/4,z+1/4,-x;-z+1/2,x+1/4,y-1/4;"
+	symLines[528] += "y+1/4,-z+1/2,x-1/4;z+1/4,x+1/4,-y;z+1/4,-x+1/2,y-1/4;-y+1/2,z+1/4,x-1/4;-y+1/4,-x-1/4,z;y+1/2,x+1/2,z+1/2;"
+	symLines[528] += "x+1/2,-z+1/4,-y+1/4;x+1/2,z+1/2,y+1/2;-z+1/4,y+1/2,-x+1/4;z+1/2,y+1/2,x+1/2"
+	symLines[529]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z;x,-z,y;x,-y,-z;x,z,-y;z,y,-x;-x,y,-z;-z,y,x;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;"
+	symLines[529] += "-z,x,-y;y,-z,-x;y,x,-z;-y,-x,-z;-x,z,y;-x,-z,-y;z,-y,x;-z,-y,-x;-x,-y,-z;y,-x,-z;x,y,-z;-y,x,-z;-x,z,-y;-x,y,z;-x,-z,y;"
+	symLines[529] += "-z,-y,x;x,-y,z;z,-y,-x;-z,-x,-y;-y,-z,-x;y,z,-x;-z,x,y;y,-z,x;z,x,-y;z,-x,y;-y,z,x;-y,-x,z;y,x,z;x,-z,-y;x,z,y;-z,y,-x;"
+	symLines[529] += "z,y,x;x+1/2,y+1/2,z+1/2;-y+1/2,x+1/2,z+1/2;-x+1/2,-y+1/2,z+1/2;y+1/2,-x+1/2,z+1/2;x+1/2,-z+1/2,y+1/2;x+1/2,-y+1/2,-z+1/2;"
+	symLines[529] += "x+1/2,z+1/2,-y+1/2;z+1/2,y+1/2,-x+1/2;-x+1/2,y+1/2,-z+1/2;-z+1/2,y+1/2,x+1/2;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;"
+	symLines[529] += "-y+1/2,-z+1/2,x+1/2;z+1/2,-x+1/2,-y+1/2;-y+1/2,z+1/2,-x+1/2;-z+1/2,-x+1/2,y+1/2;-z+1/2,x+1/2,-y+1/2;y+1/2,-z+1/2,-x+1/2;"
+	symLines[529] += "y+1/2,x+1/2,-z+1/2;-y+1/2,-x+1/2,-z+1/2;-x+1/2,z+1/2,y+1/2;-x+1/2,-z+1/2,-y+1/2;z+1/2,-y+1/2,x+1/2;-z+1/2,-y+1/2,-x+1/2;"
+	symLines[529] += "-x+1/2,-y+1/2,-z+1/2;y+1/2,-x+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-y+1/2,x+1/2,-z+1/2;-x+1/2,z+1/2,-y+1/2;-x+1/2,y+1/2,z+1/2;"
+	symLines[529] += "-x+1/2,-z+1/2,y+1/2;-z+1/2,-y+1/2,x+1/2;x+1/2,-y+1/2,z+1/2;z+1/2,-y+1/2,-x+1/2;-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;"
+	symLines[529] += "y+1/2,z+1/2,-x+1/2;-z+1/2,x+1/2,y+1/2;y+1/2,-z+1/2,x+1/2;z+1/2,x+1/2,-y+1/2;z+1/2,-x+1/2,y+1/2;-y+1/2,z+1/2,x+1/2;"
+	symLines[529] += "-y+1/2,-x+1/2,z+1/2;y+1/2,x+1/2,z+1/2;x+1/2,-z+1/2,-y+1/2;x+1/2,z+1/2,y+1/2;-z+1/2,y+1/2,-x+1/2;z+1/2,y+1/2,x+1/2"
+	symLines[530]  = "x,y,z;-y+1/4,x-1/4,z+1/4;-x,-y+1/2,z;y+1/4,-x+1/4,z-1/4;x+1/4,-z+1/4,y-1/4;x,-y,-z+1/2;x-1/4,z+1/4,-y+1/4;"
+	symLines[530] += "z-1/4,y+1/4,-x+1/4;-x+1/2,y,-z;-z+1/4,y-1/4,x+1/4;z,x,y;y,z,x;-y,-z+1/2,x;z,-x,-y+1/2;-y+1/2,z,-x;-z,-x+1/2,y;"
+	symLines[530] += "-z+1/2,x,-y;y,-z,-x+1/2;y-1/4,x+1/4,-z+1/4;-y+1/4,-x+1/4,-z+1/4;-x+1/4,z-1/4,y+1/4;-x+1/4,-z+1/4,-y+1/4;"
+	symLines[530] += "z+1/4,-y+1/4,x-1/4;-z+1/4,-y+1/4,-x+1/4;-x,-y,-z;y-1/4,-x+1/4,-z-1/4;x,y+1/2,-z;-y-1/4,x-1/4,-z+1/4;-x-1/4,z-1/4,-y+1/4;"
+	symLines[530] += "-x,y,z+1/2;-x+1/4,-z-1/4,y-1/4;-z+1/4,-y-1/4,x-1/4;x+1/2,-y,z;z-1/4,-y+1/4,-x-1/4;-z,-x,-y;-y,-z,-x;y,z+1/2,-x;"
+	symLines[530] += "-z,x,y+1/2;y+1/2,-z,x;z,x+1/2,-y;z+1/2,-x,y;-y,z,x+1/2;-y+1/4,-x-1/4,z-1/4;y-1/4,x-1/4,z-1/4;x-1/4,-z+1/4,-y-1/4;"
+	symLines[530] += "x-1/4,z-1/4,y-1/4;-z-1/4,y-1/4,-x+1/4;z-1/4,y-1/4,x-1/4;x+1/2,y+1/2,z+1/2;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;"
+	symLines[530] += "y-1/4,-x-1/4,z+1/4;x-1/4,-z-1/4,y+1/4;x+1/2,-y+1/2,-z;x+1/4,z-1/4,-y-1/4;z+1/4,y-1/4,-x-1/4;-x,y+1/2,-z+1/2;"
+	symLines[530] += "-z-1/4,y+1/4,x-1/4;z+1/2,x+1/2,y+1/2;y+1/2,z+1/2,x+1/2;-y+1/2,-z,x+1/2;z+1/2,-x+1/2,-y;-y,z+1/2,-x+1/2;-z+1/2,-x,y+1/2;"
+	symLines[530] += "-z,x+1/2,-y+1/2;y+1/2,-z+1/2,-x;y+1/4,x-1/4,-z-1/4;-y-1/4,-x-1/4,-z-1/4;-x-1/4,z+1/4,y-1/4;-x-1/4,-z-1/4,-y-1/4;"
+	symLines[530] += "z-1/4,-y-1/4,x+1/4;-z-1/4,-y-1/4,-x-1/4;-x+1/2,-y+1/2,-z+1/2;y+1/4,-x-1/4,-z+1/4;x+1/2,y,-z+1/2;-y+1/4,x+1/4,-z-1/4;"
+	symLines[530] += "-x+1/4,z+1/4,-y-1/4;-x+1/2,y+1/2,z;-x-1/4,-z+1/4,y+1/4;-z-1/4,-y+1/4,x+1/4;x,-y+1/2,z+1/2;z+1/4,-y-1/4,-x+1/4;"
+	symLines[530] += "-z+1/2,-x+1/2,-y+1/2;-y+1/2,-z+1/2,-x+1/2;y+1/2,z,-x+1/2;-z+1/2,x+1/2,y;y,-z+1/2,x+1/2;z+1/2,x,-y+1/2;z,-x+1/2,y+1/2;"
+	symLines[530] += "-y+1/2,z+1/2,x;-y-1/4,-x+1/4,z+1/4;y+1/4,x+1/4,z+1/4;x+1/4,-z-1/4,-y+1/4;x+1/4,z+1/4,y+1/4;-z+1/4,y+1/4,-x-1/4;z+1/4,y+1/4,x+1/4"
+
+	return symLines[idNum]
+End
+
+
+
 
 
 
