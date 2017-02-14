@@ -940,7 +940,7 @@ Function Change_GND_DislocationDensity(GND_Density)	// used to set the GND dislo
 			Wave DL = directFrom_xtal(xtal)					// direct lattice { a[], b[], c[] }
 			Make/N=3/D/FREE v3=NaN								// coefficients of the Burgers vector
 			if (xtal.SpaceGroup>=195)							// cubic
-				String sym=getSymString(xtal.SpaceGroup)
+				String sym=getHMsym2(xtal.SpaceGroupIDnum)
 				if (strsearch(sym,"F",0)==0)					// FCC
 					v3 = {1,1,0}									// (<110> lattice vector)/2
 				elseif (strsearch(sym,"I",0)==0)			// BCC

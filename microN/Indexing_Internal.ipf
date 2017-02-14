@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.23
+#pragma version = 0.24
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -381,7 +381,12 @@ AllMatchesViewSize = limit(30*AllMatches[p]^4/(maxMatches^4),1,20)
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	wnote = ReplaceStringByKey("lengthUnit",wnote,"nm","=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
-
+	if (strlen(xtal.SpaceGroupID))
+		wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	endif
+	if (numtype(xtal.SpaceGroupIDnum))
+		wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,xtal.SpaceGroupIDnum,"=")
+	endif
 	wnote = ReplaceNumberByKey("keVmaxCalc",wnote,keVmaxCalc,"=")
 	wnote = ReplaceNumberByKey("keVmaxTest",wnote,keVmaxTest,"=")
 	wnote = ReplaceStringByKey("hklPrefer",wnote,vec2str(hklPrefer),"=")
@@ -1552,6 +1557,12 @@ Function/WAVE runIndexingQs(args)
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	wnote = ReplaceStringByKey("lengthUnit",wnote,"nm","=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	if (strlen(xtal.SpaceGroupID))
+		wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	endif
+	if (numtype(xtal.SpaceGroupIDnum))
+		wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,xtal.SpaceGroupIDnum,"=")
+	endif
 
 	wnote = ReplaceNumberByKey("keVmaxCalc",wnote,keVmaxCalc,"=")
 	wnote = ReplaceNumberByKey("keVmaxTest",wnote,keVmaxTest,"=")
@@ -2082,6 +2093,12 @@ endif
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	wnote = ReplaceStringByKey("lengthUnit",wnote,"nm","=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	if (strlen(xtal.SpaceGroupID))
+		wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	endif
+	if (numtype(xtal.SpaceGroupIDnum))
+		wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,xtal.SpaceGroupIDnum,"=")
+	endif
 
 	wnote = ReplaceNumberByKey("keVmaxCalc",wnote,keVmax,"=")
 	wnote = ReplaceNumberByKey("keVmaxTest",wnote,keVmax,"=")
@@ -2927,6 +2944,12 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 	wnotekfs = ReplaceStringByKey("latticeParameters",wnotekfs,str,"=")
 	wnotekfs = ReplaceStringByKey("lengthUnit",wnotekfs,"nm","=")
 	wnotekfs = ReplaceNumberByKey("SpaceGroup",wnotekfs,xtal.SpaceGroup,"=")
+	if (strlen(xtal.SpaceGroupID))
+		wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	endif
+	if (numtype(xtal.SpaceGroupIDnum))
+		wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,xtal.SpaceGroupIDnum,"=")
+	endif
 	for (i=0;i<xtal.N;i+=1)
 		sprintf str,"{%s,%g,%g,%g,%g}",xtal.atom[i].name,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z,xtal.atom[i].occ
 		wnotekfs = ReplaceStringByKey("AtomDesctiption"+num2istr(i+1),wnotekfs,str,"=")
@@ -3096,6 +3119,12 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	wnoteQs = ReplaceStringByKey("latticeParameters",wnoteQs,str,"=")
 	wnoteQs = ReplaceStringByKey("lengthUnit",wnoteQs,"nm","=")
 	wnoteQs = ReplaceNumberByKey("SpaceGroup",wnoteQs,xtal.SpaceGroup,"=")
+	if (strlen(xtal.SpaceGroupID))
+		wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	endif
+	if (numtype(xtal.SpaceGroupIDnum))
+		wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,xtal.SpaceGroupIDnum,"=")
+	endif
 	for (i=0;i<xtal.N;i+=1)
 		sprintf str,"{%s,%g,%g,%g,%g}",xtal.atom[i].name,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z,xtal.atom[i].occ
 		wnoteQs = ReplaceStringByKey("AtomDesctiption"+num2istr(i+1),wnoteQs,str,"=")
@@ -4041,35 +4070,37 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 		endif
 	endif
 
+	String SpaceGroupID=""
 	Variable cosTol=cos(tol*PI/180)		// convert degree to dot, this should be slightly less than 1.0
 	Make/N=(3,3)/D/FREE direct
 	String FullPeakListName, desc=""
 	if (StringMatch(lattice,"C"))
 		direct = (p==q) * 0.54310206		// simple cubic direct lattice with a = 0.3 nm
-//		Variable SpaceGroup = 224			// [195,230]
-		Variable SpaceGroup = 227			// [195,230], diamond structure
+		SpaceGroupID = "227:1"				// conventional diamond structure
 		desc = "Cubic Test"
 		FullPeakListName = "FullPeakListTestCubic"
 	elseif (StringMatch(lattice,"M1"))
 		direct[0][0] = {0.28, 0, 0.076}	// a   a non-cubic direct lattice (Monoclinic)
 		direct[0][1] = {0, 0.3, 0}		// b	(a^c !=90, a^b = c^b = 90,  alpha=gamma=90
 		direct[0][2] = {0, 0, 0.29}		// c
-		SpaceGroup = 14						// [3,15]
+		SpaceGroupID = "14:b1"
 		desc = "Monoclinic 1 Test"
 		FullPeakListName = "FullPeakListTestM1"
 	elseif (StringMatch(lattice,"M2"))
 		direct[0][0] = {0.28, 0, 0.075}	// a   a non-cubic direct lattice (Monoclinic)
 		direct[0][1] = {0, 0.3, 0}		// b	(a^c !=90, a^b = c^b = 90,  alpha=gamma=90
 		direct[0][2] = {0, 0, 0.29}		// c
-		SpaceGroup = 14						// [3,15]
+		SpaceGroupID = "14:b1"
 		desc = "Monoclinic 2 Test"
 		FullPeakListName = "FullPeakListTestM2"
 	else
 		return $""
 	endif
 
+	Variable SpaceGroup = str2num(SpaceGroupID)
+	Variable SpaceGroupIDnum = SpaceGroupID2num(SpaceGroupID)
 	Variable Vc = MatrixDet(direct)
-	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup)
+	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID)
 
 	MatrixOP/FREE/O recip = 2*PI * (Inv(direct))^t
 	recip = recip==0 ? 0 : recip
@@ -4097,12 +4128,14 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 
 	Wave LC = direct2LatticeConstants(direct)
 	if (printIt)
-		printf "lattice constants: %.9g, %.9g, %.9g,   %g¡, %g¡, %g¡,   SG=%G\r",LC[0],LC[1],LC[2],LC[3],LC[4],LC[5],SpaceGroup
+		printf "lattice constants: %.9g, %.9g, %.9g,   %g¡, %g¡, %g¡,   SG=%s\r",LC[0],LC[1],LC[2],LC[3],LC[4],LC[5],SpaceGroupID
 	endif
 	STRUCT crystalStructure xtal
 	xtal.a = LC[0] ;			xtal.b = LC[1] ;		xtal.c = LC[2]
 	xtal.alpha = LC[3] ;	xtal.beta = LC[4] ;	xtal.gam = LC[5]
 	xtal.SpaceGroup = SpaceGroup
+	xtal.SpaceGroupID = SpaceGroupID
+	xtal.SpaceGroupIDnum = SpaceGroupIDnum
 	xtal.desc = desc
 	if (!isValidLatticeConstants(xtal)	)
 		print "ERROR -- Lattice Constants are NOT valid"
@@ -4194,6 +4227,8 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	wnote = ReplaceStringByKey("direct",wnote,directStr,"=")
 	wnote = ReplaceStringByKey("recip",wnote,recipStr,"=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,SpaceGroup,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+	wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,SpaceGroupIDnum,"=")
 	wnote = ReplaceNumberByKey("tol",wnote,tol,"=")
 	wnote = ReplaceStringByKey("hklCenter",wnote,vec2str(hkl,bare=1,sep=","),"=")
 	if (angle)
@@ -4703,30 +4738,30 @@ Static Function/WAVE MakeTestSpots(Nreq,[cone,lattice,angle,axis,tol,printIt])
 
 	Variable cosTol=cos(tol*PI/180)			// convert degree to dot, this should be slightly less than 1.0
 	Make/N=(3,3)/D/FREE direct
-	String desc=""
+	String desc="", SpaceGroupID=""
 
 	if (StringMatch(lattice,"C"))
 		direct = (p==q) * 0.54310206			// simple cubic direct lattice with a = 0.3 nm
-		Variable SpaceGroup = 224				// [195,230]
-SpaceGroup = 227			// [195,230]
-
+		SpaceGroupID = "224:1"
+SpaceGroupID = "227:1"
 		desc = "Cubic Test"
 	elseif (StringMatch(lattice,"M1"))
 		direct[0][0] = {0.28, 0, 0.076}		// a   a non-cubic direct lattice (Monoclinic)
 		direct[0][1] = {0, 0.3, 0}			// b	(a^c !=90, a^b = c^b = 90,  alpha=gamma=90
 		direct[0][2] = {0, 0, 0.29}			// c
-		SpaceGroup = 14							// [3,15]
+		SpaceGroupID = "14:b1"
 		desc = "Monoclinic 1 Test"
 	elseif (StringMatch(lattice,"M2"))
 		direct[0][0] = {0.28, 0, 0.075}		// a   a non-cubic direct lattice (Monoclinic)
 		direct[0][1] = {0, 0.3, 0}			// b	(a^c !=90, a^b = c^b = 90,  alpha=gamma=90
 		direct[0][2] = {0, 0, 0.29}			// c
-		SpaceGroup = 14							// [3,15]
+		SpaceGroupID = "14:b1"
 		desc = "Monoclinic Test"
 	endif
-
+	Variable SpaceGroup = str2num(SpaceGroupID)
+	Variable SpaceGroupIDnum = SpaceGroupID2num(SpaceGroupID)
 	Variable Vc = MatrixDet(direct)
-	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup)
+	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID)
 
 	MatrixOP/FREE/O recip   = 2*PI * (Inv(direct))^t
 	recip = recip==0 ? 0 : recip
@@ -4754,12 +4789,14 @@ SpaceGroup = 227			// [195,230]
 
 	Wave LC = direct2LatticeConstants(direct)
 	if (printIt)
-		printf "lattice constants: %.9g, %.9g, %.9g,   %g¡, %g¡, %g¡,   SG=%G\r",LC[0],LC[1],LC[2],LC[3],LC[4],LC[5],SpaceGroup
+		printf "lattice constants: %.9g, %.9g, %.9g,   %g¡, %g¡, %g¡,   SG=%s\r",LC[0],LC[1],LC[2],LC[3],LC[4],LC[5],SpaceGroupID
 	endif
 	STRUCT crystalStructure xtal
 	xtal.a = LC[0] ;			xtal.b = LC[1] ;		xtal.c = LC[2]
 	xtal.alpha = LC[3] ;	xtal.beta = LC[4] ;	xtal.gam = LC[5]
 	xtal.SpaceGroup = SpaceGroup
+	xtal.SpaceGroupID = SpaceGroupID
+	xtal.SpaceGroupIDnum = SpaceGroupIDnum
 	xtal.desc = desc
 	if (!isValidLatticeConstants(xtal)	)
 		print "ERROR -- Lattice Constants are NOT valid"
@@ -4828,6 +4865,8 @@ SpaceGroup = 227			// [195,230]
 	wnote = ReplaceStringByKey("direct",wnote,directStr,"=")
 	wnote = ReplaceStringByKey("recip",wnote,recipStr,"=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,SpaceGroup,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+	wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,SpaceGroupIDnum,"=")
 	wnote = ReplaceNumberByKey("cone",wnote,cone,"=")
 	wnote = ReplaceNumberByKey("tol",wnote,tol,"=")
 	wnote = ReplaceStringByKey("hklCenter",wnote,vec2str(hkl,bare=1,sep=","),"=")

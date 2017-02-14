@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.88
+#pragma version = 4.89
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -607,7 +607,15 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 	wNote = ReplaceStringByKey("latticeParameters",wnote,StringByKey("latticeParameters",indexNote,"="),"=")
 	wNote = ReplaceStringByKey("lengthUnit",wnote,StringByKey("lengthUnit",indexNote,"="),"=")
 	wNote = ReplaceStringByKey("SpaceGroup",wnote,StringByKey("SpaceGroup",indexNote,"="),"=")
-	String str = StringByKey("AtomDesctiption1",indexNote,"=")
+	String str = StringByKey("SpaceGroupID",indexNote,"=")
+	if (strlen(str))
+		wNote = ReplaceStringByKey("SpaceGroupID",wnote,str,"=")
+	endif
+	str = StringByKey("SpaceGroupIDnum",indexNote,"=")
+	if (strlen(str))
+		wNote = ReplaceStringByKey("SpaceGroupIDnum",wnote,str,"=")
+	endif
+	str = StringByKey("AtomDesctiption1",indexNote,"=")
 	for (i=1;strlen(str);i+=1)
 		wNote = ReplaceStringByKey("AtomDesctiption"+num2istr(i),wnote,str,"=")
 		str = StringByKey("AtomDesctiption"+num2istr(i+1),indexNote,"=")
@@ -972,8 +980,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	endif
 	my = (V_min-V_max)*vert + V_max
 
-	String tagStr="", str
-	Variable h,k,l, angleErr,keV=NaN,SpaceGroup
+	String tagStr="", str, SpaceGroupID
+	Variable h,k,l, angleErr,keV=NaN, SpaceGroupIDnum
 	Variable dist2, m
 	Variable px,py
 	Variable ip = NumberByKey("patternNum",GetUserData("","","Indexing"),"=")	// pattern number
@@ -1178,14 +1186,20 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		py =  FullPeakIndexed[m][10][ip]
 		keV = FullPeakIndexed[m][7][ip]
 		angleErr=FullPeakIndexed[m][8][ip]
-		SpaceGroup=NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
+		SpaceGroupIDnum = NumberByKey("SpaceGroupIDnum",note(FullPeakIndexed),"=")
+		if (numtype(SpaceGroupIDnum))
+			SpaceGroupIDnum = NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
+			SpaceGroupID = LatticeSym#FindDefaultIDForSG(SpaceGroupIDnum)
+			SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(SpaceGroupIDnum)
+		endif
+
 		if (ip>0)
 			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+angFmt+" (deg)",h,k,l,keV,px,py,m,ip,angleErr
 		else
 			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+angFmt+" (deg)",h,k,l,keV,px,py,m,angleErr
 		endif
 		tagStr = "\\Zr090Indexed peak position\r" + str
-		tagStr += SelectString(numtype(SpaceGroup),"\r"+getSymString(SpaceGroup)+"    Space Group #"+num2istr(SpaceGroup),"")
+		tagStr += SelectString(numtype(SpaceGroupIDnum),"\r"+getHMsym2(SpaceGroupIDnum)+"    Space Group "+SpaceGroupID,"")
 
 	elseif (useStrain)												// examining strain refined peaks
 		if (!WaveExists(PeaksForStrain))
@@ -1613,6 +1627,12 @@ Static Function setXtalFromNote(wnote,xtal)
 	if (!(1<=SpaceGroup && SpaceGroup<=230))
 		return 1
 	endif
+	String SpaceGroupID = StringByKey("SpaceGroupID",wnote,"=")
+	Variable SpaceGroupIDnum = NumberByKey("SpaceGroupIDnum",wnote,"=")
+	if (strlen(SpaceGroupID)<1)
+		SpaceGroupID = LatticeSym#FindDefaultIDForSG(SpaceGroup)
+	endif
+	SpaceGroupIDnum = numtype(SpaceGroupIDnum) ? str2num(SpaceGroupID) : SpaceGroupIDnum
 
 	String str = StringByKey("latticeParameters",wnote,"=")
 	Variable a,b,c,alpha,bet,gam
@@ -1634,6 +1654,8 @@ Static Function setXtalFromNote(wnote,xtal)
 	xtal.beta = bet
 	xtal.gam = gam
 	xtal.SpaceGroup = SpaceGroup
+	xtal.SpaceGroupID = SpaceGroupID
+	xtal.SpaceGroupIDnum = SpaceGroupIDnum
 	xtal.desc = structureDesc
 	xtal.Unconventional00 = NaN
 
@@ -2312,6 +2334,12 @@ Static Function/WAVE readIndexFile(indexFile,path)
 			wnote = ReplaceNumberByKey("SpaceGroup",wnote,spaceGroup,"=")
 		endif
 	endif
+	String SpaceGroupID = StringByKey("SpaceGroupID",wnote,"=")
+	Variable SpaceGroupIDnum = NumberByKey("SpaceGroupIDnum",wnote,"=")
+	if (strlen(SpaceGroupID)<1)
+		SpaceGroupID = LatticeSym#FindDefaultIDForSG(SpaceGroup)
+	endif
+	SpaceGroupIDnum = numtype(SpaceGroupIDnum) ? str2num(SpaceGroupID) : SpaceGroupIDnum
 
 	Note/K FullPeakIndexed, wnote
 	SetDimLabel 1,0,Qx,FullPeakIndexed				;	SetDimLabel 1,1,Qy,FullPeakIndexed
@@ -4617,6 +4645,8 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	endif
 	fprintf refNum,"$latticeParameters	{ %g, %g, %g, %g, %g, %g }// using nm and degrees\n",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	fprintf refNum,"$lengthUnit			nm					// length unit for lattice constants a,b,c\n"
+	fprintf refNum,"$SpaceGroupID			%s					// Structure number from International Tables\n",xtal.SpaceGroupID
+	fprintf refNum,"$SpaceGroupIDnum		%d					// Structure number from International Tables\n",xtal.SpaceGroupIDnum
 	fprintf refNum,"$SpaceGroup			%d					// Structure number from International Tables\n",xtal.SpaceGroup
 	if (stringmatch(StringFromList(1,GetIndexingFuncOrExec()),"EulerOrig"))
 		fprintf refNum,"$latticeStructure		%d					// Structure number from International Tables\n",xtal.SpaceGroup
@@ -6863,7 +6893,7 @@ Static Function forceLattice(LC,SG,[Vc])
 	Variable SG
 	Variable Vc										// if present, then preserve Vc
 
-	STRUCT crystalStructure xtal					// this sruct is set in this routine
+	STRUCT crystalStructure xtal				// this sruct is local to this routine
 	xtal.SpaceGroup = SG
 	xtal.a = LC[0]
 	xtal.b = LC[1]

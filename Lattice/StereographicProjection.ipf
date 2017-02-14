@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=StereoGraphicProjection
-#pragma version = 2.85
+#pragma version = 2.86
 #include "LatticeSym", version>=4.13
 
 
@@ -166,12 +166,10 @@ Function MakeStereo(Hz,Kz,Lz,hklmax,fntSize,phi,[Qmax,hklPerp, WulffStepIn,Wulff
 	ModifyGraph gfMult=60,width={Aspect,1},tick=3,noLabel=2,standoff=0,axThick=0,freePos=0,freePos=0
 	SetAxis emptyLeft -2,2
 	SetAxis emptyBottom -2,2
-//	sprintf str, "\Zr142#%d   %s\r\\Zr141(%d %d %d)\r90\\F'Symbol'°\\F]0",xtal.SpaceGroup,getSymString(xtal.SpaceGroup),Hz,Kz,Lz
-//	sprintf str, "\Zr142#%d   %s\r\\Zr141(%s)\r90\\F'Symbol'°\\F]0",xtal.SpaceGroup,getSymString(xtal.SpaceGroup),hkl2str(Hz,Kz,Lz)
 	if (strlen(xtal.desc))
-		sprintf str, "\\JR\\Zr200%s\r\\Zr071#%d   %s\r\\Zr141(%s)\r90\\F'Symbol'°\\F]0",xtal.desc,xtal.SpaceGroup,getSymString(xtal.SpaceGroup),hkl2str(Hz,Kz,Lz)
+		sprintf str, "\\JR\\Zr200%s\r\\Zr071%s   %s\r\\Zr141(%s)\r90\\F'Symbol'°\\F]0",xtal.desc,xtal.SpaceGroupID,getHMsym2(xtal.SpaceGroupIDnum),hkl2str(Hz,Kz,Lz)
 	else
-		sprintf str, "\\JR\\Zr142#%d   %s\r\\Zr141(%s)\r90\\F'Symbol'°\\F]0",xtal.SpaceGroup,getSymString(xtal.SpaceGroup),hkl2str(Hz,Kz,Lz)
+		sprintf str, "\\JR\\Zr142%s   %s\r\\Zr141(%s)\r90\\F'Symbol'°\\F]0",xtal.SpaceGroupID,getHMsym2(xtal.SpaceGroupIDnum),hkl2str(Hz,Kz,Lz)
 	endif
 	TextBox/N=pole/F=0/A=RT/X=0/Y=0/B=1 str
 	Button zoomIn,pos={5,5},size={30,20},proc=ZoomStereoButtonProc,title="+"
@@ -286,9 +284,9 @@ Function ZoomStereoButtonProc(B_Struct) : ButtonControl
 		sprintf str, "\\Zr200(%s)\r%g\\F'Symbol'°\\F]0",hkl2str(Hz,Kz,Lz),stereoRadius
 	else
 		if (strlen(xtal.desc))
-			sprintf str, "\\JR\\Zr200%s\r\\Zr071#%d   %s\r\\Zr141(%s)\r%g\\F'Symbol'°\\F]0",xtal.desc,xtal.SpaceGroup,getSymString(xtal.SpaceGroup),hkl2str(Hz,Kz,Lz),stereoRadius
+			sprintf str, "\\JR\\Zr200%s\r\\Zr071%s   %s\r\\Zr141(%s)\r%g\\F'Symbol'°\\F]0",xtal.desc,xtal.SpaceGroupID,getHMsym2(xtal.SpaceGroupIDnum),hkl2str(Hz,Kz,Lz),stereoRadius
 		else
-			sprintf str, "\\JR\\Zr142#%d   %s\r\\Zr141(%s)\r%g\\F'Symbol'°\\F]0",xtal.SpaceGroup,getSymString(xtal.SpaceGroup),hkl2str(Hz,Kz,Lz),stereoRadius
+			sprintf str, "\\JR\\Zr142%s   %s\r\\Zr141(%s)\r%g\\F'Symbol'°\\F]0",xtal.SpaceGroupID,getHMsym2(xtal.SpaceGroupIDnum),hkl2str(Hz,Kz,Lz),stereoRadius
 		endif
 	endif
 	TextBox/C/N=pole str

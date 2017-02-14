@@ -332,7 +332,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 
 	Wave cell = MakeCellOutline(prefix,direct,Na=Na,Nb=Nb,Nc=Nc)
 	Wave cell0 = MakeCellOutline(prefix,direct,name=NameOfWave(cell)+"0")
-	if (isRhombohedral(xtal.SpaceGroup))
+	if (LatticeSym#isRhombohedral(xtal.SpaceGroup))
 		Wave rhomLat = RhomLatticeFromHex(direct)	// returns a Rhombohedral direct lattice
 		Wave rhomCell0 = AtomView#MakeCellOutline("",rhomLat,name=prefix+"_RhomOutline0")
 	else

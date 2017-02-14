@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.14
+#pragma version = 1.15
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -275,6 +275,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	wnote = ReplaceStringByKey("lengthUnit",wnote,"nm","=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
+	wnote = ReplaceNumberByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
 	for (i=0;i<xtal.N;i+=1)
 		sprintf str, "{%s %g %g %g %g}",xtal.atom[i].name,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z,xtal.atom[i].occ
 		wnote = ReplaceStringByKey("AtomDesctiption"+num2istr(i+1),wnote,str,"=")
@@ -456,8 +457,8 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	Variable ylo=V_min, yhi=V_max
 	my = (ylo-yhi)*vert + yhi
 
-	String tagStr="", str, wnote=note(wTrace)
-	Variable h,k,l,keV,SpaceGroup
+	String tagStr="", str, wnote=note(wTrace), SpaceGroupID
+	Variable h,k,l,keV
 	Variable dist2, m
 	Variable px,py,i,N
 
@@ -482,10 +483,16 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	px = wTrace[m][9][0]
 	py = wTrace[m][10][0]
 	keV=wTrace[m][7][0]
-	SpaceGroup=NumberByKey("SpaceGroup",wnote,"=")
+	SpaceGroupID = StringByKey("SpaceGroupID",wnote,"=")
+	if (strlen(SpaceGroupID)<1)
+		SpaceGroupID = StringByKey("SpaceGroup",wnote,"=")
+	endif
 	sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d",h,k,l,keV,px,py,m
 	tagStr = "\\Zr090Indexed peak position\r" + str
-	tagStr += SelectString(numtype(SpaceGroup),"\r"+getSymString(SpaceGroup)+"    Space Group #"+num2istr(SpaceGroup),"")
+	if (latticeSym#isValidSpaceGroupID(SpaceGroupID))
+		sprintf str, "\r%s    Space Group %s", getHMsym2(SpaceGroupID2num(SpaceGroupID)),SpaceGroupID
+		tagStr += str
+	endif
 
 	Variable theta = NaN									// find theta for this spot
 	STRUCT microGeometry geo

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=indexLots
-#pragma version = 2.37
+#pragma version = 2.38
 #include "ArrayOf3dOrientsN", version>=2.58
 #include "DepthResolvedQueryN", version>=1.52
 #include "IndexingN", version>=4.45
@@ -1549,6 +1549,8 @@ Static Function/T CreateXmlStepStr(FullPeakList,FullPeakIndexed)
 		endif
 	
 		xml += addXMLnumFromTagVals("SpaceGroup",inote,"",3,3)
+		xml += addXMLstrFromTagVals("SpaceGroupID",inote,"",3)
+		xml += addXMLnumFromTagVals("SpaceGroupIDnum",inote,"",3,3)
 		Wave wlat = str2vec(StringByKey("latticeParameters",inote,"="))
 		xml += "\t\t\t<latticeParameters"+unit+">"+vec2str(wlat,places=9,bare=1,sep=" ")+"</latticeParameters>\n"
 		xml += "\t\t</xtl>\n"

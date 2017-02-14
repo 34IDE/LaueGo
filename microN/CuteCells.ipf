@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #requiredPackages "xmlMultiIndex;"
 #pragma ModuleName=CuteCells
-#pragma version=0.10
+#pragma version=0.20
 
 Menu "Rotations"
 	SubMenu("Cute Cells on Graph")
@@ -308,7 +308,7 @@ Function AddCuteCellOnPoint(pnt,[win])
 
 	Variable showNums=NumVarOrDefault("root:Packages:micro:CuteCells:showNumbers",0)
 	String title = SelectString(showNums,"",num2str(pnt))
-	DrawUnitCellOnGraph(num2str(pnt),direct,xOff,yOff,SpaceGroup=194,thick=2,color=darkGreen, arrow=1, title=title)
+	DrawUnitCellOnGraph(num2str(pnt),direct,xOff,yOff,SpaceGroupID="194",thick=2,color=darkGreen, arrow=1, title=title)
 	return pnt
 End
 //
@@ -332,21 +332,21 @@ Function RemoveCuteCellOnPoint(pnt,[win])
 	return pnt
 End
 //
-Static Function/T DrawUnitCellOnGraph(grpName,direct,xOff,yOff,[SpaceGroup,win,thick,color,arrow,title])
+Static Function/T DrawUnitCellOnGraph(grpName,direct,xOff,yOff,[SpaceGroupID,win,thick,color,arrow,title])
 	String grpName				// name of group of draw commands
 	Wave direct					// contains direct lattice (rotated and ready to put on graph)
 	Variable xOff, yOff
-	Variable SpaceGroup
+	String SpaceGroupID
 	String win					// graph name, use "" for top graph
 	Variable thick
 	Wave color
 	Variable arrow				// arrow can be one of {0,1,2,3}
 	String title				// optional title to add
 	win = SelectString(ParamIsDefault(win),win,"")
-	if (ParamIsDefault(SpaceGroup) || numtype(SpaceGroup))		// SpaceGroup not given, check wave note
-		SpaceGroup = NumberByKey("SpaceGroup",note(direct),"=")
+	if (ParamIsDefault(SpaceGroupID) || strlen(SpaceGroupID)<1)		// SpaceGroupID not given, check wave note
+		SpaceGroupID = StringByKey("SpaceGroupID",note(direct),"=")
 	endif
-	if (!(SpaceGroup>0))
+	if (strlen(SpaceGroupID)<1)
 		return ""
 	endif
 	if (ParamIsDefault(color))
@@ -395,8 +395,8 @@ Static Function/T DrawUnitCellOnGraph(grpName,direct,xOff,yOff,[SpaceGroup,win,t
 		yhat *= -1
 	endif
 
-	//	print "SpaceGroup =",SpaceGroup
-	Variable system = LatticeSym#latticeSystem(SpaceGroup)
+	//	print "SpaceGroupID =",SpaceGroupID
+	Variable system = LatticeSym#latticeSystem(SpaceGroupID)
 	//	TRICLINIC=0,MONOCLINIC=1,ORTHORHOMBIC=2,TETRAGONAL=3,TRIGONAL=4,HEXAGONAL=5,CUBIC=6
 	if (system==4 || system==5)		// trigonal or hexagonal, special, use a hexagonal cell
 		Wave lines=MakeAllLinesAroundHexagonalCell(direct,xhat=xhat,yhat=yhat)

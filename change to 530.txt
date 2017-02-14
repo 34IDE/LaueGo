@@ -1,42 +1,45 @@
+check all occurances of getHMboth, getHMsym, getHMsym2, getFullHMSym, getHallSymbol
+search for getSymString --> getHMsym2
+
 Routines to change to accomodate 530 types
 searched for "SpaceGroup" and "crystalStructure"
 
 Legend
-	OK	no change needed
+	OK	no change needed, already OK
 	?	means needs work
 	-	in progress
 	x	done
 
 
 in LaueGo:
--	Lattice/LatticeSym.ipf
+x	Lattice/LatticeSym.ipf
 OK	Lattice/AtomView.ipf
-?	Lattice/LaueSimulation.ipf
+x	Lattice/LaueSimulation.ipf
 
-?	microN/IndexingN.ipf
-?	microN/indexLotsN.ipf
-?	microN/Indexing_Internal.ipf
-?	microN/xmlMultiIndex.ipf
+x	microN/IndexingN.ipf
+x	microN/indexLotsN.ipf
+x	microN/Indexing_Internal.ipf
+x	microN/xmlMultiIndex.ipf
 OK	microN/ArrayOf3dOrientsN.ipf
-?	microN/CuteCells.ipf		(SpaceGroup only used to get system)
+x	microN/CuteCells.ipf
 
-?	Diffractometer/Diffractometer.ipf
+x	Diffractometer/Diffractometer.ipf
 
 
 OK	General/Gizmo/GizmoUtility.ipf
-?	Lattice/PowderPatterns.ipf (add SpaceGroupID to title)
-?	Lattice/StereographicProjection.ipf
+x	Lattice/PowderPatterns.ipf
+x	Lattice/StereographicProjection.ipf
 OK	microN/DetectorCalibration.ipf
 
 ================================================
 
 in LocalPackages:
-?	ORNL/EFRC/dsdO_calc.ipf
+x	ORNL/EFRC/dsdO_calc.ipf
 OK	ORNL/EFRC/DhirajCalc.ipf
 OK	ORNL/EFRC/pairCorrelations.ipf
 OK	ORNL/EFRC/SingleColumn.ipf
 
-?	inProgress/ODF.ipf
+x	inProgress/ODF.ipf
 OK	inProgress/testHKL.ipf
 OK	Diffraction/DiffractometerSim.ipf
 OK	Diffraction/Dynamical.ipf

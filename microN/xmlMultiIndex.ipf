@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=1.99
+#pragma version=2.00
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1802,14 +1802,23 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	svec = ReplaceString(" ",xmlTagContents("l",step),";")
 	FullPeakIndexed[][5] = str2num(StringFromList(p,svec))
 
-	Variable SpaceGroup = str2num(ReplaceString(" ",xmlTagContents("SpaceGroup",step),";"))
+//	Variable SpaceGroup = str2num(ReplaceString(" ",xmlTagContents("SpaceGroup",step),";"))
+	Variable SpaceGroup = str2num(xmlTagContents("SpaceGroup",step))
 	if (!(SpaceGroup>=1 && SpaceGroup<=230))
 		return ""
 	endif
+	String SpaceGroupID = xmlTagContents("SpaceGroupID",step)
+	Variable SpaceGroupIDnum = str2num(xmlTagContents("SpaceGroupIDnum",step))
+	if (strlen(SpaceGroupID)<1)
+		SpaceGroupID = LatticeSym#FindDefaultIDforSG(SpaceGroup)
+	endif
+	SpaceGroupIDnum = numtype(SpaceGroupIDnum) ? str2num(SpaceGroupID) : SpaceGroupIDnum
 
 	wnote = ReplaceStringByKey("waveClass","","IndexedPeakList","=")
 	wnote += roi
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,SpaceGroup,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+	wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,SpaceGroupIDnum,"=")
 	String str = "{{"
 	str += ReplaceString(" ",xmlTagContents("astar",step),",") + "}{"
 	str += ReplaceString(" ",xmlTagContents("bstar",step),",") + "}{"
@@ -3481,6 +3490,8 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with current values
 		DoAlert 0, "no crystal structure found, continuing..."
 		xtal.SpaceGroup = -1					// flags as an invalid xtal, will not calculate Fstruct
+		xtal.SpaceGroupID = ""
+		xtal.SpaceGroupIDnum = -1
 	endif
 	if (!WaveExists(recip0))
 		if (xtal.SpaceGroup > 0)
@@ -4779,7 +4790,15 @@ Function LatticeParametersFromXML(FullFileName,xtal)
 	if (!(SpaceGroup>=1 && SpaceGroup<=230))
 		return 1
 	endif
+	String SpaceGroupID = xmlTagContents("SpaceGroupID",buf)
+	Variable SpaceGroupIDnum = str2num(xmlTagContents("SpaceGroupIDnum",buf))
+	if (strlen(SpaceGroupID)<1)
+		SpaceGroupID = LatticeSym#FindDefaultIDforSG(SpaceGroup)
+	endif
+	SpaceGroupIDnum = numtype(SpaceGroupIDnum) ? str2num(SpaceGroupID) : SpaceGroupIDnum
 	xtal.SpaceGroup = SpaceGroup
+	xtal.SpaceGroupID = SpaceGroupID
+	xtal.SpaceGroupIDnum = SpaceGroupIDnum
 
 	String str = xmlTagContents("latticeParameters",buf)
 	Variable a,b,c,alpha,bet,gam
@@ -5068,6 +5087,8 @@ EndStructure
 	
 		char xtl_structureDesc[250]
 		int16 xtl_SpaceGroup
+		int16 xtl_SpaceGroupIDnum
+		char xtl_SpaceGroupID[12]
 		double xtl_a									// units are nm
 		double xtl_b
 		double xtl_c
@@ -5211,6 +5232,8 @@ Static Function FillStepStructure(step,FullPeakIndex)
 	step.index.xtl_beta = str2num(StringFromList(4,str,","))
 	step.index.xtl_gamma = str2num(StringFromList(5,str,","))
 	step.index.xtl_SpaceGroup = NumberByKey("SpaceGroup",wnote,"=")
+	step.index.xtl_SpaceGroupIDnum = NumberByKey("SpaceGroupIDnum",wnote,"=")
+	step.index.xtl_SpaceGroupID = StringByKey("SpaceGroupID",wnote,"=")
 	step.index.xtl_structureDesc = StringByKey("structureDesc",wnote,"=")
 
 	Make/N=(DimSize(FullPeakIndex,0))/FREE testCount
@@ -5482,6 +5505,8 @@ Static Function/T AppendTo3dXML(step,path,filename,[overwrite])	// append data (
 			out += "\t\t\t<structureDesc>"+step.index.xtl_structureDesc+"</structureDesc>\n"
 		endif
 		out += "\t\t\t<SpaceGroup>"+num2istr(step.index.xtl_SpaceGroup)+"</SpaceGroup>\n"
+		out += "\t\t\t<SpaceGroupID>"+step.index.xtl_SpaceGroupID+"</SpaceGroupID>\n"
+		out += "\t\t\t<SpaceGroupIDnum>"+num2istr(step.index.xtl_SpaceGroupIDnum)+"</SpaceGroupIDnum>\n"
 		sprintf str, "\t\t\t<latticeParameters unit=\"nm\">%.9g %.9g %.9g %.9g %.9g %.9g</latticeParameters>\n",step.index.xtl_a,step.index.xtl_b,step.index.xtl_c,step.index.xtl_alpha,step.index.xtl_beta,step.index.xtl_gamma
 		out += str
 		out += "\t\t</xtl>\n"

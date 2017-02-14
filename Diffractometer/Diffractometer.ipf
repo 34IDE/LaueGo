@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.58
+#pragma version = 0.59
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -689,8 +689,8 @@ Function printSampleStructure(s)
 	endif
 
 	if (!LatticeSym#LatticeBad(s.xtal))
-		String sym = getHMboth(s.xtal.SpaceGroup)
-		printf "    for '%s'  lattice is  #%d   %s     %.9gnm, %.9gnm, %.9gnm,   %g¡, %g¡, %g¡\r",s.xtal.desc,s.xtal.SpaceGroup,sym,s.xtal.a,s.xtal.b,s.xtal.c,s.xtal.alpha,s.xtal.beta,s.xtal.gam
+		String sym = getHMboth(s.xtal.SpaceGroupIDnum)
+		printf "    for '%s'  lattice is  %s   %s     %.9gnm, %.9gnm, %.9gnm,   %g¡, %g¡, %g¡\r",s.xtal.desc,s.xtal.SpaceGroupID,sym,s.xtal.a,s.xtal.b,s.xtal.c,s.xtal.alpha,s.xtal.beta,s.xtal.gam
 	endif
 
 	if (s.Nrefs > 0 && !sampleRefBad(s.refs[0]) && !sampleRefBad(s.refs[1]))
@@ -1087,6 +1087,8 @@ Static Function fourcReferenceOrientation(s,px,py)
 
 	s.xtal.desc = "fourc default"
 	s.xtal.SpaceGroup = 221
+	s.xtal.SpaceGroupID = LatticeSym#FindDefaultIDforSG(221)
+	s.xtal.SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(221)
 	s.xtal.a = 0.154
 	LatticeSym#ForceLatticeToStructure(s.xtal)
 	s.refs[0].lambda = 0.154
@@ -1237,6 +1239,8 @@ Static Function psicReferenceOrientation(s,px,py)
 
 	s.xtal.desc = "psic default"
 	s.xtal.SpaceGroup = 221
+	s.xtal.SpaceGroupID = LatticeSym#FindDefaultIDforSG(221)
+	s.xtal.SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(221)
 	s.xtal.a = 0.154
 	LatticeSym#ForceLatticeToStructure(s.xtal)
 	s.refs[0].lambda = 0.154
@@ -1303,6 +1307,8 @@ Function protoReferenceOrientation(s,px,py)	// fills s with the reference orient
 	s.Nrefs = 0
 	s.xtal.desc = "default Si"
 	s.xtal.SpaceGroup = 227
+	s.xtal.SpaceGroupID = LatticeSym#FindDefaultIDforSG(227)
+	s.xtal.SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(227)
 	s.xtal.a = 0.54310206
 	LatticeSym#ForceLatticeToStructure(s.xtal)
 	Variable astar = 2*PI/(s.xtal.a)
