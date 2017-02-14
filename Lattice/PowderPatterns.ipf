@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.20
+#pragma version = 0.21
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -27,7 +27,7 @@ End
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
 Static Constant N_POWDER_LINES_COLUMNS = 8		// number of coumns in a powder lines wave
 #if (IgorVersion()<7)
-	Static strConstant PLUSMINUS = "\261"		// Windows use ALT keycode 0177 = 261 octal, on mac option-shift-=
+	Static strConstant PLUSMINUS = "\261"			// Windows use ALT keycode 0177 = 261 octal, on mac option-shift-=
 #else
 	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, PLUS-MINUS SIGN
 #endif
@@ -278,7 +278,9 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	if (keV>0)
 		wNote = ReplaceNumberByKey("keV",wNote,keV,"=")
 	endif
-	wNote = ReplaceStringByKey("xtalName",wNote,desc,"=")
+	String xtalTitle = desc + SelectString(strlen(xtal.SpaceGroupID), "", "  "+xtal.SpaceGroupID)
+	xtalTitle += SelectString(numtype(xtal.SpaceGroupIDnum), "", "  "+getHMsym2(xtal.SpaceGroupIDnum), "")
+	wNote = ReplaceStringByKey("xtalTitle",wNote,xtalTitle,"=")
 
 	Variable NlinesMax=200
 	Make/N=(NlinesMax,7)/D/FREE lines=NaN
@@ -314,16 +316,16 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 				lines[m][3] = l
 				lines[m][4] = theta*180/PI			// save angle in degrees
 				lines[m][5] = F2
-				lines[m][6] = F2 * Lorentz * Pol		// was F2*LP
+				lines[m][6] = F2 * Lorentz * Pol	// was F2*LP
 				m += 1
 			endfor
 		endfor
 	endfor
-	NlinesMax = m
+	NlinesMax = m											// the largest multiplicity
 	Redimension/N=(NlinesMax,-1) lines				// trim off extras
 
 	Make/N=(m)/FREE/D Qs, QsIndex, temp
-	Qs = lines[p][0]									// Q values for every possible hkl
+	Qs = lines[p][0]										// Q values for every possible hkl
 	MakeIndex Qs, QsIndex								//  to sort with increasing Q
 	Variable i
 	for (i=0;i<DimSize(lines,1);i+=1)
@@ -358,25 +360,33 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	Note/K hklStr, "waveClass=HKLlabelsPowderLines;LinesWave="+GetWavesDataFolder(lineShort,2)+";"
 	wNote = ReplaceStringByKey("hklStrWave",wNote,str,"=")
 
-	Make/N=(NlinesMax,3)/FREE hkls					// temp list of hkls for line, used to pick the "nicest" hkl
+	str += "All"
+	Make/N=(NlinesMax)/T/O $str/WAVE=hklStrAll = ""
+	Note/K hklStrAll, "waveClass=HKLlabelsPowderLinesAll;LinesWave="+GetWavesDataFolder(lineShort,2)+";"
+	wNote = ReplaceStringByKey("hklStrAllWave",wNote,str,"=")
+
+	Make/N=(NlinesMax,3)/FREE hkls						// temp list of hkls for line, used to pick the "nicest" hkl
 	Variable mult, Nlines=0
 	for (Nlines=0,i=0; i<NlinesMax;)
-		qhkl = lines[i][0]								// Q of this line
+		qhkl = lines[i][0]									// Q of this line
 		mult = 0
 		hkls = NaN
 		do
 			lineShort[Nlines][0,N_POWDER_LINES_COLUMNS-2] = lines[i][q]
-			hkls[mult][] = lines[i][q+1]				// accumulate list of all hkls in this line
+			hkls[mult][] = lines[i][q+1]					// accumulate list of all hkls in this line
+			hklStrAll[Nlines] += "("+hkl2str(lines[i][1],lines[i][2],lines[i][3])+")+"
 			mult += 1
 			i += 1
 		while(abs(lines[i][0]-qhkl)<1e-10)
+		hklStrAll[Nlines] = ReplaceString(", ",hklStrAll[Nlines],",")
+		hklStrAll[Nlines] = TrimBoth(hklStrAll[Nlines],chars="+")
 		lineShort[Nlines][7] = mult
 		Wave niceHKL = nicestHKL(hkls)
 		lineShort[Nlines][1,3] = niceHKL[q-1]			// re-set hkl to the "nicest" one
 		hklStr[Nlines] = nicestHKLstr(hkls)			// better for labeling, it includes multipliticites
 		Nlines += 1
 	endfor
-	Redimension/N=(Nlines,-1) lineShort, hklStr		// trim to final size
+	Redimension/N=(Nlines,-1) lineShort, hklStr, hklStrAll		// trim to final size
 
 	Note/K lineShort, wNote
 	if (printIt)
@@ -561,7 +571,7 @@ Function GraphPowderPattern(ww)
 	Variable keV = NumberByKey("keV",wnote,"=")
 	Variable FWHMQ = NumberByKey("FWHMQ",wnote,"=")
 	String title = "\\JR\\Zr125"
-	title += StringByKey("xtalName", wnote,"=")
+	title += StringByKey("xtalTitle", wnote,"=")
 	title += SelectString(keV>0 || FWHMQ>0,"","\\Zr075")
 	title += SelectString(keV>0,"","\r"+num2str(keV)+" keV")
 	title += SelectString(FWHMQ>0,"","\rFWHM = "+num2str(FWHMQ)+"(nm\\S-1\\M)")
@@ -625,7 +635,7 @@ Function GraphPowderLines(ww,[theta])
 	String wnote = note(ww)
 	Variable keV = NumberByKey("keV",wnote,"=")
 	String title = "\\JR\\Zr125"
-	title += StringByKey("xtalName", wnote,"=")
+	title += StringByKey("xtalTitle", wnote,"=")
 	title += SelectString(keV>0,"","\r"+num2str(keV)+"\\M keV")
 
 	Display /W=(273,348,1151,732) ww[*][iy] vs ww[*][ix]
@@ -658,6 +668,7 @@ Static Function ShowPowderLinesWindowHook(s)
 		endif
 		String wNote=note(lines)
 		Wave/T hklStr = $(GetWavesDataFolder(lines,1)+StringByKey("hklStrWave",wNote,"="))
+		Wave/T hklStrAll = $(GetWavesDataFolder(lines,1)+StringByKey("hklStrWave",wNote,"=")+"All")
 
 		Variable Xval = AxisValFromPixel(win,"bottom",s.mouseLoc.h)
 		String xrange=StringByKey("XRANGE",TraceInfo(win,NameOfWave(lines),0))
@@ -680,7 +691,13 @@ Static Function ShowPowderLinesWindowHook(s)
 		else
 			tagStr = "("+hkl2str(lines[iLine][1],lines[iLine][2],lines[iLine][3])+")"
 		endif
-		sprintf str, "\\Zr075\rQ = %g nm\\S-1\M\\Zr075",Qval
+		tagStr += "\\Zr075\r"
+		if (WaveExists(hklStrAll))
+			if (ItemsInList(hklStrAll[iLine],"+") <= 4)
+				tagStr += hklStrAll[iLine]+"\r"
+			endif
+		endif
+		sprintf str, "Q = %g nm\\S-1\M\\Zr075",Qval
 		tagStr += str
 		if (theta>0)
 			sprintf str, "\rtheta = %g"+DEGREESIGN,theta
@@ -694,7 +711,11 @@ Static Function ShowPowderLinesWindowHook(s)
 		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)/2) ? -7 : 7
 		anchor = SelectString(X0>0,"R","L")
 		anchor += SelectString(Y0>0,"T","B")
+#if (IgorVersion()<7)
 		Tag/C/N=lineHKL/W=$win/A=$anchor/F=0/L=2/X=(X0)/Y=(Y0)/P=1 $NameOfWave(lines),iLine,tagStr
+#else
+		Tag/C/N=lineHKL/W=$win/A=$anchor/F=0/L=2/X=(X0)/Y=(Y0)/G=(0,0,0,45875)/B=1/P=1 $NameOfWave(lines),iLine,tagStr
+#endif
 		DoUpdate
 		return 1
 	else											// clean up

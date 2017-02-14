@@ -4472,7 +4472,7 @@ Static Function DW_factor_M(T,thetaM,Qmag,amu)		// calculates the M in exp(-M), 
 	if (xx>50000)
 		return 0
 	endif
-	Variable Phi = Integrate1D(PhiIntegrand,0,xx)/xx
+	Variable Phi = Integrate1D(LatticeSym#PhiIntegrand,0,xx)/xx
 	Variable B = (3*hbar^2 * T * c^2)/(2*(amu*amu_eV)*kB*thetaM^2)* (Phi + xx/4)
 	Variable M = B *(Qmag*1.e9)^2		// Q is in 1/nm, but we need it in 1/m
 	return M

@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.41
+#pragma version = 0.42
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -342,12 +342,19 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 
 	SetDataFolder fldrSav
 
+	String id = xtal.SpaceGroupID, str
+	if (strlen(id)<1)
+		id = num2str(xtal.SpaceGroup)
+	endif
+	String title = desc + SelectString(strlen(id), "", "  "+id)
+	str = getHMsym2(xtal.SpaceGroupIDnum)
+	title += SelectString(strlen(str), "", "  "+str)
 	wNote = "waveClass=atomViewXYZ;"
 	wNote = ReplaceStringByKey("sourceFldr",wNote,GetWavesDataFolder(xyz,1),"=")
 	wNote = ReplaceStringByKey("desc",wNote,desc,"=")
+	wNote = ReplaceStringByKey("title",wNote,title,"=")
 	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
 	wNote = ReplaceNumberByKey("Natom",wNote,Natom,"=")
-	String str
 	sprintf str,"%g %g %g",Na,Nb,Nc
 	wNote = ReplaceStringByKey("Nabc",wNote,str,"=")
 
@@ -1104,7 +1111,11 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Wave rhomCell0 = $StringByKey("rhomOutlineWave0",wNote,"=")
 	Variable bondLenMax = NumberByKey("bondLenMax",wNote,"=")
 	String sourceFldr=StringByKey("sourceFldr",wNote,"=")
-	String desc=StringByKey("desc",wNote,"=")
+	String title=StringByKey("title",wNote,"=")
+	if (strlen(title)<1)
+		title = StringByKey("desc",wNote,"=")
+	endif
+
 	Variable Na,Nb,Nc
 	String title2="", title3=""
 	sscanf StringByKey("Nabc",wNote,"="),"%g %g %g", Na,Nb,Nc
@@ -1142,7 +1153,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	NewGizmo/N=$gizName/W=(234,45,992,803)/T=gizName
 	ModifyGizmo startRecMacro
 #endif
-	String titleGroup = AddGizmoTitleGroup("",desc,title2=title2,title3=title3,title4=sourceFldr)
+	String titleGroup = AddGizmoTitleGroup("",title,title2=title2,title3=title3,title4=sourceFldr)
 
 	MatrixOP/FREE maxX = maxVal(col(xyz,0))
 	MatrixOP/FREE maxY = maxVal(col(xyz,1))
@@ -1730,13 +1741,16 @@ Static Function AtomViewGizmoFixHookProc(s)
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
 	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
 #else
-	String desc = StringByKey("desc",wnote,"="), title3=""
+	String title = StringByKey("title",wnote,"="), title3=""
+	if (strlen(title)<1)
+		title = StringByKey("desc",wNote,"=")
+	endif
 	Variable bondLenMax=NumberByKey("bondLenMax",wnote,"=")
 	if (bondLenMax>0)
 		sprintf title3,"max bond length = %g nm",bondLenMax
 	endif
 	String sourceFldr = StringByKey("sourceFldr",wnote,"=")
-	String titleGroup = AddGizmoTitleGroup("textTitle",desc,title2=title2,title3=title3,title4=sourceFldr)
+	String titleGroup = AddGizmoTitleGroup("textTitle",title,title2=title2,title3=title3,title4=sourceFldr)
 #endif
 	return 0	 
 End
