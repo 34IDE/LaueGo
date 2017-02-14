@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.01
+#pragma version = 6.02
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -4012,7 +4012,18 @@ Static Function CIF_interpret(xtal,buf,[desc])
 
 	String id = FindDefaultIDforSG(xtal.SpaceGroup)
 	xtal.SpaceGroupID = id
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1-530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)// change id to id number in [1-530]
+
+	// try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
+	String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)
+	HMsym = ReplaceString(" ",HMsym,"")	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
+	String nlist = LatticeSym#SymString2SGtype(HMsym,2)
+	Variable idNum = str2num(StringFromList(0,nlist))
+	if (ItemsInList(nlist)==1 && isValidSpaceGroupIDnum(idNum))	// found valid SpaceGroupIDnum
+		String allIDs=MakeAllIDs()
+		xtal.SpaceGroupIDnum = idNum
+		xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
+	endif
 
 	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
 
@@ -4033,7 +4044,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		i = strsearch(buf,"\n"+last+"\n",0)+strlen(last)+2		// i is now start of table values
 		buf = buf[i,Inf]
 		for (i=strsearch(buf,"\n",0); i>=0; i=strsearch(buf,"\n",i+1))	// find end of list
-			cc = char2num(buf[i+1])				// values end with a line having an "_", an empty line, or line starting with "#"
+			cc = char2num(buf[i+1])					// values end with a line having an "_", an empty line, or line starting with "#"
 			if (cc<=10 || cc==35 || cc==95)
 				break
 			endif
@@ -4042,7 +4053,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			buf = buf[0,i]
 		endif
 
-		buf = buf[0,i]								// buf now contains ONLY the list values
+		buf = buf[0,i]										// buf now contains ONLY the list values
 		buf = ReplaceString(" ",buf,"\t")
 		do
 			buf = ReplaceString("\t\t",buf,"\t")	// change all multiple tabs to single tabs
@@ -4050,17 +4061,17 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		buf = ReplaceString("\n\t",buf,"\n")
 		buf = ReplaceString("\t\n",buf,"\n")
 		if (char2num(buf)==9)
-			buf = ReplaceString("\t",buf,"",0,1)		// remove the leading tab
+			buf = ReplaceString("\t",buf,"",0,1)	// remove the leading tab
 		endif
 		buf = ReplaceString("\t",buf,";")			// turns white space separated table into a set of lists
 
-		String symb
+		String symb											// Element symbol, e.g. "Fe", "Co", ...
 		Variable Z, occ, Biso, Uiso, Uij
 
 		Variable N, i0,i1
 		for (N=0,i0=0; N<STRUCTURE_ATOMS_MAX && i0<strlen(buf); N+=1)
 			i1 = strsearch(buf,"\n",i0)
-			line = buf[i0,i1-1]								// un-terminated line
+			line = buf[i0,i1-1]							// un-terminated line
 			xtal.atom[N].DebyeT = NaN
 			xtal.atom[N].Uiso = NaN	;	xtal.atom[N].Biso = NaN
 			xtal.atom[N].U11 = NaN		;	xtal.atom[N].U22 = NaN	;		xtal.atom[N].U33 = NaN
