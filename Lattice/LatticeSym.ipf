@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.02
+#pragma version = 6.03
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -5161,6 +5161,17 @@ End
 
 
 ThreadSafe Static Function/T MakeAllIDs()
+	// Returns the list with all of the 530 Space Group types.
+	//	In the 230 SpaceGroups, there are:
+	//	  140 Space Groups of   1 types
+	//	   30 Space Groups of   2 types
+	//	   26 Space Groups of   3 types
+	//	   25 Space Groups of   6 types
+	//	    6 Space Groups of   9 types
+	//	    1 Space Groups of  12 types
+	//	    2 Space Groups of  18 types
+	// for the full list, use  NumbersOfTypes(), which is shown below.
+
 	String allIDs = "1;2;3:b;3:c;3:a;4:b;4:c;4:a;5:b1;5:b2;5:b3;5:c1;5:c2;5:c3;5:a1;5:a2;"
 	allIDs += "5:a3;6:b;6:c;6:a;7:b1;7:b2;7:b3;7:c1;7:c2;7:c3;7:a1;7:a2;7:a3;8:b1;8:b2;8:b3;"
 	allIDs += "8:c1;8:c2;8:c3;8:a1;8:a2;8:a3;9:b1;9:b2;9:b3;9:-b1;9:-b2;9:-b3;9:c1;9:c2;"
@@ -5202,6 +5213,32 @@ ThreadSafe Static Function/T MakeAllIDs()
 	allIDs += "225;226;227:1;227:2;228:1;228:2;229;230"
 	return allIDs
 End
+//
+//	Function NumbersOfTypes()
+//		String allIDs = LatticeSym#MakeAllIDs()
+//		Make/N=230/I/O types=0
+//		SetScale/P x 1,1,"SpaceGroup", types
+//		Variable i,m
+//		for (i=0;i<530;i+=1)
+//			m = str2num(StringFromList(i,allIDs))
+//			types[m-1] +=1
+//		endfor
+//	
+//		Variable tMax=WaveMax(types)
+//		Duplicate/FREE types cntTypes
+//		Make/N=(tMax)/I/FREE sums
+//		print "In the 230 SpaceGroups, there are:"
+//		for (i=0;i<tMax;i+=1)
+//			cntTypes = (types[p]==(i+1))
+//			if (sum(cntTypes))
+//				printf "  %3d Space Groups of %3d types\r",sum(cntTypes), i+1
+//			endif
+//		endfor
+//
+//		Display /W=(298,120,1440,504) types
+//		ModifyGraph mode=4, marker=19, lStyle=1, tick=2, mirror=1, minor=1
+//		SetAxis/A/E=1 left
+//	End
 
 
 
