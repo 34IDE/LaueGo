@@ -1092,62 +1092,81 @@ End
 Static Function ForceLatticeToStructure(xtal)
 	STRUCT crystalStructure &xtal					// this sruct is set in this routine
 
-	Variable SpaceGroup=xtal.SpaceGroup			// local value for convienence
-	if (!isValidSpaceGroup(SpaceGroup))			// invalid SpaceGroup, it must be in range [1,230]
-		DoAlert 0, "invalid Space Group number "+num2str(SpaceGroup)
+	// Make sure that the SpaceGroup, SpaceGroupID, and SpaceGroupIDnum all agree
+	Variable SG, idNum
+	String id = xtal.SpaceGroupID	// first try to use the id to identify the material			
+	if (isValidSpaceGroupID(id))
+		SG = str2num(id)
+		idNum = SpaceGroupID2num(id)
+	else
+		SG = xtal.SpaceGroup			// failed with SpaceGroupID, try just SpaceGroup
+		id = FindDefaultIDforSG(SG)	
+		idNum = SpaceGroupID2num(id)
+		xtal.SpaceGroupID = id			// set id & idNum using values from SpaceGroup
+		xtal.SpaceGroupIDnum = idNum
+	endif
+	if (!isValidSpaceGroupIDnum(idNum))	// SpaceGroupIDnum must be in range [1,530]
+		DoAlert 0, "invalid Space Group ID "+id+"     or SpaceGroup #"+num2str(SG)
 		return 1
 	endif
-	//	Cubic				[195,230]		//	a
-	//	Hexagonal		[168,194]			//	a,c
-	//	Trigonal			[143,167]		//	a,alpha
-	//	Tetragonal		[75,142]		//	a,c
-	//	Orthorhombic	[16,74]			//	a,b,c
-	//	Monoclinic		[3,15]		//	a,b,c,gamma
-	//	Triclinic		[1,2]				//	a,b,c,alpha,beta,gamma
 
-	if (SpaceGroup>=195)				// Cubic
-		xtal.b = xtal.a
-		xtal.c = xtal.a
-		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-	elseif(SpaceGroup>=168)			// Hexagonal
-		xtal.b = xtal.a
-		xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
+	//	Cubic				[195,230]		a
+	//	Hexagonal		[168,194]		a,c
+	//	Trigonal			[143,167]		a,alpha
+	//	Tetragonal		[75,142]			a,c
+	//	Orthorhombic	[16,74]			a,b,c
+	//	Monoclinic		[3,15]			a,b,c,gamma
+	//	Triclinic		[1,2]				a,b,c,alpha,beta,gamma
 
-	elseif(SpaceGroup>=143)			// Trigonal (generally hexagonal cell), for rhomohedral use rhomohedral cell, unless obviously the hexagonal
-		if (isRhombohedral(SpaceGroup))	// rhombohedral structure
-			if ((abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-3)	// obviously hexagonal
-				xtal.b = xtal.a
-				xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
-			else								// rhombohedral with rhombohedral cell
-				xtal.b = xtal.a
-				xtal.c = xtal.a
-				xtal.beta = xtal.alpha
-				xtal.gam = xtal.alpha
-			endif
-		else									// "P" trigonal, use hexagonal cell
+	// force the lattice constant to confomr to system
+	Variable system = latticeSystem(id)
+	if (system == CUBIC)					// Cubic space groups [195,230]
+			xtal.b = xtal.a
+			xtal.c = xtal.a
+			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+
+	elseif (system == HEXAGONAL)			// Hexagonal space groups [168,194]
+			xtal.b = xtal.a
+			xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
+
+	elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
+		// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
+		if (isRhombohedral(SG) && abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1)
+			// looks like a rhombohedral structure using rhombohedral lattice constants
+			xtal.b = xtal.a					// set to rhombohedral a=b=c, alpha=beta=gamma
+			xtal.c = xtal.a
+			xtal.beta = xtal.alpha
+			xtal.gam = xtal.alpha
+		else										// set to hexagonal lattice constants
 			xtal.b = xtal.a
 			xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
 		endif
 
-	elseif(SpaceGroup>=75)				// Tetragonal
+	elseif (system == TETRAGONAL)		// Tetragonal space groups [75,142]
 		xtal.b = xtal.a
 		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-	elseif(SpaceGroup>=16)				// Orthorhombic
+
+	elseif (system == ORTHORHOMBIC)		// Orthorhombic space groups [16,74]
 		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-	elseif(SpaceGroup>=3)				// Monoclinic
-//		xtal.alpha=90;  xtal.beta=90
+
+	elseif (system == MONOCLINIC)		// Monoclinic space groups [3,15]
 		xtal.alpha=90;  xtal.gam=90
-//	else										// Triclinic
+
+	elseif (system == TRICLINIC)			// Triclinic space groups 1,2]
+		// nothing to fix
+	else
+		return 1									// system is invalid, NOT valid
 	endif
 
+	// check that lattice constants appear valid (non NaN or negatives or zero...)
 	String str
-	if (xtal.a<=0 || xtal.b<=0 || xtal.c<=0 || numtype(xtal.a+xtal.b+xtal.c))	// check for valid a,b,c
+	if (xtal.a<=0 || xtal.b<=0 || xtal.c<=0 || numtype(xtal.a+xtal.b+xtal.c))
 		sprintf str,"invalid, (a,b,c) = (%g,%g,%g)",xtal.a,xtal.b,xtal.c
 		DoAlert 0, str
 		return 1
 	endif
 	Variable alpha=xtal.alpha,bet=xtal.beta,gam=xtal.gam
-	if (alpha<=0 || bet<=0 || gam<=0 || alpha>=180 || bet>=180 || gam>=180 || numtype(alpha+bet+gam))	// check for valid angles
+	if (alpha<=0 || bet<=0 || gam<=0 || alpha>=180 || bet>=180 || gam>=180 || numtype(alpha+bet+gam))
 		sprintf str,"invalid, (alpha,beta,gam) = (%g,%g,%g)",alpha,bet,gam
 		DoAlert 0, str
 		return 1
@@ -5930,6 +5949,9 @@ ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice consta
 				return (isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam))
 			endif
 			return 0
+
+		case TETRAGONAL	:						// Tetragonal space groups [75,142]
+			return isTETRAGONAL_LC(a,b,c,alpha,bet,gam)
 
 		case ORTHORHOMBIC:						// Orthorhombic space groups [16,74]
 			return isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)
