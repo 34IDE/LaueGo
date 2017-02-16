@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.17
+#pragma version = 4.18
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1981,6 +1981,7 @@ Function/T RemoveDuplicatesFromList(list,[listSepStr,matchCase])
 		m = WhichListItem(item,list,listSepStr,i+1,matchCase)
 		if (m>0)
 			list = RemoveListItem(m,list,listSepStr)
+			i -= 1					// forces a search again for item, there may be more than one occurance of item
 		endif
 	endfor
 	return list

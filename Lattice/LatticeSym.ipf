@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.04
+#pragma version = 6.05
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -2445,7 +2445,8 @@ Static Function/T SelectNewSG(find)
 		symList += str
 	endfor	
 
-	String list = symmtry2SG(find,type=0,printIt=0), sym
+	String list = symmtry2SG(find,types=-1,printIt=0), sym
+	list = RemoveDuplicatesFromList(list)
 	String system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 	String id, allIDs=MakeAllIDs()
 	Variable Nlist=ItemsInList(list), idNum
@@ -4038,7 +4039,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	// try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)
 	HMsym = ReplaceString(" ",HMsym,"")	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-	String nlist = LatticeSym#SymString2SGtype(HMsym,2)
+	String nlist = SymString2SGtype(HMsym,2)	// checks in getHMsym2
 	Variable idNum = str2num(StringFromList(0,nlist))
 	if (ItemsInList(nlist)==1 && isValidSpaceGroupIDnum(idNum))	// found valid SpaceGroupIDnum
 		String allIDs=MakeAllIDs()
@@ -5533,73 +5534,73 @@ ThreadSafe Static Function latticeSystem(SpaceGroupID)
 End
 
 
-Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from the symmetry string
+Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from the symmetry string
 	String strIN
-	Variable type						// 0=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 3=Hall, 4=Lattice System, 5=SpaceGroupID
+	Variable types						// -1=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=SpaceGroupID
 	Variable printIt
-	type = ParamIsDefault(type) ? 0 : round(type)
-	type = type<0 || type>5 ? NaN : type
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ?  strlen(GetRTStackInfo(2))<1 : !(!printIt)
+	types = ParamIsDefault(types) ? -1 : round(types)
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	if (strlen(strIN)<1 || numtype(type))
+	if (strlen(strIN)<1 || numtype(types))
 		Prompt strIN, "Symmetry Symbol or Space Group Number, (e.g. \"Pmm*\"), wild cards allowed"
-		Prompt type,"Symbol Type",popup,"Check All Symbol Types;Hermann-Mauguin;Full Hermann-Mauguin;Hall;Lattice System;SpaceGroup ID"
-		type += 1
-		DoPrompt "Symmetry Symbol",strIN,type
+		Variable t1=(types&1)+1, t2=(types&2)+1, t4=(types&4)+1, t8=(types&8)+1, t16=(types&16)+1
+		Prompt t1, "Hermann-Mauguin", popup "-;Hermann-Mauguin"
+		Prompt t2, "Full Hermann-Mauguin", popup "-;Full Hermann-Mauguin"
+		Prompt t4, "Hall", popup "-;Hall"
+		Prompt t8, "Lattice System", popup "-;Lattice System"
+		Prompt t16, "SpaceGroup ID", popup "-;SpaceGroup ID"
+		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16
 		if (V_flag)
 			return ""
 		endif
-		type -= 1
+		types = 0
+		types += t1==2 ? 1 : 0
+		types += t2==2 ? 2 : 0
+		types += t4==2 ? 4 : 0
+		types += t8==2 ? 8 : 0
+		types += t16==2 ? 16 : 0
 		printIt = 1
 	endif
 	if (strlen(strIN)<1)
 		return ""
 	endif
-	type = round(type)
 
-	String list="", name=StringFromList(type,"any type of;Hermann-Mauguin;FULL Hermann-Mauguin;Hall;Lattice System;SpaceGroup ID")
+	String list="", nameList=""
 	Variable idNum
-	if (type==1 || type==0)
-		list += SymString2SGtype(strIn,1)
+	if (types & 1)
+		list += SymString2SGtype(strIn,1)		// 1 = Hermann-Mauguin
+		nameList += "Hermann-Mauguin, "
 	endif
-	if (type==2 || type==0)
-		list += SymString2SGtype(strIn,2)
+	if (types & 2)
+		list += SymString2SGtype(strIn,2)		// 2 = Full Hermann-Mauguin, HM2
+		nameList += "FULL Hermann-Mauguin, "
 	endif
-	if (type==3 || type==0)
-		list += SymString2SGtype(strIn,3)
+	if (types & 4)
+		list += SymString2SGtype(strIn,4)		// 4 = Hall
+		nameList += "Hall, "
 	endif
-	if (type==4 || type==0)
-		list += SymString2SGtype(strIn,4)
+	if (types & 8)
+		list += SymString2SGtype(strIn,8)		// 8 = Lattice System
+		nameList += "Lattice System, "
 	endif
-	if (type==5 || type==0)
-		list += SymString2SGtype(strIn,5)
+	if (types & 16)
+		list += SymString2SGtype(strIn,16)		// 16 = space group ID, e.g. "15:b3"
+		nameList += "Space Group ID, "
 	endif
+	nameList = TrimBoth(nameList,chars=", ")
+	list = RemoveDuplicatesFromList(list)
+	list = SortList(list,";",1)
 
-	Variable i,Nlist=ItemsInList(list), last, now
-	String str = SortList(list,";",2)
-	list = ""
-	for (last=-Inf,i=0; i<Nlist; i+=1)		// remove duplicates
-		now = str2num(StringFromList(i,str))
-		now = numtype(now) ? NaN : now
-		now = (now>=1 && now<=230) ? now : NaN
-		if (now>last)
-			list += num2istr(now)+";"
-			last = now
-		endif
-	endfor
-	Nlist = ItemsInList(list)
-
-	// finally print out information about each SpaceGroupIDnum in list
-	if (printIt)
+	if (printIt)	// print out information about each SpaceGroupIDnum in list
+		Variable i, Nlist=ItemsInList(list)
 		if (Nlist<1)
-			printf "No matches of \"%s\" to a %s symbol\r",strIN,name
+			printf "No matches of \"%s\" to a symbol in:{%s}\r",strIN,nameList
 			return ""
 		elseif (Nlist>1)
-			printf "There are %g possible matches of  \"%s\"  to %s symbol\r",Nlist,strIN,name
+			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
 		String allIDs=MakeAllIDs()
-		printf "SG\t\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\r"
+		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\r"
 		String id, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
 			idNum = str2num(StringFromList(i,list))
@@ -5611,7 +5612,7 @@ Function/S symmtry2SG(strIN,[type,printIt])	// find the Space Group number from 
 
 				id = StringFromList(idNum-1,allIDs)
 				system = StringFromList(latticeSystem(id),systemNames)
-				printf "%s\t-->\t\t%s\t\t%s\t\t%s%s%s\r", id,system,HM,tab,getHallSymbol(idNum),fullHM
+				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s\r", id,system,HM,tab,getHallSymbol(idNum),fullHM
 			endif
 		endfor
 	endif
@@ -5621,20 +5622,23 @@ End
 
 Static Function/S SymString2SGtype(symIN,type)	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed
 	String symIN						// requested symbol, if empty, then a dialog will come up
-	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 3=Hall, 4=Lattice System, 5=space group type
+	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=space group ID
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
 	String list=""
 
 	Variable idNum
 	type = round(type)
-	if (type==1)
+	if (type==1)						// searching for a Hermann-Mauguin
 		FUNCREF getHMsym symbolFunc = getHMsym
-	elseif (type==2)
+
+	elseif (type==2)					// searching for a Full Hermann-Mauguin
 		FUNCREF getHMsym symbolFunc = getHMsym2
-	elseif (type==3)
+
+	elseif (type==4)					// searching for a Hall symbol
 		FUNCREF getHMsym symbolFunc = getHallSymbol
-	elseif (type==4)
+
+	elseif (type==8)					// searching for a Lattice System
 		if (StringMatch("Triclinic",find))
 			list += expandRange("1-2",";")+";"
 		endif
@@ -5658,13 +5662,15 @@ Static Function/S SymString2SGtype(symIN,type)	// finds space group of a Hermann
 		if (StringMatch("Cubic",find))
 			list += expandRange("195-230",";")+";"
 		endif
-	elseif (type==5)
+
+	elseif (type==16)						// searching for a Space Group ID, e.g. "15:b3"
 		String allIDs=MakeAllIDs()
 		for (idNum=1; idNum<=530; idNum+=1)
 			if (StringMatch(StringFromList(idNum-1,allIDs), find))// ignore spaces
 				list += num2istr(idNum)+";"			// found a match, save it
 			endif
 		endfor
+
 	else
 		return ""
 	endif
