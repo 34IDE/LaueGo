@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.03
+#pragma version = 6.04
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -1748,7 +1748,9 @@ End
 Static Function SetToDummyXTAL(xtal)				// fill the crystal structure with valid dummy values
 	STRUCT crystalStructure &xtal
 	xtal.desc = "Dummy Structure"
-	xtal.SpaceGroup = 195								// simple cubic
+	xtal.SpaceGroupID = "195"							// simple cubic
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
+	xtal.SpaceGroup = 195
 	xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
 	xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
 	xtal.Vc = 0.125
@@ -5972,7 +5974,7 @@ ThreadSafe Static Function isCUBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC ar
 	Variable a,b,c,alpha,bet,gam
 	Variable lenTol = max(max(a,b),c) * 1e-4, angleTol=0.00573		// 1e-4 degree
 
-	Variable basic = numtype(a+b+c+alpha+bet+gam) && a>0
+	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0
 	Variable anglesOK = (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
 	return basic & anglesOK && (abs(a-b)<lenTol) && (abs(a-c)<lenTol)
 End
@@ -5982,7 +5984,7 @@ ThreadSafe Static Function isHEXAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if L
 	Variable a,b,c,alpha,bet,gam
 	Variable lenTol = max(max(a,b),c) * 1e-4, angleTol=0.00573		// 1e-4 degree
 
-	Variable basic = numtype(a+b+c+alpha+bet+gam) && a>0 && c>0
+	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && c>0
 	Variable anglesOK = abs(alpha-90)<angletol && abs(bet-90)<angletol && abs(gam-120)<angleTol
 	return anglesOK &&  (abs(a-b)<lenTol)
 End
@@ -5992,7 +5994,7 @@ ThreadSafe Static Function isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam)	// returns 1 i
 	Variable a,b,c,alpha,bet,gam
 	Variable lenTol = max(max(a,b),c) * 1e-4, angleTol=0.00573		// 1e-4 degree
 
-	Variable basic = numtype(a+b+c+alpha+bet+gam) && a>0 && alpha>0
+	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && alpha>0
 	Variable anglesOK = abs(alpha-bet)<angleTol && (alpha-gam)<angleTol
 	return anglesOK && abs(a-b)<lenTol && abs(a-c)<lenTol
 End
@@ -6002,7 +6004,7 @@ ThreadSafe Static Function isTETRAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if 
 	Variable a,b,c,alpha,bet,gam
 	Variable lenTol = max(max(a,b),c) * 1e-4, angleTol=0.00573		// 1e-4 degree
 
-	Variable basic = numtype(a+b+c+alpha+bet+gam) && a>0 && b>0 && c>0
+	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0
 	Variable anglesOK = (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
 	return anglesOK && ( abs(a-b) || abs(a-c) || abs(b-c) )
 End
@@ -6012,7 +6014,7 @@ ThreadSafe Static Function isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 i
 	Variable a,b,c,alpha,bet,gam
 	Variable angleTol=0.00573		// 1e-4 degree
 
-	Variable basic = numtype(a+b+c+alpha+bet+gam) && a>0 && b>0 && c>0
+	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0
 	return (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
 End
 //
@@ -6021,7 +6023,7 @@ ThreadSafe Static Function isMONOCLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if 
 	Variable a,b,c,alpha,bet,gam
 	Variable angleTol=0.00573		// 1e-4 degree
 
-	Variable basic = numtype(a+b+c+alpha+bet+gam) && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
+	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
 	Variable num90s = (abs(alpha-90)<angleTol) + (abs(bet-90)<angleTol) + (abs(gam-90)<angleTol)
 	return num90s >= 2
 End
@@ -6029,7 +6031,7 @@ End
 ThreadSafe Static Function isTRICLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Triclinic
 	// no conditions, always 1 if no numbers are NaN, Inf, or negative
 	Variable a,b,c,alpha,bet,gam
-	return numtype(a+b+c+alpha+bet+gam) && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
+	return numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
 End
 //Function TestisValidLatticeConstants()	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
 //	STRUCT crystalStructure xtal
