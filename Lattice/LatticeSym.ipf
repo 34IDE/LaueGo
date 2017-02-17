@@ -5253,13 +5253,14 @@ End
 //		for (i=0;i<tMax;i+=1)
 //			cntTypes = (types[p]==(i+1))
 //			if (sum(cntTypes))
-//				printf "  %3d Space Groups of %3d types\r",sum(cntTypes), i+1
+//				printf "  %3d Space Groups with %3d types\r",sum(cntTypes), i+1
 //			endif
 //		endfor
 //
 //		Display /W=(298,120,1440,504) types
-//		ModifyGraph mode=4, marker=19, lStyle=1, tick=2, mirror=1, minor=1
-//		SetAxis/A/E=1 left
+//		ModifyGraph mode=4, marker=19, lStyle=1, tick=2, mirror=1, minor=1, grid=1
+//		Label left "number of types"
+//		SetAxis/A/N=1/E=1 left
 //	End
 
 
