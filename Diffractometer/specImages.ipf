@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.54
+#pragma version = 0.55
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -445,7 +445,7 @@ Function/WAVE MakeQspaceVolumeSpec(scanRange,[mask,Nthreads,doConvex])
 		maskName = ""
 	endif
 	if (printIt)
-		printf "%SMakeQspaceVolumeSpec(\"%s\"", BULLET,scanRange
+		printf "%sMakeQspaceVolumeSpec(\"%s\"", BULLET,scanRange
 		if (strlen(maskName))
 			printf ", mask=%s",maskName
 		endif
