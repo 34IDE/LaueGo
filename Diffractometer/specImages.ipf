@@ -589,6 +589,8 @@ Function/WAVE MakeQspaceVolumeSpec(scanRange,[mask,Nthreads,doConvex])
 	Variable dQ = norm(q01)/(N-1)
 print "dQ start = ",dQ
 	dQ = max(dQ,max(max(v.xW,v.yW),v.zW)/MAX_Q_SPACE_DIM)
+//print "dQ after = ",dQ
+//dQ = 0.05
 print "dQ after = ",dQ
 	Variable Nx=ceil(v.xW / dQ)+1, Ny=ceil(v.yW / dQ)+1, Nz=ceil(v.zW / dQ)+1
 	Variable Nqtot = Nx*Ny*Nz
@@ -605,6 +607,10 @@ print "dQ after = ",dQ
 		print str
 		return $""
 	endif
+
+	v.Nx = Nx	;	v.Ny = Ny	;	v.Nz = Nz
+
+	BoundingBoxPrompt(v)						// let the user adjust the box size
 
 	Make/N=(Nx,Ny,Nz)/D/O $QspaceName=0
 	Wave Qspace=$QspaceName
@@ -789,6 +795,10 @@ print "dQ after = ",dQ
 	printf "  the whole process took  %s\r",Secs2Time(seconds1+seconds2+seconds3,5,0)
 
 	if (strlen(GetRTStackInfo(2))<1)
+		DoAlert 0, "Save Experiment first"
+		if (V_flag)
+			SaveExperiment
+		endif
 		MakeGizmoQspace3D(Qspace)
 	endif
 	return Qspace

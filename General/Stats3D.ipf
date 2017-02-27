@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.16
+#pragma version = 0.17
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -954,7 +954,13 @@ Function/S boundingVolumeStruct2str(v)
 	STRUCT boundingVolume &v
 	String str
 //	sprintf str,"Vol = X=[%g, %g] ÆX=%g,  Y=[%g, %g] ÆY=%g,  Z=[%g, %g] ÆZ=%g,  Vol=%g\r",v.xlo,v.xhi,v.xW, v.ylo,v.yhi,v.yW, v.zlo,v.zhi,v.zW,v.vol
-	sprintf str,"Vol = X=[%g, %g] Nx=%g,  Y=[%g, %g] Ny=%g,  Z=[%g, %g] Nz=%g,  Vol=%g\r",v.xlo,v.xhi,v.Nx, v.ylo,v.yhi,v.Ny, v.zlo,v.zhi,v.Nz,v.vol
+//	sprintf str,"Vol = X=[%g, %g] Nx=%g,  Y=[%g, %g] Ny=%g,  Z=[%g, %g] Nz=%g,  Vol=%g\r",v.xlo,v.xhi,v.Nx, v.ylo,v.yhi,v.Ny, v.zlo,v.zhi,v.Nz,v.vol
+	if (v.Nx < 1 && v.Ny < 1 && v.Nz < 1)		// no points
+		sprintf str,"Vol = X=[%g, %g],  Y=[%g, %g],  Z=[%g, %g],  Vol=%g\r",v.xlo,v.xhi, v.ylo,v.yhi, v.zlo,v.zhi,v.vol
+	else
+		Variable N = v.Nx * v.Ny * v.Nz
+		sprintf str,"Vol = X=[%g, %g] Nx=%g,  Y=[%g, %g] Ny=%g,  Z=[%g, %g] Nz=%g,  Vol=%g,  Npts=%g\r",v.xlo,v.xhi,v.Nx, v.ylo,v.yhi,v.Ny, v.zlo,v.zhi,v.Nz,v.vol,N
+	endif
 	return str
 End
 
@@ -1009,9 +1015,9 @@ Function extendBoundingVolumeStruct(v,vec)
 	Wave vec
 
 	updateBoundingVolumeStruct(v)									// ensure that dx,dy,dz are calculated
-	Variable xlo = min(xlo,vec[0]), xhi = max(xhi,vec[0])	// new ranges
-	Variable ylo = min(ylo,vec[1]), yhi = max(yhi,vec[1])
-	Variable zlo = min(zlo,vec[2]), zhi = max(zhi,vec[2])
+	Variable xlo = min(v.xlo,vec[0]), xhi = max(v.xhi,vec[0])	// new ranges
+	Variable ylo = min(v.ylo,vec[1]), yhi = max(v.yhi,vec[1])
+	Variable zlo = min(v.zlo,vec[2]), zhi = max(v.zhi,vec[2])
 	Variable Nx,Ny,Nz
 	Nx = ceil(abs(xhi-xlo) / v.dx) + 1							// new Nx,Ny,Nz
 	Ny = ceil(abs(yhi-ylo) / v.dy) + 1
@@ -1113,6 +1119,83 @@ Function Fill_boundingVolume_from_3Dwave(v,w3D)
 	v.Ny = DimSize(w3D,1)
 	v.Nz = DimSize(w3D,2)
 	updateBoundingVolumeStruct(v)
+End
+
+
+
+
+Function BoundingBoxesEqual(v1,v2)
+	STRUCT boundingVolume &v1, &v2
+	Variable same = 1
+	same = same && (v1.xlo == v2.xlo && v1.xhi == v2.xhi)
+	same = same && (v1.ylo == v2.ylo && v1.yhi == v2.yhi)
+	same = same && (v1.zlo == v2.zlo && v1.zhi == v2.zhi)
+	same = same && (v1.Nx == v2.Nx && v1.Ny == v2.Ny && v1.Nz == v2.Nz)
+	return same
+End
+
+
+
+Function BoundingBoxPrompt(v)
+	STRUCT boundingVolume &v
+
+	Variable xlo, xhi,  ylo, yhi,  zlo, zhi
+	Variable Nx, Ny, Nz
+	Prompt xlo, "Xlo"		;	Prompt xhi, "Xhi"
+	Prompt ylo, "Ylo"		;	Prompt yhi, "Yhi"
+	Prompt zlo, "Zlo"		;	Prompt zhi, "Zhi"
+	Prompt Nx, "Nx"		;	Prompt Ny, "Ny"		;	Prompt Nz, "Nz"
+
+	STRUCT boundingVolume v1
+	STRUCT boundingVolume v2
+	copyBoundingVolumeStructs(v,v2)			// copy v into v2
+	do
+		copyBoundingVolumeStructs(v2,v1)	// copy v2 into v1
+		xlo = v1.xlo	;	xhi = v1.xhi
+		ylo = v1.ylo	;	yhi = v1.yhi
+		zlo = v1.zlo	;	zhi = v1.zhi
+		Nx = v1.Nx		;	Ny = v1.Ny	;	Nz = v1.Nz
+		DoPrompt "Bounding Volume", xlo,xhi,ylo,yhi,zlo,zhi, Nx,Ny,Nz
+		if (V_flag)
+			return 1
+		endif
+
+		v2.xlo = xlo	;	v2.xhi = xhi
+		v2.ylo = ylo	;	v2.yhi = yhi
+		v2.zlo = zlo	;	v2.zhi = zhi
+		v2.Nx = Nx		;	v2.Ny = Ny		;	v2.Nz = Nz
+	while (!BoundingBoxesEqual(v1,v2))
+
+	if (numtype(Nx+Ny+Nz+xlo+xhi+ylo+yhi+zlo+zhi))
+		return 1
+	elseif (Nx<1 || Ny<1 || Nz<1)
+		return 1
+	elseif (xlo==xhi || ylo==yhi || zlo==zhi)
+		return 1
+	endif
+	Variable swap
+	if (v2.xhi < v2.xlo)
+		swap = v2.xlo
+		v2.xlo = v2.xhi
+		v2.xhi = swap
+	endif
+	if (v2.yhi < v2.ylo)
+		swap = v2.ylo
+		v2.ylo = v2.yhi
+		v2.yhi = swap
+	endif
+	if (v2.zhi < v2.zlo)
+		swap = v2.zlo
+		v2.zlo = v2.zhi
+		v2.zhi = swap
+	endif
+
+	if (!BoundingBoxesEqual(v,v2))
+		print "changed box :",boundingVolumeStruct2str(v)
+		print "     to box :",boundingVolumeStruct2str(v2)
+		copyBoundingVolumeStructs(v2,v)		// copy v2 into v
+	endif
+	return 0
 End
 
 //  ========================== End of Bounding Volume Structure ==========================  //
