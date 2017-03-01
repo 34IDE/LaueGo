@@ -154,7 +154,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.00, Stop using just SpaceGroup [1-230], switch to using the complete set of 530 types
 //								Added SpaceGroupID and SpaceGroupIDnum to the crystalStructure structure
 //								This is important since some of the space groups have many variants (e.g. SG=15 has 18 different ways of using it)
-//	with verison 6.06, added keV to the Lattice Panel
+//	with verison 6.06, added keV to the Lattice Panel, also Get_f_proto(), Svector should not have the "/10"
 
 //	Rhombohedral Transformation:
 //
@@ -4461,7 +4461,7 @@ Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fato
 	variable keV										// energy is ignored in this simple calculation
 	Variable QAngstrom								// |Q| in (1/Angstrom), == 2*PI/d[Angstrom]
 	variable valence									// optional integer for valence
-	valence = ParamIsDefault(valence) ? 0 : valence
+	valence = ParamIsDefault(valence) || numtype(valence) ? 0 : valence
 
 	Variable iz=ZfromLabel(AtomType), Bval
 	if (iz<1 || numtype(iz))
@@ -4486,7 +4486,7 @@ Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fato
 		Bval = poly(coef,iz-1)
 	endif
 
-	Variable Svector = QAngstrom/(4*PI)/10	// must be in (1/Angstrom)
+	Variable Svector = QAngstrom/(4*PI)
 	Variable f0 = iz * exp(-Svector*Svector*(Bval)) - valence
 	f0 = numtype(f0) ? 1 : max(f0,0)			// always a valid number > 0
 	return cmplx(f0,0)
