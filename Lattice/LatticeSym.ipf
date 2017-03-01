@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.05
+#pragma version = 6.06
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -154,6 +154,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.00, Stop using just SpaceGroup [1-230], switch to using the complete set of 530 types
 //								Added SpaceGroupID and SpaceGroupIDnum to the crystalStructure structure
 //								This is important since some of the space groups have many variants (e.g. SG=15 has 18 different ways of using it)
+//	with verison 6.06, added keV to the Lattice Panel
 
 //	Rhombohedral Transformation:
 //
@@ -199,6 +200,8 @@ Menu "Analysis"
 		help={"show d-spacing for the hkl reflection"}
 		"Fstructure [hkl]", /Q ,getFstruct(NaN,NaN,NaN)
 		help={"Crude Structure Factor using current lattice"}
+		LatticeSym#MenuItemIfCromerPresent("Set Energy..."), setCromerEnergy(NaN)
+		help={"The energy that is used by the Cromer-Liberman"}
 		LatticeSym#MenuItemIfCromerPresent("calculate mu..."), get_muOfXtal(NaN)
 		help={"Calculate mu (absorption factor) using current lattice structure"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
@@ -359,7 +362,9 @@ Function MakeLatticeParametersPanel(strStruct)
 		DoWindow/F LatticeSet
 		return 0
 	endif
-	NewPanel /K=1 /W=(675,60,675+220,60+508)
+	Variable showEnergy = (exists("Get_f")==6)
+	Variable bottom = 60+508 + (showEnergy ? 20 : 0)
+	NewPanel /K=1 /W=(675,60,675+220,bottom)
 	DoWindow/C LatticeSet
 	FillLatticeParametersPanel(strStruct,"LatticeSet",0,0)
 End
@@ -1315,7 +1320,7 @@ Function/WAVE direct2LatticeConstants(direct)	// calculate lattice constants ang
 End
 
 Static Function xtalVibrates(xtal)						// True if some Thermal vibration info present in xtal (for any atom)
-	STRUCT crystalStructure &xtal						// this sruct is filled  by this routine
+	STRUCT crystalStructure &xtal
 	Variable i,vibrate
 	for (i=0,vibrate=0; i < xtal.N; i+=1)
 		vibrate = vibrate || atomThermalInfo(xtal.atom[i])
@@ -2145,7 +2150,9 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	endif
 
 	SetWindow kwTopWin,userdata(LatticePanelName)=hostWin+"#LatticePanel"
-	NewPanel/K=1/W=(left,top,left+221,top+508)/HOST=$hostWin
+	Variable showEnergy = (exists("Get_f")==6)
+	Variable bottom = top+60+508 + (showEnergy ? 20 : 0)
+	NewPanel/K=1/W=(left,top,left+221,bottom)/HOST=$hostWin
 	ModifyPanel frameStyle=0, frameInset=0
 	RenameWindow #,LatticePanel
 	SetVariable setDesc,pos={4,13},size={211,18},title="name"
@@ -2220,7 +2227,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	ValDisplay d_LatticeDisp,limits={0,0,0},value=#"root:Packages:Lattices:PanelValues:dspace_nm"
 	ValDisplay d_LatticeDisp,help={"d-spacing (nm) calculated using the lattice"},frame=0
 	SetVariable T_LatticeVar,pos={143,459},size={70,18},proc=LatticePanelParamProc,title="T("+DEGREESIGN+"C)",font="Lucida Grande",fSize=12
-	SetVariable T_LatticeVar,limits={-273.151,inf,0},value=root:Packages:Lattices:PanelValues:T_C
+	SetVariable T_LatticeVar,limits={-273.15,inf,0},value=root:Packages:Lattices:PanelValues:T_C
 	SetVariable T_LatticeVar,help={"Temperature (C) used when Thermal factors are given"}
 	ValDisplay Fr_3atticeDisp,pos={20,483},size={80,17},title="F =",value= #"root:Packages:Lattices:PanelValues:Fr"
 	ValDisplay Fr_3atticeDisp,font="Lucida Grande",fSize=12,format="%.3f",limits={0,0,0},barmisc={0,1000}
@@ -2228,6 +2235,12 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	ValDisplay Fi_3atticeDisp,pos={104,483},size={80,17},title="+i",value= #"root:Packages:Lattices:PanelValues:Fi"
 	ValDisplay Fi_3atticeDisp,font="Lucida Grande",fSize=12,format="%.3f",limits={0,0,0},barmisc={0,1000}
 	ValDisplay Fi_3atticeDisp,help={"imag part of F(hkl) calulated from the lattice"},frame=0
+	if (showEnergy)
+		SetVariable setvarEnergy,pos={37,504},size={140,20},title="Energy (keV)"
+		SetVariable setvarEnergy,font="Lucida Grande",fSize=12,format="%.4f"
+		SetVariable setvarEnergy,limits={0,inf,0},value= root:Packages:Lattices:keV
+		SetVariable setvarEnergy,proc=LatticePanelParamProc
+	endif
 
 	String subWin = GetUserData("","","LatticePanelName")
 	UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
@@ -4305,9 +4318,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	Variable h,k,l
 	Variable keV
 	Variable T_K										// Temperature (K), used to calculate Debye-Waller factor
-	keV = ParamIsDefault(keV) ? NaN : keV
+	keV = ParamIsDefault(keV) || keV<0 ? NaN : keV
 	T_K = ParamIsDefault(T_K) ? NaN : max(0,T_K)
-	T_K = T_K>0 ? T_K : NaN
 
 	String SpaceGroupID = xtal.SpaceGroupID
 	if (!isValidSpaceGroupID(SpaceGroupID) || numtype(h+k+l))
@@ -4361,7 +4373,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		Wave recip = recipFrom_xtal(xtal)			// get reicprocal lattice from xtal
 		MatrixOP/FREE qvec = recip x hkl
 	endif
-	keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",10)
+	keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",NaN)
 
 	Variable/C fatomC
 	Variable fatomMag, fatomArg=0
@@ -4397,7 +4409,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 			//	M = B*(sin^2(theta)/lam^2) --> M = B/(16 PI^2) * Q^2
 			//	exp(-B * sin^2(theta)/lam^2)		B = 8 * PI^2 * <u^2> =  8 * PI^2 * Uiso
 			itemp = atomThermalInfo(xtal.atom[m],T_K=T_K)	// Get kind of thermal info present (0 means none)
-			if (itemp==1)
+			if (itemp==1 && T_K>1e-9)								// has a DebyeWaller factor and non-zero Temperature
 				thetaM = xtal.atom[m].DebyeT
 				amu = Element_amu(xtal.atom[m].Zatom)			// mass of atom (amu)
 				DW = exp(-DW_factor_M(T_K,thetaM,Qmag,amu))// calculates the M in exp(-M), no I/O
@@ -4577,6 +4589,19 @@ Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 	endif
 	Variable mu = 2*re_nm*(hc_keVnm/keV)*Fpp / (xtal.Vc)
 	return (mu * 1000)						// convert mu from 1/nm --> 1/µm
+End
+
+
+Function setCromerEnergy(keV)
+	Variable keV
+
+	Prompt keV, "Energy (keV) for Cromer-Liberman"
+	DoPrompt "Energy (keV)", keV
+	if (V_flag)
+		return keV
+	endif
+	Variable/G root:Packages:Lattices:keV = keV		// only used when calculating Cromer-Liberman values
+	return keV
 End
 
 
@@ -6513,6 +6538,9 @@ Function InitLatticeSymPackage([showPanel])			// used to initialize this package
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:Lattices
 	NewDataFolder/O root:Packages:Lattices:SymOps
+	if (!exists("root:Packages:Lattices:keV"))
+		Variable/G root:Packages:Lattices:keV = 10		// only used when calculating Cromer-Liberman values
+	endif
 	if (showPanel)
 		MakeLatticeParametersPanel("")
 	endif
