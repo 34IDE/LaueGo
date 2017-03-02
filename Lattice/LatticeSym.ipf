@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.06
+#pragma version = 6.07
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -182,6 +182,19 @@ Static Constant ELEMENT_Zmax = 116
 //		VcRecip = MatrixDet(recipLatice)		// Volume of reciprocal lattice cell
 //
 //		kf^ = ki^ - 2*(ki^ . q^)*q^		note: (ki^ . q^) must be NEGATIVE (both Bragg & Laue)
+//
+//
+//							SG				  idNum
+//	Cubic				[195,230]		[489-530]
+//	Hexagonal		[168,194]		[462-488]
+//	Trigonal			[143,167]		[430-461]
+//	Tetragonal		[75,142]			[240-429]
+//	Orthorhombic	[16,74]			[108-239]
+//	Monoclinic		[3,15]			[3-107]
+//	Triclinic		[1,2]				[1,2]
+//
+//											SG										idNum
+//	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
 
 
 Menu "Analysis"
@@ -4039,10 +4052,6 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	endif
 
 	Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
-//	if (numtype(SG))
-//		String SGstr=CIF_readString("_symmetry_space_group_name_H-M",buf)
-//		SG = str2num(SymString2SGtype(SGstr,1))
-//	endif
 	xtal.SpaceGroup = SG > 0 ? SG : 1
 
 	String id = FindDefaultIDforSG(xtal.SpaceGroup)
@@ -4050,9 +4059,11 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)// change id to id number in [1-530]
 
 	// try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
-	String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)
-	HMsym = ReplaceString(" ",HMsym,"")	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-	String nlist = SymString2SGtype(HMsym,2)	// checks in getHMsym2
+	String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
+	String nlist = SymString2SGtype(HMsym,2,0)	// checks in getHMsym2
+	if (strlen(nlist)<1)
+		nlist = SymString2SGtype(HMsym,2,1)	// checks in getHMsym2 again, but ignoring minus signs
+	endif
 	Variable idNum = str2num(StringFromList(0,nlist))
 	if (ItemsInList(nlist)==1 && isValidSpaceGroupIDnum(idNum))	// found valid SpaceGroupIDnum
 		String allIDs=MakeAllIDs()
@@ -5312,6 +5323,20 @@ End
 //
 //    Trigonal		:H	hexagonal    axes
 //						:R	rhombohedral axes
+//
+//
+//
+//	Cubic				[195,230]		[489-530]
+//	Hexagonal		[168,194]		[462-488]
+//	Trigonal			[143,167]		[430-461]
+//	Tetragonal		[75,142]			[240-429]
+//	Orthorhombic	[16,74]			[108-239]
+//	Monoclinic		[3,15]			[3-107]
+//	Triclinic		[1,2]				[1,2]
+//
+//											SG										idNum
+//	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
+
 
 ThreadSafe Function/S getHMboth(SpaceGroupIDnum)	// returns short and (full) Hermann-Mauguin symbol
 	Variable SpaceGroupIDnum								//Space Group number, from International Tables
@@ -5562,20 +5587,21 @@ End
 
 Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from the symmetry string
 	String strIN
-	Variable types						// -1=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=SpaceGroupID
+	Variable types						// -1=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=SpaceGroupID, 32=Ignore Minuses
 	Variable printIt
 	types = ParamIsDefault(types) ? -1 : round(types)
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	if (strlen(strIN)<1 || numtype(types))
 		Prompt strIN, "Symmetry Symbol or Space Group Number, (e.g. \"Pmm*\"), wild cards allowed"
-		Variable t1=(types&1)+1, t2=(types&2)+1, t4=(types&4)+1, t8=(types&8)+1, t16=(types&16)+1
+		Variable t1=!(!(types&1))+1, t2=!(!(types&2))+1, t4=!(!(types&4))+1, t8=!(!(types&8))+1, t16=!(!(types&16))+1, t32=!(!(types&32))+1
 		Prompt t1, "Hermann-Mauguin", popup "-;Hermann-Mauguin"
 		Prompt t2, "Full Hermann-Mauguin", popup "-;Full Hermann-Mauguin"
 		Prompt t4, "Hall", popup "-;Hall"
 		Prompt t8, "Lattice System", popup "-;Lattice System"
 		Prompt t16, "SpaceGroup ID", popup "-;SpaceGroup ID"
-		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16
+		Prompt t32, "Ignore All Minus Signs", popup "-;Ignore Minus Signs"
+		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16,t32
 		if (V_flag)
 			return ""
 		endif
@@ -5585,32 +5611,34 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 		types += t4==2 ? 4 : 0
 		types += t8==2 ? 8 : 0
 		types += t16==2 ? 16 : 0
+		types += t32==2 ? 32 : 0
 		printIt = 1
 	endif
 	if (strlen(strIN)<1)
 		return ""
 	endif
+	Variable ignoreMinus = !(!(types & 32))					// 1 means ignore minus signs in matching
 
 	String list="", nameList=""
 	Variable idNum
 	if (types & 1)
-		list += SymString2SGtype(strIn,1)		// 1 = Hermann-Mauguin
+		list += SymString2SGtype(strIN,1,ignoreMinus)		// 1 = Hermann-Mauguin
 		nameList += "Hermann-Mauguin, "
 	endif
 	if (types & 2)
-		list += SymString2SGtype(strIn,2)		// 2 = Full Hermann-Mauguin, HM2
+		list += SymString2SGtype(strIN,2,ignoreMinus)		// 2 = Full Hermann-Mauguin, HM2
 		nameList += "FULL Hermann-Mauguin, "
 	endif
 	if (types & 4)
-		list += SymString2SGtype(strIn,4)		// 4 = Hall
+		list += SymString2SGtype(strIN,4,ignoreMinus)		// 4 = Hall
 		nameList += "Hall, "
 	endif
 	if (types & 8)
-		list += SymString2SGtype(strIn,8)		// 8 = Lattice System
+		list += SymString2SGtype(strIN,8,ignoreMinus)		// 8 = Lattice System
 		nameList += "Lattice System, "
 	endif
 	if (types & 16)
-		list += SymString2SGtype(strIn,16)		// 16 = space group ID, e.g. "15:b3"
+		list += SymString2SGtype(strIN,16,ignoreMinus)		// 16 = space group ID, e.g. "15:b3"
 		nameList += "Space Group ID, "
 	endif
 	nameList = TrimBoth(nameList,chars=", ")
@@ -5646,66 +5674,82 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 End
 
 
-Static Function/S SymString2SGtype(symIN,type)	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed
+Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
+	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed, return list of idNums [1,530]
 	String symIN						// requested symbol, if empty, then a dialog will come up
 	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=space group ID
+	Variable ignoreMinus			// if true, then ignore any minus signs when matching
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
-	String list=""
+	if (ignoreMinus)
+		find = ReplaceString("-",find,"")			// ignore all minus signs too
+	endif
 
-	Variable idNum
 	type = round(type)
-	if (type==1)						// searching for a Hermann-Mauguin
-		FUNCREF getHMsym symbolFunc = getHMsym
+	if (!(type & 31))					// return "" if type not 1, 2, 4, 8, or 16
+		return ""
+	endif
 
-	elseif (type==2)					// searching for a Full Hermann-Mauguin
-		FUNCREF getHMsym symbolFunc = getHMsym2
-
-	elseif (type==4)					// searching for a Hall symbol
-		FUNCREF getHMsym symbolFunc = getHallSymbol
-
-	elseif (type==8)					// searching for a Lattice System
+	String sym,list=""
+	Variable idNum
+	if (type==8)						// searching for a Lattice System
 		if (StringMatch("Triclinic",find))
 			list += expandRange("1-2",";")+";"
 		endif
 		if (StringMatch("Monoclinic",find))
-			list += expandRange("3-15",";")+";"
+			list += expandRange("3-107",";")+";"
 		endif
 		if (StringMatch("Orthorhombic",find))
-			list += expandRange("16-74",";")+";"
+			list += expandRange("108-239",";")+";"
 		endif
 		if (StringMatch("Tetragonal",find))
-			list += expandRange("75-142",";")+";"
+			list += expandRange("240-429",";")+";"
 		endif
 		if (StringMatch("Trigonal",find))
-			list += expandRange("143-167",";")+";"
+			list += expandRange("430-461",";")+";"
 		elseif (StringMatch("Rhombohedral",find))
-			list += expandRange("143-167",";")+";"
+			list += expandRange("434,437,445,451,453,459,461",";")+";"
 		endif
 		if (StringMatch("Hexagonal",find))
-			list += expandRange("168-193",";")+";"
+			list += expandRange("462-488",";")+";"
 		endif
 		if (StringMatch("Cubic",find))
-			list += expandRange("195-230",";")+";"
+			list += expandRange("489-530",";")+";"
 		endif
+		return list
+	endif
 
-	elseif (type==16)						// searching for a Space Group ID, e.g. "15:b3"
+	if (type==16)											// searching for a Space Group ID, e.g. "15:b3"
 		String allIDs=MakeAllIDs()
 		for (idNum=1; idNum<=530; idNum+=1)
-			if (StringMatch(StringFromList(idNum-1,allIDs), find))// ignore spaces
+			sym = StringFromList(idNum-1,allIDs)
+			if (ignoreMinus)
+				sym = ReplaceString("-",sym,"")		// do not include minus signs in match
+			endif
+			if (StringMatch(sym, find))
 				list += num2istr(idNum)+";"			// found a match, save it
 			endif
 		endfor
-
-	else
-		return ""
+		return list
 	endif
 
-	String sym
-	for (idNum=1;idNum<=530;idNum+=1)				// check all 530 space group types
-		sym = symbolFunc(idNum)
-		if (StringMatch(ReplaceString(" ",sym,"")	,find))// ignore spaces
-			list += num2istr(idNum)+";"				// found a match, save it
+	if (type==1)						// searching for a Hermann-Mauguin
+		FUNCREF getHMsym symbolFunc = getHMsym
+	elseif (type==2)					// searching for a Full Hermann-Mauguin
+		FUNCREF getHMsym symbolFunc = getHMsym2
+	elseif (type==4)					// searching for a Hall symbol
+		FUNCREF getHMsym symbolFunc = getHallSymbol
+	endif
+
+	// symbolFunc has been set, check all idNums in symbolFunc(idNum)
+	for (idNum=1;idNum<=530;idNum+=1)			// check all 530 space group types using symbolFunc
+		sym = ReplaceString(" ",symbolFunc(idNum),"")	// ignore spaces
+		if (ignoreMinus)
+			sym = ReplaceString("-",sym,"")		// optionally, do not include minus signs
+		endif
+
+		if (StringMatch(sym,find))				// look for find in sym
+			list += num2istr(idNum)+";"			// found a match, save it
 		endif
 	endfor
 	return list
