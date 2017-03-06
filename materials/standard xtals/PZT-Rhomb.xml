@@ -2,7 +2,7 @@
 
 <cif>
 	<chemical_name_common>PZT crystal (Rhomb axis)</chemical_name_common>
-	<space_group_IT_number>167</space_group_IT_number>
+	<space_group_id>167:R</space_group_ID>
 	<cell>
 		<a unit="nm">0.5826</a>
 		<b unit="nm">0.5826</b>

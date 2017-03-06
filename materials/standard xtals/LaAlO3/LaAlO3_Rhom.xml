@@ -2,6 +2,7 @@
 
 <cif>
 	<chemical_name_common>LaAlO3 (Rhom)</chemical_name_common>
+	<space_group_id>167:R</space_group_id>
 	<space_group_IT_number>167</space_group_IT_number>
 	<cell>
 		<a unit="nm">0.535671359458805nm</a>

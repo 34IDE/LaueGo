@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.07
+#pragma version = 6.08
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -155,6 +155,7 @@ Static Constant ELEMENT_Zmax = 116
 //								Added SpaceGroupID and SpaceGroupIDnum to the crystalStructure structure
 //								This is important since some of the space groups have many variants (e.g. SG=15 has 18 different ways of using it)
 //	with verison 6.06, added keV to the Lattice Panel, also Get_f_proto(), Svector should not have the "/10"
+//	with verison 6.08, changed space_group_ID --> space_group_id (to align with CIF usage)
 
 //	Rhombohedral Transformation:
 //
@@ -3329,7 +3330,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	String str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
 
-	String id = XMLtagContents("space_group_ID",cif)
+	String id = XMLtagContents("space_group_id",cif)
 	xtal.SpaceGroupID = id[0,11]
 	Variable SG = str2num(XMLtagContents("space_group_IT_number",cif))
 	xtal.SpaceGroup = isValidSpaceGroup(SG) ? SG : str2num(id)
@@ -3595,7 +3596,7 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 		cif += "\t<space_group_IT_number>"+num2istr(xtal.SpaceGroup)+"</space_group_IT_number>"+NL
 	endif
 	if (strlen(xtal.SpaceGroupID)>0)
-		cif += "\t<space_group_ID>"+xtal.SpaceGroupID+"</space_group_ID>"+NL
+		cif += "\t<space_group_id>"+xtal.SpaceGroupID+"</space_group_id>"+NL
 	endif
 	Variable alphaT = xtal.alphaT
 	alphaT = alphaT>0 ? alphaT : NaN
