@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.40
+#pragma version = 2.41
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -450,6 +450,16 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		return 1
 	endif
 
+	Wave badPixels = GetBadPixelsImage(wnote)		// get image with bad pixels if badPixels exists
+	if (WaveExists(badPixels))
+		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixels,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixels,1) )
+			DoAlert 0,"badPixels and image have different dimensions than the whole detector"
+			DoWindow/K $progressWin						// done with status window
+			return 1
+		endif
+		Wave badPixels = ROIofImage(badPixels, startx,groupx,endx, starty,groupy,endy)	// badPixels is now a free wave, of correct ROI
+	endif
+
 	Variable Q0=2*PI/d0										// Q of unstrained material (1/nm)
 	range2 = SelectString(ItemsInRange(range2),"-1",range2)
 
@@ -563,6 +573,17 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		DoAlert 0, "There were "+num2istr(V_numNans)+" bad images found, they will be skipped"
 	endif
 
+	if (WaveExists(badPixels) && WaveExists(mask))
+		Duplicate/FREE mask, maskLocal							// maskLocal is combination of mask and badPixels
+		maskLocal = badPixels || mask
+	elseif (WaveExists(badPixels))
+		Wave maskLocal = badPixels
+	elseif (WaveExists(mask))
+		Wave maskLocal = mask
+	else
+		Wave maskLocal = $""
+	endif
+
 	// note that Q range only depends upon image size and energy range, not on X, H or depth
 	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ			// get range of Q
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVlo],m2_Fill_QHistAt1Depth[ikeVlo],NaN)	// load one image to get its size & Q range
@@ -573,14 +594,14 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		DoWindow/K $progressWin									// done with status window
 		return 1
 	endif
-	thetaLo = real(thetaRange(geo,image,maskIN=mask,depth=depth0))	// min theta on this image
+	thetaLo = real(thetaRange(geo,image,maskIN=maskLocal,depth=depth0))	// min theta on this image
 	KillWaves/Z image
 	keV = keV_FillQvsPositions[ikeVlo]
 	Qmin = 4*PI*sin(thetaLo)*keV/hc								// min Q (1/nm)
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVhi],m2_Fill_QHistAt1Depth[ikeVhi],NaN)
 	Wave image = $(LoadGenericImageFile(name))				// load image
 	String wnoteFull = note(image)								// a full typical wave note
-	thetaHi = imag(thetaRange(geo,image,maskIN=mask,depth=depth0))	// max theta on this image
+	thetaHi = imag(thetaRange(geo,image,maskIN=maskLocal,depth=depth0))	// max theta on this image
 	KillWaves/Z image
 	keV = keV_FillQvsPositions[ikeVhi]
 	Qmax = 4*PI*sin(thetaHi)*keV/hc								// max Q (1/nm)
@@ -713,7 +734,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			Qhist = 0													// needed because FillQhist1imageFile() accumulates into Qhist
 			QhistNorm = 0
 			// fill Qhist from one file
-			wnote = FillQhist1imageFile(name,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
+			wnote = FillQhist1imageFile(name,sinTheta,indexWaveQ,Qhist,QhistNorm,maskLocal,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
 			timer3=startMSTimer
 			if (NumberByKey("V_min", wnote,"=")==0  && NumberByKey("V_max", wnote,"=")==0)
 				sec3 += stopMSTimer(timer3)/1e6

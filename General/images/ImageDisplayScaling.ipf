@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.09
+#pragma version = 2.10
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -23,6 +23,7 @@ Menu "Graph"
 End
 Menu "Data"
 	MenuItemIfWaveClassExists("Get Image Wave Info","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
+	MenuItemIfWaveClassExists("Load Bad Pixels","speImage*;rawImage*","DIMS:2"), Function LoadDefaultBadPixelImage($"","")
 End
 
 Menu "New"
@@ -177,8 +178,203 @@ End
 // =============================================================================================
 
 
-// ============================== Start of Generic Image Reading ===============================
 // =============================================================================================
+// ============================== Start of Getting Bad Pixel Info ==============================
+
+Function/WAVE GetBadPixelsImage(wnote)
+	// returns the bad pixels image, if it exists, wnote is from a loaded image
+	String wnote
+
+	String id = StringByKey("detectorID",wnote,"=")
+	Variable Nx = round(NumberByKey("xDimDet",wnote,"="))
+	Variable Ny = round(NumberByKey("yDimDet",wnote,"="))
+	if (numtype(Nx+Nx) || Nx<1 || Ny<1 || strlen(id)<1)
+		return $""
+	endif
+
+	String name =  "root:Packages:imageDisplay:"+ReplaceString("__",CleanupName(id+"_BadPixels",0),"_")
+	Wave badPixels = $name
+	if (Nx==DimSize(badPixels,0) && Ny==DimSize(badPixels,1) && WaveInClass(badPixels,"badPixelsImage*"))
+		return badPixels
+	endif
+	return $""
+End
+
+
+Function/WAVE LoadDefaultBadPixelImage(image,fileName,[printIt])
+	Wave image
+	String fileName	// name of file with the bad pixels, may be ""
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	if (!WaveExists(image))
+		String imageName, wList=reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
+		Prompt imageName, "name of image", popup, wList
+		DoPrompt "image",imageName
+		if (V_flag)
+			return $""
+		endif
+		Wave image = $imageName
+		printIt = 1
+	endif
+	if (!WaveExists(image))
+		return $""
+	endif
+	if (printIt)
+		printf "LoadDefaultBadPixelImage(%s,\"%s\")\r",NameOfWave(image),fileName
+	endif
+	String wnote=note(image)		// a generic image wave note with detectorID and size of image (xDimDet,yDimDet)
+	String id = StringByKey("detectorID",wnote,"=")
+	Variable Nx = round(NumberByKey("xDimDet",wnote,"="))
+	Variable Ny = round(NumberByKey("yDimDet",wnote,"="))
+	if (numtype(Nx+Nx) || Nx<1 || Ny<1 || strlen(id)<1)
+		return $""
+	endif
+
+	Wave pxyBad = readBadPixelFile(fileName,id)
+	Wave badImage = badPixelList2image(Nx,Ny,pxyBad)
+	String name = ReplaceString("__",CleanupName(id+"_BadPixels",0),"_")
+
+	if (printIt)
+		fileName = StringByKey("badPixelFile",note(pxyBad),"=")
+		printf "Loaded Bad Pixels from \"%s\", into image \"%s\"[%d][%d]\r", fileName,name, Nx,Ny
+	endif
+
+	name = "root:Packages:imageDisplay:"+name
+	Duplicate/O badImage, $name
+	return $name
+End
+
+
+Static Function/WAVE badPixelList2image(Nx,Ny,pxy)
+	// take wave with bad pixels (probably from readBadPixelFile()) and return image with bad pixels
+	// good pixels are 1, bad pixels are 0
+	Variable Nx,Ny				// number of pixels in image, used to make badImage[][]
+	Wave pxy						// list of bad pixels pxy[][2]
+
+	Variable N=DimSize(pxy,0)	// number of bad pixels in pxy[][2]
+	Make/N=(Nx,Ny)/B/U/FREE badImage=1
+	Variable  px,py, i
+	for (i=0;i<N;i+=1)
+		px = pxy[i][0]
+		py = pxy[i][1]
+		if (px<0 || px>=Nx || py<0 || py>=Ny)
+			String str
+			sprintf str, "Bad pixel = (%d, %d) is outside of detector size [%d, %d]",px,py,Nx,Ny
+			print str
+			DoAlert 0, str
+			return $""
+		endif
+		badImage[px][py] = 0
+	endfor
+
+	String wnote=note(pxy)
+	wnote = ReplaceStringByKey("waveClass",wnote,"badPixelsImage","=")
+	Note/K badImage, wnote
+	return badImage
+End
+
+
+Static Function/WAVE readBadPixelFile(fileName, id)
+	// read a bad pixel file, and return free wave with the bad pixels
+	String fileName
+	String id
+
+	PathInfo home
+	String BadPixelFilters = "Bad Pixel Files (*.txt):.txt;All Files:.*;"
+	Variable f
+	if (V_flag)
+		Open/F=BadPixelFilters/M="Bad Pixel File"/P=home/R/Z=2 f as fileName
+	else
+		Open/F=BadPixelFilters/M="Bad Pixel File"/R/Z=2 f as fileName
+	endif
+	fileName = S_fileName
+	if (f==0 || V_flag)
+		return $""
+	endif
+
+	FStatus f
+	String buf = PadString("",V_logEOF,0x20)
+	FBinRead f, buf
+	Close f
+
+	buf = ReplaceString("\t",buf," ")
+	buf = ReplaceString("\r",buf,"\n")
+	for ( ; strsearch(buf,"\n\n",0)>=0; )
+		buf = ReplaceString("\n\n",buf,"\n")
+	endfor
+	buf = TrimBoth(buf)
+	if (!StringMatch(StringFromList(0,buf,"\n"),"Bad Pixel File*"))
+		return $""						// wrong file type
+	endif
+
+	String str = TrimBoth(StringFromList(1,buf,"\n"))
+	if (strsearch(str,"$ID",0,2)!=0)
+		return $""
+	endif
+	str = TrimBoth(str[3,Inf])
+	id = TrimBoth(id)
+	if (!StringMatch(str,id))
+		return $""						// detector ID does not match
+	endif
+
+	buf = ReplaceString(",",buf," ")	// change to ";" separated list of pixel x y
+	buf = ReplaceString("(",buf," ")
+	buf = ReplaceString(")",buf," ")
+	buf = ReplaceString("\n",buf,";")
+	String pair
+	Variable i, N=ItemsInlist(buf), px,py
+	Variable Npix, Nalloc=100
+	Make/N=(Nalloc,2)/I/FREE pxy
+	for (i=2,Npix=0;i<N;i+=1)
+		pair = StringFromList(i,buf)
+		sscanf pair, "%d %d", px,py
+		if (V_flag==2)
+			if (Npix >= Nalloc)
+				Nalloc += 10000
+				Redimension/N=(Nalloc,-1) pxy
+			endif
+			pxy[Npix][0] = px
+			pxy[Npix][1] = py
+			Npix += 1
+		endif
+	endfor
+
+	String wnote = "waveClass=badPixelsXY;"
+	wnote = ReplaceStringByKey("detectorID",wnote,id,"=")
+	wnote = ReplaceStringByKey("badPixelFile",wnote,S_fileName,"=")
+	Note/K pxy, wnote
+
+	if (Npix<1)
+		WAVEClear pxy
+	else
+		Redimension/N=(Npix,-1) pxy
+	endif
+	return pxy
+End
+
+	//	Function test_LoadBadPixels()
+	//		Make/N=(3,3)/FREE im
+	//		Note im, "detectorID=PE1621 723-3335;xDimDet=2048;yDimDet=2048;"
+	//		LoadDefaultBadPixelImage(im,"",printIt=1)
+	//	End
+
+	//	Function/WAVE test_GetBadPixelsImage()
+	//		String wnote = "detectorID=PE1621 723-3335;xDimDet=2048;yDimDet=2048;"
+	//		Wave badIm = GetBadPixelsImage(wnote)
+	//		if (WaveExists(badIm))
+	//			print GetWavesDataFolder(badIm,2)
+	//		else
+	//			print "could not find bad image"
+	//		endif
+	//	End
+
+// =============================== End of Getting Bad Pixel Info ===============================
+// =============================================================================================
+
+
+// =============================================================================================
+// ============================== Start of Generic Image Reading ===============================
 
 Function imageLoadersAvailable()		// returns true if a real image loader is available
 	Variable haveHDF5 = exists("LoadHDF5imageFile")==6	// flags indicating which type of images I know how to read
@@ -830,6 +1026,33 @@ End
 
 // =============================================================================================
 // =================================== Start of Generic Util ===================================
+
+Function/WAVE ROIofImage(image, startx,groupx,endx, starty,groupy,endy)
+	// This never returns image, but alwasy a FREE copy or subset of image
+	Wave image
+	Variable startx,groupx,endx
+	Variable starty,groupy,endy
+
+	if (!WaveExists(image))
+		return $""
+	elseif (WaveDims(image)!=2)				// only works on image (i.e. 2D arrays)
+		return $""
+	endif
+
+	Duplicate/FREE image, ROI
+	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
+	if (startx==0 && starty==0 && groupx==1 && groupy==1 && endx==(Nx-1) && endy==(Ny-1))
+		return ROI									// ROI is same size as image
+	endif
+
+	// need to extract an ROI
+	Nx = floor( (endx-startx+1)/groupx )	// size of requested ROI
+	Ny = floor( (endy-starty+1)/groupy )
+	Redimension/N=(Nx,Ny) ROI
+	ROI = image[p*groupx + startx][q*groupy + starty]	// does not do grouping, just pick first pixel
+	return ROI
+End
+
 
 Proc Graph_ImageStyle() : GraphStyle
 	GraphImageStyle()
