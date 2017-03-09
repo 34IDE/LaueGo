@@ -7,7 +7,7 @@
 // version 2.14 speed up Fill_Q_Positions(), by only reading part of image headers
 // version 2.30 change Fill1_3DQspace() to allow processing only an roi
 
-#include "ImageDisplayScaling", version>=2.07
+#include "ImageDisplayScaling", version>=2.10
 #if (Exists("HDF5OpenFile")==4)
 #include "HDF5images", version>=0.32
 #endif
