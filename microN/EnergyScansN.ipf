@@ -1,15 +1,16 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.41
+#pragma version = 2.42
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
 // version 2.14 speed up Fill_Q_Positions(), by only reading part of image headers
 // version 2.30 change Fill1_3DQspace() to allow processing only an roi
+// version 2.42 Fill_Q_Positions() and fix Fill1_3DQspace() now automatically use the badPixels wave
 
-#include "ImageDisplayScaling", version>=2.10
+#include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.32
+#include "HDF5images", version>=0.35
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
 #include "WinView", version>=2.03
@@ -17,9 +18,9 @@
 #include "Masking", version>1.03
 #include "GizmoZoomTranslate", version>=2.03
 #include "GizmoClip", version>=2.03
-#include "GizmoMarkers", version>=2.13
-#include "QspaceVolumesView",  version>=1.19
-#include "microGeometryN", version>=1.86
+#include "GizmoMarkers", version>=2.21
+#include "QspaceVolumesView",  version>=1.21
+#include "microGeometryN", version>=1.95
 
 Static Constant hc = 1.239841857				// hc (keV-nm)
 Static Constant secPerPixelFixed = 18.8e-6		// the fixed time is takes to process one pixel (sec) after any distortion
@@ -6538,6 +6539,30 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		return $""
 	endif
 
+	// read in the badPixels (if they exist) and combine with mask (1=OK, 0=bad)
+	Wave badPixels = GetBadPixelsImage(wnote)				// get image with bad pixels if badPixels exists
+	if (WaveExists(badPixels))
+		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixels,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixels,1) )
+			DoAlert 0,"badPixels and image have different dimensions than the whole detector"
+			DoWindow/K $progressWin								// done with status window
+			return $""
+		endif
+		Wave BP = ROIofImage(badPixels, startx,groupx,endx, starty,groupy,endy)	// badPixels is now a free wave, of correct ROI
+		Wave badPixels = BP
+	endif
+	// make the local free wave maskLocal it must always exist
+	if (WaveExists(badPixels) && WaveExists(mask))
+		Make/N=(Ni,Nj)/B/U/FREE maskLocal
+		maskLocal = badPixels || mask							// maskLocal is combination of mask and badPixels
+	elseif (WaveExists(badPixels))
+		Wave maskLocal = badPixels								// badPixels is already a local free wave
+	elseif (WaveExists(mask))
+		Make/N=(Ni,Nj)/B/U/FREE maskLocal						// remember, maskLocal must be a local free wave
+		maskLocal = mask[p][q] ? 1 : 0							// only 0 or 1
+	else
+		Wave maskLocal = $""
+	endif
+
 	// read header from each of the images, and store it to figure out what was done.
 	Variable N = ItemsInRange(range)							// number of images to be processed
 	Make/N=(N)/FREE/D keV_FillQvsPositions=NaN				// hold the Energies
@@ -6704,7 +6729,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 
 	ProgressPanelUpdate(progressWin,0,status="pre-computing Qvecs array, may take 90 sec.",resetClock=1)
 	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
-	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=mask,depth=depth,printIt=printIt)
+	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=maskLocal,depth=depth,printIt=printIt)
 	KillWaves/Z image													// done looking at first image
 
 	// make 3D volume to hold  the 3D q-histogram
@@ -6805,7 +6830,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 
 		// monochromator scan (not undulator gap)
 		elseif (mono)
-			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark)// fill Qhist from one file, Qhats are precomputed
+			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=maskLocal,dark=dark)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z image
 
 		// undulator scan (monochromator not used)
@@ -6826,7 +6851,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
 			keV = gap2keV_Func(NumberByKey("undulatorGap",note(image),"="))
 			Note/K dimage, ReplaceNumberByKey("keV",note(image),keV,"=")
-			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=mask,dark=dark,I0normalize=I0normalize,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
+			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=maskLocal,dark=dark,I0normalize=I0normalize,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z i0												// delete old "previous" image
 			Wave i0 = image											// save current image as i0, the new "previous" image
 		endif
@@ -6932,11 +6957,11 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,I
 	endif
 	Variable Ni=DimSize(image,0),Nj=DimSize(image,1)
 
-	if (WaveExists(mask))
-		Wave maskIn=mask
+	if (WaveExists(mask))								// mask is array that was passed (or not passed)
+		Wave maskIn=mask									// there is ALWAYS a maskIn, it is either equal to mask or "1"
 	else
 		Make/N=(Ni,Nj)/FREE/B/U maskLocal=1
-		Wave maskIn=maskLocal
+		Wave maskIn=maskLocal							// no mask, so make maskLocal and set to 1 (use all pixels)
 	endif
 	if (WaveExists(dark))
 		if (WaveType(image) & 0x58)					// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
@@ -7158,8 +7183,8 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	WaveClear qvecs
 
 	if (WaveExists(mask))
-		Make/N=(N)/B/U/FREE maskLocal
-		maskLocal = mask[mod(p,Ni)][floor(p/Ni)] ? 1 : NaN		// set maskLocal to passed values, NaN values are not used
+		Make/N=(N)/B/U/FREE maskLocal					// un-wrap mask into a 1-D wave
+		maskLocal = mask[mod(p,Ni)][floor(p/Ni)] ? 1 : 0		// set maskLocal to passed values, 1=OK, 0=BAD
 		hkl = maskLocal[p] ? hkl[p][q] : NaN			// remove values that are masked off (set to NaN)
 		WaveClear maskLocal
 	endif
