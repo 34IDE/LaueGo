@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.11
+#pragma version = 2.12
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -10,6 +10,7 @@
 //folder
 //
 //	at verion 2.07, added the ImageROIstruct Structure and associated functions
+//	at verion 2.12, bad pixel support, and also ROIofImage()
 
 
 // =============================================================================================
@@ -23,7 +24,7 @@ Menu "Graph"
 End
 Menu "Data"
 	MenuItemIfWaveClassExists("Get Image Wave Info...","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
-	MenuItemIfWaveClassExists("Load Bad Pixels...","speImage*;rawImage*","DIMS:2"), LoadDefaultBadPixelImage($"","")
+	"Load Bad Pixels...", LoadDefaultBadPixelImage($"","")
 End
 
 Menu "New"
@@ -219,6 +220,11 @@ Function/WAVE LoadDefaultBadPixelImage(image,fileName,[printIt])
 			menuStr += SelectString(strlen(menuStr),""," ;")
 		endif
 		menuStr += reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
+		if (!strlen(menuStr))
+			print "No geometrys or images found, nothing done."
+			DoAlert 0, "No geometrys or images found, nothing done."
+			return $""
+		endif
 		Prompt infoSource, "source of detector info", popup, menuStr
 		DoPrompt "image",infoSource
 		if (V_flag)
@@ -253,8 +259,8 @@ Function/WAVE LoadDefaultBadPixelImage(image,fileName,[printIt])
 	Wave pxyBad = ImageDisplayScaling#readBadPixelFile(fileName,id)
 	Wave badImage = ImageDisplayScaling#badPixelList2image(Nx,Ny,pxyBad)
 	if (!WaveExists(badImage))
-		print "Error loading bad pixel file"
-		DoAlert 0, "Error loading bad pixel file"
+		print "Error loading bad pixel file, nothing done."
+		DoAlert 0, "Error loading bad pixel file, nothing done."
 		return $""
 	endif
 
