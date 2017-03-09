@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.10
+#pragma version = 2.11
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -19,11 +19,11 @@ Menu "Graph"
 //	"Set Aspect Ratio to Get Square Pixels \ Range",SetAspectToSquarePixels("")
 	// MenuItemIfTopGraphImage("Set Aspect Ratio to Get Square Pixels"),SetAspectToSquarePixels("")
 	MenuItemIfTopGraphImage("Sum Image Horizontally & Vertically"),sumImageToBothEdges($"",printIt=1)
-	MenuItemIfWaveClassExists("Get Image Info","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
+	MenuItemIfWaveClassExists("Get Image Info...","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
 End
 Menu "Data"
-	MenuItemIfWaveClassExists("Get Image Wave Info","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
-	MenuItemIfWaveClassExists("Load Bad Pixels","speImage*;rawImage*","DIMS:2"), LoadDefaultBadPixelImage($"","")
+	MenuItemIfWaveClassExists("Get Image Wave Info...","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
+	MenuItemIfWaveClassExists("Load Bad Pixels...","speImage*;rawImage*","DIMS:2"), LoadDefaultBadPixelImage($"","")
 End
 
 Menu "New"
@@ -207,32 +207,57 @@ Function/WAVE LoadDefaultBadPixelImage(image,fileName,[printIt])
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	if (!WaveExists(image))
-		String imageName, wList=reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
-		Prompt imageName, "name of image", popup, wList
-		DoPrompt "image",imageName
+	String wnote=""
+	if (WaveExists(image))
+		wnote=note(image)		// a generic image wave note with detectorID and size of image (xDimDet,yDimDet)
+	else
+		String infoSource, menuStr=""
+		FUNCREF geoDetectorInfoWaveProto detectorInfoFunc=$"geoDetectorInfoWave"
+		Wave/T dInfo = detectorInfoFunc()
+		if (WaveExists(dInfo))
+			menuStr = ReplaceString(":", StringByKey("menuStr",note(dInfo),"="),";")
+			menuStr += SelectString(strlen(menuStr),""," ;")
+		endif
+		menuStr += reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
+		Prompt infoSource, "source of detector info", popup, menuStr
+		DoPrompt "image",infoSource
 		if (V_flag)
 			return $""
 		endif
-		Wave image = $imageName
+
+		if (numpnts(dInfo))
+			Variable i = WhichListItem(infoSource,menuStr)
+			if (i>=0)
+				wnote = dInfo[i]
+			endif
+		endif
+		if (!strlen(wnote))
+			Wave image = $infoSource
+			if (WaveExists(image))
+				wnote = note(image)
+			endif
+		endif
 		printIt = 1
-	endif
-	if (!WaveExists(image))
-		return $""
 	endif
 	if (printIt)
 		printf "LoadDefaultBadPixelImage(%s,\"%s\")\r",NameOfWave(image),fileName
 	endif
-	String wnote=note(image)		// a generic image wave note with detectorID and size of image (xDimDet,yDimDet)
-	String id = StringByKey("detectorID",wnote,"=")
+
+	String id = TrimBoth(StringByKey("detectorID",wnote,"="))
 	Variable Nx = round(NumberByKey("xDimDet",wnote,"="))
 	Variable Ny = round(NumberByKey("yDimDet",wnote,"="))
 	if (numtype(Nx+Nx) || Nx<1 || Ny<1 || strlen(id)<1)
 		return $""
 	endif
 
-	Wave pxyBad = readBadPixelFile(fileName,id)
-	Wave badImage = badPixelList2image(Nx,Ny,pxyBad)
+	Wave pxyBad = ImageDisplayScaling#readBadPixelFile(fileName,id)
+	Wave badImage = ImageDisplayScaling#badPixelList2image(Nx,Ny,pxyBad)
+	if (!WaveExists(badImage))
+		print "Error loading bad pixel file"
+		DoAlert 0, "Error loading bad pixel file"
+		return $""
+	endif
+
 	String name = ReplaceString("__",CleanupName(id+"_BadPixels",0),"_")
 
 	if (printIt)
@@ -245,12 +270,20 @@ Function/WAVE LoadDefaultBadPixelImage(image,fileName,[printIt])
 	return $name
 End
 
+Function/WAVE geoDetectorInfoWaveProto()
+	return $""
+End
+
 
 Static Function/WAVE badPixelList2image(Nx,Ny,pxy)
 	// take wave with bad pixels (probably from readBadPixelFile()) and return image with bad pixels
 	// good pixels are 1, bad pixels are 0
 	Variable Nx,Ny				// number of pixels in image, used to make badImage[][]
 	Wave pxy						// list of bad pixels pxy[][2]
+
+	if (!WaveExists(pxy) || numtype(Nx+Ny) || Nx<1 || Ny<1)
+		return $""
+	endif
 
 	Variable N=DimSize(pxy,0)	// number of bad pixels in pxy[][2]
 	Make/N=(Nx,Ny)/B/U/FREE badImage=1

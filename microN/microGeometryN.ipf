@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.94
+#pragma version = 1.95
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -3446,6 +3446,41 @@ End
 
 // ============================================================================================
 // ================================== Start of Utility Items ==================================
+
+Function/WAVE geoDetectorInfoWave()
+	Make/T/N=(MAX_Ndetectors)/FREE dInfo=""
+	STRUCT microGeometry g
+	if (FillGeometryStructDefault(g,alert=1))	//fill the geometry structure with current values
+		return $""
+	endif
+	String list, id, color, menuStr=""
+	Variable i,m, Nx,Ny
+	for (i=0,m=0; i<MAX_Ndetectors; i+=1)			// info about all of the detectors
+		if (g.d[i].used)
+			if (g.d[i].used)
+				Nx = g.d[i].Nx
+				Ny = g.d[i].Ny
+				id = g.d[i].detectorID
+				color = StringByKey(id,DetIDcolors)
+				list = ReplaceStringByKey("detectorID","",id,"=")
+				list = ReplaceNumberByKey("xDimDet",list,Nx,"=")
+				list = ReplaceNumberByKey("yDimDet",list,Ny,"=")
+				if (strlen(color))
+					list = ReplaceStringByKey("color",list,color,"=")
+				endif
+				dInfo[m] = list
+				menuStr += id + SelectString(strlen(color),"", ", "+ color)+":"
+				m += 1
+			endif
+		endif
+	endfor
+
+	String wnote = "waveClass=detectorInfoBrief;"
+	wnote = ReplaceStringByKey("menuStr",wnote,menuStr,"=")
+	Note/K dInfo, wnote
+	return dInfo
+End
+
 
 Static Function/S MakeUnique3Vector(preset)	// make a new 3-vector, and optionally set it to preset[]
 	Wave preset												// optional wave, if none call with $""
