@@ -23,7 +23,7 @@ Menu "Graph"
 End
 Menu "Data"
 	MenuItemIfWaveClassExists("Get Image Wave Info","speImage*;rawImage*","DIMS:2"), GenericWaveNoteInfo($"","",class="speImage*;rawImage*",options="DIMS:2",type="image")
-	MenuItemIfWaveClassExists("Load Bad Pixels","speImage*;rawImage*","DIMS:2"), Function LoadDefaultBadPixelImage($"","")
+	MenuItemIfWaveClassExists("Load Bad Pixels","speImage*;rawImage*","DIMS:2"), LoadDefaultBadPixelImage($"","")
 End
 
 Menu "New"

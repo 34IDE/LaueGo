@@ -457,7 +457,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			DoWindow/K $progressWin						// done with status window
 			return 1
 		endif
-		Wave badPixels = ROIofImage(badPixels, startx,groupx,endx, starty,groupy,endy)	// badPixels is now a free wave, of correct ROI
+		Wave BP = ROIofImage(badPixels, startx,groupx,endx, starty,groupy,endy)	// badPixels is now a free wave, of correct ROI
+		Wave badPixels = BP
 	endif
 
 	Variable Q0=2*PI/d0										// Q of unstrained material (1/nm)

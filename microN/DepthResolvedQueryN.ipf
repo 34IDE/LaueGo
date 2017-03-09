@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.64
+#pragma version = 1.65
 #pragma IgorVersion = 6.0
 #pragma ModuleName=depthResolve
 //#include "microGeometry", version>=2.48
@@ -452,7 +452,8 @@ Function FillMovieOfOneScan(pathName,fileFmt,range,surface,absorpLength,type,[fl
 		GetFileFolderInfo/P=$pathName/Q/Z fileName
 	endif
 	if (!V_isFile)														// the passed fileFmt & range do not point to a file, time to ask the user
-		GetFileFolderInfo/P=$pathName/Q Hash("a",1)		// this puts up a dialog, asks user to find the file. the Hash forces a dialog
+		String tempPath = SelectString( ItemsInList(PathList(pathName,";","")), "", pathName)
+		GetFileFolderInfo/P=$tempPath/Q Hash("a",1)	// this puts up a dialog, asks user to find the file. the Hash forces a dialog
 		if (!V_isFile)
 			return 1														// user canceled out
 		endif
