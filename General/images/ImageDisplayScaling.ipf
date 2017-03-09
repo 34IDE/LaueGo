@@ -212,14 +212,14 @@ Function/WAVE LoadDefaultBadPixelImage(image,fileName,[printIt])
 	if (WaveExists(image))
 		wnote=note(image)		// a generic image wave note with detectorID and size of image (xDimDet,yDimDet)
 	else
-		String infoSource, menuStr=""
+		String infoSource, menuStr="", wList=""
 		FUNCREF geoDetectorInfoWaveProto detectorInfoFunc=$"geoDetectorInfoWave"
 		Wave/T dInfo = detectorInfoFunc()
+		wList = reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
 		if (WaveExists(dInfo))
 			menuStr = ReplaceString(":", StringByKey("menuStr",note(dInfo),"="),";")
-			menuStr += SelectString(strlen(menuStr),""," ;")
 		endif
-		menuStr += reverseList(WaveListClass("speImage*;rawImage*","*","DIMS:2"))
+		menuStr += SelectString(strlen(menuStr) && strlen(wList),""," ;") + wList
 		if (!strlen(menuStr))
 			print "No geometrys or images found, nothing done."
 			DoAlert 0, "No geometrys or images found, nothing done."

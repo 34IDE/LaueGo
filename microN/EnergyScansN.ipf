@@ -1,12 +1,12 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.42
+#pragma version = 2.43
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
 // version 2.14 speed up Fill_Q_Positions(), by only reading part of image headers
 // version 2.30 change Fill1_3DQspace() to allow processing only an roi
-// version 2.42 Fill_Q_Positions() and fix Fill1_3DQspace() now automatically use the badPixels wave
+// version 2.43 Fill_Q_Positions() and fix Fill1_3DQspace() now automatically use the badPixels wave
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -7467,7 +7467,7 @@ Function/T FillEscanParametersPanel(strStruct,hostWin,left,top)
 
 	SetWindow kwTopWin,userdata(EscanPanelName)=hostWin+"#EscanPanel"
 //	NewPanel/K=1/W=(left,top,left+221,top+430)/HOST=$hostWin
-	NewPanel/K=1/W=(left,top,left+221,top+452)/HOST=$hostWin
+	NewPanel/K=1/W=(left,top,left+221,top+482)/HOST=$hostWin
 	ModifyPanel frameStyle=0, frameInset=0
 	RenameWindow #,EscanPanel
 
@@ -7521,6 +7521,11 @@ Function/T FillEscanParametersPanel(strStruct,hostWin,left,top)
 	Button buttonFill3DQspace,help={"Read In the Energy scan data & create a 3D Q-space"}
 	Button buttonGizmoOf3DQspace,pos={53,start+small},size={155,20},disable=2,proc=EnergyScans#EscanButtonProc,title="make 3D Q-space Gizmo",fSize=10
 	Button buttonGizmoOf3DQspace,help={"show a Gizmo from a previously loaded 3D Q-space"}
+
+	start = start+small + big
+	Button buttonLoadBadPixels,pos={16,start},size={150,20},proc=EnergyScans#EscanButtonProc,title="Load Bad Pixel File"
+	Button buttonLoadBadPixels,help={"Load in the bad pixels for a detector"}
+	Button buttonLoadBadPixels,fSize=10
 
 	EnableDisableEscanControls(hostWin+"#EscanPanel")
 	return "#EscanPanel"
@@ -7596,7 +7601,10 @@ Static Function EscanButtonProc(ctrlName) : ButtonControl
 		Fill1_3DQspace(0,"imagePath","","",printIt=1)
 	elseif (stringmatch(ctrlName,"buttonGizmoOf3DQspace"))
 		MakeGizmoQspace3d($"")
+	elseif (stringmatch(ctrlName,"buttonLoadBadPixels"))
+		LoadDefaultBadPixelImage($"","")
 	endif
+
 	EnableDisableEscanControls(GetUserData("microPanel","","EscanPanelName"))
 End
 //
