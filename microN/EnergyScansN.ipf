@@ -481,7 +481,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable microSec0 = stopMSTimer(-2)									// used for timing, number of µsec
 	Variable microSec = microSec0, Npixels=0
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N1N2)+" image headers",resetClock=1)
-	Variable i,m1,m2
+	Variable i,m1,m2, varyROI=0, iv
 	for (m1=str2num(range1), i=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range1
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2))		// loop over range2
 			if (mod(i,50)==0)
@@ -492,10 +492,14 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				endif
 			endif
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)
-			wnote=ReadGenericHeader(name,extras="EscanOnly:1")		// short wave note to add to file read in
-			if (ExtendROIfromWaveNote(roiAll,wnote))					// find ROI that holds ALL the images, skip really bad ROI's
+			wnote = ReadGenericHeader(name,extras="EscanOnly:1")	// short wave note to add to file read in
+
+			iv = ExtendROIfromWaveNote(roiAll,wnote)					// find ROI that holds ALL the images
+			if (iv<0)																// really bad ROI in wave note, skip
 				continue
 			endif
+			varyROI = iv ? 1 : varyROI										// set varyROI to true if roiAll is changing
+
 			Npixels += (NumberByKey("startx", wnote,"=") - NumberByKey("endx", wnote,"=")) * (NumberByKey("starty", wnote,"=") - NumberByKey("endy", wnote,"="))
 
 			X_FillQvsPositions[i] = NumberByKey("X1",wnote,"=")		// list of X positioner values
@@ -513,10 +517,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	if (printIt)
 		printf "took %s\r",Secs2Time(seconds,5,3)
 	endif
+	if (varyROI && WaveExists(mask))
+			DoAlert 0,"You cannot use a mask when you are also varying the ROI size"
+			DoWindow/K $progressWin						// done with status window
+			return 1
+	endif
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
 
 	if (WaveExists(badPixelsAll))
-		Wave badPixels = ExtractROIofImage(badPixelsAll, roiAll)	// badPixels is now a free wave, of correct ROI
+		Wave badPixels = ExtractROIofImage(badPixelsAll, roiAll)	// badPixels is now a free wave, with size of roiAll
 	else
 		Wave badPixels = $""
 	endif
@@ -579,6 +588,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		DoAlert 0, "There were "+num2istr(V_numNans)+" bad images found, they will be skipped"
 	endif
 
+	// if varyROI is True, then maskLocal will be size of roiAll
 	if (WaveExists(badPixels) && WaveExists(mask))
 		Duplicate/FREE mask, maskLocal							// maskLocal is combination of mask and badPixels
 		maskLocal = badPixels || mask
@@ -591,20 +601,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 
 	// note that Q range only depends upon image size and energy range, not on X, H or depth
-	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ			// get range of Q
+	Variable Qmin, Qmax, dQ, NQ									// get range of Q
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVlo],m2_Fill_QHistAt1Depth[ikeVlo],NaN)	// load one image to get its size & Q range
-	Wave image = $(LoadGenericImageFile(name))				// load image
-	thetaLo = real(thetaRange(geo.d[dNum],image,maskIN=maskLocal,depth=depth0))	// min theta on this image
-	KillWaves/Z image
+	String wnoteFull = ReadGenericHeader(name)				// a full typical wave note
+
+	Variable thetaZ = thetaRange(geo.d[dNum],roiAll,maskIN=maskLocal,depth=depth0)		// returns the range of theta spanned by roi
 	keV = keV_FillQvsPositions[ikeVlo]
-	Qmin = 4*PI*sin(thetaLo)*keV/hc								// min Q (1/nm)
-	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVhi],m2_Fill_QHistAt1Depth[ikeVhi],NaN)
-	Wave image = $(LoadGenericImageFile(name))				// load image
-	String wnoteFull = note(image)								// a full typical wave note
-	thetaHi = imag(thetaRange(geo.d[dNum],image,maskIN=maskLocal,depth=depth0))	// max theta on this image
-	KillWaves/Z image
+	Qmin = 4*PI * sin( real(thetaZ) ) * keV/hc			// min Q (1/nm)
 	keV = keV_FillQvsPositions[ikeVhi]
-	Qmax = 4*PI*sin(thetaHi)*keV/hc								// max Q (1/nm)
+	Qmax = 4*PI * sin( imag(thetaZ) ) * keV/hc			// max Q (1/nm)
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
@@ -632,7 +637,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		endif
 		printf "E range = [%g, %g] (keV)\r", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi]
 		printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
-		printf "theta range = [%g, %g]¡\r",thetaLo*180/PI,thetaHi*180/PI
+		printf "theta range = [%g, %g]¡\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI
 		if (d0>0)
 			printf "   d0 = %g (nm),   Q0 = %g (1/nm)\r",d0,Q0
 		endif
@@ -3006,16 +3011,18 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	endif
 
 	// note that Q range only depends upon image size and energy
-	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ				// get range of Q
+	Variable Qmin, Qmax, dQ, NQ										// get range of Q
 	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
 	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+imageName+"' using detector ID"
 		return 1
 	endif
-	thetaLo = real(thetaRange(geo.d[dNum],image,maskIN=mask,depth=depth))	// min theta on this image
-	Qmin = 4*PI*sin(thetaLo)*keV/hc									// min Q (1/nm)
-	thetaHi = imag(thetaRange(geo.d[dNum],image,maskIN=mask,depth=depth))	// max theta on this image
-	Qmax = 4*PI*sin(thetaHi)*keV/hc									// max Q (1/nm)
+
+	STRUCT ImageROIstruct roi
+	ImageROIstructInit(roi, wnote=note(image))					// returns 0=OK, non-zero if problem
+	Variable/C thetaZ = thetaRange(geo.d[dNum],roi,maskIN=mask,depth=depth)		// theta range on this image
+	Qmin = 4*PI*sin(real(thetaZ))*keV/hc							// min Q (1/nm)
+	Qmax = 4*PI*sin(imag(thetaZ))*keV/hc							// max Q (1/nm)
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable px,py															// the current pixel to analyze (unbinned full chip pixels)
@@ -3027,7 +3034,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 
 	if (printIt)
 		printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
-		printf "theta range = [%g, %g]¡\r",thetaLo*180/PI,thetaHi*180/PI
+		printf "theta range = [%g, %g]¡\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI
 		if (d0>0)
 			printf "   d0 = %g (nm),   Q0 = %g (1/nm)\r",d0,2*PI/d0
 		endif
@@ -3369,29 +3376,24 @@ Static Function sameROI(list,startx, endx, starty, endy, groupx, groupy)
 	return (ierr < 1e-9)								// true if the ROI's are equal
 End
 //
-Static Function/C thetaRange(d,image,[maskIN,depth])		// returns the range of theta spanned by image
+Static Function/C thetaRange(d,roi,[maskIN,depth])		// returns the range of theta spanned by image
 	STRUCT detectorGeometry &d
-	Wave image
-	Wave maskIN
-	Variable depth											// optional passed depth for when depth is not zero & not in wave note
+	STRUCT ImageROIstruct &roi									// an ROI of interest
+	Wave maskIN															// mask must match roi size exactly
+	Variable depth														// optional passed depth for when depth is not zero & not in wave note
 	depth = ParamIsDefault(depth) ? NaN : depth			// if depth not passed, set to invalid value
 
-	String wnote = note(image)
-	Variable startx, groupx, starty, groupy
-	startx = NumberByKey("startx", wnote,"=")
-	starty = NumberByKey("starty", wnote,"=")
-	groupx = NumberByKey("groupx", wnote,"=")
-	groupy = NumberByKey("groupy", wnote,"=")
-	depth = numtype(depth) ? NumberByKey("depth", wnote,"=") : depth	// if depth not passed, try wavenote
-	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
-	if (numtype(startx+groupx+starty+groupy))
-		DoAlert 0, "could not get ROI from wave note of image '"+NameOfWave(image)+"'"
+	if (!ImageROIstructValid(roi))
+		DoAlert 0, "ERROR -- thetaRange() ROI is invalid"
 		return cmplx(NaN,NaN)
 	endif
+	Variable groupx = roi.binx, groupy = roi.biny
+	Variable Nx = roi.Nx, Ny = roi.Ny
+
 	if (WaveExists(maskIN) && !ParamIsDefault(maskIN))
 		Wave mask = maskIN					// check all un masked pixels on the detector
 		if (Nx!=DimSize(mask,0) || Ny!=DimSize(mask,1))
-			DoAlert 0,"mask size does not match image size"
+			DoAlert 0,"mask size does not match roi size"
 			return cmplx(NaN,NaN)
 		endif
 	else											// if no mask passed, make one that is all ones
@@ -3399,15 +3401,15 @@ Static Function/C thetaRange(d,image,[maskIN,depth])		// returns the range of th
 		Wave mask = maskOnes
 	endif
 
-	Variable theta,thetaMin=Inf, thetaMax=-Inf	// Bragg angle (rad) and range of theta, test all 4 corners of the image
-	Variable ix,iy, px,py						// loop over all pixels
+	Variable theta,thetaMin=Inf, thetaMax=-Inf	// Bragg angle (rad) and range of theta, test all points in the roi
+	Variable ix,iy, px,py					// loop over all pixels
 	for (iy=0;iy<Ny;iy+=1)
-		py = starty + groupy*iy
+		py = roi.yLo + groupy*iy
 		for (ix=0;ix<Nx;ix+=1)
-			if (!mask[ix][iy])					// skip points masked off
+			if (!mask[ix][iy])				// skip points masked off
 				continue
 			endif
-			px = startx + groupx*ix
+			px = roi.xLo + groupx*ix
 			theta = pixel2q(d,px,py,$"",depth=depth)
 			thetaMin = min(theta,thetaMin)
 			thetaMax = max(theta,thetaMax)
@@ -3415,6 +3417,52 @@ Static Function/C thetaRange(d,image,[maskIN,depth])		// returns the range of th
 	endfor
 	return cmplx(thetaMin,thetaMax)
 End
+//	Static Function/C thetaRange(d,image,[maskIN,depth])		// returns the range of theta spanned by image
+//		STRUCT detectorGeometry &d
+//		Wave image
+//		Wave maskIN
+//		Variable depth											// optional passed depth for when depth is not zero & not in wave note
+//		depth = ParamIsDefault(depth) ? NaN : depth			// if depth not passed, set to invalid value
+//	
+//		String wnote = note(image)
+//		Variable startx, groupx, starty, groupy
+//		startx = NumberByKey("startx", wnote,"=")
+//		starty = NumberByKey("starty", wnote,"=")
+//		groupx = NumberByKey("groupx", wnote,"=")
+//		groupy = NumberByKey("groupy", wnote,"=")
+//		depth = numtype(depth) ? NumberByKey("depth", wnote,"=") : depth	// if depth not passed, try wavenote
+//		Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
+//		if (numtype(startx+groupx+starty+groupy))
+//			DoAlert 0, "could not get ROI from wave note of image '"+NameOfWave(image)+"'"
+//			return cmplx(NaN,NaN)
+//		endif
+//		if (WaveExists(maskIN) && !ParamIsDefault(maskIN))
+//			Wave mask = maskIN					// check all un masked pixels on the detector
+//			if (Nx!=DimSize(mask,0) || Ny!=DimSize(mask,1))
+//				DoAlert 0,"mask size does not match image size"
+//				return cmplx(NaN,NaN)
+//			endif
+//		else											// if no mask passed, make one that is all ones
+//			Make/N=(Nx,Ny)/U/B/FREE maskOnes=1
+//			Wave mask = maskOnes
+//		endif
+//	
+//		Variable theta,thetaMin=Inf, thetaMax=-Inf	// Bragg angle (rad) and range of theta, test all 4 corners of the image
+//		Variable ix,iy, px,py						// loop over all pixels
+//		for (iy=0;iy<Ny;iy+=1)
+//			py = starty + groupy*iy
+//			for (ix=0;ix<Nx;ix+=1)
+//				if (!mask[ix][iy])					// skip points masked off
+//					continue
+//				endif
+//				px = startx + groupx*ix
+//				theta = pixel2q(d,px,py,$"",depth=depth)
+//				thetaMin = min(theta,thetaMin)
+//				thetaMax = max(theta,thetaMax)
+//			endfor
+//		endfor
+//		return cmplx(thetaMin,thetaMax)
+//	End
 
 
 #ifdef TRY_ME_OUT

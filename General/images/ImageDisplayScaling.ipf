@@ -1073,31 +1073,37 @@ Function roiNOTinImage(image, roi)
 End
 
 
-Function ExtendROIfromWaveNote(roi,wnote)
+Function ExtendROIfromWaveNote(roi,wnote)	// returns -1=error, 0=did nothing, 1=extended
 	STRUCT ImageROIstruct &roi
 	String wnote										// wave note from an image
 
-	Variable startx = NumberByKey("startx", wnote,"=")
-	Variable endx = NumberByKey("endx", wnote,"=")
-	Variable starty = NumberByKey("starty", wnote,"=")
-	Variable endy = NumberByKey("endy", wnote,"=")
+	Variable startx = round(NumberByKey("startx", wnote,"="))
+	Variable endx = round(NumberByKey("endx", wnote,"="))
+	Variable starty = round(NumberByKey("starty", wnote,"="))
+	Variable endy = round(NumberByKey("endy", wnote,"="))
 
 	Variable ierr
 	ierr = abs(roi.binx - NumberByKey("groupx", wnote,"="))	// binning must match
 	ierr += abs(roi.biny - NumberByKey("groupy", wnote,"="))
 	if (ierr > 1e-3)
-		return 1
+		return -1
 	elseif (numtype(startx + starty + endx + endy))
-		return 1
+		return -1
 	elseif (startx<0 || starty<0 || endx<startx || endy<starty)
-		return 1
+		return -1
 	endif
 
-	roi.xLo = min(roi.xLo, startx)
-	roi.xHi= min(roi.xHi, endx)
-	roi.yLo = min(roi.yLo, starty)
-	roi.yHi= min(roi.yHi, endy)
-	return 0
+	Variable vary = abs(startx - roi.xLo) + abs(endx - roi.xHi) + abs(starty - roi.yLo) + abs(endy - roi.yHi)
+	if (vary > 0.5)
+		roi.xLo = min(roi.xLo, startx)
+		roi.xHi= min(roi.xHi, endx)
+		roi.yLo = min(roi.yLo, starty)
+		roi.yHi= min(roi.yHi, endy)
+		vary = 1
+	else
+		vary = 0
+	endif
+	return vary
 End
 
 
