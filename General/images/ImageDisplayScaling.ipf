@@ -972,20 +972,34 @@ End
 
 Structure ImageROIstruct	// a ROI on an image
 	int16		empty				// 0 is not empty
-	int32		xLo				// must be >= 0
+	int32		xLo				// must be >= 0 (xLo, xHi, yLo, yHi are all UN-binned pixels)
 	int32		xHi				// must be >= xLo
 	int32		yLo				// must be >= 0
 	int32		yHi				// must be >= yLo
-	int32		Nx					// size of this roi
+	int32		Nx					// size of this roi (in BINNED pixels)
 	int32		Ny					// computed from yHi-yLo+1
+	int16		binx				// binning in x
+	int16		biny				// binning in y
 EndStructure
 //
-Function ImageROIstructInit(roi)
+Function ImageROIstructInit(roi, [wnote])	// returns 0=OK, non-zero if problem
 	STRUCT ImageROIstruct &roi
+	String wnote				// optional, if given use it to preset roi values
 	roi.empty = 0
-	roi.xLo = 0	;	roi.xHi = 0
-	roi.yLo = 0	;	roi.yHi = 0
-	roi.Nx = 1	;	roi.Ny = 1
+	roi.xLo = 0		;	roi.xHi = 0
+	roi.yLo = 0		;	roi.yHi = 0
+	roi.Nx = 1		;	roi.Ny = 1
+	roi.binx = 1	;	roi.biny = 1
+	if (ParamIsDefault(wnote))
+		return 0
+	endif
+
+	Variable startx, endx, starty, endy, groupx, groupy
+	startx = NumberByKey("startx", wnote,"=");	endx = NumberByKey("endx", wnote,"=");	groupx = NumberByKey("groupx", wnote,"=")
+	starty = NumberByKey("starty", wnote,"=");	endy = NumberByKey("endy", wnote,"=");	groupy = NumberByKey("groupy", wnote,"=")
+	roi.xLo = startx	;	roi.xHi = endx	;	roi.binx = groupx
+	roi.yLo = starty	;	roi.yHi = endy;	roi.biny = groupy
+	return ImageROIstructValid(roi)			// verify data in wave note
 End
 //
 Function/T ImageROIstruct2str(roi)
@@ -999,6 +1013,11 @@ Function/T ImageROIstruct2str(roi)
 	else
 		sprintf out, "ix=[%g, %g] (N=%g),  iy=[%g, %g] (N=%g)\r", roi.xLo,roi.xHi,roi.Nx, roi.yLo,roi.yHi,roi.Ny
 	endif
+	if (roi.binx != 1 || roi.biny != 1)
+		String str
+		sprintf str, "  binx = %d,   biny = %d\r", roi.binx, roi.biny
+		out += str
+	endif
 	return out
 End
 //
@@ -1010,36 +1029,106 @@ Function ImageROIstructValid(roi)
 		return 1
 	endif
 
-	Variable err=0
+	if (roi.binx<=0 || roi.binx > 500)		// check for valid binning
+		roi.Nx = 0
+		return 2
+	elseif (roi.biny<=0 || roi.biny > 500)
+		roi.Ny = 0
+		return 2
+	endif
+
 	if (roi.xLo <= roi.xHi && roi.xLo >= 0)
-		roi.Nx = roi.xHi - roi.xLo + 1
+		roi.Nx = (roi.xHi - roi.xLo + 1) / roi.binx
 	else
 		roi.Nx = 0
-		err = 1
+		return 1
 	endif
 
 	if (roi.yLo <= roi.yHi && roi.yLo >= 0)
-		roi.Ny = roi.yHi - roi.yLo + 1
+		roi.Ny = (roi.yHi - roi.yLo + 1) / roi.biny
 	else
 		roi.Ny = 0
-		err = 1
+		return 1
 	endif
 
-	return !err
+	return 0					// all OK and not empty
 End
 
 // returns TRUE if roi does NOT fit in the image
 Function roiNOTinImage(image, roi)
 	Wave image				// a 2D array
 	STRUCT ImageROIstruct &roi
-	if (!ImageROIstructValid(roi))
+
+	if (!ImageROIstructValid(roi) || !WaveExists(image))
 		return 1				// roi not even valid
-	elseif (roi.xHi >= DimSize(image,0))
+	endif
+	String wnote=note(image)
+
+	Variable OK=1
+	OK = OK && ( roi.xLo >= NumberByKey("startx",wnote,"=") )
+	OK = OK && ( roi.yLo >= NumberByKey("starty",wnote,"=") )
+	OK = OK && ( roi.xHi <= NumberByKey("endx",wnote,"=") )
+	OK = OK && ( roi.yHi <= NumberByKey("endy",wnote,"=") )
+	return OK
+End
+
+
+Function ExtendROIfromWaveNote(roi,wnote)
+	STRUCT ImageROIstruct &roi
+	String wnote										// wave note from an image
+
+	Variable startx = NumberByKey("startx", wnote,"=")
+	Variable endx = NumberByKey("endx", wnote,"=")
+	Variable starty = NumberByKey("starty", wnote,"=")
+	Variable endy = NumberByKey("endy", wnote,"=")
+
+	Variable ierr
+	ierr = abs(roi.binx - NumberByKey("groupx", wnote,"="))	// binning must match
+	ierr += abs(roi.biny - NumberByKey("groupy", wnote,"="))
+	if (ierr > 1e-3)
 		return 1
-	elseif (roi.yHi >= DimSize(image,1))
+	elseif (numtype(startx + starty + endx + endy))
 		return 1
-	endif	
+	elseif (startx<0 || starty<0 || endx<startx || endy<starty)
+		return 1
+	endif
+
+	roi.xLo = min(roi.xLo, startx)
+	roi.xHi= min(roi.xHi, endx)
+	roi.yLo = min(roi.yLo, starty)
+	roi.yHi= min(roi.yHi, endy)
 	return 0
+End
+
+
+Function/WAVE ExtractROIofImage(image, roi)
+	// This never returns the same image, but alwasy a FREE copy or subset of image
+	Wave image
+	STRUCT ImageROIstruct &roi
+
+	if (!WaveExists(image))
+		return $""
+	elseif (WaveDims(image)!=2)				// only works on image (i.e. 2D arrays)
+		return $""
+	elseif (!ImageROIstructValid(roi))
+		return $""
+	endif
+
+	Variable startx = roi.xLo, groupx = roi.binx, endx = roi.xHi
+	Variable starty = roi.yLo, groupy = roi.biny, endy = roi.yHi
+
+	Duplicate/FREE image, imageROI
+	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
+	if (startx==0 && starty==0 && groupx==1 && groupy==1 && endx==(Nx-1) && endy==(Ny-1))
+		return imageROI							// ROI is same size as image
+	endif
+
+	// need to extract an ROI
+	Nx = floor( (endx-startx+1)/groupx )	// size of requested ROI
+	Ny = floor( (endy-starty+1)/groupy )
+	Redimension/N=(Nx,Ny) imageROI
+	imageROI = image[p*groupx + startx][q*groupy + starty]	// does not do grouping, just pick first pixel
+	return imageROI
 End
 
 //Function aaa()
@@ -1066,31 +1155,31 @@ End
 // =============================================================================================
 // =================================== Start of Generic Util ===================================
 
-Function/WAVE ROIofImage(image, startx,groupx,endx, starty,groupy,endy)
-	// This never returns image, but alwasy a FREE copy or subset of image
-	Wave image
-	Variable startx,groupx,endx
-	Variable starty,groupy,endy
-
-	if (!WaveExists(image))
-		return $""
-	elseif (WaveDims(image)!=2)				// only works on image (i.e. 2D arrays)
-		return $""
-	endif
-
-	Duplicate/FREE image, ROI
-	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
-	if (startx==0 && starty==0 && groupx==1 && groupy==1 && endx==(Nx-1) && endy==(Ny-1))
-		return ROI									// ROI is same size as image
-	endif
-
-	// need to extract an ROI
-	Nx = floor( (endx-startx+1)/groupx )	// size of requested ROI
-	Ny = floor( (endy-starty+1)/groupy )
-	Redimension/N=(Nx,Ny) ROI
-	ROI = image[p*groupx + startx][q*groupy + starty]	// does not do grouping, just pick first pixel
-	return ROI
-End
+//Function/WAVE ROIofImage(image, startx,groupx,endx, starty,groupy,endy)
+//	// This never returns image, but alwasy a FREE copy or subset of image
+//	Wave image
+//	Variable startx,groupx,endx
+//	Variable starty,groupy,endy
+//
+//	if (!WaveExists(image))
+//		return $""
+//	elseif (WaveDims(image)!=2)				// only works on image (i.e. 2D arrays)
+//		return $""
+//	endif
+//
+//	Duplicate/FREE image, ROI
+//	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
+//	if (startx==0 && starty==0 && groupx==1 && groupy==1 && endx==(Nx-1) && endy==(Ny-1))
+//		return ROI									// ROI is same size as image
+//	endif
+//
+//	// need to extract an ROI
+//	Nx = floor( (endx-startx+1)/groupx )	// size of requested ROI
+//	Ny = floor( (endy-starty+1)/groupy )
+//	Redimension/N=(Nx,Ny) ROI
+//	ROI = image[p*groupx + startx][q*groupy + starty]	// does not do grouping, just pick first pixel
+//	return ROI
+//End
 
 
 Proc Graph_ImageStyle() : GraphStyle

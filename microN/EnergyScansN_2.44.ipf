@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.45
+#pragma version = 2.44
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -8,7 +8,6 @@
 // version 2.30 change Fill1_3DQspace() to allow processing only an roi
 // version 2.43 Fill_Q_Positions() and fix Fill1_3DQspace() now automatically use the badPixels wave
 // version 2.44 Cleaned out all the old code
-// version 2.45 Fill_Q_Positions(), allow for variable ROI in the histograming
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -413,6 +412,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	fileFullFmt += nameFmt
 
+	STRUCT microGeometry geo
+	FillGeometryStructDefault(geo)
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
  	if (printIt)
 		printf "processing with distotion "+SelectString(useDistortion,"OFF","on")
@@ -423,47 +424,44 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		print SelectString(I0normalize,"   NOT normalizing","   Normalizing")+" to the ion chamber and exposure time"
 	endif
 
-
-
-//	xxxxxxx  start
-
 	// open the first file in the range, to get info about the images
 	String name = fullNameFromFmt(fileFullFmt,str2num(range1),str2num(range2),NaN)
-	String wnote = ReadGenericHeader(name,extras="EscanOnly:1")		// short wave note to add to file read in
-	if (strlen(wnote)<1)
-		printf "could not load very first image header from '%s'\r",name
+	Wave image = $(LoadGenericImageFile(name))		// load first image in range
+	if (!WaveExists(image))
+		printf "could not load very first image named '%s'\r",name
 		DoAlert 0,"could not load very first image"
 		DoWindow/K $progressWin							// done with status window
 		return 1
 	endif
-	STRUCT ImageROIstruct roiAll							// an ROI that will contain all of the images being processed
-	ImageROIstructInit(roiAll, wnote=wnote)			// initialie roiAll with roi of first image
-	
-	Variable keV = NumberByKey("keV", wnote,"=")	// energy for this image
-	if (numtype(keV))
+	Variable Ni,Nj, Npixels = numpnts(image)		// number of pixels in one image
+	Ni = DimSize(image,0)
+	Nj = DimSize(image,1)
+	String wnote = note(image)
+	KillWaves/Z image
+	Variable keV, startx, endx, starty, endy, groupx, groupy
+	keV = NumberByKey("keV", wnote,"=")				// energy for this image
+	startx = NumberByKey("startx", wnote,"=");	endx = NumberByKey("endx", wnote,"=");	groupx = NumberByKey("groupx", wnote,"=")
+	starty = NumberByKey("starty", wnote,"=");	endy = NumberByKey("endy", wnote,"=");	groupy = NumberByKey("groupy", wnote,"=")
+	if (numtype(startx+endx+starty+endy+groupx+groupy))
+		DoAlert 0,"could not get ROI from wave note of image '"+name+"'"
+		DoWindow/K $progressWin							// done with status window
+		return 1
+	elseif (numtype(keV))
 		DoAlert 0,"invalid keV in image '"+name+"'"
 		DoWindow/K $progressWin							// done with status window
 		return 1
 	endif
 
-	Wave badPixelsAll = GetBadPixelsImage(wnote)	// get full image with bad pixels if badPixels exists
-	if (WaveExists(badPixelsAll))
-		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixelsAll,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixelsAll,1) )
-			DoAlert 0,"badPixelsAll and image have different dimensions than the whole detector"
+	Wave badPixels = GetBadPixelsImage(wnote)		// get image with bad pixels if badPixels exists
+	if (WaveExists(badPixels))
+		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixels,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixels,1) )
+			DoAlert 0,"badPixels and image have different dimensions than the whole detector"
 			DoWindow/K $progressWin						// done with status window
 			return 1
 		endif
+		Wave BP = ROIofImage(badPixels, startx,groupx,endx, starty,groupy,endy)	// badPixels is now a free wave, of correct ROI
+		Wave badPixels = BP
 	endif
-
-	STRUCT microGeometry geo
-	FillGeometryStructDefault(geo)
-	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
-	if (!(dNum>=0 && dNum<=2))
-		DoAlert 0,"could not get detector number from from wave note using detector ID"
-		return 1
-	endif
-
-//	xxxxxxxx  end
 
 	Variable Q0=2*PI/d0										// Q of unstrained material (1/nm)
 	range2 = SelectString(ItemsInRange(range2),"-1",range2)
@@ -473,13 +471,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Make/N=(N1N2)/FREE/D X_FillQvsPositions=NaN, H_FillQvsPositions=NaN, depth_FillQvsPositions=NaN, keV_FillQvsPositions=NaN
 	Make/N=(N1N2)/FREE/U/I m1_Fill_QHistAt1Depth=0, m2_Fill_QHistAt1Depth=0
 	Make/N=(N1N2)/FREE/D Y_FillQvsPositions=NaN, Z_FillQvsPositions=NaN
+//	Make/N=(N1N2)/FREE/D keV_all=NaN, I0_all=NaN						// energy & I0Normalization for EVERY image
+//	Variable iall=0
 	Variable seconds
 	if (printIt)
 		printf "about to examine %d image headers...   ",N1N2
 	endif
 	// for all the N1*N2 files (go over range), store the energies, X position, H position, and indicies
 	Variable microSec0 = stopMSTimer(-2)									// used for timing, number of µsec
-	Variable microSec = microSec0, Npixels=0
+	Variable microSec = microSec0
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N1N2)+" image headers",resetClock=1)
 	Variable i,m1,m2
 	for (m1=str2num(range1), i=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range1
@@ -493,11 +493,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			endif
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)
 			wnote=ReadGenericHeader(name,extras="EscanOnly:1")		// short wave note to add to file read in
-			if (ExtendROIfromWaveNote(roiAll,wnote))					// find ROI that holds ALL the images, skip really bad ROI's
+
+//			keV_all[iall] = NumberByKey("keV", wnote,"=")				// save keV and I0 for FillQhist1imageFile()
+//			if (I0normalize)
+//				I0_all = I0normalizationFromNote(wnote)					// normalization by intenstiy & exposure time
+//			endif
+//			iall += 1
+			if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
 				continue
 			endif
-			Npixels += (NumberByKey("startx", wnote,"=") - NumberByKey("endx", wnote,"=")) * (NumberByKey("starty", wnote,"=") - NumberByKey("endy", wnote,"="))
-
 			X_FillQvsPositions[i] = NumberByKey("X1",wnote,"=")		// list of X positioner values
 			H_FillQvsPositions[i] = NumberByKey("H1",wnote,"=")		// list of H positioner values
 			depth_FillQvsPositions[i] = NumberByKey("depth",wnote,"=")	// list of depths
@@ -513,15 +517,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	if (printIt)
 		printf "took %s\r",Secs2Time(seconds,5,3)
 	endif
+//	Redimension/N=(iall) keV_all, I0_all
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
-
-	if (WaveExists(badPixelsAll))
-		Wave badPixels = ExtractROIofImage(badPixelsAll, roiAll)	// badPixels is now a free wave, of correct ROI
-	else
-		Wave badPixels = $""
-	endif
-
-	Variable Ni = roiAll.Nx, Nj = roiAll.Ny								// number of BINNED pixels
 
 	microSec = stopMSTimer(-2)												// for timeing bulk of processing
 	Variable dx,Nx, dy,Ny, ddep,Nz, off
@@ -594,23 +591,29 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable thetaLo,thetaHi, Qmin, Qmax, dQ, NQ			// get range of Q
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVlo],m2_Fill_QHistAt1Depth[ikeVlo],NaN)	// load one image to get its size & Q range
 	Wave image = $(LoadGenericImageFile(name))				// load image
-	thetaLo = real(thetaRange(geo.d[dNum],image,maskIN=maskLocal,depth=depth0))	// min theta on this image
+	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
+	if (!(dNum>=0 && dNum<=2))
+		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
+		DoWindow/K $progressWin									// done with status window
+		return 1
+	endif
+	thetaLo = real(thetaRange(geo,image,maskIN=maskLocal,depth=depth0))	// min theta on this image
 	KillWaves/Z image
 	keV = keV_FillQvsPositions[ikeVlo]
 	Qmin = 4*PI*sin(thetaLo)*keV/hc								// min Q (1/nm)
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVhi],m2_Fill_QHistAt1Depth[ikeVhi],NaN)
 	Wave image = $(LoadGenericImageFile(name))				// load image
 	String wnoteFull = note(image)								// a full typical wave note
-	thetaHi = imag(thetaRange(geo.d[dNum],image,maskIN=maskLocal,depth=depth0))	// max theta on this image
+	thetaHi = imag(thetaRange(geo,image,maskIN=maskLocal,depth=depth0))	// max theta on this image
 	KillWaves/Z image
 	keV = keV_FillQvsPositions[ikeVhi]
 	Qmax = 4*PI*sin(thetaHi)*keV/hc								// max Q (1/nm)
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
-	px = (roiAll.xLo + roiAll.xHi)/2							// approximate full chip pixel position in center or the image (UN-binned)
-	px = (roiAll.yLo + roiAll.yHi)/2
-	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py+(roiAll.biny),$"")))*keV/hc
+	py = round((starty+endy)/2)									// approximate full chip pixel position in center or the image
+	px = round((startx+endx)/2)
+	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+groupx,py+groupy,$"")))*keV/hc
 //		dQ /= 1.5
 	NQ = round((Qmax-Qmin)/dQ) + 1								// number of Qs
 
@@ -702,11 +705,11 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	// done with the setup part, now actually compute something
 	if (useDistortion)												// if using the distortion, precompute for all images  here
 		Abort "Fill_Q_Positions(), filling the distortion map needs serious fixing"
-		Wave DistortionMap = GetDistortionMap(roiAll)		// if using the distortion, precompute for all images here
+		Wave DistortionMap = GetDistortionMap(startx,starty, groupx,groupy, Ni,Nj)	// if using the distortion, precompute for all images here
 	endif																	// distortion map now ready
 
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
-	Wave sinTheta = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as an image, but filled with sin(theta) for this energy
+	Wave sinTheta = $(MakeSinThetaArray(name,geo,depth=depth))	// make an array the same size as an image, but filled with sin(theta) for this energy
 	Redimension/N=(Ni*Nj) sinTheta
 	Make/N=(Ni*Nj)/I/FREE indexWaveQ
 	indexWaveQ = p
@@ -729,17 +732,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				endif
 			endif
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)	// image name to process
-			Wave image = $(LoadGenericImageFile(name, extras="EscanOnly:1"))	// load next image to histogram
-			if (!WaveExists(image))
-				printf "could not load image named '%s'\r",name
-				continue
-			endif
 
-			// accumulate the Q histogram for only ONE image into Qhist
-			Qhist = 0													// needed because FillQhist1image() accumulates into Qhist
+			// accumulate the Q histogram for one image into Qhist
+			Qhist = 0													// needed because FillQhist1imageFile() accumulates into Qhist
 			QhistNorm = 0
-			wnote = FillQhist1image(image,sinTheta,indexWaveQ,Qhist,QhistNorm,maskLocal,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
-			KillWaves/Z image											// done with the image
+			// fill Qhist from one file
+			wnote = FillQhist1imageFile(name,sinTheta,indexWaveQ,Qhist,QhistNorm,maskLocal,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
 			timer3=startMSTimer
 			if (NumberByKey("V_min", wnote,"=")==0  && NumberByKey("V_max", wnote,"=")==0)
 				sec3 += stopMSTimer(timer3)/1e6
@@ -764,6 +762,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			endif
 			sec3 += stopMSTimer(timer3)/1e6
 
+
 			Q_CoordinatesBig[Ncoords][0] = xSample[ipnt-1]				// 0  1  2  3  4   5
 			Q_CoordinatesBig[Ncoords][1] = ySample[ipnt-1]				//	XX,YY,ZZ,HH,FF,depth, i,j,k
 			Q_CoordinatesBig[Ncoords][2] = zSample[ipnt-1]				// note that ipnt has already been incremented
@@ -774,6 +773,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			Q_CoordinatesBig[Ncoords][7] = nDim>2 ? j : -1
 			Q_CoordinatesBig[Ncoords][8] = nDim>3 ? k : -1
 			Ncoords += 1
+
 		endfor
 	endfor
 	Redimension/N=(Ncoords,-1) Q_CoordinatesBig
@@ -1706,224 +1706,117 @@ End
 
 
 
-Static Function/S FillQhist1image(image,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,[maskNorm,dark,I0normalize])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
-	Wave image							// *******   NOTE, this wave will be altered!!!!  *******
-	Wave sinTheta											// array of sin(theta)'s that is same size as the image to be loaded	
-	Wave indexWaveQ										// index sorted wave of sinTheta
+Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,[maskNorm,dark,I0normalize])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
+	String fullName
+	Wave sinTheta										// array of sin(theta)'s that is same size as the image to be loaded	
+	Wave indexWaveQ									// index sorted wave of sinTheta
 	Wave Qhist
-	Wave QhistNorm											// array that contains number of pixels contributing to each bin in Qhist
-	Wave mask												// optional mask, only use pixels that are true, ONLY 0 or 1 (do not use 255)
-	Variable maskNorm										// use pixels outside of mask to normalize whole image (suppresses pedestal)
-	Wave dark												// an optional background wave
-	Variable I0normalize								// a Flag, if True then normalize data (default is True)
+	Wave QhistNorm										// array that contains number of pixels contributing to each bin in Qhist
+	Wave mask											// optional mask, only use pixels that are true, ONLY 0 or 1 (do not use 255)
+	Variable maskNorm									// use pixels outside of mask to normalize whole image (suppresses pedestal)
+	Wave dark											// an optional background wave
+	Variable I0normalize							// a Flag, if True then normalize data (default is True)
 	maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
 	maskNorm = numtype(maskNorm) ? 0 : !(!maskNorm)
 	I0normalize = ParamIsDefault(I0normalize) ? 0 : I0normalize	// default to old way (un-normalized)
 	I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
 
-	Variable timer = startMSTimer					// start timer for initial processing
+	Variable timer = startMSTimer				// start timer for initial processing
+	Wave image = $(LoadGenericImageFile(fullName, extras="EscanOnly:1"))	// load image
 	if (!WaveExists(image))
-		print "input image does not exist"
-		timer = stopMSTimer(timer)					// stop timer
+		printf "could not load image named '%s'\r",fullName
+		timer = stopMSTimer(timer)				// stop timer
 		return ""
 	endif
-
 	if (WaveExists(dark))
-		if (WaveType(image) & 0x58)					// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
+		if (WaveType(image) & 0x58)				// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
 			Redimension/I image
 		endif
-		MatrixOP/FREE image = image - dark
+		MatrixOP/O image = image - dark
 	endif
 	String wnote = note(image)
 	Variable keV = NumberByKey("keV", wnote,"=")
 	if (numtype(keV))
-		DoAlert 0,"invalid keV in image wave note"
-		timer = stopMSTimer(timer)					// stop timer
+		DoAlert 0,"invalid keV in image '"+fullName+"'"
+		timer = stopMSTimer(timer)				// stop timer
 		return ""
 	endif
-	ImageStats/M=1/Q image								// check for empty images, skip them
+	ImageStats/M=1/Q image							// check for empty images, skip them
 	if (V_min==0 && V_max==0)
-		timer = stopMSTimer(timer)					// stop timer
+		timer = stopMSTimer(timer)				// stop timer
 		wnote = ReplaceNumberByKey("V_min",wnote,V_min,"=")	// flag that this is empty
 		wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
-		return wnote										// image is empty, do not waste time adding zeros
+		KillWaves/Z image
+		return wnote									// image is empty, do not waste time adding zeros
 	endif
 
 	Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
 
 	NVAR secExtra=secExtra, secExtra1=secExtra1
 	if (NVAR_Exists(secExtra))
-		Variable timeExtra = startMSTimer			// start timer for intermediate processing
+		Variable timeExtra = startMSTimer		// start timer for intermediate processing
 	endif
 	Variable i, j, Ni=DimSize(image,0), Nj=DimSize(image,1)
-	Variable k												// index into Qhist for each pixel
+	Variable k											// index into Qhist for each pixel
 	Variable NQ=numpnts(Qhist)
 	Variable Qmin = DimOffset(Qhist,0)
 	Variable dQ = DimDelta(Qhist,0)
 	Variable factor = 4*PI*keV/hc
-	MatrixOp/FREE kQimage = (factor*sinTheta-Qmin)/dQ	// this method is 4.5 x faster
-	MatrixOp/FREE kQimage = round(kQimage)		// this is now the index into Qhist for each point
+	MatrixOp/O kQimage = (factor*sinTheta-Qmin)/dQ	// this method is 4.5 x faster
+	MatrixOp/O kQimage = round(kQimage)		// this is now the index into Qhist for each point
 	if (WaveExists(mask))
 		Variable avgDarkPixel = 0
 		if (maskNorm)
-			ImageStats/M=1/R=mask image				// note, mask is 1 where we want, so it is correct for the ROI!
+			ImageStats/M=1/R=mask image			// note, mask is 1 where we want, so it is correct for the ROI!
 			avgDarkPixel = V_avg
 		endif
-		MatrixOp/FREE image = (image-avgDarkPixel)*mask	// mask values needs to be 1 or 0
+		MatrixOp/O image = (image-avgDarkPixel)*mask	// mask values needs to be 1 or 0
 	endif
 	Variable N=numpnts(image)
-	Redimension/N=(N) image,kQimage					// unwrap for faster processing
+	Redimension/N=(N) image,kQimage				// unwrap for faster processing
 	SetScale/P x 0,1,"", image, kQimage
 
 	if (NVAR_Exists(secExtra1))
-		Variable timeExtra1 = startMSTimer			// start timer for intermediate processing
+		Variable timeExtra1 = startMSTimer		// start timer for intermediate processing
 	endif
-	IndexSort indexWaveQ, image						// sinTheta was already sorted, so kQimage is already sorted
-	//	MatrixOp/FREE image = waveMap2(image,indexWaveQ,N)	// this is only slightly faster
+	IndexSort indexWaveQ, image					// sinTheta was already sorted, so kQimage is already sorted
+	//	MatrixOp/O image = waveMap2(image,indexWaveQ,N)	// this is only slightly faster
 
 	if (NVAR_Exists(secExtra1))
 		secExtra1 += stopMSTimer(timeExtra1)/1e6
 	endif
 	// for each pixel in image, accumulate intensity into Qhist
-	Variable i0=0,i1										// range of image to sum
+	Variable i0=0,i1									// range of image to sum
+
 	i0 = BinarySearch(kQimage,-0.1)
 	i0 = (i0==-1) ? 0 : i0
 	i0 = (i0==-2) ? NQ-1 : i0
 	i0 += (kQimage[i0]<0)
 	k = kQimage[i0]
-	for (;k<NQ;)											// for each bin in Qhist
-		i1 = BinarySearch(kQimage,k)					// this returns the last index with a value of k
+
+	for (;k<NQ;)										// for each bin in Qhist
+		i1 = BinarySearch(kQimage,k)				// this returns the last index with a value of k
 		if (i1<i0)
 			break
 		endif
 		Qhist[k] = sum(image,i0,i1)
-		QhistNorm[k] += i1-i0+1						// number of pixels used for this Q bin
-		i0 = I1 + 1											// reset start point of region
-		k = i0<N ? kQimage[i0] : NQ					// do not index kQimage out of its range
+		QhistNorm[k] += i1-i0+1					// number of pixels used for this Q bin
+		i0 = I1 + 1										// reset start point of region
+		k = kQimage[i0]
 	endfor
 	if (NVAR_Exists(secExtra))
 		secExtra += stopMSTimer(timeExtra)/1e6
 	endif
 	if (inorm!=1)
-		Qhist *= inorm										// apply the normalization
+		Qhist *= inorm									// apply the normalization
 	endif
 	Variable seconds = stopMSTimer(timer)/1e6	// stop timer here
 	if (ItemsInList(GetRTStackInfo(0))<3 && seconds>2.0)
-		printf "	processing image took %s\r",Secs2Time(seconds,5,2)
+		printf "	processing image '%s' took %s\r",NameOfWave(image),Secs2Time(seconds,5,2)
 	endif
+	KIllWaves/Z image, kQimage
 	return wnote
 End
-//Static Function/S FillQhist1imageFile(fullName,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,[maskNorm,dark,I0normalize])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
-//	String fullName
-//	Wave sinTheta										// array of sin(theta)'s that is same size as the image to be loaded	
-//	Wave indexWaveQ									// index sorted wave of sinTheta
-//	Wave Qhist
-//	Wave QhistNorm										// array that contains number of pixels contributing to each bin in Qhist
-//	Wave mask											// optional mask, only use pixels that are true, ONLY 0 or 1 (do not use 255)
-//	Variable maskNorm									// use pixels outside of mask to normalize whole image (suppresses pedestal)
-//	Wave dark											// an optional background wave
-//	Variable I0normalize							// a Flag, if True then normalize data (default is True)
-//	maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
-//	maskNorm = numtype(maskNorm) ? 0 : !(!maskNorm)
-//	I0normalize = ParamIsDefault(I0normalize) ? 0 : I0normalize	// default to old way (un-normalized)
-//	I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
-//
-//	Variable timer = startMSTimer				// start timer for initial processing
-//	Wave image = $(LoadGenericImageFile(fullName, extras="EscanOnly:1"))	// load image
-//	if (!WaveExists(image))
-//		printf "could not load image named '%s'\r",fullName
-//		timer = stopMSTimer(timer)				// stop timer
-//		return ""
-//	endif
-//	if (WaveExists(dark))
-//		if (WaveType(image) & 0x58)				// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
-//			Redimension/I image
-//		endif
-//		MatrixOP/O image = image - dark
-//	endif
-//	String wnote = note(image)
-//	Variable keV = NumberByKey("keV", wnote,"=")
-//	if (numtype(keV))
-//		DoAlert 0,"invalid keV in image '"+fullName+"'"
-//		timer = stopMSTimer(timer)				// stop timer
-//		return ""
-//	endif
-//	ImageStats/M=1/Q image							// check for empty images, skip them
-//	if (V_min==0 && V_max==0)
-//		timer = stopMSTimer(timer)				// stop timer
-//		wnote = ReplaceNumberByKey("V_min",wnote,V_min,"=")	// flag that this is empty
-//		wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
-//		KillWaves/Z image
-//		return wnote									// image is empty, do not waste time adding zeros
-//	endif
-//
-//	Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
-//
-//	NVAR secExtra=secExtra, secExtra1=secExtra1
-//	if (NVAR_Exists(secExtra))
-//		Variable timeExtra = startMSTimer		// start timer for intermediate processing
-//	endif
-//	Variable i, j, Ni=DimSize(image,0), Nj=DimSize(image,1)
-//	Variable k											// index into Qhist for each pixel
-//	Variable NQ=numpnts(Qhist)
-//	Variable Qmin = DimOffset(Qhist,0)
-//	Variable dQ = DimDelta(Qhist,0)
-//	Variable factor = 4*PI*keV/hc
-//	MatrixOp/O kQimage = (factor*sinTheta-Qmin)/dQ	// this method is 4.5 x faster
-//	MatrixOp/O kQimage = round(kQimage)		// this is now the index into Qhist for each point
-//	if (WaveExists(mask))
-//		Variable avgDarkPixel = 0
-//		if (maskNorm)
-//			ImageStats/M=1/R=mask image			// note, mask is 1 where we want, so it is correct for the ROI!
-//			avgDarkPixel = V_avg
-//		endif
-//		MatrixOp/O image = (image-avgDarkPixel)*mask	// mask values needs to be 1 or 0
-//	endif
-//	Variable N=numpnts(image)
-//	Redimension/N=(N) image,kQimage				// unwrap for faster processing
-//	SetScale/P x 0,1,"", image, kQimage
-//
-//	if (NVAR_Exists(secExtra1))
-//		Variable timeExtra1 = startMSTimer		// start timer for intermediate processing
-//	endif
-//	IndexSort indexWaveQ, image					// sinTheta was already sorted, so kQimage is already sorted
-//	//	MatrixOp/O image = waveMap2(image,indexWaveQ,N)	// this is only slightly faster
-//
-//	if (NVAR_Exists(secExtra1))
-//		secExtra1 += stopMSTimer(timeExtra1)/1e6
-//	endif
-//	// for each pixel in image, accumulate intensity into Qhist
-//	Variable i0=0,i1									// range of image to sum
-//
-//	i0 = BinarySearch(kQimage,-0.1)
-//	i0 = (i0==-1) ? 0 : i0
-//	i0 = (i0==-2) ? NQ-1 : i0
-//	i0 += (kQimage[i0]<0)
-//	k = kQimage[i0]
-//
-//	for (;k<NQ;)										// for each bin in Qhist
-//		i1 = BinarySearch(kQimage,k)				// this returns the last index with a value of k
-//		if (i1<i0)
-//			break
-//		endif
-//		Qhist[k] = sum(image,i0,i1)
-//		QhistNorm[k] += i1-i0+1					// number of pixels used for this Q bin
-//		i0 = I1 + 1										// reset start point of region
-//		k = kQimage[i0]
-//	endfor
-//	if (NVAR_Exists(secExtra))
-//		secExtra += stopMSTimer(timeExtra)/1e6
-//	endif
-//	if (inorm!=1)
-//		Qhist *= inorm									// apply the normalization
-//	endif
-//	Variable seconds = stopMSTimer(timer)/1e6	// stop timer here
-//	if (ItemsInList(GetRTStackInfo(0))<3 && seconds>2.0)
-//		printf "	processing image '%s' took %s\r",NameOfWave(image),Secs2Time(seconds,5,2)
-//	endif
-//	KIllWaves/Z image, kQimage
-//	return wnote
-//End
 
 Static Function I0normalizationFromNote(wnote)	// normalization by intenstiy & exposure time
 	String wnote
@@ -2126,15 +2019,11 @@ Static Function calcNranges(nameFmt)
 End
 
 
-Static Function/WAVE GetDistortionMap(roi)	// if using the distortion, precompute for all images here
-	STRUCT ImageROIstruct &roi
-	if (!ImageROIstructValid(roi))
-		return $""
-	endif
+Static Function/WAVE GetDistortionMap(startx,starty, groupx,groupy, Ni,Nj)	// if using the distortion, precompute for all images here
+	Variable startx, starty
+	Variable groupx, groupy
+	Variable Ni, Nj
 
-	Variable startx = roi.xLo, starty = roi.yLo
-	Variable groupx = roi.binx, groupy = roi.biny
-	Variable Ni = roi.Nx,  Nj = roi.Ny
 	Abort "GetDistortionMap(), filling the distortion map needs serious fixing"
 	// check if distiortion map already exists
 	Variable distortionOK=0
@@ -3012,9 +2901,9 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 		DoAlert 0,"could not get detector number from from wave note of image '"+imageName+"' using detector ID"
 		return 1
 	endif
-	thetaLo = real(thetaRange(geo.d[dNum],image,maskIN=mask,depth=depth))	// min theta on this image
+	thetaLo = real(thetaRange(geo,image,maskIN=mask,depth=depth))	// min theta on this image
 	Qmin = 4*PI*sin(thetaLo)*keV/hc									// min Q (1/nm)
-	thetaHi = imag(thetaRange(geo.d[dNum],image,maskIN=mask,depth=depth))	// max theta on this image
+	thetaHi = imag(thetaRange(geo,image,maskIN=mask,depth=depth))	// max theta on this image
 	Qmax = 4*PI*sin(thetaHi)*keV/hc									// max Q (1/nm)
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
@@ -3080,13 +2969,13 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	CopyScales/I image, sinTheta
 	sinTheta = NaN
 	// for each pixel in image, compute sin(theta) and save it in sinTheta[][]
-	Make/N=(Ni)/I/FREE Xpixels
-	Make/N=(Nj)/I/FREE Ypixels
-	Ypixels = p*groupy + (groupy-1)/2 + starty
-	Xpixels = p*groupx + (groupx-1)/2 + startx
-	sinTheta = pixel2q(geo.d[dNum],Xpixels[p],Ypixels[q],$"",depth=depth)	// first set to theta
+	Make/N=(Ni)/I/FREE sinThetaCachedPX
+	Make/N=(Nj)/I/FREE sinThetaCachedPY
+	sinThetaCachedPY = p*groupy + (groupy-1)/2 + starty
+	sinThetaCachedPX = p*groupx + (groupx-1)/2 + startx
+	sinTheta = pixel2q(geo.d[dNum],sinThetaCachedPX[p],sinThetaCachedPY[q],$"",depth=depth)	// first set to theta
 	sinTheta = sin(sinTheta)											// convert theta -> sin(theta)
-	WAVEClear Xpixels,Ypixels
+	WAVEClear sinThetaCachedPX,sinThetaCachedPY
 	seconds = stopMSTimer(timer)/1e6								// stop timer here
 	if (printIt)
 		printf "filling array of sin(theta) from  '%s'  at depth = %g,  took %s\r",NameOfWave(image),depth,Secs2Time(seconds,5,1)
@@ -3103,8 +2992,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	Make/N=(NQ)/FREE/D QhistNorm=0								// number of pixels used for each Qhist, use to normalize
 	SetScale/I x Qmin,Qmax,"1/nm", Qhist
 
-	Duplicate/FREE image, imageTemp								// needed because FillQhist1image() changes the input image
-	wnote = FillQhist1image(imageTemp,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,dark=dark,maskNorm=maskNorm,i0normalize=i0normalize)	// fill Qhist from one file
+	wnote = FillQhist1image(image,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,dark=dark,maskNorm=maskNorm,i0normalize=i0normalize)	// fill Qhist from one file
 	wnote = ReplaceStringByKey("waveClass",wnote,"Qhistogram","=")
 	wnote = ReplaceStringByKey("singleImage",wnote,GetWavesDataFolder(image,2),"=")
 	Note/K Qhist, wnote
@@ -3156,98 +3044,98 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	return 0
 End
 //
-//	Static Function/S FillQhist1image(imageIn,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,[maskNorm,dark,I0normalize])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
-//		Wave imageIn
-//		Wave sinTheta											// array of sin(theta)'s that is same size as the image to be loaded	
-//		Wave indexWaveQ										// index sorted wave of sinTheta
-//		Wave Qhist
-//		Wave QhistNorm											// array that contains number of pixels contributing to each bin in Qhist
-//		Wave mask												// optional mask, only use pixels that are true, ONLY 0 or 1 (do not use 255)
-//		Variable maskNorm										// use pixels outside of mask to normalize whole image (suppresses pedestal)
-//		Wave dark												// an optional background wave
-//		Variable I0normalize								// a Flag, if True then normalize data (default is True)
-//		maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
-//		maskNorm = numtype(maskNorm) ? 0 : !(!maskNorm)
-//		I0normalize = ParamIsDefault(I0normalize) ? 0 : I0normalize	// default to old way (un-normalized)
-//		I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
-//		if (!WaveExists(imageIn))
-//			print "input image does not exist"
-//			return ""
-//		endif
-//	
-//		Duplicate/FREE imageIn, image
-//		if (WaveExists(dark))
-//			if (WaveType(image) & 0x58)					// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
-//				Redimension/I image
-//			endif
-//			MatrixOP/O image = image - dark
-//		endif
-//		String wnote = note(image)
-//		Variable keV = NumberByKey("keV", wnote,"=")
-//		keV = NumberByKey("keV", wnote,"=")
-//		if (numtype(keV))
-//			DoAlert 0,"invalid keV in image '"+NameOfWave(image)+"'"
-//			return ""
-//		endif
-//		ImageStats/M=1/Q image							// check for empty images, skip them
-//		if (V_min==0 && V_max==0)
-//			wnote = ReplaceNumberByKey("V_min",wnote,V_min,"=")	// flag that this is empty
-//			wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
-//			return wnote									// image is empty, do not waste time adding zeros
-//		endif
-//	
-//		Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
-//	
-//		Variable timer = startMSTimer							// start timer for initial processing
-//		Variable i, j, Ni=DimSize(image,0), Nj=DimSize(image,1)
-//		Variable k														// index into Qhist for each pixel
-//		Variable NQ=numpnts(Qhist)
-//		Variable Qmin = DimOffset(Qhist,0)
-//		Variable dQ = DimDelta(Qhist,0)
-//		Variable factor = 4*PI*keV/hc
-//		MatrixOp/FREE kQimage = (factor*sinTheta-Qmin)/dQ	// this method is 4.5 x faster
-//		MatrixOp/FREE/O kQimage = round(kQimage)			// this is now the index into Qhist for each point
-//		if (WaveExists(mask))
-//			Variable avgDarkPixel = 0
-//			if (maskNorm)
-//				ImageStats/M=1/R=mask image						// note, mask is 1 where we want, so it is correct for the ROI!
-//				avgDarkPixel = V_avg
-//			endif
-//			MatrixOp/O/FREE image = (image-avgDarkPixel)*mask	// mask values needs to be 1 or 0
-//		endif
-//		Variable N=numpnts(image)
-//		Redimension/N=(N) image,kQimage							// unwrap for faster processing
-//		SetScale/P x 0,1,"", image, kQimage
-//	
-//		IndexSort indexWaveQ, image								// sinTheta was already sorted, so kQimage is already sorted
-//		//	MatrixOp/O/FREE image = waveMap2(image,indexWaveQ,N)	// this is slightly faster
-//	
-//		// for each pixel in image, accumulate intensity into Qhist
-//		Variable i0=0,i1												// range of image to sum
-//		i0 = BinarySearch(kQimage,-0.1)
-//		i0 = (i0==-1) ? 0 : i0
-//		i0 = (i0==-2) ? NQ-1 : i0
-//		i0 += (kQimage[i0]<0)
-//		k = kQimage[i0]
-//		for (;k<NQ;)													// for each bin in Qhist
-//			i1 = BinarySearch(kQimage,k)							// this returns the last index with a value of k
-//			if (i1<i0)
-//				break
-//			endif
-//			Qhist[k] = sum(image,i0,i1)
-//			QhistNorm[k] += i1-i0+1								// number of pixels used for this Q bin
-//			i0 = I1 + 1													// reset start point of region
-//			k = i0<N ? kQimage[i0] : NQ							// do not index kQimage out of its range
-//		endfor
-//		if (inorm!=1)
-//			Qhist *= inorm												// apply the normalization
-//		endif
-//		Variable seconds = stopMSTimer(timer)/1e6			// stop timer here
-//		if (ItemsInList(GetRTStackInfo(0))<3 && seconds>2.0)
-//			printf "	processing image took %s\r",Secs2Time(seconds,5,2)
-//		endif
-//		return wnote
-//	End
+Static Function/S FillQhist1image(imageIn,sinTheta,indexWaveQ,Qhist,QhistNorm,mask,[maskNorm,dark,I0normalize])// fill Qhist from one file, F is for fast, sin(theta) is precomputed
+	Wave imageIn
+	Wave sinTheta											// array of sin(theta)'s that is same size as the image to be loaded	
+	Wave indexWaveQ										// index sorted wave of sinTheta
+	Wave Qhist
+	Wave QhistNorm											// array that contains number of pixels contributing to each bin in Qhist
+	Wave mask												// optional mask, only use pixels that are true, ONLY 0 or 1 (do not use 255)
+	Variable maskNorm										// use pixels outside of mask to normalize whole image (suppresses pedestal)
+	Wave dark												// an optional background wave
+	Variable I0normalize								// a Flag, if True then normalize data (default is True)
+	maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
+	maskNorm = numtype(maskNorm) ? 0 : !(!maskNorm)
+	I0normalize = ParamIsDefault(I0normalize) ? 0 : I0normalize	// default to old way (un-normalized)
+	I0normalize = numtype(I0normalize) ? 0 : !(!I0normalize)
+	if (!WaveExists(imageIn))
+		print "input image does not exist"
+		return ""
+	endif
+
+	Duplicate/FREE imageIn, image
+	if (WaveExists(dark))
+		if (WaveType(image) & 0x58)					// either 8bit (0x08) or 16bit (0x10) or un-signed (0x40)
+			Redimension/I image
+		endif
+		MatrixOP/O image = image - dark
+	endif
+	String wnote = note(image)
+	Variable keV = NumberByKey("keV", wnote,"=")
+	keV = NumberByKey("keV", wnote,"=")
+	if (numtype(keV))
+		DoAlert 0,"invalid keV in image '"+NameOfWave(image)+"'"
+		return ""
+	endif
+	ImageStats/M=1/Q image							// check for empty images, skip them
+	if (V_min==0 && V_max==0)
+		wnote = ReplaceNumberByKey("V_min",wnote,V_min,"=")	// flag that this is empty
+		wnote = ReplaceNumberByKey("V_max",wnote,V_max,"=")
+		return wnote									// image is empty, do not waste time adding zeros
+	endif
+
+	Variable inorm = 	I0normalize ? I0normalizationFromNote(wnote) : 1	// normalization by intenstiy & exposure time
+
+	Variable timer = startMSTimer							// start timer for initial processing
+	Variable i, j, Ni=DimSize(image,0), Nj=DimSize(image,1)
+	Variable k														// index into Qhist for each pixel
+	Variable NQ=numpnts(Qhist)
+	Variable Qmin = DimOffset(Qhist,0)
+	Variable dQ = DimDelta(Qhist,0)
+	Variable factor = 4*PI*keV/hc
+	MatrixOp/FREE kQimage = (factor*sinTheta-Qmin)/dQ	// this method is 4.5 x faster
+	MatrixOp/FREE/O kQimage = round(kQimage)			// this is now the index into Qhist for each point
+	if (WaveExists(mask))
+		Variable avgDarkPixel = 0
+		if (maskNorm)
+			ImageStats/M=1/R=mask image						// note, mask is 1 where we want, so it is correct for the ROI!
+			avgDarkPixel = V_avg
+		endif
+		MatrixOp/O/FREE image = (image-avgDarkPixel)*mask	// mask values needs to be 1 or 0
+	endif
+	Variable N=numpnts(image)
+	Redimension/N=(N) image,kQimage							// unwrap for faster processing
+	SetScale/P x 0,1,"", image, kQimage
+
+	IndexSort indexWaveQ, image								// sinTheta was already sorted, so kQimage is already sorted
+	//	MatrixOp/O/FREE image = waveMap2(image,indexWaveQ,N)	// this is slightly faster
+
+	// for each pixel in image, accumulate intensity into Qhist
+	Variable i0=0,i1												// range of image to sum
+	i0 = BinarySearch(kQimage,-0.1)
+	i0 = (i0==-1) ? 0 : i0
+	i0 = (i0==-2) ? NQ-1 : i0
+	i0 += (kQimage[i0]<0)
+	k = kQimage[i0]
+	for (;k<NQ;)													// for each bin in Qhist
+		i1 = BinarySearch(kQimage,k)							// this returns the last index with a value of k
+		if (i1<i0)
+			break
+		endif
+		Qhist[k] = sum(image,i0,i1)
+		QhistNorm[k] += i1-i0+1								// number of pixels used for this Q bin
+		i0 = I1 + 1													// reset start point of region
+		k = i0<N ? kQimage[i0] : NQ							// do not index kQimage out of its range
+	endfor
+	if (inorm!=1)
+		Qhist *= inorm												// apply the normalization
+	endif
+	Variable seconds = stopMSTimer(timer)/1e6			// stop timer here
+	if (ItemsInList(GetRTStackInfo(0))<3 && seconds>2.0)
+		printf "	processing image took %s\r",Secs2Time(seconds,5,2)
+	endif
+	return wnote
+End
 
 // ================================== End of Q distribution from 1 loaded image ==================================
 // ===============================================================================================================
@@ -3257,102 +3145,61 @@ End
 // ===============================================================================================================
 // ====================================== Start of Q-histograming Utility  =======================================
 
-Static Function/WAVE MakeSinThetaArray(roi,d,wnote,[depth])	// make an array the same size as roi, but filled with sin(theta)'s
-	STRUCT ImageROIstruct &roi
-	STRUCT detectorGeometry &d					// the input detector geometry
-	String wnote
+Static Function/S MakeSinThetaArray(fullName,geo,[depth])	// make an array the same size as an image, but filled with sin(theta)'s
+	String fullName										// complete path name to image
+	STRUCT microGeometry &geo						// the input geo
 	Variable depth										// usually determined from image file
 	depth = ParamIsDefault(depth) ? NaN : depth
 
 	Variable timer = startMSTimer						// start timer for initial processing
-	if (ImageROIstructValid(roi))
-		print "ERROR -- MakeSinThetaArray(), invalid ROI"
-		DoAlert 0, "ERROR -- MakeSinThetaArray(), invalid ROI"
-		return $""
+	Wave image = $(LoadGenericImageFile(fullName))	// load image
+	if (!WaveExists(image))
+		printf "could not load image named '%s'\r",fullName
+		DoAlert 0,"could not load image"
+		return ""
 	endif
+	String wnote = note(image)
+	Variable startx, starty, groupx, groupy, dNum
+	startx = NumberByKey("startx", wnote,"=")
+	groupx = NumberByKey("groupx", wnote,"=")
+	starty = NumberByKey("starty", wnote,"=")
+	groupy = NumberByKey("groupy", wnote,"=")
 	if (numtype(depth))
 		depth = NumberByKey("depth", wnote,"=")		// depth for this image
 	endif
 	depth = numtype(depth) ? 0 : depth					// default depth to zero
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
+	if (!(dNum>=0 && dNum<=2))
+		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
+		return ""
+	elseif (numtype(startx+starty+groupx+groupy))
+		DoAlert 0,"could not get ROI from wave note of image '"+fullName+"'"
+		return ""
+	endif
 
-	Variable startx = roi.xLo, groupx = roi.binx
-	Variable starty = roi.yLo, groupy = roi.biny
-	Variable Ni = roi.Nx, Nj = roi.Ny					// number of BINNED pixels
-	Make/N=(Ni,Nj)/O/D sinThetaCached = NaN
-	SetScale/P x, 0, 1,"", sinThetaCached
-	SetScale/P y, 0, 1,"", sinThetaCached
+	Variable Ni=DimSize(image,0), Nj=DimSize(image,1)
+	Make/N=(Ni,Nj)/O/D sinThetaCached
 	Note/K sinThetaCached, wnote
+	CopyScales/I image, sinThetaCached
+	sinThetaCached = NaN
 
 	// for each pixel in image, compute sin(theta) and save it in sinThetaCached[][]
-	Make/N=(Ni)/O/I/FREE Xpixels
-	Make/N=(Nj)/O/I/FREE Ypixels
-	Ypixels = p*groupy + (groupy-1)/2 + starty
-	Xpixels = p*groupx + (groupx-1)/2 + startx
-	sinThetaCached = pixel2q(d,Xpixels[p],Ypixels[q],$"",depth=depth)	// first set to theta
+	Make/N=(Ni)/O/I sinThetaCachedPX
+	Make/N=(Nj)/O/I sinThetaCachedPY
+	sinThetaCachedPY = p*groupy + (groupy-1)/2 + starty
+	sinThetaCachedPX = p*groupx + (groupx-1)/2 + startx
+	sinThetaCached = pixel2q(geo.d[dNum],sinThetaCachedPX[p],sinThetaCachedPY[q],$"",depth=depth)	// first set to theta
 	sinThetaCached = sin(sinThetaCached)				// convert theta -> sin(theta)
-	WAVEClear Xpixels,Ypixels
+
+	KillWaves/Z sinThetaCachedPX,sinThetaCachedPY
 
 	Variable seconds = stopMSTimer(timer)/1e6		// stop timer here
 	if (ItemsInList(GetRTStackInfo(0))<3 && seconds>5)
-		printf "filling array of sin(theta) from  at depth = %g,  took %s\r",depth,Secs2Time(seconds,5,1)
+		printf "filling array of sin(theta) from  '%s'  at depth = %g,  took %s\r",NameOfWave(image),depth,Secs2Time(seconds,5,1)
 	endif
-	return sinThetaCached
+	KIllWaves/Z image
+	return GetWavesDataFolder(sinThetaCached,2)
 End
-//Static Function/S MakeSinThetaArray(fullName,geo,[depth])	// make an array the same size as an image, but filled with sin(theta)'s
-//	String fullName										// complete path name to image
-//	STRUCT microGeometry &geo						// the input geo
-//	Variable depth										// usually determined from image file
-//	depth = ParamIsDefault(depth) ? NaN : depth
-//
-//	Variable timer = startMSTimer						// start timer for initial processing
-//	Wave image = $(LoadGenericImageFile(fullName))	// load image
-//	if (!WaveExists(image))
-//		printf "could not load image named '%s'\r",fullName
-//		DoAlert 0,"could not load image"
-//		return ""
-//	endif
-//	String wnote = note(image)
-//	Variable startx, starty, groupx, groupy, dNum
-//	startx = NumberByKey("startx", wnote,"=")
-//	groupx = NumberByKey("groupx", wnote,"=")
-//	starty = NumberByKey("starty", wnote,"=")
-//	groupy = NumberByKey("groupy", wnote,"=")
-//	if (numtype(depth))
-//		depth = NumberByKey("depth", wnote,"=")		// depth for this image
-//	endif
-//	depth = numtype(depth) ? 0 : depth					// default depth to zero
-//	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
-//	if (!(dNum>=0 && dNum<=2))
-//		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
-//		return ""
-//	elseif (numtype(startx+starty+groupx+groupy))
-//		DoAlert 0,"could not get ROI from wave note of image '"+fullName+"'"
-//		return ""
-//	endif
-//
-//	Variable Ni=DimSize(image,0), Nj=DimSize(image,1)
-//	Make/N=(Ni,Nj)/O/D sinThetaCached
-//	Note/K sinThetaCached, wnote
-//	CopyScales/I image, sinThetaCached
-//	sinThetaCached = NaN
-//
-//	// for each pixel in image, compute sin(theta) and save it in sinThetaCached[][]
-//	Make/N=(Ni)/O/I sinThetaCachedPX
-//	Make/N=(Nj)/O/I sinThetaCachedPY
-//	sinThetaCachedPY = p*groupy + (groupy-1)/2 + starty
-//	sinThetaCachedPX = p*groupx + (groupx-1)/2 + startx
-//	sinThetaCached = pixel2q(geo.d[dNum],sinThetaCachedPX[p],sinThetaCachedPY[q],$"",depth=depth)	// first set to theta
-//	sinThetaCached = sin(sinThetaCached)				// convert theta -> sin(theta)
-//
-//	KillWaves/Z sinThetaCachedPX,sinThetaCachedPY
-//
-//	Variable seconds = stopMSTimer(timer)/1e6		// stop timer here
-//	if (ItemsInList(GetRTStackInfo(0))<3 && seconds>5)
-//		printf "filling array of sin(theta) from  '%s'  at depth = %g,  took %s\r",NameOfWave(image),depth,Secs2Time(seconds,5,1)
-//	endif
-//	KIllWaves/Z image
-//	return GetWavesDataFolder(sinThetaCached,2)
-//End
 
 
 // returns true if ROI in list is the same as the other ROI
@@ -3369,21 +3216,27 @@ Static Function sameROI(list,startx, endx, starty, endy, groupx, groupy)
 	return (ierr < 1e-9)								// true if the ROI's are equal
 End
 //
-Static Function/C thetaRange(d,image,[maskIN,depth])		// returns the range of theta spanned by image
-	STRUCT detectorGeometry &d
+Static Function/C thetaRange(geo,image,[maskIN,depth])		// returns the range of theta spanned by image
+	STRUCT microGeometry &geo
 	Wave image
 	Wave maskIN
 	Variable depth											// optional passed depth for when depth is not zero & not in wave note
 	depth = ParamIsDefault(depth) ? NaN : depth			// if depth not passed, set to invalid value
 
 	String wnote = note(image)
-	Variable startx, groupx, starty, groupy
+	Variable startx, groupx, starty, groupy, dNum
 	startx = NumberByKey("startx", wnote,"=")
 	starty = NumberByKey("starty", wnote,"=")
 	groupx = NumberByKey("groupx", wnote,"=")
 	groupy = NumberByKey("groupy", wnote,"=")
 	depth = numtype(depth) ? NumberByKey("depth", wnote,"=") : depth	// if depth not passed, try wavenote
+//	depth = numtype(depth) ? 0 : depth
+	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	Variable Nx=DimSize(image,0), Ny=DimSize(image,1)
+	if (!(dNum>=0 && dNum<=2))
+		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
+		return cmplx(NaN,NaN)
+	endif
 	if (numtype(startx+groupx+starty+groupy))
 		DoAlert 0, "could not get ROI from wave note of image '"+NameOfWave(image)+"'"
 		return cmplx(NaN,NaN)
@@ -3408,7 +3261,7 @@ Static Function/C thetaRange(d,image,[maskIN,depth])		// returns the range of th
 				continue
 			endif
 			px = startx + groupx*ix
-			theta = pixel2q(d,px,py,$"",depth=depth)
+			theta = pixel2q(geo.d[dNum],px,py,$"",depth=depth)
 			thetaMin = min(theta,thetaMin)
 			thetaMax = max(theta,thetaMax)
 		endfor
@@ -4707,10 +4560,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			DoWindow/K $progressWin								// done with status window
 			return $""
 		endif
-
-		STRUCT ImageROIstruct roiAll
-		ImageROIstructInit(roiAll, wnote=wnote)				// returns 0=OK, non-zero if problem
-		Wave BP = ExtractROIofImage(badPixels, roiAll)	// badPixels is now a free wave, of correct ROI
+		Wave BP = ROIofImage(badPixels, startx,groupx,endx, starty,groupy,endy)	// badPixels is now a free wave, of correct ROI
 		Wave badPixels = BP
 	endif
 	// make the local free wave maskLocal it must always exist
