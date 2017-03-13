@@ -358,8 +358,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			DoPrompt "range(s)",range1Prompt, I0normalize
 		endif
 		if (V_flag)
-			DoWindow/K $progressWin
-			return 1
+			return ERROR_Fill_Q_Positions("", progressWin)
 		endif
 		I0normalize -= 1
 		printIt = 1
@@ -384,18 +383,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	if (WaveExists(mask))
 		if (sum(mask)==0)
-			DoAlert 0, "You picked a mask that is all zero, stopping"
-			DoWindow/K $progressWin						// done with status window
-			return 1
+			return ERROR_Fill_Q_Positions("You picked a mask that is all zero, stopping", progressWin)
 		endif
 	endif
+
 	Variable N1=ItemsInRange(range1)					// number of images to be processed
 	Variable N2=ItemsInRange(range2)					// number of images to be processed
 	Variable N1N2=(N1<1 ? 1:N1) * (N2<1 ? 1:N2)	// total number of images
 	if (N1<1 || (Nranges>1 && N2<1))
-		DoAlert 0, "range is empty"
-		DoWindow/K $progressWin							// done with status window
-		return 1
+		return ERROR_Fill_Q_Positions("range is empty",progressWin)
 	endif
 	if (N1>0)
 		printf "range1  %g  %s\r",N1,range1[0,300]
@@ -431,27 +427,21 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	String name = fullNameFromFmt(fileFullFmt,str2num(range1),str2num(range2),NaN)
 	String wnote = ReadGenericHeader(name,extras="EscanOnly:1")		// short wave note to add to file read in
 	if (strlen(wnote)<1)
-		printf "could not load very first image header from '%s'\r",name
-		DoAlert 0,"could not load very first image"
-		DoWindow/K $progressWin							// done with status window
-		return 1
+		sprintf str, "could not load very first image header from '%s'\r",name
+		return ERROR_Fill_Q_Positions(str,progressWin)
 	endif
 	STRUCT ImageROIstruct roiAll							// an ROI that will contain all of the images being processed
 	ImageROIstructInit(roiAll, wnote=wnote)			// initialie roiAll with roi of first image
 	
 	Variable keV = NumberByKey("keV", wnote,"=")	// energy for this image
 	if (numtype(keV))
-		DoAlert 0,"invalid keV in image '"+name+"'"
-		DoWindow/K $progressWin							// done with status window
-		return 1
+		return ERROR_Fill_Q_Positions("invalid keV in image '"+name+"'",progressWin)
 	endif
 
 	Wave badPixelsAll = GetBadPixelsImage(wnote)	// get full image with bad pixels if badPixels exists
 	if (WaveExists(badPixelsAll))
 		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixelsAll,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixelsAll,1) )
-			DoAlert 0,"badPixelsAll and image have different dimensions than the whole detector"
-			DoWindow/K $progressWin						// done with status window
-			return 1
+			return ERROR_Fill_Q_Positions("badPixelsAll and image have different dimensions than the whole detector",progressWin)
 		endif
 	endif
 
@@ -459,8 +449,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	FillGeometryStructDefault(geo)
 	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
 	if (!(dNum>=0 && dNum<=2))
-		DoAlert 0,"could not get detector number from from wave note using detector ID"
-		return 1
+		return ERROR_Fill_Q_Positions("could not get detector number from from wave note using detector ID",progressWin)
 	endif
 
 //	xxxxxxxx  end
@@ -486,9 +475,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2))		// loop over range2
 			if (mod(i,50)==0)
 				if (ProgressPanelUpdate(progressWin,i/N1N2*100))		// update progress bar
-					DoWindow/K $progressWin									// done with status window
-					print "User abort"
-					return 1
+					return ERROR_Fill_Q_Positions("User abort", progressWin)
 				endif
 			endif
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)
@@ -518,9 +505,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		printf "took %s\r",Secs2Time(seconds,5,3)
 	endif
 	if (varyROI && WaveExists(mask))
-			DoAlert 0,"You cannot use a mask when you are also varying the ROI size"
-			DoWindow/K $progressWin						// done with status window
-			return 1
+		return ERROR_Fill_Q_Positions("You cannot use a mask when you are also varying the ROI size", progressWin)
+	elseif (WaveExists(dark) && varyROI)
+		return ERROR_Fill_Q_Positions("You cannot use a dark image when you are also varying the ROI size", progressWin)
 	endif
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
 
@@ -711,12 +698,13 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif																	// distortion map now ready
 
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
-	Wave sinTheta = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as an image, but filled with sin(theta) for this energy
-	Redimension/N=(Ni*Nj) sinTheta
+	// This sin(theta) array is the size of roiAll
+	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as an image, but filled with sin(theta) for this energy
+	Redimension/N=(Ni*Nj) sinThetaAll
 	Make/N=(Ni*Nj)/I/FREE indexWaveQ
 	indexWaveQ = p
 	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
-	Sort sinTheta, sinTheta,indexWaveQ							// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
+	Sort sinThetaAll, sinThetaAll,indexWaveQ				// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
 
 	if (printIt)
 		printf "starting the actual Q histogramming of %d images...   ",N1N2
@@ -743,7 +731,22 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			// accumulate the Q histogram for only ONE image into Qhist
 			Qhist = 0													// needed because FillQhist1image() accumulates into Qhist
 			QhistNorm = 0
-			wnote = FillQhist1image(image,sinTheta,indexWaveQ,Qhist,QhistNorm,maskLocal,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
+
+DoAlert 0, "need to remake the sinTheta array, and the new maskLocal"
+//if (roi size differs)
+//	remake the sinTheta array
+//	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as an image, but filled with sin(theta) for this energy
+//	Redimension/N=(Ni*Nj) sinThetaAll
+//	Make/N=(Ni*Nj)/I/FREE indexWaveQ
+//	indexWaveQ = p
+//	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
+//	Sort sinThetaAll, sinThetaAll,indexWaveQ				// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
+//
+//endif
+
+
+
+			wnote = FillQhist1image(image,sinThetaAll,indexWaveQ,Qhist,QhistNorm,maskLocal,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
 			KillWaves/Z image											// done with the image
 			timer3=startMSTimer
 			if (NumberByKey("V_min", wnote,"=")==0  && NumberByKey("V_max", wnote,"=")==0)
@@ -870,7 +873,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	// done with processing, clean up
 	DoWindow/K $progressWin										// done with status window
-	KillWaves/Z sinTheta
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt)
 		printf "  final stuff took %s\r",Secs2Time(seconds,5,2)
@@ -900,6 +902,19 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	beep
 	return 0
+End
+//
+Static Function ERROR_Fill_Q_Positions(message,progressWin)
+	String message
+	String progressWin
+	if (strlen(message))											// if there is a message, show it
+		DoAlert 0, message
+		print message
+	endif
+	if (strlen(progressWin))										// if there is a progressWin, kill it
+		DoWindow/K $progressWin
+	endif
+	return 1
 End
 
 
@@ -3264,7 +3279,7 @@ End
 // ===============================================================================================================
 // ====================================== Start of Q-histograming Utility  =======================================
 
-Static Function/WAVE MakeSinThetaArray(roi,d,wnote,[depth])	// make an array the same size as roi, but filled with sin(theta)'s
+Static Function/WAVE MakeSinThetaArray(roi,d,wnote,[depth])	// make a free array the same size as roi, but filled with sin(theta)'s
 	STRUCT ImageROIstruct &roi
 	STRUCT detectorGeometry &d					// the input detector geometry
 	String wnote
@@ -3285,7 +3300,7 @@ Static Function/WAVE MakeSinThetaArray(roi,d,wnote,[depth])	// make an array the
 	Variable startx = roi.xLo, groupx = roi.binx
 	Variable starty = roi.yLo, groupy = roi.biny
 	Variable Ni = roi.Nx, Nj = roi.Ny					// number of BINNED pixels
-	Make/N=(Ni,Nj)/O/D sinThetaCached = NaN
+	Make/N=(Ni,Nj)/D/FREE sinThetaCached = NaN
 	SetScale/P x, 0, 1,"", sinThetaCached
 	SetScale/P y, 0, 1,"", sinThetaCached
 	Note/K sinThetaCached, wnote
