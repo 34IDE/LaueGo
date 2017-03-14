@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.08
+#pragma version = 6.09
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -156,6 +156,7 @@ Static Constant ELEMENT_Zmax = 116
 //								This is important since some of the space groups have many variants (e.g. SG=15 has 18 different ways of using it)
 //	with verison 6.06, added keV to the Lattice Panel, also Get_f_proto(), Svector should not have the "/10"
 //	with verison 6.08, changed space_group_ID --> space_group_id (to align with CIF usage)
+//	with verison 6.09, in muOfXtal() was getting mult and occ wrong
 
 //	Rhombohedral Transformation:
 //
@@ -4591,10 +4592,18 @@ Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 	// mu = (2 * re * lambda * f") / Vc
 
 	Variable/C fatomC
-	Variable m, Fpp
+	Variable m, Fpp, mult, occ
 	for (m=0,Fpp=0; m<xtal.N; m+=1)		// loop over the defined atoms, accumulate f"
 		fatomC = fa(Z2symbol(xtal.atom[m].Zatom),0, keV,valence=(xtal.atom[m].valence))
-		Fpp += imag(fatomC) * (xtal.atom[m].mult) * (xtal.atom[m].occ)
+		occ = xtal.atom[m].occ
+		occ = occ <= 0 ? 1 : occ
+		mult = xtal.atom[m].mult
+		Wave watom = $("root:Packages:Lattices:atom"+num2istr(m))
+		if (mult<1 && WaveExists(watom))
+			mult = DimSize(watom,0)
+		endif
+		mult = max(mult,1)
+		Fpp += imag(fatomC) * mult * occ
 	endfor
 	if (!(Fpp>=0))								// if Fpp is negative or NaN, then invalid
 		return NaN
