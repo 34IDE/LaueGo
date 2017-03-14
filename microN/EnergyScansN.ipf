@@ -690,10 +690,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
 	// This sin(theta) array is the size of roiAll
+print "roiAll =",imageROIstruct2str(roiAll)
 	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as roiAll, but filled with sin(theta) for this energy
+print "sinThetaAll",NumberByKey("startx",note(sinThetaAll),"="), NumberByKey("endx",note(sinThetaAll),"="), NumberByKey("starty",note(sinThetaAll),"="), NumberByKey("endy",note(sinThetaAll),"="),"  ",DimSize(sinThetaAll,0), DimSize(sinThetaAll,1)
+
 	STRUCT imageROIstruct ROIsinTheta
 	ROIsinTheta.empty = 1											// roi of current sinTheta, starts empty to forces a calculation first time
-
 	if (printIt)
 		printf "starting the actual Q histogramming of %d images...   ",N1N2
 	endif
@@ -712,13 +714,16 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			name = fullNameFromFmt(fileFullFmt,m1,m2,NaN)	// image name to process
 			Wave image = $(LoadGenericImageFile(name, extras="EscanOnly:1"))	// load next image to histogram
 			if (!WaveExists(image))
-				printf "could not load image named '%s'\r",name
+				printf "\r  could not load image named '%s'\r",name
 				continue
 			endif
 
 			if (!imageEqualsROI(image,ROIsinTheta))			// this image has a new roi, so re-set sinTheta & maskLocalSub
+print "\r image,",NumberByKey("startx",note(image),"="), NumberByKey("endx",note(image),"="), NumberByKey("starty",note(image),"="), NumberByKey("endy",note(image),"=")
 				imageROIstructInit(ROIsinTheta, wnote=note(image))	// re-set roi_Sin(theta) to match current image
+print "ROI struct = ",imageROIstruct2str(ROIsinTheta)
 				Wave sinTheta = ExtractROIofImage(sinThetaAll, ROIsinTheta)
+print "sinTheta",NumberByKey("startx",note(sinTheta),"="), NumberByKey("endx",note(sinTheta),"="), NumberByKey("starty",note(sinTheta),"="), NumberByKey("endy",note(sinTheta),"=")
 				Nimage = numpnts(sinTheta)
 				Redimension/N=(Nimage) sinTheta
 				Make/N=(Nimage)/I/FREE indexWaveQ = p
@@ -3286,6 +3291,13 @@ Static Function/WAVE MakeSinThetaArray(roi,d,wnote,[depth])	// make a free array
 	Make/N=(Ni,Nj)/D/FREE sinThetaCached = NaN
 	SetScale/P x, 0, 1,"", sinThetaCached
 	SetScale/P y, 0, 1,"", sinThetaCached
+
+	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")
+	wnote = ReplaceNumberByKey("endx",wnote,roi.xHi,"=")
+	wnote = ReplaceNumberByKey("groupx",wnote,groupx,"=")
+	wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
+	wnote = ReplaceNumberByKey("endy",wnote,roi.yHi,"=")
+	wnote = ReplaceNumberByKey("groupy",wnote,groupy,"=")
 	Note/K sinThetaCached, wnote
 
 	// for each pixel in image, compute sin(theta) and save it in sinThetaCached[][]
