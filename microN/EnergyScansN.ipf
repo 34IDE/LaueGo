@@ -690,9 +690,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
 	// This sin(theta) array is the size of roiAll
-print "roiAll =",imageROIstruct2str(roiAll)
+//print "roiAll =",imageROIstruct2str(roiAll)
 	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as roiAll, but filled with sin(theta) for this energy
-print "sinThetaAll",NumberByKey("startx",note(sinThetaAll),"="), NumberByKey("endx",note(sinThetaAll),"="), NumberByKey("starty",note(sinThetaAll),"="), NumberByKey("endy",note(sinThetaAll),"="),"  ",DimSize(sinThetaAll,0), DimSize(sinThetaAll,1)
+//print "sinThetaAll",NumberByKey("startx",note(sinThetaAll),"="), NumberByKey("endx",note(sinThetaAll),"="), NumberByKey("starty",note(sinThetaAll),"="), NumberByKey("endy",note(sinThetaAll),"="),"  ",DimSize(sinThetaAll,0), DimSize(sinThetaAll,1)
 
 	STRUCT imageROIstruct ROIsinTheta
 	ROIsinTheta.empty = 1											// roi of current sinTheta, starts empty to forces a calculation first time
@@ -718,12 +718,12 @@ print "sinThetaAll",NumberByKey("startx",note(sinThetaAll),"="), NumberByKey("en
 				continue
 			endif
 
-			if (!imageEqualsROI(image,ROIsinTheta))			// this image has a new roi, so re-set sinTheta & maskLocalSub
-print "\r image,",NumberByKey("startx",note(image),"="), NumberByKey("endx",note(image),"="), NumberByKey("starty",note(image),"="), NumberByKey("endy",note(image),"=")
+			if (!imageMatchesROI(image,ROIsinTheta))		// this image has a new roi, so re-set sinTheta & maskLocalSub
+//print "\r image,",NumberByKey("startx",note(image),"="), NumberByKey("endx",note(image),"="), NumberByKey("starty",note(image),"="), NumberByKey("endy",note(image),"=")
 				imageROIstructInit(ROIsinTheta, wnote=note(image))	// re-set roi_Sin(theta) to match current image
-print "ROI struct = ",imageROIstruct2str(ROIsinTheta)
+//print "ROI struct = ",imageROIstruct2str(ROIsinTheta)
 				Wave sinTheta = ExtractROIofImage(sinThetaAll, ROIsinTheta)
-print "sinTheta",NumberByKey("startx",note(sinTheta),"="), NumberByKey("endx",note(sinTheta),"="), NumberByKey("starty",note(sinTheta),"="), NumberByKey("endy",note(sinTheta),"=")
+//print "sinTheta",NumberByKey("startx",note(sinTheta),"="), NumberByKey("endx",note(sinTheta),"="), NumberByKey("starty",note(sinTheta),"="), NumberByKey("endy",note(sinTheta),"=")
 				Nimage = numpnts(sinTheta)
 				Redimension/N=(Nimage) sinTheta
 				Make/N=(Nimage)/I/FREE indexWaveQ = p
@@ -734,6 +734,12 @@ print "sinTheta",NumberByKey("startx",note(sinTheta),"="), NumberByKey("endx",no
 			// accumulate the Q histogram for only ONE image into Qhist
 			Qhist = 0													// needed because FillQhist1image() accumulates into Qhist
 			QhistNorm = 0
+
+if (!EqualWaves(sinTheta,indexWaveQ,512) || numpnts(image)!=numpnts(sinTheta))
+Debugger
+endif
+
+
 			wnote = FillQhist1image(image,sinTheta,indexWaveQ,Qhist,QhistNorm,maskLocalSub,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
 			KillWaves/Z image											// done with the image
 			timer3=startMSTimer

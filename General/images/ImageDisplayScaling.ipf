@@ -1111,7 +1111,7 @@ Function ExtendROIfromWaveNote(roi,wnote)	// returns -1=error, 0=did nothing, 1=
 End
 
 
-Function imageEqualsROI(image,roi)		// returns True if image matches roi
+Function imageMatchesROI(image,roi)		// returns True if image matches roi
 	Wave image
 	STRUCT imageROIstruct &roi
 	if (!WaveExists(image))
@@ -1132,6 +1132,7 @@ End
 Function/WAVE ExtractROIofImage(image, roi)
 	// extract the roi out of image, image needs to contain the roi
 	// This never returns the same image, but alwasy a FREE copy or subset of image
+	// Note, both the image and the roi, may not start at (0,0)
 	Wave image
 	STRUCT imageROIstruct &roi
 
@@ -1161,16 +1162,12 @@ Function/WAVE ExtractROIofImage(image, roi)
 	endif
 
 	// need to extract an ROI
-	Variable Nx, Ny
-	Nx = floor( (endx-startx+1)/groupx )	// size of requested ROI
-	Ny = floor( (endy-starty+1)/groupy )
-	Redimension/N=(Nx,Ny) imageROI
-
+	Redimension/N=(roi.Nx, roi.Ny) imageROI	// redimension to requested size
 	Variable fx = roi.binx / groupx,  fy = roi.biny / groupy
 	Variable ix0 = roi.xLo - startx,  iy0 = roi.yLo - starty
 	imageROI = image[ix0+p*fx][iy0+q*fy]	// does not do binning, just pick first pixel
 
-	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")
+	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")	// re-set wavenote to match roi
 	wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
 	wnote = ReplaceNumberByKey("endx",wnote,endx,"=")
 	wnote = ReplaceNumberByKey("endy",wnote,endy,"=")
