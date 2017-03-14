@@ -9,7 +9,7 @@
 // in the "Igor Pro Folder", and uncomment the following line and put it in the top of the procedure
 //folder
 //
-//	at verion 2.07, added the ImageROIstruct Structure and associated functions
+//	at verion 2.07, added the imageROIstruct Structure and associated functions
 //	at verion 2.12, bad pixel support, and also ROIofImage()
 
 
@@ -970,7 +970,7 @@ End
 // =============================================================================================
 // =================================== Start of roi Structure ==================================
 
-Structure ImageROIstruct	// a ROI on an image
+Structure imageROIstruct	// a ROI on an image
 	int16		empty				// 0 is not empty
 	int32		xLo				// must be >= 0 (xLo, xHi, yLo, yHi are all UN-binned pixels)
 	int32		xHi				// must be >= xLo
@@ -982,8 +982,8 @@ Structure ImageROIstruct	// a ROI on an image
 	int16		biny				// binning in y
 EndStructure
 //
-Function ImageROIstructInit(roi, [wnote])	// returns 0=OK, non-zero if problem
-	STRUCT ImageROIstruct &roi
+Function imageROIstructInit(roi, [wnote])	// returns 0=OK, non-zero if problem
+	STRUCT imageROIstruct &roi
 	String wnote				// optional, if given use it to preset roi values
 	roi.empty = 0
 	roi.xLo = 0		;	roi.xHi = 0
@@ -997,18 +997,18 @@ Function ImageROIstructInit(roi, [wnote])	// returns 0=OK, non-zero if problem
 	Variable startx, endx, starty, endy, groupx, groupy
 	startx = NumberByKey("startx", wnote,"=");	endx = NumberByKey("endx", wnote,"=");	groupx = NumberByKey("groupx", wnote,"=")
 	starty = NumberByKey("starty", wnote,"=");	endy = NumberByKey("endy", wnote,"=");	groupy = NumberByKey("groupy", wnote,"=")
-	roi.xLo = startx	;	roi.xHi = endx	;	roi.binx = groupx
-	roi.yLo = starty	;	roi.yHi = endy;	roi.biny = groupy
-	return ImageROIstructValid(roi)			// verify data in wave note
+	roi.xLo = round(startx)	;	roi.xHi = round(endx)	;	roi.binx = round(groupx)
+	roi.yLo = round(starty)	;	roi.yHi = round(endy)	;	roi.biny = round(groupy)
+	return imageROIstructBad(roi)			// verify data in wave note
 End
 //
-Function/T ImageROIstruct2str(roi)
-	STRUCT ImageROIstruct &roi
+Function/T imageROIstruct2str(roi)
+	STRUCT imageROIstruct &roi
 	String out
 
 	if (roi.empty)
 		out = "ROI is empty"
-	elseif (!ImageROIstructValid(roi))
+	elseif (imageROIstructBad(roi))
 		out = "INVALID roi structure"
 	else
 		sprintf out, "ix=[%g, %g] (N=%g),  iy=[%g, %g] (N=%g)\r", roi.xLo,roi.xHi,roi.Nx, roi.yLo,roi.yHi,roi.Ny
@@ -1021,9 +1021,9 @@ Function/T ImageROIstruct2str(roi)
 	return out
 End
 //
-Function ImageROIstructValid(roi)
+Function imageROIstructBad(roi)
 	// check for obvious errors and update Nx,Ny, return 1 if empty, 2 if really invalid
-	STRUCT ImageROIstruct &roi
+	STRUCT imageROIstruct &roi
 
 	if (roi.empty)					// if empty, the values do not matter
 		return 1
@@ -1054,12 +1054,12 @@ Function ImageROIstructValid(roi)
 	return 0					// all OK and not empty
 End
 
-// returns TRUE if roi does NOT fit in the image
-Function roiNOTinImage(image, roi)
-	Wave image				// a 2D array
-	STRUCT ImageROIstruct &roi
 
-	if (!ImageROIstructValid(roi) || !WaveExists(image))
+Function roiNOTinImage(image, roi)		// returns TRUE if roi does NOT fit in the image
+	Wave image				// a 2D array
+	STRUCT imageROIstruct &roi
+
+	if (imageROIstructBad(roi) || !WaveExists(image))
 		return 1				// roi not even valid
 	endif
 	String wnote=note(image)
@@ -1074,8 +1074,12 @@ End
 
 
 Function ExtendROIfromWaveNote(roi,wnote)	// returns -1=error, 0=did nothing, 1=extended
-	STRUCT ImageROIstruct &roi
+	STRUCT imageROIstruct &roi
 	String wnote										// wave note from an image
+
+	if (imageROIstructBad(roi))
+		return -1
+	endif
 
 	Variable startx = round(NumberByKey("startx", wnote,"="))
 	Variable endx = round(NumberByKey("endx", wnote,"="))
@@ -1099,24 +1103,42 @@ Function ExtendROIfromWaveNote(roi,wnote)	// returns -1=error, 0=did nothing, 1=
 		roi.xHi= min(roi.xHi, endx)
 		roi.yLo = min(roi.yLo, starty)
 		roi.yHi= min(roi.yHi, endy)
-		vary = 1
+		vary = 1										// wnote, is valid, changed roi
 	else
-		vary = 0
+		vary = 0										// wnote is valid, no change in roi needed
 	endif
 	return vary
+End
+
+
+Function imageEqualsROI(image,roi)		// returns True if image matches roi
+	Wave image
+	STRUCT imageROIstruct &roi
+	if (!WaveExists(image))
+		return 0
+	elseif (imageROIstructBad(roi))
+		return 0
+	endif
+
+	String wnote = note(image)
+	Variable err=0
+	err += abs(round(NumberByKey("startx", wnote,"=")) - roi.xlo) + abs(round(NumberByKey("endx", wnote,"=")) - roi.xHi)
+	err += abs(round(NumberByKey("starty", wnote,"=")) - roi.ylo) + abs(round(NumberByKey("endy", wnote,"=")) - roi.yHi)
+	err += abs(round(NumberByKey("groupx", wnote,"=")) - roi.binx) + abs(round(NumberByKey("groupy", wnote,"=")) - roi.biny)
+	return (err<1e-5)
 End
 
 
 Function/WAVE ExtractROIofImage(image, roi)
 	// This never returns the same image, but alwasy a FREE copy or subset of image
 	Wave image
-	STRUCT ImageROIstruct &roi
+	STRUCT imageROIstruct &roi
 
 	if (!WaveExists(image))
 		return $""
 	elseif (WaveDims(image)!=2)				// only works on image (i.e. 2D arrays)
 		return $""
-	elseif (!ImageROIstructValid(roi))
+	elseif (imageROIstructBad(roi))
 		return $""
 	endif
 
@@ -1138,19 +1160,19 @@ Function/WAVE ExtractROIofImage(image, roi)
 End
 
 //Function aaa()
-//	STRUCT ImageROIstruct roi
-//	initImageROIstruct(roi)
-//	print ImageROIstructValid(roi)
-//	print ImageROIstruct2str(roi)
+//	STRUCT imageROIstruct roi
+//	initimageROIstruct(roi)
+//	print imageROIstructBad(roi)
+//	print imageROIstruct2str(roi)
 //
 //	roi.empty = 1
-//	print ImageROIstructValid(roi)
-//	print ImageROIstruct2str(roi)
+//	print imageROIstructBad(roi)
+//	print imageROIstruct2str(roi)
 //
 //	roi.xLo = -3
 //	roi.empty = 0
-//	print ImageROIstructValid(roi)
-//	print ImageROIstruct2str(roi)
+//	print imageROIstructBad(roi)
+//	print imageROIstruct2str(roi)
 //End
 
 // ==================================== End of roi Structure ===================================

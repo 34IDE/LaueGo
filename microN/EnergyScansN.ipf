@@ -419,19 +419,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		print SelectString(I0normalize,"   NOT normalizing","   Normalizing")+" to the ion chamber and exposure time"
 	endif
 
-
-
-//	xxxxxxx  start
-
 	// open the first file in the range, to get info about the images
 	String name = fullNameFromFmt(fileFullFmt,str2num(range1),str2num(range2),NaN)
-	String wnote = ReadGenericHeader(name,extras="EscanOnly:1")		// short wave note to add to file read in
+	String wnote = ReadGenericHeader(name)				// wave note of the image file
 	if (strlen(wnote)<1)
 		sprintf str, "could not load very first image header from '%s'\r",name
 		return ERROR_Fill_Q_Positions(str,progressWin)
 	endif
-	STRUCT ImageROIstruct roiAll							// an ROI that will contain all of the images being processed
-	ImageROIstructInit(roiAll, wnote=wnote)			// initialie roiAll with roi of first image
+	STRUCT imageROIstruct roiAll							// an ROI that will contain all of the images being processed
+	imageROIstructInit(roiAll, wnote=wnote)			// initialie roiAll with roi of first image
 	
 	Variable keV = NumberByKey("keV", wnote,"=")	// energy for this image
 	if (numtype(keV))
@@ -451,8 +447,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	if (!(dNum>=0 && dNum<=2))
 		return ERROR_Fill_Q_Positions("could not get detector number from from wave note using detector ID",progressWin)
 	endif
-
-//	xxxxxxxx  end
 
 	Variable Q0=2*PI/d0										// Q of unstrained material (1/nm)
 	range2 = SelectString(ItemsInRange(range2),"-1",range2)
@@ -482,13 +476,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			wnote = ReadGenericHeader(name,extras="EscanOnly:1")	// short wave note to add to file read in
 
 			iv = ExtendROIfromWaveNote(roiAll,wnote)					// find ROI that holds ALL the images
-			if (iv<0)																// really bad ROI in wave note, skip
-				continue
+			if (iv<0)
+				continue																// really bad ROI in wave note, skip this one
 			endif
 			varyROI = iv ? 1 : varyROI										// set varyROI to true if roiAll is changing
 
-			Npixels += (NumberByKey("startx", wnote,"=") - NumberByKey("endx", wnote,"=")) * (NumberByKey("starty", wnote,"=") - NumberByKey("endy", wnote,"="))
-
+			Npixels += NumberByKey("xdim", wnote,"=") * NumberByKey("ydim", wnote,"=")
 			X_FillQvsPositions[i] = NumberByKey("X1",wnote,"=")		// list of X positioner values
 			H_FillQvsPositions[i] = NumberByKey("H1",wnote,"=")		// list of H positioner values
 			depth_FillQvsPositions[i] = NumberByKey("depth",wnote,"=")	// list of depths
@@ -516,8 +509,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	else
 		Wave badPixels = $""
 	endif
-
-	Variable Ni = roiAll.Nx, Nj = roiAll.Ny								// number of BINNED pixels
 
 	microSec = stopMSTimer(-2)												// for timeing bulk of processing
 	Variable dx,Nx, dy,Ny, ddep,Nz, off
@@ -592,7 +583,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVlo],m2_Fill_QHistAt1Depth[ikeVlo],NaN)	// load one image to get its size & Q range
 	String wnoteFull = ReadGenericHeader(name)				// a full typical wave note
 
-	Variable thetaZ = thetaRange(geo.d[dNum],roiAll,maskIN=maskLocal,depth=depth0)		// returns the range of theta spanned by roi
+	Variable/C thetaZ = thetaRange(geo.d[dNum],roiAll,maskIN=maskLocal,depth=depth0)		// returns the range of theta spanned by roi
 	keV = keV_FillQvsPositions[ikeVlo]
 	Qmin = 4*PI * sin( real(thetaZ) ) * keV/hc			// min Q (1/nm)
 	keV = keV_FillQvsPositions[ikeVhi]
@@ -699,12 +690,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
 	// This sin(theta) array is the size of roiAll
-	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as an image, but filled with sin(theta) for this energy
-	Redimension/N=(Ni*Nj) sinThetaAll
-	Make/N=(Ni*Nj)/I/FREE indexWaveQ
-	indexWaveQ = p
-	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
-	Sort sinThetaAll, sinThetaAll,indexWaveQ				// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
+	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as roiAll, but filled with sin(theta) for this energy
+	STRUCT imageROIstruct ROIsinTheta
+	ROIsinTheta.empty = 1											// roi of current sinTheta, starts empty to forces a calculation first time
 
 	if (printIt)
 		printf "starting the actual Q histogramming of %d images...   ",N1N2
@@ -713,7 +701,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable sec3=0,timer3
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N1N2)+" images",resetClock=1)	// update progress bar
 	// for all the N1N2 files (go over range), compute Qhist for each image
-	Variable ipnt, j, k
+	Variable ipnt, j, k, Nimage
 	for (m1=str2num(range1),ipnt=0,Ncoords=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range, all the images
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2),ipnt+=1)					// loop over range2
 			if (mod(ipnt,100)==0)
@@ -728,25 +716,20 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 				continue
 			endif
 
+			if (!imageEqualsROI(image,ROIsinTheta))			// this image has a new roi, so re-set sinTheta & maskLocalSub
+				imageROIstructInit(ROIsinTheta, wnote=note(image))	// re-set roi_Sin(theta) to match current image
+				Wave sinTheta = ExtractROIofImage(sinThetaAll, ROIsinTheta)
+				Nimage = numpnts(sinTheta)
+				Redimension/N=(Nimage) sinTheta
+				Make/N=(Nimage)/I/FREE indexWaveQ = p
+				Sort sinTheta, sinTheta,indexWaveQ				// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
+				Wave maskLocalSub = ExtractROIofImage(maskLocal, ROIsinTheta)
+			endif
+
 			// accumulate the Q histogram for only ONE image into Qhist
 			Qhist = 0													// needed because FillQhist1image() accumulates into Qhist
 			QhistNorm = 0
-
-DoAlert 0, "need to remake the sinTheta array, and the new maskLocal"
-//if (roi size differs)
-//	remake the sinTheta array
-//	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as an image, but filled with sin(theta) for this energy
-//	Redimension/N=(Ni*Nj) sinThetaAll
-//	Make/N=(Ni*Nj)/I/FREE indexWaveQ
-//	indexWaveQ = p
-//	ProgressPanelUpdate(progressWin,0,status="sorting sin(theta) array",resetClock=1)
-//	Sort sinThetaAll, sinThetaAll,indexWaveQ				// sort so indexWaveQ[0] is index to lowest sin(theta), indexWaveQ[inf] is greatest
-//
-//endif
-
-
-
-			wnote = FillQhist1image(image,sinThetaAll,indexWaveQ,Qhist,QhistNorm,maskLocal,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
+			wnote = FillQhist1image(image,sinTheta,indexWaveQ,Qhist,QhistNorm,maskLocalSub,dark=dark,maskNorm=maskNorm,I0normalize=I0normalize)
 			KillWaves/Z image											// done with the image
 			timer3=startMSTimer
 			if (NumberByKey("V_min", wnote,"=")==0  && NumberByKey("V_max", wnote,"=")==0)
@@ -2147,8 +2130,8 @@ End
 
 
 Static Function/WAVE GetDistortionMap(roi)	// if using the distortion, precompute for all images here
-	STRUCT ImageROIstruct &roi
-	if (!ImageROIstructValid(roi))
+	STRUCT imageROIstruct &roi
+	if (imageROIstructBad(roi))
 		return $""
 	endif
 
@@ -3033,8 +3016,8 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 		return 1
 	endif
 
-	STRUCT ImageROIstruct roi
-	ImageROIstructInit(roi, wnote=note(image))					// returns 0=OK, non-zero if problem
+	STRUCT imageROIstruct roi
+	imageROIstructInit(roi, wnote=note(image))					// returns 0=OK, non-zero if problem
 	Variable/C thetaZ = thetaRange(geo.d[dNum],roi,maskIN=mask,depth=depth)		// theta range on this image
 	Qmin = 4*PI*sin(real(thetaZ))*keV/hc							// min Q (1/nm)
 	Qmax = 4*PI*sin(imag(thetaZ))*keV/hc							// max Q (1/nm)
@@ -3280,14 +3263,14 @@ End
 // ====================================== Start of Q-histograming Utility  =======================================
 
 Static Function/WAVE MakeSinThetaArray(roi,d,wnote,[depth])	// make a free array the same size as roi, but filled with sin(theta)'s
-	STRUCT ImageROIstruct &roi
+	STRUCT imageROIstruct &roi
 	STRUCT detectorGeometry &d					// the input detector geometry
 	String wnote
 	Variable depth										// usually determined from image file
 	depth = ParamIsDefault(depth) ? NaN : depth
 
 	Variable timer = startMSTimer						// start timer for initial processing
-	if (ImageROIstructValid(roi))
+	if (imageROIstructBad(roi))
 		print "ERROR -- MakeSinThetaArray(), invalid ROI"
 		DoAlert 0, "ERROR -- MakeSinThetaArray(), invalid ROI"
 		return $""
@@ -3393,12 +3376,12 @@ End
 //
 Static Function/C thetaRange(d,roi,[maskIN,depth])		// returns the range of theta spanned by image
 	STRUCT detectorGeometry &d
-	STRUCT ImageROIstruct &roi									// an ROI of interest
+	STRUCT imageROIstruct &roi									// an ROI of interest
 	Wave maskIN															// mask must match roi size exactly
 	Variable depth														// optional passed depth for when depth is not zero & not in wave note
 	depth = ParamIsDefault(depth) ? NaN : depth			// if depth not passed, set to invalid value
 
-	if (!ImageROIstructValid(roi))
+	if (imageROIstructBad(roi))
 		DoAlert 0, "ERROR -- thetaRange() ROI is invalid"
 		return cmplx(NaN,NaN)
 	endif
@@ -4500,7 +4483,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable I0normalize 	// a Flag, if True then normalize data (default is True)
 	Variable doConvex			// if True, make the convex hull
 	String FilterFunc			// OPTIONAL, name of a filter for the image
-	STRUCT ImageROIstruct &roi
+	STRUCT imageROIstruct &roi
 	Variable autoGo			// OPTIONAL, if true, then do not ask user about Nx,Ny,Nz, just use the auto values
 	Variable printIt
 	depth = ParamIsDefault(depth) ? 0 : depth
@@ -4515,7 +4498,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 	String extras=""
 	if (!ParamIsDefault(roi))						// an roi was given, check to see if it is empty or invalid
-		if (ImageROIstructValid(roi) && !(roi.empty))
+		if (!imageROIstructBad(roi) && !(roi.empty))
 			sprintf extras,"roi=%d,%d,%d,%d;",roi.xLo, roi.xHi, roi.yLo, roi.yHi
 		endif
 	endif
@@ -4771,8 +4754,8 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 			return $""
 		endif
 
-		STRUCT ImageROIstruct roiAll
-		ImageROIstructInit(roiAll, wnote=wnote)				// returns 0=OK, non-zero if problem
+		STRUCT imageROIstruct roiAll
+		imageROIstructInit(roiAll, wnote=wnote)				// returns 0=OK, non-zero if problem
 		Wave BP = ExtractROIofImage(badPixels, roiAll)	// badPixels is now a free wave, of correct ROI
 		Wave badPixels = BP
 	endif
