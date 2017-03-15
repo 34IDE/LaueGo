@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.46
+#pragma version = 2.45
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -8,8 +8,7 @@
 // version 2.30 change Fill1_3DQspace() to allow processing only an roi
 // version 2.43 Fill_Q_Positions() and fix Fill1_3DQspace() now automatically use the badPixels wave
 // version 2.44 Cleaned out all the old code
-// version 2.45 Fill_Q_Positions(), allow for variable ROI in the histograming (only for |Q|)
-// version 2.46 Fill_Q_Positions(), allow for variable ROI in the histograming (added 3D Q too)
+// version 2.45 Fill_Q_Positions(), allow for variable ROI in the histograming
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -445,7 +444,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	STRUCT microGeometry geo
 	FillGeometryStructDefault(geo)
 	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
-	if (!(dNum>=0 && dNum<MAX_Ndetectors))
+	if (!(dNum>=0 && dNum<=2))
 		return ERROR_Fill_Q_Positions("could not get detector number from from wave note using detector ID",progressWin)
 	endif
 
@@ -3023,7 +3022,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	// note that Q range only depends upon image size and energy
 	Variable Qmin, Qmax, dQ, NQ										// get range of Q
 	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
-	if (!(dNum>=0 && dNum<MAX_Ndetectors))
+	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+imageName+"' using detector ID"
 		return 1
 	endif
@@ -4708,16 +4707,20 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 	if (WaveExists(mask))
 		if (sum(mask)==0)
-			ERROR_Fill_Q_Positions("You picked a mask that is all zero, stopping",progressWin)
+			DoAlert 0, "You picked a mask that is all zero, stopping"
+			DoWindow/K $progressWin					// done with status window
 			return $""
 		endif
 	endif
 	if (ItemsInRange(range)<1) 						// if range is empty, get the full range from the directory
-		ERROR_Fill_Q_Positions("range is empty",progressWin)
+		DoAlert 0, "range is empty"
+			DoWindow/K $progressWin					// done with status window
 		return $""
 	endif
 
 	Variable timer0 = stopMSTimer(-2)/1e6			// starting time, used to time prooess (sec)
+	STRUCT microGeometry geo
+	FillGeometryStructDefault(geo)
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
  	if (printIt)
 		printf "processing with distotion %s", SelectString(useDistortion,"OFF","on")
@@ -4728,60 +4731,64 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	ProgressPanelUpdate(progressWin,0,status="setting up")
 	String name
 	sprintf name, fileRootFmt, str2num(range)
-
-	String wnote = ReadGenericHeader(name)					// wave note of the image file
-	if (strlen(wnote)<1)
-		sprintf str, "could not load very first image header from '%s'\r",name
-		ERROR_Fill_Q_Positions(str,progressWin)
+	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load first image in range
+	if (!WaveExists(image))
+		printf "could not load very first image named '%s'\r",name
+		DoAlert 0,"could not load very first image"
+		DoWindow/K $progressWin									// done with status window
 		return $""
 	endif
-	STRUCT imageROIstruct roiAll									// an ROI that will contain all of the images being processed
-	imageROIstructInit(roiAll, wnote=wnote)					// initialie roiAll with roi of first image
-	
-
-//	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load first image in range
-//	if (!WaveExists(image))
-//		sprintf str, "could not load very first image named '%s'\r",name
-//		ERROR_Fill_Q_Positions(str,progressWin)
-//		return $""
-//	endif
 //	Local_ImageFilter(image)										// do NOT need to filter this image, not using the contents
-
-
-//	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
-//	Ni = DimSize(image,0)
-//	Nj = DimSize(image,1)
-//	String wnote = note(image)
-//	KillWaves/Z image
+	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
+	Ni = DimSize(image,0)
+	Nj = DimSize(image,1)
+	String wnote = note(image)
+	KillWaves/Z image
 	String MonoMode = StringByKey("MonoMode",wnote,"=")// energy for this image
 	Variable mono = StringMatch(MonoMode,"mono*")			// if not mono, then must be undulator scan
 	FUNCREF gap2keV_A gap2keV_Func = $SelectString(exists("gap2keV")==6,"gap2keV_A","gap2keV")
-	Variable keV, gap
+	Variable keV, gap, startx, endx, starty, endy, groupx, groupy
 	keV = NumberByKey("keV", wnote,"=")						// energy for this image
 	gap = NumberByKey("undulatorGap", wnote,"=")			// undulator gap for this image
 	keV = mono ? keV : gap2keV_Func(gap)						// convert undulator gap to energy for undulator scan
-	if (numtype(keV))
-		ERROR_Fill_Q_Positions("invalid keV in image '"+name+"'",progressWin)
+	startx = NumberByKey("startx", wnote,"=");	endx = NumberByKey("endx", wnote,"=");	groupx = NumberByKey("groupx", wnote,"=")
+	starty = NumberByKey("starty", wnote,"=");	endy = NumberByKey("endy", wnote,"=");	groupy = NumberByKey("groupy", wnote,"=")
+	if (numtype(startx+endx+starty+endy+groupx+groupy))
+		DoAlert 0,"could not get ROI from wave note of image '"+name+"'"
+		DoWindow/K $progressWin									// done with status window
+		return $""
+	elseif (numtype(keV))
+		DoAlert 0,"invalid keV in image '"+name+"'"
+		DoWindow/K $progressWin									// done with status window
 		return $""
 	endif
 
 	// read in the badPixels (if they exist) and combine with mask (1=OK, 0=bad)
-	Wave badPixelsAll = GetBadPixelsImage(wnote)			// get full image with bad pixels if badPixels exists
-	if (WaveExists(badPixelsAll))
-		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixelsAll,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixelsAll,1) )
-			ERROR_Fill_Q_Positions("badPixelsAll and image have different dimensions than the whole detector",progressWin)
+	Wave badPixels = GetBadPixelsImage(wnote)				// get image with bad pixels if badPixels exists
+	if (WaveExists(badPixels))
+		if ( round(NumberByKey("xDimDet",wnote,"=")) != DimSize(badPixels,0) || round(NumberByKey("yDimDet",wnote,"=")) != DimSize(badPixels,1) )
+			DoAlert 0,"badPixels and image have different dimensions than the whole detector"
+			DoWindow/K $progressWin								// done with status window
 			return $""
 		endif
-	endif
 
-	STRUCT microGeometry geo
-	FillGeometryStructDefault(geo)
-	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
-	if (!(dNum>=0 && dNum<MAX_Ndetectors))
-		ERROR_Fill_Q_Positions("could not get detector number from from wave note using detector ID",progressWin)
-		return $""
+		STRUCT imageROIstruct roiAll
+		imageROIstructInit(roiAll, wnote=wnote)				// returns 0=OK, non-zero if problem
+		Wave BP = ExtractROIofImage(badPixels, roiAll)	// badPixels is now a free wave, of correct ROI
+		Wave badPixels = BP
 	endif
-	String wnoteFull = wnote
+	// make the local free wave maskLocal it must always exist
+	if (WaveExists(badPixels) && WaveExists(mask))
+		Make/N=(Ni,Nj)/B/U/FREE maskLocal
+		maskLocal = badPixels || mask							// maskLocal is combination of mask and badPixels
+	elseif (WaveExists(badPixels))
+		Wave maskLocal = badPixels								// badPixels is already a local free wave
+	elseif (WaveExists(mask))
+		Make/N=(Ni,Nj)/B/U/FREE maskLocal						// remember, maskLocal must be a local free wave
+		maskLocal = mask[p][q] ? 1 : 0							// only 0 or 1
+	else
+		Wave maskLocal = $""
+	endif
 
 	// read header from each of the images, and store it to figure out what was done.
 	Variable N = ItemsInRange(range)							// number of images to be processed
@@ -4791,24 +4798,17 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Make/N=(N)/FREE/S currents=NaN, normalization=NaN	// save for possible normalizations
 	// for all the N files (go over range), store the energies, X position, H position, and indicies
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N)+" image headers",resetClock=1)
-	Variable m, j, varyROI=0, iv, Npixels=0
+	Variable m, j
 	for (m=str2num(range), i=0; numtype(m)==0; m=NextInRange(range,m), i+=1)		// loop over range
 		if (mod(m,20)==0)
 			if (ProgressPanelUpdate(progressWin,i/N*100))	// update progress bar
-				ERROR_Fill_Q_Positions("User abort",progressWin)
+				DoWindow/K $progressWin							// done with status window
+				print "User abort"
 				return $""
 			endif
 		endif
 		sprintf name, fileRootFmt, m
 		wnote=ReadGenericHeader(name, extras=extras)		// wave note to add to file read in
-
-		iv = ExtendROIfromWaveNote(roiAll,wnote)			// find ROI that holds ALL the images
-		if (iv<0)
-			continue														// really bad ROI in wave note, skip this one
-		endif
-		varyROI = iv ? 1 : varyROI								// set varyROI to true if roiAll is changing
-
-		Npixels += NumberByKey("xdim", wnote,"=") * NumberByKey("ydim", wnote,"=")
 		if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
 			continue
 		endif
@@ -4823,31 +4823,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		Ic0_FillQvsPositions[i] = NumberByKey("I0", wnote,"=")	// Ic0 for normalization
 		currents[i] = NumberByKey("ringCurrent",wnote,"=")
 	endfor
-	if (varyROI && WaveExists(mask))
-		ERROR_Fill_Q_Positions("You cannot use a mask when you are also varying the ROI size", progressWin)
-		return $""
-	elseif (WaveExists(dark) && varyROI)
-		ERROR_Fill_Q_Positions("You cannot use a dark image when you are also varying the ROI size", progressWin)
-		return $""
-	endif
-
-	if (WaveExists(badPixelsAll))
-		Wave badPixels = ExtractROIofImage(badPixelsAll, roiAll)	// badPixels is now a free wave, with size of roiAll
-	else
-		Wave badPixels = $""
-	endif
-	// if varyROI is True, then maskLocal will be size of roiAll
-	if (WaveExists(badPixels) && WaveExists(mask))
-		Duplicate/FREE mask, maskLocal
-		maskLocal = badPixels || mask							// maskLocal is combination of mask and badPixels
-	elseif (WaveExists(badPixels))
-		Wave maskLocal = badPixels								// badPixels is already a local free wave
-	elseif (WaveExists(mask))
-		Wave maskLocal = mask
-	else
-		Wave maskLocal = $""
-	endif
-
 	Make/N=(N,3)/O/D Qspace3DIndexEnergy
 	Qspace3DIndexEnergy[][0] = m_Fill_QHistAt1Depth[p]	// permanently store the index & energy for evey image
 	Qspace3DIndexEnergy[][1] = keV_FillQvsPositions[p]
@@ -4909,11 +4884,15 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 
 	// note that Q range only depends upon image size and energy range, not on X or H position
-//	sprintf name, fileRootFmt, m_Fill_QHistAt1Depth[ikeVlo]	// load one image to get its size & Q range
-//	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
-//xxxxxxx
-//	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
-//	Local_ImageFilter(image)
+	sprintf name, fileRootFmt, m_Fill_QHistAt1Depth[ikeVlo]	// load one image to get its size & Q range
+	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
+	Local_ImageFilter(image)
+	Variable dNum = detectorNumFromID(geo, StringByKey("detectorID", note(image),"="))
+	if (!(dNum>=0 && dNum<=2))
+		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
+		DoWindow/K $progressWin									// done with status window
+		return $""
+	endif
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable Elo=keV_FillQvsPositions[ikeVlo], Ehi=keV_FillQvsPositions[ikeVhi]
@@ -4938,49 +4917,47 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 
 	if (useDistortion)												// if using the distortion, precompute for all images  here
 		Abort "Fill1_3DQspace(), filling the distortion map needs serious fixing"
-		Wave DistortionMap = GetDistortionMap(roiAll)		// if using the distortion, precompute for all images here
-//		// check if distiortion map already exists
-//		Variable distortionOK=0
-//		if(exists("root:Packages:geometry:tempCachedDistortionMap")==1)	// wave exists, so check its size and location
-//			Wave DistortionMap = root:Packages:geometry:tempCachedDistortionMap
-//			distortionOK = (DimOffset(DistortionMap,0)==startx) && 1
-//			distortionOK = (DimOffset(DistortionMap,1)==starty) && 1
-//			distortionOK = (DimDelta(DistortionMap,0)==groupx) && 1
-//			distortionOK = (DimDelta(DistortionMap,1)==groupy) && 1
-//			distortionOK = (DimSize(DistortionMap,0)==Ni) && 1
-//			distortionOK = (DimSize(DistortionMap,1)==Nj) && 1
-//		endif
-//		if (!distortionOK)											// existing map (if it exists) is not OK, so make a new one
-//			KIllWaves/Z root:Packages:geometry:tempCachedDistortionMap	// ensure that this is gone!
-//			Make/N=(Ni,Nj,2)/O root:Packages:geometry:tempCachedDistortionMapTemp
-//			Wave distortionMap = root:Packages:geometry:tempCachedDistortionMapTemp
-//			SetScale/P x startx,groupx,"", distortionMap	// scale distortionMap[][] to full chip pixels
-//			SetScale/P y starty,groupy,"", distortionMap
-//			Variable/C dxy
-//			Wave xymap = root:Packages:geometry:xymap
-//			ProgressPanelUpdate(progressWin,0,status="making local copy of the distortion map")
-//			for (j=0;j<Nj;j+=1)
-//				for (i=0;i<Ni;i+=1)
-//					py = starty + j*groupy
-//					px = startx + i*groupx
-////					dxy = peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
-//					distortionMap[i][j][0] = real(dxy)			// accumulate all the distortions that I will need
-//					distortionMap[i][j][1] = imag(dxy)
-//				endfor
-//			endfor
-//			Rename root:Packages:geometry:tempCachedDistortionMapTemp, tempCachedDistortionMap
-//			if (printIt && seconds>0.2)
-//				printf "creating local copy of distortion map took %s\r",Secs2Time(seconds,5,3)
-//			endif
-//		endif
-//		Note/K DistortionMap, "use=1"
+		// check if distiortion map already exists
+		Variable distortionOK=0
+		if(exists("root:Packages:geometry:tempCachedDistortionMap")==1)	// wave exists, so check its size and location
+			Wave DistortionMap = root:Packages:geometry:tempCachedDistortionMap
+			distortionOK = (DimOffset(DistortionMap,0)==startx) && 1
+			distortionOK = (DimOffset(DistortionMap,1)==starty) && 1
+			distortionOK = (DimDelta(DistortionMap,0)==groupx) && 1
+			distortionOK = (DimDelta(DistortionMap,1)==groupy) && 1
+			distortionOK = (DimSize(DistortionMap,0)==Ni) && 1
+			distortionOK = (DimSize(DistortionMap,1)==Nj) && 1
+		endif
+		if (!distortionOK)											// existing map (if it exists) is not OK, so make a new one
+			KIllWaves/Z root:Packages:geometry:tempCachedDistortionMap	// ensure that this is gone!
+			Make/N=(Ni,Nj,2)/O root:Packages:geometry:tempCachedDistortionMapTemp
+			Wave distortionMap = root:Packages:geometry:tempCachedDistortionMapTemp
+			SetScale/P x startx,groupx,"", distortionMap	// scale distortionMap[][] to full chip pixels
+			SetScale/P y starty,groupy,"", distortionMap
+			Variable/C dxy
+			Wave xymap = root:Packages:geometry:xymap
+			ProgressPanelUpdate(progressWin,0,status="making local copy of the distortion map")
+			for (j=0;j<Nj;j+=1)
+				for (i=0;i<Ni;i+=1)
+					py = starty + j*groupy
+					px = startx + i*groupx
+//					dxy = peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
+					distortionMap[i][j][0] = real(dxy)			// accumulate all the distortions that I will need
+					distortionMap[i][j][1] = imag(dxy)
+				endfor
+			endfor
+			Rename root:Packages:geometry:tempCachedDistortionMapTemp, tempCachedDistortionMap
+			if (printIt && seconds>0.2)
+				printf "creating local copy of distortion map took %s\r",Secs2Time(seconds,5,3)
+			endif
+		endif
+		Note/K DistortionMap, "use=1"
 	endif																	// distortion map now ready
 
 	ProgressPanelUpdate(progressWin,0,status="pre-computing Qvecs array, may take 90 sec.",resetClock=1)
 	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
-xxxx
 	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=maskLocal,depth=depth,printIt=printIt)
-//	KillWaves/Z image													// done looking at first image
+	KillWaves/Z image													// done looking at first image
 
 	// make 3D volume to hold  the 3D q-histogram
 
@@ -5043,7 +5020,7 @@ xxxx
 	endif
 
 	if (!(NQx>0 && NQy>0 && NQz>0))								// test for valid NQ's
-		ERROR_Fill_Q_Positions("Volume has a zero dimension",progressWin)
+		DoWindow/K $progressWin									// done with status window
 		return $""
 	elseif (printIt)
 		printf "Q Histogram range = [%g, %g],  [%g, %g],  [%g, %g]\r",QxLo,QxHi, QyLo,QyHi, QzLo,QzHi
@@ -5294,7 +5271,7 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	endif
 	depth = numtype(depth) ? 0 : depth					// default depth to zero
 	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
-	if (!(dNum>=0 && dNum<MAX_Ndetectors))
+	if (!(dNum>=0 && dNum<=2))
 		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
 		return $""
 	elseif (numtype(startx+starty+groupx+groupy))
