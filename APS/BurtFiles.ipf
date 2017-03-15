@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.20
-#pragma version = 0.04
+#pragma version = 0.05
 #pragma ModuleName=BurtFiles
 
 Menu "Load Waves"
@@ -225,7 +225,7 @@ Static Function/WAVE LoadPVfrom34IDBurtFiles(PVname,start,[period,final])
 		if (V_flag!=7)
 			continue
 		endif
-		month = WhichListItem(str,"Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec")+1
+		month = WhichListItem(str,MonthNamesShort)+1
 		sprintf str,"%4d-%02d-%02dT%02d:%02d:%02d",year,month,day,hour,minute,second
 		pv[N][0] = str
 		pv[N][1] = StringFromList(3,line,"\t")

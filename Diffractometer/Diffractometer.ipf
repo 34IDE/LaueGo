@@ -2337,7 +2337,7 @@ Static Function/T NewDetectorFileName(ds)
 			// sscanf d.timeMeasured, "%3s, %3s %d, %d, %02d:%02d:%02d (%g)",smonth,smonth,day,year,hour,minute,second,TZ
 			sscanf ds.d[i].timeMeasured, "%3s, %3s %d, %d, %02d:%02d:%02d ",smonth,smonth,day,year,hour,minute,second
 			if (V_flag==8)
-				month = WhichListItem(smonth, "Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec")+1
+				month = WhichListItem(smonth, MonthNamesShort)+1
 				epoch = max(epoch, date2secs(year,month,day) + 3600*hour+60*minute+second)
 			endif
 			break

@@ -32,9 +32,9 @@ In the <Detector N="0"> group, the tags are:
 					It contains two numbers one for the x direction on the detector, one for the right (required)
 					This detector has a size of 409.6mm x 409.6mm, so each pixel is 409.6/2048 = 200 microns square
 
-	<timeMeasured>	date and time when this detetector parameters were measured (optional)
+	<timeMeasured>	OPTIONAL, date and time when this detetector parameters were measured (optional)
 
-	<note>			a note of possible interest (optional)
+	<note>			OPTIONAL, a note of possible interest (optional)
 			
 	<ID>			a unique detector ID, a string that is different for each detector.  This same ID should be stored in the HDF 
 					file so that a connection can be made between an image and one of the <Detecto> groups in this file (required)
@@ -51,8 +51,8 @@ In the <Detector N="0"> group, the tags are:
 					The reason that the R is along the -(111) rather than a 90° about the (001), is to get the orientation
 					of the pixels at the final location correct.  In this example the x pixels will increase along the Z direction.
 
-	<m1> <m2> <m3>	Three unit vectors giving the direction of the three possible detector translators.  Unused translations are
-					indicated by m1 being either all 0, or containing a NaN.
+	<m1> <m2> <m3>	OPTIONAL, three unit vectors giving the direction of the three possible detector translators.  
+					Unused translations are indicated by m1 being either all 0, containing a NaN, or being absent.
 					The translation is in the direction of m1 by a distance t1 (which is given elsewhere)
 					These 3 are optional.
 

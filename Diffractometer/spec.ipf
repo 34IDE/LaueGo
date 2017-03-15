@@ -2215,7 +2215,7 @@ Function specDate2seconds(dstring)
 		return NaN
 	endif
 
-	imon = WhichListItem(mon,"Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec")
+	imon = WhichListItem(mon,MonthNamesShort)
 	if (imon<0)
 		return NaN
 	endif
@@ -2231,7 +2231,7 @@ Function/T specTime2Igor(specTime,format)		// e.g.	print specTime2Igor(specInfoT
 
 	String month=StringFromList(0,specTime," "), hms=StringFromList(2,specTime," ")
 	Variable day=str2num(StringFromList(1,specTime," ")), year=str2num(StringFromList(3,specTime," "))
-	Variable imonth=WhichListItem(month,"Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec")+1
+	Variable imonth=WhichListItem(month,MonthNamesShort)+1
 	return Secs2Date(date2secs(year,imonth,day),format)+SelectString(format==-2,",  ","T")+hms
 End
 
