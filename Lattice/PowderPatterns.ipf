@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.21
+#pragma version = 0.22
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -151,7 +151,7 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	wName = AddEndingToWaveName(NameOfWave(lines),SelectString(theta,"_Q","_Theta"))
 	Make/N=(N)/O $wName/WAVE=intens = 0	// Wave to receive intensity
 	Variable useF2 = numtype(lines[0][6])!=0
-	String leftLabel = SelectString(useF2,"Intensity","| F |\\S2\\M")
+	String leftLabel = SelectString(useF2,"Intensity","|F|\\S2\\M")
 	//	SetScale d 0,0,leftLabel, intens
 	String class = "PowderPattern" + SelectString(theta,"Qnm","Theta")
 	String wnote = ReplaceStringByKey("waveClass",note(lines),class,"=")
@@ -355,7 +355,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	SetDimLabel 1,0,Q_nm,lineShort ;	SetDimLabel 1,1,h,lineShort ;		SetDimLabel 1,2,k,lineShort ;			SetDimLabel 1,3,l,lineShort
 	SetDimLabel 1,4,theta,lineShort ;	SetDimLabel 1,5,F2,lineShort ;		SetDimLabel 1,6,Intensity,lineShort ;	SetDimLabel 1,7,mult,lineShort
 
-	str = wname[0,31-7-1]+"_hklStr"
+	str = wname[0,31-10-1]+"_hklStr"
 	Make/N=(NlinesMax)/T/O $str/WAVE=hklStr = ""
 	Note/K hklStr, "waveClass=HKLlabelsPowderLines;LinesWave="+GetWavesDataFolder(lineShort,2)+";"
 	wNote = ReplaceStringByKey("hklStrWave",wNote,str,"=")
@@ -625,7 +625,7 @@ Function GraphPowderLines(ww,[theta])
 	endif
 	Variable iy=numtype(ww[0][6]) ? 5 : 6
 	Variable ix = (theta && numtype(ww[0][4])==0) ? 4 : 0
-	String leftLabel = SelectString(iy==6,"| F |\\S2\\M","Intensity")
+	String leftLabel = SelectString(iy==6,"|F|\\S2\\M","Intensity")
 #if (IgorVersion()<7)
 	String bottomLabel = SelectString(ix,"Q  (nm\\S-1\\M)", "\\Zr150\\F'Symbol'q\260\\F]0\\M")	// "\260" = option-5, degree sign in Symbol font
 #else
