@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.95
+#pragma version = 1.96
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -1351,10 +1351,7 @@ Function GeometryUpdateCalc(g)	// update all internally calculated things in the
 	Init_microGeo()
 	Variable i, N=0
 	for (i=0;i<MAX_Ndetectors;i+=1)				// recalculate g.Ndetectors
-		if (g.d[i].used)
-			DetectorUpdateCalc(g.d[i])			// update all internally calculated things in the detector structures
-			N += 1
-		endif
+		N += DetectorUpdateCalc(g.d[i]) ? 0:1	// update all internally calculated things in the detector structures
 	endfor
 	g.Ndetectors = N
 	if (Exists("root:Packages:geometry:xymap")==1)
