@@ -25,7 +25,7 @@
 #include "QspaceVolumesView",  version>=1.21
 #include "microGeometryN", version>=1.95
 
-Static Constant hc = 1.239841857				// hc (keV-nm)
+Static Constant hc = 1.239841857					// hc (keV-nm)
 Static Constant secPerPixelFixed = 18.8e-6		// the fixed time is takes to process one pixel (sec) after any distortion
 Static Constant secPerPixelDistort = 15.24e-3	// time is takes to process distortion for one pixel (sec)  (measured with a 2GHz clock)
 Static Constant DEFAULT_I0_GAIN = 1e9
@@ -4728,7 +4728,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	ProgressPanelUpdate(progressWin,0,status="setting up")
 	String name
 	sprintf name, fileRootFmt, str2num(range)
-
 	String wnote = ReadGenericHeader(name)					// wave note of the image file
 	if (strlen(wnote)<1)
 		sprintf str, "could not load very first image header from '%s'\r",name
@@ -4738,21 +4737,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	STRUCT imageROIstruct roiAll									// an ROI that will contain all of the images being processed
 	imageROIstructInit(roiAll, wnote=wnote)					// initialie roiAll with roi of first image
 	
-
-//	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load first image in range
-//	if (!WaveExists(image))
-//		sprintf str, "could not load very first image named '%s'\r",name
-//		ERROR_Fill_Q_Positions(str,progressWin)
-//		return $""
-//	endif
-//	Local_ImageFilter(image)										// do NOT need to filter this image, not using the contents
-
-
-//	Variable Ni,Nj, Npixels = numpnts(image)				// number of pixels in one image
-//	Ni = DimSize(image,0)
-//	Nj = DimSize(image,1)
-//	String wnote = note(image)
-//	KillWaves/Z image
 	String MonoMode = StringByKey("MonoMode",wnote,"=")// energy for this image
 	Variable mono = StringMatch(MonoMode,"mono*")			// if not mono, then must be undulator scan
 	FUNCREF gap2keV_A gap2keV_Func = $SelectString(exists("gap2keV")==6,"gap2keV_A","gap2keV")
@@ -4809,9 +4793,6 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		varyROI = iv ? 1 : varyROI								// set varyROI to true if roiAll is changing
 
 		Npixels += NumberByKey("xdim", wnote,"=") * NumberByKey("ydim", wnote,"=")
-		if (!sameROI(wnote,startx, endx, starty, endy, groupx, groupy))	// skip bad ROI's
-			continue
-		endif
 		if (mono)
 			keV = NumberByKey("keV", wnote,"=")				// list of energies
 		else
@@ -4869,7 +4850,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
 	if (ParamIsDefault(depth) || numtype(depth))
-		depth = NumberByKey("depth",wnote,"=")				// no depth given, try from file
+		depth = NumberByKey("depth",wnoteFull,"=")			// no depth given, try from file
 	endif
 
 	Variable dkeV,NkeV, off=0
@@ -4909,23 +4890,16 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif
 
 	// note that Q range only depends upon image size and energy range, not on X or H position
-//	sprintf name, fileRootFmt, m_Fill_QHistAt1Depth[ikeVlo]	// load one image to get its size & Q range
-//	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
-//xxxxxxx
-//	Wave image = $(LoadGenericImageFile(name,extras=extras))	// load image
-//	Local_ImageFilter(image)
-
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable Elo=keV_FillQvsPositions[ikeVlo], Ehi=keV_FillQvsPositions[ikeVhi]
 	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
-	py = round((starty+endy)/2)									// approximate full chip pixel position in center or the image
-	px = round((startx+endx)/2)
-	Variable dQpixel = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+groupx,py+groupy,$"")))*Elo/hc
+	px = (roiAll.xLo + roiAll.xHi)/2							// approximate full chip pixel position in center or the image (UN-binned)
+	px = (roiAll.yLo + roiAll.yHi)/2
+	Variable dQpixel = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py+(roiAll.biny),$"")))*Elo/hc
 	Variable dQenergy = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * dkeV/hc
 	Variable dQ = max(dQpixel, dQenergy)						// choose larger of energy scan or pixel size
 
 	if (printIt)
-//		Variable eVrange = 1000*(keV_FillQvsPositions[ikeVhi]-keV_FillQvsPositions[ikeVlo])/(NkeV-1)
 		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],dkeV
 		printf "    %s Scan\r",SelectString(mono,"Undulator","Monochromator")
 	endif
@@ -4939,53 +4913,17 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	if (useDistortion)												// if using the distortion, precompute for all images  here
 		Abort "Fill1_3DQspace(), filling the distortion map needs serious fixing"
 		Wave DistortionMap = GetDistortionMap(roiAll)		// if using the distortion, precompute for all images here
-//		// check if distiortion map already exists
-//		Variable distortionOK=0
-//		if(exists("root:Packages:geometry:tempCachedDistortionMap")==1)	// wave exists, so check its size and location
-//			Wave DistortionMap = root:Packages:geometry:tempCachedDistortionMap
-//			distortionOK = (DimOffset(DistortionMap,0)==startx) && 1
-//			distortionOK = (DimOffset(DistortionMap,1)==starty) && 1
-//			distortionOK = (DimDelta(DistortionMap,0)==groupx) && 1
-//			distortionOK = (DimDelta(DistortionMap,1)==groupy) && 1
-//			distortionOK = (DimSize(DistortionMap,0)==Ni) && 1
-//			distortionOK = (DimSize(DistortionMap,1)==Nj) && 1
-//		endif
-//		if (!distortionOK)											// existing map (if it exists) is not OK, so make a new one
-//			KIllWaves/Z root:Packages:geometry:tempCachedDistortionMap	// ensure that this is gone!
-//			Make/N=(Ni,Nj,2)/O root:Packages:geometry:tempCachedDistortionMapTemp
-//			Wave distortionMap = root:Packages:geometry:tempCachedDistortionMapTemp
-//			SetScale/P x startx,groupx,"", distortionMap	// scale distortionMap[][] to full chip pixels
-//			SetScale/P y starty,groupy,"", distortionMap
-//			Variable/C dxy
-//			Wave xymap = root:Packages:geometry:xymap
-//			ProgressPanelUpdate(progressWin,0,status="making local copy of the distortion map")
-//			for (j=0;j<Nj;j+=1)
-//				for (i=0;i<Ni;i+=1)
-//					py = starty + j*groupy
-//					px = startx + i*groupx
-////					dxy = peakcorrection2(xymap,px,py)			// returns cmplx(dx,dy)
-//					distortionMap[i][j][0] = real(dxy)			// accumulate all the distortions that I will need
-//					distortionMap[i][j][1] = imag(dxy)
-//				endfor
-//			endfor
-//			Rename root:Packages:geometry:tempCachedDistortionMapTemp, tempCachedDistortionMap
-//			if (printIt && seconds>0.2)
-//				printf "creating local copy of distortion map took %s\r",Secs2Time(seconds,5,3)
-//			endif
-//		endif
-//		Note/K DistortionMap, "use=1"
 	endif																	// distortion map now ready
 
 	ProgressPanelUpdate(progressWin,0,status="pre-computing Qvecs array, may take 90 sec.",resetClock=1)
-	// make an array the same size as an image, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
-xxxx
-	Wave Qvecs1keV = MakeQarray(image,geo,recip,Elo,Ehi,mask=maskLocal,depth=depth,printIt=printIt)
-//	KillWaves/Z image													// done looking at first image
+	// make an array the same size as an roiAll, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
+	// print "roiAll =",imageROIstruct2str(roiAll)
+	Wave Qvecs1keVall = MakeQvecsArray(roiAll,geo.d[dNum],wnoteFull,recip,Elo,Ehi,mask=maskLocal,depth=depth,printIt=printIt)
+	// print "Qvecs1keVall",NumberByKey("startx",note(Qvecs1keVall),"="), NumberByKey("endx",note(Qvecs1keVall),"="), NumberByKey("starty",note(Qvecs1keVall),"="), NumberByKey("endy",note(Qvecs1keVall),"="),"  ",DimSize(Qvecs1keVall,0), DimSize(Qvecs1keVall,1)
 
 	// make 3D volume to hold  the 3D q-histogram
-
 	// find range of Qx,Qy,Qz
-	wnote = note(Qvecs1keV)
+	wnote = note(Qvecs1keVall)
 	Variable QxLo = NumberByKey("QxLo",wnote,"="), QxHi = NumberByKey("QxHi",wnote,"=")
 	Variable QyLo = NumberByKey("QyLo",wnote,"="), QyHi = NumberByKey("QyHi",wnote,"=")
 	Variable QzLo = NumberByKey("QzLo",wnote,"="), QzHi = NumberByKey("QzHi",wnote,"=")
@@ -5058,6 +4996,9 @@ xxxx
 	SetScale/I y QyLo,QyHi,Qunits, Qspace3D, Qspace3DNorm
 	SetScale/I z QzLo,QzHi,Qunits, Qspace3D, Qspace3DNorm
 
+	STRUCT imageROIstruct ROIQvecs1keV
+	ROIQvecs1keV.empty = 1											// roi of current ROIQvecs1keV, starts empty to forces a calculation first time
+
 	// Starting bulk of processing"
 	// for all the N files (go over range), accumulate Qhist from all images
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N)+" images",resetClock=1)	// update progress bar
@@ -5072,36 +5013,51 @@ xxxx
 		endif
 		sprintf name, fileRootFmt, m
 		Wave image = $(LoadGenericImageFile(name,extras=extras))
-		Local_ImageFilter(image)
-
 		if (!WaveExists(image))
 			printf "could not load image named '%s'\r",name
 			continue
+		endif
+		Local_ImageFilter(image)
+
+		if (!imageMatchesROI(image,ROIQvecs1keV))		// this image has a new roi, so re-set Qvecs1keV & maskLocalSub
+			//print "\r image,",NumberByKey("startx",note(image),"="), NumberByKey("endx",note(image),"="), NumberByKey("starty",note(image),"="), NumberByKey("endy",note(image),"=")
+			imageROIstructInit(ROIQvecs1keV, wnote=note(image))	// re-set roi_Qvecs1keV to match current image
+			//print "ROI struct = ",imageROIstruct2str(ROIQvecs1keV)
+			Wave Qvecs1keV = ExtractROIofImage(Qvecs1keVall, ROIQvecs1keV)
+			//print "Qvecs1keV",NumberByKey("startx",note(Qvecs1keV),"="), NumberByKey("endx",note(Qvecs1keV),"="), NumberByKey("starty",note(Qvecs1keV),"="), NumberByKey("endy",note(Qvecs1keV),"=")
+			Wave maskLocalSub = ExtractROIofImage(maskLocal, ROIQvecs1keV)
+		endif
+
+
+if ( Dimsize(image,0)!=DimSize(Qvecs1keV,0) || Dimsize(image,1)!=DimSize(Qvecs1keV,1) )
+Debugger
+endif
+
 
 		// monochromator scan (not undulator gap)
-		elseif (mono)
-			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=maskLocal,dark=dark)// fill Qhist from one file, Qhats are precomputed
+		if (mono)
+			wnote = Fill3DQhist1image(image,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=maskLocalSub,dark=dark)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z image
 
 		// undulator scan (monochromator not used)
-		elseif (!WaveExists(i0))									// first image cannot be processed since there is no "previous" image yet
+		elseif (!WaveExists(i0))									// FIRST image cannot be processed since there is no "previous" image yet
 			Wave i0 = image											// save for use as "previous" image in undulator scans
 			maxPixel = maxValueOfType(image)					// set max value that a pixel can be
 			if (useNormalization)									// using normalized images (by beam current)
 				Redimension/S i0										// change i0 to float
 				i0 *= normalization[0]
 			endif
-		else																// undulator gap scan, use difference between this image and "previous" image
+		else																// SUBSEQUENT, undulator gap scan, use difference between this image and "previous" image
 			if (useNormalization)									// valid normalization, so normalize
 				Redimension/S image
 				image *= normalization[ipnt]
 			endif
 			// dimage is (image-i0), but zero out any pixels greater than maxPixel or pixels in image less than lowThresh
-			// then clip dimage to the range [0,maxPixel], 
+			// then clip dimage to the range [0,maxPixel]
 			MatrixOP/FREE dimage = clip((image-i0) * (greater(maxPixel,i0) && greater(maxPixel,image) && greater(image,lowThresh)),0,maxPixel)
 			keV = gap2keV_Func(NumberByKey("undulatorGap",note(image),"="))
 			Note/K dimage, ReplaceNumberByKey("keV",note(image),keV,"=")
-			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=maskLocal,dark=dark,I0normalize=I0normalize,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
+			wnote = Fill3DQhist1image(dimage,Qvecs1keV,Qspace3D,Qspace3DNorm,mask=maskLocalSub,dark=dark,I0normalize=I0normalize,printIt=printIt)// fill Qhist from one file, Qhats are precomputed
 			KillWaves/Z i0												// delete old "previous" image
 			Wave i0 = image											// save current image as i0, the new "previous" image
 		endif
@@ -5119,19 +5075,18 @@ xxxx
 	Variable NusedVoxels = sum(Qspace3DNorm)				// number of voxels in Qspace that were filled (some don't get used)
 	WaveClear Qspace3DNorm
 
-	if (printIt)
-		printf "Processed %d pixels into %d voxels\r",NusedPixels,NusedVoxels
-	endif
 	if (useDistortion)
-		Note/K DistortionMap, "use=0"
+		Note/K DistortionMap, "use=0"							// turn off distortion map
 	endif
 
 	seconds = stopMSTimer(-2)/1e6 - timer0
 	if (printIt)
+		printf "Processed %d pixels into %d voxels\r",NusedPixels,NusedVoxels
 		printf "\r  processing all %d images took %s	(%.3g µs/pixel)\r",N,Secs2Time(seconds,5,1),1e6*seconds/(N*Npixels)
 		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
 	endif
 
+	wnote = wnoteFull
 	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D","=")
 	wnote = ReplaceNumberByKey("depth",wnote,depth,"=")
 	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1,sep=","),"=")
@@ -5151,15 +5106,16 @@ xxxx
 	endif
 	wnote = ReplaceNumberByKey("executionSeconds",wnote,seconds,"=")
 	Note/K Qspace3D, wnote
-	DoWindow/K $progressWin										// done with status window
 	if (seconds>(12*60))											// execution took more than 12 minutes, save experiment
 		print "Processing took more than 12 minutees, Saving this Igor Experiemnt"
 		SaveExperiment
 	endif
+	DoWindow/K $progressWin										// done with status window
 	if (printIt)
 		beep
 	endif
 
+	// now display Q-space volume as a Gizmo
 	if (allZero)
 		printf "'%s' is ALL zeros, nothing to display\r",NameOfWave(Qspace3D)
 	elseif (printIt)
@@ -5243,9 +5199,6 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,I
 	for (jp=0;jp<Nj;jp+=1)								// for each pixel in the detector
 		for (ip=0;ip<Ni;ip+=1)
 			if (maskIn[ip][jp])
-//				i = round((Qvecs[0][ip][jp] - Qx0) / dQx)
-//				j = round((Qvecs[1][ip][jp] - Qy0) / dQy)
-//				k = round((Qvecs[2][ip][jp] - Qz0) / dQz)
 				i = round((Qvecs[ip][jp][0] - Qx0) / dQx)
 				j = round((Qvecs[ip][jp][1] - Qy0) / dQy)
 				k = round((Qvecs[ip][jp][2] - Qz0) / dQz)
@@ -5263,11 +5216,12 @@ Static Function/S Fill3DQhist1image(image,Qvecs1keV,Qhist,QhistNorm,[mask,dark,I
 End
 
 
-// Make an array the same size as an image, but filled with Q^ to each pixel's
+// Make an array the same size as an image, but filled with Q^ to each pixel
 // for a 2K x 2K image, this takes 1 minute.
-Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
-	Wave image
-	STRUCT microGeometry &geo						// the input geo
+Static Function/WAVE MakeQvecsArray(roi,d,wnote,recip,Elo,Ehi,[depth,mask,printIt])
+	STRUCT imageROIstruct &roi						// region of detector of interest
+	STRUCT detectorGeometry &d					// the input detector geometry
+	String wnote
 	Wave recip											// reciprocal lattice, used to find range of Q's
 	Variable Elo, Ehi									// Energy Range (keV)
 	Variable depth										// usually determined from image file
@@ -5277,32 +5231,17 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? ItemsInList(GetRTStackInfo(0))<3 : !(!printIt)
 
-	if (!WaveExists(image))
+	if (imageROIstructBad(roi) || !(d.used))
+		print "ERROR -- MakeQvecsArray(), invalid ROI"
+		DoAlert 0, "ERROR -- MakeQvecsArray(), invalid ROI"
 		return $""
 	endif
-	Variable Ni=DimSize(image,0), Nj=DimSize(image,1), N=Ni*Nj
-
 	Variable seconds = stopMSTimer(-2)/1e6			// start timer for initial processing
-	String wnote = note(image)
-	Variable startx, starty, groupx, groupy, dNum
-	startx = NumberByKey("startx", wnote,"=")
-	groupx = NumberByKey("groupx", wnote,"=")
-	starty = NumberByKey("starty", wnote,"=")
-	groupy = NumberByKey("groupy", wnote,"=")
-	if (numtype(depth))
-		depth = NumberByKey("depth", wnote,"=")		// depth for this image
-	endif
-	depth = numtype(depth) ? 0 : depth					// default depth to zero
-	dNum = detectorNumFromID(geo, StringByKey("detectorID", wnote,"="))
-	if (!(dNum>=0 && dNum<MAX_Ndetectors))
-		DoAlert 0,"could not get detector number from from wave note of image '"+NameOfWave(image)+"' using detector ID"
-		return $""
-	elseif (numtype(startx+starty+groupx+groupy))
-		DoAlert 0,"could not get ROI from wave note of image '"+NameOfWave(image)+"'"
-		return $""
-	endif
+	Variable startx = roi.xLo, groupx = roi.binx
+	Variable starty = roi.yLo, groupy = roi.biny
+	Variable Ni = roi.Nx, Nj = roi.Ny					// number of BINNED pixels
+	Variable NiNj = Ni*Nj
 
-//	Make/N=(3,Ni,Nj)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
 	Make/N=(Ni,Nj,3)/D/FREE Qvecs1keV=NaN				// Qvector at 1keV
 
 	// for each pixel in image, compute sin(theta) and save it in Qvecs1keV[][][3]
@@ -5310,33 +5249,33 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	if (WaveExists(recip))
 		MatrixOP/FREE recipInv = Inv(recip)
 		MatrixOP/FREE diff = sum(magsqr(recipInv - recip^t))
-		useMat = diff[0]>1e-9					// only use recip when it is not an identity matrix
+		useMat = diff[0]>1e-9								// only use recip when it is not an identity matrix
 	endif
 	Make/N=3/D/FREE qhat, qij, hkl
 
-	Make/N=(N,2)/I/FREE pxpy								// all the pixels in the image, these will be un-binned & zero based
+	Make/N=(NiNj,2)/I/FREE pxpy							// all the pixels in the image, these will be un-binned & zero based
 	pxpy[][0] = mod(p,Ni)*groupx + (groupx-1)/2 + startx	// set the X-pixel values [0,Ni-1]
 	pxpy[][1] = floor(p/Ni)*groupy + (groupy-1)/2 + starty	// set the Y-pixel values [0,Nj-1]
-	Wave qvecs = pixel2qVEC(geo.d[dNum],pxpy,depth=depth)	// qvecs in beam line coords, at this point qvecs are normalized
+	Wave qvecs = pixel2qVEC(d,pxpy,depth=depth)	// qvecs in beam line coords, at this point qvecs are normalized
+	WaveClear pxpy
 
 	Make/N=3/D/FREE ki={0,0,1}
 	Variable factor = 4*PI/hc
 	MatrixOP/FREE qLens = -(qvecs x ki) * factor	// length of each q-vector, qvecs^ x ki == -sin(theta)
 	qvecs *= qLens[p]											// re-scale qhats to real q-vectors
-//	Qvecs1keV = qvecs[q+r*Ni][p]							// Qvectors at 1keV, just multiply by E to get Q
 	Qvecs1keV = qvecs[p+q*Ni][r]							// Qvectors at 1keV, just multiply by E to get Q
 	WaveClear qLens
 
 	// find range of Qx,Qy,Qz
 	if (useMat)													// if recip is identity, this saves 1 minute for large images
-		MatrixOP/FREE/O hkl = (recipInv x (qvecs^t))^t			// this is really hkl/E
+		MatrixOP/FREE/O hkl = (recipInv x (qvecs^t))^t	// this is really hkl/E
 	else
 		Duplicate/FREE qvecs, hkl
 	endif
 	WaveClear qvecs
 
 	if (WaveExists(mask))
-		Make/N=(N)/B/U/FREE maskLocal					// un-wrap mask into a 1-D wave
+		Make/N=(NiNj)/B/U/FREE maskLocal				// un-wrap mask into a 1-D wave
 		maskLocal = mask[mod(p,Ni)][floor(p/Ni)] ? 1 : 0		// set maskLocal to passed values, 1=OK, 0=BAD
 		hkl = maskLocal[p] ? hkl[p][q] : NaN			// remove values that are masked off (set to NaN)
 		WaveClear maskLocal
@@ -5359,11 +5298,17 @@ Static Function/WAVE MakeQarray(image,geo,recip,Elo,Ehi,[depth,mask,printIt])
 	wnote = ReplaceNumberByKey("QxHi",wnote,QxHi,"=")
 	wnote = ReplaceNumberByKey("QyHi",wnote,QyHi,"=")
 	wnote = ReplaceNumberByKey("QzHi",wnote,QzHi,"=")
+	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")
+	wnote = ReplaceNumberByKey("endx",wnote,roi.xHi,"=")
+	wnote = ReplaceNumberByKey("groupx",wnote,groupx,"=")
+	wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
+	wnote = ReplaceNumberByKey("endy",wnote,roi.yHi,"=")
+	wnote = ReplaceNumberByKey("groupy",wnote,groupy,"=")
 	Note/K Qvecs1keV, wnote
 
 	seconds = stopMSTimer(-2)/1e6 - seconds
 	if (printIt && seconds>5)
-		printf "filling array of Q's from  '%s'  at depth = %g,  took %s\r",NameOfWave(image),depth,Secs2Time(seconds,5,1)
+		printf "filling array of Q's at depth = %g,  took %s\r", depth, Secs2Time(seconds,5,1)
 	endif
 	return Qvecs1keV
 End

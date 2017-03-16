@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.12
+#pragma version = 2.13
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -1133,12 +1133,13 @@ Function/WAVE ExtractROIofImage(image, roi)
 	// extract the roi out of image, image needs to contain the roi
 	// This never returns the same image, but alwasy a FREE copy or subset of image
 	// Note, both the image and the roi, may not start at (0,0)
+	// the image may have layers or chunks
 	Wave image
 	STRUCT imageROIstruct &roi
 
 	if (!WaveExists(image))
 		return $""
-	elseif (WaveDims(image)!=2)				// only works on image (i.e. 2D arrays)
+	elseif (WaveDims(image)<2)				// only works on image (i.e. 2D arrays) or greater
 		return $""
 	elseif (imageROIstructBad(roi))
 		return $""
@@ -1165,7 +1166,14 @@ Function/WAVE ExtractROIofImage(image, roi)
 	Redimension/N=(roi.Nx, roi.Ny) imageROI	// redimension to requested size
 	Variable fx = roi.binx / groupx,  fy = roi.biny / groupy
 	Variable ix0 = roi.xLo - startx,  iy0 = roi.yLo - starty
-	imageROI = image[ix0+p*fx][iy0+q*fy]	// does not do binning, just pick first pixel
+
+	if (WaveDims(image)==2)					// a 2D array
+		imageROI = image[ix0+p*fx][iy0+q*fy]	// does not do binning, just pick first pixel
+	elseif (WaveDims(image)==3)				// a 3D array
+		imageROI = image[ix0+p*fx][iy0+q*fy][r]
+	elseif (WaveDims(image)==4)				// a 4D array
+		imageROI = image[ix0+p*fx][iy0+q*fy][r][s]
+	endif
 
 	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")	// re-set wavenote to match roi
 	wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
