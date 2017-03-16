@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.09
+#pragma version = 6.10
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -2488,19 +2488,42 @@ Static Function/T SelectNewSG(find)
 		endif
 	endfor
 	Variable N=ItemsInList(symList)
+	if (strsearch(find,"*",0)<0 && N<1)
+		symList = SelectNewSG(find+"*")
+		N = ItemsInList(symList)
+	endif
 	if (N<1)
+		symmtry2SG("")							// this will print stuff to history, hopefully helpful
 		return ""
 	elseif (N==1)
 		sym = StringFromList(0,symList)
 		return StringFromList(0,sym," ")
 	endif
-
-	Prompt sym,"Space Group",popup,symList
+	Prompt sym,"Space Group",popup,addDefaults2symList(symList)
 	DoPrompt "Space Group",sym
 	if (V_flag)
 		return ""
 	endif
 	return StringFromList(0,sym," ")
+End
+//
+Static Function/S addDefaults2symList(in)	// add "Default" to the default Space Groups
+	String in
+	String line, id, out=""
+	Variable SG, i,N=ItemsInList(in)
+	for (i=0;i<N;i+=1)
+		line = StringFromList(i,in)
+		id = StringFromList(0,line," ")
+		SG = str2num(id)
+		if (strsearch(id,":",0)<0)
+			out += line+";"					// a simple SG with no options
+		elseif (StringMatch(id,FindDefaultIDforSG(SG)))
+			out += line+"  <--Default;"		// a simple SG with no options
+		else
+			out += line+";"					// a simple SG with no options
+		endif
+	endfor
+	return out
 End
 
 
@@ -5656,7 +5679,7 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 	list = SortList(list,";",1)
 
 	if (printIt)	// print out information about each SpaceGroupIDnum in list
-		Variable i, Nlist=ItemsInList(list)
+		Variable i, Nlist=ItemsInList(list), showDefault
 		if (Nlist<1)
 			printf "No matches of \"%s\" to a symbol in:{%s}\r",strIN,nameList
 			return ""
@@ -5664,19 +5687,20 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
 		String allIDs=MakeAllIDs()
-		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\r"
+		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
 		String id, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
 			idNum = str2num(StringFromList(i,list))
 			if (isValidSpaceGroupIDnum(idNum))
 				fullHM = getHMsym2(idNum)			// usually fullHM is the same as HM
 				HM = getHMSym(idNum)
-				fullHM = SelectString(StringMatch(fullHM,HM),"\t\tfull H-M = ["+fullHM+"]","")
+				fullHM = SelectString(StringMatch(fullHM,HM),"\t\t\t"+fullHM,"")
 				tab = SelectString(strlen(getHMsym2(idNum))>5,"\t","")
 
 				id = StringFromList(idNum-1,allIDs)
 				system = StringFromList(latticeSystem(id),systemNames)
-				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s\r", id,system,HM,tab,getHallSymbol(idNum),fullHM
+				showDefault = strsearch(id,":",0)>=0 && StringMatch(id,FindDefaultIDforSG(str2num(id)))
+				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", id,system,HM,tab,getHallSymbol(idNum),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
 			endif
 		endfor
 	endif
