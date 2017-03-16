@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.13
+#pragma version = 2.14
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -1163,15 +1163,17 @@ Function/WAVE ExtractROIofImage(image, roi)
 	endif
 
 	// need to extract an ROI
-	Redimension/N=(roi.Nx, roi.Ny) imageROI	// redimension to requested size
 	Variable fx = roi.binx / groupx,  fy = roi.biny / groupy
 	Variable ix0 = roi.xLo - startx,  iy0 = roi.yLo - starty
 
 	if (WaveDims(image)==2)					// a 2D array
+		Redimension/N=(roi.Nx, roi.Ny) imageROI	// redimension to requested size
 		imageROI = image[ix0+p*fx][iy0+q*fy]	// does not do binning, just pick first pixel
 	elseif (WaveDims(image)==3)				// a 3D array
+		Redimension/N=(roi.Nx, roi.Ny, -1) imageROI
 		imageROI = image[ix0+p*fx][iy0+q*fy][r]
 	elseif (WaveDims(image)==4)				// a 4D array
+		Redimension/N=(roi.Nx, roi.Ny, -1,-1) imageROI
 		imageROI = image[ix0+p*fx][iy0+q*fy][r][s]
 	endif
 
