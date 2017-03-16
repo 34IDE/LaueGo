@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.38
+#pragma version = 3.39
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -276,6 +276,17 @@ Function CheckLaueGoVersion(alert)		// Check if this version is the most recent
 		printf "The most recent distribution was created:  %s,  %s,   %g files\r",dateStr,timeStr,ss.web.count
 		sprintf str, "\rThe most recent distribution with %g files was created:\r  %s,  %s\r",ss.web.count,dateStr,timeStr
 		out += str
+		Variable dt = ss.web.epoch - ss.disk.epoch
+		String deltaString = ElapsedTime2Str(abs(dt))
+		if (dt>0)
+			printf "%s behind the current distribution.\r",deltaString
+			sprintf str, "  %s behind the current distribution.",deltaString
+			out += str
+		else
+			printf "%s **AHEAD** of the current distribution.\r",deltaString
+			sprintf str, "  %s **AHEAD** of the current distribution.",deltaString
+			out += str
+		endif
 	endif
 	print " "
 	if (alert)
