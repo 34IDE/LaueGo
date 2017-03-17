@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.10
+#pragma version = 6.11
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -157,6 +157,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.06, added keV to the Lattice Panel, also Get_f_proto(), Svector should not have the "/10"
 //	with verison 6.08, changed space_group_ID --> space_group_id (to align with CIF usage)
 //	with verison 6.09, in muOfXtal() was getting mult and occ wrong
+//	with verison 6.11, fixed the CIF file reading, it now uses NextLineInBuf() from Utility_JZT.ipf
 
 //	Rhombohedral Transformation:
 //
@@ -4076,25 +4077,36 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		return 1
 	endif
 
-	Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
-	xtal.SpaceGroup = SG > 0 ? SG : 1
-
-	String id = FindDefaultIDforSG(xtal.SpaceGroup)
-	xtal.SpaceGroupID = id
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)// change id to id number in [1-530]
-
-	// try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
-	String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-	String nlist = SymString2SGtype(HMsym,2,0)	// checks in getHMsym2
-	if (strlen(nlist)<1)
-		nlist = SymString2SGtype(HMsym,2,1)	// checks in getHMsym2 again, but ignoring minus signs
+	// 1st try for the id directly
+	xtal.SpaceGroupID = CIF_readString("_space_group_id",buf)
+	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
+	if (strlen(xtal.SpaceGroupID)<1)
+		String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
+		String nlist = SymString2SGtype(HMsym,2,0)	// checks in getHMsym2
+		if (strlen(nlist)<1)
+			nlist = SymString2SGtype(HMsym,2,1)		// checks in getHMsym2 again, but ignoring minus signs
+		endif
+		if (ItemsInList(nlist)==1)						// just one result, use it
+			Variable idNum = str2num(StringFromList(0,nlist))
+			if (isValidSpaceGroupIDnum(idNum))			// found valid SpaceGroupIDnum
+				String allIDs=MakeAllIDs()
+				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
+				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
+			endif
+		endif
 	endif
-	Variable idNum = str2num(StringFromList(0,nlist))
-	if (ItemsInList(nlist)==1 && isValidSpaceGroupIDnum(idNum))	// found valid SpaceGroupIDnum
-		String allIDs=MakeAllIDs()
-		xtal.SpaceGroupIDnum = idNum
-		xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
+	// 3rd try, look for the Space Group [1-230]
+	if (strlen(xtal.SpaceGroupID)<1)
+		Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
+		if (SG>0)
+			xtal.SpaceGroupID = FindDefaultIDforSG(xtal.SpaceGroup)	// try to get id from SG [1-230]
+		endif
 	endif
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID))	// give up
+		Abort "cannot find the Space Group from CIF file"
+	endif
+	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
 
 	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
 
@@ -4110,39 +4122,21 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	endfor
 
 	if (strlen(list))				// found atom positions, interpret the list
-		buf = buf[i,Inf]
-		String line, last=StringFromList(ItemsInList(list)-1,list)
-		i = strsearch(buf,"\n"+last+"\n",0)+strlen(last)+2		// i is now start of table values
-		buf = buf[i,Inf]
-		for (i=strsearch(buf,"\n",0); i>=0; i=strsearch(buf,"\n",i+1))	// find end of list
-			cc = char2num(buf[i+1])					// values end with a line having an "_", an empty line, or line starting with "#"
-			if (cc<=10 || cc==35 || cc==95)
-				break
-			endif
-		endfor
-		if (i>0)
-			buf = buf[0,i]
-		endif
-
-		buf = buf[0,i]										// buf now contains ONLY the list values
-		buf = ReplaceString(" ",buf,"\t")
+		buf = buf[i+1,Inf]		// buf now starts after the "\n" preceeding loop_
+		i = 0
+		String line = NextLineInBuf(buf,i)				// skip the line with "loop_"
 		do
-			buf = ReplaceString("\t\t",buf,"\t")	// change all multiple tabs to single tabs
-		while (strsearch(buf,"\t\t",0)>=0)
-		buf = ReplaceString("\n\t",buf,"\n")
-		buf = ReplaceString("\t\n",buf,"\n")
-		if (char2num(buf)==9)
-			buf = ReplaceString("\t",buf,"",0,1)	// remove the leading tab
-		endif
-		buf = ReplaceString("\t",buf,";")			// turns white space separated table into a set of lists
+			line = TrimBoth(NextLineInBuf(buf,i))		// trim off any white space and the terminating "\n"
+		while (char2num(line[0])==95)
+
+		for(; strlen(line)<1 || char2num(line[0])==35;)	// skip any blank lines or lines starting with "#"
+			line = TrimBoth(NextLineInBuf(buf,i))	
+		endfor
 
 		String symb											// Element symbol, e.g. "Fe", "Co", ...
-		Variable Z, occ, Biso, Uiso, Uij
-
-		Variable N, i0,i1
-		for (N=0,i0=0; N<STRUCTURE_ATOMS_MAX && i0<strlen(buf); N+=1)
-			i1 = strsearch(buf,"\n",i0)
-			line = buf[i0,i1-1]							// un-terminated line
+		Variable Z, occ, Biso, Uiso, Uij, N
+		for (N=0; N<STRUCTURE_ATOMS_MAX && strlen(line)>0; N+=1)	// loop until you get an empty line
+			line = ChangeCIFline2List(line)			// make line semi-colon separated list
 			xtal.atom[N].DebyeT = NaN
 			xtal.atom[N].Uiso = NaN	;	xtal.atom[N].Biso = NaN
 			xtal.atom[N].U11 = NaN		;	xtal.atom[N].U22 = NaN	;		xtal.atom[N].U33 = NaN
@@ -4176,7 +4170,8 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.atom[N].U12 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_12",list),line))/100
 			xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100
 			xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100
-			i0 = i1+1										// start of next line
+
+			line = TrimBoth(NextLineInBuf(buf,i))		// get the next line
 		endfor
 		xtal.N = N
 	endif
@@ -4188,14 +4183,29 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	return 0
 End
 //
+Function/S ChangeCIFline2List(line)				// change a CIF data line to a semi-colon separated list
+	String line
+	line = TrimBoth(line)	
+	line = ReplaceString("\t",line,";")
+	line = ReplaceString(" ",line,";")
+	do
+		line = ReplaceString(";;",line,";")		// change all multiple ";" to single ";"
+	while (strsearch(line,";;",0)>=0)
+	return line
+End
+//
 Static Function/T CIF_loop_Labels(buf)
 	String buf
 
 	Variable i1, i0 = strsearch(buf,"\nloop_\n",0)
 	i0 += 7
 	String name, list=""
-	for(;char2num(buf[i0])==95;)
-		i1 = strsearch(buf,"\n",i0+1)-1
+	for(;char2num(buf[i0])==95 || char2num(buf[i0])<=32;)
+		if (char2num(buf[i0])<=32)
+			i0 += 1							// skip leading white space
+			continue
+		endif
+			i1 = strsearch(buf,"\n",i0+1)-1
 		name = buf[i0,i1]
 		list += name+";"
 		i0 = i1 + 2
@@ -4221,15 +4231,21 @@ Static Function/T CIF_readString(key,buf)
 	String key
 	String buf
 
-	Variable len=strlen(key)
-	Variable i0 = strsearch(buf,"\n"+key,0)
-
+	Variable i0 = strsearch(buf,"\n"+key,0), i1,i2
 	if (i0<0)
 		return ""
 	endif
 
-	i0 = strsearch(buf,"'",i0+1)+1
-	Variable i1 = strsearch(buf,"'",i0+1)-1
+	i1 = strsearch(buf,"\"",i0+1)
+	i2 = strsearch(buf,"'",i0+1)
+	i1 = i1<0 ? Inf : i1
+	i2 = i2<0 ? Inf : i2
+	i0 = min(i1,i2)+1
+	if (i1>i2)								// quoted with a single quote
+		i1 = strsearch(buf,"'",i0+1)-1
+	else
+		i1 = strsearch(buf,"\"",i0+1)-1
+	endif
 	return TrimFrontBackWhiteSpace(buf[i0,i1])
 End
 

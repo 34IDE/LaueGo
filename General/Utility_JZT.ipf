@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.19
+#pragma version = 4.20
 // #pragma hide = 1
 
 Menu "Graph"
@@ -76,6 +76,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		intersectionOfLists(a,b,[sep]) returns intersection of two lists a & b
 //		RemoveDuplicatesFromList(list,[listSepStr,matchCase]), return list with duplicate items removed
 //		OnlyWavesThatAreDisplayed(), removes waves that are not displayed from a list of wave
+//		NextLineInBuf(), returns next line in buf (which has <nl> separators) each time it is called.
 //		AxisLabelFromGraph(), gets the axis label
 //		WindowsWithWave(w,flag), return list of all windows with w, flag (a mask): graph=1, table=2, gizmo=4
 //		DisplayTableOfWave(...), display table taking into account any col/row labels
@@ -1988,6 +1989,42 @@ Function/T RemoveDuplicatesFromList(list,[listSepStr,matchCase])
 	endfor
 	return list
 End
+
+
+Function/S NextLineInBuf(buf,i,[NL])
+	// eturns the next line in buf (which has <nl> separators) each time it is called, see the following test_NextLineInBuf() for usage
+	String buf
+	Variable &i					// next line starts at buf[i], this gets set for each call in here
+	String NL					// a single character, probably "\n", but may be "\r"
+	NL = SelectString(ParamIsDefault(NL),NL,"\n")
+	NL = SelectString(strlen(NL)<1,NL,"\n")
+
+	Variable len = strlen(buf)
+	if (i<0 || i>=len)
+		i = -1
+		return ""
+	endif
+
+	Variable i0=i, i1
+	i1 = strsearch(buf,NL,i0)
+	if (i1<0)
+		i = -1					// flags that we are done
+		return buf[i0,Inf]
+	endif
+	i = i1+1						// first char after the NL
+	i = i>=len ? -1 : i		// new starting point
+
+	i1 = limit(i1,0,len-1)
+	return buf[i0,i1]			// the next line
+End
+//	Function test_NextLineInBuf()
+//		String buf = "\nabc\nxyz\n\nhij\n", line
+//		Variable i=0
+//		do
+//			line = NextLineInBuf(buf,i)
+//			printf "line = --%s--   i = %d\r",line,i
+//		while(i>=0)
+//	End
 
 
 Function/T AxisLabelFromGraph(gName,w,axis)	// returns specified axis label for the top graph containing the wave
