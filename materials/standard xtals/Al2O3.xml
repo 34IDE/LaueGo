@@ -15,12 +15,14 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract_xyz>0 0 0.3523</fract_xyz>
+		<valence>3</valence>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract_xyz>0.3064 0 0.25</fract_xyz>
+		<valence>-2</valence>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 </cif>

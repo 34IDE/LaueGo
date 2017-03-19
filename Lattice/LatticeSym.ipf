@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.11
+#pragma version = 6.12
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -158,6 +158,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.08, changed space_group_ID --> space_group_id (to align with CIF usage)
 //	with verison 6.09, in muOfXtal() was getting mult and occ wrong
 //	with verison 6.11, fixed the CIF file reading, it now uses NextLineInBuf() from Utility_JZT.ipf
+//	with verison 6.12, fixed a bug with valence when reading a CIF file, also tries to read multiplicity.
 
 //	Rhombohedral Transformation:
 //
@@ -1080,7 +1081,7 @@ End
 ThreadSafe Static Function atomThermalInfo(atom,[T_K])	// True if atom contains thermal information of some kind
 	Struct atomTypeStructure &atom
 	Variable T_K											// optional temperature
-	T_K = ParamIsDefault(T_K) ? 0 : T_K			// only consider T_K if it is passed (0 is valid)
+	T_K = ParamIsDefault(T_K) ? 300.0 : T_K		// only consider T_K if it is passed (0 is valid)
 	// returns type of thermal info
 	//		0 = No thermal information for this atom
 	//		1 = Debye T
@@ -1094,7 +1095,7 @@ ThreadSafe Static Function atomThermalInfo(atom,[T_K])	// True if atom contains 
 	Variable U12_OK = numtype(atom.U12 + atom.U13 + atom.U23) == 0
 
 	Variable vibrate=0
-	if (thetaM>0 && T_K>=0)		// have a valid and Debye Temperature and Temperature
+	if (thetaM>0 && T_K>0)			// have a valid and Debye Temperature and Temperature
 		vibrate = 1
 	elseif (atom.Biso > 0)			// have a valid Biso
 		vibrate = 2
@@ -4134,13 +4135,14 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		endfor
 
 		String symb											// Element symbol, e.g. "Fe", "Co", ...
-		Variable Z, occ, Biso, Uiso, Uij, N
+		Variable Z, occ, Biso, Uiso, Uij, mult, N
 		for (N=0; N<STRUCTURE_ATOMS_MAX && strlen(line)>0; N+=1)	// loop until you get an empty line
 			line = ChangeCIFline2List(line)			// make line semi-colon separated list
 			xtal.atom[N].DebyeT = NaN
 			xtal.atom[N].Uiso = NaN	;	xtal.atom[N].Biso = NaN
 			xtal.atom[N].U11 = NaN		;	xtal.atom[N].U22 = NaN	;		xtal.atom[N].U33 = NaN
 			xtal.atom[N].U12 = NaN		;	xtal.atom[N].U13 = NaN	;		xtal.atom[N].U23 = NaN
+			xtal.atom[N].valence = 0
 
 			name = StringFromList(WhichListItem("_atom_site_label",list),line)
 			xtal.atom[N].name = name[0,59]
@@ -4158,6 +4160,8 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.atom[N].WyckoffSymbol = str[0]
 			occ = str2num(StringFromList(WhichListItem("_atom_site_occupancy",list),line))
 			xtal.atom[N].occ = occ >=0 ? limit(occ,0,1) : 1
+			mult = str2num(StringFromList(WhichListItem("_atom_site_symmetry_multiplicity",list),line))
+			xtal.atom[N].mult = mult>0 ? mult : 1
 			Biso = str2num(StringFromList(WhichListItem("_atom_site_B_iso_or_equiv",list),line))/100	// assume value in Angstrom^2
 			xtal.atom[N].Biso = Biso>0 ? Biso : NaN
 
