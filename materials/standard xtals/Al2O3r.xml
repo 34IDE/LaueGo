@@ -5,23 +5,25 @@
 	<space_group_IT_number>167</space_group_IT_number>
 	<space_group_id>167:R</space_group_id>
 	<cell>
-		<a unit="nm">0.5128</a>
-		<b unit="nm">0.5128</b>
-		<c unit="nm">0.5128</c>
-		<alpha>55.1</alpha>
-		<beta>55.1</beta>
-		<gamma>55.1</gamma>
+		<a unit="nm">0.5128155</a>
+		<b unit="nm">0.5128155</b>
+		<c unit="nm">0.5128155</c>
+		<alpha>55.27934</alpha>
+		<beta>55.27934</beta>
+		<gamma>55.27934</gamma>
 	</cell>
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract_xyz>0.352 0.352 0.352</fract_xyz>
+		<valence>3</valence>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract_xyz>0.556 0.944 0.25</fract_xyz>
+		<valence>-2</valence>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 </cif>

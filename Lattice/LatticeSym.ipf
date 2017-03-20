@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.12
+#pragma version = 6.14
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -4731,8 +4731,8 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 
 	String SpaceGroupID=xtal.SpaceGroupID
 	SetSymOpsForSpaceGroup(SpaceGroupID)		// ensure existance of symmetry op mats and vecs
-	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(xtal.SpaceGroup))
-	Wave bvecs = $("root:Packages:Lattices:SymOps:equivXYZB"+num2istr(xtal.SpaceGroup))
+	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+xtal.SpaceGroupID,0))
+	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+xtal.SpaceGroupID,0))
 	if (!WaveExists(mats) || !WaveExists(bvecs))
 		Abort"Unable to get symmetry operations in positionsOfOneAtomType()"
 	endif
@@ -4958,15 +4958,17 @@ End
 ThreadSafe Function/S MakeSymmetryOps(xtal)			// make a wave with the symmetry operation
 	STRUCT crystalStructure &xtal
 
-	String SG = num2istr(xtal.SpaceGroup)
-	Wave equivXYZM = $("root:Packages:Lattices:SymOps:equivXYZM"+SG)
+	String SG = num2istr(xtal.SpaceGroup), wName
+	wName = ReplaceString(":",xtal.SpaceGroupID,"_")	// cannot use CleanUpName() here, not ThreadSafe
+	wName = "root:Packages:Lattices:SymOps:equivXYZM"+ReplaceString("-",wName,"_")
+	Wave equivXYZM = $wName
 	if (!WaveExists(equivXYZM))
 		return ""
 	endif
 	Variable Nequiv=DimSize(equivXYZM,0)					// number of all symmetry operations for this space group
 	String/G root:Packages:Lattices:SymOps:SymmetryOpsPath="root:Packages:Lattices:SymOps:SymmetryOps"+SG
 
-	String wName = "root:Packages:Lattices:SymOps:SymmetryOps"+SG
+	wName = "root:Packages:Lattices:SymOps:SymmetryOps"+SG
 	Make/N=(2*Nequiv,3,3)/D/O $wName=NaN
 	Wave ops = $wName
 
@@ -5204,7 +5206,7 @@ End
 ThreadSafe Static Function isValidSpaceGroupID(id)		// returns TRUE if id is valid
 	String id															// a space group id, e.g. "15" or "15:-b2"
 	String allIDs=MakeAllIDs()
-	return WhichListItem(id,allIDs)>=0
+	return WhichListItem(id,allIDs,";",0,0)>=0
 End
 
 
@@ -5218,7 +5220,7 @@ Function SpaceGroupID2num(id)
 	String id									// a space group id, e.g. "15" or "15:-b2"
 
 	String allIDs=MakeAllIDs()
-	Variable idNum = 1+WhichListItem(id,allIDs)
+	Variable idNum = 1+WhichListItem(id,allIDs,";",0,0)
 	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
 	if (numtype(idNum))
 		idNum = FindDefaultIDnumForSG(round(str2num(id)))
@@ -6657,12 +6659,14 @@ End
 Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
 	String SpaceGroupID
 	Variable SG=str2num(SpaceGroupID)
-	Wave mats = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SG))
-	Wave bvecs = $("root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SG))
+	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
+	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
 	Variable numSymOps
 	if (WaveExists(mats) && WaveExists(bvecs))				// check if they exist
-		numSymOps = NumberByKey("numSymOps",note(mats),"=")
-		return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
+		if (StringMatch(StringByKey("SpaceGroupID",note(mats),"="), SpaceGroupID))
+			numSymOps = NumberByKey("numSymOps",note(mats),"=")
+			return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
+		endif
 	endif
 	if (!isValidSpaceGroup(SG))								// Space Group must be in range [1, 230]
 		DoAlert 0, "Bad Space Group = "+SpaceGroupID+", in SetSymOpsForSpaceGroup"
@@ -6677,10 +6681,10 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 	String symOperations=setSymLineID(SpaceGroupID)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
 
 	Variable i,N=ItemsInList(symOperations)
-	String wName = "root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SG)
+	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
 	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
 	Wave equivM = $wName
-	wName = "root:Packages:Lattices:SymOps:equivXYZB"+num2istr(SG)
+	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
 	Make/N=(N,3)/O/D $wName
 	Wave equivB = $wName
 

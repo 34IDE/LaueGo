@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.42
+#pragma version = 0.43
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -332,7 +332,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 
 	Wave cell = MakeCellOutline(prefix,direct,Na=Na,Nb=Nb,Nc=Nc)
 	Wave cell0 = MakeCellOutline(prefix,direct,name=NameOfWave(cell)+"0")
-	if (LatticeSym#isRhombohedral(xtal.SpaceGroup))
+	if (LatticeSym#isRhombohedral(xtal.SpaceGroup) && strsearch(xtal.SpaceGroupID, ":H",0)>0)
 		Wave rhomLat = RhomLatticeFromHex(direct)	// returns a Rhombohedral direct lattice
 		Wave rhomCell0 = AtomView#MakeCellOutline("",rhomLat,name=prefix+"_RhomOutline0")
 	else
