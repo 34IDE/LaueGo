@@ -40,7 +40,7 @@ Menu "Zones"
 		End
 	End
 	"-"
-	MenuItemIfWaveClassExists("Make Zones Wave from Ghats...","Ghat*","MINCOLS:3"), IndexingInternal#MakeZonesWave($"",NaN)
+	MenuItemIfWaveClassExists("Make Zones Wave from Ghats...","Ghat*;QsMeasured","MINCOLS:3"), IndexingInternal#MakeZonesWave($"",NaN)
 	"-"
 	MenuItemIfWaveClassExists("Table of ZonesWave","Zones*","MINCOLS:4"),/Q, DisplayTableOfWave($"",classes="Zones*",promptStr="Zones",options="MINCOLS:4",top=52,left=15,colWid=80)
 	MenuItemIfWaveClassExists("Table of Ghats","QsMeasured*","MINCOLS:3"),/Q, DisplayTableOfWave($"",classes="QsMeasured*",promptStr="Ghat",options="MINCOLS:3",top=65,left=17,colWid=80)
