@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.24
+#pragma version = 0.25
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2823,7 +2823,7 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 	SetDimLabel 1,0,Qx,kfs	;	SetDimLabel 1,1,Qy,kfs	;	SetDimLabel 1,2,Qz,kfs
 //	SetDimLabel 1,3,dNum,kfs
 
-	String wnotePeak=note(FullPeakList), wnote
+	String wnotePeak=note(FullPeakList), wnote=""
 	Variable dNum=limit(detectorNumFromID(geo, StringByKey("detectorID",wnotePeak,"=")),0,MAX_Ndetectors)
 	Variable startx,groupx, starty,groupy			// ROI of the original image
 	startx = NumberByKey("startx",wnotePeak,"=")
@@ -3029,7 +3029,7 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	SetDimLabel 1,4,dNum,GhatMeasured
 
 	Make/N=3/D/FREE qhat
-	String wnotePeak=note(FullPeakList), wnote
+	String wnotePeak=note(FullPeakList), wnote=""
 
 	Variable dNum=limit(detectorNumFromID(geo, StringByKey("detectorID",wnotePeak,"=")),0,MAX_Ndetectors)
 	Variable startx,groupx, starty,groupy			// ROI of the original image
