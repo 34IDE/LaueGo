@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.14
+#pragma version = 6.15
 #include "Utility_JZT" version>=4.14
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -159,6 +159,8 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.09, in muOfXtal() was getting mult and occ wrong
 //	with verison 6.11, fixed the CIF file reading, it now uses NextLineInBuf() from Utility_JZT.ipf
 //	with verison 6.12, fixed a bug with valence when reading a CIF file, also tries to read multiplicity.
+//	with verison 6.14, changed equivXYZM and equivXYZB to end with SpaceGroupID (not just SG)
+//	with verison 6.15, changed slightly the formula for putting fractional coords into range [0,1).
 
 //	Rhombohedral Transformation:
 //
@@ -4751,8 +4753,7 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		mat = mats[m][p][q]
 		bv = bvecs[m][p]
 		MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
-		rr += abs(floor(rr))						// translate to a unit cell with only positive values
-		rr = mod(rr,1)									//   and restrict values to values to [0,1), the first unit cell
+		rr = mod(rr,1) + (rr<0 ? 1 : 0)			// atom's fractional rhombohedral coordinates in [0,1), the first unit cell
 
 		MatrixOP/FREE vec = direct x rr			// real space vector for rr
 		if (Neq<2)
@@ -5875,12 +5876,12 @@ Static Function Rhom2HexFractonal(xtal)					// converts hexagonal --> rhombohedr
 	Wave directR = directFrom_xtal(xtal)			// Obverse Rhombohedral direct lattice
 	Wave directH = HexLatticeFromRhom(directR)	// returns a Hexagonal direct lattice
 
-	Make/N=3/D/FREE xyzR								// fractional rhombohedral coordinates
+	Make/N=3/D/FREE xyzR								// one atom's fractional rhombohedral coordinates
 	Variable i
 	for (i=0; i < xtal.N; i+=1)
 		xyzR = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
 		MatrixOP/FREE xyzH = Inv(directH) x directR x xyzR
-		xyzH = mod(xyzH[p]+2,1)							// fractional hexagonal coordinates
+		xyzH = mod(xyzH,1) + (xyzH<0 ? 1 : 0)		// atom's fractional rhombohedral coordinates
 		printf "fractional: Rhom=%s  -->  Hex=%s\r",vec2str(xyzR,zeroThresh=1e-12),vec2str(xyzH,zeroThresh=1e-12)
 	endfor
 End
@@ -5896,12 +5897,12 @@ Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral
 	Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
 	Wave directR = RhomLatticeFromHex(directH)	// Obverse Rhombohedral direct lattice from Hexagonal
 
-	Make/N=3/D/FREE xyzH								// fractional hexagonal coordinates
+	Make/N=3/D/FREE xyzH								// one atom's fractional hexagonal coordinates
 	Variable i
 	for (i=0; i < xtal.N; i+=1)
 		xyzH = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
 		MatrixOP/FREE xyzR = Inv(directR) x directH x xyzH
-		xyzR = mod(xyzR[p]+2,1)							// fractional rhombohedral coordinates
+		xyzR = mod(xyzR,1) + (xyzR<0 ? 1 : 0)		// atom's fractional rhombohedral coordinates
 		printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
 	endfor
 End
