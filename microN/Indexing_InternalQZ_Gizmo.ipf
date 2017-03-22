@@ -32,6 +32,8 @@ Function GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,ZoneZone)
 		Wave ZoneZone=ZoneZone
 	endif
 
+	Duplicate/O ZonesWave, ZonesWaveView
+
 	Variable Ntest=DimSize(GhatsMeasured,0), Nz=DimSize(ZonesWave,0), Nzz=DimSize(ZoneZone,0)
 	if (!(Nz>0 && Ntest>0))
 		return 0
