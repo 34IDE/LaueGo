@@ -3,7 +3,7 @@
 <cif>
 	<chemical_name_common>Cu3Au RT</chemical_name_common>
 	<space_group_IT_number>221</space_group_IT_number>
-	<space_group_id>221</space_group_ID>
+	<space_group_id>221</space_group_id>
 	<H-M>Pm-3m</H-M>
 	<amcsd>0011894</amcsd>
 	<cell>
@@ -16,16 +16,16 @@
 		<temperature unit="C">22.5</temperature>
 	</cell>
 	<atom_site>
-		<label>Au</label>
-		<symbol>Au</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
-		<WyckoffSymbol>a</WyckoffSymbol>
-	</atom_site>
-	<atom_site>
 		<label>Cu</label>
 		<symbol>Cu</symbol>
 		<fract_xyz>0 0.5 0.5</fract_xyz>
 		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Au</label>
+		<symbol>Au</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<citation>H.D. Megaw, Crystal Structures 1973 (1973) 89-90, Copper-gold alloy, Cu3Au</citation>
 </cif>
