@@ -20,13 +20,13 @@
 	<atom_site>
 		<label>Cr</label>
 		<symbol>Cr</symbol>
-		<fract_xyz>0 0 0</fract_x>
+		<fract_xyz>0 0 0</fract_xyz>
 		<occupancy>0.25</occupancy>
 	</atom_site>
 	<atom_site>
 		<label>Co</label>
 		<symbol>Co</symbol>
-		<fract_xyz>0 0 0</fract_x>
+		<fract_xyz>0 0 0</fract_xyz>
 		<occupancy>0.2</occupancy>
 	</atom_site>
 </cif>

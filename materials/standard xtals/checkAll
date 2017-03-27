@@ -1,0 +1,5 @@
+for file in *
+do
+	xmllint -noout "$file"
+	# ls "$file"
+done
