@@ -1,5 +1,7 @@
-for file in *
-do
-	xmllint -noout "$file"
-	# ls "$file"
-done
+find *.xml -type f -exec xmllint -noout {} \;
+
+#	for file in *
+#	do
+#		xmllint -noout "$file"
+#		# ls "$file"
+#	done
