@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.20
+#pragma version = 4.21
 // #pragma hide = 1
 
 Menu "Graph"
@@ -114,6 +114,8 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		pingHost(host), returns ping time in seconds, returns NaN CANNOT ping the host
 //		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
+//		RemoveLeadingString(str,head,ignoreCase), removes head from start of str
+//		RemoveTrailingString(str,tail,ignoreCase), removes tail from end of str
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
 //		use funcions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
@@ -3530,6 +3532,37 @@ End
 #endif
 
 
+
+ThreadSafe Function/S RemoveLeadingString(str,head,ignoreCase)
+	// returns str with head removed (if it starts with head)
+	// if head=="", returns str
+	// ignoreCase: 1=upper or lower case,   0=case must match
+	String str				// string to search
+	String head				// string that may be at start
+	Variable ignoreCase	// if true then ignore case of head
+
+	Variable strict = ignoreCase ? 3 : 1
+	if (strsearch(str,head,Inf, strict)==0)	// found head at position 0
+		return str[strlen(head),Inf]				// remove head
+	endif
+	return str
+End
+
+ThreadSafe Function/S RemoveTrailingString(str,tail,ignoreCase)
+	// returns str with tail removed (if it ends with tail)
+	// if tail=="", returns str
+	// ignoreCase: 1=upper or lower case,   0=case must match
+	String str				// string to search
+	String tail				// string that may be at end
+	Variable ignoreCase	// if true then ignore case of tail
+
+	Variable strict = ignoreCase ? 3 : 1
+	Variable i = strsearch(str,tail,Inf, strict)
+	if ((i+strlen(tail)) == strlen(str))	// found tail at end
+		str = str[0,strlen(str)-strlen(tail)-1]	// trim off tail
+	endif
+	return str
+End
 
 // These three funcitons are replacements for TrimFrontBackWhiteSpace() functions that are now DEPRECATED (see bottom of file)
 ThreadSafe Function/S TrimBoth(str,[chars,ignoreCase])
