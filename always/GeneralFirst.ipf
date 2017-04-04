@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.39
+#pragma version = 3.40
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -108,6 +108,8 @@ Menu "Data"
 		help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
 		"BURT files from APS",Execute/P "INSERTINCLUDE  \"BurtFiles\"";Execute/P "COMPILEPROCEDURES "
 		help = {"Load Burt files (from APS)."}
+		"xye files from APS",Execute/P "INSERTINCLUDE  \"xyeFiles\"";Execute/P "COMPILEPROCEDURES "
+		help = {"Load xye files (from APS)."}
 	End
 End
 
@@ -122,6 +124,8 @@ Menu "Load Waves"
 		help = {"Load Burt files (from APS)."}
 		"EPICS Load Scan Record", Execute/P "INSERTINCLUDE \"LoadEPICSscans\"" ; 	Execute/P "COMPILEPROCEDURES "
 		help = {"Load procedures for Loading the dump of a scan record using TkGrab, does not need EPICS support"}
+		"xye files from APS",Execute/P "INSERTINCLUDE  \"xyeFiles\"";Execute/P "COMPILEPROCEDURES "
+		help = {"Load xye files (from APS)."}
 	End
 End
 #endif
