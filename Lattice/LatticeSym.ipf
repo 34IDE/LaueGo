@@ -1,8 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.15
-#include "Utility_JZT" version>=4.14
+#pragma version = 6.16
+#include "Utility_JZT" version>=4.21
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -161,6 +161,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.12, fixed a bug with valence when reading a CIF file, also tries to read multiplicity.
 //	with verison 6.14, changed equivXYZM and equivXYZB to end with SpaceGroupID (not just SG)
 //	with verison 6.15, changed slightly the formula for putting fractional coords into range [0,1).
+//	with verison 6.16, added reading of sym ops from CIF files, can now get space group id from sym ops too.
 
 //	Rhombohedral Transformation:
 //
@@ -4051,6 +4052,144 @@ Static Function readCrystalStructureCIF(xtal,fileName,[path])
 	return err
 End
 
+//Static Function CIF_interpret(xtal,buf,[desc])
+//	STRUCT crystalStructure &xtal
+//	String buf
+//	String desc
+//	desc = SelectString(ParamIsDefault(desc),desc,"")
+//
+//	buf += "\n"
+//	String name=""
+//	name = CIF_readString("_chemical_formula_structural",buf)
+//	if (strlen(name)<1)
+//		name = CIF_readString("_chemical_name_systematic",buf)
+//	endif
+//	if (strlen(name)<1)
+//		name = CIF_readString("_chemical_name_mineral",buf)
+//	endif
+//	String str = SelectString(strlen(name),desc,name)
+//	xtal.desc = str[0,99]
+//
+//	// find lattice constants
+//	xtal.a = CIF_readNumber("_cell_length_a",buf)/10		// want nm, cif is in Angstroms
+//	xtal.b = CIF_readNumber("_cell_length_b",buf)/10
+//	xtal.c = CIF_readNumber("_cell_length_c",buf)/10
+//	xtal.alpha = CIF_readNumber("_cell_angle_alpha",buf)
+//	xtal.beta = CIF_readNumber("_cell_angle_beta",buf)
+//	xtal.gam = CIF_readNumber("_cell_angle_gamma",buf)
+//	if (numtype(xtal.a + xtal.b + xtal.c + xtal.alpha + xtal.beta + xtal.gam))
+//		return 1
+//	endif
+//
+//	// 1st try for the id directly
+//	xtal.SpaceGroupID = CIF_readString("_space_group_id",buf)
+//	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
+//	if (strlen(xtal.SpaceGroupID)<1)
+//		String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
+//		String nlist = SymString2SGtype(HMsym,2,0)	// checks in getHMsym2
+//		if (strlen(nlist)<1)
+//			nlist = SymString2SGtype(HMsym,2,1)		// checks in getHMsym2 again, but ignoring minus signs
+//		endif
+//		if (ItemsInList(nlist)==1)						// just one result, use it
+//			Variable idNum = str2num(StringFromList(0,nlist))
+//			if (isValidSpaceGroupIDnum(idNum))			// found valid SpaceGroupIDnum
+//				String allIDs=MakeAllIDs()
+//				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
+//				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
+//			endif
+//		endif
+//	endif
+//	// 3rd try, look for the Space Group [1-230]
+//	if (strlen(xtal.SpaceGroupID)<1)
+//		Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
+//		if (SG>0)
+//			xtal.SpaceGroupID = FindDefaultIDforSG(xtal.SpaceGroup)	// try to get id from SG [1-230]
+//		endif
+//	endif
+//	if (!isValidSpaceGroupID(xtal.SpaceGroupID))	// give up
+//		Abort "cannot find the Space Group from CIF file"
+//	endif
+//	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
+//	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
+//
+//	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
+//
+//	xtal.N = 0
+//	// find the atoms
+//	Variable i, cc
+//	String list=""					// find loop_ with the fractional atom positions
+//	for (i=strsearch(buf,"\nloop_",0); i>=0; i=strsearch(buf,"\nloop_",i+5))
+//		list = CIF_loop_Labels(buf[i,Inf])
+//		if (WhichListItem("_atom_site_fract_x",list)>=0)
+//			break
+//		endif
+//	endfor
+//
+//	if (strlen(list))				// found atom positions, interpret the list
+//		buf = buf[i+1,Inf]		// buf now starts after the "\n" preceeding loop_
+//		i = 0
+//		String line = NextLineInBuf(buf,i)				// skip the line with "loop_"
+//		do
+//			line = TrimBoth(NextLineInBuf(buf,i))		// trim off any white space and the terminating "\n"
+//		while (char2num(line[0])==95)
+//
+//		for(; strlen(line)<1 || char2num(line[0])==35;)	// skip any blank lines or lines starting with "#"
+//			line = TrimBoth(NextLineInBuf(buf,i))	
+//		endfor
+//
+//		String symb											// Element symbol, e.g. "Fe", "Co", ...
+//		Variable Z, occ, Biso, Uiso, Uij, mult, N
+//		for (N=0; N<STRUCTURE_ATOMS_MAX && strlen(line)>0; N+=1)	// loop until you get an empty line
+//			line = ChangeCIFline2List(line)			// make line semi-colon separated list
+//			xtal.atom[N].DebyeT = NaN
+//			xtal.atom[N].Uiso = NaN	;	xtal.atom[N].Biso = NaN
+//			xtal.atom[N].U11 = NaN		;	xtal.atom[N].U22 = NaN	;		xtal.atom[N].U33 = NaN
+//			xtal.atom[N].U12 = NaN		;	xtal.atom[N].U13 = NaN	;		xtal.atom[N].U23 = NaN
+//			xtal.atom[N].valence = 0
+//
+//			name = StringFromList(WhichListItem("_atom_site_label",list),line)
+//			xtal.atom[N].name = name[0,59]
+//			symb = StringFromList(WhichListItem("_atom_site_type_symbol",list),line)
+//			symb = SelectString(strlen(symb),name,symb)	// if symbol not included, try to get Z from label
+//			Z = ZfromLabel(symb)
+//			xtal.atom[N].Zatom = Z>0 ? Z : 1
+//			xtal.atom[N].x = str2num(StringFromList(WhichListItem("_atom_site_fract_x",list),line))
+//			xtal.atom[N].y = str2num(StringFromList(WhichListItem("_atom_site_fract_y",list),line))
+//			xtal.atom[N].z = str2num(StringFromList(WhichListItem("_atom_site_fract_z",list),line))
+//			if (numtype(xtal.atom[N].x + xtal.atom[N].y + xtal.atom[N].z) || strlen(name)<1)
+//				break
+//			endif
+//			str = StringFromList(WhichListItem("_atom_site_Wyckoff_symbol",list),line)
+//			xtal.atom[N].WyckoffSymbol = str[0]
+//			occ = str2num(StringFromList(WhichListItem("_atom_site_occupancy",list),line))
+//			xtal.atom[N].occ = occ >=0 ? limit(occ,0,1) : 1
+//			mult = str2num(StringFromList(WhichListItem("_atom_site_symmetry_multiplicity",list),line))
+//			xtal.atom[N].mult = mult>0 ? mult : 1
+//			Biso = str2num(StringFromList(WhichListItem("_atom_site_B_iso_or_equiv",list),line))/100	// assume value in Angstrom^2
+//			xtal.atom[N].Biso = Biso>0 ? Biso : NaN
+//
+//			Uiso = str2num(StringFromList(WhichListItem("_atom_site_U_iso_or_equiv",list),line))/100	// assume value in Angstrom^2
+//			xtal.atom[N].Uiso = Uiso>0 ? Uiso : NaN
+//
+//			xtal.atom[N].U11 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_11",list),line))/100	// assume value in Angstrom^2
+//			xtal.atom[N].U22 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_22",list),line))/100
+//			xtal.atom[N].U33 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_33",list),line))/100
+//			xtal.atom[N].U12 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_12",list),line))/100
+//			xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100
+//			xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100
+//
+//			line = TrimBoth(NextLineInBuf(buf,i))		// get the next line
+//		endfor
+//		xtal.N = N
+//	endif
+//	xtal.Nbonds	 = 0
+//	xtal.Unconventional00 = NaN
+//	xtal.sourceFile = ""
+//	ForceLatticeToStructure(xtal)
+////	xtal.hashID = xtalHashID(xtal)
+//	return 0
+//End
+//
 Static Function CIF_interpret(xtal,buf,[desc])
 	STRUCT crystalStructure &xtal
 	String buf
@@ -4085,13 +4224,13 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0)	// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0)			// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1)		// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1)				// checks in getHMsym2 again, but ignoring minus signs
 		endif
-		if (ItemsInList(nlist)==1)						// just one result, use it
+		if (ItemsInList(nlist)==1)								// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))			// found valid SpaceGroupIDnum
+			if (isValidSpaceGroupIDnum(idNum))					// found valid SpaceGroupIDnum
 				String allIDs=MakeAllIDs()
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
@@ -4105,7 +4244,12 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.SpaceGroupID = FindDefaultIDforSG(xtal.SpaceGroup)	// try to get id from SG [1-230]
 		endif
 	endif
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))	// give up
+	// 4th try, look at the symmetry operations
+	if (strlen(xtal.SpaceGroupID)<1)
+		String symLine = GetSymLineFromCIFbuffer(buf)		// get the sym ops from a CIF file buffer
+		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
+	endif
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
@@ -4116,24 +4260,23 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	xtal.N = 0
 	// find the atoms
 	Variable i, cc
-	String list=""					// find loop_ with the fractional atom positions
+	String loop_, line, list=""							// find loop_ with the fractional atom positions
 	for (i=strsearch(buf,"\nloop_",0); i>=0; i=strsearch(buf,"\nloop_",i+5))
 		list = CIF_loop_Labels(buf[i,Inf])
 		if (WhichListItem("_atom_site_fract_x",list)>=0)
 			break
 		endif
 	endfor
-
 	if (strlen(list))				// found atom positions, interpret the list
-		buf = buf[i+1,Inf]		// buf now starts after the "\n" preceeding loop_
+		loop_ = buf[i+1,Inf]								// loop_ now starts after the "\n" preceeding loop_
 		i = 0
-		String line = NextLineInBuf(buf,i)				// skip the line with "loop_"
+		line = NextLineInBuf(loop_,i)					// skip the line with "loop_"
 		do
-			line = TrimBoth(NextLineInBuf(buf,i))		// trim off any white space and the terminating "\n"
+			line = TrimBoth(NextLineInBuf(loop_,i))	// trim off any white space and the terminating "\n"
 		while (char2num(line[0])==95)
 
 		for(; strlen(line)<1 || char2num(line[0])==35;)	// skip any blank lines or lines starting with "#"
-			line = TrimBoth(NextLineInBuf(buf,i))	
+			line = TrimBoth(NextLineInBuf(loop_,i))	
 		endfor
 
 		String symb											// Element symbol, e.g. "Fe", "Co", ...
@@ -4177,28 +4320,172 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.atom[N].U13 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_13",list),line))/100
 			xtal.atom[N].U23 = str2num(StringFromList(WhichListItem("_atom_site_aniso_U_23",list),line))/100
 
-			line = TrimBoth(NextLineInBuf(buf,i))		// get the next line
+			line = TrimBoth(NextLineInBuf(loop_,i))		// get the next line
 		endfor
 		xtal.N = N
 	endif
+
 	xtal.Nbonds	 = 0
 	xtal.Unconventional00 = NaN
 	xtal.sourceFile = ""
 	ForceLatticeToStructure(xtal)
-//	xtal.hashID = xtalHashID(xtal)
+	return 0
+End
+
+Function/T GetSymLineFromCIFbuffer(buf)		// get the sym ops from a CIF file buffer
+	String buf			// content of a CIF file
+	// find loop_ with symmetry ops
+
+	String list="", symTag="", loop_, line, str
+	Variable i, N
+	for (i=strsearch(buf,"\nloop_",0); i>=0; i=strsearch(buf,"\nloop_",i+5))
+		list = CIF_loop_Labels(buf[i,Inf])
+		if (WhichListItem("_symmetry_equiv_pos_as_xyz",list)>=0)
+			symTag = "_symmetry_equiv_pos_as_xyz"
+			break
+		elseif (WhichListItem("_space_group_symop_operation_xyz",list)>=0)
+			symTag = "_space_group_symop_operation_xyz"
+			break
+		endif
+	endfor
+	Variable isym = strlen(list) ? WhichListItem(symTag,list) : -1
+	if (isym>=0)												// found symmetry operations, get them
+		loop_ = buf[i+1,Inf]								// loop_ now starts after the "\n" preceeding loop_
+		i = 0
+		line = NextLineInBuf(loop_,i)					// skip the line with "loop_"
+		do
+			line = TrimBoth(NextLineInBuf(loop_,i))	// trim off any white space and the terminating "\n"
+		while (char2num(line[0])==95)
+
+		for(; strlen(line)<1 || char2num(line[0])==35;)	// skip any blank lines or lines starting with "#"
+			line = TrimBoth(NextLineInBuf(loop_,i))	
+		endfor
+
+		String symLine=""
+		for (N=0; N<192 && !CIFloopEnd(line); N+=1)// loop until you get an empty line, over all symmetry op
+			line = ChangeCIFline2List(line)				// make line semi-colon separated list
+			str = StringFromList(isym,line)
+			str = ReplaceString(" ",str,"")
+			if (strlen(str))
+				symLine += str+";"
+			endif
+			line = TrimBoth(NextLineInBuf(loop_,i))	// get the next line
+		endfor
+		// printf "found %g sym ops: %s",ItemsInList(symLine), symLine[0,130]
+		// printf "%s\r", SelectString(strlen(symLine)>131, "", "...")
+	endif
+
+	return symLine
+End
+//
+Static Function/T FindIDfromSymOps(symList)
+	String symList
+	if (strlen(symList)<1)
+		return ""
+	endif
+
+	Variable idNum, N=ItemsInList(symList)
+	String str, allIDs=MakeAllIDs(), id
+	for (idNum=1;idNum<=530;idNum+=1)
+		str = setSymLineIDnum(idNum)
+		if (ItemsInList(str) != N)
+			continue						// cannot be a match
+		endif
+		id = StringFromList(idNum-1, allIDs)
+		if (SymOpsMatchesIDnum(id,str))
+			return id					// found a match
+		endif
+	endfor
+	return ""							// give up, nothing matches
+End
+//
+Static Function SymOpsMatchesIDnum(id,symList)
+	// check that the given list of sym ops match my list using id
+	// returns 1 if a match, 0 if not match
+	String id				// SpaceGroupID
+	String symList
+
+	String internal = setSymLineID(id)
+	Variable i,N=ItemsInList(internal)
+
+	symList = ReplaceString(" ",symList,"")
+	internal = ReplaceString(" ",internal,"")
+	if (ItemsInList(symList) != N)
+		return 0											// number of operations differ
+	endif 
+
+	String str
+	for (i=N-1;i>=0;i-=1)
+		str = StringFromList(i,symList)			// remove str from each of the lists
+		symList = RemoveFromList(str,symList)
+		internal = RemoveFromList(str,internal)
+	endfor
+
+	if (strlen(symList) || strlen(internal))
+		print "Mismatch in sym ops"
+		printf "  given ops:  %s\r",symList
+		printf "  but %s has:  %s\r",internal
+		return 0											// some operations do not match
+	endif
+	return 1												// a match
+End
+//
+Static Function CIFloopEnd(line)
+	String line
+	if (strlen(line)<1)
+		return 1
+	elseif (char2num(line[0])==95)
+		return 1
+	elseif (strsearch(line,"loop_",0)==0)
+		return 1
+	endif
 	return 0
 End
 //
-Function/S ChangeCIFline2List(line)				// change a CIF data line to a semi-colon separated list
+Static Function/S ChangeCIFline2List(line)	// change a CIF data line to a semi-colon separated list
 	String line
-	line = TrimBoth(line)	
-	line = ReplaceString("\t",line,";")
-	line = ReplaceString(" ",line,";")
+	line = TrimFront(line)							// remove any indents
+	line = ReplaceString(";",line,":")			// semi-colon is special
+	line = ReplaceString("\t",line," ")
+
+	Variable i0=0,isp,iqu
 	do
-		line = ReplaceString(";;",line,";")		// change all multiple ";" to single ";"
+		isp = strsearch(line," ",i0)
+		iqu = strsearch(line,"'",i0)
+		isp = isp<0 ? Inf : isp					// turn not found (=-1) into Inf
+		iqu = iqu<0 ? Inf : iqu
+		if (isp<iqu)									// found both, but space is first
+			line[isp,isp] = ";"
+			i0 = isp + 1
+		elseif (iqu<isp)								// found a quote separator
+			if (iqu==0)
+				line = line[1,Inf]
+			else			
+				line[iqu,iqu] = ";"
+			endif
+			iqu = strsearch(line,"'",iqu+1)		// find closing quote
+			line[iqu,iqu] = ";"
+			i0 = iqu + 1
+		else
+			break											// did not find space or quote, done
+		endif
+	while(1)
+
+	do
+		line = ReplaceString(";;",line,";")	// change all multiple ";" to single ";"
 	while (strsearch(line,";;",0)>=0)
 	return line
 End
+//Function/S ChangeCIFline2List(line)				// change a CIF data line to a semi-colon separated list
+//	String line
+//	line = TrimBoth(line)	
+//	line = ReplaceString("\t",line,";")
+//	line = ReplaceString(" ",line,";")
+//	do
+//		line = ReplaceString(";;",line,";")		// change all multiple ";" to single ";"
+//	while (strsearch(line,";;",0)>=0)
+//	return line
+//End
 //
 Static Function/T CIF_loop_Labels(buf)
 	String buf
