@@ -4387,33 +4387,30 @@ Static Function/T FindIDfromSymOps(symList)
 	Variable idNum, N=ItemsInList(symList)
 	String str, allIDs=MakeAllIDs(), id
 	for (idNum=1;idNum<=530;idNum+=1)
-		str = setSymLineIDnum(idNum)
-		if (ItemsInList(str) != N)
-			continue						// cannot be a match
-		endif
 		id = StringFromList(idNum-1, allIDs)
-		if (SymOpsMatchesIDnum(id,str))
+		if (SymOpsMatchesID(id,symList))
 			return id					// found a match
 		endif
 	endfor
 	return ""							// give up, nothing matches
 End
 //
-Static Function SymOpsMatchesIDnum(id,symList)
+Static Function SymOpsMatchesID(id,symList,[printIt])
 	// check that the given list of sym ops match my list using id
 	// returns 1 if a match, 0 if not match
 	String id				// SpaceGroupID
 	String symList
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	String internal = setSymLineID(id)
 	Variable i,N=ItemsInList(internal)
-
-	symList = ReplaceString(" ",symList,"")
-	internal = ReplaceString(" ",internal,"")
 	if (ItemsInList(symList) != N)
 		return 0											// number of operations differ
 	endif 
 
+	symList = ReplaceString(" ",symList,"")
+	internal = ReplaceString(" ",internal,"")
 	String str
 	for (i=N-1;i>=0;i-=1)
 		str = StringFromList(i,symList)			// remove str from each of the lists
@@ -4422,9 +4419,11 @@ Static Function SymOpsMatchesIDnum(id,symList)
 	endfor
 
 	if (strlen(symList) || strlen(internal))
-		print "Mismatch in sym ops"
-		printf "  given ops:  %s\r",symList
-		printf "  but %s has:  %s\r",internal
+		if (printIt)
+			print "Mismatch in sym ops"
+			printf "  given ops:  %s\r",symList
+			printf "  but %s has:  %s\r",id,internal
+		endif
 		return 0											// some operations do not match
 	endif
 	return 1												// a match
