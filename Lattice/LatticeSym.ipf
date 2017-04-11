@@ -6945,14 +6945,22 @@ End
 //Function testParseOne()
 //	String expression = "-x+y-2/3"
 //	Variable m0,m1,m2, b
-//	ParseOneSymEquation(expression,m0,m1,m2,b)
-//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b
+//	LatticeSym#ParseOneSymEquation(expression,m0,m1,m2,b)
+//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b,"   ",expressionStr(m0,m1,m2,b)
 //	expression = "x-y"
-//	ParseOneSymEquation(expression,m0,m1,m2,b)
-//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b
+//	LatticeSym#ParseOneSymEquation(expression,m0,m1,m2,b)
+//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b,"   ",expressionStr(m0,m1,m2,b)
 //	expression = "-z-1/4"
-//	ParseOneSymEquation(expression,m0,m1,m2,b)
-//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b
+//	LatticeSym#ParseOneSymEquation(expression,m0,m1,m2,b)
+//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b,"   ",expressionStr(m0,m1,m2,b)
+//
+//	expression = "-1/4-z"
+//	LatticeSym#ParseOneSymEquation(expression,m0,m1,m2,b)
+//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b,"   ",expressionStr(m0,m1,m2,b)
+//
+//	expression = "1/4-z"
+//	LatticeSym#ParseOneSymEquation(expression,m0,m1,m2,b)
+//	print expression,"    ",m0,"  ",m1,"  ",m2,"  ",b,"   ",expressionStr(m0,m1,m2,b)
 //End
 //
 //
@@ -6964,7 +6972,43 @@ End
 //	ModifyTable width(numOps.x)=48,alignment(numOps.d)=1,width(numOps.d)=54
 //EndMacro
 //
+Static Function/T expressionStr(mx,my,mz,b)	// turn a set of coefficients back into a string, opposite of ParseOneSymEquation()
+	Variable mx,my,mz,b
 
+	String str, out=""
+	if (mx==1)
+		out += "+x"
+	elseif (mx==-1)
+		out += "-x"
+	elseif(mx)
+		sprintf str, "%+.0fx", mx
+		out += str
+	endif
+
+	if (my==1)
+		out += "+y"
+	elseif (my==-1)
+		out += "-y"
+	elseif(my)
+		sprintf str, "%+.0fy", my
+		out += str
+	endif
+
+	if (mz==1)
+		out += "+z"
+	elseif (mz==-1)
+		out += "-z"
+	elseif(mz)
+		sprintf str, "%+.0fz", mz
+		out += str
+	endif
+	out = RemoveLeadingString(out,"+",1)
+
+	if (b)
+		out += num2fraction(b,6,addSign=1)	// turn b into a fraction string
+	endif
+	return out
+End
 
 
 
