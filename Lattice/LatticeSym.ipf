@@ -162,7 +162,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.14, changed equivXYZM and equivXYZB to end with SpaceGroupID (not just SG)
 //	with verison 6.15, changed slightly the formula for putting fractional coords into range [0,1).
 //	with verison 6.16, added reading of sym ops from CIF files, can now get space group id from sym ops too.
-//	with verison 6.17, fixes to the reading for sym ops from CIF files, changed ParseOneSymEquation()
+//	with verison 6.17, fixes to the reading for sym ops from CIF files, changed ParseOneSymEquation(), modfied setSymLineIDnum() to emphasize duplicates
 
 //	Rhombohedral Transformation:
 //
@@ -6990,6 +6990,18 @@ Static Function/T setSymLineIDnum(idNum)
 		return ""								// invalid
 	endif
 
+	// These are the duplicate symmetry lines, I don't understand these duplicates????:
+	//	324 & 322  ==  68:1ba-c & 68:1
+	//	328 & 326  ==  68:1-cba & 68:1cab
+	// 332 & 330  ==  68:1a-cb & 68:1bca
+	String symLine322, symLine326, symLine330
+	symLine322  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
+	symLine322 += "-x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLine326  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
+	symLine326 += "-x+1/2,-y+1/2,-z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLine330  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
+	symLine330 += "-x+1/2,-y+1/2,-z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+
 	Make/N=531/T/FREE symLines=""
 	symLines[0] = ""
 	// Triclinic SG[1,2]  SG_idNum 1-2
@@ -7348,28 +7360,22 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[320] += "-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y,-z+1/2;-x+1/2,y,z;x+1/2,-y,z"
 	symLines[321]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y,z+1/2;-x+1/2,-y,z;x+1/2,-y,-z+1/2;"
 	symLines[321] += "-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y,-z;-x+1/2,y,z+1/2;x+1/2,-y,z"
-	symLines[322]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
-	symLines[322] += "-x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[322]  = symLine322
 	symLines[323]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z+1/2;x,-y,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y,z;"
 	symLines[323] += "x+1/2,-y,-z+1/2;-x+1/2,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y,z+1/2;x+1/2,-y+1/2,z+1/2"
-	symLines[324]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;"
-	symLines[324] += "-x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z;-x+1/2,y+1/2,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
+	symLines[324]  = symLine322
 	symLines[325]  = "x,y,z;-x,-y+1/2,z;x,-y,-z+1/2;-x,y+1/2,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y,z+1/2;x,-y+1/2,z+1/2;x+1/2,y+1/2,z;-x+1/2,-y,z;"
 	symLines[325] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z+1/2;-x+1/2,-y+1/2,-z;x+1/2,y,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z+1/2"
-	symLines[326]  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
-	symLines[326] += "-x+1/2,-y+1/2,-z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[326]  = symLine326
 	symLines[327]  = "x,y,z;-x+1/2,-y,z;x,-y,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
 	symLines[327] += "-x+1/2,-y+1/2,z+1/2;x,-y+1/2,-z;-x+1/2,y+1/2,-z;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z;x+1/2,-y+1/2,z"
-	symLines[328]  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2;x,y+1/2,z+1/2;"
-	symLines[328] += "-x+1/2,-y+1/2,-z;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[328]  = symLine326
 	symLines[329]  = "x,y,z;-x+1/2,-y,z+1/2;x,-y,-z+1/2;-x+1/2,y,-z;-x,-y,-z;x+1/2,y,-z+1/2;-x,y,z+1/2;x+1/2,-y,z;x,y+1/2,z+1/2;"
 	symLines[329] += "-x+1/2,-y+1/2,z;x,-y+1/2,-z;-x+1/2,y+1/2,-z+1/2;-x,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x,y+1/2,z;x+1/2,-y+1/2,z+1/2"
-	symLines[330]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
-	symLines[330] += "-x+1/2,-y+1/2,-z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[330]  = symLine330
 	symLines[331]  = "x,y,z;-x,-y+1/2,z+1/2;x,-y+1/2,-z;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z;x,-y,z+1/2;x+1/2,y,z+1/2;"
 	symLines[331] += "-x+1/2,-y+1/2,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y,z"
-	symLines[332]  = "x,y,z;-x,-y+1/2,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2;x+1/2,y,z+1/2;"
-	symLines[332] += "-x+1/2,-y+1/2,-z;-x+1/2,-y,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,y,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z;x+1/2,-y+1/2,z"
+	symLines[332]  = symLine330
 	symLines[333]  = "x,y,z;-x,-y+1/2,z;x,-y+1/2,-z+1/2;-x,y,-z+1/2;-x,-y,-z;x,y+1/2,-z;-x,y+1/2,z+1/2;x,-y,z+1/2;x+1/2,y,z+1/2;"
 	symLines[333] += "-x+1/2,-y+1/2,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,y,-z;-x+1/2,-y,-z+1/2;x+1/2,y+1/2,-z+1/2;-x+1/2,y+1/2,z;x+1/2,-y,z"
 	symLines[334]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z;-x,-y,-z;x,y,-z;-x,y,z;x,-y,z;x,y+1/2,z+1/2;-x,-y+1/2,z+1/2;x,-y+1/2,-z+1/2;"
