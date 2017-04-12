@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.22
+#pragma version = 4.23
 // #pragma hide = 1
 
 Menu "Graph"
@@ -133,7 +133,8 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		decodeMatFromStr(str), returns a FREE wave defined by str, inverse of encodeMatAsStr()
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
 //		str2cmplx(str), this is like str2num, but for complex
-//		num2fraction(val,maxDenom,[addSign]), convert val to closest fraction string with max denom
+//		num2fraction(val,maxDenom,[addPlus]), convert val to closest fraction string with max denom
+//		real2rational(val,maxDenom), returns cmplx with closest rational fraction (used by num2fraction)
 //		vec2MINstr(vecIN), similar to hkl2str(), convert vecIN to a string of acceptable minimal length
 //		minStr2Vec(inStr,Nreq), similar to str2hkl(), convert a string of numbers to a wave of Nreq values, pretty forgiving about format
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
@@ -4229,26 +4230,43 @@ ThreadSafe Function/C str2cmplx(str)	// this is like str2num, but for complex
 End
 
 
-ThreadSafe Function/T num2fraction(val,maxDenom,[addSign])	// turn val into a fraction string, 0.25 --> "1/4"
+ThreadSafe Function/T num2fraction(val,maxDenom,[addPlus])	// turn val into a fraction string, 0.25 --> "1/4"
 	Variable val
 	Variable maxDenom				// maximum denominator to consider
-	Variable addSign				// if True, always include the '+' sign
-	addSign = ParamIsDefault(addSign) || numtype(addSign) ? 0 : addSign
+	Variable addPlus				// if True, always include the '+' sign
+	addPlus = ParamIsDefault(addPlus) || numtype(addPlus) ? 0 : addPlus
 
-	Variable i, err, bestErr, denom, tol=1e-2/maxDenom
-	for (i=1,bestErr=Inf; i<=maxDenom; i+=1)
-		err = abs((i*val) - round(i*val))
-		if ((err+tol)<bestErr)
-			bestErr = err
-			denom = i
-		endif
-	endfor
+	Variable/C zi = real2rational(val,maxDenom)
+	Variable numer=real(zi), denom=imag(zi)
+	String plusSign = SelectString(addPlus && val>0, "", "+")
+	String numerStr = plusSign + num2istr(numer)
 
-	String numerStr = SelectString(addSign && val>0, "", "+") + num2istr(round(val*denom))
-	if (denom==1)
+	if (numtype(numer)==2)
+		return "NaN"
+	elseif (denom==1)
 		return numerStr
 	endif
 	return numerStr+"/"+num2istr(denom)
+End
+
+
+ThreadSafe Function/C real2rational(val,maxDenom)
+	// for val, find closest rational number real/imag, where real & imag are ints
+	Variable val					// the real value
+	Variable maxDenom				// maximum denominator to consider, allowed maximum of 1e6
+
+	if (maxDenom>1e6 || numtype(maxDenom) || maxDenom<1 || numtype(val)==2)
+		return cmplx(NaN,NaN)
+	elseif (numtype(val)==1)
+		return cmplx(val,1)
+	endif
+	Make/N=(maxDenom-1)/D/FREE pp=p+1
+	MatrixOP/FREE err = Abs((pp*val) - round(pp*val))
+	WaveStats/Q/M=1 err
+	Variable denom = V_minloc+1
+	Variable numer = round(val*denom)
+	denom = (numer==0) ? 1 : denom
+	return cmplx(numer,denom)	// numer/denom is closest rational to val
 End
 
 
