@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.17
+#pragma version = 6.18
 #include "Utility_JZT" version>=4.21
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -7005,7 +7005,7 @@ Static Function/T expressionStr(mx,my,mz,b)	// turn a set of coefficients back i
 	out = RemoveLeadingString(out,"+",1)
 
 	if (b)
-		out += num2fraction(b,6,addSign=1)	// turn b into a fraction string
+		out += num2fraction(b,6,addPlus=1)	// turn b into a fraction string
 	endif
 	return out
 End
