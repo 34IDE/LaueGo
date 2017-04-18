@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.23
+#pragma version = 4.24
 // #pragma hide = 1
 
 Menu "Graph"
@@ -133,8 +133,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		decodeMatFromStr(str), returns a FREE wave defined by str, inverse of encodeMatAsStr()
 //		cmplx2str(zz,[places,mag]), convert complex number to a printable string
 //		str2cmplx(str), this is like str2num, but for complex
-//		num2fraction(val,maxDenom,[addPlus]), convert val to closest fraction string with max denom
-//		real2rational(val,maxDenom), returns cmplx with closest rational fraction (used by num2fraction)
+//		num2fraction(val,tol,[addPlus]), convert val to closest fraction string that is within tol
 //		vec2MINstr(vecIN), similar to hkl2str(), convert vecIN to a string of acceptable minimal length
 //		minStr2Vec(inStr,Nreq), similar to str2hkl(), convert a string of numbers to a wave of Nreq values, pretty forgiving about format
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
@@ -4230,14 +4229,22 @@ ThreadSafe Function/C str2cmplx(str)	// this is like str2num, but for complex
 End
 
 
-ThreadSafe Function/T num2fraction(val,maxDenom,[addPlus])	// turn val into a fraction string, 0.25 --> "1/4"
+ThreadSafe Function/T num2fraction(val,tol,[addPlus])	// turn val into a fraction string, 0.25 --> "1/4"
 	Variable val
-	Variable maxDenom				// maximum denominator to consider
+	Variable tol					// requested tolerance
 	Variable addPlus				// if True, always include the '+' sign
 	addPlus = ParamIsDefault(addPlus) || numtype(addPlus) ? 0 : addPlus
 
-	Variable/C zi = real2rational(val,maxDenom)
-	Variable numer=real(zi), denom=imag(zi)
+	if (numtype(val+tol)==2)
+		return "NaN"
+	elseif (numtype(val)==1)
+		return num2str(val)
+	elseif (val==0)
+		return "0"
+	endif
+
+	RatioFromNumber/MERR=(tol) val
+	Variable numer=V_numerator, denom=V_denominator
 	String plusSign = SelectString(addPlus && val>0, "", "+")
 	String numerStr = plusSign + num2istr(numer)
 
@@ -4248,26 +4255,26 @@ ThreadSafe Function/T num2fraction(val,maxDenom,[addPlus])	// turn val into a fr
 	endif
 	return numerStr+"/"+num2istr(denom)
 End
-
-
-ThreadSafe Function/C real2rational(val,maxDenom)
-	// for val, find closest rational number real/imag, where real & imag are ints
-	Variable val					// the real value
-	Variable maxDenom				// maximum denominator to consider, allowed maximum of 1e6
-
-	if (maxDenom>1e6 || numtype(maxDenom) || maxDenom<1 || numtype(val)==2)
-		return cmplx(NaN,NaN)
-	elseif (numtype(val)==1)
-		return cmplx(val,1)
-	endif
-	Make/N=(maxDenom-1)/D/FREE pp=p+1
-	MatrixOP/FREE err = Abs((pp*val) - round(pp*val))
-	WaveStats/Q/M=1 err
-	Variable denom = V_minloc+1
-	Variable numer = round(val*denom)
-	denom = (numer==0) ? 1 : denom
-	return cmplx(numer,denom)	// numer/denom is closest rational to val
-End
+//
+//ThreadSafe Function/C real2rational(val,maxDenom)
+//	// for val, find closest rational number real/imag, where real & imag are ints
+//	// note, for maxDenom=9e7, I get a memory fault, but 8e7 takes 5 seconds, 1e6 is only 1/16 sec.
+//	Variable val					// the real value
+//	Variable maxDenom				// maximum denominator to consider, allowed maximum of 1e6
+//
+//	if (maxDenom>8e7 || numtype(maxDenom) || maxDenom<1 || numtype(val)==2)
+//		return cmplx(NaN,NaN)
+//	elseif (numtype(val)==1)
+//		return cmplx(val,1)
+//	endif
+//	Make/N=(maxDenom-1)/D/FREE pp=p+1
+//	MatrixOP/FREE err = Abs((pp*val) - round(pp*val))
+//	WaveStats/Q/M=1 err
+//	Variable denom = V_minloc+1
+//	Variable numer = round(val*denom)
+//	denom = (numer==0) ? 1 : denom
+//	return cmplx(numer,denom)	// numer/denom is closest rational to val
+//End
 
 
 ThreadSafe Function/S vec2MINstr(vecIN)		// a replacement for hkl2str()

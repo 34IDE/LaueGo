@@ -1,8 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.18
-#include "Utility_JZT" version>=4.21
+#pragma version = 6.19
+#include "Utility_JZT" version>=4.24
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -163,6 +163,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.15, changed slightly the formula for putting fractional coords into range [0,1).
 //	with verison 6.16, added reading of sym ops from CIF files, can now get space group id from sym ops too.
 //	with verison 6.17, fixes to the reading for sym ops from CIF files, changed ParseOneSymEquation(), modfied setSymLineIDnum() to emphasize duplicates
+//	with verison 6.19, changed definition of num2fraction(), now uses tolerance
 
 //	Rhombohedral Transformation:
 //
@@ -7005,7 +7006,7 @@ Static Function/T expressionStr(mx,my,mz,b)	// turn a set of coefficients back i
 	out = RemoveLeadingString(out,"+",1)
 
 	if (b)
-		out += num2fraction(b,6,addPlus=1)	// turn b into a fraction string
+		out += num2fraction(b,0.1,addPlus=1)	// turn b into a fraction string
 	endif
 	return out
 End
