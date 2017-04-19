@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.20
+#pragma version = 6.21
 #include "Utility_JZT" version>=4.24
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -165,6 +165,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.17, fixes to the reading for sym ops from CIF files, changed ParseOneSymEquation(), modfied setSymLineIDnum() to emphasize duplicates
 //	with verison 6.19, changed definition of num2fraction(), now uses tolerance
 //	with verison 6.20, removed unnecessay copy_xtal(), copy_atomType(), copy_bondType()
+//	with verison 6.21, changed lowestOrderHKL() for better speed, uses gcd(), also now returns the integer divisor used
 
 //	Rhombohedral Transformation:
 //
@@ -6362,20 +6363,49 @@ End
 
 // changes hkl[3] to the lowest order hkl, ignores whether a reflection is allowed, just removes common factors
 ThreadSafe Function lowestOrderHKL(h,k,l)
-	Variable &h,&k,&l							// these hkl are returned with all common factors removed
-	Variable maxDiv								// max possible divisor
-	Variable i
-	maxDiv = max(abs(h),abs(k))				// the maximum divisor cannot be bigger than the smallest of hkl
-	maxDiv = max(maxDiv,abs(l))
-	for (i=maxDiv;i>=2;i-=1)					// check all divisorts in range [2, maxDiv]
+	Variable &h,&k,&l									// these hkl are returned with all common factors removed
+	Variable f, i, maxDiv = gcdZero(h,k)		// max possible divisor
+	maxDiv = min(maxDiv, gcdZero(h,l))
+	maxDiv = min(maxDiv, gcdZero(k,l))
+	maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k,l all zero
+	for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
 		if (mod(h,i) || mod(k,i) || mod(l,i))	// i is not a factor of h, k, and l
 			continue
 		endif
 		h /= i
 		k /= i
 		l /= i
+		f *= i
 	endfor
+	return f
 End
+//
+ThreadSafe Function gcdZero(a,b)		// this is needed because gcd returns NaN when a or b is 0
+	Variable a,b
+	if (a==0 && b==0)
+		return Inf
+	elseif (a==0)
+		return b
+	elseif (b==0)
+		return a
+	endif
+	return gcd(a,b)							// note, gcd ignores the sign
+End
+//ThreadSafe Function lowestOrderHKL(h,k,l)
+//	Variable &h,&k,&l							// these hkl are returned with all common factors removed
+//	Variable maxDiv							// max possible divisor
+//	Variable i
+//	maxDiv = max(abs(h),abs(k))			// the maximum divisor cannot be bigger than the smallest of hkl
+//	maxDiv = max(maxDiv,abs(l))
+//	for (i=maxDiv;i>=2;i-=1)				// check all divisorts in range [2, maxDiv]
+//		if (mod(h,i) || mod(k,i) || mod(l,i))	// i is not a factor of h, k, and l
+//			continue
+//		endif
+//		h /= i
+//		k /= i
+//		l /= i
+//	endfor
+//End
 
 
 // changes hkl[3] to the lowest order allowed hkl (ie for FCC, 0,0,12 -> 002 not 001
