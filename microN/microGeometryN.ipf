@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.96
+#pragma version = 1.97
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -759,58 +759,58 @@ ThreadSafe Static Function/C tthRange(d)	// tth is the usual 2-theta
 	return cmplx(tthMin,tthMax)
 End
 
-ThreadSafe Function CopymicroGeometry(f,i)	// copy a microGeometry structure
-	STRUCT microGeometry &f, &i					// f is the destination, i is source
-	CopySampleGeometry(f.s,i.s)					// copy Sample geometry
-	f.Ndetectors = i.Ndetectors
-	Variable m
-	for (m=0;m<MAX_Ndetectors;m+=1)				// copy the detectors, even copy un-used detectors
-		CopyDetectorGeometry(f.d[m],i.d[m])
-	endfor
-	CopyWireGeometry(f.wire,i.wire)				// copy the wire
-End
+//	ThreadSafe Function CopymicroGeometry(f,i)	// copy a microGeometry structure
+//		STRUCT microGeometry &f, &i					// f is the destination, i is source
+//		CopySampleGeometry(f.s,i.s)					// copy Sample geometry
+//		f.Ndetectors = i.Ndetectors
+//		Variable m
+//		for (m=0;m<MAX_Ndetectors;m+=1)				// copy the detectors, even copy un-used detectors
+//			CopyDetectorGeometry(f.d[m],i.d[m])
+//		endfor
+//		CopyWireGeometry(f.wire,i.wire)				// copy the wire
+//	End
 //
-ThreadSafe Function CopyDetectorGeometry(f,i)	// copy a detector structure
-	STRUCT detectorGeometry &f, &i				// f is the destination, i is source
-	f.used = i.used
-	f.Nx = i.Nx;			f.Ny = i.Ny
-	f.sizeX = i.sizeX;		f.sizeY = i.sizeY
-	f.R[0]=i.R[0];		f.R[1]=i.R[1];			f.R[2]=i.R[2];
-	f.P[0]=i.P[0];		f.P[1]=i.P[1];			f.P[2]=i.P[2];
-	f.timeMeasured = i.timeMeasured
-	f.geoNote = i.geoNote
-	f.detectorID = i.detectorID
-	f.color = i.color	
-	f.rgb[0] = i.rgb[0]	;	f.rgb[1] = i.rgb[1]	;	f.rgb[2] = i.rgb[2]
-	f.distortionMapFile = i.distortionMapFile
-	f.rho00=i.rho00;		f.rho01=i.rho01;		f.rho02=i.rho02
-	f.rho10=i.rho10;		f.rho11=i.rho11;		f.rho12=i.rho12
-	f.rho20=i.rho20;		f.rho21=i.rho21;		f.rho22=i.rho22
-End
+//	ThreadSafe Function CopyDetectorGeometry(f,i)	// copy a detector structure
+//		STRUCT detectorGeometry &f, &i				// f is the destination, i is source
+//		f.used = i.used
+//		f.Nx = i.Nx;			f.Ny = i.Ny
+//		f.sizeX = i.sizeX;		f.sizeY = i.sizeY
+//		f.R[0]=i.R[0];		f.R[1]=i.R[1];			f.R[2]=i.R[2];
+//		f.P[0]=i.P[0];		f.P[1]=i.P[1];			f.P[2]=i.P[2];
+//		f.timeMeasured = i.timeMeasured
+//		f.geoNote = i.geoNote
+//		f.detectorID = i.detectorID
+//		f.color = i.color	
+//		f.rgb[0] = i.rgb[0]	;	f.rgb[1] = i.rgb[1]	;	f.rgb[2] = i.rgb[2]
+//		f.distortionMapFile = i.distortionMapFile
+//		f.rho00=i.rho00;		f.rho01=i.rho01;		f.rho02=i.rho02
+//		f.rho10=i.rho10;		f.rho11=i.rho11;		f.rho12=i.rho12
+//		f.rho20=i.rho20;		f.rho21=i.rho21;		f.rho22=i.rho22
+//	End
 //
-ThreadSafe Function CopyWireGeometry(f,i)	// copy a wire geometry structure, set f = i
-	STRUCT wireGeometry &f, &i					// f is the destination, i is source
-	f.origin[0]=i.origin[0];	f.origin[1]=i.origin[1];	f.origin[2]=i.origin[2];
-	f.F = i.F
-	f.dia = i.dia
-	f.knife = i.knife
-	f.axis[0]=i.axis[0];	f.axis[1]=i.axis[1];	f.axis[2]=i.axis[2];
-	f.axisR[0]=i.axisR[0];	f.axisR[1]=i.axisR[1];	f.axisR[2]=i.axisR[2];
-	f.R[0] = i.R[0];			f.R[1] = i.R[1];			f.R[2] = i.R[2]
-	f.Rmag = i.Rmag
-	f.R00=i.R00;				f.R01=i.R01;				f.R02=i.R02
-	f.R10=i.R10;				f.R11=i.R11;				f.R12=i.R12
-	f.R20=i.R20;				f.R21=i.R21;				f.R22=i.R22
-End
-ThreadSafe Function CopySampleGeometry(f,i)// copy a Sample geometry structure, set f = i
-	STRUCT sampleGeometry &f, &i					// f is the destination, i is source
-	f.O[0] = i.O[0];		f.O[1] = i.O[1];		f.O[2] = i.O[2]
-	f.R[0] = i.R[0];		f.R[1] = i.R[1];		f.R[2] = i.R[2]
-	f.Rmag = i.Rmag
-	f.R00=i.R00;			f.R01=i.R01;			f.R02=i.R02
-	f.R10=i.R10;			f.R11=i.R11;			f.R12=i.R12
-	f.R20=i.R20;			f.R21=i.R21;			f.R22=i.R22
-End
+//	ThreadSafe Function CopyWireGeometry(f,i)	// copy a wire geometry structure, set f = i
+//		STRUCT wireGeometry &f, &i					// f is the destination, i is source
+//		f.origin[0]=i.origin[0];	f.origin[1]=i.origin[1];	f.origin[2]=i.origin[2];
+//		f.F = i.F
+//		f.dia = i.dia
+//		f.knife = i.knife
+//		f.axis[0]=i.axis[0];	f.axis[1]=i.axis[1];	f.axis[2]=i.axis[2];
+//		f.axisR[0]=i.axisR[0];	f.axisR[1]=i.axisR[1];	f.axisR[2]=i.axisR[2];
+//		f.R[0] = i.R[0];			f.R[1] = i.R[1];			f.R[2] = i.R[2]
+//		f.Rmag = i.Rmag
+//		f.R00=i.R00;				f.R01=i.R01;				f.R02=i.R02
+//		f.R10=i.R10;				f.R11=i.R11;				f.R12=i.R12
+//		f.R20=i.R20;				f.R21=i.R21;				f.R22=i.R22
+//	End
+//	ThreadSafe Function CopySampleGeometry(f,i)// copy a Sample geometry structure, set f = i
+//		STRUCT sampleGeometry &f, &i					// f is the destination, i is source
+//		f.O[0] = i.O[0];		f.O[1] = i.O[1];		f.O[2] = i.O[2]
+//		f.R[0] = i.R[0];		f.R[1] = i.R[1];		f.R[2] = i.R[2]
+//		f.Rmag = i.Rmag
+//		f.R00=i.R00;			f.R01=i.R01;			f.R02=i.R02
+//		f.R10=i.R10;			f.R11=i.R11;			f.R12=i.R12
+//		f.R20=i.R20;			f.R21=i.R21;			f.R22=i.R22
+//	End
 
 
 
@@ -831,8 +831,8 @@ Function FillGeoFromStrStruct(g,strStruct)
 		STRUCT microGeometry0 g0
 		StructGet/S g0, strStruct				// first load strStruct into old geo
 		g.Ndetectors = g0.Ndetectors			// copy g0 --> g
-		CopyWireGeometry(g.wire,g0.wire)	// copy wire
-		CopySampleGeometry(g.s,g0.s)			// copy sample
+		g.wire = g0.wire							// copy wire, was:  CopyWireGeometry(g.wire,g0.wire)
+		g.s = g0.s									// copy sample, was:  CopySampleGeometry(g.s,g0.s)
 		for (i=0;i<Ndets;i+=1)
 			g.d[i].used = g0.d[i].used		// copy the detectors (but not the color info)
 			g.d[i].Nx = g0.d[i].Nx;			g.d[i].Ny = g0.d[i].Ny
@@ -4660,7 +4660,7 @@ Function GeoFromWeb(epoch,gIn)
 		DoAlert 0, "Not loading geometry from web, values are invalid"
 	else
 		GeometryUpdateCalc(g)									// calculate other values
-		CopymicroGeometry(gIn,g)								// new geometry is valid, so copy it in
+		gIn = g														// new geometry is valid, so copy it in, was:  CopymicroGeometry(gIn,g)
 	endif
 	return 0
 End
@@ -4789,7 +4789,7 @@ Function GeoFromEPICS(gIn)	// fill the geometry structure from EPICS (uses caget
 		return 1
 	else
 		GeometryUpdateCalc(g)										// calculate other values
-		CopymicroGeometry(gIn,g)									// new geometry is valid, so copy it in
+		gIn = g															// new geometry is valid, so copy it in, was:  CopymicroGeometry(gIn,g)
 		if (ItemsInList(GetRTStackInfo(0))<3)					// print everything if run from command line
 			printf "Loaded geometry information from EPICS on  %s,  %s\r",date(),time()
 		endif
@@ -4812,8 +4812,8 @@ Static Function putGeo2EPICS(gIn)	// put the geometry structure to EPICS (uses c
 		return 1
 	endif
 	STRUCT microGeometry g										// a working copy of gIn
-	CopymicroGeometry(g,gIn)										// copy gIn to g (the working copy)
-	GeometryUpdateCalc(g)											// calculate other values
+	g = gIn															// copy gIn to g (the working copy), was:  CopymicroGeometry(g,gIn)
+	GeometryUpdateCalc(g)										// calculate other values
 	if (MicroGeometryBad(g))
 		printGeometry(g)
 		print "The given microgeometry is BAD, not sending it to EPICS"

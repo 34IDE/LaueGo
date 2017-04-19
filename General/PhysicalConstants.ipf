@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.14
+#pragma version = 2.15
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
 Static StrConstant NISTserverASCII_URL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -225,7 +225,7 @@ Function GetPhysicalConstant(name,[c,printIt])	// returns value of constant
 	endif
 
 	if (!ParamIsDefault(c))
-		copyPhysicalConstantStructure(c,clocal)	// struct c was supplied, so fill it
+		c = clocal											// struct c was supplied, so fill it, was:  copyPhysicalConstantStructure(c,clocal)
 	endif
 	if (printIt)
 		print formatPhysicalConstantStructure(clocal,always=1)
@@ -485,16 +485,16 @@ Static Function FillConstantStucturesFromLists(lists,cAll)	// returns number of 
 		nConstants += 1
 		if (m==0)
 			cAll.N1 += 1
-			copyPhysicalConstantStructure(cAll.c1[j],clocal)
+			cAll.c1[j] = clocal								// was:  copyPhysicalConstantStructure(cAll.c1[j],clocal)
 		elseif (m==1)
 			cAll.N2 += 1
-			copyPhysicalConstantStructure(cAll.c2[j],clocal)
+			cAll.c2[j] = clocal								// was:  copyPhysicalConstantStructure(cAll.c2[j],clocal)
 		elseif (m==2)
 			cAll.N3 += 1
-			copyPhysicalConstantStructure(cAll.c3[j],clocal)
+			cAll.c3[j] = clocal								// was:  copyPhysicalConstantStructure(cAll.c3[j],clocal)
 		elseif (m==3)
 			cAll.N4 += 1
-			copyPhysicalConstantStructure(cAll.c4[j],clocal)
+			cAll.c4[j] = clocal								// was:  copyPhysicalConstantStructure(cAll.c4[j],clocal)
 		else
 			break
 		endif
@@ -538,16 +538,16 @@ Static Structure PhysicalConstantStructureAll
 	STRUCT PhysicalConstantStructure c4[100]			// c4 only needs 35 of these 100
 EndStructure
 //
-ThreadSafe Static Function copyPhysicalConstantStructure(f,i)
-	STRUCT PhysicalConstantStructure &f, &i
-	f.valid	= i.valid
-	f.name	= i.name
-	f.value	= i.value
-	f.err		= i.err
-	f.unit	= i.unit
-	f.symbol	= i.symbol
-	f.exact	= i.exact
-End
+//	ThreadSafe Static Function copyPhysicalConstantStructure(f,i)
+//		STRUCT PhysicalConstantStructure &f, &i
+//		f.valid	= i.valid
+//		f.name	= i.name
+//		f.value	= i.value
+//		f.err		= i.err
+//		f.unit	= i.unit
+//		f.symbol	= i.symbol
+//		f.exact	= i.exact
+//	End
 //
 ThreadSafe Static Function initPhysicalConstantStructure(c)
 	STRUCT PhysicalConstantStructure &c
@@ -569,13 +569,13 @@ ThreadSafe Static Function getStruct_i(cAll,i,ci)
 	Variable j = mod(i,100)		// index into c1, c2, c3, or c4
 	Variable m = floor(i/100)		// which group of 100 to choose
 	if (m==0)
-		copyPhysicalConstantStructure(ci,cAll.c1[j])
+		ci = cAll.c1[j]				// was:  copyPhysicalConstantStructure(ci,cAll.c1[j])
 	elseif (m==1)
-		copyPhysicalConstantStructure(ci,cAll.c2[j])
+		ci = cAll.c2[j]				// was:  copyPhysicalConstantStructure(ci,cAll.c2[j])
 	elseif (m==2)
-		copyPhysicalConstantStructure(ci,cAll.c3[j])
+		ci = cAll.c3[j]				// was:  copyPhysicalConstantStructure(ci,cAll.c3[j])
 	elseif (m==3)
-		copyPhysicalConstantStructure(ci,cAll.c4[j])
+		ci = cAll.c4[j]				// was:  copyPhysicalConstantStructure(ci,cAll.c4[j])
 	else
 		initPhysicalConstantStructure(ci)
 	endif

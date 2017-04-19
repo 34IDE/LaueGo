@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.19
+#pragma version = 6.20
 #include "Utility_JZT" version>=4.24
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -164,6 +164,7 @@ Static Constant ELEMENT_Zmax = 116
 //	with verison 6.16, added reading of sym ops from CIF files, can now get space group id from sym ops too.
 //	with verison 6.17, fixes to the reading for sym ops from CIF files, changed ParseOneSymEquation(), modfied setSymLineIDnum() to emphasize duplicates
 //	with verison 6.19, changed definition of num2fraction(), now uses tolerance
+//	with verison 6.20, removed unnecessay copy_xtal(), copy_atomType(), copy_bondType()
 
 //	Rhombohedral Transformation:
 //
@@ -458,7 +459,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 		return NaN
 	endif
 	STRUCT crystalStructure xtal					// the working copy
-	copy_xtal(xtal,xtal_IN)						// copy xtal_IN to a working copy
+	xtal = xtal_IN										// copy xtal_IN to a working copy, was:  copy_xtal(xtal,xtal_IN)
 
 	SetSymOpsForSpaceGroup(xtal.SpaceGroupID)	// ensure that symmetry ops are right
 	Variable Natoms = round(xtal.N)				// number of predefined atoms
@@ -571,7 +572,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	xtal.Vibrate = xtalVibrates(xtal)					// True if some Thermal vibration info present in xtal
 	xtal.haveDebyeT = xtalHasDebye(xtal)				// True if some one of the atoms has a Debye Temperature
 	xtal.hashID = xtalHashID(xtal)
-	copy_xtal(xtal_IN,xtal)								// copy working copy to the passed copy
+	xtal_IN = xtal												// copy working copy to the passed copy, was:  copy_xtal(xtal_IN,xtal)
 	return Natoms
 End
 //
@@ -1010,7 +1011,7 @@ Static Function/S xtalHashID(xtalIN)		// Calculates the hashID for xtal
 	STRUCT crystalStructure &xtalIN		// This does NOT get modified
 
 	STRUCT crystalStructure xtal
-	copy_xtal(xtal,xtalIN)					// not changing xtalIN
+	xtal = xtalIN								// not changing xtalIN, was:  copy_xtal(xtal,xtalIN)
 
 	Make/FREE waveStruct
 	StructPut xtal, waveStruct
@@ -1859,7 +1860,7 @@ Static Function/T OverOccupyList(xtalIN,[occMax,printIt])	// checks if sites in 
 	printIt = numtype(printIt) ? 0 : !(!printIt)
 
 	STRUCT crystalStructure xtal
-	copy_xtal(xtal,xtalIN)
+	xtal = xtalIN					// was:  copy_xtal(xtal,xtalIN)
 	String str, out=""
 
 	Variable Natoms=xtal.N		// nuber of atom types
@@ -6608,113 +6609,113 @@ ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has
 End
 
 
-Function copy_xtal(target,source)						// copy a crystalStructure source to target
-	STRUCT crystalStructure &source
-	STRUCT crystalStructure &target
-
-	target.desc = source.desc
-
-	target.a = source.a
-	target.b = source.b
-	target.c = source.c
-	target.alpha = source.alpha
-	target.beta = source.beta
-	target.gam = source.gam
-
-	target.SpaceGroup = source.SpaceGroup
-	target.SpaceGroupID = source.SpaceGroupID
-	target.SpaceGroupIDnum = source.SpaceGroupIDnum
-	target.Vc = source.Vc
-	target.density = source.density
-	target.alphaT = source.alphaT
-
-	target.Temperature = source.Temperature
-	target.Vibrate = source.Vibrate
-	target.haveDebyeT = source.haveDebyeT
-	target.hashID = source.hashID
-
-	target.N = source.N
-	Variable i, N=source.N
-	for (i=0;i<N;i+=1)
-		copy_atomType(target.atom[i],source.atom[i])
-	endfor
-
-	target.Nbonds = source.Nbonds
-	N = target.Nbonds
-	for (i=0;i<N;i+=1)
-		copy_bondType(target.bond[i],source.bond[i])
-	endfor
-
-	target.a0 = source.a0
-	target.b0 = source.b0
-	target.c0 = source.c0
-	target.a1 = source.a1
-	target.b1 = source.b1
-	target.c1 = source.c1
-	target.a2 = source.a2
-	target.b2 = source.b2
-	target.c2 = source.c2
-
-	target.as0 = source.as0
-	target.bs0 = source.bs0
-	target.cs0 = source.cs0
-	target.as1 = source.as1
-	target.bs1 = source.bs1
-	target.cs1 = source.cs1
-	target.as2 = source.as2
-	target.bs2 = source.bs2
-	target.cs2 = source.cs2
-
-	target.Unconventional00 = source.Unconventional00
-	target.Unconventional01 = source.Unconventional01
-	target.Unconventional02 = source.Unconventional02
-	target.Unconventional10 = source.Unconventional10
-	target.Unconventional11 = source.Unconventional11
-	target.Unconventional12 = source.Unconventional12
-	target.Unconventional20 = source.Unconventional20
-	target.Unconventional21 = source.Unconventional21
-	target.Unconventional22 = source.Unconventional22
-
-	String fullFile = source.sourceFile
-	fullFile = fullFile[0,MAX_FILE_LEN-1]
-	target.sourceFile = fullFile
-End
+//	Function copy_xtal(target,source)						// copy a crystalStructure source to target
+//		STRUCT crystalStructure &source
+//		STRUCT crystalStructure &target
+//	
+//		target.desc = source.desc
+//	
+//		target.a = source.a
+//		target.b = source.b
+//		target.c = source.c
+//		target.alpha = source.alpha
+//		target.beta = source.beta
+//		target.gam = source.gam
+//	
+//		target.SpaceGroup = source.SpaceGroup
+//		target.SpaceGroupID = source.SpaceGroupID
+//		target.SpaceGroupIDnum = source.SpaceGroupIDnum
+//		target.Vc = source.Vc
+//		target.density = source.density
+//		target.alphaT = source.alphaT
+//	
+//		target.Temperature = source.Temperature
+//		target.Vibrate = source.Vibrate
+//		target.haveDebyeT = source.haveDebyeT
+//		target.hashID = source.hashID
+//	
+//		target.N = source.N
+//		Variable i, N=source.N
+//		for (i=0;i<N;i+=1)
+//			copy_atomType(target.atom[i],source.atom[i])
+//		endfor
+//	
+//		target.Nbonds = source.Nbonds
+//		N = target.Nbonds
+//		for (i=0;i<N;i+=1)
+//			copy_bondType(target.bond[i],source.bond[i])
+//		endfor
+//	
+//		target.a0 = source.a0
+//		target.b0 = source.b0
+//		target.c0 = source.c0
+//		target.a1 = source.a1
+//		target.b1 = source.b1
+//		target.c1 = source.c1
+//		target.a2 = source.a2
+//		target.b2 = source.b2
+//		target.c2 = source.c2
+//	
+//		target.as0 = source.as0
+//		target.bs0 = source.bs0
+//		target.cs0 = source.cs0
+//		target.as1 = source.as1
+//		target.bs1 = source.bs1
+//		target.cs1 = source.cs1
+//		target.as2 = source.as2
+//		target.bs2 = source.bs2
+//		target.cs2 = source.cs2
+//	
+//		target.Unconventional00 = source.Unconventional00
+//		target.Unconventional01 = source.Unconventional01
+//		target.Unconventional02 = source.Unconventional02
+//		target.Unconventional10 = source.Unconventional10
+//		target.Unconventional11 = source.Unconventional11
+//		target.Unconventional12 = source.Unconventional12
+//		target.Unconventional20 = source.Unconventional20
+//		target.Unconventional21 = source.Unconventional21
+//		target.Unconventional22 = source.Unconventional22
+//	
+//		String fullFile = source.sourceFile
+//		fullFile = fullFile[0,MAX_FILE_LEN-1]
+//		target.sourceFile = fullFile
+//	End
 //
-Static Function copy_atomType(target,source)		// copy a atomTypeStructure source to target
-	STRUCT atomTypeStructure &source
-	STRUCT atomTypeStructure &target
-
-	target.name = source.name
-	target.Zatom = source.Zatom
-	target.valence = source.valence
-	target.x = source.x
-	target.y = source.y
-	target.z = source.z
-	target.occ = source.occ
-	target.WyckoffSymbol = source.WyckoffSymbol
-	target.DebyeT = source.DebyeT
-	target.Biso = source.Biso
-	target.Uiso = source.Uiso
-	target.U11 = source.U11
-	target.U22 = source.U22
-	target.U33 = source.U33
-	target.U12 = source.U12
-	target.U13 = source.U13
-	target.U23 = source.U23
-End
+//	Static Function copy_atomType(target,source)		// copy a atomTypeStructure source to target
+//		STRUCT atomTypeStructure &source
+//		STRUCT atomTypeStructure &target
+//	
+//		target.name = source.name
+//		target.Zatom = source.Zatom
+//		target.valence = source.valence
+//		target.x = source.x
+//		target.y = source.y
+//		target.z = source.z
+//		target.occ = source.occ
+//		target.WyckoffSymbol = source.WyckoffSymbol
+//		target.DebyeT = source.DebyeT
+//		target.Biso = source.Biso
+//		target.Uiso = source.Uiso
+//		target.U11 = source.U11
+//		target.U22 = source.U22
+//		target.U33 = source.U33
+//		target.U12 = source.U12
+//		target.U13 = source.U13
+//		target.U23 = source.U23
+//	End
 //
-Static Function copy_bondType(target,source)		// copy a bondTypeStructure source to target
-	STRUCT bondTypeStructure &source
-	STRUCT bondTypeStructure &target
-
-	target.label0 = source.label0
-	target.label1 = source.label1
-	target.N = source.N
-	Variable i,N = source.N
-	for (i=0;i<N;i+=1)
-		target.len[i] = source.len[i]
-	endfor
-End
+//	Static Function copy_bondType(target,source)		// copy a bondTypeStructure source to target
+//		STRUCT bondTypeStructure &source
+//		STRUCT bondTypeStructure &target
+//	
+//		target.label0 = source.label0
+//		target.label1 = source.label1
+//		target.N = source.N
+//		Variable i,N = source.N
+//		for (i=0;i<N;i+=1)
+//			target.len[i] = source.len[i]
+//		endfor
+//	End
 
 
 Function StructGet_xtal(strStruct,xtal6)		// take value of strStruct, and fill xtal6, whether strStruct was v5 or v6
@@ -6756,13 +6757,13 @@ Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --
 	xtal6.N = xtal5.N
 	Variable i, N=xtal5.N
 	for (i=0;i<N;i+=1)
-		copy_atomType(xtal6.atom[i],xtal5.atom[i])
+		xtal6.atom[i] = xtal5.atom[i]							// was:  copy_atomType(xtal6.atom[i],xtal5.atom[i])
 	endfor
 
 	xtal6.Nbonds = xtal5.Nbonds
 	N = xtal6.Nbonds
 	for (i=0;i<N;i+=1)
-		copy_bondType(xtal6.bond[i],xtal5.bond[i])
+		xtal6.bond[i] = xtal5.bond[i]							// was:  copy_bondType(xtal6.bond[i],xtal5.bond[i])
 	endfor
 
 	xtal6.a0 = xtal5.a0	;	xtal6.b0 = xtal5.b0	;	xtal6.c0 = xtal5.c0

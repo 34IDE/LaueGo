@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.59
+#pragma version = 0.60
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -562,10 +562,10 @@ Static Function SetSampleStruct(name,xtal,ref0,ref1,s)
 	STRUCT sampleStructure &s					// structure definition for a sample
 
 	s.name = name[0,255]
-	copy_xtal(s.xtal,xtal)
+	s.xtal = xtal									// was:  copy_xtal(s.xtal,xtal)
 	s.Nrefs = 2
-	copyOneOrientation(s.refs[0],ref0)		// copy a oneOrientation structure
-	copyOneOrientation(s.refs[1],ref1)
+	s.refs[0] = ref0								// copy a oneOrientation structure
+	s.refs[1] = ref1								// was:  // copyOneOrientation(s.refs[0],ref0)
 	UpdateDefaultSampleStruct(s)
 End
 
@@ -659,20 +659,20 @@ Static Function SampleUpdateCalc(s)
 End
 
 
-Function copyOneOrientation(dest,in)		// copy a oneOrientation structure
-	STRUCT oneOrientation &dest, &in		// dest is the destination, in is source
-	Variable Naxes=NumVarOrDefault("root:Packages:Diffractometer:Naxes",DEFAULT_Naxes)
-	dest.h = in.h
-	dest.k = in.k
-	dest.l = in.l
-	Variable i
-	for (i=0;i<Naxes;i+=1)
-		dest.A[i] = in.A[i]
-	endfor
-	dest.lambda = in.lambda
-	dest.px = in.px
-	dest.py = in.py
-End
+//	Function copyOneOrientation(dest,in)		// copy a oneOrientation structure
+//		STRUCT oneOrientation &dest, &in		// dest is the destination, in is source
+//		Variable Naxes=NumVarOrDefault("root:Packages:Diffractometer:Naxes",DEFAULT_Naxes)
+//		dest.h = in.h
+//		dest.k = in.k
+//		dest.l = in.l
+//		Variable i
+//		for (i=0;i<Naxes;i+=1)
+//			dest.A[i] = in.A[i]
+//		endfor
+//		dest.lambda = in.lambda
+//		dest.px = in.px
+//		dest.py = in.py
+//	End
 
 Function PrintCurrentSample()				// prints the current default sample to the history
 	STRUCT sampleStructure s
@@ -806,9 +806,9 @@ Static Function SetSampleReferenceReflections(name,hklStr0,Astr0,hklStr1,Astr1,p
 	sf.refs[0].lambda = lam0
 	sf.refs[1].lambda = lam1
 	if (!LatticeSym#LatticeBad(xtal))
-		copy_xtal(sf.xtal,s.xtal)				
+		sf.xtal = s.xtal						// was:  copy_xtal(sf.xtal,s.xtal)	
 	else
-		copy_xtal(sf.xtal,xtal)
+		sf.xtal = xtal							// was:  copy_xtal(sf.xtal,xtal)
 	endif
 
 	Wave vec = string2wave(hklStr0)
@@ -1677,7 +1677,7 @@ Function FillDetectorStructDefault(d,id)		//fill the detector structure with cur
 	endif
 
 	if (i>=0 && i<MAX_DETECTORS)
-		CopyOneDetectorGeometry(d,ds.d[i])
+		d = ds.d[i]											// was:  CopyOneDetectorGeometry(d,ds.d[i])
 	else
 		return 1
 	endif
@@ -1744,7 +1744,7 @@ Static Function UpdateDetectorInList(ds,d,force)	// update a detector in a list 
 	endif
 	if (last>=0)
 		DetectorUpdateCalc(d)
-		CopyOneDetectorGeometry(ds.d[last],d)
+		ds.d[last] = d								// was:  CopyOneDetectorGeometry(ds.d[last],d)
 		ds.last = last
 	endif
 	return last
@@ -1779,7 +1779,7 @@ Function SetDefaultDetector2Reference(point,[fresh])	// set default detector to 
 	if (fresh)
 		ds.N = 1
 		ds.last = 0
-		CopyOneDetectorGeometry(ds.d[0],d)
+		ds.d[0] = d												// was:  CopyOneDetectorGeometry(ds.d[0],d)
 	else
 		UpdateDetectorInList(ds,d,0)						// does a DetectorUpdateCalc(), and stores new values where they will be found
 	endif
@@ -2259,7 +2259,7 @@ Static Function DetectorsFromXML(buf,ds)
 		d.P[2] = str2num(StringFromList(2,list))
 
 		DetectorUpdateCalc(d)					// calculate other values
-		CopyOneDetectorGeometry(ds.d[N],d)
+		ds.d[N] = d									// was:  CopyOneDetectorGeometry(ds.d[N],d)
 	endfor
 
 	printf "   Load detector geometry that was written %s, %s",dateWritten,timeWritten
@@ -2295,7 +2295,7 @@ Function WriteDetectorToFile(fileName,path,[ds])
 			return 1
 		endif
 	else
-		CopyDetectorGeometrys(dds,ds)
+		dds = ds										// was:  CopyDetectorGeometrys(dds,ds)
 	endif
 	if (!(dds.N > 0))
 		DoAlert 0,"No Valid Detectors\rNothing Done"
@@ -2374,7 +2374,7 @@ Static Function/T Detectors2xmlStr(ds)
 		if (!ds.d[i].used)
 			continue
 		endif
-		CopyOneDetectorGeometry(d,ds.d[i])
+		d = ds.d[i]									// was:  CopyOneDetectorGeometry(d,ds.d[i])
 		if (DetectorBad(d))
 			continue
 		endif
@@ -2416,34 +2416,34 @@ End
 
 
 
-Function CopyDetectorGeometrys(f,i)			// copy a all detector structures
-	STRUCT detectorGeometrys &f, &i				// f is the destination, i is source
-
-	f.N = i.N
-	f.last = i.last
-	f.diffractometer = i.diffractometer
-	Variable j
-	for (j=0;j<MAX_DETECTORS;j+=1)
-		CopyOneDetectorGeometry(f.d[j],i.d[j])
-	endfor
-End
+//	Function CopyDetectorGeometrys(f,i)			// copy a all detector structures
+//		STRUCT detectorGeometrys &f, &i				// f is the destination, i is source
+//	
+//		f.N = i.N
+//		f.last = i.last
+//		f.diffractometer = i.diffractometer
+//		Variable j
+//		for (j=0;j<MAX_DETECTORS;j+=1)
+//			CopyOneDetectorGeometry(f.d[j],i.d[j])
+//		endfor
+//	End
 //
-Static Function CopyOneDetectorGeometry(f,i)	// copy a detector structure
-	STRUCT detectorGeometry &f, &i					// f is the destination, i is source
-	f.used = i.used
-	f.Nx = i.Nx;			f.Ny = i.Ny
-	f.sizeX = i.sizeX;		f.sizeY = i.sizeY
-	f.R[0]=i.R[0];		f.R[1]=i.R[1];			f.R[2]=i.R[2];
-	f.P[0]=i.P[0];		f.P[1]=i.P[1];			f.P[2]=i.P[2];
-	f.timeMeasured = i.timeMeasured
-	f.geoNote = i.geoNote
-	f.detectorID = i.detectorID
-	f.distortionMapFile = i.distortionMapFile
-	f.rho00=i.rho00;		f.rho01=i.rho01;		f.rho02=i.rho02
-	f.rho10=i.rho10;		f.rho11=i.rho11;		f.rho12=i.rho12
-	f.rho20=i.rho20;		f.rho21=i.rho21;		f.rho22=i.rho22
-	f.px0 = i.px0	;		f.py0 = i.py0
-End
+//	Static Function CopyOneDetectorGeometry(f,i)	// copy a detector structure
+//		STRUCT detectorGeometry &f, &i					// f is the destination, i is source
+//		f.used = i.used
+//		f.Nx = i.Nx;			f.Ny = i.Ny
+//		f.sizeX = i.sizeX;		f.sizeY = i.sizeY
+//		f.R[0]=i.R[0];		f.R[1]=i.R[1];			f.R[2]=i.R[2];
+//		f.P[0]=i.P[0];		f.P[1]=i.P[1];			f.P[2]=i.P[2];
+//		f.timeMeasured = i.timeMeasured
+//		f.geoNote = i.geoNote
+//		f.detectorID = i.detectorID
+//		f.distortionMapFile = i.distortionMapFile
+//		f.rho00=i.rho00;		f.rho01=i.rho01;		f.rho02=i.rho02
+//		f.rho10=i.rho10;		f.rho11=i.rho11;		f.rho12=i.rho12
+//		f.rho20=i.rho20;		f.rho21=i.rho21;		f.rho22=i.rho22
+//		f.px0 = i.px0	;		f.py0 = i.py0
+//	End
 
 Static Function DetectorBad(d)
 	STRUCT detectorGeometry &d
@@ -2528,7 +2528,7 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,Ptype,[quiet,i
 		Nid = Nid<0 ? 0 : Nid
 	endif
 	STRUCT detectorGeometry d
-	CopyOneDetectorGeometry(d,ds.d[Nid])
+	d = ds.d[Nid]											// was:  CopyOneDetectorGeometry(d,ds.d[Nid])
 	// set the default values
 
 	Variable ask = ( !(Nx>0) || !(Ny>0) || !(dx>0) || !(dy>0) )
@@ -2578,7 +2578,7 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,Ptype,[quiet,i
 	endif
 
 	STRUCT detectorGeometry df
-	CopyOneDetectorGeometry(df,d)
+	df = d															// was:  CopyOneDetectorGeometry(df,d)
 	df.Nx = Nx ;				df.Ny = Ny						// get size and number of pixels
 	df.sizeX = dx * Nx ;	df.sizeY = dy * Ny
 	df.geoNote = dNote
@@ -2615,7 +2615,7 @@ Static Function SetDetectorParameters(Nx,Ny,dx,dy,Rstr,Pstr,dNote,Ptype,[quiet,i
 		return 1
 	endif
 
-	CopyOneDetectorGeometry(ds.d[Nid],df)
+	ds.d[Nid] = df													// was:  CopyOneDetectorGeometry(ds.d[Nid],df)
 	ds.last = Nid
 	String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName","")
 	if (strlen(DiffractometerName))
@@ -2651,7 +2651,7 @@ Static Function ResetSetPilatus100Kcalibration(xydir,px0,py0,dist)
 	Nid = Nid<0 ? ds.last : Nid
 	Nid = Nid<0 ? MAX_DETECTORS-1 : Nid
 	STRUCT detectorGeometry d
-	CopyOneDetectorGeometry(d,ds.d[Nid])
+	d = ds.d[Nid]											// was:  CopyOneDetectorGeometry(d,ds.d[Nid])
 	// set the default values
 
 	px0 = px0 > 0 ? px0 : d.px0						// first default to previous
@@ -2933,7 +2933,7 @@ Static Function DetectorUpdateButtonProc(ba) : ButtonControl
 		if (FillDetectorsStruct(ds))
 			return 1
 		endif
-		CopyOneDetectorGeometry(ds.d[idet],d)
+		ds.d[idet] = d									// was:  CopyOneDetectorGeometry(ds.d[idet],d)
 		UpdateDefaultDetectorStruct(ds,local=1)
 		Button UpdateButton,disable=1			// hide the update button
 	endif

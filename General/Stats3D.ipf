@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.17
+#pragma version = 0.18
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -788,32 +788,32 @@ ThreadSafe Function initGeneric3DPeakStructure(GP)
 End
 
 
-ThreadSafe Function copyGeneric3DPeakStructure(in,dest)
-	STRUCT Generic3DPeakStructure &in, &dest
-
-	dest.OK		= in.OK
-	dest.bkg		= in.bkg		;	dest.bkgErr	= in.bkgErr
-	dest.amp		= in.amp		;	dest.ampErr	= in.ampErr
-	dest.x		= in.x		;	dest.xErr	= in.xErr
-	dest.y		= in.y		;	dest.yErr	= in.yErr
-	dest.z		= in.z		;	dest.zErr	= in.zErr
-	dest.FWx		= in.FWx		;	dest.FWxErr	= in.FWxErr
-	dest.FWy		= in.FWy		;	dest.FWyErr	= in.FWyErr
-	dest.FWz		= in.FWz		;	dest.FWzErr	= in.FWzErr
-	dest.chisq	= in.chisq
-	dest.Cxy		= in.Cxy		;	dest.CxyErr	= in.CxyErr
-	dest.Cxz		= in.Cxz		;	dest.CxzErr	= in.CxzErr
-	dest.Cyz		= in.Cyz		;	dest.CyzErr	= in.CyzErr
-	dest.ix		= in.ix		;	dest.iy		= in.iy	;	dest.iz = in.iz
-	dest.maxValue = in.maxValue
-	dest.funcName	= in.funcName
-	dest.wname	= in.wname
-
-	dest.Xunit = in.Xunit
-	dest.Yunit = in.Yunit
-	dest.Zunit = in.Zunit
-	dest.hkl[0] = in.hkl[0];	dest.hkl[1] = in.hkl[1]	;	dest.hkl[2] = in.hkl[2]
-End
+//	ThreadSafe Function copyGeneric3DPeakStructure(in,dest)
+//		STRUCT Generic3DPeakStructure &in, &dest
+//	
+//		dest.OK		= in.OK
+//		dest.bkg		= in.bkg		;	dest.bkgErr	= in.bkgErr
+//		dest.amp		= in.amp		;	dest.ampErr	= in.ampErr
+//		dest.x		= in.x		;	dest.xErr	= in.xErr
+//		dest.y		= in.y		;	dest.yErr	= in.yErr
+//		dest.z		= in.z		;	dest.zErr	= in.zErr
+//		dest.FWx		= in.FWx		;	dest.FWxErr	= in.FWxErr
+//		dest.FWy		= in.FWy		;	dest.FWyErr	= in.FWyErr
+//		dest.FWz		= in.FWz		;	dest.FWzErr	= in.FWzErr
+//		dest.chisq	= in.chisq
+//		dest.Cxy		= in.Cxy		;	dest.CxyErr	= in.CxyErr
+//		dest.Cxz		= in.Cxz		;	dest.CxzErr	= in.CxzErr
+//		dest.Cyz		= in.Cyz		;	dest.CyzErr	= in.CyzErr
+//		dest.ix		= in.ix		;	dest.iy		= in.iy	;	dest.iz = in.iz
+//		dest.maxValue = in.maxValue
+//		dest.funcName	= in.funcName
+//		dest.wname	= in.wname
+//	
+//		dest.Xunit = in.Xunit
+//		dest.Yunit = in.Yunit
+//		dest.Zunit = in.Zunit
+//		dest.hkl[0] = in.hkl[0];	dest.hkl[1] = in.hkl[1]	;	dest.hkl[2] = in.hkl[2]
+//	End
 
 
 Function printGeneric3DPeakStructure(GP)
@@ -997,16 +997,16 @@ Function boundingVolumeStructDecode(str,v)		// convert str --> v
 End
 
 
-//ThreadSafe Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
-Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
-	STRUCT boundingVolume &vin, &vout
-	vout.xlo = vin.xlo ;	vout.ylo = vin.ylo ;	vout.zlo = vin.zlo
-	vout.xhi = vin.xhi ;	vout.yhi = vin.yhi ;	vout.zhi = vin.zhi
-	vout.xW = vin.xW   ;	vout.yW = vin.yW   ;	vout.zW = vin.zW
-	vout.Nx = vin.Nx   ;	vout.Ny = vin.Ny   ;	vout.Nz = vin.Nz
-	vout.dx = vin.dx   ;	vout.dy = vin.dy   ;	vout.dz = vin.dz
-	vout.vol = vin.vol
-End
+//	//ThreadSafe Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
+//	Function copyBoundingVolumeStructs(vin,vout)		// note, vall may be v1 or v2
+//		STRUCT boundingVolume &vin, &vout
+//		vout.xlo = vin.xlo ;	vout.ylo = vin.ylo ;	vout.zlo = vin.zlo
+//		vout.xhi = vin.xhi ;	vout.yhi = vin.yhi ;	vout.zhi = vin.zhi
+//		vout.xW = vin.xW   ;	vout.yW = vin.yW   ;	vout.zW = vin.zW
+//		vout.Nx = vin.Nx   ;	vout.Ny = vin.Ny   ;	vout.Nz = vin.Nz
+//		vout.dx = vin.dx   ;	vout.dy = vin.dy   ;	vout.dz = vin.dz
+//		vout.vol = vin.vol
+//	End
 //
 //ThreadSafe Function extendBoundingVolumeStruct(v,vec)
 Function extendBoundingVolumeStruct(v,vec)
@@ -1148,9 +1148,9 @@ Function BoundingBoxPrompt(v)
 
 	STRUCT boundingVolume v1
 	STRUCT boundingVolume v2
-	copyBoundingVolumeStructs(v,v2)			// copy v into v2
+	v2 = v											// copy v into v2, was:  copyBoundingVolumeStructs(v,v2)
 	do
-		copyBoundingVolumeStructs(v2,v1)	// copy v2 into v1
+		v1 = v2										// copy v2 into v1, was:  copyBoundingVolumeStructs(v2,v1)
 		xlo = v1.xlo	;	xhi = v1.xhi
 		ylo = v1.ylo	;	yhi = v1.yhi
 		zlo = v1.zlo	;	zhi = v1.zhi
@@ -1193,7 +1193,7 @@ Function BoundingBoxPrompt(v)
 	if (!BoundingBoxesEqual(v,v2))
 		print "changed box :",boundingVolumeStruct2str(v)
 		print "     to box :",boundingVolumeStruct2str(v2)
-		copyBoundingVolumeStructs(v2,v)		// copy v2 into v
+		v = v2										// copy v2 into v, was:  copyBoundingVolumeStructs(v2,v)
 	endif
 	return 0
 End

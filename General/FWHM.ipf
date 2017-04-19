@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 2.14
+#pragma version = 2.15
 #pragma ModuleName=fwhm
 
 // with v 2.0, major revision, started using structures
@@ -348,7 +348,7 @@ Function/WAVE FitPeakWave(yw,xw,yp,xp,[fitW,pLo,pHi,printIt,peakStruct])
 		endif
 	endif
 	if (!ParamIsDefault(peakStruct))			// copy to peakStruct if one was passed
-		copyPeakShapeStructure(peakStruct,pkLocal)
+		peakStruct = pkLocal						// was:  copyPeakShapeStructure(peakStruct,pkLocal)
 	endif
 
 	if (printIt)
@@ -818,26 +818,26 @@ Structure PeakShapeStructure
 	char type[40]			// type of shape, e.g. "Simple;Lorentzian;Gaussian;Voigt;PearsonVII"
 EndStructure
 //
-ThreadSafe Function copyPeakShapeStructure(f,i)
-	// copy PeakShapeStructure i into f
-	STRUCT PeakShapeStructure &f, &i
-	f.N = i.N
-	f.x0 = i.x0 ;			f.dx0 = i.dx0
-	f.FWHM = i.FWHM ;		f.dFWHM = i.dFWHM
-	f.amp = i.amp ;		f.damp = i.damp
-	f.bkg = i.bkg ;		f.dbkg = i.dbkg
-	f.net = i.net ;		f.dnet = i.dnet
-	f.shape = i.shape ;	f.dshape = i.dshape
-	f.shape1 = i.shape1;f.dshape1 = i.dshape1
-	f.COM = i.COM ;		f.dCOM = i.dCOM
-	f.xunits = i.xunits;f.yunits = i.yunits
-	f.type = i.type
-	Variable m
-	for (m=0;m<MAX_PEAK_COEFS;m+=1)
-		f.coef[m] = i.coef[m]
-		f.sigma[m] = i.sigma[m]
-	endfor
-End
+//	ThreadSafe Function copyPeakShapeStructure(f,i)
+//		// copy PeakShapeStructure i into f
+//		STRUCT PeakShapeStructure &f, &i
+//		f.N = i.N
+//		f.x0 = i.x0 ;			f.dx0 = i.dx0
+//		f.FWHM = i.FWHM ;		f.dFWHM = i.dFWHM
+//		f.amp = i.amp ;		f.damp = i.damp
+//		f.bkg = i.bkg ;		f.dbkg = i.dbkg
+//		f.net = i.net ;		f.dnet = i.dnet
+//		f.shape = i.shape ;	f.dshape = i.dshape
+//		f.shape1 = i.shape1;f.dshape1 = i.dshape1
+//		f.COM = i.COM ;		f.dCOM = i.dCOM
+//		f.xunits = i.xunits;f.yunits = i.yunits
+//		f.type = i.type
+//		Variable m
+//		for (m=0;m<MAX_PEAK_COEFS;m+=1)
+//			f.coef[m] = i.coef[m]
+//			f.sigma[m] = i.sigma[m]
+//		endfor
+//	End
 //
 ThreadSafe Function initPeakShapeStructure(pk)
 	// initialze PeakShapeStructure to default/empty values

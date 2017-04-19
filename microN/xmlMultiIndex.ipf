@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.00
+#pragma version=2.01
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -3409,7 +3409,7 @@ Function/WAVE SimulatedLauePatternFromGM(gm,Elo,Ehi,[detector,startx,starty,endx
 	endif
 
 	STRUCT detectorGeometry ds
-	CopyDetectorGeometry(ds,geo.d[detector])
+	ds = geo.d[detector]							// was:  CopyDetectorGeometry(ds,geo.d[detector])
 	color = ds.color
 	if (printIt)
 		printf "SimulatedLauePatternFromGM(%s, %g,%g", NameOfWave(gm),Elo,Ehi

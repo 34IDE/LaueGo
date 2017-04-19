@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.25
+#pragma version = 0.26
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -1136,36 +1136,36 @@ Static Function ZonesStructClear(zones)
 	return 0
 End
 //
-Static Function ZonesStructCopy(dest,source)
-	STRUCT allZonesStruct &dest
-	STRUCT allZonesStruct &source
-	ZonesStructClear(dest)			// start fresh
-	dest.measured = source.measured
-	dest.Nz = source.Nz
-	dest.NsMin = source.NsMin
-	Variable m, i
-	for (m=0;m<STRUCT_ZONES_MAX;m+=1)
-		dest.zn[m].axisHat[0] = source.zn[m].axisHat[0]
-		dest.zn[m].axisHat[1] = source.zn[m].axisHat[1]
-		dest.zn[m].axisHat[2] = source.zn[m].axisHat[2]
-		dest.zn[m].axisijk[0] = source.zn[m].axisijk[0]
-		dest.zn[m].axisijk[1] = source.zn[m].axisijk[1]
-		dest.zn[m].axisijk[2] = source.zn[m].axisijk[2]
-		dest.zn[m].Ns = source.zn[m].Ns
-		for (i=0;i<STRUCT_ZONESPOTS_MAX;i+=1)
-			dest.zn[m].g[i].xyz[0] = source.zn[m].g[i].xyz[0]
-			dest.zn[m].g[i].xyz[1] = source.zn[m].g[i].xyz[1]
-			dest.zn[m].g[i].xyz[2] = source.zn[m].g[i].xyz[2]
-			dest.zn[m].h[i].hkl[0] = source.zn[m].h[i].hkl[0]
-			dest.zn[m].h[i].hkl[1] = source.zn[m].h[i].hkl[1]
-			dest.zn[m].h[i].hkl[2] = source.zn[m].h[i].hkl[2]
-		endfor
-	endfor
-	dest.precision = source.precision
-	dest.GhatSource = source.GhatSource
-	dest.desc = source.desc
-	return 0
-End
+//	Static Function ZonesStructCopy(dest,source)
+//		STRUCT allZonesStruct &dest
+//		STRUCT allZonesStruct &source
+//		ZonesStructClear(dest)			// start fresh
+//		dest.measured = source.measured
+//		dest.Nz = source.Nz
+//		dest.NsMin = source.NsMin
+//		Variable m, i
+//		for (m=0;m<STRUCT_ZONES_MAX;m+=1)
+//			dest.zn[m].axisHat[0] = source.zn[m].axisHat[0]
+//			dest.zn[m].axisHat[1] = source.zn[m].axisHat[1]
+//			dest.zn[m].axisHat[2] = source.zn[m].axisHat[2]
+//			dest.zn[m].axisijk[0] = source.zn[m].axisijk[0]
+//			dest.zn[m].axisijk[1] = source.zn[m].axisijk[1]
+//			dest.zn[m].axisijk[2] = source.zn[m].axisijk[2]
+//			dest.zn[m].Ns = source.zn[m].Ns
+//			for (i=0;i<STRUCT_ZONESPOTS_MAX;i+=1)
+//				dest.zn[m].g[i].xyz[0] = source.zn[m].g[i].xyz[0]
+//				dest.zn[m].g[i].xyz[1] = source.zn[m].g[i].xyz[1]
+//				dest.zn[m].g[i].xyz[2] = source.zn[m].g[i].xyz[2]
+//				dest.zn[m].h[i].hkl[0] = source.zn[m].h[i].hkl[0]
+//				dest.zn[m].h[i].hkl[1] = source.zn[m].h[i].hkl[1]
+//				dest.zn[m].h[i].hkl[2] = source.zn[m].h[i].hkl[2]
+//			endfor
+//		endfor
+//		dest.precision = source.precision
+//		dest.GhatSource = source.GhatSource
+//		dest.desc = source.desc
+//		return 0
+//	End
 //
 Static Function/T ZonesStruct2Str(zi,[maxPrint])
 	STRUCT allZonesStruct &zi

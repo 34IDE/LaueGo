@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.86
+#pragma version = 0.87
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -812,7 +812,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 			noteStr = ReplaceNumberByKey("rhoz",noteStr,rhoz,"=")
 			Note/K cListN, noteStr
 		endif
-		CopyDetectorGeometry(d,g.d[dNum])				// set new detector structure to start as the old one
+		d = g.d[dNum]											// set new detector structure to start as the old one, was:  CopyDetectorGeometry(d,g.d[dNum])
 		Rstart = sqrt((d.R[0]*d.R[0])+(d.R[1]*d.R[1])+(d.R[2]*d.R[2]))*180/PI
 		if (printIt)
 			printf "Detector %d\r",dNum
@@ -851,7 +851,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 			printf "error started at %g,   reduced to  %g,   after %d iterations\r",NumberByKey("errStart",noteStr,"="),err, NumberByKey("V_OptNumIters",noteStr,"=")
 			printf "(final - initial) --> ÆR={%.2g,%.2g,%.2g},   ÆP={%.3f,%.3f,%.3f}\r",(d.R[0]-g.d[dNum].R[0]), (d.R[1]-g.d[dNum].R[1]), (d.R[2]-g.d[dNum].R[2]), (d.P[0]-g.d[dNum].P[0])/1000, (d.P[1]-g.d[dNum].P[1])/1000, (d.P[2]-g.d[dNum].P[2])/1000
 		endif
-		CopyDetectorGeometry(g.d[dNum],d)				// updagte structure with fitted values for this detector
+		g.d[dNum] = d											// updagte structure with fitted values for this detector, was:  CopyDetectorGeometry(g.d[dNum],d)
 	endfor
 	err3 /= (g.Ndetectors)
 	if (printIt && numtype(Rend)==0)
