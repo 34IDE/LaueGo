@@ -1,6 +1,7 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf820
 \cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Monaco;}
 {\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
 \margl1440\margr1440\vieww20300\viewh17200\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-8120\pardirnatural\partightenfactor0
 
@@ -32,6 +33,17 @@ A
 \f0 \
 \
 \
+NOTE:\
+	To determine the symmetry, the best thing is to use is 
+\f1 <space_group_id>\
+	If you use <space_group_IT_number>, then you leave an ambiguity (space group 15 has 18 different variants)
+\f0 \
+
+\f1 	<H-M> is Hermann-Mauguin symbol, that can also uniquely id the space group, but is sometimes ambiguous.\
+
+\f0 	It should also be possible to figure out the symmetry from the symmetry operations.\
+\
+\
 
 \f1 <?xml version="1.0" encoding="UTF-8" ?>
 \f0 				// first line in the file, tells the world that this is xml\
@@ -45,7 +57,10 @@ A
 \f0 // This is the name you want to call this structure
 \f1 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 	<space_group_IT_number>225</space_group_IT_number>	
+\cf0 	<space_group_id>166:H</space_group_id>			
+\f0 // space group id, there are 530 of these. USE this, and NOT <
+\f1 space_group_IT_number>\
+	<space_group_IT_number>225</space_group_IT_number>	
 \f0 // space group number from International Tables [1-230]
 \f1 \
 	<H-M>Fm-3m</H-M>							
@@ -147,6 +162,16 @@ A
 		Thermal parameters are of form exp(-2 PI^2 U11 h^2 8 a*^2 + ... + U12hka*b*)\
 		U12 = U23 = U13 = 0 by symmetry\
   -->\
+\
+\
+Symmetry Operations can be included using either tag  <symmetry_equiv_pos_as_xyz> or <space_group_symop_operation_xyz> as in:\
+<symmetry_equiv_pos_as_xyz>\
+	x,y,z\
+	-x,y+1/2,-z+1/2\
+	-x,-y,-z\
+	x,-y-1/2,z-1/2\
+</symmetry_equiv_pos_as_xyz>\
+\
 \
 \
 recognized length units are:\

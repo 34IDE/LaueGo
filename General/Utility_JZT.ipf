@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.24
+#pragma version = 4.25
 // #pragma hide = 1
 
 Menu "Graph"
@@ -37,7 +37,8 @@ StrConstant MonthNamesFull = "January;February;March;April;May;June;July;August;
 StrConstant MonthNamesShort = "Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec"
 Static Constant Smallest32bitFloat = 1.40129846432482e-45			// see DefaultZeroThresh(ww) below for use and finding
 Static Constant Smallest64bitFloat = 4.94065645841247e-324
-Static Constant maxIgorWaveNameLen=31
+Static Constant maxIgorWaveNameLen = 31
+StrConstant WhiteSpaceChars = " \t\r\n"
 #if (IgorVersion()<7)
 Constant GIZMO_WIN_TYPE = 13			// numbers for Igor 6 and under
 Constant GIZMO_WIN_BIT = 4096
@@ -114,6 +115,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		Posix2HFS, a replacement for PosixToHFS(), (using ParseFilePath() for HFSToPosix()) we no longer need HFSAndPosix.xop
 //		pingHost(host), returns ping time in seconds, returns NaN CANNOT ping the host
 //		cpuFrequency(), systemUserName(), sytemHostname(), localTimeZoneName(), getEnvironment(), returns system info
+//		FindFirstCharInStr(str,chars), finds first occurance of any of the chars in chars that occur in str
 //		RemoveLeadingString(str,head,ignoreCase), removes head from start of str
 //		RemoveTrailingString(str,tail,ignoreCase), removes tail from end of str
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
@@ -1412,25 +1414,63 @@ ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //r
 	String delimiters					// characters that might be used for delimiters (NOT semi-colon), default is space, tab, cr, or nl = " \t\r\n"
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
 	if (ParamIsDefault(delimiters) || strlen(delimiters)==0)
-		delimiters = " \t\r\n"							// the usual white-space characters
+		delimiters = WhiteSpaceChars											// the usual white-space characters
 	endif
 
-	String str = XMLtagContents(xmltag,buf,occurance=occurance)
-	str = ReplaceString(";",str,"_")				// cannot have any semi-colons in input string
+	String str = XMLtagContents(xmltag,buf,occurance=occurance)	// get the contents
+	return XMLContents2List(str,delimiters=delimiters)				// convert contents to a list
+End
 
-	Variable i
-	for (i=0;i<strlen(delimiters);i+=1)
-		str = ReplaceString(delimiters[i],str,";")		// replace every occurance of a character in delimiters with a semi-colon
-	endfor
+
+ThreadSafe Static Function/T XMLContents2List(str,[delimiters,sep])
+	// take a tag contents (just text, no xml) and convert it to a semi-colon separated list
+	// assumes that list elements can be quoted with single or double quotes
+	// list elements are separated by characters in delimiters (CANNOT be semi-colon)
+	String str							// contents of an xml tag pair, the contents in: <tag>contents</tag>
+	String delimiters					// characters that might be used for delimiters (NOT semi-colon), default is space, tab, cr, or nl = " \t\r\n"
+	String sep							// list separator, usually ";"
+	if (ParamIsDefault(delimiters) || strlen(delimiters)==0)
+		delimiters = WhiteSpaceChars					// the usual white-space characters
+	endif
+	if (ParamIsDefault(sep) || strlen(sep)==0)
+		sep = ";"											// the usual white-space characters
+	endif
+	String sep2 = sep+sep
+
+	str = ReplaceString(sep,str,"_")				// cannot have any semi-colons in input string, that is the list separator
+
+	String first, list=""
+	Variable i0,i1
+	do
+		first = str[0]
+		if (strsearch(delimiters,first,0)==0)		// starts with a delimiter, skip this character
+			str = str[1,Inf]
+			continue
+		elseif (cmpstr(first,"\"")==0)				// starts with a ", find the matching "
+			i0 = 1
+			i1 = strsearch(str,"\"", 1)-1
+		elseif (cmpstr(first,"'")==0)				// starts with a ', find the matching '
+			i0 = 1
+			i1 = strsearch(str,"'", 1)-1
+		else
+			i0 = 0											// no quotes, find next delimiter
+			i1 = FindFirstCharInStr(str[1,Inf],delimiters+"\"'")
+		endif
+
+		if (i1>=i0)
+			list += str[i0,i1]+sep						// add to list
+			str = str[i1+2,Inf]
+		else
+			break
+		endif
+	while(numtype(i1)==0)
 
 	do
-		str = ReplaceString(";;",str,";")			// replace all multiple semi-colons with a single semi-colon
-	while(strsearch(str,";;",0)>=0)
+		list = ReplaceString(sep2,list,sep)		// replace all multiple semi-colons with a single semi-colon
+	while(strsearch(list,sep2,0)>=0)
+	list = RemoveLeadingString(list,sep,1)		// remove any leaing semi-colon
 
-	if (char2num(str[0])==char2num(";"))			// remove any leaing semi-colon
-		str = str[1,Inf]
-	endif
-	return str
+	return list
 End
 
 
@@ -3532,6 +3572,22 @@ Function/T getEnvVariables()
 End
 #endif
 
+
+ThreadSafe Function FindFirstCharInStr(str,chars)
+	// finds fist occurance of any of the chars in chars that occur in str
+	// returns position of first one to occur, returns Inf if none are found
+	String str						// the string to look in
+	String chars					// the characers to search for
+
+	String ch
+	Variable i,j,Nc=strlen(chars), first=Inf
+	for (i=0;i<Nc;i+=1)			// loop over each of the characters in chars
+		ch = chars[i]
+		j = strsearch(str,ch,0)
+		first = j>=0 ? min(first,j) : first
+	endfor
+	return first					// will return Inf if no characters found
+End
 
 
 ThreadSafe Function/S RemoveLeadingString(str,head,ignoreCase)
