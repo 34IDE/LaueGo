@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.22
+#pragma version = 0.23
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -271,7 +271,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	astar = sqrt((xtal.as0)^2 + (xtal.as1)^2 + (xtal.as2)^2)
 	bstar = sqrt((xtal.bs0)^2 + (xtal.bs1)^2 + (xtal.bs2)^2)
 	cstar = sqrt((xtal.cs0)^2 + (xtal.cs1)^2 + (xtal.cs2)^2)
-	Variable hmax=floor(Qmax/astar), kmax=floor(Qmax/bstar), lmax=floor(Qmax/astar)
+	Variable hmax=floor(Qmax/astar), kmax=floor(Qmax/bstar), lmax=floor(Qmax/cstar)
 
 	String wNote = "waveClass=PowderLines;"
 	wNote = ReplaceNumberByKey("Qmax",wNote,Qmax,"=")
