@@ -1443,7 +1443,7 @@ ThreadSafe Static Function/T XMLContents2List(str,[delimiters,sep])
 	Variable i0,i1
 	do
 		first = str[0]
-		if (strsearch(delimiters,first,0)==0)		// starts with a delimiter, skip this character
+		if (strsearch(delimiters,first,0)>=0)		// starts with a delimiter, skip this character
 			str = str[1,Inf]
 			continue
 		elseif (cmpstr(first,"\"")==0)				// starts with a ", find the matching "

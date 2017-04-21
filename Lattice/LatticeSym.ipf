@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.21
+#pragma version = 6.22
 #include "Utility_JZT" version>=4.24
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -3363,15 +3363,43 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	String str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
 
-	String id = XMLtagContents("space_group_id",cif)
-	xtal.SpaceGroupID = id[0,11]
-	Variable SG = str2num(XMLtagContents("space_group_IT_number",cif))
-	xtal.SpaceGroup = isValidSpaceGroup(SG) ? SG : str2num(id)
-	if (strlen(id)<1)
-		id = FindDefaultIDforSG(xtal.SpaceGroup)
-		xtal.SpaceGroupID = id
+	// 1st try for the id directly
+	Variable SG=-1
+	xtal.SpaceGroupID = TrimFrontBackWhiteSpace(XMLtagContents("space_group_id",cif))
+	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
+	if (strlen(xtal.SpaceGroupID)<1)
+		String HMsym = XMLtagContents("H-M",cif)			//	Hermann-Manguin symbol, e.g. 'I 1 2/a 1'
+		String nlist = SymString2SGtype(HMsym,2,0)			// checks in getHMsym2
+		if (strlen(nlist)<1)
+			nlist = SymString2SGtype(HMsym,2,1)				// checks in getHMsym2 again, but ignoring minus signs
+		endif
+		if (ItemsInList(nlist)==1)								// just one result, use it
+			Variable idNum = str2num(StringFromList(0,nlist))
+			if (isValidSpaceGroupIDnum(idNum))					// found valid SpaceGroupIDnum
+				String allIDs=MakeAllIDs()
+				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
+				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
+			endif
+		endif
 	endif
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1-530]
+	// 3rd try, look at the symmetry operations
+	if (strlen(xtal.SpaceGroupID)<1)
+		String symLine = GetSymLinesFromXMLbuffer(cif)	// get the symmetry operations
+		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
+	endif
+	// 4th try, look for the Space Group number [1-230], and use the default id for that Space Group
+	if (strlen(xtal.SpaceGroupID)<1)
+		SG = str2num(XMLtagContents("space_group_IT_number",cif))
+		if (SG>0)
+			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1-230]
+		endif
+	endif
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
+		Abort "cannot find the Space Group from CIF file"
+	endif
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)		// change id to id number in [1-530]
+	SG = str2num(xtal.SpaceGroupID)
+	xtal.SpaceGroup = SG
 
 	String cell = XMLtagContents("cell",cif)			// cell group
 	String unit
@@ -3530,6 +3558,17 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	ForceLatticeToStructure(xtal)
 	UpdateCrystalStructureDefaults(xtal)
 	return 0
+End
+//
+Static Function/T GetSymLinesFromXMLbuffer(buf)		// get the sym ops from an xml buffer
+	String buf			// content of an xml file
+
+	String symOps = XMLtagContents2List("symmetry_equiv_pos_as_xyz",buf)
+	if (strlen(symOps)<1)
+		symOps = XMLtagContents2List("space_group_symop_operation_xyz",buf)
+	endif
+	symOps = ReplaceString(" ",symOps,"")					// no spaces in the symmetry operations
+	return symOps
 End
 //
 Static Function ForceXtalAtomNamesUnique(xtal)		// forces all of the xtal atom names to be unique
@@ -4103,17 +4142,17 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			endif
 		endif
 	endif
-	// 3rd try, look for the Space Group [1-230]
+	// 3rd try, look at the symmetry operations
+	if (strlen(xtal.SpaceGroupID)<1)
+		String symLine = GetSymLinesFromCIFbuffer(buf)	// get the sym ops from a CIF file buffer
+		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
+	endif
+	// 4th try, look for the Space Group number [1-230], and use the default id for that Space Group
 	if (strlen(xtal.SpaceGroupID)<1)
 		Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
 		if (SG>0)
-			xtal.SpaceGroupID = FindDefaultIDforSG(xtal.SpaceGroup)	// try to get id from SG [1-230]
+			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1-230]
 		endif
-	endif
-	// 4th try, look at the symmetry operations
-	if (strlen(xtal.SpaceGroupID)<1)
-		String symLine = GetSymLineFromCIFbuffer(buf)		// get the sym ops from a CIF file buffer
-		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
 	endif
 	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
 		Abort "cannot find the Space Group from CIF file"
@@ -4198,7 +4237,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	return 0
 End
 
-Function/T GetSymLineFromCIFbuffer(buf)		// get the sym ops from a CIF file buffer
+Function/T GetSymLinesFromCIFbuffer(buf)		// get the sym ops from a CIF file buffer
 	String buf			// content of a CIF file
 	// find loop_ with symmetry ops
 
