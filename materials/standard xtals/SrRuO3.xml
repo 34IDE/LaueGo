@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>SrRuO3</chemical_name_common>
+	<space_group_id>62</space_group_id>
+	<H-M>Pnma</H-M>
+	<cell>
+		<a unit="nm">0.55304</a>
+		<b unit="nm">0.78446</b>
+		<c unit="nm">0.5567</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Sr</label>
+		<symbol>Sr</symbol>
+		<fract_xyz>0.4843 0.2500 0.0027</fract_xyz>
+		<valence>2</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Ti</label>
+		<symbol>Ti</symbol>
+		<fract_xyz>0.0 0.0 0.0</fract_xyz>
+		<valence>4</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.2236 0.0278 0.2752</fract_xyz>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<valence>-2</valence>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.5034 0.2500 0.5532</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>-2</valence>
+	</atom_site>
+
+	<citation>
+		C.W. Jones, P.D. Battle, P. Lightfoot, W.T.A. Harrison,
+		Acta Crystallographica, Section C: Crystal Structure Communications (1989) 45,  p365-p367
+		"The structure of Sr Ru O3 by time-of-flight neutron powder diffraction"
+	</citation>
+</cif>
