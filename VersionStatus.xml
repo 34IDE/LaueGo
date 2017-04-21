@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, April 21, 2017" time="12:43:44 PM CDT" isoTime="2017-04-21T12:43:44"></written>
+	<written date="Friday, April 21, 2017" time="06:50:15 PM CDT" isoTime="2017-04-21T18:50:15"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>566f28bc964ac587360bc3f4c495103c2867a13f</gitHash>
-	<fileCount>238</fileCount>
+	<gitHash>4fcd0b00b352d55a9d65ed29a317a7cd20e8b7cd</gitHash>
+	<fileCount>239</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
@@ -60,6 +60,7 @@
 	<file version="nan" time="2016-03-14T09:37:51" md5="d5b2a33015a7b019ff5384a1771e75a3" sha256="1915fa02fdce0aa052a38cb3da002aeb11f71310f1bdb3951d4a1b9cf6d837a4" ext=".exe">microN/binary/Euler4.exe</file>
 	<file version="2.07" time="2016-10-04T09:42:38" md5="12354c7aef3ed0b12598f19cde428264" sha256="156569f6266724525c85fe3e8e67211f3f6fc3b31b61df8a80ea0d34bba70527" ext=".ipf">General/Gizmo/GizmoMovies.ipf</file>
 	<file version="0.26" time="2017-04-19T12:06:25" md5="85be64dd1316cf281ec162143228fbe6" sha256="af0bc1707d2f32abfe994560493c99f7b696c7fec5e68365cbc945a4e320beea" ext=".ipf">microN/Indexing_Internal.ipf</file>
+	<file version="nan" time="2017-04-21T16:15:53" md5="80cc94d35c8adc84b1fe7879776f47b0" sha256="88d24edf1fcbd560d3eee1387f85fd2ec352db990c351661c3fba6de883b214c" ext=".xml">materials/standard xtals/SrRuO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="5fd4be5e4a6a5528e4b2815977ed4600" sha256="a393e2454c417c2d59e1c4ceb5c64f6239f2aae1c645a63a3e5ef8f8a2d093ea" ext=".png">doc/microDiffractionMedia/Picture4.png</file>
 	<file version="nan" time="2016-01-25T12:48:43" md5="d66c42d29fb9ec14f91bd52c6f3b8774" sha256="9688fb505ec2fce9a61d91fa2c13f401d619e0dc3531d145f6beff7eb7358ba0" ext=".xml">materials/standard xtals/Be.xml</file>
 	<file version="0.55" time="2017-02-26T00:58:40" md5="04b11ae0c26ecc07bed25c8d3ed1c364" sha256="8bd69792ff3ff295427dad38f3f11b18fd94e174769da5826d0a9cfe6dc183f3" ext=".ipf">Diffractometer/specImages.ipf</file>
