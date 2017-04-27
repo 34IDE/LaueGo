@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<xrayEnergies xmlns="http://sector34.xor.aps.anl.gov/34ide:xrayEnergies">
-
-<element_xray>
+<element_xray xmlns="http://sector34.xor.aps.anl.gov/34ide:element_xray">
 <!-- 
 	contents of <edge>:  name_of_absorption_edge energy(eV)
 	contents of <line>:  name_of_emission_line energy(eV) relative_strength  -->
+
 <Z1>
 	<symb>H</symb>
 	<name>Hydrogen</name>
@@ -2212,7 +2211,7 @@
 	<boil>165.1</boil>
 	<radius>1.24</radius>
 	<covRadius>1.31</covRadius>
-	<electroneg>NaN/electroneg>
+	<electroneg>NaN</electroneg>
 	<atomVol>42.9</atomVol>
 	<DebyeT>64</DebyeT>
 	<state>g</state>
