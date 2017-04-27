@@ -4520,7 +4520,7 @@
 <Z109>
 	<symb>Mt</symb>
 	<name>Meitnerium</name>
-	<amu>268</amu>
+	<amu>289</amu>
 </Z109>
 
 <Z110>
@@ -4532,7 +4532,7 @@
 <Z111>
 	<symb>Rg</symb>
 	<name>Roentgenium</name>
-	<amu>280</amu>
+	<amu>282</amu>
 </Z111>
 
 <Z112>
@@ -4542,9 +4542,9 @@
 </Z112>
 
 <Z113>
-	<symb></symb>
-	<name>Ununtrium</name>
-	<amu>284</amu>
+	<symb>Nh</symb>
+	<name>Nihonium</name>
+	<amu>286</amu>
 </Z113>
 
 <Z114>
@@ -4554,9 +4554,9 @@
 </Z114>
 
 <Z115>
-	<symb></symb>
-	<name>Ununpentium</name>
-	<amu>288</amu>
+	<symb>Mc</symb>
+	<name>Moscovium</name>
+	<amu>290</amu>
 </Z115>
 
 <Z116>
@@ -4564,5 +4564,17 @@
 	<name>Livermorium</name>
 	<amu>293</amu>
 </Z116>
+
+<Z117>
+	<symb>Ts</symb>
+	<name>Tennessine</name>
+	<amu>294</amu>
+</Z117>
+
+<Z118>
+	<symb>Og</symb>
+	<name>Oganesson</name>
+	<amu>294</amu>
+</Z118>
 
 </element_xray>
