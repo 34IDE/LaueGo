@@ -1,8 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.22
-#include "Utility_JZT" version>=4.24
+#pragma version = 6.23
+#include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -10,7 +10,7 @@
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
-Static Constant ELEMENT_Zmax = 116
+Static Constant ELEMENT_Zmax = 118
 
 //	remember to execute    InitLatticeSymPackage()
 //
