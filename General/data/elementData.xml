@@ -3,7 +3,16 @@
 <element_xray xmlns="http://sector34.xor.aps.anl.gov/34ide:element_xray">
 <!-- 
 	contents of <edge>:  name_of_absorption_edge energy(eV)
-	contents of <line>:  name_of_emission_line energy(eV) relative_strength  -->
+	contents of <line>:  name_of_emission_line energy(eV) relative_strength -->
+
+<Zmax>118</Zmax>		<!-- number of atomic symbols in <symbols> below -->
+
+<symbols>
+	H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge 
+	As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm 
+	Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac 
+	Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og
+</symbols>
 
 <Z1>
 	<symb>H</symb>
@@ -55,34 +64,34 @@
 	</edges>
 </Z2>
 
-<Z3>
-	<symb>Li</symb>
-	<name>Lithium</name>
-	<amu>6.941</amu>
-	<density>0.533</density>
-	<valence>1</valence>
-	<firstIon>5.392</firstIon>
-	<fusion>3</fusion>
-	<vapor>147.1</vapor>
-	<thermalConduc>84.7</thermalConduc>
-	<specificHeat>3.582</specificHeat>
-	<melt>453.7</melt>
-	<boil>1615</boil>
-	<radius>1.55</radius>
-	<covRadius>1.23</covRadius>
-	<elecConduc>11.7</elecConduc>
-	<electroneg>0.98</electroneg>
-	<atomVol>13.1</atomVol>
-	<DebyeT>448</DebyeT>
-	<state>s</state>
-	<config>[He] 2s1</config>
-	<edges>
-		<N>1</N>
-		<edge>K 54.7</edge>
+<Z3>									<!-- atomic number of the element -->
+	<symb>Li</symb>						<!-- atomic symbol -->
+	<name>Lithium</name>				<!-- name of atom -->
+	<amu>6.941</amu>					<!-- atomic mass -->
+	<density>0.533</density>			<!-- density (g/cm^3) -->
+	<valence>1</valence>				<!-- usual valence -->
+	<firstIon>5.392</firstIon>			<!-- first ionization energy (V) -->
+	<fusion>3</fusion>					<!-- heat of fusion (kJ/mol) -->
+	<vapor>147.1</vapor>				<!-- heat of vaporization (kJ/mol) -->
+	<thermalConduc>84.7</thermalConduc>	<!-- thermal conductivity (W/m/K) -->
+	<specificHeat>3.582</specificHeat>	<!-- sepcific hear (J/g/K) -->
+	<melt>453.7</melt>					<!-- melting point (Kelvin) -->
+	<boil>1615</boil>					<!-- boiling point (Kelvin) -->
+	<radius>1.55</radius>				<!-- atomic radius (Angstrom) -->
+	<covRadius>1.23</covRadius>			<!-- covalent radius (Angstrom) -->
+	<elecConduc>11.7</elecConduc>		<!-- electrical conductivity (1e6/Ohm/m) -->
+	<electroneg>0.98</electroneg>		<!-- electronegativity -->
+	<atomVol>13.1</atomVol>				<!-- atomic volume (Angstrom^3) -->
+	<DebyeT>448</DebyeT>				<!-- Debye Temperature (K) -->
+	<state>s</state>					<!-- state at room temerature (s,l,g) -->
+	<config>[He] 2s1</config>			<!-- electronic configuration -->
+	<edges>								<!-- all x-ray absorption edges -->
+		<N>1</N>						<!-- number of edges -->
+		<edge>K 54.7</edge>				<!-- edge name, energy (eV) -->
 	</edges>
-	<emissionLines>
-		<N>1</N>
-		<line>Ka12 54.3 150</line>
+	<emissionLines>						<!-- all x-ray emission lines -->
+		<N>1</N>						<!-- number of emission lines -->
+		<line>Ka12 54.3 150</line>		<!-- line label, energy (eV), strength [0-100] -->
 	</emissionLines>
 </Z3>
 
