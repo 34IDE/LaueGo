@@ -24,7 +24,6 @@
 	<atomVol>14.1</atomVol>
 	<DebyeT>122</DebyeT>
 	<state>g</state>
-	<config>1s1</config>
 	<edges>
 		<N>1</N>
 		<edge>K 13.6</edge>
@@ -48,7 +47,6 @@
 	<electroneg>NaN</electroneg>
 	<atomVol>31.8</atomVol>
 	<state>g</state>
-	<config>1s2</config>
 	<edges>
 		<N>1</N>
 		<edge>K 24.6</edge>
@@ -75,7 +73,6 @@
 	<atomVol>13.1</atomVol>
 	<DebyeT>448</DebyeT>
 	<state>s</state>
-	<config>[He] 2s1</config>
 	<edges>
 		<N>1</N>
 		<edge>K 54.7</edge>
@@ -106,7 +103,6 @@
 	<atomVol>5</atomVol>
 	<DebyeT>1031</DebyeT>
 	<state>s</state>
-	<config>[He] 2s2</config>
 	<edges>
 		<N>1</N>
 		<edge>K 111.5</edge>
@@ -137,7 +133,6 @@
 	<atomVol>4.6</atomVol>
 	<DebyeT>1362</DebyeT>
 	<state>s</state>
-	<config>[He] 2s2 2p1</config>
 	<edges>
 		<N>1</N>
 		<edge>K 188</edge>
@@ -167,7 +162,6 @@
 	<atomVol>5.3</atomVol>
 	<DebyeT>1550</DebyeT>
 	<state>s</state>
-	<config>[He] 2s2 2p2</config>
 	<edges>
 		<N>1</N>
 		<edge>K 284.2</edge>
@@ -196,7 +190,6 @@
 	<electroneg>3.04</electroneg>
 	<atomVol>17.3</atomVol>
 	<state>g</state>
-	<config>[He] 2s2 2p3</config>
 	<edges>
 		<N>2</N>
 		<edge>K 409.9</edge>
@@ -226,7 +219,6 @@
 	<electroneg>3.44</electroneg>
 	<atomVol>14</atomVol>
 	<state>g</state>
-	<config>[He] 2s2 2p4</config>
 	<edges>
 		<N>2</N>
 		<edge>K 543.1</edge>
@@ -256,7 +248,6 @@
 	<electroneg>3.98</electroneg>
 	<atomVol>17.1</atomVol>
 	<state>g</state>
-	<config>[He] 2s2 2p5</config>
 	<edges>
 		<N>1</N>
 		<edge>K 696.7</edge>
@@ -286,7 +277,6 @@
 	<atomVol>16.9</atomVol>
 	<DebyeT>74.6</DebyeT>
 	<state>g</state>
-	<config>[He] 2s2 2p6</config>
 	<edges>
 		<N>4</N>
 		<edge>K 870.2</edge>
@@ -320,7 +310,6 @@
 	<atomVol>23.7</atomVol>
 	<DebyeT>155</DebyeT>
 	<state>s</state>
-	<config>[Ne] 3s1</config>
 	<edges>
 		<N>4</N>
 		<edge>K 1070.8</edge>
@@ -354,7 +343,6 @@
 	<atomVol>14</atomVol>
 	<DebyeT>330</DebyeT>
 	<state>s</state>
-	<config>[Ne] 3s2</config>
 	<edges>
 		<N>4</N>
 		<edge>K 1303</edge>
@@ -388,7 +376,6 @@
 	<atomVol>10</atomVol>
 	<DebyeT>393</DebyeT>
 	<state>s</state>
-	<config>[Ne] 3s2 3p1</config>
 	<edges>
 		<N>4</N>
 		<edge>K 1559.6</edge>
@@ -424,7 +411,6 @@
 	<atomVol>12.1</atomVol>
 	<DebyeT>692</DebyeT>
 	<state>s</state>
-	<config>[Ne] 3s2 3p2</config>
 	<edges>
 		<N>4</N>
 		<edge>K 1839</edge>
@@ -460,7 +446,6 @@
 	<atomVol>17</atomVol>
 	<DebyeT>576</DebyeT>
 	<state>s</state>
-	<config>[Ne] 3s2 3p3</config>
 	<edges>
 		<N>4</N>
 		<edge>K 2145.5</edge>
@@ -496,7 +481,6 @@
 	<atomVol>15.5</atomVol>
 	<DebyeT>527</DebyeT>
 	<state>s</state>
-	<config>[Ne] 3s2 3p4</config>
 	<edges>
 		<N>4</N>
 		<edge>K 2472</edge>
@@ -530,7 +514,6 @@
 	<electroneg>3.16</electroneg>
 	<atomVol>18.7</atomVol>
 	<state>g</state>
-	<config>[Ne] 3s2 3p5</config>
 	<edges>
 		<N>4</N>
 		<edge>K 2822.4</edge>
@@ -565,7 +548,6 @@
 	<atomVol>24.2</atomVol>
 	<DebyeT>92</DebyeT>
 	<state>g</state>
-	<config>[Ne] 3s2 3p6</config>
 	<edges>
 		<N>7</N>
 		<edge>K 3205.9</edge>
@@ -604,7 +586,6 @@
 	<atomVol>45.3</atomVol>
 	<DebyeT>100</DebyeT>
 	<state>s</state>
-	<config>[Ar] 4s1</config>
 	<edges>
 		<N>7</N>
 		<edge>K 3608.4</edge>
@@ -643,7 +624,6 @@
 	<atomVol>29.9</atomVol>
 	<DebyeT>230</DebyeT>
 	<state>s</state>
-	<config>[Ar] 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 4038.5</edge>
@@ -682,7 +662,6 @@
 	<atomVol>15</atomVol>
 	<DebyeT>476</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d1 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 4492</edge>
@@ -724,7 +703,6 @@
 	<atomVol>10.6</atomVol>
 	<DebyeT>380</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d2 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 4966</edge>
@@ -766,7 +744,6 @@
 	<atomVol>8.35</atomVol>
 	<DebyeT>390</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d3 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 5465</edge>
@@ -808,7 +785,6 @@
 	<atomVol>7.23</atomVol>
 	<DebyeT>424</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d5 4s1</config>
 	<edges>
 		<N>7</N>
 		<edge>K 5989</edge>
@@ -850,7 +826,6 @@
 	<atomVol>7.39</atomVol>
 	<DebyeT>363</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d5 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 6539</edge>
@@ -892,7 +867,6 @@
 	<atomVol>7.1</atomVol>
 	<DebyeT>373</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d6 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 7112</edge>
@@ -934,7 +908,6 @@
 	<atomVol>6.7</atomVol>
 	<DebyeT>386</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d7 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 7709</edge>
@@ -976,7 +949,6 @@
 	<atomVol>6.6</atomVol>
 	<DebyeT>345</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d8 4s2</config>
 	<edges>
 		<N>7</N>
 		<edge>K 8333</edge>
@@ -1018,7 +990,6 @@
 	<atomVol>7.1</atomVol>
 	<DebyeT>310</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d10 4s1</config>
 	<edges>
 		<N>7</N>
 		<edge>K 8979</edge>
@@ -1060,7 +1031,6 @@
 	<atomVol>9.2</atomVol>
 	<DebyeT>237</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d10 4s2</config>
 	<edges>
 		<N>9</N>
 		<edge>K 9659</edge>
@@ -1104,7 +1074,6 @@
 	<atomVol>11.8</atomVol>
 	<DebyeT>240</DebyeT>
 	<state>l</state>
-	<config>[Ar] 3d10 4s2 4p1</config>
 	<edges>
 		<N>9</N>
 		<edge>K 10367</edge>
@@ -1149,7 +1118,6 @@
 	<atomVol>13.6</atomVol>
 	<DebyeT>403</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d10 4s2 4p2</config>
 	<edges>
 		<N>9</N>
 		<edge>K 11103</edge>
@@ -1194,7 +1162,6 @@
 	<atomVol>13.1</atomVol>
 	<DebyeT>275</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d10 4s2 4p3</config>
 	<edges>
 		<N>9</N>
 		<edge>K 11867</edge>
@@ -1240,7 +1207,6 @@
 	<atomVol>16.5</atomVol>
 	<DebyeT>152.5</DebyeT>
 	<state>s</state>
-	<config>[Ar] 3d10 4s2 4p4</config>
 	<edges>
 		<N>9</N>
 		<edge>K 12658</edge>
@@ -1285,7 +1251,6 @@
 	<electroneg>2.96</electroneg>
 	<atomVol>23.5</atomVol>
 	<state>l</state>
-	<config>[Ar] 3d10 4s2 4p5</config>
 	<edges>
 		<N>9</N>
 		<edge>K 13474</edge>
@@ -1330,7 +1295,6 @@
 	<atomVol>32.2</atomVol>
 	<DebyeT>71.9</DebyeT>
 	<state>g</state>
-	<config>[Ar] 3d10 4s2 4p6</config>
 	<edges>
 		<N>12</N>
 		<edge>K 14326</edge>
@@ -1379,7 +1343,6 @@
 	<atomVol>55.9</atomVol>
 	<DebyeT>59</DebyeT>
 	<state>s</state>
-	<config>[Kr] 5s1</config>
 	<edges>
 		<N>12</N>
 		<edge>K 15200</edge>
@@ -1429,7 +1392,6 @@
 	<atomVol>33.7</atomVol>
 	<DebyeT>148</DebyeT>
 	<state>s</state>
-	<config>[Kr] 5s2</config>
 	<edges>
 		<N>12</N>
 		<edge>K 16105</edge>
@@ -1479,7 +1441,6 @@
 	<atomVol>19.8</atomVol>
 	<DebyeT>214</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d1 5s2</config>
 	<edges>
 		<N>12</N>
 		<edge>K 17038</edge>
@@ -1529,7 +1490,6 @@
 	<atomVol>14.1</atomVol>
 	<DebyeT>250</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d2 5s2</config>
 	<edges>
 		<N>12</N>
 		<edge>K 17998</edge>
@@ -1581,7 +1541,6 @@
 	<atomVol>10.8</atomVol>
 	<DebyeT>260</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d4 5s1</config>
 	<edges>
 		<N>12</N>
 		<edge>K 18986</edge>
@@ -1633,7 +1592,6 @@
 	<atomVol>9.4</atomVol>
 	<DebyeT>377</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d5 5s1</config>
 	<edges>
 		<N>12</N>
 		<edge>K 20000</edge>
@@ -1685,7 +1643,6 @@
 	<atomVol>8.5</atomVol>
 	<DebyeT>422</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d5 5s2</config>
 	<edges>
 		<N>12</N>
 		<edge>K 21044</edge>
@@ -1737,7 +1694,6 @@
 	<atomVol>8.3</atomVol>
 	<DebyeT>415</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d7 5s1</config>
 	<edges>
 		<N>12</N>
 		<edge>K 22117</edge>
@@ -1789,7 +1745,6 @@
 	<atomVol>8.3</atomVol>
 	<DebyeT>350</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d8 5s1</config>
 	<edges>
 		<N>12</N>
 		<edge>K 23220</edge>
@@ -1841,7 +1796,6 @@
 	<atomVol>8.9</atomVol>
 	<DebyeT>275</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10</config>
 	<edges>
 		<N>12</N>
 		<edge>K 24350</edge>
@@ -1893,7 +1847,6 @@
 	<atomVol>10.3</atomVol>
 	<DebyeT>221</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s1</config>
 	<edges>
 		<N>12</N>
 		<edge>K 25514</edge>
@@ -1945,7 +1898,6 @@
 	<atomVol>13.1</atomVol>
 	<DebyeT>221</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s2</config>
 	<edges>
 		<N>14</N>
 		<edge>K 26711</edge>
@@ -1999,7 +1951,6 @@
 	<atomVol>15.7</atomVol>
 	<DebyeT>129</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s2 5p1</config>
 	<edges>
 		<N>14</N>
 		<edge>K 27940</edge>
@@ -2053,7 +2004,6 @@
 	<atomVol>16.3</atomVol>
 	<DebyeT>254</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s2 5p2</config>
 	<edges>
 		<N>14</N>
 		<edge>K 29200</edge>
@@ -2107,7 +2057,6 @@
 	<atomVol>18.4</atomVol>
 	<DebyeT>200</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s2 5p3</config>
 	<edges>
 		<N>14</N>
 		<edge>K 30491</edge>
@@ -2161,7 +2110,6 @@
 	<atomVol>20.5</atomVol>
 	<DebyeT>152</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s2 5p4</config>
 	<edges>
 		<N>14</N>
 		<edge>K 31814</edge>
@@ -2215,7 +2163,6 @@
 	<atomVol>25.7</atomVol>
 	<DebyeT>109</DebyeT>
 	<state>s</state>
-	<config>[Kr] 4d10 5s2 5p5</config>
 	<edges>
 		<N>14</N>
 		<edge>K 33169</edge>
@@ -2268,7 +2215,6 @@
 	<atomVol>42.9</atomVol>
 	<DebyeT>64</DebyeT>
 	<state>g</state>
-	<config>[Kr] 4d10 5s2 5p6</config>
 	<edges>
 		<N>17</N>
 		<edge>K 34561</edge>
@@ -2325,7 +2271,6 @@
 	<atomVol>70</atomVol>
 	<DebyeT>43</DebyeT>
 	<state>l</state>
-	<config>[Xe] 6s1</config>
 	<edges>
 		<N>17</N>
 		<edge>K 35985</edge>
@@ -2382,7 +2327,6 @@
 	<atomVol>39</atomVol>
 	<DebyeT>116</DebyeT>
 	<state>s</state>
-	<config>[Xe] 6s2</config>
 	<edges>
 		<N>17</N>
 		<edge>K 37441</edge>
@@ -2439,7 +2383,6 @@
 	<atomVol>22.5</atomVol>
 	<DebyeT>135</DebyeT>
 	<state>s</state>
-	<config>[Xe] 5d1 6s2</config>
 	<edges>
 		<N>17</N>
 		<edge>K 38925</edge>
@@ -2497,7 +2440,6 @@
 	<atomVol>21</atomVol>
 	<DebyeT>138</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f1 5d1 6s2</config>
 	<edges>
 		<N>18</N>
 		<edge>K 40443</edge>
@@ -2556,7 +2498,6 @@
 	<atomVol>20.8</atomVol>
 	<DebyeT>138</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f3 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 41991</edge>
@@ -2616,7 +2557,6 @@
 	<atomVol>20.6</atomVol>
 	<DebyeT>148</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f4 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 43569</edge>
@@ -2671,7 +2611,6 @@
 	<electroneg>1.13</electroneg>
 	<atomVol>22.4</atomVol>
 	<state>s</state>
-	<config>[Xe] 4f5 6s2</config>
 	<edges>
 		<N>12</N>
 		<edge>K 45184</edge>
@@ -2723,7 +2662,6 @@
 	<atomVol>19.9</atomVol>
 	<DebyeT>184</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f6 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 46834</edge>
@@ -2783,7 +2721,6 @@
 	<atomVol>28.9</atomVol>
 	<DebyeT>118</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f7 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 48519</edge>
@@ -2843,7 +2780,6 @@
 	<atomVol>19.9</atomVol>
 	<DebyeT>155</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f7 5d1 6s2</config>
 	<edges>
 		<N>18</N>
 		<edge>K 50239</edge>
@@ -2901,7 +2837,6 @@
 	<atomVol>19.2</atomVol>
 	<DebyeT>158</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f9 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 51996</edge>
@@ -2960,7 +2895,6 @@
 	<atomVol>19</atomVol>
 	<DebyeT>158</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f10 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 53789</edge>
@@ -3020,7 +2954,6 @@
 	<atomVol>18.7</atomVol>
 	<DebyeT>161</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f11 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 55618</edge>
@@ -3080,7 +3013,6 @@
 	<atomVol>18.4</atomVol>
 	<DebyeT>163</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f12 6s2</config>
 	<edges>
 		<N>18</N>
 		<edge>K 57486</edge>
@@ -3139,7 +3071,6 @@
 	<atomVol>18.1</atomVol>
 	<DebyeT>167</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f13 6s2</config>
 	<edges>
 		<N>18</N>
 		<edge>K 59390</edge>
@@ -3198,7 +3129,6 @@
 	<atomVol>24.8</atomVol>
 	<DebyeT>118</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 61332</edge>
@@ -3258,7 +3188,6 @@
 	<atomVol>17.8</atomVol>
 	<DebyeT>116</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d1 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 63314</edge>
@@ -3318,7 +3247,6 @@
 	<atomVol>13.6</atomVol>
 	<DebyeT>213</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d2 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 65351</edge>
@@ -3378,7 +3306,6 @@
 	<atomVol>10.9</atomVol>
 	<DebyeT>225</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d3 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 67416</edge>
@@ -3438,7 +3365,6 @@
 	<atomVol>9.53</atomVol>
 	<DebyeT>312</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d4 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 69525</edge>
@@ -3498,7 +3424,6 @@
 	<atomVol>8.85</atomVol>
 	<DebyeT>275</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d5 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 71676</edge>
@@ -3558,7 +3483,6 @@
 	<atomVol>8.43</atomVol>
 	<DebyeT>400</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d6 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 73871</edge>
@@ -3618,7 +3542,6 @@
 	<atomVol>8.54</atomVol>
 	<DebyeT>228</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d7 6s2</config>
 	<edges>
 		<N>19</N>
 		<edge>K 76111</edge>
@@ -3678,7 +3601,6 @@
 	<atomVol>9.1</atomVol>
 	<DebyeT>225</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d9 6s1</config>
 	<edges>
 		<N>19</N>
 		<edge>K 78395</edge>
@@ -3738,7 +3660,6 @@
 	<atomVol>10.2</atomVol>
 	<DebyeT>178</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d10 6s1</config>
 	<edges>
 		<N>19</N>
 		<edge>K 80725</edge>
@@ -3798,7 +3719,6 @@
 	<atomVol>14.8</atomVol>
 	<DebyeT>92</DebyeT>
 	<state>l</state>
-	<config>[Xe] 4f14 5d10 6s2</config>
 	<edges>
 		<N>21</N>
 		<edge>K 83102</edge>
@@ -3860,7 +3780,6 @@
 	<atomVol>17.2</atomVol>
 	<DebyeT>96</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d10 6s2 6p1</config>
 	<edges>
 		<N>21</N>
 		<edge>K 85530</edge>
@@ -3922,7 +3841,6 @@
 	<atomVol>18.3</atomVol>
 	<DebyeT>87</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d10 6s2 6p2</config>
 	<edges>
 		<N>21</N>
 		<edge>K 88005</edge>
@@ -3984,7 +3902,6 @@
 	<atomVol>21.3</atomVol>
 	<DebyeT>116</DebyeT>
 	<state>s</state>
-	<config>[Xe] 4f14 5d10 6s2 6p3</config>
 	<edges>
 		<N>21</N>
 		<edge>K 90526</edge>
@@ -4043,7 +3960,6 @@
 	<electroneg>2</electroneg>
 	<atomVol>22.7</atomVol>
 	<state>s</state>
-	<config>[Xe] 4f14 5d10 6s2 6p4</config>
 	<edges>
 		<N>21</N>
 		<edge>K 93105</edge>
@@ -4085,7 +4001,6 @@
 	<covRadius>1.47</covRadius>
 	<electroneg>2.2</electroneg>
 	<state>s</state>
-	<config>[Xe] 4f14 5d10 6s2 6p5</config>
 	<edges>
 		<N>21</N>
 		<edge>K 95730</edge>
@@ -4129,7 +4044,6 @@
 	<electroneg>NaN</electroneg>
 	<atomVol>50.5</atomVol>
 	<state>g</state>
-	<config>[Xe] 4f14 5d10 6s2 6p6</config>
 	<edges>
 		<N>22</N>
 		<edge>K 98404</edge>
@@ -4173,7 +4087,6 @@
 	<electroneg>0.7</electroneg>
 	<DebyeT>39</DebyeT>
 	<state>l</state>
-	<config>[Rn] 7s1</config>
 	<edges>
 		<N>24</N>
 		<edge>K 101137</edge>
@@ -4222,7 +4135,6 @@
 	<atomVol>45.2</atomVol>
 	<DebyeT>89</DebyeT>
 	<state>s</state>
-	<config>[Rn] 7s2</config>
 	<edges>
 		<N>24</N>
 		<edge>K 103922</edge>
@@ -4267,7 +4179,6 @@
 	<electroneg>1.1</electroneg>
 	<atomVol>22.5</atomVol>
 	<state>s</state>
-	<config>[Rn] 6d1 7s2</config>
 	<edges>
 		<N>21</N>
 		<edge>K 106755</edge>
@@ -4314,7 +4225,6 @@
 	<atomVol>19.9</atomVol>
 	<DebyeT>100</DebyeT>
 	<state>s</state>
-	<config>[Rn] 6d2 7s2</config>
 	<edges>
 		<N>24</N>
 		<edge>K 109651</edge>
@@ -4374,7 +4284,6 @@
 	<electroneg>1.5</electroneg>
 	<DebyeT>262</DebyeT>
 	<state>s</state>
-	<config>[Rn] 5f2 6d1 7s2</config>
 	<edges>
 		<N>21</N>
 		<edge>K 112601</edge>
@@ -4419,7 +4328,6 @@
 	<electroneg>1.38</electroneg>
 	<DebyeT>300</DebyeT>
 	<state>s</state>
-	<config>[Rn] 5f3 6d1 7s2</config>
 	<edges>
 		<N>24</N>
 		<edge>K 115606</edge>
@@ -4476,7 +4384,6 @@
 	<boil>4175</boil>
 	<electroneg>1.36</electroneg>
 	<state>s</state>
-	<config>[Rn] 5f4 6d1 7s2</config>
 </Z93>
 
 <Z94>
@@ -4492,7 +4399,6 @@
 	<boil>3505</boil>
 	<electroneg>1.28</electroneg>
 	<state>s</state>
-	<config>[Rn] 5f6 7s2</config>
 </Z94>
 
 <Z95>
@@ -4507,7 +4413,6 @@
 	<boil>2880</boil>
 	<electroneg>1.13</electroneg>
 	<state>s</state>
-	<config>[Rn] 5f7 7s2</config>
 </Z95>
 
 <Z96>
@@ -4519,7 +4424,6 @@
 	<thermalConduc>10</thermalConduc>
 	<melt>1620</melt>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f7 6d1 7s2</config>
 </Z96>
 
 <Z97>
@@ -4530,7 +4434,6 @@
 	<firstIon>6.23</firstIon>
 	<thermalConduc>10</thermalConduc>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f9 7s2</config>
 </Z97>
 
 <Z98>
@@ -4541,7 +4444,6 @@
 	<thermalConduc>10</thermalConduc>
 	<melt>1170</melt>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f10 7s2</config>
 </Z98>
 
 <Z99>
@@ -4552,7 +4454,6 @@
 	<thermalConduc>10</thermalConduc>
 	<melt>1130</melt>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f11 7s2</config>
 </Z99>
 
 <Z100>
@@ -4563,7 +4464,6 @@
 	<thermalConduc>10</thermalConduc>
 	<melt>1800</melt>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f12 7s2</config>
 </Z100>
 
 <Z101>
@@ -4571,7 +4471,6 @@
 	<name>Mendelevium</name>
 	<amu>258</amu>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f13 7s2</config>
 </Z101>
 
 <Z102>
@@ -4579,119 +4478,102 @@
 	<name>Nobelium</name>
 	<amu>259</amu>
 	<electroneg>1.3</electroneg>
-	<config>[Rn] 5f14 7s2</config>
 </Z102>
 
 <Z103>
 	<symb>Lr</symb>
 	<name>Lawrencium</name>
 	<amu>262</amu>
-	<config>[Rn] 5f14 7s2 7p1</config>
 </Z103>
 
 <Z104>
 	<symb>Rf</symb>
 	<name>Rutherfordium</name>
 	<amu>261</amu>
-	<config>[Rn] 5f14 6d2 7s2</config>
 </Z104>
 
 <Z105>
 	<symb>Db</symb>
 	<name>Dubnium</name>
 	<amu>262</amu>
-	<config>[Rn] 5f14 6d3 7s2</config>
 </Z105>
 
 <Z106>
 	<symb>Sg</symb>
 	<name>Seaborgium</name>
 	<amu>266</amu>
-	<config>[Rn] 5f14 6d4 7s2</config>
 </Z106>
 
 <Z107>
 	<symb>Bh</symb>
 	<name>Bohrium</name>
 	<amu>264</amu>
-	<config>[Rn] 5f14 6d5 7s2</config>
 </Z107>
 
 <Z108>
 	<symb>Hs</symb>
 	<name>Hassium</name>
 	<amu>277</amu>
-	<config>[Rn] 5f14 6d6 7s2</config>
 </Z108>
 
 <Z109>
 	<symb>Mt</symb>
 	<name>Meitnerium</name>
 	<amu>289</amu>
-	<config>[Rn] 5f14 6d7 7s2</config>
 </Z109>
 
 <Z110>
 	<symb>Ds</symb>
 	<name>Darmstadtium</name>
 	<amu>281</amu>
-	<config>[Rn] 5f14 6d9 7s1</config>
 </Z110>
 
 <Z111>
 	<symb>Rg</symb>
 	<name>Roentgenium</name>
 	<amu>282</amu>
-	<config>[Rn] 5f14 6d10 7s1</config>
 </Z111>
 
 <Z112>
 	<symb>Cn</symb>
 	<name>Copernicium</name>
 	<amu>285</amu>
-	<config>[Rn] 5f14 6d10 7s2</config>
 </Z112>
 
 <Z113>
 	<symb>Nh</symb>
 	<name>Nihonium</name>
 	<amu>286</amu>
-	<config>[Rn] 5f14 6d10 7s2 7p1</config>
 </Z113>
 
 <Z114>
 	<symb>Fl</symb>
 	<name>Flerovium</name>
 	<amu>289</amu>
-	<config>[Rn] 5f14 6d10 7s2 7p2</config>
 </Z114>
 
 <Z115>
 	<symb>Mc</symb>
 	<name>Moscovium</name>
 	<amu>290</amu>
-	<config>[Rn] 5f14 6d10 7s2 7p3</config>
 </Z115>
 
 <Z116>
 	<symb>Lv</symb>
 	<name>Livermorium</name>
 	<amu>293</amu>
-	<config>[Rn] 5f14 6d10 7s2 7p4</config>
 </Z116>
 
 <Z117>
 	<symb>Ts</symb>
 	<name>Tennessine</name>
 	<amu>294</amu>
-	<config>[Rn] 5f14 6d10 7s2 7p5</config>
 </Z117>
 
 <Z118>
 	<symb>Og</symb>
 	<name>Oganesson</name>
 	<amu>294</amu>
-	<config>[Rn] 5f14 6d10 7s2 7p6</config>
 </Z118>
 
 </element_xray>
