@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.21
+#pragma version = 2.22
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -1147,13 +1147,14 @@ End
 
 
 
-Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
+Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,zeroBad,printIt])
 	Wave space3D
 	STRUCT Generic3DPeakStructure &GP	// filled with result of fitting
 	Wave Qc								// center of sub-volume to fit
 	Variable QxHW,QyHW,QzHW		// half widths dQz, dQy, dQz for the sub volume
+	Variable zeroBad					// if True, ignore zeros
 	Variable printIt
-
+	zeroBad = ParamIsDefault(zeroBad) || numtype(zeroBad) ? 0 : zeroBad
 	printIt = ParamIsDefault(printIt) ? 0 : !(!printIt)
 	QyHW = ParamIsDefault(QyHW) ? NaN : QyHW	// QyHW & QzHW default to QwhX
 	QzHW = ParamIsDefault(QzHW) ? NaN : QzHW
@@ -1235,6 +1236,9 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,printIt])
 	QyHW = QyHW>0 && numtype(QyHW)==0 ? QyHW : QxHW
 	QzHW = QzHW>0 && numtype(QzHW)==0 ? QzHW : QxHW
 	Wave sub3D = ExtractSubVolume(space3D,Qc,QxHW,HWy=QyHW,HWz=QzHW)	// get sub-volume centered on Qc
+	if (zeroBad)
+		sub3D = sub3D==0 ? NaN : sub3D		// when zeroBad is True, ignore zeros
+	endif
 	Variable err = FitPeakIn3D(sub3D,GP,QxHW,HWy=QyHW,HWz=QzHW, printIt=1)	// uses "Gaussian3DFitFunc"
 //	Variable err = FitPeakIn3D(sub3D,GP,QxHW,HWy=QyHW,HWz=QzHW, func3D="GaussianCross3DFitFunc", printIt=1)
 	if (err && printIt)							// in case of error, at least print & return something useful

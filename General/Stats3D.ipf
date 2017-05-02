@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.18
+#pragma version = 0.19
 #pragma IgorVersion = 6.3
 #pragma ModuleName=Stats3D
 
@@ -97,16 +97,16 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 
 	// set W_coef to the starting values of the coefficients
 	if (WaveExists(coefs))				// starting coefficients were passed 
-		Wave W_coef = coefs
-		Note/K W_coef, ReplaceStringByKey("func3D",note(W_coef),func3D,"=")
+		Wave W_coefLocal = coefs
+		Note/K W_coefLocal, ReplaceStringByKey("func3D",note(W_coefLocal),func3D,"=")
 	else
 		FUNCREF Peak3DFitSetCoefProto funcCoefs = $ReplaceString("Func",func3D,"Coefs",1,1)
 		if (strlen(StringByKey("NAME",FuncRefInfo(funcCoefs)))<1)
 			return 1							// no function for getting coefficients
 		endif
-		Wave W_coef = funcCoefs(space3D,startXYZ,HW)	// calculate the starting coefficients
+		Wave W_coefLocal = funcCoefs(space3D,startXYZ,HW)	// calculate the starting coefficients
 	endif
-	if (!WaveExists(W_coef))
+	if (!WaveExists(W_coefLocal))
 		return 1
 	endif
 
@@ -114,11 +114,11 @@ Function FitPeakIn3D(space3D,GP, HWx,[HWy,HWz, startXYZ, stdDev, func3D, coefs, 
 	Variable V_FitOptions = (printIt ? 0 : 4)
 	Variable V_FitError=0, V_FitQuitReason=0
 if (StringMatch(func3D,"GaussianCross3DFitFunc") && printIt)
-	printf "before fit, W_coef = %s\r",vec2str(W_coef)
+	printf "before fit, W_coef = %s\r",vec2str(W_coefLocal)
 endif
-	FuncFitMD/Q FitFunc, W_coef, space3D/W=errWave/I=1
+	FuncFitMD/Q FitFunc, W_coefLocal, space3D/W=errWave/I=1
 if (StringMatch(func3D,"GaussianCross3DFitFunc") && printIt)
-	printf "after fit, W_coef  = %s\r",vec2str(W_coef)
+	printf "after fit, W_coef  = %s\r",vec2str(W_coefLocal)
 endif
 	if (V_FitError)
 		if (printIt)
@@ -126,10 +126,10 @@ endif
 		endif
 		return 1
 	endif
-	Note/K W_coef, ReplaceNumberByKey("V_chisq",note(W_coef),V_chisq,"=")	// store chisq in wave note
+	Note/K W_coefLocal, ReplaceNumberByKey("V_chisq",note(W_coefLocal),V_chisq,"=")	// store chisq in wave note
 
 	// only accept peaks that are within the original volume
-	Make/N=3/D/FREE xyzFit=W_coef[2*p + 2]
+	Make/N=3/D/FREE xyzFit=W_coefLocal[2*p + 2]
 	if (!isPointInVolume(space3D,xyzFit))	// verify if point is in a volume, works for triplets and for a 3D array
 		if (printIt)
 			print "ERROR -- Fit failed, peak not inside of fitting volume"
@@ -137,9 +137,10 @@ endif
 		return 1
 	endif
 
-	// copy fit results from W_coef & W_sigma into GP
+	// copy fit results from W_coefLocal & W_sigma into GP
 	Wave W_sigma=W_sigma
-	funcSetGP(space3D,GP,W_coef,W_sigma)	// set GP from values in W_coef, W_sigma, & space3D
+	Duplicate/O W_coefLocal, W_coef
+	funcSetGP(space3D,GP,W_coefLocal,W_sigma)	// set GP from values in W_coefLocal, W_sigma, & space3D
 
 	if (printIt)
 		printGeneric3DPeakStructure(GP)
