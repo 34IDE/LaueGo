@@ -1185,6 +1185,10 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,zeroBad,printIt])
 		endif
 	endif
 
+	if (ParamIsDefault(zeroBad))
+		zeroBad = WaveInClass(space3D,"Histogram3D")	// default is to ignore zeros in histograms
+	endif
+
 	if (!WaveExists(space3D) || !WaveExists(Qc) || !(QxHW>0))
 		printIt = 1
 		String QcName=NameOfWave(Qc), spaceName = NameOfWave(space3D)
@@ -1196,21 +1200,27 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,zeroBad,printIt])
 		Prompt QxHW,"X-HW in Volume to Use"
 		Prompt QyHW,"Y-HW in Volume to Use (NaN defaults to X-HW)"
 		Prompt QzHW,"Z-HW in Volume to Use (NaN defaults to X-HW)"
+		Prompt zeroBad, "Ignore Zeros in 3D wave", popup, "Fit Zeros;Ignore Zeros"
+		zeroBad = zeroBad ? 2 : 1
 		if (WaveExists(Qc))						// Qc was passed, do not ask for it
-			DoPrompt "Fit 3D Peak",spaceName,QxHW,QyHW,QzHW
+			DoPrompt "Fit 3D Peak",spaceName,QxHW,QyHW,QzHW,zeroBad
 		else
 			Prompt QcName,"Center of 3D space",popup,QcList
-			DoPrompt "Fit 3D Peak",spaceName,QcName,QxHW,QyHW,QzHW
+			DoPrompt "Fit 3D Peak",spaceName,QcName,QxHW,QyHW,QzHW,zeroBad
 		endif
 		if (V_flag)
 			return 1
 		endif
+		zeroBad = zeroBad==2
 		printf "FitPeakAt3Dmarker(%s, %s, %g",spaceName,QcName,QxHW
 		if (QyHW>0)
 			printf ", QyHW=%g",QyHW
 		endif
 		if (QzHW>0)
 			printf ", QzHW=%g",QzHW
+		endif
+		if (zeroBad)
+			printf ", zeroBad=1"
 		endif
 		printf ")\r"
 		if (!stringmatch(spaceName,"_free_"))

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.46
+#pragma version = 2.47
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -5087,7 +5087,7 @@ endif
 	endif
 
 	wnote = wnoteFull
-	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D","=")
+	wnote = ReplaceStringByKey("waveClass",wnote,"GizmoXYZ,Qspace3D,Histogram3D","=")
 	wnote = ReplaceNumberByKey("depth",wnote,depth,"=")
 	wnote = ReplaceStringByKey("Qcenter",wnote,vec2str(Qc,bare=1,sep=","),"=")
 	wnote = ReplaceStringByKey("range",wnote,range,"=")
