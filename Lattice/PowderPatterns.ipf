@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.23
+#pragma version = 0.24
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -285,6 +285,8 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	Variable NlinesMax=200
 	Make/N=(NlinesMax,7)/D/FREE lines=NaN
 
+	Variable F2min = magSqr( FstructMax(xtal,Qmax,keV=keV) )/ 50
+	F2min = numtype(F2min) || F2min<=0 ? 0.001 : F2min
 	Variable qhkl,Pol=NaN,Lorentz=NaN,theta=NaN,F2
 	Variable h,k,l, m
 	for (m=0,l=0; l<=lmax; l=LatticeSym#incrementIndex(l))
@@ -303,7 +305,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 				else
 					F2 = magsqr(Fstruct(xtal,h,k,l))
 				endif
-				if (F2 < 0.001)
+				if (F2 < F2min)			// was F2 < 0.001
 					continue
 				endif
 				if (m>=NlinesMax)

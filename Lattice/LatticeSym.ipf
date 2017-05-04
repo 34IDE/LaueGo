@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.23
+#pragma version = 6.24
 #include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -166,6 +166,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 6.19, changed definition of num2fraction(), now uses tolerance
 //	with verison 6.20, removed unnecessay copy_xtal(), copy_atomType(), copy_bondType()
 //	with verison 6.21, changed lowestOrderHKL() for better speed, uses gcd(), also now returns the integer divisor used
+//	with verison 6.24, added FstructMax to be used to find the minimum F for an allowed reflection
 
 //	Rhombohedral Transformation:
 //
@@ -4793,6 +4794,58 @@ End
 Static Function PhiIntegrand(xx)		// this function should never be called with xx<0
 	Variable xx
 	return xx>0 ? xx/(exp(xx)-1) : 1
+End
+
+
+Function/C FstructMax(xtal,Qmag,[keV])
+	STRUCT crystalStructure &xtal				// sruct defining the crystal, not changed here
+	Variable Qmag										// Q (1/nm)
+	Variable keV
+	keV = ParamIsDefault(keV) || keV<0 ? NaN : keV
+
+	String SpaceGroupID = xtal.SpaceGroupID
+	Variable/C zero=cmplx(0,0)
+
+
+	keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",NaN)
+
+	Variable/C fatomC
+	Variable fatomMag, fatomArg=0
+	String name
+	Variable valence
+	Variable m
+	Variable/C c2PI=cmplx(0,2*PI), ifatomArg
+	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
+
+	reMakeAtomXYZs(xtal)
+	if (!(xtal.N>=1))
+		return cmplx(1,0)
+	endif
+	FUNCREF Get_f_proto fa = $"Get_f"				// if Get_f() does not exist, then Get_f_proto() will be used
+
+	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
+		name="root:Packages:Lattices:atom"+num2istr(m)
+		valence = numtype(xtal.atom[m].valence) ? 0 : xtal.atom[m].valence
+		Wave ww = $name
+		if (valence==0 )
+			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Qmag/10, keV)
+		else
+			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Qmag/10, keV,valence=valence)
+		endif
+		fatomC = r2polar(fatomC)
+		fatomMag = real(fatomC)
+		fatomArg = imag(fatomC)
+		fatomMag *= xtal.atom[m].occ
+
+		ifatomArg = cmplx(0,fatomArg)
+		MatrixOP/FREE Fcm = fatomMag * sum(exp(ifatomArg))
+		Fc += Fcm[0]										// accumulate for this atom
+	endfor
+
+	Variable Fr, Fi
+	Fr = abs(real(Fc))<1e-8 ? 0 : real(Fc)		// set tiny values to zero
+	Fi = abs(imag(Fc))<1e-8 ? 0 : imag(Fc)
+	return cmplx(Fr,Fi)
 End
 
 
