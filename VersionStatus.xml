@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, May 02, 2017" time="04:14:00 PM CDT" isoTime="2017-05-02T16:14:00"></written>
+	<written date="Thursday, May 04, 2017" time="12:20:00 PM CDT" isoTime="2017-05-04T12:20:00"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>799ef3aa2d1afb0dacc7dadc1e36de303f0a0322</gitHash>
+	<gitHash>d4707cecae10a11777cae82e3d5d61ae61726c82</gitHash>
 	<fileCount>239</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -86,7 +86,7 @@
 	<file version="nan" time="2016-02-17T12:50:21" md5="6322fea572f91f50836f6c7434f46cee" sha256="3da51fb01e96429d9cb29ba7fb2d1c95a9411d43ccf55d20b36885f3ebcbe70a" ext=".xml">materials/standard xtals/Ag.xml</file>
 	<file version="nan" time="2016-02-17T12:51:09" md5="183c8e8c0e097872e115ac8a6c72e972" sha256="20aa8c7cbf1699df6f0724d56dec5e458cb2f8301e90d773c2de7c0a3ab8dd61" ext=".xml">materials/standard xtals/CdTe.xml</file>
 	<file version="nan" time="2016-02-17T12:54:11" md5="43c1c98b07ef8f1ac041f0c5ffac4129" sha256="ed3f6993d2d5d90bc384c85ad7f27565cabdefaff8c5dbad8f3e4fb5dbfc8f2a" ext=".xml">materials/standard xtals/Sn.xml</file>
-	<file version="6.23" time="2017-04-27T11:35:25" md5="54e8a8db9944efabd13babb389aa500c" sha256="69493e50804553ddacbd2bd5f2faf4e162d7f5f17ef43ddd6bf891a62098dfab" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="6.24" time="2017-05-04T12:03:37" md5="ae17e03f45f12ba5adab19e86aba30eb" sha256="d14abf26230412674fa9634a0313b099f83400bce817b7a535741cd3d895a141" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="2.22" time="2017-05-02T16:07:41" md5="ae6c05b16a98bea160798592a86c46ab" sha256="62ac3ca9a83e4f289520b98202fa67c0368f70e8e96be99b8e39b450a679659c" ext=".ipf">General/Gizmo/GizmoMarkers.ipf</file>
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" sha256="98f1c8c454a199ff6ee8d24fced76dea00d6d8a33bad14957640e1e8da441f5e" ext="">micro/Euler_ppc</file>
@@ -140,7 +140,7 @@
 	<file version="0.06" time="2016-09-26T10:10:34" md5="fe0ae800f9ecf81c48ef7ffbe073db29" sha256="a541f4f2596ed8c79b0a592190c62dc0f7e42d81a154b1ae9e35cefeff6ac9c4" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
 	<file version="2.06" time="2016-11-15T15:19:13" md5="bc20e9131cca616540f4b7334cf6dcf3" sha256="6c59772edacc30baeccea6da3f4e41d35a043b0631d3a2c31096831065188048" ext=".ipf">General/Images/WinView.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dd417fe3b1d24918e2c69c5288420a54" sha256="84d27f78ad9abdeaf06f07412fe8294dbaf22ba3efa428e723a6c495214be982" ext="">micro/Euler_i386</file>
-	<file version="0.23" time="2017-04-21T12:31:14" md5="34663e0f8f3fedef1a8f70aaba0df9dd" sha256="31facd5c386ac72148a768887121c428d50795569ca9c1084b10f6b8e2f8d832" ext=".ipf">Lattice/PowderPatterns.ipf</file>
+	<file version="0.24" time="2017-05-04T12:03:37" md5="414ead78d10c59addc97c5a009858455" sha256="113e7032ac559ea051793c046fe3502f436ff536ee00128e9666657624552c96" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="5e1ef070dd65f5d3076ccc4c62ff81f8" sha256="a4c14563ac905cdc42aa56785e40cb9b7134b4222883b27d0017027faa6addd3" ext=".xml">geometrys/geoN_2013-06-13_20-21-05.xml</file>
 	<file version="1.43" time="2015-04-29T17:41:07" md5="7b7c6270d165c91628448ef4db2fd4e1" sha256="a45319793b70c65af9c72950f102cc6f6454b2da9c5970fad5183633241a2eda" ext=".ipf">micro/Grains/GrainMath.ipf</file>
 	<file version="1.31" time="2014-04-30T10:28:30" md5="f540a8c3cfee6af39d56a94abbaa8d62" sha256="e6f3c3fd3541e2d6a364ea6a1b03adff10f6dedbc973ee453b8e7fa9b226988e" ext=".ipf">micro/Grains/GizmoGrains.ipf</file>
