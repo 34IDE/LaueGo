@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.24
+#pragma version = 6.25
 #include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -151,7 +151,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 5.27, remove materialsXML, change path materials to materialsPath
 //	with verison 5.29, fixed bug in FindMaterialsFile() involving materialsPath
 //
-//	with verison 6.00, Stop using just SpaceGroup [1-230], switch to using the complete set of 530 types
+//	with verison 6.00, Stop using just SpaceGroup [1,230], switch to using the complete set of 530 types
 //								Added SpaceGroupID and SpaceGroupIDnum to the crystalStructure structure
 //								This is important since some of the space groups have many variants (e.g. SG=15 has 18 different ways of using it)
 //	with verison 6.06, added keV to the Lattice Panel, also Get_f_proto(), Svector should not have the "/10"
@@ -167,6 +167,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 6.20, removed unnecessay copy_xtal(), copy_atomType(), copy_bondType()
 //	with verison 6.21, changed lowestOrderHKL() for better speed, uses gcd(), also now returns the integer divisor used
 //	with verison 6.24, added FstructMax to be used to find the minimum F for an allowed reflection, no longer just assumes 0.01 electrons
+//	with verison 6.25, fixed error in space group numbering (affected Orthorhombic & Tetragonal)
 
 //	Rhombohedral Transformation:
 //
@@ -196,14 +197,14 @@ Static Constant ELEMENT_Zmax = 118
 //		kf^ = ki^ - 2*(ki^ . q^)*q^		note: (ki^ . q^) must be NEGATIVE (both Bragg & Laue)
 //
 //
-//							SG				  idNum
-//	Cubic				[195,230]		[489-530]
-//	Hexagonal		[168,194]		[462-488]
-//	Trigonal			[143,167]		[430-461]
-//	Tetragonal		[75,142]			[240-429]
-//	Orthorhombic	[16,74]			[108-239]
-//	Monoclinic		[3,15]			[3-107]
-//	Triclinic		[1,2]				[1,2]
+//							SG				  idNum			#IDs		#SpaceGroups
+//	Cubic				[195,230]		[489,530]		 42			36
+//	Hexagonal		[168,194]		[462,488]		 27			27
+//	Trigonal			[143,167]		[430,461]		 32			25
+//	Tetragonal		[75,142]			[349,429]		 81			68
+//	Orthorhombic	[16,74]			[108,348]		241			59
+//	Monoclinic		[3,15]			[3,107]			105			13
+//	Triclinic		[1,2]				[1,2]				  2			 2
 //
 //											SG										idNum
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
@@ -1140,13 +1141,18 @@ Static Function ForceLatticeToStructure(xtal)
 		return 1
 	endif
 
-	//	Cubic				[195,230]		a
-	//	Hexagonal		[168,194]		a,c
-	//	Trigonal			[143,167]		a,alpha
-	//	Tetragonal		[75,142]			a,c
-	//	Orthorhombic	[16,74]			a,b,c
-	//	Monoclinic		[3,15]			a,b,c,gamma
-	//	Triclinic		[1,2]				a,b,c,alpha,beta,gamma
+	//	system			  SG			   idNum
+	//	Triclinic		[1,2]				[1,2]					a,b,c,alpha,beta,gamma
+	//	Monoclinic		[3,15]			[3,107]				a,b,c,gamma
+	//	Orthorhombic	[16,74]			[108,348]			a,b,c
+	//	Tetragonal		[75,142]			[349,429]			a,c
+	//	Trigonal			[143,167]		[430,461]			Hex: a,c   Rhom: a,alpha
+	//	Hexagonal		[168,194]		[462,488]			a,c
+	//	Cubic				[195,230]		[489,530]			a
+	//	
+	//	for Rhombohedral		a,alpha
+	//	SG =		[146,148,155,160,161,166,167]
+	//	idNum =	[434,437,445,451,453,459,461]
 
 	// force the lattice constant to confomr to system
 	Variable system = latticeSystem(id)
@@ -2714,7 +2720,7 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 	xtal.SpaceGroup = SpaceGroup
 	String id = FindDefaultIDforSG(xtal.SpaceGroup)
 	xtal.SpaceGroupID = id
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1-530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1,530]
 	xtal.alphaT = !(alphaT>0) ? 0 : alphaT
 	ForceLatticeToStructure(xtal)
 
@@ -3388,17 +3394,17 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		String symLine = GetSymLinesFromXMLbuffer(cif)	// get the symmetry operations
 		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
 	endif
-	// 4th try, look for the Space Group number [1-230], and use the default id for that Space Group
+	// 4th try, look for the Space Group number [1,230], and use the default id for that Space Group
 	if (strlen(xtal.SpaceGroupID)<1)
 		SG = str2num(XMLtagContents("space_group_IT_number",cif))
 		if (SG>0)
-			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1-230]
+			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1,230]
 		endif
 	endif
 	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)		// change id to id number in [1-530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)		// change id to id number in [1,530]
 	SG = str2num(xtal.SpaceGroupID)
 	xtal.SpaceGroup = SG
 
@@ -4148,11 +4154,11 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		String symLine = GetSymLinesFromCIFbuffer(buf)	// get the sym ops from a CIF file buffer
 		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
 	endif
-	// 4th try, look for the Space Group number [1-230], and use the default id for that Space Group
+	// 4th try, look for the Space Group number [1,230], and use the default id for that Space Group
 	if (strlen(xtal.SpaceGroupID)<1)
 		Variable SG=CIF_readNumber("_symmetry_Int_Tables_number",buf)
 		if (SG>0)
-			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1-230]
+			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1,230]
 		endif
 	endif
 	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
@@ -5476,7 +5482,7 @@ End
 
 
 ThreadSafe Static Function/T FindDefaultIDforSG(SG)
-	Variable SG					// space group number [1-230]
+	Variable SG					// space group number [1,230]
 	if (!isValidSpaceGroup(SG))		// invalid
 		return ""
 	endif
@@ -5497,7 +5503,7 @@ End
 
 ThreadSafe Static Function FindDefaultIDnumForSG(SG)
 	// look for exatly "SG", or the first occurance of "SG:"
-	Variable SG					// space group number [1-230]
+	Variable SG					// space group number [1,230]
 	if (!isValidSpaceGroup(SG))		// invalid
 		return NaN
 	endif
@@ -5625,14 +5631,14 @@ End
 //						:R	rhombohedral axes
 //
 //
-//
-//	Cubic				[195,230]		[489-530]
-//	Hexagonal		[168,194]		[462-488]
-//	Trigonal			[143,167]		[430-461]
-//	Tetragonal		[75,142]			[240-429]
-//	Orthorhombic	[16,74]			[108-239]
-//	Monoclinic		[3,15]			[3-107]
-//	Triclinic		[1,2]				[1,2]
+//							SG				  idNum			#IDs		#SpaceGroups
+//	Cubic				[195,230]		[489,530]		 42			36
+//	Hexagonal		[168,194]		[462,488]		 27			27
+//	Trigonal			[143,167]		[430,461]		 32			25
+//	Tetragonal		[75,142]			[349,429]		 81			68
+//	Orthorhombic	[16,74]			[108,348]		241			59
+//	Monoclinic		[3,15]			[3,107]			105			13
+//	Triclinic		[1,2]				[1,2]				  2			 2
 //
 //											SG										idNum
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
@@ -5652,7 +5658,7 @@ End
 
 
 ThreadSafe Function/T getHMsym(idNum)		// returns short Hermann-Mauguin symbol
-	Variable idNum									// index into the SpaceGroup IDs [1-530]
+	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""									// invalid SpaceGroup ID number
 	endif
@@ -5687,7 +5693,7 @@ ThreadSafe Function/T getHMsym(idNum)		// returns short Hermann-Mauguin symbol
 End
 
 ThreadSafe Function/T getHMsym2(idNum)	// returns longer Hermann-Mauguin symbol
-	Variable idNum									// index into the SpaceGroup IDs [1-530]
+	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""									// invalid SpaceGroup ID number
 	endif
@@ -5764,7 +5770,7 @@ End
 
 
 ThreadSafe Function/S getHallSymbol(idNum)
-	Variable idNum									// index into the SpaceGroup IDs [1-530]
+	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""									// invalid SpaceGroup ID number
 	endif
@@ -5863,7 +5869,7 @@ End
 ThreadSafe Static Function latticeSystem(SpaceGroupID)
 	String SpaceGroupID
 
-	Variable SG=str2num(SpaceGroupID)	//Space Group number, from International Tables [1-230]
+	Variable SG=str2num(SpaceGroupID)	//Space Group number, from International Tables [1,230]
 	if (SG>230)
 		return -1					  	// invalid
 	elseif (SG>=195)
@@ -6001,10 +6007,10 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
 			list += expandRange("3-107",";")+";"
 		endif
 		if (StringMatch("Orthorhombic",find))
-			list += expandRange("108-239",";")+";"
+			list += expandRange("108-348",";")+";"
 		endif
 		if (StringMatch("Tetragonal",find))
-			list += expandRange("240-429",";")+";"
+			list += expandRange("349-429",";")+";"
 		endif
 		if (StringMatch("Trigonal",find))
 			list += expandRange("430-461",";")+";"
@@ -6843,11 +6849,11 @@ Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --
 	xtal6.desc = xtal5.desc
 	xtal6.a = xtal5.a				;	xtal6.b = xtal5.b				;	xtal6.c = xtal5.c
 	xtal6.alpha = xtal5.alpha	;	xtal6.beta = xtal5.beta	;	xtal6.gam = xtal5.gam
-	xtal6.SpaceGroup = xtal5.SpaceGroup						// in range [1-230]
+	xtal6.SpaceGroup = xtal5.SpaceGroup						// in range [1,230]
 
 	String id = FindDefaultIDforSG(xtal5.SpaceGroup)
 	xtal6.SpaceGroupID = id										// change SG number to id string
-	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id)			// change id to id number in [1-530]
+	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id)			// change id to id number in [1,530]
 
 	xtal6.Vc = xtal5.Vc
 	xtal6.density = xtal5.density
@@ -7154,10 +7160,10 @@ Static Function/T setSymLineIDnum(idNum)
 
 	Make/N=531/T/FREE symLines=""
 	symLines[0] = ""
-	// Triclinic SG[1,2]  SG_idNum 1-2
+	// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
 	symLines[1]  = "x,y,z"
 	symLines[2]  = "x,y,z;-x,-y,-z"
-	// Monoclinic SG[3,15]  SG_idNum 3-107
+	// Monoclinic SG[3,15]  SG_idNum [3,107]   (105 idNums)
 	symLines[3]  = "x,y,z;-x,y,-z"
 	symLines[4]  = "x,y,z;-x,-y,z"
 	symLines[5]  = "x,y,z;x,-y,-z"
@@ -7263,7 +7269,7 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[105]  = "x,y,z;x,-y,-z+1/2;-x,-y,-z;-x,y,z+1/2;x+1/2,y+1/2,z;x+1/2,-y+1/2,-z+1/2;-x+1/2,-y+1/2,-z;-x+1/2,y+1/2,z+1/2"
 	symLines[106]  = "x,y,z;x,-y+1/2,-z+1/2;-x,-y,-z;-x,y+1/2,z+1/2;x+1/2,y,z+1/2;x+1/2,-y+1/2,-z;-x+1/2,-y,-z+1/2;-x+1/2,y+1/2,z"
 	symLines[107]  = "x,y,z;x,-y+1/2,-z;-x,-y,-z;-x,y+1/2,z;x+1/2,y+1/2,z+1/2;x+1/2,-y,-z+1/2;-x+1/2,-y+1/2,-z+1/2;-x+1/2,y,z+1/2"
-	// Orthorhombic SG[16,74]  SG_idNum 108-239
+	// Orthorhombic SG[16,74]  SG_idNum [108,348]   (241 idNums)
 	symLines[108]  = "x,y,z;-x,-y,z;x,-y,-z;-x,y,-z"
 	symLines[109]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2"
 	symLines[110]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z"
@@ -7403,7 +7409,6 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[237]  = "x,y,z;-x+1/2,-y,-z+1/2;-x,-y,z;x,-y,-z;-x,y,-z;x+1/2,y,-z+1/2;-x+1/2,y,z+1/2;x+1/2,-y,z+1/2"
 	symLines[238]  = "x,y,z;-x+1/2,-y,z;x,-y,-z+1/2;-x+1/2,y,-z+1/2;-x,-y,-z;x+1/2,y,-z;-x,y,z+1/2;x+1/2,-y,z+1/2"
 	symLines[239]  = "x,y,z;-x+1/2,-y,z;x+1/2,-y,-z;-x,y,-z;-x,-y,-z;x+1/2,y,-z;-x+1/2,y,z;x,-y,z"
-	// Tetragonal SG[75,142]  SG_idNum 240-429
 	symLines[240]  = "x,y,z;-x,-y+1/2,z;x,-y,-z;-x,y+1/2,-z;-x,-y,-z;x,y+1/2,-z;-x,y,z;x,-y+1/2,z"
 	symLines[241]  = "x,y,z;-x,-y,z;x,-y+1/2,-z;-x,y+1/2,-z;-x,-y,-z;x,y,-z;-x,y+1/2,z;x,-y+1/2,z"
 	symLines[242]  = "x,y,z;-x,-y,z+1/2;x,-y,-z+1/2;-x,y,-z;-x,-y,-z;x,y,-z+1/2;-x,y,z+1/2;x,-y,z"
@@ -7566,6 +7571,7 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[347] += "x,-y+1/2,-z+1/2;-x,y+1/2,-z+1/2;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z+1/2;-x,y+1/2,z+1/2;x,-y+1/2,z+1/2"
 	symLines[348]  = "x,y,z;-x,-y,z+1/2;x,-y,-z;-x,y,-z+1/2;-x,-y,-z;x,y,-z+1/2;-x,y,z;x,-y,z+1/2;x+1/2,y+1/2,z+1/2;-x+1/2,-y+1/2,z;"
 	symLines[348] += "x+1/2,-y+1/2,-z+1/2;-x+1/2,y+1/2,-z;-x+1/2,-y+1/2,-z+1/2;x+1/2,y+1/2,-z;-x+1/2,y+1/2,z+1/2;x+1/2,-y+1/2,z"
+	// Tetragonal SG[75,142]  SG_idNum [349,429]   (81 idNums)
 	symLines[349]  = "x,y,z;-y,x,z;-x,-y,z;y,-x,z"
 	symLines[350]  = "x,y,z;-y,x,z+1/4;-x,-y,z+1/2;y,-x,z-1/4"
 	symLines[351]  = "x,y,z;-y,x,z+1/2;-x,-y,z;y,-x,z+1/2"
@@ -7704,7 +7710,7 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[429] += "x+1/2,y+1/2,z+1/2;-y-1/4,x+1/4,z-1/4;-x+1/2,-y,z+1/2;y-1/4,-x-1/4,z+1/4;x+1/2,-y+1/2,-z;-x,y+1/2,-z+1/2;"
 	symLines[429] += "y+1/4,x-1/4,-z-1/4;-y-1/4,-x-1/4,-z-1/4;-x+1/2,-y+1/2,-z+1/2;y+1/4,-x-1/4,-z+1/4;x+1/2,y,-z+1/2;-y+1/4,x+1/4,-z-1/4;"
 	symLines[429] += "-x+1/2,y+1/2,z;x,-y+1/2,z+1/2;-y-1/4,-x+1/4,z+1/4;y+1/4,x+1/4,z+1/4"
-	// Trigonal SG[143,167]  SG_idNum 430-461
+	// Trigonal SG[143,167]  SG_idNum [430,461]   (32 idNums)
 	symLines[430]  = "x,y,z;-y,x-y,z;-x+y,-x,z"
 	symLines[431]  = "x,y,z;-y,x-y,z+1/3;-x+y,-x,z-1/3"
 	symLines[432]  = "x,y,z;-y,x-y,z-1/3;-x+y,-x,z+1/3"
@@ -7757,7 +7763,7 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[460] += "x-y+1/3,x-1/3,-z-1/3;-x+y+1/3,y-1/3,z+1/6;x+1/3,x-y-1/3,z+1/6;-y+1/3,-x-1/3,z+1/6"
 	symLines[461]  = "x,y,z;z,x,y;y,z,x;-y+1/2,-x+1/2,-z+1/2;-x+1/2,-z+1/2,-y+1/2;-z+1/2,-y+1/2,-x+1/2;-x,-y,-z;-z,-x,-y;-y,-z,-x;"
 	symLines[461] += "y+1/2,x+1/2,z+1/2;x+1/2,z+1/2,y+1/2;z+1/2,y+1/2,x+1/2"
-	// Hexagonal SG[168,194]  SG_idNum 462-488
+	// Hexagonal SG[168,194]  SG_idNum [462,488]   (25 idNums)
 	symLines[462]  = "x,y,z;x-y,x,z;-y,x-y,z;-x,-y,z;-x+y,-x,z;y,-x+y,z"
 	symLines[463]  = "x,y,z;x-y,x,z+1/6;-y,x-y,z+1/3;-x,-y,z+1/2;-x+y,-x,z-1/3;y,-x+y,z-1/6"
 	symLines[464]  = "x,y,z;x-y,x,z-1/6;-y,x-y,z-1/3;-x,-y,z+1/2;-x+y,-x,z+1/3;y,-x+y,z+1/6"
@@ -7796,7 +7802,7 @@ Static Function/T setSymLineIDnum(idNum)
 	symLines[488]  = "x,y,z;x-y,x,z+1/2;-y,x-y,z;-x,-y,z+1/2;-x+y,-x,z;y,-x+y,z+1/2;x-y,-y,-z;-x,-x+y,-z;y,x,-z;-y,-x,-z+1/2;-x+y,y,-z+1/2;"
 	symLines[488] += "x,x-y,-z+1/2;-x,-y,-z;-x+y,-x,-z+1/2;y,-x+y,-z;x,y,-z+1/2;x-y,x,-z;-y,x-y,-z+1/2;-x+y,y,z;x,x-y,z;-y,-x,z;y,x,z+1/2;"
 	symLines[488] += "x-y,-y,z+1/2;-x,-x+y,z+1/2"
-	// Cubic SG[195,230]  SG_idNum 489-530
+	// Cubic SG[195,230]  SG_idNum [489,530]   (42 idNums)
 	symLines[489]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z"
 	symLines[490]  = "x,y,z;z,x,y;y,z,x;-y,-z,x;z,-x,-y;-y,z,-x;-z,-x,y;-z,x,-y;y,-z,-x;-x,-y,z;x,-y,-z;-x,y,-z;x,y+1/2,z+1/2;z,x+1/2,y+1/2;"
 	symLines[490] += "y,z+1/2,x+1/2;-y,-z+1/2,x+1/2;z,-x+1/2,-y+1/2;-y,z+1/2,-x+1/2;-z,-x+1/2,y+1/2;-z,x+1/2,-y+1/2;y,-z+1/2,-x+1/2;"
