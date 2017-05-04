@@ -166,7 +166,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 6.19, changed definition of num2fraction(), now uses tolerance
 //	with verison 6.20, removed unnecessay copy_xtal(), copy_atomType(), copy_bondType()
 //	with verison 6.21, changed lowestOrderHKL() for better speed, uses gcd(), also now returns the integer divisor used
-//	with verison 6.24, added FstructMax to be used to find the minimum F for an allowed reflection
+//	with verison 6.24, added FstructMax to be used to find the minimum F for an allowed reflection, no longer just assumes 0.01 electrons
 
 //	Rhombohedral Transformation:
 //
@@ -4801,21 +4801,11 @@ Function/C FstructMax(xtal,Qmag,[keV])
 	STRUCT crystalStructure &xtal				// sruct defining the crystal, not changed here
 	Variable Qmag										// Q (1/nm)
 	Variable keV
-	keV = ParamIsDefault(keV) || keV<0 ? NaN : keV
+	keV = ParamIsDefault(keV) || keV<=0 ? NumVarOrDefault("root:Packages:Lattices:keV",NaN) : keV
 
-	String SpaceGroupID = xtal.SpaceGroupID
-	Variable/C zero=cmplx(0,0)
-
-
-	keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:keV",NaN)
-
-	Variable/C fatomC
-	Variable fatomMag, fatomArg=0
 	String name
-	Variable valence
-	Variable m
-	Variable/C c2PI=cmplx(0,2*PI), ifatomArg
-	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
+	Variable valence, m
+	Variable/C fatomC, Fc=cmplx(0,0)				// the result, complex structure factor
 
 	reMakeAtomXYZs(xtal)
 	if (!(xtal.N>=1))
@@ -4832,20 +4822,9 @@ Function/C FstructMax(xtal,Qmag,[keV])
 		else
 			fatomC = fa(Z2symbol(xtal.atom[m].Zatom),Qmag/10, keV,valence=valence)
 		endif
-		fatomC = r2polar(fatomC)
-		fatomMag = real(fatomC)
-		fatomArg = imag(fatomC)
-		fatomMag *= xtal.atom[m].occ
-
-		ifatomArg = cmplx(0,fatomArg)
-		MatrixOP/FREE Fcm = fatomMag * sum(exp(ifatomArg))
-		Fc += Fcm[0]										// accumulate for this atom
+		Fc += fatomC * cmplx(DimSize(ww,0) * xtal.atom[m].occ, 0)
 	endfor
-
-	Variable Fr, Fi
-	Fr = abs(real(Fc))<1e-8 ? 0 : real(Fc)		// set tiny values to zero
-	Fi = abs(imag(Fc))<1e-8 ? 0 : imag(Fc)
-	return cmplx(Fr,Fi)
+	return Fc
 End
 
 
@@ -5108,7 +5087,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
 
-	Variable fatomMag, m
+	Variable fatomMag, m, FMax=0
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
 	Make/N=3/D/FREE hkl={h,k,l}
@@ -5122,8 +5101,10 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		if (WaveExists(ww))
 			MatrixOP/O/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl)))
 			Fc += Fcm[0]									// accumulate for this atom
+			FMax += max(fatomMag,0.01) * DimSize(ww,0)
 		else
 			Fc += cmplx(fatomMag,0)					// no atom position, just make it in phase
+			FMax += max(fatomMag,0.01)				// always at least 0.01 electrons/atom
 		endif
 	endfor
 
@@ -5143,7 +5124,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	endif
 #endif
 
-	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
+	return (magsqr(Fc)/(xtal.N)^2 > (FMax/50)^2)			// allowed means more than 0.01 electron/atom
+//	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
 End
 
 
