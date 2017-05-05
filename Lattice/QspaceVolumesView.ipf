@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.21
+#pragma version = 1.22
 #include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
 #include "Stats3D" version>= 0.05
@@ -9,7 +9,7 @@
 Menu "Qspace"
 	MenuItemIfWaveClassExists("Gizmo of Qspace ...","Qspace3D*","DIMS:3"), MakeGizmoQspace3D($"")
 	MenuItemIfWaveClassExists("ReScale by Qn ...","Qspace3D","DIMS:3"), RescaleQspace3DbyQn($"",NaN)
-	MenuItemIfWaveClassExists("Make a Radial Line for Gizmo ...","GizmoCorners","DIMS:2,MAXCOLS:3,MINCOLS:3"), MakeRadialLine($"")
+	MenuItemIfWinExists("Add Radial Line to Gizmo","*","WIN:"+num2istr(GIZMO_WIN_BIT)), AddRadialLineGizmo()
 	SubMenu "Utility"
 		"  Make a Test 3D Qspace",QspaceVolumesView#MakeTestQspaceVolume()
 	End
@@ -1316,71 +1316,56 @@ End
 //  ======================================================================================  //
 //  ============================ Start of Gizmo Enhancements =============================  //
 
-Function/WAVE MakeRadialLine(corners,[point,printIt])
-	Wave corners							// corners of the volume, used to set ends of line
-	String point							// string with a 3-vector that is a point on the radial line
+Function/WAVE AddRadialLineGizmo([gName,add,endPoint,printIt])
+	String gName							// name of Gizmo, defaults to top one
+	Variable add							// add the path and display it too.
+	String endPoint						// string with a 3-vector that is the end point on the radial line
 	Variable printIt
-	point = SelectString(ParamIsDefault(point),point,"")
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2)) < 1) : !(!printIt)
+	gName = SelectString(ParamIsDefault(gName), gName, "")
+	add = ParamIsDefault(add) || numtype(add) ? 1 : add
+	endPoint = SelectString(ParamIsDefault(endPoint),endPoint,"")
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	Variable ask=!WaveExists(corners)
-	Variable pointOK=1
-	if (!ParamIsDefault(point))		// if a default, assume the center of volume
-		Wave vcTemp = str2vec(point)
-		pointOK = numpnts(vcTemp)==3
-		ask = ask || !pointOK
+	if (strlen(gName)<1)
+#if (IgorVersion()<7)
+		Execute "GetGizmo gizmoName"	// no gizmo name passed, select the top gizmo
+		SVAR S_GizmoName=S_GizmoName
+		gName = S_GizmoName
+		KillStrings/Z S_GizmoName
+#else
+		GetGizmo gizmoName					// no gizmo name passed, select the top gizmo
+		gName = S_GizmoName
+#endif
+	endif
+	if (strlen(WinList(gName,";","WIN:"+num2istr(GIZMO_WIN_BIT) ))<1)
+		return $""							// no gizmos, done
 	endif
 
-	String name=""
-	if (ask)
-		String clist=WaveListClass("GizmoCorners","*","DIMS:2,MAXCOLS:3,MINCOLS:3")
-		if (ItemsInList(clist)==1 && pointOK)
-			Wave corners=$StringFromList(0,clist)	// only one choice, take it
-		elseif (ItemsInList(clist)>=1)				// multiple choices, ask user
-			Prompt name,"Wave with Corners of Gizmo",popup,clist
-			Prompt point,"point on radial line, use \"\" for default"
-			DoPrompt "Corners Wave",name, point
-			if (V_flag)
-				print "Could not find the corners wave for input, nothing done"
-				return $""
-			endif
-			Wave corners=$name
-			Wave vcTemp = str2vec(point)
-			pointOK = numpnts(vcTemp)==3
-		else
-			return $""						// cannot find corners wave, give up
-		endif
-		printIt = 1							// force printing, since no input wave was provided
-	endif
-	if (!WaveExists(corners))
-		return $""
-	endif
-
-	Make/N=3/D/FREE lo, hi				// lowest and highest values in x,y,z
-	Make/N=(DimSize(corners,0))/D/FREE v=corners[p][0]
-	lo[0] = WaveMin(v) ;	hi[0] = WaveMax(v)
-	v = corners[p][1]
-	lo[1] = WaveMin(v) ;	hi[1] = WaveMax(v)
-	v = corners[p][2]
-	lo[2] = WaveMin(v) ;	hi[2] = WaveMax(v)
+#if (IgorVersion()<7)
+	Execute "GetGizmo/N="+gName+" dataLimits"	// sets: GizmoXmin, GizmoXmax, GizmoYmin, GizmoYmax, GizmoZmin, GizmoZmax 
+	NVAR GizmoXmin=GizmoXmin, GizmoYmin=GizmoYmin, GizmoZmin=GizmoZmin
+	NVAR GizmoXmax=GizmoXmax, GizmoYmax=GizmoYmax, GizmoZmax=GizmoZmax
+#else
+	GetGizmo/N=$gName dataLimits		// sets: GizmoXmin, GizmoXmax, GizmoYmin, GizmoYmax, GizmoZmin, GizmoZmax 
+#endif
+	Make/N=3/D/FREE lo={GizmoXmin, GizmoYmin, GizmoZmin}, hi={GizmoXmax, GizmoYmax, GizmoZmax }
+	KillVariables/Z GizmoXmin, GizmoYmin, GizmoZmin, GizmoXmax, GizmoYmax, GizmoZmax
+	Wave vcTemp = str2vec(endPoint)
 	if (numpnts(vcTemp)==3)
 		Wave vc = vcTemp
 	else
-		MatrixOP/FREE vc = (lo+hi)/2	// center
+		MatrixOP/FREE vc = (lo+hi)/2	// end point will be center of volume
 	endif
 	if (norm(vc)==0)
-		return $""							// center is origin, cannot draw a line from origin to origin
+		return $""							// end point is the origin, cannot draw a line from origin to origin
 	endif
 
-	name=CleanupName(NameOfWave(corners)+"_radialLine",0)
+	String name=CleanupName(gName+"_radialLine",0)
 	Make/N=(2,3)/O $name/WAVE=line = NaN
-	String wnote=ReplaceStringByKey("waveClass",note(corners),"GizmoRadialLine,GizmoPath","=")
+	String wnote=ReplaceStringByKey("waveClass","","GizmoRadialLine,GizmoPath","=")
+	wnote = ReplaceStringByKey("GizmoTarget",wnote,gName,"=")
 	Note/K line, wnote
-	if (printIt)
-		printf "Created a radial line named  '%s'  in folder  '%s'\r",NameOfWave(line),GetWavesDataFolder(line,1)
-		print "To add this to a Gizmo, add a new Path with this wave as the source"
-	endif
+
 	line[1][] = vc[q]						// one end of line always lies at center of Gizmo
 	if (lo[0]<=0 && hi[0]<=0 && lo[1]<=0 && hi[1]<=0 && lo[2]<=0 && hi[2]<=0)
 		line[0][] = 0						// origin is inside box, so start of line is {0,0,0}
@@ -1390,6 +1375,33 @@ Function/WAVE MakeRadialLine(corners,[point,printIt])
 		ps = towardZero/vc
 		Variable psMin = WaveMax(ps)	// closest to 1, when ps==1, line has zero length
 		line[0][] = psMin*vc[q]
+	endif
+	if (printIt)
+		printf "Created a radial line named  '%s'  in folder  '%s'  for Gizmo '%s'\r",NameOfWave(line),GetWavesDataFolder(line,1),gName
+	endif
+	if (add)
+#if (IgorVersion()<7)
+		Execute "GetGizmo/N="+gName+" objectNameList"
+		SVAR S_ObjectNames=S_ObjectNames
+		if (WhichListItem("RadialLinePath",S_ObjectNames)<0)	// add the object if it does not exist
+			Execute "AppendToGizmo/N="+gName+" path="+GetWavesDataFolder(line,2)+",name=RadialLinePath"
+		endif
+		Execute "GetGizmo/N="+gName+" displayNameList"
+		SVAR S_DisplayNames=S_DisplayNames
+		if (WhichListItem("RadialLinePath",S_DisplayNames)<0)	// display the object if it is not displayed
+			Execute "ModifyGizmo/N="+gName+" setDisplayList=-1, object=RadialLinePath"
+		endif
+		KillStrings/Z S_ObjectNames, S_DisplayNames
+#else
+		GetGizmo/N=$gName objectNameList
+		if (WhichListItem("RadialLinePath",S_ObjectNames)<0)	// add the object if it does not exist
+			AppendToGizmo/N=$gName path=line,name=RadialLinePath
+		endif
+		GetGizmo/N=$gName displayNameList
+		if (WhichListItem("RadialLinePath",S_DisplayNames)<0)	// display the object if it is not displayed
+			ModifyGizmo/N=$gName setDisplayList=-1, object=RadialLinePath
+		endif
+#endif
 	endif
 	return line
 End
