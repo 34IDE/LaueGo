@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#include "GizmoMarkers", version>=2.03
+#include "GizmoMarkers", version>=2.04
 #include "GizmoZoomTranslate", version>=2.00
 
 
@@ -18,25 +18,38 @@ End
 //  ====================================================================================  //
 //  ================================== Start of Gizmo ==================================  //
 
-Function GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,ZoneZone)
+Function GizmoMakeWavesForZones(GhatsMeasured,ZoneAxes,ZoneZone)
 	// for a Gizmo, make the waves: GizmoGhats, GizmoZoneLines, GizmoZoneCircles, GizmoZoneZonePoints
-	Wave GhatsMeasured, ZonesWave		// only uses first 3 columns
+	Wave GhatsMeasured, ZoneAxes			// only uses first 3 columns
 	Wave ZoneZone
-	if (!WaveExists(GhatsMeasured))		// if wave not passed, look for a local version
-		Wave GhatsMeasured=GhatsMeasured
-	endif
-	if (!WaveExists(ZonesWave))
-		Wave ZonesWave=ZonesWave
-	endif
-	if (!WaveExists(ZoneZone))
-		Wave ZoneZone=ZoneZone
+
+	if (!WaveExists(GhatsMeasured) || !WaveExists(ZoneAxes))
+		String GhatList = WaveListClass("QsMeasured","*","DIMS:2,MINCOLS:3,MINROWS:1")
+		String ZAxesList = WaveListClass("Zones","*","DIMS:2,MINCOLS:3,MINROWS:1")
+		String ZZList = WaveListClass("ZoneZone","*","DIMS:2,MINCOLS:3,MINROWS:1")
+		if (ItemsInList(GhatList)<1 || ItemsInList(ZAxesList)<1)
+			return 1
+		elseif (ItemsInList(GhatList)==1 && ItemsInList(ZAxesList)==1)
+			Wave GhatsMeasured = $StringFromList(0,GhatList)
+			Wave ZoneAxes = $StringFromList(0,ZAxesList)
+		else
+			String Gname, Zname, ZZname
+			Prompt Gname,"Ghats Measured",popup, GhatList
+			Prompt Zname,"Zone Axes",popup, ZAxesList
+			Prompt ZZname,"ZoneZone",popup, ZZList
+			DoPrompt "Waves for Gizmo", Gname, Zname, ZZname
+			if (V_flag)
+				return 1
+			endif
+			Wave GhatsMeasured = $Gname
+			Wave ZoneAxes = $Zname
+			Wave ZoneZone = $ZZname
+		endif
 	endif
 
-	Duplicate/O ZonesWave, ZonesWaveView
-
-	Variable Ntest=DimSize(GhatsMeasured,0), Nz=DimSize(ZonesWave,0), Nzz=DimSize(ZoneZone,0)
+	Variable Ntest=DimSize(GhatsMeasured,0), Nz=DimSize(ZoneAxes,0), Nzz=DimSize(ZoneZone,0)
 	if (!(Nz>0 && Ntest>0))
-		return 0
+		return 1
 	endif
 	Variable i,Ncir=50						// number of intervals in a circle
 
@@ -63,8 +76,8 @@ Function GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,ZoneZone)
 	GizmoGhats = GhatsMeasured[p][q]	// first 3 columns of GhatsMeasured is G^
 
 	for (i=0;i<Nz;i+=1)						// lines of the Zone axes
-		GizmoZoneLines[3*i][] = -ZonesWave[i][q]
-		GizmoZoneLines[3*i+1][] = ZonesWave[i][q]
+		GizmoZoneLines[3*i][] = -ZoneAxes[i][q]
+		GizmoZoneLines[3*i+1][] = ZoneAxes[i][q]
 		if (i<Ncolors)
 			GizmoZoneLinesRGBA[3*i][] = RGBAfirst[i][q]
 			GizmoZoneLinesRGBA[3*i+1][] = RGBAfirst[i][q]
@@ -77,7 +90,7 @@ Function GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,ZoneZone)
 	Make/N=3/D/FREE axis
 	Variable mz, rad
 	for (mz=0;mz<Nz;mz+=1)					// for each zone, make a great circle, with axis GizmoZoneLines
-		axis[] = ZonesWave[mz][p]
+		axis[] = ZoneAxes[mz][p]
 		Wave zero = perpVector(axis)
 		Cross axis, zero
 		Wave W_Cross=W_Cross				// vector perpendicular to both axis and zero
@@ -97,6 +110,7 @@ Function GizmoMakeWavesForZones(GhatsMeasured,ZonesWave,ZoneZone)
 	if (Nzz>0)									// the Zone of Zones
 		GizmoZoneZonePoints[][] = ZoneZone[p][q]
 	endif
+	return 0
 End
 //
 // called by GizmoMakeWavesForZones()

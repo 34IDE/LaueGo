@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.26
+#pragma version = 0.27
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -1814,11 +1814,9 @@ Function/WAVE runIndexingOnlyZones(args)
 	String noteMeasured=note(GhatsMeasured)
 	Wave ZonesWave=MakeZonesWave(GhatsMeasured, 4, tolAngle=angTol)
 
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*making GhatsMeasured and ZonesWave done, elapsed time = %.3f s\r",stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#endif
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))
@@ -1831,33 +1829,31 @@ Function/WAVE runIndexingOnlyZones(args)
 	Make/N=3/D/FREE hklPrefer={hp,kp,lp}
 	MatrixOP/FREE perpDir = recipBase x hklPrefer
 
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*finished setup, elapsed time = %.3f s\r",stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#endif
 
 	Variable maxLatticeLen = ( MatrixDet(direct)^(1/3) ) * 6
 	Variable NmaxTestZones = round(8000/DimSize(ZonesWave,0))	// maximum number of test zones to make
 	NmaxTestZones = limit(NmaxTestZones,4,1000)					// want N(testZones)*N(measuredZones) ~ 8000
-#ifdef ZONE_TESTING
-	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones,printIt=printIt)
+
+	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones)
+//#ifdef ZONE_TESTING
+//	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones,printIt=printIt)
+//#else
+//	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones)
+//#endif
 	if (printIt)
 		printf "*made %d (out of %d) PossibleZoneAxes to test against, elapsed time = %.3f s\r",DimSize(PossibleZoneAxes,0),NmaxTestZones,stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#else
-	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones)
-#endif
 
 	// PossibleZonePairs & MeasuredZonePairs are lists of {dot,i,j}
 	Wave PossibleZonePairs = MakePairsList(PossibleZoneAxes)	// all pairs of directions, returns {dot,i,j} of each pair
 	Wave MeasuredZonePairs = MakePairsList(ZonesWave)			//   only uses first 3 columns of argument
 
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*made both pairs waves, elapsed time = %.3f s\r",stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#endif
 
 
 	// get all of the rotations between pairs
@@ -1870,11 +1866,9 @@ Function/WAVE runIndexingOnlyZones(args)
 
 	Variable iMeasured, nMeasuredPairs=DimSize(MeasuredZonePairs,0)
 	Variable iPossible, nPossiblePairs=DimSize(PossibleZonePairs,0)
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*there are %d pairs of Measured Zones,  and %d pairs of Possible zones\r",nMeasuredPairs,nPossiblePairs
 	endif
-#endif
 	Variable doti, nPairs
 	for (iMeasured=0,nPairs=0; iMeasured<nMeasuredPairs; iMeasured+=1)
 		doti = MeasuredZonePairs[iMeasured][0]
@@ -1896,11 +1890,9 @@ Function/WAVE runIndexingOnlyZones(args)
 		endfor
 	endfor
 	Redimension/N=(nPairs,-1) indexPairs
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*made pairs of pairs: indexPairs[%d][4], elapsed time = %.3f s\r",nPairs, stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#endif
 	if (nPairs<1)
 		printf "ERROR -- nPairs = %g,  must be ³ 2\r",nPairs
 		return $""
@@ -1912,10 +1904,10 @@ Function/WAVE runIndexingOnlyZones(args)
 	// first generate the rotation vectors in PairRotations
 
 	Wave PairRotations = ConstructAllPairRotations(indexPairs,ZonesWave,PossibleZoneAxes)
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*made PairRotations[%d][3] the rotation vectors, elapsed time = %.3f s\r",DimSize(PairRotations,0),stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
+#ifdef ZONE_TESTING
 	if (DataFolderExists(":GizmoWaves"))
 		Duplicate/O PairRotations, :GizmoWaves:PairRotationsView
 	endif
@@ -1923,29 +1915,23 @@ Function/WAVE runIndexingOnlyZones(args)
 
 	Variable threshStart=angTol*PI/180		// largest acceptable error between measured and calculated angles
 	Variable threshStop=0.001*PI/180		// at 0.001¡ stop searching for a better match
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "running with a starting threshold of %g¡, and a stopping threshold of %g¡\r",threshStart*180/PI, threshStop*180/PI
 	endif
-#endif
 	Make/N=3/D/FREE rotAxis, center=0		// start center at {0,0,0}
 	Variable hits, hitsLast=Inf, thresh, radius=Inf	// hits is largest number of PairRotations that are the same rotation
 	for (thresh=threshStart; thresh>threshStop; thresh /= threshDivide)
 		hits = FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)
-#ifdef ZONE_TESTING
 		if (printIt)
 			Variable indexOfMax = NumberByKey("indexOfMax",note(rotAxis),"=")
 			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d)\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexOfMax
 		endif
-#endif
 
 
 		if ((hits+2) > hitsLast)				// no significant reduction
-#ifdef ZONE_TESTING
 			if (printIt)
 				print "  stop looping because (hits+2) > hitsLast"
 			endif
-#endif
 			break
 		endif
 
@@ -1958,11 +1944,9 @@ Function/WAVE runIndexingOnlyZones(args)
 	Make/N=(3,3)/D/FREE rotMat
 	rotationMatAboutAxis(rotAxis,angle,rotMat)	// make rotMat the matrix version of rotAxis
 	MatrixOP/O/FREE recip = rotMat x recipBase
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*found <rot> = %s  |<rot>|=%.3f¡,  with %d hits, elapsed time = %.3f s\r",vec2str(rotAxis,zeroThresh=1e-9),angle,hits,stopMSTimer(-2)*1e-6-sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#endif
 
 	// find rms error in the zones directions
 	// rotate PossibleZoneAxes by rotAxis for comparison to measured Zone axes
@@ -1984,11 +1968,9 @@ endif
 		endif
 	endfor
 	rmsZones = sqrt(rmsZones/NZ)
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "Zones rms error (from %d of %d) zones = %.3g¡\r",NZ,DimSize(ZonesWave,0),rmsZones
 	endif
-#endif
 
 	// find rms error of the Ghats to predicted hkl directions
 	STRUCT microGeometry g
@@ -2025,11 +2007,9 @@ endif
 	angle = norm(rotAxis)*180/PI
 	rotationMatAboutAxis(rotAxis,angle,rotMat)	// re-make rotMat and recip
 	MatrixOP/O/FREE recip = rotMat x recipBase	// re-make recip
-#ifdef ZONE_TESTING
 	if (printIt)
 		printf "*after non-linear least-squares optimization, <rot> = %s  |<rot>|=%.3f¡,  elapsed time = %.3f s\r",vec2str(rotAxis,zeroThresh=1e-9),angle,stopMSTimer(-2)*1e-6-sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
-#endif
 
 	// now save all indexed values using the optimized rotation
 	Variable Npatterns=1
@@ -2073,10 +2053,10 @@ endif
 	Variable goodness0 = goodNessOfPattern(IndexedWave,ipat)
 	rmsGhat = sqrt(rmsGhat/NG)
 	Variable executionTime = stopMSTimer(-2)*1e-6 - sec0
-#ifdef ZONE_TESTING
-	printf "Ghat rms error (from %d of %d) Ghats = %.3g¡,  range=[%.4f, %.4f¡],  goodness0=%g\r",NG,NG0,rmsGhat,minError,maxError,goodness0
-	printf "Total time = %.3f s\r",executionTime
-#endif
+	if (printIt)
+		printf "Ghat rms error (from %d of %d) Ghats = %.3g¡,  range=[%.4f, %.4f¡],  goodness0=%g\r",NG,NG0,rmsGhat,minError,maxError,goodness0
+		printf "Total time = %.3f s\r",executionTime
+	endif
 
 	SetDimLabel 1,0,Qx,IndexedWave			;	SetDimLabel 1,1,Qy,IndexedWave
 	SetDimLabel 1,2,Qz,IndexedWave			;	SetDimLabel 1,3,h,IndexedWave
@@ -2262,7 +2242,6 @@ Static Function/WAVE MakeZonesWave(GhatsMeasured,Nmin,[tolAngle,printIt])
 		printf "for Nmin = %d,  found %d measured zones\r",Nmin,Nz
 	endif
 #ifdef ZONE_TESTING
-//Duplicate/O zw, ZonesWave
 GizmoMakeWavesForZones(GhatsMeasured,zw,$"")
 #endif
 	return zw
