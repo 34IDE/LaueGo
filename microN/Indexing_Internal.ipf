@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.27
+#pragma version = 0.28
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -1354,7 +1354,7 @@ Function/WAVE runIndexingQs(args)
 	// Possible HKL Pairs & Measured Ghat Pairs are lists of {dot,i,j}
 	Variable minDot = cos(measuredSpan*PI/180)										// smallest dot products between all of the GhatsMeasured
 	Wave MeasuredGhatPairs = MakePairsList(GhatsMeasured)						//   only uses first 3 columns of argument
-	Wave PossibleQhatPairs = MakePairsList(PossibleQhats,mindot=minDot)	// all pairs of hkl, {dot, i, j}
+	Wave PossibleQhatPairs = MakePairsList(PossibleQhats,minAngle=measuredSpan)	// all pairs of hkl, {angle, i, j}
 	Variable iMeasured, nMeasuredPairs=DimSize(MeasuredGhatPairs,0)
 	Variable iPossible, nPossiblePairs=DimSize(PossibleQhatPairs,0)
 #ifdef QS_TESTING
@@ -1833,22 +1833,19 @@ Function/WAVE runIndexingOnlyZones(args)
 		printf "*finished setup, elapsed time = %.3f s\r",stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
 
-	Variable maxLatticeLen = ( MatrixDet(direct)^(1/3) ) * 6
+//	Variable maxLatticeLen = ( MatrixDet(direct)^(1/3) ) * 6
+	Variable maxLatticeLen = ( MatrixDet(direct)^(1/3) ) * 4
 	Variable NmaxTestZones = round(8000/DimSize(ZonesWave,0))	// maximum number of test zones to make
 	NmaxTestZones = limit(NmaxTestZones,4,1000)					// want N(testZones)*N(measuredZones) ~ 8000
 
-	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones)
-//#ifdef ZONE_TESTING
-//	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones,printIt=printIt)
-//#else
-//	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones)
-//#endif
+	Wave PossibleZoneAxes=MakeVecHatsTestWave(direct,perpDir,cone*PI/180,maxLatticeLen,NmaxTestZones,printIt=printIt)
+Duplicate/O PossibleZoneAxes, PossibleZoneAxesView
 	if (printIt)
 		printf "*made %d (out of %d) PossibleZoneAxes to test against, elapsed time = %.3f s\r",DimSize(PossibleZoneAxes,0),NmaxTestZones,stopMSTimer(-2)*1e-6 - sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
 
 	// PossibleZonePairs & MeasuredZonePairs are lists of {dot,i,j}
-	Wave PossibleZonePairs = MakePairsList(PossibleZoneAxes)	// all pairs of directions, returns {dot,i,j} of each pair
+	Wave PossibleZonePairs = MakePairsList(PossibleZoneAxes)	// all pairs of directions, returns {angle,i,j} of each pair
 	Wave MeasuredZonePairs = MakePairsList(ZonesWave)			//   only uses first 3 columns of argument
 
 	if (printIt)
@@ -1860,8 +1857,7 @@ Function/WAVE runIndexingOnlyZones(args)
 	// make a list of all the rotation vectors (radian)
 
 
-	Variable dotTol = 1-cos(angTol*PI/180)
-	Variable Nalloc = 1000
+	Variable Nalloc=1000
 	Make/N=(Nalloc,4)/U/I/FREE indexPairs=0
 
 	Variable iMeasured, nMeasuredPairs=DimSize(MeasuredZonePairs,0)
@@ -1869,11 +1865,12 @@ Function/WAVE runIndexingOnlyZones(args)
 	if (printIt)
 		printf "*there are %d pairs of Measured Zones,  and %d pairs of Possible zones\r",nMeasuredPairs,nPossiblePairs
 	endif
-	Variable doti, nPairs
+
+	Variable nPairs, angTolRad=angTol*PI/180, ai
 	for (iMeasured=0,nPairs=0; iMeasured<nMeasuredPairs; iMeasured+=1)
-		doti = MeasuredZonePairs[iMeasured][0]
+		ai = MeasuredZonePairs[iMeasured][0]
 		for (iPossible=0; iPossible<nPossiblePairs; iPossible+=1)
-			if (abs(doti-PossibleZonePairs[iPossible][0])<dotTol)			// do the pairs have the same angular separation?
+			if (abs(PossibleZonePairs[iPossible][0]-ai)<angTolRad)			// do the pairs have the same angular separation?
 				if (nPairs>=Nalloc)
 					Nalloc += 1000
 					Redimension/N=(Nalloc,-1) indexPairs
@@ -1913,12 +1910,12 @@ Function/WAVE runIndexingOnlyZones(args)
 	endif
 #endif
 
+	Make/N=3/D/FREE rotAxis, center=0		// start center at {0,0,0}
 	Variable threshStart=angTol*PI/180		// largest acceptable error between measured and calculated angles
 	Variable threshStop=0.001*PI/180		// at 0.001¡ stop searching for a better match
 	if (printIt)
 		printf "running with a starting threshold of %g¡, and a stopping threshold of %g¡\r",threshStart*180/PI, threshStop*180/PI
 	endif
-	Make/N=3/D/FREE rotAxis, center=0		// start center at {0,0,0}
 	Variable hits, hitsLast=Inf, thresh, radius=Inf	// hits is largest number of PairRotations that are the same rotation
 	for (thresh=threshStart; thresh>threshStop; thresh /= threshDivide)
 		hits = FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)
@@ -2169,6 +2166,7 @@ Static Function/WAVE MakeVecHatsTestWave(lattice,perpDirIN,cone,maxLatticeLen,Nm
 	String wnote="waveClass=DirectionsTest;"
 	wnote = ReplaceStringByKey("perpDir",wnote,vec2str(perpDir,sep=","),"=")
 	wnote = ReplaceNumberByKey("ZoneAngleRange",wnote,cone*180/PI,"=")
+	wnote = ReplaceNumberByKey("maxLatticeLen",wnote,maxLatticeLen,"=")
 	Note/K TestHats, wnote
 	return TestHats
 End
@@ -2622,34 +2620,34 @@ Function RefineOrientation_Err(wOpt, rx,ry,rz)
 End
 
 
-Static Function/WAVE MakePairsList(vecHats,[minDot])// returns pairDots, whose columns are: {dot, i, j}
+Static Function/WAVE MakePairsList(vecHats,[minAngle])// returns pairAngles, whose columns are: {angle, i, j}
 	Wave vecHats										// a wave containing unit vectors (only use first 3 columns)
-	Variable minDot									// do not accept any pairs with a dot less than minDot (-1 gets everything)
-	minDot = ParamIsDefault(minDot) || numtype(minDot) ? -2 : minDot
+	Variable minAngle									// do not accept any pairs with an angle less than minAngle (-1 gets everything)
+	minAngle = ParamIsDefault(minAngle) || numtype(minAngle) ? -2 : minAngle
 
 	Variable notParallel = cos(0.05*PI/180)	// = 0.999999619228249, sufficient for parallel
 	Variable Nv=DimSize(vecHats,0)
 	Variable Np = Nv*(Nv-1)/2						// number of unique parirs of vecHats, init to max possible value
-	Make/N=(Np,3)/D/FREE pairDots=NaN
+	Make/N=(Np,3)/D/FREE pairAngles=NaN
 	Make/N=3/D/FREE vecj, veci
-	Variable dot, j,i,m=0
+	Variable angle, j,i,m=0
 	for (j=0,m=0; j<(Nv-1); j+=1)
 		vecj = vecHats[j][p]
 		for (i=j+1;i<Nv;i+=1)
 			veci = vecHats[i][p]
-			dot = MatrixDot(vecj,veci)
-			if (abs(dot)<notParallel && dot>minDot)	// vectors are neither parallel nor anti-parallel, and not too far apart
-				pairDots[m][0] = dot				// store this pair, save dot and i,j
-				pairDots[m][1] = j
-				pairDots[m][2] = i
+			angle = acos(limit(MatrixDot(vecj,veci),-1,1))
+			if (abs(angle)<notParallel && angle>minAngle)	// vectors are neither parallel nor anti-parallel, and not too far apart
+				pairAngles[m][0] = angle			// store this pair, save angle and i,j
+				pairAngles[m][1] = j
+				pairAngles[m][2] = i
 				m += 1			
 			endif
 		endfor
 	endfor
 	Np = m
-	Redimension/N=(Np,-1) pairDots
-	pairDots[][0] = limit(pairDots[p][q],-1,1)	// ensure that dot is in [-1,1]
-	return pairDots
+	Redimension/N=(Np,-1) pairAngles
+	pairAngles[][0] = limit(pairAngles[p][q],0,PI)	// ensure that angle is in [0,pi)
+	return pairAngles
 End
 
 

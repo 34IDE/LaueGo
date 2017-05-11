@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.25
+#pragma version = 6.26
 #include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -168,6 +168,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 6.21, changed lowestOrderHKL() for better speed, uses gcd(), also now returns the integer divisor used
 //	with verison 6.24, added FstructMax to be used to find the minimum F for an allowed reflection, no longer just assumes 0.01 electrons
 //	with verison 6.25, fixed error in space group numbering (affected Orthorhombic & Tetragonal)
+//	with verison 6.26, fixed sign problem in lowestOrderHKL()
 
 //	Rhombohedral Transformation:
 //
@@ -6457,19 +6458,25 @@ ThreadSafe Function lowestOrderHKL(h,k,l)
 		l /= i
 		f *= i
 	endfor
+	h = h==0 ? 0 : h									// rmove "-0"
+	k = k==0 ? 0 : k
+	l = l==0 ? 0 : l
 	return f
 End
 //
 ThreadSafe Function gcdZero(a,b)		// this is needed because gcd returns NaN when a or b is 0
 	Variable a,b
+	Variable answer
 	if (a==0 && b==0)
-		return Inf
+		answer = Inf
 	elseif (a==0)
-		return b
+		answer = b
 	elseif (b==0)
-		return a
+		answer = a
+	else
+		answer = gcd(a,b)						// note, gcd ignores the sign
 	endif
-	return gcd(a,b)							// note, gcd ignores the sign
+	return abs(answer)
 End
 //ThreadSafe Function lowestOrderHKL(h,k,l)
 //	Variable &h,&k,&l							// these hkl are returned with all common factors removed
