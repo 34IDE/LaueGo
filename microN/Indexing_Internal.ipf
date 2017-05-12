@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.28
+#pragma version = 0.29
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2258,16 +2258,16 @@ Static Function/WAVE FindZonesWithNspots(Ghats,Nmin,tolAngle)
 	Variable Nalloc=100
 	Make/N=(Nalloc)/I/FREE nZones=0		// holds number of spots contributing to a zone
 	Make/N=(Nalloc,3)/D/FREE zones=0	// direction of each zone axis
+	Make/N=(Nalloc)/D/FREE rmsZones=0	// holds rms error in setting each zone
 																			// the next two waves are only used for testing
 	Variable minDot = cos(5.0*PI/180)	// G-vectors must be > 5 degrees apart to define a zone (not too parallel)
 	Variable tol = cos(tolAngle*PI/180)	// tolerance on dot product
-	Variable sinMax = abs(sin(tolAngle*PI/180))
+	Variable sinMin = abs(sin(tolAngle*PI/180))	// |W_Cross| must be greater than this
 	Make/N=3/D/FREE g0, g1, axis, axisAvg
 
-	String gIndexList							// holds list of G^'s used to form one zone
 	Variable Nz=0								// Nz is number of zones found, m is first spot to start searching
 	Variable iz									// number of spots in this zone
-	Variable mag, dot
+	Variable mag, dot, rms
 	Variable i,j, m=0							// m is first spot to start searching
 	for (m=0;m<(NG-1);m+=1)				// m is first spot that defines this possible zone
 		g0 = Ghats[m][p]
@@ -2285,35 +2285,32 @@ Static Function/WAVE FindZonesWithNspots(Ghats,Nmin,tolAngle)
 			if (!isNewAxis(zones,axis,tol))
 				continue							// already have this axis, try again
 			endif
-			// the (g0,g1) pair defining axis[3], has not been found before, check it out
 
+			// the (g0,g1) pair defining axis[3], has not been found before, check it out
 			// have a new unique zone axis, find the spots belonging to this zone
 			axisAvg = 0
-			gIndexList = ""
+			rms = 0
 			for (i=0,iz=0; i<NG; i+=1)	// find how many other spots belong to this axis
 				g1 = Ghats[i][p]
 				Cross g0,g1
 				mag = normalize(W_cross)
 				dot = MatrixDot(W_cross,axis)
-				if (mag<sinMax)				// only look at the cross product when g0 & g1 not too parallel
-					iz += 1						// this spot real close to g0, increment iz
-					gIndexList += num2istr(i)+";"
-					axisAvg += axis
-				elseif (abs(dot) > tol)
-					iz += 1						// a spot in zone, increment iz
-					gIndexList += num2istr(i)+";"
+				if (mag>sinMin && abs(dot) > tol)	// W_cross is big enough and close enough to axis
+					iz += 1						// a spot on zone, increment iz
 					axisAvg += dot<0 ? -W_cross : W_cross
+					rms += acos(limit(dot,-1,1))^2	// accumulate for the rms
 				endif
 			endfor								// for i
-			if (iz >= Nmin)					// found another zone axis with at least Nmin spots, save it
+			if (iz >= Nmin)					// found another zone axis with at least Nmin spots, save last one
 				if (Nz>=Nalloc)
 					Nalloc += 100				// need to extend zones, nZones
 					Redimension/N=(Nalloc,-1) zones
-					Redimension/N=(Nalloc) nZones
+					Redimension/N=(Nalloc) nZones, rmsZones
 				endif
 				normalize(axisAvg)			// want a unit vector, so don't bother to divide by iz
 				zones[Nz][] = axisAvg[q]	// axis of this zone
-				nZones[Nz] = iz				// save number of spots contributing to this zone
+				nZones[Nz] = iz+1				// save number of spots contributing to this zone (note, g0,g0 does not contribute)
+				rmsZones[Nz] = sqrt(rms/iz)
 				Nz += 1
 			endif
 		endfor									// for j
@@ -2328,14 +2325,16 @@ Static Function/WAVE FindZonesWithNspots(Ghats,Nmin,tolAngle)
 	MakeIndex/R nZones, indexWave
 
 	// assemble the output wave
-	Make/N=(Nz,4)/D/FREE zoneOut		// this is the output wave
+	Make/N=(Nz,5)/D/FREE zoneOut			// this is the output wave
 	zoneOut[][0,2] = zones[indexWave[p]][q]
 	zoneOut[][3] = nZones[indexWave[p]]
+	zoneOut[][4] = rmsZones[indexWave[p]]
 	WaveClear zones, nZones
-	SetDimLabel 1,0,Zx,zoneOut			// first 3 columns are the zone axis (unit vector)
+	SetDimLabel 1,0,Zx,zoneOut			// columns 0,1,2 are the zone axis (unit vector)
 	SetDimLabel 1,1,Zy,zoneOut
 	SetDimLabel 1,2,Zz,zoneOut
 	SetDimLabel 1,3,Ns,zoneOut			// column 3 is number of spots used to define each zone axis
+	SetDimLabel 1,4,rms,zoneOut			// column 4 is rms error in setting the zone axis
 
 	String wnote = note(Ghats)
 	wnote = ReplaceStringByKey("waveClass",wnote,"Zones","=")
