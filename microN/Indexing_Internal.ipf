@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.29
+#pragma version = 0.30
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -49,6 +49,7 @@ End
 
 
 
+#ifdef QS_TESTING
 //  ====================================================================================  //
 //  ============================ Start of Zones+Qs Indexing ============================  //
 
@@ -1274,7 +1275,7 @@ End
 
 //  ============================= End of Zones+Qs Indexing =============================  //
 //  ====================================================================================  //
-
+#endif
 
 
 
@@ -1424,8 +1425,8 @@ Function/WAVE runIndexingQs(args)
 		hits = FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)
 #ifdef QS_TESTING
 		if (printIt)
-			Variable indexOfMax = NumberByKey("indexOfMax",note(rotAxis),"=")
-			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d), %s\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexOfMax,timeIncrement()
+			Variable indexBest = NumberByKey("indexBest",note(rotAxis),"=")
+			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d), %s\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexBest,timeIncrement()
 		endif
 #endif
 
@@ -1760,6 +1761,66 @@ End
 //		DuplicaTe/O qhats, qhatsView
 //	End
 
+
+// This Routine is probably BAD, use FindBestRot() instead
+//
+Static Function FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)	//  returns topSum number of hits at this rot
+	Wave PairRotations	// input list of rotation vectors for all possible pairs
+	Wave rotAxis			// returned rotation vector (radian), the result
+	Variable thresh		// threshold (radian)
+	Wave center				// center of volume to check, only check PairRotations[i][3] within radius of center
+	Variable radius		// radius around center to check, probably starts with Inf
+
+	radius = numtype(radius) || radius<=0 ? Inf : radius
+	Variable N=DimSize(PairRotations,0), thresh2=(thresh*thresh)
+
+	//	inVolume[] identifies those rotations within "radius" of "center[3]"
+	MatrixOP/FREE inVolume = greater(radius,sqrt(sumRows(magSqr(PairRotations-rowRepeat(center,N)))))
+	Make/N=(N)/FREE/I summs=0
+	MultiThread summs[] = summs_Set(p,inVolume,PairRotations,thresh2)
+
+	Variable topSum1 = WaveMax(summs)-1	// this ensures that NumTopRotations > 0
+	MatrixOP/FREE isFrequentRot = greater(summs,topSum1)	// flags pairs having more than topSum1 matches
+
+	WaveStats/M=1/Q summs
+#if defined(ZONE_TESTING) || defined(QS_TESTING)
+	Variable indexBest=V_maxLoc					// index of a point at the max
+	Note/K rotAxis, ReplaceNumberByKey("indexBest",note(rotAxis),indexBest,"=")
+#endif
+	Make/N=3/D/FREE rotMostLikely = PairRotations[V_maxLoc][p]
+
+	// sameRot is flags identifying all rotations within thresh of rotMostLikely
+	MatrixOP/FREE sameRot = greater(thresh2,sumRows(magSqr(PairRotations-rowRepeat(rotMostLikely,N))))
+	Variable NumSameRotations = sum(sameRot)// number of rotations that occur at rotMostLikely
+	MatrixOP/FREE rotAvg = sumCols(PairRotations*colRepeat(sameRot,3))
+	rotAxis = rotAvg / NumSameRotations		// the result being returned
+
+#if defined(ZONE_TESTING) || defined(QS_TESTING)
+	if (DataFolderExists(":GizmoWaves"))
+		// Duplicate/O summs, summsView
+		Duplicate/O PairRotations, :GizmoWaves:PairRotationsViewSize
+		Wave PairRotationsViewSize = :GizmoWaves:PairRotationsViewSize
+		Redimension/S  PairRotationsViewSize
+		Variable sizeMin = N>10000 ? 1 : 2
+		PairRotationsViewSize = limit(round(summs[p]/1),sizeMin,25)
+		Variable sizeMax = limit(WaveMax(PairRotationsViewSize)+6,6,25)
+		PairRotationsViewSize[indexBest][] = sizeMax	// make closest point bigger
+
+		Duplicate/O PairRotationsViewSize, :GizmoWaves:PairRotationsViewRGBA
+		Wave PairRotationsViewRGBA = :GizmoWaves:PairRotationsViewRGBA
+		Redimension/N=(-1,4) PairRotationsViewRGBA
+		PairRotationsViewRGBA = 0
+		PairRotationsViewRGBA[][3] = inVolume[p] ? 1 : 0.3
+		PairRotationsViewRGBA[][1,2] = isFrequentRot[p] ? 1 : 0
+
+		Make/FREE red={1,0,0,1}
+		PairRotationsViewRGBA[indexBest][] = red[q]	// make closest point red
+	endif
+#endif
+
+	return topSum1+1								// largest number of parirs in one rotaiton
+End
+
 //  ================================ End of Qs Indexing ================================  //
 //  ====================================================================================  //
 
@@ -1784,7 +1845,7 @@ End
 //	This should let me use a reduced angle tolerance and fewer hkl's.
 // Use rotation vectors rather than Euler angles.
 
-Function/WAVE runIndexingOnlyZones(args)
+Function/WAVE runIndexingZones(args)
 	String args
 	Wave FullPeakList = $StringByKey("FullPeakList",args)
 	Variable keVmax = NumberByKey("keVmaxTest",args)	// 30, maximum energy for finding peaks (keV)
@@ -1918,12 +1979,12 @@ Duplicate/O PossibleZoneAxes, PossibleZoneAxesView
 	endif
 	Variable hits, hitsLast=Inf, thresh, radius=Inf	// hits is largest number of PairRotations that are the same rotation
 	for (thresh=threshStart; thresh>threshStop; thresh /= threshDivide)
-		hits = FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)
+		Wave rotAxis = FindBestRot(PairRotations,GhatsMeasured,thresh,center,radius,angTol,keVmax)
+		hits = NumberByKey("hits",note(rotAxis),"=")
 		if (printIt)
-			Variable indexOfMax = NumberByKey("indexOfMax",note(rotAxis),"=")
-			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d)\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexOfMax
+			Variable indexBest = NumberByKey("indexBest",note(rotAxis),"=")
+			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d)\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexBest
 		endif
-
 
 		if ((hits+2) > hitsLast)				// no significant reduction
 			if (printIt)
@@ -1931,7 +1992,6 @@ Duplicate/O PossibleZoneAxes, PossibleZoneAxesView
 			endif
 			break
 		endif
-
 
 		hitsLast = hits
 		center = rotAxis							// for next iteration, reset
@@ -2358,6 +2418,13 @@ Static Function isNewAxis(existingAxes,axis,tol)	// only used by FindZonesWithNs
 	return (dotMax < tol)
 End
 
+//  =============================== End of Zones Indexing ==============================  //
+//  ====================================================================================  //
+
+
+
+//  ============================= Start of Zones Utilities =============================  //
+//  ====================================================================================  //
 
 Function/WAVE PutZoneLinesOnGraph(FullPeakList,[Nmin,tolAngle,printIt])
 	// Find the zones from fitted peaks, and put lines on plot showing the zones.
@@ -2560,9 +2627,8 @@ Static Function pixelOnDetector(d,pz)
 	return 1
 End
 
-//  =============================== End of Zones Indexing ==============================  //
+//  ============================== End of Zones Utilities ==============================  //
 //  ====================================================================================  //
-
 
 
 
@@ -2700,8 +2766,6 @@ End
 
 
 
-
-
 // convert px,py positions on detector into kf vectors, assumes ki={0,0,1}
 ThreadSafe Function/WAVE pixel2kfVEC(d,pxpy,[depth,DeltaPixelCorrect])	// returns the normalized kf's in beam line coords
 	STRUCT detectorGeometry &d
@@ -2728,9 +2792,6 @@ ThreadSafe Function/WAVE pixel2kfVEC(d,pxpy,[depth,DeltaPixelCorrect])	// return
 	WaveClear ki, depthVec
 	return kf										// normalized kf-vectors in beam line coords
 End
-
-
-
 
 
 Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,FullPeakList2,DeltaPixelCorrect])	// convert peaks to kf^s
@@ -3119,17 +3180,20 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 End
 
 
-Static Function FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)	//  returns topSum number of hits at this rot
-	Wave PairRotations	// input list of rotation vectors for all possible pairs
-	Wave rotAxis			// returned rotation vector (radian), the result
+Static Function/Wave FindBestRot(PairRotations,GhatsMeasured,thresh,center,radius,angTol,keVmax)
+	// returns the best rotAxis in PairRotations, topSum number of hits at the best rot
+	Wave PairRotations	// input a set of all possible rotation vectors
+	Wave GhatsMeasured	// measured {x,y,z, intensity, dNum}, intensity & dNum are optional
 	Variable thresh		// threshold (radian)
 	Wave center				// center of volume to check, only check PairRotations[i][3] within radius of center
 	Variable radius		// radius around center to check, probably starts with Inf
+	Variable angTol		// NumberByKey("angleTolerance",args)	// ~0.5¡, angular matrch in pair angles (degree), as this gets bigger it runs slower
+	Variable keVmax		// maximum energy for finding peaks (keV)
 
 	radius = numtype(radius) || radius<=0 ? Inf : radius
-	Variable N=DimSize(PairRotations,0), i, thresh2=(thresh*thresh)
+	Variable N=DimSize(PairRotations,0), thresh2=(thresh*thresh)
 
-	//	inVolume[] identifies those rotations within radius of center[3]
+	//	inVolume[] identifies those rotations within "radius" of "center[3]"
 	MatrixOP/FREE inVolume = greater(radius,sqrt(sumRows(magSqr(PairRotations-rowRepeat(center,N)))))
 	Make/N=(N)/FREE/I summs=0
 	MultiThread summs[] = summs_Set(p,inVolume,PairRotations,thresh2)
@@ -3137,37 +3201,42 @@ Static Function FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)	//  r
 	Variable topSum1 = WaveMax(summs)-1	// this ensures that NumTopRotations > 0
 	MatrixOP/FREE isFrequentRot = greater(summs,topSum1)	// flags pairs having more than topSum1 matches
 
-//if (0)
-//	Variable NumTopRotations = sum(isFrequentRot)				// number of rotations that occur > topSum1 times
-//	MatrixOP/FREE rotAvg = sumCols(PairRotations*colRepeat(isFrequentRot,3))
-//	rotAxis = rotAvg / NumTopRotations		// the result being returned
-//	//printf "thresh = %g¡,  summs = [%g, %g]   NumTopRotations = %g,   topSum1 = %g\r",thresh*180/PI,WaveMin(summs),WaveMax(summs),NumTopRotations,topSum1
-//else
-	// find position of largest point in summs, not the average of largest points
-	WaveStats/M=1/Q summs
-	Make/N=3/D/FREE rotMostLikely = PairRotations[V_maxloc][p]
-#if defined(ZONE_TESTING) || defined(QS_TESTING)
-	Variable indexOfMax=V_maxLoc					// index of a point at the max
-	Note/K rotAxis, ReplaceNumberByKey("indexOfMax",note(rotAxis),indexOfMax,"=")
-#endif
+	Make/N=3/D/FREE rotTest
+	Variable errBest, err, i, maxSum=WaveMax(summs), indexBest=NaN
+	for (i=0,errBest=Inf; i<N; i+=1)
+		if (summs[i]<maxSum)						// if not a top value, skip
+			continue
+		endif
+		rotTest = PairRotations[i][p]
+		err = OrientationError(GhatsMeasured,rotTest,angTol,keVmax)
+		if (err<errBest)
+			errBest = err
+			indexBest = i								// find the best rotation
+		endif
+	endfor
 
+	Make/N=3/D/FREE rotMostLikely = PairRotations[indexBest][p]
 	// sameRot is flags identifying all rotations within thresh of rotMostLikely
 	MatrixOP/FREE sameRot = greater(thresh2,sumRows(magSqr(PairRotations-rowRepeat(rotMostLikely,N))))
 	Variable NumSameRotations = sum(sameRot)// number of rotations that occur at rotMostLikely
 	MatrixOP/FREE rotAvg = sumCols(PairRotations*colRepeat(sameRot,3))
+
+	Make/N=3/D/FREE rotAxis
 	rotAxis = rotAvg / NumSameRotations		// the result being returned
-//endif
+	String wnote=ReplaceNumberByKey("hits","",topSum1+1,"=")	// largest number of parirs in one rotaiton
+	wnote = ReplaceNumberByKey("indexBest",wnote,indexBest,"=")
+	Note/K rotAxis, wnote
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING)
 	if (DataFolderExists(":GizmoWaves"))
-		//	Duplicate/O summs, summsView
+		// Duplicate/O summs, summsView
 		Duplicate/O PairRotations, :GizmoWaves:PairRotationsViewSize
 		Wave PairRotationsViewSize = :GizmoWaves:PairRotationsViewSize
 		Redimension/S  PairRotationsViewSize
 		Variable sizeMin = N>10000 ? 1 : 2
 		PairRotationsViewSize = limit(round(summs[p]/1),sizeMin,25)
 		Variable sizeMax = limit(WaveMax(PairRotationsViewSize)+6,6,25)
-		PairRotationsViewSize[indexOfMax][] = sizeMax	// make closest point bigger
+		PairRotationsViewSize[indexBest][] = sizeMax	// make closest point bigger
 
 		Duplicate/O PairRotationsViewSize, :GizmoWaves:PairRotationsViewRGBA
 		Wave PairRotationsViewRGBA = :GizmoWaves:PairRotationsViewRGBA
@@ -3177,19 +3246,93 @@ Static Function FindPeakInRots(PairRotations,rotAxis,thresh,center,radius)	//  r
 		PairRotationsViewRGBA[][1,2] = isFrequentRot[p] ? 1 : 0
 
 		Make/FREE red={1,0,0,1}
-		PairRotationsViewRGBA[indexOfMax][] = red[q]	// make closest point red
+		PairRotationsViewRGBA[indexBest][] = red[q]	// make closest point red
 	endif
 #endif
 
-	return topSum1+1								// largest number of parirs in one rotaiton
+	return rotAxis
+//	return topSum1+1								// largest number of parirs in one rotaiton
 End
 //
-ThreadSafe Function summs_Set(i,inVolume,PairRotations,thresh2)
+Static Function OrientationError(GhatsMeasured,rotAxis,angTol,keVmax,[kin])
+	// computes an error between measured spots and a given rotAxis, used to find the best orientation
+	Wave GhatsMeasured			// measured {x,y,z, intensity, dNum}, intensity & dNum are optional
+	Wave rotAxis
+	Variable angTol				// angular tolerance (degree)
+	Variable keVmax				// maximum energy for finding peaks (keV)
+	Wave kin							// optional incident wave direction (usually defaults to 001)
+
+	Make/N=3/D/FREE ki={0,0,1}			// use this for the incident beam direction
+	if (WaveExists(kin))
+		ki = kin[p]
+	endif
+	normalize(ki)
+
+
+	STRUCT microGeometry g
+	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current values
+		return NaN
+	endif
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))
+		DoAlert 0, "no lattice structure found, did you forget to set it?"
+		return NaN
+	endif
+	Wave recipBase = recipFrom_xtal(xtal)
+	Variable angle = norm(rotAxis)*180/PI	// total rotation angle (degree)
+	Variable dotMin = cos(angTol*PI/180)	// minimum dot between Ghat and (recip x hkl)
+	Make/N=(3,3)/D/FREE rotMat
+	rotationMatAboutAxis(rotAxis,angle,rotMat)	// make rotMat the matrix version of rotAxis
+	MatrixOP/O/FREE recip = rotMat x recipBase
+
+	Variable NG0=DimSize(GhatsMeasured,0)
+	Make/N=(NG0,3)/D/FREE Ghats = GhatsMeasured[p][q]	// only the first 3 columns
+	Make/N=(NG0)/FREE weight=1
+	if (DimSize(GhatsMeasured,1)>=3)		// intensities are present, use them
+		weight = sqrt(1/abs(GhatsMeasured[p][3]))
+		weight = numtype(weight) ? 1 : weight
+	endif
+
+	Make/N=(NG0)/D/FREE dots
+	MultiThread dots = Dist2NearestHKL(p,recip,GhatsMeasured,keVmax,ki)	// dot to the nearest hkl to gVec
+	MatrixOP/FREE dotOK = greater(dots,dotMin)
+	Variable N=sum(dotOK)
+	MatrixOP/FREE errs = Sum( (RowRepeat(1,NG0)-dots) * weight * dotOK )
+	return errs[0]/N
+End
+//
+ThreadSafe Static Function Dist2NearestHKL(index,recip,GhatsMeasured,keVmax,ki)	// in and out can be the same wave
+	// find hkl that is most paralllel to gVec, is allowed, and has energy < keVmax
+	Variable index
+	Wave recip						// reciprocal lattice (in actual rotated frame)
+	Wave GhatsMeasured			// has q-vectors that are known, gVec point in the measured direction
+	Variable keVmax				// maximum allowed energy
+	Wave ki							// incident wave direction, usually is (001)
+
+	Make/N=3/D/FREE ghat = GhatsMeasured[index][p]
+	normalize(ghat)
+
+	Variable Qmax = -4*PI*MatrixDot(ki,ghat)*keVmax/hc	// |Q| = 4*¹*sin(theta)/lambda
+	MatrixOP/FREE hklBase = Inv(recip) x ghat				// hkl vector but with maximum value of 1 or -1
+	MatrixOP/FREE maxBase = maxVal(abs(hklBase))
+	hklBase /= maxBase[0]											// now largest value of |hklBase| == 1
+
+	MatrixOP/FREE qBase = recip x hklBase
+	Variable maxInt = floor(Qmax/norm(qBase))				// max value of an hkl
+
+	Make/N=(maxInt,3)/FREE hkls = round(hklBase[q] * (p+1))
+	MatrixOP/FREE dots = sumRows( (NormalizeCols(recip x hkls^t)^t)*RowRepeat(ghat,maxInt))
+	return WaveMax(dots)
+End
+
+
+ThreadSafe Static Function summs_Set(i,inVolume,PairRotations,thresh2)
+	// returns the number of rotation vectors in PairRotations[][3] that are within a distance thresh of PairRotations[i][3]
 	Variable i
-	Wave inVolume
-	Wave PairRotations
-	Variable thresh2
-	if (!inVolume[i])				// PairRotations[i][p] is within radius of center
+	Wave inVolume					// 1 if point i is inside the volume, 0 if point i is outside volume being tested
+	Wave PairRotations			// set of all rotations, here we check point i
+	Variable thresh2				// square of distance thresh
+	if (!inVolume[i])				// if PairRotations[i][p] is outside of volume being tested, return 0
 		return 0
 	endif
 	Variable N=DimSize(PairRotations,0)
@@ -3269,7 +3412,6 @@ endif
 	return norm(rotAxis)
 End
 //
-// ThreadSafe
 ThreadSafe Static Function/WAVE rotFromPairs(g0,g1,q0,q1) // helper routine for rotFromPairsIndexed()
 	Wave g0, g1					// measured g's from data
 	Wave q0, q1					// possible q's from given lattice
@@ -3349,51 +3491,6 @@ Static Function hkPreferPointsAtDetector(xtal,kfHats,[kin])
 	//	if alpha <= beta return 0		meaning: detector is far from the incident beam 
 	return atDetector
 End
-//Static Function hkPreferPointsAtDetector(xtal,Ghats,[kin])
-//	// used to determine the meaning of hklPrefer
-//	// returns 1 if hklPrefer points at detector center (forward scattering)
-//	// returns 0 if hklPrefer is the q-vector that Diffracts to the detector center (top detector)
-//	STRUCT crystalStructure &xtal
-//	Wave Ghats						// contains all of the measured G^s
-//	Wave kin							// optional incident wave direction (defaults to 001)
-//
-//	Make/N=3/D/FREE ki={0,0,1}								// use this for the incident beam direction
-//	if (!ParamIsDefault(kin))									// one was passed, use it
-//		ki = kin[p]
-//		normalize(ki)
-//	endif
-//
-//	Variable N=DimSize(Ghats,0)
-//	MatrixOP/FREE qhat0 = Normalize(sumCols(Ghats))	// assume that average Ghat is Q-vector to center of detector
-//	Redimension/N=3 qhat0
-//	Variable dot = MatrixDot(ki,qhat0)
-//	Make/N=3/D/FREE kf0 = (ki - 2*dot*qhat0)			//		kf^ = ki^ - 2*(ki^ . q^)*q^,   kf0 is normalized
-//	if (MatrixDot(ki,kf0)>0.99)								// kf0 & ki are within 8¡, forward scattering
-//		return 1
-//	endif
-//
-//	// form a kf for every Ghat
-//	MatrixOP/FREE kf = (rowRepeat(ki,N) - 2*colRepeat((Ghats x ki),3)*Ghats)	//		kf^ = ki^ - 2*(ki^ . q^)*q^
-//
-//	Cross kf0, ki
-//	Wave W_Cross=W_Cross
-//	Duplicate/FREE W_Cross, a				// a[3] is the axis perp to ki, kf, & qhat0
-//	KillWaves/Z W_Cross
-//	normalize(a)
-//	// now make kfPerp the components kf perpendicular to the a[3], and normlized kfPerp
-//	MatrixOP/FREE kfPerp = NormalizeRows( kf - rowRepeat(a,N)*colRepeat((kf x a),3) )
-//
-//	// alpha & beta are angles in the plane of diffraction, this plane contains ki, kf0 & qhat0
-//	// alpha is the angle between kf0 and the most distant kf (cone angle from detector center detector edge)
-//	// beta is the angle from ki to kf closest to ki
-//	MatrixOP/FREE cosAlpha = minVal( kfPerp x kf0 )			// min { kfPerp ¥ kf0 } = cos(alpha)
-//	MatrixOP/FREE cosBeta = maxVal( kfPerp x ki )			// max { kfPerp ¥ ki } = cos(beta)
-//	Variable atDetector = (cosAlpha[0] < cosBeta[0])
-//
-//	//	if beta < alpha return 1		meaning: incident beam is closer to the detector than the size of the detector
-//	//	if alpha <= beta return 0		meaning: detector is far from the incident beam 
-//	return atDetector
-//End
 //Function test_hkPreferPointsAtDetector()
 //	Wave FullPeakList=FullPeakListOrange
 //	STRUCT crystalStructure xtal
@@ -3632,21 +3729,6 @@ ThreadSafe Static Function/WAVE RotMatAboutAxisOnly(axis)		// return rotation ma
 	rotationMatAboutAxis(a,angle,rot)
 	return rot
 End
-//ThreadSafe Static Function/WAVE RotMatAboutAxisOnly(axis)		// return rotation matrix
-//	// see:   http://en.wikipedia.org/wiki/Rotation_matrix
-//	Wave axis			// axis of rotation, length is rotation angle (radian)
-//
-//	Make/N=3/D/FREE a=axis
-//	Variable angle = normalize(a)
-//	Variable c=cos(angle), s=sin(angle)
-//	Variable c1 = 1-c
-//
-//	Make/N=3/D/FREE rot
-//	rot[0][0] = {c+a[0]*a[0]*c1, a[1]*a[0]*c1+a[2]*s, a[2]*a[0]*c1-a[1]*s}
-//	rot[0][1] = {a[0]*a[1]*c1-a[2]*s, c+a[1]*a[1]*c1, a[2]*a[1]*c1+a[0]*s}
-//	rot[0][2] = {a[0]*a[2]*c1+a[1]*s, a[1]*a[2]*c1-a[0]*s, c+a[2]*a[2]*c1}
-//	return rot
-//End
 
 
 
@@ -3910,7 +3992,7 @@ Static Function/WAVE MatrixRy(angle)	// rotation matrix about the y axis thru an
 End
 
 
-Function/T timeIncrement([fresh,longTime,seconds])
+Static Function/T timeIncrement([fresh,longTime,seconds])
 	Variable fresh							// reset all ticks to zero, default is NO restart
 	Variable longTime						// lets you set what is a long time (default is 0.2 sec)
 	Variable seconds						// returns total execution time in seconds, not the regular string
