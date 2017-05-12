@@ -2290,7 +2290,7 @@ Static Function/WAVE FindZonesWithNspots(Ghats,Nmin,tolAngle)
 			// have a new unique zone axis, find the spots belonging to this zone
 			axisAvg = 0
 			rms = 0
-			for (i=0,iz=0; i<NG; i+=1)	// find how many other spots belong to this axis
+			for (i=0,iz=1; i<NG; i+=1)	// find how many other spots belong to this axis (iz=1, because g0,g0 does not work)
 				g1 = Ghats[i][p]
 				Cross g0,g1
 				mag = normalize(W_cross)
@@ -2309,7 +2309,7 @@ Static Function/WAVE FindZonesWithNspots(Ghats,Nmin,tolAngle)
 				endif
 				normalize(axisAvg)			// want a unit vector, so don't bother to divide by iz
 				zones[Nz][] = axisAvg[q]	// axis of this zone
-				nZones[Nz] = iz+1				// save number of spots contributing to this zone (note, g0,g0 does not contribute)
+				nZones[Nz] = iz				// save number of spots contributing to this zone (note, g0,g0 does not contribute)
 				rmsZones[Nz] = sqrt(rms/iz)
 				Nz += 1
 			endif
