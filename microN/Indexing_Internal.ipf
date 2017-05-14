@@ -1848,13 +1848,14 @@ End
 Function/WAVE runIndexingZones(args)
 	String args
 	Wave FullPeakList = $StringByKey("FullPeakList",args)
-	Variable keVmax = NumberByKey("keVmaxTest",args)	// 30, maximum energy for finding peaks (keV)
+	Variable keVmaxCalc = NumberByKey("keVmaxCalc",args)	// 15, maximum energy for finding orientation (keV)
+	Variable keVmaxTest = NumberByKey("keVmaxTest",args)	// 30, maximum energy for finding matching peaks (keV)
 	Variable angTol = NumberByKey("angleTolerance",args)	// ~0.5¡, angular matrch in pair angles (degree), as this gets bigger it runs slower
-	Variable hp = NumberByKey("hp",args)					// preferred hkl
+	Variable hp = NumberByKey("hp",args)							// preferred hkl
 	Variable kp = NumberByKey("kp",args)	
 	Variable lp = NumberByKey("lp",args)	
-	Variable cone = NumberByKey("cone",args)			// for possible zone axes, range of allowed tilts from central hkl (degree)
-	Variable maxSpots = NumberByKey("maxSpots",args)	// -n max num. of spots from FullPeakList to use, default is 250
+	Variable cone = NumberByKey("cone",args)					// for possible zone axes, range of allowed tilts from central hkl (degree)
+	Variable maxSpots = NumberByKey("maxSpots",args)			// -n max num. of spots from FullPeakList to use, default is 250
 	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
 	Variable printIt = NumberByKey("printIt",args)
@@ -1866,7 +1867,7 @@ Function/WAVE runIndexingZones(args)
 		return $""
 	elseif (numtype(hp+kp+lp))
 		return $""
-	elseif (keVmax<=0 || numtype(keVmax))
+	elseif (keVmaxCalc<=0 || keVmaxTest<=0 || numtype(keVmaxCalc+keVmaxTest))
 		return $""
 	endif
 	Variable sec0=stopMSTimer(-2)*1e-6, sec1=sec0
@@ -1977,13 +1978,17 @@ Duplicate/O PossibleZoneAxes, PossibleZoneAxesView
 	if (printIt)
 		printf "running with a starting threshold of %g¡, and a stopping threshold of %g¡\r",threshStart*180/PI, threshStop*180/PI
 	endif
-	Variable hits, hitsLast=Inf, thresh, radius=Inf	// hits is largest number of PairRotations that are the same rotation
-	for (thresh=threshStart; thresh>threshStop; thresh /= threshDivide)
-		Wave rotAxis = FindBestRot(PairRotations,GhatsMeasured,thresh,center,radius,angTol,keVmax)
+	Variable hits, hitsLast=Inf, thresh, radius, OrientErr	// hits is largest number of PairRotations that are the same rotation
+	for (thresh=threshStart, radius=Inf; thresh>threshStop; thresh /= threshDivide)
+		Wave rotAxis = FindBestRot(PairRotations,GhatsMeasured,thresh,center,radius,angTol,keVmaxCalc)
+		if (!WaveExists(rotAxis))
+			return $""
+		endif
 		hits = NumberByKey("hits",note(rotAxis),"=")
+		OrientErr = NumberByKey("OrientationError",note(rotAxis),"=")
 		if (printIt)
 			Variable indexBest = NumberByKey("indexBest",note(rotAxis),"=")
-			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d)\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexBest
+			printf "  hits = %g,   hitsLast = %g,  thresh=%.3g¡,  radius=%.3g¡,   axis=%s  (%d),  OrientErr=%g\r",hits,hitsLast,thresh*180/PI,radius*180/PI,vec2str(rotAxis,zeroThresh=1e-9),indexBest,OrientErr
 		endif
 
 		if ((hits+2) > hitsLast)				// no significant reduction
@@ -2044,7 +2049,7 @@ endif
 	Make/N=(NG0,3)/D/FREE hkls=NaN, hklsAll=NaN
 	for (i=0,NG1=0; i<NG0; i+=1)
 		vec = GhatsMeasured[i][p]
-		Wave hkl = LowestAllowedHKLfromGhat(xtal,recip,vec,keVmax)	// reduce to nearest hkl
+		Wave hkl = LowestAllowedHKLfromGhat(xtal,recip,vec,keVmaxTest)	// reduce to nearest hkl
 		if (!WaveExists(hkl))
 			continue
 		endif
@@ -2062,8 +2067,8 @@ endif
 	// do a least-squares optimization on the rotation vector
 	Variable err = RefineOrientation(GhatsMeasured,hkls,recipBase,rotAxis)
 	angle = norm(rotAxis)*180/PI
-	rotationMatAboutAxis(rotAxis,angle,rotMat)	// re-make rotMat and recip
-	MatrixOP/O/FREE recip = rotMat x recipBase	// re-make recip
+	rotationMatAboutAxis(rotAxis,angle,rotMat)		// re-make rotMat and recip
+	MatrixOP/O/FREE recip = rotMat x recipBase		// re-make recip
 	if (printIt)
 		printf "*after non-linear least-squares optimization, <rot> = %s  |<rot>|=%.3f¡,  elapsed time = %.3f s\r",vec2str(rotAxis,zeroThresh=1e-9),angle,stopMSTimer(-2)*1e-6-sec1 ; sec1 = stopMSTimer(-2)*1e-6
 	endif
@@ -2075,7 +2080,7 @@ endif
 	Make/N=(NG0,12,Npatterns)/O $IndexedName/WAVE=IndexedWave = NaN
 	Variable dNum, px,py, keV, intensity, intensityMax=-Inf, ipat=0
 	Variable NG, rmsGhat, minError=Inf, maxError=-Inf
-	for (i=0,NG=0; i<NG0; i+=1)					// re-calc with optimized rotation
+	for (i=0,NG=0; i<NG0; i+=1)							// re-calc with optimized rotation
 		vec = GhatsMeasured[i][p]
 		dNum = GhatsMeasured[i][4]
 		hkl = hklsAll[i][p]
@@ -2111,7 +2116,7 @@ endif
 	rmsGhat = sqrt(rmsGhat/NG)
 	Variable executionTime = stopMSTimer(-2)*1e-6 - sec0
 	if (printIt)
-		printf "Ghat rms error (from %d of %d) Ghats = %.3g¡,  range=[%.4f, %.4f¡],  goodness0=%g\r",NG,NG0,rmsGhat,minError,maxError,goodness0
+		printf "Ghat rms error (from %d of %d) = %.3g¡,  error range=[%.4f, %.4f¡],  goodness0=%g\r",NG,NG0,rmsGhat,minError,maxError,goodness0
 		printf "Total time = %.3f s\r",executionTime
 	endif
 
@@ -2137,8 +2142,8 @@ endif
 		wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,xtal.SpaceGroupIDnum,"=")
 	endif
 
-	wnote = ReplaceNumberByKey("keVmaxCalc",wnote,keVmax,"=")
-	wnote = ReplaceNumberByKey("keVmaxTest",wnote,keVmax,"=")
+	wnote = ReplaceNumberByKey("keVmaxCalc",wnote,keVmaxCalc,"=")
+	wnote = ReplaceNumberByKey("keVmaxTest",wnote,keVmaxTest,"=")
 	wnote = ReplaceStringByKey("hklPrefer",wnote,vec2str(hklPrefer),"=")
 	wnote = ReplaceNumberByKey("cone",wnote,cone,"=")
 	wnote = ReplaceNumberByKey("angleTolerance",wnote,angTol,"=")
@@ -2695,13 +2700,14 @@ Static Function/WAVE MakePairsList(vecHats,[minAngle])// returns pairAngles, who
 	Variable Np = Nv*(Nv-1)/2						// number of unique parirs of vecHats, init to max possible value
 	Make/N=(Np,3)/D/FREE pairAngles=NaN
 	Make/N=3/D/FREE vecj, veci
-	Variable angle, j,i,m=0
-	for (j=0,m=0; j<(Nv-1); j+=1)
+	Variable angle, dot, j,i,m=0
+	for (j=0,m=0; j<(Nv-1); j+=1)				// do not test the last one, it will already have been checked
 		vecj = vecHats[j][p]
 		for (i=j+1;i<Nv;i+=1)
 			veci = vecHats[i][p]
-			angle = acos(limit(MatrixDot(vecj,veci),-1,1))
-			if (abs(angle)<notParallel && angle>minAngle)	// vectors are neither parallel nor anti-parallel, and not too far apart
+			dot = limit(MatrixDot(vecj,veci),-1,1)
+			angle = acos(dot)
+			if (abs(dot)<notParallel && angle>minAngle)	// vectors are neither parallel nor anti-parallel, and not too far apart
 				pairAngles[m][0] = angle			// store this pair, save angle and i,j
 				pairAngles[m][1] = j
 				pairAngles[m][2] = i
@@ -3214,6 +3220,9 @@ Static Function/Wave FindBestRot(PairRotations,GhatsMeasured,thresh,center,radiu
 			indexBest = i								// find the best rotation
 		endif
 	endfor
+	if (!(indexBest>=0))
+		return $""
+	endif
 
 	Make/N=3/D/FREE rotMostLikely = PairRotations[indexBest][p]
 	// sameRot is flags identifying all rotations within thresh of rotMostLikely
@@ -3225,6 +3234,7 @@ Static Function/Wave FindBestRot(PairRotations,GhatsMeasured,thresh,center,radiu
 	rotAxis = rotAvg / NumSameRotations		// the result being returned
 	String wnote=ReplaceNumberByKey("hits","",topSum1+1,"=")	// largest number of parirs in one rotaiton
 	wnote = ReplaceNumberByKey("indexBest",wnote,indexBest,"=")
+	wnote = ReplaceNumberByKey("OrientationError",wnote,errBest,"=")
 	Note/K rotAxis, wnote
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING)
@@ -3256,6 +3266,8 @@ End
 //
 Static Function OrientationError(GhatsMeasured,rotAxis,angTol,keVmax,[kin])
 	// computes an error between measured spots and a given rotAxis, used to find the best orientation
+	// the error is the weighted variance between predicted hkl's and measured directions
+	// weighting is by sqrt(intensity)
 	Wave GhatsMeasured			// measured {x,y,z, intensity, dNum}, intensity & dNum are optional
 	Wave rotAxis
 	Variable angTol				// angular tolerance (degree)
@@ -3301,8 +3313,8 @@ Static Function OrientationError(GhatsMeasured,rotAxis,angTol,keVmax,[kin])
 	return errs[0]/N
 End
 //
-ThreadSafe Static Function Dist2NearestHKL(index,recip,GhatsMeasured,keVmax,ki)	// in and out can be the same wave
-	// find hkl that is most paralllel to gVec, is allowed, and has energy < keVmax
+ThreadSafe Static Function Dist2NearestHKL(index,recip,GhatsMeasured,keVmax,ki)
+	// find hkl that is most paralllel to gVec, and and has energy < keVmax
 	Variable index
 	Wave recip						// reciprocal lattice (in actual rotated frame)
 	Wave GhatsMeasured			// has q-vectors that are known, gVec point in the measured direction
@@ -3319,6 +3331,9 @@ ThreadSafe Static Function Dist2NearestHKL(index,recip,GhatsMeasured,keVmax,ki)	
 
 	MatrixOP/FREE qBase = recip x hklBase
 	Variable maxInt = floor(Qmax/norm(qBase))				// max value of an hkl
+	if (maxInt<2)
+		return NaN
+	endif
 
 	Make/N=(maxInt,3)/FREE hkls = round(hklBase[q] * (p+1))
 	MatrixOP/FREE dots = sumRows( (NormalizeCols(recip x hkls^t)^t)*RowRepeat(ghat,maxInt))
