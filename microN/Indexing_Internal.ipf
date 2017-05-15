@@ -3280,11 +3280,6 @@ Static Function OrientationError(GhatsMeasured,rotAxis,angTol,keVmax,[kin])
 	endif
 	normalize(ki)
 
-
-	STRUCT microGeometry g
-	if (FillGeometryStructDefault(g, alert=1))	//fill the geometry structure with current values
-		return NaN
-	endif
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))
 		DoAlert 0, "no lattice structure found, did you forget to set it?"
