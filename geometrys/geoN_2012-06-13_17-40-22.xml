@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<geoN xmlns="http://sector34.xor.aps.anl.gov/34ide/geoN">
+<geoN xmlns="http://sector34.xray.aps.anl.gov/34ide/geoN">
 	<dateWritten>Wed, Jun 13, 2012</dateWritten>
 	<timeWritten>17:42:54.2 (-5)</timeWritten>
 	<EPOCH start="midnight Jan 1, 1904" unit="sec">3422454174</EPOCH>

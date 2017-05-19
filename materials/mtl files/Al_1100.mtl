@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<chemical_mixture name="Al 1100" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+<chemical_mixture name="Al 1100" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">1.43</density>
 	<part symbol="Al" fraction="0.99"></part>
 	<part symbol="Cu" fraction="0.001"></part>

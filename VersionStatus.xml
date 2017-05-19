@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">
+<VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
 	<written date="Monday, May 15, 2017" time="10:50:09 AM CDT" isoTime="2017-05-15T10:50:09"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<gitHash>a3e42ca69f9b77165ba9fadd20a1847f2c3937c7</gitHash>

@@ -76,7 +76,7 @@ def compareFiles(Vfiles, actualFiles):		# returns a string detailing mis-matches
 def VersionStatusFile2dict(FolderPath):
 	""" read the VersionXmlName file, and use its contents to fill a dict """
 	fullFile = os.path.join(FolderPath,VersionXmlName)
-	xmlns = '{http://sector34.xor.aps.anl.gov/34ide:VersionStatus}'	# the name space
+	xmlns = '{http://sector34.xray.aps.anl.gov/34ide:VersionStatus}'	# the name space
 
 	try:	tree = xml.etree.ElementTree.parse(fullFile)
 	except:	tree = None

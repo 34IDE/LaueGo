@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<geoN xmlns="http://sector34.xor.aps.anl.gov/34ide/geoN">
+<geoN xmlns="http://sector34.xray.aps.anl.gov/34ide/geoN">
 	<dateWritten>Thu, Oct 20, 2011</dateWritten>
 	<timeWritten>21:36:13.5 (-5)</timeWritten>
 	<EPOCH start="midnight Jan 1, 1904" unit="sec">3401991374</EPOCH>

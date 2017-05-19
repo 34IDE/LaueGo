@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<element_xray xmlns="http://sector34.xor.aps.anl.gov/34ide:element_xray">
+<element_xray xmlns="http://sector34.xray.aps.anl.gov/34ide:element_xray">
 <!-- 
 	contents of <edge>:  name_of_absorption_edge energy(eV)
 	contents of <line>:  name_of_emission_line energy(eV) relative_strength -->

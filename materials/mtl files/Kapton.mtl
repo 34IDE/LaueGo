@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<chemical_mixture name="Kapton" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+<chemical_mixture name="Kapton" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">1.43</density>
 	<part symbol="C" fraction="0.564103"></part>
 	<part symbol="H" fraction="0.25641"></part>

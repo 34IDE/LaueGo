@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<chemical_mixture name="SRM1834 NIST" fraction_present="0.98808" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+<chemical_mixture name="SRM1834 NIST" fraction_present="0.98808" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">3.3</density>
 	<part symbol="O" fraction="1"></part>
 	<part symbol="Si" fraction="0.2319"></part>

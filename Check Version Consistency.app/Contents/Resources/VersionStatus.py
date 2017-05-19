@@ -102,7 +102,7 @@ def WriteVersionStatus(FolderPath,actualFiles,now):
 	strTime = time.strftime('%I:%M:%S %p %Z',now)
 	strIso = time.strftime(isoFmt,now)
 	out = '<?xml version="1.0" encoding="UTF-8" ?>\n\n'
-	out += '<VersionStatus xmlns="http://sector34.xor.aps.anl.gov/34ide:VersionStatus">\n'
+	out += '<VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">\n'
 	out += '\t<written date="'+strDate+'" time="'+strTime+'" isoTime="'+strIso+'"></written>\n'
 	out += '\t<sourceFolder>'+FolderPath+'</sourceFolder>\n'
 	if len(gitHash):

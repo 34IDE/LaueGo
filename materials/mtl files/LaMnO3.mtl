@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<chemical_mixture name="Lanthanum Manganite" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+<chemical_mixture name="Lanthanum Manganite" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>LaMnO3</chemical_formula>
 	<density unit="g/cm^3">2.24</density>
 	<part symbol="La" fraction="0.2"></part>

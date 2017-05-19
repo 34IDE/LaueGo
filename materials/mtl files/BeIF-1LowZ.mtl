@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<chemical_mixture name="Be IF-1 low Z (Brush-Wellman)" xmlns="http://sector34.xor.aps.anl.gov/34ide">
+<chemical_mixture name="Be IF-1 low Z (Brush-Wellman)" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>Be</chemical_formula>
 	<density unit="g/cm^3">1.85</density>
 	<part symbol="Be" fraction="0.99835"></part>

@@ -2,8 +2,8 @@ This is a description of the geoNzzzzzzzz.xml files contents
 actually the file name does not have to start with geoN and does not have to end with ".xml"
 
 The FIRST line contains <?xml version="1.0" encoding="UTF-8" ?> which identifies this as an xml file.
-The line <geoN xmlns="http://sector34.xor.aps.anl.gov/34ide/geoN"> marks that start of the geoN group. The
-url xmlns="http://sector34.xor.aps.anl.gov/34ide/geoN" does not mean anything, it is just a unique identifier
+The line <geoN xmlns="http://sector34.xray.aps.anl.gov/34ide/geoN"> marks that start of the geoN group. The
+url xmlns="http://sector34.xray.aps.anl.gov/34ide/geoN" does not mean anything, it is just a unique identifier
 that will mark this geoN as different from any other use of geoN on the internet
 All of what is described here is the information between "<geoN" and the closing tag "</geoN>".
 Anything after the "</geoN>" is ignored
@@ -161,7 +161,7 @@ of the wire positioner.
 An example of a geoN xml file:
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<geoN xmlns="http://sector34.xor.aps.anl.gov/34ide/geoN">
+<geoN xmlns="http://sector34.xray.aps.anl.gov/34ide/geoN">
 	<dateWritten>Thu, Oct 20, 2011</dateWritten>
 	<timeWritten>21:36:13.5 (-5)</timeWritten>
 	<EPOCH start="midnight Jan 1, 1904" unit="sec">3401991374</EPOCH>
