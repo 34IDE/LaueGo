@@ -17,21 +17,26 @@ End
 
 
 #if (IgorVersion()<7)
-	strConstant DEGREESIGN = "\241"			// option-shift-8
-	strConstant BULLET = "\245"				// option-8
-	strConstant ARING = "\201"				// Angstrom sign, option-shift-A
-	strConstant GDELTA = "\306"		// Mac option-j, xC6, o306, d198
+	strConstant DEGREESIGN = "\241"		// option-shift-8
+	strConstant BULLET = "\245"			// option-8
+	strConstant ARING = "\201"			// Angstrom sign, option-shift-A
+	strConstant GDELTA = "\306"			// Mac option-j, xC6, o306, d198
+	Static strConstant Gmu = "\265"		// Mac option-m, Greek mu
 #if StringMatch(IgorInfo(2),"Windows")
 	strConstant BCHAR = "\257"
+	Static strConstant PLUSMINUS = "\241"	// MS Alt 241, plus-minus sign
 #else
 	strConstant BCHAR = "\321"
+	Static strConstant PLUSMINUS = "\261"	// Mac option-+, plus-minus sign
 #endif
 #else
 	strConstant DEGREESIGN = "\xC2\xB0"	// UTF8, DEGREE SIGN
 	strConstant BULLET = "\xE2\x80\xA2"
 	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
 	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
-	strConstant GDELTA = "\xCE\x94"	// UTF8, Greek DELTA
+	strConstant GDELTA = "\xCE\x94"			// UTF8, Greek DELTA
+	Static strConstant Gmu = "\xCE\xBC"	// UTF8, Greek mu
+	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, plus-minus sign
 #endif
 
 
@@ -3110,7 +3115,7 @@ ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val ± err"
 
 	String vfmt, evfmt, str
 	vfmt = "%."+num2istr(n)+"g"			// format for value
-	String pm = SelectString(sp,"±"," ± ")
+	String pm = SelectString(sp,PLUSMINUS," "+PLUSMINUS+" ")
 	evfmt = vfmt + pm + SelectString(n>=2,"%.1g","%.2g")
 
 	if (err>0)
@@ -4955,7 +4960,7 @@ ThreadSafe Function SIprefix2factor(prefix)
 	if (strsearch(prefix,"o",0)>=0)				// need to check for "o", which is also invalid
 		return NaN
 	endif
-	prefix = ReplaceString("µ",prefix,"o")	// NumberByKey() routine does not work with a key="µ", so use internally use "o" instead
+	prefix = ReplaceString(Gmu,prefix,"o")	// NumberByKey() routine does not work with a key="µ", so use internally use "o" instead
 
 	String keyVals="d:0.1;c:0.01;m:1e-3;o:1e-6;n:1e-9;p:1e-12;f:1e-15;a:1e-18;z:1e-21;y:1e-24;"
 	keyVals += "h:100;H:100;k:1e3;K:1e3;M:1e6;G:1e9;T:1e12;P:1e15;E:1e18;Z:1e21;Y:1e24;"
@@ -4995,7 +5000,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	yard, yd					36 inches
 	//	mile, mi					5280 feet
 	//	nauticalmile			1852 m
-	//	Angstrom, Ang, Å		1e-10 m
+	//	Angstrom, Ang,ARING	1e-10 m
 	//	micron, micrometer	1e-6 m
 	//	parsec, pc				1 parsec
 	//	lightYear, ly			9.4605284e15 m
@@ -5031,12 +5036,17 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	unit = ChangeStrEnding("feet",unit,"foot")
 	unit = ChangeStrEnding("inches",unit,"inch")
 	unit = ChangeStrEnding("fermi",unit,"fm")
-	unit = ChangeStrEnding("√Ö",unit,"Å")		// funny encoding of Angstrom symbol
-	unit = ChangeStrEnding("Ang",unit,"Å")	// lots of ways to write Angstrom
-	unit = ChangeStrEnding("Angstrom",unit,"Å")
-	unit = ChangeStrEnding("micrometer",unit,"µm")
-	unit = ChangeStrEnding("micron",unit,"µm")
-	unit = ChangeStrEnding("micro",unit,"µ")
+	unit = ChangeStrEnding("√Ö",unit,ARING)		// funny encodings of Angstrom symbol
+	unit = ChangeStrEnding("\201",unit,ARING)		// Mac opt-shift-A
+	unit = ChangeStrEnding("\xC3\x85",unit,ARING)	// UTF8
+	unit = ChangeStrEnding("Ang",unit,ARING)		// lots of ways to write Angstrom
+	unit = ChangeStrEnding("Angstrom",unit,ARING)
+	unit = ChangeStrEnding("micrometer",unit,Gmu+"m")		// Gmu is Greek mu
+	unit = ChangeStrEnding("micron",unit,Gmu+"m")
+	unit = ChangeStrEnding("micro",unit,Gmu)
+	unit = ChangeStrEnding("micrometer",unit,Gmu+"m")
+	unit = ChangeStrEnding("micron",unit,Gmu+"m")
+	unit = ChangeStrEnding("micro",unit,Gmu)
 	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
 
 	String prefix
@@ -5044,7 +5054,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	if (strsearch(unit,"m",i)==i)				// ends in 'm', means meters
 		value = 1
 		prefix = unit[0,strlen(unit)-2]
-	elseif(StringMatch(unit,"*Å"))	 			// the Angstrom
+	elseif(StringMatch(unit,"*"+ARING))		// the Angstrom
 		value = 1e-10
 		prefix = unit[0,strlen(unit)-2]
 	elseif(StringMatch(unit,"*CuXunit") || StringMatch(unit,"*CuXU"))	// the Cu X-unit
@@ -5432,8 +5442,8 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	else
 		return defaultSeconds							// cannot find base value
 	endif
+	prefix = ReplaceString("micro",prefix,Gmu)			// Greek mu
 
-	prefix = ReplaceString("micro",prefix,"µ")
 	value *= SIprefix2factor(prefix)
 	return (power==1) ? value : (value ^ power)
 End
