@@ -1,8 +1,7 @@
-#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.27
+#pragma version = 4.26
 // #pragma hide = 1
 
 Menu "Graph"
@@ -20,7 +19,6 @@ End
 	strConstant DEGREESIGN = "\241"			// option-shift-8
 	strConstant BULLET = "\245"				// option-8
 	strConstant ARING = "\201"				// Angstrom sign, option-shift-A
-	strConstant GDELTA = "\306"		// Mac option-j, xC6, o306, d198
 #if StringMatch(IgorInfo(2),"Windows")
 	strConstant BCHAR = "\257"
 #else
@@ -31,7 +29,6 @@ End
 	strConstant BULLET = "\xE2\x80\xA2"
 	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
 	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
-	strConstant GDELTA = "\xCE\x94"	// UTF8, Greek DELTA
 #endif
 
 
@@ -103,7 +100,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		rangeOfVec(wav,[row,col,layer,chunk]), returns the max and min number in the specified vector
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
-//		ValErrStr(val,err), returns string  "val Â± err" formatted correctly
+//		ValErrStr(val,err), returns string  "val ± err" formatted correctly
 //		normalize(a), normalizes a if it is a vector or square matrix
 //		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
 //		maxValueOfType(w), returns largest number that can be stored in a wave of specified type
@@ -2825,7 +2822,7 @@ ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
 
 	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
 	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180 degree rotation,
+	if (cosine<= -1)								// special for 180¡ rotation,
 		axis[0] = sqrt((rot[0][0]+1)/2)
 		axis[1] = sqrt((rot[1][1]+1)/2)
 		axis[2] = sqrt((rot[2][2]+1)/2)		// always assume z positive
@@ -2835,7 +2832,7 @@ ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
 			WaveStats/M=1/Q axis
 			axis = p==V_maxloc
 		endif
-	else												// rotaion < 180 degree, usual formula works
+	else												// rotaion < 180¡, usual formula works
 		axis[0] = rot[2][1] - rot[1][2]
 		axis[1] = rot[0][2] - rot[2][0]
 		axis[2] = rot[1][0] - rot[0][1]
@@ -2888,29 +2885,6 @@ ThreadSafe Function smallestNonZeroValue(vec,[tol])
 	MatrixOP/FREE temp = abs(vec)
 	temp = temp < tol ? NaN : temp
 	return WaveMin(temp)
-End
-
-Function/C waveRange(ww,[printIt])
-	// returns the min and max value in wave, only works for numeric waves, ignores number of dimensions
-	Wave ww
-	Variable printIt
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-
-	if (WaveType(ww,1) != 1)
-		if (printIt)
-			if (WaveType(ww,1)<1)
-				printf "The given wave is NULL.\r"
-			else
-				printf "\"%s\"   is invalid, it is NOT numeric.\r", NameOfWave(ww)
-			endif
-		endif
-		return cmplx(NaN,NaN)
-	endif
-	WaveStats/M=1/Q ww
-	if (printIt)
-		printf "\"%s\"   range=[%g, %g], %s=%.3g  --> %.2g%% variation\r", NameOfWave(ww),V_min,V_max, gDELTA, V_max-V_min, (V_max-V_min)/V_avg*100
-	endif
-	return cmplx(V_min,V_max)
 End
 
 
@@ -3000,7 +2974,7 @@ End
 
 
 ThreadSafe Function/C rangeOfVec(wav,[row,col,layer,chunk])		// returns the max and min number in the specified vector
-	Wave wav						// a 1D array (if more than 1D, MUST specify appropriate row, col, layer, chunk)
+	Wave wav						// a 1D array (if more than 1D, must specify appropriate row, col, layer, chunk)
 	Variable row,col,layer,chunk	// for selecting out a vector at a specific row, col, or layer, chunk
 	if (WaveType(wav,1)!=1)				// only understand numeric
 		return cmplx(NaN,NaN)
@@ -3096,10 +3070,10 @@ ThreadSafe Function placesOfPrecision(a)	// number of significant figures in a n
 End
 
 
-ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val Â± err"
+ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val ± err"
 	Variable val								// value
 	Variable err								// err in value
-	Variable sp								// optionally put spaces around the Â±
+	Variable sp								// optionally put spaces around the ±
 	sp = ParamIsDefault(sp) ? 0 : !(!sp)
 	sp = numtype(sp) ? 0 : sp
 	err = numtype(err) ? 0 : abs(err)
@@ -3110,7 +3084,7 @@ ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val Â± err"
 
 	String vfmt, evfmt, str
 	vfmt = "%."+num2istr(n)+"g"			// format for value
-	String pm = SelectString(sp,"Â±"," Â± ")
+	String pm = SelectString(sp,"±"," ± ")
 	evfmt = vfmt + pm + SelectString(n>=2,"%.1g","%.2g")
 
 	if (err>0)
@@ -4929,12 +4903,12 @@ ThreadSafe Function SIprefix2factor(prefix)
 	// return the product of the prefixes, e.g. "mp" returns 1e-15
 	// white space (anything <= a space) is ignored.
 	// for bad prefix values, (e.g. "v" or "3") returns NaN
-	// Note, internally I use "o" instead of "Âµ" since the NumberByKey() routine does not work with a key="Âµ"
+	// Note, internally I use "o" instead of "µ" since the NumberByKey() routine does not work with a key="µ"
 	// also note that all prefixes are case sensitive except for "H" and "K", which can be either upper or lower.
 	//		deci	= "d" = 0.1
 	//		centi	= "c" = 0.01
 	//		milli	= "m" = 1e-3
-	//		micro	= "Âµ" = 1e-6
+	//		micro	= "µ" = 1e-6
 	//		nano	= "n" = 1e-9
 	//		pico	= "p" = 1e-12
 	//		femto	= "f" = 1e-15
@@ -4955,7 +4929,7 @@ ThreadSafe Function SIprefix2factor(prefix)
 	if (strsearch(prefix,"o",0)>=0)				// need to check for "o", which is also invalid
 		return NaN
 	endif
-	prefix = ReplaceString("Âµ",prefix,"o")	// NumberByKey() routine does not work with a key="Âµ", so use internally use "o" instead
+	prefix = ReplaceString("µ",prefix,"o")	// NumberByKey() routine does not work with a key="µ", so use internally use "o" instead
 
 	String keyVals="d:0.1;c:0.01;m:1e-3;o:1e-6;n:1e-9;p:1e-12;f:1e-15;a:1e-18;z:1e-21;y:1e-24;"
 	keyVals += "h:100;H:100;k:1e3;K:1e3;M:1e6;G:1e9;T:1e12;P:1e15;E:1e18;Z:1e21;Y:1e24;"
@@ -4971,14 +4945,14 @@ ThreadSafe Function SIprefix2factor(prefix)
 	return value
 End
 //	Function test_SIprefix2factor()
-//		String chars=" dcmÂµnpfazyHhKkMGTPEZYv"
+//		String chars=" dcmµnpfazyHhKkMGTPEZYv"
 //		Variable i
 //		for (i=0;i<strlen(chars);i+=1)
 //			printf " '%s'  %g\r",chars[i],SIprefix2factor(chars[i])
 //		endfor
 //		print " "
 //		print "following should be 1's"
-//		printf "%g, %g, %g, %g, %g, ", SIprefix2factor("cH"), SIprefix2factor("mk"), SIprefix2factor("ÂµM"), SIprefix2factor("nG"), SIprefix2factor("pT")
+//		printf "%g, %g, %g, %g, %g, ", SIprefix2factor("cH"), SIprefix2factor("mk"), SIprefix2factor("µM"), SIprefix2factor("nG"), SIprefix2factor("pT")
 //		printf "%g, %g, %g, %g\r", SIprefix2factor("fP"), SIprefix2factor("aE"), SIprefix2factor("zZ"), SIprefix2factor("yY")
 //	End
 
@@ -4995,7 +4969,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	yard, yd					36 inches
 	//	mile, mi					5280 feet
 	//	nauticalmile			1852 m
-	//	Angstrom, Ang, Ã…		1e-10 m
+	//	Angstrom, Ang, 		1e-10 m
 	//	micron, micrometer	1e-6 m
 	//	parsec, pc				1 parsec
 	//	lightYear, ly			9.4605284e15 m
@@ -5031,12 +5005,12 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	unit = ChangeStrEnding("feet",unit,"foot")
 	unit = ChangeStrEnding("inches",unit,"inch")
 	unit = ChangeStrEnding("fermi",unit,"fm")
-	unit = ChangeStrEnding("âˆšÃ–",unit,"Ã…")		// funny encoding of Angstrom symbol
-	unit = ChangeStrEnding("Ang",unit,"Ã…")	// lots of ways to write Angstrom
-	unit = ChangeStrEnding("Angstrom",unit,"Ã…")
-	unit = ChangeStrEnding("micrometer",unit,"Âµm")
-	unit = ChangeStrEnding("micron",unit,"Âµm")
-	unit = ChangeStrEnding("micro",unit,"Âµ")
+	unit = ChangeStrEnding("Ã…",unit,"")		// funny encoding of Angstrom symbol
+	unit = ChangeStrEnding("Ang",unit,"")	// lots of ways to write Angstrom
+	unit = ChangeStrEnding("Angstrom",unit,"")
+	unit = ChangeStrEnding("micrometer",unit,"µm")
+	unit = ChangeStrEnding("micron",unit,"µm")
+	unit = ChangeStrEnding("micro",unit,"µ")
 	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
 
 	String prefix
@@ -5044,7 +5018,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	if (strsearch(unit,"m",i)==i)				// ends in 'm', means meters
 		value = 1
 		prefix = unit[0,strlen(unit)-2]
-	elseif(StringMatch(unit,"*Ã…"))	 			// the Angstrom
+	elseif(StringMatch(unit,"*"))	 			// the Angstrom
 		value = 1e-10
 		prefix = unit[0,strlen(unit)-2]
 	elseif(StringMatch(unit,"*CuXunit") || StringMatch(unit,"*CuXU"))	// the Cu X-unit
@@ -5225,13 +5199,11 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 	unitOut = ReplaceString("Plank",unitOut,"P")
 
 	unitIn = ReplaceString(" ",unitIn,"")			// no spaces
-	unitIn = ReplaceString("\241",unitIn,"")		// no degree signs, Mac opt-shift-9
-	unitIn = ReplaceString("\xC2\xB0",unitIn,"")	// no degree signs, UTF8
+	unitIn = ReplaceString("¡",unitIn,"")			// no degree signs
 	unitIn = RemoveEnding(unitIn,"s")				// and no trailing 's'
 
 	unitOut = ReplaceString(" ",unitOut,"")		// no spaces
-	unitOut = ReplaceString("\241",unitOut,"")		// no degree signs, Mac opt-shift-9
-	unitOut = ReplaceString("\xC2\xB0",unitOut,"")		// no degree signs, UTF8
+	unitOut = ReplaceString("¡",unitOut,"")		// no degree signs
 	unitOut = RemoveEnding(unitOut,"s")			// and no trailing 's'
 
 	if (strlen(unitIn)<1 || strlen(unitOut)<1)
@@ -5433,7 +5405,7 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		return defaultSeconds							// cannot find base value
 	endif
 
-	prefix = ReplaceString("micro",prefix,"Âµ")
+	prefix = ReplaceString("micro",prefix,"µ")
 	value *= SIprefix2factor(prefix)
 	return (power==1) ? value : (value ^ power)
 End
@@ -5603,7 +5575,7 @@ ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral St
 	String str = SelectString(j<0,"","-")		// start str with the sign
 	j = round(abs(j))
 
-	if (j<1 || numtype(j))					// retrns "" for zero, Â±Inf, NaN
+	if (j<1 || numtype(j))					// retrns "" for zero, ±Inf, NaN
 		str = ""
 	elseif (j>=1000)
 		str += "M"+RomanNumeral(j-1000)	// add an M & remove 1000
