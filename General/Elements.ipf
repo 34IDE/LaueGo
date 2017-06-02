@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -70,6 +70,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	May 3, 2015		2.01
 //		moved #include "MaterialsLocate" to the ElementDataInitPackage() funciton
+//
+//	Jun 2, 2017		2.04
+//		modified EmissionEnergies(), It can now return the average K-emission, or L, or M, or even <Ka>
 
 Menu "Analysis"
       Submenu "Element"
@@ -627,57 +630,85 @@ End
 //  ======================================================================================  //
 //  ========================== Start of emission line functions ==========================  //
 
-Function EmissionEnergies(symb,edgeType)		// display or return a single emission line energy
+Function EmissionEnergies(symb,edgeType,[printIt])		// display or return am average or a single emission line energy
 	String symb				// atomic symbol
 	String edgeType		// item to return
+	Variable printIt
+	Variable topLevel=strlen(GetRTStackInfo(2))==0
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? topLevel : printIt
+	edgeType = ReplaceString("<",edgeType,"")
+	edgeType = ReplaceString(">",edgeType,"")
 
 	Wave/T FullEmissionLineInfo = root:Packages:Elements:FullEmissionLineInfo
 	if (!WaveExists(FullEmissionLineInfo))
 		ElementDataInitPackage()
 	endif
 
-	String edgeTypes="All;Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
-	Variable ask=0, topLevel=strlen(GetRTStackInfo(2))<1
-	if (topLevel)
-		ask = WhichListItem(symb, ELEMENT_Symbols )<0
-		ask = WhichListItem(edgeType, edgeTypes )<0
-	endif
-	if (ask)
-		Prompt edgeType, "edge type",popup, edgeTypes
+	String edgeTypesMenu="All;<K>;<Ka>;<Kb>;<Kg>;Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;<L>;<La>;<Lb>;<Lg>;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
+	String edgeTypes="Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
+
+	Variable Z=element2Z(symb)
+	if (topLevel && (numtype(Z) || !edgeTypeInLines(edgeType,edgeTypes)))
+		Prompt edgeType, "edge type",popup, edgeTypesMenu
 		Prompt symb, "atomic symbol", popup, ELEMENT_Symbols
 		DoPrompt "select", symb,edgeType
 		if (V_flag)
 			return NaN
 		endif
+		edgeType = ReplaceString("<",edgeType,"")
+		edgeType = ReplaceString(">",edgeType,"")
+		printIt = 1
 	endif
-	if (WhichListItem(symb, ELEMENT_Symbols )<0 || WhichListItem(edgeType, edgeTypes )<0)
+	Z = element2Z(symb)
+	if (numtype(Z) || !edgeTypeInLines(edgeType,edgeTypes))
 		return NaN
 	endif
 
-	Variable Z=element2Z(symb)
 	STRUCT EmissionLineStruct em
 	StructGet/S em, FullEmissionLineInfo[Z]
 
-	Variable eV = NaN
-	if (stringmatch(edgeType,"All"))
+	Variable i, eV, rel
+	if (stringmatch(edgeType,"All"))		// print out all the emission lines for symb
 		printEmissionLineStruct(em)
 		if (em.N >0)
-			eV = em.line[em.N - 1].eV	// return the highest energy
+			eV = em.line[em.N - 1].eV			// return the highest energy
 		endif
-	else
-		Variable i, rel=NaN
-		for (i=0;i<em.N;i+=1)
-			if (stringmatch(edgeType, em.line[i].name))
-				eV = em.line[i].eV
+
+	else												// looking for a single or an average
+		Variable relSum, N
+		for (i=0,eV=0,relSum=0,N=0; i<em.N; i+=1)
+			if (strsearch(em.line[i].name, edgeType,0,2)==0)	// starts with edgeType
 				rel = em.line[i].rel
-				break
+				eV += em.line[i].eV * rel		// accumulate for average
+				relSum += rel
+				N += 1
 			endif
 		endfor
-		if ((ask || topLevel) && numtype(eV)==0)
-			printf "  %s(%s) is at %g eV  (relative strength = %g)\r",symb,edgeType,eV,rel
+		eV = N ? eV/relSum : NaN
+		if (printIt && numtype(eV)==0)
+			if (N==1)
+				printf "  %s(%s) is at %g eV  (relative strength = %g)\r",symb,edgeType,eV,rel
+			else
+				printf "  %s(%s) is at %g eV  (weighted average of %d lines)\r",symb,edgeType,eV,N
+			endif
 		endif
 	endif
 	return eV
+End
+//
+Static Function edgeTypeInLines(edgeType,lines)
+	String edgeType
+	String lines
+	if (cmpstr(edgeType,"All")==0)
+		return 1
+	endif
+	Variable i, N=ItemsInList(lines)
+	for (i=0;i<N;i+=1)
+		if (strsearch(StringFromList(i,lines),edgeType,0,2)==0)
+			return 1
+		endif
+	endfor
+	return 0
 End
 
 
