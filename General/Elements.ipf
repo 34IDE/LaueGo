@@ -686,11 +686,11 @@ Function EmissionEnergies(symb,edgeType,[printIt])		// display or return am aver
 		endfor
 		eV = N ? eV/relSum : NaN
 		if (printIt && numtype(eV)==0)
-			if (N==1)
-				printf "  %s(%s) is at %g eV  (relative strength = %g)\r",symb,edgeType,eV,rel
-			else
-				printf "  %s(%s) is at %g eV  (weighted average of %d lines)\r",symb,edgeType,eV,N
-			endif
+			String str=""
+			if (N>1)
+				sprintf str, ",  the weighted average of %d lines",N
+			endif	
+			printf "  %s(%s) is at %g eV  (relative strength = %g%s)\r",symb,edgeType,eV,relSum,str
 		endif
 	endif
 	return eV
