@@ -735,12 +735,13 @@ Function/T emissionEdgeName(emissionLine)
 	return StringByKey(emissionLine,Lkeys)
 End
 
-Static Function/T emissionLineList(Z)			// get list of lines to fit
+Static Function/T emissionLineList(Z,[minSep])			// get list of lines to fit
 	Variable Z
+	Variable minSep						// minimum separation between lines for grouping
+	minSep = ParamIsDefault(minSep) || numtype(minSep) || minSep<0 ? NumVarOrDefault("root:Packages:Elements:defaultPeakFWHM",0)*MIN_LINE_SEPARATION_FRACTION : minSep
 	// retruns a ";" separated list, each element is of form "eV:strength:name"
 	// where the strength is relative to 100, and name is the name of the emission line
 
-	Variable minSep = NumVarOrDefault("root:Packages:Elements:defaultPeakFWHM",0)*MIN_LINE_SEPARATION_FRACTION
 	STRUCT EmissionLineStruct em
 	Wave/T FullEmissionLineInfo = root:Packages:Elements:FullEmissionLineInfo
 	if (!WaveExists(FullEmissionLineInfo))
