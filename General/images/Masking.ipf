@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Masking
-#pragma version = 1.03
+#pragma version = 1.04
 
 
 Menu "GraphMarquee",dynamic
@@ -76,7 +76,7 @@ End
 //===================  This section is used to make an image mask by hand
 
 Function MakeMask(image)
-	Wave image
+	Wave image						// image used as starting point, provides size, and other info
 	if (!WaveExists(image) || WaveDims(image)!=2)
 		String imageName = ""
 		String list = WaveListClass("rawImage*;ImageSummed*","*","DIMS:2")
@@ -124,6 +124,15 @@ Function MakeMask(image)
 	Make/N=(Nx,Ny)/B/U/O $maskName
 	Wave mask = $maskName
 	wnote = ReplaceStringByKey("waveClass",wnote,"imageMask","=")
+	String inote=note(image)							// numbers to help locate this mask in a larger image (if ROI)
+	wnote = ReplaceStringByKey("startx",wnote,StringByKey("startx",inote,"="),"=")
+	wnote = ReplaceStringByKey("endx",wnote,StringByKey("endx",inote,"="),"=")
+	wnote = ReplaceStringByKey("groupx",wnote,StringByKey("groupx",inote,"="),"=")
+	wnote = ReplaceStringByKey("starty",wnote,StringByKey("starty",inote,"="),"=")
+	wnote = ReplaceStringByKey("endy",wnote,StringByKey("endy",inote,"="),"=")
+	wnote = ReplaceStringByKey("groupy",wnote,StringByKey("groupy",inote,"="),"=")
+	wnote = ReplaceStringByKey("xDimDet",wnote,StringByKey("xDimDet",inote,"="),"=")
+	wnote = ReplaceStringByKey("yDimDet",wnote,StringByKey("yDimDet",inote,"="),"=")
 	Note/K mask, wnote
 
 	//	WaveStats/Q image
