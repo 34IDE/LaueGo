@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.19
+#pragma version = 2.20
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -1078,8 +1078,6 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,ticks,3}
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabel,1}
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelText,xlabel}
-		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelDistance,0.05}
-		ModifyGizmo ModifyObject=axes0, objectType=axes property={0,axisLabelScale,0.5}
 	endif
 
 	if (stringmatch(ylabel,"empty"))
@@ -1088,8 +1086,6 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,ticks,3}
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabel,1}
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelText,ylabel}
-		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelDistance,0.05}
-		ModifyGizmo ModifyObject=axes0, objectType=axes property={1,axisLabelScale,0.5}
 	endif
 
 	if (stringmatch(zlabel,"empty"))
@@ -1098,8 +1094,6 @@ Function setGizmoAxisLabels(xlabel,ylabel,zlabel)
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,ticks,3}
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabel,1}
 		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelText,zlabel}
-		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelDistance,0.2}
-		ModifyGizmo ModifyObject=axes0, objectType=axes property={2,axisLabelScale,0.5}
 	endif
 #endif
 End

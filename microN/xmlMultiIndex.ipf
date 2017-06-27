@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.01
+#pragma version=2.02
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -2225,6 +2225,7 @@ Function MakeGizmo_xmlData(scatt)
 	if (strlen(title2))
 		title = title2+SelectString(strlen(title),"",", ")+title
 	endif
+	title = ReplaceString(", , ",title,", ")
 	Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+CleanupName(NameOfWave(scatt)+"Corners",0))
 	if (!WaveExists(cubeCorners))
 		Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+"cubeCorners")			// the old way for compatibility
@@ -2298,9 +2299,6 @@ Function MakeGizmo_xmlData(scatt)
 	NewGizmo/N=$name/T=name/W=(253,44,804,566)
 	ModifyGizmo startRecMacro
 
-	if (strlen(title))
-		AppendToGizmo string=title,strFont=GenevaEquivFont,name=Title
-	endif
 	AppendToGizmo attribute blendFunc={770,771},name=blendFunc0
 	AppendToGizmo Axes=boxAxes,name=axes0
 	setGizmoAxisLabels("X  (µm)","H  (µm)","F  (µm)")
@@ -2335,13 +2333,6 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo modifyObject=light0 objectType=light property={ direction,0.426121,-0.439519,0.790724}
 	ModifyGizmo modifyObject=light0 objectType=light property={ specular,0.733333,0.733333,0.733333,0.5}
 
-	if (strlen(title))
-		ModifyGizmo setDisplayList=0, opName=translateTitle, operation=translate, data={-1.9,1.9,0}
-		ModifyGizmo setDisplayList=1, opName=scaleTitle, operation=scale, data={0.1,0.1,0.1}
-		ModifyGizmo setDisplayList=2, opName=rotateTitle, operation=rotate, data={180,1,0,0}
-		ModifyGizmo setDisplayList=3, object=Title
-		ModifyGizmo setDisplayList=4, opName=MainTransform, operation=mainTransform
-	endif
 	ModifyGizmo setDisplayList=-1, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}
 	ModifyGizmo setDisplayList=-1, opName=scale0, operation=scale, data={1.25,1.25,1.25}
 	ModifyGizmo setDisplayList=-1, attribute=blendFunc0
@@ -2354,6 +2345,11 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo SETQUATERNION={0.824516,0.417235,-0.157751,-0.348105}
 	ModifyGizmo autoscaling=1
 	ModifyGizmo currentGroupObject=""
+
+	if (strlen(title))
+		TextBox/C/N=Title/F=0/B=1/A=LT/X=1.5/Y=1.5 "\\Zr150" + title
+	endif
+
 	ModifyGizmo compile
 	ModifyGizmo endRecMacro
 #endif
