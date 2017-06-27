@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, June 27, 2017" time="09:43:02 AM CDT" isoTime="2017-06-27T09:43:02"></written>
+	<written date="Tuesday, June 27, 2017" time="12:53:32 PM CDT" isoTime="2017-06-27T12:53:32"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>be9193d967024aad9df6e2313710713efc7fc0a2</gitHash>
+	<gitHash>ae1caab530db6db0e59ce4621640998a71a03cc7</gitHash>
 	<fileCount>240</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -13,7 +13,7 @@
 	<file version="1.65" time="2017-02-18T16:34:12" md5="dc205508bac9c3e6c142db937196317b" sha256="f7567db761f260a67dffdb93ba4e60234cb60b929e75262a8c5903da53c044ff" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
 	<file version="nan" time="2016-02-19T14:01:32" md5="6d2b6b0f362cb5763df99155c64406fe" sha256="015776fc7639c2ef9f23fee482575e5f54702287fdb23b1cb5140bb3cc2e7596" ext=".xml">materials/standard xtals/Forsterite_Pnma.xml</file>
 	<file version="nan" time="2016-02-17T12:54:16" md5="60a36ceedd3ac2eb34fbd5667b2c02d8" sha256="c635705a96777b8233f43b82af34d5e7a5511163ae3a00ded5f7d7d6947651bf" ext=".xml">materials/standard xtals/Rene-41.xml</file>
-	<file version="2.01" time="2017-04-19T12:03:29" md5="583a3f32feae172b9db4e92289d7ed8a" sha256="909633b0b7b73c7d01995caadbc84d681cbe2977b93a47472f0f11f40d952ee6" ext=".ipf">microN/xmlMultiIndex.ipf</file>
+	<file version="2.02" time="2017-06-27T12:49:17" md5="6bb4220dcca6aa29fa9bacbd386859ed" sha256="dbf8510bbdc518d89b999cccf9441dc630e7357b3a8f10ea5b52f6c7cba3ed20" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/Images/PilatusTiffs.ipf</file>
 	<file version="nan" time="2017-05-19T10:59:08" md5="294ead7a65b44c3d1b59cb02ea246318" sha256="907518cb07a9c16cc48194b15fbb242b3b2459c2ac9dec2988f201d4906c490f" ext=".html">doc/geometry.html</file>
 	<file version="nan" time="2016-01-25T13:00:16" md5="affb1cba03512545d073d9fbd09fffd3" sha256="516c5b5369fe5b2bd4228db4d8a1abd9e3e56054056e6601671a42e39206bdcd" ext=".xml">materials/standard xtals/RuO2.xml</file>
@@ -23,7 +23,7 @@
 	<file version="nan" time="2017-05-19T11:04:45" md5="21a6ac906a1c8484e63af6e1fb87120f" sha256="c8759f570a0eb7f6e7a9383a883ac9d9a54b3e45f4b10b582dacbd79a7a18f36" ext=".xml">geometrys/geoN_2012-02-01_20-31-17.xml</file>
 	<file version="2.5" time="2017-03-15T12:37:40" md5="53079e9feb799c518410d1aa00beba90" sha256="67799e31c486801d18e66ab5ea8d82bb28a498e415e93233cc0e7c3e9b9224bc" ext=".ipf">Diffractometer/spec.ipf</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" sha256="93ec0b54c4c2a1e3a276fbb5ed400d5126aca93ebbd6d9096fe52d18e9e211dc" ext=".ipf">General/absorption.ipf</file>
-	<file version="2.19" time="2016-10-24T10:09:10" md5="4b611d79eb7c8ba42e0829be562fe585" sha256="1cd3cb500aca21bb709c42a9fbc160f7411f85f7955956bdea3bcfbb64a73f19" ext=".ipf">General/Gizmo/GizmoUtility.ipf</file>
+	<file version="2.2" time="2017-06-27T12:34:19" md5="90f3557f1f943b361ec23dc12268896e" sha256="ce23293b4708ec3e26313ae21afd30e4038fa20d6c6d4d73d59b8914b4bac276" ext=".ipf">General/Gizmo/GizmoUtility.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:54" md5="fa636622c6ca0cafbe43be0bda30771b" sha256="2e604afd90d24b28f2631b72d6ed089cdf7942ae0b3edb43eac53946ff67eb75" ext=".xml">materials/standard xtals/Pu-alpha.xml</file>
 	<file version="2.15" time="2017-04-19T11:33:59" md5="2076201cea73bbc5af20e0b39cc6af8b" sha256="886a6c0f9d655952aaa0ec263aeeedd9f2a0342bb1c06a054c3134bf1c80623c" ext=".ipf">General/FWHM.ipf</file>
 	<file version="0.19" time="2017-05-02T15:05:03" md5="699a97718e9a8a83a97a2b8d8ecd0ec0" sha256="0dd4a138103ab078b3b17483a629257714e5a5917d5eedff42c8ec7f2749cd87" ext=".ipf">General/Stats3D.ipf</file>
