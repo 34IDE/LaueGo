@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.14
+#pragma version = 2.15
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -1177,12 +1177,12 @@ Function/WAVE ExtractROIofImage(image, roi)
 		imageROI = image[ix0+p*fx][iy0+q*fy][r][s]
 	endif
 
-	wnote = ReplaceNumberByKey("startx",wnote,startx,"=")	// re-set wavenote to match roi
-	wnote = ReplaceNumberByKey("starty",wnote,starty,"=")
-	wnote = ReplaceNumberByKey("endx",wnote,endx,"=")
-	wnote = ReplaceNumberByKey("endy",wnote,endy,"=")
-	wnote = ReplaceNumberByKey("groupx",wnote,groupx,"=")
-	wnote = ReplaceNumberByKey("groupy",wnote,groupy,"=")
+	wnote = ReplaceNumberByKey("startx",wnote,roi.xLo,"=")	// re-set wavenote to match roi
+	wnote = ReplaceNumberByKey("starty",wnote,roi.yLo,"=")
+	wnote = ReplaceNumberByKey("endx",wnote,roi.xHi,"=")
+	wnote = ReplaceNumberByKey("endy",wnote,roi.yHi,"=")
+	wnote = ReplaceNumberByKey("groupx",wnote,roi.binx,"=")
+	wnote = ReplaceNumberByKey("groupy",wnote,roi.biny,"=")
 	Note/K imageROI, wnote
 	return imageROI
 End
