@@ -2225,7 +2225,6 @@ Function MakeGizmo_xmlData(scatt)
 	if (strlen(title2))
 		title = title2+SelectString(strlen(title),"",", ")+title
 	endif
-	title = ReplaceString(", , ",title,", ")
 	Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+CleanupName(NameOfWave(scatt)+"Corners",0))
 	if (!WaveExists(cubeCorners))
 		Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+"cubeCorners")			// the old way for compatibility
@@ -2370,6 +2369,10 @@ Static Function/T getTitleFromNote(list)
 		Variable seconds = date2secs(yr,month,day) + 3600*h+60*m+s
 		str += ", "+Secs2Date(seconds,2)+"  "+Secs2Time(seconds,0)
 	endif
+	str = TrimBoth(str,chars=" ,")
+	for (; strsearch(str, ", , ",0)>=0 ;)		// remove all extra ", "
+		str = ReplaceString(", , ",str,", ")
+	endfor
 	return str
 End
 
