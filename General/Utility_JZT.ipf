@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.27
+#pragma version = 4.28
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3537,6 +3537,7 @@ Function cpuFrequency()		// return the cpu frequency (Hz)
 End
 
 Function/T systemUserName()		// return unix username
+#if (IgorVersion()<7)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
 		print "Only know how to get user name from a Mac"
 		return ""								// cannot get answer
@@ -3550,6 +3551,9 @@ Function/T systemUserName()		// return unix username
 		DoAlert 0, "Unable to get user name, message is '"+S_value+"'"
 	endif
 	return userName
+#else
+	return IgorInfo(7)
+#endif
 End
 
 Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
