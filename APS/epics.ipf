@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.0
-#pragma version=1.81
+#pragma version=1.82
 
 Menu "Data"
 	Submenu "EPICS"
@@ -227,9 +227,8 @@ End
 
 
 Function/T getEpicsBasePath()
-	String env = getEnvironment()
-	String base = StringByKey("EPICS_BASE", env,"=")
-	String path = StringByKey("PATH", env,"=")
+	String base = getEnvironment("EPICS_BASE")
+	String path = getEnvironment("PATH")
 	String str
 	Variable i
 	for (i=0, str=StringFromList(i,path,":"); strlen(str); i+=1, str=StringFromList(i,path,":"))

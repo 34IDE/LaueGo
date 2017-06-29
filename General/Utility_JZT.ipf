@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.28
+#pragma version = 4.29
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3520,7 +3520,7 @@ Function pingHost(host)				// returns ping time in seconds, returns NaN CANNOT p
 	return Tavg
 End
 
-Function cpuFrequency()		// return the cpu frequency (Hz)
+Function cpuFrequency()					// return the cpu frequency (Hz)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
 		print "Only know how to get cpu speed from a Mac"
 		// DoAlert 0, "Only know how to get cpu speed from a Mac"
@@ -3536,7 +3536,7 @@ Function cpuFrequency()		// return the cpu frequency (Hz)
 	return freq
 End
 
-Function/T systemUserName()		// return unix username
+Function/T systemUserName()				// return unix username
 #if (IgorVersion()<7)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
 		print "Only know how to get user name from a Mac"
@@ -3556,6 +3556,11 @@ Function/T systemUserName()		// return unix username
 #endif
 End
 
+#if (IgorVersion()>7 && stringmatch(IgorInfo(2),"Windows"))
+Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
+	return GetEnvironmentVariable("COMPUTERNAME")
+End
+#elif (stringmatch(IgorInfo(2),"Macintosh"))
 Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
 		DoAlert 0, "Only know how to get hostname from a Mac"
@@ -3565,6 +3570,12 @@ Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.
 	String hostname = ReplaceString("\"",S_value,"")
 	return ReplaceString("\"",S_value,"")
 End
+#else
+Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
+	DoAlert 0, "Do not know how to get hostname from Windows in Igor 6 or earlier."
+	return ""									// cannot get answer
+End
+#endif
 
 Function/T localTimeZoneName()
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
@@ -3579,10 +3590,10 @@ Function/T localTimeZoneName()
 	return S_value
 End
 
-
-// Get a list of system environment variables, semi-colon separated
 #if (stringmatch(IgorInfo(2),"Macintosh"))
-Function/T getEnvironment()
+// Get a list of system environment variables, semi-colon separated
+Function/T getEnvironment(name)
+	String name										// name of variable, use "=" to get all
 	String cmd
 	sprintf cmd "do shell script \"source ~/.bash_profile ; env\""
 	ExecuteScriptText cmd
@@ -3599,11 +3610,21 @@ Function/T getEnvironment()
 		return ""
 	endif
 	S_value = ReplaceString("\r",S_value,";")
-	return S_value
+
+	if (StringMatch(name,"="))
+		return S_value
+	else
+		return StringByKey(name,S_value,"=")
+	endif
 End
-#else
-Function/T getEnvVariables()
-	return ""
+#elif (IgorVersion() >= 7)					// Windows in Igor7
+Function/T getEnvironment(name)
+	return GetEnvironmentVariable(name)
+End
+#else													// Windows in Igor6
+Function/T getEnvironment(name)
+	DoAlert 0, "Do not know how to get envirnment variable on Windows in Igor 6 or earlier"
+	return ""										// cannot get answer
 End
 #endif
 

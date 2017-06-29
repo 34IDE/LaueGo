@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma IgorVersion = 6.3
-#pragma version = 0.06
+#pragma version = 0.07
 #pragma ModuleName=CurrentDetector
 #include "ImageDisplayScaling"
 #include "HDF5images"
@@ -140,12 +140,11 @@ End
 //
 Static Function/T exportVariablesCommands(varList)	// make an export command with quoted values
 	String varList						// list of current environment variables to get and format
-	String env=getEnvironment()	// get key=value list of all environment variables
 	String str, var, value, cmd=""
 	Variable i, N=ItemsInList(varList)
 	for (i=0;i<N;i+=1)
 		var = StringFromList(i,varList)
-		value = StringByKey(var,getEnvironment(),"=")
+		value = getEnvironment(var)
 		if (strlen(var)>0 && strlen(value)>0)
 			sprintf str "%s=\\\"%s\\\" ",var,value
 			cmd += str
