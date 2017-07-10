@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.29
+#pragma version = 4.30
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3619,10 +3619,12 @@ Function/T getEnvironment(name)
 End
 #elif (IgorVersion() >= 7)					// Windows in Igor7
 Function/T getEnvironment(name)
+	String name										// name of variable, use "=" to get all
 	return GetEnvironmentVariable(name)
 End
 #else													// Windows in Igor6
 Function/T getEnvironment(name)
+	String name										// name of variable, use "=" to get all
 	DoAlert 0, "Do not know how to get envirnment variable on Windows in Igor 6 or earlier"
 	return ""										// cannot get answer
 End
