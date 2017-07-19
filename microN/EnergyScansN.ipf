@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.47
+#pragma version = 2.48
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -10,6 +10,7 @@
 // version 2.44 Cleaned out all the old code
 // version 2.45 Fill_Q_Positions(), allow for variable ROI in the histograming (only for |Q|)
 // version 2.46 Fill_Q_Positions(), allow for variable ROI in the histograming (added 3D Q too)
+// version 2.48 added FindStepSizeInVec(vec,threshold), use in FindScalingFromVec(), Fill_Q_Positions(), and Fill1_3DQspace()
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -518,11 +519,6 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	FindScalingFromVec(depth_FillQvsPositions,0.1,off,ddep,Nz)	//  "    "    "   "     "   "    "     "   "  depths
 	Variable depth0 = WaveMin(depth_FillQvsPositions)
 
-		//Duplicate/O keV_FillQvsPositions, keV_FillQvsPositionsView
-		//Duplicate/O X_FillQvsPositions, X_FillQvsPositionsView
-		//Duplicate/O H_FillQvsPositions, H_FillQvsPositionsView
-		//Duplicate/O depth_FillQvsPositions, depth_FillQvsPositionsView
-
 	// let the user correct the scan ranges as necessary
 	dx = abs(dx)
 	dy = abs(dy)
@@ -562,10 +558,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	depth0 = numtype(depth0) ? depth : depth0
 	depth0 = numtype(depth0) ? 0 : depth0
 	WaveStats/M=1/Q keV_FillQvsPositions
-	Variable ikeVlo=V_minloc, ikeVhi=V_maxloc				// save location of min and max energies
 	if (V_numNans)
 		DoAlert 0, "There were "+num2istr(V_numNans)+" bad images found, they will be skipped"
 	endif
+	Variable ikeVlo=V_minloc, ikeVhi=V_maxloc				// save location of min and max energies
+	Variable keVmax=keV_FillQvsPositions[ikeVhi], keVmin=keV_FillQvsPositions[ikeVlo]
+	Variable dkeV = FindStepSizeInVec(keV_FillQvsPositions, 0.0001)	// returns energy step
 
 	// if varyROI is True, then maskLocal will be size of roiAll
 	if (WaveExists(badPixels) && WaveExists(mask))
@@ -585,17 +583,17 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	String wnoteFull = ReadGenericHeader(name)				// a full typical wave note
 
 	Variable/C thetaZ = thetaRange(geo.d[dNum],roiAll,maskIN=maskLocal,depth=depth0)		// returns the range of theta spanned by roi
-	keV = keV_FillQvsPositions[ikeVlo]
-	Qmin = 4*PI * sin( real(thetaZ) ) * keV/hc			// min Q (1/nm)
-	keV = keV_FillQvsPositions[ikeVhi]
-	Qmax = 4*PI * sin( imag(thetaZ) ) * keV/hc			// max Q (1/nm)
+	Qmin = 4*PI * sin( real(thetaZ) ) * keVmin/hc		// min Q (1/nm)
+	Qmax = 4*PI * sin( imag(thetaZ) ) * keVmax/hc		// max Q (1/nm)
 
 	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
 	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
 	px = (roiAll.xLo + roiAll.xHi)/2							// approximate full chip pixel position in center or the image (UN-binned)
 	px = (roiAll.yLo + roiAll.yHi)/2
-	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py+(roiAll.biny),$"")))*keV/hc
-//		dQ /= 1.5
+	// dQ is max of Q change in x+1, y+1, or energy step
+	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py,$"")))*keVmax/hc
+	dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px,py+(roiAll.biny),$"")))*keVmax/hc)
+	dQ = max(dQ, 4*PI*sin(pixel2q(geo.d[dNum],px,py,$""))/hc * dkeV)	// also consider the energy step size
 	NQ = round((Qmax-Qmin)/dQ) + 1								// number of Qs
 
 	if (printIt)
@@ -614,7 +612,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		else
 			printf "only one depth value\r"
 		endif
-		printf "E range = [%g, %g] (keV)\r", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi]
+		printf "E range = [%g, %g] (keV)\r", keVmin, keVmax
 		printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
 		printf "theta range = [%g, %g]¡\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI
 		if (d0>0)
@@ -3488,44 +3486,24 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Wave vec
 	Variable threshold					// a change greater than this is intentional (less is jitter)
 	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
-	Variable &stepSize
-	Variable &dimN
+	Variable &stepSize					// returned step size
+	Variable &dimN							// returned number of points
 	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
 
-	// first, get the step size
-	Duplicate/FREE vec vecSort
-	Variable N = numpnts(vecSort)
-	SetScale/P x 0,1,"", vecSort
+	stepSize = FindStepSizeInVec(vec,threshold)	// get the step size from values in vec
+	// stepSize is rounded to show no significant digits past threshold/10
 
-	vecSort = vecSort[p+1]-vecSort[p]			// make vecSort the differences
-	vecSort = abs(vecSort[p])<threshold ? NaN : vecSort[p]
-	Sort vecSort, vecSort
-
-	WaveStats/Q vecSort
-	N = V_npnts
-	Redimension/N=(N) vecSort						// remove all NaN's (small steps) 
-	if (N<1)
-		first = vec[0]									// no steps, just use first point
-		stepSize = 0
-		dimN = 1
-		return 0
-	endif
-	stepSize = vecSort[(N-1)/2]					// take the median value (avoids problems with average)
-
-	// round stepSize to 9 significant figures
-	stepSize = (placesOfPrecision(roundSignificant(stepSize,9))<7) ? roundSignificant(stepSize,9) : stepSize
-
-	// second, the starting point, the average of all the points within threshold of the lowest
+	// find the starting point, the average of all the points within threshold of the lowest
 	Duplicate/FREE vec vecSort
 	SetScale/P x 0,1,"", vecSort
 	Sort vecSort, vecSort
 	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
 	first = vecSort(i/2)							// this gives median of the points within threshold of the lowest
 
-	// third, find number of points in "one scan"
+	// find number of points in "one scan"
 	WaveStats/M=1/Q vec
 	Variable snapBack = 0.1*(V_max-V_min)		// 0.1 of full range is a new scan
-	N = numpnts(vec)
+	Variable N = numpnts(vec)
 	Variable tm=0,tn=0, m=0						// tm=# of scan found
 	for (i=1;i<N;i+=1)
 		if (abs(vec[i]-vec[i-1])<threshold)	// this step is a repeat, do not count it
@@ -3551,42 +3529,23 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Wave vec
 	Variable threshold					// a change greater than this is intentional (less is jitter)
 	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
-	Variable &stepSize
-	Variable &dimN
+	Variable &stepSize					// returned step size
+	Variable &dimN							// returned number of points
 	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
 
 	// first, get the step size
-	Duplicate/FREE vec vecSort
-	Variable N = numpnts(vecSort)
-	SetScale/P x 0,1,"", vecSort
+	stepSize = FindStepSizeInVec(vec,threshold)	// returns the step size from values in vec
+	// stepSize is rounded to show no significant digits past threshold/10
 
-	vecSort = vecSort[p+1]-vecSort[p]			// make vecSort the differences
-	vecSort = abs(vecSort[p])<threshold ? NaN : vecSort[p]
-	Sort vecSort, vecSort
-
-	WaveStats/Q vecSort
-	N = V_npnts
-	Redimension/N=(N) vecSort						// remove all NaN's (small steps) 
-	if (N<1)
-		first = vec[0]									// no steps, just use first point
-		stepSize = 0
-		dimN = 1
-		return 0
-	endif
-	stepSize = vecSort[(N-1)/2]					// take the median value (avoids problems with average)
-
-	// round stepSize to 9 significant figures
-	stepSize = (placesOfPrecision(roundSignificant(stepSize,9))<7) ? roundSignificant(stepSize,9) : stepSize
-
-	// second, the starting point, the median of all the points within threshold of the lowest
+	// find the starting point, the median of all the points within threshold of the lowest
 	Duplicate/FREE vec vecSort
 	SetScale/P x 0,1,"", vecSort
 	Sort vecSort, vecSort
 	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
 	first = vecSort(i/2)							// this gives median of the points within threshold of the lowest
 
-	// third, find number of points in "one scan"
-	N = numpnts(vec)
+	// find number of points in "one scan"
+	Variable N = numpnts(vec)
 	Variable tm=0,tn=0, m=0						// tm=# of scan found
 	for (i=1;i<N;i+=1)
 		if (abs(vec[i]-vec[i-1])<threshold)	// this step is a repeat, do not count it
@@ -3607,6 +3566,47 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	return 0
 End
 #endif
+
+
+Static Function FindStepSizeInVec(vec,threshold)
+	// returns the step size from values in vec
+	// stepSize is rounded to show no significant digits past threshold/10
+	Wave vec
+	Variable threshold								// changes greater than this are intentional (less is jitter)
+	if (numpnts(vec)<2)								// do not have 2 point, just return step size of 0
+		return 0
+	endif
+
+	threshold = abs(threshold)					// no negative thresholds
+	if (numtype(threshold))						//  and you must pass a valid looking threshold
+		return NaN
+	endif
+
+	Duplicate/FREE vec dVec
+	Variable N = numpnts(vec)-1
+	Redimension/N=(N) dVec
+	SetScale/P x 0,1,"", dVec
+
+	dVec = vec[p+1]-vec[p]							// make dVec the differences
+	dVec = abs(dVec[p])<threshold ? NaN : dVec[p]
+	Sort dVec, dVec
+
+	WaveStats/Q dVec
+	N = V_npnts
+	Redimension/N=(N) dVec							// remove all NaN's (small steps) 
+	if (N<1)												// do not have 2 point, just return step size of 0
+		return 0
+	endif
+
+	Variable stepSize=dVec[floor((N-1)/2)]	// take the median value (avoids problems with average)
+	if (threshold!=0)	
+		threshold /= 10								// use threshold/10 to round
+		Variable times = threshold<1 ? 10^ceil(-log(threshold)) : 10^floor(log(threshold))
+		stepSize = round(stepSize*times)/times
+	endif
+
+	return stepSize
+End
 
 
 Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index in to pkWave of the ±50% of peak points, or use cursors A & B
@@ -4853,10 +4853,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		depth = NumberByKey("depth",wnoteFull,"=")			// no depth given, try from file
 	endif
 
-	Variable dkeV,NkeV, off=0
-	FindScalingFromVec(keV_FillQvsPositions,2e-4,off,dkeV,NkeV)		// get step size and number of points for the energy scan
-	dkeV = abs(dkeV)													// sign is not used
-
+	Variable dkeV = abs(FindStepSizeInVec(keV_FillQvsPositions,2e-4))	// step size in the energy scan
 	Variable ask = (printIt || strlen(GetRTStackInfo(2))==0)	// ask if called from command line
 	ask = ask && !autoGo											// don't ask when autoGo=True
 	ask = ask || numtype(dkeV)>0									// always ask for invalid dkeV
@@ -4895,10 +4892,10 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
 	px = (roiAll.xLo + roiAll.xHi)/2							// approximate full chip pixel position in center or the image (UN-binned)
 	px = (roiAll.yLo + roiAll.yHi)/2
-	Variable dQpixel = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py+(roiAll.biny),$"")))*Elo/hc
-	Variable dQenergy = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * dkeV/hc
-	Variable dQ = max(dQpixel, dQenergy)						// choose larger of energy scan or pixel size
-
+	// choose dQ as largest of pixelX+1, pixelY+1, or dEnergy
+	Variable dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py,$"")))*Elo/hc
+	dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px,py+(roiAll.biny),$"")))*Elo/hc )
+	dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * dkeV/hc )
 	if (printIt)
 		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],dkeV
 		printf "    %s Scan\r",SelectString(mono,"Undulator","Monochromator")
