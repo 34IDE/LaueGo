@@ -3495,7 +3495,7 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	dimN = 0
 
 	// get the step size
-	stepSize = EnergyScans#FindStepSizeInVec(vec,threshold)	// returns the signed step size from values in vec
+	stepSize = FindStepSizeInVec(vec,threshold,signed=0)	// returns the signed step size from values in vec
 	if (numtype(stepSize) || !WaveExists(vec))		// failed
 		return 1
 	elseif (stepSize==0)									// only one point, no actual scan
@@ -3511,14 +3511,14 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Sort vecSort, vecSort
 	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+stepSize/2))
 	first = vecSort(i/2)									// this gives median of the points within |stepSize/2| of the lowest
-	if (threshold!=0)											// use threshold/10 to round
+	if (threshold!=0)											// use threshold/10 to round first
 		Variable num = threshold/10
 		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
 		first = round(first*times)/times
 	endif
 	WaveClear vecSort
 
-	// find number of points in "one scan", a scan changes when a step is > |1.5*stepSize|
+	// find number of points in "one scan", a scan changes when a step is > |2*stepSize|
 	Variable N = numpnts(vec)
 	Duplicate/FREE vec dVec
 	Redimension/N=(N-1) dVec
@@ -3526,7 +3526,7 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	dVec = vec[p+1]-vec[p]									// make dVec the differences
 	dVec = numtype(dVec) ? NaN : dVec					// change Inf --> NaN
 	dVec = abs(dVec)<threshold ? NaN : dVec			// step is a repeat, do not count it
-	dVec = abs(dVec)<(1.5*stepSize) ? 0 : dVec		// set all normal steps to 0, step is: delta < (1.5*step)
+	dVec = abs(dVec)<(2*stepSize) ? 0 : dVec		// set all normal steps to 0, step is: delta < (2*step)
 	// at this point, dVec is non-zero at the breaks, NaN at bad points, and 0 at normal steps
 
 	Make/N=(N)/U/I/FREE sizes=0
