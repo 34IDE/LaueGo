@@ -563,7 +563,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 	Variable ikeVlo=V_minloc, ikeVhi=V_maxloc				// save location of min and max energies
 	Variable keVmax=keV_FillQvsPositions[ikeVhi], keVmin=keV_FillQvsPositions[ikeVlo]
-	Variable dkeV = FindStepSizeInVec(keV_FillQvsPositions, 0.0001)	// returns energy step
+	Variable dkeV = FindStepSizeInVec(keV_FillQvsPositions, 0.0002)	// returns energy step, threshold=0.2 eV
 
 	// if varyROI is True, then maskLocal will be size of roiAll
 	if (WaveExists(badPixels) && WaveExists(mask))
@@ -3486,41 +3486,73 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Wave vec
 	Variable threshold					// a change greater than this is intentional (less is jitter)
 	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
-	Variable &stepSize					// returned step size
+	Variable &stepSize					// returned |step size|
 	Variable &dimN							// returned number of points
-	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
 
-	stepSize = FindStepSizeInVec(vec,threshold)	// get the step size from values in vec
-	// stepSize is rounded to show no significant digits past threshold/10
+	threshold = abs(threshold)							// no negative thresholds
+	first = NaN													// init to bad values
+	stepSize = NaN
+	dimN = 0
 
-	// find the starting point, the average of all the points within threshold of the lowest
+	// get the step size
+	stepSize = EnergyScans#FindStepSizeInVec(vec,threshold)	// returns the signed step size from values in vec
+	if (numtype(stepSize) || !WaveExists(vec))		// failed
+		return 1
+	elseif (stepSize==0)									// only one point, no actual scan
+		first = vec[0]
+		dimN = 1
+		return 0
+	endif
+
+	// find the starting point, the median of all the points within |stepSize/2| of the lowest
+	// note that first is always the smallest, regardless of the direction of scan, stepSize is always positive
 	Duplicate/FREE vec vecSort
 	SetScale/P x 0,1,"", vecSort
 	Sort vecSort, vecSort
-	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+threshold))
-	first = vecSort(i/2)							// this gives median of the points within threshold of the lowest
+	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+stepSize/2))
+	first = vecSort(i/2)									// this gives median of the points within |stepSize/2| of the lowest
+	if (threshold!=0)											// use threshold/10 to round
+		Variable num = threshold/10
+		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
+		first = round(first*times)/times
+	endif
+	WaveClear vecSort
 
-	// find number of points in "one scan"
-	WaveStats/M=1/Q vec
-	Variable snapBack = 0.1*(V_max-V_min)		// 0.1 of full range is a new scan
+	// find number of points in "one scan", a scan changes when a step is > |1.5*stepSize|
 	Variable N = numpnts(vec)
-	Variable tm=0,tn=0, m=0						// tm=# of scan found
-	for (i=1;i<N;i+=1)
-		if (abs(vec[i]-vec[i-1])<threshold)	// this step is a repeat, do not count it
-			continue
-		elseif (abs(vec[i]-vec[i-1])>snapBack)	// this a new scan
-			tm += m+1									// sum of number of points in "a scan"
-			tn += 1										// number of scans found
-			m = 0
-		else												// just another OK step
-			m += 1
+	Duplicate/FREE vec dVec
+	Redimension/N=(N-1) dVec
+	SetScale/P x 0,1,"", dVec
+	dVec = vec[p+1]-vec[p]									// make dVec the differences
+	dVec = numtype(dVec) ? NaN : dVec					// change Inf --> NaN
+	dVec = abs(dVec)<threshold ? NaN : dVec			// step is a repeat, do not count it
+	dVec = abs(dVec)<(1.5*stepSize) ? 0 : dVec		// set all normal steps to 0, step is: delta < (1.5*step)
+	// at this point, dVec is non-zero at the breaks, NaN at bad points, and 0 at normal steps
+
+	Make/N=(N)/U/I/FREE sizes=0
+	Variable istart, Nsize
+	for (i=0,istart=0,Nsize=0; i<(N-1); i+=1)
+		if (dVec[i])
+			WaveStats/M=1/Q/R=[istart,i] dVec			// want number of valid (not NaN) points in this range
+			sizes[Nsize] = V_npnts
+			Nsize += 1
+			istart = i+1
 		endif
 	endfor
-	if (m>0)
-		tm += m+1										// sum of number of points in "a scan"
-		tn += 1											// number of scans found
+
+	if ((N-2-istart) > 1)									// add a last point, since there was probably not a big step at end
+		WaveStats/M=1/Q/R=[istart,N-2] dVec
+		sizes[Nsize] = V_npnts+1
+		Nsize += 1
+	elseif (Nsize<1)
+		dimN = 2
+		return 0
 	endif
-	dimN = round(tm/ tn)
+	Redimension/N=(Nsize) sizes
+	sizes = !sizes ? NaN : sizes							// remove all zeros
+	WaveStats/M=1/Q sizes
+	Redimension/N=(V_npnts) sizes
+	dimN = StatsMedian(sizes)								// the median number of points in one scan
 	return 0
 End
 #else
@@ -3550,7 +3582,7 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	for (i=1;i<N;i+=1)
 		if (abs(vec[i]-vec[i-1])<threshold)	// this step is a repeat, do not count it
 			continue
-		elseif (abs(vec[i]-vec[i-1]-stepSize)<(abs(stepSize)+threshold))	// this an OK step
+		elseif (abs(abs(vec[i]-vec[i-1])-stepSize)<(abs(stepSize)+threshold))	// this an OK step
 			m += 1
 		else
 			tm += m+1									// sum of number of points in "a scan"
@@ -3568,12 +3600,17 @@ End
 #endif
 
 
-Static Function FindStepSizeInVec(vec,threshold)
+Static Function FindStepSizeInVec(vec,threshold,[signed])
 	// returns the step size from values in vec
 	// stepSize is rounded to show no significant digits past threshold/10
 	Wave vec
 	Variable threshold								// changes greater than this are intentional (less is jitter)
-	if (numpnts(vec)<2)								// do not have 2 point, just return step size of 0
+	Variable signed									// if True, return signed stepSize, use signed=0 for zig-zag scans or SetScale commands
+	signed = numtype(signed) ? 0 : signed		//		default is UNsigned
+
+	if (!WaveExists(vec))							// failed, ERROR
+		return NaN
+	elseif (numpnts(vec)<2)						// do not have 2 point, just return step size of 0
 		return 0
 	endif
 
@@ -3588,20 +3625,23 @@ Static Function FindStepSizeInVec(vec,threshold)
 	SetScale/P x 0,1,"", dVec
 
 	dVec = vec[p+1]-vec[p]							// make dVec the differences
+	if (!signed)
+		dVec = abs(dVec)								// abs() will show correct step size for signed, and for SetScale commands
+	endif
 	dVec = abs(dVec[p])<threshold ? NaN : dVec[p]
 	Sort dVec, dVec
 
 	WaveStats/Q dVec
 	N = V_npnts
-	Redimension/N=(N) dVec							// remove all NaN's (small steps) 
+	Redimension/N=(N) dVec							// remove all NaN's (tiny steps) 
 	if (N<1)												// do not have 2 point, just return step size of 0
 		return 0
 	endif
 
 	Variable stepSize=dVec[floor((N-1)/2)]	// take the median value (avoids problems with average)
 	if (threshold!=0)	
-		threshold /= 10								// use threshold/10 to round
-		Variable times = threshold<1 ? 10^ceil(-log(threshold)) : 10^floor(log(threshold))
+		Variable num = threshold/10				// use threshold/10 to round
+		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
 		stepSize = round(stepSize*times)/times
 	endif
 
@@ -4853,7 +4893,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 		depth = NumberByKey("depth",wnoteFull,"=")			// no depth given, try from file
 	endif
 
-	Variable dkeV = abs(FindStepSizeInVec(keV_FillQvsPositions,2e-4))	// step size in the energy scan
+	Variable dkeV = FindStepSizeInVec(keV_FillQvsPositions, 2e-4)	// abs(step size) in the energy scan, threshold=0.2 eV
 	Variable ask = (printIt || strlen(GetRTStackInfo(2))==0)	// ask if called from command line
 	ask = ask && !autoGo											// don't ask when autoGo=True
 	ask = ask || numtype(dkeV)>0									// always ask for invalid dkeV
