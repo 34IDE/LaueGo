@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.48
+#pragma version = 2.49
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -11,6 +11,7 @@
 // version 2.45 Fill_Q_Positions(), allow for variable ROI in the histograming (only for |Q|)
 // version 2.46 Fill_Q_Positions(), allow for variable ROI in the histograming (added 3D Q too)
 // version 2.48 added FindStepSizeInVec(vec,threshold), use in FindScalingFromVec(), Fill_Q_Positions(), and Fill1_3DQspace()
+// version 2.49 moved FindScalingFromVec() and FindStepSizeInVec() to Utillity_JZT
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -3480,96 +3481,32 @@ End
 //	End
 
 
-#ifdef TRY_ME_OUT
+#ifdef OLD_WAY_EnergyScans
 // find the step size in a coordinate by examining the values
-Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
+OverRide Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	Wave vec
 	Variable threshold					// a change greater than this is intentional (less is jitter)
 	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
 	Variable &stepSize					// returned |step size|
 	Variable &dimN							// returned number of points
 
-	threshold = abs(threshold)							// no negative thresholds
-	first = NaN													// init to bad values
+	threshold = abs(threshold)						// no negative thresholds
+	first = NaN												// init to bad values
 	stepSize = NaN
 	dimN = 0
 
-	// get the step size
-	stepSize = FindStepSizeInVec(vec,threshold,signed=0)	// returns the signed step size from values in vec
-	if (numtype(stepSize) || !WaveExists(vec))		// failed
+	// get the step size rounded to show no significant digits past threshold/10
+	stepSize = FindStepSizeInVec(vec,threshold,signed=0)	// returns the |step size| from values in vec
+	if (numtype(stepSize) || !WaveExists(vec))	// failed
 		return 1
-	elseif (stepSize==0)									// only one point, no actual scan
+	elseif (stepSize==0)								// only one point, no actual scan
 		first = vec[0]
 		dimN = 1
 		return 0
 	endif
 
-	// find the starting point, the median of all the points within |stepSize/2| of the lowest
-	// note that first is always the smallest, regardless of the direction of scan, stepSize is always positive
-	Duplicate/FREE vec vecSort
-	SetScale/P x 0,1,"", vecSort
-	Sort vecSort, vecSort
-	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+stepSize/2))
-	first = vecSort(i/2)									// this gives median of the points within |stepSize/2| of the lowest
-	if (threshold!=0)											// use threshold/10 to round first
-		Variable num = threshold/10
-		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
-		first = round(first*times)/times
-	endif
-	WaveClear vecSort
-
-	// find number of points in "one scan", a scan changes when a step is > |2*stepSize|
-	Variable N = numpnts(vec)
-	Duplicate/FREE vec dVec
-	Redimension/N=(N-1) dVec
-	SetScale/P x 0,1,"", dVec
-	dVec = vec[p+1]-vec[p]									// make dVec the differences
-	dVec = numtype(dVec) ? NaN : dVec					// change Inf --> NaN
-	dVec = abs(dVec)<threshold ? NaN : dVec			// step is a repeat, do not count it
-	dVec = abs(dVec)<(2*stepSize) ? 0 : dVec		// set all normal steps to 0, step is: delta < (2*step)
-	// at this point, dVec is non-zero at the breaks, NaN at bad points, and 0 at normal steps
-
-	Make/N=(N)/U/I/FREE sizes=0
-	Variable istart, Nsize
-	for (i=0,istart=0,Nsize=0; i<(N-1); i+=1)
-		if (dVec[i])
-			WaveStats/M=1/Q/R=[istart,i] dVec			// want number of valid (not NaN) points in this range
-			sizes[Nsize] = V_npnts
-			Nsize += 1
-			istart = i+1
-		endif
-	endfor
-
-	if ((N-2-istart) > 1)									// add a last point, since there was probably not a big step at end
-		WaveStats/M=1/Q/R=[istart,N-2] dVec
-		sizes[Nsize] = V_npnts+1
-		Nsize += 1
-	elseif (Nsize<1)
-		dimN = 2
-		return 0
-	endif
-	Redimension/N=(Nsize) sizes
-	sizes = !sizes ? NaN : sizes							// remove all zeros
-	WaveStats/M=1/Q sizes
-	Redimension/N=(V_npnts) sizes
-	dimN = StatsMedian(sizes)								// the median number of points in one scan
-	return 0
-End
-#else
-// find the step size in a coordinate by examining the values
-Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
-	Wave vec
-	Variable threshold					// a change greater than this is intentional (less is jitter)
-	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
-	Variable &stepSize					// returned step size
-	Variable &dimN							// returned number of points
-	threshold = threshold>0 ? threshold : 0.1	// no negative thresholds
-
-	// first, get the step size
-	stepSize = FindStepSizeInVec(vec,threshold)	// returns the step size from values in vec
-	// stepSize is rounded to show no significant digits past threshold/10
-
 	// find the starting point, the median of all the points within threshold of the lowest
+	// note that first is always the smallest, regardless of the direction of scan, stepSize is always positive
 	Duplicate/FREE vec vecSort
 	SetScale/P x 0,1,"", vecSort
 	Sort vecSort, vecSort
@@ -3598,55 +3535,6 @@ Static Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	return 0
 End
 #endif
-
-
-Static Function FindStepSizeInVec(vec,threshold,[signed])
-	// returns the step size from values in vec
-	// stepSize is rounded to show no significant digits past threshold/10
-	Wave vec
-	Variable threshold								// changes greater than this are intentional (less is jitter)
-	Variable signed									// if True, return signed stepSize, use signed=0 for zig-zag scans or SetScale commands
-	signed = numtype(signed) ? 0 : signed		//		default is UNsigned
-
-	if (!WaveExists(vec))							// failed, ERROR
-		return NaN
-	elseif (numpnts(vec)<2)						// do not have 2 point, just return step size of 0
-		return 0
-	endif
-
-	threshold = abs(threshold)					// no negative thresholds
-	if (numtype(threshold))						//  and you must pass a valid looking threshold
-		return NaN
-	endif
-
-	Duplicate/FREE vec dVec
-	Variable N = numpnts(vec)-1
-	Redimension/N=(N) dVec
-	SetScale/P x 0,1,"", dVec
-
-	dVec = vec[p+1]-vec[p]							// make dVec the differences
-	if (!signed)
-		dVec = abs(dVec)								// abs() will show correct step size for signed, and for SetScale commands
-	endif
-	dVec = abs(dVec[p])<threshold ? NaN : dVec[p]
-	Sort dVec, dVec
-
-	WaveStats/Q dVec
-	N = V_npnts
-	Redimension/N=(N) dVec							// remove all NaN's (tiny steps) 
-	if (N<1)												// do not have 2 point, just return step size of 0
-		return 0
-	endif
-
-	Variable stepSize=dVec[floor((N-1)/2)]	// take the median value (avoids problems with average)
-	if (threshold!=0)	
-		Variable num = threshold/10				// use threshold/10 to round
-		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
-		stepSize = round(stepSize*times)/times
-	endif
-
-	return stepSize
-End
 
 
 Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index in to pkWave of the ±50% of peak points, or use cursors A & B

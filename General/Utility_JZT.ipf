@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.30
+#pragma version = 4.31
 // #pragma hide = 1
 
 Menu "Graph"
@@ -106,6 +106,8 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		smallestNonZeroValue(vec,[tol]), returns the abs( smallest non-zero element ), e.g. {0, -0.1, 3} returns 0.1
 //		MedianOfWave(), returns median (or other percentile) of a wave, useful for picking scaling ranges
 //		rangeOfVec(wav,[row,col,layer,chunk]), returns the max and min number in the specified vector
+//		FindScalingFromVec(), find the scaling (for a SetScale command) that fit the values of vec[] (position of a step scan)
+//		FindStepSizeInVec(),  find the step size in a vec (positions of a step scan) by examining the values
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -3072,6 +3074,139 @@ ThreadSafe Function/C rangeOfVec(wav,[row,col,layer,chunk])		// returns the max 
 End
 
 
+Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
+	// find the scaling used in a SetScale command that fits the values of vec[]
+	// vec[] are the positions of a step scan.
+	// values are rounded to show no significant digits past threshold/10
+	Wave vec
+	Variable threshold					// a change greater than this is intentional (less is jitter)
+	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
+	Variable &stepSize					// returned |step size|
+	Variable &dimN							// returned number of points
+
+	threshold = abs(threshold)							// no negative thresholds
+	first = NaN													// init to bad values
+	stepSize = NaN
+	dimN = 0
+
+	// get the step size
+	stepSize = FindStepSizeInVec(vec,threshold,signed=0)	// returns the un-signed |step size| from values in vec
+	if (numtype(stepSize) || !WaveExists(vec) ||numpnts(vec)<1)		// failed
+		stepSize = NaN
+		return 1
+	elseif (stepSize==0)									// only one point, no actual scan
+		first = vec[0]
+		stepSize = 0
+		dimN = 1
+		return 0
+	endif
+
+	// find the starting point, the median of all the points within |stepSize/2| of the lowest
+	// note that first is always the smallest, regardless of the direction of scan, stepSize is always positive
+	Duplicate/FREE vec vecSort
+	SetScale/P x 0,1,"", vecSort
+	Sort vecSort, vecSort
+	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+stepSize/2))
+	first = vecSort(i/2)									// this gives median of the points within |stepSize/2| of the lowest
+	if (threshold!=0)											// use threshold/10 to round first
+		Variable num = threshold/10
+		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
+		first = round(first*times)/times
+	endif
+	WaveClear vecSort
+
+	// find number of points in "one scan"
+	//   a new scan is a change of more than |2*stepSize|
+	//   a step is a change of more than |stepSize/5|
+	Variable N = numpnts(vec)
+	Duplicate/FREE vec dVec
+	Redimension/N=(N-1) dVec
+	SetScale/P x 0,1,"", dVec
+	dVec = vec[p+1]-vec[p]									// make dVec the differences
+	dVec = numtype(dVec) ? NaN : dVec					// change Inf --> NaN
+	Variable tol = max(abs(stepSize/5),threshold)	// must be greater than this to look like a real step
+	dVec = abs(dVec)<tol ? NaN : dVec					// step is a repeat, do not count it
+	dVec = abs(dVec)<(2*stepSize) ? 0 : dVec		// set all normal steps to 0, step is: delta < (2*step)
+	// at this point, dVec is non-zero at the end of each scan, NaN at bad points, and 0 at normal steps
+
+	// count the number of points in each scan, stored in sizes[]
+	Make/N=(N)/U/I/FREE sizes=0							// holds the size of each scan that was found
+	Variable istart, Nsizes
+	for (i=0,istart=0,Nsizes=0; i<(N-1); i+=1)
+		if (dVec[i])											// found a scan end
+			WaveStats/M=1/Q/R=[istart,i] dVec			// want number of valid (not NaN) points in this range of a single scan
+			sizes[Nsizes] = V_npnts						// number of valid (not NaN) points in this scan [istart,i]
+			Nsizes += 1
+			istart = i+1
+		endif
+	endfor
+
+	if ((N-2-istart) > 0)									// add a last point, since there was probably not a big step at end
+		WaveStats/M=1/Q/R=[istart,N-2] dVec
+		sizes[Nsizes] = V_npnts+1
+		Nsizes += 1
+	elseif (Nsizes<1)
+		dimN = 2
+		return 0
+	endif
+	Redimension/N=(Nsizes) sizes
+	sizes = !sizes ? NaN : sizes							// remove all zeros
+	WaveStats/M=1/Q sizes
+	Redimension/N=(V_npnts) sizes
+	dimN = StatsMedian(sizes)								// the median number of points in one scan
+	return 0
+End
+
+
+Function FindStepSizeInVec(vec,threshold,[signed])
+	// find the step size in vec (position of a step scan) by examining the values
+	// returns the step size from values in vec
+	// stepSize is rounded to show no significant digits past threshold/10
+	Wave vec
+	Variable threshold								// changes greater than this are intentional (less is jitter)
+	Variable signed									// if True, return signed stepSize, use signed=0 for zig-zag scans or SetScale commands
+	signed = numtype(signed) ? 0 : signed		//		default is UNsigned
+
+	if (!WaveExists(vec))							// failed, ERROR
+		return NaN
+	elseif (numpnts(vec)<2)						// do not have 2 point, just return step size of 0
+		return 0
+	endif
+
+	threshold = abs(threshold)					// no negative thresholds
+	if (numtype(threshold))						//  and you must pass a valid looking threshold
+		return NaN
+	endif
+
+	Duplicate/FREE vec dVec
+	Variable N = numpnts(vec)-1
+	Redimension/N=(N) dVec
+	SetScale/P x 0,1,"", dVec
+
+	dVec = vec[p+1]-vec[p]							// make dVec the differences
+	if (!signed)
+		dVec = abs(dVec)								// abs() will show correct step size for signed, and for SetScale commands
+	endif
+	dVec = abs(dVec[p])<threshold ? NaN : dVec[p]
+	Sort dVec, dVec
+
+	WaveStats/Q dVec
+	N = V_npnts
+	Redimension/N=(N) dVec							// remove all NaN's (tiny steps) 
+	if (N<1)												// do not have 2 point, just return step size of 0
+		return 0
+	endif
+
+	Variable stepSize=dVec[floor((N-1)/2)]	// take the median value (avoids problems with average)
+	if (threshold!=0)	
+		Variable num = threshold/10				// use threshold/10 to round
+		Variable times = num<1 ? 10^ceil(-log(num)) : 10^floor(log(num))
+		stepSize = round(stepSize*times)/times
+	endif
+
+	return stepSize
+End
+
 
 // This routine is much faster than going through an [sprintf str,"%g",val] conversion
 ThreadSafe Function roundSignificant(val,N)	// round val to N significant figures
@@ -4128,7 +4263,7 @@ ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// 
 	zeroThresh = ParamIsDefault(zeroThresh) || numtype(zeroThresh) || zeroThresh<=0 ? NaN : zeroThresh
 	sep = SelectString(ParamIsDefault(sep),sep,",  ")
 
-	if (!WaveExists(w1))
+	if (!WaveExists(w1) || numpnts(w1)<1)
 		return SelectString(bare,"{}","")
 	endif
 
