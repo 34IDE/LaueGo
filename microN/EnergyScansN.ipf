@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.50
+#pragma version = 2.51
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -13,6 +13,7 @@
 // version 2.48 added FindStepSizeInVec(vec,threshold), use in FindScalingFromVec(), Fill_Q_Positions(), and Fill1_3DQspace()
 // version 2.49 moved FindScalingFromVec() and FindStepSizeInVec() to Utillity_JZT
 // version 2.50 Fill_Q_Positions(), added optional dQ, and a DEFAULT_dQfactor to allow user tweaking of dQ
+// version 2.51 changed all special Mac character, should print better with Windows & Igor7
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -34,6 +35,17 @@ Static Constant secPerPixelDistort = 15.24e-3	// time is takes to process distor
 Static Constant DEFAULT_I0_GAIN = 1e9
 Static Constant DEFAULT_I0_SCALING = 1e5
 Static Constant DEFAULT_dQfactor = 1.1
+#if (IgorVersion()<7)
+	Static strConstant Gmu = "\265"		// Mac option-m, Greek mu
+#if StringMatch(IgorInfo(2),"Windows")
+	Static strConstant PLUSMINUS = "\241"	// MS Alt 241, plus-minus sign
+#else
+	Static strConstant PLUSMINUS = "\261"	// Mac option-+, plus-minus sign
+#endif
+#else
+	Static strConstant Gmu = "\xCE\xBC"	// UTF8, Greek mu
+	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, plus-minus sign
+#endif
 
 
 //	**	To get the ful chip unbinned pixel position from ROI data use the following:
@@ -143,7 +155,7 @@ Function SetDataFolderFromMenu1()
 	from=GetDataFolder(1)
 	SetDataFolder $fldr
 	to=GetDataFolder(1)
-	printf "\r\r¥¥ changed data folder from  '%s'  -->  '%s'\r",from,to
+	printf "\r\r%s%s changed data folder from  '%s'  -->  '%s'\r",BULLET,BULLET,from,to
 End
 
 //Function/S MenuItemIfWaveExists(item,wName)
@@ -205,7 +217,7 @@ Function NewEnergyScan(fldr,title,d0)		// set up a folder for a new Energy Scan
 			return 1
 		endif
 		d0 = (d0>0 && numtype(d0)==0) ? d0 : NaN
-		printf "\r¥|\r¥|\r"
+		printf "\r%s|\r%s|\r",BULLET,BULLET
 		printf "NewEnergyScan(\"%s\",\"%s\",%.9g)\r",fldr,title,d0
 	endif
 	fldr = StringFromList(ItemsInList(fldr,":")-1, fldr,":")	// remove leading part of path
@@ -220,7 +232,7 @@ Function NewEnergyScan(fldr,title,d0)		// set up a folder for a new Energy Scan
 	fldr = "root:"+fldr							// full name of new folder to create
 	printf "d0 = %g,   new folder = '%s',    title='%s'\r",d0,fldr,title
 	NewDataFolder/S $fldr
-	printf "¥¥ changed data folder from  '%s'  -->  '%s'\r",fldrSav,GetDataFolder(1)
+	printf "%s%s changed data folder from  '%s'  -->  '%s'\r",BULLET,BULLET,fldrSav,GetDataFolder(1)
 	Variable/G $(fldr+":d0")=d0
 	if (strlen(title))
 		String/G $(fldr+":title")=title
@@ -473,7 +485,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 		printf "about to examine %d image headers...   ",N1N2
 	endif
 	// for all the N1*N2 files (go over range), store the energies, X position, H position, and indicies
-	Variable microSec0 = stopMSTimer(-2)									// used for timing, number of µsec
+	Variable microSec0 = stopMSTimer(-2)									// used for timing, number of micro-sec
 	Variable microSec = microSec0, Npixels=0
 	ProgressPanelUpdate(progressWin,0,status="examining "+num2istr(N1N2)+" image headers",resetClock=1)
 	Variable i,m1,m2, varyROI=0, iv
@@ -539,7 +551,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Prompt Ny,"# of points (NOT intervals) in Hsample"
 	Prompt ddep,"step size in depth (micron)"
 	Prompt Nz,"# of points (NOT intervals) in depth"
-	Prompt depth,"depth to assume (µm)"
+	Prompt depth,"depth to assume (micron)"
 	if (Nz<=1 && numtype(depth0))
 		DoPrompt "scan sizes",dx,Nx,dy,Ny,depth
 		depth = numtype(depth) ? 0 : depth
@@ -615,27 +627,27 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	if (printIt)
 		if (Nx>1)
-			printf "X range = [%.2f, %.2f] (µm), dX=%.2f,  %d points\r",X0, X0+(Nx-1)*dx, dx,Nx
+			printf "X range = [%.2f, %.2f] (%sm), dX=%.2f,  %d points\r",X0, X0+(Nx-1)*dx,Gmu, dx,Nx
 		else
-			printf "only one X value %g µm\r",X0
+			printf "only one X value %g %sm\r",X0,Gmu
 		endif
 		if (Ny>1)
-			printf "H range = [%.2f, %.2f] (µm), dH=%.2f,  %d points\r",H0, H0+(Ny-1)*dy, dy,Ny
+			printf "H range = [%.2f, %.2f] (%sm), dH=%.2f,  %d points\r",H0, H0+(Ny-1)*dy,Gmu, dy,Ny
 		else
-			printf "only one H value %g µm\r",H0
+			printf "only one H value %g %sm\r",H0,Gmu
 		endif
 		if (Nz>1)
-			printf "Depth range = [%.2f, %.2f] (µm), dDepth=%.2f,  %d points\r",depth0, depth0+(Nz-1)*ddep, ddep,Nz
+			printf "Depth range = [%.2f, %.2f] (%sm), dDepth=%.2f,  %d points\r",depth0, depth0+(Nz-1)*ddep,Gmu, ddep,Nz
 		else
 			printf "only one depth value\r"
 		endif
 		printf "E range = [%g, %g] (keV)\r", keVmin, keVmax
 		if (numtype(dQfactor))
-			printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
+			printf "Q range = [%g, %g] (1/nm),  %sQ=%.2g(1/nm)       ",Qmin, Qmax,GDELTA,dQ
 		else
-			printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm), dQfactor=%g       ",Qmin, Qmax,dQ,dQfactor
+			printf "Q range = [%g, %g] (1/nm),  %sQ=%.2g(1/nm), dQfactor=%g       ",Qmin, Qmax,GDELTA,dQ,dQfactor
 		endif
-		printf "theta range = [%g, %g]¡\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI
+		printf "theta range = [%g, %g]%s\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI,DEGREESIGN
 		if (d0>0)
 			printf "   d0 = %g (nm),   Q0 = %g (1/nm)\r",d0,Q0
 		endif
@@ -647,7 +659,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Nm = Nm<=1 ? 0 : Nm												// make unscanned dimensions 0, not 1
 
 	// info on scanned coordinates
-	Make/N=3/T/FREE LablesWAV={"Xsample", "Hsample", "Depth"}, TagsWAV={"X1", "H1", "Depth"}, UnitsWAV={"µm", "µm", "µm"}
+	Make/N=3/T/FREE LablesWAV={"Xsample", "Hsample", "Depth"}, TagsWAV={"X1", "H1", "Depth"}, UnitsWAV={Gmu+"m", Gmu+"m", Gmu+"m"}
 	Make/N=3/D/FREE offsetsWAV={X0, H0, depth0}, deltasWAV={dx, dy, ddep}
 	Make/N=4/T/FREE DimTags="",LabelNames="", LabelUnits=""
 	Make/N=4/D/FREE del, dim0
@@ -843,7 +855,7 @@ endif
 	Q_Positions = numtype(Q_Positions) ? NaN : Q_Positions
 	seconds = (stopMSTimer(-2)-microSec)/1e6
 	if (printIt)
-		printf "took %s	(%.3g µs/pixel)\r",Secs2Time(seconds,5,1),1e6*seconds/(N1N2*Npixels)
+		printf "took %s	(%.3g %ss/pixel)\r",Secs2Time(seconds,5,1),1e6*seconds/(N1N2*Npixels),Gmu
 		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
 	endif
 
@@ -996,7 +1008,7 @@ Function MakeOtherQhistWaves(Q_Positions,[printIt,Qlo,Qhi])	// make waves for pl
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", list,"="),NumberByKey("Qfwhm", list,"=")
 		Variable strainPeak = NumberByKey("strain", list,"=")
 		if (numtype(strainPeak)==0)
-			printf ",   ÆQ = %.3f,   strain = %.1e",NumberByKey("ÆQ", list,"="),strainPeak
+			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("ÆQ", list,"="),strainPeak
 		endif
 		printf "\r"
 		String win = MakeGraph_Qhist(Qhist)
@@ -1542,10 +1554,10 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 	wnote = ReplaceStringByKey("sourceWave",wnote,GetWavesDataFolder(Q_Positions,2),"=")
 	wnote = ReplaceNumberByKey("ImaxPnt",wnote,ImaxPnt,"=")
 	wnote = ReplaceNumberByKey("maxIntens",wnote,maxIntens,"=")
-	wnote = ReplaceNumberByKey("XofMax",wnote,XofMax,"=")		// X of the max point (µm)
-	wnote = ReplaceNumberByKey("HofMax",wnote,HofMax,"=")		// H of the max point (µm)
+	wnote = ReplaceNumberByKey("XofMax",wnote,XofMax,"=")		// X of the max point (micron)
+	wnote = ReplaceNumberByKey("HofMax",wnote,HofMax,"=")		// H of the max point (micron)
 	if (numtype(DepthofMax)==0)
-		wnote = ReplaceNumberByKey("DepthofMax",wnote,DepthofMax,"=") // depth of the max point (µm)
+		wnote = ReplaceNumberByKey("DepthofMax",wnote,DepthofMax,"=") // depth of the max point (micron)
 	endif
 	str = SelectString(I0normalize,"Intensity","Intensity / I\\B0\\M")
 	wnote = ReplaceStringByKey("labelValue",wnote,str,"=")
@@ -2826,20 +2838,20 @@ Static Function/S textQ_fromWnote(wnote)
 	Variable fwhmErr = NumberByKey("fwhmErr",wnote,"=")
 	Variable strainErr = NumberByKey("strainErr",wnote,"=")
 	if (numtype(QcErr)==0)
-		sprintf str, "Q\\Bc\\M = %g±%.2g (nm\\S-1\\M)",Qc,QcErr
+		sprintf str, "Q\\Bc\\M = %g%s%.2g (nm\\S-1\\M)",Qc,PLUSMINUS,QcErr
 	else
 		sprintf str, "Q\\Bc\\M = %g (nm\\S-1\\M)",Qc
 	endif
 	textQ = str
 	if (numtype(fwhmErr)==0)
-		sprintf str, "\rFWHM = %.2g±%.1g",fwhm,fwhmErr
+		sprintf str, "\rFWHM = %.2g%s%.1g",fwhm,PLUSMINUS,fwhmErr
 	else
 		sprintf str, "\rFWHM = %.2g",fwhm
 	endif
 	textQ += str
 	if (numtype(strain)==0 && numtype(strainErr)==0)
-//		sprintf str,"\rstrain = %.1e ±%.1e",strain,strainErr
-		sprintf str,"\r\\F'Symbol'e\\F]0 = %.1e ±%.1e",strain,strainErr
+//		sprintf str,"\rstrain = %.1e %s%.1e",strain,PLUSMINUS,strainErr
+		sprintf str,"\r\\F'Symbol'e\\F]0 = %.1e %s%.1e",strain,PLUSMINUS,strainErr
 		textQ += str
 	elseif (numtype(strain)==0)
 //		sprintf str,"\rstrain = %.1e",strain
@@ -2928,7 +2940,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 			return 1
 		elseif (ItemsInList(iList)>1 || ask)
 			Prompt imageName,"image to process",popup,iList
-			Prompt depth,"depth to assume (µm)"
+			Prompt depth,"depth to assume (micron)"
 			Prompt maskName, "mask to use with image",popup,maskList
 			Prompt maskNorm, "subtract dark using pixels outside of mask",popup,"Nothing;Suppress"
 			Prompt I0normalize,"Normalize the Q-hists",popup,"Do NOT Normalize to Io or exposure;Normalize to Io & exposure"
@@ -3062,8 +3074,8 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	NQ = round((Qmax-Qmin)/dQ) + 1									// number of Qs
 
 	if (printIt)
-		printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
-		printf "theta range = [%g, %g]¡\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI
+		printf "Q range = [%g, %g] (1/nm),  %sQ=%.2g(1/nm)       ",Qmin, Qmax,GDELTA,dQ
+		printf "theta range = [%g, %g]%s\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI,DEGREESIGN
 		if (d0>0)
 			printf "   d0 = %g (nm),   Q0 = %g (1/nm)\r",d0,2*PI/d0
 		endif
@@ -3152,7 +3164,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 	Qhist = numtype(Qhist) ? NaN : Qhist
 	seconds = stopMSTimer(timer)/1e6
 	if (printIt)
-		printf "  processing image took %s	(%.3g µs/pixel)\r",Secs2Time(seconds,5,1),1e6*seconds/Npixels
+		printf "  processing image took %s	(%.3g %ss/pixel)\r",Secs2Time(seconds,5,1),1e6*seconds/Npixels,Gmu
 	endif
 
 	String QfitInfo = fitOneQhist(Qhist,d0=d0,quiet=1,printit=1)
@@ -3176,7 +3188,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", QfitInfo,"="),NumberByKey("Qfwhm", QfitInfo,"=")
 		Variable strain = NumberByKey("strain", QfitInfo,"=")
 		if (numtype(strain)==0)
-			printf ",   ÆQ = %.3f,   strain = %.1e",NumberByKey("ÆQ", QfitInfo,"="),strain
+			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("ÆQ", QfitInfo,"="),strain
 		endif
 		printf "\r"
 		String win = MakeGraph_Qhist(Qhist)
@@ -3812,7 +3824,7 @@ Function/S WhatsMovingInFolder(pathName)							// returns a list of the moving a
 		Wave w=$(name+"moving")
 		WaveStats/M=1/Q w
 		if (ItemsInList(GetRTStackInfo(0))<2)
-			printf "for %s,  range = [%g,  %g],  Æ = %g\r",name,V_min,V_max,V_max-V_min
+			printf "for %s,  range = [%g,  %g],  %s = %g\r",name,V_min,V_max,GDELTA,V_max-V_min
 		endif
 	endfor
 	return tags
@@ -3895,7 +3907,7 @@ Function reScaleQwaveToStrain(w,d0)
 		for (i=ItemsInLIst(wlist)-1;i>=0;i-=1)
 			wName = StringFromList(i,wList)
 			units = WaveUnits($wName,0)
-			if (!stringmatch(units,"1/nm") && !stringmatch(units,"1/"))
+			if (!stringmatch(units,"1/nm") && !stringmatch(units,"1/"+ARING))
 				wList = RemoveFromList(wName,wList)
 			endif
 		endfor
@@ -3913,8 +3925,8 @@ Function reScaleQwaveToStrain(w,d0)
 	endif
 
 	units = WaveUnits(w,0)
-	if (!stringmatch(units,"1/nm") && !stringmatch(units,"1/"))
-		DoAlert 0,"wave units not 1/nm or 1/, they are '"+units+"'"
+	if (!stringmatch(units,"1/nm") && !stringmatch(units,"1/"+ARING))
+		DoAlert 0,"wave units not 1/nm or 1/"+ARING+", they are '"+units+"'"
 		return 1
 	endif
 	Variable N=numpnts(w), Qstart=DimOffset(w,0), dQ=DimDelta(w,0), Qc=2*PI/d0
@@ -4078,13 +4090,13 @@ Function MakePseudoWhiteImages(pathName,namePart,[range1,range2])
 		SetScale/P x 0,1,"pixel", imageEsum
 		SetScale/P y 0,1,"pixel", imageEsum
 		if (numtype(depthHi+depthLo)==0)
-			SetScale/I z depthLo,depthHi,"µm", imageEsum
+			SetScale/I z depthLo,depthHi,Gmu+"m", imageEsum
 		endif
 	endif
 	SetScale/P x 0,1,"pixel", imageSumAll
 	SetScale/P y 0,1,"pixel", imageSumAll
 	if (numtype(depthHi+depthLo)==0 && WaveExists(sumIntensDepth))
-		SetScale/I x depthLo,depthHi,"µm", sumIntensDepth
+		SetScale/I x depthLo,depthHi,Gmu+"m", sumIntensDepth
 	endif
 	if (strlen(range1))
 		wnote = ReplaceStringByKey("range1",wnote,range1,"=")
@@ -4298,7 +4310,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 		endif
 		imageplane = imageEsum[p][q][i]
 		depth = DimOffset(imageEsum,2) + i*DimDelta(imageEsum,2)
-		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\Zr200S\\Zr050\\F]0(Energys)  Depth = "+num2str(depth)+" µm"
+		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\Zr200S\\Zr050\\F]0(Energys)  Depth = "+num2str(depth)+" "+Gmu+"m"
 	endif
 	String title = StrVarOrDefault(path+"title","")
 	if (strlen(title))
@@ -4807,7 +4819,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	ask = ask || numtype(dkeV)>0									// always ask for invalid dkeV
 	if (ask)
 		// correct the scan ranges as necessary
-		Prompt depth,"depth to use (µm)"
+		Prompt depth,"depth to use (micron)"
 		Prompt dkeV,"step size in E (eV)"
 		Prompt I0normalize,"Normalize the Q-hists",popup,"Do NOT Normalize to Io or exposure;Normalize to Io & exposure"
 		Prompt doConvex,"Also compute Convex Hull (can take a while)",popup,"No Convex Hull;Compute Convex Hull"
@@ -4845,7 +4857,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px,py+(roiAll.biny),$"")))*Elo/hc )
 	dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))) * dkeV/hc )
 	if (printIt)
-		printf "E range = [%g, %g] (keV),  ÆE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],dkeV
+		printf "E range = [%g, %g] (keV),  %sE=%.2g eV", keV_FillQvsPositions[ikeVlo], keV_FillQvsPositions[ikeVhi],GDELTA,dkeV
 		printf "    %s Scan\r",SelectString(mono,"Undulator","Monochromator")
 	endif
 
@@ -5027,7 +5039,7 @@ endif
 	seconds = stopMSTimer(-2)/1e6 - timer0
 	if (printIt)
 		printf "Processed %d pixels into %d voxels\r",NusedPixels,NusedVoxels
-		printf "\r  processing all %d images took %s	(%.3g µs/pixel)\r",N,Secs2Time(seconds,5,1),1e6*seconds/(N*Npixels)
+		printf "\r  processing all %d images took %s	(%.3g %ss/pixel)\r",N,Secs2Time(seconds,5,1),1e6*seconds/(N*Npixels),Gmu
 		printf "		the accumulation/assignment part took %s\r",Secs2Time(sec3,5,2)
 	endif
 
@@ -5589,10 +5601,10 @@ Static Function EscanButtonProc(ctrlName) : ButtonControl
 			endif
 		endif
 	elseif (stringmatch(ctrlName,"buttonFillQ_Distn"))
-		printf "¥Fill_Q_Positions(NaN,\"imagePath\",\"\",\"\",\"\",$\"\")\r"
+		printf "%sFill_Q_Positions(NaN,\"imagePath\",\"\",\"\",\"\",$\"\")\r",BULLET
 		Fill_Q_Positions(NaN,"imagePath","","","",$"",printIt=1)
 	elseif (stringmatch(ctrlName,"buttonFitSingleQdistn"))
-//		printf "¥MakeGraph_Qhist($\"\")\r"
+//		printf "%sMakeGraph_Qhist($\"\")\r",BULLET
 		MakeGraph_Qhist($"")
 	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions","*","MINCOLS:1")))
 //	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions,Qhistogram","*","MINCOLS:1")))
@@ -5601,24 +5613,24 @@ Static Function EscanButtonProc(ctrlName) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonRGBforQDistn") && strlen(WaveListClass("Q_Positions,Qhistogram","*","")))
 		MakeRGBforQdistribution($"",$"")
 	elseif (stringmatch(ctrlName,"buttonlayoutQDistn") && strlen(WinList("Graph*_Q",";","WIN:1")))
-		printf "¥MakeLayoutQ_Positions_hist(\"\")\r"
+		printf "%sMakeLayoutQ_Positions_hist(\"\")\r",BULLET
 		MakeLayoutQ_Positions_hist("")
 	elseif (stringmatch(ctrlName,"buttonPseudoWhite"))
-		printf "¥MakePseudoWhiteImages(\"\",\"\")\r"
+		printf "%sMakePseudoWhiteImages(\"\",\"\")\r",BULLET
 		MakePseudoWhiteImages("","")
 	elseif (stringmatch(ctrlName,"buttonRePlotEsumDepth") && WaveExists(imageEsum))
-		printf "¥MakeEsumPlot()\r"
+		printf "%sMakeEsumPlot()\r",BULLET
 		MakeEsumPlot()
 	elseif (stringmatch(ctrlName,"buttonMovieEsumsDepth") && WaveExists(imageEsum))
-		printf "¥MakeEsumMovie()\r"
+		printf "%sMakeEsumMovie()\r",BULLET
 		MakeEsumMovie()
 	elseif (stringmatch(ctrlName,"buttonMakeMask") && strlen(WaveListClass("rawImage*;ImageSummed*","*","DIMS:2")))
-		printf "¥MakeMask($\"\")\r"
+		printf "%sMakeMask($\"\")\r",BULLET
 		MakeMask($"")
 	elseif (stringmatch(ctrlName,"buttonClearMask") && MaskToClearExists())
 		ClearMask()
 	elseif (stringmatch(ctrlName,"buttonFillQ1image"))
-		printf "¥Fill_Q_1image(NaN,$\"\")\r"
+		printf "%sFill_Q_1image(NaN,$\"\")\r",BULLET
 		Fill_Q_1image(NaN,$"")
 	elseif (stringmatch(ctrlName,"buttonTransferd0"))
 		update_d0()
