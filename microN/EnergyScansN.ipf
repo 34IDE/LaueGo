@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.49
+#pragma version = 2.50
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -12,6 +12,7 @@
 // version 2.46 Fill_Q_Positions(), allow for variable ROI in the histograming (added 3D Q too)
 // version 2.48 added FindStepSizeInVec(vec,threshold), use in FindScalingFromVec(), Fill_Q_Positions(), and Fill1_3DQspace()
 // version 2.49 moved FindScalingFromVec() and FindStepSizeInVec() to Utillity_JZT
+// version 2.50 Fill_Q_Positions(), added optional dQ, and a DEFAULT_dQfactor to allow user tweaking of dQ
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -32,6 +33,7 @@ Static Constant secPerPixelFixed = 18.8e-6		// the fixed time is takes to proces
 Static Constant secPerPixelDistort = 15.24e-3	// time is takes to process distortion for one pixel (sec)  (measured with a 2GHz clock)
 Static Constant DEFAULT_I0_GAIN = 1e9
 Static Constant DEFAULT_I0_SCALING = 1e5
+Static Constant DEFAULT_dQfactor = 1.1
 
 
 //	**	To get the ful chip unbinned pixel position from ROI data use the following:
@@ -234,7 +236,7 @@ End
 //	Process many images all at the same depth, but in an array of x-y (possible X-H) positions. One of the positions may be depth,
 //	which would occur when there was a wire scan in the process.
 //	and it is assumed that the sample is thin so that the yc in geo is correct for all images.
-Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm,dark,I0normalize,printIt])	// does not assume depth in image
+Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm,dark,I0normalize,dQ,printIt])	// does not assume depth in image
 	Variable d0				// d-spacing of the strain=0 material (nm)
 	String pathName		// either name of path to images, or the full explicit path, i.e. "Macintosh HD:Users:tischler:data:cal:recon:"
 	String nameFmt			// file name format string (not path info), something like  "EW5_%d.h5", or "EW1_%d_%d.h5"
@@ -245,14 +247,15 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable maskNorm		// use pixels outside of mask to normalize whole image (suppresses pedestal)
 	Wave dark				// an optional background wave
 	Variable I0normalize// a Flag, if True then normalize data (default is True)
+	Variable dQ				// if passed, this will be the bin size used for the histogram, if bad then a calculated value will be used
 	Variable printIt
 	depth = ParamIsDefault(depth) ? NaN : depth
 	maskNorm = ParamIsDefault(maskNorm) ? 0 : maskNorm
 	maskNorm = numtype(maskNorm) ? 0 : !(!maskNorm)
 	I0normalize = ParamIsDefault(I0normalize) ? 1 : I0normalize
 	I0normalize = numtype(I0normalize) ? NaN : !(!I0normalize)	// a NaN forces a prompt to user
-	printIt = ParamIsDefault(printIt) ? Nan : printIt
-	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	dQ = numtype(dQ) || dQ<=0 ? NaN : dQ				// if dQ is bad, then a calculated value will be used
+	printIt = ParamIsDefault(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	if (!((d0>0)) && exists("d0")!=2)					// there is no d0, check with the user
 		DoAlert 2, "There is no d0, so you cannot get strain, just Q.  Do you want to set d0?"
@@ -371,15 +374,21 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	if (printIt)
 		sprintf str,"Fill_Q_Positions(%g,\"%s\",\"%s\",\"%s\",\"%s\",%s",d0,pathName,nameFmt,range1,range2,maskName
-		if (WaveExists(dark))
-			darkName = NameOfWave(dark)
-			str += ",dark="+darkName
+		if (numtype(depth)==0)
+			str += ", depth="+num2str(depth)
 		endif
 		if (maskNorm)
-			str += ",maskNorm=1"
+			str += ", maskNorm=1"
+		endif
+		if (WaveExists(dark))
+			darkName = NameOfWave(dark)
+			str += ", dark="+darkName
 		endif
 		if (!ParamIsDefault(I0normalize) || !I0normalize)
-			str += ",I0normalize="+num2str(I0normalize)
+			str += ", I0normalize="+num2str(I0normalize)
+		endif
+		if (numtype(dQ)==0)
+			str += ", dQ="+num2str(dQ)
 		endif
 		str += ")"
 		print str[0,390]
@@ -579,22 +588,29 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 
 	// note that Q range only depends upon image size and energy range, not on X, H or depth
-	Variable Qmin, Qmax, dQ, NQ									// get range of Q
+	Variable Qmin, Qmax, NQ, dQfactor=NaN						// get range of Q
 	name = fullNameFromFmt(fileFullFmt,m1_Fill_QHistAt1Depth[ikeVlo],m2_Fill_QHistAt1Depth[ikeVlo],NaN)	// load one image to get its size & Q range
 	String wnoteFull = ReadGenericHeader(name)				// a full typical wave note
 
 	Variable/C thetaZ = thetaRange(geo.d[dNum],roiAll,maskIN=maskLocal,depth=depth0)		// returns the range of theta spanned by roi
-	Qmin = 4*PI * sin( real(thetaZ) ) * keVmin/hc		// min Q (1/nm)
-	Qmax = 4*PI * sin( imag(thetaZ) ) * keVmax/hc		// max Q (1/nm)
-
-	// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
-	Variable px,py														// the current pixel to analyze (unbinned full chip pixels)
-	px = (roiAll.xLo + roiAll.xHi)/2							// approximate full chip pixel position in center or the image (UN-binned)
-	px = (roiAll.yLo + roiAll.yHi)/2
-	// dQ is max of Q change in x+1, y+1, or energy step
-	dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py,$"")))*keVmax/hc
-	dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px,py+(roiAll.biny),$"")))*keVmax/hc)
-	dQ = max(dQ, 4*PI*sin(pixel2q(geo.d[dNum],px,py,$""))/hc * dkeV)	// also consider the energy step size
+	Qmin = 4*PI * sin( real(thetaZ) ) * keVmin/hc			// min Q (1/nm)
+	Qmax = 4*PI * sin( imag(thetaZ) ) * keVmax/hc			// max Q (1/nm)
+	if (numtype(dQ) || dQ<=0)
+		// determine dQ (1/nm), the Q resolution to use.  Base it on the distance between two adjacent pixels
+		Variable px,py													// the current pixel to analyze (unbinned full chip pixels)
+		px = (roiAll.xLo + roiAll.xHi)/2						// approximate full chip pixel position in center or the image (UN-binned)
+		px = (roiAll.yLo + roiAll.yHi)/2
+		// dQ is max of Q change in x+1, y+1, or energy step
+		dQ = 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px+(roiAll.binx),py,$"")))*keVmax/hc
+		dQ = max(dQ, 4*PI*abs(sin(pixel2q(geo.d[dNum],px,py,$""))-sin(pixel2q(geo.d[dNum],px,py+(roiAll.biny),$"")))*keVmax/hc)
+		dQ = max(dQ, 4*PI*sin(pixel2q(geo.d[dNum],px,py,$""))/hc * dkeV)	// also consider the energy step size
+		dQfactor = NumVarOrDefault("root:Packages:micro:Escan:dQfactor", NaN)
+		dQfactor = numtype(dQfactor) || dQfactor<=0 ? NaN : dQfactor
+		dQ *= numtype(dQfactor) ? DEFAULT_dQfactor : dQfactor	// allows user to modify dQ used for histogram bins
+		if (numtype(dQfactor)==0)
+			wnoteFull = ReplaceNumberByKey("dQfactor",wnoteFull,dQfactor,"=")
+		endif
+	endif
 	NQ = round((Qmax-Qmin)/dQ) + 1								// number of Qs
 
 	if (printIt)
@@ -614,7 +630,11 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			printf "only one depth value\r"
 		endif
 		printf "E range = [%g, %g] (keV)\r", keVmin, keVmax
-		printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
+		if (numtype(dQfactor))
+			printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm)       ",Qmin, Qmax,dQ
+		else
+			printf "Q range = [%g, %g] (1/nm),  ÆQ=%.2g(1/nm), dQfactor=%g       ",Qmin, Qmax,dQ,dQfactor
+		endif
 		printf "theta range = [%g, %g]¡\r",real(thetaZ)*180/PI,imag(thetaZ)*180/PI
 		if (d0>0)
 			printf "   d0 = %g (nm),   Q0 = %g (1/nm)\r",d0,Q0
