@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.32
+#pragma version = 4.33
 // #pragma hide = 1
 
 Menu "Graph"
@@ -70,6 +70,11 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //	4	String ranges, deals with "1,4,5-20",  for handling a non-consecutive range of integers, This one is good
 //	5	Progress panels
 //	6	Generic XML support
+//			XMLNodeList()					returns a list of node tag at top most level in buf
+//			XMLtagContents()				returns contents of an element
+//			XMLremoveComments()			remove all xml comments from str, returns string without comments
+//			XMLattibutes2KeyList()		return a list with all of the attribute value pairs for xmltag
+//			XMLtagContents2List()		reads a tag contensts and converts it to a list, kind of specialized
 //	7	WaveListClass() & WaveInClass(), used for handling the "waveClass=ccccc;" in wave notes
 //		  also AddClassToWaveNote(), RemoveClassFromWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
 //		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
@@ -1342,34 +1347,20 @@ End
 //		other code goes here ...
 //	while(strlen(feed))
 
-ThreadSafe Function/T XMLNodeList(buf)			// returns a list of node names at top most level in buf
+ThreadSafe Function/T XMLNodeList(buf)				// returns a list of node names at top most level in buf
 	String buf
-	String name,nodes=""
+	String tName, names=""
 	Variable i0=0, i1,i2
 	do
-		i0 = strsearch(buf,"<",i0)					// find start of a tag
+		i0 = XMLfindNextLeadingTagPos(buf,i0)
 		if (i0<0)
 			break
 		endif
-		i1 = strsearch(buf," ",i0)					// find end of tag name using i1 or i2, end will be in i1
-		i1 = i1<0 ? Inf : i1
-		i2 = strsearch(buf,">",i0)
-		i2 = i2<0 ? Inf : i2
-		i1 = min(i1,i2)
-		if (numtype(i1) || (i1-i0-1)<1)
-			break
-		endif
-		name = ReplaceString(";",buf[i0+1,i1-1],"_")// name cannot contain semi-colons
-		nodes += name+";"
-
-		i2 = strsearch(buf,"</"+name+">",i0)		// find the closer for this tag, check for '</name>'
-		if (i2<0)
-			i0 = strsearch(buf,">",i1+1)				// no '</name>', just a simple node
-		else
-			i0 = i2 + strlen(name) + 3				// first character after '</name>'
-		endif
+		tName = XMLfindNextLeadingTagName(buf,i0)
+		names += ReplaceString(";",tName,"_")+";"	// tName cannot contain semi-colons
+		i0 = XMLfindCloser(buf,tName,i0+1)				// position just after closer
 	while(i0>0)
-	return nodes
+	return names
 End
 
 
@@ -1383,13 +1374,7 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	Variable startLocal = ParamIsDefault(start) ? 0 : start
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
 
-	Variable i1, i0=startOfxmltag(xmltag,buf,occurance,start=startLocal)
-//	if (startLocal>0)
-////		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
-//		i0 = startOfxmltag(xmltag,buf,occurance,start=startLocal)
-//	else
-//		i0 = startOfxmltag(xmltag,buf,occurance)
-//	endif
+	Variable i1, i0=startOfxmltag(xmltag,buf,occurance, start=startLocal)
 	if (i0<0)
 		return ""
 	endif
@@ -1399,20 +1384,24 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	endif
 	i0 += 1													// start of contents
 
-	i1 = strsearch(buf,"</"+xmltag+">",i0)-1	// character just before closing '<tag>'
-	startLocal = strsearch(buf,">",i1)+1			// character just after closing '<tag>'
+	i1 = XMLfindCloser(buf,xmltag,i0-2)			// character just after final '>'
+	startLocal = strsearch(buf,">",i1)				// save character just after closing '<tag>'
 
-	if (i1<i0 || i1<0)
+	if (i1<i0 || i1<0)									// could not find a valid closer
 		if (!ParamIsDefault(start))
 			start = -1
 		endif
 		return ""
 	endif
 
-	if (!ParamIsDefault(start))
+	if (!ParamIsDefault(start))						// pass start back if used
 		start = startLocal
 	endif
 
+	i1 -= strlen(xmltag)+4
+	if (i1<i0)
+		return ""											// no content
+	endif
 	return buf[i0,i1]
 End
 
@@ -1430,8 +1419,7 @@ ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //r
 	String str = XMLtagContents(xmltag,buf,occurance=occurance)	// get the contents
 	return XMLContents2List(str,delimiters=delimiters)				// convert contents to a list
 End
-
-
+//
 ThreadSafe Static Function/T XMLContents2List(str,[delimiters,sep])
 	// take a tag contents (just text, no xml) and convert it to a semi-colon separated list
 	// assumes that list elements can be quoted with single or double quotes
@@ -1495,12 +1483,6 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// retur
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
 
 	Variable i1, i0=startOfxmltag(xmltag,buf,occurance, start=startLocal)
-//	if (startLocal>0)
-////		i0 = startOfxmltag(xmltag,buf[startLocal,Inf],occurance) + startLocal
-//		i0 = startOfxmltag(xmltag,buf,occurance, start=startLocal)
-//	else
-//		i0 = startOfxmltag(xmltag,buf,occurance)
-//	endif
 	if (i0<0)
 		return ""
 	endif
@@ -1522,17 +1504,17 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// retur
 		do
 			i1 = strsearch(buf,"=",i0,0)
 			key = TrimFrontBackWhiteSpace(buf[i0,i1-1])
-			i0 = strsearch(buf,"\"",i1,0)+1				// character after the first double quote around value
-			i1 = strsearch(buf,"\"",i0,0)-1				// character before the second double quote around value
+			i0 = strsearch(buf,"\"",i1,0)+1			// character after the first double quote around value
+			i1 = strsearch(buf,"\"",i0,0)-1			// character before the second double quote around value
 			value = buf[i0,i1]
 			if (strlen(key)>0)
 				keyVals = ReplaceStringByKey(key,keyVals,value,"=")
 			endif
-			i0 = strsearch(buf," ",i1,0)					// find space separator, set up for next key="val" pair
+			i0 = strsearch(buf," ",i1,0)				// find space separator, set up for next key="val" pair
 		while(i0>0 && strlen(key))
 	endif
 
-	if (!ParamIsDefault(start))							// set start if it was passed
+	if (!ParamIsDefault(start))						// set start if it was passed
 		start = startLocal
 	endif
 	return keyVals
@@ -1559,18 +1541,90 @@ ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance,[start])	// return
 	Variable start
 	start = ParamIsDefault(start) || start<=0 || numtype(start) ? 0 : round(start)
 
-	Variable i0,i1, i, starti
-	for (i=0,i0=start;i<=occurance;i+=1)
-		starti = i0
-		i0 = strsearch(buf,"<"+xmltag+" ",starti)	// find start of a tag with attributes
-		i1 = strsearch(buf,"<"+xmltag+">",starti)	// find start of a tag without attributes
-		i0 = i0<0 ? Inf : i0
-		i1 = i1<0 ? Inf : i1
-		i0 = min(i0,i1)
-		i0 += (i<occurance) ? strlen(xmltag)+2 : 0	// for more, move starting point forward
+	String name												// current tag
+	Variable i0,i1, iocc, match
+	for (iocc=0,i0=start; iocc<=occurance; )
+		i0 = XMLfindNextLeadingTagPos(buf,i0)
+		if (i0<0)
+			return -1
+		endif
+		name = XMLfindNextLeadingTagName(buf,i0)
+
+		match = cmpstr(xmltag,name,1)==0
+		iocc += match
+		if (!match || iocc<=occurance)
+			i0 = XMLfindCloser(buf,name,i0)
+		endif
 	endfor
-	i0 = numtype(i0) || i0<0 ? -1 : i0
 	return i0
+End
+//
+ThreadSafe Static Function/T XMLfindNextLeadingTagName(buf,start)
+	// return string with the first tag that we find in buf, start searching in buf[start]
+	String buf												// a string containing xml
+	Variable start											// start searching at buf[start]
+	if (start<0)
+		return ""
+	endif
+
+	Variable i0, i1,i2
+	i0 = XMLfindNextLeadingTagPos(buf,start)
+	if (i0 < 0)
+		return ""
+	endif
+
+	i0 += 1													// first char in name of tag
+
+	i1 = strsearch(buf," ",i0) - 1
+	i2 = strsearch(buf,">",i0) - 1
+	i1 = i1<i0 ? Inf : i1
+	i2 = i2<i0 ? Inf : i2
+	i1 = min(i1,i2)
+
+	if (numtype(i1)==0)
+		return buf[i0,i1]
+	endif
+	return ""
+End
+//
+ThreadSafe Static Function XMLfindNextLeadingTagPos(buf,start)
+	// return position of "<" that is the next xml tag in buf[start]
+	String buf												// a string containing xml
+	Variable start											// start searching at buf[start]
+	if (start<0)
+		return -1
+	endif
+
+	Variable i0, i1,i2
+	i0 = strsearch(buf,"<",start)
+	i0 = i0<0 ? -1 : i0
+	return i0
+End
+//
+ThreadSafe Static Function XMLfindCloser(buf,tagName,start)
+	// returns index into buf that points to first character AFTER "</tagName>"
+	String buf												// a string containing xml
+	String tagName											// the name of the xml tag
+	Variable start											// start searching buf at buf[start]
+
+	Variable i, len=strlen(tagName)+3
+
+	if (char2num(tagName[0])==63)					// tag starts with a "?"==63
+		i = strsearch(buf,"?>",start)
+		i += i>0 ? 2 : 0
+		return i
+	endif
+
+	i = strsearch(buf,"</"+tagName+">",start)	// find the closer for this tag, search for '</tagName>'
+	if (i<0)
+		i = strsearch(buf,"/>",start)				// no '</tagName>', just an empty-element tag, ends with '/>'
+		len = 2
+	endif
+
+	if (i<0)													// failed to find closer
+		return -1
+	endif
+	return i+len
 End
 
 //  ================================= End of Generic XML =================================  //
