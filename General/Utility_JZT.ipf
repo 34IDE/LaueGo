@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.31
+#pragma version = 4.32
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3074,28 +3074,35 @@ ThreadSafe Function/C rangeOfVec(wav,[row,col,layer,chunk])		// returns the max 
 End
 
 
-Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
-	// find the scaling used in a SetScale command that fits the values of vec[]
-	// vec[] are the positions of a step scan.
-	// values are rounded to show no significant digits past threshold/10
-	Wave vec
+Function FindScalingFromVec(vecIN,threshold,first,stepSize,dimN)
+	// find the scaling suitable for a SetScale command that fits the values of vecIN[]
+	// vecIN[] are the positions of a step scan.
+	// first & stepSize are rounded to show no significant digits past threshold/10
+	// dimN (number of points) does not count steps when vecIN does not change, this occurs in outer dim of a 2D scan
+	// note, this should properly handle zig-zag scans too.
+	Wave vecIN
 	Variable threshold					// a change greater than this is intentional (less is jitter)
 	Variable &first						// use 	SetScale/P x first,stepSize,"",waveName
 	Variable &stepSize					// returned |step size|
-	Variable &dimN							// returned number of points
+	Variable &dimN							// returned number of points (=steps+1), does not count when standing still
 
 	threshold = abs(threshold)							// no negative thresholds
 	first = NaN													// init to bad values
 	stepSize = NaN
 	dimN = 0
+	if (!WaveExists(vecIN) ||numpnts(vecIN)<1)		// failed
+		return 1
+	endif
+	Variable i,m, N=numpnts(vecIN)
+	Make/N=(N)/D/FREE vec=vecIN							// ensures that vec is a floating type
 
 	// get the step size
 	stepSize = FindStepSizeInVec(vec,threshold,signed=0)	// returns the un-signed |step size| from values in vec
-	if (numtype(stepSize) || !WaveExists(vec) ||numpnts(vec)<1)		// failed
+	if (numtype(stepSize))									// failed
 		stepSize = NaN
 		return 1
 	elseif (stepSize==0)									// only one point, no actual scan
-		first = vec[0]
+		first = vecIN[0]
 		stepSize = 0
 		dimN = 1
 		return 0
@@ -3104,9 +3111,8 @@ Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	// find the starting point, the median of all the points within |stepSize/2| of the lowest
 	// note that first is always the smallest, regardless of the direction of scan, stepSize is always positive
 	Duplicate/FREE vec vecSort
-	SetScale/P x 0,1,"", vecSort
 	Sort vecSort, vecSort
-	Variable i = floor(BinarySearchInterp(vecSort, vecSort[0]+stepSize/2))
+	i = floor(BinarySearchInterp(vecSort, vecSort[0]+stepSize/2))
 	first = vecSort(i/2)									// this gives median of the points within |stepSize/2| of the lowest
 	if (threshold!=0)											// use threshold/10 to round first
 		Variable num = threshold/10
@@ -3115,40 +3121,79 @@ Function FindScalingFromVec(vec,threshold,first,stepSize,dimN)
 	endif
 	WaveClear vecSort
 
-	// find number of points in "one scan"
+	Make/N=(N-1)/D/FREE dVec								// ensures that vec is a floating type
+	dVec = vec[p+1]-vec[p]									// make dVec the differences
+	vec = NaN
+	vec[0] = vecIN[0]
+	for (i=1,m=1; i<N; i+=1)								// set vec to be vecIN, but WITHOUT any constant steps
+		if (abs(dVec[i-1]) > threshold)	
+			vec[m] = vecIN[i]									// copy vecIN --> vec, but skip constant steps
+			m += 1
+		endif
+	endfor
+	N = m
+	Redimension/N=(N) vec									// vec now contains NO contant steps, and NO NaN's
+
+	// find number of points (=steps+1) in "one scan"
+	//   does not count steps when vec does not change, this occurs in outer dim of a 2D scan
 	//   a new scan is a change of more than |2*stepSize|
 	//   a step is a change of more than |stepSize/5|
-	Variable N = numpnts(vec)
 	Duplicate/FREE vec dVec
 	Redimension/N=(N-1) dVec
-	SetScale/P x 0,1,"", dVec
 	dVec = vec[p+1]-vec[p]									// make dVec the differences
 	dVec = numtype(dVec) ? NaN : dVec					// change Inf --> NaN
 	Variable tol = max(abs(stepSize/5),threshold)	// must be greater than this to look like a real step
 	dVec = abs(dVec)<tol ? NaN : dVec					// step is a repeat, do not count it
-	dVec = abs(dVec)<(2*stepSize) ? 0 : dVec		// set all normal steps to 0, step is: delta < (2*step)
-	// at this point, dVec is non-zero at the end of each scan, NaN at bad points, and 0 at normal steps
 
-	// count the number of points in each scan, stored in sizes[]
-	Make/N=(N)/U/I/FREE sizes=0							// holds the size of each scan that was found
-	Variable istart, Nsizes
-	for (i=0,istart=0,Nsizes=0; i<(N-1); i+=1)
-		if (dVec[i])											// found a scan end
-			WaveStats/M=1/Q/R=[istart,i] dVec			// want number of valid (not NaN) points in this range of a single scan
-			sizes[Nsizes] = V_npnts						// number of valid (not NaN) points in this scan [istart,i]
+	// test for ZigZag scans
+	Duplicate/FREE dVec, ztest
+	ztest = abs(dVec)>(2*stepSize) ? NaN : dVec	// remove all steps that look like snap-backs
+	WaveStats/Q ztest											// average value of all normal scan steps
+	Variable istart, Nsizes, isZigZag
+	isZigZag = V_sdev>abs(2*V_avg) && (V_sdev/stepSize)>0.5
+	WaveClear ztest
+	if (isZigZag)
+		// count the number of points in each scan, stored in sizes[]
+		Make/N=(N)/U/I/FREE sizes=0						// holds the size of each scan that was found
+		Variable plusMinus=sign(dVec[0])
+		for (i=0,istart=0,Nsizes=0; i<(N-1); i+=1)
+			if (sign(dVec[i]) != plusMinus)				// found end of a scan, process
+				WaveStats/M=1/Q/R=[istart,i-1] dVec	// want number of valid (not NaN) points in this range of a single scan
+				sizes[Nsizes] = V_npnts+1					// number of valid (not NaN) points in this scan [istart,i]
+				plusMinus *= -1
+				Nsizes += 1
+				istart = i
+			elseif (i==(N-2))									// the last point is alwasy the end of a scan, process
+				WaveStats/M=1/Q/R=[istart,i] dVec		// want number of valid (not NaN) points in this range of a single scan
+				sizes[Nsizes] = V_npnts+1					// number of valid (not NaN) points in this scan [istart,i]
+				Nsizes += 1
+			endif
+		endfor
+
+	else
+		// at this point, dVec is non-zero at the end of each scan, NaN at bad points, and 0 at normal steps
+		// count the number of points in each scan, stored in sizes[]
+		dVec = abs(dVec)<(2*stepSize) ? 0 : dVec	// set all normal steps to 0, step is: delta < (2*step)
+		Make/N=(N)/U/I/FREE sizes=0						// holds the size of each scan that was found
+		for (i=0,istart=0,Nsizes=0; i<(N-1); i+=1)
+			if (dVec[i])										// found a scan end
+				WaveStats/M=1/Q/R=[istart,i] dVec		// want number of valid (not NaN) points in this range of a single scan
+				sizes[Nsizes] = V_npnts					// number of valid (not NaN) points in this scan [istart,i]
+				Nsizes += 1
+				istart = i+1
+			endif
+		endfor
+
+		if ((N-2-istart) > 0)								// add a last point, since there was probably not a big step at end
+			WaveStats/M=1/Q/R=[istart,N-2] dVec
+			sizes[Nsizes] = V_npnts+1
 			Nsizes += 1
-			istart = i+1
+		elseif (Nsizes<1)
+			dimN = 2
+			return 0
 		endif
-	endfor
-
-	if ((N-2-istart) > 0)									// add a last point, since there was probably not a big step at end
-		WaveStats/M=1/Q/R=[istart,N-2] dVec
-		sizes[Nsizes] = V_npnts+1
-		Nsizes += 1
-	elseif (Nsizes<1)
-		dimN = 2
-		return 0
 	endif
+
 	Redimension/N=(Nsizes) sizes
 	sizes = !sizes ? NaN : sizes							// remove all zeros
 	WaveStats/M=1/Q sizes
