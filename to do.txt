@@ -1,0 +1,17 @@
+xml to fix:
+	General/Utility_JZT.ipf
+
+
+xml to check:
+	Diffractometer/Diffractometer.ipf
+	General/Elements.ipf
+	Lattice/LatticeSym.ipf
+	always/GeneralFirst.ipf
+	microN/microGeometryN.ipf
+	microN/xmlMultiIndex.ipf
+
+	General/Elements.ipf
+	APS/VTIfiles.ipf
+
+
+
