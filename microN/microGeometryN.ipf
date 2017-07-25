@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.97
+#pragma version = 1.98
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -2393,7 +2393,7 @@ Static Function GeoFromXML(buf,g)
 			DoAlert 0,str
 			continue
 		endif
-		detector = XMLtagContents("Detector",buf,occurance=i)
+		detector = XMLtagContents("Detector",detectors,occurance=i)
 		g.Ndetectors += 1
 		g.d[N].used = 1
 		g.d[N].timeMeasured = XMLtagContents("timeMeasured",detector)

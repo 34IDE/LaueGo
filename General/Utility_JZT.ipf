@@ -1385,7 +1385,7 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	i0 += 1													// start of contents
 
 	i1 = XMLfindCloser(buf,xmltag,i0-2)			// character just after final '>'
-	startLocal = strsearch(buf,">",i1)				// save character just after closing '<tag>'
+	startLocal = i1										// save character just after closing '<tag>'
 
 	if (i1<i0 || i1<0)									// could not find a valid closer
 		if (!ParamIsDefault(start))
@@ -1493,7 +1493,7 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// retur
 	if (i1 < i0)											// this is an ERROR
 		startLocal = -1
 	else
-		startLocal = i1 + 2								// character just after closing '>'
+		startLocal = XMLfindCloser(buf,xmltag,i1+2)// character just after closing '>'
 		// parse buf into key=value pairs
 		buf = buf[i0,i1]
 		buf = ReplaceString("\t",buf," ")

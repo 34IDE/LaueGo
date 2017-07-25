@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.26
+#pragma version = 6.27
 #include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -169,6 +169,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 6.24, added FstructMax to be used to find the minimum F for an allowed reflection, no longer just assumes 0.01 electrons
 //	with verison 6.25, fixed error in space group numbering (affected Orthorhombic & Tetragonal)
 //	with verison 6.26, fixed sign problem in lowestOrderHKL()
+//	with verison 6.27, fixed up reading xml files in readCrystalStructureXML()
 
 //	Rhombohedral Transformation:
 //
@@ -3349,19 +3350,12 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	Close f
 	buf = XMLremoveComments(buf)
 
-	Variable i0,i1
-	i0 = strsearch(buf,"<cif>",0,2)
-	if (i0<0)
+	String cif = XMLtagContents("cif",buf)
+	if (strlen(cif)<10)
 		return 1
 	endif
-	i0 += 5												// start just after <cif>
-	i1 = strsearch(buf,"</cif>",0,2)
-	if (i1<0)
-		return 1
-	endif
-	i1 -= 1												// ends just before </cif>
-	String cif = buf[i0,i1]
 
+	Variable i0,i1
 	i1 = strlen(fullFile)-1						// possibly trim file length to fit, keep last part of fullFile
 	i0 = max(0,i1-MAX_FILE_LEN)
 	fullFile = fullFile[i0,i1]
@@ -3442,13 +3436,16 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
  		endif
 	endif
 
-	// collect the atom sites
+	// collect the atom sites values
 	String atomSite, atomLabel, symbol, WyckoffSymbol
-	Variable Zatom, fracX,fracY,fracZ,occupy,valence,DebyeT,N=0
+	Variable Zatom, fracX,fracY,fracZ,occupy,valence,DebyeT
 	Variable Biso, Uiso, aU11,aU22,aU33, aU12,aU13,aU23, mult
-	i0 = strsearch(cif,"<atom_site",i0,2)
+	Variable start=0, N=0
 	do
-		atomSite = XMLtagContents("atom_site",cif[i0,Inf])	// one atom site
+		atomSite = XMLtagContents("atom_site",cif, start=start)	// next atom site
+		if (strlen(atomSite)<10)										// could not find another atom_site
+			break
+		endif
 		atomLabel = XMLtagContents("label",atomSite)			// label for this atom type
 		symbol = XMLtagContents("symbol",atomSite)				// atomic symbol for this atom type
 		atomLabel = SelectString(strlen(atomLabel), symbol, atomLabel)	// if no label given, use the symbol (may not be unique)
@@ -3534,18 +3531,22 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		xtal.atom[N].U12 = numtype(aU12) ?  NaN : aU12
 		xtal.atom[N].U13 = numtype(aU13) ?  NaN : aU13
 		xtal.atom[N].U23 = numtype(aU23) ?  NaN : aU23
-		i0 = strsearch(cif,"<atom_site",i0+10,2)
 		N += 1
-	while(N<STRUCTURE_ATOMS_MAX && i0>0)
-	xtal.N = N											// number of atoms described here
+	while(N<STRUCTURE_ATOMS_MAX)
+	xtal.N = N												// number of atoms described here
 	ForceXtalAtomNamesUnique(xtal)					// forces all of the xtal atom names to be unique
 
-	Variable i, unitsConvert, Nbond=0, Nlen
-	String bondKeys, label0,label1,list
-	i0 = strsearch(cif,"<bond_chemical",i0,2)
+	Variable i, unitsConvert, Nlen, start0, Nbond=0
+	String bondKeys, label0,label1,list, BondBody
+	start = 0
 	do
-		Wave blen = str2vec(XMLtagContents("bond_chemical",cif[i0,Inf]))	// bond length(s)
-		bondKeys = XMLattibutes2KeyList("bond_chemical",cif[i0,Inf])
+		start0 = start
+		BondBody = XMLtagContents("bond_chemical",cif, start=start0)	// next chemical bond site
+		if (strlen(BondBody)<1)
+			break
+		endif
+		Wave blen = str2vec(BondBody)				// bond length(s)
+		bondKeys = XMLattibutes2KeyList("bond_chemical",cif, start=start)	// next bond
 		label0 = StringByKey("n0",bondKeys,"=")
 		label1 = StringByKey("n1",bondKeys,"=")
 		Nlen = min(numpnts(blen),5)					// number of lengths for this bond
@@ -3560,8 +3561,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			endfor
 			Nbond += 1
 		endif
-		i0 = strsearch(cif,"<bond_chemical",i0+10,2)
-	while(Nbond<(2*STRUCTURE_ATOMS_MAX) && i0>0)
+	while(Nbond<(2*STRUCTURE_ATOMS_MAX))
 	xtal.Nbonds = Nbond
 	ForceLatticeToStructure(xtal)
 	UpdateCrystalStructureDefaults(xtal)
