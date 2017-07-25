@@ -1,6 +1,5 @@
 in 
-XMLtagContents, and probably startOfxmltag()
-check use of occurance with start
+OK	XMLtagContents, and probably startOfxmltag() check use of occurance with start
 
 
 xml to fix:
@@ -10,7 +9,7 @@ OK	General/Utility_JZT.ipf
 xml to check:
 OK	Diffractometer/Diffractometer.ipf
 OK	General/Elements.ipf
-OK	Lattice/LatticeSym.ipf, (improve method of reading xml)
+OK	Lattice/LatticeSym.ipf, (improved reading xml)
 OK	always/GeneralFirst.ipf
 OK	microN/microGeometryN.ipf
 OK	APS/VTIfiles.ipf
