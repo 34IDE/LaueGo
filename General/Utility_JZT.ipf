@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.33
+#pragma version = 4.34
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1346,18 +1346,27 @@ End
 //		feed = XMLtagContents("feed",buf, start=start)
 //		other code goes here ...
 //	while(strlen(feed))
+//
+//
+//		Element names are case-sensitive
+//		Element names must start with a letter or underscore
+//		Element names cannot start with the letters xml (or XML, or Xml, etc)
+//		Element names can contain letters, digits, hyphens, underscores, and periods
+//		Element names cannot contain spaces
 
 ThreadSafe Function/T XMLNodeList(buf)				// returns a list of node names at top most level in buf
 	String buf
 	String tName, names=""
 	Variable i0=0, i1,i2
 	do
-		i0 = XMLfindNextLeadingTagPos(buf,i0)
+		i0 = XMLfindNextLeadingTagPos(buf,i0)			// i0 is on the leading "<"
 		if (i0<0)
 			break
 		endif
 		tName = XMLfindNextLeadingTagName(buf,i0)
-		names += ReplaceString(";",tName,"_")+";"	// tName cannot contain semi-colons
+		if (XMLvalidElementName(tName))					// skip prolog and things like that
+			names += ReplaceString(";",tName,"_")+";"	// tName cannot contain semi-colons
+		endif
 		i0 = XMLfindCloser(buf,tName,i0+1)				// position just after closer
 	while(i0>0)
 	return names
@@ -1373,6 +1382,9 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
 	Variable startLocal = ParamIsDefault(start) ? 0 : start
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
+	if (!XMLvalidElementName(xmltag))
+		return ""
+	endif
 
 	Variable i1, i0=startOfxmltag(xmltag,buf,occurance, start=startLocal)
 	if (i0<0)
@@ -1417,6 +1429,9 @@ ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //r
 	endif
 
 	String str = XMLtagContents(xmltag,buf,occurance=occurance)	// get the contents
+	if (strlen(str)<1)
+		return ""
+	endif
 	return XMLContents2List(str,delimiters=delimiters)				// convert contents to a list
 End
 //
@@ -1481,6 +1496,9 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// retur
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
 	Variable startLocal = ParamIsDefault(start) ? 0 : start
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
+	if (!XMLvalidElementName(xmltag))
+		return ""
+	endif
 
 	Variable i1, i0=startOfxmltag(xmltag,buf,occurance, start=startLocal)
 	if (i0<0)
@@ -1534,7 +1552,8 @@ ThreadSafe Function/T XMLremoveComments(str)	// remove all xml comments from str
 	while(1)
 	return str
 End
-//
+
+
 ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance,[start])	// returns the index into buf pointing to the start of xmltag
 	String xmltag, buf
 	Variable occurance									// use 0 for first occurance, 1 for second, ...
@@ -1553,7 +1572,7 @@ ThreadSafe Static Function startOfxmltag(xmltag,buf,occurance,[start])	// return
 		match = cmpstr(xmltag,name,1)==0
 		iocc += match
 		if (!match || iocc<=occurance)
-			i0 = XMLfindCloser(buf,name,i0)
+			i0 = XMLfindCloser(buf,name,i0+1)		// start after the beginning of the opener
 		endif
 	endfor
 	return i0
@@ -1595,36 +1614,87 @@ ThreadSafe Static Function XMLfindNextLeadingTagPos(buf,start)
 		return -1
 	endif
 
-	Variable i0, i1,i2
-	i0 = strsearch(buf,"<",start)
-	i0 = i0<0 ? -1 : i0
-	return i0
+	return strsearch(buf,"<",start)
 End
 //
-ThreadSafe Static Function XMLfindCloser(buf,tagName,start)
-	// returns index into buf that points to first character AFTER "</tagName>"
+ThreadSafe Static Function XMLfindCloser(buf,xmltag,start)
+	// returns index into buf that points to first character AFTER "</xmltag>"
 	String buf												// a string containing xml
-	String tagName											// the name of the xml tag
+	String xmltag											// the name of the xml tag
 	Variable start											// start searching buf at buf[start]
 
-	Variable i, len=strlen(tagName)+3
-
-	if (char2num(tagName[0])==63)					// tag starts with a "?"==63
+	Variable i
+	if (char2num(xmltag[0])==63)							// prolog, tag starts with a "?"==63
 		i = strsearch(buf,"?>",start)
 		i += i>0 ? 2 : 0
 		return i
 	endif
 
-	i = strsearch(buf,"</"+tagName+">",start)	// find the closer for this tag, search for '</tagName>'
-	if (i<0)
-		i = strsearch(buf,"/>",start)				// no '</tagName>', just an empty-element tag, ends with '/>'
-		len = 2
-	endif
+	String close1="</"+xmltag+">", close2="/>"
+	Variable j0,j1, i1,i2, iClose						// jn are openers, in are closers
 
-	if (i<0)													// failed to find closer
-		return -1
+	do
+		j0 = strsearch(buf,"<"+xmltag+" ",start)		;	j0 = j0<0 ? Inf : j0
+		j1 = strsearch(buf,"<"+xmltag+">",start)		;	j1 = j1<0 ? Inf : j1
+		j0 = min(j0,j1)
+
+		i1 = strsearch(buf,close1,start)	;	i1 = i1<0 ? Inf : i1
+		i2 = strsearch(buf,close2,start)	;	i2 = i2<0 ? Inf : i2
+
+		if (j0<i1 && j0<i2)									// found another open before the close, dig deeper
+			start = XMLfindCloser(buf,xmltag,j0+strlen(xmltag))
+			iClose = NaN										// NaN causes a loop in the while()
+		elseif (i1<i2)
+			iClose = i1 + strlen(close1)					// done, advance to char after "</xmltag>"
+		elseif (i2<i1)
+			iClose = i2 + strlen(close2)					// done, advance to char after "/>"
+		else
+			iClose = -1											// failed to find a closer
+		endif
+	while (numtype(iClose))
+	return iClose
+End
+//
+//	ThreadSafe Static Function XMLfindCloser(buf,xmltag,start)
+//		// returns index into buf that points to first character AFTER "</xmltag>"
+//		String buf												// a string containing xml
+//		String xmltag											// the name of the xml tag
+//		Variable start											// start searching buf at buf[start]
+//	
+//		Variable i, len=strlen(xmltag)+3
+//	
+//		if (char2num(xmltag[0])==63)						// tag starts with a "?"==63
+//			i = strsearch(buf,"?>",start)
+//			i += i>0 ? 2 : 0
+//			return i
+//		endif
+//	
+//		i = strsearch(buf,"</"+xmltag+">",start)	// find the closer for this tag, search for '</xmltag>'
+//		if (i<0)
+//			i = strsearch(buf,"/>",start)				// no '</xmltag>', just an empty-element tag, ends with '/>'
+//			len = 2
+//		endif
+//	
+//		if (i<0)													// failed to find closer
+//			return -1
+//		endif
+//		return i+len
+//	End
+
+
+ThreadSafe Static Function XMLvalidElementName(tagName)
+	// returns 1 if tagName is a valid xml name, 0 if not valid
+	String tagName
+	if (!isletter(tagName) && char2num(tagName)!=95)	// must start with letter or '_'
+		return 0
 	endif
-	return i+len
+	if (strsearch(tagName," ",0) >= 0)						// cannot contain " "
+		return 0
+	endif
+	if (StringMatch(tagName,"xml*"))						// cannot start with xml, XML, Xml, etc.
+		return 0
+	endif
+	return 1	
 End
 
 //  ================================= End of Generic XML =================================  //
@@ -2221,13 +2291,13 @@ Function/S WindowsWithWave(w,flag)
 	return out
 End
 //
-//		********** This Funciton is DEPRECATED, just call WindowsWithWave(w,1) directly **********
+//		********** This Function is DEPRECATED, just call WindowsWithWave(w,1) directly **********
 Function/S FindGraphsWithWave(w)	// find the graph window which contains the specified wave
 	Wave w
 	return WindowsWithWave(w,1)
 End
 //
-//		********** This Funciton is DEPRECATED, just call WindowsWithWave(w,2) directly **********
+//		********** This Function is DEPRECATED, just call WindowsWithWave(w,2) directly **********
 Function/S FindTablesWithWave(w)	// find the table windows which contains the specified wave
 	Wave w
 	return WindowsWithWave(w,2)
@@ -3913,7 +3983,7 @@ ThreadSafe Function/S RemoveTrailingString(str,tail,ignoreCase)
 	return str
 End
 
-// These three funcitons are replacements for TrimFrontBackWhiteSpace() functions that are now DEPRECATED (see bottom of file)
+// These three functions are replacements for TrimFrontBackWhiteSpace() functions that are now DEPRECATED (see bottom of file)
 ThreadSafe Function/S TrimBoth(str,[chars,ignoreCase])
 	String str					// string to process
 	String chars				// a set of characters to strip, defaults to white space if not given
