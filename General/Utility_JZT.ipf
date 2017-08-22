@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.34
+#pragma version = 4.35
 // #pragma hide = 1
 
 Menu "Graph"
@@ -113,6 +113,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		rangeOfVec(wav,[row,col,layer,chunk]), returns the max and min number in the specified vector
 //		FindScalingFromVec(), find the scaling (for a SetScale command) that fit the values of vec[] (position of a step scan)
 //		FindStepSizeInVec(),  find the step size in a vec (positions of a step scan) by examining the values
+//		RangeOfValuesContainingFraction(),  returns range of VALUES of wave that constitute a given fraction of all values in wave
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -3374,6 +3375,46 @@ Function FindStepSizeInVec(vec,threshold,[signed])
 	endif
 
 	return stepSize
+End
+
+
+Function/C RangeOfValuesContainingFraction(wwIN,frac, [zero])	// this is a 1D calculation
+	// returns range of VALUES of wave that constitute a given fraction of all values in wave
+	// if zero is True, then values are assumed to be all positive, and returns rad s.t. frac of wwIN are < rad
+	Wave wwIN							// a 1D wave
+	Variable frac						// want range that contains frac, either [lo,hi], or [0,rad]
+	Variable zero						// if True, then want only fraction starting from zero, assumes no negatives
+	zero = ParamIsDefault(zero) || numtype(zero) ? 0 : zero
+
+	if (frac<=0 || numtype(frac)==2)
+		return cmplx(NaN,NaN)
+	endif
+	frac = min(frac,1)
+
+	Duplicate/FREE wwIN, ww
+	Sort ww, ww
+	WaveStats/M=1/Q ww
+	Redimension/N=(V_npnts) ww				// this is needed since wwIN may contain NaN
+
+	Variable N=DimSize(ww,0), xlo=NaN, xhi=NaN
+	Variable x0=(1/N), dx=(1-1/N)/(N-1)	// a scaling for ww
+	if (zero)
+		Variable i = (frac-x0)/dx + 0.5
+		if (i<0)
+			xlo = ww[0]/2	
+		else
+			i = limit(i,0,N-1)
+			xlo = ww[i]									// xhi is left as NaN
+		endif
+	else
+		Variable lo = ((1-frac)/2 - x0)/dx - 0.5
+		Variable hi = ((1+frac)/2 - x0)/dx + 0.5
+		lo = limit(lo,0,N-1)
+		hi = limit(hi,0,N-1)
+		xlo = ww[lo]
+		xhi = ww[hi]
+	endif
+	return cmplx(xlo,xhi)
 End
 
 
