@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.89
+#pragma version = 4.90
 #include "LatticeSym", version>=5.14
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
@@ -28,7 +28,7 @@ Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your M
 //	with version 4.00, add the ability to use both spe and hdf5 with the new geometry
 //	with version 4.18, changed default name of FullPeakList to something like FullPeakListOrange
 //	with version 4.60, changed how pick_keV_calc() works
-//	with version 4.88, changed number of columns of FullPeakList from 11 to 12
+//	with version 4.88, changed number of columns in FullPeakList from 11 to 12
 
 //	#define USE_ENERGY_STRAIN_REFINE		// paste this line (uncommented) in your Procedure Window to use newer strain refinement
 
@@ -652,7 +652,7 @@ End
 //
 Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	Wave FullPeakIndexed				// contains the result of indexing peaks
-	Variable pattern					// pattern in FullPeakIndexed to draw
+	Variable pattern						// pattern in FullPeakIndexed to draw
 
 	Variable i, badWave = !WaveExists(FullPeakIndexed)
 	if (badWave)							// try getting FullPeakIndexed from the top image
@@ -666,9 +666,9 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	if (badWave)
 		String wList = reverseList(WaveListClass("IndexedPeakList*","*",""))
 		i = ItemsInList(wList)
-		if (i==1)						// only one, so choose it
+		if (i==1)							// only one, so choose it
 			Wave FullPeakIndexed = $(StringFromList(0,wList))
-		elseif(i>0)						// more than 1, so ask
+		elseif(i>0)							// more than 1, so ask
 			String wName=""
 			Prompt wName,"Indexed Peak List",popup,wList
 			DoPrompt "Indexed Peak List",wName
@@ -681,6 +681,9 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	badWave = !WaveExists(FullPeakIndexed)
 	if (!badWave)
 		badWave = (DimSize(FullPeakIndexed,0)<1 || DimSize(FullPeakIndexed,1)<12)
+	endif
+	if (badWave)
+		return 1
 	endif
 	String wnote = note(FullPeakIndexed)
 	Variable NpatternsFound = max(DimSize(FullPeakIndexed,2),1)
@@ -707,34 +710,38 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	String win							// name of window displaying image
 	imageName = StringByKey("fittedIgorImage",wnote,"=")
 
-	if (exists(imageName)==1)
-		Wave image = $imageName
-		win = FindGraphWithImage(image)
+	Variable err=0
+	if (itemsInList(imageName,",")>=1)
+		for (i=0;i<itemsInList(imageName,",");i+=1)
+			Wave image = $StringFromList(i,imageName,",")
+			win = FindGraphWithImage(image)
+			err = UpdateIndexingOn1image(win,image,FullPeakIndexed,pattern) || err
+		endfor
 	endif
-	if (strlen(win)<1)					// found fitted image, but no window, see if raw window is open
-		Wave rawimage = $(StringByKey("rawIgorImage",wnote,"="))
+
+	if (err)
+		Wave image = $(StringByKey("rawIgorImage",wnote,"="))
 		win = FindGraphWithImage(rawimage)
+		err = UpdateIndexingOn1image(win,image,FullPeakIndexed,pattern)
 	endif
-	if (!WaveExists(image))			// could not find the fitted image, try for raw image
-		imageName = StringByKey("rawIgorImage",wnote,"=")
-		Wave image = $imageName
-		win = FindGraphWithImage(image)
-	endif
+	return err
+End
+//
+
+Static Function UpdateIndexingOn1image(win,image,FullPeakIndexed,pattern)
+	String win								// window name
+	Wave image								// image wave in win
+	Wave FullPeakIndexed				// contains the result of indexing peaks
+	Variable pattern						// pattern in FullPeakIndexed to draw
 
 	if (!WaveExists(image))			// could not find the image
 		return 1
 	endif
 	if (strlen(win))
-		DoWindow/F $win			// bring window with image to the top
+		DoWindow/F $win					// bring window with image to the top
 	else
-		NewImageGraphLocal(image)// no window exists, so make one showing image
-//		NewImageGraph(image,withButtons=1)	// no window exists, so make one showing image
-//		Graph_imageMake(image,1)	// no window exists, so make one showing image
+		NewImageGraphLocal(image)		// no window exists, so make one showing image
   	endif
-//	resetpkLIstFromFullPeakList($(StringByKey("peakListWave",wnote,"=")))
-//	NVAR boxesOn=boxesOn
-//	boxesOn = 0
-//	ButtonProc_Boxes("")				// make sure that boxes are on
 	STRUCT WMButtonAction B_Struct
 	B_Struct.eventCode = 2
 	B_Struct.eventMod = 63				// special to force ON or OFF
@@ -748,6 +755,7 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	Variable dNum = detectorNumFromID(g, StringByKey("detectorID",note(image),"="))
 	dNum = max(0,dNum)					// default to 0
 
+	String wnote = note(FullPeakIndexed)
 	String peakListName = StringByKey("peakListWave", wnote,"=")
 	if (strlen(peakListName))
 		SetWindow kwTopWin userdata(FitPeaks )="FullPeakList="+peakListName
@@ -756,15 +764,15 @@ Function DisplayResultOfIndexing(FullPeakIndexed,pattern)
 	Variable wid = (NumberByKey("maxPeakWidth",wnote,"=")+NumberByKey("minSpotSeparation",wnote,"="))/2
 	wid = numtype(wid) ? NumberByKey("minSpotSeparation",wnote,"=") : wid
 	//	wid = numtype(wid) ? 30 : wid		// width of the cross
-	wid = numtype(wid) ? 20 : wid		// width of the cross
+	wid = numtype(wid) ? 20 : wid	// width of the cross
 	Variable N=DimSize(FullPeakIndexed,0), tsize
 	tsize = round(75 - N/4)
 	tsize = limit(tsize,45,75)
-	Variable px,py
-	SetDrawLayer UserFront			// draw the X's
+	Variable i, px,py
+	SetDrawLayer UserFront				// draw the X's
 	for (i=0;i<N;i+=1)
 		if (dNum != FullPeakIndexed[i][11][pattern])
-			continue					// wrong detector, skip this spot
+			continue							// wrong detector, skip this spot
 		endif
 		px = FullPeakIndexed[i][9][pattern]
 		py = FullPeakIndexed[i][10][pattern]
@@ -980,7 +988,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	endif
 	my = (V_min-V_max)*vert + V_max
 
-	String tagStr="", str, SpaceGroupID
+	String tagStr="", str, SpaceGroupID=""
 	Variable h,k,l, angleErr,keV=NaN, SpaceGroupIDnum
 	Variable dist2, m
 	Variable px,py
@@ -988,6 +996,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	ip = (ip<0 || numtype(ip)) ? 0 : ip
 
 	Wave FullPeakIndexed=$(StringByKey("FullPeakIndexed",GetUserData("","","Indexing"),"="))
+//print "xxxxxxxxx add 'FullPeakIndexed' to the UserData via:  SetWindow winName, userdata(Indexing)=UDStr"
+//Wave FullPeakIndexed=FullPeakIndexedOrange
 	if (!WaveExists(FullPeakIndexed))
 		FullPeakIndexName = StringFromList(0,TraceNamesInClass("IndexedPeakList*",win))
 		Wave FullPeakIndexed = TraceNameToWaveRef(win,FullPeakIndexName)
@@ -1188,9 +1198,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		angleErr=FullPeakIndexed[m][8][ip]
 		SpaceGroupIDnum = NumberByKey("SpaceGroupIDnum",note(FullPeakIndexed),"=")
 		if (numtype(SpaceGroupIDnum))
-			SpaceGroupIDnum = NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
-			SpaceGroupID = LatticeSym#FindDefaultIDForSG(SpaceGroupIDnum)
-			SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(SpaceGroupIDnum)
+			Variable SG = NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
+			SpaceGroupID = LatticeSym#FindDefaultIDForSG(SG)
+			SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(SG)
 		endif
 
 		if (ip>0)
@@ -1704,18 +1714,20 @@ End
 
 Function/WAVE FindIndexListForImage(image)	// returns wave ref of FullPeakIndex for an image
 	Wave image
-	String wList=WaveListClass("IndexedPeakList*","*","MAXCOLS:12")
-	Variable i, N=ItemsInList(wList)
+	String wList=WaveListClass("IndexedPeakList*","*","MAXCOLS:12"), ilist
+	Variable m, i, N=ItemsInList(wList)
 	for (i=0;i<N;i+=1)
 		Wave indexList = $StringFromList(i,wList)
-		Wave iTest = $StringByKey("fittedIgorImage",note(indexList),"=")
-		if (WaveRefsEqual(image,iTest))
-			return indexList
-		endif
+		ilist = StringByKey("fittedIgorImage",note(indexList),"=")		// this can now be a list (comma separated)
+		for (m=0;m<ItemsInLIst(ilist,",");m+=1)
+			Wave iTest = $StringFromList(m,ilist,",")
+			if (WaveRefsEqual(image,iTest))
+				return indexList
+			endif
+		endfor
 	endfor
 	return $""
 End
-//
 //Function/WAVE FindPeakListForImage(image)
 //	Wave image
 //	if (!WaveExists(image))
@@ -4556,6 +4568,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable depth = NumberByKey("depth",wnote,"=")
+	String fittedIgorImages=StringByKey("fittedIgorImage",wnote,"=")
 
 	Variable i, px,py
 	for (i=0,N=0;i<N0;i+=1)
@@ -4581,6 +4594,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
+		fittedIgorImages += ","+StringByKey("fittedIgorImage",wnote,"=")
 		for (i=0;i<N1;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -4605,6 +4619,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
+		fittedIgorImages += ","+StringByKey("fittedIgorImage",wnote,"=")
 		for (i=0;i<N2;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -4628,6 +4643,10 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
 	depth = NumberByKey("depth",wnote,"=")
+	do
+		fittedIgorImages = ReplaceString(",,",fittedIgorImages,"")
+	while (strsearch(fittedIgorImages,",,",0)>0)
+	fittedIgorImages = TrimBoth(fittedIgorImages,chars=",")
 
 	Variable refNum
 	Open/C="R*ch"/P=$pathName/T="TEXT" refNum as fname
@@ -4674,9 +4693,9 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	if (strlen(str))
 		fprintf refNum,"$rawIgorImage		%s		// name of Igor image wave\n",str
 	endif
-	str = StringByKey("fittedIgorImage",wnote,"=")
-	if (strlen(str))
-		fprintf refNum,"$fittedIgorImage	%s	// name of flattened Igor image wave used to fit peaks\n",str
+//	str = StringByKey("fittedIgorImage",wnote,"=")
+	if (strlen(fittedIgorImages))
+		fprintf refNum,"$fittedIgorImage	%s	// name of flattened Igor image wave used to fit peaks\n",fittedIgorImages
 	endif
 	val = NumberByKey("fractionBkg",wnote,"=")
 	if (!numtype(val))
