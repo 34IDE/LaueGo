@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.35
+#pragma version = 4.36
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3022,9 +3022,10 @@ ThreadSafe Function smallestNonZeroValue(vec,[tol])
 	return WaveMin(temp)
 End
 
-Function/C waveRange(ww,[printIt])
+Function/C waveRange(ww,[name,printIt])
 	// returns the min and max value in wave, only works for numeric waves, ignores number of dimensions
 	Wave ww
+	String name							// when printIt is true, use this as the name
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
@@ -3040,7 +3041,8 @@ Function/C waveRange(ww,[printIt])
 	endif
 	WaveStats/M=1/Q ww
 	if (printIt)
-		printf "\"%s\"   range=[%g, %g], %s=%.3g  --> %.2g%% variation\r", NameOfWave(ww),V_min,V_max, gDELTA, V_max-V_min, (V_max-V_min)/V_avg*100
+		name = SelectString(ParamIsDefault(name), name, NameOfWave(ww))
+		printf "\"%s\"   range=[%g, %g], %s=%.3g  --> %.2g%% variation\r", name,V_min,V_max, gDELTA, V_max-V_min, (V_max-V_min)/V_avg*100
 	endif
 	return cmplx(V_min,V_max)
 End

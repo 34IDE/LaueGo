@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.15
+#pragma version = 2.16
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -11,6 +11,15 @@
 //
 //	at verion 2.07, added the imageROIstruct Structure and associated functions
 //	at verion 2.12, bad pixel support, and also ROIofImage()
+
+
+#if (IgorVersion()>7)
+	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, plus-minus sign
+#elif StringMatch(IgorInfo(2),"Windows")
+	Static strConstant PLUSMINUS = "\241"			// MS Alt 241, plus-minus sign
+#else
+	Static strConstant PLUSMINUS = "\261"			// Mac option-+, plus-minus sign
+#endif
 
 
 // =============================================================================================
@@ -766,7 +775,7 @@ Function/S NewImageGraph(image,[withButtons,kill])
 		Display/W=(345,44,822,440)/K=(kill)
 		AppendImage image
 		if (withButtons && !NOButtons)
-			Button boxes,pos={0,25},size={60,21},proc=ButtonBoxesProc,title="±boxes"
+			Button boxes,pos={0,25},size={60,21},proc=ButtonBoxesProc,title=PLUSMINUS+"boxes"
 			FUNCREF ImageButtonRGBproto  func = $"ImageButtonRGB"
 			Wave rgb = func(image)
 			if (WaveExists(rgb))
@@ -2133,7 +2142,7 @@ Function RemovePeakFromPeakList()				// returns row number removed, -1 if nothin
 	endif
 
 	Variable tol, x0,y0
-	tol = round(min(V_right-V_left,V_bottom-V_top)/2)	// ± tolerance in pixels
+	tol = round(min(V_right-V_left,V_bottom-V_top)/2)	// PLUSMINUS tolerance in pixels
 	x0 = (V_left+V_right)/2
 	y0 = (V_bottom+V_top)/2
 
@@ -2687,7 +2696,7 @@ Static Function/T valueAndError2Str(val,err)
 	Variable val,err
 	String str
 	if (numtype(val + err)==0)
-		sprintf str "%g±%.2g",val,err
+		sprintf str "%g%s%.2g",val,PLUSMINUS,err
 	elseif (numtype(val)==0)
 		sprintf str "%g",val
 	else

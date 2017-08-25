@@ -765,10 +765,13 @@ Static Function UpdateIndexingOn1image(win,image,FullPeakIndexed,pattern)
 	wid = numtype(wid) ? NumberByKey("minSpotSeparation",wnote,"=") : wid
 	//	wid = numtype(wid) ? 30 : wid		// width of the cross
 	wid = numtype(wid) ? 20 : wid	// width of the cross
-	Variable N=DimSize(FullPeakIndexed,0), tsize
-	tsize = round(75 - N/4)
-	tsize = limit(tsize,45,75)
-	Variable i, px,py
+	//	Variable tsize = round(75 - N/4)
+	//	tsize = limit(tsize,45,75)
+	MatrixOP/FREE num_dNum = sum(equal(col(FullPeakIndexed[][][pattern],11),dNum))
+	Variable tsize = round(80 - num_dNum[0]/4)
+	tsize = limit(tsize,45,80)
+
+	Variable i, px,py, N=DimSize(FullPeakIndexed,0)
 	SetDrawLayer UserFront				// draw the X's
 	for (i=0;i<N;i+=1)
 		if (dNum != FullPeakIndexed[i][11][pattern])
@@ -799,7 +802,8 @@ Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 	Variable tsize
 	tsize = tsize>2 && tsize<150 ? tsize : 75
 	String str
-	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize	// use for gfMult=100
+	//	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize	// use for gfMult=100
+	sprintf str,"\\Zr%03d\\[0",tsize	// use for gfMult=100
 	str += hkl2IgorBarStr(h,k,l)							// change to Igor string with negatives --> bars
 	Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
 	px = limit(px,0,DimSize(image,0)-1)
@@ -810,6 +814,22 @@ Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 	Tag/C/N=$name/I=1/F=0/G=(55000,5000,0)/B=1/A=MB/L=0/X=1/Y=0.5 $wname,p,str
 	return 0
 End
+//
+ThreadSafe Static Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+	Variable h,k,l				// hkl value
+
+	if (numtype(h+k+l))
+		return num2str(h)+","+num2str(k)+","+num2str(l)
+	endif
+//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
+	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+	String str=""
+	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
+	str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
+	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
+	return str
+End
+//
 //Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 //	Variable i
 //	Variable h,k,l				// hkl value
@@ -996,8 +1016,6 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	ip = (ip<0 || numtype(ip)) ? 0 : ip
 
 	Wave FullPeakIndexed=$(StringByKey("FullPeakIndexed",GetUserData("","","Indexing"),"="))
-//print "xxxxxxxxx add 'FullPeakIndexed' to the UserData via:  SetWindow winName, userdata(Indexing)=UDStr"
-//Wave FullPeakIndexed=FullPeakIndexedOrange
 	if (!WaveExists(FullPeakIndexed))
 		FullPeakIndexName = StringFromList(0,TraceNamesInClass("IndexedPeakList*",win))
 		Wave FullPeakIndexed = TraceNameToWaveRef(win,FullPeakIndexName)
@@ -1264,7 +1282,7 @@ End
 
 Function ButtonBoxesProc(B_Struct) : ButtonControl
 	STRUCT WMButtonAction &B_Struct
-	if (B_Struct.eventCode !=2)					// only process on button up
+	if (B_Struct.eventCode !=2)						// only process on button up
 		return 0
 	endif
 	Wave peakList = $StringByKey("FullPeakList",GetUserData(B_Struct.win,"","FitPeaks"),"=")
@@ -1280,7 +1298,7 @@ Function ButtonBoxesProc(B_Struct) : ButtonControl
 	String boxKeys = GetUserData(B_Struct.win,"","boxes")	// save for later
 	Variable boxesOn = NumberByKey("boxesOn"boxKeys,"=")
 	boxesOn = numtype(boxesOn) ? 1 : !boxesOn
-	if (B_Struct.eventMod==63)					// special to force ON or OFF
+	if (B_Struct.eventMod==63)						// special to force ON or OFF
 		boxesOn = stringmatch(B_Struct.ctrlName,"ON") ? 1 : boxesOn
 		boxesOn = stringmatch(B_Struct.ctrlName,"OFF") ? 0 : boxesOn
 	endif
@@ -2247,7 +2265,8 @@ Static Function/WAVE readIndexFile(indexFile,path)
 	Variable i1,i0 = strsearch(buffer,"$pattern"+num2istr(ipattern),0)		// put into "key=value" everything up pattern ipattern
 	i0= i0<0 ? Inf : i0-1
 	String wnote = keyStrFromBuffer(buffer[0,i0])
-	String peakListName = ParseFilePath(3,StringByKey("peakListWave",wnote,"="),":",0,0)
+	String peakListNameList = StringByKey("peakListWave",wnote,"=")
+	String peakListName = ParseFilePath(3,StringFromList(0,peakListNameList,","),":",0,0)
 	String FullPeakIndexedName = CleanupName("FullPeakIndexed"+ReplaceString("FullPeakList",peakListName,""),0)
 	Variable Npatterns = NumberByKey("NpatternsFound",wnote,"=")
 	if (!(Npatterns>0))
@@ -4569,6 +4588,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	groupy = numtype(groupy) ? 1 : groupy
 	Variable depth = NumberByKey("depth",wnote,"=")
 	String fittedIgorImages=StringByKey("fittedIgorImage",wnote,"=")
+	String PeakListWaves=GetWavesDataFolder(FullPeakList,2)
 
 	Variable i, px,py
 	for (i=0,N=0;i<N0;i+=1)
@@ -4595,6 +4615,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
 		fittedIgorImages += ","+StringByKey("fittedIgorImage",wnote,"=")
+		PeakListWaves += ","+GetWavesDataFolder(FullPeakList1,2)
 		for (i=0;i<N1;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -4620,6 +4641,7 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		groupy = numtype(groupy) ? 1 : groupy
 		depth = NumberByKey("depth",wnote,"=")
 		fittedIgorImages += ","+StringByKey("fittedIgorImage",wnote,"=")
+		PeakListWaves += ","+GetWavesDataFolder(FullPeakList2,2)
 		for (i=0;i<N2;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based
@@ -4647,6 +4669,10 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		fittedIgorImages = ReplaceString(",,",fittedIgorImages,"")
 	while (strsearch(fittedIgorImages,",,",0)>0)
 	fittedIgorImages = TrimBoth(fittedIgorImages,chars=",")
+	do
+		PeakListWaves = ReplaceString(",,",PeakListWaves,"")
+	while (strsearch(PeakListWaves,",,",0)>0)
+	PeakListWaves = TrimBoth(PeakListWaves,chars=",")
 
 	Variable refNum
 	Open/C="R*ch"/P=$pathName/T="TEXT" refNum as fname
@@ -4680,7 +4706,8 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	if (strlen(str))
 		fprintf refNum,"$imageFileName			%s		// name of image file read in by Igor\n",str
 	endif
-	fprintf refNum,"$peakListWave	%s	// Igor wave containng list of peak positions\n",GetWavesDataFolder(FullPeakList,2)
+//	fprintf refNum,"$peakListWave	%s	// Igor wave containng list of peak positions\n",GetWavesDataFolder(FullPeakList,2)
+	fprintf refNum,"$peakListWave	%s	// Igor wave containng list of peak positions\n",PeakListWaves
 	val = NumberByKey("exposure",wnote,"=")
 	if (!numtype(val))
 		fprintf refNum,"$exposure			%g					// CCD exposure of original image (sec)\n",val
@@ -6370,6 +6397,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	if (coords<0 || coords>3)								// coords must be 0, 1, 2, or 3
 		return ""
 	endif
+
 	if (!ParamIsDefault(FullPeakList))
 		if (!WaveExists(FullPeakList))
 			return ""
@@ -6380,54 +6408,52 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 			return ""
 		endif
 	endif
-	String FitPeakWaveList = WaveListClass("FittedPeakList*","*","")
-	String indexWaveList = WaveListClass("IndexedPeakList*","*","")
-	Variable pickList=0, pickIndex=0
-	if (!WaveExists(FullPeakList))
-		if (ItemsInList(FitPeakWaveList)==1)
-			Wave FullPeakList = $StringFromList(0,FitPeakWaveList)
-		else
-			pickList = 1
-		endif
-	endif
+
+
+
+//	xxxxxxxxx
+//	xxxxxxxxx
+//	xxxxxxxxx
 	if (!WaveExists(FullPeakIndexed))
-		if (ItemsInList(indexWaveList)==1)
+		String indexWaveList = WaveListClass("IndexedPeakList*","*","")
+		if (ItemsInList(indexWaveList) < 1)
+			return ""
+		elseif (ItemsInList(indexWaveList) == 1)
 			Wave FullPeakIndexed = $StringFromList(0,indexWaveList)
 		else
-			pickIndex = 1
-		endif
-	endif
-	if (pickList && ItemsInList(FitPeakWaveList)<2)
-		return ""
-	elseif (pickIndex && ItemsInList(indexWaveList)<2)
-		return ""
-	elseif (pickList || pickIndex)
-		String peaksName, indexName
-		coords += 1				// change from 0 based to 1 based
-		Prompt coords,"strain coordinates",popup,"Crystal;Beam Line;XHF;Sample (outward normal)"
-		Prompt peaksName,"peak list",popup,FitPeakWaveList
-		Prompt indexName,"index list",popup,indexWaveList
-		if (pickList && pickIndex)
-			DoPrompt "pick peaks & index list",peaksName,indexName
-		elseif (pickList)
-			DoPrompt "pick peaks list",peaksName
-		else
-			DoPrompt "pick index list",indexName
-		endif
-		if (V_flag)
-			return ""
-		endif
-		coords -= 1				// change back to 0 based from 1 based
-		if (pickList)
-			Wave FullPeakList = $peaksName
-		endif
-		if (pickIndex)
+			String indexName
+			Prompt coords,"strain coordinates",popup,"Crystal;Beam Line;XHF;Sample (outward normal)"
+			Prompt indexName,"index list",popup,indexWaveList
+			coords += 1				// change from 0 based to 1 based
+			DoPrompt "Pick index list",indexName, coords
+			if (V_flag)
+				return ""
+			endif
+			coords -= 1				// change from 1 based to 0 based
 			Wave FullPeakIndexed = $indexName
 		endif
 	endif
-	if (!WaveExists(FullPeakList) || !WaveExists(FullPeakIndexed))
+	if (!WaveExists(FullPeakIndexed))
 		return ""
 	endif
+	String peakLists = StringByKey("peakListWave",note(FullPeakIndexed),"=")
+	Variable Npeaks = ItemsInList(peakLists,",")
+	Make/N=(Npeaks)/FREE/WAVE FullPeakListWaves = $StringFromList(p,peakLists,",")
+	Variable iPeak, mm=0
+	for (iPeak=0;iPeak<Npeaks;iPeak+=1)
+		mm += WaveExists(FullPeakListWaves[iPeak])
+	endfor
+	if (mm<1)						// make sure some FullPeakList's exist
+		return ""
+	endif
+//	xxxxxxxxx
+//	xxxxxxxxx
+//	xxxxxxxxx
+
+
+
+
+
 	STRUCT microGeometry geo
 	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
 		return ""
@@ -6451,17 +6477,36 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	alphaFit = alphaFit ? 1 : 0 ;		betFit = betFit ? 1 : 0 ;		gamFit = gamFit ? 1 : 0
 	Variable Nfit = aFit+bFit+cFit+alphaFit+betFit+gamFit
 	if (Nfit<1 || (aFit&&bFit&&cFit))
-		return ""												// this is deviatoric, you cannot fit all 3 lengths
+		return ""													// this is deviatoric, you cannot fit all 3 lengths
 	endif
 	sprintf constrain "%d%d%d%d%d%d", aFit,bFit,cFit,alphaFit,betFit,gamFit		// constrain is for {a,b,c,alpha,beta,gamma}
 
 	Variable N=DimSize(FullPeakIndexed,0)
 	KillWaves/Z epsilon,epsilonBL,epsilonXHF,epsilonSample
 	if ((Nfit+3)>=(2*N))										// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations)
-		return ""												// each measured spot provides 2 values
+		return ""													// each measured spot provides 2 values
 	endif
-	Wave Qs = FullPeakList2Qwave(FullPeakList)
-	if (!WaveExists(Qs))
+
+	Wave Qs = $""													// all possible measured Qs, check all used detectors
+	Variable iQs
+	for (iPeak=0;iPeak<Npeaks;iPeak+=1)
+		Wave FullPeakList = FullPeakListWaves[iPeak]
+		if (!WaveExists(FullPeakList))
+			continue
+		endif
+		Wave Qis = FullPeakList2Qwave(FullPeakList)
+		if (!WaveExists(Qis) || DimSize(Qis,0)<1)
+			continue
+		endif
+		if (!WaveExists(Qs))
+			Duplicate/FREE Qis, Qs								// create Qs
+		else
+			iQs = DimSize(Qs,0)
+			Redimension/N=(iQs+DimSize(Qis,0),-1) Qs	// extend Qs
+			Qs[iQs,Inf][] = Qis[p-iQs][q]
+		endif
+	endfor
+	if (!WaveExists(Qs) || DimSize(Qs,0)<1)
 		return ""
 	endif
 	String funcName = "Indexing#latticeMismatch"+num2istr(Nfit+3)	// need 3 extra for the rotation, which is always there
@@ -6469,22 +6514,20 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	// done with I/O, now setup the calculation
 
 	// from initial recip lattice, find lattice constants, and initial rotation (stored as rx,ry,rz)
-	Make/N=3/O/D hkl_latticeMismatch, axis_latticeMismatch
-	Wave hkl=hkl_latticeMismatch, axis=axis_latticeMismatch
-	Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
-	Make/N=(3,3)/O/D RLmeas_latticeMismatch
-	Wave  RLmeas=RLmeas_latticeMismatch
-	sscanf StringByKey("recip_lattice0",note(FullPeakIndexed),"="), "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
-	RLmeas[0][0] = as0 ;		RLmeas[0][1] = bs0 ;		RLmeas[0][2] = cs0		// the original measured RL
-	RLmeas[1][0] = as1 ;		RLmeas[1][1] = bs1 ;		RLmeas[1][2] = cs1
-	RLmeas[2][0] = as2 ;		RLmeas[2][1] = bs2 ;		RLmeas[2][2] = cs2
+	Wave RLmeas = decodeMatFromStr(StringByKey("recip_lattice0",note(FullPeakIndexed),"="))
+	Duplicate/FREE RLmeas, RLmeasStart
+	Make/N=3/D/FREE hkl
+	Make/N=3/O/D axis_latticeMismatch
+	Wave axis=axis_latticeMismatch
+
 	Make/N=6/O/D optimize_LatticeConstantsWave
 	Wave LC=optimize_LatticeConstantsWave
 	Variable Vc = RL2latticeConstants(RLmeas,LC)		// calc original lattice constants from RL, stored in LC, save original Vc too
 	forceLattice(LC,NumberByKey("SpaceGroup",note(FullPeakIndexed),"="),Vc=Vc)	// force lattice constants to match Space Group exactly, preserve Vc
 
-	Make/N=(3,3)/O/D DL_latticeMismatch, RL_latticeMismatch, RL0_latticeMismatch, rho_latticeMismatch
-	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, RL0=RL0_latticeMismatch, rho=rho_latticeMismatch
+	Make/N=(3,3)/D/FREE RL0
+	Make/N=(3,3)/O/D DL_latticeMismatch, RL_latticeMismatch, rho_latticeMismatch
+	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, rho=rho_latticeMismatch
 	RLfromLatticeConstants(LC,DL,RL0)						// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)						// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
 	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
@@ -6495,8 +6538,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	rotationMatAboutAxis(axis,angle,rho)					// forces rho to be a perfect rotation matrix
 	MatrixOp/O RLmeas = rho x RL0							// ensure that starting point perfectly agrees with Space Group
 
-	Make/N=(3,3)/O/D Ameas_Deviatoric, Astart_Deviatoric	// Vcartesian = A x Vcell,   used to make the strain tensor
-	Wave Ameas=Ameas_Deviatoric, Astart=Astart_Deviatoric
+	Make/N=(3,3)/D/FREE Ameas, Astart						// Vcartesian = A x Vcell,   used to make the strain tensor
 	Astart = DL														// the starting direct lattice
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
@@ -6513,6 +6555,10 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		if (Npatterns>1)
 			printf "For pattern  %d  of  [0, %d]\r",pattern,Npatterns-1
 		endif
+		Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
+		as0 = RLmeasStart[0][0]	;	bs0 = RLmeasStart[0][1]	;	cs0 = RLmeasStart[0][2]	// the original measured RL
+		as1 = RLmeasStart[1][0]	;	bs1 = RLmeasStart[1][1]	;	cs1 = RLmeasStart[1][2]
+		as1 = RLmeasStart[2][0]	;	bs2 = RLmeasStart[2][1]	;	cs2 = RLmeasStart[2][2]
 		printf "starting reciprocal lattice,	a* = {%+.6f, %+.6f, %+.6f} (1/nm)\r",as0,as1,as2
 		printf "							b* = {%+.6f, %+.6f, %+.6f}\r",bs0,bs1,bs2
 		printf "							c* = {%+.6f, %+.6f, %+.6f}\r",cs0,cs1,cs2
@@ -6521,55 +6567,48 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r"LC[0]/LC[2],LC[1]/LC[2],LC[0]/LC[1]
 	endif
 
-	Make/N=3/O/D/FREE qhat, qhat2
+	Make/N=3/O/D/FREE qhat
 	Make/N=(N,14)/O/D PeaksForStrain=NaN
-	SetDimLabel 1,0,h,PeaksForStrain ;			SetDimLabel 1,1,k,PeaksForStrain ;			SetDimLabel 1,2,l,PeaksForStrain
-	SetDimLabel 1,3,fitQx,PeaksForStrain ;		SetDimLabel 1,4,fitQy,PeaksForStrain ;		SetDimLabel 1,5,fitQz,PeaksForStrain
-	SetDimLabel 1,6,indexQx,PeaksForStrain ;	SetDimLabel 1,7,indexQy,PeaksForStrain ;	SetDimLabel 1,8,indexQz,PeaksForStrain
+	SetDimLabel 1,0,h,PeaksForStrain ;				SetDimLabel 1,1,k,PeaksForStrain ;			SetDimLabel 1,2,l,PeaksForStrain
+	SetDimLabel 1,3,fitQx,PeaksForStrain ;		SetDimLabel 1,4,fitQy,PeaksForStrain ;	SetDimLabel 1,5,fitQz,PeaksForStrain
+	SetDimLabel 1,6,indexQx,PeaksForStrain ;	SetDimLabel 1,7,indexQy,PeaksForStrain ;SetDimLabel 1,8,indexQz,PeaksForStrain
 	SetDimLabel 1,9,fit_Intens,PeaksForStrain;	SetDimLabel 1,10,keV,PeaksForStrain
-	SetDimLabel 1,11,pixelX,PeaksForStrain;	SetDimLabel 1,12,pixelY,PeaksForStrain;	SetDimLabel 1,13,angErr,PeaksForStrain
-	PeaksForStrain[][0,2] = FullPeakIndexed[p][q+3][pattern]	// set the hkl
+	SetDimLabel 1,11,pixelX,PeaksForStrain;		SetDimLabel 1,12,pixelY,PeaksForStrain;	SetDimLabel 1,13,angErr,PeaksForStrain
 	String wnote = ReplaceNumberByKey("patternNum","",pattern,"=")
 	wnote = ReplaceStringByKey("constrain",wnote,constrain,"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"StrainPeakList","=")
 	Note/K PeaksForStrain,wnote
 
-	Variable Nj=DimSize(Qs,0), cosMax, jmax, dot			// find the measured peak that goes with each indexed peak (in Q^)
-	Variable i,j,m
+	Variable Nj=DimSize(Qs,0), jmax								// find the measured peak that goes with each indexed peak (in Q^)
+	Make/N=(Nj,3)/D/FREE Q3s = Qs[p][q]						// only the Q^ vector, without the intensity
+	MatrixOP/FREE Q3s = NormalizeRows(Q3s)
+
+	Variable i,m
 	for (i=0,m=0;i<N;i+=1)
-		hkl[0] = PeaksForStrain[i][0]
-		hkl[1] = PeaksForStrain[i][1]
-		hkl[2] = PeaksForStrain[i][2]
+		hkl = FullPeakIndexed[i][p+3][pattern]				// set the hkl
 		MatrixOp/O/FREE qhat = RLmeas x hkl					// predicted g^ from each measured hkl
 		normalize(qhat)
-		PeaksForStrain[i][6,8] = qhat[q-6]
-		cosMax = -4
-		jmax = -1
-		for (j=0;j<Nj;j+=1)											// search fitted peaks to find the closest one
-			qhat2 = Qs[j][p]
-			dot = MatrixDot(qhat,qhat2)
-			if (dot>cosMax)
-				cosMax = dot
-				jmax = j
-			endif
-		endfor
-		if (jmax>=0)
-			qhat2 = Qs[jmax][p]										// closest fitted peak to this hkl
-			normalize(qhat2)
-			PeaksForStrain[m][3,5] = qhat2[q-3]				// store fitted q^, and its intensity
-			PeaksForStrain[m][9] = Qs[jmax][3]
+
+		MatrixOP/FREE dots = Q3s x qhat
+		WaveStats/M=1/Q dots
+		if (V_npnts>0)
+			jmax = V_maxloc
+			PeaksForStrain[m][0,2] = hkl[q]						// store the hkl
+			PeaksForStrain[m][3,5] = Q3s[jmax][q-3]			// store closest fitted q^
+			PeaksForStrain[m][6,8] = qhat[q-6]					// store predicted g^
+			PeaksForStrain[m][9] = Qs[jmax][3]					// 	and its intensity
 			m += 1
+		else
+			PeaksForStrain[m][] = NaN								// bad point
 		endif
 	endfor
 	N = m
+	Redimension/N=(N,-1) PeaksForStrain						// reset to number of valid points in PeaksForStrain
 	Variable rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)
 	if (printIt)
 //		printf "at start, rms error = %.5f¡\r",latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)		// 3 rotations and all 6 lattice constants
 		printf "at start, rms error = %.5f¡\r",rmsErr*180/PI	// 3 rotations and all 6 lattice constants
 	endif
-
-	KillWaves/Z RL0_latticeMismatch
-	Redimension/N=(N,14) PeaksForStrain
 	if ((Nfit+3)>=(2*N))											// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations),  requires 1 more 
 		return ""														// each measured spot provides 2 values
 	endif
@@ -6608,8 +6647,8 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		if (printIt)
 			printf "Optimize failed with V_flag=%d,   V_OptTermCode=%d,   V_OptNumIters=%d,   V_OptNumFunctionCalls=%d\r",V_flag,V_OptTermCode,V_OptNumIters,V_OptNumFunctionCalls
 		endif
-		KillWaves/Z Ameas_Deviatoric, Astart_Deviatoric, totalTrans
-		KillWaves/Z FullPeakList2Qfile_Q, W_Cross
+		KillWaves/Z totalTrans
+		KillWaves/Z W_Cross
 		KillWaves/Z W_OptGradient, optimize_xWave, optimize_typXWave
 		KillWaves/Z axis_latticeMismatch, rho_latticeMismatch
 		return ""
@@ -6628,24 +6667,13 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	MatrixOp/O DL = rho x DL
 	Ameas = DL													// Vcartesian = A x Vcell,   used to make the strain tensor
 
-	String wName = UniqueName("sqrtMat",1,0)
-	Duplicate/O Astart $wName
-	Wave F = $wName											// holds the transformation from Astart to Ameas
-	wName = UniqueName("sqrtMat",1,0)
-	Duplicate/O Astart $wName
-	Wave U = $wName											// holds U,  F = R x U
-
-	MatrixOp/O F = Ameas x Inv(Astart)					// transformed un-strained to strained,  Ameas = F x Ao
-	MatrixOp/O U = F^t x F									// U is symmetric, so F^t x F = U^t x R^t x R x U = U x R^-1 x R x U = U x U = U^2
-	KillWaves/Z Ameas_Deviatoric, Astart_Deviatoric, F
+	MatrixOp/FREE F = Ameas x Inv(Astart)				// transformed un-strained to strained,  Ameas = F x Ao,  F = R x U
+	MatrixOp/FREE U = F^t x F								// U is symmetric, so F^t x F = U^t x R^t x R x U = U x R^-1 x R x U = U x U = U^2
 	if (sqrtSymmetricMat(U))								// U starts as F^t x F, and is replaced by sqrt(U^2)
-		KillWaves/Z U
 		KillWaves/Z axis_latticeMismatch, rho_latticeMismatch
-		KillWaves/Z hkl_latticeMismatch, RLmeas_latticeMismatch
 		return ""
 	endif
 	MatrixOp/O epsilon = U - Identity(3)				// U = I + epsilon
-	KillWaves/Z U
 
 	Variable trace = MatrixTrace(epsilon)
 	epsilon -= (p==q)*trace/3								// only deviatoric part, subtract trace/3 from diagonal
@@ -6757,10 +6785,9 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Note/K PeaksForStrain, wnote
 
 	KillWaves/Z  axis_latticeMismatch, rho_latticeMismatch
-	KillWaves/Z hkl_latticeMismatch, RLmeas_latticeMismatch
 	KillWaves/Z fithat_PeaksForStrain, optimize_LatticeConstantsWave
 	KillWaves/Z RL_latticeMismatch, DL_latticeMismatch
-	KillWaves/Z FullPeakList2Qfile_Q, W_Cross
+	KillWaves/Z W_Cross
 	KillWaves/Z M_Lower,M_Upper,W_LUPermutation,M_x
 
 	if (coords==0)
@@ -7150,14 +7177,20 @@ Static Function EnableDisableStartStrainCheck(win)
 	return 0
 End
 
-Static Function/WAVE FullPeakList2Qwave(FullPeakList) // convert fitted peaks to a Qlist+intens, peaks file for analysis be Euler
+Static Function/WAVE FullPeakList2Qwave(FullPeakList, [printIt]) // convert fitted peaks to a Qlist+intens, peaks file for analysis be Euler
 	// returns a FREE wave!!
 	Wave FullPeakList
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	if (!WaveExists(FullPeakList))
-		DoAlert 0, "input wave for FullPeakList2File() does not exists"
+		if (printIt)
+			DoAlert 0, "input wave for FullPeakList2File() does not exists"
+		endif
 		return $""
 	elseif (DimSize(FullPeakList,1)<11)
-		DoAlert 0, "the passed full peak list '"+NameOfWave(FullPeakList)+"' is not the right size"
+		if (printIt)
+			DoAlert 0, "the passed full peak list '"+NameOfWave(FullPeakList)+"' is not the right size"
+		endif
 		return $""
 	endif
 	Variable N=DimSize(FullPeakList,0)
