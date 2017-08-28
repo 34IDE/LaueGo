@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.27
+#pragma version = 6.28
 #include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -170,6 +170,7 @@ Static Constant ELEMENT_Zmax = 118
 //	with verison 6.25, fixed error in space group numbering (affected Orthorhombic & Tetragonal)
 //	with verison 6.26, fixed sign problem in lowestOrderHKL()
 //	with verison 6.27, fixed up reading xml files in readCrystalStructureXML()
+//	with version 6.28, simplified minus2bar(), and changed hkl2IgorBarStr()
 
 //	Rhombohedral Transformation:
 //
@@ -6702,7 +6703,8 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over t
 	if (numtype(h+k+l))
 		return num2str(h)+","+num2str(k)+","+num2str(l)
 	endif
-	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
+//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
+	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
 	String str=""
 	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
 	str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
@@ -6718,10 +6720,8 @@ ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has
 	spaces = round(spaces)==limit(spaces,1,5) ? spaces : 0
 
 	String sspaces = PadString("",spaces,0x20), bs
-	for (; strsearch(str,"-",0)>=0;)
-		sprintf bs, "\\[9\\S\\f01%s\\]9\\M\\X9",sspaces+BCHAR
-		str = ReplaceString("-",str,bs,0,1)
-	endfor
+	sprintf bs, "\\[9\\S\\f01%s\\]9\\M\\X9",sspaces+BCHAR
+	str = ReplaceString("-",str,bs)
 	return str
 End
 

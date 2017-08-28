@@ -2,7 +2,7 @@
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
 #pragma version = 4.90
-#include "LatticeSym", version>=5.14
+#include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.85
 #include "Masking", version>1.03
 #include "ImageDisplayScaling", version>=2.06
@@ -815,20 +815,21 @@ Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 	return 0
 End
 //
-ThreadSafe Static Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
-	Variable h,k,l				// hkl value
-
-	if (numtype(h+k+l))
-		return num2str(h)+","+num2str(k)+","+num2str(l)
-	endif
-//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
-	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
-	String str=""
-	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
-	str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
-	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
-	return str
-End
+// use version of hkl2IgorBarStr() that is in Latticesym.ipf
+//ThreadSafe Static Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+//	Variable h,k,l				// hkl value
+//
+//	if (numtype(h+k+l))
+//		return num2str(h)+","+num2str(k)+","+num2str(l)
+//	endif
+////	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
+//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+//	String str=""
+//	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
+//	str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
+//	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
+//	return str
+//End
 //
 //Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 //	Variable i
