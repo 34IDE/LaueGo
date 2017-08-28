@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.76
+#pragma version = 2.77
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -33,13 +33,13 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	if ((kind==1) || (kind==2))		// an experiment (packed or unpacked)
 		PathInfo $pathName				// expand the path name, "/Users/name/data/Copper" is better than "home'
 		pathName = SelectString(V_flag,pathName+":",S_path)
-		printf "\r%s  %s  restarting this file on '%s' from '%s%s'\r\r",date(),time(),getHostName(1),pathName,file
+		printf "\r%s  %s  restarting this file on '%s' from '%s%s'  [%s]\r\r",date(),time(),getHostName(1),pathName,file,VersionStatusHash(0)
 		ExperimentModified 0			// mark this experiment as still unmodified
 	endif
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
-	printf "%s  %s  starting new Untitled Igor Experiment on '%s'\r\r",date(),time(),getHostName(1)
+	printf "%s  %s  starting new Untitled Igor Experiment on '%s'  [%s]\r\r",date(),time(),getHostName(1),VersionStatusHash(0)
 
 	CheckStartupPrefs()
 	ExperimentModified 0				// mark this experiment as still unmodified
@@ -49,7 +49,7 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	//	MoveWindow /C V_left+20,V_top-40,V_right,V_bottom-2
 End
 
-Static Function/T getHostName(local)	// return unix hostname
+Static Function/S getHostName(local)	// return unix hostname
 	Variable local							// 0-> network name (bob.world.com), 1-> local name (Bob's MacBook)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
 		print "Only know how to get user name from a Mac"
@@ -67,6 +67,33 @@ Static Function/T getHostName(local)	// return unix hostname
 	return S_value[1,i]					// first & last char are double-quotes, remove
 End
 
+Static Function/S VersionStatusHash(full)
+	Variable full							// if true returns full hash, otherwise only first 6 characters of buf
+	Variable f
+	Open/R/Z f as SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:LaueGo:VersionStatus.xml"
+	if (V_flag)
+		return ""							// could not open file
+	endif
+	FStatus f
+	if (V_logEOF<2000)					// way too small
+		Close f
+		return ""
+	endif
+
+	String buf=PadString("",2000,0x20)
+	FBinRead f, buf
+	Close f
+	Variable i0=strsearch(buf,"<gitHash>",0)
+	if (i0<0)
+		return ""
+	endif
+	i0 += strlen("<gitHash>")
+	Variable i1=strsearch(buf,"</gitHash>",i0)
+	if (i1<i0)
+		return ""
+	endif
+	return SelectString(full, buf[i0,i0+5], buf[i0,i1-1])
+End
 
 //  ====================================================================================  //
 //  ============================== Startup Configuration ===============================  //
