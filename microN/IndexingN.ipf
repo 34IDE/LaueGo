@@ -1200,6 +1200,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		Make/N=2/FREE mxmy={mx,my}								// location from mouse
 		Make/N=(N,2)/FREE pxpy = FullPeakIndexed[p][9+q][ip] - mxmy[q]
 		MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all indexed peaks
+		if (DimSize(FullPeakIndexed,1)>11)						// only intersested in pixels on this detector
+			dpxpy2 = FullPeakIndexed[p][11][ip]==dNum ? dpxpy2[p] : NaN
+		endif
 		WaveStats/M=1/Q dpxpy2
 		m = V_minLoc
 		wIndex = m
@@ -1239,6 +1242,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		Make/N=2/FREE mxmy={mx,my}								// location from mouse
 		Make/N=(N,2)/FREE pxpy = PeaksForStrain[p][11+q] - mxmy[q]
 		MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all strain refined peaks
+		if (DimSize(PeaksForStrain,1)>14)						// only intersested in pixels on this detector
+			dpxpy2 = PeaksForStrain[p][14]==dNum ? dpxpy2[p] : NaN
+		endif
 		WaveStats/M=1/Q dpxpy2
 		m = V_minLoc
 		wIndex = m
@@ -6568,12 +6574,13 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	endif
 
 	Make/N=3/O/D/FREE qhat
-	Make/N=(N,14)/O/D PeaksForStrain=NaN
+	Make/N=(N,15)/O/D PeaksForStrain=NaN
 	SetDimLabel 1,0,h,PeaksForStrain ;				SetDimLabel 1,1,k,PeaksForStrain ;			SetDimLabel 1,2,l,PeaksForStrain
 	SetDimLabel 1,3,fitQx,PeaksForStrain ;		SetDimLabel 1,4,fitQy,PeaksForStrain ;	SetDimLabel 1,5,fitQz,PeaksForStrain
 	SetDimLabel 1,6,indexQx,PeaksForStrain ;	SetDimLabel 1,7,indexQy,PeaksForStrain ;SetDimLabel 1,8,indexQz,PeaksForStrain
 	SetDimLabel 1,9,fit_Intens,PeaksForStrain;	SetDimLabel 1,10,keV,PeaksForStrain
 	SetDimLabel 1,11,pixelX,PeaksForStrain;		SetDimLabel 1,12,pixelY,PeaksForStrain;	SetDimLabel 1,13,angErr,PeaksForStrain
+	SetDimLabel 1,14,detNum,PeaksForStrain
 	String wnote = ReplaceNumberByKey("patternNum","",pattern,"=")
 	wnote = ReplaceStringByKey("constrain",wnote,constrain,"=")
 	wnote = ReplaceStringByKey("waveClass",wnote,"StrainPeakList","=")
@@ -6597,6 +6604,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 			PeaksForStrain[m][3,5] = Q3s[jmax][q-3]			// store closest fitted q^
 			PeaksForStrain[m][6,8] = qhat[q-6]					// store predicted g^
 			PeaksForStrain[m][9] = Qs[jmax][3]					// 	and its intensity
+			PeaksForStrain[m][14] = FullPeakIndexed[i][11][pattern]	// detector number
 			m += 1
 		else
 			PeaksForStrain[m][] = NaN								// bad point
@@ -6722,7 +6730,10 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		sine = -qhat[3]										// sin(Bragg angle)
 		d = dSpacingFromLatticeConstants(PeaksForStrain[i][0],PeaksForStrain[i][1],PeaksForStrain[i][2],LC[0],LC[1],LC[2],LC[3],LC[4],LC[5])
 		keV = hc/(2*d*sine)
-		PeaksForStrain[i][10][pattern] = keV				// energy of strained reflection (at strained position, not fitted position)
+		PeaksForStrain[i][10] = keV				// energy of strained reflection (at strained position, not fitted position)
+		if (DimSize(PeaksForStrain,1) > 14)
+			dNum = PeaksForStrain[i][14]
+		endif
 		pz = q2pixel(geo.d[dNum],qhat)
 		PeaksForStrain[i][11][pattern] = (real(pz)-(startx-FIRST_PIXEL)-(groupx-1)/2)/groupx		// change to binned pixels
 		PeaksForStrain[i][12][pattern] = (imag(pz)-(starty-FIRST_PIXEL)-(groupy-1)/2)/groupy	// pixels are still zero based
