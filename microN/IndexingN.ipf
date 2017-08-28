@@ -914,7 +914,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 	// use shift to look at the indexing result, use command to look at fitted peaks
 	String win = (s.winName)
-	if (!(s.eventMod&10 && (s.eventCode==4 || s.eventCode==3)) || s.keycode)		// eventMod==2 is shift key, 8 is command, 1 is mouse, and no regular key held down
+	Variable process = (s.eventMod&10 && (s.eventCode==4 || s.eventCode==3)) && (s.keycode==0 || s.keycode==255)		// eventMod==2 is shift key, 8 is command, 1 is mouse, and no regular key held down
+	if (!process)
 		Tag/K/N=indexedPeakInfo/W=$win
 		s.doSetCursor= 0
 		s.cursorCode = 0				// for nothing
@@ -5455,7 +5456,7 @@ Function EstimateConeAngle(dnum, [image, printIt])
 
 	Variable cone=EstimateConeAngleFromDet(g.d[dnum])
 	if (printIt)
-		printf "cone angle to fill detector %g is probably %g¡\r",dnum,cone
+		printf "cone angle to fill detector %g is probably %.3g¡\r",dnum,cone
 	endif
 	return cone
 End
@@ -5466,23 +5467,21 @@ ThreadSafe Static Function EstimateConeAngleFromDet(d)
 	// This routine assumes that you know the hkl at detector center
 	STRUCT detectorGeometry &d			// detector parameters
 
-	Make/N=8/D/FREE pxw={0,0.5,1, 0,1, 0,0.5,1}, pyw={0,0,0, 0.5,0.5, 1,1,1}
-	pxw *= d.Nx-1								// {pxw,pyw} are 8 points around edge of detector
-	pyw *= d.Ny-1
-	Make/N=3/D/FREE qf,q0
+	Make/N=3/D/FREE q0
 	pixel2q(d,(d.Nx-1)/2,(d.Ny-1)/2,q0)// q^ that produces ray to detector center
 	if (norm(q0)==0)
 		q0 = {0,1,0}
 	endif
 
-	Variable i, cone
-	for (cone=0,i=0; i<8; i+=1)			// check 8 points around edge of detector
-		pixel2q(d,pxw[i],pyw[i],qf)		// q^ that produces ray to point on detector
-		cone = max(cone, angleVec2Vec(q0,qf))
-	endfor
+	Make/D/FREE pxpy = {{0,0.5,1, 0,1, 0,0.5,1}, {0,0,0, 0.5,0.5, 1,1,1}}
+	pxpy[][0] *= d.Nx-1						// {pxpy} are 8 points around edge of detector
+	pxpy[][1] *= d.Ny-1
+	Wave Qs = pixel2qVEC(d,pxpy)			// returns the qhat in beam line coords for the 8 points
+
+	MatrixOP/FREE minDot = minVal(Qs x q0)
+	Variable cone = acos(limit(minDot[0],-1,1))*180/PI
 	return cone
 End
-
 
 
 Function RotationBetweenTwoIndexations(windex0,pattern0,windex1,pattern1,[printIt])
@@ -6415,11 +6414,6 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		endif
 	endif
 
-
-
-//	xxxxxxxxx
-//	xxxxxxxxx
-//	xxxxxxxxx
 	if (!WaveExists(FullPeakIndexed))
 		String indexWaveList = WaveListClass("IndexedPeakList*","*","")
 		if (ItemsInList(indexWaveList) < 1)
@@ -6452,13 +6446,6 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	if (mm<1)						// make sure some FullPeakList's exist
 		return ""
 	endif
-//	xxxxxxxxx
-//	xxxxxxxxx
-//	xxxxxxxxx
-
-
-
-
 
 	STRUCT microGeometry geo
 	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
