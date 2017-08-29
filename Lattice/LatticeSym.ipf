@@ -6658,9 +6658,11 @@ ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acc
 	else
 		sprintf hklStr,"%.0f %.0f %.0f",h,k,l
 	endif
+#if (IgorVersion()>7)
 	if (bar)														// only Arial and Tahoma work properly with OVERLINE
 		hklStr = "\\[0\\F'"+BAR_FONT_ALWAYS+"'" + hklStr + "\\F]0"
 	endif
+#endif
 	return hklStr
 End
 //ThreadSafe Function/S hkl2str(h,k,l)	// format h,k,l into a string of acceptable minimal length
@@ -6792,11 +6794,13 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over t
 	return str
 End
 //
-ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has minuses to one using a bar over the following character
+ThreadSafe Function/T minus2bar(str,[spaces,single])	// change an Igor string that has minuses to one using a bar over the following character
 	String str
 	Variable spaces
+	Variable single								// minus sign only applies to next character, otherwise assume integers
 	spaces = ParamIsDefault(spaces) ? 0 : spaces
 	spaces = round(spaces)==limit(spaces,1,5) ? spaces : 0
+	single = 0										// single is only here for compatibility with the Igor 7 version
 
 	String sspaces = PadString("",spaces,0x20), bs
 	sprintf bs, "\\[9\\S\\f01%s\\]9\\M\\X9",sspaces+BCHAR
