@@ -803,8 +803,7 @@ Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 	tsize = tsize>2 && tsize<150 ? tsize : 75
 	String str
 	//	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize
-	//	sprintf str,"\\F'Arial'\\Zr%03d",tsize
-	sprintf str,"\\F'Consolas'\\Zr%03d",tsize
+	sprintf str,"\\F'Arial'\\Zr%03d",tsize
 	str += SelectString (IgorVersion() > 7, "\\[0", "")
 	str += hkl2IgorBarStr(h,k,l)							// change to Igor string with negatives --> bars
 	Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
@@ -1275,7 +1274,6 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 #endif
 		hklStr = hkl2str(h,k,l, bar=1)
 		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r∆=%.2g%s\rhkl=(%s),   #%d",px,py, keV,angleErr,angleErrUnit,hklStr,m
-//		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r∆=%.2g%s\rhkl=(%d %d %d),   #%d",px,py, keV,angleErr,angleErrUnit,h,k,l,m
 		tagStr = "\\Zr090Strained peak position\r" + str
 	endif
 	if (WaveExists(image))

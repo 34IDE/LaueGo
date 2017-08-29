@@ -12,7 +12,8 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 Static Constant ELEMENT_Zmax = 118
 #if (IgorVersion()>7)
-Static strConstant OVERLINE = "\xCC\x85"			// put this before a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
+Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
+Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 #endif
 
 
@@ -2386,7 +2387,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 //	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
 	titleStr += "   \\F'Arial'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
 
-	titleStr = minus2bar(titleStr)								// change all minuses to a bar over following character
+	titleStr = minus2bar(titleStr, single=1)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
 	TitleBox structureTitle,pos={imag(sizeLeft),63},title=titleStr, fSize=real(sizeLeft), win=$subWin
 	SetVariable T_LatticeVar disable=(numtype(T_C)>0),win=$subWin
@@ -6636,22 +6637,18 @@ End
 
 ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acceptable minimal length
 	Variable h,k,l
-	Variable bar														// return unicocde string with bars instead of negatives
+	Variable bar														// OPTIONAL, return unicocde string with bars instead of negatives
 	bar = ParamIsDefault(bar) || numtype(bar) ? 0 : bar	// default is negative signs
-	bar = IgorVersion()<7 ? 0 : bar							// not available for Igor 6 (requires unicode support)
-	if (numtype(h+k+l))
-		return "nan,nan,nan"
-	endif
+	bar = IgorVersion()<7 ? 0 : bar							// bar not available for Igor 6 (requires unicode support)
 	h = abs(h)<1e-14 ? 0 : h
 	k = abs(k)<1e-14 ? 0 : k
 	l = abs(l)<1e-14 ? 0 : l
 	String hklStr
-	if (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)	// hkl are non-integers
-		sprintf hklStr,"%g, %g, %g",h,k,l
-		return hklStr
-	endif
-
-	if (bar)
+	if (numtype(h+k+l))
+		hklStr = "nan,nan,nan"
+	elseif (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)
+		sprintf hklStr,"%g, %g, %g",h,k,l					// hkl are non-integers
+	elseif (bar)
 		String sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
 		hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
 	elseif (k<0 || l<0)
@@ -6660,6 +6657,9 @@ ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acc
 		sprintf hklStr,"%.0f%.0f%.0f",h,k,l
 	else
 		sprintf hklStr,"%.0f %.0f %.0f",h,k,l
+	endif
+	if (bar)														// only Arial and Tahoma work properly with OVERLINE
+		hklStr = "\\[0\\F'"+BAR_FONT_ALWAYS+"'" + hklStr + "\\F]0"
 	endif
 	return hklStr
 End
@@ -6749,20 +6749,27 @@ ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string t
 	single = ParamIsDefault(single) || numtype(single) ? 0 : single
 
 	String c, out=""
+	Variable i
 	if (single)
-		String bs = OVERLINE
-		out = ReplaceString("-",str,bs)
+		for (i=0;i<strlen(str);i+=1)
+			if (CmpStr(str[i],"-")==0)		// for each "-" put OVERLINE after the following character
+				i += 1
+				out += str[i]+OVERLINE
+			else
+				out += str[i]
+			endif
+		endfor
 	else
-		Variable i, ic, neg=0
+		Variable ic, neg=0
 		for (i=0,neg=0; i<strlen(str); i+=1)
 			c = str[i]
 			ic = char2num(str[i])
 			if (ic==45)							// a negative sign
 				neg = 1
-			elseif (48<=ic && ic<=57)			// c is a digit {0,1,2,3,4,5,6,7,8,9}
-				out += SelectString(neg, "", OVERLINE)+c
+			elseif (48<=ic && ic<=57)		// c is a digit {0,1,2,3,4,5,6,7,8,9}
+				out += c+SelectString(neg, "", OVERLINE)
 			else
-				out += SelectString(neg && ic>32, "", OVERLINE)+c
+				out += c+SelectString(neg && ic>32, "", OVERLINE)
 				neg = 0							// not a digit, reset neg and copy char
 			endif
 		endfor
