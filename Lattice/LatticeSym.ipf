@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.28
+#pragma version = 6.29
 #include "Utility_JZT" version>=4.26
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -11,6 +11,10 @@
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 Static Constant ELEMENT_Zmax = 118
+#if (IgorVersion()>7)
+Static strConstant OVERLINE = "\xCC\x85"			// put this before a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
+#endif
+
 
 //	remember to execute    InitLatticeSymPackage()
 //
@@ -2379,7 +2383,8 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_gamma,noedit=0,frame=1,win=$subWin
 		titleStr += "Triclinic"
 	endif
-	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+//	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+	titleStr += "   \\F'Arial'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
 
 	titleStr = minus2bar(titleStr)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
@@ -6629,26 +6634,55 @@ ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal 
 End
 
 
-ThreadSafe Function/S hkl2str(h,k,l)	// format h,k,l into a string of acceptable minimal length
+ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acceptable minimal length
 	Variable h,k,l
+	Variable bar														// return unicocde string with bars instead of negatives
+	bar = ParamIsDefault(bar) || numtype(bar) ? 0 : bar	// default is negative signs
+	bar = IgorVersion()<7 ? 0 : bar							// not available for Igor 6 (requires unicode support)
 	if (numtype(h+k+l))
 		return "nan,nan,nan"
 	endif
 	h = abs(h)<1e-14 ? 0 : h
 	k = abs(k)<1e-14 ? 0 : k
 	l = abs(l)<1e-14 ? 0 : l
-	String hkl
+	String hklStr
 	if (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)	// hkl are non-integers
-		sprintf hkl,"%g, %g, %g",h,k,l
-	elseif (k<0 || l<0)
-		sprintf hkl,"%.0f, %.0f, %.0f",h,k,l
-	elseif (abs(h)<10 && k<10 && l<10)
-		sprintf hkl,"%.0f%.0f%.0f",h,k,l
-	else
-		sprintf hkl,"%.0f %.0f %.0f",h,k,l
+		sprintf hklStr,"%g, %g, %g",h,k,l
+		return hklStr
 	endif
-	return hkl
+
+	if (bar)
+		String sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
+		hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
+	elseif (k<0 || l<0)
+		sprintf hklStr,"%.0f, %.0f, %.0f",h,k,l
+	elseif (abs(h)<10 && k<10 && l<10)
+		sprintf hklStr,"%.0f%.0f%.0f",h,k,l
+	else
+		sprintf hklStr,"%.0f %.0f %.0f",h,k,l
+	endif
+	return hklStr
 End
+//ThreadSafe Function/S hkl2str(h,k,l)	// format h,k,l into a string of acceptable minimal length
+//	Variable h,k,l
+//	if (numtype(h+k+l))
+//		return "nan,nan,nan"
+//	endif
+//	h = abs(h)<1e-14 ? 0 : h
+//	k = abs(k)<1e-14 ? 0 : k
+//	l = abs(l)<1e-14 ? 0 : l
+//	String hkl
+//	if (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)	// hkl are non-integers
+//		sprintf hkl,"%g, %g, %g",h,k,l
+//	elseif (k<0 || l<0)
+//		sprintf hkl,"%.0f, %.0f, %.0f",h,k,l
+//	elseif (abs(h)<10 && k<10 && l<10)
+//		sprintf hkl,"%.0f%.0f%.0f",h,k,l
+//	else
+//		sprintf hkl,"%.0f %.0f %.0f",h,k,l
+//	endif
+//	return hkl
+//End
 
 
 ThreadSafe Function str2hkl(hklStr,h,k,l)
@@ -6697,13 +6731,52 @@ End
 //	End
 
 
+#if (IgorVersion() > 7)
+ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+	Variable h,k,l				// hkl value
+	if (numtype(h+k+l))
+		return num2str(h)+","+num2str(k)+","+num2str(l)
+	endif
+	//	String sp=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
+	String sp=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+	//	print h,k,l,"     ",minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
+	return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
+End
+//
+ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string that has minuses to one using a bar over the following character
+	String str
+	Variable single								// minus sign only applies to next character, otherwise assume integers
+	single = ParamIsDefault(single) || numtype(single) ? 0 : single
+
+	String c, out=""
+	if (single)
+		String bs = OVERLINE
+		out = ReplaceString("-",str,bs)
+	else
+		Variable i, ic, neg=0
+		for (i=0,neg=0; i<strlen(str); i+=1)
+			c = str[i]
+			ic = char2num(str[i])
+			if (ic==45)							// a negative sign
+				neg = 1
+			elseif (48<=ic && ic<=57)			// c is a digit {0,1,2,3,4,5,6,7,8,9}
+				out += SelectString(neg, "", OVERLINE)+c
+			else
+				out += SelectString(neg && ic>32, "", OVERLINE)+c
+				neg = 0							// not a digit, reset neg and copy char
+			endif
+		endfor
+	endif
+	return out
+End
+#else
 ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
 	Variable h,k,l				// hkl value
 
 	if (numtype(h+k+l))
 		return num2str(h)+","+num2str(k)+","+num2str(l)
 	endif
-//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
+	//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
 	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
 	String str=""
 	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
@@ -6711,8 +6784,7 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over t
 	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
 	return str
 End
-
-
+//
 ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has minuses to one using a bar over the following character
 	String str
 	Variable spaces
@@ -6724,7 +6796,7 @@ ThreadSafe Function/T minus2bar(str,[spaces])		// change an Igor string that has
 	str = ReplaceString("-",str,bs)
 	return str
 End
-
+#endif
 
 //	Function copy_xtal(target,source)						// copy a crystalStructure source to target
 //		STRUCT crystalStructure &source

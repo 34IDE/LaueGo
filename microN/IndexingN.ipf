@@ -802,8 +802,9 @@ Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 	Variable tsize
 	tsize = tsize>2 && tsize<150 ? tsize : 75
 	String str
-	//	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize	// use for gfMult=100
-	sprintf str,"\\Zr%03d\\[0",tsize	// use for gfMult=100
+	//	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize
+	//	sprintf str,"\\F'Arial'\\Zr%03d",tsize
+	sprintf str,"\\F'Consolas'\\Zr%03d",tsize
 	str += hkl2IgorBarStr(h,k,l)							// change to Igor string with negatives --> bars
 	Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
 	px = limit(px,0,DimSize(image,0)-1)
@@ -1010,7 +1011,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	endif
 	my = (V_min-V_max)*vert + V_max
 
-	String tagStr="", str, SpaceGroupID=""
+	String tagStr="", str, SpaceGroupID="", hklStr=""
 	Variable h,k,l, angleErr,keV=NaN, SpaceGroupIDnum
 	Variable dist2, m
 	Variable px,py
@@ -1125,7 +1126,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			sprintf str,"\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'∞\\F]0,   #%d",theta*180/PI,m
 			tagStr += str
 		elseif (useMissing)
-			sprintf tagStr,"\\Zr090Missing peak: (%.2f, %.2f)\r(%d %d %d) at %.4f keV,   #%d",px,py,missing[imiss][0],missing[imiss][1],missing[imiss][2],keV,imiss
+			hklStr = hkl2str(missing[imiss][0],missing[imiss][1],missing[imiss][2], bar=1)
+			sprintf tagStr,"\\Zr090Missing peak: (%.2f, %.2f)\r(%s) at %.4f keV,   #%d",px,py,hklStr,keV,imiss
 			String desc = StringByKey("xtalDesc",note(missing),"=")
 			if (strlen(desc)>0)
 				tagStr +="\r"+desc
@@ -1160,7 +1162,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				CloseAllowedhkl(hkli)
 				MatrixOp/O/FREE xyz = recip x hkli
 				keV = hc*norm(xyz)/(4*PI*sin(theta))
-				sprintf str, "hkl = (%g %g %g),  %.4f keV",hkli[0],hkli[1],hkli[2],keV
+				hklStr = hkl2str(hkli[0],hkli[1],hkli[2], bar=1)
+				sprintf str, "hkl = (%s),  %.4f keV",hklStr,keV
 				tagStr += "\r"+str
 				if (useFitted)
 					MatrixOp/O/FREE hkl = recip x hkli			// go from integral hkl to Q in BL
@@ -1187,7 +1190,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				CloseAllowedhkl(hkli)
 				MatrixOp/O/FREE xyz = recip x hkli
 				keV = hc*norm(xyz)/(4*PI*sin(theta))
-				sprintf str, "hkl = (%g %g %g),  %.4f keV",hkli[0],hkli[1],hkli[2],keV
+				hklStr = hkl2str(hkli[0],hkli[1],hkli[2], bar=1)
+				sprintf str, "hkl = (%s),  %.4f keV",hklStr,keV
 				tagStr += "\r"+str
 			endif
 		endif
@@ -1226,10 +1230,11 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(SG)
 		endif
 
+		hklStr = hkl2str(h,k,l, bar=1)
 		if (ip>0)
-			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+angFmt+" (deg)",h,k,l,keV,px,py,m,ip,angleErr
+			sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+angFmt+" (deg)",hklStr,keV,px,py,m,ip,angleErr
 		else
-			sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+angFmt+" (deg)",h,k,l,keV,px,py,m,angleErr
+			sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+angFmt+" (deg)",hklStr,keV,px,py,m,angleErr
 		endif
 		tagStr = "\\Zr090Indexed peak position\r" + str
 		tagStr += SelectString(numtype(SpaceGroupIDnum),"\r"+getHMsym2(SpaceGroupIDnum)+"    Space Group "+SpaceGroupID,"")
@@ -1267,7 +1272,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 #else
 		String angleErrUnit = "°"
 #endif
-		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r∆=%.2g%s\rhkl=(%d %d %d),   #%d",px,py, keV,angleErr,angleErrUnit,h,k,l,m
+		hklStr = hkl2str(h,k,l, bar=1)
+		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r∆=%.2g%s\rhkl=(%s),   #%d",px,py, keV,angleErr,angleErrUnit,hklStr,m
+//		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r∆=%.2g%s\rhkl=(%d %d %d),   #%d",px,py, keV,angleErr,angleErrUnit,h,k,l,m
 		tagStr = "\\Zr090Strained peak position\r" + str
 	endif
 	if (WaveExists(image))
