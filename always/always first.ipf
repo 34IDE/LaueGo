@@ -70,7 +70,12 @@ End
 Static Function/S VersionStatusHash(full)
 	Variable full							// if true returns full hash, otherwise only first 6 characters of buf
 	Variable f
-	Open/R/Z f as SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:LaueGo:VersionStatus.xml"
+	String fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:LaueGo:VersionStatus.xml"
+	Open/R/Z f as fname
+	if (V_flag)								// check in 6, Open has trouble following links
+		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
+		Open/R/Z f as fname
+	endif
 	if (V_flag)
 		return ""							// could not open file
 	endif
