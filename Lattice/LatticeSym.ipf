@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
 #pragma version = 6.29
-#include "Utility_JZT" version>=4.26
+#include "Utility_JZT" version>=4.36
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -246,9 +246,9 @@ Menu "Analysis"
 		"angle between two hkl's",angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN)
 		"  Convert old xtl files to new xml files",ConverXTLfile2XMLfile("")
 		"-"
-		MenuItemIfWindowAbsent("Include Powder Patterns Support","PowderPatterns.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"PowderPatterns\", version>=0.10";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_PowderPatternLattice()"
+		MenuItemIfWindowAbsent("Include Powder Patterns Support","PowderPatterns.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"PowderPatterns\", version>=0.24";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_PowderPatternLattice()"
 		help = {"Load Function used to compute Powder Patterns from Loaded Lattice"}
-		MenuItemIfWindowAbsent("Include Atom View Support","AtomView.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"AtomView\", version>=0.17";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_AtomViewLattice()"
+		MenuItemIfWindowAbsent("Include Atom View Support","AtomView.ipf","WIN:128"), Execute/P "INSERTINCLUDE  \"AtomView\", version>=0.43";Execute/P "COMPILEPROCEDURES ";Execute/P "Init_AtomViewLattice()"
 		help = {"Load Function used to Display Atoms from the Loaded Lattice in a Gizmo"}
 	End
 End
@@ -2657,13 +2657,13 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonAtomView"))	// add support for AtomView
 		String cmd
 		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",\"%s\")",ba.win,SpaceGroupID
-		Execute/P "INSERTINCLUDE \"AtomView\", version>=0.17"
+		Execute/P "INSERTINCLUDE \"AtomView\", version>=0.43"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P "Init_AtomViewLattice()"
 		Execute/P cmd
 	elseif (stringmatch(ctrlName,"buttonPowderPattern"))	// add support for PowderPatterns
 		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",\"%s\")",ba.win,SpaceGroupID
-		Execute/P "INSERTINCLUDE \"PowderPatterns\", version>=0.10"
+		Execute/P "INSERTINCLUDE \"PowderPatterns\", version>=0.24"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P "Init_PowderPatternLattice()"
 		Execute/P cmd

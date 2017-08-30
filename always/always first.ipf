@@ -5,11 +5,11 @@
 #pragma hide = 1
 
 #if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
-#include "GeneralFirst", version>=3.35
+#include "GeneralFirst", version>=3.40
 #endif
 
 #if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & (4+8+16)	// LauGo or Scattering or APS Specific
-#include "LaueGoFirst", version>=2.07
+#include "LaueGoFirst", version>=2.10
 #endif
 
 #if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32

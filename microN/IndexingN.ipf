@@ -1,21 +1,21 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.90
+#pragma version = 4.91
 #include "LatticeSym", version>=6.28
-#include "microGeometryN", version>=1.85
-#include "Masking", version>1.03
-#include "ImageDisplayScaling", version>=2.06
+#include "microGeometryN", version>=1.98
+#include "Masking", version>1.04
+#include "ImageDisplayScaling", version>=2.16
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&2)
 #include "tiff"
 //#else
 #endif
 //#if (Exists("HDF5OpenFile")==4)
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&1 && Exists("HDF5OpenFile")==4)
-#include "HDF5images", version>=0.32
+#include "HDF5images", version>=0.35
 #endif
 #if (NumVarOrDefault("root:Packages:MICRO_GEOMETRY_VERSION",0)&4)
-#include "WinView", version>=2.04
+#include "WinView", version>=2.06
 //#else
 #endif
 Constant INDEXING_MAX_CALC = 30
@@ -2013,7 +2013,7 @@ Function/T pickIndexingFunction(path)
 		return ""
 	endif
 	if (StringMatch(exe,"[#include internal Igor functions]"))	// now include Indexing_Internal.ipf
-		Execute/P "INSERTINCLUDE  \"Indexing_Internal\", version>=0.10"
+		Execute/P "INSERTINCLUDE  \"Indexing_Internal\", version>=0.30"
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P "pickIndexingFunction(\"\")"
 		DoAlert 0, "re-running to Select an internal Igor indexing routine."
@@ -7350,7 +7350,7 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetector
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	if (exists("MakeStereo")!=6)
 		print "Loading Stereographic package"
-		Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.83";Execute/P "COMPILEPROCEDURES "
+		Execute/P "INSERTINCLUDE  \"StereographicProjection\", version>=2.86";Execute/P "COMPILEPROCEDURES "
 		return 1
 	endif
 	if (!WaveExists(FullPeakIndexed))
