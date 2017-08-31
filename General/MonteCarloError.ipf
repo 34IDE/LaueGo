@@ -5,14 +5,79 @@
 Static Constant MCerrorMaxXvals = 20
 
 Menu "Macros"
-	"Propogate Errors thru Function...", ErrorFromFunction("", $"", $"")
+	"Propogate Errors thru Function...", ErrorThruFunction("", $"", $"")
 End
 
-Function/S ErrorFromFunction(funcName, xWave, errWave, [MC, printIt])
+//			Error Propogation thru a Function, using a Monte Carlo method
+//
+// Determine the error in the output of a function based on the errors (standard deviations) of the input values.
+// funcName (or func) is a function of Nx variables with each variable having its own standard deviation.
+// You can use either ErrorThruFunction() or ErrorFromMonteCarlo() to calculate the standard deviation of func(x-variables)
+// arising from the standard deviation of each of the x inputs.
+//
+// func must have a single argument that is a wave with the x-values, an example is:
+//
+//	Function genericRadius(xVal)					// computes the distance from origin of xVal in N-dimensional space
+//		Wave xVal										// the N input X values
+//		return norm(xVal)
+//	End
+//
+//
+//
+// two examples of its use is:
+//
+//	Function test1()									// test using ErrorThruFunction()
+//		Make/N=3/D/FREE xWave={3,1,0.2}, xErr={0.01,1,0.1}			// separate wave for x and x-error
+//		ErrorThruFunction("genericRadius", xWave, xErr, printIt=1)
+//
+//		Make/N=(3,2)/D/FREE xValErr = {{3,1,0.2}, {0.01,1,0.1}}	// x and x-error as two columns of one wave
+//		ErrorThruFunction("genericRadius", xValErr, $"", printIt=1)
+//	End
+//
+//
+//	Function test2()									// test using ErrorFromMonteCarlo()
+//		STRUCT MCerrorStructure MC				// describes the error from a Monte Carlo error analysis
+//		MCerror#Init_MCerrorStructure(MC)
+//		FUNCREF MonteCarloFuncitonProto func = genericRadius
+//		MC.Nx = 3
+//		MC.xVal[0] = 3		;	MC.xErr[0] = 0.01
+//		MC.xVal[1] = 1		;	MC.xErr[1] = 1
+//		MC.xVal[2] = 0.2	;	MC.xErr[2] = 0.1
+//		MC.funcName = StringByKey("NAME",FuncRefInfo(func))
+//		if (MCerror#ErrorFromMonteCarlo(MC))				// returns value and error of func(xVal,xErr)
+//			print "ERROR -- failure calling ErrorFromMonteCarlo()"
+//		else
+//			print MCerror#MCerrorStructure2str(MC)
+//		endif
+//	End
+//
+//
+//
+//	or you can simply run:
+//				ErrorThruFunction("", $"", $"")
+//	and you will be prompted for the function name and Xwaves
+//
+//
+//	The MC is an MCerrorStructure that contains all of the details (both inputs and outputs).
+//	See the definition of MCerrorStructure below for details.
+//
+//	The first 4 items in MC are the inputs to the problem {funcName, Nx, xVal[], xErr[]}
+//	And the last 6 {N,Ntotal,value,err,avg,sdev} are the result of the Monte Carlo analysis.
+//
+//	NOTE, avg is likely to be shifted a bit from value if func(...) is not flat at xVal.
+//	e.g. consider when func(x) = exp(x), then symmetric errors in x tend to favor + excursions over - ones.
+
+
+
+
+
+
+Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, printIt])
+	// returns result of error propogation as a "key=value;" list
 	String funcName
 	Wave xWave								// x values (or 2 columns with x & err)
 	Wave errWave							// errors, if xWave has 2 columns, then errWave can be NULL
-	STRUCT MCerrorStructure &MC		// OPTIONAL, describes the error from a Monte Carlo error analysis
+	STRUCT MCerrorStructure &MC		// OPTIONAL, will be filled by this function (only an output)
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRtStackInfo(2))==0 : printIt
 
@@ -38,7 +103,7 @@ Function/S ErrorFromFunction(funcName, xWave, errWave, [MC, printIt])
 	if (printIt)
 		xName = SelectString(WaveExists(xWave), "$\"\"", NameOfWave(xWave))
 		errName = SelectString(WaveExists(errWave), "$\"\"", NameOfWave(errWave))
-		printf "ErrorFromFunction(\"%s\", %s, %s)\r", funcName,xName,errName
+		printf "ErrorThruFunction(\"%s\", %s, %s)\r", funcName,xName,errName
 	endif
 	Variable Nx=DimSize(xWave,0)
 	if (!(Nx>0))
@@ -89,23 +154,6 @@ Function/S ErrorFromFunction(funcName, xWave, errWave, [MC, printIt])
 End
 
 
-Structure MCerrorStructure			// describes the error from a Monte Carlo error analysis
-	// These first 4 are filled in by the user
-	char		funcName[50]				// name of function used to evaluate
-	int32		Nx								// number of X values (never more than MCerrorMaxXvals)
-	double	xVal[MCerrorMaxXvals]	// X values for input to func
-	double	xErr[MCerrorMaxXvals]	// errors for each of the X values (standard deviation)
-	//
-	// The following are computed by ErrorFromMonteCarlo()
-	int32		N								// number of VALID evaluations of function
-	int32		Ntotal						// total number of evaluations of function
-	double	value							// value of func(xVal)
-	double	err							// standard deviation of N evaluations about value (NOT average)
-	double	avg							// average value of function (this may be different than value)
-	double	sdev							// standard deviation of N evaluations about average
-EndStructure
-//
-//
 Static Function ErrorFromMonteCarlo(MC,[Nmax])// fills MC structure with info about errors of func(xVal), loops until avg is stable
 	STRUCT MCerrorStructure &MC					// describes the error from a Monte Carlo error analysis
 	Variable Nmax										// max number of evaluations to use. If not passed, use 1e6, it usually stops first
@@ -162,6 +210,26 @@ Function MonteCarloFuncitonProto(xVal)
 	Wave xVal											// the input X values
 	return NaN
 End
+
+
+Structure MCerrorStructure			// describes the error from a Monte Carlo error analysis
+	// These first 4 are filled in by the user
+	char		funcName[50]				// name of function used to evaluate
+	int32		Nx								// number of X values (never more than MCerrorMaxXvals)
+	double	xVal[MCerrorMaxXvals]	// X values for input to func
+	double	xErr[MCerrorMaxXvals]	// errors for each of the X values (standard deviation)
+	//
+	// The following are computed by ErrorFromMonteCarlo()
+	int32		N								// number of VALID evaluations of function
+	int32		Ntotal						// total number of evaluations of function
+	double	value							// value of func(xVal)
+	double	err							// standard deviation of N evaluations about value (NOT average)
+	double	avg							// average value of function (this may be different than value)
+	double	sdev							// standard deviation of N evaluations about average
+	// NOTE, avg is likely to be shifted a bit from value if func(...) is not flat at xVal.
+	//		Consider the case of func(x) = exp(x), then symmetric errors in x tend to favor + excursions over - ones.
+EndStructure
+//
 
 Static Function/S Init_MCerrorStructure(MC)
 	STRUCT MCerrorStructure &MC					// describes the error from a Monte Carlo error analysis
