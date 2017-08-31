@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, August 30, 2017" time="01:56:57 PM CDT" isoTime="2017-08-30T13:56:57"></written>
+	<written date="Thursday, August 31, 2017" time="10:20:50 AM CDT" isoTime="2017-08-31T10:20:50"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>588376983bbf88d1388ce013e0f2430fbf1d1110</gitHash>
-	<fileCount>241</fileCount>
+	<gitHash>0a4c5dfb1ca03d585256aa7bbdc589295da2513b</gitHash>
+	<fileCount>242</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
@@ -36,6 +36,7 @@
 	<file version="nan" time="2016-02-17T12:54:23" md5="ef10b7bb01c0e7379c7f05e064760951" sha256="b80479b32f1ab5767df96f8725726fdadeb1be86af3b75359bbae511de81cce1" ext=".xml">materials/standard xtals/IN625.xml</file>
 	<file version="1.12" time="2016-09-26T10:10:34" md5="6b386dd145b76aadbbe1910dd998ab5c" sha256="e9b9f208201856288698964b20168095f64166d3bfdac92ca84eaa5b6f66402d" ext=".ipf">APS/mdaFiles.ipf</file>
 	<file version="2.15" time="2017-04-19T11:38:58" md5="7fa4dc54d1501cc4f5d029f1baba03b9" sha256="94854cc04f094a20a7f5255fdd623967cb45279bee17c8ba9ac11bd713c71097" ext=".ipf">General/PhysicalConstants.ipf</file>
+	<file version="0.1" time="2017-08-31T10:17:11" md5="37980215415940fe281b4461ed13c7ec" sha256="176d02d57c1ccf1684ff6858084d2db137b0c58af8d52897cca34192f4a472cc" ext=".ipf">General/MonteCarloError.ipf</file>
 	<file version="nan" time="2016-06-23T11:30:26" md5="fc075faadf5dfe77f35fe573b3c9bab5" sha256="096a336f712940e93165ca85df11025e556a2719f0c48adfe1432ab41543e748" ext=".xml">materials/standard xtals/Graphite.xml</file>
 	<file version="2" time="2016-01-08T10:13:18" md5="422f6a96eb0d40cc58391319010fe5ab" sha256="96c882280be5851b21b5fce994b6526f06276208da15c626d5aa7ba48aad9003" ext=".ipf">General/CromerLiberman.ipf</file>
 	<file version="nan" time="2017-03-06T15:13:35" md5="b5f4d3dfd47a7ae1a8054c9d1a56c19b" sha256="028b8e07b1b4dce4e340fe426bb247639321bf6b0f3e87690c4fae3a1155383c" ext=".xml">materials/standard xtals/BiFeO3.xml</file>
