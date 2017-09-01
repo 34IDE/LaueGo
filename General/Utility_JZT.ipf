@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.36
+#pragma version = 4.37
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5276,12 +5276,14 @@ ThreadSafe Function/T num2Ordinal(n)
 	// converts integer n to ordinal string, e.g. 1 --> "1st"
 	// if n is not an integer then just append "th"
 	Variable n		// an integer
-	String ending=StringFromList(abs(n),"th;st;nd;rd;")
+	Variable i = mod(abs(n),10)
+	i = (abs(n) == limit(abs(n),10,19)) ? 0 : i		// because 11, 12, 13 just get "th", but 31 --> "31st"
+	String ending=StringFromList(i,"th;st;nd;rd;")
 	ending = SelectString(strlen(ending),"th",ending)
-	if (numtype(n))
+	if (numtype(n))				// NaN or Inf
 		ending = ""
 	elseif (abs(round(n)-n)>1e-5)
-		ending = "th"
+		ending = "th"				// not an integer
 	else
 		n = round(n)
 	endif
