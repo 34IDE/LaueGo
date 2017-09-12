@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.37
+#pragma version = 4.38
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1632,6 +1632,10 @@ ThreadSafe Static Function XMLfindCloser(buf,xmltag,start)
 	endif
 
 	String close1="</"+xmltag+">", close2="/>"
+	if (cmpstr(xmltag,"!--")==0)							// special rule for comments
+		close1 = "-->"
+		close2 = close1
+	endif
 	Variable j0,j1, i1,i2, iClose						// jn are openers, in are closers
 
 	do

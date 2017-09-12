@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -1121,6 +1121,8 @@ Static Function Make_ElementDataWaves()
 	if (strlen(elementData)<100)
 		return 1
 	endif
+	elementData = XMLremoveComments(elementData)
+
 	Variable Zmax = ItemsInList(ELEMENT_Symbols)
 	Make/N=(Zmax+1)/T/O root:Packages:Elements:name/WAVE=name = ""
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:amu/WAVE=amu = NaN
