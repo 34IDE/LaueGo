@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.38
+#pragma version = 4.39
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3046,7 +3046,8 @@ Function/C waveRange(ww,[name,printIt])
 	WaveStats/M=1/Q ww
 	if (printIt)
 		name = SelectString(ParamIsDefault(name), name, NameOfWave(ww))
-		printf "\"%s\"   range=[%g, %g], %s=%.3g  --> %.2g%% variation\r", name,V_min,V_max, gDELTA, V_max-V_min, (V_max-V_min)/V_avg*100
+		Variable variation = (V_max-V_min)==0 ? 0 : (V_max-V_min)/V_avg
+		printf "\"%s\"   range=[%g, %g], %s=%.3g  --> %.2g%% variation\r", name,V_min,V_max, gDELTA, V_max-V_min, variation*100
 	endif
 	return cmplx(V_min,V_max)
 End
