@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.29
+#pragma version = 6.30
 #include "Utility_JZT" version>=4.36
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -176,6 +176,7 @@ Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works wel
 //	with verison 6.26, fixed sign problem in lowestOrderHKL()
 //	with verison 6.27, fixed up reading xml files in readCrystalStructureXML()
 //	with version 6.28, simplified minus2bar(), and changed hkl2IgorBarStr()
+//	with version 6.30, fixed error writing WyckoffSymbol to an xml file
 
 //	Rhombohedral Transformation:
 //
@@ -3735,7 +3736,7 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 			cif += "\t\t<occupancy>"+num2StrFull(xtal.atom[i].occ)+"</occupancy>"+NL
 		endif
 		if (strlen(xtal.atom[i].WyckoffSymbol)>0)
-			cif += "\t\t<WyckoffSymbol>"+xtal.atom[i].WyckoffSymbol+"</WyckoffSymb>"+NL
+			cif += "\t\t<WyckoffSymbol>"+xtal.atom[i].WyckoffSymbol+"</WyckoffSymbol>"+NL
 		endif
 
 		itemp = atomThermalInfo(xtal.atom[i])

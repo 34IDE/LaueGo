@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.15
+#pragma version = 1.16
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -9,13 +9,13 @@
 
 Menu LaueGoMainMenuName
 	SubMenu "Laue Simulation"
-		"Make Simulated Laue Pattern", MakeSimulatedLauePattern(NaN,NaN,NaN,NaN,NaN)
+		"Make Simulated Laue Pattern", MakeSimulatedLauePattern(NaN,NaN)
 		"  re-Plot a Laue Pattern",DisplaySimulatedLauePattern($"")
 	End
 End
 Menu "Analysis"
 	SubMenu "Laue Simulation"
-		"Make Simulated Laue Pattern", MakeSimulatedLauePattern(NaN,NaN,NaN,NaN,NaN)
+		"Make Simulated Laue Pattern", MakeSimulatedLauePattern(NaN,NaN)
 		"  re-Plot a Laue Pattern",DisplaySimulatedLauePattern($"")
 	End
 End
@@ -193,10 +193,10 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	Variable icnt=0
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)	// display a progress bar
 	for (l=0,Nspots=0; abs(l)<=lmax; l = l<0 ? -l : -(l+1))
-		for (k=0; abs(k)<=kmax; k = k<0 ? -k : -(k+1))
+		for (k=0; abs(k)<=kmax; k = k<0 ? -k : -(k+1))					// for kmax=4, k={0,-1,1,-2,2,-3,3,-4,4}
 			for (h=0; abs(h)<=hmax; h = h<0 ? -h : -(h+1))
 				hkl = {h,k,l}
-				if (parallel_hkl_exists(h,k,l,Nspots,PeakIndexed))	// already got this reflection
+				if (parallel_hkl_exists(h,k,l,Nspots,PeakIndexed))		// already got this reflection
 					continue
 				elseif (h==0 && k==0 && l==0)
 					continue

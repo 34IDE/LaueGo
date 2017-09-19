@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Ba(SO4)</chemical_name_common>
+	<space_group_IT_number>62</space_group_IT_number>
+	<space_group_id>62:cab</space_group_id>
+	<H-M>Pbnm</H-M>
+	<amcsd>5559</amcsd>
+	<cell>
+		<a unit="nm">0.71540</a>
+		<b unit="nm">0.88790</b>
+		<c unit="nm">0.54540</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<volume>0.346440076164</volume>
+	</cell>
+	<atom_site>
+		<label>Ba</label>
+		<symbol>Ba</symbol>
+		<fract_xyz>0.15842 0.18453 0.25</fract_xyz>
+		<valence>2</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11>0.01025</aniso_U_11>
+		<aniso_U_22>0.00843</aniso_U_22>
+		<aniso_U_33>0.01298</aniso_U_33>
+		<aniso_U_12>-0.00048</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract_xyz>0.19082 0.43749 0.75</fract_xyz>
+		<valence>6</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11>0.00910</aniso_U_11>
+		<aniso_U_22>0.00840</aniso_U_22>
+		<aniso_U_33>0.00930</aniso_U_33>
+		<aniso_U_12>0.00033</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.10720 0.58700 0.75</fract_xyz>
+		<valence>-2</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11>0.0266</aniso_U_11>
+		<aniso_U_22>0.0131</aniso_U_22>
+		<aniso_U_33>0.028</aniso_U_33>
+		<aniso_U_12>0.0105</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.0498 0.3176 0.75</fract_xyz>
+		<valence>-2</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11>0.0117</aniso_U_11>
+		<aniso_U_22>0.0209</aniso_U_22>
+		<aniso_U_33>0.0202</aniso_U_33>
+		<aniso_U_12>-0.0067</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.3118 0.4194 0.9704</fract_xyz>
+		<valence>-2</valence>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<aniso_U_11>0.0149</aniso_U_11>
+		<aniso_U_22>0.0149</aniso_U_22>
+		<aniso_U_33>0.0103</aniso_U_33>
+		<aniso_U_12>-0.002</aniso_U_12>
+		<aniso_U_13>-0.0028</aniso_U_13>
+		<aniso_U_23>0.0008</aniso_U_23>
+	</atom_site>
+	<citation>
+		S.D. Jacobsen, J.R. Smyth, R.J. Swope, R.T. Downs, The Canadian Mineralogist, 36 (1998), 1053-1060
+		"Rigid-body character of the SO4 groups in celestine, anglesite and barite"
+	</citation>
+</cif>
