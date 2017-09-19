@@ -24,9 +24,9 @@ End
 
 Static Constant hc = 1.239841857		// keV-nm
 
-Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detector,printIt])
-	Variable Elo,Ehi						// energy range (keV)
-	Variable h0,k0,l0					// central hkl
+Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,printIt])
+	Variable Elo,Ehi					// energy range (keV)
+	Variable h,k,l						// central hkl
 	Wave recipSource					// OPTIONAL, either a (3,3) mat with recip lattice, OR a waveClass=IndexedPeakList* with a recip_lattice0
 	Variable Nmax						// maximum number of reflection to generate
 	Variable detector					// detector number [0,MAX_Ndetectors-1]
@@ -36,9 +36,10 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	detector = ParamIsDefault(detector) ? 0 : detector
 	detector = detector==round(limit(detector,0,MAX_Ndetectors-1)) ? detector : NaN
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	Variable h0=h, k0=k, l0=l								// rename central hkl
 
 	STRUCT crystalStructure xtal							// crystal structure
-	if (FillCrystalStructDefault(xtal))						//fill the geometry structure with current default values
+	if (FillCrystalStructDefault(xtal))				//fill the geometry structure with current default values
 		DoAlert 0,"Unable to load Crystal Structure"
 		return $""
 	endif
@@ -57,7 +58,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 			dList += num2istr(i)+SelectString(strlen(color),";"," ("+color+");")
 		endif
 	endfor
-	if (Ndetectors<1)										// nothing there
+	if (Ndetectors<1)											// nothing there
 		return $""
 	elseif (Ndetectors>1 && ParamIsDefault(detector))		// force a choice of which detector to use
 		detector = NaN
@@ -71,7 +72,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 	err = err || ( !WaveExists(recipSource) && ( numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0) ) )
 	if (err)
 		if (numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0))
-			h0=0;	k0=0;	l0=1							// default to the (001) reflection
+			h0=0;	k0=0;	l0=1									// default to the (001) reflection
 		endif
 		Elo = (numtype(Elo) || Elo<0) ? 6 : Elo
 		Ehi = (numtype(Ehi) || Ehi<=Elo) ? max(25,15+Elo) : Ehi
@@ -108,8 +109,8 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		Wave recipSource = $recipName
 		if (WaveExists(recipSource))
 			if (DimSize(recipSource,0)==3 && DimSize(recipSource,1)==3)
-				Wave recip = recipSource				// recipSource is a 3x3 mat, all done
-			else												// try to get recip from wave note
+				Wave recip = recipSource					// recipSource is a 3x3 mat, all done
+			else													// try to get recip from wave note
 				Wave recip = decodeMatFromStr(StringByKey("recip_lattice0", note(recipSource),"="))	
 			endif
 		else
@@ -121,7 +122,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		if (WaveExists(recipSource))
 			printf ", recipSource=%s",recipName
 		else
-			printf ", h0=%g,k0=%g,l0=%g", h0,k0,l0
+			printf ", h=%g,k=%g,l=%g", h0,k0,l0
 		endif
 		if (!ParamIsDefault(Nmax) && Nmax!=100)
 			printf ", Nmax=%g", Nmax
@@ -176,21 +177,19 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 
 	//	find highest 2theta --> thetaMax
 	Variable thetaMax
-	thetaMax = pixel2q(geo.d[detector],0,0,$"")		// check all four corners of the detecgtor to find the maximum theta
+	thetaMax = pixel2q(geo.d[detector],0,0,$"")	// check all four corners of the detecgtor to find the maximum theta
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],0,geo.d[detector].Ny -1,$""))
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],geo.d[detector].Nx -1,0,$""))
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],geo.d[detector].Nx -1,geo.d[detector].Ny -1,$""))
-	Make/N=3/D/FREE ki={0,0,1}								//	this is a convention
+	Make/N=3/D/FREE ki={0,0,1}							//	this is a convention
 
 	Variable dmin = hc/(2*Ehi*sin(thetaMax))
 	Variable hmax = ceil(xtal.a / dmin)
 	Variable kmax = ceil(xtal.b / dmin)
 	Variable lmax = ceil(xtal.c / dmin)
-	Variable/C pz
-	Variable px,py, keV, Qlen, sintheta
-	Variable h,k,l, Nspots
 
-	Variable icnt=0
+	Variable/C pz
+	Variable px,py, keV, Qlen, sintheta, Nspots, icnt=0
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)	// display a progress bar
 	for (l=0,Nspots=0; abs(l)<=lmax; l = l<0 ? -l : -(l+1))
 		for (k=0; abs(k)<=kmax; k = k<0 ? -k : -(k+1))					// for kmax=4, k={0,-1,1,-2,2,-3,3,-4,4}
@@ -202,7 +201,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 					continue
 				endif
 
-				MatrixOp/O/FREE qhat = recip x hkl			// make the qhat to test
+				MatrixOp/O/FREE qhat = recip x hkl		// make the qhat to test
 				Qlen = normalize(qhat)
 				pz = q2pixel(geo.d[detector],qhat)
 				px = real(pz)
@@ -232,20 +231,20 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 				PeakIndexed[Nspots][11][0] = detector	// detector number
 				Nspots += 1
 				if (Nspots+1 >= Nmax)
-					h=Inf;	k=Inf;	l=inf				// force loops to end
+					h=Inf;	k=Inf;	l=inf					// force loops to end
 				endif
 			endfor
 		endfor
 		icnt += 1
 		if (ProgressPanelUpdate(progressWin,icnt/(2*lmax+1)*100	))	// update progress bar
-			break										//   and break out of loop
+			break													//   and break out of loop
 		endif
 	endfor
 	Variable executionTime = SecondsInProgressPanel(progressWin)
 	DoWindow/K $progressWin
 	Redimension/N=(Nspots,-1,-1) PeakIndexed		// trim to exact size
-	PeakIndexed[][8][0] = 0							// error is always zero for a calculated spot
-	PeakIndexed[][6][0] = 1							// set all intensities to 1
+	PeakIndexed[][8][0] = 0								// error is always zero for a calculated spot
+	PeakIndexed[][6][0] = 1								// set all intensities to 1
 	if (printIt)
 		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,Secs2Time(executionTime,5,0)
 	endif
@@ -288,10 +287,10 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h0,k0,l0,recipSource,Nmax,detect
 		wnote = ReplaceStringByKey("rotation_matrix0",wnote,str,"=")
 	endif
 
-	XYZ2pixel(geo.d[detector],ki,px,py)							// check for incident beam hitting detector after sample
+	XYZ2pixel(geo.d[detector],ki,px,py)				// check for incident beam hitting detector after sample
 	if (numtype(px+py))
 		qhat = -ki
-		XYZ2pixel(geo.d[detector],qhat,px,py)						// check for incident beam hitting detector before sample
+		XYZ2pixel(geo.d[detector],qhat,px,py)			// check for incident beam hitting detector before sample
 	endif
 	if ((px>=startx && px<=endx && py>=starty && py<=endy))	// incident beam hits detector, draw a cross at that point
 		sprintf str,"{%g,%g}",px,py
