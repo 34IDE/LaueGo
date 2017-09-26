@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.40
+#pragma version = 4.41
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2495,6 +2495,9 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 		Edit/W=(left,top,left+width,top+height)/K=1 ww
 	endif
 	ModifyTable font=fontName, size=fontSize, format(Point)=1,width(Point)=36, width(ww.d)=colWid
+	if (WaveType(ww) | 0x38)				// if ww is an integer (8, 16, or 32 bit) use integer format
+		ModifyTable format(ww.d)=1
+	endif
 	return ww
 End
 
