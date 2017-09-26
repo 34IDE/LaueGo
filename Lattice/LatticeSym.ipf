@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.30
+#pragma version = 6.31
 #include "Utility_JZT" version>=4.36
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -177,6 +177,7 @@ Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works wel
 //	with verison 6.27, fixed up reading xml files in readCrystalStructureXML()
 //	with version 6.28, simplified minus2bar(), and changed hkl2IgorBarStr()
 //	with version 6.30, fixed error writing WyckoffSymbol to an xml file
+//	with version 6.31, start to add ability to transform between different settings for the same Space Group.
 
 //	Rhombohedral Transformation:
 //
@@ -7022,10 +7023,187 @@ End
 //
 //	================================================================================
 //
-//			This section is for making the matricies for the symmetry operations for Space Groups
+//			This section is for making the matricies that changes the settings for a Space Group
 //
 
+Static Function/WAVE GetSettingTransForm(id)
+	String id					// SpaceGroup ID name, e.g. "146:H"
 
+	Variable i = SpaceGroupID2num(id)		// in range [1,530]
+	if (numtype(i))								// check for valid id
+		return $""
+	endif
+
+	Make/N=(530)/T/FREE CBMs=""
+	CBMs[0]= {"x,y,z","x,y,z","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","y,z,x","z,x,y","x,y,z"}
+	CBMs[21]= {"-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x"}
+	CBMs[40]= {"-z,y,x-z","-x+z,y+1/4,-x","x,y-1/4,z","-z,y+1/4,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","x-y,z+1/4,-y","y,z-1/4,x","-x,z+1/4,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","y-z,x+1/4,-z","z,x+1/4,y","-y,x+1/4,-y+z"}
+	CBMs[56]= {"x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y"}
+	CBMs[76]= {"-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x","-z,y,x-z","-x+z-1/4,y+1/4,-x"}
+	CBMs[93]= {"x+1/4,y+1/4,z","-z-1/4,y+1/4,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","x-y-1/4,z+1/4,-y","y+1/4,z+1/4,x","-x-1/4,z+1/4,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","y-z-1/4,x+1/4,-z","z-1/4,x+1/4,y"}
+	CBMs[106]= {"-y-1/4,x+1/4,-y+z","x,y,z","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","x,y,z","x,y,z","x,y,z","y,z,x","z,x,y","x,y,z"}
+	CBMs[128]= {"y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z"}
+	CBMs[150]= {"y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z"}
+	CBMs[173]= {"y,z,x","z,x,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y"}
+	CBMs[196]= {"x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x"}
+	CBMs[219]= {"z,x,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","x,y,z","x-1/4,y-1/4,z-1/4","x,y,z","y,z,x","z,x,y","x,y,z","x-1/4,y-1/4,z","y,z,x","y-1/4,z-1/4,x","z,x,y","z-1/4,x-1/4,y"}
+	CBMs[238]= {"x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x"}
+	CBMs[260]= {"z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","x-1/4,y-1/4,z","y,z,x","y-1/4,z-1/4,x"}
+	CBMs[281]= {"z,x,y","z-1/4,x-1/4,y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y"}
+	CBMs[303]= {"x,y,z","y,x,-z","y,z,x","z,y,-x","z,x,y","x,z,-y","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","x+1/4,y+1/4,z","y,z,x","y+1/4,z+1/4,x","z,x,y","z-1/4,x+1/4,y","x,y,z","x,y-1/4,z-1/4"}
+	CBMs[323]= {"x,y,z","x+1/4,y,z-1/4","y,z,x","y,z-1/4,x-1/4","y,z,x","y+1/4,z,x-1/4","z,x,y","z,x+1/4,y-1/4","z,x,y","z-1/4,x,y-1/4","x,y,z","x,y,z","x+1/8,y+1/8,z+1/8","x,y,z","x,y,z","y,z,x","z,x,y"}
+	CBMs[340]= {"x,y,z","x-1/4,y+1/4,z+1/4","x,y,z","x-1/4,y+1/4,z+1/4","y,z,x","y-1/4,z+1/4,x+1/4","z,x,y","z-1/4,x+1/4,y+1/4","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[358]= {"x,y,z","x-1/4,y+1/4,z","x,y,z","x+1/4,y+1/4,z+1/4","x,y,z","x,y,z","x+1/2,y-1/4,z+1/8","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[378]= {"x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[402]= {"x-1/4,y-1/4,z","x,y,z","x-1/4,y-1/4,z-1/4","x,y,z","x,y,z","x,y,z","x-1/4,y+1/4,z","x,y,z","x-1/4,y+1/4,z","x,y,z","x,y,z","x,y,z","x-1/4,y+1/4,z+1/4","x,y,z","x-1/4,y+1/4,z-1/4","x,y,z"}
+	CBMs[418]= {"x,y,z","x,y,z","x-1/4,y+1/4,z+1/4","x,y,z","x-1/4,y+1/4,z-1/4","x,y,z","x,y,z","x,y,z","x,y-1/4,z+1/8","x,y,z","x,y-1/4,z+1/8","x,y,z","x,y,z","x,y,z","x,y,z","2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/"}
+	CBMs[434]= {"x,y,z","x,y,z","2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/","x,y,z"}
+	CBMs[446]= {"x,y,z","x,y,z","x,y,z","x,y,z","2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/","x,y,z","2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[458]= {"2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/","x,y,z","2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[470]= {"x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[494]= {"x,y,z","x-1/4,y-1/4,z-1/4","x,y,z","x,y,z","x+1/8,y+1/8,z+1/8","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z","x,y,z"}
+	CBMs[515]= {"x,y,z","x,y,z","x,y,z","x-1/4,y-1/4,z-1/4","x,y,z","x,y,z","x+1/4,y+1/4,z+1/4","x,y,z","x,y,z","x,y,z","x+1/8,y+1/8,z+1/8","x,y,z","x+3/8,y+3/8,z+3/8","x,y,z","x,y,z"}
+
+	String CBMx = CBMs[i-1]
+	Wave mat = MatrixFromSymLine(CBMx,3)						// a (3,3) matrix
+	String wnote="waveClass=ChangeBasisMat"					// fill the wave note
+	wnote = ReplaceStringByKey("SGid",wnote,id,"=")
+	wnote = ReplaceStringByKey("CBMx",wnote,CBMx,"=")
+	Note/K mat, wnote
+	return mat
+End
+//
+//	Function test_GetSettingTransForm()
+//		String id, idList="146:R;146:H;346;-1"
+//		Variable i, N=ItemsInList(idList)
+//		for (i=0;i<N;i+=1)
+//			id = StringFromList(i,idList)
+//			Wave mat = GetSettingTransForm(id)
+//			print " "
+//			if (WaveExists(mat))
+//				print note(mat)
+//				printWave(mat,name="mat",brief=1)
+//			else
+//				printf "no settings transform matrix with Space Group ID = \"%s\"\r",id
+//			endif
+//		endfor
+//	End
+//
+// makes one matrix either (3,3) or (4,4) from the symmetry op string
+Static Function/WAVE MatrixFromSymLine(symOp,dim)	// returns either 3x3 or 4x4 matrix
+	String symOp													// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
+	Variable dim													// either 3 or 4
+	if (dim!=3 && dim!=4)
+		return $""
+	endif
+	Make/N=(dim,dim)/D/FREE mat=0							// either (3,3) or (4,4)
+
+	String expression
+	Variable i, err
+	for (i=0,err=0; i<3; i+=1)
+		expression = StringFromList(i,symOp,",")
+
+		Wave vec = ParseOneSymExpression(expression)	// parse one expression of form "-x+y"  or "-x", or "-x+y", etc.
+		if (!WaveExists(vec))
+			err = 1
+			break
+		endif
+		mat[i][] = vec[q]											// vec is always [4], but this still works for dim=3
+	endfor
+
+	if (!err)
+		Make/N=(3,3)/D/FREE mat3 = mat[p][q]				// mat3 is ALWAYS (3,3)
+		err = err || (MatrixDet(mat3)<0.001)
+	endif
+	if (err)
+		WaveClear mat
+	endif
+	return mat
+End
+//
+Static Function/WAVE ParseOneSymExpression(expression)	// parse one expression of form "-x+y"  or "-x", or "-x+y, etc.
+	String expression
+
+	expression = LowerStr(expression)		// only lower case
+	expression = ReplaceString(" ",expression,"")	// no spaces
+	expression = ReplaceString("-",expression,"+-")	// so all terms are joined by a "+"
+	do
+		expression = ReplaceString("++",expression,"+")	// only a single "+"
+	while (strsearch(expression,"++",0)>=0)
+	expression = ReplaceString("*x",expression,"x")	// "*x" --> "x"
+	expression = ReplaceString("*y",expression,"y")	// "*y" --> "y"
+	expression = ReplaceString("*z",expression,"z")	// "*z" --> "z"
+	expression = TrimFront(expression,chars="+")	// remove any leading "+"
+
+	Make/N=4/D/FREE vec=0
+	Variable i, N=ItemsInList(expression,"+")
+	String term
+	for (i=0;i<4;i+=1)							// look for x, y, z
+		term = StringFromList(i,expression,"+")
+
+		if (strsearch(term,"x",0)>=0)
+			term = ReplaceString("-x",term,"-1")
+			term = ReplaceString("x",term,"")
+			vec[0] = arithmetic(term,1)
+		elseif (strsearch(term,"y",0)>=0)
+			term = ReplaceString("-y",term,"-1")
+			term = ReplaceString("y",term,"")
+			vec[1] = arithmetic(term,1)
+		elseif (strsearch(term,"z",0)>=0)
+			term = ReplaceString("-z",term,"-1")
+			term = ReplaceString("z",term,"")
+			vec[2] = arithmetic(term,1)
+		else
+			vec[3] = arithmetic(term,0)
+		endif
+	endfor
+	return vec
+End
+//	Function test_ParseOneSymExpression()
+//		String expression = "2/3*x-1/3*y-1/3*z + -1/7"
+//		Wave vec = ParseOneSymExpression(expression)
+//		print expression,"  -->  ",vec2str(vec)
+//	End
+//
+Static Function arithmetic(nstr,def)
+	String nstr				// string evaluates to a NUMBER, nstr is something like "1/3 + 5" or "-1/3 + 5"
+	Variable def			// default value, usually 1 or 0
+	if (strlen(nstr)<1)
+		return def
+	endif
+
+	nstr = ReplaceString(" ",nstr,"")		// no spaces
+	nstr = ReplaceString("-",nstr,"+-")
+	nstr = TrimFront(nstr,chars="+")		// remove any leading "+"
+
+	String term
+	Variable i, val, N=ItemsInList(nstr,"+")
+	for (i=0, val=0; i<N; i+=1)
+		term = StringFromList(i,nstr,"+")
+		if (strsearch(term,"/",0)>0)
+			val += str2num(StringFromList(0,term,"/")) / str2num(StringFromList(1,term,"/"))
+		elseif (strsearch(term,"*",0)>0)
+			val += str2num(StringFromList(0,term,"*")) * str2num(StringFromList(1,term,"*"))
+		else
+			val += str2num(term)
+		endif
+	endfor
+	val = numtype(val)==2 ? def : val
+	return val
+End
+
+
+
+
+
+
+
+
+//
+//	================================================================================
+//
+//			This section is for making the matricies for the symmetry operations for Space Groups
+//
 
 Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
 	String SpaceGroupID
