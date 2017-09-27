@@ -383,6 +383,64 @@ Structure bondTypeStructure	// defines the type of bond between two atom types
 	double len[5]				// length of bond (possibly multiple values) (nm)
 EndStructure
 
+
+Function init_crystalStructure(xtal)		// set all values to empty or invalid values
+	STRUCT crystalStructure &xtal
+	
+	xtal.desc = ""
+	xtal.a = NaN		;		xtal.b = NaN		;	xtal.c = NaN
+	xtal.alpha = NaN	;		xtal.beta = NaN	;	xtal.gam = NaN
+	xtal.SpaceGroup = 0
+	xtal.SpaceGroupID = ""	;	xtal.SpaceGroupIDnum = 0
+	xtal.a0 = NaN		;	xtal.a1 = NaN	;		xtal.a2 = NaN
+	xtal.b0 = NaN		;	xtal.b1 = NaN	;		xtal.b2 = NaN
+	xtal.c0 = NaN		;	xtal.c1 = NaN	;		xtal.c2 = NaN
+
+	xtal.Vc = NaN
+	xtal.density = NaN
+	xtal.Temperature = 0	;	xtal.alphaT = 0
+	xtal.Vibrate = 0			;	xtal.haveDebyeT = 0
+
+	xtal.N = 0
+	Variable i
+	for (i=0; i<STRUCTURE_ATOMS_MAX; i+=1)
+		init_atomTypeStructure(xtal.atom[i])
+	endfor
+
+	xtal.Nbonds = 0
+	for (i=0; i<(2*STRUCTURE_ATOMS_MAX); i+=1)
+		init_bondTypeStructure(xtal.bond[i])
+	endfor
+
+	xtal.Unconventional00 = NaN	;	xtal.Unconventional01 = NaN	;	xtal.Unconventional02 = NaN
+	xtal.Unconventional10 = NaN	;	xtal.Unconventional11 = NaN	;	xtal.Unconventional12 = NaN
+	xtal.Unconventional20 = NaN	;	xtal.Unconventional21 = NaN	;	xtal.Unconventional22 = NaN
+	xtal.sourceFile = ""			;	xtal.hashID = ""
+End
+
+Function init_atomTypeStructure(atom)		// set all values to empty or invalid values
+	STRUCT atomTypeStructure &atom
+	atom.name = ""
+	atom.Zatom = 0
+	atom.x = NaN	;	atom.y = NaN	;	atom.z = NaN
+	atom.occ = 1
+	atom.WyckoffSymbol = ""
+	atom.valence = 0
+	atom.mult = 1
+	atom.DebyeT = NaN	;	atom.Biso = NaN	;	atom.Uiso = NaN
+	atom.U11 = NaN		;	atom.U22 = NaN		;	atom.U33 = NaN
+	atom.U12 = NaN		;	atom.U13 = NaN		;	atom.U23 = NaN
+End
+
+Function init_bondTypeStructure(bond)		// set all values to empty or invalid values
+	STRUCT bondTypeStructure &bond
+	bond.label0 = ""
+	bond.label1 = ""
+	bond.N = 0
+	bond.len[0] = NaN		;	bond.len[1] = NaN		;	bond.len[2] = NaN
+	bond.len[3] = NaN		;	bond.len[4] = NaN
+End
+
 //	End of Structure definitions
 // =========================================================================
 // =========================================================================
@@ -873,8 +931,11 @@ Function print_crystalStructStr(strStruct)	// prints the contents of a crystalSt
 End
 
 
-Function print_crystalStructure(xtal)			// prints out the value in a crystalStructure
+Function print_crystalStructure(xtal, [brief])			// prints out the value in a crystalStructure
 	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
+	Variable brief										// if true, print short version
+	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : brief
+
 	Variable i,N=xtal.N
 	if (WhichListItem("LatticePanelButtonProc",GetRTStackInfo(0))>=0)
 		printf "%sshowCrystalStructure()\r",BULLET
@@ -979,6 +1040,10 @@ Function print_crystalStructure(xtal)			// prints out the value in a crystalStru
 		else
 			print "\t\tCharge Neutral"
 		endif
+		if (brief)
+			return 0
+		endif
+
 		if (xtal.Nbonds > 0)
 			printf "defined bonds types (nm):\r"
 			for (i=0;i<xtal.Nbonds;i+=1)
@@ -7080,7 +7145,7 @@ Static Function/WAVE GetSettingTransForm(id)
 	CBMs[521] = {"x+1/4,y+1/4,z+1/4","x,y,z","x,y,z","x,y,z","x+1/8,y+1/8,z+1/8","x,y,z","x+3/8,y+3/8,z+3/8","x,y,z","x,y,z"}
 
 	String CBMx = CBMs[i-1]
-	Wave mat = MatrixFromSymLine(CBMx,3)						// a (3,3) matrix
+	Wave mat = MatrixFromSymLine(CBMx,3)						// (3,3) matrix, NONE of the CBM have a constant part, so a (4,4) mat is pointless
 	String wnote="waveClass=ChangeBasisMat"					// fill the wave note
 	wnote = ReplaceStringByKey("SGid",wnote,id,"=")
 	wnote = ReplaceStringByKey("CBMx",wnote,CBMx,"=")
