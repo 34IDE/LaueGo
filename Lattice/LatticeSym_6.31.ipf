@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.32
+#pragma version = 6.31
 #include "Utility_JZT" version>=4.36
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -535,7 +535,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetSymOpsForSpaceGroup(xtal.SpaceGroupID)	// ensure that symmetry ops are right
 	Variable Natoms = round(xtal.N)				// number of predefined atoms
 	Natoms = numtype(Natoms) ? 0 : limit(Natoms,0,STRUCTURE_ATOMS_MAX)
-	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroupID)+"\""
+	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroup)+"\""
 
 	if (Natoms<1)
 		DoAlert 1, "No atoms defined, create one?"
@@ -868,14 +868,14 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	ControlInfo/W=$win setAtomRelY		;		yy = V_Value
 	ControlInfo/W=$win setAtomRelZ		;		zz = V_Value
 	if (StringMatch(ctrlName,"setAtomWyckoff") && strlen(symbol)>0)	// changed Wyckoff, force xyz to conform
-		if (!ForceXYZtoWyckoff(xtal.SpaceGroupID,symbol,xx,yy,zz))
+		if (!ForceXYZtoWyckoff(xtal.SpaceGroup,symbol,xx,yy,zz))
 			SetVariable setAtomRelX,win=$win,value= _NUM:xx
 			SetVariable setAtomRelY,win=$win,value= _NUM:yy
 			SetVariable setAtomRelZ,win=$win,value= _NUM:zz
 		endif
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
-		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,xx,yy,zz,mult)
+		symbol = FindWyckoffSymbol(xtal.SpaceGroup,xx,yy,zz,mult)
 		if (char2num(symbol)==65)
 			mm = 27+1
 		else
@@ -891,7 +891,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	xtal.atom[m].z = zz
 	xtal.atom[m].WyckoffSymbol = symbol[0]
 	if (char2num(symbol)>32 && !(mult>0))
-		mult = WyckoffMultiplicity(xtal.SpaceGroupID,symbol)
+		mult = WyckoffMultiplicity(xtal.SpaceGroup,symbol)
 	endif
 	if (mult>0)
 		xtal.atom[m].mult = mult
@@ -3476,7 +3476,6 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)		// change id to id number in [1,530]
 	SG = str2num(xtal.SpaceGroupID)
 	xtal.SpaceGroup = SG
-	String SpaceGroupID = xtal.SpaceGroupID
 
 	String cell = XMLtagContents("cell",cif)			// cell group
 	String unit
@@ -3537,7 +3536,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			fracZ = str2num(XMLtagContents("fract_z",atomSite))
 		endif
 		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))		// try to get x,y,z from Wyckoff symbol
-			if (ForceXYZtoWyckoff(SpaceGroupID,WyckoffSymbol,fracX,fracY,fracZ))
+			if (ForceXYZtoWyckoff(SG,WyckoffSymbol,fracX,fracY,fracZ))
 				fracX = NaN													// will cause a break in next if()
 			endif
 		endif
@@ -3546,7 +3545,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 		mult = 0
 		if (strlen(WyckoffSymbol)==0)									// try to set Wyckoff symbol from coordinates
-			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,fracX,fracY,fracZ,mult)
+			WyckoffSymbol = FindWyckoffSymbol(SG,fracX,fracY,fracZ,mult)
 		endif
 
 		valence = str2num(XMLtagContents("valence",atomSite))
@@ -8559,16 +8558,14 @@ End
 //			This section is for making the matricies for the symmetry operations for Space Groups
 // 		the Funcitons associated with Wyckoff symbols are:
 //			used by regular routines (above this):
-//				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
+//				WyckoffMenuStr(), ForceXYZtoWyckoff(), FindWyckoffSymbol(), WyckoffMultiplicity()
 //
 //			ONLY used by other Wyckoff routines (below this):
 //				GetWyckoffSymStrings(), WyckoffStrFromSG()
 
-
-Static Function WyckoffMultiplicity(SpaceGroupID,letter)
-	String SpaceGroupID
+Static Function WyckoffMultiplicity(SG,letter)
+	Variable SG
 	String letter
-Variable SG = str2num(SpaceGroupID)
 	String list = WyckoffStrFromSG(SG)
 	if (strlen(list)<1)
 		return 1
@@ -8577,9 +8574,8 @@ Variable SG = str2num(SpaceGroupID)
 	return mult
 End
 //
-Static Function/T WyckoffMenuStr(SpaceGroupID)
-	String SpaceGroupID
-Variable SG = str2num(SpaceGroupID)
+Static Function/T WyckoffMenuStr(SG)
+	Variable SG
 	String list = WyckoffStrFromSG(SG)
 	if (strlen(list)<1)
 		return ""
@@ -8592,32 +8588,6 @@ Variable SG = str2num(SpaceGroupID)
 	endfor
 	return mStr
 End
-//
-//Static Function WyckoffMultiplicity(SG,letter)
-//	Variable SG
-//	String letter
-//	String list = WyckoffStrFromSG(SG)
-//	if (strlen(list)<1)
-//		return 1
-//	endif
-//	Variable mult = NumberByKey(letter,list,":",";",1)
-//	return mult
-//End
-//
-//Static Function/T WyckoffMenuStr(SG)
-//	Variable SG
-//	String list = WyckoffStrFromSG(SG)
-//	if (strlen(list)<1)
-//		return ""
-//	endif
-//
-//	Variable i, N=ItemsInList(list)
-//	String mStr=""
-//	for (i=1;i<=N;i+=1)
-//		mStr += num2char(i<27 ? i+96 : i+38)+";"
-//	endfor
-//	return mStr
-//End
 //
 Static Function/T WyckoffStrFromSG(SG)
 	Variable SG
@@ -8761,12 +8731,10 @@ End
 //	return 0
 //End
 
-
-Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
-	String SpaceGroupID
+Static Function/T FindWyckoffSymbol(SG,x0,y0,z0,mult)
+	Variable SG
 	Variable x0,y0,z0
 	Variable &mult
-Variable SG = str2num(SpaceGroupID)
 	Wave/T WyckList=GetWyckoffSymStrings(SG)
 
 	String sx=num2str(x0), sy=num2str(y0), sz=num2str(z0)
@@ -8800,43 +8768,6 @@ Variable SG = str2num(SpaceGroupID)
 	KillVariables/Z root:temp_temp_
 	return symbol
 End
-//Static Function/T FindWyckoffSymbol(SG,x0,y0,z0,mult)
-//	Variable SG
-//	Variable x0,y0,z0
-//	Variable &mult
-//	Wave/T WyckList=GetWyckoffSymStrings(SG)
-//
-//	String sx=num2str(x0), sy=num2str(y0), sz=num2str(z0)
-//	String item, symOp, symbol=""
-//
-//	Variable xop,yop,zop
-//	Variable m, N=DimSize(WyckList,0)
-//	mult = 0
-//	for (m=0;m<N;m+=1)
-//		symOp = WyckList[m][1]
-//		symOp = ReplaceString("2x",symOp,"2*x")
-//		symOp = ReplaceString("2y",symOp,"2*y")
-//		symOp = ReplaceString("2z",symOp,"2*z")
-//		symOp = ReplaceString("x",symOp,sx)
-//		symOp = ReplaceString("y",symOp,sy)
-//		symOp = ReplaceString("z",symOp,sz)
-//
-//		Execute "Variable/G root:temp_temp_ = "+StringFromList(0,symOp,",")
-//		xop = NumVarOrDefault("root:temp_temp_",NaN)
-//		Execute "Variable/G root:temp_temp_ = "+StringFromList(1,symOp,",")
-//		yop = NumVarOrDefault("root:temp_temp_",NaN)
-//		Execute "Variable/G root:temp_temp_ = "+StringFromList(2,symOp,",")
-//		zop = NumVarOrDefault("root:temp_temp_",NaN)
-//
-//		if ((abs(xop-x0) + abs(yop-y0) + abs(zop-z0)) < 1e-4)
-//			symbol = WyckList[m][0]
-//			mult = round(str2num(WyckList[m][2]))
-//			break
-//		endif
-//	endfor
-//	KillVariables/Z root:temp_temp_
-//	return symbol
-//End
 //		//	test_FindWyckoffSymbol(47,  0, 0.5, 0.3765)
 //	Function test_FindWyckoffSymbol(SG,x0,y0,z0)
 //		Variable SG
@@ -8848,12 +8779,10 @@ End
 //	End
 
 
-
-Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
-	String SpaceGroupID
+Static Function ForceXYZtoWyckoff(SG,symbol,x0,y0,z0)
+	Variable SG
 	String symbol
 	Variable &x0,&y0,&z0
-Variable SG = str2num(SpaceGroupID)
 	Wave/T WyckList=GetWyckoffSymStrings(SG)
 
 	String item, symOp=""
@@ -8883,39 +8812,6 @@ Variable SG = str2num(SpaceGroupID)
 	KillVariables/Z root:temp_temp_
 	return 0
 End
-//Static Function ForceXYZtoWyckoff(SG,symbol,x0,y0,z0)
-//	Variable SG
-//	String symbol
-//	Variable &x0,&y0,&z0
-//	Wave/T WyckList=GetWyckoffSymStrings(SG)
-//
-//	String item, symOp=""
-//	Variable xop,yop,zop
-//	Variable m, N=DimSize(WyckList,0)
-//	for (m=0;m<N;m+=1)
-//		if (strsearch(WyckList[m][0], symbol,0)==0)
-//			symOp = WyckList[m][1]
-//		endif
-//	endfor
-//	if (strlen(symOp)<1)
-//		return 1
-//	endif
-//	symOp = ReplaceString("2x",symOp,"2*x")
-//	symOp = ReplaceString("2y",symOp,"2*y")
-//	symOp = ReplaceString("2z",symOp,"2*z")
-//	symOp = ReplaceString("x",symOp,num2str(x0))
-//	symOp = ReplaceString("y",symOp,num2str(y0))
-//	symOp = ReplaceString("z",symOp,num2str(z0))
-//
-//	Execute "Variable/G root:temp_temp_ = "+StringFromList(0,symOp,",")
-//	x0 = NumVarOrDefault("root:temp_temp_",x0)
-//	Execute "Variable/G root:temp_temp_ = "+StringFromList(1,symOp,",")
-//	y0 = NumVarOrDefault("root:temp_temp_",y0)
-//	Execute "Variable/G root:temp_temp_ = "+StringFromList(2,symOp,",")
-//	z0 = NumVarOrDefault("root:temp_temp_",z0)
-//	KillVariables/Z root:temp_temp_
-//	return 0
-//End
 //	Function test_ForceXYZtoWyckoff(SG,symbol,x0,y0,z0)
 //		Variable SG
 //		String symbol
