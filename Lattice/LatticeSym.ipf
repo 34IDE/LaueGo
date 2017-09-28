@@ -2739,6 +2739,20 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 	return 0
 End
 
+
+Static Function/T LatticeSetPanelList()			// returns list of win#subWin for all of the "LatticePanel"'s
+	String panelList=WinList("*",";","WIN:64")	// list of ALL Panels
+	String win, list=""
+	Variable i
+	for (i=0;i<ItemsInList(panelList);i+=1)
+		win = GetUserData(StringFromList(i,panelList), "", "LatticePanelName")
+		if (strlen(win))
+			list += win+";"
+		endif
+	endfor
+	return list
+End
+
 //	End of lattice set panel
 // =========================================================================
 // =========================================================================
