@@ -178,7 +178,7 @@ Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works wel
 //	with version 6.28, simplified minus2bar(), and changed hkl2IgorBarStr()
 //	with version 6.30, fixed error writing WyckoffSymbol to an xml file
 //	with version 6.31, start to add ability to transform between different settings for the same Space Group.
-// with version 6.32, change all Wyckoff routines to use SpaceGroupID rather than SpaceGroup
+//	with version 6.32, change all Wyckoff routines to use SpaceGroupID rather than SpaceGroup
 
 //	Rhombohedral Transformation:
 //
@@ -8563,157 +8563,42 @@ End
 //				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
 //
 //			ONLY used by other Wyckoff routines (below this):
-//				GetWyckoffSymStrings(), WyckoffStrFromSG()
-
+//				GetWyckoffSymStrings()
 
 Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 	String SpaceGroupID
 	String letter
-	String list = WyckoffStrFromSG(SpaceGroupID)
-	if (strlen(list)<1)
-		return 1
+
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
+	Variable i, N=DimSize(Wlist,0), mult=NaN
+	for (i=0;i<N;i+=1)
+		if (cmpstr(Wlist[i][0],letter)==0)
+			mult = str2num(Wlist[i][2])
+		endif
+	endfor
+	if (strsearch(SpaceGroupID,":R",0,2)>0)				// ONLY for Rhombohedral
+		mult /= 3													//   divide multiplicity by 3
 	endif
-	Variable mult = NumberByKey(letter,list,":",";",1)
 	return mult
 End
 //
 Static Function/T WyckoffMenuStr(SpaceGroupID)
 	String SpaceGroupID
-	String list = WyckoffStrFromSG(SpaceGroupID)
-	if (strlen(list)<1)
-		return ""
-	endif
-
-	Variable i, N=ItemsInList(list)
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
+	Variable i, N=DimSize(Wlist,0)
 	String mStr=""
-	for (i=1;i<=N;i+=1)
-		mStr += num2char(i<27 ? i+96 : i+38)+";"
+	for (i=0;i<N;i+=1)
+		mStr += Wlist[i][0]+";"								// add each character to the menu str
 	endfor
 	return mStr
 End
 //
-//Static Function WyckoffMultiplicity(SG,letter)
-//	Variable SG
-//	String letter
-//	String list = WyckoffStrFromSG(SG)
-//	if (strlen(list)<1)
-//		return 1
-//	endif
-//	Variable mult = NumberByKey(letter,list,":",";",1)
-//	return mult
-//End
-//
-//Static Function/T WyckoffMenuStr(SG)
-//	Variable SG
-//	String list = WyckoffStrFromSG(SG)
-//	if (strlen(list)<1)
-//		return ""
-//	endif
-//
-//	Variable i, N=ItemsInList(list)
-//	String mStr=""
-//	for (i=1;i<=N;i+=1)
-//		mStr += num2char(i<27 ? i+96 : i+38)+";"
-//	endfor
-//	return mStr
-//End
-//
-Static Function/T WyckoffStrFromSG(SpaceGroupID)
-	String SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID))
-		return ""
-	endif
-	Variable SG = round(str2num(SpaceGroupID))
-
-	Make/N=230/FREE/T WyckoffWave=""
-	WyckoffWave[0] = {"a:1;","a:1;b:1;c:1;d:1;e:1;f:1;g:1;h:1;i:2;","a:1;b:1;c:1;d:1;e:2;","a:2;","a:2;b:2;c:4;","a:1;b:1;c:2;"}
-	WyckoffWave[6] = {"a:2;","a:2;b:4;","a:4;",":1;b:1;c:1;d:1;e:1;f:1;g:1;h:1;i:2;j:2;k:2;l:2;m:2;n:2;o:4;","a:2;b:2;c:2;d:2;e:2;f:4;"}
-	WyckoffWave[11] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:8;","a:2;b:2;c:2;d:2;e:2;f:2;g:4;","a:2;b:2;c:2;d:2;e:4;"}
-	WyckoffWave[14] = {"a:4;b:4;c:4;d:4;e:4;f:8;","a:1;b:1;c:1;d:1;e:1;f:1;g:1;h:1;i:2;j:2;k:2;l:2;m:2;n:2;o:2;p:2;q:2;r:2;s:2;t:2;u:4;"}
-	WyckoffWave[16] = {"a:2;b:2;c:2;d:2;e:4;","a:2;b:2;c:4;","a:4;","a:4;b:4;c:8;","a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:4;l:8;"}
-	WyckoffWave[21] = {"a:4;b:4;c:4;d:4;e:8;j:8;f:8;i:8;g:8;h:8;k:16;","a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:8;","a:4;b:4;c:4;d:8;"}
-	WyckoffWave[24] = {"a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:2;i:4;","a:2;b:2;c:4;","a:2;b:2;c:2;d:2;e:4;","a:2;b:2;c:2;d:4;","a:4;","a:2;b:2;c:4;"}
-	WyckoffWave[30] = {"a:2;b:4;","a:2;b:2;c:4;","a:4;","a:2;b:2;c:4;","a:2;b:2;c:4;d:4;e:4;f:8;","a:4;b:8;","a:4;b:4;c:4;d:8;"}
-	WyckoffWave[37] = {"a:2;b:2;c:4;d:4;e:4;f:8;","a:4;b:4;c:4;d:8;","a:4;b:4;c:8;"}
-	WyckoffWave[40] = {"a:4;b:8;","a:4;b:8;c:8;d:8;e:16;","a:8;b:16;","a:2;b:2;c:4;d:4;e:8;","a:4;b:4;c:8;","a:4;b:4;c:8;"}
-	WyckoffWave[46] = {"a:1;b:1;c:1;d:1;e:1;f:1;g:1;h:1;i:2;j:2;k:2;l:2;m:2;n:2;o:2;p:2;q:2;r:2;s:2;t:2;u:4;v:4;w:4;x:4;y:4;z:4;A:8;"}
-	WyckoffWave[47] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:4;l:4;m:8;","a:2;b:2;c:2;d:2;e:2;f:2;g:2;h:2;i:4;j:4;k:4;l:4;m:4;n:4;o:4;p:4;q:4;r:8;"}
-	WyckoffWave[49] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:4;l:4;m:8;","a:2;b:2;c:2;d:2;e:2;f:2;g:4;h:4;i:4;j:4;k:4;l:8;","a:4;b:4;c:4;d:4;e:8;"}
-	WyckoffWave[52] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:8;","a:4;b:4;c:4;d:4;e:4;f:8;","a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:8;","a:4;b:4;c:4;d:4;e:8;"}
-	WyckoffWave[56] = {"a:4;b:4;c:4;d:4;e:8;","a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:8;","a:2;b:2;c:4;d:4;e:4;f:4;g:8;","a:4;b:4;c:4;d:8;"}
-	WyckoffWave[60] = {"a:4;b:4;c:8;","a:4;b:4;c:4;d:8;","a:4;b:4;c:4;d:8;e:8;f:8;g:8;h:16;","a:4;b:4;c:8;d:8;e:8;f:8;g:16;"}
-	WyckoffWave[64] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:4;l:4;m:8;n:8;o:8;p:8;q:8;r:16;","a:4;b:4;c:4;d:4;e:4;f:4;g:8;h:8;i:8;j:8;k:8;l:8;m:16;"}
-	WyckoffWave[66] = {"a:4;b:4;c:4;d:4;e:4;f:4;g:4;h:8;i:8;j:8;k:8;l:8;m:8;n:8;o:16;","a:4;b:4;c:8;d:8;e:8;f:8;g:8;h:8;i:16;"}
-	WyckoffWave[68] = {"a:4;b:4;c:8;d:8;e:8;f:8;g:8;h:8;i:8;j:16;k:16;l:16;m:16;n:16;o:16;p:32;","a:8;b:8;c:16;d:16;e:16;f:16;g:16;h:32;"}
-	WyckoffWave[70] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:8;l:8;m:8;n:8;o:16;","a:4;b:4;c:4;d:4;e:8;f:8;g:8;h:8;i:8;j:8;k:16;"}
-	WyckoffWave[72] = {"a:8;b:8;c:8;d:8;e:8;f:16;","a:4;b:4;c:4;d:4;e:4;f:8;g:8;h:8;i:8;j:16;","a:1;b:1;c:2;d:4;","a:4;","a:2;b:2;c:2;d:4;","a:4;"}
-	WyckoffWave[78] = {"a:2;b:4;c:8;","a:4;b:8;","a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:4;","a:2;b:2;c:2;d:2;e:4;f:4;g:8;"}
-	WyckoffWave[82] = {"a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:2;i:4;j:4;k:4;l:8;","a:2;b:2;c:2;d:2;e:2;f:2;g:4;h:4;i:4;j:4;k:8;"}
-	WyckoffWave[84] = {"a:2;b:2;c:2;d:4;e:4;f:4;g:8;","a:2;b:2;c:4;d:4;e:4;f:4;g:8;","a:2;b:2;c:4;d:4;e:4;f:8;g:8;h:8;i:16;"}
-	WyckoffWave[87] = {"a:4;b:4;c:8;d:8;e:8;f:16;","a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:2;i:4;j:4;k:4;l:4;m:4;n:4;o:4;p:8;","a:2;b:2;c:2;d:4;e:4;f:4;g:8;"}
-	WyckoffWave[90] = {"a:4;b:4;c:4;d:8;","a:4;b:8;","a:2;b:2;c:2;d:2;e:2;f:2;g:4;h:4;i:4;j:4;k:4;l:4;m:4;n:4;o:4;p:8;","a:2;b:2;c:4;d:4;e:4;f:4;g:8;"}
-	WyckoffWave[94] = {"a:4;b:4;c:4;d:8;","a:4;b:8;","a:2;b:2;c:4;d:4;e:4;f:8;g:8;h:8;i:8;j:8;k:16;","a:4;b:4;c:8;d:8;e:8;f:8;g:16;"}
-	WyckoffWave[98] = {"a:1;b:1;c:2;d:4;e:4;f:4;g:8;","a:2;b:2;c:4;d:8;","a:2;b:2;c:4;d:4;e:8;","a:2;b:4;c:4;d:8;","a:2;b:2;c:4;d:8;"}
-	WyckoffWave[103] = {"a:2;b:4;c:8;","a:2;b:2;c:2;d:4;e:4;f:8;","a:4;b:4;c:8;","a:2;b:4;c:8;d:8;e:16;","a:4;b:4;c:8;d:16;"}
-	WyckoffWave[108] = {"a:4;b:8;c:16;","a:8;b:16;","a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:2;i:4;j:4;k:4;l:4;m:4;n:4;o:8;"}
-	WyckoffWave[111] = {"a:2;c:2;b:2;d:2;e:2;f:2;g:4;h:4;i:4;j:4;k:4;l:4;m:4;n:8;","a:2;b:2;c:2;d:4;e:4;f:8;","a:2;b:2;c:4;d:4;e:8;"}
-	WyckoffWave[114] = {"a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:4;i:4;j:4;k:4;l:8;","a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:4;j:8;"}
-	WyckoffWave[116] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:8;","a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:8;"}
-	WyckoffWave[118] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:8;h:8;i:8;j:16;","a:4;d:4;b:4;c:4;e:8;h:8;f:8;g:8;i:16;"}
-	WyckoffWave[120] = {"a:2;b:2;c:4;d:4;e:4;f:8;g:8;h:8;i:8;j:16;","a:4;b:4;c:8;d:8;e:16;"}
-	WyckoffWave[122] = {"a:1;b:1;c:1;d:1;e:2;f:2;g:2;h:2;i:4;j:4;k:4;l:4;m:4;n:4;o:4;p:8;q:8;r:8;s:8;t:8;u:16;"}
-	WyckoffWave[123] = {"a:2;c:2;b:2;d:2;e:4;f:4;g:4;h:4;i:8;j:8;k:8;l:8;m:8;n:16;"}
-	WyckoffWave[124] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:8;j:8;k:8;l:8;m:8;n:16;","a:2;b:2;c:4;d:4;e:4;f:8;g:8;h:8;i:8;j:8;k:16;"}
-	WyckoffWave[126] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:4;h:4;i:8;j:8;k:8;l:16;","a:2;b:2;c:4;d:4;e:4;f:8;g:8;h:8;i:16;"}
-	WyckoffWave[128] = {"a:2;b:2;c:2;d:4;e:4;f:4;g:8;h:8;i:8;j:8;k:16;","a:4;b:4;c:4;d:8;e:8;f:8;g:16;"}
-	WyckoffWave[130] = {"a:2;b:2;c:2;d:2;e:2;f:2;g:4;h:4;i:4;j:4;k:4;l:4;m:4;n:8;o:8;p:8;q:8;r:16;","a:2;c:2;b:2;d:2;e:4;f:4;g:4;h:4;i:4;j:4;k:8;l:8;m:8;n:8;o:8;p:16;"}
-	WyckoffWave[132] = {"a:4;b:4;c:4;d:4;e:8;f:8;g:8;h:8;i:8;j:8;k:16;","a:2;b:2;c:4;d:4;e:4;f:4;g:4;h:8;i:8;j:8;k:8;l:8;m:8;n:16;"}
-	WyckoffWave[134] = {"a:4;b:4;c:4;d:4;e:8;f:8;g:8;h:8;i:16;","a:2;b:2;c:4;d:4;e:4;f:4;g:4;h:8;i:8;j:8;k:16;"}
-	WyckoffWave[136] = {"a:2;b:2;c:4;d:4;e:8;f:8;g:8;h:16;","a:4;b:4;c:4;d:4;e:4;f:8;g:8;h:8;i:8;j:16;"}
-	WyckoffWave[138] = {"a:2;b:2;c:4;d:4;e:4;f:8;g:8;h:8;i:8;j:8;k:16;l:16;m:16;n:16;o:32;","a:4;b:4;c:4;d:4;e:8;f:8;g:8;h:8;i:16;j:16;k:16;l:16;m:32;"}
-	WyckoffWave[140] = {"a:4;b:4;c:8;d:8;e:8;f:16;g:16;h:16;i:32;","a:8;b:8;c:16;d:16;e:16;f:16;g:32;","a:1;b:1;c:1;d:3;","a:3;"}
-	WyckoffWave[144] = {"a:3;","a:3;b:9;","a:1;b:1;c:2;d:2;e:3;f:3;g:6;","a:3;b:3;c:6;d:9;e:9;f:18;"}
-	WyckoffWave[148] = {"a:1;b:1;c:1;d:1;e:1;f:1;g:2;h:2;i:2;j:3;k:3;l:6;","a:1;b:1;c:2;d:2;e:3;f:3;g:6;","a:3;b:3;c:6;","a:3;b:3;c:6;"}
-	WyckoffWave[152] = {"a:3;b:3;c:6;","a:3;b:3;c:6;","a:3;b:3;c:6;d:9;e:9;f:18;","a:1;b:1;c:1;d:3;e:6;","a:1;b:2;c:3;d:6;","a:2;b:2;c:2;d:6;"}
-	WyckoffWave[158] = {"a:2;b:2;c:6;","a:3;b:9;c:18;","a:6;b:18;","a:1;b:1;c:2;d:2;e:2;f:3;g:3;h:4;i:6;j:6;k:6;l:12;"}
-	WyckoffWave[162] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:6;h:6;i:12;","a:1;b:1;c:2;d:2;e:3;f:3;g:6;h:6;i:6;j:12;","a:2;b:2;c:4;d:4;e:6;f:6;g:12;"}
-	WyckoffWave[165] = {"a:3;b:3;c:6;e:9;d:9;f:18;g:18;h:18;i:36;","a:6;b:6;c:12;d:18;e:18;f:36;","a:1;b:2;c:3;d:6;","a:6;","a:6;"}
-	WyckoffWave[170] = {"a:3;b:3;c:6;","a:3;b:3;c:6;","a:2;b:2;c:6;","a:1;b:1;c:1;d:1;e:1;f:1;g:2;h:2;i:2;j:3;k:3;l:6;"}
-	WyckoffWave[174] = {"a:1;b:1;c:2;d:2;e:2;f:3;g:3;h:4;i:6;j:6;k:6;l:12;","a:2;b:2;c:2;d:2;e:4;f:4;g:6;h:6;i:12;"}
-	WyckoffWave[176] = {"a:1;b:1;c:2;d:2;e:2;f:3;g:3;h:4;i:6;j:6;k:6;l:6;m:6;n:12;","a:6;b:6;c:12;","a:6;b:6;c:12;"}
-	WyckoffWave[179] = {"a:3;b:3;c:3;d:3;e:6;f:6;g:6;h:6;i:6;j:6;k:12;","a:3;b:3;c:3;d:3;e:6;f:6;g:6;h:6;i:6;j:6;k:12;"}
-	WyckoffWave[181] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:6;h:6;i:12;","a:1;b:2;c:3;d:6;e:6;f:12;","a:2;b:4;c:6;d:12;","a:2;b:4;c:6;d:12;"}
-	WyckoffWave[185] = {"a:2;b:2;c:6;d:12;","a:1;b:1;c:1;d:1;e:1;f:1;g:2;h:2;i:2;j:3;k:3;l:6;m:6;n:6;o:12;"}
-	WyckoffWave[187] = {"a:2;c:2;e:2;b:2;d:2;f:2;g:4;h:4;i:4;j:6;k:6;l:12;","a:1;b:1;c:2;d:2;e:2;f:3;g:3;h:4;i:6;j:6;k:6;l:12;"}
-	WyckoffWave[189] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:6;h:6;i:12;","a:1;b:1;c:2;d:2;e:2;f:3;g:3;h:4;i:6;j:6;k:6;l:6;m:6;n:12;o:12;p:12;q:12;r:24;"}
-	WyckoffWave[191] = {"a:2;b:2;c:4;d:4;e:4;f:6;g:6;h:8;i:12;j:12;k:12;l:12;m:24;","a:2;b:2;c:4;d:4;e:4;f:6;g:6;h:8;i:12;j:12;k:12;l:24;"}
-	WyckoffWave[193] = {"a:2;b:2;c:2;d:2;e:4;f:4;g:6;h:6;i:12;j:12;k:12;l:24;","a:1;b:1;c:3;d:3;e:4;f:6;i:6;g:6;h:6;j:12;"}
-	WyckoffWave[195] = {"a:4;b:4;c:4;d:4;e:16;f:24;g:24;h:48;","a:2;b:6;c:8;d:12;e:12;f:24;","a:4;b:12;"}
-	WyckoffWave[198] = {"a:8;b:12;c:24;","a:1;b:1;c:3;d:3;e:6;h:6;f:6;g:6;i:8;j:12;k:12;l:24;"}
-	WyckoffWave[200] = {"a:2;b:4;c:4;d:6;e:8;f:12;g:12;h:24;","a:4;b:4;c:8;d:24;e:24;f:32;g:48;h:48;i:96;"}
-	WyckoffWave[202] = {"a:8;b:8;c:16;d:16;e:32;f:48;g:96;","a:2;b:6;c:8;d:12;e:12;f:16;g:24;h:48;"}
-	WyckoffWave[204] = {"a:4;b:4;c:8;d:24;","a:8;b:8;c:16;d:24;e:48;"}
-	WyckoffWave[206] = {"a:1;b:1;c:3;d:3;e:6;f:6;g:8;h:12;i:12;j:12;k:24;","a:2;b:4;c:4;d:6;e:6;f:6;g:8;h:12;i:12;j:12;k:12;l:12;m:24;"}
-	WyckoffWave[208] = {"a:4;b:4;c:8;d:24;e:24;f:32;g:48;h:48;i:48;j:96;","a:8;b:8;c:16;d:16;e:32;f:48;g:48;h:96;"}
-	WyckoffWave[210] = {"a:2;b:6;c:8;d:12;e:12;f:16;g:24;h:24;i:24;j:48;","a:4;b:4;c:8;d:12;e:24;"}
-	WyckoffWave[212] = {"a:4;b:4;c:8;d:12;e:24;","a:8;b:8;c:12;d:12;e:16;f:24;h:24;g:24;i:48;"}
-	WyckoffWave[214] = {"a:1;b:1;c:3;d:3;e:4;f:6;g:6;h:12;i:12;j:24;","a:4;b:4;c:4;d:4;e:16;f:24;g:24;h:48;i:96;"}
-	WyckoffWave[216] = {"a:2;b:6;c:8;d:12;e:12;f:24;g:24;h:48;","a:2;b:6;c:6;d:6;e:8;f:12;g:12;h:12;i:24;"}
-	WyckoffWave[218] = {"a:8;b:8;c:24;d:24;e:32;f:48;g:48;h:96;","a:12;b:12;c:16;d:24;e:48;"}
-	WyckoffWave[220] = {"a:1;b:1;c:3;d:3;e:6;f:6;g:8;h:12;i:12;j:12;k:24;l:24;m:24;n:48;","a:2;b:6;c:8;d:12;e:12;f:16;g:24;h:24;i:48;"}
-	WyckoffWave[222] = {"a:2;b:6;c:6;d:6;e:8;f:12;g:12;h:12;i:16;j:24;k:24;l:48;","a:2;b:4;c:4;d:6;e:8;f:12;g:12;h:24;i:24;j:24;k:24;l:48;"}
-	WyckoffWave[224] = {"a:4;b:4;c:8;d:24;e:24;f:32;g:48;h:48;i:48;j:96;k:96;l:192;","a:8;b:8;c:24;d:24;e:48;f:48;g:64;h:96;i:96;j:192;"}
-	WyckoffWave[226] = {"a:8;b:8;c:16;d:16;e:32;f:48;g:96;h:96;i:192;","a:16;b:32;c:32;d:48;e:64;f:96;g:96;h:192;"}
-	WyckoffWave[228] = {"a:2;b:6;c:8;d:12;e:12;f:16;g:24;h:24;i:48;j:48;k:48;l:96;","a:16;b:16;c:24;d:24;e:32;f:48;g:48;h:96;"}
-	return WyckoffWave[SG-1]
-End
 //Function testWyckoff(SG,letter)
 //	Variable SG
 //	String letter
 //
 //	String mStr = LatticeSym#WyckoffMenuStr(SG)
 //	Variable mult = LatticeSym#WyckoffMultiplicity(SG,letter)
-//	print "list = ",LatticeSym#WyckoffStrFromSG(SG)
 //	printf "mStr = '%s'\r",mStr
 //	printf "for '%s',  mult = %g\r",letter,mult
 //	return 0
@@ -8729,36 +8614,6 @@ End
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// this is not neeed, already done by WyckoffMultiplicity(47,"A")
-
-//Function MultiplicityFromWyckoff(SG,symbol)
-//	// returns multiplicity for the Wyckoff symbol
-//	Variable SG
-//	String symbol
-//
-//	Wave/T WyckList=GetWyckoffSymStrings(SG)
-//	Variable i
-//	for (i=0;i<DimSize(WyckList,0);i+=1)
-//		if (strsearch(WyckList[i][0],symbol,0)==0)
-//			return str2num(WyckList[i][2])
-//		endif
-//	endfor
-//	return 0
-//End
 
 
 Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
@@ -8798,43 +8653,7 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 	KillVariables/Z root:temp_temp_
 	return symbol
 End
-//Static Function/T FindWyckoffSymbol(SG,x0,y0,z0,mult)
-//	Variable SG
-//	Variable x0,y0,z0
-//	Variable &mult
-//	Wave/T WyckList=GetWyckoffSymStrings(SG)
 //
-//	String sx=num2str(x0), sy=num2str(y0), sz=num2str(z0)
-//	String item, symOp, symbol=""
-//
-//	Variable xop,yop,zop
-//	Variable m, N=DimSize(WyckList,0)
-//	mult = 0
-//	for (m=0;m<N;m+=1)
-//		symOp = WyckList[m][1]
-//		symOp = ReplaceString("2x",symOp,"2*x")
-//		symOp = ReplaceString("2y",symOp,"2*y")
-//		symOp = ReplaceString("2z",symOp,"2*z")
-//		symOp = ReplaceString("x",symOp,sx)
-//		symOp = ReplaceString("y",symOp,sy)
-//		symOp = ReplaceString("z",symOp,sz)
-//
-//		Execute "Variable/G root:temp_temp_ = "+StringFromList(0,symOp,",")
-//		xop = NumVarOrDefault("root:temp_temp_",NaN)
-//		Execute "Variable/G root:temp_temp_ = "+StringFromList(1,symOp,",")
-//		yop = NumVarOrDefault("root:temp_temp_",NaN)
-//		Execute "Variable/G root:temp_temp_ = "+StringFromList(2,symOp,",")
-//		zop = NumVarOrDefault("root:temp_temp_",NaN)
-//
-//		if ((abs(xop-x0) + abs(yop-y0) + abs(zop-z0)) < 1e-4)
-//			symbol = WyckList[m][0]
-//			mult = round(str2num(WyckList[m][2]))
-//			break
-//		endif
-//	endfor
-//	KillVariables/Z root:temp_temp_
-//	return symbol
-//End
 //		//	test_FindWyckoffSymbol(47,  0, 0.5, 0.3765)
 //	Function test_FindWyckoffSymbol(SG,x0,y0,z0)
 //		Variable SG
@@ -8880,53 +8699,7 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 	KillVariables/Z root:temp_temp_
 	return 0
 End
-//Static Function ForceXYZtoWyckoff(SG,symbol,x0,y0,z0)
-//	Variable SG
-//	String symbol
-//	Variable &x0,&y0,&z0
-//	Wave/T WyckList=GetWyckoffSymStrings(SG)
-//
-//	String item, symOp=""
-//	Variable xop,yop,zop
-//	Variable m, N=DimSize(WyckList,0)
-//	for (m=0;m<N;m+=1)
-//		if (strsearch(WyckList[m][0], symbol,0)==0)
-//			symOp = WyckList[m][1]
-//		endif
-//	endfor
-//	if (strlen(symOp)<1)
-//		return 1
-//	endif
-//	symOp = ReplaceString("2x",symOp,"2*x")
-//	symOp = ReplaceString("2y",symOp,"2*y")
-//	symOp = ReplaceString("2z",symOp,"2*z")
-//	symOp = ReplaceString("x",symOp,num2str(x0))
-//	symOp = ReplaceString("y",symOp,num2str(y0))
-//	symOp = ReplaceString("z",symOp,num2str(z0))
-//
-//	Execute "Variable/G root:temp_temp_ = "+StringFromList(0,symOp,",")
-//	x0 = NumVarOrDefault("root:temp_temp_",x0)
-//	Execute "Variable/G root:temp_temp_ = "+StringFromList(1,symOp,",")
-//	y0 = NumVarOrDefault("root:temp_temp_",y0)
-//	Execute "Variable/G root:temp_temp_ = "+StringFromList(2,symOp,",")
-//	z0 = NumVarOrDefault("root:temp_temp_",z0)
-//	KillVariables/Z root:temp_temp_
-//	return 0
-//End
-//	Function test_ForceXYZtoWyckoff(SG,symbol,x0,y0,z0)
-//		Variable SG
-//		String symbol
-//		Variable x0,y0,z0
-//	
-//		String out, str
-//		sprintf out,"#%g, Wyckoff=\"%s\",   {%g, %g, %g} --> ",SG,symbol,x0,y0,z0
-//		Variable err=ForceXYZtoWyckoff(SG,symbol,x0,y0,z0)
-//		sprintf str,"{%g, %g, %g}",x0,y0,z0
-//		out += str
-//		out += SelectString(err,"","   ****** ERROR ******")
-//		print out
-//	End
-//
+
 
 Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	String SpaceGroupID
