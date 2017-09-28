@@ -8577,13 +8577,13 @@ End
 //				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
 //
 //			ONLY used by other Wyckoff routines (below this):
-//				GetWyckoffSymStrings()
+//				GetWyckoffSymStrings230()
 
 Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 	String SpaceGroupID
 	String letter
 
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
+	Wave/T Wlist=GetWyckoffSymStrings230(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
 	Variable i, N=DimSize(Wlist,0), mult=NaN
 	for (i=0;i<N;i+=1)
 		if (cmpstr(Wlist[i][0],letter)==0)
@@ -8598,7 +8598,7 @@ End
 //
 Static Function/T WyckoffMenuStr(SpaceGroupID)
 	String SpaceGroupID
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
+	Wave/T Wlist=GetWyckoffSymStrings230(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
 	Variable i, N=DimSize(Wlist,0)
 	String mStr=""
 	for (i=0;i<N;i+=1)
@@ -8634,7 +8634,7 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 	String SpaceGroupID
 	Variable x0,y0,z0
 	Variable &mult
-	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
+	Wave/T WyckList=GetWyckoffSymStrings230(SpaceGroupID)
 
 	String sx=num2str(x0), sy=num2str(y0), sz=num2str(z0)
 	String item, symOp, symbol=""
@@ -8684,7 +8684,7 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 	String SpaceGroupID
 	String symbol
 	Variable &x0,&y0,&z0
-	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
+	Wave/T WyckList=GetWyckoffSymStrings230(SpaceGroupID)
 
 	String item, symOp=""
 	Variable xop,yop,zop
@@ -8715,7 +8715,7 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 End
 
 
-Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
+Static Function/WAVE GetWyckoffSymStrings230(SpaceGroupID)
 	String SpaceGroupID
 	if (!isValidSpaceGroupID(SpaceGroupID))
 		return $""
@@ -8968,8 +8968,10 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	WyckList[][2] = StringFromList(2,StringFromList(p,list),":")
 	return WyckList
 End
-//	Function test_GetWyckoffSymStrings(SG)
-//		Variable SG
-//		Wave WyckList=GetWyckoffSymStrings(SG)
-//		print WyckList
+//	Function test_GetWyckoffSymStrings230(SpaceGroupID)
+//		String SpaceGroupID
+//		Wave WyckList=LatticeSym#GetWyckoffSymStrings230(SpaceGroupID)
+//		// print WyckList
+//		Duplicate/O WyckList, WyckListView
+//		DisplayTableOfWave(WyckListView)
 //	End
