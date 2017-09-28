@@ -178,6 +178,7 @@ Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works wel
 //	with version 6.28, simplified minus2bar(), and changed hkl2IgorBarStr()
 //	with version 6.30, fixed error writing WyckoffSymbol to an xml file
 //	with version 6.31, start to add ability to transform between different settings for the same Space Group.
+// with version 6.32, change all Wyckoff routines to use SpaceGroupID rather than SpaceGroup
 
 //	Rhombohedral Transformation:
 //
@@ -8568,8 +8569,7 @@ End
 Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 	String SpaceGroupID
 	String letter
-Variable SG = str2num(SpaceGroupID)
-	String list = WyckoffStrFromSG(SG)
+	String list = WyckoffStrFromSG(SpaceGroupID)
 	if (strlen(list)<1)
 		return 1
 	endif
@@ -8579,8 +8579,7 @@ End
 //
 Static Function/T WyckoffMenuStr(SpaceGroupID)
 	String SpaceGroupID
-Variable SG = str2num(SpaceGroupID)
-	String list = WyckoffStrFromSG(SG)
+	String list = WyckoffStrFromSG(SpaceGroupID)
 	if (strlen(list)<1)
 		return ""
 	endif
@@ -8619,12 +8618,12 @@ End
 //	return mStr
 //End
 //
-Static Function/T WyckoffStrFromSG(SG)
-	Variable SG
-	if (!isValidSpaceGroup(SG))
+Static Function/T WyckoffStrFromSG(SpaceGroupID)
+	String SpaceGroupID
+	if (!isValidSpaceGroupID(SpaceGroupID))
 		return ""
 	endif
-	SG = round(SG)
+	Variable SG = round(str2num(SpaceGroupID))
 
 	Make/N=230/FREE/T WyckoffWave=""
 	WyckoffWave[0] = {"a:1;","a:1;b:1;c:1;d:1;e:1;f:1;g:1;h:1;i:2;","a:1;b:1;c:1;d:1;e:2;","a:2;","a:2;b:2;c:4;","a:1;b:1;c:2;"}
@@ -8766,8 +8765,7 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 	String SpaceGroupID
 	Variable x0,y0,z0
 	Variable &mult
-Variable SG = str2num(SpaceGroupID)
-	Wave/T WyckList=GetWyckoffSymStrings(SG)
+	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
 
 	String sx=num2str(x0), sy=num2str(y0), sz=num2str(z0)
 	String item, symOp, symbol=""
@@ -8853,8 +8851,7 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 	String SpaceGroupID
 	String symbol
 	Variable &x0,&y0,&z0
-Variable SG = str2num(SpaceGroupID)
-	Wave/T WyckList=GetWyckoffSymStrings(SG)
+	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
 
 	String item, symOp=""
 	Variable xop,yop,zop
@@ -8931,11 +8928,12 @@ End
 //	End
 //
 
-Static Function/WAVE GetWyckoffSymStrings(SG)
-	Variable SG
-	if (!isValidSpaceGroup(SG))
+Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
+	String SpaceGroupID
+	if (!isValidSpaceGroupID(SpaceGroupID))
 		return $""
 	endif
+	Variable SG = round(str2num(SpaceGroupID))
 
 	Make/N=(230)/T/FREE WyckoffSyms
 	// Triclinic [1,2]  lines 0-1
