@@ -7232,61 +7232,45 @@ Static Function/WAVE ParseOneSymExpression(expression)	// parse one expression o
 	expression = TrimFront(expression,chars="+")	// remove any leading "+"
 
 	Make/N=4/D/FREE vec=0
-	Variable i, N=ItemsInList(expression,"+")
 	String term
-	for (i=0;i<4;i+=1)							// look for x, y, z
+	Variable i=0, N=ItemsInList(expression,"+")
+	do
 		term = StringFromList(i,expression,"+")
-
-		if (strsearch(term,"x",0)>=0)
+		if (strlen(term)<1)
+			break
+		elseif (strsearch(term,"x",0)>=0)
 			term = ReplaceString("-x",term,"-1")
 			term = ReplaceString("x",term,"")
-			vec[0] = arithmetic(term,1)
+			vec[0] += arithmetic(term,def=1)
 		elseif (strsearch(term,"y",0)>=0)
 			term = ReplaceString("-y",term,"-1")
 			term = ReplaceString("y",term,"")
-			vec[1] = arithmetic(term,1)
+			vec[1] += arithmetic(term,def=1)
 		elseif (strsearch(term,"z",0)>=0)
 			term = ReplaceString("-z",term,"-1")
 			term = ReplaceString("z",term,"")
-			vec[2] = arithmetic(term,1)
+			vec[2] += arithmetic(term,def=1)
 		else
-			vec[3] = arithmetic(term,0)
+			vec[3] += arithmetic(term,def=0)
 		endif
-	endfor
+		i += 1
+	while (1)
 	return vec
 End
 //	Function test_ParseOneSymExpression()
 //		String expression = "2/3*x-1/3*y-1/3*z + -1/7"
-//		Wave vec = ParseOneSymExpression(expression)
+//		Wave vec = LatticeSym#ParseOneSymExpression(expression)
+//		print expression,"  -->  ",vec2str(vec)
+//	
+//		expression = "2/3*x-1/3*y"
+//		Wave vec = LatticeSym#ParseOneSymExpression(expression)
+//		print expression,"  -->  ",vec2str(vec)
+//	
+//		expression = "2/3*x-1/3*y-1/3*z + -1/7 + 1/7"
+//		Wave vec = LatticeSym#ParseOneSymExpression(expression)
 //		print expression,"  -->  ",vec2str(vec)
 //	End
-//
-Static Function arithmetic(nstr,def)
-	String nstr				// string evaluates to a NUMBER, nstr is something like "1/3 + 5" or "-1/3 + 5"
-	Variable def			// default value, usually 1 or 0
-	if (strlen(nstr)<1)
-		return def
-	endif
 
-	nstr = ReplaceString(" ",nstr,"")		// no spaces
-	nstr = ReplaceString("-",nstr,"+-")
-	nstr = TrimFront(nstr,chars="+")		// remove any leading "+"
-
-	String term
-	Variable i, val, N=ItemsInList(nstr,"+")
-	for (i=0, val=0; i<N; i+=1)
-		term = StringFromList(i,nstr,"+")
-		if (strsearch(term,"/",0)>0)
-			val += str2num(StringFromList(0,term,"/")) / str2num(StringFromList(1,term,"/"))
-		elseif (strsearch(term,"*",0)>0)
-			val += str2num(StringFromList(0,term,"*")) * str2num(StringFromList(1,term,"*"))
-		else
-			val += str2num(term)
-		endif
-	endfor
-	val = numtype(val)==2 ? def : val
-	return val
-End
 
 
 

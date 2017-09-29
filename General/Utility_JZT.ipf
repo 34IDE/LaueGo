@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.41
+#pragma version = 4.42
 // #pragma hide = 1
 
 Menu "Graph"
@@ -119,6 +119,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
 //		normalize(a), normalizes a if it is a vector or square matrix
 //		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
+//		arithmetic(expression), return value of expression as a real number, e.g. "1/3 + 5" --> 5.33333   or "sqrt(2)" --> 1.41421
 //		maxValueOfType(w), returns largest number that can be stored in a wave of specified type
 //		DefaultZeroThresh(w), returns a smallest number that the wave type can store, useful for printing zeros.
 //		OrderValues(x0,x1), x0 and x1 are optionally swapped so that x0<x1 (x0 & x1 are passed by reference)
@@ -135,7 +136,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		RemoveLeadingString(str,head,ignoreCase), removes head from start of str
 //		RemoveTrailingString(str,tail,ignoreCase), removes tail from end of str
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
-//		use funcions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
+//		use functions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
 //		StopAllTimers(), stops all the Igor timers
@@ -3532,6 +3533,22 @@ ThreadSafe Function isPositiveInts(ww,[tol])
 	MatrixOp/FREE tw = ReplaceNaNs(ww,0)	// ensure no NaN, (Inf is passed)
 	MatrixOp/FREE test = sum(greater(abs(round(tw)-tw),tol))
 	return test[0]<1					// if test[0] is 0, then all are ints
+End
+
+
+Function arithmetic(expression,[def])
+	String expression		// a string that evaluates to a NUMBER, e.g. "1/3 + 5" or "-1/3 + 5"
+	Variable def			// default value, usually 1 or 0 or NaN
+	def = ParamIsDefault(def) ? NaN : def
+	String cmd
+	sprintf cmd, "Variable val__temp__ = (%s)",expression
+	Execute/Z cmd
+	Variable val=def
+	if (V_flag==0)
+		val = NumVarOrDefault("val__temp__",def)
+	endif
+	KillVariables/Z val__temp__
+	return val
 End
 
 
