@@ -8593,7 +8593,7 @@ End
 //
 //	================================================================================
 //
-//			This section is for making the matricies for the symmetry operations for Space Groups
+//			This section is for making the matricies for the symmetry operations for Wyckoff Symbols
 // 		the Funcitons associated with Wyckoff symbols are:
 //			used by regular routines (above this):
 //				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
