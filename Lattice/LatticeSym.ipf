@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
 #pragma version = 6.32
-#include "Utility_JZT" version>=4.36
+#include "Utility_JZT" version>=4.42
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -7161,7 +7161,7 @@ Static Function/WAVE GetSettingTransForm(id)
 	CBMs[521] = {"x+1/4,y+1/4,z+1/4","x,y,z","x,y,z","x,y,z","x+1/8,y+1/8,z+1/8","x,y,z","x+3/8,y+3/8,z+3/8","x,y,z","x,y,z"}
 
 	String CBMx = CBMs[i-1]
-	Wave mat = MatrixFromSymLine(CBMx,3)						// (3,3) matrix, NONE of the CBM have a constant part, so a (4,4) mat is pointless
+	Wave mat = MatrixFromSymLine(CBMx,3,zeroBad=1)		// (3,3) matrix, NONE of the CBM have a constant part, so a (4,4) mat is pointless
 	String wnote="waveClass=ChangeBasisMat"					// fill the wave note
 	wnote = ReplaceStringByKey("SGid",wnote,id,"=")
 	wnote = ReplaceStringByKey("CBMx",wnote,CBMx,"=")
@@ -7186,9 +7186,12 @@ End
 //	End
 //
 // makes one matrix either (3,3) or (4,4) from the symmetry op string
-Static Function/WAVE MatrixFromSymLine(symOp,dim)	// returns either 3x3 or 4x4 matrix
+Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x3 or 4x4 matrix
 	String symOp													// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
 	Variable dim													// either 3 or 4
+	Variable zeroBad												// if 1, do not allow |mat3| near zero
+	zeroBad = ParamIsDefault(zeroBad) || numtype(zeroBad) ? 0 : zeroBad
+
 	if (dim!=3 && dim!=4)
 		return $""
 	endif
@@ -7199,7 +7202,7 @@ Static Function/WAVE MatrixFromSymLine(symOp,dim)	// returns either 3x3 or 4x4 m
 	for (i=0,err=0; i<3; i+=1)
 		expression = StringFromList(i,symOp,",")
 
-		Wave vec = ParseOneSymExpression(expression)	// parse one expression of form "-x+y"  or "-x", or "-x+y", etc.
+		Wave vec = LatticeSym#ParseOneSymExpression(expression)	// parse one expression of form "-x+y"  or "-x", or "-x+y", etc.
 		if (!WaveExists(vec))
 			err = 1
 			break
@@ -7207,7 +7210,7 @@ Static Function/WAVE MatrixFromSymLine(symOp,dim)	// returns either 3x3 or 4x4 m
 		mat[i][] = vec[q]											// vec is always [4], but this still works for dim=3
 	endfor
 
-	if (!err)
+	if (!err && zeroBad)										// skip this if !zeroBad
 		Make/N=(3,3)/D/FREE mat3 = mat[p][q]				// mat3 is ALWAYS (3,3)
 		err = err || (MatrixDet(mat3)<0.001)
 	endif
@@ -7216,6 +7219,36 @@ Static Function/WAVE MatrixFromSymLine(symOp,dim)	// returns either 3x3 or 4x4 m
 	endif
 	return mat
 End
+//Static Function/WAVE MatrixFromSymLine(symOp,dim)	// returns either 3x3 or 4x4 matrix
+//	String symOp													// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
+//	Variable dim													// either 3 or 4
+//	if (dim!=3 && dim!=4)
+//		return $""
+//	endif
+//	Make/N=(dim,dim)/D/FREE mat=0							// either (3,3) or (4,4)
+//
+//	String expression
+//	Variable i, err
+//	for (i=0,err=0; i<3; i+=1)
+//		expression = StringFromList(i,symOp,",")
+//
+//		Wave vec = ParseOneSymExpression(expression)	// parse one expression of form "-x+y"  or "-x", or "-x+y", etc.
+//		if (!WaveExists(vec))
+//			err = 1
+//			break
+//		endif
+//		mat[i][] = vec[q]											// vec is always [4], but this still works for dim=3
+//	endfor
+//
+//	if (!err)
+//		Make/N=(3,3)/D/FREE mat3 = mat[p][q]				// mat3 is ALWAYS (3,3)
+//		err = err || (MatrixDet(mat3)<0.001)
+//	endif
+//	if (err)
+//		WaveClear mat
+//	endif
+//	return mat
+//End
 //
 Static Function/WAVE ParseOneSymExpression(expression)	// parse one expression of form "-x+y"  or "-x", or "-x+y, etc.
 	String expression
