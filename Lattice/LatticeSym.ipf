@@ -5039,7 +5039,7 @@ Function reMakeAtomXYZs(xtal)
 	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
 	Variable m
 	for (m=0;m<xtal.N;m+=1)						// loop over each atom type
-		name="root:Packages:Lattices:atom"+num2istr(m)
+		name = "root:Packages:Lattices:atom"+num2istr(m)
 		Make/N=3/O/D $name
 		Wave ww = $name
 		positionsOfOneAtomType(xtal,xtal.atom[m].x,xtal.atom[m].y,xtal.atom[m].z,ww)
@@ -5091,7 +5091,9 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		mat = mats[m][p][q]
 		bv = bvecs[m][p]
 		MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
-		rr = mod(rr,1) + (rr<0 ? 1 : 0)			// atom's fractional rhombohedral coordinates in [0,1), the first unit cell
+		MatrixOp/FREE rr = rr - floor(rr)		// reduce to [0,1), the first unit cell
+		rr = mod(rr,1)
+		rr = rr<1e-12 ? 0 : rr						// a fractional coord < 1e-12 is 0
 
 		MatrixOP/FREE vec = direct x rr			// real space vector for rr
 		if (Neq<2)
@@ -6222,7 +6224,9 @@ Static Function Rhom2HexFractonal(xtal)					// converts hexagonal --> rhombohedr
 	for (i=0; i < xtal.N; i+=1)
 		xyzR = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
 		MatrixOP/FREE xyzH = Inv(directH) x directR x xyzR
-		xyzH = mod(xyzH,1) + (xyzH<0 ? 1 : 0)		// atom's fractional rhombohedral coordinates
+		MatrixOp/FREE xyzH = xyzH - floor(xyzH)	// atom's fractional hexagonal coordinates
+		xyzH = mod(xyzH,1)
+		xyzH = xyzH<1e-12 ? 0 : mod(xyzH,1)		// a fractional coord < 1e-12 is 0
 		printf "fractional: Rhom=%s  -->  Hex=%s\r",vec2str(xyzR,zeroThresh=1e-12),vec2str(xyzH,zeroThresh=1e-12)
 	endfor
 End
@@ -6243,7 +6247,8 @@ Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral
 	for (i=0; i < xtal.N; i+=1)
 		xyzH = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
 		MatrixOP/FREE xyzR = Inv(directR) x directH x xyzH
-		xyzR = mod(xyzR,1) + (xyzR<0 ? 1 : 0)		// atom's fractional rhombohedral coordinates
+		MatrixOp/FREE xyzR = xyzR - floor(xyzR)	// atom's fractional rhombohedral coordinates
+		xyzR = xyzR<1e-12 ? 0 : mod(xyzR,1)		// a fractional coord < 1e-12 is 0
 		printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
 	endfor
 End
