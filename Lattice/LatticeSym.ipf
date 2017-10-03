@@ -179,6 +179,7 @@ Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works wel
 //	with version 6.30, fixed error writing WyckoffSymbol to an xml file
 //	with version 6.31, start to add ability to transform between different settings for the same Space Group.
 //	with version 6.32, change all Wyckoff routines to use SpaceGroupID rather than SpaceGroup
+//	with version 6.34, Wyckoff routines may be done, and can change the xtal setting
 
 //	Rhombohedral Transformation:
 //
@@ -243,6 +244,7 @@ Menu "Analysis"
 		help={"Calculate mu (absorption factor) using current lattice structure"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
+		"Change Current xtal Setting...", ChangeSettingCurrentXtal("")
 		"\\M0Space Group number <--> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 		"Describe the Symmetry Operations", DescribeSymOps($"")
@@ -8747,8 +8749,8 @@ End
 //  ======================================================================================  //
 //  =========================== Start of Change Crystal Setting ==========================  //
 
-Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the current default xtal
-	String id										// the requested target id
+Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CURRENT xtal
+	String id										// the requested target id, if "", then prompt the user
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
@@ -8758,59 +8760,62 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the cu
 		return 1
 	endif
 
-	if (!ChangeXtalSetting(xtal, id, printIt=printIt))
-		SVAR crystalStructStr = root:Packages:Lattices:PanelValues:crystalStructStr
-		StructPut/S xtal, crystalStructStr
-
-		NVAR dirty = root:Packages:Lattices:PanelValues:dirty
-		SVAR desc = root:Packages:Lattices:PanelValues:desc
-		SVAR SpaceGroupID = root:Packages:Lattices:PanelValues:SpaceGroupID
-		NVAR a = root:Packages:Lattices:PanelValues:a
-		NVAR b = root:Packages:Lattices:PanelValues:b
-		NVAR c = root:Packages:Lattices:PanelValues:c
-		NVAR alpha = root:Packages:Lattices:PanelValues:alpha
-		NVAR bet = root:Packages:Lattices:PanelValues:bet
-		NVAR gam = root:Packages:Lattices:PanelValues:gam
-		if (NVAR_Exists(a) && NVAR_Exists(b) && NVAR_Exists(c))
-			a = xtal.a	;	b = xtal.b	;	c = xtal.c
-		endif
-		if (NVAR_Exists(alpha) && NVAR_Exists(bet) && NVAR_Exists(gam))
-			alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
-		endif
-		if (NVAR_Exists(dirty))
-			dirty = 1
-		endif
-		if (SVAR_Exists(SpaceGroupID))
-			SpaceGroupID = xtal.SpaceGroupID
-		endif
-		if (SVAR_Exists(desc))
-			desc = xtal.desc
-		endif
-
-		String wList=LatticeSetPanelList(), win
-		if (ItemsInList(WinList("LatticeSet",";","WIN:64"))==1)	// a #LatticePanel is displayed
-			dirty = 1	;	SpaceGroupID = xtal.SpaceGroupID
-			a = xtal.a	;	b = xtal.b	;	c = xtal.c
-			alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
-			Variable i
-			STRUCT WMSetVariableAction sva
-			sva.eventCode = 2
-			STRUCT WMButtonAction ba
-			ba.eventCode = 2
-			ba.ctrlName = "buttonLatticeSave"
-			for (i=0;i<ItemsInList(wList);i+=1)	// update all occurances of the #LatticePanel
-				win = StringFromList(i,wList)
-				sva.win = win
-				LatticePanelParamProc(sva)
-				ba.win = win
-				LatticePanelButtonProc(ba)
-			endfor
-		else													// NO #LatticePanel is up
-			ForceLatticeToStructure(xtal)
-			UpdateCrystalStructureDefaults(xtal)	// update the default xtal
-		endif
-
+	if (ChangeXtalSetting(xtal, id, printIt=printIt))	// failed to change the setting
+		return 1
 	endif
+
+	// update everything, first the Panel values
+	SVAR crystalStructStr = root:Packages:Lattices:PanelValues:crystalStructStr
+	StructPut/S xtal, crystalStructStr
+
+	NVAR dirty = root:Packages:Lattices:PanelValues:dirty
+	SVAR desc = root:Packages:Lattices:PanelValues:desc
+	SVAR SpaceGroupID = root:Packages:Lattices:PanelValues:SpaceGroupID
+	NVAR a = root:Packages:Lattices:PanelValues:a
+	NVAR b = root:Packages:Lattices:PanelValues:b
+	NVAR c = root:Packages:Lattices:PanelValues:c
+	NVAR alpha = root:Packages:Lattices:PanelValues:alpha
+	NVAR bet = root:Packages:Lattices:PanelValues:bet
+	NVAR gam = root:Packages:Lattices:PanelValues:gam
+	if (NVAR_Exists(a) && NVAR_Exists(b) && NVAR_Exists(c))
+		a = xtal.a	;	b = xtal.b	;	c = xtal.c
+	endif
+	if (NVAR_Exists(alpha) && NVAR_Exists(bet) && NVAR_Exists(gam))
+		alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
+	endif
+	if (NVAR_Exists(dirty))
+		dirty = 1
+	endif
+	if (SVAR_Exists(SpaceGroupID))
+		SpaceGroupID = xtal.SpaceGroupID
+	endif
+	if (SVAR_Exists(desc))
+		desc = xtal.desc
+	endif
+
+	String wList=LatticeSetPanelList(), win
+	if (ItemsInList(WinList("LatticeSet",";","WIN:64"))==1)	// a #LatticePanel is displayed
+		dirty = 1	;	SpaceGroupID = xtal.SpaceGroupID
+		a = xtal.a	;	b = xtal.b	;	c = xtal.c
+		alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
+		Variable i
+		STRUCT WMSetVariableAction sva
+		sva.eventCode = 2
+		STRUCT WMButtonAction ba
+		ba.eventCode = 2
+		ba.ctrlName = "buttonLatticeSave"
+		for (i=0;i<ItemsInList(wList);i+=1)	// update all occurances of the #LatticePanel
+			win = StringFromList(i,wList)
+			sva.win = win
+			LatticePanelParamProc(sva)
+			ba.win = win
+			LatticePanelButtonProc(ba)
+		endfor
+	else													// NO #LatticePanel is displayed
+		ForceLatticeToStructure(xtal)
+		UpdateCrystalStructureDefaults(xtal)	// update the default xtal
+	endif
+	return 0
 End
 //
 Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of given xtal structure 
@@ -8828,7 +8833,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 		return 1
 	endif
 
-	if (!(SG==str2num(id)))					// no id given, ask
+	if (!(SG==str2num(id)))					// no id given, ask the user
 		String defaultID = FindDefaultIDforSG(xtal.SpaceGroup)
 		String allIDs=MakeAllIDs()
 		String idList="", idNumList = symmtry2SG(num2str(SG)+"*", types=16)	// find the Space Group number from the symmetry string
@@ -8844,7 +8849,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 			id = StringFromList(idNum-1,allIDs)
 			def = cmpstr(id, defaultID) == 0
 			if (cmpstr(id, xtal.SpaceGroupID) == 0)
-				continue
+				continue								// skip the current setting
 			endif
 			id += ",  " + getHMsym2(idNum)
 			if (def)
@@ -8852,7 +8857,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 			endif
 			idList += id+";"
 		endfor
-		id = defaultID							// preset to default id
+		id = defaultID								// preset to default id
 		String str
 		sprintf str, "Target Space Group ID  (currently it is '%s')",xtal.SpaceGroupID
 		Prompt id, str, popup, idList
@@ -8878,7 +8883,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 		print_crystalStructure(xtal, brief=1)
 	endif
 
-	ConvertSetting(xtal, id)				// change setting of xtal from: xtal.SpaceGroupID --> id
+	ConvertSetting(xtal, id)					// change setting of xtal from: xtal.SpaceGroupID --> id
 
 	if (StringMatch(xtal.SpaceGroupID,"167:R"))
 		xtal.desc = "Al2O3 Sapphire (rhombohedral)"
