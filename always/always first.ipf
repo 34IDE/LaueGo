@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.77
+#pragma version = 2.78
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -33,13 +33,21 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 	if ((kind==1) || (kind==2))		// an experiment (packed or unpacked)
 		PathInfo $pathName				// expand the path name, "/Users/name/data/Copper" is better than "home'
 		pathName = SelectString(V_flag,pathName+":",S_path)
-		printf "\r%s  %s  restarting this file on '%s' from '%s%s'  [%s]\r\r",date(),time(),getHostName(1),pathName,file,VersionStatusHash(0)
+		String strLG = VersionStatusHash(0,"LaueGo")
+		strLG = SelectString(strlen(strLG), "", "  ["+strLG+"]")
+		String strLocal = VersionStatusHash(0,"LocalPackages")
+		strLocal = SelectString(strlen(strLocal), "", "  ["+strLocal+"]")
+		printf "\r%s  %s  restarting this file on '%s' from '%s%s'%s%s\r\r",date(),time(),getHostName(1),pathName,file,strLG,strLocal
 		ExperimentModified 0			// mark this experiment as still unmodified
 	endif
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
-	printf "%s  %s  starting new Untitled Igor Experiment on '%s'  [%s]\r\r",date(),time(),getHostName(1),VersionStatusHash(0)
+	String strLG = VersionStatusHash(0,"LaueGo")
+	strLG = SelectString(strlen(strLG), "", "  ["+strLG+"]")
+	String strLocal = VersionStatusHash(0,"LocalPackages")
+	strLocal = SelectString(strlen(strLocal), "", "  ["+strLocal+"]")
+	printf "%s  %s  starting new Untitled Igor Experiment on '%s'%s%s\r\r",date(),time(),getHostName(1),strLG,strLocal
 
 	CheckStartupPrefs()
 	ExperimentModified 0				// mark this experiment as still unmodified
@@ -67,10 +75,12 @@ Static Function/S getHostName(local)	// return unix hostname
 	return S_value[1,i]					// first & last char are double-quotes, remove
 End
 
-Static Function/S VersionStatusHash(full)
+Static Function/S VersionStatusHash(full,fldr)
 	Variable full							// if true returns full hash, otherwise only first 6 characters of buf
+	String fldr								// usually either "LaueGo" or "LocalPackages"
+
 	Variable f
-	String fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:LaueGo:VersionStatus.xml"
+	String fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":VersionStatus.xml"
 	Open/R/Z f as fname
 	if (V_flag)								// check in 6, Open has trouble following links
 		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
