@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.43
+#pragma version = 0.44
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -351,6 +351,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	title += SelectString(strlen(str), "", "  "+str)
 	wNote = "waveClass=atomViewXYZ;"
 	wNote = ReplaceStringByKey("sourceFldr",wNote,GetWavesDataFolder(xyz,1),"=")
+	wNote = ReplaceStringByKey("SpaceGroupID",wNote,xtal.SpaceGroupID,"=")
 	wNote = ReplaceStringByKey("desc",wNote,desc,"=")
 	wNote = ReplaceStringByKey("title",wNote,title,"=")
 	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
@@ -1115,6 +1116,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	if (strlen(title)<1)
 		title = StringByKey("desc",wNote,"=")
 	endif
+	String SpaceGroupID = StringByKey("SpaceGroupID",wnote,"=")
 
 	Variable Na,Nb,Nc
 	String title2="", title3=""
@@ -1455,7 +1457,11 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 #endif
 
 #if (IgorVersion()<7)
-	Execute "ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}"
+	if (strsearch(SpaceGroupID,":R",0)>0)
+		Execute "ModifyGizmo SETQUATERNION={0.5,0.707107,0,0.5}"
+	else
+		Execute "ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}"
+	endif
 	Execute "ModifyGizmo autoscaling=1"
 	Execute "ModifyGizmo currentGroupObject=\"\""
 	if (strlen(scaleBarGroup))
@@ -1469,7 +1475,11 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Execute "ModifyGizmo bringToFront"
 	Execute "ModifyGizmo endRecMacro"
 #else
-	ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}
+	if (strsearch(SpaceGroupID,":R",0)>0)
+		ModifyGizmo SETQUATERNION={0.5,sqrt(0.5),0,0.5}
+	else
+		ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}
+	endif
 	ModifyGizmo autoscaling=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))
