@@ -1,8 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.33
-#include "Utility_JZT" version>=4.42
+#pragma version = 6.34
+#include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -1661,9 +1661,11 @@ Function hkl2Q(h,k,l, qvec,[normal])				// compute qvector for (h,k,l), returns 
 	return Qlen
 End
 
-Function angleBetweenHKLs(h1,k1,l1,  h2,k2,l2)		// find angle between (h1,k1,l1) and (h2,k2,l2)
+Function angleBetweenHKLs(h1,k1,l1,  h2,k2,l2, [printIt])	// find angle between (h1,k1,l1) and (h2,k2,l2)
 	Variable h1,k1,l1,h2,k2,l2
-	if (numtype(h1+k1+l1+h2+k2+l2) && ItemsInList(GetRTStackInfo(0))<2 )
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (numtype(h1+k1+l1+h2+k2+l2) && printIt )
 		h1 = numtype(h1) ? 0 : h1
 		k1 = numtype(k1) ? 0 : k1
 		l1 = numtype(l1) ? 2 : l1
@@ -1681,6 +1683,7 @@ Function angleBetweenHKLs(h1,k1,l1,  h2,k2,l2)		// find angle between (h1,k1,l1)
 		endif
 		sscanf hklStr1, "%g %g %g",h1,k1,l1
 		sscanf hklStr2, "%g %g %g",h2,k2,l2
+		printIt = 1
 	endif
 
 	STRUCT crystalStructure xtal
@@ -1701,7 +1704,7 @@ Function angleBetweenHKLs(h1,k1,l1,  h2,k2,l2)		// find angle between (h1,k1,l1)
 	Variable angle = acos(limit(MatrixDot(q1,q2),-1,1))
 	angle *= 180/PI
 	KillWaves hkl_angleBetweenHKLs1, hkl_angleBetweenHKLs2
-	if (ItemsInList(GetRTStackInfo(0))<2)
+	if (printIt)
 		printf "angle between (%s) and (%s) is %g%s\r",hkl2str(h1,k1,l1),hkl2str(h2,k2,l2),angle,DEGREESIGN
 	endif
 	return angle
@@ -2306,14 +2309,19 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Button buttonLatticeSave,help={"Save these values as the current values"}
 	Button buttonLatticeRevert,pos={35,258},size={150,20},proc=LatticePanelButtonProc,title="Revert"
 	Button buttonLatticeRevert,help={"revert to the current default"}
-	Button buttonEditAtomPositions,pos={35,283},size={150,20},proc=LatticePanelButtonProc,title="Edit Atom Positions"
-	Button buttonEditAtomPositions,help={"Manually edit the atom positions"}
-	Button buttonLatticeFromFile,pos={35,308},size={150,20},proc=LatticePanelButtonProc,title="Load from a file"
+
+	Button buttonLatticeFromFile,pos={35,283},size={150,20},proc=LatticePanelButtonProc,title="Load from a file"
 	Button buttonLatticeFromFile,help={"Fill the values in this panel from a file"}
-	Button buttonPrintLattice,pos={35,333},size={150,20},proc=LatticePanelButtonProc,title="Print Lattice to History"
+	Button buttonPrintLattice,pos={35,308},size={150,20},proc=LatticePanelButtonProc,title="Print Lattice to History"
 	Button buttonPrintLattice,help={"print lattice values to the history"}
-	Button buttonWriteLattice,pos={35,358},size={150,20},proc=LatticePanelButtonProc,title="Write Lattice to File"
+	Button buttonWriteLattice,pos={35,333},size={150,20},proc=LatticePanelButtonProc,title="Write Lattice to File"
 	Button buttonWriteLattice,help={"write current lattice values to an xml file"}
+
+	PopupMenu popupLatticeEdit,pos={35,358},size={150,20},proc=LatticeSym#LatticeEditPopMenuProc,title="Utility & Atom Edit"
+	PopupMenu popupLatticeEdit,help={"Provides supprort for editing atoms and other crystalographic changes"}
+	String mstr
+	sprintf mstr, "\"Edit Atom Positions%s;Change Current Setting%s;Find Closest hkl%s;Space Group number <--> symmetry%s;Describe the Symmetry Operations%s;angle between two hkl's%s\"", HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS
+	PopupMenu popupLatticeEdit,fSize=14,mode=0,value= #mstr
 
 	Button buttonAtomView,pos={35,383},size={150,20},proc=LatticePanelButtonProc,title="Add Atom View..."
 	Button buttonAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
@@ -2687,6 +2695,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
 		LatticePanelParamProc(sva)
 	elseif (stringmatch(ctrlName,"buttonEditAtomPositions"))
+		// there is no longer a "buttonEditAtomPositions", we get here from LatticeEditPopMenuProc()
 		if (EditAtomPositions(xtal)>=0)					// xtal has been MODIFIED
 			if (ForceLatticeToStructure(xtal))			// sets everything including remaking atom0,atom1,...
 				return NaN
@@ -2737,6 +2746,33 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		Execute/P "COMPILEPROCEDURES "
 		Execute/P "Init_PowderPatternLattice()"
 		Execute/P cmd
+	endif
+	return 0
+End
+
+
+Static Function LatticeEditPopMenuProc(pa) : PopupMenuControl		// used in the LatticeSym Panel
+	STRUCT WMPopupAction &pa
+	if (pa.eventCode != 2)
+		return 0
+	endif
+
+	if (strsearch(pa.popStr,"Edit Atom Positions",0,2)>=0)
+		STRUCT WMButtonAction ba
+		ba.eventCode = 2
+		ba.win = pa.win
+		ba.ctrlName = "buttonEditAtomPositions"
+		LatticePanelButtonProc(ba)
+	elseif (strsearch(pa.popStr,"Change Current Setting",0,2)>=0)
+		ChangeSettingCurrentXtal("",printIt=1)
+	elseif (strsearch(pa.popStr,"Find Closest hkl",0,2)>=0)
+		findClosestHKL(NaN)									// help={"Knowing either the d-spacing or the Q, find closest hkl's"}
+	elseif (strsearch(pa.popStr,"Space Group number <--> symmetry",0,2)>=0)
+		symmtry2SG("")											// help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
+	elseif (strsearch(pa.popStr,"Describe the Symmetry Operations",0,2)>=0)
+		DescribeSymOps($"", printIt=1)
+	elseif (strsearch(pa.popStr,"angle between two hkl's",0,2)>=0)
+		angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN, printIt=1)
 	endif
 	return 0
 End
@@ -8753,6 +8789,9 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	String id										// the requested target id, if "", then prompt the user
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	if (printIt)
+		printf "%sChangeSettingCurrentXtal(\"%s\")\r", BULLET,id
+	endif
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with test values
@@ -8825,11 +8864,12 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	Variable SG = xtal.SpaceGroup			// Space Group number from international tables, allowed range is [1, 230]
+	String idSource = xtal.SpaceGroupID
 	if (!isValidSpaceGroup(SG))
 		printf "ERROR -- ChangeXtalSetting(\"%s\") xtal is invalid, nothing done.\r",id
 		return 1
 	elseif (numtype(str2num(id))==0 && SG != str2num(id))
-		printf "ERROR -- ChangeXtalSetting(\"%s\"), Cannot convert setting \"%s\" --> \"%s\"\r",id, xtal.SpaceGroupID,id
+		printf "ERROR -- ChangeXtalSetting(\"%s\"), Cannot convert setting \"%s\" --> \"%s\"\r",id, idSource,id
 		return 1
 	endif
 
@@ -8848,7 +8888,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 			idNum = str2num(StringFromList(i,idNumList))
 			id = StringFromList(idNum-1,allIDs)
 			def = cmpstr(id, defaultID) == 0
-			if (cmpstr(id, xtal.SpaceGroupID) == 0)
+			if (cmpstr(id, idSource) == 0)
 				continue								// skip the current setting
 			endif
 			id += ",  " + getHMsym2(idNum)
@@ -8859,7 +8899,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 		endfor
 		id = defaultID								// preset to default id
 		String str
-		sprintf str, "Target Space Group ID  (currently it is '%s')",xtal.SpaceGroupID
+		sprintf str, "Target Space Group ID  (currently it is '%s')",idSource
 		Prompt id, str, popup, idList
 		DoPrompt "Target Space Group", id
 		if (V_flag)
@@ -8874,7 +8914,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 	endif
 
 	if (numtype(str2num(id))==0 && SG != str2num(id))
-		printf "ERROR -- ChangeXtalSetting(\"%s\"), Cannot convert setting \"%s\" --> \"%s\"\r",id, xtal.SpaceGroupID,id
+		printf "ERROR -- ChangeXtalSetting(\"%s\"), Cannot convert setting \"%s\" --> \"%s\"\r",id, idSource,id
 		return 1
 	endif
 
@@ -8883,13 +8923,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 		print_crystalStructure(xtal, brief=1)
 	endif
 
-	ConvertSetting(xtal, id)					// change setting of xtal from: xtal.SpaceGroupID --> id
-
-	if (StringMatch(xtal.SpaceGroupID,"167:R"))
-		xtal.desc = "Al2O3 Sapphire (rhombohedral)"
-	elseif (StringMatch(xtal.SpaceGroupID,"167:H"))
-		xtal.desc = "Al2O3 Sapphire (hexagonal)"
-	endif
+	ConvertSetting(xtal, id)					// change setting of xtal from: idSource --> id
 
 	if (printIt)
 		print "\r  After:"
@@ -8962,6 +8996,17 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 		xtal.atom[i].y = fracT[1]
 		xtal.atom[i].z = fracT[2]
 	endfor
+
+	// try to fix name when changing between Hexagonal and Rhombohedral
+	if (strsearch(source,":H",0)>0 && strsearch(target,":R",0)>0)		// Hexagonal --> Rhombohedral
+		xtal.desc = ReplaceString("Hexagonal", xtal.desc,"Rhombohedral")
+		xtal.desc = ReplaceString("Hex", xtal.desc,"Rhom")
+	elseif (strsearch(source,":R",0)>0 && strsearch(target,":H",0)>0)	// Rhombohedral --> Hexagonal
+		xtal.desc = ReplaceString("Rhombohedral", xtal.desc,"Hexagonal")
+		xtal.desc = ReplaceString("Rhom", xtal.desc,"Hex")
+	endif
+
+	return 0
 End
 
 

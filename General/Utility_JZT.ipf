@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.43
+#pragma version = 4.44
 // #pragma hide = 1
 
 Menu "Graph"
@@ -21,6 +21,7 @@ End
 	strConstant BULLET = "\245"			// option-8
 	strConstant ARING = "\201"			// Angstrom sign, option-shift-A
 	strConstant GDELTA = "\306"			// Mac option-j, xC6, o306, d198
+	strConstant HORIZ_ELLIPSIS = "\311"// Mac option-; xC9, o311, d301
 	Static strConstant Gmu = "\265"		// Mac option-m, Greek mu
 #if StringMatch(IgorInfo(2),"Windows")
 	strConstant BCHAR = "\257"
@@ -35,6 +36,7 @@ End
 	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
 	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
 	strConstant GDELTA = "\xCE\x94"			// UTF8, Greek DELTA
+	strConstant HORIZ_ELLIPSIS = "\xE2\x80\xA6"	// UTF8, Horizontal Ellipsis
 	Static strConstant Gmu = "\xCE\xBC"	// UTF8, Greek mu
 	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, plus-minus sign
 #endif
