@@ -2,7 +2,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.42
+#pragma version = 4.43
 // #pragma hide = 1
 
 Menu "Graph"
@@ -4734,10 +4734,11 @@ ThreadSafe Function/T num2fraction(val,tol,[addPlus])	// turn val into a fractio
 		return "0"
 	endif
 
-	RatioFromNumber/MERR=(tol) val
+	RatioFromNumber/MERR=(tol) abs(val)
 	Variable numer=V_numerator, denom=V_denominator
-	String plusSign = SelectString(addPlus && val>0, "", "+")
-	String numerStr = plusSign + num2istr(numer)
+	String strSign = SelectString(addPlus && val>0, "", "+")
+	strSign = SelectString(val<0,strSign,"-")
+	String numerStr = strSign + num2istr(numer)
 
 	if (numtype(numer)==2)
 		return "NaN"
