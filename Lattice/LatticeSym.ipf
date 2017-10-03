@@ -229,6 +229,7 @@ Menu "Analysis"
 		"Show Crystal Structure",showCrystalStructure()
 		help={"Shows the crystal structure and lattice that is currently defined"}
 		"  Edit the Atom Positions...",EditAtomPositionsMenu()
+		"  Change Current xtal Setting...", ChangeSettingCurrentXtal("")
 		help={"Manually set/change the atom positions"}
 		"Load a new Crystal Structure...",LoadCrystal("")
 		help={"load a rystal structure from a fie"}
@@ -244,7 +245,6 @@ Menu "Analysis"
 		help={"Calculate mu (absorption factor) using current lattice structure"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
-		"Change Current xtal Setting...", ChangeSettingCurrentXtal("")
 		"\\M0Space Group number <--> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 		"Describe the Symmetry Operations", DescribeSymOps($"")
