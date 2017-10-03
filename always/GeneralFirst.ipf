@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.40
+#pragma version = 3.41
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -162,10 +162,10 @@ Menu "Help"
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Roman"
-			"*CHARACTER*(Times New Roman,36)", GetLastUserMenuInfo; print S_value, V_value
+			"*CHARACTER*(Times New Roman,36)", /Q, GetLastUserMenuInfo; printf "\r  Roman('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
 		End
 		SubMenu "Symbol"
-			"*CHARACTER*(Symbol,36)", GetLastUserMenuInfo; print S_value, V_value
+			"*CHARACTER*(Symbol,36)", /Q, GetLastUserMenuInfo; printf "\r  Symbol('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
 		End
 	End
 End
@@ -179,7 +179,7 @@ Menu "Help"
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Characters"
-			"*CHARACTER*(Times New Roman,36)", GetLastUserMenuInfo; print S_value, V_value
+			"*CHARACTER*(,36)", /Q, GetLastUserMenuInfo; printf "\r  Character('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
 		End
 	End
 End
