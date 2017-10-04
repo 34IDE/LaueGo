@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.35
+#pragma version = 6.34
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -8632,8 +8632,6 @@ End
 //	================================================================================
 //
 //			This section is for making the matricies for the symmetry operations for Wyckoff Symbols
-//			Wyckoff info can be found at:	http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list
-//
 // 		the Funcitons associated with Wyckoff symbols are:
 //			used by regular routines (above this):
 //				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
@@ -8682,36 +8680,9 @@ End
 
 
 
-// for		http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list?gnum=167&grha=rhombohedral
-// there appears to be a problem, also my values seem to be wrong.
-Function test_FindWyckoffSymbol(SpaceGroupID, x0,y0,z0)
-	String SpaceGroupID
-	Variable x0,y0,z0
-	Variable mult
-	String letter = FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
-	printf "{%g, %g, %g} --> %s (%g),   for %s\r",x0,y0,z0, letter, mult, SpaceGroupID
-End
-//
-//		167:H
-//		a		0,0,1/4			 6
-//		b		0,0,0				 6
-//		c		0,0,z				12
-//		d		1/2,0,0			18
-//		e		x,0,1/4			18
-// 	f		x,y,z				36
-//
-//
-//		167:R
-//		a		1/2,1/4,0					 2		should be (1/4, 1/4, 1/4)
-//		b		0,0,0							 2		OK
-//		c		z*2,z,0						 4		should be (x,x,x)
-//		d		1/2,0,1/2					 6		OK (would prefer (1/2,0,0)
-//		e		x+1/2,-x*2+1/4,x			 6		should be (x,-x+1/2,1/4), (1/4,x,-x+1/2), (-x+1/2,1/4,x), (-x,x+1/2,3/4), (3/4,-x,x+1/2), or (x+1/2,3/4,-x)
-//		f		x-y+z*2,-x*2+z,x-y*2	12		should be one of:
-//														(x,y,z), (z,x,y), (y,z,x)
-//														(-z+1/2,-y+1/2,-x+1/2), (-y+1/2,-x+1/2,-z+1/2), (-x+1/2,-z+1/2,-y+1/2)
-//														(-x,-y,-z), (-z,-x,-y), (-y,-z,-x)
-//														(z+1/2,y+1/2,x+1/2), (y+1/2,x+1/2,z+1/2), (x+1/2,z+1/2,y+1/2)
+
+
+
 
 
 
@@ -8723,35 +8694,48 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 	String SpaceGroupID
 	Variable x0,y0,z0
 	Variable &mult
+	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
 
-	Make/D/FREE vec4 = {x0,y0,z0,1}
-	Make/D/FREE vec0 = {x0,y0,z0,0}
-	Wave/T WyckList = GetWyckoffSymStrings(SpaceGroupID)
-	String symbol=""
-	mult = 0
+	String sx=num2str(x0), sy=num2str(y0), sz=num2str(z0)
+	String item, symOp, symbol=""
+
+	Variable xop,yop,zop
 	Variable m, N=DimSize(WyckList,0)
+	mult = 0
 	for (m=0;m<N;m+=1)
-		Wave mat = LatticeSym#MatrixFromSymLine(WyckList[m][1], 4, zeroBad=0)
-		MatrixOP/FREE diff = Sum(Abs( (mat x vec4) - vec0))
-		if (diff[0]<1e-4)
+		symOp = WyckList[m][1]
+		symOp = ReplaceString("2x",symOp,"2*x")
+		symOp = ReplaceString("2y",symOp,"2*y")
+		symOp = ReplaceString("2z",symOp,"2*z")
+		symOp = ReplaceString("x",symOp,sx)
+		symOp = ReplaceString("y",symOp,sy)
+		symOp = ReplaceString("z",symOp,sz)
+
+		Execute "Variable/G root:temp_temp_ = "+StringFromList(0,symOp,",")
+		xop = NumVarOrDefault("root:temp_temp_",NaN)
+		Execute "Variable/G root:temp_temp_ = "+StringFromList(1,symOp,",")
+		yop = NumVarOrDefault("root:temp_temp_",NaN)
+		Execute "Variable/G root:temp_temp_ = "+StringFromList(2,symOp,",")
+		zop = NumVarOrDefault("root:temp_temp_",NaN)
+
+		if ((abs(xop-x0) + abs(yop-y0) + abs(zop-z0)) < 1e-4)
 			symbol = WyckList[m][0]
 			mult = round(str2num(WyckList[m][2]))
 			break
 		endif
 	endfor
+	KillVariables/Z root:temp_temp_
 	return symbol
 End
 //
-//		test_FindWyckoffSymbol("47",  0, 0.5, 0.3765)
-//		test_FindWyckoffSymbol("167:H", 0.3064, 0, 0.25)		// "e"
-//		test_FindWyckoffSymbol("167:H", 0, 0, 0.25)		// "c"
-//
-//	Function test_FindWyckoffSymbol(SpaceGroupID, x0,y0,z0)
-//		String SpaceGroupID
+//		//	test_FindWyckoffSymbol(47,  0, 0.5, 0.3765)
+//	Function test_FindWyckoffSymbol(SG,x0,y0,z0)
+//		Variable SG
 //		Variable x0,y0,z0
+//	
 //		Variable mult
-//		String letter = FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
-//		printf "{%g, %g, %g} --> %s (%g),   for %s\r",x0,y0,z0, letter, mult, SpaceGroupID
+//		String symbol = FindWyckoffSymbol(SG,x0,y0,z0,mult)
+//		printf "Wyckoff = \"%s\",  mult = %g\r",symbol,mult
 //	End
 
 
@@ -8780,10 +8764,13 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 	symOp = ReplaceString("y",symOp,num2str(y0))
 	symOp = ReplaceString("z",symOp,num2str(z0))
 
-	x0 = arithmetic(StringFromList(0,symOp,","))
-	y0 = arithmetic(StringFromList(1,symOp,","))
-	z0 = arithmetic(StringFromList(2,symOp,","))
-
+	Execute "Variable/G root:temp_temp_ = "+StringFromList(0,symOp,",")
+	x0 = NumVarOrDefault("root:temp_temp_",x0)
+	Execute "Variable/G root:temp_temp_ = "+StringFromList(1,symOp,",")
+	y0 = NumVarOrDefault("root:temp_temp_",y0)
+	Execute "Variable/G root:temp_temp_ = "+StringFromList(2,symOp,",")
+	z0 = NumVarOrDefault("root:temp_temp_",z0)
+	KillVariables/Z root:temp_temp_
 	return 0
 End
 
@@ -9039,7 +9026,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 		return $""
 	endif
 
-	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID)
+	Variable idNum = SpaceGroupID2num(SpaceGroupID)
 	Make/N=(530)/T/FREE WyckoffSyms			// longest line is 345 chars
 	Make/N=(530)/T/FREE WyckoffSyms
 	// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
@@ -9680,7 +9667,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	WyckoffSyms[528] += "j:0,y,z:48;k:x,x,z:48;l:x,y,z:96;"
 	WyckoffSyms[529]  = "a:0,0,0:16;b:1/8,1/8,1/8:16;c:1/8,0,1/4:24;d:1/3,0,1/4:24;e:x,x,x:32;f:x,0,1/4:48;g:1/8,y,-y+1/4:48;h:x,y,z:96;"
 
-	String list=WyckoffSyms[SG_idNum-1]
+	String list=WyckoffSyms[idNum-1]
 	Make/N=(ItemsInList(list),3)/FREE/T WyckList
 	WyckList[][0] = StringFromList(0,StringFromList(p,list),":")
 	WyckList[][1] = StringFromList(1,StringFromList(p,list),":")
