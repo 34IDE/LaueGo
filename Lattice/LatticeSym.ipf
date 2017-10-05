@@ -8673,36 +8673,6 @@ End
 
 
 
-// for		http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list?gnum=167&grha=rhombohedral
-// there appears to be a problem, also my values seem to be wrong.
-Function test_FindWyckoffSymbol(SpaceGroupID, x0,y0,z0)
-	String SpaceGroupID
-	Variable x0,y0,z0
-	Variable mult
-	String letter = FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
-	printf "{%g, %g, %g} --> %s (%g),   for %s\r",x0,y0,z0, letter, mult, SpaceGroupID
-End
-//
-//		167:H
-//		a		0,0,1/4			 6
-//		b		0,0,0				 6
-//		c		0,0,z				12
-//		d		1/2,0,0			18
-//		e		x,0,1/4			18
-// 	f		x,y,z				36
-//
-//
-//		167:R
-//		a		1/2,1/4,0					 2		should be (1/4, 1/4, 1/4)
-//		b		0,0,0							 2		OK
-//		c		z*2,z,0						 4		should be (x,x,x)
-//		d		1/2,0,1/2					 6		OK (would prefer (1/2,0,0)
-//		e		x+1/2,-x*2+1/4,x			 6		should be (x,-x+1/2,1/4), (1/4,x,-x+1/2), (-x+1/2,1/4,x), (-x,x+1/2,3/4), (3/4,-x,x+1/2), or (x+1/2,3/4,-x)
-//		f		x-y+z*2,-x*2+z,x-y*2	12		should be one of:
-//														(x,y,z), (z,x,y), (y,z,x)
-//														(-z+1/2,-y+1/2,-x+1/2), (-y+1/2,-x+1/2,-z+1/2), (-x+1/2,-z+1/2,-y+1/2)
-//														(-x,-y,-z), (-z,-x,-y), (-y,-z,-x)
-//														(z+1/2,y+1/2,x+1/2), (y+1/2,x+1/2,z+1/2), (x+1/2,z+1/2,y+1/2)
 
 
 
@@ -8733,17 +8703,53 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 	return symbol
 End
 //
+//			for 47
 //		test_FindWyckoffSymbol("47",  0, 0.5, 0.3765)
-//		test_FindWyckoffSymbol("167:H", 0.3064, 0, 0.25)		// "e"
-//		test_FindWyckoffSymbol("167:H", 0, 0, 0.25)		// "c"
+//
+//			for 167:H
+//		test_FindWyckoffSymbol("167:H", 0, 0, 0.25)		// "a", 6		0,0,1/4
+//		test_FindWyckoffSymbol("167:H", 0,0,1/4)			// "a", 6		0,0,1/4
+//		test_FindWyckoffSymbol("167:H", 0,0,0)				// "b", 6		0,0,0
+//		test_FindWyckoffSymbol("167:H", 0,0,0.12)			// "c", 12		0,0,z
+//		test_FindWyckoffSymbol("167:H", 1/2,0,0)			// "d", 18		1/2,0,0
+//		test_FindWyckoffSymbol("167:H", 0.1,0,1/4)			// "e", 18		x,0,1/4
+//		test_FindWyckoffSymbol("167:H", 0.3064, 0, 0.25)	// "e", 18		x,0,1/4
+//		test_FindWyckoffSymbol("167:H", 0.1,0.1,1/4)		// "f", 36		x,y,z
+//
+//			for 167:R
+//		test_FindWyckoffSymbol("167:R", 1/4,1/4,1/4)		// "a", 2		1/4,1/4,1/4
+//		test_FindWyckoffSymbol("167:R", 0,0,0)				// "b", 2		0,0,0
+//		test_FindWyckoffSymbol("167:R", 0.1,0.1,0.1)		// "c", 4		x,x,x
+//			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+//			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+//			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 //
 //	Function test_FindWyckoffSymbol(SpaceGroupID, x0,y0,z0)
 //		String SpaceGroupID
 //		Variable x0,y0,z0
 //		Variable mult
-//		String letter = FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
+//		String letter = LatticeSym#FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 //		printf "{%g, %g, %g} --> %s (%g),   for %s\r",x0,y0,z0, letter, mult, SpaceGroupID
 //	End
+//
+//	for 		http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list
+// for		http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list?gnum=167&grha=rhombohedral
+// there appears to be a problem, also my values seem to be wrong.
+//
+//
+//		167:R
+//		a		1/2,1/4,0					 2		should be (1/4, 1/4, 1/4)
+//		b		0,0,0							 2		OK
+//		c		z*2,z,0						 4		should be (x,x,x)
+//		d		1/2,0,1/2					 6		OK (would prefer (1/2,0,0)
+//		e		x+1/2,-x*2+1/4,x			 6		should be (x,-x+1/2,1/4), (1/4,x,-x+1/2), (-x+1/2,1/4,x), (-x,x+1/2,3/4), (3/4,-x,x+1/2), or (x+1/2,3/4,-x)
+//		f		x-y+z*2,-x*2+z,x-y*2	12		should be one of:
+//														(x,y,z), (z,x,y), (y,z,x)
+//														(-z+1/2,-y+1/2,-x+1/2), (-y+1/2,-x+1/2,-z+1/2), (-x+1/2,-z+1/2,-y+1/2)
+//														(-x,-y,-z), (-z,-x,-y), (-y,-z,-x)
+//														(z+1/2,y+1/2,x+1/2), (y+1/2,x+1/2,z+1/2), (x+1/2,z+1/2,y+1/2)
+
+
 
 
 
