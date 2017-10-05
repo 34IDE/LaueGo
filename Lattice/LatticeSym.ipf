@@ -2462,7 +2462,6 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		titleStr += "Triclinic"
 	endif
 //	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
-//	titleStr += "   \\F'Arial'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
 	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
 
 	titleStr = minus2bar(titleStr, single=1)								// change all minuses to a bar over following character
