@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.03
+#pragma version=2.02
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -4296,14 +4296,12 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	Make/N=(Nalloc)/O/T imageNames
 
 	Variable Yn,Zn
-	String detector										// first detector in a step
-	String indexing
-	String pattern, patternKeyVals, recip_lattice
+	String pattern, patternKeyVals
 	String svec
 	Variable as0,as1,as2, bs0,bs1,bs2, cs0,cs1,cs2
 	Variable first = 1									// flags first time through
 	Variable value, i
-	String step												// contents of xml step
+	String step
 	Variable i0,i1											// mark start and end of current   <step ></step>
 	Variable i0start=0									// where to start searching for "<step "
 	Variable N=0											// counts number of points read in
@@ -4355,13 +4353,11 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 				break											// give up, all done
 			endif
 		endif
-		i0 = strsearch(buf,">",i0+1)+1				// position after the introductory ">", start of contents
-		if (i0<1)
-			break												// give up, all done
-		endif
-		// Contents of this step is bracketed by [i0,i1-1], process it:
-		i0start = i1 + 7									// where to start searching for next start tag										
-		step = XMLremoveComments(buf[i0,i1-1])	// string BETWEEN <step...>This is the Contents</step>
+		i1 += 6
+
+		// this step is bracketed by [i0,i1], process it:
+		step = buf[i0,i1]
+		i0start = i1 + 1									// where to start searching for next start tag
 
 		if (first)
 			first = 0
@@ -4388,10 +4384,7 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 				noteStr = ReplaceNumberByKey("energy",noteStr,str2num(xmlTagContents("energy",step)),"=")
 			endif
 		endif
-
-		detector = xmlTagContents("detector",step)
-		indexing = xmlTagContents("indexing",step)
-		patternKeyVals = xmlTagKeyVals("pattern",indexing)
+		patternKeyVals = multiIndex#xmlTagKeyVals("pattern",step)
 		N0 = NumberByKey("Nindexed", patternKeyVals,"=")
 		rms = NumberByKey("rms_error", patternKeyVals,"=")
 		goodness0 = NumberByKey("goodness", patternKeyVals,"=")
@@ -4402,13 +4395,12 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 			//endif
 			continue											// skip this image, it was not adequately indexed
 		endif
-		pattern = xmlTagContents("pattern",indexing)
-		recip_lattice = xmlTagContents("recip_lattice",pattern)
-		svec = xmlTagContents("astar",recip_lattice)
+		pattern = xmlTagContents("pattern",step)
+		svec = xmlTagContents("astar",pattern)
 		sscanf svec,"%g %g %g",as0,as1,as2
-		svec = xmlTagContents("bstar",recip_lattice)
+		svec = xmlTagContents("bstar",pattern)
 		sscanf svec,"%g %g %g",bs0,bs1,bs2
-		svec = xmlTagContents("cstar",recip_lattice)
+		svec = xmlTagContents("cstar",pattern)
 		sscanf svec,"%g %g %g",cs0,cs1,cs2
 
 		if (N>=Nalloc)										// need longer arrays
@@ -4429,10 +4421,10 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 		rmsIndexed[N] = rms
 		goodness[N] = goodness0
 		HutchTempC[N] = str2num(xmlTagContents("hutchTemperature",step))
-		totalSum[N] = str2num(xmlTagContents("totalSum",detector))
-		sumAboveThreshold[N] = str2num(xmlTagContents("sumAboveThreshold",detector))
-		numAboveThreshold[N] = str2num(xmlTagContents("numAboveThreshold",detector))
-		imageNames[N] = xmlTagContents("inputImage",detector)
+		totalSum[N] = str2num(xmlTagContents("totalSum",step))
+		sumAboveThreshold[N] = str2num(xmlTagContents("sumAboveThreshold",step))
+		numAboveThreshold[N] = str2num(xmlTagContents("numAboveThreshold",step))
+		imageNames[N] = xmlTagContents("inputImage",step)
 		gm[0][0][N] = as0;		gm[0][1][N] = bs0;	gm[0][2][N] = cs0	// save measured reciprocal lattice for this point
 		gm[1][0][N] = as1;		gm[1][1][N] = bs1;	gm[1][2][N] = cs1
 		gm[2][0][N] = as2;		gm[2][1][N] = bs2;	gm[2][2][N] = cs2
@@ -4926,7 +4918,7 @@ Function/T AppendIndexResult2LoadedRaw(wIndex)
 	Wave wIndex
 
 	String rawFldr = GetDataFolder(1)+"raw:"
-	if (!ValidRawXMLdataAvailable())
+	if (!multiIndex#ValidRawXMLdataAvailable())
 		DoAlert 0, "raw folder \""+rawFldr+"\" not found, first read in the xml file, or it does not have data in it"
 		return ""
 	endif

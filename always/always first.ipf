@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.78
+#pragma version = 2.79
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -86,8 +86,16 @@ Static Function/S VersionStatusHash(full,fldr)
 		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
 		Open/R/Z f as fname
 	endif
+	if (V_flag)								// check in 6, Open has trouble following links
+		fname = SpecialDirPath("Igor Application",0,0,0) + "User Procedures:"+fldr+":VersionStatus.xml"
+		Open/R/Z f as fname
+	endif
+	if (V_flag)								// check in 6, Open has trouble following links
+		fname = ReplaceString("Igor Pro 7 Folder",fname,"Igor Pro 6.3 Folder")
+		Open/R/Z f as fname
+	endif
 	if (V_flag)
-		return ""							// could not open file
+		return ""							// could not open a file
 	endif
 	FStatus f
 	if (V_logEOF<2000)					// way too small
