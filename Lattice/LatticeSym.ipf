@@ -11,10 +11,9 @@
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 Static Constant ELEMENT_Zmax = 118
-#if (IgorVersion()>7)
+//Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
+Static strConstant BAR_FONT_ALWAYS = "Tahoma"			//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
-Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
-#endif
 
 
 //	remember to execute    InitLatticeSymPackage()
@@ -2302,7 +2301,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 #else
 	SetVariable set_alpha, fSize=12, title="\xCE\xB1"+DEGREESIGN
 	SetVariable set_beta, fSize=12, title="\xCE\xB2"+DEGREESIGN
-	SetVariable set_gamma, fSize=12, title="\xCE\xB3"+DEGREESIGN
+	SetVariable set_gamma, fSize=12, title="\xC9\xA3"+DEGREESIGN	// there are two gamma's, this (latin small letter gamma) looks better than "\xCE\xB3"
 #endif
 
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
@@ -2463,7 +2462,8 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		titleStr += "Triclinic"
 	endif
 //	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
-	titleStr += "   \\F'Arial'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+//	titleStr += "   \\F'Arial'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
 
 	titleStr = minus2bar(titleStr, single=1)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
@@ -2757,7 +2757,9 @@ Static Function LatticeEditPopMenuProc(pa) : PopupMenuControl		// used in the La
 		return 0
 	endif
 
-	if (strsearch(pa.popStr,"Edit Atom Positions",0,2)>=0)
+	if (!StringMatch(pa.ctrlName,"popupLatticeEdit"))
+		return 0
+	elseif (strsearch(pa.popStr,"Edit Atom Positions",0,2)>=0)
 		STRUCT WMButtonAction ba
 		ba.eventCode = 2
 		ba.win = pa.win
@@ -8802,7 +8804,7 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	String id										// the requested target id, if "", then prompt the user
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
-	if (printIt)
+	if (printIt && strlen(GetRTStackInfo(2)))
 		printf "%sChangeSettingCurrentXtal(\"%s\")\r", BULLET,id
 	endif
 
@@ -8846,7 +8848,7 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	endif
 
 	String wList=LatticeSetPanelList(), win
-	if (ItemsInList(WinList("LatticeSet",";","WIN:64"))==1)	// a #LatticePanel is displayed
+	if (ItemsInList(wList)>0)						// a #LatticePanel is displayed
 		dirty = 1	;	SpaceGroupID = xtal.SpaceGroupID
 		a = xtal.a	;	b = xtal.b	;	c = xtal.c
 		alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
