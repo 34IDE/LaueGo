@@ -8720,6 +8720,8 @@ End
 //		test_FindWyckoffSymbol("167:R", 1/4,1/4,1/4)		// "a", 2		1/4,1/4,1/4
 //		test_FindWyckoffSymbol("167:R", 0,0,0)				// "b", 2		0,0,0
 //		test_FindWyckoffSymbol("167:R", 0.1,0.1,0.1)		// "c", 4		x,x,x
+//		test_FindWyckoffSymbol("167:R", 1/2,0,1/2)			// "d", 6		1/2, 0, 1/2	
+//		test_FindWyckoffSymbol("167:R", 1/2,0,0)			// "d", 6		1/2, 0, 0
 //			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 //			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 //			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

@@ -1,8 +1,8 @@
 #pragma TextEncoding = "UTF-8"
-#pragma rtGlobals=2		// Use modern global access method.
+#pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.44
+#pragma version = 4.45
 // #pragma hide = 1
 
 Menu "Graph"
