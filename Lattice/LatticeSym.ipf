@@ -5390,7 +5390,7 @@ ThreadSafe Function/S MakeSymmetryOps(xtal)			// make a wave with the symmetry o
 	String wnote="waveClass=SymmetryOperations;"
 	wnote = ReplaceNumberByKey("Nproper",wnote,Nproper,"=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
-	wnote = ReplaceNumberByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
 	Note/K ops, wnote
 	return GetWavesDataFolder(ops,2)
 End
