@@ -1244,7 +1244,12 @@ Static Function ForceLatticeToStructure(xtal)
 
 	elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
 		// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
-		if (isRhombohedral(SG) && abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1)
+		Variable useRhom = 0
+		if (isRhombohedral(SG))
+			useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1
+			useRhom = useRhom | ( strsearch(id,":R",0,2)>0 )
+		endif
+		if (useRhom)
 			// looks like a rhombohedral structure using rhombohedral lattice constants
 			xtal.b = xtal.a					// set to rhombohedral a=b=c, alpha=beta=gamma
 			xtal.c = xtal.a
