@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.45
+#pragma version = 4.46
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2419,7 +2419,7 @@ End
 
 
 
-Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,left,maxRows,maxCols])
+Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,left,maxRows,maxCols,align])
 	// put up a table of a 2D wave
 	Wave ww						// the ZonesWave wave (4 columns)
 	String classes				// can use commas or semicolons and *
@@ -2430,6 +2430,7 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 	Variable top,left			// top left corner of table
 	Variable maxRows			// maximum number of rows to show
 	Variable maxCols			// maximum number of columns to show
+	Variable align				// alignment, 0=left, 1=center, 2=right (default=2)
 	classes = SelectString(ParamIsDefault(classes),classes,"*")
 	promptStr = SelectString(ParamIsDefault(promptStr),promptStr,"Select a Wave for Table")
 	names = SelectString(ParamIsDefault(names),names,"*")
@@ -2439,6 +2440,8 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 	left = ParamIsDefault(left) || numtype(left) ? 5 : limit(left,0,784)
 	maxRows = ParamIsDefault(maxRows) || numtype(maxRows) ? 90 : limit(maxRows,3,200)
 	maxCols = ParamIsDefault(maxCols) || numtype(maxCols) ? 15 : limit(maxCols,3,30)
+	align = ParamIsDefault(align) || numtype(align) ? 2 : limit(round(align),0,2)
+
 	if (!WaveExists(ww))
 		String list=WaveListClass(classes,names,options)
 		if(ItemsInList(list)==1)
@@ -2497,7 +2500,7 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 	else
 		Edit/W=(left,top,left+width,top+height)/K=1 ww
 	endif
-	ModifyTable font=fontName, size=fontSize, format(Point)=1,width(Point)=36, width(ww.d)=colWid
+	ModifyTable font=fontName, size=fontSize, format(Point)=1,width(Point)=36, width(ww.d)=colWid, alignment=align
 	if (WaveType(ww) | 0x38)				// if ww is an integer (8, 16, or 32 bit) use integer format
 		ModifyTable format(ww.d)=1
 	endif
@@ -2948,49 +2951,113 @@ End
 // compute angle and axis of a rotation matrix
 // Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
 //		changed "axis[0] = rot[1][2] - rot[2][1]"   -->   "axis[0] = rot[2][1] - rot[1][2]"
-ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
+// Oct 12, 2017, changed to use a Quaternion based method:
+//			http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+ThreadSafe Function axisOfMatrix(matIN,axis,[squareUp])
 	// returns total rotation angle (deg), and sets axis to the axis of the total rotation
-	Wave mat									// should be a rotation matrix
+	Wave matIN								// should be a rotation matrix
 	Wave axis								// axis of the rotation (angle is returned)
 	Variable squareUp						// optionally square up mat (default is NOT square up)
 	squareUp = ParamIsDefault(squareUp) ? NaN : squareUp
 	squareUp = numtype(squareUp) ? 0 : !(!squareUp)
 
-	Make/N=(3,3)/FREE/D rot=mat
+	Duplicate/FREE matIN, mat
+	Variable det = MatrixDet(mat)
+	if (abs(det)<1e-12)					// a zero matrix, no rotation
+		axis = 0
+		return 0
+	elseif (det<0)							// contains an inversion
+		mat *= -1							// ensure that |mat| is always positive
+	endif
+
 	if (squareUp)
-		if (SquareUpMatrix(rot))
-			axis = NaN								// default for error
-			return NaN
-		endif
-	else
-		MatrixOp/FREE sumd = sum(Abs((mat x mat^t) - Identity(3)))
-		if (sumd[0]<0 || sumd[0]>1e-4)		// not close enough to a rotation mat, an error
-			axis = NaN								// default for error
+		if (SquareUpMatrix(mat))
+			axis = NaN						// default for error
 			return NaN
 		endif
 	endif
 
-	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
-	cosine = limit(cosine,-1,1)
-	if (cosine<= -1)								// special for 180 degree rotation,
-		axis[0] = sqrt((rot[0][0]+1)/2)
-		axis[1] = sqrt((rot[1][1]+1)/2)
-		axis[2] = sqrt((rot[2][2]+1)/2)		// always assume z positive
-		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
-		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
-		if (numtype(sum(axis)))				// this is for very special cases such as diag = {1,-1,-1}
-			WaveStats/M=1/Q axis
-			axis = p==V_maxloc
-		endif
-	else												// rotaion < 180 degree, usual formula works
-		axis[0] = rot[2][1] - rot[1][2]
-		axis[1] = rot[0][2] - rot[2][0]
-		axis[2] = rot[1][0] - rot[0][1]
-		axis /= 2
+	Variable qw, SS, tr=mat[0][0]+mat[1][1]+mat[2][2]
+	if (tr>0)
+		SS = 2*sqrt(tr+1)							// S=4*qw 
+		qw = SS/4
+		axis[0] = mat[2][1] - mat[1][2]		// any common factors are irrelevant since I next normalize axis
+		axis[1] = mat[0][2] - mat[2][0]
+		axis[2] = mat[1][0] - mat[0][1]
+		axis /= SS
+	elseif ((mat[0][0] > mat[1][1]) & (mat[0][0] > mat[2][2]))
+		SS = 2*sqrt(1 + mat[0][0] - mat[1][1] - mat[2][2])		// S=4*qx
+		qw = (mat[2][1] - mat[1][2]) / SS
+		axis[0] = 0.25 * SS
+		axis[1] = (mat[0][1] + mat[1][0]) / SS 
+		axis[2] = (mat[0][2] + mat[2][0]) / SS 
+	elseif (mat[1][1] > mat[2][2])
+		SS = 2*sqrt(1 + mat[1][1] - mat[0][0] - mat[2][2])		// S=4*qy
+		qw = (mat[0][2] - mat[2][0]) / SS
+		axis[0] = (mat[0][1] + mat[1][0]) / SS 
+		axis[1] = SS / 4
+		axis[2] = (mat[1][2] + mat[2][1]) / SS 
+	else
+		SS = 2*sqrt(1.0 + mat[2][2] - mat[0][0] - mat[1][1])	// S=4*qz
+		qw = (mat[1][0] - mat[0][1]) / SS
+		axis[0] = (mat[0][2] + mat[2][0]) / SS
+		axis[1] = (mat[1][2] + mat[2][1]) / SS
+		axis[2] = SS / 4
 	endif
 	normalize(axis)
-	return acos(cosine)*180/PI				// rotation angle in degrees
+
+	Variable angle = 2*acos(limit(qw,-1,1))
+	if (sum(axis)<0)
+		axis *= -1
+		angle *= -1
+	endif
+	angle = abs(angle+PI)<1e-12 ? PI : angle	// use 180 rather than -180
+
+	return angle*180/PI							// rotation angle in degrees
 End
+//ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
+//	// returns total rotation angle (deg), and sets axis to the axis of the total rotation
+//	Wave mat									// should be a rotation matrix
+//	Wave axis								// axis of the rotation (angle is returned)
+//	Variable squareUp						// optionally square up mat (default is NOT square up)
+//	squareUp = ParamIsDefault(squareUp) ? NaN : squareUp
+//	squareUp = numtype(squareUp) ? 0 : !(!squareUp)
+//
+//	Make/N=(3,3)/FREE/D rot=mat
+//	if (squareUp)
+//		if (SquareUpMatrix(rot))
+//			axis = NaN								// default for error
+//			return NaN
+//		endif
+//	else
+//		MatrixOp/FREE sumd = sum(Abs((mat x mat^t) - Identity(3)))
+//		if (sumd[0]<0 || sumd[0]>1e-4)		// not close enough to a rotation mat, an error
+//			axis = NaN								// default for error
+//			return NaN
+//		endif
+//	endif
+//
+//	Variable cosine = (MatrixTrace(rot)-1)/2	// trace = 1 + 2*cos(theta)
+//	cosine = limit(cosine,-1,1)
+//	if (cosine<= -1)								// special for 180 degree rotation,
+//		axis[0] = sqrt((rot[0][0]+1)/2)
+//		axis[1] = sqrt((rot[1][1]+1)/2)
+//		axis[2] = sqrt((rot[2][2]+1)/2)		// always assume z positive
+//		axis[0] = (rot[0][2]+rot[2][0])<0 ? -axis[0] : axis[0]
+//		axis[1] = (rot[1][2]+rot[2][1])<0 ? -axis[1] : axis[1]
+//		if (numtype(sum(axis)))				// this is for very special cases such as diag = {1,-1,-1}
+//			WaveStats/M=1/Q axis
+//			axis = p==V_maxloc
+//		endif
+//	else												// rotaion < 180 degree, usual formula works
+//		axis[0] = rot[2][1] - rot[1][2]
+//		axis[1] = rot[0][2] - rot[2][0]
+//		axis[2] = rot[1][0] - rot[0][1]
+//		axis /= 2
+//	endif
+//	normalize(axis)
+//	return acos(cosine)*180/PI				// rotation angle in degrees
+//End
 
 
 // Oct 5, 2014, used new proper method for changing rot to an exact rotation matrix
