@@ -803,7 +803,7 @@ Static Function DrawhklTags(i,h,k,l,px,py,dx,dy,tsize)
 	tsize = tsize>2 && tsize<150 ? tsize : 75
 	String str
 	//	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize
-	sprintf str,"\\F'Arial'\\Zr%03d",tsize
+	sprintf str,"\\F'%s'\\Zr%03d",BAR_FONT_ALWAYS,tsize
 	str += SelectString (IgorVersion() > 7, "\\[0", "")
 	str += hkl2IgorBarStr(h,k,l)							// change to Igor string with negatives --> bars
 	Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))

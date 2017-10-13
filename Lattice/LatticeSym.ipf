@@ -12,7 +12,7 @@ Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 Static Constant ELEMENT_Zmax = 118
 //Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
-Static strConstant BAR_FONT_ALWAYS = "Tahoma"			//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
+strConstant BAR_FONT_ALWAYS = "Tahoma"			//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
 
 
