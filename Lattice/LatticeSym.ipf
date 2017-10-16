@@ -4872,34 +4872,67 @@ Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fato
 	variable valence									// optional integer for valence
 	valence = ParamIsDefault(valence) || numtype(valence) ? 0 : valence
 
-	Variable iz=ZfromLabel(AtomType), Bval
-	if (iz<1 || numtype(iz))
+	Variable iz=LatticeSym#ZfromLabel(AtomType), Bval=0.6
+	if (iz<1 || numtype(iz) || iz>102)
 		return NaN
-	elseif (iz<=10)
-		Make/FREE BwTemp={58.3331,10.9071,4.33979,42.9165,23.0888,12.7188,0.02064,13.8964,11.2651, 9}	// use 9 for Ne
-		Bval = BwTemp[iz-1]
-	elseif (iz<=18)
-		Make/FREE coef={6.8736,0.011759,-0.025672}
-		Bval = poly(coef,iz-1)
-	elseif (iz<=50)
-		Make/FREE coef={51.647,-3.5557,0.085621,-0.00070461}
-		Bval = poly(coef,iz-1)
-	elseif (iz<=58)
-		Make/FREE BwTemp={5.24328,4.74225,4.27091,0.26422,0.23092,0.15152,0.1104,0.12335}
-		Bval = BwTemp[iz-51]
-	elseif (iz<=70)
-		Make/FREE coef={30.119,-0.85371,0.006597}
-		Bval = poly(coef,iz-1)
-	else
-		Make/FREE coef={-57.258,2.1161,-0.025226,9.8321e-05}
-		Bval = poly(coef,iz-1)
 	endif
 
+	Make/N=(102)/FREE Asum, Cvalues
+	Asum[0]= {0.99735,1.98741,2.94052,5.76343,5.30249,5.75354,18.3887,7.69533,8.51545,9.89498,10.7273,11.7134,12.7675,14.6203,19.8767,25.3137,34.2962,17.6483,18.8237,19.9577,21.077,22.1475,23.0399,23.9394,24.5825}
+	Asum[25]= {25.0759,25.4912,25.8733,26.3919,26.7177,27.4294,28.3022,29.2955,30.4209,31.889,31.5458,32.6372,33.2276,34.2758,35.3453,36.4462,37.5814,38.7151,39.8867,41.0858,42.315,43.5839,44.8458,46.1801,47.6055}
+	Asum[50]= {49.2118,51.1507,53.7329,55.6953,62.8485,69.7236,66.8272,60.125,58.3443,56.8636,55.7896,55.1253,54.8513,54.7338,54.9527,55.3,55.7754,56.3494,57,57.6277,58.2686,58.9901,59.7891,60.6514,61.5686}
+	Asum[75]= {62.5366,63.5314,64.5881,65.6985,66.8067,67.969,69.1621,70.3962,71.6794,73.0198,74.3032,75.8277,77.2375,78.732,79.5262,80.5945,81.6164,82.4483,83.4147,84.4334,85.2935,86.0964,86.9115,87.6827,88.4067}
+	Asum[100]= {89.0798,89.5422}
+
+	Cvalues[0]= {0.00125,0.01249,0.05988,-1.76339,-0.30409,0.24637,-11.3926,0.30413,0.48398,1.09912,1.26883,1.28489,1.23139,0.3787,-3.87732,-8.3143,-16.2972,1.35009,1.1743,1.03849,0.91762,0.84574,0.95226,1.05195}
+	Cvalues[24]= {1.40818,1.91452,2.49899,3.11686,3.59838,4.26842,4.56068,4.69149,4.70026,4.57602,4.10864,5.43921,5.34841,5.76121,5.71886,5.65073,5.55047,5.41556,5.28192,5.11007,4.91427,4.68114,4.41158,4.14542}
+	Cvalues[48]= {3.81227,3.38881,2.78462,1.84739,0.26635,-0.70709,-6.85854,-12.7404,-8.8456,-1.1393,1.64038,4.12018,6.19355,7.85731,9.12488,10.242,11.029,11.6817,12.2062,12.6322,12.9818,13.3489,13.7049,13.9824}
+	Cvalues[72]= {14.1842,14.3239,14.4097,14.4449,14.4526,14.3992,14.2911,14.18,14.0203,13.8301,13.5991,13.3183,12.9796,12.6868,12.1642,11.7484,11.2497,11.4561,11.3864,11.3632,11.5358,11.5685,11.5431,11.6823}
+	Cvalues[96]= {11.8853,12.0698,12.2983,12.5741,12.9008,13.4313}
+
 	Variable Svector = QAngstrom/(4*PI)
-	Variable f0 = iz * exp(-Svector*Svector*(Bval)) - valence
+	Variable f0 = Asum[iz-1] * exp(-Svector*Svector*Bval)
 	f0 = numtype(f0) ? 1 : max(f0,0)			// always a valid number > 0
+	if (valence)
+		f0 += (f0/iz)^2 * valence
+	endif
 	return cmplx(f0,0)
 End
+//Function/C Get_f_proto(AtomType,QAngstrom, keV, [valence])	// simple-minded fatom, just (Z-valence)
+//	string AtomType
+//	variable keV										// energy is ignored in this simple calculation
+//	Variable QAngstrom								// |Q| in (1/Angstrom), == 2*PI/d[Angstrom]
+//	variable valence									// optional integer for valence
+//	valence = ParamIsDefault(valence) || numtype(valence) ? 0 : valence
+//
+//	Variable iz=ZfromLabel(AtomType), Bval
+//	if (iz<1 || numtype(iz))
+//		return NaN
+//	elseif (iz<=10)
+//		Make/FREE BwTemp={58.3331,10.9071,4.33979,42.9165,23.0888,12.7188,0.02064,13.8964,11.2651, 9}	// use 9 for Ne
+//		Bval = BwTemp[iz-1]
+//	elseif (iz<=18)
+//		Make/FREE coef={6.8736,0.011759,-0.025672}
+//		Bval = poly(coef,iz-1)
+//	elseif (iz<=50)
+//		Make/FREE coef={51.647,-3.5557,0.085621,-0.00070461}
+//		Bval = poly(coef,iz-1)
+//	elseif (iz<=58)
+//		Make/FREE BwTemp={5.24328,4.74225,4.27091,0.26422,0.23092,0.15152,0.1104,0.12335}
+//		Bval = BwTemp[iz-51]
+//	elseif (iz<=70)
+//		Make/FREE coef={30.119,-0.85371,0.006597}
+//		Bval = poly(coef,iz-1)
+//	else
+//		Make/FREE coef={-57.258,2.1161,-0.025226,9.8321e-05}
+//		Bval = poly(coef,iz-1)
+//	endif
+//
+//	Variable Svector = QAngstrom/(4*PI)
+//	Variable f0 = iz * exp(-Svector*Svector*(Bval)) - valence
+//	f0 = numtype(f0) ? 1 : max(f0,0)			// always a valid number > 0
+//	return cmplx(f0,0)
+//End
 //Function/C Get_f_proto(AtomType,Qmag, keV, [valence])	// simple-minded fatom, just (Z-valence)
 //	string AtomType
 //	variable keV,Qmag
