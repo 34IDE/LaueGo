@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.16
+#pragma version = 2.17
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -838,7 +838,7 @@ Static Function/T imageTitleText(image)	// test suitable for a title text box
 		shrink = 1
 		if (scanNum>0)
 			str += SelectString(strlen(user),"",", ")
-			str += "scan# = "+num2str(scanNum)
+			str += "scan# = "+num2istr(scanNum)
 		endif
 		titleStr += SelectString(strlen(titleStr),"","\r")+str
 	endif
