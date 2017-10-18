@@ -179,6 +179,9 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.31, start to add ability to transform between different settings for the same Space Group.
 //	with version 6.32, change all Wyckoff routines to use SpaceGroupID rather than SpaceGroup
 //	with version 6.34, Wyckoff routines may be done, and can change the xtal setting
+//	with version 6.35, changed DescribeSymOps() to take SpaceGroupID, improved identifying Rhombohedral, use BAR_FONT_ALWAYS,
+//								improved Get_f_proto() simpler & faster & better,  improved parsing symmetry strings
+//								improved Wyckoff symbols, STILL working on Wyckoff Symbols.
 
 //	Rhombohedral Transformation:
 //
@@ -246,7 +249,7 @@ Menu "Analysis"
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
 		"\\M0Space Group number <--> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
-		"Describe the Symmetry Operations", DescribeSymOps($"")
+		"Describe the Symmetry Operations", DescribeSymOps("")
 		"angle between two hkl's",angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN)
 		"  Convert old xtl files to new xml files",ConverXTLfile2XMLfile("")
 		"-"
@@ -2776,7 +2779,7 @@ Static Function LatticeEditPopMenuProc(pa) : PopupMenuControl		// used in the La
 	elseif (strsearch(pa.popStr,"Space Group number <--> symmetry",0,2)>=0)
 		symmtry2SG("")											// help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 	elseif (strsearch(pa.popStr,"Describe the Symmetry Operations",0,2)>=0)
-		DescribeSymOps($"", printIt=1)
+		DescribeSymOps("", printIt=1)
 	elseif (strsearch(pa.popStr,"angle between two hkl's",0,2)>=0)
 		angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN, printIt=1)
 	endif
@@ -5503,107 +5506,405 @@ End
 //End
 
 
-Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry operations, returns result as a list too
-	Wave SymOps
+Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symmetry operations, returns result as a list too
+	String SpaceGroupID
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
-	if (!WaveExists(SymOps))
-		String SymmetryOpsPath=StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath",""), id=""
-		Wave SymOps = $StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
-		Variable SGw = 0
-		if (WaveExists(SymOps))
-			id = StringByKey("SpaceGroupID",note(SymOps),"=")
-			SGw = str2num(id)
-			SGw = numtype(SGw) ? NumberByKey("SpaceGroup",note(SymOps),"=") : SGw
-		endif
-		SGw = numtype(SGw) || SGw<1 ? 0 : SGw
-		STRUCT crystalStructure xtal
-		if (FillCrystalStructDefault(xtal) && !WaveExists(SymOps))
+	STRUCT crystalStructure xtal
+	if (!isValidSpaceGroupID(SpaceGroupID))
+		if (FillCrystalStructDefault(xtal))
 			return ""
 		endif
+		SpaceGroupID = xtal.SpaceGroupID
+		String allIDs=MakeAllIDs()
+		Prompt SpaceGroupID, "Space Group ID",popup,allIDs
+		DoPrompt "Space Group", SpaceGroupID
+		if (V_flag)
+			return ""
+		endif
+		printIt = 1
+	endif
+	if (!isValidSpaceGroupID(SpaceGroupID))
+		if (printIt)
+			printf "ERROR -- the SpaceGroupID = \"%s\" is invalid\r",SpaceGroupID
+		endif
+		return ""
+	endif
+	if (!StringMatch(xtal.SpaceGroupID,SpaceGroupID))
+		init_crystalStructure(xtal)
+		xtal.SpaceGroupID = SpaceGroupID
+		xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
+		xtal.alpha = 80	;	xtal.beta = 115	;	xtal.gam = 70
+		ForceLatticeToStructure(xtal)
+		if (printIt)
+			printf "DescribeSymOps(\"%s\")\r",SpaceGroupID
+		endif
+	endif
 
-		Variable useWave=0, useXtal=0
-		if (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID) && StringMatch(xtal.SpaceGroupID,id))
-			useWave = 1
-		elseif (isValidSpaceGroupID(id) && !isValidSpaceGroupID(xtal.SpaceGroupID))		// use wave
-			useWave = 1
-		elseif (!isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// use xtal
-			useXtal = 1
-		elseif (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// ask
-			DoAlert 2, "SymmetryOpsPath and Lattice Panel Disagree,\r  Remake SymmetryOps"+num2istr(SGw)+" to match Panel?"
-			if (V_flag>2)
-				return ""
-			endif
-			useWave = (V_flag==2)
-			useXtal = (V_flag==1)
-		endif
-		if (useXtal)
-			String wname = MakeSymmetryOps(xtal)
-			String/G root:Packages:Lattices:SymOps:SymmetryOpsPath = wname
-			Wave SymOps = $wname
-		endif
-	endif
-	if (!WaveExists(SymOps))
-		return ""
-	elseif (DimSize(SymOps,1)!=3 || DimSize(SymOps,2)!=3)
-		return ""
-	endif
-	Variable Nproper = NumberByKey("Nproper",note(SymOps),"=")
-	String SpaceGroupID = StringByKey("SpaceGroupID",note(SymOps),"=")
-	if (!(Nproper>0))
-		return ""
-	endif
+	Wave DL = directFrom_xtal(xtal)		// get direct lattice from xtal
+	MatrixOp/FREE/O DLI = Inv(DL)
+	MatrixOp/FREE Adots = Abs((DL^t) x DL)
+	Variable orthogonal = (Adots[0][1]+Adots[0][2]+Adots[1][2]) < 1e-12
+
+	String AllSymOps=setSymLineID(SpaceGroupID)
+	String symOp, str, out=""
+	Make/N=(3,3)/D/FREE mat3
+	Make/N=3/D/FREE vec
+	Variable Nops=ItemsInList(AllSymOps), i, Nproper=0, Nimproper=0, invert, determinanat
 	if (printIt)
 		String system = StringFromList(latticeSystem(SpaceGroupID),LatticeSystemNames)
 		Variable idNum = SpaceGroupID2num(SpaceGroupID)
-		printf "For Space Group %s  (%s) %s,  %g proper rotations\r",SpaceGroupID,system,getHMsym2(idNum),Nproper
+		printf "For Space Group \"%s\"  (%s) %s,  there are %g symmetry operations\r",SpaceGroupID,system,getHMsym2(idNum),Nops
+	endif
+	for (i=0;i<Nops;i+=1)
+		symOp = StringFromList(i,AllSymOps)
+		Wave mat4 = MatrixFromSymLine(symOp, 4, zeroBad=0)
+		mat3 = mat4[p][q]
+		vec = mat4[p][3]
+		determinanat = MatrixDet(mat3)
+		if (!orthogonal)
+			MatrixOp/O/FREE mat3 = DL x mat3 x DLI	// convert to cartesian, similarity transform
+			mat4[0,2][0,2] = mat3[p][q]
+		endif
+		invert = determinanat < 0
+		Nproper += !invert
+		Nimproper += invert
+		str = MatDedscription(mat4)
+		out += str+";"
+		if (printIt)
+			printf "%s\t\t(\"%s\")\r" SelectString(invert,"  ","* ")+str,symOp
+		endif
+	endfor
+	if (printIt)
+		printf "  %g proper rotations,  %g improper rotations\r",Nproper,Nimproper
 	endif
 
-	Make/N=3/D/FREE axis, v3
-	Make/N=(3,3)/D/FREE sym
-	String out = ReplaceNumberByKey("Nproper","",Nproper,"=")
+	out = ReplaceNumberByKey("Nproper",out,Nproper,"=")
 	out = ReplaceNumberByKey("SpaceGroup",out,str2num(SpaceGroupID),"=")
 	out = ReplaceStringByKey("SpaceGroupID",out,SpaceGroupID,"=")
-	String str, name								// name of axis
-	Variable i, angle, div
-	for (i=0;i<Nproper;i+=1)
-		sym = SymOps[i][p][q]
-		angle = axisOfMatrix(sym,axis)		// returns normalized axis
-		angle = abs(angle)<0.1 ? 0 : angle
+	return out
+End
+//
+Static Function/T MatDedscription(matIN)
+	Wave matIN
 
-		if (abs(axis[0]-1)<0.02)
-			name = "X-axis"
+	Make/N=(3,3)/D/FREE mat3
+	Make/N=3/D/FREE vec=0
+	if (DimSize(matIN,0)==3 && DimSize(matIN,1)==3)
+		mat3 = matIN[p][q]
+	elseif (DimSize(matIN,0)==4 && DimSize(matIN,1)==4)
+		mat3 = matIN[p][q]
+		vec = matIN[p][3]
+	else
+		return "ERROR -- MatDedscription(mat), mat must be 3x3 or 4x4"
+	endif
+	Variable det = MatrixDet(mat3)
+	det = abs(det)<1e-5 ? 0 : det
+
+	Variable angle, div, invert=0
+	Make/N=3/D/FREE axis
+	angle = axisOfMatrix(mat3,axis)		// returns normalized axis
+	angle = abs(angle)<0.1 ? 0 : angle
+	angle = norm(axis)>1e-8 ? angle : 0
+
+	Variable type=0	// a bit flag: 0=unknown, 1=Identity, 2=Rotation, 4=Translate, 8=Mirror, 16=Inversion, 32=Screw, 64=Glide
+	// for a Screw: tranlation lies paralles to rotation axis
+	// for a Glide: tranlation lies in the mirror plane, or translation is perpindicular to mirror normal
+
+	MatrixOp/FREE inversion = Sum(Abs(mat3 + Identity(3)))
+	MatrixOp/FREE identity = Sum(Abs(mat3 - Identity(3)))
+	if (inversion[0]<1e-12 || identity[0]<1e-12)	// only an inversion or identity
+		type = 1
+		angle = 0
+		axis = 0
+	endif
+	if (det<0)
+		type = type | 16						// turn on inversion flag
+		invert = 1
+	endif
+
+	String strT=""
+	if (norm(vec)>0)
+		type = type | 4						// has a translation
+		vec = vec - floor(vec)				// wrap into first unit cell
+		strT = vec2fractionString(vec,1/24)
+	endif
+
+	Wave mir = mirrorPlane(mat3)
+	if (WaveExists(mir))
+		axis = mir
+		type = type | 8						// turn on mirror flag
+		if (abs(MatrixDot(mir,vec))<1e-5)
+			type = type | 64					// a Glide, mirror normal perp to translation
+		endif
+	endif
+
+	if (abs(angle)>0 && norm(vec)>0 && !invert)	// check for Screw axis
+		Variable dot = MatrixDot(axis,vec)/(norm(axis)*norm(vec))
+		type = type | (abs(dot-1) < 1e-5 ? 32 : 0)
+	endif
+
+	if (abs(angle)>0)							// some type of rotation
+		type = type | 2						// turn on bit 2
+		String axisName						// name of axis
+		if (abs(axis[0]-1)<0.02)			// remember, axis is normalized
+			axisName = "X-axis"
 		elseif (abs(axis[1]-1)<0.02)
-			name = "Y-axis"
+			axisName = "Y-axis"
 		elseif (abs(axis[2]-1)<0.02)
-			name = "Z-axis"
+			axisName = "Z-axis"
 		elseif (abs(axis[0]+1)<0.02)
 			angle = -angle
-			name = "X-axis"
+			axisName = "X-axis"
 		elseif (abs(axis[1]+1)<0.02)
 			angle = -angle
-			name = "Y-axis"
+			axisName = "Y-axis"
 		elseif (abs(axis[2]+1)<0.02)
 			angle = -angle
-			name = "Z-axis"
+			axisName = "Z-axis"
 		elseif (abs(angle)>0)
 			div = smallestNonZeroValue(axis)
 			axis /= div
-			name = vec2str(axis)+" axis"
-		endif
-		if (abs(angle)<0.1)
-			str = "Identity (no rotation)"
+			axisName = vec2str(axis,sep=", ",zeroThresh=1e-7)+" axis"
 		else
-			sprintf str, "% 4.0f%s rotation about the %s",angle,DEGREESIGN,name
+			axisName = "unknown"
 		endif
-		out += str+";"
-		if (printIt)
-			print str
-		endif
-	endfor
+	endif
+
+	// bit flag: 0=unknown, 1=Identity, 2=Rotation, 4=Translate, 8=Mirror, 16=Inversion, 32=Screw, 64=Glide
+	String out=""
+	if (type&64)
+		sprintf out, "Glide: mirror plane normal to %s + translate by %s", axisName, strT
+	elseif (type&32)
+		sprintf out, "Screw: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
+	elseif ((type&(4+8)) == 12)
+		sprintf out, "Mirror/Translate: mirror plane normal to %s + translate by %s", axisName, strT
+	elseif ((type&(2+16)) == 18)
+		sprintf out, "Improper Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
+	elseif ((type&(4+16)) == 20)
+		sprintf out, "Inversion/Translate: translate by %s", strT
+	elseif ((type&(2+4)) == 6)
+		sprintf out, "Rotation/Translation: % 4.0f%s rotation about the %s  +  translate by %s",angle,DEGREESIGN,axisName, strT
+	elseif ((type&(1+4))==5)
+		sprintf out, "Translate: translate by %s", strT
+	elseif (type&2)
+		sprintf out, "Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
+	elseif ((type&(1+16)) == 17)
+		out = "Inversion"
+	elseif (type==1)
+		out = "Identity"
+	elseif ((type&4)==4)
+		sprintf out, "Fixed Position: %s", strT
+	else
+		out = "Unknown"
+	endif
+
+//	out += "   '"+binaryRep(type)+"'"
 	return out
 End
+//
+Static Function/T binaryRep(num)
+	Variable num
+	Variable i
+	String out=""
+	for (i=1;i<2^32;i*=2)
+		if (num&i)
+			out += num2istr(i)+"+"
+		endif
+	endfor
+	out = TrimEnd(out,chars="+")
+	return out
+End
+//
+Static Function/T vec2fractionString(vec,tol,[bare,addPlus,maxPrint,sep])
+	Wave vec
+	Variable tol						// requested tolerance
+	Variable bare						// if bare is TRUE, then suppress the "{}" in the output
+	Variable addPlus					// if True, always include the '+' sign
+	Variable maxPrint					// maximum number of elements to print, defaults to 20
+	String sep							// optional separator, default is ",  "   a comma and 2 spaces
+	bare = ParamIsDefault(bare) ? 0 : bare
+	addPlus = ParamIsDefault(addPlus) || numtype(addPlus) ? 0 : addPlus
+	maxPrint = ParamIsDefault(maxPrint) ? 20 : maxPrint
+	maxPrint = maxPrint>0 ? maxPrint : 20
+	sep = SelectString(ParamIsDefault(sep),sep,", ")
+
+	if (DimSize(vec,0)!=numpnts(vec))
+		return ""
+	endif
+
+	String out=""
+	Variable i,N=Dimsize(vec,0)
+	for (i=0;i<N;i+=1)
+		out += SelectString(i,"",sep)
+		out += num2fraction(vec[i],tol)
+	endfor
+	if (!bare)
+		out = "{" + out + "}"
+	endif
+	return out
+End
+//
+Static Function/Wave mirrorPlane(mat)	// if mat represents a mirror, then returns normal to the plane
+	Wave mat
+
+	if (DimSize(mat,0)==3 && DimSize(mat,1)==3)
+		Wave mat3 = mat
+	elseif (DimSize(mat,0)==4 && DimSize(mat,1)==4)
+		Duplicate/FREE mat, mat3	// make a (3,3) version of mat
+		Redimension/N=(3,3) mat3
+	else
+		return $""
+	endif
+
+	if (abs(1-MatrixTrace(mat3)) > 1e-5)		// require that trace=1
+		return $""
+	endif
+
+	Make/N=(3)/D/FREE axis
+	Variable angle = axisOfMatrix(mat3,axis)
+	if (abs(angle-180)>1e-5)						// require a 180 deg rotation
+		return $""
+	endif
+
+	Variable factor = smallestNonZeroValue(axis, tol=1e-5)
+	axis /= factor
+
+	if (DimSize(mat,0)==3)
+		return axis
+	endif
+
+	Make/N=4/D/FREE p1
+	p1[0,2] = axis[p]
+	p1 = 1
+	MatrixOp/FREE point = p1 + (mat x p1)
+	MatrixOp/FREE p2 = mat x p1
+	Redimension/N=3 point
+	point = abs(point)<1e-6 ? 0 : point
+	point = point - floor(point)
+	//	printf "p1 = %s,   (mat3 x p1) = %s,   point = %s\r",vec2str(p1,sep=", "),vec2str(p2,sep=", "),vec2str(point,sep=", ")
+
+	Make/N=(3,2)/D/FREE mirPoint
+	mirPoint[][0] = axis[p]
+	mirPoint[][1] = point[p]
+	return mirPoint
+End
+//	Function test_mirrorPlane(symOp)
+//		String symOp
+//		Wave mat = LatticeSym#MatrixFromSymLine(symOp,4)
+//	
+//		Wave mirPoint = mirrorPlane(mat)
+//		if (WaveExists(mirPoint))
+//			Make/N=3/D/FREE mir, point
+//			mir = mirPoint[p][0]
+//			point = mirPoint[p][1]
+//			printf "Mirror plane normal to the %s,  and contains %s\r",vec2str(mir,sep=", "),vec2str(point,sep=", ")
+//		else
+//			print "not a mirror"
+//		endif
+//	End
+//	Function/T DescribeSymOps(SymOps,[printIt])		// prints description of symmetry operations, returns result as a list too
+//		Wave SymOps
+//		Variable printIt
+//		printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+//	
+//		if (!WaveExists(SymOps))
+//			String SymmetryOpsPath=StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath",""), id=""
+//			Wave SymOps = $StrVarOrDefault("root:Packages:Lattices:SymOps:SymmetryOpsPath","")
+//			Variable SGw = 0
+//			if (WaveExists(SymOps))
+//				id = StringByKey("SpaceGroupID",note(SymOps),"=")
+//				SGw = str2num(id)
+//				SGw = numtype(SGw) ? NumberByKey("SpaceGroup",note(SymOps),"=") : SGw
+//			endif
+//			SGw = numtype(SGw) || SGw<1 ? 0 : SGw
+//			STRUCT crystalStructure xtal
+//			if (FillCrystalStructDefault(xtal) && !WaveExists(SymOps))
+//				return ""
+//			endif
+//	
+//			Variable useWave=0, useXtal=0
+//			if (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID) && StringMatch(xtal.SpaceGroupID,id))
+//				useWave = 1
+//			elseif (isValidSpaceGroupID(id) && !isValidSpaceGroupID(xtal.SpaceGroupID))		// use wave
+//				useWave = 1
+//			elseif (!isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// use xtal
+//				useXtal = 1
+//			elseif (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// ask
+//				DoAlert 2, "SymmetryOpsPath and Lattice Panel Disagree,\r  Remake SymmetryOps"+num2istr(SGw)+" to match Panel?"
+//				if (V_flag>2)
+//					return ""
+//				endif
+//				useWave = (V_flag==2)
+//				useXtal = (V_flag==1)
+//			endif
+//			if (useXtal)
+//				String wname = MakeSymmetryOps(xtal)
+//				String/G root:Packages:Lattices:SymOps:SymmetryOpsPath = wname
+//				Wave SymOps = $wname
+//			endif
+//		endif
+//		if (!WaveExists(SymOps))
+//			return ""
+//		elseif (DimSize(SymOps,1)!=3 || DimSize(SymOps,2)!=3)
+//			return ""
+//		endif
+//		Variable Nproper = NumberByKey("Nproper",note(SymOps),"=")
+//		String SpaceGroupID = StringByKey("SpaceGroupID",note(SymOps),"=")
+//		if (!(Nproper>0))
+//			return ""
+//		endif
+//		if (printIt)
+//			String system = StringFromList(latticeSystem(SpaceGroupID),LatticeSystemNames)
+//			Variable idNum = SpaceGroupID2num(SpaceGroupID)
+//			printf "For Space Group %s  (%s) %s,  %g proper rotations\r",SpaceGroupID,system,getHMsym2(idNum),Nproper
+//		endif
+//	
+//		Make/N=3/D/FREE axis, v3
+//		Make/N=(3,3)/D/FREE sym
+//		String out = ReplaceNumberByKey("Nproper","",Nproper,"=")
+//		out = ReplaceNumberByKey("SpaceGroup",out,str2num(SpaceGroupID),"=")
+//		out = ReplaceStringByKey("SpaceGroupID",out,SpaceGroupID,"=")
+//		String str, name								// name of axis
+//		Variable i, angle, div
+//		for (i=0;i<Nproper;i+=1)
+//			sym = SymOps[i][p][q]
+//			angle = axisOfMatrix(sym,axis)		// returns normalized axis
+//			angle = abs(angle)<0.1 ? 0 : angle
+//	
+//			if (abs(axis[0]-1)<0.02)
+//				name = "X-axis"
+//			elseif (abs(axis[1]-1)<0.02)
+//				name = "Y-axis"
+//			elseif (abs(axis[2]-1)<0.02)
+//				name = "Z-axis"
+//			elseif (abs(axis[0]+1)<0.02)
+//				angle = -angle
+//				name = "X-axis"
+//			elseif (abs(axis[1]+1)<0.02)
+//				angle = -angle
+//				name = "Y-axis"
+//			elseif (abs(axis[2]+1)<0.02)
+//				angle = -angle
+//				name = "Z-axis"
+//			elseif (abs(angle)>0)
+//				div = smallestNonZeroValue(axis)
+//				axis /= div
+//				name = vec2str(axis)+" axis"
+//			endif
+//			if (abs(angle)<0.1)
+//				str = "Identity (no rotation)"
+//			else
+//				sprintf str, "% 4.0f%s rotation about the %s",angle,DEGREESIGN,name
+//			endif
+//			out += str+";"
+//			if (printIt)
+//				print str
+//			endif
+//		endfor
+//		return out
+//	End
 
 
 ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
