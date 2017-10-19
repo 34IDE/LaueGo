@@ -5674,7 +5674,9 @@ Static Function/T MatDedscription(matIN)
 
 	// bit flag: 0=unknown, 1=Identity, 2=Rotation, 4=Translate, 8=Mirror, 16=Inversion, 32=Screw, 64=Glide
 	String out=""
-	if (type&64)
+	if (type==1)
+		out = "Identity"
+	elseif (type&64)
 		sprintf out, "Glide: mirror plane normal to %s + translate by %s", axisName, strT
 	elseif (type&32)
 		sprintf out, "Screw: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
@@ -5692,8 +5694,6 @@ Static Function/T MatDedscription(matIN)
 		sprintf out, "Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
 	elseif ((type&(1+16)) == 17)
 		out = "Inversion"
-	elseif (type==1)
-		out = "Identity"
 	elseif ((type&4)==4)
 		sprintf out, "Fixed Position: %s", strT
 	else
