@@ -5596,6 +5596,8 @@ Static Function/T MatDedscription(matIN)
 	elseif (DimSize(matIN,0)==4 && DimSize(matIN,1)==4)
 		mat3 = matIN[p][q]
 		vec = matIN[p][3]
+		vec = vec - floor(vec)				// wrap translations into first unit cell
+		vec = abs(vec)<1e-4 ? 0 : vec	// there are no tiny symmetry translations
 	else
 		return "ERROR -- MatDedscription(mat), mat must be 3x3 or 4x4"
 	endif
@@ -5611,6 +5613,7 @@ Static Function/T MatDedscription(matIN)
 	Variable type=0	// a bit flag: 0=unknown, 1=Identity, 2=Rotation, 4=Translate, 8=Mirror, 16=Inversion, 32=Screw, 64=Glide
 	// for a Screw: tranlation lies paralles to rotation axis
 	// for a Glide: tranlation lies in the mirror plane, or translation is perpindicular to mirror normal
+	// Definition of a Glide plane:		https://en.wikipedia.org/wiki/Glide_plane
 
 	MatrixOp/FREE inversion = Sum(Abs(mat3 + Identity(3)))
 	MatrixOp/FREE identity = Sum(Abs(mat3 - Identity(3)))
@@ -5627,7 +5630,6 @@ Static Function/T MatDedscription(matIN)
 	String strT=""
 	if (norm(vec)>0)
 		type = type | 4						// has a translation
-		vec = vec - floor(vec)				// wrap into first unit cell
 		strT = vec2fractionString(vec,1/24)
 	endif
 

@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.46
+#pragma version = 4.47
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3609,6 +3609,9 @@ Function arithmetic(expression,[def])
 	String expression		// a string that evaluates to a NUMBER, e.g. "1/3 + 5" or "-1/3 + 5"
 	Variable def			// default value, usually 1 or 0 or NaN
 	def = ParamIsDefault(def) ? NaN : def
+	if ((strsearch(expression,"x",0,2)+strsearch(expression,"y",0,2)+strsearch(expression,"z",0,2)) > -3)
+		return def			// just x, can give incorrect result??
+	endif
 	String cmd
 	sprintf cmd, "Variable val__temp__ = (%s)",expression
 	Execute/Z cmd
