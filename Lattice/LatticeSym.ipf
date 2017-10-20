@@ -5688,12 +5688,14 @@ Static Function/T MatDedscription(matIN)
 		sprintf out, "Mirror/Translate: mirror plane normal to %s + translate by %s", axisName, strT
 	elseif (type&8)
 		sprintf out, "Mirror: mirror plane normal to %s", axisName
+	elseif ((type&2) && (type&4) && (type&16))
+		sprintf out, "Improper Rotation/Translate: % 4.0f%s rotation about the %s + Inversion + translate by %s",angle,DEGREESIGN,axisName, strT
 	elseif ((type&2) && (type&16))
-		sprintf out, "Improper Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
+		sprintf out, "Improper Rotation: % 4.0f%s rotation about the %s + Inversion",angle,DEGREESIGN,axisName
 	elseif ((type&4) && (type&16))
-		sprintf out, "Inversion/Translate: translate by %s", strT
+		sprintf out, "Inversion/Translate: Inversion + translate by %s", strT
 	elseif ((type&2) && (type&4))
-		sprintf out, "Rotation/Translation: % 4.0f%s rotation about the %s  +  translate by %s",angle,DEGREESIGN,axisName, strT
+		sprintf out, "Rotation/Translation: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
 	elseif ((type&1) && (type&4))
 		sprintf out, "Translate: translate by %s", strT
 	elseif (type&2)
