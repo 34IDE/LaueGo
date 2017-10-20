@@ -5628,16 +5628,18 @@ Static Function/T MatDedscription(matIN)
 	endif
 
 	String strT=""
-	if (norm(vec)>0)
+	if (norm(vec)>1e-5)
 		type = type | 4						// has a translation
 		strT = vec2fractionString(vec,1/24)
+	else
+		vec = 0									// if it is zero, make it exactly zero
 	endif
 
 	Wave mir = mirrorPlane(mat3)
-	if (WaveExists(mir))
+	if (WaveExists(mir))					// a mirror
 		axis = mir
 		type = type | 8						// turn on mirror flag
-		if (abs(MatrixDot(mir,vec))<1e-5)
+		if (abs(MatrixDot(mir,vec))<1e-5 && (type&4))	// check the translation
 			type = type | 64					// a Glide, mirror normal perp to translation
 		endif
 	endif
@@ -5677,29 +5679,31 @@ Static Function/T MatDedscription(matIN)
 	// bit flag: 0=unknown, 1=Identity, 2=Rotation, 4=Translate, 8=Mirror, 16=Inversion, 32=Screw, 64=Glide
 	String out=""
 	if (type==1)
-		out = "Identity"
+		out = "Identity:"
 	elseif (type&64)
 		sprintf out, "Glide: mirror plane normal to %s + translate by %s", axisName, strT
 	elseif (type&32)
 		sprintf out, "Screw: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
-	elseif ((type&(4+8)) == 12)
+	elseif ((type&4) && (type&8))
 		sprintf out, "Mirror/Translate: mirror plane normal to %s + translate by %s", axisName, strT
-	elseif ((type&(2+16)) == 18)
+	elseif (type&8)
+		sprintf out, "Mirror: mirror plane normal to %s", axisName
+	elseif ((type&2) && (type&16))
 		sprintf out, "Improper Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
-	elseif ((type&(4+16)) == 20)
+	elseif ((type&4) && (type&16))
 		sprintf out, "Inversion/Translate: translate by %s", strT
-	elseif ((type&(2+4)) == 6)
+	elseif ((type&2) && (type&4))
 		sprintf out, "Rotation/Translation: % 4.0f%s rotation about the %s  +  translate by %s",angle,DEGREESIGN,axisName, strT
-	elseif ((type&(1+4))==5)
+	elseif ((type&1) && (type&4))
 		sprintf out, "Translate: translate by %s", strT
 	elseif (type&2)
 		sprintf out, "Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
-	elseif ((type&(1+16)) == 17)
-		out = "Inversion"
-	elseif ((type&4)==4)
+	elseif ((type&1) && (type&16))
+		out = "Inversion:"
+	elseif (type&4)
 		sprintf out, "Fixed Position: %s", strT
 	else
-		out = "Unknown"
+		out = "Unknown:"
 	endif
 
 //	out += "   '"+binaryRep(type)+"'"
