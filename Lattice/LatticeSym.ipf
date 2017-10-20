@@ -5537,9 +5537,9 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 		xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
 		xtal.alpha = 80	;	xtal.beta = 115	;	xtal.gam = 70
 		ForceLatticeToStructure(xtal)
-		if (printIt)
-			printf "DescribeSymOps(\"%s\")\r",SpaceGroupID
-		endif
+	endif
+	if (printIt)
+		printf "DescribeSymOps(\"%s\")\r",SpaceGroupID
 	endif
 
 	Wave DL = directFrom_xtal(xtal)		// get direct lattice from xtal
