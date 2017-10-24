@@ -6126,6 +6126,8 @@ ThreadSafe Function/S getHMboth(SpaceGroupIDnum)	// returns short and (full) Her
 End
 
 
+//	see:		https://en.wikipedia.org/wiki/Hermann–Mauguin_notation
+//		or:	https://bruceravel.github.io/demeter/artug/atoms/space.html#decodingthehermann-maguinnotation
 ThreadSafe Function/T getHMsym(idNum)		// returns short Hermann-Mauguin symbol
 	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	if (!isValidSpaceGroupIDnum(idNum))
