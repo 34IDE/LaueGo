@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.35
+#pragma version = 6.36
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -182,6 +182,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.35, changed DescribeSymOps() to take SpaceGroupID, improved identifying Rhombohedral, use BAR_FONT_ALWAYS,
 //								improved Get_f_proto() simpler & faster & better,  improved parsing symmetry strings
 //								improved Wyckoff symbols, STILL working on Wyckoff Symbols.
+//	with version 6.36, fix error in MatDedscription()
 
 //	Rhombohedral Transformation:
 //
@@ -5652,19 +5653,20 @@ Static Function/T MatDedscription(matIN)
 	if (abs(angle)>0)							// some type of rotation
 		type = type | 2						// turn on bit 2
 		String axisName						// name of axis
-		if (abs(axis[0]-1)<0.02)			// remember, axis is normalized
+		Variable xdot=axis[0]/norm(axis), ydot=axis[1]/norm(axis), zdot=axis[2]/norm(axis)
+		if (abs(xdot-1)<0.02)
 			axisName = "X-axis"
-		elseif (abs(axis[1]-1)<0.02)
+		elseif (abs(ydot-1)<0.02)
 			axisName = "Y-axis"
-		elseif (abs(axis[2]-1)<0.02)
+		elseif (abs(zdot-1)<0.02)
 			axisName = "Z-axis"
-		elseif (abs(axis[0]+1)<0.02)
+		elseif (abs(xdot+1)<0.02)
 			angle = -angle
 			axisName = "X-axis"
-		elseif (abs(axis[1]+1)<0.02)
+		elseif (abs(ydot+1)<0.02)
 			angle = -angle
 			axisName = "Y-axis"
-		elseif (abs(axis[2]+1)<0.02)
+		elseif (abs(zdot+1)<0.02)
 			angle = -angle
 			axisName = "Z-axis"
 		elseif (abs(angle)>0)
