@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.36
+#pragma version = 6.37
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -11,8 +11,8 @@
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Static Constant minPossibleBondLength = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 Static Constant ELEMENT_Zmax = 118
-//Static strConstant BAR_FONT_ALWAYS = "Arial"		//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
-strConstant BAR_FONT_ALWAYS = "Tahoma"			//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
+//Static strConstant BAR_FONT_ALWAYS = "Arial"	//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
+strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
 
 
@@ -183,6 +183,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								improved Get_f_proto() simpler & faster & better,  improved parsing symmetry strings
 //								improved Wyckoff symbols, STILL working on Wyckoff Symbols.
 //	with version 6.36, fix error in MatDedscription()
+//	with version 6.37, change isRhombohedral() to isRhombohedralSG(), and how it is used
 
 //	Rhombohedral Transformation:
 //
@@ -1249,8 +1250,8 @@ Static Function ForceLatticeToStructure(xtal)
 	elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
 		// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
 		Variable useRhom = 0
-		if (isRhombohedral(SG))
-			useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1
+		if (isRhombohedralSG(SG))
+			useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1	// looks rhombohedral
 			useRhom = useRhom | ( strsearch(id,":R",0,2)>0 )
 		endif
 		if (useRhom)
@@ -2156,7 +2157,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		alpha=90;  bet=90;  gam=120
 	elseif(SpaceGroup>=143)		// Trigonal
 		Variable useHex=1
-		if (isRhombohedral(SpaceGroup))
+		if (isRhombohedralSG(SpaceGroup))	// use Hex or Rhomobhedral
 			Prompt useHex, "Use Hex axes", popup, "Hexagonal Axes;Rhombohedral Axes"
 			DoPrompt "What kind of Axes?", useHex
 			if (V_flag)
@@ -2414,7 +2415,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_gamma,noedit=1,frame=0,win=$subWin
 		b=a ; alpha=90 ; bet=90 ; gam=120
 		titleStr += "Hexagonal"
-	elseif (isRhombohedral(SG) && !((abs(90-alpha)+abs(90-bet)+abs(120-gam))<1e-6))	// Rhombohedral, with rhombohedral cell
+	elseif (isRhombohedralSG(SG) && !((abs(90-alpha)+abs(90-bet)+abs(120-gam))<1e-6))	// Rhombohedral, with rhombohedral cell
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
@@ -6729,12 +6730,12 @@ End
 
 
 
-ThreadSafe Function isRhombohedralXtal(xtal)
+ThreadSafe Function isRhombohedralXtal(xtal)	// returns True if a Rhombohedral space group with Rhombohedral axes
 	STRUCT crystalStructure &xtal
-	return (isRhombohedral(xtal.SpaceGroup) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
+	return (isRhombohedralSG(xtal.SpaceGroup) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
 End
 
-ThreadSafe Static Function isRhombohedral(SpaceGroup)
+ThreadSafe Static Function isRhombohedralSG(SpaceGroup)
 	Variable SpaceGroup
 	switch(SpaceGroup)		// there are only 7 space groups that are Rhombohedral, sym for these all start with "R"
 		case 146:
@@ -6804,7 +6805,7 @@ ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice consta
 			// generally use hexagonal cell, for rhomohedral use rhomohedral cell, unless obviously the hexagonal
 			if (isHEXAGONAL_LC(a,b,c,alpha,bet,gam))	// hexagonal is always permitted
 				return 1
-			elseif (isRhombohedral(SG))		// a rhomohedral space group, may have rhom axes
+			elseif (isRhombohedralSG(SG))	// a rhomohedral space group, may have rhom axes
 				return (isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam))
 			endif
 			return 0
@@ -7103,9 +7104,9 @@ End
 
 ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acceptable minimal length
 	Variable h,k,l
-	Variable bar														// OPTIONAL, return unicocde string with bars instead of negatives
+	Variable bar											// OPTIONAL, return unicocde string with bars instead of negatives
 	bar = ParamIsDefault(bar) || numtype(bar) ? 0 : bar	// default is negative signs
-	bar = IgorVersion()<7 ? 0 : bar							// bar not available for Igor 6 (requires unicode support)
+	bar = IgorVersion()<7 ? 0 : bar					// bar not available for Igor 6 (requires unicode support)
 	h = abs(h)<1e-14 ? 0 : h
 	k = abs(k)<1e-14 ? 0 : k
 	l = abs(l)<1e-14 ? 0 : l
@@ -7113,7 +7114,7 @@ ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acc
 	if (numtype(h+k+l))
 		hklStr = "nan,nan,nan"
 	elseif (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)
-		sprintf hklStr,"%g, %g, %g",h,k,l					// hkl are non-integers
+		sprintf hklStr,"%g, %g, %g",h,k,l			// hkl are non-integers
 	elseif (bar)
 		String sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
 		hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
@@ -7125,7 +7126,7 @@ ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acc
 		sprintf hklStr,"%.0f %.0f %.0f",h,k,l
 	endif
 #if (IgorVersion()>7)
-	if (bar)														// only Arial and Tahoma work properly with OVERLINE
+	if (bar)													// only Arial and Tahoma work properly with OVERLINE
 		hklStr = "\\[0\\F'"+BAR_FONT_ALWAYS+"'" + hklStr + "\\F]0"
 	endif
 #endif
@@ -8980,11 +8981,12 @@ Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 	for (i=0;i<N;i+=1)
 		if (cmpstr(Wlist[i][0],letter)==0)
 			mult = str2num(Wlist[i][2])
+			break
 		endif
 	endfor
-	if (strsearch(SpaceGroupID,":R",0,2)>0)				// ONLY for Rhombohedral
-		mult /= 3													//   divide multiplicity by 3
-	endif
+//	if (isRhombohedral(str2num(SpaceGroupID)) && strsearch(SpaceGroupID,":R",0,2)<0)				// ONLY for Rhombohedral
+//		mult /= 3													//   divide multiplicity by 3
+//	endif
 	return mult
 End
 //
