@@ -6453,11 +6453,13 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 End
 
 
-Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
+Static Function/S SymString2SGtype(symIN,type,ignoreMinus,[id])
 	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed, return list of idNums [1,530]
 	String symIN						// requested symbol, if empty, then a dialog will come up
 	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=space group ID
 	Variable ignoreMinus			// if true, then ignore any minus signs when matching
+	Variable id							// if true, convert idNumbers to id's
+	id = ParamIsDefault(id) || numtype(id) ? 0 : id
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
 	if (ignoreMinus)
@@ -6469,7 +6471,7 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
 		return ""
 	endif
 
-	String sym,list=""
+	String sym,list="", allIDs=MakeAllIDs()
 	Variable idNum
 	if (type==8)						// searching for a Lattice System
 		if (StringMatch("Triclinic",find))
@@ -6495,11 +6497,9 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
 		if (StringMatch("Cubic",find))
 			list += expandRange("489-530",";")+";"
 		endif
-		return list
-	endif
+//		return list
 
-	if (type==16)											// searching for a Space Group ID, e.g. "15:b3"
-		String allIDs=MakeAllIDs()
+	elseif (type==16)										// searching for a Space Group ID, e.g. "15:b3"
 		for (idNum=1; idNum<=530; idNum+=1)
 			sym = StringFromList(idNum-1,allIDs)
 			if (ignoreMinus)
@@ -6509,10 +6509,9 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
 				list += num2istr(idNum)+";"			// found a match, save it
 			endif
 		endfor
-		return list
-	endif
+//		return list
 
-	if (type==1)						// searching for a Hermann-Mauguin
+	elseif (type==1)						// searching for a Hermann-Mauguin
 		FUNCREF getHMsym symbolFunc = getHMsym
 	elseif (type==2)					// searching for a Full Hermann-Mauguin
 		FUNCREF getHMsym symbolFunc = getHMsym2
@@ -6520,17 +6519,30 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus)
 		FUNCREF getHMsym symbolFunc = getHallSymbol
 	endif
 
-	// symbolFunc has been set, check all idNums in symbolFunc(idNum)
-	for (idNum=1;idNum<=530;idNum+=1)			// check all 530 space group types using symbolFunc
-		sym = ReplaceString(" ",symbolFunc(idNum),"")	// ignore spaces
-		if (ignoreMinus)
-			sym = ReplaceString("-",sym,"")		// optionally, do not include minus signs
-		endif
+	if (type<5)
+		// symbolFunc has been set, check all idNums in symbolFunc(idNum)
+		for (idNum=1;idNum<=530;idNum+=1)		// check all 530 space group types using symbolFunc
+			sym = ReplaceString(" ",symbolFunc(idNum),"")	// ignore spaces
+			if (ignoreMinus)
+				sym = ReplaceString("-",sym,"")	// optionally, do not include minus signs
+			endif
 
-		if (StringMatch(sym,find))				// look for find in sym
-			list += num2istr(idNum)+";"			// found a match, save it
-		endif
-	endfor
+			if (StringMatch(sym,find))			// look for find in sym
+				list += num2istr(idNum)+";"		// found a match, save it
+			endif
+		endfor
+	endif
+
+	if (id)
+		String temp = list
+		list = ""
+		Variable i, j
+		for (i=0;i<ItemsInList(temp);i+=1)
+			j = str2num(StringFromList(i,temp))-1
+			list += StringFromList(j,allIDs)+";"
+		endfor
+	endif
+
 	return list
 End
 
