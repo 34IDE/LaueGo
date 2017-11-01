@@ -184,6 +184,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								improved Wyckoff symbols, STILL working on Wyckoff Symbols.
 //	with version 6.36, fix error in MatDedscription()
 //	with version 6.37, change isRhombohedral() to isRhombohedralSG(), and how it is used
+//								also changed SymString2SGtype(), added parameter "returnID", added optional "id" to symmtry2SG()
 
 //	Rhombohedral Transformation:
 //
@@ -3509,9 +3510,9 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = XMLtagContents("H-M",cif)			//	Hermann-Manguin symbol, e.g. 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0)			// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0,0)		// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1)				// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0)				// checks in getHMsym2 again, but ignoring minus signs
 		endif
 		if (ItemsInList(nlist)==1)								// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
@@ -4276,9 +4277,9 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0)			// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0,0)		// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1)				// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0)				// checks in getHMsym2 again, but ignoring minus signs
 		endif
 		if (ItemsInList(nlist)==1)								// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
@@ -6363,11 +6364,13 @@ ThreadSafe Static Function latticeSystem(SpaceGroupID)
 End
 
 
-Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from the symmetry string
+Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number from the symmetry string
 	String strIN
 	Variable types						// -1=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=SpaceGroupID, 32=Ignore Minuses
+	Variable id							// if true, convert idNumbers to id's
 	Variable printIt
 	types = ParamIsDefault(types) ? -1 : round(types)
+	id = ParamIsDefault(id) || numtype(id) ? 0 : id
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	if (strlen(strIN)<1 || numtype(types))
@@ -6400,23 +6403,23 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 	String list="", nameList=""
 	Variable idNum
 	if (types & 1)
-		list += SymString2SGtype(strIN,1,ignoreMinus)		// 1 = Hermann-Mauguin
+		list += SymString2SGtype(strIN,1,ignoreMinus,id)	// 1 = Hermann-Mauguin
 		nameList += "Hermann-Mauguin, "
 	endif
 	if (types & 2)
-		list += SymString2SGtype(strIN,2,ignoreMinus)		// 2 = Full Hermann-Mauguin, HM2
+		list += SymString2SGtype(strIN,2,ignoreMinus,id)	// 2 = Full Hermann-Mauguin, HM2
 		nameList += "FULL Hermann-Mauguin, "
 	endif
 	if (types & 4)
-		list += SymString2SGtype(strIN,4,ignoreMinus)		// 4 = Hall
+		list += SymString2SGtype(strIN,4,ignoreMinus,id)	// 4 = Hall
 		nameList += "Hall, "
 	endif
 	if (types & 8)
-		list += SymString2SGtype(strIN,8,ignoreMinus)		// 8 = Lattice System
+		list += SymString2SGtype(strIN,8,ignoreMinus,id)	// 8 = Lattice System
 		nameList += "Lattice System, "
 	endif
 	if (types & 16)
-		list += SymString2SGtype(strIN,16,ignoreMinus)		// 16 = space group ID, e.g. "15:b3"
+		list += SymString2SGtype(strIN,16,ignoreMinus,id)// 16 = space group ID, e.g. "15:b3"
 		nameList += "Space Group ID, "
 	endif
 	nameList = TrimBoth(nameList,chars=", ")
@@ -6433,7 +6436,7 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 		endif
 		String allIDs=MakeAllIDs()
 		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
-		String id, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
+		String SGid, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
 			idNum = str2num(StringFromList(i,list))
 			if (isValidSpaceGroupIDnum(idNum))
@@ -6442,24 +6445,34 @@ Function/S symmtry2SG(strIN,[types,printIt])	// find the Space Group number from
 				fullHM = SelectString(StringMatch(fullHM,HM),"\t\t\t"+fullHM,"")
 				tab = SelectString(strlen(getHMsym2(idNum))>5,"\t","")
 
-				id = StringFromList(idNum-1,allIDs)
-				system = StringFromList(latticeSystem(id),systemNames)
-				showDefault = strsearch(id,":",0)>=0 && StringMatch(id,FindDefaultIDforSG(str2num(id)))
-				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", id,system,HM,tab,getHallSymbol(idNum),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
+				SGid = StringFromList(idNum-1,allIDs)
+				system = StringFromList(latticeSystem(SGid),systemNames)
+				showDefault = strsearch(SGid,":",0)>=0 && StringMatch(SGid,FindDefaultIDforSG(str2num(SGid)))
+				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
 			endif
 		endfor
 	endif
+
+	if (id)												// convert list from idNumbers to ID's
+		String temp = list
+		list = ""
+		Variable j
+		for (i=0;i<ItemsInList(temp);i+=1)
+			j = str2num(StringFromList(i,temp))-1
+			list += StringFromList(j,allIDs)+";"
+		endfor
+	endif
+
 	return list
 End
 
 
-Static Function/S SymString2SGtype(symIN,type,ignoreMinus,[id])
+Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
 	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed, return list of idNums [1,530]
 	String symIN						// requested symbol, if empty, then a dialog will come up
 	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=space group ID
 	Variable ignoreMinus			// if true, then ignore any minus signs when matching
-	Variable id							// if true, convert idNumbers to id's
-	id = ParamIsDefault(id) || numtype(id) ? 0 : id
+	Variable returnID					// if true, convert idNumbers to id's
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
 	if (ignoreMinus)
@@ -6497,7 +6510,6 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,[id])
 		if (StringMatch("Cubic",find))
 			list += expandRange("489-530",";")+";"
 		endif
-//		return list
 
 	elseif (type==16)										// searching for a Space Group ID, e.g. "15:b3"
 		for (idNum=1; idNum<=530; idNum+=1)
@@ -6509,7 +6521,6 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,[id])
 				list += num2istr(idNum)+";"			// found a match, save it
 			endif
 		endfor
-//		return list
 
 	elseif (type==1)						// searching for a Hermann-Mauguin
 		FUNCREF getHMsym symbolFunc = getHMsym
@@ -6533,7 +6544,7 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,[id])
 		endfor
 	endif
 
-	if (id)
+	if (returnID)										// convert list from idNumbers to ID's
 		String temp = list
 		list = ""
 		Variable i, j
@@ -9241,7 +9252,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 	if (!(SG==str2num(id)))					// no id given, ask the user
 		String defaultID = FindDefaultIDforSG(xtal.SpaceGroup)
 		String allIDs=MakeAllIDs()
-		String idList="", idNumList = symmtry2SG(num2str(SG)+"*", types=16)	// find the Space Group number from the symmetry string
+		String idList="", idNumList=symmtry2SG(num2str(SG)+"*",types=16)	// find the Space Group number from the symmetry string
 		if (ItemsInList(idNumList)<1)
 			if (printIt)
 				print "Only one setting for this Space Group, nothing to do"
