@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.38
+#pragma version = 6.37
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -185,7 +185,6 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.36, fix error in MatDedscription()
 //	with version 6.37, change isRhombohedral() to isRhombohedralSG(), and how it is used
 //								also changed SymString2SGtype(), added parameter "returnID", added optional "id" to symmtry2SG()
-//	with version 6.38, changed printout in MatDedscription()
 
 //	Rhombohedral Transformation:
 //
@@ -5684,63 +5683,34 @@ Static Function/T MatDedscription(matIN)
 	// bit flag: 0=unknown, 1=Identity, 2=Rotation, 4=Translate, 8=Mirror, 16=Inversion, 32=Screw, 64=Glide
 	String out=""
 	if (type==1)
-		out = "Identity"
+		out = "Identity:"
 	elseif (type&64)
-		sprintf out, "Glide - mirror plane normal to %s + translate by %s", axisName, strT
+		sprintf out, "Glide: mirror plane normal to %s + translate by %s", axisName, strT
 	elseif (type&32)
-		sprintf out, "Screw - % 4.0f%s about %s + translate by %s",angle,DEGREESIGN,axisName, strT
+		sprintf out, "Screw: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
 	elseif ((type&4) && (type&8))
-		sprintf out, "Mirror plane normal to %s + translate by %s", axisName, strT
+		sprintf out, "Mirror/Translate: mirror plane normal to %s + translate by %s", axisName, strT
 	elseif (type&8)
-		sprintf out, "Mirror plane normal to %s", axisName
+		sprintf out, "Mirror: mirror plane normal to %s", axisName
 	elseif ((type&2) && (type&4) && (type&16))
-		sprintf out, "% 4.0f%s about %s + Inversion + translate by %s",angle,DEGREESIGN,axisName, strT
+		sprintf out, "Improper Rotation/Translate: % 4.0f%s rotation about the %s + Inversion + translate by %s",angle,DEGREESIGN,axisName, strT
 	elseif ((type&2) && (type&16))
-		sprintf out, "% 4.0f%s about %s + Inversion",angle,DEGREESIGN,axisName
+		sprintf out, "Improper Rotation: % 4.0f%s rotation about the %s + Inversion",angle,DEGREESIGN,axisName
 	elseif ((type&4) && (type&16))
-		sprintf out, "Inversion + translate by %s", strT
+		sprintf out, "Inversion/Translate: Inversion + translate by %s", strT
 	elseif ((type&2) && (type&4))
-		sprintf out, "% 4.0f%s about %s + translate by %s",angle,DEGREESIGN,axisName, strT
+		sprintf out, "Rotation/Translation: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
 	elseif ((type&1) && (type&4))
-		sprintf out, "translate by %s", strT
+		sprintf out, "Translate: translate by %s", strT
 	elseif (type&2)
-		sprintf out, "% 4.0f%s about %s",angle,DEGREESIGN,axisName
+		sprintf out, "Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
 	elseif ((type&1) && (type&16))
-		out = "Inversion"
+		out = "Inversion:"
 	elseif (type&4)
-		sprintf out, "Fixed Position %s", strT
+		sprintf out, "Fixed Position: %s", strT
 	else
-		out = "Unknown"
+		out = "Unknown:"
 	endif
-//		if (type==1)
-//			out = "Identity:"
-//		elseif (type&64)
-//			sprintf out, "Glide: mirror plane normal to %s + translate by %s", axisName, strT
-//		elseif (type&32)
-//			sprintf out, "Screw: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
-//		elseif ((type&4) && (type&8))
-//			sprintf out, "Mirror/Translate: mirror plane normal to %s + translate by %s", axisName, strT
-//		elseif (type&8)
-//			sprintf out, "Mirror: mirror plane normal to %s", axisName
-//		elseif ((type&2) && (type&4) && (type&16))
-//			sprintf out, "Improper Rotation/Translate: % 4.0f%s rotation about the %s + Inversion + translate by %s",angle,DEGREESIGN,axisName, strT
-//		elseif ((type&2) && (type&16))
-//			sprintf out, "Improper Rotation: % 4.0f%s rotation about the %s + Inversion",angle,DEGREESIGN,axisName
-//		elseif ((type&4) && (type&16))
-//			sprintf out, "Inversion/Translate: Inversion + translate by %s", strT
-//		elseif ((type&2) && (type&4))
-//			sprintf out, "Rotation/Translation: % 4.0f%s rotation about the %s + translate by %s",angle,DEGREESIGN,axisName, strT
-//		elseif ((type&1) && (type&4))
-//			sprintf out, "Translate: translate by %s", strT
-//		elseif (type&2)
-//			sprintf out, "Rotation: % 4.0f%s rotation about the %s",angle,DEGREESIGN,axisName
-//		elseif ((type&1) && (type&16))
-//			out = "Inversion:"
-//		elseif (type&4)
-//			sprintf out, "Fixed Position: %s", strT
-//		else
-//			out = "Unknown:"
-//		endif
 
 //	out += "   '"+binaryRep(type)+"'"
 	return out
