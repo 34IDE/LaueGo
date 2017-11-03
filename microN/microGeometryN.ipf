@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.98
+#pragma version = 1.99
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -2848,7 +2848,6 @@ ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire th
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
 	Make/N=3/D/FREE Rvec								// rotation vector that puts axis of wire along {1,0,0}
-	Make/N=(3,3)/D/FREE rho							// rotate to frame where wire axis is along x-axis
 	Make/N=3/D/FREE pixel								// position of pixel in rotated coords
 	Make/N=3/D/FREE Sw									// position of source in rotated coords
 	Make/N=3/D/FREE delta								// scanned direction of wire motion in rotated coords
@@ -2869,7 +2868,7 @@ ThreadSafe Function DepthPixel2WireH(g,depth,xyzPixel,edge)	// calc H of wire th
 	Rvec = {0,g.wire.axisR[2], -g.wire.axisR[1]}	// cross product,   axisR x {1,0,0}
 	Variable theta = asin(normalize(Rvec))		// length of Rvec = sin(theta)
 	Rvec *= theta
-	rotationMatFromAxis(Rvec,NaN,rho)				// rotation matrix makes wire axis lie along {1,0,0}
+	Wave rho = rotationMatFromAxis(Rvec,NaN)	// rotation matrix makes wire axis lie along {1,0,0}
 
 	rhoW[0][0]=g.wire.R00;	rhoW[0][1]=g.wire.R01;	rhoW[0][2]=g.wire.R02
 	rhoW[1][0]=g.wire.R10;	rhoW[1][1]=g.wire.R11;	rhoW[1][2]=g.wire.R12
@@ -2924,7 +2923,6 @@ ThreadSafe Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
 	Variable edge						// 1=leading edge (usual),  0=trailing edge
 
 	Make/N=3/D/FREE Rvec								// rotation vector that puts axis of wire along {1,0,0}
-	Make/N=(3,3)/D/FREE rho							// rotate to frame where wire axis is along x-axis
 	Make/N=3/D/FREE pixel								// position of pixel (beam line coords)
 	Make/N=3/D/FREE wc									// position of wire center
 	Make/N=3/D/FREE ki									// incident beam direction (in rotated by rho)
@@ -2933,7 +2931,7 @@ ThreadSafe Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
 	Rvec = {0,g.wire.axisR[2], -g.wire.axisR[1]}	// cross product,   axisR x {,0,0}
 	Variable theta = asin(normalize(Rvec))		// length of Rvec = sin(theta)
 	Rvec *= theta
-	rotationMatFromAxis(Rvec,NaN,rho)				// rotation matrix makes wire axis lie along {1,0,0}
+	Wave rho = rotationMatFromAxis(Rvec,NaN)	// rotation matrix makes wire axis lie along {1,0,0}
 
 	wc = Xw
 	PositionerX2_toBeamLineX2(g.wire,wc)			// transform Xw into Beam Line coords (subtract origin & rotate)
@@ -2966,33 +2964,33 @@ ThreadSafe Function PixelxyzWire2depth(g,xyzPixel,Xw,edge)	// returns depth (µm)
 //	return Sw[2]
 End
 
-// set mat to be a rotation matrix about axis with angle
-ThreadSafe Static Function rotationMatFromAxis(axis,angle,mat)
-	Wave axis			// axis about which to rotate (or possibly Rodriques vector)
-	Variable angle		// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
-	Wave mat				// desired rotation matrix
-
-	Variable len = norm(axis)
-	angle = numtype(angle) ? len : angle*PI/180	// the rotation angle (rad)
-
-	if (angle==0)												// zero angle rotation is just the identity matrix
-		mat = (p==q)
-		return 0
-	endif
-
-	Variable nx=axis[0]/len, ny=axis[1]/len, nz=axis[2]/len
-	Variable cosa=cos(angle), sina=sin(angle)
-	Variable c1 = 1-cosa
-	if (DimSize(mat,0)!=3 && DimSize(mat,1)!=3)
-		print "ERROR -- rotationMatFromAxis(), mat must be (3,3)"
-		return 1
-	endif
-	// from		http://mathworld.wolfram.com/RodriguesRotationFormula.html (I double checked this too.)
-	mat[0][0] = cosa+nx*nx*c1;			mat[0][1] =nx*ny*c1-nz*sina;			mat[0][2] = nx*nz*c1+ny*sina;
-	mat[1][0] = nx*ny*c1+nz*sina;		mat[1][1] = cosa+ny*ny*c1;			mat[1][2] =ny*nz*c1-nx*sina;
-	mat[2][0] = nx*nz*c1-ny*sina;		mat[2][1] = ny*nz*c1+nx*sina;		mat[2][2] = cosa+nz*nz*c1;
-	return 0
-End
+	//	// set mat to be a rotation matrix about axis with angle
+	//	ThreadSafe Static Function rotationMatFromAxis(axis,angle,mat)
+	//		Wave axis			// axis about which to rotate (or possibly Rodriques vector)
+	//		Variable angle		// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
+	//		Wave mat				// desired rotation matrix
+	//	
+	//		Variable len = norm(axis)
+	//		angle = numtype(angle) ? len : angle*PI/180	// the rotation angle (rad)
+	//	
+	//		if (angle==0)												// zero angle rotation is just the identity matrix
+	//			mat = (p==q)
+	//			return 0
+	//		endif
+	//	
+	//		Variable nx=axis[0]/len, ny=axis[1]/len, nz=axis[2]/len
+	//		Variable cosa=cos(angle), sina=sin(angle)
+	//		Variable c1 = 1-cosa
+	//		if (DimSize(mat,0)!=3 && DimSize(mat,1)!=3)
+	//			print "ERROR -- rotationMatFromAxis(), mat must be (3,3)"
+	//			return 1
+	//		endif
+	//		// from		http://mathworld.wolfram.com/RodriguesRotationFormula.html (I double checked this too.)
+	//		mat[0][0] = cosa+nx*nx*c1;			mat[0][1] =nx*ny*c1-nz*sina;			mat[0][2] = nx*nz*c1+ny*sina;
+	//		mat[1][0] = nx*ny*c1+nz*sina;		mat[1][1] = cosa+ny*ny*c1;			mat[1][2] =ny*nz*c1-nx*sina;
+	//		mat[2][0] = nx*nz*c1-ny*sina;		mat[2][1] = ny*nz*c1+nx*sina;		mat[2][2] = cosa+nz*nz*c1;
+	//		return 0
+	//	End
 
 
 //Menu "Test_Wire"

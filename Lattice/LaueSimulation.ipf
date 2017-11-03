@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.16
+#pragma version = 1.17
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -161,8 +161,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		Cross qhat, qcenter									// W_Cross is the new rotation axis
 		Wave W_Cross=W_Cross
 		Variable theta = atan2(norm(W_Cross),MatrixDot(qcenter,qhat))*180/PI
-		Make/N=(3,3)/O/D/FREE rho
-		microGeo#rotationMatFromAxis(W_Cross,theta,rho)
+		Wave rho = rotationMatFromAxis(W_Cross,theta)
 		KillWaves/Z W_Cross
 		MatrixOp/O/FREE recip = rho x recip
 	endif

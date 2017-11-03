@@ -3043,34 +3043,34 @@ Static Function/WAVE recip_from_xtal(xtal)
 End
 
 
-// set mat to be a rotation matrix about axis with angle
-//ThreadSafe Static Function/WAVE rotationMatFromAxis(axis,angle)
-Static Function/WAVE rotationMatFromAxis(axis,angle)
-	Wave axis				// axis about which to rotate (or possibly Rodriques vector)
-	Variable angle			// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
-	Wave mat				// desired rotation matrix
-
-	if (!WaveExists(axis) || numtype(angle))
-		return $""
-	endif
-
-	Make/N=(3,3)/FREE mat
-	Variable len = norm(axis)
-	angle = numtype(angle) ? len : angle*PI/180	// the rotation angle (rad)
-	if (angle==0)									// zero angle rotation is just the identity matrix
-		mat = (p==q)
-		return mat
-	endif
-
-	Variable nx=axis[0]/len, ny=axis[1]/len, nz=axis[2]/len
-	Variable cosa=cos(angle), sina=sin(angle)
-	Variable c1 = 1-cosa
-	// from		http://mathworld.wolfram.com/RodriguesRotationFormula.html (I double checked this too.)
-	mat[0][0] = nx*nx*c1 + cosa;			mat[0][1] = nx*ny*c1 - nz*sina;		mat[0][2] = nx*nz*c1 + ny*sina
-	mat[1][0] = nx*ny*c1 + nz*sina;		mat[1][1] = ny*ny*c1 + cosa;			mat[1][2] = ny*nz*c1 - nx*sina
-	mat[2][0] = nx*nz*c1 - ny*sina;		mat[2][1] = ny*nz*c1 + nx*sina;		mat[2][2] = nz*nz*c1 + cosa
-	return mat
-End
+//	// set mat to be a rotation matrix about axis with angle
+//	//ThreadSafe Static Function/WAVE rotationMatFromAxis(axis,angle)
+//	Static Function/WAVE rotationMatFromAxis(axis,angle)
+//		Wave axis				// axis about which to rotate (or possibly Rodriques vector)
+//		Variable angle			// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
+//		Wave mat				// desired rotation matrix
+//
+//		if (!WaveExists(axis) || numtype(angle))
+//			return $""
+//		endif
+//
+//		Make/N=(3,3)/FREE mat
+//		Variable len = norm(axis)
+//		angle = numtype(angle) ? len : angle*PI/180	// the rotation angle (rad)
+//		if (angle==0)									// zero angle rotation is just the identity matrix
+//			mat = (p==q)
+//			return mat
+//		endif
+//
+//		Variable nx=axis[0]/len, ny=axis[1]/len, nz=axis[2]/len
+//		Variable cosa=cos(angle), sina=sin(angle)
+//		Variable c1 = 1-cosa
+//		// from		http://mathworld.wolfram.com/RodriguesRotationFormula.html (I double checked this too.)
+//		mat[0][0] = nx*nx*c1 + cosa;			mat[0][1] = nx*ny*c1 - nz*sina;		mat[0][2] = nx*nz*c1 + ny*sina
+//		mat[1][0] = nx*ny*c1 + nz*sina;		mat[1][1] = ny*ny*c1 + cosa;			mat[1][2] = ny*nz*c1 - nx*sina
+//		mat[2][0] = nx*nz*c1 - ny*sina;		mat[2][1] = ny*nz*c1 + nx*sina;		mat[2][2] = nz*nz*c1 + cosa
+//		return mat
+//	End
 
 
 

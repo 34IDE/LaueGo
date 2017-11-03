@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.47
+#pragma version = 4.48
 // #pragma hide = 1
 
 Menu "Graph"
@@ -110,6 +110,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		isRotationMat(mat,[tol]), returns true if mat is a rotation matrix
 //		axisOfMatrix(mat,axis,[squareUp]), find axis and angle from the rotation matrix mat
 //		SquareUpMatrix(rot), turns rot from almost a rotation matrix to a true rotation matrix
+//		rotationMatFromAxis() returns the rotation matrix about axis
 //		smallestNonZeroValue(vec,[tol]), returns the abs( smallest non-zero element ), e.g. {0, -0.1, 3} returns 0.1
 //		MedianOfWave(), returns median (or other percentile) of a wave, useful for picking scaling ranges
 //		rangeOfVec(wav,[row,col,layer,chunk]), returns the max and min number in the specified vector
@@ -3080,6 +3081,37 @@ ThreadSafe Function SquareUpMatrix(rot)
 	rot = rr
 	KillWaves/Z W_W, M_U, M_VT
 	return 0
+End
+
+
+// set mat to be a rotation matrix about axis with angle
+ThreadSafe Function/WAVE rotationMatFromAxis(axis,angle)
+	Wave axis			// axis about which to rotate (or possibly rotation vector in radians)
+	Variable angle		// angle to rotate (degrees), assumes axis is true Rotation vector if angle invalid
+
+	if (!WaveExists(axis) || numpnts(axis)<3)
+		return $""
+	endif
+	Variable len = norm(axis)
+	angle = numtype(angle) ? len : angle*PI/180	// the rotation angle (rad)
+	if (numtype(angle))
+		return $""
+	endif
+
+	Make/N=(3,3)/D/FREE rot								// desired rotation matrix
+	if (angle==0)												// zero angle rotation is just the identity matrix
+		rot = (p==q)
+		return rot
+	endif
+
+	Variable nx=axis[0]/len, ny=axis[1]/len, nz=axis[2]/len
+	Variable cosa=cos(angle), sina=sin(angle)
+	Variable c1 = 1-cosa
+	// from		http://mathworld.wolfram.com/RodriguesRotationFormula.html (I double checked this too.)
+	rot[0][0] = cosa+nx*nx*c1;			rot[0][1] =nx*ny*c1-nz*sina;			rot[0][2] = nx*nz*c1+ny*sina;
+	rot[1][0] = nx*ny*c1+nz*sina;		rot[1][1] = cosa+ny*ny*c1;			rot[1][2] =ny*nz*c1-nx*sina;
+	rot[2][0] = nx*nz*c1-ny*sina;		rot[2][1] = ny*nz*c1+nx*sina;		rot[2][2] = cosa+nz*nz*c1;
+	return rot
 End
 
 
