@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.38
+#pragma version = 6.39
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -186,6 +186,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.37, change isRhombohedral() to isRhombohedralSG(), and how it is used
 //								also changed SymString2SGtype(), added parameter "returnID", added optional "id" to symmtry2SG()
 //	with version 6.38, changed printout in MatDedscription()
+//	with version 6.39, MatrixFromSymLine() mirrorPlane(), MatrixFromSymLine(), MatDedscription(), FindWyckoffSymbol(): change (4,4) matricies to (3,4)
 
 //	Rhombohedral Transformation:
 //
@@ -5563,7 +5564,7 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 	endif
 	for (i=0;i<Nops;i+=1)
 		symOp = StringFromList(i,AllSymOps)
-		Wave mat4 = MatrixFromSymLine(symOp, 4, zeroBad=0)
+		Wave mat4 = MatrixFromSymLine(symOp, 4, zeroBad=0)		// mat4 is (3,4)
 		mat3 = mat4[p][q]
 		vec = mat4[p][3]
 		determinanat = MatrixDet(mat3)
@@ -5597,7 +5598,7 @@ Static Function/T MatDedscription(matIN)
 	Make/N=3/D/FREE vec=0
 	if (DimSize(matIN,0)==3 && DimSize(matIN,1)==3)
 		mat3 = matIN[p][q]
-	elseif (DimSize(matIN,0)==4 && DimSize(matIN,1)==4)
+	elseif (DimSize(matIN,0)==3 && DimSize(matIN,1)==4)
 		mat3 = matIN[p][q]
 		vec = matIN[p][3]
 		vec = vec - floor(vec)				// wrap translations into first unit cell
@@ -5792,9 +5793,9 @@ Static Function/Wave mirrorPlane(mat)	// if mat represents a mirror, then return
 	Wave mat
 
 	if (DimSize(mat,0)==3 && DimSize(mat,1)==3)
-		Wave mat3 = mat
-	elseif (DimSize(mat,0)==4 && DimSize(mat,1)==4)
-		Duplicate/FREE mat, mat3	// make a (3,3) version of mat
+		Wave mat3 = mat								// a 3x3 mat was given
+	elseif (DimSize(mat,0)==3 && DimSize(mat,1)==4)
+		Duplicate/FREE mat, mat3					// make a (3,3) version of mat(3,4)
 		Redimension/N=(3,3) mat3
 	else
 		return $""
@@ -5813,18 +5814,18 @@ Static Function/Wave mirrorPlane(mat)	// if mat represents a mirror, then return
 	Variable factor = smallestNonZeroValue(axis, tol=1e-5)
 	axis /= factor
 
-	if (DimSize(mat,0)==3)
+	if (DimSize(mat,1)==3)
 		return axis
 	endif
 
 	Make/N=4/D/FREE p1
-	p1[0,2] = axis[p]
-	p1 = 1
-	MatrixOp/FREE point = p1 + (mat x p1)
-	MatrixOp/FREE p2 = mat x p1
-	Redimension/N=3 point
+	p1[0,2] = axis[p]		;	p1 = 1
+	MatrixOp/FREE point = axis + (mat x p1)
+//	MatrixOp/FREE point = p1 + (mat x p1)
+//	Redimension/N=3 point
 	point = abs(point)<1e-6 ? 0 : point
 	point = point - floor(point)
+	//	MatrixOp/FREE p2 = mat x p1
 	//	printf "p1 = %s,   (mat3 x p1) = %s,   point = %s\r",vec2str(p1,sep=", "),vec2str(p2,sep=", "),vec2str(point,sep=", ")
 
 	Make/N=(3,2)/D/FREE mirPoint
@@ -7623,7 +7624,7 @@ End
 //	End
 //
 // makes one matrix either (3,3) or (4,4) from the symmetry op string
-Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x3 or 4x4 matrix
+Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x3 or 3x4 matrix
 	String symOp													// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
 	Variable dim													// either 3 or 4
 	Variable zeroBad												// if 1, do not allow |mat3| near zero
@@ -7632,7 +7633,7 @@ Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x
 	if (dim!=3 && dim!=4)
 		return $""
 	endif
-	Make/N=(dim,dim)/D/FREE mat=0							// either (3,3) or (4,4)
+	Make/N=(3,dim)/D/FREE mat=0								// either (3,3) or (3,4)
 
 	String expression
 	Variable i, err
@@ -9079,15 +9080,14 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
 	Variable x0,y0,z0
 	Variable &mult
 
-	Make/D/FREE vec4 = {x0,y0,z0,1}
-	Make/D/FREE vec0 = {x0,y0,z0,0}
+	Make/D/FREE vec4={x0,y0,z0,1}, vec3={x0,y0,z0}
 	Wave/T WyckList = GetWyckoffSymStrings(SpaceGroupID)
 	String symbol=""
 	mult = 0
 	Variable m, N=DimSize(WyckList,0)
 	for (m=0;m<N;m+=1)
-		Wave mat = MatrixFromSymLine(WyckList[m][1], 4, zeroBad=0)
-		MatrixOP/FREE diff = Sum(Abs( (mat x vec4) - vec0))
+		Wave mat4 = MatrixFromSymLine(WyckList[m][1], 4, zeroBad=0)
+		MatrixOP/FREE diff = Sum(Abs( (mat4 x vec4) - vec3))
 		if (diff[0]<1e-4)
 			symbol = WyckList[m][0]
 			mult = round(str2num(WyckList[m][2]))
