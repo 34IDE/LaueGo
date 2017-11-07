@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>ZnS Zincblende (Sphalerite)</chemical_name_common>
+	<space_group_IT_number>216</space_group_IT_number>
+	<amcsd>0000110</amcsd>
+	<H-M>F -4 3 m</H-M>
+	<cell>
+		<a unit="nm">0.54093</a>
+		<b unit="nm">0.54093</b>
+		<c unit="nm">0.54093</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Zn</label>
+		<symbol>Zn</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract_xyz>0.25 0.25 0.25</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Hg" n1="Te">0.279938</bond_chemical>
+	<bond_chemical unit="nm" n0="Cd" n1="Te">0.279938</bond_chemical>
+	<citation>
+		American Mineralogist 46 (1961) 1399-1411
+		B.J. Skinner
+		"Unit-cell edges of natural and synthetic sphalerites"
+	</citation>
+</cif>
