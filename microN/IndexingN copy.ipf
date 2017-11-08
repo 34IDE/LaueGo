@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.92
+#pragma version = 4.91
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -6530,14 +6530,12 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, rho=rho_latticeMismatch
 	RLfromLatticeConstants(LC,DL,RL0)						// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)						// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
-printWave(rho,brief=1)
 	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif
 	axis *= angle													// length of axis is now rotation angle (rad)
 	rotationMatAboutAxis(axis,angle,rho)					// forces rho to be a perfect rotation matrix
-printWave(rho,brief=1)
 	MatrixOp/O RLmeas = rho x RL0							// ensure that starting point perfectly agrees with Space Group
 
 	Make/N=(3,3)/D/FREE Ameas, Astart						// Vcartesian = A x Vcell,   used to make the strain tensor
@@ -6560,7 +6558,7 @@ printWave(rho,brief=1)
 		Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 		as0 = RLmeasStart[0][0]	;	bs0 = RLmeasStart[0][1]	;	cs0 = RLmeasStart[0][2]	// the original measured RL
 		as1 = RLmeasStart[1][0]	;	bs1 = RLmeasStart[1][1]	;	cs1 = RLmeasStart[1][2]
-		as2 = RLmeasStart[2][0]	;	bs2 = RLmeasStart[2][1]	;	cs2 = RLmeasStart[2][2]
+		as1 = RLmeasStart[2][0]	;	bs2 = RLmeasStart[2][1]	;	cs2 = RLmeasStart[2][2]
 		printf "starting reciprocal lattice,	a* = {%+.6f, %+.6f, %+.6f} (1/nm)\r",as0,as1,as2
 		printf "							b* = {%+.6f, %+.6f, %+.6f}\r",bs0,bs1,bs2
 		printf "							c* = {%+.6f, %+.6f, %+.6f}\r",cs0,cs1,cs2
@@ -6585,11 +6583,6 @@ printWave(rho,brief=1)
 	Variable Nj=DimSize(Qs,0), jmax								// find the measured peak that goes with each indexed peak (in Q^)
 	Make/N=(Nj,3)/D/FREE Q3s = Qs[p][q]						// only the Q^ vector, without the intensity
 	MatrixOP/FREE Q3s = NormalizeRows(Q3s)
-
-Duplicate/O Qs, QsView
-Duplicate/O Q3s, Q3sView
-printWave(RLmeasStart,brief=1,name="RLmeasStart")
-printWave(RLmeas,brief=1,name="RLmeas")
 
 	Variable i,m
 	for (i=0,m=0;i<N;i+=1)
