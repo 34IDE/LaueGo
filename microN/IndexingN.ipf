@@ -6530,14 +6530,12 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Wave DL=DL_latticeMismatch, RL=RL_latticeMismatch, rho=rho_latticeMismatch
 	RLfromLatticeConstants(LC,DL,RL0)						// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)						// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
-printWave(rho,brief=1)
 	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif
 	axis *= angle													// length of axis is now rotation angle (rad)
 	rotationMatAboutAxis(axis,angle,rho)					// forces rho to be a perfect rotation matrix
-printWave(rho,brief=1)
 	MatrixOp/O RLmeas = rho x RL0							// ensure that starting point perfectly agrees with Space Group
 
 	Make/N=(3,3)/D/FREE Ameas, Astart						// Vcartesian = A x Vcell,   used to make the strain tensor
@@ -6585,11 +6583,6 @@ printWave(rho,brief=1)
 	Variable Nj=DimSize(Qs,0), jmax								// find the measured peak that goes with each indexed peak (in Q^)
 	Make/N=(Nj,3)/D/FREE Q3s = Qs[p][q]						// only the Q^ vector, without the intensity
 	MatrixOP/FREE Q3s = NormalizeRows(Q3s)
-
-Duplicate/O Qs, QsView
-Duplicate/O Q3s, Q3sView
-printWave(RLmeasStart,brief=1,name="RLmeasStart")
-printWave(RLmeas,brief=1,name="RLmeas")
 
 	Variable i,m
 	for (i=0,m=0;i<N;i+=1)

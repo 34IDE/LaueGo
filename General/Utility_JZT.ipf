@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.48
+#pragma version = 4.49
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2502,7 +2502,7 @@ Function/WAVE DisplayTableOfWave(ww,[classes,promptStr,names,options,colWid,top,
 		Edit/W=(left,top,left+width,top+height)/K=1 ww
 	endif
 	ModifyTable font=fontName, size=fontSize, format(Point)=1,width(Point)=36, width(ww.d)=colWid, alignment=align
-	if (WaveType(ww) | 0x38)				// if ww is an integer (8, 16, or 32 bit) use integer format
+	if (WaveType(ww) & 0x38)				// if ww is an integer (8, 16, or 32 bit) use integer format
 		ModifyTable format(ww.d)=1
 	endif
 	return ww
@@ -2954,6 +2954,7 @@ End
 //		changed "axis[0] = rot[1][2] - rot[2][1]"   -->   "axis[0] = rot[2][1] - rot[1][2]"
 // Oct 12, 2017, changed to use a Quaternion based method:
 //			http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+//	*** NOTE: for DeviatoricStrainRefine(), angle MUST be POSITIVE
 ThreadSafe Function axisOfMatrix(matIN,axis,[squareUp])
 	// returns total rotation angle (deg), and sets axis to the axis of the total rotation
 	Wave matIN								// should be a rotation matrix
@@ -3012,9 +3013,9 @@ ThreadSafe Function axisOfMatrix(matIN,axis,[squareUp])
 		axis *= -1
 		angle *= -1
 	endif
-	angle = abs(angle+PI)<1e-12 ? PI : angle	// use 180 rather than -180
 
-	return angle*180/PI							// rotation angle in degrees
+	angle += angle<0 ? (2*PI) : 0			// always return angle in range [0, 360)
+	return mod(angle*180/PI, 360)			// rotation angle in degrees (always a positive number)
 End
 //ThreadSafe Function axisOfMatrix(mat,axis,[squareUp])
 //	// returns total rotation angle (deg), and sets axis to the axis of the total rotation
