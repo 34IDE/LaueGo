@@ -1035,7 +1035,7 @@ Static Function/WAVE CDPSpec2BL(inverse)	// same as for fourc
 	return fourcSpec2BL(inverse)
 End
 
-
+//	chi 90 is up
 
 
 
@@ -3125,6 +3125,7 @@ Static Function SelectDiffractometer(name)
 	listFull += "kappa:33ID,6,delta theta kappa phi mu nu;"
 	listFull += "psic:33ID,6,delta eta chi phi mu nu;"
 	listFull += "CDP:33ID,3,nu mu delta;"
+	listFull += "HERIX:30ID,4,HerixTTH th chi phi;"
 	if (!keyInList(DiffractometerName,listFull,":",";"))		// current diffractometer is not in fullList, add it
 		listFull += DiffractometerName+":"+num2istr(Naxes)+","+ReplaceString(";", DiffractometerAxisNames,",")+";"
 	endif
