@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.04
+#pragma version=2.03
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -2051,7 +2051,6 @@ Static Function/T MakeStepIndexForXML(xmlFileFull)
 	size = min(size,fileLen)
 	String buf = PadString("",size,0x20)				// a buffer for working space (of length size bytes)
 	String bufRead										// a buffer for reading more from the file (read up to this much each time)
-	String detector
 	FBinRead f, buf										// initial read
 	bytesRead = strlen(buf)
 	N = 0
@@ -2096,11 +2095,7 @@ Static Function/T MakeStepIndexForXML(xmlFileFull)
 		// this step is bracketed by [i0,i1], process it:
 		step = buf[i0,i1]
 		i0start = i1 + 1								// where to start searching for next start tag
-
-		detector = xmlTagContents("detector",step)
-
-
-		inputImage = ParseFilePath(3,  xmlTagContents("inputImage",detector), "/", 0, 0)
+		inputImage = ParseFilePath(3,  xmlTagContents("inputImage",step), "/", 0, 0)
 		if (strlen(inputImage)<1)
 			continue
 		endif
