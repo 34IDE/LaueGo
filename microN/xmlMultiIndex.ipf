@@ -1566,8 +1566,9 @@ End
 Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 	String range					// numeric range
 	String constrain				// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
-	Variable coords					// coordinate system to pass in return {Crystal=0, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
+	Variable coords				// coordinate system to pass in return {Crystal=0, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
 	Variable pattern				// only zero make sense (the default)
+	coords = ParamIsDefault(coords) || numtype(coords) ? 1 : limit(round(coords),0,3)
 	pattern = ParamIsDefault(pattern) ? 0 : pattern
 
 	Wave/T imageNames=imageNames
@@ -1588,7 +1589,6 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 	endif
 
 	if (ItemsInRange(range)<1 || ParamIsDefault(coords))
-		coords = ParamIsDefault(coords) ? 1 : coords
 		if (ItemsInRange(range)<1)
 			range = "0-"+num2istr(N-1)
 		endif
@@ -1679,7 +1679,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	String xmlFileFull			// full path name to xml file
 	Variable printIt				// force full print out of results
 	xmlFileFull = SelectString(ParamIsDefault(xmlFileFull),xmlFileFull,"")
-	coords = ParamIsDefault(coords) || numtype(coords) ? 1 : coords
+	coords = ParamIsDefault(coords) || numtype(coords) ? 1 : limit(round(coords),0,3)
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	pattern = 0						// do not yet handle other patterns
 
@@ -1751,18 +1751,29 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 
 	Open/R/Z=1 f as xmlFileFull						// start reading here
 	FStatus f
-	Variable fileLen = V_logEOF							// length of file in bytes
+	Variable fileLen = V_logEOF						// length of file in bytes
 	if (i1>=V_logEOF)
 		Close f
 		return ""
 	endif
-	FSetPos f, i0
-	String step = PadString("",i1-i0+1,0x20)			// a buffer to hold step (of length i1-i0+1 bytes)
+	FSetPos f, i0+5
+	String step = PadString("",i1-i0+1-5,0x20)	// a buffer to hold step (of length i1-i0+1 bytes)
 	FBinRead f, step										// initial read
 	Close f
-	// print ReplaceString("\n",step,"\r")
 
-	String svec = ReplaceString(" ",xmlTagContents("Xpixel",step),";")
+	String detector = xmlTagContents("detector",step)
+	String indexing = xmlTagContents("indexing",step)
+	indexing = XMLremoveComments(indexing)
+	String peaksXY = xmlTagContents("peaksXY",detector)
+	String xtl = xmlTagContents("xtl",indexing)
+	String pattern0 = xmlTagContents("pattern",indexing)
+	if (strlen(pattern0)<1)
+		return ""
+	endif
+	String recip_lattice = xmlTagContents("recip_lattice",pattern0)
+	String hkl_s = xmlTagContents("hkl_s",pattern0)
+
+	String svec = ReplaceString(" ",xmlTagContents("Xpixel",peaksXY),";")
 	Variable Nlen = ItemsInList(svec)
 	if (Nlen<4)
 		return ""
@@ -1770,18 +1781,31 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	Make/N=(Nlen,12)/O FullPeakList
 	FullPeakList = NaN
 	FullPeakList[][0] = str2num(StringFromList(p,svec))
-	svec = ReplaceString(" ",xmlTagContents("Ypixel",step),";")
+	svec = ReplaceString(" ",xmlTagContents("Ypixel",peaksXY),";")
 	FullPeakList[][1] = str2num(StringFromList(p,svec))
-	svec = ReplaceString(" ",xmlTagContents("Integral",step),";")
+	svec = ReplaceString(" ",xmlTagContents("Integral",peaksXY),";")
 	FullPeakList[][10] = str2num(StringFromList(p,svec))
-	svec = ReplaceString(" ",xmlTagContents("Intens",step),";")
+	svec = ReplaceString(" ",xmlTagContents("Intens",peaksXY),";")
 	FullPeakList[][11] = str2num(StringFromList(p,svec))
 
-	String roi = xmlTagKeyVals("ROI",step)
+	String roi = xmlTagKeyVals("ROI",detector)
 	roi = RemoveFromList("/",roi)
 	String wnote = ReplaceStringByKey("waveClass","","FittedPeakList","=")
 	wnote += roi
-	wnote = ReplaceStringByKey("detectorID",wnote,xmlTagContents("detectorID",step),"=")
+
+	STRUCT microGeometry geo
+	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
+		printf "ERROR -- DeviatoricStrainRefineXML(), cannot get the geometry\r"
+		return ""
+	endif
+	String detectorID = xmlTagContents("detectorID",detector)
+	Variable dNum = detectorNumFromID(geo,detectorID)
+	if (numtype(dNum) || dNum<0 || dNum>= MAX_Ndetectors)
+		printf "ERROR -- DeviatoricStrainRefineXML(), cannot find detector number for ID=\"%s\"\r",detectorID
+		return ""
+	endif
+
+	wnote = ReplaceStringByKey("detectorID",wnote,xmlTagContents("detectorID",detector),"=")
 	SetDimLabel 1,0,x0,FullPeakList			;	SetDimLabel 1,1,y0,FullPeakList
 	SetDimLabel 1,2,x0Err,FullPeakList		;	SetDimLabel 1,3,y0Err,FullPeakList
 	SetDimLabel 1,4,fwx,FullPeakList		;	SetDimLabel 1,5,fwy,FullPeakList
@@ -1790,25 +1814,25 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	SetDimLabel 1,10,area,FullPeakList		;	SetDimLabel 1,11,amp,FullPeakList
 	Note/K FullPeakList,wnote
 
-	svec = ReplaceString(" ",xmlTagContents("h",step),";")
+	svec = ReplaceString(" ",xmlTagContents("h",hkl_s),";")
 	Variable Ni = ItemsInList(svec)
 	if (Ni<4)
 		return ""
 	endif
 	Make/N=(Ni,12,1)/O FullPeakIndexed=NaN
 	FullPeakIndexed[][3] = str2num(StringFromList(p,svec))
-	svec = ReplaceString(" ",xmlTagContents("k",step),";")
+	svec = ReplaceString(" ",xmlTagContents("k",hkl_s),";")
 	FullPeakIndexed[][4] = str2num(StringFromList(p,svec))
-	svec = ReplaceString(" ",xmlTagContents("l",step),";")
+	svec = ReplaceString(" ",xmlTagContents("l",hkl_s),";")
 	FullPeakIndexed[][5] = str2num(StringFromList(p,svec))
+	FullPeakIndexed[][11] = dNum
 
-//	Variable SpaceGroup = str2num(ReplaceString(" ",xmlTagContents("SpaceGroup",step),";"))
-	Variable SpaceGroup = str2num(xmlTagContents("SpaceGroup",step))
+	Variable SpaceGroup = str2num(xmlTagContents("SpaceGroup",xtl))
 	if (!(SpaceGroup>=1 && SpaceGroup<=230))
 		return ""
 	endif
-	String SpaceGroupID = xmlTagContents("SpaceGroupID",step)
-	Variable SpaceGroupIDnum = str2num(xmlTagContents("SpaceGroupIDnum",step))
+	String SpaceGroupID = xmlTagContents("SpaceGroupID",xtl)
+	Variable SpaceGroupIDnum = str2num(xmlTagContents("SpaceGroupIDnum",xtl))
 	if (strlen(SpaceGroupID)<1)
 		SpaceGroupID = LatticeSym#FindDefaultIDforSG(SpaceGroup)
 	endif
@@ -1820,10 +1844,12 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
 	wnote = ReplaceNumberByKey("SpaceGroupIDnum",wnote,SpaceGroupIDnum,"=")
 	String str = "{{"
-	str += ReplaceString(" ",xmlTagContents("astar",step),",") + "}{"
-	str += ReplaceString(" ",xmlTagContents("bstar",step),",") + "}{"
-	str += ReplaceString(" ",xmlTagContents("cstar",step),",") + "}}"
+	str += ReplaceString(" ",xmlTagContents("astar",recip_lattice),",") + "}{"
+	str += ReplaceString(" ",xmlTagContents("bstar",recip_lattice),",") + "}{"
+	str += ReplaceString(" ",xmlTagContents("cstar",recip_lattice),",") + "}}"
 	wnote = ReplaceStringByKey("recip_lattice0",wnote,str,"=")
+	wnote = ReplaceStringByKey("peakListWave",wnote,"FullPeakList","=")
+
 	Note/K FullPeakIndexed, wnote
 	SetDimLabel 1,0,Qx,FullPeakIndexed			;	SetDimLabel 1,1,Qy,FullPeakIndexed
 	SetDimLabel 1,2,Qz,FullPeakIndexed			;	SetDimLabel 1,3,h,FullPeakIndexed
@@ -2094,12 +2120,9 @@ Static Function/T MakeStepIndexForXML(xmlFileFull)
 		i1 += 6
 
 		// this step is bracketed by [i0,i1], process it:
-		step = buf[i0,i1]
+		step = buf[i0+5,i1]						// io points to start of "<step...", start in a bit for getting detector
 		i0start = i1 + 1								// where to start searching for next start tag
-
 		detector = xmlTagContents("detector",step)
-
-
 		inputImage = ParseFilePath(3,  xmlTagContents("inputImage",detector), "/", 0, 0)
 		if (strlen(inputImage)<1)
 			continue
