@@ -83,8 +83,7 @@ Static Function/S VersionStatusHash(full,fldr)
 	String fname
 
 	// first look in the .git folder
-	//	fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":.git:refs:heads:master"
-	fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":.git:FETCH_HEAD"
+	fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":.git:refs:heads:master"
 	Open/R/Z f as fname					// check in ".git" folder
 	if (V_flag && IgorVersion()>7.0)// check in v6 folder too, Open has trouble following links
 		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
