@@ -372,16 +372,10 @@ Function MakeMovieSpecScanImages(scanNum)
 	Variable keV = specInfo(scanNum,"DCM_energy")
 	keV = numtype(keV) ? 10*hc_keVnm/specInfo(scanNum,"wavelength") : keV
 
-	Variable iFirst=0
-	Wave image=$LoadSpecImage(scanNum,iFirst,extras="quiet:1")
-	if (!WaveExists(image))
-		iFirst = 1
-		Wave image=$LoadSpecImage(scanNum,iFirst,extras="quiet:1")
-	endif
+	Wave image=$LoadSpecImage(scanNum,0,extras="quiet:1")
 	if (!WaveExists(image))
 		return 1
 	endif
-
 	String wnote = note(image)
 	Duplicate/O image, movieFrame
 	KillWaves/Z image
@@ -401,7 +395,7 @@ Function MakeMovieSpecScanImages(scanNum)
 	Variable maxVal=-Inf, minVal=Inf
 	Variable i, theta
 	NewMovie
-	for (i=iFirst;i<(iFirst+Np);i+=1)
+	for (i=0;i<Np;i+=1)
 		Wave image=$LoadSpecImage(scanNum,i,extras="quiet:1")
 		if (!WaveExists(image))
 			DoAlert 0,"Could not load image "+num2istr(i)+ " from scan "+num2istr(scanNum)
