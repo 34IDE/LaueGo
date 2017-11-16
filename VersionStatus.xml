@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, November 16, 2017" time="12:27:12 PM CST" isoTime="2017-11-16T12:27:12"></written>
+	<written date="Thursday, November 16, 2017" time="12:28:00 PM CST" isoTime="2017-11-16T12:28:00"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>a87f1ee1b41091ba4af24a800483ec878efab747</gitHash>
+	<gitHash>af89c209f1ac495e8a13c4ca182ea64cd73d1f65</gitHash>
 	<fileCount>247</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
