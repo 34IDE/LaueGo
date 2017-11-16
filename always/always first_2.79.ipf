@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.80
+#pragma version = 2.79
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -80,67 +80,42 @@ Static Function/S VersionStatusHash(full,fldr)
 	String fldr								// usually either "LaueGo" or "LocalPackages"
 
 	Variable f
-	String fname
-
-	// first look in the .git folder
-	//	fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":.git:refs:heads:master"
-	fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":.git:FETCH_HEAD"
-	Open/R/Z f as fname					// check in ".git" folder
-	if (V_flag && IgorVersion()>7.0)// check in v6 folder too, Open has trouble following links
+	String fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":VersionStatus.xml"
+	Open/R/Z f as fname
+	if (V_flag)								// check in 6, Open has trouble following links
 		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
 		Open/R/Z f as fname
 	endif
-
-	// second look in the VersionStatus.xml file
-	if (V_flag)								// check the VersionStatus.xml file
-		fname = SpecialDirPath("Igor Pro User Files",0,0,0) + "User Procedures:"+fldr+":VersionStatus.xml"
-		Open/R/Z f as fname
-	endif
-	if (V_flag && IgorVersion()>7.0)// check in v6 folder too, Open has trouble following links
-		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
-		Open/R/Z f as fname
-	endif
-
-	// last check in the Igor Applications folder
-	if (V_flag)
+	if (V_flag)								// check in 6, Open has trouble following links
 		fname = SpecialDirPath("Igor Application",0,0,0) + "User Procedures:"+fldr+":VersionStatus.xml"
 		Open/R/Z f as fname
 	endif
-
+	if (V_flag)								// check in 6, Open has trouble following links
+		fname = ReplaceString("Igor Pro 7 Folder",fname,"Igor Pro 6.3 Folder")
+		Open/R/Z f as fname
+	endif
 	if (V_flag)
-		return ""							// could not open a file, give up
+		return ""							// could not open a file
 	endif
 	FStatus f
-	Variable len = min(2000,V_logEOF)
-	String buf=PadString("",len,0x20)
+	if (V_logEOF<2000)					// way too small
+		Close f
+		return ""
+	endif
+
+	String buf=PadString("",2000,0x20)
 	FBinRead f, buf
 	Close f
-
-	Variable isVersionStatus = (strsearch(fname,":VersionStatus.xml",0)>=0 && V_logEOF>=2000)
-	Variable isgit = (strsearch(fname,":.git:",0)>=0 && V_logEOF>40)
-	if (isVersionStatus)				// extract from <githash> from xml
-		Variable i0=strsearch(buf,"<gitHash>",0)
-		if (i0<0)
-			return ""
-		endif
-		i0 += strlen("<gitHash>")
-		Variable i1=strsearch(buf,"</gitHash>",i0)
-		if (i1<i0)
-			return ""
-		endif
-		buf = buf[i0,i1-1]
-	elseif (isgit)
-		buf = ReplaceString("\t",buf," ")
-		buf = StringFromList(0,buf," ")
-	else
-		buf = ""
+	Variable i0=strsearch(buf,"<gitHash>",0)
+	if (i0<0)
+		return ""
 	endif
-
-
-	if (!full)
-		buf = buf[0,5]
+	i0 += strlen("<gitHash>")
+	Variable i1=strsearch(buf,"</gitHash>",i0)
+	if (i1<i0)
+		return ""
 	endif
-	return buf
+	return SelectString(full, buf[i0,i0+5], buf[i0,i1-1])
 End
 
 //  ====================================================================================  //
