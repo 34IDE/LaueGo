@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 5.0
-#pragma version = 2.50
+#pragma version = 2.51
 //#pragma hide = 1
 #pragma ModuleName=specProc
 // #include "Utility_JZT"	// only needed for expandRange() which I have included here as Static anyhow
@@ -124,6 +124,8 @@ Static strConstant specFileFilters = "spec Files (*.spc,*.spec):.spc,.spec;text 
 // Jun 23 2016, changed DisplaySpecScan() and DisplayRangeOfSpecScans(), added Kflag to make graphs that don't ask to save
 //
 // Jan 6 2017, DisplaySpecScan() to the TextBox, I make the text have alpha=0.76295 for Igor 7
+//
+//	Nov 16 2017, specReadFromSline() allow #O motor names to be separated by 2 or MORE spaces
 
 Menu "Data"
 	"-"
@@ -1088,7 +1090,7 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 	if (newHeader)
 		FSetPos fileVar, 0						// reset file position to start of header
 		Variable NangleNames=0					// number of #O lines that contain spec motor names
-		do											// save names of spec motors listed in #On lines
+		do												// save names of spec motors listed in #On lines
 			hunt = "#O"+num2istr(NangleNames)+" "
 			line1 = FindDataLineType(fileVar,hunt,1)
 			if (strlen(line1)>2)
@@ -1097,14 +1099,21 @@ Function specReadFromSline(fileVar,FilePosScan,[folderName])
 					Note angleNames, wnote
 				endif
 				Redimension/N=(NangleNames+1) angleNames
-				angleNames[NangleNames] = line1[strlen(hunt),inf]
-				NangleNames += 1
+				line1 = line1[strlen(hunt),inf]
+				do										// names are separated by 2 or MORE spaces, change long space runs to 2 spaces
+					line1 = ReplaceString("   ",line1,"  ")
+				while(strsearch(line1,"   ",0) >= 0)
+				line1 = TrimBoth(line1)
+				if (strlen(line1)>2)
+					angleNames[NangleNames] = line1
+					NangleNames += 1
+				endif
 			endif
-				FSetPos fileVar, 0				// reset file position to start of header
+			FSetPos fileVar, 0					// reset file position to start of header
 		while(strlen(line1)>2)
 
 		Variable NEPICSnames=0					// number of #H lines that contain EPICS PV names
-		do											// save names of EPICS PV's listed in #Hn lines
+		do												// save names of EPICS PV's listed in #Hn lines
 			hunt = "#H"+num2istr(NEPICSnames)+" "
 			line1 = FindDataLineType(fileVar,hunt,1)
 			if (strlen(line1)>2)

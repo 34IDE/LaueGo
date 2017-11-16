@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 1.17
+#pragma version = 1.18
 #pragma ModuleName=TiffProc
 #include "ImageDisplayScaling", version>=1.98
 
@@ -32,6 +32,7 @@
 
 // Nov  15, 2010,  with version 1.13, added the extras string to the file loaders
 // Jun  20, 2014,  with version 1.16, added the extras string to TiffReadHeader()
+// Nov  16, 2017,  with version 1.17, ImageLoad/T=tiff/... now OVERWRITES existing image
 
 Static Constant TAG_IMAGEWIDTH=256, TAG_IMAGELENGTH=257, TAG_BITSPERSAMPLE=258
 Static Constant TAG_MODEL=272, TAG_XRESOLUTION=282, TAG_YRESOLUTION=283, TAG_DATETIME=306
@@ -258,7 +259,7 @@ Function/T TiffLoadROI(fileName,i0,i1,j0,j1,[extras])
 		return ""
 	endif
 
-	ImageLoad/T=tiff/Q fileName
+	ImageLoad/T=tiff/Q/O fileName
 	if (V_flag != 1)
 		return ""											// could not open file
 	endif
@@ -266,12 +267,16 @@ Function/T TiffLoadROI(fileName,i0,i1,j0,j1,[extras])
 
 	String name=ParseFilePath(3,fileName,":",0,0)	// rename image based on the file name
 	name = CleanupName(name,0)						// wave name based on the file name
-	if (exists(name))										// if wave already exists, create unique name
-		name = name+"_"
-		name = UniqueName(name, 1, 1)
-	endif
+	//	if (exists(name))										// if wave already exists, create unique name
+	//		name = name+"_"
+	//		name = UniqueName(name, 1, 1)
+	//	endif
+	//	String wName=ParseFilePath(1,inWaveName,":",1,0)+name
+	//	Rename $inWaveName $wName
+	//	Wave wav = $wName
 	String wName=ParseFilePath(1,inWaveName,":",1,0)+name
-	Rename $inWaveName $wName
+	Duplicate/O $inWaveName, $wName
+	KillWaves/Z $inWaveName
 	Wave wav = $wName
 
 	Variable ydim, xdim									// x,y size of whole array

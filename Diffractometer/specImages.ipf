@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.55
+#pragma version = 0.56
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -1239,6 +1239,7 @@ Static Function getQofImageHook(s)									// Shift-mouseDown=follow mouse and s
 	Variable keV=specInfo(scanNum,"DCM_energy")
 	keV = numtype(keV) ? specInfo(scanNum,"keV") : keV
 	keV = numtype(kev) ? NumberByKey("keV",wnote,"=") : keV
+	keV = numtype(keV) ? 10*hc_keVnm/specInfo(scanNum,"wavelength") : keV
 	Make/N=(Naxes)/D/FREE A=NumberByKey(StringFromLIst(p,DiffractometerAxisNames),wnote,"=")
 	A = numtype(A[p]) ? specInfo(scanNum,StringFromLIst(p,DiffractometerAxisNames)) : A[p]	// angle is not in wavenote, so check specInfo()
 	if (numtype(scanNum+keV+sum(A)))
@@ -1270,21 +1271,28 @@ Static Function getQofImageHook(s)									// Shift-mouseDown=follow mouse and s
 	STRUCT sampleStructure sa	
 	String str = ParseFilePath(1,GetWavesDataFolder(image,1),":",1,0)+"sampleStructStr"
 	String strStruct=StrVarOrDefault(str,"")					// fill the sample structure with values in spec scan directory
+
+	Wave hkl=$""
 	if (strlen(strStruct)>0)											// need this to get hkl
 		StructGet/S/B=2 sa, strStruct								// found structure information, load into s
 		Wave hkl = HKLofPixel(sa,d,keV,px,py,A)					// returns hkl of pixel in beam CRYSTAL frame, (not sample frame, not BL coords)
 	else
-		Wave hkl=$""
+		Wave recip = decodeMatFromStr(StringByKey("recip_lattice0",wnote,"="))
+		if (WaveExists(recip))
+			MatrixOP/FREE hkl = Inv(recip) x qvec
+		endif
 	endif
 
 	String tagStr=""
-	sprintf str,"\f01q\f00\\BBL\\M = {%.3f, %.3f, %.3f} nm\\S-1\\M |q|= %.3f",qvec[0],qvec[1],qvec[2],norm(qvec)
+	sprintf str,"|q|= %.3f,  \\F'Symbol'\\Zr1002q\\]0 = %.4f%s",norm(qvec),2*theta*180/PI,DEGREESIGN
+	tagStr += str
+	sprintf str,"\r\f01q\f00\\BBL\\M = {%.3f, %.3f, %.3f} nm\\S-1\\M",qvec[0],qvec[1],qvec[2]
 	tagStr += str
 	if (WaveExists(hkl))
 		sprintf str,"\r\f01hkl\f00 = [%.3f, %.3f, %.3f]",hkl[0],hkl[1],hkl[2]
 		tagStr += str
 	endif
-	sprintf str,"\r\\[0pixel [%.2f, %.2f],  \\F'Symbol'\\Zr1002q\\]0 = %.4f%s",px,py,2*theta*180/PI,DEGREESIGN
+	sprintf str,"\r\\[0pixel [%.2f, %.2f]",px,py
 	tagStr += str
 
 	px = limit(px,0,DimSize(image,0)-1)							// needed in case (px,py) is outside the image
@@ -1643,7 +1651,10 @@ Function/T LoadSpecImageInfo(scanNum,pindex[,extras])
 //print str
 			Redimension/N=(3,3) UBs
 			String DiffractometerName = StrVarOrDefault("root:Packages:Diffractometer:DiffractometerName","XYZ")
-			String name = "diffractometer#"+DiffractometerName+"Spec2BL"
+			String name = DiffractometerName+"Spec2BL"
+			if (exists(name)!=6)
+				name = "diffractometer#"+name
+			endif
 			FUNCREF protoSpec2BL getSpec2BL = $name
 			Wave spec2BL = getSpec2BL(0)
 			MatrixOP/FREE UBs = spec2BL x UBs * 10		// spec uses Angstrom, I use nm
@@ -1670,16 +1681,18 @@ Function/T specImageFileName(scanNum,pindex,[specPath])
 	Variable pindex
 	String specPath
 	specPath = SelectString(ParamIsDefault(specPath),specPath,StrVarOrDefault("root:Packages:spec:specDefaultFile",""))
-	String fullName=""
+	String path, name, fullName=""
 	if (exists("PilatusTiffReadHeader")==6)
-		String path = ParseFilePath(1, specPath,":", 1,0)
-		String name=ParseFilePath(3, specPath,":", 0,0)
+		path = ParseFilePath(1, specPath,":", 1,0)
+		name=ParseFilePath(3, specPath,":", 0,0)
 		sprintf fullName, "%simages:%s:S%03d:%s_S%03d_%05d.tif", path,name,scanNum,name,scanNum,pindex
 		// sprintf fullName, "%simages:%s:S%03d:%s_S%03d_%05d.tif", ParseFilePath(1, specPath,":", 1,0),name,scanNum,name,scanNum,pindex
 	elseif (exists("ReadHDF5header")==6)
 		fullName=""						// not yet implemented
 	elseif (exists("TiffReadHeader")==6)
-		fullName=""						// not yet implemented
+		path = ParseFilePath(1, specPath,":", 1,0)
+		name=ParseFilePath(3, specPath,":", 0,0)
+		sprintf fullName, "%simages:S%03d:%s_S%03d_%05d.tif", path,scanNum,name,scanNum,pindex
 	elseif (exists("WinViewReadHeader")==6)
 		fullName=""						// not yet implemented
 	endif

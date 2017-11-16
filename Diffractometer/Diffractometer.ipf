@@ -1035,7 +1035,7 @@ Static Function/WAVE CDPSpec2BL(inverse)	// same as for fourc
 	return fourcSpec2BL(inverse)
 End
 
-//	chi 90 is up
+
 
 
 
