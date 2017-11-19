@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Cubic Zirconia</chemical_name_common>
+	<amcsd>0011730</amcsd>
+	<H-M>F m -3 m</H-M>
+		<cell>
+		<a unit="nm">0.507</a>
+		<b unit="nm">0.507</b>
+		<c unit="nm">0.507</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Zr</label>
+		<valence>4</valence>
+		<fract_xyz>0 0 0</fract_xyz>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<valence>-2</valence>
+		<fract_xyz>0.25 0.25 0.25</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<citation>
+	R.W.G. Wyckoff
+	Crystal Structures, V1, (1963) pg. 239-444
+	"Fluorite structure"
+	</citation>
+</cif>

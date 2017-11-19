@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Yittria Stabilized Zirconia, Zr.72 Y.28 O1.862</chemical_name_common>
+	<space_group_IT_number>225</space_group_IT_number>
+	<space_group_id>225</space_group_id>
+	<H-M>F m -3 m</H-M>
+	<cell>
+		<a unit="nm">0.516</a>
+		<b unit="nm">0.516</b>
+		<c unit="nm">0.516</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<temperature unit="K">225</temperature>
+	</cell>
+	<atom_site>
+		<label>Zr</label>
+		<valence>4</valence>
+		<fract_xyz>0 0 0</fract_xyz>
+		<occ>0.72</occ>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<B_iso>0.63</B_iso>
+	</atom_site>
+	<atom_site>
+		<label>Z</label>
+		<valence>3</valence>
+		<fract_xyz>0 0 0</fract_xyz>
+		<occ>0.28</occ>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<B_iso>0.63</B_iso>
+	</atom_site>
+		<atom_site>
+		<label>O</label>
+		<valence>-2</valence>
+		<fract_xyz>0.25 0.25 0.25</fract_xyz>
+		<occ>0.931</occ>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<B_iso>1.9</B_iso>
+	</atom_site>
+	<citation>
+	Acta Crystallographica, Section B: Structural Science (1984) 40 pg.367 372
+	H. Horiuchi, A.J. Schultz, P.C. Leung, J.M. Williams
+	"Time-of-Flight Neutron Diffraction Study of a Single Crystal of Yttria-Stabilized Zirconia Zr (Y) O1.862, at High Temperature and in an Applied Electrical Field"
+	</citation>
+</cif>

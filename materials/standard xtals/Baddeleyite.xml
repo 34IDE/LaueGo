@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Baddeleyite, ZrO2</chemical_name_common>
+	<space_group_IT_number>14</space_group_IT_number>
+	<space_group_id>14:b1</space_group_id>
+	<H-M>P 1 21/c 1</H-M>
+	<amcsd>0009231</amcsd>
+	<cell>
+		<a unit="nm">0.5169</a>
+		<b unit="nm">0.5232</b>
+		<c unit="nm">0.5341</c>
+		<alpha>90</alpha>
+		<beta>99.25</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Zr</label>
+		<valence>4</valence>
+		<fract_xyz>0.2758 0.0404 0.2089</fract_xyz>
+		<U_iso>0.01267</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<valence>-2</valence>
+		<fract_xyz>0.069 0.342 0.34500</fract_xyz>
+		<U_iso>0.02533</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<valence>-2</valence>
+		<fract_xyz>0.451 0.758 0.479</fract_xyz>
+		<U_iso>0.01773</U_iso>
+	</atom_site>
+	<citation>
+	J.D. McCullough, K.N. Trueblood
+	Acta Crystallographica v12 (1959) pg.507-511
+	"The crystal structure of baddeleyite (monoclinic ZrO2)"
+	</citation>
+</cif>
