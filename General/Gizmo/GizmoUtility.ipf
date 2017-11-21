@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.20
+#pragma version = 2.21
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -1316,14 +1316,14 @@ Function/T AddGizmoClipPlaneGroup(groupName)
 		Execute "ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data=12293"
 		Execute "ModifyGizmo currentGroupObject=\"::\""
 #else
-		AppendToGizmo group,name=groupName
+		AppendToGizmo group,name=$groupName
 		ModifyGizmo currentGroupObject=groupName
-		ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data={12288,}	// enable all of the 6 clip planes
-		ModifyGizmo setDisplayList=1, opName=enable1, operation=enable, data={12289,}
-		ModifyGizmo setDisplayList=2, opName=enable2, operation=enable, data={12290,}
-		ModifyGizmo setDisplayList=3, opName=enable3, operation=enable, data={12291,}
-		ModifyGizmo setDisplayList=4, opName=enable4, operation=enable, data={12292,}
-		ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data={12293,}
+		ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data={12288}	// enable all of the 6 clip planes
+		ModifyGizmo setDisplayList=1, opName=enable1, operation=enable, data={12289}
+		ModifyGizmo setDisplayList=2, opName=enable2, operation=enable, data={12290}
+		ModifyGizmo setDisplayList=3, opName=enable3, operation=enable, data={12291}
+		ModifyGizmo setDisplayList=4, opName=enable4, operation=enable, data={12292}
+		ModifyGizmo setDisplayList=5, opName=enable5, operation=enable, data={12293}
 		ModifyGizmo currentGroupObject="::"
 #endif
 		// ************************* Group Object End *******************
@@ -1352,7 +1352,7 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 	String keyVals=StrVarOrDefault("S_GizmoUserString","")
 	KillStrings/Z S_GizmoUserString
 #else
-	GetGizmo/Z userString=groupName
+	GetGizmo/Z userString=$groupName
 	String keyVals=S_GizmoUserString
 #endif
 
@@ -1452,6 +1452,7 @@ Function ModifyGizmoClipPlaneGroup(groupName,action,clipVal)
 					plane = 5
 					A=0; B=0; C=-1		//		dataStr = "{5,0,0,-1,"
 				endif
+				D = clipBox
 //				dataStr += num2str(clipBox)+"}"
 
 #endif
