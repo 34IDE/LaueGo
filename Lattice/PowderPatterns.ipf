@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.24
+#pragma version = 0.25
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -26,11 +26,6 @@ End
 
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
 Static Constant N_POWDER_LINES_COLUMNS = 8		// number of coumns in a powder lines wave
-#if (IgorVersion()<7)
-	Static strConstant PLUSMINUS = "\261"			// Windows use ALT keycode 0177 = 261 octal, on mac option-shift-=
-#else
-	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, PLUS-MINUS SIGN
-#endif
 
 
 Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)

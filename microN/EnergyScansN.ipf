@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.51
+#pragma version = 2.52
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -14,6 +14,7 @@
 // version 2.49 moved FindScalingFromVec() and FindStepSizeInVec() to Utillity_JZT
 // version 2.50 Fill_Q_Positions(), added optional dQ, and a DEFAULT_dQfactor to allow user tweaking of dQ
 // version 2.51 changed all special Mac character, should print better with Windows & Igor7
+// version 2.52 moved defn. of Gmu & PLUSMINUS to Utility_JZT.ipf
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -35,17 +36,6 @@ Static Constant secPerPixelDistort = 15.24e-3	// time is takes to process distor
 Static Constant DEFAULT_I0_GAIN = 1e9
 Static Constant DEFAULT_I0_SCALING = 1e5
 Static Constant DEFAULT_dQfactor = 1.1
-#if (IgorVersion()<7)
-	Static strConstant Gmu = "\265"		// Mac option-m, Greek mu
-#if StringMatch(IgorInfo(2),"Windows")
-	Static strConstant PLUSMINUS = "\241"	// MS Alt 241, plus-minus sign
-#else
-	Static strConstant PLUSMINUS = "\261"	// Mac option-+, plus-minus sign
-#endif
-#else
-	Static strConstant Gmu = "\xCE\xBC"	// UTF8, Greek mu
-	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, plus-minus sign
-#endif
 
 
 //	**	To get the ful chip unbinned pixel position from ROI data use the following:

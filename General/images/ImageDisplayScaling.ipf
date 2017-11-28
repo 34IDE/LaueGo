@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.17
+#pragma version = 2.18
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -11,15 +11,7 @@
 //
 //	at verion 2.07, added the imageROIstruct Structure and associated functions
 //	at verion 2.12, bad pixel support, and also ROIofImage()
-
-
-#if (IgorVersion()>7)
-	Static strConstant PLUSMINUS = "\xC2\xB1"	// UTF8, plus-minus sign
-#elif StringMatch(IgorInfo(2),"Windows")
-	Static strConstant PLUSMINUS = "\241"			// MS Alt 241, plus-minus sign
-#else
-	Static strConstant PLUSMINUS = "\261"			// Mac option-+, plus-minus sign
-#endif
+//	at verion 2.18, moved PLUSMINUS to Utility_JZT.ipf
 
 
 // =============================================================================================
