@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.80
+#pragma version = 2.81
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -37,7 +37,7 @@ Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
 		strLG = SelectString(strlen(strLG), "", "  ["+strLG+"]")
 		String strLocal = VersionStatusHash(0,"LocalPackages")
 		strLocal = SelectString(strlen(strLocal), "", "  ["+strLocal+"]")
-		printf "\r%s  %s  restarting this file on '%s' from '%s%s'%s%s\r\r",date(),time(),getHostName(1),pathName,file,strLG,strLocal
+		printf "\r%s  %s  restarting Igor %g  on '%s' from file '%s%s'%s%s\r\r",date(),time(),IgorVersion(),getHostName(1),pathName,file,strLG,strLocal
 		ExperimentModified 0			// mark this experiment as still unmodified
 	endif
 End
