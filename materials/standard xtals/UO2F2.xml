@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>UO2F2</chemical_name_common>
+	<chemical_name_common>Uranyl fluoride</chemical_name_common>
+	<chemical_formula_structural>UO2F2</chemical_formula_structural>
 	<space_group_IT_number>166</space_group_IT_number>
 	<space_group_id>166:H</space_group_id>
 	<cell>

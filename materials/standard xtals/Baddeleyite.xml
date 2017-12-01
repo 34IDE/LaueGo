@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>Baddeleyite, ZrO2</chemical_name_common>
+	<chemical_name_common>Baddeleyite</chemical_name_common>
+	<chemical_formula_structural>ZrO2</chemical_formula_structural>
 	<space_group_IT_number>14</space_group_IT_number>
 	<space_group_id>14:b1</space_group_id>
 	<H-M>P 1 21/c 1</H-M>
