@@ -1025,7 +1025,7 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 	else
 		reMakeAtomXYZs(xtal)						// only execute reMakeAtomXYZs(xtal) once
 		if (strlen(xtal.formula)>0)
-			printf "atom type locations:\t chemical formula = \"%s\"\r",xtal.formula
+			printf "atom types & locations:\t chemical formula = \"%s\"\r",xtal.formula
 		else
 			printf "atom type locations:\r"
 		endif
