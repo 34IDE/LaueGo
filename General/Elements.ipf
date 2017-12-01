@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.05
+#pragma version = 2.06
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -73,6 +73,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	Jun 2, 2017		2.04
 //		modified EmissionEnergies(), It can now return the average K-emission, or L, or M, or even <Ka>
+//
+//	Dec 1, 2017		2.06
+//		added ChemFormula2IgorStr(), returns a chemical formula suitable for a graph annotation, versions for Igor 6 & 7 
 
 Menu "Analysis"
       Submenu "Element"
@@ -309,6 +312,62 @@ Static Function FindMatchingBracket(str,istart)
 	while(1)
 	return iclose
 End
+
+
+#if (IgorVersion()>7)
+Function/T ChemFormula2IgorStr(formula)	// returns a chemical formula suitable for a graph annotation
+	String formula				// somthing like Ca10(PO4)6(OH)2
+
+	formula = ReplaceString("(", formula, " (")
+	formula = TrimBoth(formula)
+	String c
+	Variable i
+	do
+		c = formula[i]
+		if (isdigit(c))
+			formula[i,i] = num2char(8320+str2num(c))	// change digit to sub-script digit
+		endif
+		i += 1
+	while (i<strlen(formula))
+	do																// change all multiple spaces to a single space
+		formula = ReplaceString("  ", formula, " ")
+	while (strsearch(formula,"  ",0) >= 0)
+	return formula
+End
+#else
+Function/T ChemFormula2IgorStr(formula)	// returns a chemical formula suitable for a graph annotation
+	String formula				// somthing like Ca10(PO4)6(OH)2
+
+	formula = ReplaceString("(", formula, " (")
+	String c
+	Variable i, onDigit=0
+	do
+		c = formula[i]
+		if (isdigit(c) || CmpStr(c, ".")==0)
+			if (!onDigit)
+				onDigit = 1
+				formula[i] = "\\B"		// this inserts the string, does not replace
+				i += 1
+			endif	
+		else
+			if (onDigit)
+				onDigit = 0
+				formula[i] = "\\M"		// this inserts the string, does not replace
+				i += 1
+			endif	
+		endif
+		i += 1
+	while (i<strlen(formula))
+	if (onDigit)
+		formula += "\\M"
+	endif	
+	do										// change all multiple spaces to a single space
+		formula = ReplaceString("  ", formula, " ")
+	while (strsearch(formula,"  ",0) >= 0)
+	formula = TrimBoth(formula)
+	return formula
+End
+#endif
 
 
 Function/T LookUpMaterial(material)
