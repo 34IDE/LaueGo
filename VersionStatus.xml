@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Saturday, December 02, 2017" time="12:21:44 PM CST" isoTime="2017-12-02T12:21:44"></written>
+	<written date="Saturday, December 02, 2017" time="01:02:45 PM CST" isoTime="2017-12-02T13:02:45"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>69f4b430928eabf86924abae9ecfe8490dd4bb6f</gitHash>
+	<gitHash>71746f6cf323bd5a39d7ab855ab865baaef7eb04</gitHash>
 	<fileCount>250</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -189,7 +189,7 @@
 	<file version="2.67" time="2014-10-06T09:42:00" md5="86f474c532356a5aad2b7adcc625691b" sha256="86dd3308ad0404ba0607d996fd71f50da6f91443d0e3ef17a5d9a4714526eabe" ext=".ipf">micro/microGeometry.ipf</file>
 	<file version="nan" time="2016-02-17T12:53:27" md5="6cc544eca4eb02d11b4e6096af30f2ed" sha256="ce9314391b7c713941c8e630131a5b18e63034ff17d3883cb5def82cd9d0669b" ext=".xml">materials/standard xtals/SrAlO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="fde12c23ffdfde57b393c6256dbe67f0" sha256="71d10f1c6c55ec84cc584096d78ae41ebe80a914dab1b1a126de5680b582f720" ext=".xml">geometrys/geoN_2013-01-31_15-10-07.xml</file>
-	<file version="0.45" time="2017-11-10T16:51:58" md5="5fe179af1183a3c8a34e24e30c822835" sha256="a25e33dc86b30c7324ccee7e64d6136e08cd719e4c392ba18d93afe8ae385f83" ext=".ipf">Lattice/AtomView.ipf</file>
+	<file version="0.46" time="2017-12-02T13:00:25" md5="91c04bf87dae4145c4d77e5ab4c2407d" sha256="4638e317077ca37c2f2000bb7fb56f85e0fa3f5c1979c47dd52f60eee8bf575e" ext=".ipf">Lattice/AtomView.ipf</file>
 	<file version="nan" time="2017-12-01T17:04:47" md5="7049c0d01a143c9115fcea9558269f34" sha256="8e8fe6156963a210d1970260a3c03c099a8166b0075d8c3282e4d289ef1626b1" ext=".xml">materials/standard xtals/Pigeonite.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="21c8c1a4e96121064f92dbfa36ec916e" sha256="43b6c9e782c6d8cdd5e2362564974c08b34734b63f177b83b538d70ecbebac10" ext=".xml">geometrys/geoN_2013-03-23_14-27-53.xml</file>
 	<file version="2.17" time="2013-10-28T11:28:49" md5="943bd23067647c83f99d989b53f102c8" sha256="33a2b022cddfee9384fe43e1e40f06c649026e9c853cce7b0d1aa1fa545a796f" ext=".ipf">micro/indexLots.ipf</file>
