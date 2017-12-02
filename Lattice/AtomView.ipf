@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.45
+#pragma version = 0.46
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -354,6 +354,9 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	wNote = ReplaceStringByKey("SpaceGroupID",wNote,xtal.SpaceGroupID,"=")
 	wNote = ReplaceStringByKey("desc",wNote,desc,"=")
 	wNote = ReplaceStringByKey("title",wNote,title,"=")
+	if (strlen(xtal.formula))
+		wNote = ReplaceStringByKey("formula",wNote,xtal.formula,"=")
+	endif
 	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
 	wNote = ReplaceNumberByKey("Natom",wNote,Natom,"=")
 	sprintf str,"%g %g %g",Na,Nb,Nc
@@ -1112,7 +1115,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Wave rhomCell0 = $StringByKey("rhomOutlineWave0",wNote,"=")
 	Variable bondLenMax = NumberByKey("bondLenMax",wNote,"=")
 	String sourceFldr=StringByKey("sourceFldr",wNote,"=")
-	String title=StringByKey("title",wNote,"=")
+	String title=StringByKey("title",wNote,"="), formula=StringByKey("formula",wNote,"=")
 	if (strlen(title)<1)
 		title = StringByKey("desc",wNote,"=")
 	endif
@@ -1149,9 +1152,15 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 
 	String str, objectList="", attributeList="", scaleBarGroup=""
 #if (IgorVersion()<7)
+	if (strlen(formula))
+		title2 += "   "+formula
+	endif
 	Execute "NewGizmo/N="+gizName+"/T=\""+gizName+"\" /W=(234,45,992,803)"
 	Execute "ModifyGizmo startRecMacro"
 #else
+	if (strlen(formula))
+		title2 += "   "+ChemFormula2IgorStr(formula)
+	endif
 	NewGizmo/N=$gizName/W=(234,45,992,803)/T=gizName
 	ModifyGizmo startRecMacro
 #endif
@@ -1280,7 +1289,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ rotationType,0}
 		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ Shape,8}
 		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ size,1.5}
-		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ color,0,0,0,1}
+		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ color,0.5,0.5,0.5,0.5}
 		ModifyGizmo ModifyObject=atomViewAtomsLabels,objectType=scatter,property={ TextWave,$GetWavesDataFolder(AtomTypewave,2)}
 		objectList += "atomViewAtomsLabels;"
 	endif
@@ -1721,6 +1730,7 @@ Static Function AtomViewGizmoFixHookProc(s)
 	endif
 
 	String wnote=note(xyz), title2="", str
+	String formula = StringByKey("formula",wnote,"=")
 	str = StringByKey("Nabc",wnote,"=")
 	if (strlen(str)>1)
 		title2 = ReplaceString(" ",str," x ")+" cells"	// new title2 string
@@ -1730,6 +1740,9 @@ Static Function AtomViewGizmoFixHookProc(s)
 	endif
 
 #if (IgorVersion()<7)
+	if (strlen(formula))
+		title2 += "   "+formula
+	endif
 	Execute "GetGizmo/N="+win+"/Z objectNameList"
 	String ObjectNames = StrVarOrDefault("S_ObjectNames","")
 	KillStrings/Z S_ObjectNames
@@ -1751,6 +1764,9 @@ Static Function AtomViewGizmoFixHookProc(s)
 	Execute "ModifyGizmo/N="+win+"/Z currentGroupObject=\"::\""
 	Execute "ModifyGizmo/N="+win+"/Z endRecMacro"
 #else
+	if (strlen(formula))
+		title2 += "   "+ChemFormula2IgorStr(formula)
+	endif
 	String title = StringByKey("title",wnote,"="), title3=""
 	if (strlen(title)<1)
 		title = StringByKey("desc",wNote,"=")
@@ -1762,7 +1778,7 @@ Static Function AtomViewGizmoFixHookProc(s)
 	String sourceFldr = StringByKey("sourceFldr",wnote,"=")
 	String titleGroup = AddGizmoTitleGroup("textTitle",title,title2=title2,title3=title3,title4=sourceFldr)
 #endif
-	return 0	 
+	return 0
 End
 
 //  ============================================================================  //
