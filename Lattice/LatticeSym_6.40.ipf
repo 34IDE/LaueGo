@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.41
+#pragma version = 6.40
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -10081,7 +10081,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	WyckoffSyms[527]  = "a:1/8,1/8,1/8:16;b:1/4,1/4,1/4:32;c:0,0,0:32;d:7/8,1/8,1/8:48;e:x,x,x:64;f:x,1/8,1/8:96;g:1/4,y,-y:96;h:x,y,z:192;"
 	WyckoffSyms[528]  = "a:0,0,0:2;b:0,1/2,1/2:6;c:1/4,1/4,1/4:8;d:1/4,0,1/2:12;e:x,0,0:12;f:x,x,x:16;g:x,0,1/2:24;h:0,y,y:24;i:1/4,y,-y+1/2:48;"
 	WyckoffSyms[528] += "j:0,y,z:48;k:x,x,z:48;l:x,y,z:96;"
-	WyckoffSyms[529]  = "a:0,0,0:16;b:1/8,1/8,1/8:16;c:1/8,0,1/4:24;d:3/8,0,1/4:24;e:x,x,x:32;f:x,0,1/4:48;g:1/8,y,-y+1/4:48;h:x,y,z:96;"
+	WyckoffSyms[529]  = "a:0,0,0:16;b:1/8,1/8,1/8:16;c:1/8,0,1/4:24;d:1/3,0,1/4:24;e:x,x,x:32;f:x,0,1/4:48;g:1/8,y,-y+1/4:48;h:x,y,z:96;"
 
 	String list=WyckoffSyms[SG_idNum-1]
 	Make/N=(ItemsInList(list),3)/FREE/T WyckList
