@@ -6479,7 +6479,7 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 	endif
 	Variable ignoreMinus = !(!(types & 32))					// 1 means ignore minus signs in matching
 
-	String list="", nameList=""
+	String list="", nameList="", allIDs=""
 	Variable idNum
 	if (types & 1)
 		list += SymString2SGtype(strIN,1,ignoreMinus,id)	// 1 = Hermann-Mauguin
@@ -6513,7 +6513,7 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		elseif (Nlist>1)
 			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
-		String allIDs=MakeAllIDs()
+		allIDs = MakeAllIDs()
 		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
 		String SGid, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
@@ -6532,15 +6532,18 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		endfor
 	endif
 
-	if (id)												// convert list from idNumbers to ID's
-		String temp = list
-		list = ""
-		Variable j
-		for (i=0;i<ItemsInList(temp);i+=1)
-			j = str2num(StringFromList(i,temp))-1
-			list += StringFromList(j,allIDs)+";"
-		endfor
-	endif
+//	if (id)												// convert list from idNumbers to ID's
+//		if (!strlen(allIDs))
+//			allIDs = MakeAllIDs()
+//		endif
+//		String temp = list
+//		list = ""
+//		Variable j
+//		for (i=0;i<ItemsInList(temp);i+=1)
+//			j = str2num(StringFromList(i,temp))-1
+//			list += StringFromList(j,allIDs)+";"
+//		endfor
+//	endif
 
 	return list
 End
@@ -7609,7 +7612,7 @@ Static Function/WAVE GetSettingTransForm(id)
 	CBMs[521] = {"x+1/4,y+1/4,z+1/4","x,y,z","x,y,z","x,y,z","x+1/8,y+1/8,z+1/8","x,y,z","x+3/8,y+3/8,z+3/8","x,y,z","x,y,z"}
 
 	String CBMx = CBMs[i-1]
-	Wave mat = MatrixFromSymLine(CBMx,3,zeroBad=1)		// (3,3) matrix, NONE of the CBM have a constant part, so a (4,4) mat is pointless
+	Wave mat = MatrixFromSymLine(CBMx,4,zeroBad=1)		// (3,3) matrix, NONE of the CBM have a constant part, so a (4,4) mat is pointless
 	String wnote="waveClass=ChangeBasisMat"					// fill the wave note
 	wnote = ReplaceStringByKey("SGid",wnote,id,"=")
 	wnote = ReplaceStringByKey("CBMx",wnote,CBMx,"=")
@@ -9371,6 +9374,8 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 	xtal.SpaceGroupIDnum = SpaceGroupID2num(target)
 	Wave CBM = GetSettingTransForm(target)	// converts Defalt --> Target
 	Wave CBM0 = GetSettingTransForm(source)	// converts Defalt --> Source
+	Redimension/N=(3,3) CBM, CBM0
+
 	Wave DL = directFrom_xtal(xtal)				// returns a FREE wave with real lattice
 	MatrixOp/FREE GS = DL^t x DL					// source metrical matrix, see description below
 	MatrixOp/FREE GD = Inv(CBM0^t) x GS x Inv(CBM0)		//	1st convert source --> default,  GD is default metrical matrix
