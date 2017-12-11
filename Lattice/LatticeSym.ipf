@@ -6479,7 +6479,7 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 	endif
 	Variable ignoreMinus = !(!(types & 32))					// 1 means ignore minus signs in matching
 
-	String list="", nameList="", allIDs=""
+	String list="", nameList=""
 	Variable idNum
 	if (types & 1)
 		list += SymString2SGtype(strIN,1,ignoreMinus,id)	// 1 = Hermann-Mauguin
@@ -6513,7 +6513,7 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		elseif (Nlist>1)
 			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
-		allIDs = MakeAllIDs()
+		String allIDs = MakeAllIDs()
 		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
 		String SGid, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
