@@ -189,6 +189,12 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.39, MatrixFromSymLine() mirrorPlane(), MatrixFromSymLine(), MatDedscription(), FindWyckoffSymbol(): change (4,4) matricies to (3,4)
 //	with version 6.40, added .formula to the crystalStructure (also had to add crystalStructure6)
 
+
+
+// 6.41
+// added SymOpMatricies34N()
+
+
 //	Rhombohedral Transformation:
 //
 //	for Rhombohedral (hkl), and Hexagonal (HKL)
@@ -7945,6 +7951,52 @@ Static Function/T expressionStr(mx,my,mz,b)	// turn a set of coefficients back i
 	return out
 End
 
+
+Static Function/WAVE SymOpMatricies34N(SpaceGroupID, [printIt])
+	// returns a [3][4][Nop] matrix of the Nop symmetry operations
+	String SpaceGroupID
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	String symOp, symOperations
+	if (!isValidSpaceGroupID(SpaceGroupID))
+		SpaceGroupID = FindDefaultIDforSG(str2num(SpaceGroupID))	// not found, try the default Space Group
+	endif
+	symOperations = setSymLineID(SpaceGroupID)					// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+
+	Variable i,numSymOps=ItemsInList(symOperations)
+	if (numSymOps<1)
+		return $""
+	endif
+
+	Make/N=(3,4,numSymOps)/D/FREE mats34=0
+	for (i=0;i<numSymOps;i+=1)
+		symOp = StringFromList(i,symOperations)					// a sym string, e.g. "-y-1/4,-x+1/4,z+1/4:"
+		Wave mat4 = MatrixFromSymLine(symOp, 4, zeroBad=0)	// mat4 is (3,4)
+		if (!WaveExists(mat4))
+			return $""
+		endif
+		mats34[][][i] = mat4[p][q]
+	endfor
+
+	String wnote="waveClass=SymmetryOperations;"
+	wnote = ReplaceNumberByKey("numSymOps",wnote,numSymOps,"=")
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,str2num(SpaceGroupID),"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+	Note/K mats34, wnote
+
+	if (printIt)
+		String name
+		printf "SpaceGroupID '%s'\r",SpaceGroupID
+		for (i=0;i<numSymOps;i+=1)
+			mat4 = mats34[p][q][i]
+			sprintf name, "symOp_%d  \"%s\"",i, StringFromList(i,symOperations)
+			printWave(mat4, name=name, brief=1)
+		endfor
+	endif
+
+	return mats34
+End
 
 
 Static Function/T setSymLineID(id)
