@@ -1656,13 +1656,13 @@ End
 ThreadSafe Function dSpacing(xtal,h,k,l,[T])		// returns d-spacing for the hkl (nm)
 	STRUCT crystalStructure &xtal		// this sruct is set in this routine
 	Variable h,k,l
-	Variable T
+	Variable T									// OPTIONAL Temperature (C)
 	Variable xx,yy,zz
 	xx = h*xtal.as0 + k*xtal.bs0 + l*xtal.cs0
 	yy = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
 	zz = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
 	Variable d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
-	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T))	// do if T passed, and valid alphaT
+	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T) && numtype(T) && T>=0)	// do if T passed, and valid alphaT
 		T = limit(T,-273.15,Inf)				// limit T to > absolute zero
 		d = d*(1+xtal.alphaT*(T-22.5))		// apply temperature correction
 	endif

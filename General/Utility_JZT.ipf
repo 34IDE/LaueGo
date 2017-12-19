@@ -2,7 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method.
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.50
+#pragma version = 4.51
 // #pragma hide = 1
 
 Menu "Graph"
@@ -26,6 +26,7 @@ End
 	strConstant HORIZ_ELLIPSIS = "\xE2\x80\xA6"	// UTF8, Horizontal Ellipsis
 	strConstant Gmu = "\xCE\xBC"				// UTF8, Greek mu
 	strConstant PLUSMINUS = "\xC2\xB1"		// UTF8, plus-minus sign
+	strConstant INTEGRAL_SIGN = "\xE2\x88\xAB"		// UTF8, integral sign
 #elif StringMatch(IgorInfo(2),"Windows")
 	// Igor 6 Windows
 	strConstant BULLET = "\7"					// Bullet, MS Alt-7
@@ -36,6 +37,7 @@ End
 	strConstant GDELTA = "\916"				// MS Alt-241
 	strConstant PLUSMINUS = "\241"			// MS Alt-241, plus-minus sign
 	strConstant Gmu = "\230"					// MS Alt-230, Greek mu
+	strConstant INTEGRAL_SIGN = "\222B"	// Degree sign, MS Alt-222B
 #else
 	// Igor 6 Mac
 	strConstant BULLET = "\245"				// Mac option-8
@@ -46,6 +48,7 @@ End
 	strConstant PLUSMINUS = "\261"			// Mac option-+, plus-minus sign
 	strConstant GDELTA = "\306"				// Mac option-j, xC6, o306, d198
 	strConstant Gmu = "\265"					// Mac option-m, Greek mu
+	strConstant INTEGRAL_SIGN = "\272"		// option-b
 #endif
 
 StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;Nh;Fl;Mc;Lv;Ts;Og"
