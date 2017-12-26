@@ -1,8 +1,8 @@
-#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method.
+#pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.51
+#pragma version = 4.52
 // #pragma hide = 1
 
 Menu "Graph"
@@ -129,7 +129,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		RangeOfValuesContainingFraction(),  returns range of VALUES of wave that constitute a given fraction of all values in wave
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
-//		ValErrStr(val,err), returns string  "val Â± err" formatted correctly
+//		ValErrStr(val,err), returns string  "val ± err" formatted correctly
 //		normalize(a), normalizes a if it is a vector or square matrix
 //		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
 //		arithmetic(expression), return value of expression as a real number, e.g. "1/3 + 5" --> 5.33333   or "sqrt(2)" --> 1.41421
@@ -185,6 +185,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		SplitNumAndUnits(in)  take string such as "-9.3e2 mi" --> "-9.3e2;mi",  or "2 nm^-1" --> "2;nm^-1"
 //		ConvertUnits2seconds(unit,[defaultLen])  returns conversion factor from time unit to seconds
 //		ConvertUnits2kg(unit,[defaultMass])  returns conversion factor from unit to killo-grams
+//		ConvertUnits2Joules(unit,[defaultEnergy])  returns conversion factor from unit to Joules
 //		RomanNumeral(j) converts a number to a Roman Numeral string, NO upper limit, so watch out for string length
 //		RomanNumeral2Int(str) convert a Roman Numeral string to an integer
 //	9	Old legacy or deprecated functions
@@ -3574,10 +3575,10 @@ ThreadSafe Function placesOfPrecision(a)	// number of significant figures in a n
 End
 
 
-ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val Â± err"
+ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val ± err"
 	Variable val								// value
 	Variable err								// err in value
-	Variable sp								// optionally put spaces around the Â±
+	Variable sp								// optionally put spaces around the ±
 	sp = ParamIsDefault(sp) ? 0 : !(!sp)
 	sp = numtype(sp) ? 0 : sp
 	err = numtype(err) ? 0 : abs(err)
@@ -5456,12 +5457,12 @@ ThreadSafe Function SIprefix2factor(prefix)
 	// return the product of the prefixes, e.g. "mp" returns 1e-15
 	// white space (anything <= a space) is ignored.
 	// for bad prefix values, (e.g. "v" or "3") returns NaN
-	// Note, internally I use "o" instead of "Âµ" since the NumberByKey() routine does not work with a key="Âµ"
+	// Note, internally I use "o" instead of "µ" since the NumberByKey() routine does not work with a key="µ"
 	// also note that all prefixes are case sensitive except for "H" and "K", which can be either upper or lower.
 	//		deci	= "d" = 0.1
 	//		centi	= "c" = 0.01
 	//		milli	= "m" = 1e-3
-	//		micro	= "Âµ" = 1e-6
+	//		micro	= "µ" = 1e-6
 	//		nano	= "n" = 1e-9
 	//		pico	= "p" = 1e-12
 	//		femto	= "f" = 1e-15
@@ -5482,7 +5483,7 @@ ThreadSafe Function SIprefix2factor(prefix)
 	if (strsearch(prefix,"o",0)>=0)				// need to check for "o", which is also invalid
 		return NaN
 	endif
-	prefix = ReplaceString(Gmu,prefix,"o")	// NumberByKey() routine does not work with a key="Âµ", so use internally use "o" instead
+	prefix = ReplaceString(Gmu,prefix,"o")	// NumberByKey() routine does not work with a key="µ", so use internally use "o" instead
 
 	String keyVals="d:0.1;c:0.01;m:1e-3;o:1e-6;n:1e-9;p:1e-12;f:1e-15;a:1e-18;z:1e-21;y:1e-24;"
 	keyVals += "h:100;H:100;k:1e3;K:1e3;M:1e6;G:1e9;T:1e12;P:1e15;E:1e18;Z:1e21;Y:1e24;"
@@ -5498,14 +5499,14 @@ ThreadSafe Function SIprefix2factor(prefix)
 	return value
 End
 //	Function test_SIprefix2factor()
-//		String chars=" dcmÂµnpfazyHhKkMGTPEZYv"
+//		String chars=" dcmµnpfazyHhKkMGTPEZYv"
 //		Variable i
 //		for (i=0;i<strlen(chars);i+=1)
 //			printf " '%s'  %g\r",chars[i],SIprefix2factor(chars[i])
 //		endfor
 //		print " "
 //		print "following should be 1's"
-//		printf "%g, %g, %g, %g, %g, ", SIprefix2factor("cH"), SIprefix2factor("mk"), SIprefix2factor("ÂµM"), SIprefix2factor("nG"), SIprefix2factor("pT")
+//		printf "%g, %g, %g, %g, %g, ", SIprefix2factor("cH"), SIprefix2factor("mk"), SIprefix2factor("µM"), SIprefix2factor("nG"), SIprefix2factor("pT")
 //		printf "%g, %g, %g, %g\r", SIprefix2factor("fP"), SIprefix2factor("aE"), SIprefix2factor("zZ"), SIprefix2factor("yY")
 //	End
 
@@ -6129,13 +6130,178 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 End
 
 
+ThreadSafe Function ConvertUnits2Joules(unit,[defaultEnergy])
+	// returns conversion factor from unit to Joules
+	String unit
+	Variable defaultEnergy
+	defaultEnergy = ParamIsDefault(defaultEnergy) ? NaN : defaultEnergy	// no default value
+
+	// Joule								1 J							(kg * m^2 * s^-2 = N*m)
+	// erg								1e-7 J
+	// cal, calorie					4.184 J						(Thermochemical calorie)
+	// Btu, BTU							1055.06 J
+	// Wh, watt-hour					3600 J						usually used as 'kiloWatt-hour'
+	// eV, electron-volt			1.6021766208e-19			e_C = 1.6021766208e-19 C
+	// Ry, Rydberg						2.179872325e-18 J			R(inf) * hc = (me * e^4) / (8 * epsilon0^2 * h^2) = ( 1/2 * me * c^2 * alpha^2 )
+	// Ha, Hartree						2*Ry								
+	// ft-lbf, ft-lb, Foot-pound	1.3558179483314 J			(12*inch) *(g*kg/pound)) = ((12*0.0254) * (9.80665*0.45359237))
+	// therm								1e5 BTU		
+	// quad								1e15 BTU
+	// TWyr, terawatt-year			31.556925216e18 J			= 365.24219 * 24*3600 * 1e12
+	// 'TNT' or 'kg of TNT'		4.184e6 J					(1 kg of TNT), releases 4.184e6 J of energy = cal*1e6 = Mcal
+	// 'ton of TNT', , 'kiloton, ton	4.184e9 J			(1 metric ton of TNT),  '1 kiloton = (1000 metric tons of TNT)
+	// Planck, Planck energy		1.956113e9 J				sqrt(hbar * c^5 / GN)
+	// foe, Bethe						1e44 J						= 10^51 erg
+
+	Variable e_C = 1.6021766208e-19				// electron charge in Couloumbs
+	Variable BTU = 1055.06							// one BTU (J) [[definition of BTU]
+	Variable Ry_hc = 2.179872325e-18			// R(inf) * hc, Rydberg energy (J)
+	Variable cal = 4.184							// 1 Thermochemical calorie = 4.184 J
+	Variable PlanckE = 1.956113e9				// sqrt(hbar * c^5 / GN) (J),  hbar=1.054571800e-34,  c=299792458,  GN=6.67408e-11
+
+	// check for powers  "^N"
+	Variable ipow=strsearch(unit,"^",0), power=1
+	if (ipow>=0)										// found a power
+		power = str2num(unit[ipow+1,Inf])		// number after "^"
+		unit = unit[0,ipow-1]						// string before "^"
+	endif
+
+	unit = RemoveEnding(unit,"s")				// none of the units end in 's'
+	unit = ReplaceString(" of ",unit," ")
+	unit = ReplaceString("-",unit,"")			// no dashes
+	unit = ReplaceString(" ",unit,"")			// no spaces
+
+	unit = ReplaceString("tonTNT",unit,"kTNT")
+	unit = ReplaceString("ton",unit,"kTNT")
+	unit = ReplaceString("kg",unit,"TNT")
+
+	unit = ReplaceString("kilo",unit,"k")
+	unit = ReplaceString("mega",unit,"M")
+	unit = ReplaceString("giga",unit,"G")
+
+	String prefix=""
+	Variable value=NaN, i = max(0,strlen(unit)-1)
+
+	if(StringMatch(unit,"*Joule") || StringMatch(unit,"*J"))
+		value = 1
+		i = strsearch(unit,"J",inf,3)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*Planck*"))
+		value = PlanckE								// Planck Energy = sqrt(hbar * c^5 / GN)
+		i = strsearch(unit,"Planck",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*cal*"))
+		value = cal										// (Thermochemical calorie)
+		i = strsearch(unit,"cal",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*BTU"))
+		value = BTU
+		i = strsearch(unit,"BTU",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*watthour"))
+		value = 3600
+		i = strsearch(unit,"watt",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*Wh"))				// Watt-hour
+		value = 3600
+		i = strsearch(unit,"Wh",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*eV") || StringMatch(unit,"*electronVolt"))
+		value = e_C										// elementary charge
+		i = strsearch(unit,"eV",0,2)
+		i = i<0 ? strsearch(unit,"electron",0,2) : i
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*Ry") || StringMatch(unit,"*Rydberg"))
+		value = Ry_hc									// R(inf) * hc
+		i = strsearch(unit,"Ry",inf,3)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*Ha") || StringMatch(unit,"*Hartree"))
+		value = 2*Ry_hc								// 2*Ry
+		i = strsearch(unit,"Ha",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*erg"))
+		value = 1e-7
+		i = strsearch(unit,"erg",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*therm"))
+		value = 1e5 * BTU
+		i = strsearch(unit,"therm",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*quad"))
+		value = 1e15 * BTU
+		i = strsearch(unit,"quad",0,2)
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*foe") || StringMatch(unit,"*Bethe"))
+		value = 1e44									// 10^51 ergs
+		i = strsearch(unit,"foe",0,2)
+		i = i<0 ? strsearch(unit,"Bethe",0,2) : i
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*TWyr") || StringMatch(unit,"*terawattYear"))
+		value = 365.24219 * (24*3600) * 1e12		// (days in year) * (seconds in day) * 1e12 = 31.556925216e18
+		i = strsearch(unit,"TWyr",0,2)
+		i = i<0 ? strsearch(unit,"terawatt",0,2) : i
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*ftlb*") || StringMatch(unit,"*FootPound*"))
+		// pound force:
+		//		g = 9.80665								// average acceleration at earth surface (m/sec^2)
+		//		kgPerPound = 0.45359237			// 1 pound-mass = 0.45359237 kg [definition of pound]
+		//		1 foot-pound = (12 * inch)   * (g * kgPerPound)
+		//		1 foot-pound = (12 * 0.0254) * (9.80665 * 0.45359237)
+		value = (12*0.0254) * (9.80665*0.45359237)
+		i = strsearch(unit,"ft",0,2)
+		i = i<0 ? strsearch(unit,"Foot",0,2) : i
+		prefix = unit[0,i-1]
+	elseif(StringMatch(unit,"*TNT"))
+		value = cal*1e6								// (1 kg of TNT) = 1 Mcal
+		i = strsearch(unit,"TNT",0,2)
+		prefix = unit[0,i-1]
+	else
+		return defaultEnergy						// cannot find base value, use default
+	endif
+
+	value *= SIprefix2factor(prefix)
+	return (power==1) ? value : (value ^ power)
+End
+//
+//	Function test_ConvertUnits2Joules()
+//		String AllValues  = "J:1;Joule:1;erg:1e-7;cal:4.184;calorie:4.184;Btu:1055.06;BTU:1055.06;kWh:3.6e6;kilowatt-hour:3.6e6;"
+//		AllValues += "eV:1.6021766208e-19;electron-volt:1.6021766208e-19;Ry:2.179872325e-18;Rydberg:2.179872325e-18;"
+//		AllValues += "Ha:4.35974465e-18;Hartree:4.35974465e-18;ft-lbf:1.3558179483314;ft-lb:1.3558179483314;Foot-pound:1.3558179483314;"
+//		AllValues += "therm:1055.06e5;quad:1055.06e15;TWyr:31.556925216e18;terawatt-year:31.556925216e18;ton of TNT:4.184e9;ton:4.184e9;"
+//		AllValues += "Planck:1.956113e9;Planck energy:1.956113e9;foe:1e44;Bethe:1e44"
+//		String SI=";d;c;m;"+Gmu+";n;p;f;a;z;y;h;k;M;G;T;P;E;Z;Y"		// first item is empty, SIprefix2factor("")==1
+//	
+//		String prefix, unitBase
+//		Variable ip, Np=ItemsInList(SI), valExpect, valCalc
+//		Variable Nerr=0, i, Nv=ItemsInlist(AllValues)
+//		for (i=0;i<Nv;i+=1)
+//			unitBase = StringFromList(0,StringFromList(i,AllValues),":")
+//	
+//			for (ip=0;ip<Np;ip+=1)					// check all SI prefixes
+//				prefix = StringFromList(ip,SI)
+//				valExpect = SIprefix2factor(prefix) * NumberByKey(unitBase,AllValues)
+//				valCalc = ConvertUnits2Joules(prefix+unitBase)
+//				if (abs(valCalc-valExpect)/valExpect > 1e-15 || numtype(valCalc+valExpect))
+//					printf "%s\t\t\tCalc=%g,\t\texpected=%g\r",prefix+unitBase,valCalc,valExpect
+//					Nerr += 1
+//				endif
+//			endfor
+//		endfor
+//		if (Nerr)
+//			printf "\r  completed with %g errors\r",Nerr
+//		else
+//			print "completed with NO errors"
+//		endif
+//	End
+
+
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
 	Variable j
 
 	String str = SelectString(j<0,"","-")		// start str with the sign
 	j = round(abs(j))
 
-	if (j<1 || numtype(j))					// retrns "" for zero, Â±Inf, NaN
+	if (j<1 || numtype(j))					// retrns "" for zero, ±Inf, NaN
 		str = ""
 	elseif (j>=1000)
 		str += "M"+RomanNumeral(j-1000)	// add an M & remove 1000
