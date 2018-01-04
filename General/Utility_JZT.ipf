@@ -5452,6 +5452,19 @@ ThreadSafe Function/T ChangeStrEnding(oldEnd, inStr, newEnd)
 End
 
 
+//  ====================================================================================  //
+//  ============================= Start of Unit Conversions ============================  //
+Static Constant c = 299792458						// exact speed of light (m/s)
+Static Constant e_C = 1.6021766208e-19			// Charge on electron (C)
+Static Constant hbar = 1.054571800e-34			// reduced Planck Constant, h/2pi (J s)
+Static Constant kB = 8.6173303e-5					// Boltzmann constant (eV/K), updated March 2017
+Static Constant GN = 6.67408e-11					// Newton Gravity Constant (m^3 kg^-1 s^-2)
+Static Constant inch = 0.0254						// length of inch (m)
+Static Constant kgPerPound = 0.45359237			// 1 pound = 0.45359237 kgm [definition of pound]
+Static Constant gStd = 9.80665						// std acceleration of gravity (m * s^-2)
+Static Constant tropicalYear = 31556925.216	// = 365.24219 * 24*3600, seconds in a tropical year (NOT sidereal), there are 365.24219 days in 1 tropical year
+
+
 ThreadSafe Function SIprefix2factor(prefix)
 	String prefix
 	// return the product of the prefixes, e.g. "mp" returns 1e-15
@@ -5534,7 +5547,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	CuXunit, CuXU			Cu X-unit, 1.00207697e-13 m
 	//	MoXunit, MoXU			Mo X-unit, 1.00209952e-13 m
 	//	Xunit, XU				X-unit (just average of Mo & Cu), 1.002088e-13 m
-	//	Planck, PlanckLength 1.616199e-35 m
+	//	Planck, PlanckLength sqrt(hbar*GN/c^3)  =  1.616199e-35 m
 	//	fathom					6 feet
 	//	chain						66 feet
 	//	rod						16.5 feet
@@ -5609,7 +5622,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 		i = StringMatch(unit,"*BohrRadiu") ? 10 : 3		// the "s" got trimmed off!
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*Planck") || StringMatch(unit,"*PlanckLength"))
-		value = 1.616199e-35
+		value = sqrt(hbar*GN/c^3)
 		i = StringMatch(unit,"*Planck") ? 6 : 13
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*in") || StringMatch(unit,"*inch"))	 	// a few english units just for fun
@@ -5771,7 +5784,7 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 		return NaN
 	endif
 
-	Variable T_Planck = 1.416833e32						// Planck Temperature (K)
+	Variable T_Planck = sqrt(hbar * c^5 / (GN * (kB*e_C)^2))	// Planck Temperature = 1.416833e32 (K)
 	Variable Tout, Kelvin, n
 	if (strlen(unitIn)>1)
 		n = strlen(unitIn)
@@ -5843,7 +5856,7 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	//	week, wk				7 days
 	//	fortnight			14 days
 	//	lunar month, moon, lune	29.530588 days
-	//	year, yr, y			365.24219 days
+	//	year, yr, y			tropical year = 365.24219 days
 	//	olympiad				4 years
 	//	lustrum				5 years
 	//	indiction			15 years
@@ -5853,9 +5866,9 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	//	jiffy					1 fm/c
 	//	shake					1e-8 s
 	//	beat					0.001 day = 3.6 s
-	//	Planck time			1.616199e-35 / c
+	//	Planck time			1.616199e-35 / c  =  sqrt(hbar*GN / c^5)
 	//	Svedberg, Sv		1e-13 s
-	//	galactic year		230e6 years
+	//	galactic year		230e6 tropical years
 	//	sidereal day		23.9344699 hour
 	//	sidereal year		365.256363004 days
 	//	helek					3 + 1/3 seconds
@@ -5872,10 +5885,8 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 
 	String prefix
 	Variable value=NaN, i = max(0,strlen(unit)-1)
-	Variable c = 299792458								// speed of light (m/s)
 	Variable hour = 3600								// seconds in 1 hour
 	Variable day = 24*hour								// seconds in 1 day
-	Variable year = 365.24219 * day					// seconds in 1 year
 
 	if(StringMatch(unit,"*second") || StringMatch(unit,"*sec") || StringMatch(unit,"*s"))				// the second
 		i = StringMatch(unit,"*second") ? 7 : 2
@@ -5883,13 +5894,13 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		value = 1
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*decade"))			// decade = 10 years
-		value = 10 * year
+		value = 10 * tropicalYear
 		prefix = unit[0,strlen(unit)-7]
 	elseif(StringMatch(unit,"*century"))			// century = 100 years
-		value = 100 * year
+		value = 100 * tropicalYear
 		prefix = unit[0,strlen(unit)-8]
 	elseif(StringMatch(unit,"*millennium"))		// millennium = 1000 years
-		value = 1000 * year
+		value = 1000 * tropicalYear
 		prefix = unit[0,strlen(unit)-11]
 	elseif(StringMatch(unit,"*fortnight") )		// fortnight = 2 weeks
 		value = 14 * day
@@ -5899,13 +5910,13 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		i = StringMatch(unit,"*lunarmonth") ? 11 : 5
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*olympiad"))			// olympiad = 4 years
-		value = 4 * year
+		value = 4 * tropicalYear
 		prefix = unit[0,strlen(unit)-9]
 	elseif(StringMatch(unit,"*lustrum"))			// lustrum = 5 years
-		value = 5 * year
+		value = 5 * tropicalYear
 		prefix = unit[0,strlen(unit)-8]
 	elseif(StringMatch(unit,"*indiction"))		// indiction = 5 years
-		value = 15 * year
+		value = 15 * tropicalYear
 		prefix = unit[0,strlen(unit)-10]
 	elseif(StringMatch(unit,"*jiffy"))				// time to go one fermi
 		value = 1e-15 / c	
@@ -5917,7 +5928,7 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		value = 3.6
 		prefix = unit[0,strlen(unit)-5]
 	elseif(StringMatch(unit,"*Planck") || StringMatch(unit,"*Plancktime"))
-		value = 1.616199e-35 / c
+		value = sqrt(hbar*GN / c^5)
 		i = StringMatch(unit,"*Plancktime") ? 10 : 6
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*Svedberg") || StringMatch(unit,"*Sv"))
@@ -5925,7 +5936,7 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		i = StringMatch(unit,"*Svedberg") ? 9 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*galacticyear"))	// galactic year = 230e6 years
-		value = 230e6 * year
+		value = 230e6 * tropicalYear
 		prefix = unit[0,strlen(unit)-13]
 	elseif(StringMatch(unit,"*siderealday"))	// sidereal day = 23.9344699 hour
 		value = 23.9344699 * hour
@@ -5958,14 +5969,14 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		i = StringMatch(unit,"*week") ? 5 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*year") || StringMatch(unit,"*yr") || StringMatch(unit,"*y"))
-		value = year										// 1 year = 365.24219 days
+		value = tropicalYear							// 1 year = 365.24219 days
 		i = StringMatch(unit,"*year") ? 5 : 2
 		i = StringMatch(unit,"*yr") ? 3 : i
 		prefix = unit[0,strlen(unit)-i]
 	else
 		return defaultSeconds							// cannot find base value
 	endif
-	prefix = ReplaceString("micro",prefix,Gmu)			// Greek mu
+	prefix = ReplaceString("micro",prefix,Gmu)	// Greek mu
 
 	value *= SIprefix2factor(prefix)
 	return (power==1) ? value : (value ^ power)
@@ -6015,23 +6026,20 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 	//	tlb, troyPound			5.760*0.06479891 kg		Troy pound
 	//	toz, troyOunce			5.760*0.06479891/12.0 kg	Troy ounce
 	//	amu, dalton				1.66053904e-27 kg			atomic mass unit
-	//	mP, Planck				sqrt(hbar*cLight/GN)	Planck mass
+	//	mP, Planck				sqrt(hbar*c/GN)			Planck mass
 	//	sun, sol, solar		1.9891E30 kg				solar mass
 	//	me							9.10938356e-31 kg			electron mass
 	//	mp							1.672621898e-27 kg		proton mass
 	//	mn							1.674927471e-27 kg		neutron mass
 	//	mmu						1.883531594e-28 kg		muon mass
 
-	Variable kgPerPound = 0.45359237			// 1 pound = 0.45359237 kgm [definition of pound]
 	unit = ReplaceString(" ",unit,"")			// no spaces
-
 	// check for powers  "^N"
 	Variable ipow=strsearch(unit,"^",0), power=1
 	if (ipow>=0)										// found a power
 		power = str2num(unit[ipow+1,Inf])		// number after "^"
 		unit = unit[0,ipow-1]						// string before "^"
 	endif
-
 	unit = RemoveEnding(unit,"s")				// none of the units end in 's'
 
 	// alternate spellings:
@@ -6040,7 +6048,7 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 	String prefix
 	Variable value=NaN, i = max(0,strlen(unit)-1)
 	if(StringMatch(unit,"*Planck")) 			// Planck mass
-		value = 2.1764702e-08
+		value = sqrt(hbar*c/GN)
 		prefix = unit[0,strlen(unit)-7]
 	elseif(StringMatch(unit,"*amu") || StringMatch(unit,"*dalton"))
 		value = 1.66053904e-27
@@ -6058,7 +6066,7 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 		i = StringMatch(unit,"*stone") ? 6 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*slug")) 			// slug, acceleration at earth surface is 9.80665 N
-		value = kgPerPound*9.80665/(12.0*0.0254)
+		value = kgPerPound*gStd/(12*inch)
 		prefix = unit[0,strlen(unit)-5]
 	elseif(StringMatch(unit,"*fir") || StringMatch(unit,"*firkin"))
 		value = 90.0*kgPerPound 					// firkin
@@ -6153,11 +6161,9 @@ ThreadSafe Function ConvertUnits2Joules(unit,[defaultEnergy])
 	// Planck, Planck energy		1.956113e9 J				sqrt(hbar * c^5 / GN)
 	// foe, Bethe						1e44 J						= 10^51 erg
 
-	Variable e_C = 1.6021766208e-19				// electron charge in Couloumbs
 	Variable BTU = 1055.06							// one BTU (J) [[definition of BTU]
 	Variable Ry_hc = 2.179872325e-18			// R(inf) * hc, Rydberg energy (J)
 	Variable cal = 4.184							// 1 Thermochemical calorie = 4.184 J
-	Variable PlanckE = 1.956113e9				// sqrt(hbar * c^5 / GN) (J),  hbar=1.054571800e-34,  c=299792458,  GN=6.67408e-11
 
 	// check for powers  "^N"
 	Variable ipow=strsearch(unit,"^",0), power=1
@@ -6187,7 +6193,7 @@ ThreadSafe Function ConvertUnits2Joules(unit,[defaultEnergy])
 		i = strsearch(unit,"J",inf,3)
 		prefix = unit[0,i-1]
 	elseif(StringMatch(unit,"*Planck*"))
-		value = PlanckE								// Planck Energy = sqrt(hbar * c^5 / GN)
+		value = sqrt(hbar*c^5/GN)					// Planck Energy = 1.956113e9
 		i = strsearch(unit,"Planck",0,2)
 		prefix = unit[0,i-1]
 	elseif(StringMatch(unit,"*cal*"))
@@ -6237,17 +6243,13 @@ ThreadSafe Function ConvertUnits2Joules(unit,[defaultEnergy])
 		i = i<0 ? strsearch(unit,"Bethe",0,2) : i
 		prefix = unit[0,i-1]
 	elseif(StringMatch(unit,"*TWyr") || StringMatch(unit,"*terawattYear"))
-		value = 365.24219 * (24*3600) * 1e12		// (days in year) * (seconds in day) * 1e12 = 31.556925216e18
+		value = tropicalYear * 1e12		// (days in year) * (seconds in day) * 1e12 = 31.556925216e18
 		i = strsearch(unit,"TWyr",0,2)
 		i = i<0 ? strsearch(unit,"terawatt",0,2) : i
 		prefix = unit[0,i-1]
 	elseif(StringMatch(unit,"*ftlb*") || StringMatch(unit,"*FootPound*"))
-		// pound force:
-		//		g = 9.80665								// average acceleration at earth surface (m/sec^2)
-		//		kgPerPound = 0.45359237			// 1 pound-mass = 0.45359237 kg [definition of pound]
-		//		1 foot-pound = (12 * inch)   * (g * kgPerPound)
-		//		1 foot-pound = (12 * 0.0254) * (9.80665 * 0.45359237)
-		value = (12*0.0254) * (9.80665*0.45359237)
+		// distance * pound force
+		value = (12*inch) * (gStd*kgPerPound)	// (12*inch) * (9.80665 * 0.45359237)
 		i = strsearch(unit,"ft",0,2)
 		i = i<0 ? strsearch(unit,"Foot",0,2) : i
 		prefix = unit[0,i-1]
@@ -6293,6 +6295,9 @@ End
 //			print "completed with NO errors"
 //		endif
 //	End
+//
+//  ====================================================================================  //
+//  ============================= Start of Unit Conversions ============================  //
 
 
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length
