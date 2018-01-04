@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.52
+#pragma version = 4.53
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5534,7 +5534,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	CuXunit, CuXU			Cu X-unit, 1.00207697e-13 m
 	//	MoXunit, MoXU			Mo X-unit, 1.00209952e-13 m
 	//	Xunit, XU				X-unit (just average of Mo & Cu), 1.002088e-13 m
-	//	Plank, PlanckLength	1.616199e-35 m
+	//	Planck, PlanckLength 1.616199e-35 m
 	//	fathom					6 feet
 	//	chain						66 feet
 	//	rod						16.5 feet
@@ -5608,9 +5608,9 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 		value = 0.52917721092e-10
 		i = StringMatch(unit,"*BohrRadiu") ? 10 : 3		// the "s" got trimmed off!
 		prefix = unit[0,strlen(unit)-i]
-	elseif(StringMatch(unit,"*Plank") || StringMatch(unit,"*PlanckLength"))
+	elseif(StringMatch(unit,"*Planck") || StringMatch(unit,"*PlanckLength"))
 		value = 1.616199e-35
-		i = StringMatch(unit,"*Plank") ? 6 : 13
+		i = StringMatch(unit,"*Planck") ? 6 : 13
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*in") || StringMatch(unit,"*inch"))	 	// a few english units just for fun
 		value = 25.4e-3
@@ -5736,8 +5736,8 @@ End
 
 ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Temperature in units of (unitOut)
 	// ConvertTemperatureUnits(400,"K","F") --> "260.33"
-	// work for Celsius, Kelvin, Fahrenheit, Rankine, & Plank units
-	// for Plank Temperature, see: http://en.wikipedia.org/wiki/Planck_temperature
+	// work for Celsius, Kelvin, Fahrenheit, Rankine, & Planck units
+	// for Planck Temperature, see: http://en.wikipedia.org/wiki/Planck_temperature
 	String unitIn, unitOut			// input and output units, NO defaults allowed
 	Variable Tin						// input temperature in units of (unitIn)
 
@@ -5746,7 +5746,7 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 	unitIn = ReplaceString("Temp",unitIn,"")
 	unitOut = ReplaceString("Temp",unitOut,"")
 
-	unitIn = ReplaceString("Kelvin",unitIn,"K")// use single letter abreviations
+	unitIn = ReplaceString("Kelvin",unitIn,"K")	// use single letter abreviations
 	unitOut = ReplaceString("Kelvin",unitOut,"K")
 	unitIn = ReplaceString("Celsius",unitIn,"C")
 	unitOut = ReplaceString("Celsius",unitOut,"C")
@@ -5754,31 +5754,31 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 	unitOut = ReplaceString("Fahrenheit",unitOut,"F")
 	unitIn = ReplaceString("Rankine",unitIn,"R")
 	unitOut = ReplaceString("Rankine",unitOut,"R")
-	unitIn = ReplaceString("Plank",unitIn,"P")// Plank Temperature
-	unitOut = ReplaceString("Plank",unitOut,"P")
+	unitIn = ReplaceString("Planck",unitIn,"P")	// Planck Temperature
+	unitOut = ReplaceString("Planck",unitOut,"P")
 
-	unitIn = ReplaceString(" ",unitIn,"")			// no spaces
+	unitIn = ReplaceString(" ",unitIn,"")				// no spaces
 	unitIn = ReplaceString("\241",unitIn,"")		// no degree signs, Mac opt-shift-9
 	unitIn = ReplaceString("\xC2\xB0",unitIn,"")	// no degree signs, UTF8
-	unitIn = RemoveEnding(unitIn,"s")				// and no trailing 's'
+	unitIn = RemoveEnding(unitIn,"s")					// and no trailing 's'
 
-	unitOut = ReplaceString(" ",unitOut,"")		// no spaces
+	unitOut = ReplaceString(" ",unitOut,"")			// no spaces
 	unitOut = ReplaceString("\241",unitOut,"")		// no degree signs, Mac opt-shift-9
-	unitOut = ReplaceString("\xC2\xB0",unitOut,"")		// no degree signs, UTF8
-	unitOut = RemoveEnding(unitOut,"s")			// and no trailing 's'
+	unitOut = ReplaceString("\xC2\xB0",unitOut,"")// no degree signs, UTF8
+	unitOut = RemoveEnding(unitOut,"s")				// and no trailing 's'
 
 	if (strlen(unitIn)<1 || strlen(unitOut)<1)
 		return NaN
 	endif
 
-	Variable T_Plank = 1.416833e32					// Plank Temperature (K)
+	Variable T_Planck = 1.416833e32						// Planck Temperature (K)
 	Variable Tout, Kelvin, n
 	if (strlen(unitIn)>1)
 		n = strlen(unitIn)
 		Tin *= SIprefix2factor(unitIn[0,n-2])
-		unitIn = unitIn[n-1]							// the last character
+		unitIn = unitIn[n-1]								// the last character
 	endif
-	strswitch(unitIn)										// first convert Tin to Kelvin
+	strswitch(unitIn)											// first convert Tin to Kelvin
 		case "F":
 			Kelvin = (Tin - 32) * 5/9 + 273.15
 			break
@@ -5792,7 +5792,7 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 			Kelvin = Tin
 			break
 		case "P":
-			Kelvin = Tin / T_Plank
+			Kelvin = Tin / T_Planck
 			break
 		default:
 			return NaN
@@ -5818,7 +5818,7 @@ ThreadSafe Function ConvertTemperatureUnits(Tin,unitIn,unitOut)	// returns Tempe
 			Tout = Kelvin
 			break
 		case "P":
-			Tout = Kelvin / T_Plank
+			Tout = Kelvin / T_Planck
 			break
 		default:
 			return NaN
@@ -5853,7 +5853,7 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	//	jiffy					1 fm/c
 	//	shake					1e-8 s
 	//	beat					0.001 day = 3.6 s
-	//	Plank time			1.616199e-35 / c
+	//	Planck time			1.616199e-35 / c
 	//	Svedberg, Sv		1e-13 s
 	//	galactic year		230e6 years
 	//	sidereal day		23.9344699 hour
@@ -5916,9 +5916,9 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	elseif(StringMatch(unit,"*beat"))				// 1/1000 of a day (Swatch decimal time)
 		value = 3.6
 		prefix = unit[0,strlen(unit)-5]
-	elseif(StringMatch(unit,"*Plank") || StringMatch(unit,"*Planktime"))
+	elseif(StringMatch(unit,"*Planck") || StringMatch(unit,"*Plancktime"))
 		value = 1.616199e-35 / c
-		i = StringMatch(unit,"*Planktime") ? 10 : 6
+		i = StringMatch(unit,"*Plancktime") ? 10 : 6
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*Svedberg") || StringMatch(unit,"*Sv"))
 		value = 1e-13
@@ -5979,7 +5979,7 @@ End
 //		endif
 //	
 //		String list = "second;sec;s;minute;min;m;hour;hr;h;day;d;week;wk;fortnight;lunar month;lune;moon;year;yr;y;"
-//		list += "olympiad;lustrum;indiction;decade;century;millennium;jiffy;shake;beat;Plank time;"
+//		list += "olympiad;lustrum;indiction;decade;century;millennium;jiffy;shake;beat;Planck time;"
 //		list += "Svedberg;Sv;galactic year;sidereal day;sidereal year;helek;pahar;abc"
 //		String unit
 //		Variable value, i, N=ItemsInList(list)
