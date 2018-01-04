@@ -5463,6 +5463,7 @@ Static Constant inch = 0.0254						// length of inch (m)
 Static Constant kgPerPound = 0.45359237			// 1 pound = 0.45359237 kgm [definition of pound]
 Static Constant gStd = 9.80665						// std acceleration of gravity (m * s^-2)
 Static Constant tropicalYear = 31556925.216	// = 365.24219 * 24*3600, seconds in a tropical year (NOT sidereal), there are 365.24219 days in 1 tropical year
+Static Constant AstronomicalUnit = 149597870700
 
 
 ThreadSafe Function SIprefix2factor(prefix)
@@ -5538,8 +5539,8 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	nauticalmile			1852 m
 	//	Angstrom, Ang,ARING	1e-10 m
 	//	micron, micrometer	1e-6 m
-	//	parsec, pc				1 parsec
-	//	lightYear, ly			9.4605284e15 m
+	//	parsec, pc				1 parsec = AU / tan(pi/(180*3600))		# = 3.08568025e16 (m)
+	//	lightYear, ly			9.4605284e15 m  =  c * tropicalYear
 	//	astronomicalunit, au	149597870700 m
 	//	BohrRadius, ao, a0	0.52917721092e-10 m
 	//	fermi, fm				1e-15 m == 1 fm
@@ -5606,15 +5607,15 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 		i = StringMatch(unit,"*XU") ? 3 : 6
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*pc") || StringMatch(unit,"*parsec"))
-		value = 3.08568025e16
+		value = AstronomicalUnit / tan(pi/(180*3600))		// = 3.08568025e16 (m)
 		i = StringMatch(unit,"*parsec") ? 7 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*ly") || StringMatch(unit,"*lightYear"))
-		value = 9.4605284e15
+		value = c * tropicalYear				// = 9.4605284e15
 		i = StringMatch(unit,"*lightYear") ? 10 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*au") || StringMatch(unit,"*astronomicalunit"))
-		value = 149597870700
+		value = AstronomicalUnit
 		i = StringMatch(unit,"*au") ? 3 : 17
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*a0") || StringMatch(unit,"*ao") || StringMatch(unit,"*BohrRadiu"))
@@ -5626,50 +5627,50 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 		i = StringMatch(unit,"*Planck") ? 6 : 13
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*in") || StringMatch(unit,"*inch"))	 	// a few english units just for fun
-		value = 25.4e-3
+		value = inch
 		i = StringMatch(unit,"*inch") ? 5 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*ft") || StringMatch(unit,"*foot") || StringMatch(unit,"*feet"))
-		value = 12*25.4e-3
+		value = 12*inch
 		i = StringMatch(unit,"*ft") ? 3 : 5
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*nauticalmile"))
 		value = 1852
 		prefix = unit[0,strlen(unit)-13]
 	elseif(StringMatch(unit,"*mi") || StringMatch(unit,"*mile"))
-		value = 5280*12*25.4e-3
+		value = 5280 * 12*inch
 		i = StringMatch(unit,"*mile") ? 5 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*yd") || StringMatch(unit,"*yard"))
-		value = 3*12*25.4e-3
+		value = 3 * 12*inch
 		i = StringMatch(unit,"*yard") ? 5 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*mil"))			// 0.001 inch
-		value = 25.4e-6
+		value = 0.001 * inch
 		prefix = unit[0,strlen(unit)-4]
 	elseif(StringMatch(unit,"*fathom"))		// 6 feet
-		value = 6*12*25.4e-3
+		value = 6 * 12*inch
 		prefix = unit[0,strlen(unit)-7]
 	elseif(StringMatch(unit,"*chain"))			// 66 feet
-		value = 66*12*25.4e-3
+		value = 66 * 12*inch
 		prefix = unit[0,strlen(unit)-6]
 	elseif(StringMatch(unit,"*rod"))			// 16.5 feet
-		value = 16.5*12*25.4e-3
+		value = 16.5 * 12*inch
 		prefix = unit[0,strlen(unit)-4]
 	elseif(StringMatch(unit,"*league"))		// 3 miles
-		value = 3*5280*12*25.4e-3
+		value = 3 * 5280 * 12*inch
 		prefix = unit[0,strlen(unit)-7]
 	elseif(StringMatch(unit,"*furlong"))		// 660 feet
-		value = 660*12*25.4e-3
+		value = 660 * 12*inch
 		prefix = unit[0,strlen(unit)-8]
 	elseif(StringMatch(unit,"*cubit"))			// a rough number
 		value = 0.525
 		prefix = unit[0,strlen(unit)-6]
 	elseif(StringMatch(unit,"*point"))			// 1/72 inch
-		value = 25.4e-3 / 72
+		value = inch / 72
 		prefix = unit[0,strlen(unit)-6]
 	elseif(StringMatch(unit,"*pica"))			// 1/72 foot
-		value = 12*25.4e-3 / 72
+		value = 12*inch / 72
 		prefix = unit[0,strlen(unit)-5]
 	elseif(StringMatch(unit,"*Li"))				// Chinese mile is 500m
 		value = 500
@@ -6062,14 +6063,14 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 		value = 1.883531594e-28
 		prefix = unit[0,strlen(unit)-4]
 	elseif(StringMatch(unit,"*stone") || StringMatch(unit,"*st"))
-		value = 14.0*kgPerPound					// stone
+		value = 14 * kgPerPound					// stone = 14 pounds
 		i = StringMatch(unit,"*stone") ? 6 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*slug")) 			// slug, acceleration at earth surface is 9.80665 N
 		value = kgPerPound*gStd/(12*inch)
 		prefix = unit[0,strlen(unit)-5]
 	elseif(StringMatch(unit,"*fir") || StringMatch(unit,"*firkin"))
-		value = 90.0*kgPerPound 					// firkin
+		value = 90 * kgPerPound 					// firkin
 		i = StringMatch(unit,"*firkin") ? 7 : 4
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*me")) 			// electron mass
@@ -6082,7 +6083,7 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 		value = 1.674927471e-27
 		prefix = unit[0,strlen(unit)-3]
 	elseif(StringMatch(unit,"*grain") || StringMatch(unit,"*gr"))
-		value = kgPerPound/7000.0					// grain
+		value = kgPerPound/7000					// grain
 		i = StringMatch(unit,"*grain") ? 6 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*carat") || StringMatch(unit,"*ct"))
@@ -6109,13 +6110,13 @@ ThreadSafe Function ConvertUnits2kg(unit,[defaultMass])
 		i = StringMatch(unit,"*pound") ? 6 : i
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*longton") || StringMatch(unit,"*long") || StringMatch(unit,"*t.long"))
-		value = 2240.0*kgPerPound					// long ton, (2240 pounds)
+		value = 2240 * kgPerPound					// long ton, (2240 pounds)
 		i = StringMatch(unit,"*long") ? 5 : NaN
 		i = StringMatch(unit,"*t.long") ? 7 : i
 		i = StringMatch(unit,"*longton") ? 8 : i
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*shortton") || StringMatch(unit,"*t.short") || StringMatch(unit,"*short") || StringMatch(unit,"*ton"))
-		value = 2000*kgPerPound					// short ton, (2000 pounds)
+		value = 2000 * kgPerPound					// short ton, (2000 pounds)
 		i = StringMatch(unit,"*ton") ? 4 : NaN
 		i = StringMatch(unit,"*short") ? 6 : i
 		i = StringMatch(unit,"*t.short") ? 8 : i
