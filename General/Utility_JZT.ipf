@@ -6159,7 +6159,7 @@ ThreadSafe Function ConvertUnits2Joules(unit,[defaultEnergy])
 	// TWyr, terawatt-year			31.556925216e18 J			= 365.24219 * 24*3600 * 1e12
 	// 'TNT' or 'kg of TNT'		4.184e6 J					(1 kg of TNT), releases 4.184e6 J of energy = cal*1e6 = Mcal
 	// 'ton of TNT', , 'kiloton, ton	4.184e9 J			(1 metric ton of TNT),  '1 kiloton = (1000 metric tons of TNT)
-	// Planck, Planck energy		1.956113e9 J				sqrt(hbar * c^5 / GN)
+	// Planck, Planck energy		1956113859.56355 J		sqrt(hbar * c^5 / GN)
 	// foe, Bethe						1e44 J						= 10^51 erg
 
 	Variable BTU = 1055.06							// one BTU (J) [[definition of BTU]
@@ -6194,7 +6194,7 @@ ThreadSafe Function ConvertUnits2Joules(unit,[defaultEnergy])
 		i = strsearch(unit,"J",inf,3)
 		prefix = unit[0,i-1]
 	elseif(StringMatch(unit,"*Planck*"))
-		value = sqrt(hbar*c^5/GN)					// Planck Energy = 1.956113e9
+		value = sqrt(hbar*c^5/GN)					// Planck Energy = 1956113859.56355
 		i = strsearch(unit,"Planck",0,2)
 		prefix = unit[0,i-1]
 	elseif(StringMatch(unit,"*cal*"))
@@ -6271,7 +6271,7 @@ End
 //		AllValues += "eV:1.6021766208e-19;electron-volt:1.6021766208e-19;Ry:2.179872325e-18;Rydberg:2.179872325e-18;"
 //		AllValues += "Ha:4.35974465e-18;Hartree:4.35974465e-18;ft-lbf:1.3558179483314;ft-lb:1.3558179483314;Foot-pound:1.3558179483314;"
 //		AllValues += "therm:1055.06e5;quad:1055.06e15;TWyr:31.556925216e18;terawatt-year:31.556925216e18;ton of TNT:4.184e9;ton:4.184e9;"
-//		AllValues += "Planck:1.956113e9;Planck energy:1.956113e9;foe:1e44;Bethe:1e44"
+//		AllValues += "Planck:1956113859.56355;Planck energy:1956113859.56355;foe:1e44;Bethe:1e44"
 //		String SI=";d;c;m;"+Gmu+";n;p;f;a;z;y;h;k;M;G;T;P;E;Z;Y"		// first item is empty, SIprefix2factor("")==1
 //	
 //		String prefix, unitBase
