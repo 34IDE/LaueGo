@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Antimony</chemical_name_common>
+	<space_group_IT_number>166</space_group_IT_number>
+	<H-M>R-3m:H</H-M>
+	<Hall>-R 3 2'':H</Hall>
+	<amcsd>0012838</amcsd>
+	<cell>
+		<a unit="nm">0.43084</a>
+		<b unit="nm">0.43084</b>
+		<c unit="nm">1.1274</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="K">299</temperature>
+	</cell>
+	<atom_site>
+		<label>Sb</label>
+		<symbol>Sb</symbol>
+		<fract_xyz>0 0 0.23349</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<citation>Schiferl D, Barrett CS, Journal of Applied Crystallography 2 (1969) 30-36, "The crystal structure of arsenic at 4.2, 78 and 299 K"</citation>
+	<bond_chemical unit="nm" n0="Sb" n1="Sb">0.290821 0.335494</bond_chemical>
+</cif>
+
+<!--   
+<cif>
+	<chemical_name_common>Antimony Rhom</chemical_name_common>
+	<space_group_IT_number>166</space_group_IT_number>
+	<H-M>R-3m:R</H-M>
+	<Hall>-R 3 2'':R</Hall>
+	<amcsd>0011253</amcsd>
+	<cell>
+		<a unit="nm">0.450661</a>
+		<b unit="nm">0.450661</b>
+		<c unit="nm">0.450661</c>
+		<alpha>57.108</alpha>
+		<beta>57.108</beta>
+		<gamma>57.108</gamma>
+	</cell>
+	<atom_site>
+		<label>Sb</label>
+		<symbol>Sb</symbol>
+		<fract_xyz>0.233 0.233 0.233</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Sb" n1="Sb">0.290821 0.335494</bond_chemical>
+	<citation>Wyckoff R W G, Crystal Structures 1 (1963) 7-83, Second edition. Interscience Publishers, New York, New York</citation>
+</cif>
+  -->
