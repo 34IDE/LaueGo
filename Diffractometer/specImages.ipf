@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.56
+#pragma version = 0.57
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -12,6 +12,7 @@
 #include "GizmoMarkers", version>=2.0
 #include "Masking", version>=1.01
 
+Constant FIRST_IMAGE_NUMBER = 1						// images start as XXX_S002_00001.tif, not 00000.tif
 Static Constant hc_keVnm = 1.239841856			// h*c (keV-nm)
 
 // #define USE_EXTRA_PILATUS_SPEC_FILE			// put this in your procedure file to use the funky file extra with extra Pilatus info
@@ -1023,7 +1024,7 @@ End
 
 Function/T rePlotDiffractometerImage(scanNum,pindex,[extras])
 	Variable scanNum											// scanNumber in spec file
-	Variable pindex												// point in scanNum
+	Variable pindex											// point in scanNum, ALWAYS starts at 0
 	String extras												// example		"quiet:1;multiple:0;"
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 
@@ -1031,7 +1032,7 @@ Function/T rePlotDiffractometerImage(scanNum,pindex,[extras])
 		scanNum = scanNum>0 ? scanNum : NumVarOrDefault("root:Packages:spec:lastScan", 1)
 		pindex = pindex>=0 ? pindex : 0
 		Prompt scanNum,"spec Scan Number"
-		Prompt pindex,"point in spec scan"
+		Prompt pindex,"point in spec scan, ALWAYS starts at 0"
 		DoPrompt "spec Scan & Point", scanNum,pindex
 		if (V_flag)
 			return ""
@@ -1321,7 +1322,7 @@ End
 
 Function/T LoadSpecImage(scanNum,pindex[,extras])
 	Variable scanNum											// scanNumber in spec file
-	Variable pindex											// point in scanNum
+	Variable pindex											// point in scanNum, first point in scan is ALWAYS 0
 	String extras												// example		"quiet:1;multiple:0;"
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 	Variable quiet = NumberByKey("quiet",extras)				// for quiet=1, if any problems just return
@@ -1333,7 +1334,7 @@ Function/T LoadSpecImage(scanNum,pindex[,extras])
 		scanNum = scanNum>0 ? scanNum : NumVarOrDefault("root:Packages:spec:lastScan", 1)
 		pindex = pindex>=0 ? pindex : 0
 		Prompt scanNum,"spec Scan Number"
-		Prompt pindex,"point in spec scan"
+		Prompt pindex,"point in spec scan, starts at 0"
 		DoPrompt "spec Scan & Point", scanNum,pindex
 		if (V_flag)
 			return ""
@@ -1396,6 +1397,23 @@ Function/T LoadSpecImage(scanNum,pindex[,extras])
 		Wave image = $StringByKey("preExists", imageName)
 	else
 		Wave image = $imageName
+		String str
+		sprintf str, "_%05d",pindex+FIRST_IMAGE_NUMBER
+		Variable i = strsearch(imageName,str,0)	// make images zero based names in Igor, regardless of image name
+		if (i == (strlen(imageName)-6))
+			imageName = imageName[0,i] + num2istr(pindex)
+			i = strsearch(imageName,":",Inf,1)
+			if (i>=0)
+				imageName = imageName[i+1,Inf]
+				if (exists(imageName)==1)
+					Duplicate/O image $imageName
+					KillWaves/Z image
+					Wave image = $imageName
+				else
+					Rename image, $imageName
+				endif
+			endif
+		endif
 	endif
 
 	SetDataFolder fldrSav
@@ -1427,8 +1445,8 @@ End
 
 Function/T LoadSpecImageROI(scanNum,pindex,i0,i1,j0,j1,[extras])
 	Variable scanNum				// scanNumber in spec file
-	Variable pindex					// point in scanNum
-	Variable i0,i1,j0,j1			// pixel range of ROI (if i1 or j1<0 then use whole image)
+	Variable pindex				// point in scanNum, ALWAYS starts at 0
+	Variable i0,i1,j0,j1		// pixel range of ROI (if i1 or j1<0 then use whole image)
 	String extras					// example		"quiet:1;multiple:0;"
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 
@@ -1482,7 +1500,7 @@ End
 
 Function/T LoadSpecImageInfo(scanNum,pindex[,extras])
 	Variable scanNum											// scanNumber in spec file
-	Variable pindex												// point in scanNum
+	Variable pindex											// point in ALWAYS starts at 0
 	String extras												// example		"quiet:1;multiple:0;"
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 	Variable multiple = NumberByKey("multiple",extras)		// load multiple images, NOT YET WORKING
@@ -1494,7 +1512,7 @@ Function/T LoadSpecImageInfo(scanNum,pindex[,extras])
 		scanNum = scanNum>0 ? scanNum : NumVarOrDefault("root:Packages:spec:lastScan", 1)
 		pindex = pindex>=0 ? pindex : 0
 		Prompt scanNum,"spec Scan Number"
-		Prompt pindex,"point in spec scan"
+		Prompt pindex,"point in spec scan, starts at 0"
 		DoPrompt "spec Scan & Point", scanNum,pindex
 		if (V_flag)
 			return ""
@@ -1678,21 +1696,22 @@ End
 
 Function/T specImageFileName(scanNum,pindex,[specPath])
 	Variable scanNum
-	Variable pindex
+	Variable pindex					// index point of spec scan, ALWAYS starts at 0
 	String specPath
 	specPath = SelectString(ParamIsDefault(specPath),specPath,StrVarOrDefault("root:Packages:spec:specDefaultFile",""))
 	String path, name, fullName=""
+	Variable index = pindex + FIRST_IMAGE_NUMBER		// file index number
 	if (exists("PilatusTiffReadHeader")==6)
 		path = ParseFilePath(1, specPath,":", 1,0)
 		name=ParseFilePath(3, specPath,":", 0,0)
-		sprintf fullName, "%simages:%s:S%03d:%s_S%03d_%05d.tif", path,name,scanNum,name,scanNum,pindex
-		// sprintf fullName, "%simages:%s:S%03d:%s_S%03d_%05d.tif", ParseFilePath(1, specPath,":", 1,0),name,scanNum,name,scanNum,pindex
+		sprintf fullName, "%simages:%s:S%03d:%s_S%03d_%05d.tif", path,name,scanNum,name,scanNum,index
+		// sprintf fullName, "%simages:%s:S%03d:%s_S%03d_%05d.tif", ParseFilePath(1, specPath,":", 1,0),name,scanNum,name,scanNum,index
 	elseif (exists("ReadHDF5header")==6)
 		fullName=""						// not yet implemented
 	elseif (exists("TiffReadHeader")==6)
 		path = ParseFilePath(1, specPath,":", 1,0)
 		name=ParseFilePath(3, specPath,":", 0,0)
-		sprintf fullName, "%simages:S%03d:%s_S%03d_%05d.tif", path,scanNum,name,scanNum,pindex
+		sprintf fullName, "%simages:S%03d:%s_S%03d_%05d.tif", path,scanNum,name,scanNum,index
 	elseif (exists("WinViewReadHeader")==6)
 		fullName=""						// not yet implemented
 	endif

@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.60
+#pragma version = 0.62
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -372,16 +372,10 @@ Function MakeMovieSpecScanImages(scanNum)
 	Variable keV = specInfo(scanNum,"DCM_energy")
 	keV = numtype(keV) ? 10*hc_keVnm/specInfo(scanNum,"wavelength") : keV
 
-	Variable iFirst=0
-	Wave image=$LoadSpecImage(scanNum,iFirst,extras="quiet:1")
-	if (!WaveExists(image))
-		iFirst = 1
-		Wave image=$LoadSpecImage(scanNum,iFirst,extras="quiet:1")
-	endif
+	Wave image=$LoadSpecImage(scanNum,0,extras="quiet:1")
 	if (!WaveExists(image))
 		return 1
 	endif
-
 	String wnote = note(image)
 	Duplicate/O image, movieFrame
 	KillWaves/Z image
@@ -391,8 +385,6 @@ Function MakeMovieSpecScanImages(scanNum)
 	wnote = ReplaceNumberByKey("SCAN_LEN",wnote, Np ,"=")
 	Note/K movieFrame, wnote
 
-	print wnote
-
 	String gName=MakeGraphMovieFrame()
 	if (strlen(gName)<1)
 		return 1
@@ -401,7 +393,7 @@ Function MakeMovieSpecScanImages(scanNum)
 	Variable maxVal=-Inf, minVal=Inf
 	Variable i, theta
 	NewMovie
-	for (i=iFirst;i<(iFirst+Np);i+=1)
+	for (i=0;i<Np;i+=1)
 		Wave image=$LoadSpecImage(scanNum,i,extras="quiet:1")
 		if (!WaveExists(image))
 			DoAlert 0,"Could not load image "+num2istr(i)+ " from scan "+num2istr(scanNum)
@@ -458,13 +450,15 @@ Static Function/S MakeGraphMovieFrame()
 
 	gName = "GraphMovieFrame"+num2istr(scanNum)
 	Variable imageMax = 1e6
-	Display /W=(459,182,1389,577)/K=1
+	Display /W=(460,180,1168,830)/K=1 
 	DoWindow /C $gName
 	AppendImage movieFrame
 	ModifyImage movieFrame ctab= {1,imageMax,Terrain256,1}
 	ModifyImage movieFrame log= 1
-	ModifyGraph height={Aspect,0.400411}, mirror=1, minor=1
+	ModifyGraph mirror=1, minor=1
 	SetAxis/A/R left
+	DoUpdate
+	SetAspectToSquarePixels("")				//	ModifyGraph height={Aspect,0.400411}
 
 	LabelReLabelGraphMovieFrame(movieFrame)
 
@@ -490,7 +484,8 @@ Static Function LabelReLabelGraphMovieFrame(movieFrame)
 	endif
 
 	String wnote=note(movieFrame)
-	Variable scanNum=NumberByKey("scanNum",note(movieFrame),"=")
+	Variable scanNum=NumberByKey("scanNum",wnote,"=")
+	Variable scanPoint=NumberByKey("scanPoint",wnote,"=")
 	String timeWritten = specInfoT(scanNum,"timeWritten")
 	String specCommand = specInfoT(scanNum,"specCommand")
 	String specComment = StrVarOrDefault("specComment","")
@@ -507,7 +502,8 @@ Static Function LabelReLabelGraphMovieFrame(movieFrame)
 	Variable i, val
 	for (i=0;i<Nm;i+=1)
 		mot = StringFromList(i,motors)
-		val = specInfo(scanNum,mot)
+		val = NumberByKey(mot,wnote,"=")						// first look in wave note
+		val = numtype(val) ? specInfo(scanNum,mot) : val	// otherwise ask specInfo
 		if (numtype(val)==0)
 			str += "\r"+WordToGreek(mot)+" = "+num2str(val)+"¡"
 		endif
@@ -527,6 +523,11 @@ Static Function LabelReLabelGraphMovieFrame(movieFrame)
 	str += specCommand
 	str += SelectString(strlen(str) && strlen(timeWritten),"","\r")
 	str += timeWritten
+	str += SelectString(strlen(str),"","\r")
+	if (scanNum>0)
+		str += "scan "+num2str(scanNum) + "  #"+num2str(scanPoint)
+	endif
+
 	if (strlen(str))
 		TextBox/C/N=textTitle/F=0/B=1/A=LT/X=1.9/Y=1.2 str
 	endif
