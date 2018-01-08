@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.22
+#pragma version = 1.23
 #include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
 #include "Stats3D" version>= 0.05
@@ -945,9 +945,9 @@ Static Function/T AddGizmoRecipAxis(rlv,Qc,dLo,dHi,hCenter,name,rgba,[alpha])
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,ticks,3}
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelRotationAxis,5,1,1}
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelRotationAngle,43.443}
-	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelOffset,-0.15,-0.05,0.05}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelOffset,0,0,0}
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,labelColor, rgbaVec[0],rgbaVec[1],rgbaVec[2],rgbaVec[3]}
-	ModifyGizmo ModifyObject=$name, objectType=axes property={0,fontScaleFactor,0.7}
+	ModifyGizmo ModifyObject=$name, objectType=axes property={0,fontScaleFactor,1}
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,numTicks,7}
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisMinValue, hCenter+dLo}
 	ModifyGizmo ModifyObject=$name, objectType=axes property={0,axisMaxValue, hCenter+dHi}
