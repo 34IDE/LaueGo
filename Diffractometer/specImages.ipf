@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.57
+#pragma version = 0.58
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
@@ -783,7 +783,7 @@ print "dQ after = ",dQ
 		Note/K sampled, wnote
 	endif
 
-	MakeGizmocubeCorners(Qspace)
+//	MakeGizmocubeCorners(Qspace)
 	Qspace = Qspace==0 ? NaN : Qspace
 
 	if (doConvex)

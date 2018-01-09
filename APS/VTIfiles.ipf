@@ -289,29 +289,29 @@ Function MakeGizmoIsoVolume(volWave,[isoMin,isoMax,Niso,ColorTable,revColors,iso
 	if (numtype(sum(isoValues)+sum(isoColors)))
 		return 1
 	endif
-	String cornerList = WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3"), cName=""
-	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
-	cornerList = WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(volWave))
-	if (ItemsInList(cornerList)==1)
-		cName = StringFromList(0,cornerList)
-	elseif (ItemsInList(cornerList)>1)
-		cName = StrVarOrDefault("root:Packages:QspaceVolumes:Gizmo:cornersName","")
-		Prompt cName,"3D Qspace CORNERS",popup,cornerList
-		DoPrompt "Pick 3D Qspace CORNERS",cName
-		if (V_flag)
-			return 1
-		endif
-	endif
-
-	Wave corners = $cName
+//	String cornerList = WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3"), cName=""
+//	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
+//	cornerList = WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(volWave))
+//	if (ItemsInList(cornerList)==1)
+//		cName = StringFromList(0,cornerList)
+//	elseif (ItemsInList(cornerList)>1)
+//		cName = StrVarOrDefault("root:Packages:QspaceVolumes:Gizmo:cornersName","")
+//		Prompt cName,"3D Qspace CORNERS",popup,cornerList
+//		DoPrompt "Pick 3D Qspace CORNERS",cName
+//		if (V_flag)
+//			return 1
+//		endif
+//	endif
+//
+//	Wave corners = $cName
 
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:QspaceVolumes
 	NewDataFolder/O root:Packages:QspaceVolumes:Gizmo
 	String/G root:Packages:QspaceVolumes:Gizmo:volWaveName = NameOfWave(volWave)
-	if (WaveExists(corners))
-		String/G root:Packages:QspaceVolumes:Gizmo:cornersName = NameOfWave(corners)
-	endif
+//	if (WaveExists(corners))
+//		String/G root:Packages:QspaceVolumes:Gizmo:cornersName = NameOfWave(corners)
+//	endif
 	Variable/G root:Packages:QspaceVolumes:Gizmo:isoMax = (isoMax==isoMaxInternal) ? NaN : isoMax
 	Variable/G root:Packages:QspaceVolumes:Gizmo:isoMin = (isoMin==isoMinInternal) ? NaN : isoMin
 	Variable/G root:Packages:QspaceVolumes:Gizmo:Niso = Niso
@@ -330,36 +330,39 @@ Function MakeGizmoIsoVolume(volWave,[isoMin,isoMax,Niso,ColorTable,revColors,iso
 #endif
 	String object,displayObjectList=""
 
-	if (WaveExists(corners))
-		displayObjectList += "scatterCubeCorners;"
-		Variable icor=DimSize(corners,0)-1			// this will be 2 or 7 (7 is old way)
-		ImageStats/M=1/G={0,icor, 0,0} corners;		QxLo = V_min	;	QxHi = V_max	// need these later for setting a*, b*, c*
-		ImageStats/M=1/G={0,icor, 1,1} corners;		QyLo = V_min	;	QyHi = V_max
-		ImageStats/M=1/G={0,icor, 2,2} corners;		QzLo = V_min	;	QzHi = V_max
-#if (IgorVersion()<7)
-		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=scatterCubeCorners"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ scatterColorType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ markerType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ rotationType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ Shape,1}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ size,1}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ color,0,0,0,0}"
-#else
-		AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=scatterCubeCorners
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ markerType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ sizeType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ rotationType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ Shape,1}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ size,1}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ color,0,0,0,0}
-#endif
-	else
-		QxLo = DimOffset(volWave,0)	;	QxHi = QxLo + (DimSize(volWave,0)-1) * DimDelta(volWave,0)
-		QyLo = DimOffset(volWave,1)	;	QyHi = QyLo + (DimSize(volWave,1)-1) * DimDelta(volWave,1)
-		QzLo = DimOffset(volWave,2)	;	QzHi = QzLo + (DimSize(volWave,2)-1) * DimDelta(volWave,2)
-	endif
+//		if (WaveExists(corners))
+//			displayObjectList += "scatterCubeCorners;"
+//			Variable icor=DimSize(corners,0)-1			// this will be 2 or 7 (7 is old way)
+//			ImageStats/M=1/G={0,icor, 0,0} corners;		QxLo = V_min	;	QxHi = V_max	// need these later for setting a*, b*, c*
+//			ImageStats/M=1/G={0,icor, 1,1} corners;		QyLo = V_min	;	QyHi = V_max
+//			ImageStats/M=1/G={0,icor, 2,2} corners;		QzLo = V_min	;	QzHi = V_max
+//	#if (IgorVersion()<7)
+//			Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=scatterCubeCorners"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ scatterColorType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ markerType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ sizeType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ rotationType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ Shape,1}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ size,1}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ color,0,0,0,0}"
+//	#else
+//			AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=scatterCubeCorners
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ scatterColorType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ markerType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ sizeType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ rotationType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ Shape,1}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ size,1}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ color,0,0,0,0}
+//	#endif
+//		else
+//			QxLo = DimOffset(volWave,0)	;	QxHi = QxLo + (DimSize(volWave,0)-1) * DimDelta(volWave,0)
+//			QyLo = DimOffset(volWave,1)	;	QyHi = QyLo + (DimSize(volWave,1)-1) * DimDelta(volWave,1)
+//			QzLo = DimOffset(volWave,2)	;	QzHi = QzLo + (DimSize(volWave,2)-1) * DimDelta(volWave,2)
+//		endif
+	QxLo = DimOffset(volWave,0)	;	QxHi = QxLo + (DimSize(volWave,0)-1) * DimDelta(volWave,0)
+	QyLo = DimOffset(volWave,1)	;	QyHi = QyLo + (DimSize(volWave,1)-1) * DimDelta(volWave,1)
+	QzLo = DimOffset(volWave,2)	;	QzHi = QzLo + (DimSize(volWave,2)-1) * DimDelta(volWave,2)
 
 	Variable val, r,g,b,a
 	printf " Iso Values\t\t\t\tColors  {r,g,b,a}\r"
@@ -468,6 +471,7 @@ Function MakeGizmoIsoVolume(volWave,[isoMin,isoMax,Niso,ColorTable,revColors,iso
 #if (IgorVersion()<7)
 //	Execute "ModifyGizmo SETQUATERNION={0.628289,0.154694,-0.151222,0.747298}"
 	Execute "ModifyGizmo autoscaling=1"
+	Execute "ModifyGizmo aspectRatio=1"
 	Execute "ModifyGizmo currentGroupObject=\"\""
 	Execute "ModifyGizmo compile"
 	Execute "ModifyGizmo bringToFront"
@@ -475,6 +479,7 @@ Function MakeGizmoIsoVolume(volWave,[isoMin,isoMax,Niso,ColorTable,revColors,iso
 #else
 //	ModifyGizmo SETQUATERNION={0.628289,0.154694,-0.151222,0.747298}
 	ModifyGizmo autoscaling=1
+	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 	ModifyGizmo compile
 	ModifyGizmo bringToFront

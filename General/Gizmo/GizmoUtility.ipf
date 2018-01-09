@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.21
+#pragma version = 2.22
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -10,7 +10,6 @@ Static Constant MAX_N_OBJECTS=500						// maximum number of objects that can be 
 Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a Gizmo
 
 
-//	MakeGizmocubeCorners(xyz)	Make a scatter wave that contains xyz and is CUBICAL
 //	AddGizmoTitleGroup()			Add the title to a gizmo. Returns name of item to include in the display list
 //	setGizmoAxisLabels()			set the three axis labels
 //
@@ -22,330 +21,11 @@ Static Constant GIZMO_SCALE_BAR_LEFT_EDGE = -1.9	// left edge of scale bar on a 
 //	AddCustomAxesGroup(...)		adds a custom set of axes
 
 
-//Questionable:
+//Questionable & Legacy:
 
 //	AppendParametricXYZ2Gizmo()	Adds a parametric XYZ wave to the gizmo with its associated RGBA wave, returns name of object for parametricXYZ
 //	GizmosWithWave()				Only used by AppendParametricXYZ2Gizmo(), Maybe this should not be here:
-
-
-
-
-//  ======================================================================================  //
-//  ============================ Start of Make Gizmo Cubical =============================  //
-
-//	ActivateCornerCubeOnGizmo(), Show corner cubes on Gizmo, returns true if error displaying corner cubes
-//	DeActivateCornerCubeOnGizmo(), de-activeate corner cubes on gizmo, does not delete the scatter object, just don't display it
-//	FindMakeCubeCornerWaves(),  finds (or makes) the corner cube wave for a gizmo
-//	isCornerCubeDisplayedOnGizmo(), returns True/False whether corener cubes are displayed
-//	AddGizmoCornerCubesObject(), adds a scatter for corner cubes, returns name of scatter object (or existing scatter corner cubes object)
-//	getCornerCubeObjectNameOnGizmo(), returns name of corner cube object on the gizmo, returns "" if no corner cube displayed
-
-Function ActivateCornerCubeOnGizmo([GizmoName,forceCalc])			// Show corner cubes on Gizmo, returns true if error displaying corner cubes
-	String GizmoName			// optional name of gizmo, defaults to top gizmo
-	Variable forceCalc		// force recalculation of corners
-	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
-	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
-
-	String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// if "", then add the corner cubes
-	if (strlen(objectName)<1)
-		Wave wCorners = FindMakeCubeCornerWaves(GizmoName=GizmoName, forceCalc=forceCalc)
-		objectName = AddGizmoCornerCubesObject(wCorners,GizmoName=GizmoName)
-
-	elseif (forceCalc)		// get name of corners wave and recalculate cube corners
-		Wave wCorners = GizmoObjectWave(objectName,"Scatter")
-		Wave ww = $(StringByKey("sourceWavePath",note(wCorners),"=")+StringByKey("sourceWave",note(wCorners),"="))
-		Wave wCorners = MakeGizmocubeCorners(ww)
-	endif
-	if (strlen(objectName)<1)
-		return 1
-	endif
-
-	if (!isCornerCubeDisplayedOnGizmo(GizmoName=GizmoName))
-#if (IgorVersion()<7)
-		String Nswitch=SelectString(strlen(GizmoName),"","/N="+GizmoName)
-		Execute "ModifyGizmo"+Nswitch+" setDisplayList=-1, object="+objectName
-		Execute "ModifyGizmo"+Nswitch+" compile"
-#else
-		ModifyGizmo/N=$GizmoName setDisplayList=-1, object=$objectName
-		ModifyGizmo/N=$GizmoName compile
-#endif
-	endif
-	return 0
-End
-
-
-Function DeActivateCornerCubeOnGizmo([GizmoName])			// returns true if the gizmo corner cubes are un-displayed
-	String GizmoName			// optional name of gizmo, defaults to top gizmo
-	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
-
-	if (isCornerCubeDisplayedOnGizmo(GizmoName=GizmoName))
-		String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// if "", then add the corner cubes
-#if (IgorVersion()<7)
-		String Nswitch=SelectString(strlen(GizmoName),"","/N="+GizmoName)
-		Execute "RemoveFromGizmo"+Nswitch+" displayItem="+objectName
-		Execute "ModifyGizmo"+Nswitch+" compile"
-#else
-		RemoveFromGizmo/N=$GizmoName displayItem=$objectName
-		ModifyGizmo/N=$GizmoName compile
-#endif
-	endif
-	return 0
-End
-
-
-Static Function/WAVE FindMakeCubeCornerWaves([GizmoName,forceCalc])		// finds (or makes) the corner cube wave for a gizmo
-	String GizmoName			// optional name of gizmo, defaults to top gizmo
-	Variable forceCalc		// force recalculation of corners
-	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
-	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
-
-	String cornerList=WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3")
-	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
-	String gizmoScatterList=GizmoListScatterWaves(gizmo=GizmoName)
-	String gizmoIsoSurfaceList=GizmoListIsoSurfaceWaves(gizmo=GizmoName)		// get list of all iso surface waves
-	String gizmoSurfaceList=GizmoListSurfaceWaves(gizmo=GizmoName)		// get list of all surface waves
-	String gizmoListAll = gizmoScatterList+gizmoIsoSurfaceList+gizmoSurfaceList
-
-	String str, list3Dobjects=""
-	Variable i
-	for (i=0;i<ItemsInList(gizmoListAll);i+=1)
-		str = StringFromList(i, gizmoListAll)
-		str = StringFromList(0,str,"=")
-		Wave ww=$str
-		if (WaveExists(ww))
-			if (!WaveInClass(ww,"GizmoCorners;gizmoScatterMarkerXYZ"))		// make list of scatter waves that are NOT cube corners
-				list3Dobjects += str + ";"
-			endif
-		endif
-	endfor
-	if (itemsInList(list3Dobjects)<1)					// no scatter waves, nothing to do
-		return $""
-	endif
-
-	String list=""
-	for (i=0;i<ItemsInList(list3Dobjects);i+=1)
-		Wave ww = $StringFromList(i,list3Dobjects)
-		list += WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(ww)+";")
-	endfor
-
-	i = ItemsInList(list)
-	if (i<=1)
-		str = StringFromList(0,list)						// only one choice, take it
-	else
-		Prompt str,"Cube Corners for Gizmo",popup,list
-		DoPrompt "Cube Corners",str						// multiple choices, choose one
-		if (V_flag)
-			return $""
-		endif
-	endif
-	Wave corners = $str
-
-	if (!WaveExists(corners))								// no corner waves, make one
-		if (ItemsInList(list3Dobjects)==1)
-			Wave scat = $StringFromList(0,list3Dobjects)	// only one choice, take it
-		else
-			Prompt str,"3D object waves in Gizmo",popup,list3Dobjects
-			DoPrompt "Scatter XYZ",str					// multiple choices, choose one
-			if (V_flag)
-				return $""
-			endif
-			Wave scat = $str
-		endif
-		Wave corners = MakeGizmocubeCorners(scat)
-
-	elseif (forceCalc)
-		Wave scat = $(StringByKey("sourceWavePath",note(corners),"=")+StringByKey("sourceWave",note(corners),"="))
-		Wave corners = MakeGizmocubeCorners(scat)
-	endif
-
-	return corners
-End
-
-
-Static Function isCornerCubeDisplayedOnGizmo([GizmoName])		// returns true if the gizmo corner cubes are displayed
-	String GizmoName			// optional name of gizmo, defaults to top gizmo
-	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
-	String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// probably "CubeCornersScatter"
-	Variable i = isGizmoObjectDisplayed(objectName,gizmo=GizmoName)		// returns -1 if object not found on displayList, if found return place in displayList
-	return (i>=0)
-End
-
-
-// Add a Corner Cubes Scatter object to a Gizmo. Returns name of objectName if successful.
-Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
-	Wave wCorners				// wave with corner cube positions
-	String GizmoName			// optional name of gizmo, defaults to top gizmo
-	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
-
-	String Nswitch=""
-	if (!WaveExists(wCorners))								// check that wCorners is valid
-		return ""
-	elseif(! (WaveDims(wCorners)==2 && (DimSize(wCorners,0)==8 || DimSize(wCorners,0)==2) && DimSize(wCorners,1)==3) )
-		return ""
-	elseif (!ParamIsDefault(GizmoName) && strlen(GizmoName))
-		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
-			return ""
-		endif
-		Nswitch = "/N="+GizmoName
-	endif
-
-	String objectName = getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)
-	objectName = SelectString(strlen(objectName),"CubeCornersScatter",objectName)
-
-	String scatterList=GetGizmoObjects("scatter")		// list of current scatter objects
-	if (WhichListItem(objectName,scatterList)>=0)		// group already exists
-		return objectName
-	endif
-
-	if (WhichListItem(objectName,scatterList)<0 && strlen(objectName))	// group does not exist, create it
-#if (IgorVersion()<7)
-		Execute "ModifyGizmo startRecMacro"
-		Execute "AppendToGizmo"+Nswitch+" Scatter="+GetWavesDataFolder(wCorners,2)+",name="+objectName
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ scatterColorType,0}"
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ markerType,0}"
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ sizeType,0}"
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ rotationType,0}"
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ Shape,1}"
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ size,1}"
-		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ color,0,0,0,1}"
-		Execute "ModifyGizmo"+Nswitch+" userString={CubeCorners,\""+objectName+"\"}"	// save name of cube corner object
-		Execute "ModifyGizmo endRecMacro"
-#else
-		ModifyGizmo startRecMacro
-		AppendToGizmo/N=$GizmoName Scatter=$GetWavesDataFolder(wCorners,2), name=$objectName
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ scatterColorType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ markerType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ sizeType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ rotationType,0}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ Shape,1}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ size,1}
-		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ color,0,0,0,1}
-//		ModifyGizmo/N=$GizmoName userString={CubeCorners, objectName}	// save name of cube corner object
-		SetWindow $GizmoName userdata(CubeCorners)="AtomViewCubeCorners"
-		ModifyGizmo endRecMacro
-#endif
-	endif
-	return objectName
-End
-
-
-Static Function/T getCornerCubeObjectNameOnGizmo([GizmoName])		// returns name of corner cube object on gizmo, it may not yet be displayed
-	String GizmoName			// optional name of gizmo, defaults to top gizmo
-
-	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
-	String Nswitch=""
-	if (!ParamIsDefault(GizmoName) && strlen(GizmoName))
-		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
-			return ""
-		endif
-		Nswitch = "/N="+GizmoName
-	endif
-
-#if (IgorVersion()<7)
-	Execute "GetGizmo/Z"+Nswitch+" userString=CubeCorners"
-	String objectName=StrVarOrDefault("S_GizmoUserString","")
-	KillStrings/Z S_GizmoUserString
-#else
-//	GetGizmo/Z/N=$GizmoName userString=CubeCorners
-	String objectName = GetUserData(GizmoName,"","CubeCorners")
-#endif
-
-	if (strlen(objectName)<1)			// in case of legacy gizmos
-		String scatterList = GetGizmoObjects("scatter",gizmo=GizmoName)
-		if (WhichListItem("CubeCornersScatter",scatterList)>=0)
-			objectName = "CubeCornersScatter"
-		elseif (WhichListItem("CubeCornersScatter",scatterList)>=0)
-			objectName = "CubeCorners"
-		endif
-	endif
-
-	objectName = SelectString(WhichListItem(objectName, GetGizmoObjects("scatter"))<0,objectName,"")	// check if object exists
-	return objectName
-End
-
-
-// Make a scatter wave that contains xyz and is CUBICAL
-Function/WAVE MakeGizmocubeCorners(xyz)
-	Wave xyz							// xyz[N][3], or xyz[nx][ny][nz]
-	if (!WaveExists(xyz))
-		return $""
-	endif
-
-	Variable Xlo=NaN, Xhi=NaN, Ylo=NaN, Yhi=NaN, Zlo=NaN, Zhi=NaN
-	String units
-	if (WaveDims(xyz)==3)				// a scaled 3D array
-		units = WaveUnits(xyz,0)
-		Xlo = DimOffset(xyz,0)
-		Xhi = DimDelta(xyz,0)*(DimSize(xyz,0)-1) + Xlo
-		Ylo = DimOffset(xyz,1)
-		Yhi = DimDelta(xyz,1)*(DimSize(xyz,1)-1) + Ylo
-		Zlo = DimOffset(xyz,2)
-		Zhi = DimDelta(xyz,2)*(DimSize(xyz,2)-1) + Zlo
-		Variable swap
-		if (Xlo>Xhi)
-			swap = Xlo
-			Xlo = Xhi
-			Xhi = swap
-		endif
-		if (Ylo>Yhi)
-			swap = Ylo
-			Ylo = Yhi
-			Yhi = swap
-		endif
-		if (Zlo>Zhi)
-			swap = Zlo
-			Zlo = Zhi
-			Zhi = swap
-		endif
-	else
-		Variable N=DimSize(xyz,0)		// a list of (xyz) triplets, xyz[N][3]
-		units = WaveUnits(xyz,-1)
-		Make/N=(N)/FREE/D cubeCorners_All
-		cubeCorners_All = xyz[p][0]
-		WaveStats/Q cubeCorners_All
-		Xlo=V_min; Xhi=V_max
-		cubeCorners_All = xyz[p][1]
-		WaveStats/Q cubeCorners_All
-		Ylo=V_min; Yhi=V_max
-		cubeCorners_All = xyz[p][2]
-		WaveStats/Q cubeCorners_All
-		Zlo=V_min; Zhi=V_max
-	endif
-
-	Variable dX=Xhi-Xlo, dY=Yhi-Ylo, dZ=Zhi-Zlo
-	Variable d = max(max(dX,dY),dZ)/2, mid
-
-	Variable printIt = strlen(GetRTStackInfo(2))<=0
-	if (printIt)
-		printf "X = [%g, %g], 	Æ=%g\r",Xlo,Xhi,dX
-		printf "Y = [%g, %g], 	Æ=%g\r",Ylo,Yhi,dY
-		printf "Z = [%g, %g], 	Æ=%g\r",Zlo,Zhi,dZ
-	endif
-	mid = (Xlo+Xhi)/2;		Xlo = mid-d;	Xhi = mid+d
-	mid = (Ylo+Yhi)/2;		Ylo = mid-d;	Yhi = mid+d
-	mid = (Zlo+zhi)/2;		Zlo = mid-d;	Zhi = mid+d
-	if (printIt)
-		print " "
-		printf "X = [%g, %g], 	Æ=%g\r",Xlo,Xhi,Xhi-Xlo
-		printf "Y = [%g, %g], 	Æ=%g\r",Ylo,Yhi,Yhi-Ylo
-		printf "Z = [%g, %g], 	Æ=%g\r",Zlo,Zhi,Zhi-Zlo
-	endif
-
-	String name=CleanupName(NameOfWave(xyz)+"Corners",0)
-	Make/N=(2,3)/O $name/WAVE=corners =NaN
-	SetScale d 0,0,units, corners
-	corners[0][0] = Xlo;	corners[0][1] = Ylo; 	corners[0][2] = Zlo
-	corners[1][0] = Xhi;	corners[1][1] = Yhi; 	corners[1][2] = Zhi
-	String wnote="waveClass=GizmoCorners;"
-	wnote = ReplaceStringByKey("sourceWave",wnote,NameOfWave(xyz),"=")
-	wnote = ReplaceStringByKey("sourceWavePath",wnote,GetWavesDataFolder(xyz,1),"=")
-	Note/K corners, wnote
-	return corners
-End
-
-//  ============================= End of Make Gizmo Cubical ==============================  //
-//  ======================================================================================  //
-
+//	MakeGizmocubeCorners(xyz)	Make a scatter wave that contains xyz and is CUBICAL
 
 
 //  ======================================================================================  //
@@ -2020,16 +1700,340 @@ End
 
 
 
-#if (IgorVersion()>=7)
-Menu "Gizmo"
-	"-"
-	"Put Cube Corners on Gizmo", ActivateCornerCubeOnGizmo(forceCalc=1)
-	"De-Activate Cube Corners on Gizmo", DeActivateCornerCubeOnGizmo()
-	"-"
+
+
+//  ======================================================================================  //
+//  ========================= Start of Legacy Make Gizmo Cubical =========================  //
+
+//	ActivateCornerCubeOnGizmo(), Show corner cubes on Gizmo, returns true if error displaying corner cubes
+//	DeActivateCornerCubeOnGizmo(), de-activeate corner cubes on gizmo, does not delete the scatter object, just don't display it
+//	FindMakeCubeCornerWaves(),  finds (or makes) the corner cube wave for a gizmo
+//	isCornerCubeDisplayedOnGizmo(), returns True/False whether corener cubes are displayed
+//	AddGizmoCornerCubesObject(), adds a scatter for corner cubes, returns name of scatter object (or existing scatter corner cubes object)
+//	getCornerCubeObjectNameOnGizmo(), returns name of corner cube object on the gizmo, returns "" if no corner cube displayed
+
+Function ActivateCornerCubeOnGizmo([GizmoName,forceCalc])			// Show corner cubes on Gizmo, returns true if error displaying corner cubes
+	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	Variable forceCalc		// force recalculation of corners
+	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
+
+	String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// if "", then add the corner cubes
+	if (strlen(objectName)<1)
+		Wave wCorners = FindMakeCubeCornerWaves(GizmoName=GizmoName, forceCalc=forceCalc)
+		objectName = AddGizmoCornerCubesObject(wCorners,GizmoName=GizmoName)
+
+	elseif (forceCalc)		// get name of corners wave and recalculate cube corners
+		Wave wCorners = GizmoObjectWave(objectName,"Scatter")
+		Wave ww = $(StringByKey("sourceWavePath",note(wCorners),"=")+StringByKey("sourceWave",note(wCorners),"="))
+		Wave wCorners = MakeGizmocubeCorners(ww)
+	endif
+	if (strlen(objectName)<1)
+		return 1
+	endif
+
+	if (!isCornerCubeDisplayedOnGizmo(GizmoName=GizmoName))
+#if (IgorVersion()<7)
+		String Nswitch=SelectString(strlen(GizmoName),"","/N="+GizmoName)
+		Execute "ModifyGizmo"+Nswitch+" setDisplayList=-1, object="+objectName
+		Execute "ModifyGizmo"+Nswitch+" compile"
+#else
+		ModifyGizmo/N=$GizmoName setDisplayList=-1, object=$objectName
+		ModifyGizmo/N=$GizmoName compile
+#endif
+	endif
+	return 0
 End
+
+
+Function DeActivateCornerCubeOnGizmo([GizmoName])			// returns true if the gizmo corner cubes are un-displayed
+	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+
+	if (isCornerCubeDisplayedOnGizmo(GizmoName=GizmoName))
+		String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// if "", then add the corner cubes
+#if (IgorVersion()<7)
+		String Nswitch=SelectString(strlen(GizmoName),"","/N="+GizmoName)
+		Execute "RemoveFromGizmo"+Nswitch+" displayItem="+objectName
+		Execute "ModifyGizmo"+Nswitch+" compile"
+#else
+		RemoveFromGizmo/N=$GizmoName displayItem=$objectName
+		ModifyGizmo/N=$GizmoName compile
+#endif
+	endif
+	return 0
+End
+
+
+Static Function/WAVE FindMakeCubeCornerWaves([GizmoName,forceCalc])		// finds (or makes) the corner cube wave for a gizmo
+	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	Variable forceCalc		// force recalculation of corners
+	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+	forceCalc = ParamIsDefault(forceCalc) || numtype(forceCalc) ? 0 : !(!forceCalc)
+
+	String cornerList=WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3")
+	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
+	String gizmoScatterList=GizmoListScatterWaves(gizmo=GizmoName)
+	String gizmoIsoSurfaceList=GizmoListIsoSurfaceWaves(gizmo=GizmoName)		// get list of all iso surface waves
+	String gizmoSurfaceList=GizmoListSurfaceWaves(gizmo=GizmoName)		// get list of all surface waves
+	String gizmoListAll = gizmoScatterList+gizmoIsoSurfaceList+gizmoSurfaceList
+
+	String str, list3Dobjects=""
+	Variable i
+	for (i=0;i<ItemsInList(gizmoListAll);i+=1)
+		str = StringFromList(i, gizmoListAll)
+		str = StringFromList(0,str,"=")
+		Wave ww=$str
+		if (WaveExists(ww))
+			if (!WaveInClass(ww,"GizmoCorners;gizmoScatterMarkerXYZ"))		// make list of scatter waves that are NOT cube corners
+				list3Dobjects += str + ";"
+			endif
+		endif
+	endfor
+	if (itemsInList(list3Dobjects)<1)					// no scatter waves, nothing to do
+		return $""
+	endif
+
+	String list=""
+	for (i=0;i<ItemsInList(list3Dobjects);i+=1)
+		Wave ww = $StringFromList(i,list3Dobjects)
+		list += WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(ww)+";")
+	endfor
+
+	i = ItemsInList(list)
+	if (i<=1)
+		str = StringFromList(0,list)						// only one choice, take it
+	else
+		Prompt str,"Cube Corners for Gizmo",popup,list
+		DoPrompt "Cube Corners",str						// multiple choices, choose one
+		if (V_flag)
+			return $""
+		endif
+	endif
+	Wave corners = $str
+
+	if (!WaveExists(corners))								// no corner waves, make one
+		if (ItemsInList(list3Dobjects)==1)
+			Wave scat = $StringFromList(0,list3Dobjects)	// only one choice, take it
+		else
+			Prompt str,"3D object waves in Gizmo",popup,list3Dobjects
+			DoPrompt "Scatter XYZ",str					// multiple choices, choose one
+			if (V_flag)
+				return $""
+			endif
+			Wave scat = $str
+		endif
+		Wave corners = MakeGizmocubeCorners(scat)
+
+	elseif (forceCalc)
+		Wave scat = $(StringByKey("sourceWavePath",note(corners),"=")+StringByKey("sourceWave",note(corners),"="))
+		Wave corners = MakeGizmocubeCorners(scat)
+	endif
+
+	return corners
+End
+
+
+Static Function isCornerCubeDisplayedOnGizmo([GizmoName])		// returns true if the gizmo corner cubes are displayed
+	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+	String objectName=getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)	// probably "CubeCornersScatter"
+	Variable i = isGizmoObjectDisplayed(objectName,gizmo=GizmoName)		// returns -1 if object not found on displayList, if found return place in displayList
+	return (i>=0)
+End
+
+
+// Add a Corner Cubes Scatter object to a Gizmo. Returns name of objectName if successful.
+Static Function/T AddGizmoCornerCubesObject(wCorners,[GizmoName])
+	Wave wCorners				// wave with corner cube positions
+	String GizmoName			// optional name of gizmo, defaults to top gizmo
+	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+
+	String Nswitch=""
+	if (!WaveExists(wCorners))								// check that wCorners is valid
+		return ""
+	elseif(! (WaveDims(wCorners)==2 && (DimSize(wCorners,0)==8 || DimSize(wCorners,0)==2) && DimSize(wCorners,1)==3) )
+		return ""
+	elseif (!ParamIsDefault(GizmoName) && strlen(GizmoName))
+		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
+			return ""
+		endif
+		Nswitch = "/N="+GizmoName
+	endif
+
+	String objectName = getCornerCubeObjectNameOnGizmo(GizmoName=GizmoName)
+	objectName = SelectString(strlen(objectName),"CubeCornersScatter",objectName)
+
+	String scatterList=GetGizmoObjects("scatter")		// list of current scatter objects
+	if (WhichListItem(objectName,scatterList)>=0)		// group already exists
+		return objectName
+	endif
+
+	if (WhichListItem(objectName,scatterList)<0 && strlen(objectName))	// group does not exist, create it
+#if (IgorVersion()<7)
+		Execute "ModifyGizmo startRecMacro"
+		Execute "AppendToGizmo"+Nswitch+" Scatter="+GetWavesDataFolder(wCorners,2)+",name="+objectName
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ scatterColorType,0}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ markerType,0}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ sizeType,0}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ rotationType,0}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ Shape,1}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ size,1}"
+		Execute "ModifyGizmo"+Nswitch+" ModifyObject="+objectName+" property={ color,0,0,0,1}"
+		Execute "ModifyGizmo"+Nswitch+" userString={CubeCorners,\""+objectName+"\"}"	// save name of cube corner object
+		Execute "ModifyGizmo endRecMacro"
+#else
+		ModifyGizmo startRecMacro
+		AppendToGizmo/N=$GizmoName Scatter=$GetWavesDataFolder(wCorners,2), name=$objectName
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ scatterColorType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ markerType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ sizeType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ rotationType,0}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ Shape,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ size,1}
+		ModifyGizmo/N=$GizmoName ModifyObject=$objectName objectType=scatter property={ color,0,0,0,1}
+//		ModifyGizmo/N=$GizmoName userString={CubeCorners, objectName}	// save name of cube corner object
+		SetWindow $GizmoName userdata(CubeCorners)="AtomViewCubeCorners"
+		ModifyGizmo endRecMacro
+#endif
+	endif
+	return objectName
+End
+
+
+Static Function/T getCornerCubeObjectNameOnGizmo([GizmoName])		// returns name of corner cube object on gizmo, it may not yet be displayed
+	String GizmoName			// optional name of gizmo, defaults to top gizmo
+
+	GizmoName = SelectString(ParamIsDefault(GizmoName),GizmoName,"")
+	String Nswitch=""
+	if (!ParamIsDefault(GizmoName) && strlen(GizmoName))
+		if (WinType(GizmoName)!=GIZMO_WIN_TYPE)
+			return ""
+		endif
+		Nswitch = "/N="+GizmoName
+	endif
+
+#if (IgorVersion()<7)
+	Execute "GetGizmo/Z"+Nswitch+" userString=CubeCorners"
+	String objectName=StrVarOrDefault("S_GizmoUserString","")
+	KillStrings/Z S_GizmoUserString
+#else
+//	GetGizmo/Z/N=$GizmoName userString=CubeCorners
+	String objectName = GetUserData(GizmoName,"","CubeCorners")
+#endif
+
+	if (strlen(objectName)<1)			// in case of legacy gizmos
+		String scatterList = GetGizmoObjects("scatter",gizmo=GizmoName)
+		if (WhichListItem("CubeCornersScatter",scatterList)>=0)
+			objectName = "CubeCornersScatter"
+		elseif (WhichListItem("CubeCornersScatter",scatterList)>=0)
+			objectName = "CubeCorners"
+		endif
+	endif
+
+	objectName = SelectString(WhichListItem(objectName, GetGizmoObjects("scatter"))<0,objectName,"")	// check if object exists
+	return objectName
+End
+
+
+// Make a scatter wave that contains xyz and is CUBICAL
+Function/WAVE MakeGizmocubeCorners(xyz)
+	Wave xyz							// xyz[N][3], or xyz[nx][ny][nz]
+	if (!WaveExists(xyz))
+		return $""
+	endif
+
+	Variable Xlo=NaN, Xhi=NaN, Ylo=NaN, Yhi=NaN, Zlo=NaN, Zhi=NaN
+	String units
+	if (WaveDims(xyz)==3)				// a scaled 3D array
+		units = WaveUnits(xyz,0)
+		Xlo = DimOffset(xyz,0)
+		Xhi = DimDelta(xyz,0)*(DimSize(xyz,0)-1) + Xlo
+		Ylo = DimOffset(xyz,1)
+		Yhi = DimDelta(xyz,1)*(DimSize(xyz,1)-1) + Ylo
+		Zlo = DimOffset(xyz,2)
+		Zhi = DimDelta(xyz,2)*(DimSize(xyz,2)-1) + Zlo
+		Variable swap
+		if (Xlo>Xhi)
+			swap = Xlo
+			Xlo = Xhi
+			Xhi = swap
+		endif
+		if (Ylo>Yhi)
+			swap = Ylo
+			Ylo = Yhi
+			Yhi = swap
+		endif
+		if (Zlo>Zhi)
+			swap = Zlo
+			Zlo = Zhi
+			Zhi = swap
+		endif
+	else
+		Variable N=DimSize(xyz,0)		// a list of (xyz) triplets, xyz[N][3]
+		units = WaveUnits(xyz,-1)
+		Make/N=(N)/FREE/D cubeCorners_All
+		cubeCorners_All = xyz[p][0]
+		WaveStats/Q cubeCorners_All
+		Xlo=V_min; Xhi=V_max
+		cubeCorners_All = xyz[p][1]
+		WaveStats/Q cubeCorners_All
+		Ylo=V_min; Yhi=V_max
+		cubeCorners_All = xyz[p][2]
+		WaveStats/Q cubeCorners_All
+		Zlo=V_min; Zhi=V_max
+	endif
+
+	Variable dX=Xhi-Xlo, dY=Yhi-Ylo, dZ=Zhi-Zlo
+	Variable d = max(max(dX,dY),dZ)/2, mid
+
+	Variable printIt = strlen(GetRTStackInfo(2))<=0
+	if (printIt)
+		printf "X = [%g, %g], 	Æ=%g\r",Xlo,Xhi,dX
+		printf "Y = [%g, %g], 	Æ=%g\r",Ylo,Yhi,dY
+		printf "Z = [%g, %g], 	Æ=%g\r",Zlo,Zhi,dZ
+	endif
+	mid = (Xlo+Xhi)/2;		Xlo = mid-d;	Xhi = mid+d
+	mid = (Ylo+Yhi)/2;		Ylo = mid-d;	Yhi = mid+d
+	mid = (Zlo+zhi)/2;		Zlo = mid-d;	Zhi = mid+d
+	if (printIt)
+		print " "
+		printf "X = [%g, %g], 	Æ=%g\r",Xlo,Xhi,Xhi-Xlo
+		printf "Y = [%g, %g], 	Æ=%g\r",Ylo,Yhi,Yhi-Ylo
+		printf "Z = [%g, %g], 	Æ=%g\r",Zlo,Zhi,Zhi-Zlo
+	endif
+
+	String name=CleanupName(NameOfWave(xyz)+"Corners",0)
+	Make/N=(2,3)/O $name/WAVE=corners =NaN
+	SetScale d 0,0,units, corners
+	corners[0][0] = Xlo;	corners[0][1] = Ylo; 	corners[0][2] = Zlo
+	corners[1][0] = Xhi;	corners[1][1] = Yhi; 	corners[1][2] = Zhi
+	String wnote="waveClass=GizmoCorners;"
+	wnote = ReplaceStringByKey("sourceWave",wnote,NameOfWave(xyz),"=")
+	wnote = ReplaceStringByKey("sourceWavePath",wnote,GetWavesDataFolder(xyz,1),"=")
+	Note/K corners, wnote
+	return corners
+End
+
+//  ========================== End of Make Legacy Gizmo Cubical ==========================  //
+//  ======================================================================================  //
+
+
+
+
+
+
+#if (IgorVersion()>=7)
+//Menu "Gizmo"
+//	"-"
+//	"Put Cube Corners on Gizmo", ActivateCornerCubeOnGizmo(forceCalc=1)
+//	"De-Activate Cube Corners on Gizmo", DeActivateCornerCubeOnGizmo()
+//	"-"
+//End
 
 #if (strlen(WinList("microGeometryN.ipf", ";","WIN:128")))
 Menu "Gizmo"
+	"-"
 	"Gizmo X-H plane", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0,0,0,1}												// X-H
 	"Gizmo X-F plane", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707106781186547,0,0,0.707106781186547}	// X-F
 	"Gizmo H-F plane", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}									// H-F
@@ -2038,6 +2042,7 @@ Menu "Gizmo"
 End
 #else
 Menu "Gizmo"
+	"-"
 	"Gizmo X-Y plane [along beam, Z-axis]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.0,0.0,0.0,1.0}
 	"Gizmo Y-Z plane [side view, X-axis]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.5,0.5,0.5,0.5}
 	"Gizmo X-Z plane [-Y axis]", ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0.707107,0.0,0.0,0.707107}
@@ -2054,8 +2059,8 @@ End
 #if (IgorVersion()<7)
 Static Function InitGizmoUtilityGeneral()
 	Execute/Q/Z "GizmoMenu AppendItem={JZT0,\"-\", \"\"}"
-	Execute/Q/Z "GizmoMenu AppendItem={JZT1,\"Put Cube Corners on Gizmo\", \"ActivateCornerCubeOnGizmo(forceCalc=1)\"}"
-	Execute/Q/Z "GizmoMenu AppendItem={JZT2,\"De-Activate Cube Corners on Gizmo\", \"DeActivateCornerCubeOnGizmo()\"}"
+//	Execute/Q/Z "GizmoMenu AppendItem={JZT1,\"Put Cube Corners on Gizmo\", \"ActivateCornerCubeOnGizmo(forceCalc=1)\"}"
+//	Execute/Q/Z "GizmoMenu AppendItem={JZT2,\"De-Activate Cube Corners on Gizmo\", \"DeActivateCornerCubeOnGizmo()\"}"
 	Execute/Q/Z "GizmoMenu AppendItem={JZT3,\"-\", \"\"}"
 	if (strlen(WinList("microGeometryN.ipf", ";","WIN:128")))
 		Execute/Q/Z "GizmoMenu AppendItem={JZTr0,\"Gizmo X-H plane\", \"ModifyGizmo stopRotation ; ModifyGizmo SETQUATERNION={0,0,0,1}\"}"	// X-H

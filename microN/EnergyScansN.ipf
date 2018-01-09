@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.52
+#pragma version = 2.53
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -5066,7 +5066,7 @@ endif
 	if (allZero)
 		printf "'%s' is ALL zeros, nothing to display\r",NameOfWave(Qspace3D)
 	elseif (printIt)
-		MakeGizmocubeCorners(Qspace3D)
+//		MakeGizmocubeCorners(Qspace3D)
 		if (doConvex)
 			QspaceVolumesView#MakeConvexHullFrom3D(Qspace3D)
 			beep

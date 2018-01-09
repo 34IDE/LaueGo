@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.23
+#pragma version = 1.24
 #include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
 #include "Stats3D" version>= 0.05
@@ -232,7 +232,7 @@ print " "
 
 	Note/K QspaceCombined, wnote
 	MakeSampledPoints(QspaceCombined,name="SampledPointsCombinedXYZ")
-	MakeGizmocubeCorners(QspaceCombined)
+//	MakeGizmocubeCorners(QspaceCombined)
 	QspaceCombined = QspaceCombined==0 ? NaN : QspaceCombined
 End
 #endif
@@ -446,21 +446,21 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		return 1
 	endif
 
-	String cornerList = WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3"), cName=""
-	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
-	cornerList = WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(Qspace3D))
-	if (ItemsInList(cornerList)==1)
-		cName = StringFromList(0,cornerList)
-	elseif (ItemsInList(cornerList)>1)
-		cName = StrVarOrDefault("root:Packages:QspaceVolumes:Gizmo:cornersName","")
-		Prompt cName,"3D Qspace CORNERS",popup,cornerList
-		DoPrompt "Pick 3D Qspace CORNERS",cName
-		if (V_flag)
-			return 1
-		endif
-	endif
+//	String cornerList = WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:2,MAXROWS:2,MINCOLS:3,MAXCOLS:3"), cName=""
+//	cornerList += WaveListClass("GizmoCorners","*","DIMS:2,MINROWS:8,MAXROWS:8,MINCOLS:3,MAXCOLS:3")
+//	cornerList = WavesWithMatchingKeyVals(cornerList,"sourceWave="+NameOfWave(Qspace3D))
+//	if (ItemsInList(cornerList)==1)
+//		cName = StringFromList(0,cornerList)
+//	elseif (ItemsInList(cornerList)>1)
+//		cName = StrVarOrDefault("root:Packages:QspaceVolumes:Gizmo:cornersName","")
+//		Prompt cName,"3D Qspace CORNERS",popup,cornerList
+//		DoPrompt "Pick 3D Qspace CORNERS",cName
+//		if (V_flag)
+//			return 1
+//		endif
+//	endif
+//	Wave corners = $cName
 
-	Wave corners = $cName
 	Wave SampledVolumeXYZ = $SelectString(stringmatch(sName,"- none -"),sName,"")
 	Wave gizmoScatterMarker=gizmoScatterMarker
 
@@ -468,9 +468,9 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	NewDataFolder/O root:Packages:QspaceVolumes
 	NewDataFolder/O root:Packages:QspaceVolumes:Gizmo
 	String/G root:Packages:QspaceVolumes:Gizmo:Qspace3Dname = NameOfWave(Qspace3D)
-	if (WaveExists(corners))
-		String/G root:Packages:QspaceVolumes:Gizmo:cornersName = NameOfWave(corners)
-	endif
+//	if (WaveExists(corners))
+//		String/G root:Packages:QspaceVolumes:Gizmo:cornersName = NameOfWave(corners)
+//	endif
 	String/G root:Packages:QspaceVolumes:Gizmo:ConvexHullName = sName
 	Variable/G root:Packages:QspaceVolumes:Gizmo:isoMax = (isoMax==isoMaxInternal) ? NaN : isoMax
 	Variable/G root:Packages:QspaceVolumes:Gizmo:isoMin = (isoMin==isoMinInternal) ? NaN : isoMin
@@ -519,36 +519,39 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 		displayObjectList += "scatterMarker0;"
 	endif
 
-	if (WaveExists(corners))
-		displayObjectList += "scatterCubeCorners;"
-		Variable icor=DimSize(corners,0)-1			// this will be 2 or 7 (7 is old way)
-		ImageStats/M=1/G={0,icor, 0,0} corners;		QxLo = V_min	;	QxHi = V_max	// need these later for setting a*, b*, c*
-		ImageStats/M=1/G={0,icor, 1,1} corners;		QyLo = V_min	;	QyHi = V_max
-		ImageStats/M=1/G={0,icor, 2,2} corners;		QzLo = V_min	;	QzHi = V_max
-#if (IgorVersion()<7)
-		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=scatterCubeCorners"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ scatterColorType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ markerType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ rotationType,0}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ Shape,1}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ size,1}"
-		Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ color,0,0,0,0}"
-#else
-		AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=scatterCubeCorners
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ markerType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ sizeType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ rotationType,0}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ Shape,1}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ size,1}
-		ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ color,0,0,0,0}
-#endif
-	else
-		QxLo = DimOffset(Qspace3D,0)	;	QxHi = QxLo + (DimSize(Qspace3D,0)-1) * DimDelta(Qspace3D,0)
-		QyLo = DimOffset(Qspace3D,1)	;	QyHi = QyLo + (DimSize(Qspace3D,1)-1) * DimDelta(Qspace3D,1)
-		QzLo = DimOffset(Qspace3D,2)	;	QzHi = QzLo + (DimSize(Qspace3D,2)-1) * DimDelta(Qspace3D,2)
-	endif
+//		if (WaveExists(corners))
+//			displayObjectList += "scatterCubeCorners;"
+//			Variable icor=DimSize(corners,0)-1			// this will be 2 or 7 (7 is old way)
+//			ImageStats/M=1/G={0,icor, 0,0} corners;		QxLo = V_min	;	QxHi = V_max	// need these later for setting a*, b*, c*
+//			ImageStats/M=1/G={0,icor, 1,1} corners;		QyLo = V_min	;	QyHi = V_max
+//			ImageStats/M=1/G={0,icor, 2,2} corners;		QzLo = V_min	;	QzHi = V_max
+//	#if (IgorVersion()<7)
+//			Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=scatterCubeCorners"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ scatterColorType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ markerType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ sizeType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ rotationType,0}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ Shape,1}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ size,1}"
+//			Execute "ModifyGizmo ModifyObject=scatterCubeCorners property={ color,0,0,0,0}"
+//	#else
+//			AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=scatterCubeCorners
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ scatterColorType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ markerType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ sizeType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ rotationType,0}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ Shape,1}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ size,1}
+//			ModifyGizmo ModifyObject=scatterCubeCorners objectType=scatter property={ color,0,0,0,0}
+//	#endif
+//		else
+//			QxLo = DimOffset(Qspace3D,0)	;	QxHi = QxLo + (DimSize(Qspace3D,0)-1) * DimDelta(Qspace3D,0)
+//			QyLo = DimOffset(Qspace3D,1)	;	QyHi = QyLo + (DimSize(Qspace3D,1)-1) * DimDelta(Qspace3D,1)
+//			QzLo = DimOffset(Qspace3D,2)	;	QzHi = QzLo + (DimSize(Qspace3D,2)-1) * DimDelta(Qspace3D,2)
+//		endif
+	QxLo = DimOffset(Qspace3D,0)	;	QxHi = QxLo + (DimSize(Qspace3D,0)-1) * DimDelta(Qspace3D,0)
+	QyLo = DimOffset(Qspace3D,1)	;	QyHi = QyLo + (DimSize(Qspace3D,1)-1) * DimDelta(Qspace3D,1)
+	QzLo = DimOffset(Qspace3D,2)	;	QzHi = QzLo + (DimSize(Qspace3D,2)-1) * DimDelta(Qspace3D,2)
 
 	if (showRecip)
 		Make/N=3/D/FREE Qc = {(QxLo+QxHi)/2, (QyLo+QyHi)/2, (QzLo+QzHi)/2}		// center of volume
@@ -695,6 +698,7 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 #if (IgorVersion()<7)
 	Execute "ModifyGizmo SETQUATERNION={0.628289,0.154694,-0.151222,0.747298}"
 	Execute "ModifyGizmo autoscaling=1"
+	Execute "ModifyGizmo aspectRatio=1"
 	Execute "ModifyGizmo currentGroupObject=\"\""
 	Execute "ModifyGizmo compile"
 //	Execute "ModifyGizmo showInfo"
@@ -704,6 +708,7 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 #else
 	ModifyGizmo SETQUATERNION={0.628289,0.154694,-0.151222,0.747298}
 	ModifyGizmo autoscaling=1
+	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 	ModifyGizmo compile
 //	ModifyGizmo showInfo
@@ -1301,7 +1306,7 @@ Static Function MakeTestQspaceVolume()				// Make a test volume
 //	wnote = ReplaceStringByKey("waveClass",wnote,"ConvexHullTriangles","=")
 //	Note/K hull, wnote
 
-	MakeGizmocubeCorners(Qspace3D)
+//	MakeGizmocubeCorners(Qspace3D)
 	Qspace3D = Qspace3D==0 ? NaN : Qspace3D
 
 	return 0

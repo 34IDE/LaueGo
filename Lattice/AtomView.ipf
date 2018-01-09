@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.46
+#pragma version = 0.47
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -338,7 +338,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	else
 		Wave rhomCell0=$""
 	endif
-	Wave corners = MakeGizmocubeCorners(xyz)
+//	Wave corners = MakeGizmocubeCorners(xyz)
 
 	SetDataFolder fldrSav
 
@@ -385,9 +385,9 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 			wNote = ReplaceNumberByKey("Nbonds",wNote,Nbonds,"=")
 		endif
 	endif
-	if (WaveExists(corners))
-		wNote = ReplaceStringByKey("cornersWave",wNote,GetWavesDataFolder(corners,2),"=")
-	endif
+//	if (WaveExists(corners))
+//		wNote = ReplaceStringByKey("cornersWave",wNote,GetWavesDataFolder(corners,2),"=")
+//	endif
 	if (WaveExists(cell))
 		wNote = ReplaceStringByKey("cellOutlineWave",wNote,GetWavesDataFolder(cell,2),"=")
 	endif
@@ -1109,7 +1109,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	if (DimSize(bonds,0)<1)
 		Wave bonds = $""
 	endif
-	Wave corners = $StringByKey("cornersWave",wNote,"=")
+//	Wave corners = $StringByKey("cornersWave",wNote,"=")
 	Wave cell = $StringByKey("cellOutlineWave",wNote,"=")
 	Wave cell0 = $StringByKey("cellOutlineWave0",wNote,"=")
 	Wave rhomCell0 = $StringByKey("rhomOutlineWave0",wNote,"=")
@@ -1382,25 +1382,25 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 #endif
 	endif
 
-	if (WaveExists(corners))
-		objectList += "AtomViewCubeCorners;"
-#if (IgorVersion()<7)
-		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=AtomViewCubeCorners"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ scatterColorType,0}"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ markerType,0}"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ rotationType,0}"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ Shape,1}"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ size,1}"
-		Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ color,0,0,0,1}"
-		Execute "ModifyGizmo userString={CubeCorners,\"AtomViewCubeCorners\"}"	// save name of cube corner object
-#else
-		AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=AtomViewCubeCorners
-		ModifyGizmo ModifyObject=AtomViewCubeCorners,objectType=scatter,property={ Shape,1}
-		ModifyGizmo ModifyObject=AtomViewCubeCorners,objectType=scatter,property={ size,0}
-		SetWindow $gizName userdata(CubeCorners)="AtomViewCubeCorners"
-#endif
-	endif
+//		if (WaveExists(corners))
+//			objectList += "AtomViewCubeCorners;"
+//	#if (IgorVersion()<7)
+//			Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=AtomViewCubeCorners"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ scatterColorType,0}"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ markerType,0}"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ sizeType,0}"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ rotationType,0}"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ Shape,1}"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ size,1}"
+//			Execute "ModifyGizmo ModifyObject=AtomViewCubeCorners property={ color,0,0,0,1}"
+//			Execute "ModifyGizmo userString={CubeCorners,\"AtomViewCubeCorners\"}"	// save name of cube corner object
+//	#else
+//			AppendToGizmo Scatter=$GetWavesDataFolder(corners,2),name=AtomViewCubeCorners
+//			ModifyGizmo ModifyObject=AtomViewCubeCorners,objectType=scatter,property={ Shape,1}
+//			ModifyGizmo ModifyObject=AtomViewCubeCorners,objectType=scatter,property={ size,0}
+//			SetWindow $gizName userdata(CubeCorners)="AtomViewCubeCorners"
+//	#endif
+//		endif
 
 #if (IgorVersion()<7)
 	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendingFunction"
@@ -1472,6 +1472,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		Execute "ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}"
 	endif
 	Execute "ModifyGizmo autoscaling=1"
+	Execute "ModifyGizmo aspectRatio=1"
 	Execute "ModifyGizmo currentGroupObject=\"\""
 	if (strlen(scaleBarGroup))
 		Execute "ModifyGizmo namedHookStr={ScaleBarHook,\"GizmoUtil#GzimoReSetScaleBarHookProc\"}"
@@ -1490,6 +1491,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}
 	endif
 	ModifyGizmo autoscaling=1
+	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))
 		ModifyGizmo namedHookStr={ScaleBarHook,"GizmoUtil#GzimoReSetScaleBarHookProc"}

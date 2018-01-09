@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.04
+#pragma version=2.05
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -2253,10 +2253,10 @@ Function MakeGizmo_xmlData(scatt)
 	if (strlen(title2))
 		title = title2+SelectString(strlen(title),"",", ")+title
 	endif
-	Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+CleanupName(NameOfWave(scatt)+"Corners",0))
-	if (!WaveExists(cubeCorners))
-		Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+"cubeCorners")			// the old way for compatibility
-	endif
+//	Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+CleanupName(NameOfWave(scatt)+"Corners",0))
+//	if (!WaveExists(cubeCorners))
+//		Wave cubeCorners=$(GetWavesDataFolder(scatt,1)+"cubeCorners")			// the old way for compatibility
+//	endif
 
 	String name=UniqueName("Gizmo",5,0)
 #if (IgorVersion()<7)
@@ -2285,16 +2285,16 @@ Function MakeGizmo_xmlData(scatt)
 	Execute "ModifyGizmo ModifyObject=scatter0 property={ MinRGBA,0,0.699992,3.0518e-05,3.0518e-05,1}"
 	Execute "ModifyGizmo ModifyObject=scatter0 property={ MaxRGBA,0,0,1,0.987213,1}"
 
-	if (WaveExists(cubeCorners))
-		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(cubeCorners,2)+",name=cubeCorners"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ scatterColorType,0}"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ markerType,0}"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ rotationType,0}"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ Shape,5}"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ size,0.01}"
-		Execute "ModifyGizmo ModifyObject=cubeCorners property={ color,0,0,0,1}"
-	endif
+//	if (WaveExists(cubeCorners))
+//		Execute "AppendToGizmo Scatter="+GetWavesDataFolder(cubeCorners,2)+",name=cubeCorners"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ scatterColorType,0}"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ markerType,0}"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ sizeType,0}"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ rotationType,0}"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ Shape,5}"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ size,0.01}"
+//		Execute "ModifyGizmo ModifyObject=cubeCorners property={ color,0,0,0,1}"
+//	endif
 
 	Execute "AppendToGizmo light=Directional,name=light0"
 	Execute "ModifyGizmo light=light0 property={ position,0.426121,-0.439519,0.790724,0.0}"
@@ -2313,12 +2313,13 @@ Function MakeGizmo_xmlData(scatt)
 	Execute "ModifyGizmo setDisplayList=-1, attribute=blendFunc0"
 	Execute "ModifyGizmo setDisplayList=-1, object=axes0"
 	Execute "ModifyGizmo setDisplayList=-1, object=scatter0"
-	if (WaveExists(cubeCorners))
-		Execute "ModifyGizmo setDisplayList=-1, object=cubeCorners"
-	endif
+//	if (WaveExists(cubeCorners))
+//		Execute "ModifyGizmo setDisplayList=-1, object=cubeCorners"
+//	endif
 	Execute "ModifyGizmo setDisplayList=-1, opName=clearColor0, operation=clearColor, data={0.733,0.733,0.733,1}"
 	Execute "ModifyGizmo SETQUATERNION={0.824516,0.417235,-0.157751,-0.348105}"
 	Execute "ModifyGizmo autoscaling=1"
+	Execute "ModifyGizmo aspectRatio=1"	
 	Execute "ModifyGizmo currentGroupObject=\"\""
 	Execute "ModifyGizmo compile"
 	Execute "ModifyGizmo endRecMacro"
@@ -2344,16 +2345,16 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ MinRGBA,0,0.699992,3.0518e-05,3.0518e-05,1}
 	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ MaxRGBA,0,0,1,0.987213,1}
 
-	if (WaveExists(cubeCorners))
-		AppendToGizmo Scatter=$GetWavesDataFolder(cubeCorners,2),name=cubeCorners
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ scatterColorType,0}
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ markerType,0}
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ sizeType,0}
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ rotationType,0}
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ Shape,5}
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ size,0.01}
-		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ color,0,0,0,1}
-	endif
+//	if (WaveExists(cubeCorners))
+//		AppendToGizmo Scatter=$GetWavesDataFolder(cubeCorners,2),name=cubeCorners
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ scatterColorType,0}
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ markerType,0}
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ sizeType,0}
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ rotationType,0}
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ Shape,5}
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ size,0.01}
+//		ModifyGizmo ModifyObject=cubeCorners objectType=scatter property={ color,0,0,0,1}
+//	endif
 
 	AppendToGizmo light=Directional,name=light0
 	ModifyGizmo modifyObject=light0 objectType=light property={ position,0.426121,-0.439519,0.790724,0.0}
@@ -2365,12 +2366,13 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo setDisplayList=-1, attribute=blendFunc0
 	ModifyGizmo setDisplayList=-1, object=axes0
 	ModifyGizmo setDisplayList=-1, object=scatter0
-	if (WaveExists(cubeCorners))
-		ModifyGizmo setDisplayList=-1, object=cubeCorners
-	endif
+//	if (WaveExists(cubeCorners))
+//		ModifyGizmo setDisplayList=-1, object=cubeCorners
+//	endif
 	ModifyGizmo setDisplayList=-1, opName=clearColor0, operation=clearColor, data={0.733,0.733,0.733,1}
 	ModifyGizmo SETQUATERNION={0.824516,0.417235,-0.157751,-0.348105}
 	ModifyGizmo autoscaling=1
+	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 
 	if (strlen(title))
@@ -4206,7 +4208,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		xyz[][0] = XX[p]
 		xyz[][1] = HH[p]
 		xyz[][2] = FF[p]
-		MakeGizmocubeCorners(xyz)
+//		MakeGizmocubeCorners(xyz)
 		Make/N=(N,4)/O rgba
 		Make/N=(N)/O/FREE brite
 		Variable hi=WaveMax(totalsum)/4
