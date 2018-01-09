@@ -1,12 +1,14 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.03
+#pragma version = 2.04
 #pragma IgorVersion = 6.2
 #pragma ModuleName=GZoomTrans
 #include "GizmoUtility", version>=0.16
 
 #if (IgorVersion()>=7)
 Menu "Gizmo"
-	"Zoom & Translate", MakeGizmoZoomTransPanel()
+	SubMenu "Zoom"
+		"Zoom-Translate Panel", MakeGizmoZoomTransPanel()
+	End
 End
 #endif
 
@@ -340,7 +342,7 @@ End
 Static Function InitGizmoZoomTranslate()
 	GizmoUtil#InitGizmoUtilityGeneral()
 #if (IgorVersion()<7)
-	Execute/Q/Z "GizmoMenu AppendItem={JZTz0,\"Zoom & Translate\", \"MakeGizmoZoomTransPanel()\"}"
+	Execute/Q/Z "GizmoMenu AppendItem={JZTz0,\"Zoom-Translate Panel\", \"MakeGizmoZoomTransPanel()\"}"
 #endif
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:GizmoZoomTranslate

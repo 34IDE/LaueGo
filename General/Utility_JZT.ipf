@@ -5302,6 +5302,7 @@ Function SetGizmoZoom(zoom)
 End
 #else
 Function SetGizmoZoom(zoom)			// There is no equivalent for Igor 6
+	Variable zoom
 	return NaN
 End
 #endif
