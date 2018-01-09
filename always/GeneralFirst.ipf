@@ -13,6 +13,7 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	JZTgeneral#PeriodicCheckLaueGoVersion()
 	if(exists("NewGizmo")==4)			// If the Gizmo XOP is available, alwalys put in this menu item.
+		Execute/Q/Z "GizmoMenu AppendItem={JZT_Line0,\"-\", \"\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpSize,\"Square Up Gizmo\", \"SquareUpGizmo(\\\"\\\")\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpAsptec1,\"Set Aspect 1, True\", \"ModifyGizmo aspectRatio = 1\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpAsptec0,\"Set Aspect 0, Std\", \"ModifyGizmo aspectRatio = 0\"}"
@@ -21,8 +22,8 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 End
 #else
 Menu "Gizmo"
-	"Square Up Gizmo", SquareUpGizmo("")
 	SubMenu "Aspect"
+		"Square Up Gizmo", SquareUpGizmo("")
 		"Set Aspect 1, True", ModifyGizmo aspectRatio = 1
 		"Set Aspect 0, Std", ModifyGizmo aspectRatio = 0
 	End
