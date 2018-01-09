@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, January 09, 2018" time="01:48:10 PM CST" isoTime="2018-01-09T13:48:10"></written>
+	<written date="Tuesday, January 09, 2018" time="02:05:26 PM CST" isoTime="2018-01-09T14:05:26"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>306120ca7eda997806f84ef95f10df4b0b677cc4</gitHash>
+	<gitHash>0611824dee8fd894942d4213a38ce7a5ff6de923</gitHash>
 	<fileCount>251</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -112,7 +112,7 @@
 	<file version="nan" time="2016-02-17T12:51:22" md5="85423b9c79ab58809bea788dbcb7707e" sha256="8eba0734816d9a0e41bdf14cc706c54ff9e3d98008843afd8eb4c18bc4712bcd" ext=".xml">materials/standard xtals/KTaO3.xml</file>
 	<file version="nan" time="2017-05-19T11:04:38" md5="899797018d87c21aa5ebdb15a996fdf4" sha256="848ec0f3ab43c28a9ba45e74da105ee578bd1488cb1d887977255b6b18a7ce8f" ext=".xml">geometrys/geoN_2012-06-13_17-40-22.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="95a42278383c02fd8c55b66de214a91d" sha256="bc638ff644d525a4c452ceea74f059609c4f00f97e170761f7a18772b6663753" ext=".png">doc/microDiffractionMedia/Picture7.png</file>
-	<file version="3.42" time="2018-01-09T11:54:51" md5="f9b7a1cc9f0c6874e93260dd5246c695" sha256="4df462742b749ca4aa33fc4e40f1c1cafac46d67bafcda3f6e94ea91334e1efd" ext=".ipf">always/GeneralFirst.ipf</file>
+	<file version="3.42" time="2018-01-09T14:02:21" md5="a98fae5dbd5d4ebdf31753e6c2f975cf" sha256="67fb7f8c133c47d5c38954b646c8bbcf49d7422bcd65508170879c3694c07993" ext=".ipf">always/GeneralFirst.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:14" md5="5c60b13202fe1745a013adee8051121f" sha256="fe6617557aae1699470c52f583d063604f06d328ffe0faaadbdb3be22250a2d5" ext=".xml">materials/standard xtals/NdGaO3.xml</file>
 	<file version="nan" time="2017-05-19T11:04:40" md5="591cc5613a0bc76e4fedc33f672ab853" sha256="d5dfa5f27a3ea8e256b98ecf11c49beb27cba0aa0bbfcf863cd3c264983d05e6" ext=".xml">geometrys/geoN_2012-03-28_17-36-32.xml</file>
 	<file version="nan" time="2016-02-17T12:53:30" md5="b9a8d557ef474ce542d1815cbb3addce" sha256="02b85b59991e194332976aefb0e0728e29fae7d9fc78419eb8e82ac79300a368" ext=".xml">materials/standard xtals/spec.xml</file>
