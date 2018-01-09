@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=vti
 #pragma IgorVersion = 6.3
-#pragma version = 0.10
+#pragma version = 0.11
 #include "ColorNames"
 
 Menu "VTI"
