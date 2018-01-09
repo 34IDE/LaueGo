@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.53
+#pragma version = 4.54
 // #pragma hide = 1
 
 Menu "Graph"
@@ -172,6 +172,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
 //		SquareUpGizmo(gName), Used to square up a graph gizmo
+//		SetGizmoZoom(zoom), Interactive Set zoomFactor for a Gizmo (only for Igor 7)
 //		Name2SymbolCharacter(name), return character equivalent in Symbol font, "theta" returns "q"
 //		Letter2SymbolOrUnicode(letter), for "theta", returns either unicode or "\F'Symbol'q\F]0"
 //		added LetterName2Unicode(letter), returns unicode version of letter {alpha,Beta,...} and {Alef, bet, gimel...}
@@ -5271,6 +5272,39 @@ End
 //  =============================== End of Square Pixels ===============================  //
 //  ====================================================================================  //
 
+
+
+#if (IgorVersion()>7)
+Function SetGizmoZoom(zoom)
+	// Interactive Set zoomFactor for a Gizmo
+	Variable zoom
+	String win = StringFromList(0,WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))	// top Gizmo
+	if (strlen(win)<1)
+		return NaN
+	endif
+	if (numtype(zoom) || zoom<=0)
+		String str = WinRecreation(win,0)
+		str = ReplaceString(" ",str,"")
+		str = ReplaceString("\t",str,"")
+		zoom = NumberByKey("ModifyGizmozoomFactor",str,"=","\r")
+		zoom = numtype(zoom) || zoom<=0 ? 1 : zoom
+		Prompt zoom, "zoom must be >0 and finite, (0.8 is nice)"
+		DoPrompt "Gizmo Zoom",zoom
+		if (V_flag)
+			return NaN
+		endif
+	endif
+	if (numtype(zoom) || zoom<=0)
+		printf "ERROR -- SetGizmoZoom(), Invalid zoom = %g,  must be positive finite\r",zoom
+	endif
+	ModifyGizmo/N=$win zoomFactor = zoom
+	return zoom
+End
+#else
+Function SetGizmoZoom(zoom)			// There is no equivalent for Igor 6
+	return NaN
+End
+#endif
 
 
 

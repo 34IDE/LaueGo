@@ -23,8 +23,13 @@ End
 Menu "Gizmo"
 	"Square Up Gizmo", SquareUpGizmo("")
 	SubMenu "Aspect"
-	"Set Aspect 1, True", ModifyGizmo aspectRatio = 1
-	"Set Aspect 0, Std", ModifyGizmo aspectRatio = 0
+		"Set Aspect 1, True", ModifyGizmo aspectRatio = 1
+		"Set Aspect 0, Std", ModifyGizmo aspectRatio = 0
+	End
+	SubMenu "Zoom"
+		"Set Zoom 1", ModifyGizmo zoomFactor = 1
+		"Set Zoom 0.8", ModifyGizmo zoomFactor = 0.8
+		"Set Zoom Other...", SetGizmoZoom(NaN)
 	End
 End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
