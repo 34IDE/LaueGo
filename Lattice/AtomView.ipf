@@ -1040,8 +1040,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Variable showNames					// if true, show a,b,c labels on lattice vectors
 	Variable scaleFactor				// scale up model in Gizmo Window
 	Variable useBlend					// 0=no blend, 1=blend, -1=auto
-	scaleFactor = ParamIsDefault(scaleFactor) ? 1.25 : scaleFactor
-	scaleFactor = numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
+	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
 	useBlend = ParamIsDefault(useBlend) || numtype(useBlend) ? AtomView_UseBlend : useBlend
 	if(exists("NewGizmo")!=4)			// Do nothing if the Gizmo XOP is not available.
 		DoAlert 0, "Gizmo XOP must be installed"
@@ -1170,7 +1169,11 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	MatrixOP/FREE maxY = maxVal(col(xyz,1))
 	MatrixOP/FREE maxZ = maxVal(col(xyz,2))
 	Variable maxLength = max(max(maxX[0],maxY[0]),maxZ[0])
+#if (IgorVersion()<7)
 	scaleBarGroup = AddScaleBarGroup("",maxLength,"nm",scaleFactor=scaleFactor)
+#else
+	scaleBarGroup = AddScaleBarGroup("",maxLength,"nm")
+#endif
 
 	Variable fixedLight = 0
 #if (IgorVersion()<7)
@@ -1489,7 +1492,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}
 	endif
 	ModifyGizmo autoscaling=1
-	ModifyGizmo zoomFactor = 0.7
+	ModifyGizmo zoomFactor = (1/scaleFactor)
 	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))

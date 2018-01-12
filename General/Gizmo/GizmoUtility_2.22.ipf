@@ -145,10 +145,10 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 	String groupName			// probably "ScaleBarGroup0", If this is empty, then a unique name will be assigned
 	Variable maxLength		// maximum length in Gizmo, scale bar will be less than this
 	String units				// units for maxLength and used in scale bar label
-	Variable scaleFactor	// not used in Igor 7, will always be 1
+	Variable scaleFactor
 	String font
-	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0? 1 : scaleFactor
-	scaleFactor = IgorVersion()>7 ? 1 : scaleFactor
+	scaleFactor = ParamIsDefault(scaleFactor) ? 1 : scaleFactor
+	scaleFactor = numtype(scaleFactor) || scaleFactor<=0 ? 1 : scaleFactor
 	font = SelectString(ParamIsDefault(font),font,"")
 	if (maxLength<=0 || numtype(maxLength))
 		return ""
