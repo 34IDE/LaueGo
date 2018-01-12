@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.47
+#pragma version = 0.48
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1441,8 +1441,6 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		endif
 		ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform
 	endif
-	ModifyGizmo setDisplayList=-1, opName=orthoBase, operation=ortho, data={-2,2,-2,2,-3,3}
-	ModifyGizmo setDisplayList=-1, opName=scaleBase, operation=scale, data={scaleFactor,scaleFactor,scaleFactor}
 	if (useBlend)
 		ModifyGizmo setDisplayList=-1, attribute=blendingFunction
 		ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042
@@ -1491,6 +1489,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		ModifyGizmo SETQUATERNION={0.398347,0.525683,0.596496,0.457349}
 	endif
 	ModifyGizmo autoscaling=1
+	ModifyGizmo zoomFactor = 0.7
 	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))

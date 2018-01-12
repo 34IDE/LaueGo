@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.05
+#pragma version=2.06
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -2361,8 +2361,6 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo modifyObject=light0 objectType=light property={ direction,0.426121,-0.439519,0.790724}
 	ModifyGizmo modifyObject=light0 objectType=light property={ specular,0.733333,0.733333,0.733333,0.5}
 
-	ModifyGizmo setDisplayList=-1, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}
-	ModifyGizmo setDisplayList=-1, opName=scale0, operation=scale, data={1.25,1.25,1.25}
 	ModifyGizmo setDisplayList=-1, attribute=blendFunc0
 	ModifyGizmo setDisplayList=-1, object=axes0
 	ModifyGizmo setDisplayList=-1, object=scatter0
@@ -2371,8 +2369,9 @@ Function MakeGizmo_xmlData(scatt)
 //	endif
 	ModifyGizmo setDisplayList=-1, opName=clearColor0, operation=clearColor, data={0.733,0.733,0.733,1}
 	ModifyGizmo SETQUATERNION={0.824516,0.417235,-0.157751,-0.348105}
-	ModifyGizmo autoscaling=1
-	ModifyGizmo aspectRatio=1
+	ModifyGizmo autoscaling = 1
+	ModifyGizmo zoomFactor = 0.8
+	ModifyGizmo aspectRatio = 1
 	ModifyGizmo currentGroupObject=""
 
 	if (strlen(title))

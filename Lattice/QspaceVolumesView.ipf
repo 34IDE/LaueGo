@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=QspaceVolumesView
-#pragma version = 1.24
+#pragma version = 1.25
 #include "ImageDisplayScaling", version>= 2.06
 #include "ColorNames"
 #include "Stats3D" version>= 0.05
@@ -678,8 +678,6 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	Execute "ModifyGizmo setDisplayList=-1, attribute=blendingFunction"
 	Execute "ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042"
 #else
-	ModifyGizmo setDisplayList=-1, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}
-	ModifyGizmo setDisplayList=-1, opName=scale0, operation=scale, data={1.25,1.25,1.25}
 	ModifyGizmo setDisplayList=-1, attribute=blendingFunction
 	ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042
 #endif
@@ -707,8 +705,9 @@ Function MakeGizmoQspace3D(Qspace3D,[isoMax,isoMin,Niso,ColorTable,revColors,iso
 	Execute "ModifyGizmo endRecMacro"
 #else
 	ModifyGizmo SETQUATERNION={0.628289,0.154694,-0.151222,0.747298}
-	ModifyGizmo autoscaling=1
-	ModifyGizmo aspectRatio=1
+	ModifyGizmo autoscaling = 1
+	ModifyGizmo zoomFactor = 0.8
+	ModifyGizmo aspectRatio = 1
 	ModifyGizmo currentGroupObject=""
 	ModifyGizmo compile
 //	ModifyGizmo showInfo

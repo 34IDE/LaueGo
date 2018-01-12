@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=vti
 #pragma IgorVersion = 6.3
-#pragma version = 0.11
+#pragma version = 0.12
 #include "ColorNames"
 
 Menu "VTI"
@@ -451,8 +451,6 @@ Function MakeGizmoIsoVolume(volWave,[isoMin,isoMax,Niso,ColorTable,revColors,iso
 	Execute "ModifyGizmo setDisplayList=-1, attribute=blendingFunction"
 	Execute "ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042"
 #else
-	ModifyGizmo setDisplayList=-1, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}
-	ModifyGizmo setDisplayList=-1, opName=scale0, operation=scale, data={1.25,1.25,1.25}
 	ModifyGizmo setDisplayList=-1, attribute=blendingFunction
 	ModifyGizmo setDisplayList=-1, opName=enableBlend, operation=enable, data=3042
 #endif
@@ -479,6 +477,7 @@ Function MakeGizmoIsoVolume(volWave,[isoMin,isoMax,Niso,ColorTable,revColors,iso
 #else
 //	ModifyGizmo SETQUATERNION={0.628289,0.154694,-0.151222,0.747298}
 	ModifyGizmo autoscaling=1
+	ModifyGizmo zoomFactor=0.8
 	ModifyGizmo aspectRatio=1
 	ModifyGizmo currentGroupObject=""
 	ModifyGizmo compile
