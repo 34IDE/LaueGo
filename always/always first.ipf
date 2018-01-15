@@ -106,6 +106,7 @@ Static Function/S VersionStatusHash(full,fldr)
 	Open/R/Z f as fname					// check in ".git" folder
 	if (V_flag && IgorVersion()>7.0)// check in v6 folder too, Open has trouble following links
 		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
+		fname = ReplaceString("Igor Pro 8 User",fname,"Igor Pro 6 User")
 		Open/R/Z f as fname
 	endif
 
@@ -116,6 +117,7 @@ Static Function/S VersionStatusHash(full,fldr)
 	endif
 	if (V_flag && IgorVersion()>7.0)// check in v6 folder too, Open has trouble following links
 		fname = ReplaceString("Igor Pro 7 User",fname,"Igor Pro 6 User")
+		fname = ReplaceString("Igor Pro 8 User",fname,"Igor Pro 6 User")
 		Open/R/Z f as fname
 	endif
 
