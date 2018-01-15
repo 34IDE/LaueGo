@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.53
+#pragma version = 2.54
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -3668,29 +3668,36 @@ Static Function/T directory(pathName)
 	String pathName							// path name that I want the directory of
 	PathInfo $pathName	
 
-	SVAR imageExtension=root:Packages:imageDisplay:imageExtension
 	String list=""
+	String imageExtension=StrVarOrDefault("root:Packages:imageDisplay:imageExtension",".h5")
 	if (stringmatch(IgorInfo(2),"Macintosh"))	// this section for Mac
 		PathInfo $pathName
 		String script = "get POSIX path of file \"" + S_path + "\""
+#if (IgorVersion()<7)
 		ExecuteScriptText/Z script
+		S_value = TrimBoth(S_value,chars="\"")
+#else
+		ExecuteScriptText/UNQ/Z script
+#endif
 		if (V_Flag)
 			return ""
 		endif
-		String POSIXpath = S_value[1,StrLen(S_value)-2] // trim quotes
-		POSIXpath = ReplaceString(" ",POSIXpath,"\\\\ ")	// change spaces to escaped spaces
+		String POSIXpath = ReplaceString(" ",S_value,"\\\\ ")	// change spaces to escaped spaces
 		String cmd
 		sprintf cmd, "do shell script \"ls %s\"",POSIXpath
+//		sprintf cmd, "do shell script \"ls \\\"%s\\\"\"",POSIXpath
+#if (IgorVersion()<7)
 		ExecuteScriptText/Z cmd
+		S_value = TrimBoth(S_value,chars="\"")
+#else
+		ExecuteScriptText/UNQ/Z cmd
+#endif
 		if (V_Flag==0)
-			// print POSIXpath, "        ",cmd
 			list = S_value
-			Variable i=strlen(list)
-			list = list[1,i-2]						// remove leading and trailing double quote
 			list = ReplaceString("\r", list, ";" )		// change to a semicolon separated list
 		else
 			print " the 'ls' command failed, you may want to add anther mount point to the directory() function to speed things up"
-			list = IndexedFile($pathName,-1,"."+imageExtension)
+			list = IndexedFile($pathName,-1,imageExtension)
 		endif
 	else											// this section for Windows
 		list = IndexedFile($pathName,-1,imageExtension)	// list = IndexedFile($pathName,-1,"????")

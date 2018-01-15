@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.20
-#pragma version = 0.05
+#pragma version = 0.06
 #pragma ModuleName=BurtFiles
 
 Menu "Load Waves"
@@ -196,13 +196,15 @@ Static Function/WAVE LoadPVfrom34IDBurtFiles(PVname,start,[period,final])
 	if (strlen(final))
 		pythonScript += " "+final
 	endif
+#if (IgorVersion()<7)
 	ExecuteScriptText  "do shell script \""+pythonScript+"\""
-
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ  "do shell script \""+pythonScript+"\""
+#endif
 	String buf = S_value
 	buf = ReplaceString("\n", buf, "\r")
 	buf = ReplaceString("\r\r", buf, "\r")
-	Variable i=strlen(buf)
-	buf = buf[1,i-2]				// remove bounding double-quotes
 	if (strlen(buf)<1 || stringmatch(buf,"No such file or directory"))
 		print "error"
 		return $""

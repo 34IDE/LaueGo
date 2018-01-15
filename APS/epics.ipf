@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.0
-#pragma version=1.82
+#pragma version=1.83
 
 Menu "Data"
 	Submenu "EPICS"
@@ -53,16 +53,19 @@ Function/T get_mult_PV(pvList)	// return a keyed list of values, one for each PV
 		pv = StringFromList(i,pvList)
 	while(strlen(pv))
 	cmd += "\""									// add trailing double quote
+#if (IgorVersion()<7)
 	ExecuteScriptText cmd
-	S_value = S_value[1,Inf]				// remove leading double quote
-	i = strlen(S_value)
-	S_value = S_value[0,i-2]				// remove trailing double quote
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ cmd
+#endif
+	String out = S_value
 
 	String value,result = ""
 	i = 0
 	pv=StringFromList(i,pvList)
 	do
-		value = StringFromList(i,S_value,num2char(13))
+		value = StringFromList(i,out,num2char(13))
 		j = strlen(value)
 		if (char2num(value[j-1])==32)	// remove the trailing space
 			value = value[0,j-2]
@@ -85,8 +88,13 @@ Function get_PV_num(pv)
 	endif
 	String cmd
 	sprintf cmd "do shell script \"%s/caget -t -n -g 15 %s\"", getEpicsBasePath(),pv
+#if (IgorVersion()<7)
 	ExecuteScriptText cmd
-	return str2num(S_value[1,100])
+	S_value = S_value[1,50]
+#else
+	ExecuteScriptText/UNQ cmd
+#endif
+	return str2num(S_value)
 End
 
 Function/T get_PV_str(pv)
@@ -97,11 +105,13 @@ Function/T get_PV_str(pv)
 	endif
 	String cmd
 	sprintf cmd "do shell script \"%s/caget -t %s\"", getEpicsBasePath(),pv
+#if (IgorVersion()<7)
 	ExecuteScriptText cmd
-	Variable i1,i2
-	i1 = strsearch(S_value, "\"", 0)+1
-	i2 = strsearch(S_value, "\"", Inf,1)-1
-	return S_value[i1,i2]
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ cmd
+#endif
+	return S_value
 End
 
 Function/T get_PV_wave(pv,n)		// returns the name of the wave created
@@ -118,13 +128,13 @@ Function/T get_PV_wave(pv,n)		// returns the name of the wave created
 	else
 		sprintf cmd "do shell script \"%s/caget -t -g 15 %s\"", getEpicsBasePath(),pv
 	endif
+#if (IgorVersion()<7)
 	ExecuteScriptText cmd
-	Variable i1,i2,i
-	i1 = strsearch(S_value, "\"", 0)+1
-	i2 = strsearch(S_value, "\"", Inf,1)-1
-	for (;char2num(S_value[i1])<=32 && i1<i2;i1+=1)	// trim leading white space
-	endfor
-	String list = S_value[i1,i2]
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ cmd
+#endif
+	String list = TrimBoth(S_value)
 	if (ItemsInList(list," ")<2)
 		DoAlert 0, pv+" is not a wave form"
 		return ""
@@ -132,7 +142,7 @@ Function/T get_PV_wave(pv,n)		// returns the name of the wave created
 	n = str2num(StringFromList(0, list," "))				// number of points in the wave
 
 	String wName = pv										// name of wave to create
-	i = strsearch(pv,".VAL",0)
+	Variable i = strsearch(pv,".VAL",0)
 	if ((strlen(pv)-i)==4)								// ends with ".VAL"
 		wName = pv[0,i-1]									// remove the trailing ".VAL"
 	endif
@@ -158,11 +168,16 @@ Function/T EPICS_put_PV_num(pv,value,[fmt])
 	String cmd
 //	sprintf cmd "do shell script \"%scaput -t -n %s %.15g\"", getEpicsBasePath(),pv,value
 	sprintf cmd "do shell script \"%scaput -t -n %s "+fmt+"\"", getEpicsBasePath(),pv,value
+#if (IgorVersion()<7)
 	ExecuteScriptText/Z cmd
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/Z/UNQ cmd
+#endif
 	if (V_flag==0)
 		return ""
 	endif
-	return S_value[0,strlen(S_value)-2]				// remove leading and trailing double quote
+	return S_value
 End
 //
 Function/T EPICS_put_PV_str(pv,str)
@@ -175,11 +190,16 @@ Function/T EPICS_put_PV_str(pv,str)
 	str = "\\\""+str+"\\\""
 	String cmd
 	sprintf cmd "do shell script \"%scaput -t -s %s %s\"", getEpicsBasePath(),pv,str
+#if (IgorVersion()<7)
 	ExecuteScriptText/Z cmd
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ/Z cmd
+#endif
 	if (V_flag==0)
 		return ""
 	endif
-	return S_value[0,strlen(S_value)-2]				// remove leading and trailing double quote
+	return S_value
 End
 
 

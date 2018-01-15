@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.12
+#pragma version = 1.13
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -92,7 +92,11 @@ Static Function/T LoadMDAfile(inFile0)
 
 	String cmd
 	sprintf cmd "do shell script \"\\\"%s\\\" \\\"%s\\\" \\\"%s\\\"\"",pythonScript,PosixFileIn,outFile
+#if (IgorVersion()>7)
+	ExecuteScriptText/UNQ cmd
+#else
 	ExecuteScriptText cmd
+#endif
 	Variable err=0
 	err = strsearch(S_value,"Traceback (most recent call last)",0)>=0
 	err = err || strsearch(S_value,"ERROR --",0)==0
@@ -102,19 +106,12 @@ Static Function/T LoadMDAfile(inFile0)
 		print cmd
 		print "\r\r"
 		print S_value
-		return ""								// there is no index file
+		return ""									// there is no index file
 	endif
-	Variable i1,i2,i3
-	i1 = strsearch(S_value,"\"",0)+1			// remove leading quote
-	i2 = strsearch(S_value,"\n",0)-1
-	i2 = i2<0 ? Inf : i2
-	i3 = strsearch(S_value,"\"",i1)-1			// remove trailing quote
-	i3 = i3<0 ? Inf : i3
-	i2 = min(i2,i3)
-	if (i1<0 || i2<0)
-		return ""
-	endif
-	String mdaFile = Posix2HFS(S_value[i1,i2])
+#if (IgorVersion()<7)
+	S_value = TrimBoth(S_value,chars="\"")
+#endif
+	String mdaFile = Posix2HFS(TrimBoth(S_value))
 	if (strlen(mdaFile)<1)
 		return ""
 	endif

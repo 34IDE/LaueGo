@@ -2218,7 +2218,7 @@ Function/WAVE runIndexingEulerCommand(args)
 	endif
 
 	if (ItemsInList(GetRTStackInfo(0))<2)		// print everything if run from command line
-		printf result
+		print result
 	endif
 
 	err = strsearch(result,"writing output to file '",0)<0
@@ -3102,7 +3102,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 		return ""
 	endif
 	if (ItemsInList(GetRTStackInfo(0))<2)		// print everything if run from command line
-		printf S_value
+		print S_value
 	endif
 	if (deleteImage)
 		DeleteFile/Z=1 imageFileMac

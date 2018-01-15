@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.54
+#pragma version = 4.55
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3982,7 +3982,12 @@ Function/T Posix2HFS(posixName,[printIt])	// This is a replacement for PosixToHF
 
 	String cmd
 	sprintf cmd, "(POSIX file \"%s\") as Unicode text",posixName
+#if (IgorVersion()<7)
 	ExecuteScriptText/Z cmd
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ/Z cmd
+#endif
 	if (V_flag)
 		if (printIt)
 			printf "failure in Posix2HFS(\"%s\")\t\tcmd = '%s'\r",posixName,cmd
@@ -3990,7 +3995,7 @@ Function/T Posix2HFS(posixName,[printIt])	// This is a replacement for PosixToHF
 		endif
 		return ""										// there is no valid file path
 	endif
-	return S_value[1,strlen(S_value)-2]		// strip off leading & trailing double-quotes
+	return S_value
 End
 
 
@@ -4022,8 +4027,13 @@ Function cpuFrequency()					// return the cpu frequency (Hz)
 	endif
 	String cmd
 	sprintf cmd "do shell script \"sysctl hw.cpufrequency\""
+#if (IgorVersion()<7)
 	ExecuteScriptText cmd						//returns something like: 	"hw.cpufrequency: 2000000000"
-	Variable freq = NumberByKey("hw.cpufrequency",ReplaceString("\"",S_value,""))
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ cmd				//returns something like: 	"hw.cpufrequency: 2000000000"
+#endif
+	Variable freq = NumberByKey("hw.cpufrequency",S_value)
 	if (numtype(freq))
 		DoAlert 0, "Unable to get cpu frequency, message is '"+S_value+"'"
 	endif
@@ -4060,9 +4070,13 @@ Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.
 		DoAlert 0, "Only know how to get hostname from a Mac"
 		return ""								// cannot get answer
 	endif
-	ExecuteScriptText "do shell script \"hostname\""		//returns something like:	"bob.xray.aps.anl.gov"
-	String hostname = ReplaceString("\"",S_value,"")
-	return ReplaceString("\"",S_value,"")
+#if (IgorVersion()<7)
+	ExecuteScriptText "do shell script \"hostname\""			//returns something like:	"bob.xray.aps.anl.gov"
+	S_value = ReplaceString("\"",S_value,"")
+#else
+	ExecuteScriptText/UNQ "do shell script \"hostname\""	//returns something like:	"bob.xray.aps.anl.gov"
+#endif
+	return S_value
 End
 #else
 Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
@@ -4076,11 +4090,15 @@ Function/T localTimeZoneName()
 		print "Only know how to get Time Zone name from a Mac"
 		return ""									// cannot get answer
 	endif
+#if (IgorVersion()<7)
 	ExecuteScriptText "do shell script \"date +'%Z'\""			//returns something like: 	"CST"
-	if (strlen(S_value)>5)
+	S_value = ReplaceString("\"",S_value,"")
+#else
+	ExecuteScriptText/UNQ "do shell script \"date +'%Z'\""			//returns something like: 	"CST"
+#endif
+	if (strlen(S_value)>3)
 		DoAlert 0, "Unable to get local Time Zone name, message is '"+S_value+"'"
 	endif
-	return ReplaceString("\"",S_value,"")
 	return S_value
 End
 
@@ -4090,15 +4108,12 @@ Function/T getEnvironment(name)
 	String name										// name of variable, use "=" to get all
 	String cmd
 	sprintf cmd "do shell script \"source ~/.bash_profile ; env\""
+#if (IgorVersion()<7)
 	ExecuteScriptText cmd
-	Variable N=strlen(S_value)
-	if (char2num(S_value[0]) == 34)			// strip leading double quote
-		S_value = S_value[1,N-1]
-		N -= 1
-	endif
-	if (char2num(S_value[N-1]) == 34)		// strip trailing double quote
-		S_value = S_value[0,N-2]
-	endif
+	S_value = TrimBoth(S_value,chars="\"")
+#else
+	ExecuteScriptText/UNQ cmd
+#endif
 	if (strsearch(S_value, ";", 0)>=0)
 		DoAlert 0, "env has semi-colon"
 		return ""

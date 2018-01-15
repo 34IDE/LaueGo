@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.81
+#pragma version = 2.82
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -57,6 +57,24 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	//	MoveWindow /C V_left+20,V_top-40,V_right,V_bottom-2
 End
 
+#if (IgorVersion()>7)
+Static Function/S getHostName(local)	// return unix hostname
+	Variable local							// 0-> network name (bob.world.com), 1-> local name (Bob's MacBook)
+	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
+		print "Only know how to get user name from a Mac"
+		return ""							// cannot get answer
+	endif
+	if (local)								// get the name in double quotes
+		ExecuteScriptText/UNQ "do shell script \"scutil --get ComputerName\""	// gets local computer name
+	else										// get the network name (hostname) in double quotes
+		ExecuteScriptText/UNQ "do shell script \"hostname\""
+	endif
+	if (strlen(S_value)<=0)				// no name,
+		DoAlert 0, "Unable to get user name, message is '"+S_value+"'"
+	endif
+	return S_value							// for Igor 7 & 8, no longer have double-quotes
+End
+#else
 Static Function/S getHostName(local)	// return unix hostname
 	Variable local							// 0-> network name (bob.world.com), 1-> local name (Bob's MacBook)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
@@ -65,15 +83,16 @@ Static Function/S getHostName(local)	// return unix hostname
 	endif
 	if (local)								// get the name in double quotes
 		ExecuteScriptText "do shell script \"scutil --get ComputerName\""	// gets local computer name
-	else									// get the network name (hostname) in double quotes
+	else										// get the network name (hostname) in double quotes
 		ExecuteScriptText "do shell script \"hostname\""
 	endif
 	Variable i=strlen(S_value)-2
-	if (i<=0)								// no name,
+	if (i<=0)									// no name,
 		DoAlert 0, "Unable to get user name, message is '"+S_value+"'"
 	endif
 	return S_value[1,i]					// first & last char are double-quotes, remove
 End
+#endif
 
 Static Function/S VersionStatusHash(full,fldr)
 	Variable full							// if true returns full hash, otherwise only first 6 characters of buf
