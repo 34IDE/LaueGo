@@ -1,10 +1,11 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.17
+#pragma version = 1.18
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
 #include  "LatticeSym", version>=5.14
+Static Constant hc_keVnm = 1.2398419739		// h*c (keV-nm),  these two used to calculate mu in muOfXtal
 
 
 Menu LaueGoMainMenuName
@@ -224,6 +225,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 				PeakIndexed[Nspots][3][0] = h
 				PeakIndexed[Nspots][4][0] = k
 				PeakIndexed[Nspots][5][0] = l
+				PeakIndexed[Nspots][6][0] = intensityOfPeak(qhat,hkl,Elo,Ehi)
 				PeakIndexed[Nspots][7][0] = keV
 				PeakIndexed[Nspots][9][0] = (px-(startx-FIRST_PIXEL)-(groupx-1)/2)/groupx		// change to binned pixels
 				PeakIndexed[Nspots][10][0] = (py-(starty-FIRST_PIXEL)-(groupy-1)/2)/groupy	// pixels are still zero based
@@ -243,7 +245,6 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	DoWindow/K $progressWin
 	Redimension/N=(Nspots,-1,-1) PeakIndexed		// trim to exact size
 	PeakIndexed[][8][0] = 0								// error is always zero for a calculated spot
-	PeakIndexed[][6][0] = 1								// set all intensities to 1
 	if (printIt)
 		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,Secs2Time(executionTime,5,0)
 	endif
@@ -332,6 +333,60 @@ Static Function parallel_hkl_exists(h,k,l,N,pw)
 	endfor
 	return 0
 End
+//
+Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
+	Wave qhat
+	Wave hklIN
+	Variable Elo, Ehi
+	Elo = numtype(Elo) || Elo<=0 ? 3 : Elo
+	Ehi = numtype(Ehi) || Ehi<=Elo ? 30 : Ehi
+
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
+		DoAlert 0, "ERROR findClosestHKL()\rno lattice structure found"
+		return 1
+	endif
+
+	Make/N=3/D/FREE dhkl, hkl=hklIN
+	hkl = abs(hklIN)
+	Variable hklMax = WaveMax(hkl)
+	Variable i, delta
+	for (i=hklMax;i>0;i-=1)
+		hkl = hklIN / i
+		dhkl = abs( round(hkl)-hkl )
+		if (WaveMax(dhkl)<1e-5)
+			break
+		endif
+	endfor
+
+	FUNCREF spectrumProto spectrumFunc = $"spectrum"
+	Make/N=3/D/FREE kf, ki={0,0,1}
+	kf = ki - 2*MatrixDot(ki,qhat)*qhat
+	Variable keV, keV0
+	keV0 = hc_keVnm / ( 2 * dSpacing(xtal,hkl[0],hkl[1],hkl[2]) * sin(acos(MatrixDot(ki,kf))/2) )
+
+	Variable mu, intens=0
+	Variable/C Fhkl = Fstruct(xtal,hkl[0],hkl[1],hkl[2],keV=keV)
+	Variable istart = max(floor(Elo/keV0),1)
+	for (i=istart,keV=i*keV0; keV<Ehi; i+=1,keV+=keV0)	// for each harmonic
+		if (keV>Elo)
+			mu = LatticeSym#muOfXtal(xtal, keV)
+			mu = numtype(mu) ? 1 : mu								// in case Cromer not loaded
+			Fhkl = Fstruct(xtal,i*hkl[0],i*hkl[1],i*hkl[2], keV=keV)
+			intens += magsqr(Fhkl) * spectrumFunc(keV) / mu
+		endif
+	endfor
+	return 1e-4 * intens
+End
+
+Function spectrumProto(keV)
+	Variable keV
+	if (numtype(kev) || keV<=0 || keV>30)
+		return 0
+	endif
+	Variable eV = keV * 1000
+	return 1
+End
 
 
 Function DisplaySimulatedLauePattern(FullPeakIndexed)
@@ -378,11 +433,14 @@ Function GraphSimulateLaueStyle()
 	Variable groupy=NumberByKey("groupy",wnote,"=")
 	Variable xlo = startx/groupx, xhi = endx/groupx
 	Variable ylo = starty/groupx, yhi = endy/groupx
+	String wname = StringFromList(0,TraceNameList("",";",1))
 
 	ModifyGraph/Z width={Aspect,(xhi-xlo)/(yhi-ylo)}
 	ModifyGraph/Z grid=1, tick=2, mirror=1, minor=1, gridStyle=1
 	ModifyGraph/Z lowTrip=0.001, standoff=0, axOffset(bottom)=-1
 	ModifyGraph mode=3,marker=19,rgb=(1,4,52428),msize=2
+	ModifyGraph zmrkSize[0]={$wname[*][6][0],*,*,1,10}
+	ModifyGraph zColor[0]={$wname[*][7][0],*,*,Rainbow256}
 	ModifyGraph grid=1,gridRGB=(45000,45000,65535)
 	ModifyGraph axOffset(left) = (stringmatch(IgorInfo(2),"Macintosh" )) ? -1.1 : -2.1 		// mac, or pc
 
@@ -396,7 +454,7 @@ Function GraphSimulateLaueStyle()
 	if (numtype(h+k+l)==0)
 		str = StringByKey("structureDesc",wnote,"=")
 		str += " ("+hkl2str(h,k,l)+")"
-		str += "\rE=["+num2str(Elo)+", "+num2str(Ehi)+"]keV"
+		str += "\rE=["+num2str(Elo)+","+num2str(Ehi)+"]keV"
 		TextBox/C/N=textTitle/F=0/B=1 str
 	endif
 
