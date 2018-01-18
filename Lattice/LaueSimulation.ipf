@@ -271,6 +271,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	Redimension/N=(Nspots,-1,-1) PeakIndexed		// trim to exact size
 	PeakIndexed[][8][0] = 0								// error is always zero for a calculated spot
 	if (printIt)
+		printf "hkl ranges:  h=[%g,%g],  k=[%g,%g],  l=[%g,%g]\r", hklRange[0],hklRange[1], hklRange[2],hklRange[3], hklRange[4],hklRange[5]
 		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,ElapsedTime2Str(executionTime)
 	endif
 
@@ -390,15 +391,15 @@ Static Function/WAVE Find_hkl_range(xtal,d,recip, Elo,Ehi, startx,endx,starty,en
 	Variable Elo,Ehi
 	Variable startx,endx,starty,endy
 
-	Variable midx=(startx+endx)/2, midy=(starty+endy)/2
-	Make/N=(5,2)/D/FREE corner
-	corner[0][0]= {midx,startx,endx,startx,endx}		// detector center and 4 corners of detector
-	corner[0][1]= {midy,starty,starty,endy,endy}
+	Variable midx=(startx+endx)/2, midy=(starty+endy)/2, Nc=9
+	Make/N=(Nc,2)/D/FREE corner		// points on detector center, 4 corners, and midpoint of each edge
+	corner[0][0]= {midx,  startx,midx  ,endx  ,endx,  endx,  midx,  startx,startx}
+	corner[0][1]= {midy,  starty,starty,starty,midy,  endy,  endy,  endy  ,midy}
 
 	Make/N=3/D/FREE qvec, qhat, ki={0,0,1}
 	Make/N=3/D/FREE hklHi=-Inf, hklLo=Inf
 	Variable i, Qlen, sintheta
-	for (i=0;i<5;i+=1)
+	for (i=0;i<Nc;i+=1)
 		pixel2q(d,corner[i][0],corner[i][1],qhat)
 		sintheta = -MatrixDot(ki,qhat)
 
@@ -424,38 +425,38 @@ Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
 	Variable Elo, Ehi
 
 	STRUCT crystalStructure xtal
-	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
+	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
 		DoAlert 0, "ERROR findClosestHKL()\rno lattice structure found"
 		return 1
 	endif
 
-	Make/N=3/D/FREE dhkl, hkl=hklIN
-	hkl = abs(hklIN)
-	Variable hklMax = WaveMax(hkl)
-	Variable i, delta
-	for (i=hklMax;i>0;i-=1)
-		hkl = hklIN / i
-		dhkl = abs( round(hkl)-hkl )
-		if (WaveMax(dhkl)<1e-5)
-			break
-		endif
-	endfor
+	Make/N=3/D/FREE hkl0=hklIN
+	hkl0 = abs(hklIN)
+	Variable hklMax=WaveMax(hkl0), iDiv
+	Make/N=(hklMax,3)/D/FREE hkls=hklIN[q]/(p+1)
+	MatrixOp/FREE hkls = abs(hkls - round(hkls))
+	hkls = hkls > 1e-5 ? NaN : p
+	MatrixOp/FREE flags = sumRows(hkls)
+	flags = numtype(flags) ? NaN : p+1
+	iDiv = WaveMax(flags)
+	hkl0 = hklIN/iDiv										// hkl0 has all common divisors removed
 
 	FUNCREF spectrumProto spectrumFunc = $"spectrum"
 	Make/N=3/D/FREE kf, ki={0,0,1}
 	kf = ki - 2*MatrixDot(ki,qhat)*qhat
 	Variable keV, keV0
-	keV0 = hc_keVnm / ( 2 * dSpacing(xtal,hkl[0],hkl[1],hkl[2]) * sin(acos(MatrixDot(ki,kf))/2) )
+	keV0 = hc_keVnm / ( 2 * dSpacing(xtal,hkl0[0],hkl0[1],hkl0[2]) * sin(acos(MatrixDot(ki,kf))/2) )
 
-	Variable mu, intens=0
-	Variable/C Fhkl = Fstruct(xtal,hkl[0],hkl[1],hkl[2],keV=keV)
-	Variable istart = max(floor(Elo/keV0),1)
+	Variable Fhkl, mu, intens=0
+	Variable istart = max(floor(Elo/keV0),1), i
 	for (i=istart,keV=i*keV0; keV<Ehi; i+=1,keV+=keV0)	// for each harmonic
 		if (keV>Elo)
 			mu = LatticeSym#muOfXtal(xtal, keV)
 			mu = numtype(mu) ? 1 : mu								// in case Cromer not loaded
-			Fhkl = Fstruct(xtal,i*hkl[0],i*hkl[1],i*hkl[2], keV=keV)
-			intens += magsqr(Fhkl) * spectrumFunc(keV) / mu
+			Fhkl = magSqr(Fstruct(xtal,i*hkl0[0],i*hkl0[1],i*hkl0[2], keV=keV))
+			if (Fhkl > 1e-5)
+				intens += Fhkl * spectrumFunc(keV) / mu
+			endif
 		endif
 	endfor
 	return 1e-4 * intens
