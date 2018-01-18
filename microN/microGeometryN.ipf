@@ -636,7 +636,7 @@ End
 //
 Function printGeometry(g)					// print the details for passed geometry to the history window
 	STRUCT microGeometry &g
-	printf "current geomery parameters  (using %d detectors)\r",g.Ndetectors
+	printf "\rCurrent geomery parameters  (using %d detectors)\r",g.Ndetectors
 	if (!SampleBad(g.s))
 		printf "Sample\r"
 		printf "	Origin = {%g, %g, %g}				// raw poistioner coordinates where sample is at origin (micron)\r",g.s.O[0],g.s.O[1],g.s.O[2]
@@ -689,9 +689,9 @@ Function printDetector(d,[brief])			// print the details for passed detector geo
 	endif
 
 	printf "	Nx=%d, Ny=%d%s\r",d.Nx,d.Ny, SelectString(brief,"","					// number of un-binned pixels in detector")
-	printf "	sizeX=%g, sizeY=%g%s\r",(d.sizeX/1000), (d.sizeY/1000), SelectString(brief,"","		// size of detector (mm)r")
+	printf "	sizeX=%g, sizeY=%g%s\r",(d.sizeX/1000), (d.sizeY/1000), SelectString(brief,"","		// size of detector (mm)")
 	printf "	R = {%.7g, %.7g, %.7g}, a rotation of %.7g¡%s\r",d.R[0],d.R[1],d.R[2],sqrt(d.R[0]*d.R[0] + d.R[1]*d.R[1] + d.R[2]*d.R[2])*180/PI, SelectString(brief,"","	// rotation vector")
-	printf "	P = {%g, %g, %g}%s/r",(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000, SelectString(brief,"","					// translation vector (mm)")
+	printf "	P = {%g, %g, %g}%s\r",(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000, SelectString(brief,"","					// translation vector (mm)")
 	printf "	geometry measured on  '%s'\r",d.timeMeasured
 	if (strlen(d.geoNote))
 		printf "	detector note = '%s'\r",d.geoNote

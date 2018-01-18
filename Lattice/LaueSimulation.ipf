@@ -5,7 +5,8 @@
 
 #include  "microGeometryN", version>=1.85
 #include  "LatticeSym", version>=5.14
-Static Constant hc_keVnm = 1.2398419739		// h*c (keV-nm),  these two used to calculate mu in muOfXtal
+
+Static Constant hc_keVnm = 1.2398419739			// h*c (keV-nm)
 
 
 Menu LaueGoMainMenuName
@@ -22,8 +23,6 @@ Menu "Analysis"
 End
 
 
-
-Static Constant hc = 1.239841857		// keV-nm
 
 Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,printIt])
 	Variable Elo,Ehi					// energy range (keV)
@@ -183,7 +182,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],geo.d[detector].Nx -1,geo.d[detector].Ny -1,$""))
 	Make/N=3/D/FREE ki={0,0,1}							//	this is a convention
 
-	Variable dmin = hc/(2*Ehi*sin(thetaMax))
+	Variable dmin = hc_keVnm/(2*Ehi*sin(thetaMax))
 	Variable hmax = ceil(xtal.a / dmin)
 	Variable kmax = ceil(xtal.b / dmin)
 	Variable lmax = ceil(xtal.c / dmin)
@@ -195,7 +194,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		for (k=0; abs(k)<=kmax; k = k<0 ? -k : -(k+1))					// for kmax=4, k={0,-1,1,-2,2,-3,3,-4,4}
 			for (h=0; abs(h)<=hmax; h = h<0 ? -h : -(h+1))
 				hkl = {h,k,l}
-				if (parallel_hkl_exists(h,k,l,Nspots,PeakIndexed))		// already got this reflection
+				if (parallel_hkl_exists(hkl,Nspots,PeakIndexed))			// already got this reflection
 					continue
 				elseif (h==0 && k==0 && l==0)
 					continue
@@ -210,7 +209,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 					continue
 				endif
 				sintheta = -MatrixDot(ki,qhat)
-				keV = Qlen*hc/(4*PI*sintheta)
+				keV = Qlen*hc_keVnm/(4*PI*sintheta)
 				if (keV!=limit(keV,Elo,Ehi) && keV<Inf)
 					continue
 				endif
@@ -246,7 +245,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	Redimension/N=(Nspots,-1,-1) PeakIndexed		// trim to exact size
 	PeakIndexed[][8][0] = 0								// error is always zero for a calculated spot
 	if (printIt)
-		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,Secs2Time(executionTime,5,0)
+		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,ElapsedTime2Str(executionTime)
 	endif
 
 	String wnote=ReplaceStringByKey("waveClass","","IndexedPeakListSimulate","=")
@@ -316,23 +315,43 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	return PeakIndexed
 End
 //
-Static Function parallel_hkl_exists(h,k,l,N,pw)
-	Variable h,k,l
+Static Function parallel_hkl_exists(hkl,N,pw)
+	Wave hkl
 	Variable N				// number of rows in pw to check
 	Wave pw
 
+	Variable tol=(1-1e-5), maxDot
 	N = min(N,DimSize(pw,0))
-	Variable dot,i,tol=(1-1e-5)
-	for (i=0;i<N;i+=1)
-		dot = h*pw[i][3][0] + k*pw[i][4][0] + l*pw[i][5][0]
-		dot /= sqrt(h*h + k*k + l*l)
-		dot /= sqrt(pw[i][3][0]^2 + pw[i][4][0]^2 + pw[i][5][0]^2)
-		if (dot>tol)
-			return 1
-		endif
-	endfor
-	return 0
+	if (N<1)
+		maxDot = -2
+	elseif (N==1)
+		Make/N=3/D/FREE hklsHave=pw[0][p+3]
+		maxDot = MatrixDot(hkl,hklsHave) / (norm(hkl)*norm(hklsHave))
+	else
+		Make/N=(N,3)/D/FREE hklsHave=pw[p][q+3]
+		MatrixOp/FREE maxDot0 = maxVal(sumRows(NormalizeRows(hklsHave) * NormalizeRows(RowRepeat(hkl,N))))
+		maxDot = maxDot0[0]
+	endif
+	return (maxDot > tol)
 End
+//
+//	Static Function parallel_hkl_exists(h,k,l,N,pw)
+//		Variable h,k,l
+//		Variable N				// number of rows in pw to check
+//		Wave pw
+//	
+//		N = min(N,DimSize(pw,0))
+//		Variable dot,i,tol=(1-1e-5)
+//		for (i=0;i<N;i+=1)
+//			dot = h*pw[i][3][0] + k*pw[i][4][0] + l*pw[i][5][0]
+//			dot /= sqrt(h*h + k*k + l*l)
+//			dot /= sqrt(pw[i][3][0]^2 + pw[i][4][0]^2 + pw[i][5][0]^2)
+//			if (dot>tol)
+//				return 1
+//			endif
+//		endfor
+//		return 0
+//	End
 //
 Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
 	Wave qhat
@@ -389,15 +408,73 @@ Function spectrumProto(keV)
 End
 
 
+
+Function/WAVE Make_kf_Sim(FullPeakIndexed, [printIt])
+	// make wave with kf vectors from Qhats in FullPeakIndexed
+	Wave FullPeakIndexed
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (!WaveExists(FullPeakIndexed))
+		String wName="", list=reverseList(WaveListClass("IndexedPeakList*","*",""))
+		if (ItemsInlist(list)==1)
+			wName = StringFromList(0,list)
+		elseif (ItemsInlist(list)>1)
+			Prompt wName,"List of Indexed Peaks", popup, list
+			DoPrompt "indexed peaks",wName
+			if (V_flag)
+				return $""
+			endif
+		endif
+		Wave FullPeakIndexed=$wName
+		printIt = 1
+	endif
+	if (!WaveExists(FullPeakIndexed))
+		return $""
+	endif
+	Variable N=DimSize(FullPeakIndexed,0)
+	if (N<1)
+		return $""
+	endif
+	if (printIt)
+		printf "¥Make_kf_Sim(%s)\r",NameOfWave(FullPeakIndexed)
+	endif
+
+	Make/N=3/D/FREE ki={0,0,1}
+	Make/N=(N,3)/D/FREE qhat=FullPeakIndexed[p][q]
+	MatrixOp/FREE qhat = NormalizeRows(qhat)
+
+	// kf^ = ki^ - 2*(ki^ . q^)*q^		note: (ki^ . q^) must be NEGATIVE (both Bragg & Laue)
+	String name = NameOfWave(FullPeakIndexed)+"_kf"
+	name = ReplaceString("__",CleanupName(name,0),"_")
+	Make/N=(N,3)/D/O $name/WAVE=kf
+	MatrixOP/FREE dots = sumRows(RowRepeat(ki,N)*qhat)
+	kf = ki[q] - 2*dots[p]*qhat[p][q]
+
+	String wNote=note(FullPeakIndexed)
+	wNote = ReplaceStringByKey("waveClass",wNote,"kfSimulate","=")
+	wNote = ReplaceStringByKey("source",wNote,NameOfWave(FullPeakIndexed),"=")
+	Note/K kf, wNote
+	if (printIt)
+		printf "\t\tSaving kf wave in: \"%s\"\r",name
+	endif
+	return kf
+End
+
+
+
 Function DisplaySimulatedLauePattern(FullPeakIndexed)
 	Wave FullPeakIndexed
 
 	if (!WaveExists(FullPeakIndexed))
-		String wName
-		Prompt wName,"List of Indexed Peaks",popup,reverseList(WaveListClass("IndexedPeakList*","*",""))
-		DoPrompt "indexed peaks",wName
-		if (V_flag)
-			return 1
+		String wName="", list=reverseList(WaveListClass("IndexedPeakList*","*",""))
+		if (ItemsInlist(list)==1)
+			wName = StringFromList(0,list)
+		elseif (ItemsInlist(list)>1)
+			Prompt wName,"List of Indexed Peaks", popup, list
+			DoPrompt "indexed peaks",wName
+			if (V_flag)
+				return 1
+			endif
 		endif
 		Wave FullPeakIndexed=$wName
 	endif
@@ -455,7 +532,7 @@ Function GraphSimulateLaueStyle()
 		str = StringByKey("structureDesc",wnote,"=")
 		str += " ("+hkl2str(h,k,l)+")"
 		str += "\rE=["+num2str(Elo)+","+num2str(Ehi)+"]keV"
-		TextBox/C/N=textTitle/F=0/B=1 str
+		TextBox/C/N=textTitle/F=0/B=1/X=3/Y=2 str
 	endif
 
 	SetAxis bottom xlo-0.5,xhi+0.5
@@ -609,6 +686,12 @@ Function/T FillLaueSimParametersPanel(strStruct,hostWin,left,top)
 	Button buttonLaueSimRePlot,pos={29,40},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Re-Plot a Simulation"
 	Button buttonLaueSimRePlot,help={"Re-Plot a Laue Simulation"}
 
+	Button buttonLaueSimTable,pos={29,75},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Table of Simulation"
+	Button buttonLaueSimTable,help={"Show a Table of a Laue Simulation"}
+
+	Button buttonLaueSim_kf,pos={29,110},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make kf Wave"
+	Button buttonLaueSim_kf,help={"Make wave with kf vectors from Qhats in FullPeakIndexed"}
+
 	EnableDisableLaueSimControls(hostWin+"#LaueSimPanel")
 	return "#LaueSimPanel"
 End
@@ -620,6 +703,8 @@ Static Function EnableDisableLaueSimControls(win)				// here to enable/disable
 	Button buttonMakeLaueSim,win=$win,disable=0
 	d = strlen(WaveListClass("IndexedPeakListSimulate*","*",""))<1 ? 2 : 0
 	Button buttonLaueSimRePlot,win=$win,disable=d
+	Button buttonLaueSimTable,win=$win,disable=d
+	Button buttonLaueSim_kf,win=$win,disable=d
 End
 //
 Static Function LaueSimButtonProc(B_Struct) : ButtonControl
@@ -633,6 +718,10 @@ Static Function LaueSimButtonProc(B_Struct) : ButtonControl
 		MakeSimulatedLauePattern(NaN,NaN,printIt=1)
 	elseif (stringmatch(ctrlName,"buttonLaueSimRePlot"))
 		DisplaySimulatedLauePattern($"")
+	elseif (stringmatch(ctrlName,"buttonLaueSimTable"))
+		DisplayTableOfWave($"",classes="IndexedPeakListSimulate")
+	elseif (stringmatch(ctrlName,"buttonLaueSim_kf"))
+		Make_kf_Sim($"", printIt=1)
 	endif
 	EnableDisableLaueSimControls(GetUserData("microPanel","","LaueSimPanelName"))
 End
