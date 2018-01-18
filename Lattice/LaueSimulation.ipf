@@ -7,6 +7,9 @@
 #include  "LatticeSym", version>=5.14
 
 Static Constant hc_keVnm = 1.2398419739			// h*c (keV-nm)
+Static Constant Nmax_DEFAULT = 150
+Static Constant Elo_DEFAULT = 5
+Static Constant Ehi_DEFAULT = 30
 
 
 Menu LaueGoMainMenuName
@@ -31,8 +34,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	Variable Nmax						// maximum number of reflection to generate
 	Variable detector					// detector number [0,MAX_Ndetectors-1]
 	Variable printIt
-	Nmax = ParamIsDefault(Nmax) ? 100 : Nmax
-	Nmax = (Nmax>0 && Nmax<=2000) ? Nmax : 100
+	Nmax = ParamIsDefault(Nmax) || Nmax<=1 ? Nmax_DEFAULT : min(Nmax,2000)
 	detector = ParamIsDefault(detector) ? 0 : detector
 	detector = detector==round(limit(detector,0,MAX_Ndetectors-1)) ? detector : NaN
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
@@ -74,15 +76,14 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		if (numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0))
 			h0=0;	k0=0;	l0=1									// default to the (001) reflection
 		endif
-		Elo = (numtype(Elo) || Elo<0) ? 6 : Elo
-		Ehi = (numtype(Ehi) || Ehi<=Elo) ? max(25,15+Elo) : Ehi
+		Elo = (numtype(Elo) || Elo<0) ? Elo_DEFAULT : Elo
+		Ehi = (numtype(Ehi) || Ehi<=Elo) ? max(Ehi_DEFAULT,15+Elo) : Ehi
 		Prompt Elo,"low energy cutoff (keV)"
 		Prompt Ehi,"high energy cutoff (keV)"
 		Prompt h0,"h"
 		Prompt k0,"k"
 		Prompt l0,"l"
 		Prompt Nmax,"maximum number of reflections to accept"
-//		String recipList = "{h0,k0,l0} at center;"+WaveListClass("IndexedPeakList*;IndexedPeakListSimulate*","*",""), str
 		String recipList = "{h0,k0,l0} at center;"+WaveListClass("IndexedPeakList*","*",""), str
 		recipList += WaveList("*",";","DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
 		Prompt recipName,"Orientation Source",popup,recipList
@@ -124,7 +125,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		else
 			printf ", h=%g,k=%g,l=%g", h0,k0,l0
 		endif
-		if (!ParamIsDefault(Nmax) && Nmax!=100)
+		if (Nmax != Nmax_DEFAULT)
 			printf ", Nmax=%g", Nmax
 		endif
 		if (!ParamIsDefault(detector) && detector!=0)
@@ -182,17 +183,43 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	thetaMax = max(thetaMax,pixel2q(geo.d[detector],geo.d[detector].Nx -1,geo.d[detector].Ny -1,$""))
 	Make/N=3/D/FREE ki={0,0,1}							//	this is a convention
 
-	Variable dmin = hc_keVnm/(2*Ehi*sin(thetaMax))
-	Variable hmax = ceil(xtal.a / dmin)
-	Variable kmax = ceil(xtal.b / dmin)
-	Variable lmax = ceil(xtal.c / dmin)
+	Wave hklRange = Find_hkl_range(xtal,geo.d[detector],recip, Elo,Ehi, startx,endx,starty,endy)
+	Variable Nh,Nk,Nl
+	Nh = (hklRange[1] - hklRange[0] + 1)
+	Make/N=(Nh)/I/FREE hRange
+	hRange = hklRange[0] + p
+	Make/N=(Nh)/FREE size = hRange
+	size += size<0 ? 0.2 : 0
+	size = abs(size)
+	Sort size, hRange
+
+	Nk = (hklRange[3] - hklRange[2] + 1)
+	Make/N=(Nk)/I/FREE kRange
+	kRange = hklRange[2] + p
+	Make/N=(Nk)/FREE size = kRange
+	size += size<0 ? 0.2 : 0
+	size = abs(size)
+	Sort size, kRange
+
+	Nl = (hklRange[5] - hklRange[4] + 1)
+	Make/N=(Nl)/I/FREE lRange
+	lRange = hklRange[4] + p
+	Make/N=(Nl)/FREE size = lRange
+	size += size<0 ? 0.2 : 0
+	size = abs(size)
+	Sort size, lRange
+	WaveClear size
 
 	Variable/C pz
-	Variable px,py, keV, Qlen, sintheta, Nspots, icnt=0
+	Variable px,py, keV, Qlen, sintheta, Nspots
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)	// display a progress bar
-	for (l=0,Nspots=0; abs(l)<=lmax; l = l<0 ? -l : -(l+1))
-		for (k=0; abs(k)<=kmax; k = k<0 ? -k : -(k+1))					// for kmax=4, k={0,-1,1,-2,2,-3,3,-4,4}
-			for (h=0; abs(h)<=hmax; h = h<0 ? -h : -(h+1))
+	Variable ih,ik,il
+	for (il=0,Nspots=0; il<Nl; il+=1)
+		l = lRange[il]
+		for (ik=0; ik<Nk; ik+=1)
+			k = kRange[ik]
+			for (ih=0; ih<Nh; ih+=1)
+				h = hRange[ih]
 				hkl = {h,k,l}
 				if (parallel_hkl_exists(hkl,Nspots,PeakIndexed))			// already got this reflection
 					continue
@@ -235,8 +262,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 				endif
 			endfor
 		endfor
-		icnt += 1
-		if (ProgressPanelUpdate(progressWin,icnt/(2*lmax+1)*100	))	// update progress bar
+		if (ProgressPanelUpdate(progressWin,il/Nl*100	))	// update progress bar
 			break													//   and break out of loop
 		endif
 	endfor
@@ -266,8 +292,12 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	wnote = ReplaceNumberByKey("NpatternsFound",wnote,Nspots>0 ? 1 : 0,"=")
 	wnote = ReplaceNumberByKey("Nindexed",wnote,Nspots,"=")
 	wnote = ReplaceNumberByKey("thetaMax",wnote,thetaMax*180/PI,"=")
-	sprintf str,"{%g,%g,%g}",hmax,kmax,lmax
-	wnote = ReplaceStringByKey("hklmax",wnote,str,"=")
+	sprintf str,"%g,%g",hklRange[0],hklRange[1]
+	wnote = ReplaceStringByKey("hRange",wnote,str,"=")
+	sprintf str,"%g,%g",hklRange[2],hklRange[3]
+	wnote = ReplaceStringByKey("kRange",wnote,str,"=")
+	sprintf str,"%g,%g",hklRange[4],hklRange[5]
+	wnote = ReplaceStringByKey("lRange",wnote,str,"=")
 	wnote = ReplaceNumberByKey("executionTime",wnote,round(executionTime*1000)/1000,"=")
 	sprintf str,"{%g, %g, %g, %g, %g, %g}",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
@@ -353,12 +383,45 @@ End
 //		return 0
 //	End
 //
+Static Function/WAVE Find_hkl_range(xtal,d,recip, Elo,Ehi, startx,endx,starty,endy)
+	STRUCT crystalStructure &xtal					// crystal structure
+	STRUCT detectorGeometry &d						// structure definition for a detector
+	Wave recip
+	Variable Elo,Ehi
+	Variable startx,endx,starty,endy
+
+	Variable midx=(startx+endx)/2, midy=(starty+endy)/2
+	Make/N=(5,2)/D/FREE corner
+	corner[0][0]= {midx,startx,endx,startx,endx}		// detector center and 4 corners of detector
+	corner[0][1]= {midy,starty,starty,endy,endy}
+
+	Make/N=3/D/FREE qvec, qhat, ki={0,0,1}
+	Make/N=3/D/FREE hklHi=-Inf, hklLo=Inf
+	Variable i, Qlen, sintheta
+	for (i=0;i<5;i+=1)
+		pixel2q(d,corner[i][0],corner[i][1],qhat)
+		sintheta = -MatrixDot(ki,qhat)
+
+		Qlen = Elo/hc_keVnm * (4*PI*sintheta)
+		qvec = Qlen * qhat
+		MatrixOp/FREE hkl = Inv(recip) x qvec
+		hklLo = min(hklLo,hkl)	;	hklHi = max(hklHi,hkl)
+
+		Qlen = Ehi/hc_keVnm * (4*PI*sintheta)
+		qvec = Qlen * qhat
+		MatrixOp/FREE hkl = Inv(recip) x qvec
+		hklLo = min(hklLo,hkl)	;	hklHi = max(hklHi,hkl)
+	endfor
+	hklLo = floor(hklLo)	;	hklHi = ceil(hklHi)
+
+	Make/N=8/D/FREE hklRange={hklLo[0],hklHi[0], hklLo[1],hklHi[1], hklLo[2],hklHi[2]}
+	return hklRange
+End
+//
 Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
 	Wave qhat
 	Wave hklIN
 	Variable Elo, Ehi
-	Elo = numtype(Elo) || Elo<=0 ? 3 : Elo
-	Ehi = numtype(Ehi) || Ehi<=Elo ? 30 : Ehi
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
