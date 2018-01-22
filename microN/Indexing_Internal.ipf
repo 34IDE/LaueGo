@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.30
+#pragma version = 0.31
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -2770,34 +2770,6 @@ Static Function/WAVE LowestAllowedHKLfromGhat(xtal,recip,gVec,keVmax,[kin])	// i
 	return hkl
 End
 
-
-
-// convert px,py positions on detector into kf vectors, assumes ki={0,0,1}
-ThreadSafe Function/WAVE pixel2kfVEC(d,pxpy,[depth,DeltaPixelCorrect])	// returns the normalized kf's in beam line coords
-	STRUCT detectorGeometry &d
-	Wave pxpy								// list of pixels to use (must be in raw un-binned pixels), perhaps an ROI, first dimension is number of pixels, second is x,y
-	Variable depth							// sample depth measured along the beam (optional, 0 is default)
-	Wave DeltaPixelCorrect				// contains optional pixel corrections dimensions are [N][2]
-	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
-
-	if (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,1)==2)
-		Wave kf = pixel2XYZVEC(d,pxpy, DeltaPixelCorrect=DeltaPixelCorrect)
-	else
-		Wave kf = pixel2XYZVEC(d,pxpy)	// kf is in direction of pixel in beam line coords
-	endif
-
-	Variable N=DimSize(pxpy,0)
-	Make/N=3/D/FREE ki={0,0,1}				//	ki = geo.ki[p],  incident beam direction (normalized)
-	if (depth==0)
-		MatrixOP/FREE/O kf = NormalizeRows(kf)
-	else
-		Make/N=3/D/FREE depthVec = depth*ki[p]
-		MatrixOP/FREE/O kf = NormalizeRows(kf - rowRepeat(depthVec,N))	// kf(depth) = d*ki + kf(depth=0)
-	endif
-
-	WaveClear ki, depthVec
-	return kf										// normalized kf-vectors in beam line coords
-End
 
 
 Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,FullPeakList2,DeltaPixelCorrect])	// convert peaks to kf^s

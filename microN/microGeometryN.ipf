@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 1.99
+#pragma version = 2.00
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -1014,10 +1014,10 @@ ThreadSafe Function/WAVE pixel2XYZVEC(d,pxpy,[DeltaPixelCorrect])	// convert pix
 	Variable N=DimSize(pxpy,0), Nx=d.Nx, Ny=d.Ny
 	if (N<1)
 		return $""
-	elseif (N==1)
+	elseif (numpnts(pxpy)==2 || N==1)		// works for dimensions of (1,2) or (2)
 		Make/N=(3)/FREE xyz				// array of 3-vector to receive the result, position in beam line coords (mm)
 		pixel2XYZ(d,pxpy[0][0],pxpy[0][1],xyz)	// convert pixel position to the beam line coordinate system
-		Redimension/N=(N,3) xyz				// array of 3-vector to receive the result, position in beam line coords (mm)
+		Redimension/N=(1,3) xyz				// array of 3-vector to receive the result, position in beam line coords (mm)
 		return xyz
 	endif
 
@@ -1045,6 +1045,53 @@ ThreadSafe Function/WAVE pixel2XYZVEC(d,pxpy,[DeltaPixelCorrect])	// convert pix
 	MatrixOP/FREE/O xyz = (rho x ((xyz - rowRepeat(ixyzc,N)) * rowRepeat(dxyz,N) +rowRepeat(Pw,N))^t)^t		// (x' y' z'), position on detector for all pixels at A[]=0
 	WaveClear rho, Pw, dxyz, ixyzc
 	return xyz
+End
+
+
+// convert px,py positions on detector into kf vectors, assumes ki={0,0,1}
+// Vectorized version, dimension of pxpy is (N,2), returns (N,3)
+ThreadSafe Function/WAVE pixel2kfVEC(d,pxpy,[depth,DeltaPixelCorrect])	// returns the normalized kf's in beam line coords
+	STRUCT detectorGeometry &d
+	Wave pxpy								// list of pixels to use (must be in raw un-binned pixels), perhaps an ROI, first dimension is number of pixels, second is x,y
+	Variable depth							// sample depth measured along the beam (optional, 0 is default)
+	Wave DeltaPixelCorrect				// contains optional pixel corrections dimensions are [N][2]
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+
+	if (numpnts(pxpy)<2)
+		return $""									// pxpy is invalid
+	elseif (!ParamIsDefault(DeltaPixelCorrect) && DimSize(DeltaPixelCorrect,1)==2)
+		Wave kf = pixel2XYZVEC(d,pxpy, DeltaPixelCorrect=DeltaPixelCorrect)
+	else
+		Wave kf = pixel2XYZVEC(d,pxpy)		// kf is in direction of pixel in beam line coords dims (N,3)
+	endif
+
+	Variable N=DimSize(kf,0)					// kf is always dimensioned (N,3), never just (3)
+	if (depth==0)
+		MatrixOP/FREE/O kf = NormalizeRows(kf)
+	else
+		Make/N=3/D/FREE ki={0,0,1}			//	ki = geo.ki[p],  incident beam direction (normalized)
+		Make/N=3/D/FREE depthVec = depth*ki[p]
+		MatrixOP/FREE/O kf = NormalizeRows(kf - rowRepeat(depthVec,N))	// kf(depth) = d*ki + kf(depth=0)
+	endif
+	return kf										// normalized kf-vectors in beam line coords
+End
+
+
+// convert px,py position on detector into kf^ vector, assumes ki={0,0,1}
+ThreadSafe Function/WAVE pixel2kf(d,px,py,[depth])	// returns the normalized kf's in beam line coords
+	STRUCT detectorGeometry &d
+	Variable px,py							// pixel position, 0 based, first pixel is (0,0), NOT (1,1)
+	Variable depth							// OPTIONAL, sample depth measured along the beam (default is 0)
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+
+	Make/N=3/D/FREE kf
+	pixel2XYZ(d,px,py,kf)						// kf is in direction of pixel in beam line coords
+	if (depth!=0)
+		Make/N=3/D/FREE ki={0,0,1}			//	ki = geo.ki[p],  incident beam direction (normalized)
+		kf -= depth*ki[p]							// kf(depth) = d*ki + kf(depth=0)
+	endif
+	normalize(kf)
+	return kf										// normalized kf-vectors in beam line coords
 End
 
 
