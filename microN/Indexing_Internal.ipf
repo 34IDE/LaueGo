@@ -2410,10 +2410,10 @@ Static Function/WAVE FindZonesWithNspots(Ghats,Nmin,tolAngle)
 	return zoneOut
 End
 //
-//	returns True if axis is not parallel (or anti-parallel) to the existing directions in Gtest
+//	returns True if axis is not parallel (or anti-parallel) to the existing directions in existingAxes
 Static Function isNewAxis(existingAxes,axis,tol)	// only used by FindZonesWithNspots()
 	Wave existingAxes				// array(N,3) list of existing axes
-	Wave axis
+	Wave axis						// test axis
 	Variable tol					// tolerance on dot:  tol = cos(Æangle),  cos(0.1¡) = 0.999998476913288
 	if (norm(axis)==0)
 		return 0
@@ -4930,7 +4930,7 @@ Static Function removeCommonFactors(vec)
 	Variable tol = 0.1/maxDiv
 	for (i=maxDiv;i>=2;i-=1)			// check all divisorts in range [2, maxDiv]
 		MatrixOP/FREE/O mods = sum(abs(round(ivec/i)-(ivec/i)))
-		if (mods[0]<tol)					// i is a factor of every elemnt in ivec
+		if (mods[0]<tol)					// i is a factor of every element in ivec
 			ivec /= i
 		endif
 	endfor
