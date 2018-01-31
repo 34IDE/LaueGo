@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.48
+#pragma version = 0.49
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -39,8 +39,6 @@ Constant AtomView_UseCovalent = 1		// Can OverRide with :OverRide Constant AtomV
 												// turn this flag on to use covalent radius instead of atomic radius.
 Constant AtomView_SphereQuality = 50	// Can OverRide with :OverRide Constant AtomView_SphereQuality=100
 Constant AtomView_zero= 1e-10			// distances less than this (=1e-19 m) are considered zero
-Constant AtomView_minBondLen = 0.050		// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
-Constant AtomView_maxBondLen = 0.310		// 0.310 nm = 310 pm, maximum possible distance between atoms
 Constant AtomView_UseBlend = -1		// Can OverRide with :OverRide Constant AtomView_UseBlend=1, 0=NoBlend, 1=Blend, -1=Auto
 
 //Static Constant GizmoScaleSize_BASE=7.5
@@ -627,7 +625,7 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 		if (isMetalic)
 			blen = AtomView#FindMinSeparation(xyz)*1.05
 		else
-			blen = AtomView_maxBondLen
+			blen = LatticeSym_maxBondLen
 		else
 		endif
 	endif
@@ -657,7 +655,7 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 			endif
 			dxyz = xyz0[p] - xyz[i][p]
 			len = norm(dxyz)
-			if (AtomView_minBondLen<len && len<=blen)	// found a bond
+			if (LatticeSym_minBondLen<len && len<=blen)	// found a bond
 				if ((Nb+3)>=Nmax)				// need more room
 					Nmax += 300	
 					Redimension/N=(Nmax,-1) bonds, bsource
@@ -682,7 +680,7 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	// print "Nbonds =",Nbonds, "   ",SelectString(isMetalic,"Ionic","Metalic")
 
 	Redimension/N=(Nb-1,-1) bonds, bsource
-	bonds = abs(bonds)<AtomView_minBondLen ? 0 : bonds
+	bonds = abs(bonds)<LatticeSym_minBondLen ? 0 : bonds
 	wNote = ReplaceNumberByKey("Nbonds",wNote,Nbonds,"=")
 	Note/K bonds, wNote
 	Note/K bsource, ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Source","=")
@@ -757,7 +755,7 @@ End
 //		for (i=j+1;i<N;i+=1)
 //			dxyz = xyz0[p] - xyz[i][p]
 //			len = norm(dxyz)
-//			if (AtomView_minBondLen<len && len<=blen)	// found a bond
+//			if (LatticeSym_minBondLen<len && len<=blen)	// found a bond
 //				if ((Nb+3)>=Nmax)				// need more room
 //					Nmax += 300	
 //					Redimension/N=(Nmax,-1) bonds, bsource
@@ -781,7 +779,7 @@ End
 //	endif
 //
 //	Redimension/N=(Nb-1,-1) bonds, bsource
-//	bonds = abs(bonds)<AtomView_minBondLen ? 0 : bonds
+//	bonds = abs(bonds)<LatticeSym_minBondLen ? 0 : bonds
 //	wNote = ReplaceNumberByKey("Nbonds",wNote,Nbonds,"=")
 //	Note/K bonds, wNote
 //	Note/K bsource, ReplaceStringByKey("waveClass",wNote,"atomViewBonds_Source","=")
@@ -888,12 +886,12 @@ Static Function FindMinSeparation(xyz)	// find the closest distance between two 
 			Make/N=(iN,3)/FREE/D xyzi
 			xyzi = xyz[p+i+1][q]
 			MatrixOP/FREE/O dxyz = sqrt(sumRows(magSqr(xyzi - rowRepeat(xyz0,iN))))
-			dxyz = dxyz<AtomView_minBondLen ? Inf : dxyz	// don't permit zero distances
+			dxyz = dxyz<LatticeSym_minBondLen ? Inf : dxyz	// don't permit zero distances
 			dmin = min(dmin,WaveMin(dxyz))
 		else
 			xyz0 -= xyz[i+1][p]							// only 1 atom pair to check
 			Variable dlast = norm(xyz0)
-			dmin = dlast > AtomView_minBondLen && dlast<dmin ? dlast : dmin
+			dmin = dlast > LatticeSym_minBondLen && dlast<dmin ? dlast : dmin
 		endif
 	endfor
 	return dmin

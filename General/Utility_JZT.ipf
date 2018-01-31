@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.55
+#pragma version = 4.56
 // #pragma hide = 1
 
 Menu "Graph"
@@ -110,6 +110,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		DrawMarker(), draw a marker
 //		xy2saturatedColors(), computes saturated colors for and RGB wheel on an xy graph
 //		reverseList(), reverses a list, handy for prompt,popups
+//		UniqueWaveValues() & UniqueWaveValuesT(), get a new wave with all duplicate values in the source wave removed
 //		monotonic(a), checks if a wave is monotonic
 //		isWaveConstant(), returns 1 if all elements of wav are the same
 //		isdigit(c) & isletter(c), handy utilities
@@ -2787,6 +2788,68 @@ ThreadSafe Function/T reverseList(in,[sep])	// reverse the order of items in a l
 	endfor
 	return out
 End
+
+
+
+#if (IgorVersion()<7)
+//	For Igor7 use:
+//		FindDuplicates/RT=typeNoDups type
+//		Duplicate/FREE/T typeNoDups, atomTypes
+//		KillWaves/Z typeNoDups
+//	For Igor6 use:
+//		Wave/T atomTypes = UniqueWaveValuesT(type)
+//
+//	I have made these static since it is only for Igor6, and it is time to start using Igor7 (or 8)
+//
+Static Function/WAVE UniqueWaveValues(wwIN, [tol])		// only for Igor 6
+	Wave wwIN
+	Variable tol
+	tol = ParamIsDefault(tol) || numtype(tol) || tol<=0 ? 0: tol
+	if (!WaveExists(wwIN) || numtype(tol) || tol<0)
+		return $""
+	endif
+	Duplicate/FREE wwIN, ww, unique
+	Variable i, m, val, N=numpnts(ww)
+
+	for (i=0,m=0; i<N; i+=1)
+		val = ww[i]
+		if (numtype(val)==2)
+			continue
+		endif		
+		MatrixOP/FREE flags = greater(Abs(ww - val), tol)
+		flags = !flags
+		ww = flags[p] ? NaN : ww[p]
+		unique[m] = val
+		m += 1
+	endfor
+	Redimension/N=(m) unique
+	return unique
+End
+//
+Static Function/WAVE UniqueWaveValuesT(wwIN)			// only for Igor 6
+	Wave/T wwIN
+	if (!WaveExists(wwIN))
+		return $""
+	endif
+	Duplicate/T/FREE wwIN, ww, unique
+	Variable i, m, N=numpnts(ww)
+	Make/N=(N)/B/FREE flags
+
+	String str, invalid="INVALID_JZT_897"
+	for (i=0,m=0; i<N; i+=1)
+		str = ww[i]
+		if (cmpstr(str,invalid)==0)
+			continue
+		endif
+		flags[] = cmpstr(str,ww[p],1)
+		ww = SelectString(flags[p],invalid,ww[p])
+		unique[m] = str
+		m += 1
+	endfor
+	Redimension/N=(m) unique
+	return unique
+End
+#endif
 
 
 
