@@ -1140,7 +1140,7 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 		endif
 
 		if (xtal.Nbonds > 0)
-			printf "defined bonds types (nm):\r"
+			printf "defined bonds (nm):\r"
 			for (i=0;i<xtal.Nbonds;i+=1)
 				Make/N=(xtal.bond[i].N)/FREE/D lens
 				lens = xtal.bond[i].len[p]
@@ -7423,12 +7423,12 @@ Static Function PrintAllBondsStructure(allBonds)
 			endif
 		endfor
 	endfor
-	sv1 = SelectString(v1,"-","","+")
-	sv2 = SelectString(v2,"-","","+")
+	sv1 = SelectString(v1[p],"-","","+")
+	sv2 = SelectString(v2[p],"-","","+")
 	for (i=0;i<allBonds.Nbonds;i+=1)
 		Make/N=(allBonds.bond[i].N)/FREE/D lens
 		lens = allBonds.bond[i].len[p]
-		sprintf str, "     %s%s(%d)  <-->  %s%s(%d):  %s",sv1,allBonds.bond[i].label0,Z1[i],sv2,allBonds.bond[i].label1,Z2[i],vec2str(lens,bare=1)
+		sprintf str, "     %s%s(%d)  <-->  %s%s(%d):  %s",sv1[i],allBonds.bond[i].label0,Z1[i],sv2[i],allBonds.bond[i].label1,Z2[i],vec2str(lens,bare=1)
 		str += SelectString(i," (nm)","")
 		print str		
 	endfor
