@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.42
+#pragma version = 6.43
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -201,6 +201,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								modified: readCrystalStructure() to call ComputeBondsInxtal() (only does something if no bonds were read from file) 
 //								also added: Constants LatticeSym_minBondLen and LatticeSym_maxBondLen (also now used in AtomView.ipf)
 //								and added: LatticeSym_electroNegProto() and  LatticeSym_covRadiusProto(), (so I don't need to #include "Elements")
+//	with version 6.43, added ForceReComputeBondsInxtal() to force a recalculation of the bonds in current xtal, added call to it in Menu and popup.
 
 
 //	Rhombohedral Transformation:
@@ -252,6 +253,7 @@ Menu "Analysis"
 		help={"Shows the crystal structure and lattice that is currently defined"}
 		"  Edit the Atom Positions...",EditAtomPositionsMenu()
 		"  Change Current xtal Setting...", ChangeSettingCurrentXtal("")
+		"  Re-Calculate All Bonds...", LatticeSym#ForceReComputeBondsInxtal(ask=1)
 		help={"Manually set/change the atom positions"}
 		"Load a new Crystal Structure...",LoadCrystal("")
 		help={"load a rystal structure from a fie"}
@@ -2418,7 +2420,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	PopupMenu popupLatticeEdit,pos={35,358},size={150,20},proc=LatticeSym#LatticeEditPopMenuProc,title="Utility & Atom Edit"
 	PopupMenu popupLatticeEdit,help={"Provides supprort for editing atoms and other crystalographic changes"}
 	String mstr
-	sprintf mstr, "\"Edit Atom Positions%s;Change Current Setting%s;Find Closest hkl%s;Space Group number <--> symmetry%s;Describe the Symmetry Operations%s;angle between two hkl's%s\"", HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS
+	sprintf mstr, "\"Find Closest hkl%s;Space Group number <--> symmetry%s;Describe the Symmetry Operations%s;angle between two hkl's%s;   Edit Atom Positions%s;   Re-Calc Bonds%s;   Change Current Setting%s\"", HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS
 	PopupMenu popupLatticeEdit,fSize=14,mode=0,value= #mstr
 
 	Button buttonAtomView,pos={35,383},size={150,20},proc=LatticePanelButtonProc,title="Add Atom View..."
@@ -2856,24 +2858,27 @@ Static Function LatticeEditPopMenuProc(pa) : PopupMenuControl		// used in the La
 		return 0
 	endif
 
+	String popStr = TrimFront(pa.popStr)
 	if (!StringMatch(pa.ctrlName,"popupLatticeEdit"))
 		return 0
-	elseif (strsearch(pa.popStr,"Edit Atom Positions",0,2)>=0)
+	elseif (strsearch(popStr,"Find Closest hkl",0,2)>=0)
+		findClosestHKL(NaN)									// help={"Knowing either the d-spacing or the Q, find closest hkl's"}
+	elseif (strsearch(popStr,"Space Group number <--> symmetry",0,2)>=0)
+		symmtry2SG("")											// help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
+	elseif (strsearch(popStr,"Describe the Symmetry Operations",0,2)>=0)
+		DescribeSymOps("", printIt=1)
+	elseif (strsearch(popStr,"angle between two hkl's",0,2)>=0)
+		angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN, printIt=1)
+	elseif (strsearch(popStr,"Edit Atom Positions",0,2)>=0)
 		STRUCT WMButtonAction ba
 		ba.eventCode = 2
 		ba.win = pa.win
 		ba.ctrlName = "buttonEditAtomPositions"
 		LatticePanelButtonProc(ba)
-	elseif (strsearch(pa.popStr,"Change Current Setting",0,2)>=0)
+	elseif (strsearch(popStr,"Re-Calc Bonds",0,2)>=0)
+		ForceReComputeBondsInxtal(ask=1)
+	elseif (strsearch(popStr,"Change Current Setting",0,2)>=0)
 		ChangeSettingCurrentXtal("",printIt=1)
-	elseif (strsearch(pa.popStr,"Find Closest hkl",0,2)>=0)
-		findClosestHKL(NaN)									// help={"Knowing either the d-spacing or the Q, find closest hkl's"}
-	elseif (strsearch(pa.popStr,"Space Group number <--> symmetry",0,2)>=0)
-		symmtry2SG("")											// help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
-	elseif (strsearch(pa.popStr,"Describe the Symmetry Operations",0,2)>=0)
-		DescribeSymOps("", printIt=1)
-	elseif (strsearch(pa.popStr,"angle between two hkl's",0,2)>=0)
-		angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN, printIt=1)
 	endif
 	return 0
 End
@@ -7075,6 +7080,37 @@ End
 // =========================================================================
 // =========================================================================
 //	Start of bond finding routines
+
+// re-compute the bonds in current xtal, whatever was there gets changed.
+Static Function ForceReComputeBondsInxtal([ask,printIt])	// return 1 on error, 0 is OK
+	Variable ask				// if true then ask user before preceeding, default is True
+	Variable printIt
+	ask = ParamIsDefault(ask) || numtype(ask) ? 1 : ask
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	printIt = ask ? 1 : printIt		// if ask==1, then you must print
+
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))
+		DoAlert 0, "no crystal structure found"
+		return 1
+	endif
+	Variable err = LatticeSym#ComputeBondsInxtal(xtal,overwrite=1, printIt=printIt)	// re-calculate bonds and overwrite bond info in xtal
+	if (err)
+		DoAlert 0, "Unable to calculate bonds, current xtal info not changed"
+		return 1
+	endif
+
+	if (ask)
+		DoAlert/T="Re-Calc Bonds" 1, "Replace bonds in current xtal with values in History?"
+		if (V_flag==1)
+			UpdateCrystalStructureDefaults(xtal)
+			print "Current xtal bonds have been changed."
+		else
+			print "\r  Current xtal has NOT been changed."
+		endif
+	endif
+	return 0
+End
 
 // compute the bonds using xtal, and put result into xtal
 Static Function ComputeBondsInxtal(xtal,[overwrite, printIt])	// return 1 on error, 0 is OK
