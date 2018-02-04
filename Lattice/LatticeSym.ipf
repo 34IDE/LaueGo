@@ -3684,10 +3684,16 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
  		endif
 	endif
 
-	Variable Pressure = str2num(XMLtagContents("temperature",cif))
+	Variable Pressure = str2num(XMLtagContents("pressure",cif))
 	if (numtype(Pressure)==0)
 		unit = StringByKey("unit", XMLattibutes2KeyList("Pressure",cif),"=")
 		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1)
+	endif
+	if (numtype(xtal.Temperature))
+		Temperature = str2num(XMLtagContents("temperature",cif))
+		unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cif),"=")
+		unit = SelectString(strlen(unit),"C",unit)						// default Temperature units are C
+		xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
 	endif
 
 	// collect the atom sites values
@@ -7101,11 +7107,19 @@ End
 
 // re-compute the bonds in current xtal, whatever was there gets changed.
 Static Function ForceReComputeBonds([ask,printIt])	// return 1 on error, 0 is OK
-	Variable ask				// if true then ask user before preceeding, default is True
+	Variable ask				// if True then ask user before preceeding, default is True
 	Variable printIt
 	ask = ParamIsDefault(ask) || numtype(ask) ? 1 : ask
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	printIt = ask ? 1 : printIt		// if ask==1, then you must print
+
+	if (printIt)
+		printf "%sForceReComputeBonds(", BULLET
+		if (!ask)
+			printf "ask=1"
+		endif
+		printf ")\r"
+	endif
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))
