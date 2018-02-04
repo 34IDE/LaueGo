@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.56
+#pragma version = 4.57
 // #pragma hide = 1
 
 Menu "Graph"
@@ -188,6 +188,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		ConvertUnits2seconds(unit,[defaultLen])  returns conversion factor from time unit to seconds
 //		ConvertUnits2kg(unit,[defaultMass])  returns conversion factor from unit to killo-grams
 //		ConvertUnits2Joules(unit,[defaultEnergy])  returns conversion factor from unit to Joules
+//		ConvertUnits2Pascal(unit,[defaultEnergy])  returns conversion factor from unit to Pascal
 //		RomanNumeral(j) converts a number to a Roman Numeral string, NO upper limit, so watch out for string length
 //		RomanNumeral2Int(str) convert a Roman Numeral string to an integer
 //	9	Old legacy or deprecated functions
@@ -5577,6 +5578,8 @@ Static Constant kgPerPound = 0.45359237			// 1 pound = 0.45359237 kgm [definitio
 Static Constant gStd = 9.80665						// std acceleration of gravity (m * s^-2)
 Static Constant tropicalYear = 31556925.216	// = 365.24219 * 24*3600, seconds in a tropical year (NOT sidereal), there are 365.24219 days in 1 tropical year
 Static Constant AstronomicalUnit = 149597870700
+Static Constant stdAtmosphere = 101325			// standard atmospheric pressure (Pascal)
+Static Constant inH2O = 249.082						// pressure of 1 inch of water (Pascal)
 
 
 ThreadSafe Function SIprefix2factor(prefix)
@@ -6409,9 +6412,137 @@ End
 //			print "completed with NO errors"
 //		endif
 //	End
+
+
+ThreadSafe Function ConvertUnits2Pascal(unit,[defaultP])
+	// returns conversion factor from unit to Pascal
+	String unit
+	Variable defaultP
+	defaultP = ParamIsDefault(defaultP) ? NaN : defaultP
+	//
+	//	Pascal, Pa				1 Pascal					(= 1  N * m^-2)
+	//	bar						1e5
+	//	atmosphere, atm		stdAtmosphere			(=101325 = standard atmosphere)
+	// psi						gStd*kgPerPound/(inch^2)	(pound/square inch)
+	//	Torr						stdAtmosphere/760		(exact defintion is 1atm/760, ~mm of Hg)
+	//	mHg						stdAtmosphere/0.760	(exact defintion is 1000*atm/760, ~m of Hg)
+	//	inH2O, wc				inH2O						(=249.082, at 4¡C, also inch or inches of water)
+	// ftH2O,'ft of water'	12*inH2O					(also foot or feet of water)
+	// mH2O,mwater				inH2O/inch				(1 m of water)
+	//	msw						1e4						(meters of sea water)
+	//	fsw						1e4*0.0254*12			(feet of sea water)
+
+	unit = ReplaceString(" ",unit,"")			// no spaces
+
+	// check for powers  "^N"
+	Variable ipow=strsearch(unit,"^",0), power=1
+	if (ipow>=0)										// found a power
+		power = str2num(unit[ipow+1,Inf])		// number after "^"
+		unit = unit[0,ipow-1]						// string before "^"
+	endif
+
+	// fix spellings
+	unit = ChangeStrEnding("Pascal",unit,"Pa")
+	unit = ReplaceString("of",unit,"")
+	unit = ReplaceString("pounds",unit,"pound")
+	unit = ReplaceString("pound/squareinch",unit,"psi")
+	unit = ReplaceString("poundpersquareinch",unit,"psi")
+	unit = ReplaceString("poundpersquareinch",unit,"psi")
+	unit = ReplaceString("poundspersquareinch",unit,"psi")
+	unit = ReplaceString("seawater",unit,"sw")
+	unit = ReplaceString("water",unit,"H2O")
+	unit = ReplaceString("mercury",unit,"Hg")
+	unit = ReplaceString("wc",unit,"inH2O")
+	unit = ReplaceString("inches",unit,"in")
+	unit = ReplaceString("inch",unit,"in")
+	unit = ReplaceString("foot",unit,"ft")
+	unit = ReplaceString("feet",unit,"ft")
+	unit = ReplaceString("metres",unit,"m")	// British spelling
+	unit = ReplaceString("meters",unit,"m")	// meters
+	unit = ReplaceString("metre",unit,"m")
+	unit = ReplaceString("meter",unit,"m")
+	unit = ChangeStrEnding("ftsw",unit,"fsw")
+	unit = ChangeStrEnding("atmosphere",unit,"atm")
+	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
+
+	String prefix=""
+	Variable value=NaN, i=max(0,strlen(unit)-1)
+
+	if(StringMatch(unit,"*Pa"))					// ends in 'Pa', means Pascal
+		value = 1
+		prefix = unit[0,i-2]
+	elseif(StringMatch(unit,"*bar"))			// 1 bar = 1e5 Pa
+		value = 1e5
+		prefix = unit[0,i-3]
+	elseif(StringMatch(unit,"*atm"))			// 1 atm = 101325 Pa
+		value = stdAtmosphere
+		prefix = unit[0,i-3]
+	elseif(StringMatch(unit,"*psi"))			// pound per square inch
+		value = gStd*kgPerPound/(inch^2)
+		prefix = unit[0,i-3]
+	elseif(StringMatch(unit,"*Torr"))			// 1 Torr = 1atm/760
+		value = stdAtmosphere/760
+		prefix = unit[0,i-4]
+	elseif(StringMatch(unit,"*mHg"))			// 1 mHg = 1000atm/760
+		value = 1000*stdAtmosphere/760
+		prefix = unit[0,i-3]
+	elseif(StringMatch(unit,"*inH2O"))			// inches of water (at 4¡C)
+		value = inH2O
+		prefix = unit[0,i-5]
+	elseif(StringMatch(unit,"*ftH2O"))			// feet of water (at 4¡C)
+		value = 12*inH2O
+		prefix = unit[0,i-5]
+	elseif(StringMatch(unit,"*mH2O"))			// meters of water (at 4¡C)
+		value = inH2O/inch
+		prefix = unit[0,i-4]
+	elseif(StringMatch(unit,"*msw"))			// meters of sea water
+		value = 1e4
+		prefix = unit[0,i-3]
+	elseif(StringMatch(unit,"*fsw"))			// feet of sea water
+		value = 1e4*0.0254*12
+		prefix = unit[0,i-3]
+	else
+		return defaultP								// cannot find base value, use default
+	endif
+
+	value *= SIprefix2factor(prefix)
+	return (power==1) ? value : (value ^ power)
+End
 //
+//	Function test_ConvertUnits2Pascal()
+//		String AllValues  = "Pa:1;Pascal:1;bar:1e5;bar:1e5;atm:101325;atmosphere:101325;Torr:133.322368421053;"
+//		AllValues += "psi:6894.75729316836;pounds per square inch:6894.75729316836;pound per square inch:6894.75729316836;"
+//		AllValues += "mHg:133322.368421053;meters of mercury:133322.368421053;meter of mercury:133322.368421053;meter of Hg:133322.368421053;"
+//		AllValues += "inH2O:249.082;wc:249.082;inches of H2O:249.082;inches of water:249.082;inches water:249.082;in water:249.082;"
+//		AllValues += "ftH2O:2988.984;feet of H2O:2988.984;feet of water:2988.984;foot water:2988.984;foot of water:2988.984;"
+//		AllValues += "msw:1e4;meters of sea water:1e4;fsw:3048;feet of sea water:3048;foot sea water:3048;"
+//		AllValues += "mH2O:9806.37795275591;meters of H2O:9806.37795275591;meters of water:9806.37795275591;meter of water:9806.37795275591;"
+//		String SI=";d;c;m;"+Gmu+";n;p;f;a;z;y;h;k;M;G;T;P;E;Z;Y"		// first item is empty, SIprefix2factor("")==1
+//	
+//		String prefix, unitBase
+//		Variable ip, Np=ItemsInList(SI), valExpect, valCalc
+//		Variable Nerr=0, i, Nv=ItemsInlist(AllValues)
+//		for (i=0;i<Nv;i+=1)
+//			unitBase = StringFromList(0,StringFromList(i,AllValues),":")
+//			for (ip=0;ip<Np;ip+=1)					// check all SI prefixes
+//				prefix = StringFromList(ip,SI)
+//				valExpect = SIprefix2factor(prefix) * NumberByKey(unitBase,AllValues)
+//				valCalc = ConvertUnits2Pascal(prefix+unitBase)
+//				if (abs(valCalc-valExpect)/valExpect > 1e-14 || numtype(valCalc+valExpect))
+//					printf "%s\t\t\tCalc=%g,\t\texpected=%g\r",prefix+unitBase,valCalc,valExpect
+//					Nerr += 1
+//				endif
+//			endfor
+//		endfor
+//		if (Nerr)
+//			printf "\r  completed with %g errors\r",Nerr
+//		else
+//			print "completed with NO errors"
+//		endif
+//	End
+
+//  ============================== End of Unit Conversions =============================  //
 //  ====================================================================================  //
-//  ============================= Start of Unit Conversions ============================  //
 
 
 ThreadSafe Function/T RomanNumeral(j)	// convert integer j to a Roman Numeral String, NO upper limit, so watch out for string length

@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.43
+#pragma version = 6.44
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -341,6 +341,38 @@ Structure crystalStructure	// structure definition for a crystal lattice
 	double Vc						// volume of cell, triple product of (a[]xb[]).c
 	double density					// calculated density (g/cm^3)
 	double Temperature			// Temperature (C)
+	double Pressure				// Temperature (Pa = Pascal)
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
+	int16 N							// number of atoms described here
+	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
+	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
+	int16 haveDebyeT				// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
+	int16 Nbonds					// number of bonds described here
+	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
+	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
+	double Unconventional10,Unconventional11,Unconventional12
+	double Unconventional20,Unconventional21,Unconventional22
+	char sourceFile[MAX_FILE_LEN]	// name of source file
+	char hashID[HASHID_LEN]	// hash function for this strucutre (needs to hold at least 64 chars), This MUST be the LAST item
+EndStructure
+//
+Structure crystalStructure7	// structure definition for a crystal lattice
+	char desc[100]					// name or decription of this crystal
+	char formula[100]				// chemical formula structural
+	double a,b,c					// lattice constants, length (nm)
+	double alpha,beta,gam		// angles (degree)
+	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
+	char SpaceGroupID[12]		// id of SpaceGroup, e.g. "15:-b2", not just a number anymore
+	int16 SpaceGroupIDnum		// index to the SpaceGroupID, allowed range is [1, 530]
+	double  a0,  b0,  c0		// direct lattice from constants { a[], b[], c[] }
+	double  a1,  b1,  c1
+	double  a2,  b2,  c2
+	double  as0,  bs0,  cs0	// reciprocal lattice { a*[], b*[], c*[] }
+	double  as1,  bs1,  cs1	// a*,b*,c* already have the 2PI in them
+	double  as2,  bs2,  cs2
+	double Vc						// volume of cell, triple product of (a[]xb[]).c
+	double density					// calculated density (g/cm^3)
+	double Temperature			// Temperature (C)
 	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
@@ -458,6 +490,7 @@ Function init_crystalStructure(xtal)		// set all values to empty or invalid valu
 	xtal.Vc = NaN
 	xtal.density = NaN
 	xtal.Temperature = 0	;	xtal.alphaT = 0
+	xtal.Pressure = NaN
 	xtal.Vibrate = 0			;	xtal.haveDebyeT = 0
 
 	xtal.N = 0
@@ -1059,10 +1092,13 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 			unit = "K"
 			Temperature = ConvertTemperatureUnits(Temperature,"C",unit)		// xtal.Temperature is always C
 		endif
-		printf ",   Temperature = %g %s%s\r",Temperature,DEGREESIGN,unit
-	else
-		printf "\r"
+		printf ",   Temperature = %g %s%s",Temperature,DEGREESIGN,unit
 	endif
+	if (xtal.Pressure>0)
+		printf ",   Pressure = %.3W1PPa",xtal.Pressure
+	endif
+	printf "\r"
+
 	if (SG<=167 && SG>=143 && (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6)	// also show rhombohedral lattice constants
 		Variable aRhom = sqrt(3*(xtal.a)^2 + (xtal.c)^2)/3
 		Variable alphaRhom = 2*asin(1.5/sqrt(3+(xtal.c/xtal.a)^2)) * 180/PI
@@ -1135,9 +1171,6 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 		else
 			print "\t\tCharge Neutral"
 		endif
-		if (brief)
-			return 0
-		endif
 
 		if (xtal.Nbonds > 0)
 			printf "defined bonds (nm):\r"
@@ -1147,6 +1180,10 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 				printf "     %s  <-->  %s:  %s\r",xtal.bond[i].label0,xtal.bond[i].label1,vec2str(lens,bare=1)
 			endfor
 		endif
+		if (brief)
+			return 0
+		endif
+
 		printf "\rindividual atom positions:\rtype	frac xyz\r"
 		Variable j
 		for (i=0;i<xtal.N;i+=1)
@@ -3677,6 +3714,12 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
  		endif
 	endif
 
+	Variable Pressure = str2num(XMLtagContents("temperature",cif))
+	if (numtype(Pressure)==0)
+		unit = StringByKey("unit", XMLattibutes2KeyList("Pressure",cif),"=")
+		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1)
+	endif
+
 	// collect the atom sites values
 	String atomSite, atomLabel, symbol, WyckoffSymbol
 	Variable Zatom, fracX,fracY,fracZ,occupy,valence,DebyeT
@@ -3922,6 +3965,10 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	if (strlen(xtal.SpaceGroupID)>0)
 		cif += "\t<space_group_id>"+xtal.SpaceGroupID+"</space_group_id>"+NL
 	endif
+	if (xtal.Pressure > 0)
+		cif += "\t<Pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</Pressure>"+NL
+	endif
+
 	Variable alphaT = xtal.alphaT
 	alphaT = alphaT>0 ? alphaT : NaN
 
@@ -4415,7 +4462,8 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	endif
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
 	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
-
+	xtal.Pressure = CIF_readNumber("_cell_measurement_pressure",buf) 	// pressure (kPa) for cell parameters
+	xtal.Pressure *= 1000										 	// convert kPa --> Pa
 	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
 
 	xtal.N = 0
@@ -7848,34 +7896,107 @@ End
 #endif
 
 
-Function StructGet_xtal(strStruct,xtal7)		// take value of strStruct, and fill xtal7, whether strStruct was v5 or v6
+Function StructGet_xtal(strStruct,xtal8)		// take value of strStruct, and fill xtal8, whether strStruct was v5, v6, or v7
 	// this accepts strStruct for either the old v5 or new v6 crystalStructure
 	String strStruct										// pre vers 6.0 len=25672, after 6.0 it is 25686
-	STRUCT crystalStructure &xtal7					// structure that will be filled
+	STRUCT crystalStructure &xtal8					// structure that will be filled
 
-	if (strlen(strStruct)>=25786)					// string is for a version 7 xtal
+	if (strlen(strStruct)>=25794)					// string is for a version 8 xtal
+		StructGet/S/B=2 xtal8, strStruct
+	elseif (strlen(strStruct)>=25786)				// a bit shorter string is for a version 7 xtal
+		STRUCT crystalStructure7 xtal7
 		StructGet/S/B=2 xtal7, strStruct
-	elseif (strlen(strStruct)>=25686)				// a bit shorter string is for a version 6 xtal
+		copy_xtal78(xtal8,xtal7)						// copy xtal7 --> xtal8
+	elseif (strlen(strStruct)>=25686)				// a still shorter string is for a version 6 xtal
 		STRUCT crystalStructure6 xtal6
 		StructGet/S/B=2 xtal6, strStruct
-		copy_xtal67(xtal7,xtal6)						// copy xtal6 --> xtal7
+		copy_xtal68(xtal8,xtal6)						// copy xtal6 --> xtal8
 	else														// shorter strings assumed to be older version 5 xtal
 		STRUCT crystalStructure5 xtal5
 		StructGet/S/B=2 xtal5, strStruct
-		copy_xtal57(xtal7,xtal5)						// copy xtal5 --> xtal
+		copy_xtal58(xtal8,xtal5)						// copy xtal5 --> xtal8
 	endif
 End
 //
-Static Function copy_xtal57(xtal7,xtal5)		// copy a crystalStructure xtal5 --> xtal7
-	STRUCT crystalStructure &xtal7
+Static Function copy_xtal58(xtal8,xtal5)		// copy a crystalStructure xtal5 --> xtal8
+	STRUCT crystalStructure &xtal8
 	STRUCT crystalStructure5 &xtal5
+	STRUCT crystalStructure7 xtal7					// intermidiate
 	STRUCT crystalStructure6 xtal6					// intermidiate
 	copy_xtal56(xtal6,xtal5)							// 1st copy xtal5 --> xtal6
 	copy_xtal67(xtal7,xtal6)							// 2nd copy xtal6 --> xtal7
+	copy_xtal78(xtal8,xtal7)							// 3rd copy xtal7 --> xtal8
+End
+//
+Static Function copy_xtal68(xtal8,xtal6)		// copy a crystalStructure xtal5 --> xtal8
+	STRUCT crystalStructure &xtal8
+	STRUCT crystalStructure6 &xtal6
+	STRUCT crystalStructure7 xtal7					// intermidiate
+	copy_xtal67(xtal7,xtal6)							// 1st copy xtal6 --> xtal7
+	copy_xtal78(xtal8,xtal7)							// 2nd copy xtal7 --> xtal8
+End
+//
+Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal7 --> xtal8
+	STRUCT crystalStructure &xtal8
+	STRUCT crystalStructure7 &xtal7
+
+	xtal8.desc = xtal7.desc
+
+	xtal8.a = xtal7.a				;	xtal8.b = xtal7.b				;	xtal8.c = xtal7.c
+	xtal8.alpha = xtal7.alpha	;	xtal8.beta = xtal7.beta	;	xtal8.gam = xtal7.gam
+	xtal8.SpaceGroup = xtal7.SpaceGroup						// in range [1,230]
+	xtal8.SpaceGroupIDnum = xtal7.SpaceGroupIDnum			// in range [1,530]
+	xtal8.SpaceGroupID = xtal7.SpaceGroupID					// id, e.g. "15:-b2", not just a number anymore
+
+	xtal8.Vc = xtal7.Vc
+	xtal8.density = xtal7.density
+	xtal8.alphaT = xtal7.alphaT
+
+	xtal8.Pressure = NaN											// Only difference between 7 and 8
+	xtal8.Temperature = xtal7.Temperature
+	xtal8.Vibrate = xtal7.Vibrate
+	xtal8.haveDebyeT = xtal7.haveDebyeT
+	xtal8.hashID = xtal7.hashID
+
+	xtal8.N = xtal7.N
+	Variable i, N=xtal7.N
+	for (i=0;i<N;i+=1)
+		xtal8.atom[i] = xtal7.atom[i]							// was:  copy_atomType(xtal8.atom[i],xtal7.atom[i])
+	endfor
+
+	xtal8.Nbonds = xtal7.Nbonds
+	N = xtal8.Nbonds
+	for (i=0;i<N;i+=1)
+		xtal8.bond[i] = xtal7.bond[i]							// was:  copy_bondType(xtal8.bond[i],xtal7.bond[i])
+	endfor
+
+	xtal8.a0 = xtal7.a0	;	xtal8.b0 = xtal7.b0	;	xtal8.c0 = xtal7.c0
+	xtal8.a1 = xtal7.a1	;	xtal8.b1 = xtal7.b1	;	xtal8.c1 = xtal7.c1
+	xtal8.a2 = xtal7.a2	;	xtal8.b2 = xtal7.b2	;	xtal8.c2 = xtal7.c2
+
+	xtal8.as0 = xtal7.as0	;	xtal8.bs0 = xtal7.bs0	;	xtal8.cs0 = xtal7.cs0
+	xtal8.as1 = xtal7.as1	;	xtal8.bs1 = xtal7.bs1	;	xtal8.cs1 = xtal7.cs1
+	xtal8.as2 = xtal7.as2	;	xtal8.bs2 = xtal7.bs2	;	xtal8.cs2 = xtal7.cs2
+
+	xtal8.Unconventional00 = xtal7.Unconventional00
+	xtal8.Unconventional01 = xtal7.Unconventional01
+	xtal8.Unconventional02 = xtal7.Unconventional02
+	xtal8.Unconventional10 = xtal7.Unconventional10
+	xtal8.Unconventional11 = xtal7.Unconventional11
+	xtal8.Unconventional12 = xtal7.Unconventional12
+	xtal8.Unconventional20 = xtal7.Unconventional20
+	xtal8.Unconventional21 = xtal7.Unconventional21
+	xtal8.Unconventional22 = xtal7.Unconventional22
+
+	String fullFile = xtal7.sourceFile
+	fullFile = fullFile[0,MAX_FILE_LEN-1]
+	xtal8.sourceFile = fullFile
+
+	xtal8.formula = MinimalChemFormula(xtal8, maximal=1)	// this is the only difference between xtal6 & 7
 End
 //
 Static Function copy_xtal67(xtal7,xtal6)		// copy a crystalStructure xtal6 --> xtal7
-	STRUCT crystalStructure &xtal7
+	STRUCT crystalStructure7 &xtal7
 	STRUCT crystalStructure6 &xtal6
 
 	xtal7.desc = xtal6.desc
@@ -7928,8 +8049,7 @@ Static Function copy_xtal67(xtal7,xtal6)		// copy a crystalStructure xtal6 --> x
 	String fullFile = xtal6.sourceFile
 	fullFile = fullFile[0,MAX_FILE_LEN-1]
 	xtal7.sourceFile = fullFile
-
-	xtal7.formula = MinimalChemFormula(xtal7, maximal=1)	// this is the only difference between xtal6 & 7
+	xtal7.formula = ""												// this is the only difference between xtal6 & 7
 End
 //
 Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --> xtal6
