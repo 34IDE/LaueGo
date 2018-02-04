@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.44
+#pragma version = 6.45
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -202,6 +202,10 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								also added: Constants LatticeSym_minBondLen and LatticeSym_maxBondLen (also now used in AtomView.ipf)
 //								and added: LatticeSym_electroNegProto() and  LatticeSym_covRadiusProto(), (so I don't need to #include "Elements")
 //	with version 6.43, added ForceReComputeBondsInxtal() to force a recalculation of the bonds in current xtal, added call to it in Menu and popup.
+//	with version 6.45, removed: AllBondsStructure, atomTypeInfoStructure, init_AllBondsStructure()
+//								removed: FindBonds(), AllBondsStructure2xml(), PrintAllBondsStructure(), UpdateAllBondsStructure()
+//								added: FindCentralAtom(), FindClosestAtomDirection(), ExtendFractional(), UnBondedAtomsList()
+//								renamed ForceReComputeBondsInxtal() -> ForceReComputeBonds()
 
 
 //	Rhombohedral Transformation:
@@ -253,7 +257,7 @@ Menu "Analysis"
 		help={"Shows the crystal structure and lattice that is currently defined"}
 		"  Edit the Atom Positions...",EditAtomPositionsMenu()
 		"  Change Current xtal Setting...", ChangeSettingCurrentXtal("")
-		"  Re-Calculate All Bonds...", LatticeSym#ForceReComputeBondsInxtal(ask=1)
+		"  Re-Calculate All Bonds...", LatticeSym#ForceReComputeBonds(ask=1)
 		help={"Manually set/change the atom positions"}
 		"Load a new Crystal Structure...",LoadCrystal("")
 		help={"load a rystal structure from a fie"}
@@ -531,42 +535,6 @@ Function init_bondTypeStructure(bond)		// set all values to empty or invalid val
 	bond.N = 0
 	bond.len[0] = NaN		;	bond.len[1] = NaN		;	bond.len[2] = NaN
 	bond.len[3] = NaN		;	bond.len[4] = NaN
-End
-
-
-// Special Structures for finding list of bonds
-Static Structure AllBondsStructure
-	int16 Nbonds					// number of bonds described here
-	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
-	int16 Ntype						// number of atom types
-	int16 unassociated			// number of atom types that are not part of any bond (sum of atom[i].used)
-	Struct atomTypeInfoStructure atom[STRUCTURE_ATOMS_MAX]
-	double execution				// execution time (seconds)
-EndStructure
-//
-Static Structure atomTypeInfoStructure	// holds some basic info about one type of atom in a crystal structure
-	char name[60]					// label for this atom, usually starts with atomic symbol
-	int16 Zatom						// Z of the atom
-	int16 valence					// valence of atom, must be an integer
-	int16	used						// this atom type is used in a bond
-EndStructure
-//
-Static Function init_AllBondsStructure(allBonds)		// init an AllBondsStructure
-	STRUCT AllBondsStructure &allBonds						// set all values to empty or invalid values
-	allBonds.Nbonds = 0
-	allBonds.Ntype = 0
-	allBonds.unassociated = 0
-	allBonds.execution = NaN
-	Variable m
-	for (m=0;m<STRUCTURE_ATOMS_MAX;m+=1)
-		allBonds.atom[m].name = ""
-		allBonds.atom[m].Zatom = 0
-		allBonds.atom[m].valence = 0
-		allBonds.atom[m].used = 0
-	endfor
-	for (m=0; m<(2*STRUCTURE_ATOMS_MAX); m+=1)
-		init_bondTypeStructure(allBonds.bond[m])
-	endfor
 End
 
 //	End of Structure definitions
@@ -2913,7 +2881,7 @@ Static Function LatticeEditPopMenuProc(pa) : PopupMenuControl		// used in the La
 		ba.ctrlName = "buttonEditAtomPositions"
 		LatticePanelButtonProc(ba)
 	elseif (strsearch(popStr,"Re-Calc Bonds",0,2)>=0)
-		ForceReComputeBondsInxtal(ask=1)
+		ForceReComputeBonds(ask=1)
 	elseif (strsearch(popStr,"Change Current Setting",0,2)>=0)
 		ChangeSettingCurrentXtal("",printIt=1)
 	endif
@@ -3447,15 +3415,17 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	elseif (stringmatch(fileType,"cif"))
 		err = readCrystalStructureCIF(xtal,fname)
 	else
-		return 1															// nothing read, an error
+		return 1												// nothing read, an error
 	endif
 	if (printIt)
 		printf "\r%s xtal structure from '%s'\r\r",SelectString(err,"Loaded","ERROR -- Loading"),fname
 		if (!err)
-			OverOccupyList(xtal,printIt=1)						// print notice if some sites have occ>1
+			OverOccupyList(xtal,printIt=1)			// print notice if some sites have occ>1
 		endif
 	endif
-	ComputeBondsInxtal(xtal,overwrite=0, printIt=printIt)	// does NOTHING if xtal already contains any bonds.
+	if (xtal.Nbonds < 1)								// do NOT recalc bonds if already there
+		ComputeBonds(xtal, printIt=printIt)
+	endif
 	return err
 End
 //
@@ -7130,7 +7100,7 @@ End
 //	Start of bond finding routines
 
 // re-compute the bonds in current xtal, whatever was there gets changed.
-Static Function ForceReComputeBondsInxtal([ask,printIt])	// return 1 on error, 0 is OK
+Static Function ForceReComputeBonds([ask,printIt])	// return 1 on error, 0 is OK
 	Variable ask				// if true then ask user before preceeding, default is True
 	Variable printIt
 	ask = ParamIsDefault(ask) || numtype(ask) ? 1 : ask
@@ -7142,7 +7112,7 @@ Static Function ForceReComputeBondsInxtal([ask,printIt])	// return 1 on error, 0
 		DoAlert 0, "no crystal structure found"
 		return 1
 	endif
-	Variable err = LatticeSym#ComputeBondsInxtal(xtal,overwrite=1, printIt=printIt)	// re-calculate bonds and overwrite bond info in xtal
+	Variable err = ComputeBonds(xtal, printIt=printIt)	// re-calculate bonds and overwrite bond info in xtal
 	if (err)
 		DoAlert 0, "Unable to calculate bonds, current xtal info not changed"
 		return 1
@@ -7161,59 +7131,180 @@ Static Function ForceReComputeBondsInxtal([ask,printIt])	// return 1 on error, 0
 End
 
 // compute the bonds using xtal, and put result into xtal
-Static Function ComputeBondsInxtal(xtal,[overwrite, printIt])	// return 1 on error, 0 is OK
+Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	STRUCT crystalStructure &xtal
-	Variable overwrite
 	Variable printIt
-	overwrite = ParamIsDefault(overwrite) || numtype(overwrite) ? 0 : overwrite
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-	if (xtal.Nbonds && !overwrite)
-		return 1										// not replacing existing bonds
-	endif
 
+	Variable tick0=stopMSTimer(-2)
 	reMakeAtomXYZs(xtal)						// ensure that atom positions are current
-	Make/N=(1,3)/D/FREE xyz					// remember, these xyz are in fractional coordinates
-	Make/N=(1)/D/FREE Zs						// start small will be redimensioned as atoms are added
-	Make/N=(1)/T/FREE Types
+	Wave direct = directFrom_xtal(xtal)	// convert xyz in fractional coords, change to real lengths
+	Variable Ntype = xtal.N
 
-	String typei, wnote
-	Variable i, lo,hi, Ni, Zi, occupyi, Natom
-	for (i=0,lo=0,Natom=0; i<xtal.N; i+=1)	// generate free versions of xyz,Zs,Types for bond finding
-		Wave wa = $("root:Packages:Lattices:atom"+num2istr(i))
-		if (!WaveExists(wa))
-			if (printIt)
-				printf "ERROR -- ComputeBondsInxtal(), could not find wave \"%s\"\r","root:Packages:Lattices:atom"+num2istr(i)
-			endif
-			return 1
-		endif
-		wnote = note(wa)
-		Ni = DimSize(wa,0)
-		Zi = NumberByKey("Zatom",wnote,"=")
-		occupyi = NumberByKey("occupy",wnote,"=")
-		typei = StringByKey("atomType",wnote,"=")
-		if (Ni<1 || occupyi<0.1)
-			continue									// not fatal, but does not deserve a bond
-		endif
-		Natom += Ni
-		Redimension/N=(Natom,-1) xyz, Zs, Types
-
-		hi = lo + Ni-1
-		xyz[lo,hi][] = wa[p-lo][q]			// copy values from atomi waves
-		Zs[lo,hi] = Zi
-		Types[lo,hi] = typei
-		lo = hi + 1
+	Make/N=(Ntype)/T/FREE atomTypes=""
+	Make/N=(Ntype)/I/FREE Ztypes=-1
+	Make/N=(Ntype)/FREE occupy=1
+	Variable i, j
+	for (i=0;i<Ntype;i+=1)
+		atomTypes[i] = xtal.atom[i].name
+		Ztypes[i] = xtal.atom[i].Zatom
+		occupy[i] = xtal.atom[i].occ
 	endfor
 
-	// xyz (fractional coords) only covers 1 cell, also want to include ±0.5 in x, y, & z
+	FUNCREF LatticeSym_electroNegProto eNegFunc = $"Element_electroneg"
+	FUNCREF LatticeSym_covRadiusProto covRadFunc = $"Element_covRadius"
+	Make/N=(Ntype)/FREE ElectroNeg = eNegFunc(Ztypes[p])	// precompute the electronegativity
+	Make/N=(Ntype)/FREE radius = covRadFunc(Ztypes[p])/10	// precompute the covalent radii (nm)
+
+	WaveStats/M=1/Q ElectroNeg
+	Variable useValence = (V_max-V_min) > 0.7	// if useValence, then take into account the ElectroNegativity
+
+	Make/N=(1,3)/D/FREE xyz					// Note: these xyz are in fractional coordinates, and then get changed to nm
+	Make/N=1/I/FREE itypes						// type index for each atom xyz[][3]
+	Make/N=(Ntype)/WAVE/FREE xyzRef			// holds atom locations for each atom type
+
+	for (i=0; i<Ntype; i+=1)					// generate free versions of xyz,Zs,Types for bond finding
+		Wave wa = $("root:Packages:Lattices:atom"+num2istr(i))
+		Duplicate/FREE wa, xyzTemp
+		ExtendFractional(xyzTemp,0.5)		// extend by ±0.5 to (-0.5,1.5) in x, y, & z
+		MatrixOP/FREE xyzTemp = ( direct x xyzTemp^t )^t	// convert fractional coordinates to real units (nm)
+		xyzRef[i] = xyzTemp						// xyzRef holds a free reference to the xyz waves (1 for each atom type)
+	endfor
+
+	Variable Nbond, NbondMax=(Ntype+1)*Ntype/2
+	NbondMax = min(NbondMax,2*STRUCTURE_ATOMS_MAX)			// structure can only hold this many bonds
+	Make/N=(NbondMax)/D/FREE blen=NaN
+	Make/N=(NbondMax)/I/FREE type1=-1, type2=-1
+
+	for (j=0,Nbond=0; j<Ntype && Nbond<NbondMax; j+=1)		// examine all pairs of types, include self pairs (an atom can bond to its own type)
+		Wave xyz0 = FindCentralAtom(xyzRef[j])					// center most atom of this type (nm)
+		for (i=j;i<Ntype && Nbond<NbondMax;i+=1)				// for each of the other atoms (including itself)
+			Wave dxyz = FindClosestAtomDirection(xyz0, xyzRef[i])	// (nm)
+			if (norm(dxyz)<LatticeSym_maxBondLen)
+				if (useValence && Ztypes[i]==Ztypes[j])
+					continue							// skip if using valence and atoms have same Z
+				endif
+				blen[Nbond] = norm(dxyz)		// save blen for the j<-->i bond
+				type1[Nbond] = j
+				type2[Nbond] = i
+				Nbond += 1
+			endif
+		endfor
+	endfor
+	Redimension/N=(Nbond) blen, type1, type2
+	Sort blen, blen, type1, type2
+
+	Make/N=(Ntype)/FREE valence=0
+	if (useValence)								// not metalic, set the valences to ±1 using the bonds just found
+		Variable v1,v2, iv, m
+		for (m=0;m<Nbond;m+=1)					// for each bond, remember {blen,type1,type2} are sorted by blen
+			v1 = valence[type1[m]]
+			v2 = valence[type2[m]]
+			if (v1 && v2)							// both have been set, nothing to do
+				continue
+			elseif (v1)								// v1 was set, v2=-v1
+				valence[type2[m]] = -v1
+			elseif (v2)								// v2 was set, v1=-v2
+				valence[type1[m]] = -v2
+			else										// neither valence has been set, set both using electronegativity
+				iv = ElectroNeg[type1[m]] > ElectroNeg[type2[m]] ? -1 : 1
+				valence[type1[m]] = iv
+				valence[type2[m]] = -iv
+			endif
+		endfor
+
+		// remove bonds where both atoms have same valence or it is 0 (this is not metalic or simple covalent)
+		for (m=0;m<Nbond;m+=1)
+			if (valence[type1[m]] * valence[type2[m]] >= 0)		// the same or zero
+				DeletePoints m, 1, blen, type1, type2
+				m -= 1
+				Nbond -= 1
+			endif
+		endfor
+		Redimension/N=(Nbond) blen, type1, type2
+	endif
+
+	// copy bond values into xtal.bond
+	xtal.Nbonds = Nbond
+	for (i=0;i<Nbond;i+=1)
+		init_bondTypeStructure(xtal.bond[i])
+		xtal.bond[i].label0 = atomTypes[type1[i]]
+		xtal.bond[i].label1 = atomTypes[type2[i]]
+		xtal.bond[i].N = 1
+		xtal.bond[i].len[0] = blen[i]
+	endfor
+	Variable execution=(stopMSTimer(-2)-tick0)*1e-6	// execution time (seconds)
+
+	if (printIt)
+		printf "Computed %d bonds  (in %.3g sec):\r", Nbond, execution
+		String unit0, sv1,sv2
+		for (i=0;i<Nbond;i+=1)
+			sv1 = SelectString(valence[type1[i]],"-","","+")
+			sv2 = SelectString(valence[type2[i]],"-","","+")
+			unit0 = SelectString(i," (nm)","")
+			printf "     %s%s(%d)  <-->  %s%s(%d):  %.5g%s\r",sv1,atomTypes[type1[i]],Ztypes[type1[i]],sv2,atomTypes[type2[i]],Ztypes[type2[i]],blen[i],unit0
+		endfor
+	
+		String list=UnBondedAtomsList(xtal)
+		if (ItemsInList(list)<1)
+			print "    All atom types are associated with at least 1 bond"
+		else				// print list of those atoms not associated with a bond
+			printf "These atom types have NO bonds: {%s}\r",TrimEnd(ReplaceString(";",list,", "),chars=", ")
+		endif
+	endif
+
+	return 0
+End
+//	Function test_ComputeBonds()
+//		STRUCT crystalStructure xtal
+//		FillCrystalStructDefault(xtal)
+//		LatticeSym#ComputeBonds(xtal, printIt=1)
+//	End
+//
+Static Function/WAVE FindCentralAtom(xyz)
+	// from the set of atom positions xyz[N][3], return the central most position
+	Wave xyz							// atomic positions (nm),  NOT fractional
+
+	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
+	Variable N=DimSize(xyz,0)
+	MatrixOP/FREE xyzAvg = sumCols(xyz)/N	// average position, represents the center
+	MatrixOP/FREE dmag2 = SumRows(magSqr(xyz-RowRepeat(xyzAvg,N)))
+	dmag2 = dmag2<min2 ? Inf : dmag2		// ignore atoms that are too close
+	WaveStats/M=1/Q dmag2
+	Make/N=3/D/FREE xyz0 = xyz[V_minloc][p]
+	return xyz0
+End
+//
+Static Function/WAVE FindClosestAtomDirection(xyz0, xyz)
+	// returns a direction vector to the atom in xyz[N][3] that is closest to xyz0[3]
+	Wave xyz0						// xyz0[3]  the reference location
+	Wave xyz							// xyz[N,3] set of atom positions (nm),  NOT fractional
+	Variable N=DimSize(xyz,0)
+
+	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
+	MatrixOP/FREE dxyz = xyz - RowRepeat(xyz0,N)
+	MatrixOP/FREE dmag2 = SumRows(magSqr(dxyz))
+	dmag2 = dmag2<min2 ? Inf : dmag2		// ignore atoms that are too close
+	WaveStats/M=1/Q dmag2
+	Make/N=3/D/FREE delta = dxyz[V_minloc][p]
+	return delta
+End
+//
+Static Function ExtendFractional(xyz,delta)
+	// extend xyz in all directions by delta
+	Wave xyz											// xyz[N][3], atom positions, FRACTIONAL coordinates
+	Variable delta									// distance to extend in all directions [0,1)
+
 	Duplicate/FREE xyz, xyz0
-	Variable j, Nadd, Nxyz=Natom				// Nxyz is number of points in xyz[Nxyz][3], this will be > Natom
 	Make/N=3/D/FREE offset
 	Make/N=(26,3)/D/FREE offsets				// offsets by ±1 in x, y, & z around the center cell
 	offsets[0][0]= {-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1}
 	offsets[0][1]= {-1,-1,-1, 0, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 0, 1, 1, 1}
 	offsets[0][2]= {-1,-1,-1,-1,-1,-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 
-	for (j=0;j<26;j+=1)							// for each of the offsets, add atoms to xyz, Zs, & Types
+	Variable Natom=DimSize(xyz0,0)
+	Variable i,j, Nadd, Nxyz=Natom
+	for (j=0;j<26;j+=1)							// for each of the offsets, add atoms to xyz, & Types
 		offset = offsets[j][p]
 		MatrixOP/FREE xyzTest = xyz0 + RowRepeat(offset,Natom)
 		MatrixOP/FREE flagX = greater(col(xyzTest,0),-0.5) && greater(1.5,col(xyzTest,0))
@@ -7221,289 +7312,49 @@ Static Function ComputeBondsInxtal(xtal,[overwrite, printIt])	// return 1 on err
 		MatrixOP/FREE flagZ = greater(col(xyzTest,2),-0.5) && greater(1.5,col(xyzTest,2))
 		MatrixOP/FREE flags = flagX && flagY && flagZ	// flags is 1 if x, y, & z are all in range (-0.5, 1.5)
 		Nadd = sum(flags)							// number of points in xyzTest that I will add to xyz
-		Redimension/N=(Nxyz+Nadd,-1) xyz, Zs, Types
+		Redimension/N=(Nxyz+Nadd,-1) xyz
 		for (i=0;i<Natom;i+=1)					// for each atom in center cell (xyz0), add points that are within 1/2 of a cell
 			if (flags[i])
 				xyz[Nxyz][] = xyzTest[i][q] 
-				Zs[Nxyz] = Zs[i]
-				Types[Nxyz] = Types[i]
 				Nxyz += 1
 			endif
 		endfor
 	endfor
-
-	Wave direct = directFrom_xtal(xtal)	// convert xyz in fractional coords, change to real lengths
-	MatrixOP/FREE xyz = ( direct x xyz^t )^t
-
-	STRUCT AllBondsStructure allBonds
-	FindBonds(allBonds,xyz,Zs,Types)		// find bonds using xyz[Nxyz][3], Zs[Nxyz], & Types[Nxyz]
-	WaveClear xyz,Zs,Types
-	if (printIt)
-		if (allBonds.Nbonds < 1)
-			print "NO bonds found by FindBonds()"
-		else
-			PrintAllBondsStructure(allBonds)
-#ifdef SHOW_XML_BONDS_ON_READIN
-			print " "
-			print AllBondsStructure2xml(allBonds)
-#endif
-		endif
-	endif
-	if (allBonds.Nbonds < 1)
-		return 1
-	endif
-
-	// copy allBonds values into xtal.bond[]
-	xtal.Nbonds = 	allBonds.Nbonds			// number of bonds described here
-	for (i=0;i<(2*STRUCTURE_ATOMS_MAX);i+=1)
-		init_bondTypeStructure(xtal.bond[i])	// first, set all bonds in xtal to empty
-	endfor
-	for (i=0;i<(xtal.Nbonds);i+=1)
-		xtal.bond[i] = allBonds.bond[i]		// copy from allBonds --> xtal
-	endfor
-	return 0
-End
-//	Function test_ComputeBondsInxtal()
-//		STRUCT crystalStructure xtal
-//		FillCrystalStructDefault(xtal)
-//		LatticeSym#ComputeBondsInxtal(xtal, overwrite=1, printIt=1)
-//	End
-
-Static Function FindBonds(allBonds,xyz,Zs,Types)
-	STRUCT AllBondsStructure &allBonds	// result, this is changed
-	Wave xyz							// xyz[N][3] positions of atoms
-	Wave Zs							// Zs[N] atomic number of each atom
-	Wave/T Types					// Types[N] atom type for each atom
-
-	Variable tick0=stopMSTimer(-2)
-	Variable N=DimSize(Zs,0)	// number of atoms given, also dim of Zs[N] and Types[N]
-	Variable i
-
-	// get list of the atom types present
-#if (IgorVersion()>7)
-	FindDuplicates/RT=typeNoDups Types
-	Duplicate/FREE/T typeNoDups, atomTypes
-	KillWaves/Z typeNoDups
-#else
-	Wave/T atomTypes = JZTutil#UniqueWaveValuesT(Types)	// list of atom types present in Types[N]
-#endif
-	Variable NatomTypes=DimSize(atomtypes,0)		// number of unique atom types
-
-	// get index into atomTypes for each atom in xyz, itypes[N]
-	Make/N=(N)/I/FREE itypes=-1
-	String atom
-	for (i=0;i<NatomTypes;i+=1)							// itypes[N] is integer corresponding to the atom type (faster to compare numbers)
-		atom = atomTypes[i]
-		itypes = cmpstr(atom,Types[p]) ? itypes[p] : i	// set itypes[] only for those atoms matching atom
-	endfor
-
-	// get the Z of each atom in atomTypes
-	Make/N=(NatomTypes)/FREE/I ZatomTypes
-	for (i=0;i<NatomTypes;i+=1)
-		MatrixOP/FREE iiii = equal(itypes,i)
-		WaveStats/M=1/Q iiii
-		ZatomTypes[i] = Zs[V_maxloc]
-	endfor
-	WaveClear iiii
-	// now have atomTypes[NatomTypes] & ZatomTypes[NatomTypes]
-	// also have itypes[N], this id's the atom type for each atom
-
-	FUNCREF LatticeSym_electroNegProto eNegFunc = $"Element_electroneg"
-	FUNCREF LatticeSym_covRadiusProto covRadFunc = $"Element_covRadius"
-	Make/N=(NatomTypes)/FREE ElectroNeg = eNegFunc(ZatomTypes[p])	// precompute the electronegativity
-	Make/N=(NatomTypes)/FREE radius = covRadFunc(ZatomTypes[p])/10	// precompute the covalent radii (nm)
-
-	WaveStats/M=1/Q ElectroNeg
-	Variable metalic = (V_max-V_min) < 0.7	// if metalic, then do not worry about ElectroNegativity
-
-	Variable NbAll=N*(N-1)/2						// number of atom pairs
-	Make/N=(NbAll)/D/FREE blenAll=NaN
-	Make/N=(NbAll)/FREE type1All=-1, type2All=-1
-	Make/N=(NbAll)/FREE Z1All=-1, Z2All=-1
-	Make/N=3/D/FREE xyzj
-
-	//	Find ALL inter-atomic distances
-	Variable j, typej, m, mLast
-	Make/N=(N-1,3)/D/FREE dxyz
-	for (j=0,m=0; j<(N-1); j+=1)
-		xyzj = xyz[j][p]								// for each atom[j], compare atom[j] to all of the others
-		typej = itypes[j]
-		MatrixOP/FREE dxyz = Sqrt(SumRows(magSqr(Abs(xyz - RowRepeat(xyzj,N)))))
-		mLast = m + N-j-2
-		blenAll[m,mLast] = dxyz[p-m+j+1]		// append dxyz[j+1,Inf] to blen, dxyz[0,j] have already been included
-		type1All[m,mLast] = typej					//		and the types of both of the atoms involved
-		type2All[m,mLast] = itypes[p-m+j+1]
-		m = mLast + 1
-	endfor
-	blenAll = blenAll < LatticeSym_minBondLen ? NaN : blenAll
-	blenAll = blenAll > LatticeSym_maxBondLen ? NaN : blenAll
-	Z1All = ZatomTypes[type1All[p]]
-	Z2All = ZatomTypes[type2All[p]]
-	if (!metalic)
-		blenAll = type1All[p]==type2All[p] ? NaN : blenAll	// cannot have an atom type bonded to itself
-		blenAll = Z1All[p]==Z2All[p] ? NaN : blenAll			// cnnot have two elements of same Z bonded together
-	endif
-	Sort blenAll, blenAll,type1All,type2All,Z1All,Z2All
-	WaveStats/M=1/Q blenAll
-	NbAll = V_npnts
-	Redimension/N=(NbAll) blenAll, type1All, type2All, Z1All,Z2All
-	// blenAll is sorted list of all lengths in range [0.05, 0.31]nm
-
-	for (j=0; j<NbAll; j+=1)						// ensure that type1All <= type2All
-		if (type2All[j] < type1All[j])
-			i = type1All[j]							// swap values
-			type1All[j] = type2All[j]
-			type2All[j] = i
-		endif
-	endfor
-
-	Make/N=(NbAll)/D/FREE blen=NaN
-	Make/N=(NbAll)/FREE type1=-p-1, type2=-p-2
-	Make/N=(NbAll)/FREE Z1=-1, Z2=-1
-	Make/N=(NbAll)/FREE covDist=NaN
-	Variable t1j,t2j, dist
-	Variable NbUnique									// number of unique atom pairs
-	for (j=0,NbUnique=0; j<NbAll; j+=1)		// remove duplicate bonds & bonds with wildly wrong lengths
-		t1j = type1All[j]
-		t2j = type2All[j]
-		dist = radius[t1j] + radius[t2j]		// predicted covalent bond length
-		MatrixOP/FREE foundDup0 = sum( equal(type1,t1j) && equal(type2,t2j) )
-		if (!foundDup0[0] && 0.7*dist < blenAll[j] && blenAll[j] < 1.3*dist)	// not a duplicate, and radius not too far off
-			blen[NbUnique] = blenAll[j]
-			type1[NbUnique] = type1All[j]
-			type2[NbUnique] = type2All[j]
-			Z1[NbUnique] = Z1All[j]
-			Z2[NbUnique] = Z2All[j]
-			NbUnique += 1
-		endif
-	endfor
-	Redimension/N=(NbUnique) blen, type1, type2, Z1,Z2
-	WaveClear blenAll, type1All, type2All, Z1All,Z2All
-
-	Make/N=(NatomTypes)/FREE valence=0
-	if (!metalic)										// not metalic, set the valences to ±1
-		Variable v1,v2, iv
-		for (m=0;m<NbUnique;m+=1)
-			v1 = valence[type1[m]]
-			v2 = valence[type2[m]]
-			if (v1 && v2)								// both have been set
-				continue
-			elseif (v1)									// v1 was set, v2=-v1
-				valence[type2[m]] = -v1
-			elseif (v2)									// v2 was set, v1=-v2
-				valence[type1[m]] = -v2
-			else											// neither valence has been set, set both using electronegativity
-				iv = ElectroNeg[type1[m]] > ElectroNeg[type2[m]] ? -1 : 1
-				valence[type1[m]] = iv
-				valence[type2[m]] = -iv
-			endif
-		endfor
-
-		// remove bonds where both atoms have same valence or it is 0 (this is not metalic)
-		for (m=0;m<NbUnique;m+=1)
-			if (valence[type1[m]] * valence[type2[m]] >= 0)		// the same or zero
-				DeletePoints m, 1, blen, type1, type2, Z1,Z2
-				m -= 1
-				NbUnique -= 1
-			endif
-		endfor
-		Redimension/N=(NbUnique) blen, type1, type2, Z1,Z2
-	endif
-	Variable execution=(stopMSTimer(-2)-tick0)*1e-6	// execution time (seconds)
-
-	// fill the AllBondsStructure that is returned
-	init_AllBondsStructure(allBonds)						// set allBonds to empty
-	allBonds.Ntype = min(NatomTypes,STRUCTURE_ATOMS_MAX)
-	for (m=0; m<(allBonds.Ntype); m+=1)					// set atom types in allBonds
-		allBonds.atom[m].name = atomTypes[m]
-		allBonds.atom[m].Zatom = ZatomTypes[m]
-		allBonds.atom[m].valence = valence[m]
-	endfor
-	allBonds.Nbonds = min(NbUnique,2*STRUCTURE_ATOMS_MAX)
-	for (j=0; j<(allBonds.Nbonds); j+=1)					// set bond info in allBonds
-		allBonds.bond[j].label0 = atomTypes[type1[j]]
-		allBonds.bond[j].label1 = atomTypes[type2[j]]
-		allBonds.bond[j].N = 1
-		allBonds.bond[j].len[0] = blen[j]
-	endfor
-	UpdateAllBondsStructure(allBonds)						// fills:  allBonds.unassociated  and  allBonds.atom[m].used
-	allBonds.execution = execution							// execution time (seconds)
-
-	return 0
 End
 //
-Static Function UpdateAllBondsStructure(allBonds)	// fills:  allBonds.unassociated  and  allBonds.atom[m].used
-	STRUCT AllBondsStructure &allBonds
+Static Function/T UnBondedAtomsList(xtal)
+	// return a list atom types without any bonds
+	STRUCT crystalStructure &xtal
 
-	Make/N=(allBonds.Ntype)/FREE used=0
-	Variable m, i
-	for (m=0;m<allBonds.Ntype;m+=1)
-		for (i=0;i<allBonds.Nbonds;i+=1)
-			used[m] = cmpstr(allBonds.atom[m].name, AllBonds.bond[i].label0) ? used[m] : 1
-			used[m] = cmpstr(allBonds.atom[m].name, AllBonds.bond[i].label1) ? used[m] : 1
-		endfor
+	Variable Nbond = xtal.Nbonds, Ntype = xtal.N
+	Variable i, m
+
+	String atomTypes=""
+	for (m=0; m < Ntype; m+=1)
+		atomTypes += xtal.atom[m].name + ";"
 	endfor
 
-	allBonds.unassociated = allBonds.Ntype - sum(used)
-	for (m=0;m<allBonds.Ntype;m+=1)
-		allBonds.atom[m].used = used[m]
+	Make/N=(Ntype)/FREE iatom=p
+	String name
+	for (i=0;i<Nbond;i+=1)
+		m = WhichListItem(xtal.bond[i].label0, atomTypes)
+		iatom[m] = m<0 ? iatom[m] : NaN
+		m = WhichListItem(xtal.bond[i].label1, atomTypes)
+		iatom[m] = m<0 ? iatom[m] : NaN
 	endfor
-End
-//
-Static Function PrintAllBondsStructure(allBonds)
-	STRUCT AllBondsStructure &allBonds
-	printf "Computed %d bonds  (in %.3g sec):\r", allBonds.Nbonds, allBonds.execution
+	Sort iatom, iatom
 
-	String str
-	Variable i,m
-
-	Make/N=(allBonds.Nbonds)/FREE v1=0,v2=0, Z1=0, Z2=0
-	Make/N=(allBonds.Nbonds)/T/FREE sv1,sv2
-	for (i=0;i<allBonds.Nbonds;i+=1)
-		for (m=0;m<allBonds.Ntype;m+=1)
-			if (cmpstr(allBonds.atom[m].name, allBonds.bond[i].label0)==0)
-				v1[i] = allBonds.atom[m].valence
-				Z1[i] = allBonds.atom[m].Zatom
-			endif
-			if (cmpstr(allBonds.atom[m].name, allBonds.bond[i].label1)==0)
-				v2[i] = allBonds.atom[m].valence
-				Z2[i] = allBonds.atom[m].Zatom
-			endif
-		endfor
-	endfor
-	sv1 = SelectString(v1[p],"-","","+")
-	sv2 = SelectString(v2[p],"-","","+")
-	for (i=0;i<allBonds.Nbonds;i+=1)
-		Make/N=(allBonds.bond[i].N)/FREE/D lens
-		lens = allBonds.bond[i].len[p]
-		sprintf str, "     %s%s(%d)  <-->  %s%s(%d):  %s",sv1[i],allBonds.bond[i].label0,Z1[i],sv2[i],allBonds.bond[i].label1,Z2[i],vec2str(lens,bare=1)
-		str += SelectString(i," (nm)","")
-		print str		
-	endfor
-
-	if (allBonds.unassociated)					// print list of those atoms not associated with a bond
-		print "The following atom types do not have any bonds:"
-		for (m=0;m<allBonds.Ntype;m+=1)
-			if (allBonds.atom[m].used == 0)
-				printf "   %s%s(%d)\r",SelectString(allBonds.atom[m].valence,"-","","+"),allBonds.atom[m].name,allBonds.atom[m].Zatom
-			endif
-		endfor
-	else
-		print "    All atom types are associated with at least 1 bond"
+	WaveStats/M=1/Q iatom
+	Variable Nfree = V_npnts
+	if (Nfree<1)
+		return ""
 	endif
-End
-//
-Static Function/T AllBondsStructure2xml(allBonds)
-	STRUCT AllBondsStructure &allBonds
-	Variable i, N=allBonds.Nbonds
-	String str, lines=""
-	for (i=0;i<N;i+=1)								// create the xml line for each bond
-		Make/N=(allBonds.bond[i].N)/FREE/D lens
-		lens = allBonds.bond[i].len[p]
-		sprintf str "	<bond_chemical unit=\"nm\" n0=\"%s\" n1=\"%s\">%s</bond_chemical>\r",allBonds.bond[i].label0,allBonds.bond[i].label1,vec2str(lens,bare=1,sep=" ")
-		lines += str
+
+	String list=""
+	for (i=0;i<Nfree;i+=1)
+		list += StringFromList(iatom[i],atomTypes)+";"
 	endfor
-	return lines
+	return list
 End
 
 
