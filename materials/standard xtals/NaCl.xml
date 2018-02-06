@@ -17,6 +17,7 @@
 		<fract_x>0</fract_x>
 		<fract_y>0</fract_y>
 		<fract_z>0</fract_z>
+		<valence>1</valence>
 	</atom_site>
 	<atom_site>
 		<label>Cl</label>
@@ -24,5 +25,6 @@
 		<fract_x>0.5</fract_x>
 		<fract_y>0.5</fract_y>
 		<fract_z>0.5</fract_z>
+		<valence>-1</valence>
 	</atom_site>
 </cif>

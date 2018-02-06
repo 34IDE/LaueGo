@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>Quartz</chemical_name_common>
+	<chemical_name_common>Quartz-alpha</chemical_name_common>
 	<chemical_formula_structural>SiO2</chemical_formula_structural>
 	<space_group_IT_number>154</space_group_IT_number>
 	<space_group_id>154</space_group_id>
@@ -21,6 +21,7 @@
 		<label>Si</label>
 		<symbol>Si</symbol>
 		<fract_xyz>0.4697 0 0</fract_xyz>
+		<valence>4</valence>
 		<aniso_U_11>0.00734</aniso_U_11>
 		<aniso_U_22>0.00560</aniso_U_22>
 		<aniso_U_33>0.00666</aniso_U_33>
@@ -32,6 +33,7 @@
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract_xyz>0.4133 0.2672 0.1188</fract_xyz>
+		<valence>-2</valence>
 		<aniso_U_11>0.01642</aniso_U_11>
 		<aniso_U_22>0.01193</aniso_U_22>
 		<aniso_U_33>0.01258</aniso_U_33>

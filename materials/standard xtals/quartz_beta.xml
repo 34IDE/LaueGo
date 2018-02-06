@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Quartz-beta</chemical_name_common>
+	<chemical_formula_structural>SiO2</chemical_formula_structural>
+	<space_group_IT_number>154</space_group_IT_number>
+	<space_group_id>154</space_group_id>
+	<H-M>P 62 2 2</H-M>
+	<amcsd>0006370</amcsd>
+	<temperature unit="K">848</temperature>
+	<cell>
+		<a unit="nm">0.49965</a>
+		<b unit="nm">0.49965</b>
+		<c unit="nm">0.54570</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<volume>0.1130106829371578</volume>
+	</cell>
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract_xyz>0.5 0 0</fract_xyz>
+		<valence>4</valence>
+		<aniso_U_11>0.02646</aniso_U_11>
+		<aniso_U_22>0.02011</aniso_U_22>
+		<aniso_U_33>0.01991</aniso_U_33>
+		<aniso_U_12>0.01005</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.41520 0.20760 0.16667</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11>0.04942</aniso_U_11>
+		<aniso_U_22>0.05464</aniso_U_22>
+		<aniso_U_33>0.05853</aniso_U_33>
+		<aniso_U_12>0.02471</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>-0.03218</aniso_U_23>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
+	<citation>
+		K. Kihara, European Journal of Mineralogy, 2, (1990) 63-77
+		"An X-ray study of the temperature dependence of the quartz structure"
+	</citation>
+</cif>
+
+
+<!--   
+OLD Wyckoff values, but no Temperature given.
+<cif>
+	<chemical_name_common>Quartz-beta</chemical_name_common>
+	<chemical_formula_structural>SiO2</chemical_formula_structural>
+	<space_group_IT_number>154</space_group_IT_number>
+	<space_group_id>154</space_group_id>
+	<H-M>P 62 2 2</H-M>
+	<amcsd>0018071</amcsd>
+	<temperature unit="K">298</temperature>
+	<cell>
+		<a unit="nm">0.5013</a>
+		<b unit="nm">0.5013</b>
+		<c unit="nm">0.547</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<volume>0.1130106829371578</volume>
+	</cell>
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract_xyz>0.5 0.5 0.3333333</fract_xyz>
+		<valence>4</valence>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.197 -0.197 0.83330</fract_xyz>
+		<valence>-2</valence>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
+	<citation>
+		R. Wyckoff, Zeitschrift fur Kristallographie 63 (1926) 507-537
+		"Kriterien fur hexagonale Raumgruppen und die Kristallstruktur von beta Quarz."
+		 _cod_database_code 1011200
+	</citation>
+</cif>
+-->
+
