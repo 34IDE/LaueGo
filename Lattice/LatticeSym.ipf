@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.45
+#pragma version = 6.46
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -206,6 +206,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								removed: FindBonds(), AllBondsStructure2xml(), PrintAllBondsStructure(), UpdateAllBondsStructure()
 //								added: FindCentralAtom(), FindClosestAtomDirection(), ExtendFractional(), UnBondedAtomsList()
 //								renamed ForceReComputeBondsInxtal() -> ForceReComputeBonds()
+//	with version 6.46, fixed positionsOfOneAtomType(), was not correctly finding atom positions.
 
 
 //	Rhombohedral Transformation:
@@ -5288,25 +5289,29 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 
 	Make/N=(Neq,3)/D/FREE xyz=NaN				// internal copy of fractional coords
 	Make/N=(Neq,3)/D/FREE xyznm=NaN				// real positions (in nm), NOT fractional coords (in sync with xyz[][])
-	Variable N
+	Variable N, i, isDup
+	Make/N=(8,3)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
 	// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
-	for (m=0,N=0;m<Neq;m+=1)
+	for (m=0,N=0;m<Neq;m+=1)						// for each of the symmetry operations
 		mat = mats[m][p][q]
 		bv = bvecs[m][p]
 		MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
 		MatrixOp/FREE rr = rr - floor(rr)		// reduce to [0,1), the first unit cell
-		rr = mod(rr,1)
 		rr = rr<1e-12 ? 0 : rr						// a fractional coord < 1e-12 is 0
-
-		MatrixOP/FREE vec = direct x rr			// real space vector for rr
+		rr8 = rr[q] + add8							// deals with issue when comparing {x,y,0.99} to {x,y,0.01}
+		MatrixOP/FREE vec8 = ( direct x rr8^t )^t	// real space vectors from rr
 		if (Neq<2)
-			MatrixOP/FREE isDup = maxVal( greater(minDist2, sumRows(magSqr(xyznm - vec^t))) )
+			isDup = 0									// 1 symmetry op, there cannot be any duplicates (only for SG=1, triclinic)
 		else
-			MatrixOP/FREE isDup = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
+			for (i=0,isDup=0; i<8 && !isDup; i+=1)	// check all 8 of the add8's for duplicates
+				vec = vec8[i][p]
+				MatrixOP/FREE isDup0 = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
+				isDup = isDup || isDup0[0]
+			endfor
 		endif
-		if (isDup[0]<1)								// not a duplicate, so add to the list of positions
+		if (!isDup)										// not a duplicate, so add to the list of positions
 			xyz[N][] = rr[q]							// rr is not an equivalent atom, save it to xyz[N]
-			xyznm[N][] = vec[q]						// keep xyznm in sync with xyz
+			xyznm[N][] = vec[q]						//   also save the position in nm
 			N += 1
 		endif
 	endfor

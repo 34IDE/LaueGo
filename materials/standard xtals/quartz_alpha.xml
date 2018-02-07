@@ -6,44 +6,46 @@
 	<space_group_IT_number>154</space_group_IT_number>
 	<space_group_id>154</space_group_id>
 	<H-M>P 32 2 1</H-M>
-	<amcsd>0006362</amcsd>
+	<icsd>174</icsd>
 	<temperature unit="K">298</temperature>
 	<cell>
-		<a unit="nm">0.49137</a>
-		<b unit="nm">0.49137</b>
-		<c unit="nm">0.54047</c>
+		<a unit="nm">0.49134</a>
+		<b unit="nm">0.49134</b>
+		<c unit="nm">0.54052</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<volume>0.1130106829371578</volume>
 	</cell>
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_xyz>0.4697 0 0</fract_xyz>
+		<fract_xyz>0.46987 0 0.6666667</fract_xyz>
 		<valence>4</valence>
-		<aniso_U_11>0.00734</aniso_U_11>
-		<aniso_U_22>0.00560</aniso_U_22>
-		<aniso_U_33>0.00666</aniso_U_33>
-		<aniso_U_12>0.00280</aniso_U_12>
-		<aniso_U_13>-0.00017</aniso_U_13>
-		<aniso_U_23>-0.00035</aniso_U_23>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<aniso_U_11>0.0066</aniso_U_11>
+		<aniso_U_22>0.0051</aniso_U_22>
+		<aniso_U_33>0.0060</aniso_U_33>
+		<aniso_U_12>0.00255</aniso_U_12>
+		<aniso_U_13>-0.00015</aniso_U_13>
+		<aniso_U_23>-0.0003</aniso_U_23>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.4133 0.2672 0.1188</fract_xyz>
+		<fract_xyz>0.4141 0.2681 0.7855</fract_xyz>
 		<valence>-2</valence>
-		<aniso_U_11>0.01642</aniso_U_11>
-		<aniso_U_22>0.01193</aniso_U_22>
-		<aniso_U_33>0.01258</aniso_U_33>
-		<aniso_U_12>0.00936</aniso_U_12>
-		<aniso_U_13>-0.00303</aniso_U_13>
-		<aniso_U_23>-0.00478</aniso_U_23>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11>0.0156</aniso_U_11>
+		<aniso_U_22>0.0115</aniso_U_22>
+		<aniso_U_33>0.0119</aniso_U_33>
+		<aniso_U_12>0.0092</aniso_U_12>
+		<aniso_U_13>-0.0029</aniso_U_13>
+		<aniso_U_23>-0.0046</aniso_U_23>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
-	<citation>
-		K. Kihara K, European Journal of Mineralogy, 2, (1990), 63-77
-		"An X-ray study of the temperature dependence of the quartz structure"
+	<citation doi="10.1107/S0567740876007966">
+		Y. le Page, G. Donnay,
+		Acta Crystallographica, B32 (1976) pg. 2456-2459
+		"Refinement of the crystal structure of low-quartz"
 	</citation>
 </cif>
