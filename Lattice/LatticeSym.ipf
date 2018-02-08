@@ -5297,7 +5297,7 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		bv = bvecs[m][p]
 		MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
 		MatrixOp/FREE rr = rr - floor(rr)		// reduce to [0,1), the first unit cell
-		rr = rr<1e-12 ? 0 : rr						// a fractional coord < 1e-12 is 0
+		rr = rr<1e-7 ? 0 : rr						// a fractional coord < 1e-7 is 0
 		rr8 = rr[q] + add8							// deals with issue when comparing {x,y,0.99} to {x,y,0.01}
 		MatrixOP/FREE vec8 = ( direct x rr8^t )^t	// real space vectors from rr
 		if (Neq<2)
