@@ -19,7 +19,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_xyz>0.46987 0 0.6666667</fract_xyz>
+		<fract_xyz>0.46987 0 0.66666666666667</fract_xyz>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<aniso_U_11>0.0066</aniso_U_11>
