@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.46
+#pragma version = 6.47
 #include "Utility_JZT" version>=4.44
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -207,6 +207,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								added: FindCentralAtom(), FindClosestAtomDirection(), ExtendFractional(), UnBondedAtomsList()
 //								renamed ForceReComputeBondsInxtal() -> ForceReComputeBonds()
 //	with version 6.46, fixed positionsOfOneAtomType(), was not correctly finding atom positions.
+//	with version 6.47, added Condition_xyz(), when reading in fractional coord of 0.3333, extend precision (same for n/6)
 
 
 //	Rhombohedral Transformation:
@@ -3427,7 +3428,29 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	if (xtal.Nbonds < 1)								// do NOT recalc bonds if already there
 		ComputeBonds(xtal, printIt=printIt)
 	endif
+
+	// for fractional positions of 0.3333 or 0.1667, extend precision to exactly 1/3 or 1/6, etc.
+	Variable i
+	for (i=0;i<xtal.N;i+=1)
+		xtal.atom[i].x = Condition_xyz(xtal.atom[i].x)
+		xtal.atom[i].y = Condition_xyz(xtal.atom[i].y)
+		xtal.atom[i].z = Condition_xyz(xtal.atom[i].z)
+	endfor
 	return err
+End
+//
+Static Function Condition_xyz(val)	// make divide by 3 or 6 exact, 1/2 & 1/4 don't need this
+	Variable val					// val must be have at least 4 places after the decimal to do anything
+	Variable places = placesOfPrecision(mod(val,1))		// always in range [1,18]
+	if (places<4)
+		return val
+	endif
+	places = min(places,12)
+	Variable tens = 10^(places)
+	Variable tol6 = 3.9 / tens
+	Variable err6 = abs(round(6*val) - (6*val))
+	val = (err6>0 && err6<tol6) ? round(val*6)/6 : val
+	return val
 End
 //
 Static Function/S FindMaterialsFile(fname)		// returns full path to a materials file
