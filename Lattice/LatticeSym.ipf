@@ -7348,7 +7348,12 @@ Static Function ExtendFractional(xyz,delta)
 	Variable i,j, Nadd, Nxyz=Natom
 	for (j=0;j<26;j+=1)							// for each of the offsets, add atoms to xyz, & Types
 		offset = offsets[j][p]
-		MatrixOP/FREE xyzTest = xyz0 + RowRepeat(offset,Natom)
+		if (Natom<2)
+			Duplicate/FREE xyz0, xyzTest
+			xyzTest = xyz0 + offset
+		else
+			MatrixOP/FREE xyzTest = xyz0 + RowRepeat(offset,Natom)
+		endif
 		MatrixOP/FREE flagX = greater(col(xyzTest,0),-0.5) && greater(1.5,col(xyzTest,0))
 		MatrixOP/FREE flagY = greater(col(xyzTest,1),-0.5) && greater(1.5,col(xyzTest,1))
 		MatrixOP/FREE flagZ = greater(col(xyzTest,2),-0.5) && greater(1.5,col(xyzTest,2))
