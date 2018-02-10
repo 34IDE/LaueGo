@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.49
+#pragma version = 0.50
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -156,8 +156,7 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 	Variable Na,Nb,Nc				// number of cells in each direction, default is 1
 	Variable bLen					// maximum distance that gets a bond
 	Variable GizmoScaleSize	// 1 gives nice pictures
-	bLen = ParamIsDefault(bLen) ? NaN : bLen
-	bLen = bLen>0 ? bLen : NaN
+	bLen = ParamIsDefault(bLen) || blen<=0 ? NaN : bLen
 	GizmoScaleSize = ParamIsDefault(GizmoScaleSize) ? 1 : GizmoScaleSize
 	GizmoScaleSize = numtype(GizmoScaleSize) || GizmoScaleSize<=0 ? 1 : GizmoScaleSize
 
@@ -229,8 +228,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	Na = numtype(Na) || Na<=0 ? 1 : Na
 	Nb = numtype(Nb) || Nb<=0 ? 1 : Nb
 	Nc = numtype(Nc) || Nc<=0 ? 1 : Nc
-	bLen = ParamIsDefault(bLen) ? NaN : bLen
-	bLen = bLen>0 ? bLen : NaN
+	bLen = ParamIsDefault(bLen) || blen<=0 ? NaN : bLen
 	GizmoScaleSize = ParamIsDefault(GizmoScaleSize) ? 1 : GizmoScaleSize
 	GizmoScaleSize = numtype(GizmoScaleSize) || GizmoScaleSize<=0 ? 1 : GizmoScaleSize
 
@@ -419,29 +417,31 @@ Static Function/WAVE RepeatOneAtomSet(atomi,Na,Nb,Nc)
 		return $""
 	endif
 
-	Variable Nmax=300, N
-	Make/N=(Nmax,3)/FREE/D vecs
-
-	Make/N=3/D/FREE ahat={1,0,0}, bhat={0,1,0}, chat={0,0,1}, v
+	Variable Nalloc=300, N
+	Make/N=(Nalloc,3)/FREE/D vecs
+	Make/N=3/D/FREE v, vi
 	Variable ia,ib,ic, i
-	for (N=0,ic=0; ic<=ceil(Nc); ic+=1)
+	for (N=0,ic=0; ic<=ceil(Nc); ic+=1)	// the >= make ic go to Nc (over scans)
+		vi[2] = ic
 		for (ib=0; ib<=ceil(Nb); ib+=1)
+			vi[1] = ib
 			for (ia=0; ia<=ceil(Na); ia+=1)
-				for (i=0;i<Ni;i+=1)	// loop over each atom in atomi
-					v = atomi[i][p] + ia*ahat[p] + ib*bhat[p] + ic*chat[p]
-					if (v[0]<=Na && v[1]<=Nb && v[2]<=Nc)	// keep this atom
-						if (N>=Nmax)
-							Nmax += 300
-							Redimension/N=(Nmax,-1) vecs
+				vi[0] = ia
+				for (i=0;i<Ni;i+=1)				// loop over each atom in atomi
+					v = atomi[i][p] + vi
+					if (v[0]<=Na && v[1]<=Nb && v[2]<=Nc)	// keep this atom, not <=, not < to keep outside surface
+						if (N>=Nalloc)
+							Nalloc += 300			// need to allocate more space
+							Redimension/N=(Nalloc,-1) vecs
 						endif
-						vecs[N][] = v[q]
+						vecs[N][] = v[q]			// save this fractional position
 						N += 1
 					endif
 				endfor
 			endfor
 		endfor
 	endfor
-	Redimension/N=(N,-1) vecs
+	Redimension/N=(N,-1) vecs					// trim down to actual size
 	return vecs
 End
 
@@ -604,8 +604,7 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	String prefix
 	Wave xyz				// list of atom xyz positions
 	Variable bLen		// maximum distance that gets a bond
-	bLen = ParamIsDefault(bLen) ? NaN : bLen
-	bLen = bLen>0 ? bLen : NaN
+	bLen = ParamIsDefault(bLen) || blen<=0 ? NaN : bLen
 
 	if (!WaveExists(xyz))
 		return $""
