@@ -65,6 +65,9 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	elseif (Ndetectors>1 && ParamIsDefault(detector))		// force a choice of which detector to use
 		detector = NaN
 	endif
+	if (WaveExists(recipSource))
+		Wave recip = recipSource
+	endif
 
 	Variable startx=0, endx=(geo.d[0].Nx)-1, groupx=1	// used to define the ROI
 	Variable starty=0, endy=(geo.d[0].Ny)-1, groupy=1
