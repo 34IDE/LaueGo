@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.06
+#pragma version=2.07
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1633,11 +1633,12 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 	Note/K vonMisesN, "waveClass=vonMisesStrain;Random3dArrays"
 
 	Variable m, once=1,j, ok
+	Variable div = limit(round(ItemsInRange(range)/5),1,10)
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)		// display a progress bar (move to here, constrain set by first call) 
 	for (m=str2num(range),j=0,ok=0; numtype(m)==0; m=NextInRange(range,m),j+=1)
-		if (mod(j,10)==0)
-			if (ProgressPanelUpdate(progressWin,j/N*100))				// update progress bar
-				break														//   and break out of loop
+		if (mod(j,div)==0)
+			if (ProgressPanelUpdate(progressWin,j/N*100))			// update progress bar
+				break																//   and break out of loop
 			endif
 		endif
 		Wave eWave = $DeviatoricStrainRefineXML(m,pattern,constrain,coords=coords,xmlFileFull=xmlFileFull,printit=0)
@@ -1700,7 +1701,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 		xmlFileFull = S_fileName
 	endif
 	String names = MakeStepIndexForXML(xmlFileFull)
-	Wave indexPos = $StringFromLIst(0,names)
+	Wave indexPos = $StringFromLIst(0,names)		// contains 1 more entry than number of steps
 	Wave/T indexImage = $StringFromLIst(1,names)
 	if (!WaveExists(indexPos) || !WaveExists(indexImage))
 		return ""
@@ -1735,7 +1736,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	imageName = ParseFilePath(3,  imageName, "/", 0, 0)	// or Unix
 	imageName = ParseFilePath(3,  imageName, "\\", 0, 0)	// or Windows
 	// get step containing imageName from file
-	Variable Nindex=DimSize(indexPos,0), index
+	Variable Nindex=DimSize(indexImage,0), index
 	for (index=0;index<Nindex;index+=1)
 		if (stringmatch(indexImage[index],imageName))
 			break
@@ -2065,9 +2066,9 @@ Static Function/T MakeStepIndexForXML(xmlFileFull)
 	String inputImage
 	String step
 	Variable i0,i1										// mark start and end of current   <step ></step>
-	Variable i0start=0									// where to start searching for "<step "
-	Variable bytesRead									// keeps track of how many bytes read in (should not exceed fileLen)
-//	Variable size=50*1024								// size of a typical read
+	Variable i0start=0								// where to start searching for "<step "
+	Variable bytesRead								// keeps track of how many bytes read in (should not exceed fileLen)
+//	Variable size=50*1024							// size of a typical read
 	Variable size=200*1024							// size of a typical read
 	Variable PosOfBuf=0								// position of start of buffer
 	Variable N											// <step> index (and afterwards the total number of points)
@@ -2075,24 +2076,24 @@ Static Function/T MakeStepIndexForXML(xmlFileFull)
 	// start reading here
 	Open/R/Z=1 f as xmlFileFull
 	size = min(size,fileLen)
-	String buf = PadString("",size,0x20)				// a buffer for working space (of length size bytes)
+	String buf = PadString("",size,0x20)		// a buffer for working space (of length size bytes)
 	String bufRead										// a buffer for reading more from the file (read up to this much each time)
 	String detector
-	FBinRead f, buf										// initial read
+	FBinRead f, buf									// initial read
 	bytesRead = strlen(buf)
 	N = 0
 	do
 		i0 = strsearch(buf,"<step ",i0start,2)
 		if (i0<0)										// read more (extend buf)
-			size = min(size,fileLen-bytesRead)			// number of bytes to read
+			size = min(size,fileLen-bytesRead)	// number of bytes to read
 			bufRead = PadString("",size,0x20)
-			FBinRead f, bufRead							// could not find start of step, read more
+			FBinRead f, bufRead						// could not find start of step, read more
 			bytesRead += strlen(bufRead)
 			//	buf = buf[i0,Inf] + bufRead
 			buf = buf[0,Inf] + bufRead
-			i0 = strsearch(buf,"<step ",i0start,2)		// search again for start of step tag
+			i0 = strsearch(buf,"<step ",i0start,2)	// search again for start of step tag
 			if (i0<0)
-				break									// give up, all done
+				break										// give up, all done
 			endif
 		endif
 
@@ -2101,38 +2102,40 @@ Static Function/T MakeStepIndexForXML(xmlFileFull)
 			Redimension/N=(Nsize) indexPos, indexImage
 		endif
 
-		indexPos[N] = PosOfBuf+i0						// position of start of this <step>
+		indexPos[N] = PosOfBuf+i0					// position of start of this <step>
 		N += 1											// increment here, because some <step>s may not have an image
-		i1 = strsearch(buf,"</step>",i0,2)				// position of end of step
+		i1 = strsearch(buf,"</step>",i0,2)		// position of end of step
 		if (i1<0)
-			size = min(size,fileLen-bytesRead)			// number of bytes to read
+			size = min(size,fileLen-bytesRead)	// number of bytes to read
 			bufRead = PadString("",size,0x20)
-			FBinRead f, bufRead							// could not find end of step, read more
+			FBinRead f, bufRead						// could not find end of step, read more
 			bytesRead += strlen(bufRead)
 			buf = buf[i0,Inf] + bufRead
 			PosOfBuf += i0								// start of buf shifted higher by i0
 			i0 = 0
-			i1 = strsearch(buf,"</step>",i0,2)			// search again for end of step tag
+			i1 = strsearch(buf,"</step>",i0,2)	// search again for end of step tag
 			if (i1<0)
-				break									// give up, all done
+				break										// give up, all done
 			endif
 		endif
 		i1 += 6
 
 		// this step is bracketed by [i0,i1], process it:
-		step = buf[i0+5,i1]						// io points to start of "<step...", start in a bit for getting detector
+		step = buf[i0+5,i1]							// io points to start of "<step...", start in a bit for getting detector
 		i0start = i1 + 1								// where to start searching for next start tag
 		detector = xmlTagContents("detector",step)
 		inputImage = ParseFilePath(3,  xmlTagContents("inputImage",detector), "/", 0, 0)
 		if (strlen(inputImage)<1)
 			continue
 		endif
-		indexImage[N-1] = inputImage					// name of image for this <step>
+		indexImage[N-1] = inputImage				// name of image for this <step>
 	while(1)
 	Close f
 
 	Nsize = N
-	Redimension/N=(Nsize) indexPos, indexImage
+	Redimension/N=(Nsize+1) indexPos
+	indexPos[Nsize] = i1
+	Redimension/N=(Nsize) indexImage
 
 	return GetWavesDataFolder(indexPos,2)+";"+GetWavesDataFolder(indexImage,2)
 End
@@ -4236,7 +4239,7 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	Variable f
-	Open/R/Z=2/M="pick the XML file"/F=XMLfilters f as FullFileName
+	Open/R/Z=2/P=$PathList("home","","")/M="pick the XML file"/F=XMLfilters f as FullFileName
 	if (f)
 		Close f
 	endif

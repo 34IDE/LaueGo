@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.92
+#pragma version = 4.93
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -6395,7 +6395,7 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 	return err
 End
 //
-#else
+#else				// else for #ifdef USE_ENERGY_STRAIN_REFINE
 //
 Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPeakIndexed,printIt])
 	Variable pattern											// pattern number, usually 0
@@ -6494,7 +6494,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		if (!WaveExists(FullPeakList))
 			continue
 		endif
-		Wave Qis = FullPeakList2Qwave(FullPeakList)
+		Wave Qis = FullPeakList2Qwave(FullPeakList)	// Qxyz, intens (4 columns)
 		if (!WaveExists(Qis) || DimSize(Qis,0)<1)
 			continue
 		endif
@@ -6567,7 +6567,6 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r"LC[0]/LC[2],LC[1]/LC[2],LC[0]/LC[1]
 	endif
 
-	Make/N=3/O/D/FREE qhat
 	Make/N=(N,15)/O/D PeaksForStrain=NaN
 	SetDimLabel 1,0,h,PeaksForStrain ;				SetDimLabel 1,1,k,PeaksForStrain ;			SetDimLabel 1,2,l,PeaksForStrain
 	SetDimLabel 1,3,fitQx,PeaksForStrain ;		SetDimLabel 1,4,fitQy,PeaksForStrain ;	SetDimLabel 1,5,fitQz,PeaksForStrain
@@ -6605,7 +6604,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		endif
 	endfor
 	N = m
-	Redimension/N=(N,-1) PeaksForStrain						// reset to number of valid points in PeaksForStrain
+	Redimension/N=(N,-1) PeaksForStrain						// trim to number of valid points in PeaksForStrain
 	Variable rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)
 	if (printIt)
 //		printf "at start, rms error = %.5f¡\r",latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)		// 3 rotations and all 6 lattice constants
@@ -6845,7 +6844,7 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 	return err
 End
 //
-#endif
+#endif			// end of #ifdef USE_ENERGY_STRAIN_REFINE
 //
 Static Function latticeMismatch4(PeaksForStrain,rx,ry,rz,f1)	// only fit rx,ry,rz, and one others
 	Wave PeaksForStrain
