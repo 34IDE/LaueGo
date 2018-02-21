@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.42
+#pragma version = 3.43
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -81,7 +81,7 @@ End
 Menu "File"
 	"-"
 	SubMenu "Add Local User Package -->"
-		JZTgeneral_CheckForUserPackages(""), /Q,JZTgeneral#JZTgeneral_StartUpLocalPackage()
+		JZTgeneral#CheckForUserPackages(""), /Q,JZTgeneral#StartUpLocalPackage()
 	End
 End
 #endif
@@ -580,26 +580,63 @@ End
 
 
 
+#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32		// want to include support for User LocalPackages
 //  ====================================================================================  //
 //  =========================== Start of User Packages Menu  ===========================  //
 //
-//	This provides for an easy way to load any package in the folder "Documents:WaveMetrics:Igor Pro 6 User Files:User Procedures/LocalPackages"
-//	just put the ipf file in there and it will be available to this function for loading.
-//	if the first 50 lines of the file contain a line such as   "#requiredPackages "HDF5images;microGeometryN;", then it will only load that file if the 
-//	ipf files in the list are already loaded.
-//	if the package contains the line "#excludeFromPackageMenu", then it will not show up in the list of packages to load (useful for subroutines)
-//	Note if the ipf file contains both #requiredPackages and #excludeFromPackageMenu, then the behavior depends upon order, but that situation is stupid.
+//	This provides a self-configuring Menu for loading packages. It does NOT automatically load any *.ipf files.
+//	It just provides a Menu to load the *.ipf files.
 //
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32		// want to include support for User LocalPackages
-Function/T JZTgeneral_CheckForUserPackages(dirPath)
-	String dirPath				// full path to a directory
+//	It looks for all Igor *.ipf files in the folder:
+//			":Documents:WaveMetrics:Igor Pro N User Files:User Procedures/LocalPackages"
+//	If you don't want to use a separate folder called "LocalPackages", then just execute the command:
+//		String root:Packages:PackagesFolder_JZT = "My Packages"
+//	where you change "My Packages" to whatever folder name that you want to use.
+//	If you set:    String root:Packages:PackagesFolder_JZT="",
+//	then every *.ipf file in your "User Procedures" folder will show up on the Menu.
+//
+//	Put any Igor packages in the LocalPackages folder (or a sub-folder) that you want available for loading.
+//	They will automatically be available for including by going to the Igor MenuBar   "File:Add Local User Package-->"
+//	It ignores all files in the following sub-folders:
+//		if the folder name starts with a "."			// system folders
+//		if the folder name contains the word "subroutine"	// hides subroutines
+//		if the folder name ends in "always"			// always things
+//		if the folder name is "old"						// old things�
+//		if the folder name ends in " old"
+//		if the folder name contains "(old"
+//	
+//	If in the first 50 lines of the ipf file there is a line such as:
+//	#requiredPackages "HDF5images;microGeometryN;"
+//	then this ipf file will only appear in the Menu if all of the ipf files in the list are already loaded.
+//	In this example, the ipf file will only appear in the "File:Add Local User Package-->" Menu if the ipf 
+//	files HDF5images and microGeometryN have both been PREVIOUSLY loaded.
+//	This provides a way to suppress menu items that are not appropriate.
+//	
+//	If there is a line:
+//	#excludeFromPackageMenu
+//	then this file will not show up in the Menu. This is useful for subroutine type files.
+//	
+//	Also, if the ipf file contains a line like:
+//	#initFunctionName "Init_abcPackage()"
+//	
+//	Then Init_abcPackage() will be run after the ipf file is loaded.  Actually, everything in the double quotes is 
+//	passed to an Execute command. There is nothing special about the name.
+//	
+//	So if you include other packages in the package that you are loading, don't forget to include the packages 
+//	init_func in you init_func.
+//	
+//	e.g. if you load abc.ipf (and abc.ipf has #include "xyz"), then Init_abcPackage() should call Init_xyzPackage(). 
+//	Otherwise xyz will not be inited.  Note, the init function is not required, it is just available.
 
-	String rootPath = SpecialDirPath("Documents", 0, 0, 0 )+"WaveMetrics:Igor Pro 6 User Files:User Procedures:LocalPackages:"
+Static Function/T CheckForUserPackages(dirPath)
+	String dirPath				// full path to a directory
+	String PackagesFolder = StrVarOrDefault("root:Packages:PackagesFolder_JZT","LocalPackages")
+	String rootPath = SpecialDirPath("Igor Pro User Files", 0, 0, 0 )+"User Procedures:"+PackagesFolder
 	dirPath = SelectString(strlen(dirPath),rootPath,dirPath)
 	String pre = dirPath[strlen(rootPath),Inf]
 	pre += SelectString(strlen(pre),"",":")
 	String pathName = UniqueName("lpath",12,0)
-	NewPath/O/Q/Z $pathName ,  dirPath
+	NewPath/O/Q/Z $pathName, dirPath
 	if (V_flag)
 		return ""
 	endif
@@ -611,7 +648,7 @@ Function/T JZTgeneral_CheckForUserPackages(dirPath)
 			break
 		endif
 		if (allProcsArePresent(ReplaceString(".ipf",fname,"")))
-			i += 1													// skip if fname is already included
+			i += 1															// skip if fname is already included
 			continue
 		endif
 		required = getListOfRequiredProcs(pathName,fname)
@@ -640,7 +677,7 @@ Function/T JZTgeneral_CheckForUserPackages(dirPath)
 		elseif (strsearch(dirName,"(no copy)",dirLast,3)>=0)			// contains "(no copy)"
 			continue
 		endif
-		addMenus = JZTgeneral_CheckForUserPackages(dirName)	// check inside this sub-directory recursively
+		addMenus = CheckForUserPackages(dirName)	// check inside this sub-directory recursively
 		menuList += SelectString(strlen(addMenus),"","-;") + addMenus
 	endfor
 	KillPath/Z $pathName
@@ -653,7 +690,7 @@ Static Function/T getListOfRequiredProcs(path,ipf)
 	String line, list=""
 	Variable f, i,i0,i1
 	Open/R/P=$path/T=".ipf"/Z f as ipf
-	for (i=0;i<50;i+=1)							// check only first 50 lines
+	for (i=0;i<50;i+=1)								// check only first 50 lines
 		FReadLine/N=500 f, line
 		if (strlen(line)==0)						// end of file
 			Close f
@@ -674,19 +711,19 @@ Static Function/T getListOfRequiredProcs(path,ipf)
 		endif
 	endfor
 	Close f
-	list = ReplaceString(",",list,";")				// change commas to semi-colons
+	list = ReplaceString(",",list,";")			// change commas to semi-colons
 	return list
 End
 //
-Static Function JZTgeneral_StartUpLocalPackage()
-	GetLastUserMenuInfo							// sets S_value, V_value, etc.
+Static Function StartUpLocalPackage()
+	GetLastUserMenuInfo								// sets S_value, V_value, etc.
 	String pkg=S_value
 	if (V_flag || !stringmatch(pkg,"*.ipf" ))
 		return 1
 	endif
 	String initFuncs=getInitFunctionsName(pkg), cmd
 	pkg = ReplaceString(".ipf",pkg,"")
-	Variable i=strsearch(pkg,":",inf,1)+1				// start of name part, strip off any leading path part
+	Variable i=strsearch(pkg,":",inf,1)+1		// start of name part, strip off any leading path part
 	if (i>=strlen(pkg))
 		DoAlert 0, "ERROR:\rCould not include package '"+pkg+"'"
 		return 0
@@ -718,7 +755,8 @@ End
 Static Function/T getInitFunctionsName(ipf)
 	String ipf										// name of name of ipf file
 	String pathName = UniqueName("lpath",12,0)
-	NewPath/O/Q/Z $pathName ,  SpecialDirPath("Documents", 0, 0, 0 )+"WaveMetrics:Igor Pro 6 User Files:User Procedures:LocalPackages:"
+	String PackagesFolder = StrVarOrDefault("root:Packages:PackagesFolder_JZT","LocalPackages")
+	NewPath/O/Q/Z $pathName, SpecialDirPath("Igor Pro User Files", 0, 0, 0 )+"User Procedures:"+PackagesFolder
 	GetFileFolderInfo/P=$pathName/Q/Z=1 ipf
 	if (!V_isFile && strsearch(ipf,".ipf",0,2)<0)
 		ipf += ".ipf"
@@ -734,7 +772,7 @@ Static Function/T getInitFunctionsName(ipf)
 	endif
 	for (i=0;i<50;i+=1)
 		FReadLine/N=500 f, line
-		if (strlen(line)==0)						// end of file
+		if (strlen(line)==0)					// end of file
 			Close f
 			return initFunc
 		endif
@@ -752,10 +790,10 @@ Static Function/T getInitFunctionsName(ipf)
 	KillPath/Z $pathName
 	return initFunc
 End
-#endif
-//
+
 //  ============================ End of User Packages Menu  ============================  //
 //  ====================================================================================  //
+#endif
 
 
 
