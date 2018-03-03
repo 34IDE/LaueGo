@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.43
+#pragma version = 3.44
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.07
@@ -764,7 +764,7 @@ Static Function/T getInitFunctionsName(ipf)
 
 	String line, initFunc=""
 	Variable f, i,i0,i1
-	Open/R/P=$pathName/T=".ipf"/Z f as ":"+ipf
+	Open/R/P=$pathName/T=".ipf"/Z f as ipf
 	if (V_flag)
 		DoAlert 0, "ERROR:\rCould not re-open file '"+ipf+"'"
 		KillPath/Z $pathName
