@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Cadmoselite (Wurtzite)</chemical_name_common>
+	<space_group_id>186</space_group_id>
+	<H-M>P 63 m c</H-M>
+	<amcsd>0019175</amcsd>
+	<cell>
+		<a unit="nm">0.4299</a>
+		<b unit="nm">0.4299</b>
+		<c unit="nm">0.7010</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+	<atom_site>
+		<label>Cd</label>
+		<symbol>Cd</symbol>
+		<fract_xyz>0.3333333 0.6666667 0</fract_xyz>
+		<aniso_U_11>0.01849</aniso_U_11>
+		<aniso_U_22>0.01849</aniso_U_22>
+		<aniso_U_33>0.02243</aniso_U_33>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Se</label>
+		<symbol>Se</symbol>
+		<fract_xyz>0.3333333 0.6666667 0.37679</fract_xyz>
+		<aniso_U_11>0.01532</aniso_U_11>
+		<aniso_U_22>0.01532</aniso_U_22>
+		<aniso_U_33>0.01215</aniso_U_33>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+	<citation>
+		D.K. Freeman, S.L. Mair, Z. Barnea, Acta Crystallographica, A33 (1977), pg. 355-359
+		"The structure and Bijvoet ratios of cadmium selenide"
+	</citation>
+</cif>
