@@ -1,10 +1,11 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.06
+#pragma version = 2.07
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
 #endif
+#initFunctionName "ElementDataInitPackage()"
 Constant MIN_LINE_SEPARATION_FRACTION = 0.15	// you can over ride this in your main procedure window.
 Constant ELEMENT_Zmax = 118
 Constant ELEMENT_MAX_N_EMISSION = 20
@@ -76,6 +77,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	Dec 1, 2017		2.06
 //		added ChemFormula2IgorStr(), returns a chemical formula suitable for a graph annotation, versions for Igor 6 & 7 
+//
+//	Mar 12, 2018		2.07
+//		added line:   #initFunctionName "ElementDataInitPackage()"
 
 Menu "Analysis"
       Submenu "Element"

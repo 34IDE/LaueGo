@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 1.00
+#pragma version = 1.01
 #pragma ModuleName=MCerror
 
 Static Constant MCerrorMaxXvals=20,  MCerrorMaxYvals=10
@@ -166,7 +166,7 @@ Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, Nmax, printIt])
 
 	STRUCT MCerrorStructure MClocal					// describes the error from a Monte Carlo error analysis
 	Init_MCerrorStructure(MClocal)
-	MClocal.funcName = StringByKey("NAME",FuncRefInfo(func))+StringByKey("NAME",FuncRefInfo(funcW))
+	MClocal.funcName = funcName
 
 	MClocal.Nmax = Nmax
 	MClocal.NX = NX
@@ -198,17 +198,14 @@ Static Function ErrorFromMonteCarlo(MC)		// fills MC structure with info about e
 	Variable tick=stopMSTimer(-2)
 	Make/N=(MC.NX)/D/FREE xVal = MC.xVal[p]
 	Make/N=(MC.NX)/D/FREE xErr = MC.xErr[p]
-	Variable iReturn=NumberByKey("RETURNTYPE",FunctionInfo(MC.funcName)), isProto=1, isVec
+	Variable iReturn=NumberByKey("RETURNTYPE",FunctionInfo(MC.funcName)), isVec
 	if (iReturn==4)									// Scalar return
 		FUNCREF MonteCarloFuncitonProto func = $MC.funcName
-		isProto = NumberByKey("ISPROTO",FuncRefInfo(func))
 		isVec = 0
 	elseif (iReturn==16384)						// Wave return
 		FUNCREF MonteCarloFuncitonProtoW funcW = $MC.funcName
-		isProto = NumberByKey("ISPROTO",FuncRefInfo(funcW))
 		isVec = 1
-	endif
-	if (isProto)
+	else
 		return 1
 	endif
 	Variable vTemp
