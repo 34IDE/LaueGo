@@ -1,8 +1,8 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.47
-#include "Utility_JZT" version>=4.44
+#pragma version = 6.48
+#include "Utility_JZT" version>=4.57
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
@@ -208,6 +208,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //								renamed ForceReComputeBondsInxtal() -> ForceReComputeBonds()
 //	with version 6.46, fixed positionsOfOneAtomType(), was not correctly finding atom positions.
 //	with version 6.47, added Condition_xyz(), when reading in fractional coord of 0.3333, extend precision (same for n/6)
+//	with version 6.48, fixed FindCentralAtom() and FindClosestAtomDirection() when xyz is (1,3) (only one atom position)
 
 
 //	Rhombohedral Transformation:
@@ -7310,10 +7311,14 @@ Static Function/WAVE FindCentralAtom(xyz)
 	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
 	Variable N=DimSize(xyz,0)
 	MatrixOP/FREE xyzAvg = sumCols(xyz)/N	// average position, represents the center
-	MatrixOP/FREE dmag2 = SumRows(magSqr(xyz-RowRepeat(xyzAvg,N)))
-	dmag2 = dmag2<min2 ? Inf : dmag2		// ignore atoms that are too close
-	WaveStats/M=1/Q dmag2
-	Make/N=3/D/FREE xyz0 = xyz[V_minloc][p]
+	if (N==1)
+		Make/N=3/D/FREE xyz0 = xyz[0][p]
+	else
+		MatrixOP/FREE dmag2 = SumRows(magSqr(xyz-RowRepeat(xyzAvg,N)))
+		dmag2 = dmag2<min2 ? Inf : dmag2	// ignore atoms that are too close
+		WaveStats/M=1/Q dmag2
+		Make/N=3/D/FREE xyz0 = xyz[max(V_minloc,0)][p]
+	endif
 	return xyz0
 End
 //
@@ -7324,11 +7329,16 @@ Static Function/WAVE FindClosestAtomDirection(xyz0, xyz)
 	Variable N=DimSize(xyz,0)
 
 	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
-	MatrixOP/FREE dxyz = xyz - RowRepeat(xyz0,N)
-	MatrixOP/FREE dmag2 = SumRows(magSqr(dxyz))
-	dmag2 = dmag2<min2 ? Inf : dmag2		// ignore atoms that are too close
-	WaveStats/M=1/Q dmag2
-	Make/N=3/D/FREE delta = dxyz[V_minloc][p]
+	Make/N=3/D/FREE delta
+	if (N>1)
+		MatrixOP/FREE dxyz = xyz - RowRepeat(xyz0,N)
+		MatrixOP/FREE dmag2 = SumRows(magSqr(dxyz))
+		dmag2 = dmag2<min2 ? Inf : dmag2	// ignore atoms that are too close
+		WaveStats/M=1/Q dmag2
+		delta = dxyz[max(V_minloc,0)][p]
+	else
+		delta = xyz[0][p] - xyz0[p]
+	endif
 	return delta
 End
 //

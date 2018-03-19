@@ -162,7 +162,7 @@
 	<name>Carbon</name>
 	<amu>12.0107</amu>
 	<density>2.26</density>
-	<valence>4</valence>
+	<valence>4 2</valence>
 	<firstIon>11.26</firstIon>
 	<vapor>715</vapor>
 	<thermalConduc>155</thermalConduc>
@@ -192,7 +192,7 @@
 	<name>Nitrogen</name>
 	<amu>14.0067</amu>
 	<density>0.001165</density>
-	<valence>3</valence>
+	<valence>3 -3 5 2 4</valence>
 	<firstIon>14.534</firstIon>
 	<fusion>0.36</fusion>
 	<vapor>2.7928</vapor>
@@ -222,7 +222,7 @@
 	<name>Oxygen</name>
 	<amu>15.9994</amu>
 	<density>0.001331</density>
-	<valence>2</valence>
+	<valence>-2 -1</valence>
 	<firstIon>13.618</firstIon>
 	<fusion>0.222</fusion>
 	<vapor>3.4109</vapor>
@@ -252,7 +252,7 @@
 	<name>Fluorine</name>
 	<amu>18.9984032</amu>
 	<density>0.001696</density>
-	<valence>1</valence>
+	<valence>-1</valence>
 	<firstIon>17.422</firstIon>
 	<fusion>0.26</fusion>
 	<vapor>3.2698</vapor>
@@ -418,7 +418,7 @@
 	<name>Silicon</name>
 	<amu>28.0855</amu>
 	<density>2.32</density>
-	<valence>4</valence>
+	<valence>4 2</valence>
 	<firstIon>8.151</firstIon>
 	<fusion>50.2</fusion>
 	<vapor>359</vapor>
@@ -454,7 +454,7 @@
 	<name>Phosphorus</name>
 	<amu>30.973761</amu>
 	<density>1.82</density>
-	<valence>5</valence>
+	<valence>3 -3 5 4</valence>
 	<firstIon>10.486</firstIon>
 	<fusion>0.63</fusion>
 	<vapor>12.4</vapor>
@@ -490,7 +490,7 @@
 	<name>Sulfur</name>
 	<amu>32.065</amu>
 	<density>2.07</density>
-	<valence>6</valence>
+	<valence>6 -2 2 4</valence>
 	<firstIon>10.36</firstIon>
 	<fusion>1.73</fusion>
 	<vapor>10</vapor>
@@ -526,7 +526,7 @@
 	<name>Chlorine</name>
 	<amu>35.453</amu>
 	<density>0.003214</density>
-	<valence>1</valence>
+	<valence>-1 1 7 5 3</valence>
 	<firstIon>12.967</firstIon>
 	<fusion>3.21</fusion>
 	<vapor>10.2</vapor>
@@ -718,7 +718,7 @@
 	<name>Titanium</name>
 	<amu>47.867</amu>
 	<density>4.53</density>
-	<valence>4</valence>
+	<valence>4 3 2</valence>
 	<firstIon>6.82</firstIon>
 	<fusion>18.6</fusion>
 	<vapor>425.2</vapor>
@@ -760,7 +760,7 @@
 	<name>Vanadium</name>
 	<amu>50.9415</amu>
 	<density>6.1</density>
-	<valence>5</valence>
+	<valence>5 4 3 2</valence>
 	<firstIon>6.74</firstIon>
 	<fusion>20.8</fusion>
 	<vapor>446.7</vapor>
@@ -802,7 +802,7 @@
 	<name>Chromium</name>
 	<amu>51.9961</amu>
 	<density>7.18</density>
-	<valence>3</valence>
+	<valence>3 6 2</valence>
 	<firstIon>6.766</firstIon>
 	<fusion>20</fusion>
 	<vapor>339.5</vapor>
@@ -844,7 +844,7 @@
 	<name>Manganese</name>
 	<amu>54.938049</amu>
 	<density>7.43</density>
-	<valence>2</valence>
+	<valence>2 3 4 6 7</valence>
 	<firstIon>7.435</firstIon>
 	<fusion>14.64</fusion>
 	<vapor>219.74</vapor>
@@ -886,7 +886,7 @@
 	<name>Iron</name>
 	<amu>55.845</amu>
 	<density>7.86</density>
-	<valence>3</valence>
+	<valence>3 2 6</valence>
 	<firstIon>7.87</firstIon>
 	<fusion>13.8</fusion>
 	<vapor>349.5</vapor>
@@ -928,7 +928,7 @@
 	<name>Cobalt</name>
 	<amu>58.9332</amu>
 	<density>8.9</density>
-	<valence>2</valence>
+	<valence>2 3</valence>
 	<firstIon>7.86</firstIon>
 	<fusion>16.19</fusion>
 	<vapor>373.3</vapor>
@@ -970,7 +970,7 @@
 	<name>Nickel</name>
 	<amu>58.6934</amu>
 	<density>8.876</density>
-	<valence>2</valence>
+	<valence>2 3</valence>
 	<firstIon>7.635</firstIon>
 	<fusion>17.2</fusion>
 	<vapor>377.5</vapor>
@@ -1012,7 +1012,7 @@
 	<name>Copper</name>
 	<amu>63.546</amu>
 	<density>8.94</density>
-	<valence>2</valence>
+	<valence>2 1</valence>
 	<firstIon>7.726</firstIon>
 	<fusion>13.14</fusion>
 	<vapor>300.5</vapor>
@@ -1098,7 +1098,7 @@
 	<name>Gallium</name>
 	<amu>69.723</amu>
 	<density>5.877</density>
-	<valence>3</valence>
+	<valence>3 1</valence>
 	<firstIon>5.999</firstIon>
 	<fusion>5.59</fusion>
 	<vapor>256.06</vapor>
@@ -1188,7 +1188,7 @@
 	<name>Arsenic</name>
 	<amu>74.9216</amu>
 	<density>5.72</density>
-	<valence>3</valence>
+	<valence>3 -3 5</valence>
 	<firstIon>9.81</firstIon>
 	<fusion>27.7</fusion>
 	<vapor>32.4</vapor>
@@ -1234,7 +1234,7 @@
 	<name>Selenium</name>
 	<amu>78.96</amu>
 	<density>4.78</density>
-	<valence>4</valence>
+	<valence>4 6 -2</valence>
 	<firstIon>9.752</firstIon>
 	<fusion>5.54</fusion>
 	<vapor>26.32</vapor>
@@ -1280,7 +1280,7 @@
 	<name>Bromine</name>
 	<amu>79.904</amu>
 	<density>3.11</density>
-	<valence>1</valence>
+	<valence>-1 1 7 5 3</valence>
 	<firstIon>11.814</firstIon>
 	<fusion>5.286</fusion>
 	<vapor>14.725</vapor>
@@ -1575,7 +1575,7 @@
 	<name>Niobium</name>
 	<amu>92.90638</amu>
 	<density>8.55</density>
-	<valence>5</valence>
+	<valence>5 3 4</valence>
 	<firstIon>6.88</firstIon>
 	<fusion>26.9</fusion>
 	<vapor>690.1</vapor>
@@ -1627,7 +1627,7 @@
 	<name>Molybdenum</name>
 	<amu>95.94</amu>
 	<density>10.2</density>
-	<valence>6</valence>
+	<valence>6 5 4 3 2</valence>
 	<firstIon>7.099</firstIon>
 	<fusion>36</fusion>
 	<vapor>590.4</vapor>
@@ -1679,7 +1679,7 @@
 	<name>Technetium</name>
 	<amu>98</amu>
 	<density>11.48</density>
-	<valence>7</valence>
+	<valence>7 5 4</valence>
 	<firstIon>7.28</firstIon>
 	<fusion>23</fusion>
 	<vapor>502</vapor>
@@ -1731,7 +1731,7 @@
 	<name>Ruthenium</name>
 	<amu>101.07</amu>
 	<density>12.39</density>
-	<valence>3</valence>
+	<valence>3 4 2 6 8</valence>
 	<firstIon>7.37</firstIon>
 	<fusion>25.52</fusion>
 	<vapor>567.77</vapor>
@@ -1783,7 +1783,7 @@
 	<name>Rhodium</name>
 	<amu>102.9055</amu>
 	<density>12.39</density>
-	<valence>3</valence>
+	<valence>3 2 4</valence>
 	<firstIon>7.46</firstIon>
 	<fusion>21.76</fusion>
 	<vapor>495.39</vapor>
@@ -1835,7 +1835,7 @@
 	<name>Palladium</name>
 	<amu>106.42</amu>
 	<density>12</density>
-	<valence>2</valence>
+	<valence>2 4</valence>
 	<firstIon>8.34</firstIon>
 	<fusion>16.74</fusion>
 	<vapor>393.3</vapor>
@@ -2047,7 +2047,7 @@
 	<name>Tin</name>
 	<amu>118.71</amu>
 	<density>7.3</density>
-	<valence>4</valence>
+	<valence>4 2</valence>
 	<firstIon>7.344</firstIon>
 	<fusion>7.2</fusion>
 	<vapor>290.37</vapor>
@@ -2101,7 +2101,7 @@
 	<name>Antimony</name>
 	<amu>121.76</amu>
 	<density>6.679</density>
-	<valence>3</valence>
+	<valence>3 -3 5</valence>
 	<firstIon>8.641</firstIon>
 	<fusion>19.83</fusion>
 	<vapor>67.97</vapor>
@@ -2155,7 +2155,7 @@
 	<name>Tellurium</name>
 	<amu>127.6</amu>
 	<density>6.23</density>
-	<valence>4</valence>
+	<valence>4 5 -2</valence>
 	<firstIon>9.009</firstIon>
 	<fusion>17.49</fusion>
 	<vapor>50.63</vapor>
@@ -2209,7 +2209,7 @@
 	<name>Iodine</name>
 	<amu>126.90447</amu>
 	<density>4.92</density>
-	<valence>1</valence>
+	<valence>-1 1 5 7</valence>
 	<firstIon>10.451</firstIon>
 	<fusion>7.76</fusion>
 	<vapor>20.9</vapor>
@@ -2491,7 +2491,7 @@
 	<name>Cerium</name>
 	<amu>140.116</amu>
 	<density>6.637</density>
-	<valence>3</valence>
+	<valence>3 4</valence>
 	<firstIon>5.47</firstIon>
 	<fusion>9.2</fusion>
 	<vapor>313.8</vapor>
@@ -2550,7 +2550,7 @@
 	<name>Praseodymium</name>
 	<amu>140.90765</amu>
 	<density>6.761</density>
-	<valence>3</valence>
+	<valence>3 4</valence>
 	<firstIon>5.42</firstIon>
 	<fusion>10.04</fusion>
 	<vapor>332.63</vapor>
@@ -2717,7 +2717,7 @@
 	<name>Samarium</name>
 	<amu>150.36</amu>
 	<density>7.51</density>
-	<valence>3</valence>
+	<valence>3 2</valence>
 	<firstIon>5.63</firstIon>
 	<fusion>11.09</fusion>
 	<vapor>191.63</vapor>
@@ -2777,7 +2777,7 @@
 	<name>Europium</name>
 	<amu>151.964</amu>
 	<density>5.228</density>
-	<valence>3</valence>
+	<valence>3 2</valence>
 	<firstIon>5.67</firstIon>
 	<fusion>9.21</fusion>
 	<vapor>175.73</vapor>
@@ -2896,7 +2896,7 @@
 	<name>Terbium</name>
 	<amu>158.92534</amu>
 	<density>8.214</density>
-	<valence>3</valence>
+	<valence>3 4</valence>
 	<firstIon>5.86</firstIon>
 	<fusion>15.48</fusion>
 	<thermalConduc>11.1</thermalConduc>
@@ -3133,7 +3133,7 @@
 	<name>Thulium</name>
 	<amu>168.93421</amu>
 	<density>9.294</density>
-	<valence>3</valence>
+	<valence>3 2</valence>
 	<firstIon>6.184</firstIon>
 	<fusion>16.8</fusion>
 	<vapor>191</vapor>
@@ -3192,7 +3192,7 @@
 	<name>Ytterbium</name>
 	<amu>173.04</amu>
 	<density>6.953</density>
-	<valence>3</valence>
+	<valence>3 2</valence>
 	<firstIon>6.254</firstIon>
 	<fusion>7.7</fusion>
 	<vapor>128</vapor>
@@ -3372,7 +3372,7 @@
 	<name>Tantalum</name>
 	<amu>180.9479</amu>
 	<density>16.624</density>
-	<valence>5</valence>
+	<valence>5 4</valence>
 	<firstIon>7.89</firstIon>
 	<fusion>36</fusion>
 	<vapor>737</vapor>
@@ -3432,7 +3432,7 @@
 	<name>Tungsten</name>
 	<amu>183.84</amu>
 	<density>19.3</density>
-	<valence>6</valence>
+	<valence>6 5 4 3 2</valence>
 	<firstIon>7.98</firstIon>
 	<fusion>35.4</fusion>
 	<vapor>422.58</vapor>
@@ -3492,7 +3492,7 @@
 	<name>Rhenium</name>
 	<amu>186.207</amu>
 	<density>20.98</density>
-	<valence>7</valence>
+	<valence>7 6 5 4 3 2</valence>
 	<firstIon>7.88</firstIon>
 	<fusion>33.05</fusion>
 	<vapor>707.1</vapor>
@@ -3552,7 +3552,7 @@
 	<name>Osmium</name>
 	<amu>190.23</amu>
 	<density>22.53</density>
-	<valence>4</valence>
+	<valence>4 8 6 3 2</valence>
 	<firstIon>8.7</firstIon>
 	<fusion>29.29</fusion>
 	<vapor>627.6</vapor>
@@ -3612,7 +3612,7 @@
 	<name>Iridium</name>
 	<amu>192.217</amu>
 	<density>22.39</density>
-	<valence>4</valence>
+	<valence>4 2 6 3</valence>
 	<firstIon>9.1</firstIon>
 	<fusion>26.36</fusion>
 	<vapor>563.58</vapor>
@@ -3672,7 +3672,7 @@
 	<name>Platinum</name>
 	<amu>195.078</amu>
 	<density>21.41</density>
-	<valence>4</valence>
+	<valence>4 2</valence>
 	<firstIon>9</firstIon>
 	<fusion>19.66</fusion>
 	<vapor>510.45</vapor>
@@ -3732,7 +3732,7 @@
 	<name>Gold</name>
 	<amu>196.96655</amu>
 	<density>18.85</density>
-	<valence>3</valence>
+	<valence>3 1</valence>
 	<firstIon>9.225</firstIon>
 	<fusion>12.36</fusion>
 	<vapor>324.43</vapor>
@@ -3792,7 +3792,7 @@
 	<name>Mercury</name>
 	<amu>200.59</amu>
 	<density>13.522</density>
-	<valence>2</valence>
+	<valence>2 1</valence>
 	<firstIon>10.437</firstIon>
 	<fusion>2.292</fusion>
 	<vapor>59.3</vapor>
@@ -3854,7 +3854,7 @@
 	<name>Thallium</name>
 	<amu>204.3833</amu>
 	<density>11.83</density>
-	<valence>1</valence>
+	<valence>3 1</valence>
 	<firstIon>6.108</firstIon>
 	<fusion>4.27</fusion>
 	<vapor>162.09</vapor>
@@ -3916,7 +3916,7 @@
 	<name>Lead</name>
 	<amu>207.2</amu>
 	<density>11.33</density>
-	<valence>2</valence>
+	<valence>2 4</valence>
 	<firstIon>7.416</firstIon>
 	<fusion>4.77</fusion>
 	<vapor>177.9</vapor>
@@ -3978,7 +3978,7 @@
 	<name>Bismuth</name>
 	<amu>208.98038</amu>
 	<density>9.73</density>
-	<valence>3</valence>
+	<valence>3 5</valence>
 	<firstIon>7.289</firstIon>
 	<fusion>11</fusion>
 	<vapor>179</vapor>
@@ -4040,7 +4040,7 @@
 	<name>Polonium</name>
 	<amu>209</amu>
 	<density>9.3</density>
-	<valence>2</valence>
+	<valence>2 4</valence>
 	<firstIon>8.42</firstIon>
 	<fusion>13</fusion>
 	<vapor>120</vapor>
@@ -4084,7 +4084,7 @@
 	<name>Astatine</name>
 	<amu>210</amu>
 	<density>1</density>
-	<valence>1</valence>
+	<valence>-1 1 7 5 3</valence>
 	<fusion>12</fusion>
 	<vapor>30</vapor>
 	<thermalConduc>1.7</thermalConduc>
@@ -4373,7 +4373,7 @@
 	<name>Protactinium</name>
 	<amu>231.03588</amu>
 	<density>15.34</density>
-	<valence>5</valence>
+	<valence>5 4</valence>
 	<firstIon>5.88</firstIon>
 	<thermalConduc>47</thermalConduc>
 	<melt>1845</melt>
@@ -4415,7 +4415,7 @@
 	<name>Uranium</name>
 	<amu>238.02891</amu>
 	<density>18.92</density>
-	<valence>6</valence>
+	<valence>6 5 4 3 2</valence>
 	<firstIon>6.05</firstIon>
 	<fusion>15.48</fusion>
 	<vapor>422.58</vapor>
@@ -4478,7 +4478,7 @@
 	<name>Neptunium</name>
 	<amu>237</amu>
 	<density>20.25</density>
-	<valence>5</valence>
+	<valence>5 6 4 3</valence>
 	<firstIon>6.19</firstIon>
 	<thermalConduc>6.3</thermalConduc>
 	<melt>912</melt>
@@ -4493,7 +4493,7 @@
 	<name>Plutonium</name>
 	<amu>244</amu>
 	<density>19.84</density>
-	<valence>4</valence>
+	<valence>4 6 5 3</valence>
 	<firstIon>6.06</firstIon>
 	<thermalConduc>6.74</thermalConduc>
 	<specificHeat>0.13</specificHeat>
@@ -4509,7 +4509,7 @@
 	<name>Americium</name>
 	<amu>243</amu>
 	<density>11.7</density>
-	<valence>3</valence>
+	<valence>3 6 5 4 2</valence>
 	<firstIon>6</firstIon>
 	<thermalConduc>10</thermalConduc>
 	<melt>1449</melt>

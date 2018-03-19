@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.07
+#pragma version = 2.08
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -80,6 +80,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	Mar 12, 2018		2.07
 //		added line:   #initFunctionName "ElementDataInitPackage()"
+//
+//	Mar 19, 2018		2.08
+//		now also reads in valenceList from the xml file
 
 Menu "Analysis"
       Submenu "Element"
@@ -100,14 +103,14 @@ Function ElementData(symb,property,[printIt])
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
-	String keys = "Z;amu;density;valence;state;firstIon;heatFusion;heatVaporization;thermalConductivity;specificHeat;"
+	String keys = "Z;amu;density;valence;valenceList;state;firstIon;heatFusion;heatVaporization;thermalConductivity;specificHeat;"
 	keys += "atomRadius;meltPoint;boilPoint;covRadius;elecConduc;electroneg;atomVol;DebyeT;name"
 	keys = LowerStr(keys)
 	property = LowerStr(property)
 	Variable ip = WhichListItem(property,keys)		// index to property
 	ip = (ip>=0) ? ip+1 : NaN
 	Variable Z = element2Z(symb)
-	String propertys = "atomic number;atomic mass;density;valence;state;first ionization energy;heat of fusion;"
+	String propertys = "atomic number;atomic mass;density;valence;valenceList;state;first ionization energy;heat of fusion;"
 	propertys += "heat of vaporization;thermal conductivity;specific heat;atomic radius;melting point;"
 	propertys += "boiling point;covalent radius;electrical conductivity;electronegativity;atomic volume;DebyeT (K);name"
 	if ((numtype(Z) || numtype(ip)) && printIt)
@@ -117,11 +120,15 @@ Function ElementData(symb,property,[printIt])
 		if (V_flag)
 			return NaN
 		endif
+		property = StringFromList(ip-1,propertys)
 		Z = element2Z(symb)
 		printIt = 1
 	endif
 	if (numtype(Z) || numtype(ip))
 		return NaN
+	endif
+	if (printIt)
+		printf "ElementData(\"%s\",\"%s\")\r",symb,property
 	endif
 
 	String unit="", out="", key=StringFromList(ip-1,keys)
@@ -563,6 +570,12 @@ Function Element_valence(Z)
 	Variable Z
 	Wave valence = root:Packages:Elements:valence
 	return valence[Z]
+End
+
+Function/T Element_valenceList(Z)
+	Variable Z
+	Wave/T valenceList = root:Packages:Elements:valenceList
+	return valenceList[Z]
 End
 
 Function/T Element_state(Z)
@@ -1191,6 +1204,7 @@ Static Function Make_ElementDataWaves()
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:amu/WAVE=amu = NaN
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:density/WAVE=density = NaN
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:valence/WAVE=valence = NaN
+	Make/N=(Zmax+1)/T/O root:Packages:Elements:valenceList/WAVE=valenceList = ""
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:firstIon/WAVE=firstIon = NaN
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:heatFusion/WAVE=heatFusion = NaN
 	Make/N=(Zmax+1)/D/O root:Packages:Elements:heatVaporization/WAVE=heatVaporization = NaN
@@ -1227,6 +1241,7 @@ Static Function Make_ElementDataWaves()
 	Note/K amu, "waveClass=ElementInfo_amu;"
 	Note/K density, "waveClass=ElementInfo_density;"
 	Note/K valence, "waveClass=ElementInfo_valence;"
+	Note/K valenceList, "waveClass=ElementInfo_valenceList;"
 	Note/K firstIon, "waveClass=ElementInfo_firstIon;"
 	Note/K heatFusion, "waveClass=ElementInfo_heatFusion;"
 	Note/K heatVaporization, "waveClass=ElementInfo_heatVaporization;"
@@ -1253,7 +1268,10 @@ Static Function Make_ElementDataWaves()
 		name[iZ] = XMLtagContents("name",oneZ)
 		amu[iZ] = str2num(XMLtagContents("amu",oneZ))
 		density[iZ] = str2num(XMLtagContents("density",oneZ))
-		valence[iZ] = str2num(XMLtagContents("valence",oneZ))
+		valenceList[iZ] = XMLtagContents("valence",oneZ)
+		valenceList[iZ] = ReplaceString(" ", valenceList[iZ], ";")
+		valence[iZ] = str2num(valenceList[iZ])
+//		valence[iZ] = str2num(XMLtagContents("valence",oneZ))
 		firstIon[iZ] = str2num(XMLtagContents("firstIon",oneZ))
 		heatFusion[iZ] = str2num(XMLtagContents("fusion",oneZ))
 		heatVaporization[iZ] = str2num(XMLtagContents("vapor",oneZ))
