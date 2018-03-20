@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, March 19, 2018" time="05:52:56 PM CDT" isoTime="2018-03-19T17:52:56"></written>
+	<written date="Tuesday, March 20, 2018" time="09:58:00 AM CDT" isoTime="2018-03-20T09:58:00"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>d8677b5c9e51e278771c276694db6a4a27f63e16</gitHash>
+	<gitHash>ae57b3384a1302b3148085aaa79add4955387e8e</gitHash>
 	<fileCount>257</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -46,7 +46,7 @@
 	<file version="2.45" time="2017-03-14T16:29:48" md5="e5b84fb342798c577e15f8b825d6c756" sha256="897065511cbe27899b92e5cf8f198821711b3637a3d2065a6cff848de04a08e1" ext=".ipf">microN/EnergyScansN_onlQmag.ipf</file>
 	<file version="nan" time="2017-05-19T11:02:30" md5="f6bd9484467b2126978a5a9a344ba57a" sha256="e8a304ed8507b2ea5664e8c3e40d4e18cf40b734ca5fdfa9d4bfb2d0505c7cda" ext=".mtl">materials/mtl files/SrTiO3.mtl</file>
 	<file version="nan" time="2016-01-25T12:51:32" md5="0f83ee7c2a5abc30a1b0217a0fbd5957" sha256="f245ff4952fd93e74eec689489ae98e6bc56e776112b1bcb89de1a226d0803d5" ext=".xml">materials/standard xtals/FeO.xml</file>
-	<file version="nan" time="2018-03-19T16:38:24" md5="c88074429a4a6cdfd1f88d06ac398fab" sha256="24b58255f3bd3b10af4034e8b49f98ba9e2433c13da5d83f052c44116424ee0f" ext=".xml">General/data/elementData.xml</file>
+	<file version="nan" time="2018-03-20T09:55:53" md5="0ee4447c1c3fd2ba81ab7bd41e7d3bec" sha256="07aa0005b437f166964abf991ae377418c17fb07d96240b0ecc8bff4690abcaf" ext=".xml">General/data/elementData.xml</file>
 	<file version="1.01" time="2014-04-30T10:28:19" md5="7e15359b79fa502b6f6a78c7dfb32a1e" sha256="a0cbe05ee1e3768625356d9a67ad15f1226feb2b2ee91e2f109cdf19e5d576e9" ext=".ipf">micro/Grains/HistogramAxes.ipf</file>
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" sha256="0b6abd4c56e4c6d47569bf63e059ba6eed35847565e373287820bb4eb31b5323" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="nan" time="2017-02-13T17:40:31" md5="3e3ef5ddca2ad98a3aa250f2c02d0710" sha256="05b2225323ca193a9a83cda457f3260caf47c8d30e1e8fe3328046095b422a15" ext=".txt">doc/change to 530.txt</file>
