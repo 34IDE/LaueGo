@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.57
+#pragma version = 4.58
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5362,11 +5362,7 @@ Function SetGizmoZoom(zoom)
 		return NaN
 	endif
 	if (numtype(zoom) || zoom<=0)
-		String str = WinRecreation(win,0)
-		str = ReplaceString(" ",str,"")
-		str = ReplaceString("\t",str,"")
-		zoom = NumberByKey("ModifyGizmozoomFactor",str,"=","\r")
-		zoom = numtype(zoom) || zoom<=0 ? 1 : zoom
+		zoom = GetGizmoZoom(win)
 		Prompt zoom, "zoom must be >0 and finite, (0.8 is nice)"
 		DoPrompt "Gizmo Zoom",zoom
 		if (V_flag)
@@ -5376,9 +5372,59 @@ Function SetGizmoZoom(zoom)
 	if (numtype(zoom) || zoom<=0)
 		printf "ERROR -- SetGizmoZoom(), Invalid zoom = %g,  must be positive finite\r",zoom
 	endif
+
 	ModifyGizmo/N=$win zoomFactor = zoom
+
+//	#if strlen(WinList("GizmoUtility.ipf",";","WIN:128"))
+#if exists("ResetScaleBarLength")==6	// update scale bars if GizmoUtility.ipf is loaded
+	String keyList=GetUserData(win,"","ScaleBar")	// if there is a scaleBar, update it too.
+	if (strlen(keyList)>1)
+		keyList = ReplaceNumberByKey("scaleFactor",keyList,zoom,"=")
+		SetWindow $win userdata(ScaleBar)=keyList
+		ResetScaleBarLength()
+	endif
+#endif
 	return zoom
 End
+
+Static Function GetGizmoZoom(win)
+	String win
+	String str = WinRecreation(win,0)
+	if (strlen(str)<1)
+		return NaN
+	endif
+	str = ReplaceString(" ",str,"")
+	str = ReplaceString("\t",str,"")
+	Variable zoom = NumberByKey("ModifyGizmozoomFactor",str,"=","\r")
+	zoom = numtype(zoom) || zoom<=0 ? 1 : zoom
+	return zoom
+End
+
+//Function SetGizmoZoom(zoom)
+//	// Interactive Set zoomFactor for a Gizmo
+//	Variable zoom
+//	String win = StringFromList(0,WinList("*",";","WIN:"+num2istr(GIZMO_WIN_BIT)))	// top Gizmo
+//	if (strlen(win)<1)
+//		return NaN
+//	endif
+//	if (numtype(zoom) || zoom<=0)
+//		String str = WinRecreation(win,0)
+//		str = ReplaceString(" ",str,"")
+//		str = ReplaceString("\t",str,"")
+//		zoom = NumberByKey("ModifyGizmozoomFactor",str,"=","\r")
+//		zoom = numtype(zoom) || zoom<=0 ? 1 : zoom
+//		Prompt zoom, "zoom must be >0 and finite, (0.8 is nice)"
+//		DoPrompt "Gizmo Zoom",zoom
+//		if (V_flag)
+//			return NaN
+//		endif
+//	endif
+//	if (numtype(zoom) || zoom<=0)
+//		printf "ERROR -- SetGizmoZoom(), Invalid zoom = %g,  must be positive finite\r",zoom
+//	endif
+//	ModifyGizmo/N=$win zoomFactor = zoom
+//	return zoom
+//End
 #else
 Function SetGizmoZoom(zoom)			// There is no equivalent for Igor 6
 	Variable zoom

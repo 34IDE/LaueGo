@@ -141,15 +141,17 @@ Function/T AddGizmoTitleGroup(groupName,title1,[title2,title3,title4,pos])
 End
 
 
-Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
+Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font,fontSize])
 	String groupName			// probably "ScaleBarGroup0", If this is empty, then a unique name will be assigned
-	Variable maxLength		// maximum length in Gizmo, scale bar will be less than this
+	Variable maxLength			// maximum length in Gizmo, scale bar will be less than this
 	String units				// units for maxLength and used in scale bar label
-	Variable scaleFactor	// not used in Igor 7, will always be 1
+	Variable scaleFactor		// not used in Igor 7, will always be 1
 	String font
-	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0? 1 : scaleFactor
+	Variable fontSize			// font size, defaults to 18
+	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0 ? 1 : scaleFactor
 	scaleFactor = IgorVersion()>7 ? 1 : scaleFactor
 	font = SelectString(ParamIsDefault(font),font,"")
+	fontSize = ParamIsDefault(fontSize) || numtype(fontSize) || fontSize<=0 ? 18 : limit(round(fontSize),6,64)
 	if (maxLength<=0 || numtype(maxLength))
 		return ""
 	endif
@@ -207,30 +209,39 @@ Function/T AddScaleBarGroup(groupName,maxLength,units,[scaleFactor,font])
 #else
 	AppendToGizmo group,name=$groupName
 	ModifyGizmo currentGroupObject=groupName
-	AppendToGizmo line={0,0, 0,dxGizmoLine, 0,0}, name=lineScaleBar
 	AppendToGizmo attribute lineWidth=5, name=widthScaleBar
-	ModifyGizmo setDisplayList=0, opName=translate0, operation=translate, data={GIZMO_SCALE_BAR_LEFT_EDGE,GIZMO_SCALE_BAR_LEFT_EDGE,0}
-	ModifyGizmo setDisplayList=1, attribute=widthScaleBar
-	ModifyGizmo setDisplayList=2, object=lineScaleBar
+	AppendToGizmo line={GIZMO_SCALE_BAR_LEFT_EDGE-0.05,GIZMO_SCALE_BAR_LEFT_EDGE-0.05, 0,dxGizmoLine, GIZMO_SCALE_BAR_LEFT_EDGE-0.05,0}, name=lineScaleBar
+	AppendToGizmo light=Directional,name=lightScaleBar
+	ModifyGizmo modifyObject=lightScaleBar,objectType=light,property={ position,0,0,-1,0}
+	ModifyGizmo modifyObject=lightScaleBar,objectType=light,property={ direction,0,0,-1}
+	ModifyGizmo modifyObject=lightScaleBar,objectType=light,property={ specular,0,0,0,1}
+	ModifyGizmo modifyObject=lightScaleBar,objectType=light,property={ diffuse,0,0,0,1}
+	ModifyGizmo setDisplayList=0, opName=loadIdentity0, operation=loadIdentity
+	ModifyGizmo setDisplayList=1, object=lightScaleBar
+	ModifyGizmo setDisplayList=2, attribute=widthScaleBar
+	ModifyGizmo setDisplayList=3, object=lineScaleBar
 	ModifyGizmo currentGroupObject="::"
 
-	String str=ReplaceStringByKey("object","",groupName,"=")
-	str = ReplaceNumberByKey("scaleFactor",str,scaleFactor,"=")
-	str = ReplaceNumberByKey("BarLength",str,BarLength,"=")
-	str = ReplaceStringByKey("units",str,units,"=")
+	String textName="textScaleBar"
+	String keyList=ReplaceStringByKey("group","",groupName,"=")
+	keyList = ReplaceNumberByKey("scaleFactor",keyList,scaleFactor,"=")
+	keyList = ReplaceNumberByKey("BarLength",keyList,BarLength,"=")
+	keyList = ReplaceStringByKey("units",keyList,units,"=")
 	if (strlen(font))
-		str = ReplaceStringByKey("font",str,font,"=")
+		keyList = ReplaceStringByKey("font",keyList,font,"=")
 	endif
-	SetWindow kwTopWin,userdata(ScaleBar)=str
+	keyList = ReplaceStringByKey("textName",keyList,textName,"=")
+	keyList = ReplaceNumberByKey("fontSize",keyList,fontSize,"=")
+	SetWindow kwTopWin,userdata(ScaleBar)=keyList
 
-	Variable fontSize=18
 	unitStr = SelectString(strlen(units),""," ")+units
+	String str
 	if (strlen(font))
 		sprintf str "\\F'%s'\\Z%d%g%s", font,fontSize,BarLength,unitStr
 	else
 		sprintf str "\\Z%d%g%s", fontSize,BarLength,unitStr
 	endif
-	TextBox/C/N=textScaleBar/F=0/B=1/A=LB/X=3/Y=3 str
+	TextBox/C/N=$textName/F=0/B=1/A=LB/X=3/Y=3 str
 #endif
 	// ************************* Group Object End *******************
 	return groupName
@@ -370,16 +381,23 @@ Function ResetScaleBarLength([units,scaleFactor,font,fontSize,win])
 	if (strlen(win)<1)
 		return NaN
 	endif
-	String wnote=GetUserData(win,"","ScaleBar")
-	String groupName = StringByKey("object",wnote,"=")
+	String keyList=GetUserData(win,"","ScaleBar")
+	String groupName = StringByKey("group",keyList,"=")
 	if (strlen(groupName)<1)
 		return NaN
 	endif
-	units = SelectString(ParamIsDefault(units), units, StringByKey("units",wnote,"="))
-	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) ? NumberByKey("scaleFactor",wnote,"=") : scaleFactor
+	String object = win+":"+groupName
+	GetGizmo/N=$win displayItemExists=$object
+	if (V_flag)
+		return NaN
+	endif
+	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor <= 0 ? NaN : scaleFactor
+	scaleFactor = numtype(scaleFactor) ? JZTutil#GetGizmoZoom(win) : scaleFactor
+	scaleFactor = numtype(scaleFactor) ? NumberByKey("scaleFactor",keyList,"=") : scaleFactor
 	scaleFactor = numtype(scaleFactor) ? 1 : scaleFactor
-	font = SelectString(ParamIsDefault(font), font, StringByKey("font",wnote,"="))
-	fontSize = ParamIsDefault(fontSize) || numtype(fontSize) ? NumberByKey("fontSize",wnote,"=") : fontSize
+	units = SelectString(ParamIsDefault(units), units, StringByKey("units",keyList,"="))
+	font = SelectString(ParamIsDefault(font), font, StringByKey("font",keyList,"="))
+	fontSize = ParamIsDefault(fontSize) || numtype(fontSize) ? NumberByKey("fontSize",keyList,"=") : fontSize
 	fontSize = numtype(fontSize) ? 18 : limit(round(fontSize),6,64)
 
 	GetGizmo/N=$win/Z dataLimits
@@ -389,23 +407,19 @@ Function ResetScaleBarLength([units,scaleFactor,font,fontSize,win])
 	endif
 	Variable maxLen = max(dZ, max(dY, dX))
 	maxLen = maxLen <=0 || numtype(maxLen) ? NaN : maxLen
-//	print "   Gizmo XYZ range",GizmoXmax,GizmoXmin, GizmoYmax,GizmoYmin, GizmoZmax,GizmoZmin
-//	print "   dX,dY,dZ,",dX,dY,dZ, "max=",maxLen
+	maxLen *= scaleFactor
 
-	// for scale bar use multipliers of 1, 2, or 5 ONLY
 	Variable BarLength = 10^floor(log(maxLen))
-	if (5*BarLength < maxLen)
+	if (5*BarLength < maxLen)						// for scale bar use multipliers of 1, 2, or 5 ONLY
 		BarLength = 5*BarLength
 	elseif (2*BarLength < maxLen)
 		BarLength = 2*BarLength
 	endif
-	Variable dxGizmoLine = BarLength/maxLen * scaleFactor
-//	printf "   BarLength = %g '%s',   dxGizmoLine = %g,   maxLen = %g\r",BarLength,units,dxGizmoLine,maxLen
-	String object = win+":"+groupName
-//printf "   object =\"%s\"\r",object
+	Variable lineLen = 2*BarLength/maxLen		// length of line
 
+	Variable trans=-1.9*scaleFactor+0.46, edge=-1.95*scaleFactor
 	ModifyGizmo/N=$win currentGroupObject=object
-	Modifygizmo/N=$win modifyobject=lineScaleBar,objectType=line,property={vertex,0,0,0,dxGizmoLine,0,0}
+	Modifygizmo/N=$win modifyobject=lineScaleBar,objectType=line,property={vertex,edge,edge,0,edge+lineLen,edge,0}
 	ModifyGizmo/N=$win currentGroupObject="::"
 
 	units = SelectString(strlen(units),""," ")+units
@@ -415,9 +429,85 @@ Function ResetScaleBarLength([units,scaleFactor,font,fontSize,win])
 	else
 		sprintf str "\\Z%d%g%s", fontSize,BarLength,units
 	endif
-	TextBox/C/N=textScaleBar/F=0/B=1/A=LB/X=3/Y=3 str
+
+	String textName=StringByKey("textName",keyList,"=")
+	textName = SelectString(strlen(textName), "textScaleBar", textName)
+	TextBox/C/N=$textName/F=0/B=1/A=LB/X=3/Y=3 str
+
+	keyList = ReplaceNumberByKey("scaleFactor",keyList,scaleFactor,"=")
+	keyList = ReplaceStringByKey("textName",keyList,textName,"=")
+	keyList = ReplaceNumberByKey("BarLength",keyList,BarLength,"=")
+	if (!ParamIsDefault(units))
+		keyList = ReplaceStringByKey("units",keyList,units,"=")
+	endif
+	if (!ParamIsDefault(font))
+		keyList = ReplaceStringByKey("font",keyList,font,"=")
+	endif
+	if (!ParamIsDefault(fontSize))
+		keyList = ReplaceNumberByKey("fontSize",keyList,fontSize,"=")
+	endif
+	SetWindow $win userdata(ScaleBar)=keyList
+
 	return BarLength
 End
+//	Function ResetScaleBarLength([units,scaleFactor,font,fontSize,win])
+//		String units
+//		Variable scaleFactor
+//		String font
+//		Variable fontSize
+//		String win
+//		win = SelectString(ParamIsDefault(win),win,WinName(0,GIZMO_WIN_BIT))
+//		if (strlen(win)<1)
+//			return NaN
+//		endif
+//		String wnote=GetUserData(win,"","ScaleBar")
+//		String groupName = StringByKey("object",wnote,"=")
+//		if (strlen(groupName)<1)
+//			return NaN
+//		endif
+//		units = SelectString(ParamIsDefault(units), units, StringByKey("units",wnote,"="))
+//		scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) ? NumberByKey("scaleFactor",wnote,"=") : scaleFactor
+//		scaleFactor = numtype(scaleFactor) ? 1 : scaleFactor
+//		font = SelectString(ParamIsDefault(font), font, StringByKey("font",wnote,"="))
+//		fontSize = ParamIsDefault(fontSize) || numtype(fontSize) ? NumberByKey("fontSize",wnote,"=") : fontSize
+//		fontSize = numtype(fontSize) ? 18 : limit(round(fontSize),6,64)
+//	
+//		GetGizmo/N=$win/Z dataLimits
+//		Variable dX=GizmoXmax-GizmoXmin, dY=GizmoYmax-GizmoYmin, dZ=GizmoZmax-GizmoZmin
+//		if (dX<=0 || dY<=0 || dZ<=0 || numtype(dX+dY+dZ))
+//			return NaN
+//		endif
+//		Variable maxLen = max(dZ, max(dY, dX))
+//		maxLen = maxLen <=0 || numtype(maxLen) ? NaN : maxLen
+//	//	print "   Gizmo XYZ range",GizmoXmax,GizmoXmin, GizmoYmax,GizmoYmin, GizmoZmax,GizmoZmin
+//	//	print "   dX,dY,dZ,",dX,dY,dZ, "max=",maxLen
+//	
+//		// for scale bar use multipliers of 1, 2, or 5 ONLY
+//		Variable BarLength = 10^floor(log(maxLen))
+//		if (5*BarLength < maxLen)
+//			BarLength = 5*BarLength
+//		elseif (2*BarLength < maxLen)
+//			BarLength = 2*BarLength
+//		endif
+//		Variable dxGizmoLine = BarLength/maxLen * scaleFactor
+//	//	printf "   BarLength = %g '%s',   dxGizmoLine = %g,   maxLen = %g\r",BarLength,units,dxGizmoLine,maxLen
+//		String object = win+":"+groupName
+//	//printf "   object =\"%s\"\r",object
+//	
+//		ModifyGizmo/N=$win currentGroupObject=object
+//		Modifygizmo/N=$win modifyobject=lineScaleBar,objectType=line,property={vertex,0,0,0,dxGizmoLine,0,0}
+//		ModifyGizmo/N=$win currentGroupObject="::"
+//	
+//		units = SelectString(strlen(units),""," ")+units
+//		String str
+//		if (strlen(font))
+//			sprintf str "\\F'%s'\\Z%d%g%s", font,fontSize,BarLength,units
+//		else
+//			sprintf str "\\Z%d%g%s", fontSize,BarLength,units
+//		endif
+//		TextBox/C/N=textScaleBar/F=0/B=1/A=LB/X=3/Y=3 str
+//		return BarLength
+//	End
 #endif
 
 

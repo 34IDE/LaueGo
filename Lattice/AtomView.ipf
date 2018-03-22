@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.50
+#pragma version = 0.51
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1439,7 +1439,6 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		if (strlen(scaleBarGroup))
 			ModifyGizmo setDisplayList=-1, object=$scaleBarGroup
 		endif
-		ModifyGizmo setDisplayList=-1, opName=MainTransform, operation=mainTransform
 	endif
 	if (useBlend)
 		ModifyGizmo setDisplayList=-1, attribute=blendingFunction

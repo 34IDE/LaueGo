@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.44
+#pragma version = 3.45
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=4.07
+#include "Utility_JZT", version>=4.58
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 strConstant TEST_TEST="test test"
@@ -28,8 +28,8 @@ Menu "Gizmo"
 		"Set Aspect 0, Std", ModifyGizmo aspectRatio = 0
 	End
 	SubMenu "Zoom"
-		"Set Zoom 1", ModifyGizmo zoomFactor = 1
-		"Set Zoom 0.8", ModifyGizmo zoomFactor = 0.8
+		"Set Zoom 1", SetGizmoZoom(1)
+		"Set Zoom 0.8", SetGizmoZoom(0.8)
 		"Set Zoom Other...", SetGizmoZoom(NaN)
 	End
 End
