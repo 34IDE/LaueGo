@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.48
+#pragma version = 6.49
 #include "Utility_JZT" version>=4.57
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -209,6 +209,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.46, fixed positionsOfOneAtomType(), was not correctly finding atom positions.
 //	with version 6.47, added Condition_xyz(), when reading in fractional coord of 0.3333, extend precision (same for n/6)
 //	with version 6.48, fixed FindCentralAtom() and FindClosestAtomDirection() when xyz is (1,3) (only one atom position)
+//	with version 6.49, when printing lattice to History, the default is now to not show all atom positions.
 
 
 //	Rhombohedral Transformation:
@@ -2838,8 +2839,10 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		xtal.Temperature = T_C
 		ForceLatticeToStructure(xtal)
 		print " "
-		DoAlert 1,"\tPrint ALL atom info to history too?"
-		print_crystalStructure(xtal, brief=(V_flag!=1))
+		//	DoAlert 1,"\tPrint ALL atom info to history too?"
+		//	print_crystalStructure(xtal, brief=(V_flag!=1))
+		DoAlert 1,"\tPrint Only Basic Info to History?\r\t(do NOT print ALL atom positions)"
+		print_crystalStructure(xtal, brief=(V_flag==1))
 	elseif (stringmatch(ctrlName,"buttonWriteLattice"))	// write current lattice parameters to an xml file
 		writeCrystalStructure2xmlFile("","")
 	elseif (stringmatch(ctrlName,"buttonAtomView"))	// add support for AtomView
