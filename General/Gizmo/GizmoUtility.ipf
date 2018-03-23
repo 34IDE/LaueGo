@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.22
+#pragma version = 2.23
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -415,7 +415,7 @@ Function ResetScaleBarLength([units,scaleFactor,font,fontSize,win])
 	elseif (2*BarLength < maxLen)
 		BarLength = 2*BarLength
 	endif
-	Variable lineLen = 2*BarLength/maxLen		// length of line
+	Variable lineLen = 2*scaleFactor*BarLength/maxLen		// length of line in Gizmo Units (2=window width)
 
 	Variable trans=-1.9*scaleFactor+0.46, edge=-1.95*scaleFactor
 	ModifyGizmo/N=$win currentGroupObject=object

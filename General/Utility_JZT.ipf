@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.58
+#pragma version = 4.59
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5375,16 +5375,25 @@ Function SetGizmoZoom(zoom)
 
 	ModifyGizmo/N=$win zoomFactor = zoom
 
-//	#if strlen(WinList("GizmoUtility.ipf",";","WIN:128"))
-#if exists("ResetScaleBarLength")==6	// update scale bars if GizmoUtility.ipf is loaded
-	String keyList=GetUserData(win,"","ScaleBar")	// if there is a scaleBar, update it too.
-	if (strlen(keyList)>1)
-		keyList = ReplaceNumberByKey("scaleFactor",keyList,zoom,"=")
-		SetWindow $win userdata(ScaleBar)=keyList
-		ResetScaleBarLength()
+	if (exists("ResetScaleBarLength")==6)				// and update scale bars if GizmoUtility.ipf is loaded
+		String keyList=GetUserData(win,"","ScaleBar")	// if there is a scaleBar, update it too.
+		if (strlen(keyList)>1)
+			keyList = ReplaceNumberByKey("scaleFactor",keyList,zoom,"=")
+			SetWindow $win userdata(ScaleBar)=keyList
+			FUNCREF ResetScaleBarLengthProto func = $"ResetScaleBarLength"
+			func()
+		endif
 	endif
-#endif
 	return zoom
+End
+//
+Function ResetScaleBarLengthProto([units,scaleFactor,font,fontSize,win])
+	String units
+	Variable scaleFactor
+	String font
+	Variable fontSize
+	String win
+	return NaN
 End
 
 Static Function GetGizmoZoom(win)
