@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.45
+#pragma version = 3.46
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.58
@@ -59,11 +59,19 @@ End
 #endif
 
 #if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2
+#if (IgorVersion()<7)			// GizmoZoomTranslate only works for Igor 7 & 8
 Menu "Analysis"
 	Submenu "Packages"
 		Submenu "Gizmo"
 			"Gizmo Zoom & Translate", Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GZoomTrans#InitGizmoZoomTranslate()"
 			help = {"Provide support of Zooming and translating Gizmos"}
+		End
+	End
+End
+#endif
+Menu "Analysis"
+	Submenu "Packages"
+		Submenu "Gizmo"
 			"Gizmo Clip Planes", Execute/P "INSERTINCLUDE \"GizmoClip\", version>=2.00" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GClipPlanes#InitGizmoClipPlanes()"
 			help = {"Provide support of adding clip planes to a Gizmo"}
 			"Gizmo Markers", Execute/P "INSERTINCLUDE \"GizmoMarkers\", version>=2.03" ; 	Execute/P "COMPILEPROCEDURES ";Execute/P "GMarkers#InitGizmoMarkers()"
@@ -145,9 +153,11 @@ End
 
 #if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
 Static Function LoadAllGizmoUtilities()
+#if (IgorVersion()<7)
 	Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00"
 	Execute/P "COMPILEPROCEDURES "
 	Execute/P "GZoomTrans#InitGizmoZoomTranslate()"
+#endif
 
 	Execute/P "INSERTINCLUDE \"GizmoClip\", version>=2.00"
 	Execute/P "COMPILEPROCEDURES "

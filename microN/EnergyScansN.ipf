@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.54
+#pragma version = 2.55
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -24,7 +24,9 @@
 #include "WinView", version>=2.03
 #endif
 #include "Masking", version>1.03
+#if (IgorVersion()<7)
 #include "GizmoZoomTranslate", version>=2.03
+#endif
 #include "GizmoClip", version>=2.03
 #include "GizmoMarkers", version>=2.21
 #include "QspaceVolumesView",  version>=1.21

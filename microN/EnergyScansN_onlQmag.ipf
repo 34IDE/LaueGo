@@ -18,7 +18,9 @@
 #include "WinView", version>=2.03
 #endif
 #include "Masking", version>1.03
+#if (IgorVersion()<7)
 #include "GizmoZoomTranslate", version>=2.03
+#endif
 #include "GizmoClip", version>=2.03
 #include "GizmoMarkers", version>=2.21
 #include "QspaceVolumesView",  version>=1.21

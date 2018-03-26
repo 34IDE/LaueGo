@@ -1,13 +1,15 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.07
+#pragma version=2.08
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
 #include "ArrayOf3dOrientsN", version>=2.62
 #include "IndexLotsN", version>=2.33
+#if (IgorVersion()<7)
 // #include "GizmoZoomTranslate"
 #include "GizmoZoomTranslate", version>=2.00
+#endif
 #include "GizmoClip", version>=2.0
 #include "GizmoMarkers", version>=2.07
 

@@ -1,13 +1,15 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=specImage
-#pragma version = 0.58
+#pragma version = 0.59
 #pragma IgorVersion = 6.2
 #include "spec", version>=2.25
 #include "Diffractometer", version >=0.26
 #include "ImageDisplayScaling", version >=1.86
 #include "QspaceVolumesView", version >=1.02
+#if (IgorVersion()<7)
 // #include "GizmoZoomTranslate", version>=1.35
 #include "GizmoZoomTranslate", version>=2.00
+#endif
 #include "GizmoClip", version>=2.0
 #include "GizmoMarkers", version>=2.0
 #include "Masking", version>=1.01
@@ -1796,7 +1798,9 @@ End
 
 Function init_specImage(imageType)
 	String imageType					// image type to include if none avaiable
+#if (IgorVersion()<7)
 	GZoomTrans#InitGizmoZoomTranslate()
+#endif
 	specInitPackage()
 	if (imageLoadersAvailable())
 		return 0

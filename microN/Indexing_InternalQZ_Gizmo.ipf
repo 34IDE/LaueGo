@@ -1,6 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include "GizmoMarkers", version>=2.04
+#if (IgorVersion()<7)
 #include "GizmoZoomTranslate", version>=2.00
+#endif
 
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
