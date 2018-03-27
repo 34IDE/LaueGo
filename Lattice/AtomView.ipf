@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.52
+#pragma version = 0.53
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1328,7 +1328,8 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ lineWidth,lineWidth}
 		ModifyGizmo ModifyObject=atomViewBonds objectType=path, property={ pathColor,AtomView_BondColorR,AtomView_BondColorG,AtomView_BondColorB,AtomView_BondColorA}
 		ModifyGizmo ModifyObject=atomViewBonds,objectType=path,property={ drawTube,1}
-		ModifyGizmo ModifyObject=atomViewBonds,objectType=path,property={ fixedRadius,AtomView_BondDia}
+		Variable bondDia = limit(round(13.333 - 0.13333*Nbonds)/1000, 0.003, AtomView_BondDia)
+		ModifyGizmo ModifyObject=atomViewBonds,objectType=path,property={ fixedRadius, bondDia}
 			ModifyGizmo setObjectAttribute={atomViewBonds,specularBond0}
 		AppendToGizmo attribute specular={0.1,0.1,0.1,1,1032},name=specularBond0
 #endif
