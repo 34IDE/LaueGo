@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.15
+#pragma version = 2.16
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
 Static StrConstant NISTserverASCII_URL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -261,7 +261,7 @@ Static Function chooseConstant(cAll,name)
 	elseif (Nlist==1)
 		choice = StringFromList(0,allNamesList)
 	else
-		Prompt choice,"Physical Constant Name",popup,"_search_;"+allNamesList
+		Prompt choice,"Physical Constant Name",popup,"_search_;"+allNamesListForMenu(allNamesList)
 		DoPrompt "Physical Constant",choice
 		if (V_flag)
 			choice = ""
@@ -284,6 +284,33 @@ Static Function chooseConstant(cAll,name)
 		endif
 	endfor
 	return ic
+End
+//
+Static Function/T allNamesListForMenu(in)		// Reorder so that particles are grouped together at end
+	String in			// list in
+	String particle, item, out=""
+	String particles="tau;muon;helion;alpha;triton;deuteron;neutron;proton;nuclear;Planck;atomic unit of;natural unit of;atomic mass"
+
+	Variable i, ip, Np=ItemsInList(particles)
+	Make/N=(Np)/T/FREE pwave=""
+	for (ip=0;ip<Np;ip+=1)								// separate by particles
+		particle = StringFromList(ip, particles)
+		for (i=0;i<ItemsInList(in);i+=1)
+			item = StringFromList(i,in)
+			if (strsearch(item,particle,0,2)>=0)	// found particle
+				pwave[ip] += item+";"					// add to pwave[]
+				in = RemoveFromList(item,in)			// remove from in
+				i -= 1
+			endif
+		endfor
+	endfor
+
+	out = in													// reassemble for output
+	for (ip=Np-1;ip>=0;ip-=1)
+		particle = StringFromList(ip, particles)
+		out += "; ;      -- "+particle+":;" + pwave[ip]
+	endfor
+	return out
 End
 //
 // returns a nice string showing contents of c
