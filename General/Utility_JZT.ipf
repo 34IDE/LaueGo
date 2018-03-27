@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.59
+#pragma version = 4.60
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5341,6 +5341,7 @@ Function SquareUpGizmo(gName)
 	Execute "GetGizmo winPixels"			// get window position & size
 	NVAR V_left=V_left, V_top=V_top, V_bottom=V_bottom
 #else
+	ModifyGizmo keepPlotSquare=1
 	GetGizmo winPixels						// get window position & size
 #endif
 	Variable height=V_bottom-V_top, top=max(44,V_top)

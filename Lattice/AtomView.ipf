@@ -1492,6 +1492,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	ModifyGizmo autoscaling=1
 	ModifyGizmo zoomFactor = (1/scaleFactor)
 	ModifyGizmo aspectRatio=1
+	ModifyGizmo keepPlotSquare=1
 	ModifyGizmo currentGroupObject=""
 	if (strlen(scaleBarGroup))
 		ModifyGizmo namedHookStr={ScaleBarHook,"GizmoUtil#GzimoReSetScaleBarHookProc"}
