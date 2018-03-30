@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>CeO2 structure</chemical_name_common>
-	<space_group_IT_number>225</space_group_IT_number>
+	<chemical_name_common>CeO2 (Cerianite)</chemical_name_common>
+	<space_group_id>225</space_group_id>
+	<H-M>F m -3 m</H-M>
+	<icsd>72155</icsd>
 	<cell>
-		<a unit="nm">0.54113</a>
-		<b unit="nm">0.54113</b>
-		<c unit="nm">0.54113</c>
+		<a unit="nm">0.54124</a>
+		<b unit="nm">0.54124</b>
+		<c unit="nm">0.54124</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
@@ -14,15 +16,24 @@
 	<atom_site>
 		<label>Ce</label>
 		<symbol>Ce</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract_xyz>0 0 0</fract_xyz>
+		<valence>4</valence>
+		<B_iso>0.29</B_iso>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_x>0.25</fract_x>
-		<fract_y>0.25</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract_xyz>0.25 0.25 0.25</fract_xyz>
+		<valence>-2</valence>
+		<B_iso>1.82</B_iso>
+		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
+	<citation>
+	<citation do1="10.1016/0022-4596(92)90330-X">
+		M. Wolcyrz, L. Kepinski, Journal of Solid State Chemistry, 99 (1992)  pg. 409-413
+		"Rietveld refinement of the structure of CeOCl formed in Pd/CeO2 catalyst:
+		notes on the existence of a stabilized tetragonal phase of La2O3 in La-Pd-O
+		system"
+	</citation>
 </cif>

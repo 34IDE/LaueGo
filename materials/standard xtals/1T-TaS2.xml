@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>1T-TaS2</chemical_name_common>
+	<space_group_id>164</space_group_id>
+	<H-M>P -3 m 1</H-M>
+	<icsd>85323</icsd>
+	<cell>
+		<a unit="nm">0.33649</a>
+		<b unit="nm">0.33649</b>
+		<c unit="nm">0.58971</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+	<atom_site>
+		<label>Ta</label>
+		<symbol>Ta</symbol>
+		<fract_xyz>0 0 0</fract_xyz>
+		<valence>4</valence>
+		<aniso_U_11>0.0061</aniso_U_11>
+		<aniso_U_22>0.0061</aniso_U_22>
+		<aniso_U_33>0.0069</aniso_U_33>
+		<aniso_U_12>0.0030</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract_xyz>0.333333 0.666667 0.2586</fract_xyz>
+		<valence>-2</valence>
+		<aniso_U_11>0.0071</aniso_U_11>
+		<aniso_U_22>0.0071</aniso_U_22>
+		<aniso_U_33>0.0086</aniso_U_33>
+		<aniso_U_12>0.0035</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+		<WyckoffSymbol>d</WyckoffSymbol>
+	</atom_site>
+	<citation do1="10.1103/PhysRevB.56.13757">
+		A. Spijkerman, J.L. de Boer, A. Meetsma, G.A. Wiegers, S. van Smaalen
+		Physical Review B56 (1997), pg. 13757-13767
+		"X-ray crystal structure refinement of the nearly commensurate phase of 1T-(TaS2) in (3+2)-dimensional superspace"
+	</citation>
+</cif>
