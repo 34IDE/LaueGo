@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, March 30, 2018" time="01:25:04 PM CDT" isoTime="2018-03-30T13:25:04"></written>
+	<written date="Friday, March 30, 2018" time="01:43:11 PM CDT" isoTime="2018-03-30T13:43:11"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>e47cf70d5d2fc45bc6affe1bf6d251b859360d45</gitHash>
+	<gitHash>21a3358133cad710e58e2d0f66c861cb6395fe39</gitHash>
 	<fileCount>259</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -139,7 +139,7 @@
 	<file version="nan" time="2017-05-19T11:03:08" md5="0b9d531e3b988e3b8f074639f3af157b" sha256="58903d3db8c5f2b35eee9a909c3626c2ce22360d6caa96e46ace810fe54cab94" ext=".mtl">materials/mtl files/CoO.mtl</file>
 	<file version="nan" time="2017-05-19T11:01:06" md5="8a125782a1333f8176155f354604c663" sha256="609d8f2100d577a60e9b2559fc77e7a646c5af65ba579dd16009627ed8846f99" ext=".txt">geometrys/geometry description.txt</file>
 	<file version="nan" time="2018-03-20T15:07:49" md5="2dcb0f33707da4ae47592721a4909567" sha256="5ff3f480ec2b24960dc9d6c822d0abe0f86a1dcbba5177022f9ed4768a794db0" ext=".xml">materials/standard xtals/SrTiO3.xml</file>
-	<file version="nan" time="2018-03-30T13:24:06" md5="78e9aa0f751baac09df99e16e749151d" sha256="b560f7f5be7ab887e351a4b218d05212ddf31fbe9b63deade5a0e19bf419882f" ext=".xml">materials/standard xtals/CeO2.xml</file>
+	<file version="nan" time="2018-03-30T13:41:42" md5="cd54723cc0833dc6b140552a012f8d79" sha256="98f88ab74497fb64501e6ffe2d569c3f6b8588739711cd91469eb0b613c72295" ext=".xml">materials/standard xtals/CeO2.xml</file>
 	<file version="2.38" time="2017-02-13T17:18:13" md5="824bdb41ba7bdb3e1a104fc588df5654" sha256="f534f2d0b0b8d4160cd7128d60ea38192d604a8cf2da83f5caf42c105fb2c29d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="nan" time="2016-02-17T12:54:40" md5="ec157453ecbaf20ee137541bc93feb13" sha256="141166b8e2bac0dcc8bb555b921339df1529d7d08f3dec4348e58cecd2e3f90d" ext=".xml">materials/standard xtals/YBCO/YBa2Cu3O7.xml</file>
 	<file version="2" time="2018-01-22T16:46:55" md5="5dd920f56f044509c541a30f3c2c28f9" sha256="2f5a5bb02d7e01e12e4f5a900c151d07fb36184a2b277909a69e956eb60755c4" ext=".ipf">microN/microGeometryN.ipf</file>
