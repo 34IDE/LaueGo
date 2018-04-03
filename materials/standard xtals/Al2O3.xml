@@ -1,9 +1,44 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>Sapphire (hexagonal)</chemical_name_common>
+	<chemical_name_common>Sapphire,Corundum (hexagonal)</chemical_name_common>
 	<chemical_formula_structural>Al2O3</chemical_formula_structural>
-	<space_group_IT_number>167</space_group_IT_number>
+	<space_group_id>167:H</space_group_id>
+	<H-M>R -3 c</H-M>
+	<cell>
+		<a unit="nm">0.4766</a>
+		<b unit="nm">0.4766</b>
+		<c unit="nm">1.295</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+	<atom_site>
+		<label>Al</label>
+		<symbol>Al</symbol>
+		<fract_xyz>0 0 0.34</fract_xyz>
+		<valence>3</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<B_iso>0.025</B_iso>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.33 0 0.25</fract_xyz>
+		<valence>-2</valence>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<B_iso>0.025</B_iso>
+	</atom_site>
+	<citation>
+		D.E. Cox, A.R. Moodenbaugh, A.W. Sleight, H.Y. Chen
+		N.B.S.(U.S.),Spec.Publ., v567 (1980), pg. 189-201
+		"Structural Refinement of Neutron and X-Ray Data by the Rietveld Method: Application to Al2 O3 and Bi V O4"
+	</citation>
+</cif>
+
+
+
+<!--   
 	<cell>
 		<a unit="nm">0.4758</a>
 		<b unit="nm">0.4758</b>
@@ -27,3 +62,5 @@
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 </cif>
+-->
+
