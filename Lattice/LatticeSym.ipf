@@ -9993,6 +9993,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	if (!isValidSpaceGroupID(SpaceGroupID))
 		return $""
 	endif
+	// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains Wyckoff 27 symbols "a"-"A".
 
 	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID)
 	Make/N=(530)/T/FREE WyckoffSyms
