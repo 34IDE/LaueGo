@@ -13,7 +13,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">22.5/temperature>
+		<temperature unit="C">22.5</temperature>
 	</cell>
 	<atom_site>
 		<label>Sr</label>
