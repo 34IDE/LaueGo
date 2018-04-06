@@ -1,4 +1,6 @@
 find *.xml -type f -exec xmllint -noout {} \;
+find LaAlO3/*.xml -type f -exec xmllint -noout {} \;
+find YBCO/*.xml -type f -exec xmllint -noout {} \;
 
 #	for file in *
 #	do
