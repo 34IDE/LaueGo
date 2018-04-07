@@ -1,7 +1,18 @@
-find *.xml -type f -exec xmllint -noout {} \;
-find LaAlO3/*.xml -type f -exec xmllint -noout {} \;
-find YBCO/*.xml -type f -exec xmllint -noout {} \;
+find . -name "*.xml" -type f -exec xmllint -noout {} \;
 
+#	find *.xml -type f -exec xmllint -noout {} \;
+#
+#	if [ -d "LaAlO3" ]; then
+#		echo "checking inside LaAlO3"
+#		find LaAlO3/*.xml -type f -exec xmllint -noout {} \;
+#	fi
+#
+#	if [ -d "YBCO" ]; then
+#		echo "checking inside YBCO"
+#		find YBCO/*.xml -type f -exec xmllint -noout {} \;
+#	fi
+#
+#
 #	for file in *
 #	do
 #		xmllint -noout "$file"
