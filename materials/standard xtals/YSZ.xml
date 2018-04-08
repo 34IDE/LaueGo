@@ -18,7 +18,7 @@
 		<label>Zr</label>
 		<valence>4</valence>
 		<fract_xyz>0 0 0</fract_xyz>
-		<occ>0.72</occ>
+		<occupancy>0.72</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<B_iso>0.63</B_iso>
 	</atom_site>
@@ -26,7 +26,7 @@
 		<label>Y</label>
 		<valence>3</valence>
 		<fract_xyz>0 0 0</fract_xyz>
-		<occ>0.28</occ>
+		<occupancy>0.28</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<B_iso>0.63</B_iso>
 	</atom_site>
@@ -34,7 +34,7 @@
 		<label>O</label>
 		<valence>-2</valence>
 		<fract_xyz>0.25 0.25 0.25</fract_xyz>
-		<occ>0.931</occ>
+		<occupancy>0.931</occupancy>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<B_iso>1.9</B_iso>
 	</atom_site>

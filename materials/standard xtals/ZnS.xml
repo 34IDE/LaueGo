@@ -25,8 +25,7 @@
 		<fract_xyz>0.25 0.25 0.25</fract_xyz>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-	<bond_chemical unit="nm" n0="Hg" n1="Te">0.279938</bond_chemical>
-	<bond_chemical unit="nm" n0="Cd" n1="Te">0.279938</bond_chemical>
+	<bond_chemical unit="nm" n0="Zn" n1="S">0.23423</bond_chemical>
 	<citation>
 		American Mineralogist 46 (1961) 1399-1411
 		B.J. Skinner

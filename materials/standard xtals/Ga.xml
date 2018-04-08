@@ -3,9 +3,7 @@
 <cif>
 	<chemical_name_common>Gallium</chemical_name_common>
 	<space_group_IT_number>64</space_group_IT_number>
-	<source>
-		#(C) 2013 by Fachinformationszentrum Karlsruhe. _43388-ICSD
-	</source>
+	<icsd>43388</icsd>
 	<cell>
 		<a unit="nm">0.4523</a>
 		<b unit="nm">0.7661</b>
