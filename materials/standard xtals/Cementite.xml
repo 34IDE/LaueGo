@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Cementite (gamma-iron)</chemical_name_common>
+	<chemical_formula_structural>Fe</chemical_formula_structural>
+	<space_group_IT_number>225</space_group_IT_number>
+	<amcsd>0013523</amcsd>
+	<H-M>P n m a</H-M>
+	<cell>
+		<a unit="nm">0.5092</a>
+		<b unit="nm">0.6741</b>
+		<c unit="nm">0.4527</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Fe1</label>
+		<symbol>Fe</symbol>
+		<fract_xyz>0.1834 0.0689 0.3344</fract_xyz>
+		<U_iso>0.00545</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Fe2</label>
+		<symbol>Fe</symbol>
+		<fract_xyz>0.0388 0.25 0.8422</fract_xyz>
+		<U_iso>0.01267</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>C</label>
+		<symbol>C</symbol>
+		<fract_xyz>0.8764 0.25 0.4426</fract_xyz>
+		<U_iso>0.0114</U_iso>
+	</atom_site>
+	<citation doi="10.1016/0022-4596(84)90340-2">
+		D. Fruchart, P. Chaudouet, R. Fruchart, A. Rouault, J.P. Senateur,
+		Journal of Solid State Chemistry, 51 (1984), pg. 246-252
+		"Etudes structurales de composes de type cementite: effet de l'hydrogene sur Fe3C suivi par diffraction neutronique. Spectrometrie Mossbauer sur FeCo2B et  Co3B dopes au 57Fe"
+	</citation>
+</cif>

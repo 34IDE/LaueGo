@@ -5,9 +5,9 @@
 	<space_group_id>167:R</space_group_id>
 	<space_group_IT_number>167</space_group_IT_number>
 	<cell>
-		<a unit="nm">0.535671359458805nm</a>
-		<b unit="nm">0.535671359458805nm</b>
-		<c unit="nm">0.535671359458805nm</c>
+		<a unit="nm">0.535671359458805</a>
+		<b unit="nm">0.535671359458805</b>
+		<c unit="nm">0.535671359458805</c>
 		<alpha>60.0998983806666</alpha>
 		<beta>60.0998983806666</beta>
 		<gamma>60.0998983806666</gamma>

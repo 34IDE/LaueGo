@@ -27,4 +27,5 @@
 		<fract_z>0.25</fract_z>
 		<DebyeTemperature unit="K">370</DebyeTemperature>
 	</atom_site>
+	<bond_chemical unit="nm" n0="Ga" n1="As">0.2448</bond_chemical>
 </cif>
