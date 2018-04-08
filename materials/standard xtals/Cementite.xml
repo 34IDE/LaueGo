@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>Cementite (gamma-iron)</chemical_name_common>
-	<chemical_formula_structural>Fe</chemical_formula_structural>
-	<space_group_IT_number>225</space_group_IT_number>
+	<chemical_name_common>Cementite</chemical_name_common>
+	<chemical_formula_structural>Fe3C</chemical_formula_structural>
+	<space_group_id>62</space_group_id>
 	<amcsd>0013523</amcsd>
 	<H-M>P n m a</H-M>
 	<cell>
@@ -26,7 +26,6 @@
 		<fract_xyz>0.0388 0.25 0.8422</fract_xyz>
 		<U_iso>0.01267</U_iso>
 	</atom_site>
-
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
