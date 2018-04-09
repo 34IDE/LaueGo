@@ -17,5 +17,6 @@
 		<fract_x>0</fract_x>
 		<fract_y>0</fract_y>
 		<fract_z>0</fract_z>
+		<DebyeTemperature unit="K">275</DebyeTemperature>
 	</atom_site>
 </cif>
