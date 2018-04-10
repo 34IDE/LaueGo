@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif>
-	<chemical_name_common>Hematite</chemical_name_common>
+	<chemical_name_common>Hematite (hex)</chemical_name_common>
 	<chemical_formula_structural>Fe2O3</chemical_formula_structural>
-	<space_group_IT_number>167</space_group_IT_number>
+	<space_group_id>167:H</space_group_id>
 	<amcsd>0017806</amcsd>
 	<H-M>R -3 c</H-M>
 	<cell>
@@ -35,9 +35,9 @@
 		<aniso_U_13>0.00052</aniso_U_13>
 		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
-	<citation>
-		Maslen E N, Streltsov V A, Streltsova N R, Ishizawa N,
+	<citation doi="10.1107/S0108768194002284">
+		E.N. Maslen, V.A. Streltsov, N.R. Streltsova, N. Ishizawa,
 		Acta Crystallographica B50 (1994) 435-441
-		"Synchrotron X-ray study of the electron density in alpha-Fe2O3"
+		"Synchrotron X-ray study of the electron density in α-Fe2O3"
 	</citation>
 </cif>
