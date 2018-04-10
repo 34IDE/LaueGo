@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, April 10, 2018" time="12:36:14 PM CDT" isoTime="2018-04-10T12:36:14"></written>
+	<written date="Tuesday, April 10, 2018" time="12:47:20 PM CDT" isoTime="2018-04-10T12:47:20"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>3420c4a2b440ceb8f5737a58b1b507c7150c8374</gitHash>
+	<gitHash>5d22bd99e82f4bbfb8d284fb8f4b7328be4a31a1</gitHash>
 	<fileCount>264</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -189,7 +189,7 @@
 	<file version="0.9949" time="2015-04-14T14:07:27" md5="159bb52b122a79ec20e36cf3dfa697fc" sha256="f0925e4d1dd30bd2a424435b8821fc09bd7da30c252122a4f2e8424b6fcc8252" ext=".ipf">micro/EnergyWireScans.ipf</file>
 	<file version="nan" time="2017-05-19T11:03:28" md5="a510a58148730a3397a2b48af39846c1" sha256="c9858c38305b95667a6700dfff607ad41190b91457a3b1f651b421265bc05965" ext=".mtl">materials/mtl files/BeIF-1LowZ.mtl</file>
 	<file version="0.12" time="2018-01-12T10:08:02" md5="4f64269612da2aaa500378e7fd75bca9" sha256="6e632c44581876e3873a61d951b26bed13635343c53f421df76b1c718c7aba39" ext=".ipf">APS/VTIfiles.ipf</file>
-	<file version="nan" time="2018-04-10T12:35:10" md5="af761491d6b8c0b610899299adbe2799" sha256="9bde4eaca96e21245269ea457d358bacc94386beef2d95d62c705ac798099b20" ext=".xml">materials/standard xtals/Fe2O3r.xml</file>
+	<file version="nan" time="2018-04-10T12:45:35" md5="e957339707cfabc14a50397f98212918" sha256="60d04fecad75c18a5241f546cbda1eb634963af834ceb1555a8599768b447985" ext=".xml">materials/standard xtals/Fe2O3r.xml</file>
 	<file version="4.93" time="2018-02-19T10:17:23" md5="c1b63db81186096163c615036fca8690" sha256="642a356335922d0044067bc6c09b995a5b769a82d58f5e2237f9dc31b09a1531" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="1.03" time="2015-04-06T12:28:50" md5="91e01397abd3c8ac6ecf440d77a19b8e" sha256="a2da0dd6b4de5945c5f78321ecde4917ac74cdedbd413feeec54b8ef929cd74a" ext=".ipf">General/Images/Tif.ipf</file>
 	<file version="1.04" time="2017-06-26T17:37:23" md5="e1b2377696096ba860a6fec19b1cce42" sha256="f5a93609538095e526243b38df494ba9e788dc77ec0fa1d1d74b055e088ebde4" ext=".ipf">General/Images/Masking.ipf</file>
