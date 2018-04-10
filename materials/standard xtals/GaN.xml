@@ -8,9 +8,9 @@
 	<space_group_id>186</space_group_id>
 	<icsd>34476</icsd>
 	<cell>
-		<a unit="nm">0.3190</a>
-		<b unit="nm">0.3190</b>
-		<c unit="nm">0.5189</c>
+		<a unit="nm">0.31894</a>
+		<b unit="nm">0.31894</b>
+		<c unit="nm">0.521639</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
@@ -45,5 +45,12 @@
 		H. Schulz, K.H. Thiemann,
 		Solid State Communications 23 (1977) pg. 815-819
 		"Crystal structure refinement of AlN and GaN"
+		<!--
+		lattice constants modified by JZT
+		from the paper, they were:
+		<a unit="nm">0.3190</a>
+		<b unit="nm">0.3190</b>
+		<c unit="nm">0.5189</c>
+		-->
 	</citation>
 </cif>
