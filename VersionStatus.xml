@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, March 30, 2018" time="01:43:11 PM CDT" isoTime="2018-03-30T13:43:11"></written>
+	<written date="Tuesday, April 10, 2018" time="11:38:14 AM CDT" isoTime="2018-04-10T11:38:14"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>21a3358133cad710e58e2d0f66c861cb6395fe39</gitHash>
-	<fileCount>259</fileCount>
+	<gitHash>f6db9c85bdb12afc06754ebe58d5bc6e1fb118ff</gitHash>
+	<fileCount>263</fileCount>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2016-02-17T12:52:02" md5="fe9ee0597981862da8330b3d7c57f022" sha256="cfb99cf14aa39c06d12bb599c0beea4b974a0f8fef0a023ccdd472520f0cb380" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
@@ -29,12 +29,12 @@
 	<file version="2.15" time="2017-04-19T11:33:59" md5="2076201cea73bbc5af20e0b39cc6af8b" sha256="886a6c0f9d655952aaa0ec263aeeedd9f2a0342bb1c06a054c3134bf1c80623c" ext=".ipf">General/FWHM.ipf</file>
 	<file version="0.19" time="2017-05-02T15:05:03" md5="699a97718e9a8a83a97a2b8d8ecd0ec0" sha256="0dd4a138103ab078b3b17483a629257714e5a5917d5eedff42c8ec7f2749cd87" ext=".ipf">General/Stats3D.ipf</file>
 	<file version="2.02" time="2015-04-06T12:28:50" md5="71f7c816b78fa886768eeeff46b720f6" sha256="d52e433d5bb230dded7db6d885a6d920d920fad8724ab99e87d029a7d7b480b3" ext=".ipf">Lattice/Reorient.ipf</file>
-	<file version="nan" time="2016-02-17T12:51:39" md5="61af7611a6ee88e43e39612091d08c06" sha256="81613bb62898bcebec52ab1e2e2aa72566b1f5c71fa2119112f8f23d1bebd7f0" ext=".xml">materials/standard xtals/Ga.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="50298b5c9f8bec4be71c6840a72172e6" sha256="409fce7bf201b192406024a18674172f5e61a34348f3505bc8c80ca73718f0ab" ext=".xml">materials/standard xtals/Ga.xml</file>
 	<file version="nan" time="2015-03-16T13:55:50" md5="cd77de6db2098b618af02ccb19324887" sha256="77dfac712a4d10a7588117f23b7dd8f5bcb575cad795d26aed3f9e68e8a713a2" ext=".html">doc/microDiffraction.html</file>
-	<file version="nan" time="2017-11-10T16:51:58" md5="155d60278216efca658bca6fb33cc455" sha256="2b7911ec51bd2fe16f15622894e1b660765babd4eb674199a38779ac6ced2081" ext=".xml">materials/standard xtals/ZnS.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="4c1b47582d072f72eafee354f67f7698" sha256="7d636cad6bb06902699abed155255798d1a23f48154f92a1722e5da5d69a00c3" ext=".xml">materials/standard xtals/ZnS.xml</file>
 	<file version="2.04" time="2018-01-09T13:46:06" md5="81904df45d7f37eda4ee32d41a5b9e51" sha256="a0263f260d4ac387d4630f8584a252c31b9e51870ed40e41785f444c17be097c" ext=".ipf">General/Gizmo/GizmoZoomTranslate.ipf</file>
 	<file version="nan" time="2016-02-17T12:51:31" md5="d67ca41e55dcdc6d1d1430f1ffa450d2" sha256="c4b46abda54aade79b981a015fc6925fb51234e728b6b84da7aaf6cc9baaac44" ext=".xml">materials/standard xtals/Ge.xml</file>
-	<file version="nan" time="2017-03-27T10:41:06" md5="cfb992ab234de278be2875688c04342a" sha256="cd4a34e428025f6710ac5f8ae4c227b7a4e4377a3397353e931bc10f055bf0bd" ext="">materials/standard xtals/checkAll</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="746edcd468ee2b37604c17b445f8dbbe" sha256="158c919314fd05740b9c57cd55dd35509108edc72593475cccd79a5a8a19bd18" ext="">materials/standard xtals/checkAll</file>
 	<file version="nan" time="2016-02-17T12:54:23" md5="ef10b7bb01c0e7379c7f05e064760951" sha256="b80479b32f1ab5767df96f8725726fdadeb1be86af3b75359bbae511de81cce1" ext=".xml">materials/standard xtals/IN625.xml</file>
 	<file version="1.13" time="2018-01-15T13:24:12" md5="477eefde0b7ddaf318bdc10ca9f1cf78" sha256="508d481248a6c0ff14ac0a5e53e8f9ebb7b27999a1236a1aaaf1d2f99b06cd81" ext=".ipf">APS/mdaFiles.ipf</file>
 	<file version="2.16" time="2018-03-27T13:24:00" md5="2843ad49bf7073d1b79d7d56b815ffa8" sha256="7b56c39267baf71b38ff6daead6a9150084bc4d1062b80f0a263a1f175e76215" ext=".ipf">General/PhysicalConstants.ipf</file>
@@ -55,11 +55,11 @@
 	<file version="nan" time="2017-12-01T17:02:28" md5="b1c941a480948837892f8e8dc2ea0dc9" sha256="c9d4a5046f9abeb2e9c508eea7d47f4896b08534e08777f89f8acd5a3bec1388" ext=".xml">materials/standard xtals/Pyrite.xml</file>
 	<file version="0.62" time="2018-01-05T15:23:07" md5="5e81e6017fc86788f2ce95094a9f90a9" sha256="106907f7836acb18a1a9c9909b41d06494eb7366baec61acf61d37e0efb173f2" ext=".ipf">Diffractometer/Diffractometer.ipf</file>
 	<file version="nan" time="2018-02-05T10:48:24" md5="ebf1198fb5e89fa07868b027d4e8ecae" sha256="8ee30e4e41740705aa442ce5d6f0914f9156480e900c0a694aa8c426e20a0d0b" ext=".xml">materials/standard xtals/Cs.xml</file>
-	<file version="nan" time="2017-11-19T14:39:22" md5="f6ac4e7ae824af63c82305128206cdd4" sha256="a676df5ead97c6ffd0847e8bde5bf32f195ee8d9ef7784a76bca3e0c622be292" ext=".xml">materials/standard xtals/YSZ.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="b2e74f2be2d5cc4814c6355259ca8148" sha256="bd83ed51637a2945b0b79459f521a08525ce9ffb90ddb3f90572d43c265c1b87" ext=".xml">materials/standard xtals/YSZ.xml</file>
 	<file version="nan" time="2017-05-19T11:03:33" md5="7edf48411e326a73c761267b105a42bc" sha256="436145caa325f74db7db48c2f2bcf290c17b1a47ed3d8aa5224cca6685386f8c" ext=".mtl">materials/mtl files/BeIF-1.mtl</file>
 	<file version="nan" time="2017-03-24T11:38:21" md5="708d6f920f4487c6abdf32d62282a8f4" sha256="f49abb6130faca481206be02be21307d8eaa98f678e6b71981f2ad94ae790d6e" ext=".xml">materials/standard xtals/Cu3AuHT.xml</file>
 	<file version="nan" time="2017-05-19T11:03:00" md5="a3e6e20e4d151008300988b5fda12249" sha256="ac1ca299925927641315944186b182a402f22179c3d0706ce89647ddde5ed59c" ext=".mtl">materials/mtl files/FeO.mtl</file>
-	<file version="nan" time="2017-12-01T17:04:04" md5="87b2e30404e0bf6ed5f7d35bb62e6da1" sha256="a810dc479318fe51fa3730ec22d161c71caa18750105cb179d249932cfbd2c27" ext=".xml">materials/standard xtals/Austenite.xml</file>
+	<file version="nan" time="2018-03-30T13:41:42" md5="cd54723cc0833dc6b140552a012f8d79" sha256="98f88ab74497fb64501e6ffe2d569c3f6b8588739711cd91469eb0b613c72295" ext=".xml">materials/standard xtals/CeO2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7fd56632214ddaf61f5143df4e74464c" sha256="6b90045853bd730b4d227dbf3b89c12a74a6c46b6e899eb3612fd07a6a42209f" ext=".png">doc/microDiffractionMedia/Picture8.png</file>
 	<file version="0.03" time="2016-02-23T17:27:27" md5="5e2bb62224a7c8d36b68844724677595" sha256="b9b61d3cfe80d5d4676070bf03311d6be1bd71ec097b522ce90f4dbdb83705e4" ext=".ipf">micro/DoAll.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:20" md5="d4f0585718afaabd10ac0afe8bd3534f" sha256="c43876eb0eade57e7b3858e5be72aee06fb96cf9d20d7b3cac8227df9fe195c5" ext=".xml">materials/standard xtals/Mo.xml</file>
@@ -73,10 +73,10 @@
 	<file version="nan" time="2017-05-19T11:02:43" md5="b5393db77c8d44b03b2437f3342ca1ea" sha256="106a1fabefe74b15d3b229575522d8ac477c5059a49afd7e5972f101266ceaba" ext=".mtl">materials/mtl files/MnO.mtl</file>
 	<file version="nan" time="2016-02-17T12:53:17" md5="2cf6470ab2c0a648ed245c3fa50be4d6" sha256="5bfc944ab22f2db7a9ec4ba5c885c725f6d83721dac697ca9fe95a22948d9178" ext=".xml">materials/standard xtals/Tungsten.xml</file>
 	<file version="nan" time="2016-10-23T15:40:36" md5="63887c5d8fa7b09bbcb088dac8be41d5" sha256="f460bbfcf6d710a5262d8907cd9a5046b79cae1549c15c0386ebc24976abdf61" ext=".xml">materials/standard xtals/Antimony.xml</file>
-	<file version="nan" time="2017-12-01T17:03:48" md5="27766b5ca94916389ff7b639bd55c363" sha256="2f6a17302cd7c8209ccb1514d4983a1649231578823e01faae77c8391f1a47a9" ext=".xml">materials/standard xtals/Fe2O3.xml</file>
+	<file version="nan" time="2018-04-09T15:37:38" md5="e576a25c81fdd4841e01f5d1581743e7" sha256="91ea13f212d1016354b5d27c48020cffb8c8adc36fb2df40b8a085cdc4254843" ext=".xml">materials/standard xtals/Fe2O3.xml</file>
 	<file version="nan" time="2017-05-19T11:02:52" md5="ee390bd73f007e22d8c1cfe1a705df9a" sha256="fb9ec753780659ece512d3631a2b79edc1a4175ce961ba9615722b294c0c2011" ext=".mtl">materials/mtl files/LaMnO3.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="927455be35d34bf51c034d7b650dc6ce" sha256="a9f099ef1689f9637c94db6ab29a4071999b2d57d56ea0d8f0faeea05eab34d8" ext=".exe">microN/binary/peaksearch_win32.exe</file>
-	<file version="nan" time="2017-12-01T17:05:35" md5="e5f1bf21ca82776d58936bc60333b48e" sha256="7db5f48c6ba3b0a292d7f3c9a0ac582f5e9d42f5f403948206d07f9e895f68f0" ext=".xml">materials/standard xtals/Al2O3.xml</file>
+	<file version="nan" time="2018-04-03T10:59:42" md5="e4f0af852b944051d2f8f016e4c544cf" sha256="bbc9142811421215c122b0b30e5de3132122bba961bbc9a82a8e77c0e04ddef4" ext=".xml">materials/standard xtals/Al2O3.xml</file>
 	<file version="nan" time="2017-05-19T11:03:05" md5="a38597d727252b7f697baf43ea5a07a7" sha256="1c382dcb85ec7fc06d3ee21b18346618457abf2844bb795e90fc92b9e3a6ebf4" ext=".mtl">materials/mtl files/CuO.mtl</file>
 	<file version="1.01" time="2014-04-30T10:28:14" md5="7d0b601862db9a8f5ded00c02fd4dd39" sha256="f15d0034cd443bc3d00d11a5a2fb73e6ae740c0aef5ec2c124e3a9ff560726ef" ext=".ipf">micro/Grains/NeighborByWalking.ipf</file>
 	<file version="nan" time="2017-05-19T11:04:49" md5="409f7c01e47f58b79d4f34514a6007d0" sha256="8811c6cfcf1c2039a2271820d8ef301674023419833722d635e577f951212a84" ext=".xml">geometrys/geoN_2011-10-20_21-35-02.xml</file>
@@ -93,7 +93,7 @@
 	<file version="nan" time="2016-02-17T12:50:21" md5="6322fea572f91f50836f6c7434f46cee" sha256="3da51fb01e96429d9cb29ba7fb2d1c95a9411d43ccf55d20b36885f3ebcbe70a" ext=".xml">materials/standard xtals/Ag.xml</file>
 	<file version="nan" time="2016-02-17T12:51:09" md5="183c8e8c0e097872e115ac8a6c72e972" sha256="20aa8c7cbf1699df6f0724d56dec5e458cb2f8301e90d773c2de7c0a3ab8dd61" ext=".xml">materials/standard xtals/CdTe.xml</file>
 	<file version="nan" time="2016-02-17T12:54:11" md5="43c1c98b07ef8f1ac041f0c5ffac4129" sha256="ed3f6993d2d5d90bc384c85ad7f27565cabdefaff8c5dbad8f3e4fb5dbfc8f2a" ext=".xml">materials/standard xtals/Sn.xml</file>
-	<file version="6.49" time="2018-03-23T16:23:21" md5="7314ce2cb666f8311e5b7b7de4539ab2" sha256="545bfa3799a0bdd4cbc11079a6a01552eb6930792b281d9d8af6bc716f5f2e3d" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="6.49" time="2018-04-03T10:38:59" md5="8efe8744aa6968c959d5d19cafa5847a" sha256="7c24b6cf55d6355752c461abc70279e447d329b424f142cfb31bf3e1c907814c" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="2.22" time="2017-05-02T16:07:41" md5="ae6c05b16a98bea160798592a86c46ab" sha256="62ac3ca9a83e4f289520b98202fa67c0368f70e8e96be99b8e39b450a679659c" ext=".ipf">General/Gizmo/GizmoMarkers.ipf</file>
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" sha256="98f1c8c454a199ff6ee8d24fced76dea00d6d8a33bad14957640e1e8da441f5e" ext="">micro/Euler_ppc</file>
@@ -122,13 +122,14 @@
 	<file version="nan" time="2017-09-13T12:29:59" md5="5a7b900e76f541b7f7090f435cffcac9" sha256="f6ade2ce9088a8dc58a6de4832f6b1ba15c3ce34084b376e2377b6e26b8404e9" ext=".xml">materials/standard xtals/Ir.xml</file>
 	<file version="nan" time="2015-08-07T15:10:20" md5="842427c8dccddee9905e48da2004e9fb" sha256="b85c28efb9f2f5b204cdf8cbe44a7b024c07ebba3dbfe2e8735d5262ca9c5317" ext=".ihf">doc/Utility_JZT.ihf</file>
 	<file version="nan" time="2014-03-04T11:56:16" md5="e14984054d4661c474487323b7044a1a" sha256="360a924d0003a83d684fc2f550da4402cfacb973a970c78301a80313b6ea9b60" ext=".xml">geometrys/geoN_2013-07-03_16-01-03.xml</file>
+	<file version="nan" time="2018-04-09T10:28:51" md5="4ad50a1825727cb9daf38fa616f40aa4" sha256="e1c836fcec1dbec3af83a3f0540980cfd2bd43441f3a839246c9ec6935cfc1ca" ext=".xml">materials/standard xtals/Iron/Ferrite.xml</file>
 	<file version="nan" time="2017-12-01T17:01:56" md5="e2a45e8a3a10a3e5b3627b8591819484" sha256="147189ef8bc9b5839391fcabf406c200fd1c8e412fef181e218fd66c6068e2b1" ext=".xml">materials/standard xtals/TiO2 Anatase.xml</file>
 	<file version="nan" time="2017-05-19T11:02:55" md5="c85699b302551fc5172927aa350aae91" sha256="16c009eb579da74c6619539d6017410d9a10fb6694b98a9348c2b7fb91dffb32" ext=".mtl">materials/mtl files/Kapton.mtl</file>
 	<file version="1" time="2013-10-28T11:28:48" md5="5c3700988af4c045e4eabb62f805b056" sha256="020eb5c6c5886ef7d2af15197e08149fdaad0d662e62d24bb7caaeea3659df14" ext=".ipf">micro/ExamineImageSet.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:57" md5="83bc998367651772495c0b69a3af15e1" sha256="2b2c758f7496236f6fb331a0f05913c57f1c405849be68c29e7f298b5c7c11c5" ext=".xml">materials/standard xtals/Diamond.xml</file>
 	<file version="0.06" time="2018-01-15T13:40:26" md5="eea69dbe50228676c6a551d3c895efc4" sha256="8eecb3a2d981ade358ec88d8889a2af92c38a0cc246444593113b052869cd708" ext=".ipf">APS/BurtFiles.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" sha256="173d6b6a080773c06344cbe6cef8bcc7da855d4c240a706a4c4333bd9e260a30" ext=".png">doc/microDiffractionMedia/Picture0.png</file>
-	<file version="nan" time="2016-02-17T12:51:34" md5="7f6e12f624d0cb12100e9429f3d4a79a" sha256="2a84e18503a477fe0e0ba32367f4b97ad0d34451615309a4449ca62a02404d99" ext=".xml">materials/standard xtals/GaAs.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="65b5667b5de56e38439b69e60d6746f7" sha256="9cd5fb76ce3c936f47de118d18082d87520d10800dcbec53e50579366ea50201" ext=".xml">materials/standard xtals/GaAs.xml</file>
 	<file version="nan" time="2016-03-14T09:37:51" md5="d5b2a33015a7b019ff5384a1771e75a3" sha256="1915fa02fdce0aa052a38cb3da002aeb11f71310f1bdb3951d4a1b9cf6d837a4" ext=".exe">microN/binary/Euler4.exe</file>
 	<file version="nan" time="2018-01-09T10:11:02" md5="9c4556a0e808b1529f39a07754a30598" sha256="cf69e46cbc08fc4c1c0a02405e5cb373c89504c2395b61c9d1fde72460acdaa2" ext=".xml">materials/standard xtals/Baddeleyite.xml</file>
 	<file version="nan" time="2017-12-01T17:02:01" md5="bc543bbceb40d5cbc7ce19d20aaecf7a" sha256="c23f84a22033a78e3dc82414ca24491fd7cc673bf97a601d8d0101a53365a466" ext=".xml">materials/standard xtals/TiO2 Rutile.xml</file>
@@ -138,16 +139,17 @@
 	<file version="2.55" time="2018-03-26T18:07:15" md5="25ba38b9599f0ac996ecd60c31ac9968" sha256="5af255a236f4f02f31d9ef0e7bb9e69c0a5ce7680381405afe82a325fdbced5f" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="nan" time="2017-05-19T11:03:08" md5="0b9d531e3b988e3b8f074639f3af157b" sha256="58903d3db8c5f2b35eee9a909c3626c2ce22360d6caa96e46ace810fe54cab94" ext=".mtl">materials/mtl files/CoO.mtl</file>
 	<file version="nan" time="2017-05-19T11:01:06" md5="8a125782a1333f8176155f354604c663" sha256="609d8f2100d577a60e9b2559fc77e7a646c5af65ba579dd16009627ed8846f99" ext=".txt">geometrys/geometry description.txt</file>
-	<file version="nan" time="2018-03-20T15:07:49" md5="2dcb0f33707da4ae47592721a4909567" sha256="5ff3f480ec2b24960dc9d6c822d0abe0f86a1dcbba5177022f9ed4768a794db0" ext=".xml">materials/standard xtals/SrTiO3.xml</file>
-	<file version="nan" time="2018-03-30T13:41:42" md5="cd54723cc0833dc6b140552a012f8d79" sha256="98f88ab74497fb64501e6ffe2d569c3f6b8588739711cd91469eb0b613c72295" ext=".xml">materials/standard xtals/CeO2.xml</file>
+	<file version="nan" time="2018-04-06T16:40:22" md5="1b1781684b645f9ccf82ec523b750d60" sha256="aaff7cfacc4110f485c17b297f9efde4bf183988c5c47724652a9531561dc85b" ext=".xml">materials/standard xtals/SrTiO3.xml</file>
 	<file version="2.38" time="2017-02-13T17:18:13" md5="824bdb41ba7bdb3e1a104fc588df5654" sha256="f534f2d0b0b8d4160cd7128d60ea38192d604a8cf2da83f5caf42c105fb2c29d" ext=".ipf">microN/indexLotsN.ipf</file>
 	<file version="nan" time="2016-02-17T12:54:40" md5="ec157453ecbaf20ee137541bc93feb13" sha256="141166b8e2bac0dcc8bb555b921339df1529d7d08f3dec4348e58cecd2e3f90d" ext=".xml">materials/standard xtals/YBCO/YBa2Cu3O7.xml</file>
 	<file version="2" time="2018-01-22T16:46:55" md5="5dd920f56f044509c541a30f3c2c28f9" sha256="2f5a5bb02d7e01e12e4f5a900c151d07fb36184a2b277909a69e956eb60755c4" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="1.25" time="2018-01-12T10:08:02" md5="4ff594bed373aaac37d0bc8e26b03ca0" sha256="d277b905715db8f0137c5892bbe4fb6a303cb5408156ecefa7c0ea4095c76628" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
 	<file version="1.21" time="2015-06-24T17:43:18" md5="644294cf6ed7b3ae70159b8e14df9511" sha256="13fb11094ccb051fdeecde7d3ee966b4a514d61b29e2e2ccefc8c936ce350370" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
+	<file version="nan" time="2017-12-01T17:04:04" md5="87b2e30404e0bf6ed5f7d35bb62e6da1" sha256="a810dc479318fe51fa3730ec22d161c71caa18750105cb179d249932cfbd2c27" ext=".xml">materials/standard xtals/Iron/Austenite.xml</file>
 	<file version="2.47" time="2015-04-29T17:44:41" md5="1739501ffbb5e2f1a57ae3365c197964" sha256="8f88720391744fdc9636c0e76e8701f04306c47d184729232cc73afcf2a957c3" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
 	<file version="nan" time="2015-03-07T20:16:43" md5="de5d175054f11d16b08a38843714d4a4" sha256="2f04278a18a7dcfe236d49be57092e8585f0908a42fae52a11bf99126cea97b7" ext=".py">APS/burt_tool.py</file>
 	<file version="0.02" time="2014-04-30T10:31:04" md5="b0f908fc7fa668858c9a43e746ae2da0" sha256="bfb93dd1f19e95fd746c4d8de010df19366d8e4f79256b8d9dc69fcbd0d4e989" ext=".ipf">micro/BudaiExtra.ipf</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="c0cbffc42732f7eff25cbd5922c93d27" sha256="4e606d7ddcf442363e8aa72b718dcbbebe7efe00eab912bb32a3f4d0581f2ec4" ext=".xml">materials/standard xtals/Iron/Cementite.xml</file>
 	<file version="nan" time="2017-12-01T17:02:52" md5="a07f55d55ba43215b0f7eef0fbb0576c" sha256="80ff43d85a46733c68b4e5d832f7c11204ad4fea203bef338578dd4c661e991e" ext=".xml">materials/standard xtals/MgAl2O4_spinel.xml</file>
 	<file version="0.07" time="2017-06-29T15:53:35" md5="64ae350b774b6fe0af9956f36305b3a3" sha256="77214c649d13b93b5c0f0b62cc7ead29d18565f2def005fbb7b91be365b0f9b7" ext=".ipf">APS/CurrentDetectorImage.ipf</file>
 	<file version="2.06" time="2016-11-15T15:19:13" md5="bc20e9131cca616540f4b7334cf6dcf3" sha256="6c59772edacc30baeccea6da3f4e41d35a043b0631d3a2c31096831065188048" ext=".ipf">General/Images/WinView.ipf</file>
@@ -156,8 +158,10 @@
 	<file version="nan" time="2013-10-28T11:28:48" md5="5e1ef070dd65f5d3076ccc4c62ff81f8" sha256="a4c14563ac905cdc42aa56785e40cb9b7134b4222883b27d0017027faa6addd3" ext=".xml">geometrys/geoN_2013-06-13_20-21-05.xml</file>
 	<file version="1.43" time="2015-04-29T17:41:07" md5="7b7c6270d165c91628448ef4db2fd4e1" sha256="a45319793b70c65af9c72950f102cc6f6454b2da9c5970fad5183633241a2eda" ext=".ipf">micro/Grains/GrainMath.ipf</file>
 	<file version="1.31" time="2014-04-30T10:28:30" md5="f540a8c3cfee6af39d56a94abbaa8d62" sha256="e6f3c3fd3541e2d6a364ea6a1b03adff10f6dedbc973ee453b8e7fa9b226988e" ext=".ipf">micro/Grains/GizmoGrains.ipf</file>
+	<file version="nan" time="2018-04-09T17:02:42" md5="a3388b8684a08b903b978f976491e917" sha256="b2377b67c0a4bc3888279fb6d962fbf6faf6e52267d34bf0e530a4996253f9d2" ext=".xml">materials/standard xtals/Ta.xml</file>
 	<file version="2.24" time="2016-05-03T16:18:32" md5="ab08400fb5586d9962d5e8c1de44e1e5" sha256="34fa6395705d9132eb808f8b8d67ed704f02cf0e3e797de6b0b8d47e8dc7359c" ext=".ipf">General/Xray.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:28" md5="bc1ce8f6e526dba60afe110ca227bbff" sha256="951ecd39223cdcbd32b415dc3c60d56f3f941cb742af2836b233beecd6ca79c0" ext=".xml">materials/standard xtals/Mg2SiO4.xml</file>
+	<file version="nan" time="2018-04-09T13:43:56" md5="b2725618873cd280999f9fd2f282368b" sha256="0d65f6324462967b135534ac776cdc7fd5052ef057573250892d319bcde729ac" ext=".xml">materials/standard xtals/Iron/Martensite.xml</file>
 	<file version="nan" time="2016-02-17T12:54:14" md5="3797a5210149d8c428d1d087a22f460f" sha256="fdc5260adb56acaba498f260e477eaa94340e797f7671afc72fe2772d580dbb4" ext=".xml">materials/standard xtals/Rene-104.xml</file>
 	<file version="1.01" time="2014-10-06T09:42:00" md5="d0f03e7884dcb8b68c7e1627054c2fe8" sha256="271a1a2ca910ab3748e5b572c6b67aa2c9ce997758c84bca95e0f6789be36bca" ext=".ipf">Lattice/PoleFigure.ipf</file>
 	<file version="nan" time="2010-08-10T14:43:23" md5="6fdcf5251dacaf7cba15897530f70e28" sha256="4ae818070b4b05a8f9cf37cae54a47f3054214608d02da0298a2ac8a3f048ab4" ext=".html">doc/geo_tag OLD.html</file>
@@ -165,19 +169,18 @@
 	<file version="nan" time="2017-05-19T11:03:12" md5="42610b7d31e8ca0e1c3669b4fc9062d9" sha256="f148f089555b91df3deb91f05297a4d446841b14e1cf4bd34028e76fa5b529fb" ext=".mtl">materials/mtl files/CdWO4.mtl</file>
 	<file version="nan" time="2017-05-19T11:02:30" md5="f6bd9484467b2126978a5a9a344ba57a" sha256="e8a304ed8507b2ea5664e8c3e40d4e18cf40b734ca5fdfa9d4bfb2d0505c7cda" ext=".mtl">materials/mtl files/SrTiO3.mtl</file>
 	<file version="nan" time="2017-12-01T16:59:47" md5="0d7ae196f506a94d00d4ec1c61a01bda" sha256="c0e368cde0e1710e5f49fe4582de3b76ca663c259d2075404b157633ab4a3452" ext=".xml">materials/standard xtals/Barite.xml</file>
-	<file version="nan" time="2017-03-27T10:19:34" md5="7fbecd54c522885acb2ec062d2d2ee18" sha256="90e63a08b86dee4dafa231826b4e9bc9b3e16b6423065a19dcdea62ad817a9bc" ext=".xml">materials/standard xtals/Fe.xml</file>
 	<file version="4.6" time="2018-03-27T10:32:23" md5="b74c9dad7869cd918a1e1ecd3b6599bc" sha256="aae43f9d3f107f0d4dcdf9a568be019f1a481e65f4059d16242d44c08366a312" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:18" md5="dea0a34450c3db1ed673c6da40c2b2c6" sha256="0a2f75152d14d91bf6c14fd7776904230bdc7a78579ea5d4d7adbff279faaf7f" ext=".xml">materials/standard xtals/Al.xml</file>
 	<file version="nan" time="2017-03-27T10:20:09" md5="482ca8f78ca1ace64095c7286b3df81b" sha256="a80664bcb4f9b8a8e91b49487503e04574d1b5c4b117f7a5d2291cac49815e17" ext=".xml">materials/standard xtals/IN740.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="8318859207bfbd615cd77d47bd5cf7aa" sha256="e37b6ebf3de2f280aed777cfcb0c4a772de3f250302c437335237bcb9ece81e9" ext="">micro/Euler</file>
 	<file version="nan" time="2017-05-19T11:02:27" md5="082d9610796cb45d4d39b86364d0706b" sha256="4987c0a269f08a1180663dee3fe557e1d106e4f6b38ba2ae0a039f8798635e63" ext=".mtl">materials/mtl files/water.mtl</file>
 	<file version="nan" time="2016-02-17T12:53:34" md5="4100fdf1b21d08a45a530d6ca0fb7293" sha256="cb963a181c0308ec2e21ed9bb10b46c0ee8ee671937e141c71297c292f97451b" ext=".xml">materials/standard xtals/Scandium.xml</file>
-	<file version="nan" time="2017-12-01T17:08:06" md5="50227e398a3611a12df6dea1a25fbe0c" sha256="fcca4ffe0d2c43894cb35c8f3afa59685d342e952d21ab6c6dd1f79a7bc96017" ext=".xml">materials/standard xtals/UO2.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="ae2195d71b1dadf863ccf31eb558cae7" sha256="c902e0662d20c1811abda0df25940dd8cb3f544414ae645e34763504296cd37d" ext=".xml">materials/standard xtals/UO2.xml</file>
 	<file version="nan" time="2018-03-12T10:23:57" md5="7c5c2cdfba00d0e36a083aea8df3d280" sha256="7b83dd56f95c7e4988350f3aad5c916b591d6d2406723a35cf338ca19b8f6371" ext=".xml">materials/standard xtals/CdSe ZincBlende.xml</file>
 	<file version="2.55" time="2017-07-24T12:39:07" md5="c283ec40c3d1262c46f69f098fa91505" sha256="e9bf64db978ff042133ad5f7dba48aabc4d337d6d499b001caef441714222dcd" ext=".ipf">microN/ArrayOf3dOrientsN_LongLong.ipf</file>
 	<file version="2" time="2016-07-07T10:10:13" md5="5d1238168068bafd89cad7a4d7644de5" sha256="50c09636ad70320469da28266786b1393e78c16261b9a48ffb0245602cbac318" ext=".ipf">microN/microGeometryN_NEW.ipf</file>
 	<file version="0.02" time="2014-04-30T10:24:23" md5="cb0cb3b993b12b3a2b00474baf4f9f9f" sha256="95464c39829041f1212f4c51163c5689b57aae7d41263021d68c9af45cc3fbd4" ext=".ipf">APS/LoadEPICSscans.ipf</file>
-	<file version="nan" time="2016-02-17T12:52:38" md5="b04b22117a3a4024f961b0cf51facc60" sha256="8835da60de85ec0715fd67e9bf4e48079d5a94b77d8e269a8a18d8b653222471" ext=".xml">materials/standard xtals/Rh.xml</file>
+	<file version="nan" time="2018-04-09T17:05:32" md5="25e8d2c101acd3dec81b4a91062df8f5" sha256="88306aca665fccd3c8b253b6a323b2c3dc3d487515d7800bf19d42da91df8453" ext=".xml">materials/standard xtals/Rh.xml</file>
 	<file version="nan" time="2017-05-19T11:04:43" md5="cbdfa02d10b679bfedae76b4976e95ae" sha256="0f5a43fa99a66e35d4e8e67e08b6b7d2533b548644f2e8a1a0870a615576390d" ext=".xml">geometrys/geoN_2012-02-09_10-54-13.xml</file>
 	<file version="nan" time="2016-02-17T12:52:23" md5="dc11aa71904a996102699a6e3a2c6c8c" sha256="9ccf6a1d49d35d40883ace295ad9938aa04602133b5f85cae14b37754610fe6d" ext=".xml">materials/standard xtals/MgO.xml</file>
 	<file version="nan" time="2014-03-04T11:15:53" md5="028b928e6aa13bd5190cdbcad4eec441" sha256="ea946747c3b5e25d23151afedd7faebc6c3e623f9ffda93586c1213a2b7481f3" ext=".xml">geometrys/geoD_2013-02-21_17-10-03.xml</file>
@@ -191,7 +194,7 @@
 	<file version="1.04" time="2017-06-26T17:37:23" md5="e1b2377696096ba860a6fec19b1cce42" sha256="f5a93609538095e526243b38df494ba9e788dc77ec0fa1d1d74b055e088ebde4" ext=".ipf">General/Images/Masking.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="7f757ea8b8080ab2c920dcc79559e095" sha256="fc2fc6a6b5289c30f9955769743f53687374c563f52e16ae1fa0715bf88bbe03" ext=".exe">microN/binary/euler.exe</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="f7cbe5ad6d73260131a8d08f2a847f0d" sha256="3a1ff49978374d7b272605b29e4be50f56e243b329c8f2c47f271d024331bd33" ext=".png">doc/microDiffractionMedia/Picture2.png</file>
-	<file version="nan" time="2017-12-01T17:05:07" md5="a4f3c600206054ed1c0630c1a50bd995" sha256="3397b38db251438daeace20a292d5d7939f7678fe31bcb508f4ecbea6387534b" ext=".xml">materials/standard xtals/Autunite.xml</file>
+	<file version="nan" time="2018-04-05T17:29:20" md5="80d8e3c02403c68e176fdd655e6ed73d" sha256="6065a82c7d2be377da054a8733253363699b45319e860f40b1b638f9c65fd157" ext=".xml">materials/standard xtals/Autunite.xml</file>
 	<file version="2.67" time="2014-10-06T09:42:00" md5="86f474c532356a5aad2b7adcc625691b" sha256="86dd3308ad0404ba0607d996fd71f50da6f91443d0e3ef17a5d9a4714526eabe" ext=".ipf">micro/microGeometry.ipf</file>
 	<file version="nan" time="2016-02-17T12:53:27" md5="6cc544eca4eb02d11b4e6096af30f2ed" sha256="ce9314391b7c713941c8e630131a5b18e63034ff17d3883cb5def82cd9d0669b" ext=".xml">materials/standard xtals/SrAlO4.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="fde12c23ffdfde57b393c6256dbe67f0" sha256="71d10f1c6c55ec84cc584096d78ae41ebe80a914dab1b1a126de5680b582f720" ext=".xml">geometrys/geoN_2013-01-31_15-10-07.xml</file>
@@ -203,13 +206,13 @@
 	<file version="nan" time="2016-02-17T12:52:12" md5="53682397cf4760fa41bd2b12114b5939" sha256="b216cb2fffec277242b972cfdef4321f10a4f2ce4a4b5c81aa1c81414264663c" ext=".xml">materials/standard xtals/Ni.xml</file>
 	<file version="1.2" time="2014-04-30T10:15:27" md5="cd1cb1a391fcc1773133936446285544" sha256="9bf9662944e0670269184a781e5506c9c36c20f363e42b9967a97657de732b32" ext=".ipf">General/Neutron.ipf</file>
 	<file version="nan" time="2016-02-17T12:50:03" md5="8773479a54e4f1694369b9c070e65b4b" sha256="3dcecd86de7ed816ba869e22eff9153794b1159ed93a7152cf8f88e32a5c54d4" ext=".xml">materials/standard xtals/BaTiO3.xml</file>
-	<file version="nan" time="2016-02-17T12:53:02" md5="05bfb7e7d8d96aa0a31f0f078087d957" sha256="2b742202ceef5d11b8fe219da9a70751aec84e7f9e8454cc870c8ad774e83ae3" ext=".xml">materials/standard xtals/Pd.xml</file>
+	<file version="nan" time="2018-04-09T17:06:14" md5="0437a3a0b1220d36efcba706028d8698" sha256="1a2225ef28e429ec537436aeae175eda6663d0d1b776cd75424d16993b43d766" ext=".xml">materials/standard xtals/Pd.xml</file>
 	<file version="0.2" time="2017-02-13T16:18:17" md5="2a77accc9b14282d6fcf8bfd74c55183" sha256="45987b0b5e0bec49c0d621edfa9cd053bc3ccb24354b875e73760da34f6312c4" ext=".ipf">microN/CuteCells.ipf</file>
 	<file version="3.3" time="2013-10-28T11:28:49" md5="808c2afa92a3f4df971c6f7fa25e0e2f" sha256="c0f667dd5cc2f4459fa839e5200d0460de81ee4f3e53bcb8822b318eb5d2c1a5" ext=".ipf">microN/microBeamStart34ID.ipf</file>
 	<file version="0.03" time="2013-11-07T09:29:57" md5="d4bae30c469490f8af1304d136b5af33" sha256="af2a7ef622915af527f9f534855ab7e44b8a6616c8e374fdf378ee939552ffef" ext=".ipf">General/JZT-analysis.ipf</file>
 	<file version="nan" time="2018-02-07T17:10:38" md5="dec23fb0b2d88fcd6dc7252e94fe4013" sha256="46ad72c7cc0cd33dd49e7303c7299b30d0ddfc18b1443882b5f501163a3e2cba" ext=".xml">materials/standard xtals/quartz_beta.xml</file>
 	<file version="nan" time="2017-03-24T11:25:14" md5="7b49d890ba3c033418b434f71fb4aeee" sha256="ffe0bccb27cfa818bcb60a27f9162bc9792715ce7fa1fe211d7bfd1a74ea6bcd" ext=".xml">materials/standard xtals/Cu3AuRT.xml</file>
-	<file version="nan" time="2017-03-06T14:56:59" md5="7dd84295204179dbcf29351f65a37c36" sha256="2b1398430cdfa284839ab4cd83970fdc4e2c16dab2ceb70483731704e073775b" ext=".xml">materials/standard xtals/LaAlO3/LaAlO3_Rhom.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="07d72bbc7a31275e6129da15ec0ac06e" sha256="f3ba424959574f955e45e27f3b5735ba20873b2e7d6c89b8aa67820cde7f0752" ext=".xml">materials/standard xtals/LaAlO3/LaAlO3_Rhom.xml</file>
 	<file version="nan" time="2017-11-20T13:37:53" md5="ddbfacff1757186cad5716366435f324" sha256="a2e48df46d2ce5d3b6199d71f628d814b81724d35deb97df3f1e1a756cabdf11" ext=".xml">materials/standard xtals/CaF2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="fdb7ce7b40230dfecefe1bb0b5a93d95" sha256="24b58d055a1573c2e6c1fff33f5e899e3d8dfa91cc467bafaf81098daa10d676" ext=".png">doc/microDiffractionMedia/Picture6.png</file>
 	<file version="nan" time="2016-02-17T12:54:51" md5="51fabd50cbf0203b3c289c4be6f612c2" sha256="4c5a35dc7cfec74e030ce21cf1085452b5b75242e7d2442cdb707fc1ec3482a9" ext=".xml">materials/standard xtals/LaAlO3/LaAlO3_PseudoCubic.xml</file>
@@ -240,7 +243,7 @@
 	<file version="nan" time="2017-05-19T11:03:44" md5="fbf3c7071507fc3519382520245f912c" sha256="3fe6d803b08414b63fc980b40f496a09276cabb6e6fd4c490a33c2269aaef370" ext=".mtl">materials/mtl files/air.mtl</file>
 	<file version="2.18" time="2017-11-28T13:34:34" md5="75267411ac898458a40e4f96a95bcbde" sha256="a294c817a9913d187d5e17ca19c32fdd7c8435fe0e656205f32eab173e97f482" ext=".ipf">General/Images/ImageDisplayScaling.ipf</file>
 	<file version="nan" time="2016-01-25T12:51:08" md5="99c29ec2b8b58e6ae65703756120d558" sha256="27076ca5d60c667e3ffb07a1cd803ca848d5ba44c63e79dc0b0c8a0276cfc669" ext=".xml">materials/standard xtals/Er.xml</file>
-	<file version="nan" time="2017-03-06T14:42:09" md5="76e43bee58b30f01c87a52f14e6c59c9" sha256="e30c3ccd03c621a129f5bb67f328dda6ab4c42845c7024078e72ad51b25d7101" ext=".xml">materials/standard xtals/PZT-Hex.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="e4954e61df9c14c350acf99a751c00b6" sha256="6a2590e4d7eb4c750b2f88405e7e7e6de8c9da451e9828eeb0cf67d215283f63" ext=".xml">materials/standard xtals/PZT-Hex.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="1c82da1e29ab6bdf874eb8b8c81d131f" sha256="fcddb80dddd1d8d9f3e2360f0d8bb50706067e283af98ec6420db93ce8e38a78" ext=".png">doc/microDiffractionMedia/Picture5.png</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="1c77c9950cb0235ab0d938044b335e06" sha256="7c28fe7135bca1228c13c2ebcb629b4f765bb3a1b7131111e3f4d714f213de0b" ext=".xml">geometrys/geoN_2012-11-10_17-59-03.xml</file>
 	<file version="0.02" time="2016-02-11T11:22:51" md5="d185b56b1e92d1c5ed4f06a0b4162fda" sha256="681f143f92e05e8dd964d77761ec4ba0375c2948b9470988156769da01bcf0a1" ext=".ipf">materials/mtl files/materialsLocate.ipf</file>
@@ -250,7 +253,8 @@
 	<file version="nan" time="2018-02-07T11:31:06" md5="b8a7308a342dfda650b29af5154238ed" sha256="03ddb901d049c24b10d3655b057859416c500139bf1d3f2fa7db3aad8daf6b93" ext=".xml">materials/standard xtals/NaCl.xml</file>
 	<file version="nan" time="2016-02-17T12:51:02" md5="099cf0766c06fd0c96e4a058e94b4e2d" sha256="4e96894b522e262e171f3d06a45660d39a1968aaf506151ada2cb161413bd4fb" ext=".xml">materials/standard xtals/Cr.xml</file>
 	<file version="nan" time="2016-02-17T12:54:34" md5="44de718c66737da23b5802f226f14e06" sha256="0ab670a3bcc8eb7f6fd0f574f0bdf72dff72ecc74c600fb4d0ff4b718e782c94" ext=".xml">materials/standard xtals/YBCO/YBCO3.xml</file>
-	<file version="nan" time="2017-03-27T10:20:54" md5="44bf9d6b8b7501068bbb872af367b51b" sha256="c6afb46427c24f71d6546dbd4ee2abd5773efc52c53fb50f1b81aa34274a65d4" ext=".xml">materials/standard xtals/PZT-Rhomb.xml</file>
+	<file version="nan" time="2018-04-09T10:55:24" md5="16a08beb99372f9cd502ab99a89de7b0" sha256="cf25d7a231a9a644538f9a130984e5363da85806608a0f1780f47eb7abd235c4" ext=".xml">materials/standard xtals/Iron/Iron-delta.xml</file>
+	<file version="nan" time="2018-04-09T10:12:22" md5="352e2df60b3ad02118c804fa211bdef0" sha256="bd7ae166e73a32c85b2ade24a0a1a2e733e2c8208fa46f5b693ac398825090d5" ext=".xml">materials/standard xtals/PZT-Rhomb.xml</file>
 	<file version="1" time="2017-04-04T13:18:53" md5="248ea8b361ecd3c0fdfe0061befe5baa" sha256="5520293afb313f129522f38b2f40e6d68b5069594c062989d9277759cfdd7805" ext=".ipf">APS/xyeFiles.ipf</file>
 	<file version="2.66" time="2014-10-06T09:42:00" md5="4cf4f2ae776b8beb5ec5c74048c71994" sha256="25611ca90d6e4d4825aae5f37666559f8e0d23ea835fdb2d106c3b696d486599" ext=".ipf">micro/Indexing.ipf</file>
 	<file version="nan" time="2016-02-17T12:52:56" md5="b71edc24ac6bf83c4fc29baef1f2bfae" sha256="90a0f223ce0d53fb009d734f773f58ae7ddd3e3143374c9b344ce41b750b782e" ext=".xml">materials/standard xtals/Pt.xml</file>
