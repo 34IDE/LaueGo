@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Gallium nitride (Wurtzite 2H)</chemical_name_common>
+	<chemical_formula_structural>GaN</chemical_formula_structural>
+	<space_group_id>164</space_group_id>
+	<H-M>P 63 m c</H-M>
+	<space_group_id>186</space_group_id>
+	<icsd>34476</icsd>
+	<cell>
+		<a unit="nm">0.3190</a>
+		<b unit="nm">0.3190</b>
+		<c unit="nm">0.5189</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+	<atom_site>
+		<label>Ga</label>
+		<symbol>Ga</symbol>
+		<fract_xyz>-0.333333 -0.666667 0</fract_xyz>
+		<valence>3</valence>
+		<aniso_U_11>0.0052</aniso_U_11>
+		<aniso_U_22>0.0052</aniso_U_22>
+		<aniso_U_33>0.0027</aniso_U_33>
+		<aniso_U_12>0.0026</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>N</label>
+		<symbol>N</symbol>
+		<fract_xyz>-0.333333 -0.666667 0.377</fract_xyz>
+		<valence>-3</valence>
+		<aniso_U_11>0.0070</aniso_U_11>
+		<aniso_U_22>0.0070</aniso_U_22>
+		<aniso_U_33>0.0024</aniso_U_33>
+		<aniso_U_12>0.0035</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+	<citation do1="10.1016/0038-1098(77)90959-0">
+		H. Schulz, K.H. Thiemann,
+		Solid State Communications 23 (1977) pg. 815-819
+		"Crystal structure refinement of AlN and GaN"
+	</citation>
+</cif>
