@@ -6,12 +6,12 @@
 	<space_group_IT_number>167</space_group_IT_number>
 	<space_group_id>167:R</space_group_id>
 	<cell>
-		<a unit="nm">0.5128155</a>
-		<b unit="nm">0.5128155</b>
-		<c unit="nm">0.5128155</c>
-		<alpha>55.27934</alpha>
-		<beta>55.27934</beta>
-		<gamma>55.27934</gamma>
+		<a unit="nm">0.51284335</a>
+		<b unit="nm">0.51284335</b>
+		<c unit="nm">0.51284335</c>
+		<alpha>55.2874356</alpha>
+		<beta>55.2874356</beta>
+		<gamma>55.2874356</gamma>
 	</cell>
 	<atom_site>
 		<label>Al</label>
