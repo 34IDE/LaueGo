@@ -220,7 +220,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //		l = (-H-2K+L)/3
 //		and the condition (-H+K+L) = 3n (where n is an integer) for allowed reflections, three Rhombohedral cells per Hexagonal cell
 //
-//		H = h=k
+//		H = h-k
 //		K = k-l
 //		L = h+k+l
 //
