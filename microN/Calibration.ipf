@@ -212,7 +212,7 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 		endif
 		Wave FullPeakList = $peakListName
 	endif
-	printf "MakeCalibData(%d),   using FullPeakList='%s'\r",dNum,peakListName
+	printf "MakeCalibData(%d)\t\t// using FullPeakList='%s'\r",dNum,peakListName
 	Variable Npeaks=DimSize(FullPeakList,0), k
 
 	// Find the correct FullPeakIndexed wave, may be a FullPeakIndexedAux for dNum = 1 or 2
@@ -650,7 +650,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 	FillGeometryStructDefault(g)							//fill the geometry structure with current values
 
 	Variable Rstart, Rend, Rangle
-	Variable err, sec, failed=0
+	Variable err, seconds, failed=0
 	String noteStr, errList=""
 	Variable rhox=NaN, rhoy=NaN, rhoz=NaN, rhox0=NaN, rhoy0=NaN, rhoz0=NaN
 	STRUCT detectorGeometry d								// this is the structure that will be optimized
@@ -688,16 +688,19 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		endif
 
 		failed = OptimizeDetectorCalibration(d,cList)
-		if (failed && printIt)
-			printf "-----------------------\rERROR in Optimize\r  %s\r  -----------------------\r",note(cList)
-		endif
 		noteStr=note(cList)
+		if (failed && printIt)
+			print "----------------------- ERROR in Optimize"
+//			print " ",note(cList)
+			print "---",OptimizeError2str(NumberByKey("ERROR",noteStr,"="),NumberByKey("V_OptTermCode",noteStr,"="),NumberByKey("V_OptNumIters",noteStr,"="))
+			printf "-----------------------"
+		endif
 		if ( NumberByKey("V_OptNumIters",noteStr,"=")<50 && dNum==0)
 			printf "-----------------------\rPOSSIBLE ERROR (no. of iterations = %d is too few), re-run this\r  -----------------------\r", NumberByKey("V_OptNumIters",noteStr,"=")
 		endif
 		Rend = sqrt((d.R[0]*d.R[0])+(d.R[1]*d.R[1])+(d.R[2]*d.R[2]))*180/PI
 		err = NumberByKey("err",noteStr,"=")
-		sec = NumberByKey("exectutionSec",noteStr,"=")
+		seconds = NumberByKey("exectutionSec",noteStr,"=")
 		err3 += err
 		errList += num2str(err)+";"
 		if (dNum==0)
@@ -706,8 +709,8 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 			rhoz = NumberByKey("rhoz",noteStr,"=")
 		endif
 		if (printIt)
-			if (sec>4)
-				printf "\tOptimization toook %s\r",Secs2Time(sec,5,1)
+			if (seconds>4)
+				printf "\tOptimization toook %s\r",Secs2Time(seconds,5,1)
 			endif
 			printf "ended at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %g¡\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rend
 			if (dNum==0)
@@ -765,7 +768,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 End
 //
 Static Function FillOutCalibTable(clist)	// fill in columns that can be calculated, this MODIFIES clist
-	// modifies {qx_hkl, qy_hkl, qz_hkl}=[5,7],  theta_keV=[9],  calculated_keV=[10], deltaE_eV=[11]
+	// modifies calculated_keV=[6], deltaE_eV=[7]
 	Wave clist							// table with calibration data
 	String wnote=note(clist)
 
@@ -803,6 +806,51 @@ Static Function FillOutCalibTable(clist)	// fill in columns that can be calculat
 	endfor
 	return 0
 End
+
+
+Function/T OptimizeError2str(flag,OptTermCode,OptNumIters)
+	Variable flag
+	Variable OptTermCode
+	Variable OptNumIters
+	if (!flag)
+		return ""
+	endif
+
+	String flagErrs = "57:User abort;"
+	flagErrs += "788:Iteration limit was exceeded.;"
+	flagErrs += "789:	Maximum step size was exceeded in five consecutive iterations.;"
+	flagErrs += "790:	The number of points in the typical X size wave specified by /R does not match the number of X values specified by the /X flag;"
+	flagErrs += "791:	Gradient nearly zero and no iterations taken. This means the starting point is very nearly a critical point. It could be a solution, or it could be so close to a saddle point or a maximum (when searching for a minimum) that the gradient has no useful information. Try a slightly different starting point.;"
+
+	String termErrs = "1:Gradient tolerance was satisfied.;"
+	termErrs += "2:Step size tolerance was satisfied.;"
+	termErrs += "3:No step was found that was better than the last iteration. This could be because the current step is a solution, or your function may be too nonlinear for Optimize to solve, or your tolerances may be too large (or too small), or finite difference gradients are not sufficiently accurate for this problem.;"
+	termErrs += "4:Iteration limit was exceeded.;"
+	termErrs += "5:Maximum step size was exceeded in five consecutive iterations. This may mean that the maximum step size is too small, or that the function is unbounded in the search direction (that is, goes to -inf if you are searching for a minimum), or that the function approaches the solution asymptotically (function is bounded but doesn't have a well-defined extreme point).;"
+	termErrs += "6:Same as V_flag = 791.;"
+	String out = StringByKey(num2istr(flag), flagErrs)
+	String str = StringByKey(num2istr(OptTermCode), termErrs)
+
+
+	if (flag==788 && OptTermCode==4)
+		str = ""
+	endif
+
+	if (strlen(str))
+		if (strlen(out))
+			out += "\r   " + str
+		else
+			out = str
+		endif
+	endif
+	if (strlen(out))
+		sprintf str, "   %d iterations", OptNumIters
+		out += str
+	endif
+	return out
+End
+
+
 
 
 Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes values in d to best fit values in CalibrationList
@@ -867,19 +915,19 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	Note/K CalibrationList, noteStr
 
 	Variable dR = 1e-8									// this gives a limit of (~0.5e-6)¡
-	d.R[0]= round(W_Extremum[0]/dR)*dR			// round to 8 places
+	d.R[0]= round(W_Extremum[0]/dR)*dR				// round to 8 places
 	d.R[1]= round(W_Extremum[1]/dR)*dR
 	d.R[2]= round(W_Extremum[2]/dR)*dR
-	d.R[0] = (d.R[0]==0) ? 0 : d.R[0]					// change -0 to +0
+	d.R[0] = (d.R[0]==0) ? 0 : d.R[0]				// change -0 to +0
 	d.R[1] = (d.R[1]==0) ? 0 : d.R[1]
 	d.R[2] = (d.R[2]==0) ? 0 : d.R[2]
 
 	Variable dP = min(d.sizeX/d.Nx,d.sizeY/d.Ny)/100	// resolution limit in Px,Py,Pz (1% of a pixel)
-	dP = 10^round(log(dP))							// make rounding to a fixed number of places (not arbitrary number)
+	dP = 10^round(log(dP))								// make rounding to a fixed number of places (not arbitrary number)
 	d.P[0]= round(W_Extremum[3]/dP)*dP
 	d.P[1]= round(W_Extremum[4]/dP)*dP
 	d.P[2]= round(W_Extremum[5]/dP)*dP
-	d.P[0] = (d.P[0]==0) ? 0 : d.P[0]					// change -0 to +0
+	d.P[0] = (d.P[0]==0) ? 0 : d.P[0]				// change -0 to +0
 	d.P[1] = (d.P[1]==0) ? 0 : d.P[1]
 	d.P[2] = (d.P[2]==0) ? 0 : d.P[2]
 
@@ -887,8 +935,8 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	sprintf str,"%s, %s (%g)",date(),Secs2Time(DateTime,3),date2secs(-1,-1,-1)/3600
 	d.timeMeasured = str
 
-	CalibrationList[][10] = CalculatedQvecEnergy(CalibrationList,p)	// fill calculated energy from sample orientation and known lattice constants
-	CalibrationList[][11] = ( CalibrationList[p][8] - CalibrationList[p][10] ) *1e3	// ÆE (eV)
+	CalibrationList[][6] = CalculatedQvecEnergy(CalibrationList,p)	// fill calculated energy from sample orientation and known lattice constants
+	CalibrationList[][7] = ( CalibrationList[p][5] - CalibrationList[p][6] ) *1e3	// ÆE (eV)
 
 	KillWaves/Z W_Extremum, W_OptGradient
 	return V_flag
@@ -1046,8 +1094,8 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	Variable keV, Qlen, i, haveE, haveQhat
 	Variable Nmeas, dqRad, dqPerp, err2, pixelX, pixelY, dq2
 	for (i=0,Nmeas=0,err2=0; i<N; i+=1)
-		pixelX = CalibrationList[i][0]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
-		pixelY = CalibrationList[i][1]	;	pixelY = pixelY==limit(pixelY,0,d.Ny - 1) ? pixelY : NaN
+		pixelX = CalibrationList[i][3]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
+		pixelY = CalibrationList[i][4]	;	pixelY = pixelY==limit(pixelY,0,d.Ny - 1) ? pixelY : NaN
 		keV = CalibrationList[i][5]
 		keV = numtype(keV)==0 && keV>0 ? keV : NaN
 		haveQhat = numtype(pixelX+pixelY) == 0		// valid pixelX & pixelY are present
@@ -1162,9 +1210,8 @@ Static Function CalculatedQvecEnergy(CalibrationList,m)	// fills the calculated 
 	// compute ideal Q-vector from just rhoSample and the reciprocal lattice
 	Wave recip0 = decodeMatFromStr(StringByKey("recipSTD",wnote, "="))	// returns a FREE wave defined by str
 	Make/N=3/D/FREE hkl = CalibrationList[m][p]
-	MatrixOP/FREE qcalc = recip0 x hkl
+	MatrixOP/FREE qcalc = rhoSample x recip0 x hkl	// rotate Q-vector by rhoSample
 	Variable Qlen = norm(qcalc)
-	MatrixOp/FREE qcalc = rhoSample x qcalc				// rotate Q-vector by rhoSample
 
 	Variable sintheta = -MatrixDot(ki,qcalc)/Qlen		// sin(theta) = -ki dot q^ 
 	return hc * Qlen / (4*PI*sintheta)						// energy (keV)
