@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.90
+#pragma version = 0.91
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -18,7 +18,7 @@ Menu LaueGoMainMenuName
 		"-"
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on 1 Detector","DetectorCalibrationList*",""),GraphCalibrationDetector($"")
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on All Detectors","DetectorCalibrationList*",""),GraphAllCalibrationDetector()
-		MenuItemIfWaveClassExists("  Table of Calibration Data","DetectorCalibrationList*",""), DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:7;MINCOLS:7")
+		MenuItemIfWaveClassExists("  Table of Calibration Data","DetectorCalibrationList*",""), DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:12;MINCOLS:10")
 		MenuItemIfFunctionExists("Write Detector values to EPICS...","EPICS_put_PV_num"), WriteDetectorGeo2EPICS(NaN)
 		"-"
 		"(testing"
@@ -173,15 +173,6 @@ End
 // ==============================================================================================
 // ==================================== Start of Optimization ===================================
 
-//	The user supplies ONLY columns [0,2], [4-4], [7], the rest are calculated.
-//
-//	CalibrationList[][0,2]	= [REQUIRED] hkl for each measured spot
-//	CalibrationList[][3,4]	= [OPTIONAL] (px,py) are measured on image
-//	CalibrationList[][5]	= [OPTIONAL] keV, MEASURED energy of spot (otherwise leave as NaN)
-//
-//	CalibrationList[][6]	= [CALCULATED] keV calculated from sample orientation and known lattice (does NOT use measured spot position)
-//	CalibrationList[][7]	= [CALCULATED] ÆE (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
-
 Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by OptimizeAll()
 	Variable dNum
 	dNum = mod(dNum,1) ? NaN : dNum
@@ -287,14 +278,24 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 	endif
 	printf "	starting with a sample rotation of  {%g, %g, %g}\r",rhox,rhoy,rhoz
 
+//	STRUCT crystalStructure xtal
+//	if (FillCrystalStructDefault(xtal))									// fill the lattice structure with test values
+//		DoAlert 0, "no crystal structure found"
+//		return $""
+//	endif
+//	Wave recip0 = recipFrom_xtal(xtal)	
+
 	String name = CleanupName("CalibrationList"+ReplaceString("FullPeakList",NameOfWave(FullPeakList),""),0)
 	name = name[0,29]+num2istr(dNum)
-	Make/N=(Npeaks,8)/O/D $name/Wave=cList = NaN				// list of measured reflections used to calibrate the detector, {px,py,qx,qy,yz,keV,theta}
-	SetDimLabel 1,0,H,cList;			SetDimLabel 1,1,K,cList;	SetDimLabel 1,2,L,cList	// (hkl)
-	SetDimLabel 1,3,px,cList;			SetDimLabel 1,4,py,cList	// measued pixel
-	SetDimLabel 1,5,keV_meas,cList										// measured keV
-	SetDimLabel 1,6,calculated_keV,cList								// energy calculated from sample orientation (no measured parameters)
-	SetDimLabel 1,7,deltaE_eV,cList										// measured - calculated energy (eV)
+	Make/N=(Npeaks,12)/O/D $name=NaN								// list of measured reflections used to calibrate the detector, {px,py,qx,qy,yz,keV,theta}
+	Wave cList = $name
+	SetDimLabel 1,0,px,cList;			SetDimLabel 1,1,py,cList													// measued pixel
+	SetDimLabel 1,2,H,cList;			SetDimLabel 1,3,K,cList;			SetDimLabel 1,4,L,cList		// (hkl)
+	SetDimLabel 1,5,qx_hkl,cList;	SetDimLabel 1,6,qy_hkl,cList;	SetDimLabel 1,7,qz_hkl,cList	// qvector from (hkl)
+	SetDimLabel 1,8,keV_meas,cList													// measured keV
+	SetDimLabel 1,9,theta_keV_hkl,cList											// theta calculated from known d(hkl) and measured keV
+	SetDimLabel 1,10,calculated_keV,cList											// energy calculated from sample orientation (no measured parameters)
+	SetDimLabel 1,11,deltaE_eV,cList												// measured - calculated energy (eV)
 	String noteStr = ""
 	noteStr=ReplaceStringByKey("waveClass",noteStr,"DetectorCalibrationList"+SelectString(dNum,"0",""),"=")
 	noteStr = ReplaceStringByKey("detectorID",noteStr,g.d[dNum].detectorID,"=")// detector ID
@@ -306,6 +307,13 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 	noteStr = ReplaceNumberByKey("rhoy",noteStr,rhoy,"=")
 	noteStr = ReplaceNumberByKey("rhoz",noteStr,rhoz,"=")
 	Note/K cList, noteStr
+	//	CalibrationList[][0,1]	= (px,py) are measured on image
+	//	CalibrationList[][2-4]	= hkl are hkl for each measured spot
+	//	CalibrationList[][5-7]	= Q-vector, calculated from knowing hkl and the standard reciprocal lattice (NOT rotated from standard orientation)
+	//	CalibrationList[][8]	= keV, measured energy of spot
+	//	CalibrationList[][9]	= theta (deg), obtained from calculated d(hkl) and measured energy using: lambda = 2d sin(theta)
+	//	CalibrationList[][10]	= keV calculated from sample orientation and known lattice (does not use measured spot position)
+	//	CalibrationList[][11]	= ÆE (eV),  ( CalibrationList[][8] - CalibrationList[][10] ) *1e3
 
 	Variable tolerance, i									// dpixel tolerance to find indexed spots that match fitted peaks
 	for (tolerance=Inf,m=0; m<(Npeaks-1); m+=1)
@@ -313,13 +321,13 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 			tolerance = min((FullPeakList[m][0]-FullPeakList[i][0])^2 +(FullPeakList[m][1]-FullPeakList[i][1])^2, tolerance)
 		endfor
 	endfor
-	tolerance = tolerance/4								// in units of pixel^2,  half way between the two nearest peaks
+	tolerance = tolerance/4									// in units of pixel^2,  half way between the two nearest peaks
 
-	// Find closest indexed peak to each of the fitted peaks, must also be within tolerance
+	// Find closest indexed peak to each of the fitted peaks, must also be withing tolerance
 	Make/N=3/D/FREE hkl
 	Variable px,py, dist, kBest, distBest
 	for (m=0;m<Npeaks;m+=1)								// for each fitted peak, find corresponding indexed peak (if one is close enough)
-		px = FullPeakList[m][0]							// fitted peak positions
+		px = FullPeakList[m][0]								// fitted peak positions
 		py = FullPeakList[m][1]
 		for (k=0,distBest=Inf; k<Nindex; k+=1)
 			dist = (px-FullPeakIndexed[k][9])^2 + (py-FullPeakIndexed[k][10])^2
@@ -328,28 +336,30 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 				kBest = k
 			endif
 		endfor
-		if (distBest > tolerance)							// this peak not indexed, it is of no use to the calibration list
+		if (distBest > tolerance)								// this peak not indexed, it is of no use to the calibration list
 			continue
 		endif
 
-		hkl = FullPeakIndexed[kBest][p+3]				// hkl for this fitted peak
-		cList[m][0,2] = hkl[q]								// CalibrationList[][0-2] = hkl are hkl for each measured spot
-		cList[m][3] = px										// CalibrationList[][3,4] = (px,py) are measured on image
-		cList[m][4] = py
+		hkl = FullPeakIndexed[kBest][p+3]					// hkl for this fitted peak
+		cList[m][0] = px										// CalibrationList[][0,1] = (px,py) are measured on image
+		cList[m][1] = py
+		cList[m][2,4] = hkl[q-2]							// CalibrationList[][2-4] = hkl are hkl for each measured spot
 		if (WaveExists(Emeasured))
-			cList[m][5] = Emeasured[m]					// CalibrationList[][5] = keV, EASURED energy of spot
+			cList[m][8] = Emeasured[m]					// CalibrationList[][8] = keV, measured energy of spot
 			deltaE[m] = (Emeasured[m] - FullPeakIndexed[kBest][7])*1e3	// not really needed, just to look at.
 		endif
 	endfor
 	// these coumns will be filled out later at the start of optimization
-	cList[][6] = NaN											// initially there is no calculated energy, or error
-	cList[][7] = NaN
+	cList[][5,7] = NaN										// CalibrationList[][5-7] = Q-vector, calculated from knowing hkl and the standard reciprocal lattice (NOT rotated from standard orientation)
+	cList[][9] = NaN											// initially there is no calculated energy, or error
+	cList[][10] = NaN											// initially there is no calculated energy, or error
+	cList[][11] = NaN
 
 	Variable haveE, haveHKL, havePixel
 	for (m=Npeaks-1;m>=0;m-=1)							// remove all bad lines, must be hkl and (pxiel or energy)
-		haveHKL = numtype(cList[m][0]+cList[m][1]+cList[m][2]) == 0
-		havePixel = numtype(cList[m][3]+cList[m][4]) == 0
-		haveE = numtype(cList[m][5]) == 0
+		haveE = numtype(cList[m][8]) == 0
+		havePixel = numtype(cList[m][0]+cList[m][1]) == 0
+		haveHKL = numtype(cList[m][2]+cList[m][3]+cList[m][4]) == 0
 		if (!haveHKL || (!haveE && !havePixel))		// check for valid hkl, and either pixel or energy
 			DeletePoints/M=0 m, 1, cList
 		endif
@@ -586,8 +596,8 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		cName0 = SelectString(WaveExists(calib0),"CalibrationList0",NameOfWave(calib0))
 		cName1 = SelectString(WaveExists(calib1),"CalibrationList1",NameOfWave(calib1))
 		cName2 = SelectString(WaveExists(calib2),"CalibrationList2",NameOfWave(calib2))
-		String wList0 = WaveListClass("DetectorCalibrationList0","*","DIMS:2;MAXCOLS:7;MINCOLS:7")+"_none_"
-		String wList12 = WaveListClass("DetectorCalibrationList","*","DIMS:2;MAXCOLS:7;MINCOLS:7")+"_none_"
+		String wList0 = WaveListClass("DetectorCalibrationList0","*","DIMS:2;MAXCOLS:12;MINCOLS:10")+"_none_"
+		String wList12 = WaveListClass("DetectorCalibrationList","*","DIMS:2;MAXCOLS:12;MINCOLS:10")+"_none_"
 		Prompt cName0,"top detector",popup,wList0
 		Prompt cName1,"side detector 1",popup,wList12
 		Prompt cName2,"side detector 2",popup,wList12
@@ -660,18 +670,18 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		if (!(g.d[dNum].used))
 			continue												// skip un-used detectors
 		endif
-		Wave cList = $StringFromList(dNum,cNameList)	// data to use for optimization
-		if (!WaveExists(cList))
+		Wave cListN = $StringFromList(dNum,cNameList)	// data to use for optimization
+		if (!WaveExists(cListN))
 			continue
 		endif
-		FillOutCalibTable(cList)							// fill in columns that can be calculated, this MODIFIES clist
+		FillOutCalibTable(cListN)							// fill in columns that can be calculated, this MODIFIES clist
 
-		noteStr=note(cList)
+		noteStr=note(cListN)
 		if (dNum && numtype(rhox+rhoy+rhoz)==0)
 			noteStr = ReplaceNumberByKey("rhox",noteStr,rhox,"=")
 			noteStr = ReplaceNumberByKey("rhoy",noteStr,rhoy,"=")
 			noteStr = ReplaceNumberByKey("rhoz",noteStr,rhoz,"=")
-			Note/K cList, noteStr
+			Note/K cListN, noteStr
 		endif
 		d = g.d[dNum]											// set new detector structure to start as the old one, was:  CopyDetectorGeometry(d,g.d[dNum])
 		Rstart = sqrt((d.R[0]*d.R[0])+(d.R[1]*d.R[1])+(d.R[2]*d.R[2]))*180/PI
@@ -687,11 +697,11 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 			printf "sample started at axis = {%g, %g, %g},   |sample angle| = %g¡\r",rhox,rhoy,rhoz,angle
 		endif
 
-		failed = OptimizeDetectorCalibration(d,cList)
+		failed = OptimizeDetectorCalibration(d,cListN)
 		if (failed && printIt)
-			printf "-----------------------\rERROR in Optimize\r  %s\r  -----------------------\r",note(cList)
+			printf "-----------------------\rERROR in Optimize\r  %s\r  -----------------------\r",note(cListN)
 		endif
-		noteStr=note(cList)
+		noteStr=note(cListN)
 		if ( NumberByKey("V_OptNumIters",noteStr,"=")<50 && dNum==0)
 			printf "-----------------------\rPOSSIBLE ERROR (no. of iterations = %d is too few), re-run this\r  -----------------------\r", NumberByKey("V_OptNumIters",noteStr,"=")
 		endif
@@ -727,11 +737,11 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 
 	Variable m, maxDeltaE=0
 	for (m=0;m<ItemsInList(cNameList);m+=1)
-		Wave cList = $StringFromList(m,cNameList)	// data to use for optimization
-		if (!WaveExists(cList))
+		Wave cListN = $StringFromList(m,cNameList)	// data to use for optimization
+		if (!WaveExists(cListN))
 			continue
 		endif
-		ImageStats/G={0,DimSize(cList,0)-1, 7,7} cList
+		ImageStats/G={0,DimSize(cListN,0)-1, 11,11} cListN
 		if (V_max>abs(maxDeltaE) || (-V_min)>abs(maxDeltaE))
 			maxDeltaE = abs(V_max) > abs(V_min) ? V_max : V_min
 		endif
@@ -767,7 +777,6 @@ End
 Static Function FillOutCalibTable(clist)	// fill in columns that can be calculated, this MODIFIES clist
 	// modifies {qx_hkl, qy_hkl, qz_hkl}=[5,7],  theta_keV=[9],  calculated_keV=[10], deltaE_eV=[11]
 	Wave clist							// table with calibration data
-	String wnote=note(clist)
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))					// fill the lattice structure with current values
@@ -775,9 +784,8 @@ Static Function FillOutCalibTable(clist)	// fill in columns that can be calculat
 		return 1
 	endif
 	Wave recip0 = recipFrom_xtal(xtal)						// STANDARD reciprocal lattice, not rotated to match actual sample
-	wnote = ReplaceStringByKey("recipSTD",wnote, encodeMatAsStr(recip0), "=")
-	Note/K clist, wnote
 
+	String wnote=note(clist)
 	Variable rhox=NumberByKey("rhox",wnote,"="), rhoy=NumberByKey("rhoy",wnote,"="), rhoz=NumberByKey("rhoz",wnote,"=")
 	Make/N=(3,3)/D/FREE rhoSample
 	RotationVec2Matrix(rhox,rhoy,rhoz,NaN,rhoSample)	// Compute rhoSample, the sample rotation mat. Apply to qhat's to make them line up with (px,py) pairs
@@ -785,8 +793,8 @@ Static Function FillOutCalibTable(clist)	// fill in columns that can be calculat
 	Make/N=3/D/FREE hkl, ki={0,0,1}
 	Variable keVmeas, keVcalc, theta, eV, m, N=DimSize(clist,0)
 	for (m=0;m<N;m+=1)
-		hkl = clist[m][p]
-		keVmeas = cList[m][5]								// measured energy
+		hkl = clist[m][p+2]
+		keVmeas = cList[m][8]								// measured energy
 		MatrixOp/FREE qvec = recip0 x hkl
 		qvec = abs(qvec)<1e-14 ? 0 : qvec
 		theta = asin(hc/keVmeas*norm(qvec)/4/PI)*180/PI // CalibrationList[][9] = theta (deg), obtained from calculated d(hkl) and measured energy using: Q = 4¹ sin(theta)/lambda
@@ -798,8 +806,10 @@ Static Function FillOutCalibTable(clist)	// fill in columns that can be calculat
 			keVcalc = -hc * norm(qvec) / (4*PI*MatrixDot(qhat,ki))
 			eV = (keVmeas - keVcalc) * 1000
 		endif
-		cList[m][6] = keVcalc
-		cList[m][7] = eV
+		cList[m][5,7] = qvec[q-5]							// CalibrationList[][5-7] = Q-vector, calculated from knowing hkl and the standard reciprocal lattice (NOT rotated from standard orientation)
+		cList[m][9] = theta
+		cList[m][10] = keVcalc
+		cList[m][11] = eV
 	endfor
 	return 0
 End
@@ -933,32 +943,31 @@ Function CalibrationErrorRP(CalibrationList,Rx,Ry,Rz,Px,Py,Pz)	// returns error 
 	d.R[0] = Rx;	d.R[1] = Ry;	d.R[2] = Rz			// Rotation vector for detector (degree)
 	d.P[0] = Px;	d.P[1] = Py;	d.P[2] = Pz			// offset to detector (micron)
 	DetectorUpdateCalc(d)									// update all fields in this detector structure (basically rho)
+	//print "in CalibrationErrorRP:"
+	//	printDetector(d)
 
-	Wave recip0 = decodeMatFromStr(StringByKey("recipSTD",noteStr, "="))
-
-	Make/N=3/D/FREE ki={0,0,1}, kf, hkl, qmeas
+	Make/N=3/D/FREE ki={0,0,1}, kf, qcalc, qmeas
 	Make/N=3/D/FREE radialHat								// unit vector in qmeas direction
 	Make/N=3/D/FREE dq
 	Variable N=DimSize(CalibrationList,0)				// number of measured spots to use in computing error values
 	Variable keV, Qlen, i, haveE, haveQhat
 	Variable Nmeas, dqRad, dqPerp, err, pixelX, pixelY
 	for (i=0,Nmeas=0,err=0; i<N; i+=1)
-		pixelX = CalibrationList[i][3]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
-		pixelY = CalibrationList[i][4]	;	pixelY = pixelY==limit(pixelY,0,d.Ny - 1) ? pixelY : NaN
-		keV = CalibrationList[i][5]
+		pixelX = CalibrationList[i][0]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
+		pixelY = CalibrationList[i][1]	;	pixelY = pixelY==limit(pixelY,0,d.Ny - 1) ? pixelY : NaN
+		keV = CalibrationList[i][8]
 		keV = numtype(keV)==0 && keV>0 ? keV : NaN
 		haveQhat = numtype(pixelX+pixelY) == 0		// valid pixelX & pixelY are present
 		haveE = keV > 0										// valid energy is present
-
-		hkl = CalibrationList[i][p]
-		if (numtype(sum(hkl)))
-			continue												// Invalid hkl, skip, you must have the hkl
+		qcalc = CalibrationList[i][p+5]					// Q vector for this reflection in STANDARD orientation
+		if (numtype(sum(qcalc)))							// standard q-vector is valid
+			continue												// Invalid {qx,qy,qz} in standard orientation, skip
 		elseif (!haveQhat && !haveE)
 			continue												// neither energy nor direction, nothing was measured
 		endif
 
 		// compute CALCULATED Q-vector from just rhoSample and the reciprocal lattice
-		MatrixOp/FREE qcalc = rhoSample x recip0 x hkl	// rotate Q-vector by rhoSample, this is the Calculated qvec
+		MatrixOp/FREE qcalc = rhoSample x qcalc		// rotate Q-vector by rhoSample, this is the Calculated qvec
 
 		// compute MEASURED Q-vectors from (pixelX,pixelY) & keV
 		if (haveQhat)											// pixel is valid
@@ -1037,9 +1046,7 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	d.P[0] = Px;	d.P[1] = Py;	d.P[2] = Pz			// offset to detector (micron)
 	DetectorUpdateCalc(d)									// update all fields in this detector structure (basically rho)
 
-	Wave recip0 = decodeMatFromStr(StringByKey("recipSTD",noteStr, "="))
-
-	Make/N=3/D/FREE ki={0,0,1}, kf, qmeas, hkl
+	Make/N=3/D/FREE ki={0,0,1}, kf, qcalc, qmeas
 	Make/N=3/D/FREE radialHat								// unit vector in qmeas direction
 	Make/N=3/D/FREE dq
 	Variable N=DimSize(CalibrationList,0)				// number of measured spots to use in computing error values
@@ -1048,20 +1055,19 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	for (i=0,Nmeas=0,err2=0; i<N; i+=1)
 		pixelX = CalibrationList[i][0]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
 		pixelY = CalibrationList[i][1]	;	pixelY = pixelY==limit(pixelY,0,d.Ny - 1) ? pixelY : NaN
-		keV = CalibrationList[i][5]
+		keV = CalibrationList[i][8]
 		keV = numtype(keV)==0 && keV>0 ? keV : NaN
 		haveQhat = numtype(pixelX+pixelY) == 0		// valid pixelX & pixelY are present
 		haveE = keV > 0										// valid energy is present
-
-		hkl = CalibrationList[i][p]
-		if (numtype(sum(hkl)))
-			continue												// Invalid hkl, skip, you must have the hkl
+		qcalc = CalibrationList[i][p+5]					// Q vector for this reflection in STANDARD orientation
+		if (numtype(sum(qcalc)))							// standard q-vector is valid
+			continue												// Invalid {qx,qy,qz} in standard orientation, skip
 		elseif (!haveQhat && !haveE)
 			continue												// neither energy nor direction, nothing was measured
 		endif
 
 		// compute CALCULATED Q-vector from just rhoSample and the reciprocal lattice
-		MatrixOp/FREE qcalc = rhoSample x recip0 x hkl	// rotate Q-vector by rhoSample, this is the Calculated qvec
+		MatrixOp/FREE qcalc = rhoSample x qcalc		// rotate Q-vector by rhoSample, this is the Calculated qvec
 
 		// compute MEASURED Q-vectors from (pixelX,pixelY) & keV
 		if (haveQhat)											// pixel is valid
@@ -1152,17 +1158,16 @@ Static Function CalculatedQvecEnergy(CalibrationList,m)	// fills the calculated 
 	Wave CalibrationList
 	Variable m
 
-	Make/N=3/D/FREE ki={0,0,1}
-	String wnote = note(CalibrationList)
-
-	Variable rhox=NumberByKey("rhox",wnote,"="), rhoy=NumberByKey("rhoy",wnote,"="), rhoz=NumberByKey("rhoz",wnote,"=")
 	Make/N=(3,3)/D/FREE rhoSample							// rotation matrix computed from {rhox,rhoy,rhoz}
+	Make/N=3/D/FREE ki={0,0,1}
+
+	String noteStr = note(CalibrationList)
+	Variable rhox=NumberByKey("rhox",noteStr,"="), rhoy=NumberByKey("rhoy",noteStr,"="), rhoz=NumberByKey("rhoz",noteStr,"=")
 	RotationVec2Matrix(rhox,rhoy,rhoz,NaN,rhoSample)// Compute the sample rotation rhoSample. Apply to qhat's to make them line up with (px,py) pairs
 
 	// compute ideal Q-vector from just rhoSample and the reciprocal lattice
-	Wave recip0 = decodeMatFromStr(StringByKey("recipSTD",wnote, "="))	// returns a FREE wave defined by str
-	Make/N=3/D/FREE hkl = CalibrationList[m][p]
-	MatrixOP/FREE qcalc = recip0 x hkl
+	Make/N=3/D/FREE qcalc
+	qcalc = CalibrationList[m][p+5]							// Q vector for this reflection in stardard orientation
 	Variable Qlen = norm(qcalc)
 	MatrixOp/FREE qcalc = rhoSample x qcalc				// rotate Q-vector by rhoSample
 
@@ -1171,10 +1176,43 @@ Static Function CalculatedQvecEnergy(CalibrationList,m)	// fills the calculated 
 End
 
 
+//	Replaced by DisplayTableOfWave() from Utility_JZT.ipf
+//
+//	Function TableCalibrationData(calib)
+//		Wave calib
+//	//	String wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:10;MINCOLS:10")
+//		String wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:12;MINCOLS:10")
+//		if (!WaveExists(calib) && ItemsInList(wList)==1)
+//			Wave calib = $StringFromList(0,wList)
+//		elseif (!WaveExists(calib))
+//			String calibName
+//			Prompt calibName,"Calibration List wave",popup,wLIst
+//			DoPrompt "Calibration List Wave",calibName
+//			if (V_flag)
+//				return 1
+//			endif
+//			Wave calib = $calibName
+//		endif
+//		if (!WaveExists(calib))
+//			DoAlert 0,"cannot find CalibrationList wave"
+//			return 1
+//		endif
+//	
+//		String wName = "Table_"+NameOfWave(calib)
+//		String name = StringFromList(0,WinList(wName,";", "WIN:2"))
+//		if (strlen(name))
+//			DoWindow/F $name
+//			return 0
+//		endif
+//		Edit/K=1/N=$wName/W=(255,125,1144,599) calib.ld
+//		ModifyTable format(Point)=1,width(Point)=28,width(calib.l)=42,width(calib.d)=80
+//	End
+
 
 
 Function GraphAllCalibrationDetector()
-	String list = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:7;MINCOLS:7")
+//	String list = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:10;MINCOLS:10")
+	String list = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:12;MINCOLS:10")
 	Variable i,N=ItemsInList(list)
 	for (i=0;i<N;i+=1)
 		GraphCalibrationDetector($StringFromList(i,list))
@@ -1183,7 +1221,8 @@ End
 
 Function GraphCalibrationDetector(calib)
 	Wave calib
-	String calibName,wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:7;MINCOLS:7")
+//	String calibName,wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:10;MINCOLS:10")
+	String calibName,wList = WaveListClass("DetectorCalibrationList*","*","DIMS:2;MAXCOLS:12;MINCOLS:10")
 	if (!WaveExists(calib) && ItemsInList(wList)==1)
 		Wave calib = $StringFromList(0,wList)
 	elseif (!WaveExists(calib))
@@ -1218,22 +1257,22 @@ Function GraphCalibrationDetector(calib)
 	xoff += stringmatch(detectorID,"PE0820, 476-1807") ? -190 : 0
 	xoff += stringmatch(detectorID,"PE0820, 476-1850") ? 450 : 0
 
-	Display /W=(xoff,40,xoff+wid,40+wid)/K=1/N=$wName calib[*][4] vs calib[*][3]
+	Display /W=(xoff,40,xoff+wid,40+wid)/K=1/N=$wName calib[*][1] vs calib[*][0]
 	ModifyGraph width={Aspect,Nx/Ny}
-	AppendToGraph calib[*][4] vs calib[*][3]
+	AppendToGraph calib[*][1] vs calib[*][0]
 	ModifyGraph gfMult=110, tick=2, mirror=1, minor=1, lowTrip=0.001, standoff=0, mode=3
 	ModifyGraph rgb($calibName)=(0,0,0), marker($calibName)=8, marker($cname1)=19
 
-	ImageStats/M=1/G={0,DimSize(calib,0)-1,5,5} calib
+	ImageStats/M=1/G={0,DimSize(calib,0)-1,8,8} calib
 	Variable NkeV=V_npnts
-	ImageStats/M=1/G={0,DimSize(calib,0)-1,7,7} calib
+	ImageStats/M=1/G={0,DimSize(calib,0)-1,11,11} calib
 	Variable NdE=V_npnts
 	if (NdE>2 && NdE>NkeV/2)
 		Variable zrange = max(abs(V_max),abs(V_min))
-		ModifyGraph zColor($cname1)={calib[*][7],-zrange,zrange,RedWhiteBlue256}
+		ModifyGraph zColor($cname1)={calib[*][11],-zrange,zrange,RedWhiteBlue256}
 		ColorScale/C/N=textColorScale "ÆE  (eV)"
 	else
-		ModifyGraph zColor($cname1)={calib[*][5],*,*,Rainbow256}
+		ModifyGraph zColor($cname1)={calib[*][8],*,*,Rainbow256}
 		ColorScale/C/N=textColorScale "E  (keV)"
 	endif
 	ColorScale/C/N=textColorScale/F=0/S=3/M/B=1/A=RC/X=2.94/Y=0.98/E trace=$cname1
@@ -1672,7 +1711,7 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 		DoAlert 0, "no crystal structure found"
 		return ""
 	endif
-	Wave recip0 = recipFrom_xtal(xtal)						// STANDARD reciprocal lattice, not rotated to match actual sample
+	Wave recip0 = recipFrom_xtal(xtal)	
 	Make/N=(3,3)/D/FREE recip, rhoSample
 
 	// sample rotation
@@ -1706,20 +1745,23 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 		pkList = RemoveListItem(N,pkList)
 	endfor
 
-	//	CalibrationList[][0,2]	= [REQUIRED] hkl for each measured spot
-	//	CalibrationList[][3,4]	= [OPTIONAL] (px,py) are measured on image
-	//	CalibrationList[][5]	= [OPTIONAL] keV, MEASURED energy of spot (otherwise leave as NaN)
-	//
-	//	CalibrationList[][6]	= [CALCULATED] keV calculated from sample orientation and known lattice (does NOT use measured spot position)
-	//	CalibrationList[][7]	= [CALCULATED] ÆE (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
-
+	//	CalibrationList[][0,1]	= (px,py) are measured on image
+	//	CalibrationList[][2-4]	= hkl are hkl for each measured spot
+	//	CalibrationList[][5-7]	= Q-vector, calculated from knowing hkl and the standard reciprocal lattice (NOT rotated from standard orientation)
+	//	CalibrationList[][8]	= keV, measured energy of spot
+	//	CalibrationList[][9]	= theta (deg), obtained from calculated d(hkl) and measured energy using: lambda = 2d sin(theta)
+	//	CalibrationList[][10]	= keV calculated from sample orientation and known lattice (does not use measured spot position)
+	//	CalibrationList[][11]	= ÆE (eV),  ( CalibrationList[][8] - CalibrationList[][10] ) *1e3
 	String name="CalibrationListTest"+num2istr(dNum)
-	Make/N=(N,8)/O/D $name/Wave=cList =NaN	// a list of measured reflections used to calibrate the detector, {px,py,qx,qy,yz,keV,theta}
-	SetDimLabel 1,0,H,cList;			SetDimLabel 1,1,K,cList;	SetDimLabel 1,2,L,cList	// (hkl)
-	SetDimLabel 1,3,px,cList;			SetDimLabel 1,4,py,cList	// measued pixel
-	SetDimLabel 1,5,keV_meas,cList										// measured keV
-	SetDimLabel 1,6,calculated_keV,cList								// energy calculated from sample orientation (no measured parameters)
-	SetDimLabel 1,7,deltaE_eV,cList										// measured - calculated energy (eV)
+	Make/N=(N,12)/O/D $name=NaN					// a list of measured reflections used to calibrate the detector, {px,py,qx,qy,yz,keV,theta}
+	Wave cList = $name
+	SetDimLabel 1,0,px,cList;		SetDimLabel 1,1,py,cList											// measued pixel
+	SetDimLabel 1,2,H,cList;		SetDimLabel 1,3,K,cList;		SetDimLabel 1,4,L,cList					// (hkl)
+	SetDimLabel 1,5,qx_hkl,cList;	SetDimLabel 1,6,qy_hkl,cList;	SetDimLabel 1,7,qz_hkl,cList	// qvector from (hkl)
+	SetDimLabel 1,8,keV,cList														// measured keV
+	SetDimLabel 1,9,theta_keV_hkl,cList											// theta calculated from known d(hkl) and measured keV
+	SetDimLabel 1,10,calculated_keV,cList											// energy calculated from sample orientation (no measured parameters)
+	SetDimLabel 1,11,deltaE_eV,cList												// measured - calculated energy (eV)
 	String noteStr = ""
 	noteStr=ReplaceStringByKey("waveClass",noteStr,"DetectorCalibrationList"+SelectString(dNum,"0",""),"=")
 	noteStr = ReplaceStringByKey("detectorID",noteStr,g.d[dNum].detectorID,"=")// detector ID
@@ -1730,7 +1772,6 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 	noteStr = ReplaceNumberByKey("rhox",noteStr,axisSampleFake[0],"=")	// rotation vector for sample
 	noteStr = ReplaceNumberByKey("rhoy",noteStr,axisSampleFake[1],"=")
 	noteStr = ReplaceNumberByKey("rhoz",noteStr,axisSampleFake[2],"=")
-	noteStr = ReplaceStringByKey("recipSTD",noteStr, encodeMatAsStr(recip0), "=")
 	Note/K cList, noteStr
 
 	Make/N=3/D/FREE ki={0,0,1}, kf, qvec
@@ -1769,23 +1810,25 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 		keV += noise>0 ? enoise(noise/2000) : 0		// when noise present, add ~1eV of noise
 
 		// recalculate qhat to be STANDARD orientation, cList[][5-7] does not need to know actual orientations, only angle between qhat pairs is used
-		// MatrixOp/FREE qvec =  recip0 x hkl
+		MatrixOp/FREE qvec =  recip0 x hkl
 
-		cList[m][0] = h;		cList[m][1] = k;		cList[m][2] = l	// (hkl)
-		cList[m][3] = px;		cList[m][4] = py								// measured pixel position
-		cList[m][5] = keV															// keV,  from Q = 4¹ sin(theta)/lambda == Q = 4¹ sin(theta) * (E/hc)
-		cLIst[m][6] = NaN
-		cList[m][7] = NaN
+		cList[m][0] = px;		cList[m][1] = py											// measured pixel position
+		cList[m][2] = h;		cList[m][3] = k;		cList[m][4] = l					// (hkl)
+		cList[m][5] = qvec[0];	cList[m][6] = qvec[1];	cList[m][7] = qvec[2]	// calculated from hkl (not measured)
+		cList[m][8] =keV																	// keV,  from Q = 4¹ sin(theta)/lambda == Q = 4¹ sin(theta) * (E/hc)
+		cList[m][9] = asin(hc*Q/(4*PI*keV))*180/PI								// theta (degree),  calculated from Q = 4¹ sin(theta) * (E/hc)
+		cLIst[m][10] = NaN
+		cList[m][11] = NaN
 		m += 1
 	endfor
 	N = m
 	if (printing)
 		print "N=",N
 	endif
-	Redimension/N=(N,8) cList
+	Redimension/N=(N,12) cList
 
 	if (N>1)
-		ImageStats/G={0,N-1,7,7} cList				// pretend that did not measure spot with highest energy
+		ImageStats/G={0,N-1,8,8} cList				// pretend that did not measure spot with highest energy
 		cList[V_maxRowLoc][8] = NaN
 		cList[V_maxRowLoc][9] = NaN
 	endif
@@ -1815,6 +1858,33 @@ Static Function ClosestHKL(hkl)	// in and out can be the same wave
 	return 0
 End
 
+
+
+////
+//Static Function RemoveCommonFactors(h,k,l)
+//	Variable &h,&k,&l
+//	h = round(h)
+//	k = round(k)
+//	l = round(l)
+//	Variable i, maxh = max(max(abs(h),abs(k)),abs(l))
+//	Variable hh,kk,ll
+//	for (i=maxh;i>1;i-=1)
+//		if (mod(h/i,1)==0 && mod(k/i,1)==0 && mod(l/i,1)==0)
+//			h /= i
+//			k /= i
+//			l /= i
+//			return i
+//		endif
+//	endfor
+//	return 0
+//End
+////Function test(h,k,l)
+////	Variable h,k,l
+////	RemoveCommonFactors(h,k,l)
+////	print h," ",k," ",l
+////End
+//
+
 // ================================= End of Optimization Tests ==================================
 // ==============================================================================================
 
@@ -1826,7 +1896,7 @@ End
 Function/T FillCalibrationParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
 	String hostWin										// name of home window
-	Variable left, top								// offsets from the left and top
+	Variable left, top									// offsets from the left and top
 
 	SetWindow kwTopWin,userdata(CalibrationPanelName)=hostWin+"#CalibrationPanel"
 	NewPanel/K=1/W=(left,top,left+221,top+445+30)/HOST=$hostWin
@@ -1908,7 +1978,7 @@ Static Function CalibrationButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonCalibGraphAll"))
 		GraphAllCalibrationDetector()
 	elseif (stringmatch(ctrlName,"buttonCalibTable"))
-		DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:7;MINCOLS:7")
+		DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:12;MINCOLS:10")
 	elseif (stringmatch(ctrlName,"buttonCalibWrite2EPICS"))
 		WriteDetectorGeo2EPICS(NaN)
 	elseif (stringmatch(ctrlName,"buttonCalibPrintHelp"))
