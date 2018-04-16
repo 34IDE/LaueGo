@@ -235,23 +235,25 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 	endif
 	Variable Nindex=DimSize(FullPeakIndexed,0), m
 
-	// always ask for Ename, even side detectors can have energies, algthough they don't need them
-	String Ename=""														// find the list of energies that goes with FullPeakList
-	wlist = WaveListClass("measuredEnergies","*","MAXCOLS:1,MAXROWS:"+num2istr(Npeaks)) + SelectString(dnum,"...none yet...;","_none_;")
+	// always ask for EmeasuredName, even side detectors can have energies, algthough they don't need them
+	String EmeasuredName=""										// find the list of energies that goes with FullPeakList
+	wlist = WaveListClass("measuredEnergies","*","MAXCOLS:3,MAXROWS:"+num2istr(Npeaks)) + SelectString(dnum,"...none yet...;","_none_;")
 	if (ItemsInList(wlist))
-		Prompt Ename,"Measured Energies",popup,wlist
-		DoPrompt "Energies",Ename
+		Prompt EmeasuredName,"Measured Energies",popup,wlist
+		DoPrompt "Energies",EmeasuredName
 		if (V_flag)
 			return $""
 		endif
 	endif
-	Wave Emeasured=$Ename											// Emeasured should line up with FullPeakList (NOT indexed peaks)
-	printf "For detector %d,  using FullPeakIndexed='%s',   with Energies in '%s'\r",dNum,NameOfWave(FullPeakIndexed),NameOfWave(Emeasured)
+	Wave Emeasured = $EmeasuredName									// Emeasured should line up with FullPeakList (NOT indexed peaks)
 	if (WaveExists(Emeasured))
+		printf "For detector %d,  using FullPeakIndexed='%s',   with Energies from '%s'\r",dNum,NameOfWave(FullPeakIndexed),NameOfWave(Emeasured)
 		Duplicate/O Emeasured, $(NameOfWave(Emeasured)+"_dE")	// not really needed, just to look at.
 		Wave deltaE = $(NameOfWave(Emeasured)+"_dE")
 		SetScale d 0,0,"eV", deltaE
 		Note/K deltaE, ReplaceStringByKey("waveClass", note(Emeasured), "measuredEnergies_dE","=")
+	else
+		printf "For detector %d,  using FullPeakIndexed='%s',   with NO Energies\r",dNum,NameOfWave(FullPeakIndexed)
 	endif
 
 	Variable rhox, rhoy, rhoz
@@ -337,7 +339,7 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 		cList[m][3] = px										// CalibrationList[][3,4] = (px,py) are measured on image
 		cList[m][4] = py
 		if (WaveExists(Emeasured))
-			cList[m][5] = Emeasured[m]					// CalibrationList[][5] = keV, EASURED energy of spot
+			cList[m][5] = Emeasured[m]					// CalibrationList[][5] = keV, MEASURED energy of spot
 			deltaE[m] = (Emeasured[m] - FullPeakIndexed[kBest][7])*1e3	// not really needed, just to look at.
 		endif
 	endfor
@@ -457,7 +459,7 @@ Function/WAVE EnterMeasuredEnergies(peakID)				// Allows easy entry of Emeasured
 			endif
 			Wave FullPeakIndexed = $indexName
 		endif
-		Wave FullPeakList=$StringByKey("peakListWave",note(FullPeakIndexed),"=")
+		Wave FullPeakList=$StringFromList(0,StringByKey("peakListWave",note(FullPeakIndexed),"="),",")
 		Nmeas = DimSize(FullPeakIndexed,0)
 	else												// will enter energies using peak positions
 		if (ItemsInList(peakLists)<1)
@@ -1006,7 +1008,6 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 	MatrixOP/FREE Nenergy0 = sum(greater(col(CalibrationList,5),0))	// number of measured energies
 	Variable weightE = N/max(Nenergy0[0],1)			// weighting for points with measured energy
 	weightE = min(weightE*weightE,40)					//   this is weight for err^2
-	Variable/G root:weightE = weightE
 
 	for (i=0,Nmeas=0,err2=0; i<N; i+=1)
 		pixelX = CalibrationList[i][3]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
@@ -1916,7 +1917,8 @@ Static Function CalibrationButtonProc(B_Struct) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonCalibGraphAll"))
 		GraphAllCalibrationDetector()
 	elseif (stringmatch(ctrlName,"buttonCalibTable"))
-		DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:7;MINCOLS:7")
+//		DisplayTableOfWave($"",classes="DetectorCalibrationList*",promptStr="Calibration List Wave",options="DIMS:2;MAXCOLS:7;MINCOLS:7")
+		DisplayTableOfWave($"",classes="DetectorCalibrationList*,measuredEnergies*",promptStr="Calibration List Wave",options="DIMS:2")
 	elseif (stringmatch(ctrlName,"buttonCalibWrite2EPICS"))
 		WriteDetectorGeo2EPICS(NaN)
 	elseif (stringmatch(ctrlName,"buttonCalibPrintHelp"))
