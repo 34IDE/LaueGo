@@ -702,7 +702,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		endif
 		printf "errList = %s     total error = %g",errList,err3
 		if (abs(maxDeltaE) > 0)
-			printf ",   max(%sE) = %.3f\r",GDELTA,maxDeltaE
+			printf ",   max(|%sE|) = %.3f\r",GDELTA,maxDeltaE
 		endif
 		print "\r "
 	endif
