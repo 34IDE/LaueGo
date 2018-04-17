@@ -855,9 +855,8 @@ Function CalibrationErrorRP(CalibrationList,Rx,Ry,Rz,Px,Py,Pz)	// returns error 
 	Wave CalibrationList
 	Variable Rx,Ry,Rz						// rotation vector for detector, these two vectors a changed to minimize returned value
 	Variable Px,Py,Pz						// translation vector for detector
-	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice, it also
-	// compares the measured theta (from px,py) to the theta calculated from the measured energy
-	// The routine does not use the {qx,qy,qz}, or the theta columns in CalibrationList
+	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice,
+	// it also compares the measured theta (from px,py) to the theta calculated from the measured energy.
 	//
 	//	The user supplies ONLY columns [0-2]=hkl, [3,4]=(px,py), [5]=measured_keV, the rest are calculated.
 
@@ -881,9 +880,8 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	Variable Rx,Ry,Rz						// rotation vector for detector, these two vectors a changed to minimize returned value
 	Variable Px,Py,Pz						// translation vector for detector
 	Variable rhox,rhoy,rhoz			// rotation vector to apply to qhat's to make them line up with (px,py) pairs
-	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice, it also
-	// compares the measured theta (from px,py) to the theta calculated from the measured energy
-	// The routine does not use the {qx,qy,qz}, or the theta columns in CalibrationList
+	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice,
+	// it alsocompares the measured theta (from px,py) to the theta calculated from the measured energy.
 	//
 	//	The user supplies ONLY columns [0-2]=hkl, [3,4]=(px,py), [5]=measured_keV, the rest are calculated.
 
@@ -894,19 +892,15 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 
 	Variable rms = CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhoSample)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
 
+	// find error term that sets orientation about the incident beam.
 	Variable angleOffset=NumberByKey("angleOffset",noteStr,"=")	// rotation about incident beam (usually zero)
 	angleOffset = numtype(angleOffset) ? 0 : angleOffset
-
 	STRUCT detectorGeometry d									// a local version of detector structure
 	Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)			// fill d to match this orientation
-
 	Variable errOrient = errVertAngle(d,angleOffset)	// error to use for orienting system along Y-axs (controls rotation about incident beam)
-	errOrient = 1e4*(errOrient*errOrient)
+	errOrient *= 10												// weight this error heavier
 
-	//	if (NumVarOrDefault("printErrX",0))
-	//		printf "rms = %g,      errOrient = %g\r",rms,errOrient
-	//	endif
-	return (rms + errOrient)									// normalization makes E and Q equally important
+	return sqrt(rms^2 + errOrient^2)
 End
 //
 Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhoSample)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
@@ -1000,10 +994,10 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 	return rms
 End
 //
-Static Function errVertAngle(d,angleOffset)// calculate the error to use for orienting system along Y-axs
+Static Function errVertAngle(d,angleOffset)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
 	// this error fixes the rotation of the whole system about the incident beam.
 	STRUCT detectorGeometry, &d
-	Variable angleOffset							// user supplied angle offset¡, when 0 detector face perp to y-axis, rotates about z-axis
+	Variable angleOffset		// user supplied angle offset¡, when 0 detector face perp to y-axis, rotates about z-axis
 
 	Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
 	Make/N=3/D/FREE xyz
@@ -1031,9 +1025,6 @@ Static Function errVertAngle(d,angleOffset)// calculate the error to use for ori
 
 	else																// far from forward scattering (the usual)
 		angle = atan2(d.rho02,d.rho12)						// angle from y-axis to detector normal
-		//Make/N=3/D/FREE xyzN									// xyzN = rho x [ (0 0 1) ], rho is pre-calculated from vector d.R
-		//xyzN[0] = { d.rho02, d.rho12, d.rho22 }
-		// printf "kf^ = %s,  angle from vertical = %g¡\r",vec2str(xyzN),angle*180/PI
 	endif
 
 	Variable errOrient = angle - (angleOffset*PI/180)
