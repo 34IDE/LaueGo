@@ -21,11 +21,11 @@
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
-		<label>Ti</label>
-		<symbol>Ti</symbol>
+		<label>Ru</label>
+		<symbol>Ru</symbol>
 		<fract_xyz>0.0 0.0 0.0</fract_xyz>
 		<valence>4</valence>
-		<WyckoffSymbol>a</WyckoffSymbol>
+		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
@@ -42,7 +42,12 @@
 		<valence>-2</valence>
 	</atom_site>
 
-	<citation>
+	<bond_chemical unit="nm" n0="Ru" n1="O1">0.1987 0.1981</bond_chemical>
+	<bond_chemical unit="nm" n0="Ru" n1="O2">0.1983</bond_chemical>
+	<bond_chemical unit="nm" n0="Sr" n1="O1">0.2724 0.2770 0.2514</bond_chemical>
+	<bond_chemical unit="nm" n0="Sr" n1="O2">0.2505 0.2678</bond_chemical>
+
+	<citation doi="10.1107/S0108270188012077">
 		C.W. Jones, P.D. Battle, P. Lightfoot, W.T.A. Harrison,
 		Acta Crystallographica, Section C: Crystal Structure Communications (1989) 45,  p365-p367
 		"The structure of Sr Ru O3 by time-of-flight neutron powder diffraction"
