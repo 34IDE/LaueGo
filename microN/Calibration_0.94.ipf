@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.95
+#pragma version = 0.94
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -982,7 +982,7 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 		// now have qcalc[][3] & qmeas[][3], calculate the difference appropriately
 		dq = qcalc - qmeas
 		dqRad = MatrixDot(radialHat,dq)					// length of dq in radial direction, the radial error in dq
-		dq -= dqRad*radialHat								// remove radial part of dq, dq --> perpendicular part
+		dq -= dqRad*dq											// remove radial part of dq, dq --> perpendicular part
 		dqPerp = norm(dq)										// length of dq in perpendicular direction, the perpendicular error in dq
 
 		dq2  = haveQhat ? (dqPerp*dqPerp) : 0			// ignore perpendicular error if no measured Q^, only measured E
