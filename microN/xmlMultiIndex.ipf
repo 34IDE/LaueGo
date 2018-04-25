@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.08
+#pragma version=2.09
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1631,11 +1631,10 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 	N = ItemsInRange(range)												// actual number to do
 	Make/N=(3,3,N)/O epsilonN=NaN
 	Make/N=(N)/O vonMisesN=NaN
-	Note/K epsilonN, "waveClass=strain_tensor"
-	Note/K vonMisesN, "waveClass=vonMisesStrain;Random3dArrays"
 
 	Variable m, once=1,j, ok
 	Variable div = limit(round(ItemsInRange(range)/5),1,10)
+	String strainClass=""
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)		// display a progress bar (move to here, constrain set by first call) 
 	for (m=str2num(range),j=0,ok=0; numtype(m)==0; m=NextInRange(range,m),j+=1)
 		if (mod(j,div)==0)
@@ -1644,6 +1643,7 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 			endif
 		endif
 		Wave eWave = $DeviatoricStrainRefineXML(m,pattern,constrain,coords=coords,xmlFileFull=xmlFileFull,printit=0)
+		strainClass = StringBykey("waveClass",note(eWave),"=")
 		if (WaveExists(eWave))
 			ok += 1
 			epsilonN[][][j]  = eWave[p][q]
@@ -1663,7 +1663,8 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 		SaveExperiment
 	endif
 
-	String noteStr="waveClass=strain_tensor"									// re-do wave notes with more information
+	strainClass = SelectString(strlen(strainClass),"strain_tensor",strainClass)
+	String noteStr="waveClass="+strainClass									// re-do wave notes with more information
 	noteStr = ReplaceStringByKey("constrain",noteStr,constrain,"=")
 	noteStr = ReplaceNumberByKey("patternNum",noteStr,pattern,"=")
 	Note/K epsilonN, noteStr

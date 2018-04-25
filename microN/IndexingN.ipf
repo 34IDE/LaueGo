@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.93
+#pragma version = 4.94
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -6315,13 +6315,12 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	wnote = ReplaceStringByKey("recip_lattice_refined",wnote,str,"=")
 	sprintf str, "{%.8g %.8g %.8g %.8g %.8g %.8g}",a,b,c,alpha,bet,gam
 	wnote = ReplaceStringByKey("lattice_constants_refined",wnote,str,"=")
-	wnote = ReplaceStringByKey("waveClass",wnote,"strain_tensor","=")
 	wnote = ReplaceNumberByKey("SumAbsEpsilon",wnote,SumAbsEpsilon,"=")
 	wnote = ReplaceNumberByKey("vonMisesStrain",wnote,epsilonvM,"=")
-	Note/K epsilon, wnote
-	Note/K epsilonBL, wnote
-	Note/K epsilonXHF, wnote
-	Note/K epsilonSample, wnote
+	Note/K epsilon, ReplaceStringByKey("waveClass",wnote,"strain_tensor_STD","=")
+	Note/K epsilonBL, ReplaceStringByKey("waveClass",wnote,"strain_tensor_BL","=")
+	Note/K epsilonXHF, ReplaceStringByKey("waveClass",wnote,"strain_tensor_XHF","=")
+	Note/K epsilonSample, ReplaceStringByKey("waveClass",wnote,"strain_tensor_Sample","=")
 
 	wnote = note(PeaksForStrain)
 	sprintf str, "{{%.8g,%.8g,%.8g}{%.8g,%.8g,%.8g}{%.8g,%.8g,%.8g}}",RL[0][0],RL[1][0],RL[2][0],  RL[0][1],RL[1][1],RL[2][1],  RL[0][2],RL[1][2],RL[2][2]
@@ -6773,13 +6772,12 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	wnote = ReplaceStringByKey("recip_lattice_refined",wnote,str,"=")
 	sprintf str, "{%.8g %.8g %.8g %.8g %.8g %.8g}",a,b,c,alpha,bet,gam
 	wnote = ReplaceStringByKey("lattice_constants_refined",wnote,str,"=")
-	wnote = ReplaceStringByKey("waveClass",wnote,"strain_tensor","=")
 	wnote = ReplaceNumberByKey("SumAbsEpsilon",wnote,SumAbsEpsilon,"=")
 	wnote = ReplaceNumberByKey("vonMisesStrain",wnote,epsilonvM,"=")
-	Note/K epsilon, wnote
-	Note/K epsilonBL, wnote
-	Note/K epsilonXHF, wnote
-	Note/K epsilonSample, wnote
+	Note/K epsilon, ReplaceStringByKey("waveClass",wnote,"strain_tensor_STD","=")
+	Note/K epsilonBL, ReplaceStringByKey("waveClass",wnote,"strain_tensor_BL","=")
+	Note/K epsilonXHF, ReplaceStringByKey("waveClass",wnote,"strain_tensor_XHF","=")
+	Note/K epsilonSample, ReplaceStringByKey("waveClass",wnote,"strain_tensor_Sample","=")
 
 	wnote = note(PeaksForStrain)
 	sprintf str, "{{%.8g,%.8g,%.8g}{%.8g,%.8g,%.8g}{%.8g,%.8g,%.8g}}",RL[0][0],RL[1][0],RL[2][0],  RL[0][1],RL[1][1],RL[2][1],  RL[0][2],RL[1][2],RL[2][2]

@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 2.00
+#pragma version = 2.01
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -438,7 +438,7 @@ Static Function LoadPackageButtonProc(ba) : ButtonControl
 		tab = 1
 		ctrlName = "tabMicroB"
 	elseif (stringmatch(ba.ctrlName,"buttonInitCalibration"))
-		Execute/P "INSERTINCLUDE  \"DetectorCalibration\", version>=0.79"
+		Execute/P "INSERTINCLUDE  \"Calibration\", version>=0.79"
 		tab = 2
 		ctrlName = "tabMicroB"
 	else
