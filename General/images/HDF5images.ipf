@@ -14,6 +14,7 @@
 //	Mar  5, 2016, version 0.33		LoadHDF5imageFile(...), supports read of an roi, also, ReadHDF5header(...) & HDF5ReadROI(...), will work too
 //	Apr 11, 2016, version 0.34		renamed HDF5DataInfo to HDF5DataInfoLaueGo
 //	Jan 12, 2017, version 0.35		also from /entry1/user, read:  {email, proposal, phone, affiliation, badge}
+//	Apr 26, 2018, version 0.36		fixed multibyte writing problem
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -1251,7 +1252,7 @@ Function/T HDFSaveImage(fName,image)	// saves an image to an HDF5 file
 		return ""
 	endif
 
-	sarray = "Igor, HDF5images.ipf, v0.209"
+	sarray = "Igor, HDF5images.ipf, v0.36"
 	HDF5SaveData/A="creator"/O/Z sarray, f, "/"
 	if (V_Flag)
 		print "ERROR -- HDF5SaveData failed to make attribute 'creator'"
