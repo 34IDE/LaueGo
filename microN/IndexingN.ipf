@@ -4882,7 +4882,7 @@ Function TableFullPeakStrain(ww)
 			return 1
 		endif
 	endif
-	DisplayTableOfWave(ww)
+	DisplayTableOfWave(ww,maxCols=17)
 End
 
 Function TableMissingPeakList(ww)
@@ -4939,15 +4939,22 @@ Function/T MakeMeasured_hkl_EnergiesWave(N,type)
 		return ""
 	endif
 
+	Variable fresh = !WaveExists($"hklEmeasured")
 	Make/N=(N,7)/O hklEmeasured							// holds hkl,E,px,py,detNum for points that have the energies measured
+	if (fresh)
+		hklEmeasured = NaN
+	endif
+	hklEmeasured[][3] = hklEmeasured[p][3]>0 ? hklEmeasured[p][3] : NaN
+	hklEmeasured[][4] = hklEmeasured[p][4]>0 ? hklEmeasured[p][4] : NaN
+	hklEmeasured[][5] = hklEmeasured[p][5]>0 ? hklEmeasured[p][5] : NaN
+	hklEmeasured[][6] = numtype(hklEmeasured[p][6]) ? 0 : hklEmeasured[p][6]
 	SetDimLabel 1,0,H,hklEmeasured ;			SetDimLabel 1,1,K,hklEmeasured ;		SetDimLabel 1,2,L,hklEmeasured
 	SetDimLabel 1,3,$(type+"_measured"),hklEmeasured
 	SetDimLabel 1,4,pixelX,hklEmeasured ;		SetDimLabel 1,5,pixelY,hklEmeasured;	SetDimLabel 1,6,detNum,hklEmeasured
 	Note/K hklEmeasured,"waveClass=measuredEnergy;type="+type+";"
 	CheckDisplayed/A hklEmeasured
 	if (V_flag==0)												// not displayed, make the table
-		Edit/W=(5,44,506,477)/K=1 hklEmeasured.ld
-		ModifyTable format(Point)=1,width(Point)=20,width(hklEmeasured.l)=30,width(hklEmeasured.d)=62
+		DisplayTableOfWave(hklEmeasured)
 		SetWindow kwTopWin,hook(fill)=MeasuredFillHook
 	else
 		String win,wins=WinList("*",";","WIN:2")
@@ -5843,12 +5850,12 @@ End
 
 #ifdef USE_ENERGY_STRAIN_REFINE
 Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakIndexed1,FullPeakIndexed2,hklEmeasured,printIt])
-	Variable pattern											// pattern number, usually 0
-	String constrain											// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
-	Variable coords											// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
+	Variable pattern									// pattern number, usually 0
+	String constrain									// constraint on optimization, "111111", a 1 is refine, a 0 is keep constant
+	Variable coords									// coordinate system to pass in return {0=crystal, 1=BL, 2=XHF, 3=Sample (outward surface normal)}
 	Wave FullPeakIndexed
-	Wave FullPeakIndexed1, FullPeakIndexed2			// from other (Yellow and Purple) detectors)
-	Wave hklEmeasured											// measured energies, contains h,k,l,keV, any following columns such as px,py,detectorNum are ignored
+	Wave FullPeakIndexed1, FullPeakIndexed2	// from other (Yellow and Purple) detectors)
+	Wave hklEmeasured									// measured energies, contains h,k,l,keV, any following columns such as px,py,detectorNum are ignored
 	Variable printIt
 
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
@@ -5896,7 +5903,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		if (V_flag)
 			return ""
 		endif
-		//coords -= 1											// change back to 0 based from 1 based
+		//coords -= 1												// change back to 0 based from 1 based
 		Wave FullPeakIndexed = $indexName
 		Wave FullPeakIndexed1 = $indexName1
 		Wave FullPeakIndexed2 = $indexName2
@@ -5906,7 +5913,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		return ""
 	endif
 	STRUCT microGeometry geo
-	if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
+	if (FillGeometryStructDefault(geo, alert=1))		//fill the geometry structure with test values
 		return ""
 	endif
 	Variable Npatterns=DimSize(FullPeakIndexed,2)
@@ -5926,12 +5933,12 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Variable aFit,bFit,cFit,alphaFit,betFit,gamFit=NaN
 	sscanf constrain, "%1d%1d%1d%1d%1d%1d",aFit,bFit,cFit,alphaFit,betFit,gamFit
 	if (V_flag!=6 || !((aFit+bFit+cFit+alphaFit+betFit+gamFit)>0))
-		aFit = NaN												// flags bad input
+		aFit = NaN													// flags bad input
 	endif
 	if (deviatoric && str2num(constrain[0,2])>=111)
-		aFit = NaN												// when deviatoric, cannot fit all three lengths
+		aFit = NaN													// when deviatoric, cannot fit all three lengths
 	endif
-	if (!(pattern>=0) || numtype(aFit))				// need to ask user
+	if (!(pattern>=0) || numtype(aFit))					// need to ask user
 		pattern = limit(pattern,0,Npatterns-1)
 		if (StartStrainPanel(pattern,Npatterns,aFit,bFit,cFit,alphaFit,betFit,gamFit,deviatoric=deviatoric)<0)
 			return ""
@@ -5942,7 +5949,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	alphaFit = alphaFit ? 1 : 0 ;	betFit = betFit ? 1 : 0 ;		gamFit = gamFit ? 1 : 0
 	Variable Nfit = aFit+bFit+cFit+alphaFit+betFit+gamFit
 	if (Nfit<1 || (aFit&&bFit&&cFit&&deviatoric))
-		return ""												// this is deviatoric, you cannot fit all 3 lengths
+		return ""													// this is deviatoric, you cannot fit all 3 lengths
 	endif
 	sprintf constrain "%d%d%d%d%d%d", aFit,bFit,cFit,alphaFit,betFit,gamFit		// constrain is for {a,b,c,alpha,beta,gamma}
 
@@ -5959,7 +5966,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	for (idetector=0;idetector<3;idetector+=1)
 		if (WaveExists(indexWaves[idetector]))
 			Wave FullPeakList = $StringByKey("peakListWave",note(indexWaves[idetector]),"=")
-			Wave Qs = FullPeakList2Qwave(FullPeakList)		// measured qhats
+			Wave Qs = FullPeakList2Qwave(FullPeakList)	// measured qhats
 			if (!WaveExists(Qs))
 				return ""
 			endif
@@ -5981,7 +5988,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	RLmeas[2][0] = as2 ;		RLmeas[2][1] = bs2 ;		RLmeas[2][2] = cs2
 	Make/N=6/O/D optimize_LatticeConstantsWave
 	Wave LC=optimize_LatticeConstantsWave
-	Variable Vc = RL2latticeConstants(RLmeas,LC)				// calc original lattice constants from RL, stored in LC, save original Vc too
+	Variable Vc = RL2latticeConstants(RLmeas,LC)		// calc original lattice constants from RL, stored in LC, save original Vc too
 	forceLattice(LC,NumberByKey("SpaceGroup",note(FullPeakIndexed),"="),Vc=Vc)	// force lattice constants to match Space Group exactly, preserve Vc
 
 	Make/N=(3,3)/D/FREE DL, RL0
@@ -5990,16 +5997,16 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	RLfromLatticeConstants(LC,DL,RL0)						// make reference RL from lattice constants (used to compute rho), this RL exactly matches Space Group
 	MatrixOp/O rho = RLmeas x Inv(RL0)						// RLmeas = rho x RL0,  the rotation (or almost a perfect rotation matrix)
 	Make/N=3/O/D/FREE axis
-	Variable angle = axisOfMatrix(rho,axis,squareUp=1)		// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
+	Variable angle = axisOfMatrix(rho,axis,squareUp=1)	// rho is almost a  perfect rotation matrix, by remaking it, it will be a perfect rotation matrix
 	if (numtype(angle))
 		return ""
 	endif
-	axis *= angle												// length of axis is now rotation angle (rad)
-	rotationMatAboutAxis(axis,angle,rho)						// forces rho to be a perfect rotation matrix
+	axis *= angle													// length of axis is now rotation angle (rad)
+	rotationMatAboutAxis(axis,angle,rho)					// forces rho to be a perfect rotation matrix
 	MatrixOp/O/FREE RLmeas = rho x RL0						// ensure that starting point perfectly agrees with Space Group
 
 	Make/N=(3,3)/FREE/D Ameas, Astart						// Vcartesian = A x Vcell,   used to make the strain tensor
-	Astart = DL													// the starting direct lattice
+	Astart = DL														// the starting direct lattice
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
 			printf "¥"
@@ -6033,7 +6040,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	endif
 
 	String measuredType = ""									// default to no extra measured information (keV, Q, or d)
-	if (WaveExists(hklEmeasured))								// get proper column label for measured keV, Q, or d
+	if (WaveExists(hklEmeasured))							// get proper column label for measured keV, Q, or d
 		measuredType = GetDimLabel(hklEmeasured,1,3)
 		measuredType = SelectString(strlen(measuredType),"keV_measured",measuredType)
 		Make/N=(DimSize(hklEmeasured,0))/FREE measured
@@ -6043,19 +6050,20 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		elseif (strsearch(measuredType,"d",0,2)==0)
 		elseif (strsearch(measuredType,"Q",0,2)==0)
 		else
-			V_npnts = -1										// removes use of measured energy, Q, or d
+			V_npnts = -1											// removes use of measured energy, Q, or d
 		endif
-		if (V_npnts<=0)										// actually nothing extra was measured!
+		if (V_npnts<=0)											// actually nothing extra was measured!
 			Wave hklEmeasured=$""	
 			measuredType = ""
 		endif
 	endif
+	measuredType = SelectString(strlen(measuredType),"E_NOT_meas",measuredType)	// default to no extra measured information (keV, Q, or d)
 	Make/N=(N,17)/O/D PeaksForStrain=NaN
 	SetDimLabel 1,0,h,PeaksForStrain ;				SetDimLabel 1,1,k,PeaksForStrain ;				SetDimLabel 1,2,l,PeaksForStrain
 	SetDimLabel 1,3,measQx,PeaksForStrain ;		SetDimLabel 1,4,measQy,PeaksForStrain ;		SetDimLabel 1,5,measQz,PeaksForStrain
-	SetDimLabel 1,6,indexQx,PeaksForStrain ;	SetDimLabel 1,7,indexQy,PeaksForStrain ;	SetDimLabel 1,8,indexQz,PeaksForStrain
-	SetDimLabel 1,9,meas_Intens,PeaksForStrain;SetDimLabel 1,10,keV,PeaksForStrain
-	SetDimLabel 1,11,pixelX,PeaksForStrain;		SetDimLabel 1,12,pixelY,PeaksForStrain;		SetDimLabel 1,13,err_nm,PeaksForStrain
+	SetDimLabel 1,6,QxCalc,PeaksForStrain ;	SetDimLabel 1,7,QyCalc,PeaksForStrain ;	SetDimLabel 1,8,QzCalc,PeaksForStrain
+	SetDimLabel 1,9,Intens_meas,PeaksForStrain;SetDimLabel 1,10,keV_calc,PeaksForStrain
+	SetDimLabel 1,11,pixX_calc,PeaksForStrain;	SetDimLabel 1,12,pixY_calc,PeaksForStrain;	SetDimLabel 1,13,err_deg,PeaksForStrain
 	String measuredTypeColumnStr = SelectString(strlen(measuredType),"none",measuredType)
 	SetDimLabel 1,14,detNum,PeaksForStrain;	SetDimLabel 1,15,$measuredTypeColumnStr,PeaksForStrain;	SetDimLabel 1,16,deV,PeaksForStrain
 	String wnote = ReplaceNumberByKey("patternNum","",pattern,"=")
@@ -6077,22 +6085,22 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 			continue
 		endif
 		Make/N=(DimSize(Qs,0),3)/FREE/D/O qqs				// used to find which measured Q^ is closest to an indexed spot
-		for (i=0;i<Ns[idetector];i+=1)							// for each indexed peak on this detector
-			hkl = FullPeakIndexed[i][p+3][pattern]				// set the hkl
-			MatrixOp/O/FREE qcalc = RLmeas x hkl				// predicted g^ from each measured hkl
+		for (i=0;i<Ns[idetector];i+=1)						// for each indexed peak on this detector
+			hkl = FullPeakIndexed[i][p+3][pattern]		// set the hkl
+			MatrixOp/O/FREE qcalc = RLmeas x hkl			// predicted g^ from each measured hkl
 			qhat = qcalc
 			normalize(qhat)
 			qqs = Qs[p][q]*qhat[q]
 			MatrixOP/FREE/O dots = sumRows(qqs)
 			WaveStats/M=1/Q dots
-			if (V_max>0.99)									// require that Q's are parallel to within cos(0.99)=8.11¡
+			if (V_max>0.99)										// require that Q's are parallel to within cos(0.99)=8.11¡
 				PeaksForStrain[m][0,2] = hkl[q]				// set the hkl
 				qmeas = Qs[V_maxloc][p]						// closest measured peak to this hkl
 				d = dSpacingFromLatticeConstants(hkl[0],hkl[1],hkl[2],LC[0],LC[1],LC[2],LC[3],LC[4],LC[5])
 				qmeas = Qs[V_maxloc][p]*2*PI/d				// closest measured peak to this hkl
-				PeaksForStrain[m][3,5] = qmeas[q-3]			// store measured q (use a calulated energy for length of Q)
-				PeaksForStrain[m][6,8] = qcalc[q-6]			// predicted Qvectors (1/nm)
-				PeaksForStrain[m][9] = Qs[V_maxloc][3]		// measured intensity
+				PeaksForStrain[m][3,5] = qmeas[q-3]		// store measured q (use a calulated energy for length of Q)
+				PeaksForStrain[m][6,8] = qcalc[q-6]		// predicted Qvectors (1/nm)
+				PeaksForStrain[m][9] = Qs[V_maxloc][3]	// measured intensity
 				PeaksForStrain[m][14] = dNum
 				m += 1
 			endif
@@ -6101,20 +6109,20 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	N = m
 	Redimension/N=(N,-1) PeaksForStrain
 	if ((Nfit+3+(!deviatoric))>(2*N))						// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations)
-		return ""												// each measured spot provides 2 values
+		return ""													// each measured spot provides 2 values
 	endif
 
-	if (WaveExists(hklEmeasured))								// measured energies exist, set them
+	if (WaveExists(hklEmeasured))							// measured energies exist, set them
 		Make/N=(N,3)/D/FREE dhkls
 		Make/N=3/D/FREE dhkl
-		for (j=0;j<DimSize(hklEmeasured,0);j+=1)			// loop over each measured value, find matching hkl
+		for (j=0;j<DimSize(hklEmeasured,0);j+=1)		// loop over each measured value, find matching hkl
 			hkl = hklEmeasured[j][p]
 			dhkls = PeaksForStrain[p][q] - hkl[q]
 			MatrixOP/FREE/O deltas = sumRows(dhkls*dhkls)
 			WaveStats/Q/M=1 deltas
 			if (V_min<1e-5)
 				m = V_minloc
-				qhat = PeaksForStrain[m][p+3]					// measured Qvector
+				qhat = PeaksForStrain[m][p+3]				// measured Qvector
 				normalize(qhat)
 				if (strsearch(measuredType,"keV",0,2)==0)
 					sine = -qhat[2]								// measured sin(Bragg angle)
@@ -6134,7 +6142,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 
 	Variable rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)
 	if (printIt)
-		printf "at start, rms error = %.5f(1/nm)",rmsErr
+		printf "at start, rms error = %.5f¡",rmsErr*180/PI
 		printf " \t\t****** %s ******\r",SelectString(deviatoric,"Total Strain Refinement, Vc can vary","Deviatoric Strain Refinement, Vc is fixed")
 	endif
 
@@ -6168,7 +6176,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	endif
 	KillVariables/Z printOnlyFirstStrainNaN
 
-	if (V_flag)													// Optimization failed
+	if (V_flag)														// Optimization failed
 		if (printIt)
 			printf "Optimize failed with V_flag=%d,   V_OptTermCode=%d,   V_OptNumIters=%d,   V_OptNumFunctionCalls=%d\r",V_flag,V_OptTermCode,V_OptNumIters,V_OptNumFunctionCalls
 		endif
@@ -6240,7 +6248,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		qcalc = PeaksForStrain[i][p+6]						// strained peak directions
 		qmeas = PeaksForStrain[i][p+3]						// measured peak directions
 		MatrixOP/FREE/O delta = sqrt(sumSqr(qcalc-qmeas))
-		PeaksForStrain[i][13] = delta[0]
+		PeaksForStrain[i][13] = delta[0]/norm(qcalc)*180/PI
 		sine = -qcalc[2]/norm(qcalc)							// sin(Bragg angle)
 		d = dSpacingFromLatticeConstants(PeaksForStrain[i][0],PeaksForStrain[i][1],PeaksForStrain[i][2],LC[0],LC[1],LC[2],LC[3],LC[4],LC[5])
 		keV = hc/(2*d*sine)
@@ -6291,7 +6299,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		print " "
 		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g¡,   beta = %.8g¡,   gamma = %.8g¡,   Vc = %.7g (nm^3)\r",a,b,c,alpha,bet,gam,Vc
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r",a/c,b/c,a/b
-		printf "at end, rms error    = %.5f (1/nm)\r",rmsErr
+		printf "at end, rms error    = %.5f¡\r",rmsErr*180/PI
 		print " "
 		sprintf str,"  \t%sTr(epsilon) = %.2g%s",star1,trace,star2
 		printf "epsilonCrystal =	{%+.6f, %+.6f, %+.6f}  \tvon Mises strain = %.3g%s\r",epsilon[0][0],epsilon[0][1],epsilon[0][2], epsilonvM, SelectString(abs(trace)>1e-12,"",str)
@@ -6349,8 +6357,9 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	return str
 End
 //
-// Returns rms error in (1/nm).  This is new, the old way only worked before we had energies.
-// this uses the measured energy only as a flag to weight those spots more heavily, the measured energy was used previously to comput Qvecs
+// Returns rms error in (radian).  This is new, the old way only worked before we had energies.
+// this uses the measured energy if available, also points with energy get weighted more heavily
+//	The measured Qvecs columns [3,4,5] use the measured energy when it is available, otherwise a computed energy is used.
 Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations and all 6 lattice constants (uses MatrixOP for speed)
 	Wave PeaksForStrain
 	Variable rx,ry,rz
@@ -6396,54 +6405,8 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 	MatrixOP/FREE err2 = sum( (haveE*radDots2 + haveQ*perpDots2) * weights )	// Sum(i){ w_i(delta_i^2) }
 	Variable rms = sqrt(err2[0])
 	rms = numtype(rms) ? Inf : rms
-	return rms
+	return rms																// error in radian
 End
-//	Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations and all 6 lattice constants (uses MatrixOP for speed)
-//		Wave PeaksForStrain
-//		Variable rx,ry,rz
-//		Wave LC																	//	lattice parameters:   LC = {a,b,c,alpha,bet,gam}
-//	
-//		Wave RL=RL_latticeMismatch, LC=optimize_LatticeConstantsWave
-//		if (!WaveExists(RL) || !WaveExists(LC))
-//			Abort "some of the waves do not exist in latticeMismatchAll()"
-//		endif
-//		Variable Vc = NumberByKey("Vc",note(PeaksForStrain),"=")		// This is to be held constant
-//	
-//		Make/N=3/D/FREE axis = {rx,ry,rz}
-//		Make/N=(3,3)/D/FREE rho
-//		Variable angle= norm(axis)
-//		rotationMatAboutAxis(axis,angle,rho)							// calculate rho, the rotation matrix from {rx,ry,rz}
-//	
-//		RLfromLatticeConstants(LC,$"",RL,Vc=Vc)						// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
-//		MatrixOp/O RL = rho x RL											// rotate the reciprocal lattice by rho
-//	
-//		Variable N = DimSize(PeaksForStrain,0)
-//		Make/N=(N,3)/D/FREE Qvecs, Gvecs
-//		Make/N=(N)/D/FREE weight=1/(3*N)								// weight for each point, the 3 is because I am weighting 3-vectors
-//		Qvecs = PeaksForStrain[p][q+3]									// measured directions (assumed normalized)
-//		Gvecs = PeaksForStrain[p][q]										// hkl of reflections (first 3 columns)
-//		MatrixOp/O/FREE Gvecs = (RL x Gvecs^t)^t						// calcualted Gvectors from hkls
-//		PeaksForStrain[][6,8] = Gvecs[p][q-6]							// save for later checking
-//		// weight = sqrt(sqrt(PeaksForStrain[p][9]))				// weakly weight by intensity?
-//	
-//		Make/N=(N)/FREE measured = PeaksForStrain[p][15]			// measured energies(kev), Q(1/nm), or d(nm).  It is only used to make a flag.
-//		WaveStats/M=1/Q measured
-//		if (V_npnts>0)															// we have some measured energies, not just spot positions
-//			weight = measured>0 ? 5 : 1									// more heavily weight points with measured energies (by x 5)
-//			Variable m = sum(weight)
-//			weight *= 1/(3*m)	
-//		endif
-//	
-//		MatrixOP/FREE deltas = Gvecs-Qvecs
-//		MatrixOP/FREE errw = sum( (sumRows(deltas*deltas))*weight )
-//		Variable err =sqrt(errw[0])										// change to rms in k-spcace (1/nm)
-//		err = numtype(err) ? Inf : err
-//		if (numtype(err) && NumVarOrDefault("printOnlyFirstStrainNaN",1))
-//			printf "err = %g,    LC={%g, %g, %g, %g, %g, %g}\r",err,LC[0],LC[1],LC[2],LC[3],LC[4],LC[5]
-//			Variable/G printOnlyFirstStrainNaN = 0
-//		endif
-//		return err
-//	End
 //
 #else				// else for #ifdef USE_ENERGY_STRAIN_REFINE
 //
@@ -6853,7 +6816,6 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		str = GetWavesDataFolder(epsilonSample,2)
 	endif
 	return str
-//	return SelectString(coords-2,GetWavesDataFolder(epsilon,2),GetWavesDataFolder(epsilonXHF,2),GetWavesDataFolder(epsilonSample,2))
 End
 //
 Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations and all 6 lattice constants (uses MatrixOP for speed)
@@ -6890,7 +6852,7 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 		printf "err = %g,    LC={%g, %g, %g, %g, %g, %g}\r",err,LC[0],LC[1],LC[2],LC[3],LC[4],LC[5]
 		Variable/G printOnlyFirstStrainNaN = 0
 	endif
-	return err
+	return err	// units are radians
 End
 //
 #endif			// end of #ifdef USE_ENERGY_STRAIN_REFINE
