@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.95
+#pragma version = 4.94
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -1228,10 +1228,6 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			Variable SG = NumberByKey("SpaceGroup",note(FullPeakIndexed),"=")
 			SpaceGroupID = LatticeSym#FindDefaultIDForSG(SG)
 			SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(SG)
-		endif
-		if (strlen(SpaceGroupID)<1 && LatticeSym#isValidSpaceGroupIDnum(SpaceGroupIDnum))
-			String allIDs=LatticeSym#MakeAllIDs()
-			SpaceGroupID = StringFromList(SpaceGroupIDnum-1,allIDs)
 		endif
 
 		hklStr = hkl2str(h,k,l, bar=1)
@@ -5939,7 +5935,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		printIt = 1
 	endif
 	aFit = aFit ? 1 : 0 ;				bFit = bFit ? 1 : 0 ;			cFit = cFit ? 1 : 0		// ensure only 0 or 1
-	alphaFit = alphaFit ? 1 : 0 ;	betFit = betFit ? 1 : 0 ;		gamFit = gamFit ? 1 : 0
+	alphaFit = alphaFit ? 1 : 0 ;		betFit = betFit ? 1 : 0 ;		gamFit = gamFit ? 1 : 0
 	Variable Nfit = aFit+bFit+cFit+alphaFit+betFit+gamFit
 	if (Nfit<1 || (aFit&&bFit&&cFit&&deviatoric))
 		return ""												// this is deviatoric, you cannot fit all 3 lengths
@@ -6371,79 +6367,32 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 	MatrixOp/O RL = rho x RL											// rotate the reciprocal lattice by rho
 
 	Variable N = DimSize(PeaksForStrain,0)
-	Make/N=(N,3)/D/FREE Qvecs, hkls
+	Make/N=(N,3)/D/FREE Qvecs, Gvecs
+	Make/N=(N)/D/FREE weight=1/(3*N)								// weight for each point, the 3 is because I am weighting 3-vectors
 	Qvecs = PeaksForStrain[p][q+3]									// measured directions (assumed normalized)
-	hkls = PeaksForStrain[p][q]										// hkl of reflections (first 3 columns)
-	MatrixOp/O/FREE Gvecs = (RL x hkls^t)^t						// calcualted Gvectors from hkls
+	Gvecs = PeaksForStrain[p][q]										// hkl of reflections (first 3 columns)
+	MatrixOp/O/FREE Gvecs = (RL x Gvecs^t)^t						// calcualted Gvectors from hkls
 	PeaksForStrain[][6,8] = Gvecs[p][q-6]							// save for later checking
+	// weight = sqrt(sqrt(PeaksForStrain[p][9]))				// weakly weight by intensity?
 
-	MatrixOP/FREE haveE = greater(col(PeaksForStrain,15),0)	// energy >0 (and not NaN)
-	MatrixOP/FREE haveQ = greater(sumRows(magSqr(Qvecs)), 0)
+	Make/N=(N)/FREE measured = PeaksForStrain[p][15]			// measured energies(kev), Q(1/nm), or d(nm).  It is only used to make a flag.
+	WaveStats/M=1/Q measured
+	if (V_npnts>0)															// we have some measured energies, not just spot positions
+		weight = measured>0 ? 5 : 1									// more heavily weight points with measured energies (by x 5)
+		Variable m = sum(weight)
+		weight *= 1/(3*m)	
+	endif
 
-	Variable weightE = N/max(sum(haveE),1)						// enhancemet for weighting points with measured energy
-	weightE = min(weightE,6)											// max enhancement factor for an energy point
-	MatrixOP/FREE weights = haveE*weightE + haveQ				// weighting for each point
-	Variable sumWeights = sum(weights)								// used to calculate rms, the effective number of values
-	weights /= sumWeights												// this makes sum(weights) = 1
-
-	MatrixOP/FREE Qlen = sqrt(sumRows(Gvecs*Gvecs))			// |Q| for each of the Q's (or G's), used to normalize
-	MatrixOP/FREE radHats = NormalizeRows(Gvecs)				// radial unit vector for each Q
-	MatrixOP/FREE deltas = (Gvecs-Qvecs)/colRepeat(Qlen,3)	// scale or longer Qvectors will count for more
-	MatrixOp/FREE radDots = sumRows(deltas * radHats)		// the radial componenet of deltas
-
-	MatrixOP/FREE perpDots2 = sumRows(magSqr(deltas - colRepeat(radDots,3)*radHats))	// length^2 of perp part of deltas
-	MatrixOp/FREE radDots2 = magSqr(radDots)					// length^2 of radial part of deltas
-	MatrixOP/FREE err2 = sum( (haveE*radDots2 + haveQ*perpDots2) * weights )	// Sum(i){ w_i(delta_i^2) }
-	Variable rms = sqrt(err2[0])
-	rms = numtype(rms) ? Inf : rms
-	return rms
+	MatrixOP/FREE deltas = Gvecs-Qvecs
+	MatrixOP/FREE errw = sum( (sumRows(deltas*deltas))*weight )
+	Variable err =sqrt(errw[0])										// change to rms in k-spcace (1/nm)
+	err = numtype(err) ? Inf : err
+	if (numtype(err) && NumVarOrDefault("printOnlyFirstStrainNaN",1))
+		printf "err = %g,    LC={%g, %g, %g, %g, %g, %g}\r",err,LC[0],LC[1],LC[2],LC[3],LC[4],LC[5]
+		Variable/G printOnlyFirstStrainNaN = 0
+	endif
+	return err
 End
-//	Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations and all 6 lattice constants (uses MatrixOP for speed)
-//		Wave PeaksForStrain
-//		Variable rx,ry,rz
-//		Wave LC																	//	lattice parameters:   LC = {a,b,c,alpha,bet,gam}
-//	
-//		Wave RL=RL_latticeMismatch, LC=optimize_LatticeConstantsWave
-//		if (!WaveExists(RL) || !WaveExists(LC))
-//			Abort "some of the waves do not exist in latticeMismatchAll()"
-//		endif
-//		Variable Vc = NumberByKey("Vc",note(PeaksForStrain),"=")		// This is to be held constant
-//	
-//		Make/N=3/D/FREE axis = {rx,ry,rz}
-//		Make/N=(3,3)/D/FREE rho
-//		Variable angle= norm(axis)
-//		rotationMatAboutAxis(axis,angle,rho)							// calculate rho, the rotation matrix from {rx,ry,rz}
-//	
-//		RLfromLatticeConstants(LC,$"",RL,Vc=Vc)						// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
-//		MatrixOp/O RL = rho x RL											// rotate the reciprocal lattice by rho
-//	
-//		Variable N = DimSize(PeaksForStrain,0)
-//		Make/N=(N,3)/D/FREE Qvecs, Gvecs
-//		Make/N=(N)/D/FREE weight=1/(3*N)								// weight for each point, the 3 is because I am weighting 3-vectors
-//		Qvecs = PeaksForStrain[p][q+3]									// measured directions (assumed normalized)
-//		Gvecs = PeaksForStrain[p][q]										// hkl of reflections (first 3 columns)
-//		MatrixOp/O/FREE Gvecs = (RL x Gvecs^t)^t						// calcualted Gvectors from hkls
-//		PeaksForStrain[][6,8] = Gvecs[p][q-6]							// save for later checking
-//		// weight = sqrt(sqrt(PeaksForStrain[p][9]))				// weakly weight by intensity?
-//	
-//		Make/N=(N)/FREE measured = PeaksForStrain[p][15]			// measured energies(kev), Q(1/nm), or d(nm).  It is only used to make a flag.
-//		WaveStats/M=1/Q measured
-//		if (V_npnts>0)															// we have some measured energies, not just spot positions
-//			weight = measured>0 ? 5 : 1									// more heavily weight points with measured energies (by x 5)
-//			Variable m = sum(weight)
-//			weight *= 1/(3*m)	
-//		endif
-//	
-//		MatrixOP/FREE deltas = Gvecs-Qvecs
-//		MatrixOP/FREE errw = sum( (sumRows(deltas*deltas))*weight )
-//		Variable err =sqrt(errw[0])										// change to rms in k-spcace (1/nm)
-//		err = numtype(err) ? Inf : err
-//		if (numtype(err) && NumVarOrDefault("printOnlyFirstStrainNaN",1))
-//			printf "err = %g,    LC={%g, %g, %g, %g, %g, %g}\r",err,LC[0],LC[1],LC[2],LC[3],LC[4],LC[5]
-//			Variable/G printOnlyFirstStrainNaN = 0
-//		endif
-//		return err
-//	End
 //
 #else				// else for #ifdef USE_ENERGY_STRAIN_REFINE
 //
