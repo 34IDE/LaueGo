@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.25
+#pragma version = 0.26
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -168,14 +168,14 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 
 	if (theta)
 		Duplicate/FREE intens, intensQ
-		SetScale/I x 0,Qwidth,"", intensQ		// set to Q scaling
+		SetScale/I x 0,Qwidth,"", intensQ			// set to Q scaling
 		Variable width = asin(Qwidth * (hc_keVnm/keV) / (4*PI)) * 180/PI	// width in degrees
-		N /= 2									// we used an N that was too big before, so reduce it here
+		N /= 2												// we used an N that was too big before, so reduce it here
 		Redimension/N=(N) intens
 		Make/N=(N)/FREE  Qs
 		SetScale/I x 0,width,xUnits, intens, Qs	// set to Theta scaling
-		Qs = 4*PI*sin(x*PI/180)*keV/hc_keVnm	// Q at each angle
-		intens = intensQ(Qs[p])					// fill array at each theta
+		Qs = 4*PI*sin(x*PI/180)*keV/hc_keVnm		// Q at each angle
+		intens = intensQ(Qs[p])						// fill array at each theta
 	endif
 
 	Note/K intens, wnote
@@ -186,24 +186,27 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 		endif
 		printf "\r"
 	endif
-	GraphPowderPattern(intens)				// create  the graph or bring it to the front
+	GraphPowderPattern(intens)						// create  the graph or bring it to the front
 	return intens
 End
 
-Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
-	Variable Qmax				// max Q (1/nm)
-	Variable keV				// x-ray energy (keV)
+Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
+	Variable Qmax					// max Q (1/nm)
+	Variable keV					// x-ray energy (keV)
 	Variable Polarization		// 1=sigma, 0=unpolarized, -1=pi, or anything in the range [-1,1]
+	Variable scaling				// 0=traditional (100 max),  1=un-scaled
 	keV = ParamIsDefault(keV) ? NaN : keV
 	Polarization = ParamIsDefault(Polarization) ? 0 : Polarization		// default to Un-Polarized
 	Polarization = numtype(Polarization) ? 0 : Polarization
 	Polarization = limit(Polarization,-1,1)
+	scaling = ParamIsDefault(scaling) || numtype(scaling) ? NumVarOrDefault("root:Packages:Lattices:Powder:intensityScaling",0) : scaling
 
 	Variable printIt = (Qmax<=0 || numtype(Qmax)) || strlen(GetRTStackInfo(2))<1
 	if (Qmax<=0 || numtype(Qmax))
 		Prompt Qmax,"Maximum Q in powder pattern (1/nm)"
 		Prompt keV,"Energy of Beam (keV), OPTIONAL"
 		Prompt Polarization,"Polarization",popup,"Sigma (Synchrotrons);Un-Polarized (Tube Source);Pi;User Supplied..."
+		Prompt scaling, "Intensity Scaling", popup, "Traditional (max=100);UN-scaled"
 		Qmax = Qmax>0 ? Qmax : NumVarOrDefault("root:Packages:Lattices:Powder:defaultQmax",100)
 		keV = keV>0 ? keV : NumVarOrDefault("root:Packages:Lattices:Powder:defaultKeV",NaN)
 		if (Polarization==-1)
@@ -215,7 +218,8 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 		else
 			Polarization = 4
 		endif	
-		DoPrompt "Qmax",Qmax,keV,Polarization
+		scaling += 1
+		DoPrompt "Qmax",Qmax,keV,Polarization,scaling
 		if (V_flag)
 			return $""
 		endif
@@ -235,13 +239,18 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 				return $""
 			endif
 		endif
+		scaling -= 1
 	endif
+	scaling = scaling ? 1 : 0
 	if (printIt)
 		printf "CalcPowderLines(%g",Qmax
 		if (!ParamIsDefault(keV) || numtype(keV)!=2)
 			printf ", keV=%g",keV
 		endif
 		printf ", Polarization=%g",Polarization
+		if (!ParamIsDefault(scaling) || scaling!=0)
+			printf ", scaling=%g",scaling
+		endif
 		printf ")\r"
 	endif
 	if (Qmax<=0 || numtype(Qmax) || !(Polarization>=-1 && Polarization<=1))
@@ -254,6 +263,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 	endif
 	Variable/G root:Packages:Lattices:Powder:defaultQmax=Qmax
 	Variable/G root:Packages:Lattices:Powder:defaultKeV=keV
+	Variable/G root:Packages:Lattices:Powder:intensityScaling=scaling
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))					//fill the lattice structure with 'current' values
@@ -313,7 +323,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 				lines[m][3] = l
 				lines[m][4] = theta*180/PI			// save angle in degrees
 				lines[m][5] = F2
-				lines[m][6] = F2 * Lorentz * Pol	// was F2*LP
+				lines[m][6] = F2 * Lorentz * Pol	// was F2*LP, have yet to include mult
 				m += 1
 			endfor
 		endfor
@@ -384,8 +394,18 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization])
 		Nlines += 1
 	endfor
 	Redimension/N=(Nlines,-1) lineShort, hklStr, hklStrAll		// trim to final size
+	lineShort[][6] = lineShort[p][6] * lineShort[p][7]	// increas intens by multiplicity
 
+	if (scaling==0)											// traditional scaling, a max of 100
+		MatrixOP/FREE mmm = 100 / maxVal(col(lineShort,6))
+		Variable scale100 = mmm[0]
+		if (numtype(scale100)==0 && scale100>0)
+			lineShort[][6] *= scale100
+		endif
+	endif
+	wNote = ReplaceStringByKey("scaling",wNote,SelectString(scaling,"Traditional(max=100)","UN-scaled"),"=")
 	Note/K lineShort, wNote
+
 	if (printIt)
 		printf "Created Powder Lines in '%s',  with %d lines,  range of hkl is [%s%d, %s%d, %s%d]\r",wname,Nlines,PLUSMINUS,hmax,PLUSMINUS,kmax,PLUSMINUS,lmax
 	endif
@@ -688,13 +708,15 @@ Static Function ShowPowderLinesWindowHook(s)
 		else
 			tagStr = "("+hkl2str(lines[iLine][1],lines[iLine][2],lines[iLine][3])+")"
 		endif
-		tagStr += "\\Zr075\r"
+//		tagStr += "\\Zr075\r"
+		tagStr += "\\Zr085\r"
 		if (WaveExists(hklStrAll))
 			if (ItemsInList(hklStrAll[iLine],"+") <= 4)
 				tagStr += hklStrAll[iLine]+"\r"
 			endif
 		endif
-		sprintf str, "Q = %g nm\\S-1\M\\Zr075",Qval
+//		sprintf str, "Q = %g nm\\S-1\M\\Zr075",Qval
+		sprintf str, "Q = %g nm\\S-1\M\\Zr085",Qval
 		tagStr += str
 		if (theta>0)
 			sprintf str, "\rtheta = %g"+DEGREESIGN,theta
@@ -753,16 +775,58 @@ Function TablePowderLines(w)
 		DoWindow/F $table
 		return 0
 	endif
+	String fontName=GetDefaultFont("")
+	Variable fontSize = 12
+	//	Variable right = WaveExists(hklStr) ? 709 : 588
+	Variable right = 588
 
 	Wave/T hklStr = $(GetWavesDataFolder(w,1)+StringByKey("hklStrWave",note(w),"="))
-	Variable right = WaveExists(hklStr) ? 709 : 588
-
-	Edit/K=1/W=(5,44,right,434) w.ld
-	ModifyTable width(Point)=1,title(w.d)="Powder Lines",width(w.l)=20, format(w.d)=3,width(w.d)=68
+	Variable hklsWidth = 0
 	if (WaveExists(hklStr))
-		AppendToTable hklStr.y
-		ModifyTable width(hklStr.y)=122, title(hklStr.d)="hkl's"
+		Make/N=(DimSize(hklStr,0))/I/FREE lengths = FontSizeStringWidth(fontName,fontSize,0,hklStr[p])
+		hklsWidth = limit(4+WaveMax(lengths), 50, 200)
+		right = right + hklsWidth
 	endif
+
+	Variable top=44
+	Variable height=TableHeight(w,top,fontName,fontSize)
+	Edit/K=1/W=(5,top,right,top+height) w.ld
+	ModifyTable width(Point)=1,title(w.d)="Powder Lines",width(w.l)=20, format(w.d)=3,width(w.d)=68
+	if (WaveExists(hklStr) && hklsWidth)
+		AppendToTable hklStr.y
+		ModifyTable width(hklStr.y)=hklsWidth, title(hklStr.d)="hkl's"
+	endif
+	ModifyTable font=fontName, size=fontSize
+End
+
+Static Function TableHeight(ww,top,fontName,fontSize)
+	Wave ww
+	Variable top
+	String fontName
+	Variable fontSize
+	if (strlen(fontName)<1)
+		fontName = GetDefaultFont("")
+	endif
+	fontSize = fontSize<6 || fontSize>64 || numtype(fontSize) ? 12 : fontSize
+
+	String screen1=StringByKey("SCREEN1",IgorInfo(0))
+	Variable i = strsearch(screen1,"RECT=",0)
+	String rect = StringByKey("RECT",screen1[i,Inf],"=")
+	Variable scrHeight=str2num(StringFromList(3,rect,","))
+	scrHeight = numtype(scrHeight) || scrHeight<600 ? 600 : scrHeight
+	Variable Nr=DimSize(ww,0), Nc=DimSize(ww,1)
+	Variable height = 86 + (FontSizeHeight(fontName,fontSize,0))*Nr
+
+	Variable hasColLabels
+	for (i=0,hasColLabels=0; i<Nc; i+=1)
+		hasColLabels = hasColLabels || strlen(GetDimLabel(ww,1,i))
+	endfor
+	if (hasColLabels)
+		height +=  Nr*4								// leave room for column labels
+	endif
+
+	height =  min(scrHeight-top-5, height)	// make it fit on the screen
+	return height
 End
 
 
@@ -785,5 +849,8 @@ Function Init_PowderPatternLattice()
 	endif
 	if (exists("root:Packages:Lattices:Powder:defaultKeV")!=2)
 		Variable/G root:Packages:Lattices:Powder:defaultKeV=NaN
+	endif
+	if (exists("root:Packages:Lattices:Powder:intensityScaling")!=2)
+		Variable/G root:Packages:Lattices:Powder:intensityScaling=0		// 0=traditional(100) ,1=un-scaled
 	endif
 End
