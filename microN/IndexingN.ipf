@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.95
+#pragma version = 4.96
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -1229,9 +1229,8 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			SpaceGroupID = LatticeSym#FindDefaultIDForSG(SG)
 			SpaceGroupIDnum = LatticeSym#FindDefaultIDnumForSG(SG)
 		endif
-		if (strlen(SpaceGroupID)<1 && LatticeSym#isValidSpaceGroupIDnum(SpaceGroupIDnum))
-			String allIDs=LatticeSym#MakeAllIDs()
-			SpaceGroupID = StringFromList(SpaceGroupIDnum-1,allIDs)
+		if (strlen(SpaceGroupID)<1)
+			SpaceGroupID = IDnum2SpaceGroupID(SpaceGroupIDnum)
 		endif
 
 		hklStr = hkl2str(h,k,l, bar=1)
