@@ -15,6 +15,7 @@
 		<label>Ti</label>
 		<symbol>Ti</symbol>
 		<fract_xyz>0.33333 0.66667 0.25</fract_xyz>
+		<WyckoffSymbol>c</WyckoffSymb>
 		<DebyeTemperature unit="K">420</DebyeTemperature>
 	</atom_site>
 	<citation>Wyckoff R W G Second edition. Interscience Publishers, New York, New York, Crystal Structures (1963) 83;
