@@ -3577,7 +3577,7 @@ Static Function/T CrystalFileType(fname,[path])
 	path = SelectString(ParamIsDefault(path), path, "materialsPath")
 
 	PathInfo $path
-	path = SelectString(V_flag, "", path)		// set path="" if it does not exist
+	path = SelectString(V_flag,"",path)	// set path="" if it does not exist
 
 	String extension="", line=""
 	Variable f
@@ -3596,7 +3596,7 @@ Static Function/T CrystalFileType(fname,[path])
 		extension = "cif"
 	endif
 
-	if (strlen(extension) < 1)	// need to actually look at the file name extension
+	if (strlen(extension) < 1)				// need to actually look at the file name extension
 		extension = ParseFilePath(4,fname,":",0,0)
 	endif
 	return extension
@@ -3624,32 +3624,30 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	Close f
 	buf = XMLremoveComments(buf)
 
+	Variable i0,i1
+	i1 = strlen(fullFile)-1					// possibly trim file length to fit, keep last part of fullFile
+	i0 = max(0,i1-MAX_FILE_LEN)
+	fullFile = fullFile[i0,i1]
+	xtal.sourceFile = fullFile
+	xtal.hashID = ""
+
 	String cif = XMLtagContents("cif",buf)
 	if (strlen(cif)<10)
 		return 1
 	endif
-	Variable cifVers=NumberByKey("version",XMLattibutes2KeyList("cif",buf),"=")
-	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers	// default to version 1
 
-	Variable dim=str2num(XMLtagContents("dim",cif))
-	dim = numtype(dim) || dim<1 ? 3 : dim		// default to dim=3
+	// get the dim and version
+	String keyVals = XMLattibutes2KeyList("cif",buf)
+	Variable cifVers=NumberByKey("version",keyVals,"=")
+	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
+	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
+	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
 	if (dim != 3)
 		DoAlert 0, "only understand dim = 3, not"+XMLtagContents("dim",cif)
 		return 1
 	endif
 
-	Variable i0,i1
-	i1 = strlen(fullFile)-1						// possibly trim file length to fit, keep last part of fullFile
-	i0 = max(0,i1-MAX_FILE_LEN)
-	fullFile = fullFile[i0,i1]
-	xtal.sourceFile = fullFile
-
-	xtal.hashID = ""
-	String str = XMLtagContents("chemical_name_common",cif)
-	xtal.desc = str[0,99]
-	str = XMLtagContents("chemical_formula_structural",cif)
-	xtal.formula = str[0,99]
-
+	// process the space gorup info
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
 	if (strlen(space_group)<2)
@@ -3700,6 +3698,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)						// the IT space group number [1,230]
 	String SpaceGroupID = xtal.SpaceGroupID								// local string for convienence
 
+	// process the cell group: lattice constants, Pressure, Temperature, alphaT
+	Variable Temperature, Pressure
 	String cell = XMLtagContents("cell",cif)							// cell group
 	String unit
 	xtal.a = str2num(XMLtagContents("a",cell))
@@ -3715,10 +3715,16 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.beta = str2num(XMLtagContents("beta",cell))
 	xtal.gam = str2num(XMLtagContents("gamma",cell))
 	xtal.alphaT = str2num(XMLtagContents("alphaT",cell))
-	Variable Temperature = str2num(XMLtagContents("temperature",cell))
+	Temperature = str2num(XMLtagContents("temperature",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
 	unit = SelectString(strlen(unit),"C",unit)							// default Temperature units are C
 	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
+	Pressure = str2num(XMLtagContents("pressure",cif))
+	if (numtype(Pressure)==0)
+		unit = StringByKey("unit", XMLattibutes2KeyList("pressure",cif),"=")
+		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1000)	// internally I use Pa, but default input is kPa
+	endif
+
 	xtal.Unconventional00=NaN;  xtal.Unconventional01=NaN;  xtal.Unconventional02=NaN	// transform matrix for an unconventional unit cel
 	xtal.Unconventional10=NaN;  xtal.Unconventional11=NaN;  xtal.Unconventional12=NaN	// default to a conventional cell
 	xtal.Unconventional20=NaN;  xtal.Unconventional21=NaN;  xtal.Unconventional22=NaN
@@ -3733,17 +3739,11 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
  		endif
 	endif
 
-	Variable Pressure = str2num(XMLtagContents("pressure",cif))
-	if (numtype(Pressure)==0)
-		unit = StringByKey("unit", XMLattibutes2KeyList("Pressure",cif),"=")
-		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1)
-	endif
-	if (numtype(xtal.Temperature))
-		Temperature = str2num(XMLtagContents("temperature",cif))
-		unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cif),"=")
-		unit = SelectString(strlen(unit),"C",unit)						// default Temperature units are C
-		xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
-	endif
+	// process the various information: desc, formula
+	String str = XMLtagContents("chemical_name_common",cif)
+	xtal.desc = str[0,99]
+	str = XMLtagContents("chemical_formula_structural",cif)
+	xtal.formula = str[0,99]
 
 	// collect the atom sites values
 	String atomSite, atomLabel, symbol, WyckoffSymbol
@@ -3758,22 +3758,26 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		atomLabel = XMLtagContents("label",atomSite)					// label for this atom type
 		symbol = XMLtagContents("symbol",atomSite)						// atomic symbol for this atom type
 		atomLabel = SelectString(strlen(atomLabel), symbol, atomLabel)	// if no label given, use the symbol (may not be unique)
-		Zatom = ZfromLabel(SelectString(strlen(symbol),atomLabel,symbol))	// get Z
+		Zatom = ZfromLabel(SelectString(strlen(symbol),atomLabel,symbol))	// get Z, atomic number
 		WyckoffSymbol = XMLtagContents("WyckoffSymbol",atomSite)
 
-		Wave xyz = str2vec(XMLtagContents2List("fract",atomSite))				// first try v2 name for fractional coords
+		Wave xyz = str2vec(XMLtagContents2List("fract",atomSite))				// 1st try v2 name for fractional coords
 		if (!WaveExists(xyz))
-			Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))	// second try v1 name for fractional coords
+			Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))	// 2nd try v1 name for fractional coords
 		endif
-		if (WaveExists(xyz) && numpnts(xyz)==3)
+		if (WaveExists(xyz) && dim==3 && numpnts(xyz)==3)
 			fracX = xyz[0]
 			fracY = xyz[1]
 			fracZ = xyz[2]
+		elseif (WaveExists(xyz) && dim==2 && numpnts(xyz)==2)
+			fracX = xyz[0]
+			fracY = xyz[1]
 		else
-			fracX = str2num(XMLtagContents("fract_x",atomSite))
+			fracX = str2num(XMLtagContents("fract_x",atomSite))					// 3rd try separate names for fractional coords
 			fracY = str2num(XMLtagContents("fract_y",atomSite))
 			fracZ = str2num(XMLtagContents("fract_z",atomSite))
 		endif
+		fracZ = dim<3 ? 0 : fracZ												// set fracZ to 0 for 2D
 		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))	// try to get x,y,z from Wyckoff symbol
 			if (ForceXYZtoWyckoff(SpaceGroupID,WyckoffSymbol,fracX,fracY,fracZ))
 				fracX = NaN															// will cause a break in next if()
@@ -4003,7 +4007,7 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 		cif += "\t<space_group_id>"+xtal.SpaceGroupID+"</space_group_id>"+NL
 	endif
 	if (xtal.Pressure > 0)
-		cif += "\t<Pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</Pressure>"+NL
+		cif += "\t<pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</pressure>"+NL
 	endif
 
 	Variable alphaT = xtal.alphaT

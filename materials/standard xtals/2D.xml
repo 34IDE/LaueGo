@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif version="2">
+<cif version="2" dim="2">
 	<chemical_name_common>Ge surface</chemical_name_common>
-	<dim>2</dim>
 	<space_group>
 		<id>12</id>
 		<H-M>p4gm</H-M>

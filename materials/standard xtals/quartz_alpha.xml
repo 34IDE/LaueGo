@@ -7,7 +7,6 @@
 	<space_group_id>154</space_group_id>
 	<H-M>P 32 2 1</H-M>
 	<icsd>174</icsd>
-	<temperature unit="K">298</temperature>
 	<cell>
 		<a unit="nm">0.49134</a>
 		<b unit="nm">0.49134</b>
@@ -15,6 +14,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
+		<temperature unit="K">298</temperature>
 	</cell>
 	<atom_site>
 		<label>Si</label>
