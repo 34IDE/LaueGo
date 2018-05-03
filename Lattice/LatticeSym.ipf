@@ -3637,15 +3637,19 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	endif
 
 	// get the dim and version
-	String keyVals = XMLattibutes2KeyList("cif",buf)
+	String str, keyVals=XMLattibutes2KeyList("cif",buf)
 	Variable cifVers=NumberByKey("version",keyVals,"=")
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-//	if (dim != 3)
-//		DoAlert 0, "only understand dim = 3, not"+XMLtagContents("dim",cif)
-//		return 1
-//	endif
+	Variable/G root:Packages:Lattices:dim = dim
+#ifndef TESTING_2D
+	if (dim != 3)
+		sprintf str, "only understand dim=3, not \"%s\"", StringByKey("dim",keyVals,"=")
+		DoAlert 0, str
+		return 1
+	endif
+#endif
 
 	// process the space gorup info
 	// Start version 2.0 changes here
@@ -3671,7 +3675,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 		if (ItemsInList(nlist)==1)											// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum,dim=dim))					// found valid SpaceGroupIDnum
+			if (isValidSpaceGroupIDnum(idNum))								// found valid SpaceGroupIDnum
 				String allIDs = MakeAllIDs()
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
@@ -3691,7 +3695,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 	endif
 
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID, dim=dim))			// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID))						// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
 	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)	// change id to id number in [1,530]
@@ -3740,7 +3744,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	endif
 
 	// process the various information: desc, formula
-	String str = XMLtagContents("chemical_name_common",cif)
+	str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
 	str = XMLtagContents("chemical_formula_structural",cif)
 	xtal.formula = str[0,99]
@@ -6149,48 +6153,46 @@ End
 //	End
 
 
-ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
+ThreadSafe Static Function isValidSpaceGroup(SG)					// returns TRUE if SG is an int in range [1,230]
 	Variable SG
-	return ( SG == limit(round(SG), 1, 230) )
+	Variable dim = NumVarOrDefault("root:Packages:Lattices:dim",3)
+	Variable iMax = dim==2 ? 17 : 230
+	return ( SG == limit(round(SG), 1, iMax) )
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupID(id, [dim])		// returns TRUE if id is valid
-	String id																	// a space group id, e.g. "15" or "15:-b2"
-	Variable dim
-	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
-	String allIDs=MakeAllIDs(dim=dim)
+ThreadSafe Static Function isValidSpaceGroupID(id)			// returns TRUE if id is valid
+	String id																// a space group id, e.g. "15" or "15:-b2"
+	String allIDs=MakeAllIDs()
 	return WhichListItem(id,allIDs,";",0,0)>=0
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupIDnum(idNum, [dim])	// returns TRUE if SG is an int in range [1,530]
+ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
 	Variable idNum
-	Variable dim
-	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
+	Variable dim = NumVarOrDefault("root:Packages:Lattices:dim",3)
 	Variable iMax = dim==2 ? 17 : 530
 	return ( idNum == limit(round(idNum), 1, iMax) )
 End
 
 
-Function SpaceGroupID2num(id, [dim])
+Function SpaceGroupID2num(id)
 	String id									// a space group id, e.g. "15" or "15:-b2"
-	Variable dim
-	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
 
-	String allIDs=MakeAllIDs(dim=dim)
+	String allIDs=MakeAllIDs()
 	Variable idNum = 1+WhichListItem(id,allIDs,";",0,0)
-	idNum = isValidSpaceGroupIDnum(idNum,dim=dim) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
 	if (numtype(idNum))
 		idNum = FindDefaultIDnumForSG(round(str2num(id)))
 	endif
-	idNum = isValidSpaceGroupIDnum(idNum,dim=dim) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
 	return idNum
 End
 
 
 Function/T IDnum2SpaceGroupID(idNum)
 	Variable idNum								// a SpaceGroup id num should be in [1,530]
+
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""
 	endif
@@ -6202,12 +6204,12 @@ End
 
 
 ThreadSafe Static Function/T FindDefaultIDforSG(SG)
-	Variable SG					// space group number [1,230]
+	Variable SG								// space group number [1,230]
 	if (!isValidSpaceGroup(SG))		// invalid
 		return ""
 	endif
 
-	// find first space group starting with "id:"
+	// find first space group starting with "SG:"
 	string str=num2istr(SG)+":*", str2=num2istr(SG)
 	String allIDs=MakeAllIDs(), id
 	Variable i
@@ -6244,7 +6246,7 @@ End
 
 
 
-ThreadSafe Static Function/T MakeAllIDs([dim])
+ThreadSafe Static Function/T MakeAllIDs()
 	// Returns the list with all of the 530 Space Group types.
 	//	In the 230 SpaceGroups, there are:
 	//	  140 Space Groups of   1 types
@@ -6255,10 +6257,8 @@ ThreadSafe Static Function/T MakeAllIDs([dim])
 	//	    1 Space Groups of  12 types
 	//	    2 Space Groups of  18 types
 	// for the full list, use  NumbersOfTypes(), which is shown below.
-	Variable dim
-	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
 
-	if (dim==2)
+	if (NumVarOrDefault("root:Packages:Lattices:dim",3)==2)
 		return "1;2;3;4;5;6;7;8;9;10;11;12;13;14"
 	endif
 
@@ -6501,6 +6501,9 @@ ThreadSafe Function/S getHallSymbol(idNum)
 	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""									// invalid SpaceGroup ID number
+	endif
+	if (NumVarOrDefault("root:Packages:Lattices:dim",3)!=3)
+		return ""
 	endif
 
 	String Hall=""									// there are 530 items in this list
@@ -8103,6 +8106,9 @@ Function InitLatticeSymPackage([showPanel])			// used to initialize this package
 	NewDataFolder/O root:Packages:Lattices:SymOps
 	if (!exists("root:Packages:Lattices:keV"))
 		Variable/G root:Packages:Lattices:keV = 10		// only used when calculating Cromer-Liberman values
+	endif
+	if (!exists("root:Packages:Lattices:dim"))
+		Variable/G root:Packages:Lattices:dim = 3		// default, set to dim=2 for 2D values
 	endif
 	if (showPanel)
 		MakeLatticeParametersPanel("")
