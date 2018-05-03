@@ -3694,7 +3694,6 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			xtal.SpaceGroupID = FindDefaultIDforSG(SG)					// try to get id from SG [1,230]
 		endif
 	endif
-
 	if (!isValidSpaceGroupID(xtal.SpaceGroupID))						// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
@@ -6155,8 +6154,7 @@ End
 
 ThreadSafe Static Function isValidSpaceGroup(SG)					// returns TRUE if SG is an int in range [1,230]
 	Variable SG
-	Variable dim = NumVarOrDefault("root:Packages:Lattices:dim",3)
-	Variable iMax = dim==2 ? 17 : 230
+	Variable iMax = NumVarOrDefault("root:Packages:Lattices:dim",3)==2 ? 17 : 230
 	return ( SG == limit(round(SG), 1, iMax) )
 End
 
@@ -6170,8 +6168,7 @@ End
 
 ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
 	Variable idNum
-	Variable dim = NumVarOrDefault("root:Packages:Lattices:dim",3)
-	Variable iMax = dim==2 ? 17 : 530
+	Variable iMax = NumVarOrDefault("root:Packages:Lattices:dim",3)==2 ? 17 : 530
 	return ( idNum == limit(round(idNum), 1, iMax) )
 End
 
@@ -6192,7 +6189,6 @@ End
 
 Function/T IDnum2SpaceGroupID(idNum)
 	Variable idNum								// a SpaceGroup id num should be in [1,530]
-
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""
 	endif
