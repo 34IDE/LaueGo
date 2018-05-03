@@ -3642,10 +3642,10 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-	if (dim != 3)
-		DoAlert 0, "only understand dim = 3, not"+XMLtagContents("dim",cif)
-		return 1
-	endif
+//	if (dim != 3)
+//		DoAlert 0, "only understand dim = 3, not"+XMLtagContents("dim",cif)
+//		return 1
+//	endif
 
 	// process the space gorup info
 	// Start version 2.0 changes here
@@ -3671,7 +3671,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 		if (ItemsInList(nlist)==1)											// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))								// found valid SpaceGroupIDnum
+			if (isValidSpaceGroupIDnum(idNum,dim=dim))					// found valid SpaceGroupIDnum
 				String allIDs = MakeAllIDs()
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
@@ -3691,7 +3691,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 	endif
 
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))						// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID, dim=dim))			// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
 	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)	// change id to id number in [1,530]
@@ -6155,29 +6155,36 @@ ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an i
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupID(id)		// returns TRUE if id is valid
-	String id															// a space group id, e.g. "15" or "15:-b2"
-	String allIDs=MakeAllIDs()
+ThreadSafe Static Function isValidSpaceGroupID(id, [dim])		// returns TRUE if id is valid
+	String id																	// a space group id, e.g. "15" or "15:-b2"
+	Variable dim
+	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
+	String allIDs=MakeAllIDs(dim=dim)
 	return WhichListItem(id,allIDs,";",0,0)>=0
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
+ThreadSafe Static Function isValidSpaceGroupIDnum(idNum, [dim])	// returns TRUE if SG is an int in range [1,530]
 	Variable idNum
-	return ( idNum == limit(round(idNum), 1, 530) )
+	Variable dim
+	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
+	Variable iMax = dim==2 ? 17 : 530
+	return ( idNum == limit(round(idNum), 1, iMax) )
 End
 
 
-Function SpaceGroupID2num(id)
+Function SpaceGroupID2num(id, [dim])
 	String id									// a space group id, e.g. "15" or "15:-b2"
+	Variable dim
+	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
 
-	String allIDs=MakeAllIDs()
+	String allIDs=MakeAllIDs(dim=dim)
 	Variable idNum = 1+WhichListItem(id,allIDs,";",0,0)
-	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum,dim=dim) ? idNum : NaN
 	if (numtype(idNum))
 		idNum = FindDefaultIDnumForSG(round(str2num(id)))
 	endif
-	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum,dim=dim) ? idNum : NaN
 	return idNum
 End
 
@@ -6237,7 +6244,7 @@ End
 
 
 
-ThreadSafe Static Function/T MakeAllIDs()
+ThreadSafe Static Function/T MakeAllIDs([dim])
 	// Returns the list with all of the 530 Space Group types.
 	//	In the 230 SpaceGroups, there are:
 	//	  140 Space Groups of   1 types
@@ -6248,6 +6255,12 @@ ThreadSafe Static Function/T MakeAllIDs()
 	//	    1 Space Groups of  12 types
 	//	    2 Space Groups of  18 types
 	// for the full list, use  NumbersOfTypes(), which is shown below.
+	Variable dim
+	dim = ParamIsDefault(dim) || numtype(dim) || dim < 1 ? 3 : dim
+
+	if (dim==2)
+		return "1;2;3;4;5;6;7;8;9;10;11;12;13;14"
+	endif
 
 	String allIDs = "1;2;3:b;3:c;3:a;4:b;4:c;4:a;5:b1;5:b2;5:b3;5:c1;5:c2;5:c3;5:a1;5:a2;"
 	allIDs += "5:a3;6:b;6:c;6:a;7:b1;7:b2;7:b3;7:c1;7:c2;7:c3;7:a1;7:a2;7:a3;8:b1;8:b2;8:b3;"
