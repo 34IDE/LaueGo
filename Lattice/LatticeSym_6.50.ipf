@@ -3616,7 +3616,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	if (strlen(S_fileName)<1 || V_flag)
 		return 1
 	endif
-	String fullFile=S_fileName
+	String fullFile = S_fileName
 
 	FStatus f
 	String buf=PadString("",V_logEOF,0x20)
@@ -3626,15 +3626,6 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 
 	String cif = XMLtagContents("cif",buf)
 	if (strlen(cif)<10)
-		return 1
-	endif
-	Variable cifVers=NumberByKey("version",XMLattibutes2KeyList("cif",buf),"=")
-	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers	// default to version 1
-
-	Variable dim=str2num(XMLtagContents("dim",cif))
-	dim = numtype(dim) || dim<1 ? 3 : dim		// default to dim=3
-	if (dim != 3)
-		DoAlert 0, "only understand dim = 3, not"+XMLtagContents("dim",cif)
 		return 1
 	endif
 
@@ -3650,31 +3641,20 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	str = XMLtagContents("chemical_formula_structural",cif)
 	xtal.formula = str[0,99]
 
-	// Start version 2.0 changes here
-	String space_group = XMLtagContents("space_group",cif)			// space_group group
-	if (strlen(space_group)<2)
-		space_group = cif
-	endif
-	String id_Name="id", IT_name="IT_number"							// version 2 names
-	if (strlen(space_group) < 2)												// version 1 names
-		id_Name = "space_group_"+id_Name
-		IT_name = "space_group_"+IT_name
-	endif
-	// Done with version 2.0 changes here
-
 	// 1st try for the id directly
-	xtal.SpaceGroupID = TrimFrontBackWhiteSpace(XMLtagContents(id_Name,space_group))
+	Variable SG=-1
+	xtal.SpaceGroupID = TrimFrontBackWhiteSpace(XMLtagContents("space_group_id",cif))
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
-		String HMsym = XMLtagContents("H-M",space_group)				//	Hermann-Manguin symbol, e.g. 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0,0)					// checks in getHMsym2
+		String HMsym = XMLtagContents("H-M",cif)			//	Hermann-Manguin symbol, e.g. 'I 1 2/a 1'
+		String nlist = SymString2SGtype(HMsym,2,0,0)		// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1,0)							// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0)				// checks in getHMsym2 again, but ignoring minus signs
 		endif
-		if (ItemsInList(nlist)==1)											// just one result, use it
+		if (ItemsInList(nlist)==1)								// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))								// found valid SpaceGroupIDnum
-				String allIDs = MakeAllIDs()
+			if (isValidSpaceGroupIDnum(idNum))					// found valid SpaceGroupIDnum
+				String allIDs=MakeAllIDs()
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
 			endif
@@ -3682,29 +3662,29 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	endif
 	// 3rd try, look at the symmetry operations
 	if (strlen(xtal.SpaceGroupID)<1)
-		String symLine = GetSymLinesFromXMLbuffer(space_group)		// get the symmetry operations
+		String symLine = GetSymLinesFromXMLbuffer(cif)	// get the symmetry operations
 		xtal.SpaceGroupID = FindIDfromSymOps(symLine)
 	endif
 	// 4th try, look for the Space Group number [1,230], and use the default id for that Space Group
 	if (strlen(xtal.SpaceGroupID)<1)
-		Variable SG = str2num(XMLtagContents(IT_name,space_group))
+		SG = str2num(XMLtagContents("space_group_IT_number",cif))
 		if (SG>0)
-			xtal.SpaceGroupID = FindDefaultIDforSG(SG)					// try to get id from SG [1,230]
+			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1,230]
 		endif
 	endif
-
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))						// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)	// change id to id number in [1,530]
-	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)						// the IT space group number [1,230]
-	String SpaceGroupID = xtal.SpaceGroupID								// local string for convienence
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)		// change id to id number in [1,530]
+	SG = str2num(xtal.SpaceGroupID)
+	xtal.SpaceGroup = SG
+	String SpaceGroupID = xtal.SpaceGroupID
 
-	String cell = XMLtagContents("cell",cif)							// cell group
+	String cell = XMLtagContents("cell",cif)			// cell group
 	String unit
 	xtal.a = str2num(XMLtagContents("a",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("a",cell),"=")
-	xtal.a *= ConvertUnits2meters(unit,defaultLen=1e-10)*1e9		// want length in nm
+	xtal.a *= ConvertUnits2meters(unit,defaultLen=1e-10)*1e9	// want length in nm
 	xtal.b = str2num(XMLtagContents("b",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("b",cell),"=")
 	xtal.b *= ConvertUnits2meters(unit,defaultLen=1e-10)*1e9
@@ -3717,13 +3697,13 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.alphaT = str2num(XMLtagContents("alphaT",cell))
 	Variable Temperature = str2num(XMLtagContents("temperature",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
-	unit = SelectString(strlen(unit),"C",unit)							// default Temperature units are C
+	unit = SelectString(strlen(unit),"C",unit)						// default Temperature units are C
 	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
 	xtal.Unconventional00=NaN;  xtal.Unconventional01=NaN;  xtal.Unconventional02=NaN	// transform matrix for an unconventional unit cel
 	xtal.Unconventional10=NaN;  xtal.Unconventional11=NaN;  xtal.Unconventional12=NaN	// default to a conventional cell
 	xtal.Unconventional20=NaN;  xtal.Unconventional21=NaN;  xtal.Unconventional22=NaN
 	String uncoStr = XMLtagContents("Unconventional",cell)
-	if (strlen(uncoStr))														// found an $Unconventional tag
+	if (strlen(uncoStr))								// found an $Unconventional tag
 		Variable u00,u10,u20, u01,u11,u21, u02,u12,u22
 		sscanf uncoStr,"{ {%g,%g,%g}, {%g,%g,%g}, {%g,%g,%g} }",u00,u10,u20, u01,u11,u21, u02,u12,u22
 		if (V_flag==9 && numtype(u00+u10+u20+u01+u11+u21+u02+u12+u22)==0)
@@ -3752,19 +3732,15 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	Variable start=0, N=0
 	do
 		atomSite = XMLtagContents("atom_site",cif, start=start)	// next atom site
-		if (strlen(atomSite)<10)												// could not find another atom_site
+		if (strlen(atomSite)<10)										// could not find another atom_site
 			break
 		endif
-		atomLabel = XMLtagContents("label",atomSite)					// label for this atom type
-		symbol = XMLtagContents("symbol",atomSite)						// atomic symbol for this atom type
+		atomLabel = XMLtagContents("label",atomSite)			// label for this atom type
+		symbol = XMLtagContents("symbol",atomSite)				// atomic symbol for this atom type
 		atomLabel = SelectString(strlen(atomLabel), symbol, atomLabel)	// if no label given, use the symbol (may not be unique)
 		Zatom = ZfromLabel(SelectString(strlen(symbol),atomLabel,symbol))	// get Z
 		WyckoffSymbol = XMLtagContents("WyckoffSymbol",atomSite)
-
-		Wave xyz = str2vec(XMLtagContents2List("fract",atomSite))				// first try v2 name for fractional coords
-		if (!WaveExists(xyz))
-			Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))	// second try v1 name for fractional coords
-		endif
+		Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))
 		if (WaveExists(xyz) && numpnts(xyz)==3)
 			fracX = xyz[0]
 			fracY = xyz[1]
@@ -3774,16 +3750,16 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			fracY = str2num(XMLtagContents("fract_y",atomSite))
 			fracZ = str2num(XMLtagContents("fract_z",atomSite))
 		endif
-		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))	// try to get x,y,z from Wyckoff symbol
+		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))		// try to get x,y,z from Wyckoff symbol
 			if (ForceXYZtoWyckoff(SpaceGroupID,WyckoffSymbol,fracX,fracY,fracZ))
-				fracX = NaN															// will cause a break in next if()
+				fracX = NaN													// will cause a break in next if()
 			endif
 		endif
-		if (numtype(fracX+fracY+fracZ))										// give up, cannot determine coordinates
+		if (numtype(fracX+fracY+fracZ))									// give up, cannot determine coordinates
 			break
 		endif
 		mult = 0
-		if (strlen(WyckoffSymbol)==0)										// try to set Wyckoff symbol from coordinates
+		if (strlen(WyckoffSymbol)==0)									// try to set Wyckoff symbol from coordinates
 			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,fracX,fracY,fracZ,mult)
 		endif
 
@@ -3794,8 +3770,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		DebyeT = str2num(XMLtagContents("DebyeTemperature",atomSite))
 		DebyeT = DebyeT>0 ? DebyeT : NaN
 		unit = StringByKey("unit", XMLattibutes2KeyList("DebyeTemperature",atomSite),"=")
-		unit = SelectString(strlen(unit),"K",unit)						// default Debye Temperature units are K
-		DebyeT = ConvertTemperatureUnits(DebyeT,unit,"K")			// DebyeT is always stored as 
+		unit = SelectString(strlen(unit),"K",unit)				// default Debye Temperature units are K
+		DebyeT = ConvertTemperatureUnits(DebyeT,unit,"K")	// DebyeT is always stored as 
 
 		Biso = str2num(XMLtagContents("B_iso",atomSite))
 		Biso = Biso <=0 || numtype(Biso) ?  NaN : Biso
@@ -3813,20 +3789,18 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		aU22 = str2num(XMLtagContents("aniso_U_22",atomSite))
 		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_22",atomSite),"=")
 		aU22 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		aU33 = str2num(XMLtagContents("aniso_U_33",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_33",atomSite),"=")
+		aU33 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
 		aU12 = str2num(XMLtagContents("aniso_U_12",atomSite))
 		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_12",atomSite),"=")
 		aU12 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-		if (dim > 2)
-			aU33 = str2num(XMLtagContents("aniso_U_33",atomSite))
-			unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_33",atomSite),"=")
-			aU33 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-			aU13 = str2num(XMLtagContents("aniso_U_13",atomSite))
-			unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_13",atomSite),"=")
-			aU13 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-			aU23 = str2num(XMLtagContents("aniso_U_23",atomSite))
-			unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_23",atomSite),"=")
-			aU23 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-		endif
+		aU13 = str2num(XMLtagContents("aniso_U_13",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_13",atomSite),"=")
+		aU13 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		aU23 = str2num(XMLtagContents("aniso_U_23",atomSite))
+		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_23",atomSite),"=")
+		aU23 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
 
 		xtal.atom[N].name = atomLabel[0,59]
 		xtal.atom[N].Zatom = Zatom
@@ -3842,16 +3816,10 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		xtal.atom[N].Uiso = Uiso
 		xtal.atom[N].U11 = numtype(aU11) ?  NaN : aU11
 		xtal.atom[N].U22 = numtype(aU22) ?  NaN : aU22
+		xtal.atom[N].U33 = numtype(aU33) ?  NaN : aU33
 		xtal.atom[N].U12 = numtype(aU12) ?  NaN : aU12
-		if (dim==2)
-			xtal.atom[N].U33 = NaN
-			xtal.atom[N].U13 = NaN
-			xtal.atom[N].U23 = NaN
-		else
-			xtal.atom[N].U33 = numtype(aU33) ?  NaN : aU33
-			xtal.atom[N].U13 = numtype(aU13) ?  NaN : aU13
-			xtal.atom[N].U23 = numtype(aU23) ?  NaN : aU23
-		endif
+		xtal.atom[N].U13 = numtype(aU13) ?  NaN : aU13
+		xtal.atom[N].U23 = numtype(aU23) ?  NaN : aU23
 		N += 1
 	while(N<STRUCTURE_ATOMS_MAX)
 	xtal.N = N												// number of atoms described here
@@ -3862,15 +3830,15 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	start = 0
 	do
 		start0 = start
-		BondBody = XMLtagContents("bond_chemical",cif, start=start0)		// next chemical bond site
+		BondBody = XMLtagContents("bond_chemical",cif, start=start0)	// next chemical bond site
 		if (strlen(BondBody)<1)
 			break
 		endif
-		Wave blen = str2vec(BondBody)													// bond length(s)
+		Wave blen = str2vec(BondBody)				// bond length(s)
 		bondKeys = XMLattibutes2KeyList("bond_chemical",cif, start=start)	// next bond
 		label0 = StringByKey("n0",bondKeys,"=")
 		label1 = StringByKey("n1",bondKeys,"=")
-		Nlen = min(numpnts(blen),5)														// number of lengths for this bond
+		Nlen = min(numpnts(blen),5)					// number of lengths for this bond
 		if (strlen(label0) && strlen(label1) && numtype(sum(blen))==0 && Nlen>0)
 			xtal.bond[Nbond].label0 = label0[0,59]
 			xtal.bond[Nbond].label1 = label1[0,59]
