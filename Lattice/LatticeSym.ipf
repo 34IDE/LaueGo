@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.50
+#pragma version = 6.51
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -211,6 +211,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.48, fixed FindCentralAtom() and FindClosestAtomDirection() when xyz is (1,3) (only one atom position)
 //	with version 6.49, when printing lattice to History, the default is now to not show all atom positions.
 //	with version 6.50, added IDnum2SpaceGroupID(idNum), to return the id string given a number in [1,530]
+//	with version 6.51, modified readCrystalStructureXML() to read v2 files, and <pressure> shold be all lower case
 
 
 //	Rhombohedral Transformation:
@@ -3642,7 +3643,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-	Variable/G root:Packages:Lattices:dim = dim
+//	Variable/G root:Packages:Lattices:dim = dim
 #ifndef TESTING_2D
 	if (dim != 3)
 		sprintf str, "only understand dim=3, not \"%s\"", StringByKey("dim",keyVals,"=")
@@ -3655,7 +3656,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
 	if (strlen(space_group)<2)
-		space_group = cif
+		space_group = cif										// there is no <space_group> element, look in <cif>
 	endif
 	String id_Name="id", IT_name="IT_number"							// version 2 names
 	if (strlen(space_group) < 2)												// version 1 names
@@ -3702,7 +3703,6 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	String SpaceGroupID = xtal.SpaceGroupID								// local string for convienence
 
 	// process the cell group: lattice constants, Pressure, Temperature, alphaT
-	Variable Temperature, Pressure
 	String cell = XMLtagContents("cell",cif)							// cell group
 	String unit
 	xtal.a = str2num(XMLtagContents("a",cell))
@@ -3718,16 +3718,15 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.beta = str2num(XMLtagContents("beta",cell))
 	xtal.gam = str2num(XMLtagContents("gamma",cell))
 	xtal.alphaT = str2num(XMLtagContents("alphaT",cell))
-	Temperature = str2num(XMLtagContents("temperature",cell))
+	Variable Temperature = str2num(XMLtagContents("temperature",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
 	unit = SelectString(strlen(unit),"C",unit)							// default Temperature units are C
 	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
-	Pressure = str2num(XMLtagContents("pressure",cif))
+	Variable Pressure = str2num(XMLtagContents("pressure",cif))
 	if (numtype(Pressure)==0)
 		unit = StringByKey("unit", XMLattibutes2KeyList("pressure",cif),"=")
 		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1000)	// internally I use Pa, but default input is kPa
 	endif
-
 	xtal.Unconventional00=NaN;  xtal.Unconventional01=NaN;  xtal.Unconventional02=NaN	// transform matrix for an unconventional unit cel
 	xtal.Unconventional10=NaN;  xtal.Unconventional11=NaN;  xtal.Unconventional12=NaN	// default to a conventional cell
 	xtal.Unconventional20=NaN;  xtal.Unconventional21=NaN;  xtal.Unconventional22=NaN
@@ -3741,6 +3740,18 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			xtal.Unconventional20 = u20;	xtal.Unconventional21 = u21;	xtal.Unconventional22 = u22
  		endif
 	endif
+
+//	Variable Pressure = str2num(XMLtagContents("pressure",cif))
+//	if (numtype(Pressure)==0)
+//		unit = StringByKey("unit", XMLattibutes2KeyList("Pressure",cif),"=")
+//		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1)
+//	endif
+//	if (numtype(xtal.Temperature))
+//		Temperature = str2num(XMLtagContents("temperature",cif))
+//		unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cif),"=")
+//		unit = SelectString(strlen(unit),"C",unit)						// default Temperature units are C
+//		xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
+//	endif
 
 	// process the various information: desc, formula
 	str = XMLtagContents("chemical_name_common",cif)
@@ -3780,7 +3791,6 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			fracY = str2num(XMLtagContents("fract_y",atomSite))
 			fracZ = str2num(XMLtagContents("fract_z",atomSite))
 		endif
-		fracZ = dim<3 ? 0 : fracZ												// set fracZ to 0 for 2D
 		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))	// try to get x,y,z from Wyckoff symbol
 			if (ForceXYZtoWyckoff(SpaceGroupID,WyckoffSymbol,fracX,fracY,fracZ))
 				fracX = NaN															// will cause a break in next if()
@@ -4009,9 +4019,6 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	if (strlen(xtal.SpaceGroupID)>0)
 		cif += "\t<space_group_id>"+xtal.SpaceGroupID+"</space_group_id>"+NL
 	endif
-	if (xtal.Pressure > 0)
-		cif += "\t<pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</pressure>"+NL
-	endif
 
 	Variable alphaT = xtal.alphaT
 	alphaT = alphaT>0 ? alphaT : NaN
@@ -4025,6 +4032,9 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	cif += "\t\t<gamma>"+num2StrFull(xtal.gam)+"</gamma>"+NL
 	if (xtal.Vc > 0)
 		cif += "\t\t<volume>"+num2StrFull(xtal.Vc)+"</volume>"+NL
+	endif
+	if (xtal.Pressure > 0)
+		cif += "\t<pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</pressure>"+NL
 	endif
 	if (numtype(xtal.Temperature)==0)
 		Variable Temperature = xtal.Temperature
@@ -6152,10 +6162,9 @@ End
 //	End
 
 
-ThreadSafe Static Function isValidSpaceGroup(SG)					// returns TRUE if SG is an int in range [1,230]
+ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
 	Variable SG
-	Variable iMax = NumVarOrDefault("root:Packages:Lattices:dim",3)==2 ? 17 : 230
-	return ( SG == limit(round(SG), 1, iMax) )
+	return ( SG == limit(round(SG), 1, 230) )
 End
 
 
@@ -6168,8 +6177,7 @@ End
 
 ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
 	Variable idNum
-	Variable iMax = NumVarOrDefault("root:Packages:Lattices:dim",3)==2 ? 17 : 530
-	return ( idNum == limit(round(idNum), 1, iMax) )
+	return ( idNum == limit(round(idNum), 1, 530) )
 End
 
 
@@ -6253,10 +6261,6 @@ ThreadSafe Static Function/T MakeAllIDs()
 	//	    1 Space Groups of  12 types
 	//	    2 Space Groups of  18 types
 	// for the full list, use  NumbersOfTypes(), which is shown below.
-
-	if (NumVarOrDefault("root:Packages:Lattices:dim",3)==2)
-		return "1;2;3;4;5;6;7;8;9;10;11;12;13;14"
-	endif
 
 	String allIDs = "1;2;3:b;3:c;3:a;4:b;4:c;4:a;5:b1;5:b2;5:b3;5:c1;5:c2;5:c3;5:a1;5:a2;"
 	allIDs += "5:a3;6:b;6:c;6:a;7:b1;7:b2;7:b3;7:c1;7:c2;7:c3;7:a1;7:a2;7:a3;8:b1;8:b2;8:b3;"
@@ -6497,9 +6501,6 @@ ThreadSafe Function/S getHallSymbol(idNum)
 	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	if (!isValidSpaceGroupIDnum(idNum))
 		return ""									// invalid SpaceGroup ID number
-	endif
-	if (NumVarOrDefault("root:Packages:Lattices:dim",3)!=3)
-		return ""
 	endif
 
 	String Hall=""									// there are 530 items in this list
