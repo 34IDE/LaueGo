@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Ge</chemical_name_common>
-	<space_group_IT_number>227</space_group_IT_number>
+	<space_group>
+		<IT_number>227</IT_number>
+		<id>227:1</id>
+		<H-M>Fd-3m:1</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.56577974</a>
 		<b unit="nm">0.56577974</b>
@@ -16,7 +20,7 @@
 	<atom_site>
 		<label>Ge</label>
 		<symbol>Ge</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">360</DebyeTemperature>
 	</atom_site>
 	<citation>Acta Cryst. A31 (1975) pg 364-367, Baker and Hart;www.ioffe.rssi.ru/SVA/NSM/Semicond/Ge/thermal.html, for thermal expansion;</citation>

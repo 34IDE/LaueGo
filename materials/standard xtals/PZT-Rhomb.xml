@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>PZT crystal (Rhomb axes)</chemical_name_common>
-	<space_group_id>167:R</space_group_id>
+	<space_group>
+		<id>167:R</id>
+		<H-M>R-3c:R</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.5826</a>
 		<b unit="nm">0.5826</b>

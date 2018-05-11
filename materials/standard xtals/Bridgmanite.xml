@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Bridgmanite</chemical_name_common>
 	<chemical_formula_structural>MgSiO3</chemical_formula_structural>
-	<space_group_IT_number>62</space_group_IT_number>
+	<space_group>
+		<IT_number>62</IT_number>
+	</space_group>
 	<cell>
 		<a unit="nm">0.47780</a>
 		<b unit="nm">0.49298</b>
@@ -15,7 +17,7 @@
 	</cell>
 	<atom_site>
 		<symbol>Mg</symbol>
-		<fract_xyz>0.51378 0.55588 0.25</fract_xyz>
+		<fract>0.51378 0.55588 0.25</fract>
 		<U_iso unit="Å^2">0.0083</U_iso>
 		<aniso_U_11 unit="Å^2">0.0077</aniso_U_11>
 		<aniso_U_22 unit="Å^2">0.0064</aniso_U_22>
@@ -26,7 +28,7 @@
 	</atom_site>
 	<atom_site>
 		<symbol>Si</symbol>
-		<fract_xyz>0.5 0 0.5</fract_xyz>
+		<fract>0.5 0 0.5</fract>
 		<U_iso unit="Å^2">0.0058</U_iso>
 		<aniso_U_11 unit="Å^2">0.0055</aniso_U_11>
 		<aniso_U_22 unit="Å^2">0.0050</aniso_U_22>
@@ -37,7 +39,7 @@
 	</atom_site>
 	<atom_site>
 		<symbol>O</symbol>
-		<fract_xyz>0.10189 0.46645 0.25</fract_xyz>
+		<fract>0.10189 0.46645 0.25</fract>
 		<U_iso unit="Å^2">0.0073</U_iso>
 		<aniso_U_11 unit="Å^2">0.0073</aniso_U_11>
 		<aniso_U_22 unit="Å^2">0.0071</aniso_U_22>
@@ -48,7 +50,7 @@
 	</atom_site>
 	<atom_site>
 		<symbol>O</symbol>
-		<fract_xyz>0.19626 0.20133 0.55258</fract_xyz>
+		<fract>0.19626 0.20133 0.55258</fract>
 		<U_iso unit="Å^2">0.0075</U_iso>
 		<aniso_U_11 unit="Å^2">0.0069</aniso_U_11>
 		<aniso_U_22 unit="Å^2">0.0062</aniso_U_22>

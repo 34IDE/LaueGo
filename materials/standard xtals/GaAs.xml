@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>GaAs</chemical_name_common>
-	<space_group_IT_number>216</space_group_IT_number>
+	<space_group>
+		<IT_number>216</IT_number>
+		<H-M>F-43m</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.56534</a>
 		<b unit="nm">0.56534</b>

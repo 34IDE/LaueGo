@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Cesium</chemical_name_common>
-	<space_group_IT_number>229</space_group_IT_number>
-	<H-M>Im-3m</H-M>
+	<space_group>
+		<IT_number>229</IT_number>
+		<H-M>Im-3m</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.6141</a>
 		<b unit="nm">0.6141</b>
@@ -15,7 +17,7 @@
 	<atom_site>
 		<label>Cs</label>
 		<symbol>Cs</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Cs" n1="Cs">0.532</bond_chemical>

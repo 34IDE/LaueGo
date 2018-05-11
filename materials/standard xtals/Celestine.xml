@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Celestine</chemical_name_common>
 	<chemical_formula_structural>Sr(SO4)</chemical_formula_structural>
-	<space_group_IT_number>62</space_group_IT_number>
-	<space_group_id>62:cab</space_group_id>
-	<H-M>Pbnm</H-M>
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<H-M>Pbnm</H-M>
+	</space_group>
 	<amcsd>5557</amcsd>
 	<cell>
 		<a unit="nm">0.68671</a>
@@ -19,7 +21,7 @@
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
-		<fract_xyz>0.15818 0.18395 0.25</fract_xyz>
+		<fract>0.15818 0.18395 0.25</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.01005</aniso_U_11>
@@ -32,7 +34,7 @@
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
-		<fract_xyz>0.18505 0.43797 0.75</fract_xyz>
+		<fract>0.18505 0.43797 0.75</fract>
 		<valence>6</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.00797</aniso_U_11>
@@ -45,7 +47,7 @@
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.0923 0.5952 0.75</fract_xyz>
+		<fract>0.0923 0.5952 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.0195</aniso_U_11>
@@ -58,7 +60,7 @@
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.0418 0.3071 0.75</fract_xyz>
+		<fract>0.0418 0.3071 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.0126</aniso_U_11>
@@ -71,7 +73,7 @@
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.3107 0.4222 0.9744</fract_xyz>
+		<fract>0.3107 0.4222 0.9744</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>d</WyckoffSymbol>
 		<aniso_U_11>0.0138</aniso_U_11>

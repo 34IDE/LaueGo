@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Rh</chemical_name_common>
-	<space_group_IT_number>225</space_group_IT_number>
+	<space_group>
+		<IT_number>225</IT_number>
+		<H-M>Fm-3m</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.38034</a>
 		<b unit="nm">0.38034</b>

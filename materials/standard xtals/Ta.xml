@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Tantalum</chemical_name_common>
-	<space_group_id>229</space_group_id>
+	<space_group>
+		<id>229</id>
+		<H-M>I m -3 m</H-M>
+	</space_group>
 	<icsd>76152</icsd>
-	<H-M>I m -3 m</H-M>
 	<cell>
 		<a unit="nm">0.33058</a>
 		<b unit="nm">0.33058</b>
@@ -17,7 +19,7 @@
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<DebyeTemperature unit="K">225</DebyeTemperature>
 	</atom_site>

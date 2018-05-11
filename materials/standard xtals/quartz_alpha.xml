@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Quartz-alpha</chemical_name_common>
 	<chemical_formula_structural>SiO2</chemical_formula_structural>
-	<space_group_IT_number>154</space_group_IT_number>
-	<space_group_id>154</space_group_id>
-	<H-M>P 32 2 1</H-M>
+	<space_group>
+		<id>154</id>
+		<IT_number>154</IT_number>
+		<H-M>P 32 2 1</H-M>
+	</space_group>
 	<icsd>174</icsd>
 	<cell>
 		<a unit="nm">0.49134</a>
@@ -19,7 +21,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_xyz>0.46987 0 0.6667</fract_xyz>
+		<fract>0.46987 0 0.6667</fract>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<aniso_U_11>0.0066</aniso_U_11>
@@ -32,7 +34,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.4141 0.2681 0.7855</fract_xyz>
+		<fract>0.4141 0.2681 0.7855</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.0156</aniso_U_11>

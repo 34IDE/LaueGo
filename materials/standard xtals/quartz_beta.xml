@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Quartz-beta</chemical_name_common>
 	<chemical_formula_structural>SiO2</chemical_formula_structural>
-	<space_group_id>180</space_group_id>
-	<H-M>P 62 2 2</H-M>
+	<space_group>
+		<id>180</id>
+		<IT_number>154</IT_number>
+		<H-M>P 62 2 2</H-M>
+	</space_group>
 	<amcsd>0006370</amcsd>
 	<cell>
 		<a unit="nm">0.49965</a>
@@ -19,7 +22,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_xyz>0.5 0 0</fract_xyz>
+		<fract>0.5 0 0</fract>
 		<valence>4</valence>
 		<aniso_U_11>0.02646</aniso_U_11>
 		<aniso_U_22>0.02011</aniso_U_22>
@@ -31,7 +34,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.41520 0.20760 0.16667</fract_xyz>
+		<fract>0.41520 0.20760 0.16667</fract>
 		<valence>-2</valence>
 		<aniso_U_11>0.04942</aniso_U_11>
 		<aniso_U_22>0.05464</aniso_U_22>
@@ -50,14 +53,14 @@
 
 <!--   
 OLD Wyckoff values, but no Temperature given.
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Quartz-beta</chemical_name_common>
 	<chemical_formula_structural>SiO2</chemical_formula_structural>
-	<space_group_IT_number>154</space_group_IT_number>
-	<space_group_id>154</space_group_id>
-	<H-M>P 62 2 2</H-M>
+	<space_group>
+		<id>154</id>
+		<H-M>P 62 2 2</H-M>
+	</space_group>
 	<amcsd>0018071</amcsd>
-	<temperature unit="K">298</temperature>
 	<cell>
 		<a unit="nm">0.5013</a>
 		<b unit="nm">0.5013</b>
@@ -65,18 +68,19 @@ OLD Wyckoff values, but no Temperature given.
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
+		<temperature unit="K">298</temperature>
 		<volume>0.1130106829371578</volume>
 	</cell>
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_xyz>0.5 0.5 0.3333333</fract_xyz>
+		<fract>0.5 0.5 0.3333333</fract>
 		<valence>4</valence>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.197 -0.197 0.83330</fract_xyz>
+		<fract>0.197 -0.197 0.83330</fract>
 		<valence>-2</valence>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>

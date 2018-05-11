@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Uranyl fluoride</chemical_name_common>
 	<chemical_formula_structural>UO2F2</chemical_formula_structural>
-	<space_group_IT_number>166</space_group_IT_number>
-	<space_group_id>166:H</space_group_id>
+	<space_group>
+		<id>166:H</id>
+		<IT_number>166</IT_number>
+		<H-M>R-3m:H</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.4206</a>
 		<b unit="nm">0.4206</b>
@@ -16,19 +19,19 @@
 	<atom_site>
 		<label>U</label>
 		<symbol>U</symbol>
-		<fract_xyz>0.0 0.0 0.0</fract_xyz>
+		<fract>0.0 0.0 0.0</fract>
 		<valence>6</valence>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.0 0.0 0.122</fract_xyz>
+		<fract>0.0 0.0 0.122</fract>
 		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>F</label>
 		<symbol>F</symbol>
-		<fract_xyz>0.0 0.0 0.294</fract_xyz>
+		<fract>0.0 0.0 0.294</fract>
 		<valence>-1</valence>
 	</atom_site>
 	<bond_chemical unit="nm" n0="U" n1="O">0.1914</bond_chemical>

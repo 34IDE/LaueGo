@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>SRO</chemical_name_common>
 	<chemical_formula_structural>SrRuO3</chemical_formula_structural>
-	<space_group_id>62</space_group_id>
-	<H-M>Pnma</H-M>
+	<space_group>
+		<id>62</id>
+		<H-M>Pnma</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.55304</a>
 		<b unit="nm">0.78446</b>
@@ -16,28 +18,28 @@
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
-		<fract_xyz>0.4843 0.2500 0.0027</fract_xyz>
+		<fract>0.4843 0.2500 0.0027</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Ru</label>
 		<symbol>Ru</symbol>
-		<fract_xyz>0.0 0.0 0.0</fract_xyz>
+		<fract>0.0 0.0 0.0</fract>
 		<valence>4</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.2236 0.0278 0.2752</fract_xyz>
+		<fract>0.2236 0.0278 0.2752</fract>
 		<WyckoffSymbol>d</WyckoffSymbol>
 		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.5034 0.2500 0.5532</fract_xyz>
+		<fract>0.5034 0.2500 0.5532</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<valence>-2</valence>
 	</atom_site>

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>ZnO crystal (hexagonal axis)</chemical_name_common>
-	<space_group_IT_number>186</space_group_IT_number>
+	<space_group>
+		<IT_number>186</IT_number>
+		<H-M>P63mc</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.32494</a>
 		<b unit="nm">0.32494</b>

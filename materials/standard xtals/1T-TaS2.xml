@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>1T-TaS2</chemical_name_common>
-	<space_group_id>164</space_group_id>
-	<H-M>P -3 m 1</H-M>
+	<space_group>
+		<id>164</id>
+		<H-M>P -3 m 1</H-M>
+	</space_group>
 	<icsd>85323</icsd>
 	<cell>
 		<a unit="nm">0.33649</a>
@@ -16,7 +18,7 @@
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<valence>4</valence>
 		<aniso_U_11>0.0061</aniso_U_11>
 		<aniso_U_22>0.0061</aniso_U_22>
@@ -29,7 +31,7 @@
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
-		<fract_xyz>0.333333 0.666667 0.2586</fract_xyz>
+		<fract>0.333333 0.666667 0.2586</fract>
 		<valence>-2</valence>
 		<aniso_U_11>0.0071</aniso_U_11>
 		<aniso_U_22>0.0071</aniso_U_22>

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>NGO (NdGaO3)</chemical_name_common>
-	<space_group_IT_number>62</space_group_IT_number>
+	<space_group>
+		<IT_number>62</IT_number>
+		<H-M>Pnma</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.54276</a>
 		<b unit="nm">0.54979</b>

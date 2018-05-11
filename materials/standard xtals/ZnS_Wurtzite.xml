@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Wurtzite (B4)</chemical_name_common>
 	<chemical_formula_structural>ZnS</chemical_formula_structural>
-	<space_group_IT_number>186</space_group_IT_number>
+	<space_group>
+		<IT_number>186</IT_number>
+		<H-M>P63mc</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.382</a>
 		<b unit="nm">0.382</b>
@@ -16,12 +19,14 @@
 	<atom_site>
 		<label>Zn</label>
 		<symbol>Zn</symbol>
-		<fract_xyz>0.66667 0.33333 0.125</fract_xyz>
+		<fract>0.66667 0.33333 0.125</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<citation>http://www.chem.ox.ac.uk/icl/heyes/structure_of_solids/Lecture2/Lec2.html#anchor9</citation>
 </cif>

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Cadmoselite (Wurtzite)</chemical_name_common>
-	<space_group_id>186</space_group_id>
-	<H-M>P 63 m c</H-M>
+	<space_group>
+		<id>186</id>
+		<H-M>P 63 m c</H-M>
+	</space_group>
 	<amcsd>0019175</amcsd>
 	<cell>
 		<a unit="nm">0.4299</a>
@@ -16,7 +18,7 @@
 	<atom_site>
 		<label>Cd</label>
 		<symbol>Cd</symbol>
-		<fract_xyz>0.3333333 0.6666667 0</fract_xyz>
+		<fract>0.3333333 0.6666667 0</fract>
 		<aniso_U_11>0.01849</aniso_U_11>
 		<aniso_U_22>0.01849</aniso_U_22>
 		<aniso_U_33>0.02243</aniso_U_33>
@@ -25,7 +27,7 @@
 	<atom_site>
 		<label>Se</label>
 		<symbol>Se</symbol>
-		<fract_xyz>0.3333333 0.6666667 0.37679</fract_xyz>
+		<fract>0.3333333 0.6666667 0.37679</fract>
 		<aniso_U_11>0.01532</aniso_U_11>
 		<aniso_U_22>0.01532</aniso_U_22>
 		<aniso_U_33>0.01215</aniso_U_33>

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Gallium</chemical_name_common>
-	<space_group_IT_number>64</space_group_IT_number>
+	<space_group>
+		<IT_number>64</IT_number>
+		<H-M>Cmca</H-M>
+	</space_group>
 	<icsd>43388</icsd>
 	<cell>
 		<a unit="nm">0.4523</a>
@@ -17,7 +20,7 @@
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
-		<fract_xyz>0 0.1549 0.081</fract_xyz>
+		<fract>0 0.1549 0.081</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ga" n1="Ga">0.275</bond_chemical>

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Si</chemical_name_common>
-	<space_group_IT_number>227</space_group_IT_number>
-	<space_group_id>227:1</space_group_id>
-	<H-M>Fd-3m:1</H-M>
+	<space_group>
+		<id>227:1</id>
+		<IT_number>227</IT_number>
+		<H-M>Fd-3m:1</H-M>
+	</space_group>
 	<cell>
 		<!-- from CODATA Internationally recommended 2014 values, set May 2018 -->
 		<a unit="nm">0.5431020505</a>
@@ -19,7 +21,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">645</DebyeTemperature>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>

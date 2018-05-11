@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Anglesite</chemical_name_common>
 	<chemical_formula_structural>Pb(SO4)</chemical_formula_structural>
-	<space_group_IT_number>62</space_group_IT_number>
-	<space_group_id>62:cab</space_group_id>
-	<H-M>Pbnm</H-M>
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<H-M>Pbnm</H-M>
+	</space_group>
 	<amcsd>5558</amcsd>
 	<cell>
 		<a unit="nm">0.69549</a>
@@ -19,7 +21,7 @@
 	<atom_site>
 		<label>Pb</label>
 		<symbol>Pb</symbol>
-		<fract_xyz>0.16716 0.18798 0.25</fract_xyz>
+		<fract>0.16716 0.18798 0.25</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.02194</aniso_U_11>
@@ -32,7 +34,7 @@
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
-		<fract_xyz>0.1849 0.4358 0.75</fract_xyz>
+		<fract>0.1849 0.4358 0.75</fract>
 		<valence>6</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.0124</aniso_U_11>
@@ -45,7 +47,7 @@
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.0946 0.5915 0.75</fract_xyz>
+		<fract>0.0946 0.5915 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.025</aniso_U_11>
@@ -58,7 +60,7 @@
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.0424 0.3072 0.75</fract_xyz>
+		<fract>0.0424 0.3072 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.015</aniso_U_11>
@@ -71,7 +73,7 @@
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.309 0.4189 0.9726</fract_xyz>
+		<fract>0.309 0.4189 0.9726</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>d</WyckoffSymbol>
 		<aniso_U_11>0.0195</aniso_U_11>

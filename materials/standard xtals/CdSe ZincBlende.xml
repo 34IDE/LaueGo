@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>CdSe (Zinc Blende)</chemical_name_common>
-	<space_group_id>216</space_group_id>
-	<H-M>F -4 3 m</H-M>
+	<space_group>
+		<id>216</id>
+		<H-M>F -4 3 m</H-M>
+	</space_group>
 	<cell>
 		<a unit="nm">0.608</a>
 		<b unit="nm">0.608</b>
@@ -15,13 +17,13 @@
 	<atom_site>
 		<label>Cd</label>
 		<symbol>Cd</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Se</label>
 		<symbol>Se</symbol>
-		<fract_xyz>0.25 0.25 0.25</fract_xyz>
+		<fract>0.25 0.25 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Cd" n1="Se">0.263272</bond_chemical>

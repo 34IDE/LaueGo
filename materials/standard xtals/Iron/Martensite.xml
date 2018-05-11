@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Martensite (Fe2C)</chemical_name_common>
 	<chemical_formula_structural>Fe2C</chemical_formula_structural>
-	<space_group_id>58</space_group_id>
-	<H-M>P n n m</H-M>
+	<space_group>
+		<id>58</id>
+		<H-M>P n n m</H-M>
+	</space_group>
 	<icsd>76826</icsd>
 	<cell>
 		<a unit="nm">0.4704</a>
@@ -17,14 +19,14 @@
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
-		<fract_xyz>0.666667 0.25 0</fract_xyz>
+		<fract>0.666667 0.25 0</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>g</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<valence>-4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>

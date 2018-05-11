@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>CeO2 (Cerianite)</chemical_name_common>
-	<space_group_id>225</space_group_id>
-	<H-M>F m -3 m</H-M>
+	<space_group>
+		<id>225</id>
+		<H-M>F m -3 m</H-M>
+	</space_group>
 	<icsd>72155</icsd>
 	<cell>
 		<a unit="nm">0.54124</a>
@@ -16,7 +18,7 @@
 	<atom_site>
 		<label>Ce</label>
 		<symbol>Ce</symbol>
-		<fract_xyz>0 0 0</fract_xyz>
+		<fract>0 0 0</fract>
 		<valence>4</valence>
 		<B_iso>0.29</B_iso>
 		<WyckoffSymbol>a</WyckoffSymbol>
@@ -24,7 +26,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.25 0.25 0.25</fract_xyz>
+		<fract>0.25 0.25 0.25</fract>
 		<valence>-2</valence>
 		<B_iso>1.82</B_iso>
 		<WyckoffSymbol>c</WyckoffSymbol>

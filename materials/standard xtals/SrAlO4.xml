@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>SrAl2O4</chemical_name_common>
-	<space_group_IT_number>4</space_group_IT_number>
+	<space_group>
+		<IT_number>4</IT_number>
+		<id>4:b</id>
+		<H-M>P21:b</H-M>
+	</space_group>
 	<database_code_PDF>01-074-0794</database_code_PDF>
 	<R_factor_all>01-074-0794</R_factor_all>
 	<cell>

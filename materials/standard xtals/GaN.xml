@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Gallium nitride (Wurtzite 2H)</chemical_name_common>
 	<chemical_formula_structural>GaN</chemical_formula_structural>
-	<space_group_id>164</space_group_id>
-	<H-M>P 63 m c</H-M>
-	<space_group_id>186</space_group_id>
+	<space_group>
+		<id>186</id>
+		<H-M>P 63 m c</H-M>
+	</space_group>
 	<icsd>34476</icsd>
 	<cell>
 		<a unit="nm">0.31894</a>
@@ -18,7 +19,7 @@
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
-		<fract_xyz>-0.333333 -0.666667 0</fract_xyz>
+		<fract>-0.333333 -0.666667 0</fract>
 		<valence>3</valence>
 		<aniso_U_11>0.0052</aniso_U_11>
 		<aniso_U_22>0.0052</aniso_U_22>
@@ -31,7 +32,7 @@
 	<atom_site>
 		<label>N</label>
 		<symbol>N</symbol>
-		<fract_xyz>-0.333333 -0.666667 0.377</fract_xyz>
+		<fract>-0.333333 -0.666667 0.377</fract>
 		<valence>-3</valence>
 		<aniso_U_11>0.0070</aniso_U_11>
 		<aniso_U_22>0.0070</aniso_U_22>

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Autunite</chemical_name_common>
 	<chemical_formula_structural>Ca[(UO2)(PO4)]2(H2O)11</chemical_formula_structural>
-	<space_group_id>62</space_group_id>
-	<H-M>Pnma</H-M>
+	<space_group>
+		<id>62</id>
+		<H-M>Pnma</H-M>
+	</space_group>
 	<amcsd>0002977</amcsd>
 	<cell>
 		<a unit="nm">1.40135</a>
@@ -17,19 +19,19 @@
 	<atom_site>
 		<label>U</label>
 		<symbol>U</symbol>
-		<fract_xyz> .1250 .5412 .7498</fract_xyz>
+		<fract> .1250 .5412 .7498</fract>
 		<U_iso unit="Å^2">.012</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>P</label>
 		<symbol>P</symbol>
-		<fract_xyz>.1245 .5003 .2478</fract_xyz>
+		<fract>.1245 .5003 .2478</fract>
 		<U_iso unit="Å^2">.013</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>Ca</label>
 		<symbol>Ca</symbol>
-		<fract_xyz>.1251 .7500  .4501</fract_xyz>
+		<fract>.1251 .7500  .4501</fract>
 		<occupancy>0.860</occupancy>
 		<U_iso unit="Å^2">.029</U_iso>
 	</atom_site>
@@ -37,146 +39,146 @@
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_xyz>.1235 .4551  .7482</fract_xyz>
+		<fract>.1235 .4551  .7482</fract>
 		<U_iso unit="Å^2">.026</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_xyz>.1250 .6278  .7472</fract_xyz>
+		<fract>.1250 .6278  .7472</fract>
 		<U_iso unit="Å^2">.021</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract_xyz>.1252 .5440  .0733 </fract_xyz>
+		<fract>.1252 .5440  .0733 </fract>
 		<U_iso unit="Å^2">.029</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O4</label>
 		<symbol>O</symbol>
-		<fract_xyz>.0373 .4560  .2451 </fract_xyz>
+		<fract>.0373 .4560  .2451 </fract>
 		<U_iso unit="Å^2">.028</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O5</label>
 		<symbol>O</symbol>
-		<fract_xyz>.2118 .4557  .2553</fract_xyz>
+		<fract>.2118 .4557  .2553</fract>
 		<U_iso unit="Å^2">.032</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O6</label>
 		<symbol>O</symbol>
-		<fract_xyz>.1206 .5452  .4226</fract_xyz>
+		<fract>.1206 .5452  .4226</fract>
 		<U_iso unit="Å^2">.023</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O7</label>
 		<symbol>O</symbol>
-		<fract_xyz>.7591 .2500  .2851</fract_xyz>
+		<fract>.7591 .2500  .2851</fract>
 		<U_iso unit="Å^2">.041</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O8</label>
 		<symbol>O</symbol>
-		<fract_xyz>.2368 .6647  .3510</fract_xyz>
+		<fract>.2368 .6647  .3510</fract>
 		<U_iso unit="Å^2">.072</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O9</label>
 		<symbol>O</symbol>
-		<fract_xyz>.0126 .6645  .3438</fract_xyz>
+		<fract>.0126 .6645  .3438</fract>
 		<U_iso unit="Å^2">.063</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O10</label>
 		<symbol>O</symbol>
-		<fract_xyz>.0002 .2500 .2833</fract_xyz>
+		<fract>.0002 .2500 .2833</fract>
 		<U_iso unit="Å^2">.055</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O11</label>
 		<symbol>O</symbol>
-		<fract_xyz>.1263 .7500 .0757</fract_xyz>
+		<fract>.1263 .7500 .0757</fract>
 		<U_iso unit="Å^2">.039</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O12</label>
 		<symbol>O</symbol>
-		<fract_xyz>.3257 .6614 -.0255</fract_xyz>
+		<fract>.3257 .6614 -.0255</fract>
 		<U_iso unit="Å^2">.062</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O13</label>
 		<symbol>O</symbol>
-		<fract_xyz>.0759 .3379 .0243</fract_xyz>
+		<fract>.0759 .3379 .0243</fract>
 		<U_iso unit="Å^2">.057</U_iso>
 	</atom_site>
 
 	<atom_site>
 		<label>H1</label>
 		<symbol>H</symbol>
-		<fract_xyz>.7260 .2830 .2220</fract_xyz>
+		<fract>.7260 .2830 .2220</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H2</label>
 		<symbol>H</symbol>
-		<fract_xyz>.1970 .6330 .4120</fract_xyz>
+		<fract>.1970 .6330 .4120</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H3</label>
 		<symbol>H</symbol>
-		<fract_xyz>.2210 .6540 .2150</fract_xyz>
+		<fract>.2210 .6540 .2150</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H4</label>
 		<symbol>H</symbol>
-		<fract_xyz>.0330 .6191 .3350</fract_xyz>
+		<fract>.0330 .6191 .3350</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H5</label>
 		<symbol>H</symbol>
-		<fract_xyz>.0080 .6650 .2010</fract_xyz>
+		<fract>.0080 .6650 .2010</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H6</label>
 		<symbol>H</symbol>
-		<fract_xyz>.0370 .2851 .2330</fract_xyz>
+		<fract>.0370 .2851 .2330</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H7</label>
 		<symbol>H</symbol>
-		<fract_xyz>.1300 .7056 .0440</fract_xyz>
+		<fract>.1300 .7056 .0440</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H8</label>
 		<symbol>H</symbol>
-		<fract_xyz>.2720 .6740 .0580</fract_xyz>
+		<fract>.2720 .6740 .0580</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H9</label>
 		<symbol>H</symbol>
-		<fract_xyz>.3972 .6550 -.0270</fract_xyz>
+		<fract>.3972 .6550 -.0270</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H10</label>
 		<symbol>H</symbol>
-		<fract_xyz> .0680 .3819 .0750</fract_xyz>
+		<fract> .0680 .3819 .0750</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>H11</label>
 		<symbol>H</symbol>
-		<fract_xyz>.1483 .3360 .0220</fract_xyz>
+		<fract>.1483 .3360 .0220</fract>
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 
@@ -192,14 +194,14 @@ http://en.wikipedia.org/wiki/Autunite
 	<atom_site>
 		<label>F1</label>
 		<symbol>F</symbol>
-		<fract_xyz>0.66666667 0.33333333 0.0133</fract_xyz>
+		<fract>0.66666667 0.33333333 0.0133</fract>
 		<valence>-1</valence>
 		<xxxWyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>F2</label>
 		<symbol>F</symbol>
-		<fract_xyz>0.66666667 0.33333333 -0.0133</fract_xyz>
+		<fract>0.66666667 0.33333333 -0.0133</fract>
 		<valence>-1</valence>
 		<xxxWyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>

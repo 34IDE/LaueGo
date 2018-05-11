@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Sapphire,Corundum (hexagonal)</chemical_name_common>
 	<chemical_formula_structural>Al2O3</chemical_formula_structural>
-	<space_group_id>167:H</space_group_id>
-	<H-M>R -3 c</H-M>
+	<space_group>
+		<id>167:H</id>
+		<H-M>R -3 c</H-M>
+	</space_group>
 	<icsd>25778</icsd>
 	<cell>
 		<a unit="nm">0.47589</a>
@@ -17,7 +19,7 @@
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
-		<fract_xyz>0 0 0.352</fract_xyz>
+		<fract>0 0 0.352</fract>
 		<valence>3</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.00277</aniso_U_11>
@@ -30,7 +32,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.306 0 0.25</fract_xyz>
+		<fract>0.306 0 0.25</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<aniso_U_11>0.00327</aniso_U_11>
@@ -57,11 +59,13 @@
 
 
 <!--   
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Sapphire,Corundum (hexagonal)</chemical_name_common>
 	<chemical_formula_structural>Al2O3</chemical_formula_structural>
-	<space_group_id>167:H</space_group_id>
-	<H-M>R -3 c</H-M>
+	<space_group>
+		<id>167:H</id>
+		<H-M>R -3 c</H-M>
+	<space_group>
 	<cell>
 		<a unit="nm">0.4766</a>
 		<b unit="nm">0.4766</b>
@@ -73,7 +77,7 @@
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
-		<fract_xyz>0 0 0.34</fract_xyz>
+		<fract>0 0 0.34</fract>
 		<valence>3</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<B_iso>0.025</B_iso>
@@ -81,7 +85,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.33 0 0.25</fract_xyz>
+		<fract>0.33 0 0.25</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<B_iso>0.025</B_iso>
@@ -106,14 +110,14 @@
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
-		<fract_xyz>0 0 0.3523</fract_xyz>
+		<fract>0 0 0.3523</fract>
 		<valence>3</valence>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.3064 0 0.25</fract_xyz>
+		<fract>0.3064 0 0.25</fract>
 		<valence>-2</valence>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
