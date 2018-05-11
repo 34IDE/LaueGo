@@ -3654,13 +3654,13 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// process the space gorup info
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
-	if (strlen(space_group)<2)
-		space_group = cif										// there is no <space_group> element, look in <cif>
-	endif
 	String id_Name="id", IT_name="IT_number"							// version 2 names
 	if (strlen(space_group) < 2)												// version 1 names
 		id_Name = "space_group_"+id_Name
 		IT_name = "space_group_"+IT_name
+	endif
+	if (strlen(space_group)<2)
+		space_group = cif										// there is no <space_group> element, look in <cif>
 	endif
 	// Done with version 2.0 changes here
 
