@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.51
+#pragma version = 6.52
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -212,6 +212,8 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.49, when printing lattice to History, the default is now to not show all atom positions.
 //	with version 6.50, added IDnum2SpaceGroupID(idNum), to return the id string given a number in [1,530]
 //	with version 6.51, modified readCrystalStructureXML() to read v2 files, and <pressure> shold be all lower case
+//	with version 6.52, modified crystalStructure2xml() and writeCrystalStructure2xmlFile() to write v2 files
+//								also fixed bug in readCrystalStructureXML()
 
 
 //	Rhombohedral Transformation:
@@ -2846,7 +2848,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		DoAlert 1,"\tPrint Only Basic Info to History?\r\t(do NOT print ALL atom positions)"
 		print_crystalStructure(xtal, brief=(V_flag==1))
 	elseif (stringmatch(ctrlName,"buttonWriteLattice"))	// write current lattice parameters to an xml file
-		writeCrystalStructure2xmlFile("","")
+		writeCrystalStructure2xmlFile("","",symOpAsk=1)
 	elseif (stringmatch(ctrlName,"buttonAtomView"))	// add support for AtomView
 		String cmd
 		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",\"%s\")",ba.win,SpaceGroupID
@@ -3373,14 +3375,35 @@ End
 //  ========================================================================= //
 //  ================== Start of reading/writing xml files ==================  //
 
-Function writeCrystalStructure2xmlFile(path,fname)	// writes the current xtal to an xml file
+Function writeCrystalStructure2xmlFile(path,fname, [symOp,symOpAsk])	// writes the current xtal to an xml file
 	String path									// path to write to
 	String fname								// name of file to write
+	Variable symOp								// if True, write the symmetry ops into the <space_group> section
+	Variable symOpAsk							// ask user whether to include symmetry ops
+	symOp = ParamIsDefault(symOp) || numtype(symOp) ? 0 : symOp
+	symOpAsk = ParamIsDefault(symOpAsk) || numtype(symOpAsk) ? strlen(GetRTStackInfo(2))==0 : symOpAsk
+	if (symOpAsk)
+		Prompt symOp,"Include symmetry operations in the file?", popup, "No;Yes"
+		symOp = symOp ? 2 : 1
+		DoPrompt "Symmetry", symOp		// ask user whether to include symmetry operations
+		if (V_flag)
+			return 1
+		endif
+		symOp = (symOp==2)
+	endif
 
-	STRUCT crystalStructure xtal				// this sructure is written in this routine
+	if (symOpAsk)
+		printf "writeCrystalStructure2xmlFile(\"%s\",\"%s\"",path,fname
+		if (symOp)
+			printf ", symOp=1"
+		endif
+		printf ")\r"
+	endif
+
+	STRUCT crystalStructure xtal			// this sructure is written in this routine
 	FillCrystalStructDefault(xtal)
 	ForceLatticeToStructure(xtal)
-	String cif = crystalStructure2xml(xtal,NEW_LINE)	// convert xtal to cif
+	String cif = crystalStructure2xml(xtal,NEW_LINE,symOp=symOp)	// convert xtal to cif
 
 	Variable f
 	Open/C="R*ch"/F="XML Files (*.xml):.xml;"/M="file to write"/P=$path/Z=2 f as fname
@@ -3388,6 +3411,7 @@ Function writeCrystalStructure2xmlFile(path,fname)	// writes the current xtal to
 		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NEW_LINE+NEW_LINE
 		FBinWrite f, cif
 		Close f
+		printf "\twrote to file  \"%s\"\r",S_fileName
 	endif
 	return V_flag
 End
@@ -3655,13 +3679,13 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// process the space gorup info
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
-	if (strlen(space_group)<2)
-		space_group = cif										// there is no <space_group> element, look in <cif>
-	endif
 	String id_Name="id", IT_name="IT_number"							// version 2 names
 	if (strlen(space_group) < 2)												// version 1 names
 		id_Name = "space_group_"+id_Name
 		IT_name = "space_group_"+IT_name
+	endif
+	if (strlen(space_group)<2)
+		space_group = cif										// there is no <space_group> element, look in <cif>
 	endif
 	// Done with version 2.0 changes here
 
@@ -4000,11 +4024,14 @@ Static Function/T AddNum2Base(base,num)
 End
 
 
-Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal structure to xml sting (suitable for a file)
+Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of xtal structure to xml sting (suitable for a file) Version 2
 	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
 	String NL											// new line string (probably "\r" or "\n")
+	Variable symOp										// if True, write the symmetry ops into the <space_group> section
+	symOp = ParamIsDefault(symOp) || numtype(symOp) ? 0 : symOp
 
-	String cif="<cif>"+NL
+	Variable dim=3, m, N=0
+	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
 	String str, unit=" unit=\"nm\""
 
 	if (strlen(xtal.desc))
@@ -4013,16 +4040,37 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	if (strlen(xtal.formula))
 		cif += "\t<chemical_formula_structural>"+xtal.formula+"</chemical_formula_structural>"+NL
 	endif
+
+	// <space_group> section
+	cif += "\t<space_group>"+NL
 	if (numtype(xtal.SpaceGroup)==0)
-		cif += "\t<space_group_IT_number>"+num2istr(xtal.SpaceGroup)+"</space_group_IT_number>"+NL
+		cif += "\t\t<IT_number>"+num2istr(xtal.SpaceGroup)+"</IT_number>"+NL
 	endif
+	String op, symOps=""
 	if (strlen(xtal.SpaceGroupID)>0)
-		cif += "\t<space_group_id>"+xtal.SpaceGroupID+"</space_group_id>"+NL
+		cif += "\t\t<id>"+xtal.SpaceGroupID+"</id>"+NL
+		Variable idNum = xtal.SpaceGroupIDnum		// index to the SpaceGroupID, allowed range is [1, 530]
+		if (idNum>0)
+			cif += "\t\t<H-M>"+getHMsym2(idNum)+"</H-M>"+NL
+			if (symOp)										// set symmetry ops if requested
+				symOps = setSymLineIDnum(idNum)
+				N = ItemsInList(symOps)
+			endif
+		endif
 	endif
+	if (N>0)													// also write the symmetry ops
+		sprintf str, "\t\t<symops N=\"%d\">", N
+		cif += str + NL
+		for (m=0;m<N;m+=1)
+			op = StringFromList(m,symOps)			// each op is something like:  "-x,y+1/2,-z"
+			sprintf str, "\t\t\t<op>\"%s\" \"%s\" \"%s\"</op>", StringFromList(0,op,","), StringFromList(1,op,","), StringFromList(2,op,",")
+			cif += str + NL
+		endfor
+		cif += "\t\t</symops>"+NL
+	endif
+	cif += "\t</space_group>"+NL
 
-	Variable alphaT = xtal.alphaT
-	alphaT = alphaT>0 ? alphaT : NaN
-
+	// <cell> section
 	cif += "\t<cell>"+NL
 	cif += "\t\t<a"+unit+">"+num2StrFull(xtal.a)+"</a>"+NL
 	cif += "\t\t<b"+unit+">"+num2StrFull(xtal.b)+"</b>"+NL
@@ -4034,7 +4082,7 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 		cif += "\t\t<volume>"+num2StrFull(xtal.Vc)+"</volume>"+NL
 	endif
 	if (xtal.Pressure > 0)
-		cif += "\t<pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</pressure>"+NL
+		cif += "\t\t<pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</pressure>"+NL
 	endif
 	if (numtype(xtal.Temperature)==0)
 		Variable Temperature = xtal.Temperature
@@ -4046,6 +4094,8 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 		sprintf str, "<temperature unit=\"%s\">%s</temperature>",Tunits,num2StrFull(Temperature)
 		cif += "\t\t"+str+NL
 	endif
+	Variable alphaT = xtal.alphaT
+	alphaT = alphaT>0 ? alphaT : NaN
 	if (numtype(alphaT)==0)
 		cif += "\t\t<alphaT>"+num2StrFull(alphaT)+"</alphaT>"
 		cif += "\t\t	<!-- a = ao*(1+alphaT*(TempC-22.5)) -->"+NL
@@ -4060,12 +4110,13 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	endif
 	cif += "\t</cell>"+NL
 
+	// <atom_site> sections
 	Variable i, itemp
 	for(i=0; i<xtal.N; i+=1)
 		cif += "\t<atom_site>"+NL
 		cif += "\t\t<label>"+xtal.atom[i].name+"</label>"+NL
 		cif += "\t\t<symbol>"+Z2symbol(xtal.atom[i].Zatom)+"</symbol>"+NL
-		cif += "\t\t<fract_xyz>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract_xyz>"+NL
+		cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract>"+NL
 		if (numtype(xtal.atom[i].valence)==0 && abs(xtal.atom[i].valence)<10 && abs(xtal.atom[i].valence)>0)
 			cif += "\t\t<valence>"+num2StrFull(xtal.atom[i].valence)+"</valence>"+NL
 		endif
@@ -4096,6 +4147,7 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 		cif += "\t</atom_site>"+NL
 	endfor
 
+	// <bond> sections
 	String wStr
 	for(i=0; i<xtal.Nbonds; i+=1)
 		Make/N=(xtal.bond[i].N)/FREE/D lens
