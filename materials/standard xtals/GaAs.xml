@@ -3,6 +3,7 @@
 <cif version="2" dim="3">
 	<chemical_name_common>GaAs</chemical_name_common>
 	<space_group>
+		<id>216</id>
 		<IT_number>216</IT_number>
 		<H-M>F-43m</H-M>
 	</space_group>
@@ -17,17 +18,13 @@
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">370</DebyeTemperature>
 	</atom_site>
 	<atom_site>
 		<label>As</label>
 		<symbol>As</symbol>
-		<fract_x>0.25</fract_x>
-		<fract_y>0.25</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract>0.25 0.25 0.25</fract>
 		<DebyeTemperature unit="K">370</DebyeTemperature>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ga" n1="As">0.2448</bond_chemical>
