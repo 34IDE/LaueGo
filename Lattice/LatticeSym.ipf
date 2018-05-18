@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.52
+#pragma version = 6.53
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -16,6 +16,7 @@ Static Constant ELEMENT_Zmax = 118
 //Static strConstant BAR_FONT_ALWAYS = "Arial"	//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
+Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible symmetry operations
 
 
 //	remember to execute    InitLatticeSymPackage()
@@ -214,6 +215,7 @@ Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put 
 //	with version 6.51, modified readCrystalStructureXML() to read v2 files, and <pressure> shold be all lower case
 //	with version 6.52, modified crystalStructure2xml() and writeCrystalStructure2xmlFile() to write v2 files
 //								also fixed bug in readCrystalStructureXML()
+//	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
 
 
 //	Rhombohedral Transformation:
@@ -3930,41 +3932,60 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	return 0
 End
 //
-Static Function/T GetSymLinesFromXMLbuffer(buf)		// get the sym ops from an xml buffer
-	String buf			// content of an xml file
+Static Function/T GetSymLinesFromXMLbuffer(buf)		// get the sym ops from an xml buffer (works for both v1 & v2)
+	String buf			// content of xml that contains the space group information
 
-	String symOps = XMLtagContents2List("symmetry_equiv_pos_as_xyz",buf)
-	if (strlen(symOps)<1)
-		symOps = XMLtagContents2List("space_group_symop_operation_xyz",buf)
+	String symops = XMLtagContents("symops",buf), lines="", str
+	if (strlen(symops)>5)										// version 2, space_group should contain the symmetry lines
+		Variable i, start=0
+		for (i=0;i<MAXnumSymmetyrOps;i+=1)					// loop over all symmetry ops (usually don't reach MAXnumSymmetyrOps)
+			str = XMLtagContents("op",symops, start=start)
+			if (strlen(str)<1)									// no more symmetry ops, done
+				break
+			endif
+			lines += str + ";"									// and add to lines
+		endfor
+		do
+			lines = ReplaceString("  ",lines," ")			// change all double spaces to single
+		while(strsearch(lines,"  ",0) >= 0)
+		lines = ReplaceString("\" \"",lines,",")		// change to comma separated
+		lines = ReplaceString("\"",lines,"")				// remove any remaining double-quotes
+
+	else																// try as version 1
+		lines = XMLtagContents2List("symmetry_equiv_pos_as_xyz",buf)
+		if (strlen(lines)<1)
+			lines = XMLtagContents2List("space_group_symop_operation_xyz",buf)
+		endif
 	endif
-	symOps = ReplaceString(" ",symOps,"")					// no spaces in the symmetry operations
-	return symOps
+
+	lines = ReplaceString(" ",lines,"")					// no spaces in the symmetry operations
+	return lines
 End
 //
 Static Function ForceXtalAtomNamesUnique(xtal)		// forces all of the xtal atom names to be unique
 	STRUCT crystalStructure &xtal
 
 	Variable N=xtal.N
-	Make/T/N=(N)/FREE all=xtal.atom[p].name	// holds all the names
+	Make/T/N=(N)/FREE all=xtal.atom[p].name				// holds all the names
 
 	String namej, base, nameTest
 	Variable i,j,num
 	for (j=0;j<(N-1);j+=1)
-		namej = all[j]								// check this name against others
-		if (strlen(namej)<1)						// skip empty names
+		namej = all[j]												// check this name against others
+		if (strlen(namej)<1)									// skip empty names
 			continue
 		elseif (countDuplicateNames(all,namej)>1)		// will found duplicates (always find 1)
 			splitLabel(namej,base,num)
-			if (numtype(num))						// try to change "Cu" -> "Cu1"
+			if (numtype(num))										// try to change "Cu" -> "Cu1"
 				num = 1
 				nameTest = AddNum2Base(base,num)
-				if (countDuplicateNames(all,nameTest)<1)	// base+"1" does not exist
+				if (countDuplicateNames(all,nameTest)<1)// base+"1" does not exist
 					all[j] = nameTest
 				endif
 			endif
 
-			for (i=j+1;i<N;i+=1)					// look for matches to namej
-				if (StringMatch(all[i],namej))	// need to change all[i]
+			for (i=j+1;i<N;i+=1)								// look for matches to namej
+				if (StringMatch(all[i],namej))				// need to change all[i]
 					do
 						num += 1
 						nameTest = AddNum2Base(base,num)
@@ -4719,8 +4740,8 @@ Static Function SymOpsMatchesID(id,symList,[printIt])
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	String internal = setSymLineID(id)
-	Variable i,N=ItemsInList(internal)
-	if (ItemsInList(symList) != N)
+	Variable i,N=ItemsInList(internal), NsymOps=ItemsInList(symList)
+	if (NsymOps != N)
 		return 0											// number of operations differ
 	endif 
 

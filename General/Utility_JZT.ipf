@@ -1437,7 +1437,7 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 End
 
 
-ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //reads a tag contensts and converts it to a list
+ThreadSafe Function/T XMLtagContents2List(xmltag,buf,[occurance,delimiters]) //reads a tag contents and converts it to a list
 	String xmltag
 	String buf
 	Variable occurance				// use 0 for first occurance, 1 for second, ...
