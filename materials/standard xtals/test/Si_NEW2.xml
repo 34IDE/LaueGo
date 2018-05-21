@@ -27,7 +27,7 @@
 	<citation>physics.nist.gov/cuu/Constants/index.html;</citation>
 
 	<space_group>
-		<symops N="192">
+		<symops>
 			<op>"x" "y" "z"</op>
 			<op>"-x+1/4" "-y+1/4" "-z+1/4"</op>
 			<op>"-y+1/4" "x+1/4" "z+1/4"</op>
