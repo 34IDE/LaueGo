@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.55
+#pragma version = 2.56
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -15,6 +15,7 @@
 // version 2.50 Fill_Q_Positions(), added optional dQ, and a DEFAULT_dQfactor to allow user tweaking of dQ
 // version 2.51 changed all special Mac character, should print better with Windows & Igor7
 // version 2.52 moved defn. of Gmu & PLUSMINUS to Utility_JZT.ipf
+// version 2.56 Fixed bug in Fill_Q_Positions(), it now recalculates sinTheta array when the depth changes
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -518,6 +519,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	elseif (WaveExists(dark) && varyROI)
 		return ERROR_Fill_Q_Positions("You cannot use a dark image when you are also varying the ROI size", progressWin)
 	endif
+	if (numtype(depth)==0)
+		depth_FillQvsPositions = NaN									// if user passed a valid depth, ignore file values, use passed depth
+	endif
 	ProgressPanelUpdate(progressWin,0,status="done with headers",resetClock=1)
 
 	if (WaveExists(badPixelsAll))
@@ -545,6 +549,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Prompt Nz,"# of points (NOT intervals) in depth"
 	Prompt depth,"depth to assume (micron)"
 	if (Nz<=1 && numtype(depth0))
+		depth = numtype(depth) ? depth0 : depth
 		DoPrompt "scan sizes",dx,Nx,dy,Ny,depth
 		depth = numtype(depth) ? 0 : depth
 		Nz = 0
@@ -570,7 +575,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	WaveStats/M=1/Q depth_FillQvsPositions
 	depth0 = V_min
 	depth0 = numtype(depth0) ? depth : depth0
-	depth0 = numtype(depth0) ? 0 : depth0
+	depth0 = numtype(depth0) ? 0 : depth0					// depth0 is lowest (or only) depth in this set of data
 	WaveStats/M=1/Q keV_FillQvsPositions
 	if (V_numNans)
 		DoAlert 0, "There were "+num2istr(V_numNans)+" bad images found, they will be skipped"
@@ -715,7 +720,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	ProgressPanelUpdate(progressWin,0,status="making sin(theta) array",resetClock=1)
 	// This sin(theta) array is the size of roiAll
 //print "roiAll =",imageROIstruct2str(roiAll)
-	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth)	// make an array the same size as roiAll, but filled with sin(theta) for this energy
+	Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth0)	// make an array the same size as roiAll, but filled with sin(theta) for this depth
+	Variable depthSinTheta=depth0						// depth at which sinThetaAll was calculated
+	Variable depthThreshold = min( geo.d[dNum].sizeX / geo.d[dNum].Nx, geo.d[dNum].sizeY / geo.d[dNum].Ny)	// change sinThetaAll at this depth change
 //print "sinThetaAll",NumberByKey("startx",note(sinThetaAll),"="), NumberByKey("endx",note(sinThetaAll),"="), NumberByKey("starty",note(sinThetaAll),"="), NumberByKey("endy",note(sinThetaAll),"="),"  ",DimSize(sinThetaAll,0), DimSize(sinThetaAll,1)
 
 	STRUCT imageROIstruct ROIsinTheta
@@ -727,7 +734,7 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	Variable sec3=0,timer3
 	ProgressPanelUpdate(progressWin,0,status="processing "+num2istr(N1N2)+" images",resetClock=1)	// update progress bar
 	// for all the N1N2 files (go over range), compute Qhist for each image
-	Variable ipnt, j, k, Nimage
+	Variable ipnt, j, k, Nimage, depthi
 	for (m1=str2num(range1),ipnt=0,Ncoords=0; numtype(m1)==0; m1=NextInRange(range1,m1))	// loop over range, all the images
 		for (m2=str2num(range2); numtype(m2)==0; m2=NextInRange(range2,m2),ipnt+=1)					// loop over range2
 			if (mod(ipnt,100)==0)
@@ -740,6 +747,12 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 			if (!WaveExists(image))
 				printf "\r  could not load image named '%s'\r",name
 				continue
+			endif
+
+			depthi = depth_FillQvsPositions[max(ipnt-1,0)]
+			if (abs(depthSinTheta-depthi)>depthThreshold)	// depth changed by more than depthThreshold, recalculate sinThetaAll
+				Wave sinThetaAll = MakeSinThetaArray(roiAll,geo.d[dNum],wnote,depth=depth0)	// remake array sinThetaAll at new depth
+				depthSinTheta = depthi						// save depth at which sinThetaAll was calculated
 			endif
 
 			if (!imageMatchesROI(image,ROIsinTheta))		// this image has a new roi, so re-set sinTheta & maskLocalSub
