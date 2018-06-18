@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.60
+#pragma version = 4.61
 // #pragma hide = 1
 
 Menu "Graph"
@@ -223,6 +223,23 @@ Function/S MenuItemIfTopGraphImage(item)
 		return "("+item					// top graph does not contain an image, so disable menu item
 	endif
 	return item
+End
+
+// enable menu item when a particular wave class is displayed (on a graph, table, or gizmo)
+Function/S MenuItemIfWaveClassDisplayed(item,classes,optionsStr,flag)
+	String item					// item name to return, or "(item" to disable
+	String classes				// list of classes to check for (semi-colon separated)
+	String optionsStr			// options that are found in WaveList function optionsStr
+	Variable flag				// use: 1=graphs, 2=tables, 4=gizmos, or any sum of 1,2,4.  -1 or 7 gives all
+	String wList=WaveListClass(classes,"*",optionsStr)	// a list of waves in requested classes
+	Variable i, N=ItemsInList(wList)
+	for (i=0;i<N;i+=1)
+		WAVE wav=$StringFromList(i,wList)			// for each ODF wave
+		if (strlen(WindowsWithWave(wav,flag))>0)// found a window displaying wav
+			return item
+		endif
+	endfor
+	return "("+item										// found none
 End
 
 // menu active only if a graph is displayed, useful when using a Cursor on the graph
