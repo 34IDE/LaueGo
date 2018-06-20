@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.61
+#pragma version = 4.62
 // #pragma hide = 1
 
 Menu "Graph"
@@ -90,6 +90,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //	7	WaveListClass() & WaveInClass(), used for handling the "waveClass=ccccc;" in wave notes
 //		  also AddClassToWaveNote(), RemoveClassFromWaveNote(), ExcludeWavesInClass(), IncludeOnlyWavesInClass()
 //		  IncludeOnlyWavesInClass(), removes waves from the list if they are not of correct class
+//		  WindowsWithClass(), 			return list of windows that display a wave of appropriate waveClass
 //		  FoldersWithWaveClass(), returns list of sub-folders with wave of a certain class
 //		  TraceNamesInClass(), like TraceNameList(), but limit result to a list of wave classes
 //	8	Contains lots of utility stuff
@@ -105,6 +106,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		NextLineInBuf(), returns next line in buf (which has <nl> separators) each time it is called.
 //		AxisLabelFromGraph(), gets the axis label
 //		WindowsWithWave(w,flag), return list of all windows with w, flag (a mask): graph=1, table=2, gizmo=4
+//		isWaveOnGizmo(gName,ww),  returns True when ww is in object list of Gizmo
 //		DisplayTableOfWave(...), display table taking into account any col/row labels
 //		getListOfTypesInFile(), returns file type (using the $filetype) in my old standard files (trying to start only using xml)
 //		DrawMarker(), draw a marker
@@ -1784,8 +1786,12 @@ Function/T WaveListClass(waveClassList,search,options,[all,win,fldr])
 	for (m=0, name=StringFromList(0,in); strlen(name); m+=1,name=StringFromList(m,in))
 		name = fldr+name
 		if (strlen(win))
-			CheckDisplayed/W=$win $name
-			displayed = !(!V_flag)
+			if (WinType(win)==GIZMO_WIN_TYPE)		// a gizmo, cannot use CheckDisplayed
+				displayed = isWaveOnGizmo(win, $name)
+			else
+				CheckDisplayed/W=$win $name
+				displayed = !(!V_flag)
+			endif
 		endif
 		if (displayed && WaveInClass($name,waveClassList,all=all))
 			out += name+";"
@@ -1913,6 +1919,28 @@ ThreadSafe Function/T ExcludeWavesInClass(inList,excludeClassList)
 		endif
 	endfor
 	return out
+End
+
+
+// return list of windows that display a wave of appropriate waveClass
+Function/S WindowsWithClass(classes,search,options,flag)
+	String classes						// a list of acceptable wave classes (semicolon separated)
+	String search						// same as first argument in WaveList()
+	String options						// same as last argument in WaveList()
+	Variable flag						// bit flag: 1=graphs, 2=tables, 4=gizmos, or any sum of 1,2,4, 7 or -1 gives all
+
+	Variable bit = flag & 3 + (flag & 4 ? GIZMO_WIN_BIT : 0)
+	String allWindows=WinList("*",";","WIN:"+num2istr(bit))
+
+	String win, wList=""
+	Variable i, N=ItemsInList(allWindows)
+	for (i=0;i<N;i+=1)
+		win = StringFromList(i,allWindows)
+		if (strlen(WaveListClass(classes,search,options,win=win)))
+			wList += win+";"
+		endif
+	endfor
+	return wList
 End
 
 
@@ -2391,6 +2419,41 @@ Function/T FindGizmosWithWave(w)	// find list of Gizmos that contain the specifi
 	endfor
 	KillWaves/Z TW_gizmoObjectList
 	return list
+End
+
+
+Function isWaveOnGizmo(gName, ww)	// returns True when ww is in object list of Gizmo
+	String gName			// name of gizmo, use "" for top gizmo
+	Wave ww					// a wave in the object list of the gizmo
+	if (!WaveExists(ww) || exists("NewGizmo")!=4)
+		return 0
+	endif
+
+#if (IgorVersion()<7)
+	if (strlen(gName))
+		Execute "GetGizmo/Z/N="+gName+" objectList"
+	else
+		Execute "GetGizmo/Z objectList"
+	endif
+	KillStrings/Z S_gizmoObjectList
+#else
+	GetGizmo/Z/N=$gName objectList
+#endif
+	Wave/T TW_gizmoObjectList=TW_gizmoObjectList
+	String objetAll="", list=""
+	Variable m
+	for (m=0;m<numpnts(TW_gizmoObjectList);m+=1)
+		objetAll += TW_gizmoObjectList[m]+";"
+	endfor
+	KillWaves TW_gizmoObjectList
+
+	objetAll = ReplaceString("=",objetAll,";")
+	objetAll = ReplaceString(",",objetAll,";")
+	objetAll = ReplaceString("}",objetAll,";")
+	objetAll = ReplaceString("{",objetAll,";")
+	objetAll = ReplaceString("\r",objetAll,";")
+	objetAll = ReplaceString("\n",objetAll,";")
+	return strsearch(objetAll,";"+GetWavesDataFolder(ww,2)+";",0,2)>=0
 End
 //
 //Function/S FindGraphsWithWave(w)	// find the graph window which contains the specified wave
