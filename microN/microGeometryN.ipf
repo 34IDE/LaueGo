@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 2.01
+#pragma version = 2.02
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -940,6 +940,196 @@ ThreadSafe Static Function SampleBad(s)
 End
 
 
+
+
+// Vectorized version of q2pixel
+// convert qvector to pixel position, find kf that goes with qvec, then call XYZ2pixelVEC()
+ThreadSafe Function/WAVE q2pixelVEC(d,qvecs,[depth])	// returns pixel position as a complex number cmplx(px,py)
+	STRUCT detectorGeometry &d
+	Wave qvecs										// qvectors[N][3], need not be normalized
+	Variable depth									// sample depth measured along the beam
+	depth = ParamIsDefault(depth) ? NaN : depth	// default is NaN, XYZ2pixel() will handle this properly
+
+	Variable N=DimSize(qvecs,0)
+	if (N==0)
+		return $""
+	elseif (N==1)
+		Variable/C pz=q2pixel(d,qvecs,depth=depth)
+		Make/N=(1,2)/D/FREE pxpy = {real(pz),imag(pz)}
+		pxpy[0][0] = real(pz)
+		pxpy[0][1] = imag(pz)
+		return pxpy
+	endif
+
+	Make/N=3/D/FREE ki={0,0,1}				// ki = geo.ki[p],  incident beam direction
+	//	normalize(ki)
+
+	MatrixOP/FREE qhats = NormalizeRows(qvecs)						// normalized q-vectors
+	MatrixOP/FREE qLens = -2*sumRows(qhats*rowRepeat(ki,N))	// lengths for qhats, note (q^ dot -ki) always positive
+
+	qLens = qLens<0 ? NaN : qLens										// theta<0, (we do not want to reflect from the back side)
+	MatrixOP/FREE kf = qhats*colRepeat(qLens,3) + rowRepeat(ki,N)	// q = kf-ki  -->  kf = q+ki
+
+	Wave pxpy = XYZ2pixelVEC(d,kf,depth=depth)
+
+	return pxpy
+End
+
+
+// Vectorized version of XYZ2pixel
+// convert a kf vector to pixel position
+ThreadSafe Function/WAVE XYZ2pixelVEC(d,xyz,[depth])	// find pixel position (px,py) where vector xyz will intercept detector
+	STRUCT detectorGeometry, &d
+	Wave xyz							// xyz[N][3], a set of 3-vectors, points in beam line coords giving the directions of ray (micron)
+	Variable depth					// sample depth measured along the beam
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth	// default is 0, the origin
+
+	Variable N=DimSize(xyz,0)
+	if (N==0)
+		return $""
+	elseif (N==1)
+		Variable px,py
+		Variable/C pz=	XYZ2pixel(d,xyz,px,py,depth=depth)
+		Make/N=(1,2)/D/FREE pxpy
+		pxpy[0][0] = real(pz)
+		pxpy[0][1] = imag(pz)
+		return pxpy
+	endif
+
+	Make/N=3/D/FREE d_P = d.P[p]
+	Make/N=(3,3)/D/FREE rho = { {d.rho00, d.rho01, d.rho02}, {d.rho10, d.rho11, d.rho12}, {d.rho20, d.rho21, d.rho22} }
+
+	MatrixOP/FREE xyzp = (rho x (xyz^t))^t - rowRepeat(d_P,N)	// xyz' = (rho x xyz) - P
+	// remember (xyz) = rho x [ (x' y' z') + P ]
+	// xyzp[][3] is now the coordinates of the pixels transformed into detector (i.e. prime) space
+	//
+	// for the line that goes from  {x',y',z'} to {x0',y'0',z0'}, where does it intersect the z'=0 plane?  NOTE: line goes from detector to sample
+	// the condition is:  z' + t*(z0'-z') = 0,  from vector equation of a line r = t*Ær + r',  where Ær = (ro'-r')
+	// I have NOT trapped (z'-z0')==0, this should only occur when detector surface contains the origin.
+	// Note this line runs backwards from what is normally used. Going from r to r0, this makes t closer to 0 than 1, and so should improve accuracy
+
+	MatrixOP/FREE dxyzp = -rowRepeat(d_P,N) - xyzp		// Ær', subtract origin from (xp,yp,zp), this is direction of -kf
+
+	if (depth!=0)														// a non-zero depth, so modify (xp,yp,zp) to shift the origin by depth (shifts r')
+		Make/N=3/D/FREE depthVec = rho[p][2] * depth
+		MatrixOP/FREE xyzp = xyzp + rowRepeat(depthVec,N)
+		// remember:   xyz' = ( rho x xyz ) - P
+		// shifted (xp,yp,zp) by depth*ki, all in prime space
+		// This assumes that ki = {0,0,1}
+	endif
+
+	// find t,  where the line intercepts the detector, t = -zp/dzp
+	MatrixOP/FREE tvec = - col(xyzp,2) / col(dxyzp,2)	// for t==0, the point (x'y'z') already lies on the plane
+	tvec = tvec > 1 ? NaN : tvec									// ray pointing backwards through other side of origin, (going away from detector)
+
+	MatrixOP/FREE xvec = col(xyzp,0) + tvec*col(dxyzp,0)	// x = xp + t*dxp
+	MatrixOP/FREE yvec = col(xyzp,1) + tvec*col(dxyzp,1)	// y = yp + t*dyp
+
+	Variable Xscale=d.Nx/d.sizeX, Xoffset=0.5*(d.Nx-1)
+	Variable Yscale=d.Ny/d.sizeY, Yoffset=0.5*(d.Ny-1)
+	MatrixOP/FREE pxvec = xvec * Xscale + Xoffset			// convert (xy0) in prime space to pixels
+	MatrixOP/FREE pyvec = yvec * Yscale + Yoffset
+
+	Make/N=(N,2)/D/FREE pxpy
+	pxpy[][0] = pxvec[p]
+	pxpy[][1] = pyvec[p]
+
+	if (NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT))
+		//	peakUncorrect(d,px,py)	// go from true peak position to the real peak position (put distortion back in), just invert peakCorrect()
+		print "Cannot call XYZ2pixelVEC() when applying a Distortion Correction"
+		return $""
+	endif
+
+	return pxpy
+End
+//
+//	Function test_q2pixelVEC(N,depth)
+//		Variable N
+//		Variable depth
+//	
+//		Variable N_PRINT = 5
+//	
+//		STRUCT microGeometry g
+//		FillGeometryStructDefault(g)
+//		STRUCT detectorGeometry d
+//		d = g.d[0]
+//	
+//		print "Old Method:"
+//		SetRandomSeed 0.5
+//		Make/N=(N,2)/I/O pixels0, pixels1=0
+//		pixels0 = round(enoise(1000) + 1000)
+//		pixels0 = limit(pixels0,0,2047)
+//		if (N<=N_PRINT)
+//			printWave(pixels0,name="\t--- pixels0",brief=1)
+//		endif
+//	
+//		Make/N=(N,3)/D/FREE qvecs=NaN
+//		Make/N=3/D/FREE qvec
+//		Variable/C pz
+//		Variable i, px,py
+//	
+//		for (i=0;i<N;i+=1)
+//			pixel2q(d,pixels0[i][0],pixels0[i][1],qvec,depth=depth)	
+//			qvecs[i][] = qvec[q]
+//		endfor
+//		if (N<=N_PRINT)
+//			printWave(qvecs,name="\t--- qvecs",brief=1)
+//		endif
+//	
+//		Variable tick=stopMSTimer(-2)
+//		for (i=0;i<N;i+=1)
+//			qvec = qvecs[i][p]
+//			pz = q2pixel(d,qvec,depth=depth)
+//			pixels1[i][0] = real(pz)
+//			pixels1[i][1] = imag(pz)
+//		endfor
+//		Variable secOLD = (stopMSTimer(-2)-tick)*1e-6
+//	
+//		MatrixOP/FREE var = sum(magSqr(pixels1-pixels0)))
+//		Variable rmsOLD = sqrt(var[0]/N)
+//		if (N<=N_PRINT && rmsOLD>1e-7)
+//			printWave(pixels1,name="\t--- pixels1",brief=1)
+//		endif
+//		printf "  Using Old method:  rms err = %.3g,   in  %.4g sec\r",rmsOLD,secOLD
+//	
+//		print "\r  New Method:\r"
+//		tick=stopMSTimer(-2)
+//	 	Wave pixelsVec = q2pixelVEC(d,qvecs, depth=depth)
+//		Variable secNEW = (stopMSTimer(-2)-tick)*1e-6
+//		Duplicate/O pixelsVec,pixelsVec2 
+//		if (N<=N_PRINT)
+//			printWave(pixelsVec,name="\t--- pixelsVec",brief=1)
+//		endif
+//	
+//		MatrixOP/FREE var = sum(magSqr(pixelsVec-pixels0)))
+//		Variable rmsNEW = sqrt(var[0]/N)
+//		if (N<=N_PRINT && rmsNEW>1e-7)
+//			printWave(pixels1,name="\t--- pixels1",brief=1)
+//		endif
+//		printf "  Using New method:  rms err = %.3g,   in  %.4g sec,  speed up by x%.3g\r",rmsNEW,secNEW, secOLD/secNEW
+//	
+//		MatrixOP/FREE diffs = sqrt(sumRows(magSqr(pixelsVec-pixels0)))
+//		WaveStats/M=1/Q diffs
+//		Variable imax=V_maxLoc
+//		Variable dx = pixelsVec[imax][0]-pixels0[imax][0]
+//		Variable dy = pixelsVec[imax][1]-pixels0[imax][1]
+//		printf "\r  max pixel difference at point %d,   distance = %g pixels\r",imax,V_max
+//		printf "pixels0[%d][] = [%.15g, %.15g]\r",imax,pixels0[imax][0],pixels0[imax][1]
+//		printf "pixelsVec[%d][] = [%.15g, %.15g],  Æpixel = %.3g, %.3g\r",imax,pixelsVec[imax][0],pixelsVec[imax][1],dx,dy
+//	
+//		// display the results
+//		CheckDisplayed pixels0
+//		if (!V_flag)
+//			Display /W=(267,50,895,635) pixels0[*][1] vs pixels0[*][0]
+//			AppendToGraph pixels1[*][1] vs pixels1[*][0]
+//			AppendToGraph pixelsVec2[*][1] vs pixelsVec2[*][0]
+//			ModifyGraph width={Aspect,1}, mode=3, tick=2, mirror=1, minor=1, lowTrip=0.001
+//			ModifyGraph marker(pixels0)=19,marker(pixels1)=8
+//			ModifyGraph rgb(pixels1)=(1,16019,65535),rgb(pixelsVec2)=(26205,52428,1)
+//			SetAxis left d.Nx,0
+//			SetAxis bottom 0,d.Ny
+//		endif 
+//	End
 
 
 // convert qvector to pixel position
