@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.22
+#pragma version = 2.23
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -7,7 +7,8 @@
 
 
 Static strConstant Q_UNITS_LIST = "1/nm;nm\\S-1\\M"
-Static Constant NUMBER_OF_GIZMO_MARKERS = 8
+Constant GIZMO_MARKERS_NUMBER = 8	// number of gizmo markers
+strConstant GIZMO_MARKERS_COLORS = "black;red;green;blue;magenta;cyan;yellow;white"
 
 
 Static Function AfterFileOpenHook(refNum,file,pathName,type,creator,kind)
@@ -39,7 +40,7 @@ End
 Static Structure GizmoMarkerInfoStruct
 	String win
 	Variable MarkerNum			// current marker number slected on panel
-	STRUCT GizmoMarkerInfoStruct1 M[NUMBER_OF_GIZMO_MARKERS]
+	STRUCT GizmoMarkerInfoStruct1 M[GIZMO_MARKERS_NUMBER]
 EndStructure
 //
 Static Structure GizmoMarkerInfoStruct1
@@ -72,7 +73,7 @@ Function/S GizmoMarkerInfo2keyVals()
 
 	String str, sn
 	Variable i, h,k,l, intensity, ix,iy,iz, x0,y0,z0
-	for (i=0;i<NUMBER_OF_GIZMO_MARKERS;i+=1)
+	for (i=0;i<GIZMO_MARKERS_NUMBER;i+=1)
 		if (info.M[i].used)
 			sn = num2istr(i)
 			x0=info.M[i].x0 ; 	y0=info.M[i].y0 ;	 z0=info.M[i].z0
@@ -185,12 +186,12 @@ End
 
 
 Function ShowHideGizmoMarker(MarkerNum,show,[info])			// show/hide a marker
-	Variable MarkerNum					// marker number to change [0,NUMBER_OF_GIZMO_MARKERS-1]
+	Variable MarkerNum					// marker number to change [0,GIZMO_MARKERS_NUMBER-1]
 	Variable show							// true=show, false=hide
 	STRUCT GizmoMarkerInfoStruct &info
 
 	MarkerNum = round(MarkerNum)
-	if (!(MarkerNum==limit(MarkerNum,0,NUMBER_OF_GIZMO_MARKERS-1)))
+	if (!(MarkerNum==limit(MarkerNum,0,GIZMO_MARKERS_NUMBER-1)))
 		return 1
 	endif
 
@@ -600,7 +601,7 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 
 	String list=""
 	Variable i
-	for (i=0;i<NUMBER_OF_GIZMO_MARKERS;i+=1)
+	for (i=0;i<GIZMO_MARKERS_NUMBER;i+=1)
 		if (i!=info.MarkerNum && info.M[i].used)
 			list += info.M[i].MarkerName+";"
 		endif
@@ -1268,7 +1269,7 @@ Static Function GizmoMarkerInfo(info)		// returns number of markers displayed
 	info.MarkerNum = V_Value-1
 
 	Variable Ndisplay=0, i				// i must lie in range [0,7]
-	for (i=0;i<NUMBER_OF_GIZMO_MARKERS;i+=1)
+	for (i=0;i<GIZMO_MARKERS_NUMBER;i+=1)
 		Ndisplay += (GizmoMarkerInfo1(info.M[i],win,i)==0)
 	endfor
 	return Ndisplay
@@ -1277,7 +1278,7 @@ End
 Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	STRUCT GizmoMarkerInfoStruct1 &M
 	String win
-	Variable MarkerNum					// must lie in range [0, NUMBER_OF_GIZMO_MARKERS-1]
+	Variable MarkerNum					// must lie in range [0, GIZMO_MARKERS_NUMBER-1]
 	MarkerNum = round(MarkerNum)
 	Init_GizmoMarkerInfoStruct1(M)	// set all values for unsued
 
@@ -1414,7 +1415,7 @@ Static Function PrintGizmoMarkerInfoStruct(info)
 	Variable x0,y0,z0, point, ix,iy,iz, intensity, h,k,l
 	String xUnit,yUnit,zUnit
 	Variable i
-	for (i=0;i<NUMBER_OF_GIZMO_MARKERS;i+=1)
+	for (i=0;i<GIZMO_MARKERS_NUMBER;i+=1)
 		if (info.M[i].used)
 			print " "
 			printf "for marker%d,  '%s' on wave '%s'%s\r",i,info.M[i].MarkerName,info.M[i].wName,SelectString(i==info.MarkerNum,"","\t\t**** Selected Marker ****")
@@ -1515,8 +1516,7 @@ Function AddGizmoMovieFrame_Markers(gm,data)
 
 	Variable MarkerNum=NumberByKey("num",data,"=",",")				// marker number [0,7]
 	if (numtype(MarkerNum))
-		String colors="black;red;green;blue;magenta;cyan;yellow;white"
-		Make/N=8/I/FREE iwave=WhichListItem(StringFromList(p,colors),data,",")
+		Make/N=8/I/FREE iwave=WhichListItem(StringFromList(p,GIZMO_MARKERS_COLORS),data,",")
 		WaveStats/Q/M=1 iwave
 		MarkerNum = V_maxloc
 	endif
