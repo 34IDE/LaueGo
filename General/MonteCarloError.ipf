@@ -240,12 +240,12 @@ Static Function ErrorFromMonteCarlo(MC,hist)// fills MC structure with info abou
 		return 1
 	endif
 
+	Variable i, N, Ntotal, tol=TOL_FRACT
 	if (hist)
 		Make/N=(MC.Nmax,MC.Ny)/D/FREE AllValues=NaN	// holds values to be histogramed
+		tol /= 100										// use finer tol when histograming, to make a nicer histogram
 	endif
 	Make/N=(MC.NY)/D/FREE sumY2=0, sumY=0, avg=NaN, sdev, diff, xbar, changing
-	Variable tol = hist ? TOL_FRACT/100 : TOL_FRACT	// use finer tol when histograming, to make a nicer histogram
-	Variable i, N, Ntotal
 	for (i=0,N=0,Ntotal=0; i< MC.Nmax; i+=1)// loop until errors are good enough, or reach Nmax evaluations
 		xs = xVal[p] + gnoise(xErr[p])			// next set of x values with errors added
 		if (isVec)
