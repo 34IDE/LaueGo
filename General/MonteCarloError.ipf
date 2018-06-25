@@ -1,14 +1,15 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 1.01
+#pragma version = 1.02
 #pragma ModuleName=MCerror
 
 Static Constant MCerrorMaxXvals=20,  MCerrorMaxYvals=10
 
-Static Constant tol = 2e-4				// fractional tolerance change in result for stopping
+Static Constant TOL_FRACT = 2e-4				// fractional tolerance change in result for stopping
 
 
 Menu "Macros"
 	"Propogate Errors thru Function...", ErrorThruFunction("", $"", $"")
+	MenuItemIfWaveClassExists("Graph Monte Carlo Error Histogram","errorHistogramMC","DIMS:1"), GraphMCerrorHistogram($"")
 End
 
 //	August, 2017, 0.01, start
@@ -18,6 +19,8 @@ End
 //		There are TWO styles of functions:
 //		genericRadius(xVals) or  MonteCarloFuncitonProto(xVals)  returns a real scalar
 //		genericRadiusW(xVals) or MonteCarloFuncitonProtoW(xVals) returns a vector of reals
+//
+//	June 25, 2018, 1.02, added support for showing histograms of the function({x1,x2,...}) = {y1,y2,...}
 
 
 
@@ -65,12 +68,13 @@ End
 //		STRUCT MCerrorStructure MC				// describes the error from a Monte Carlo error analysis
 //		MCerror#Init_MCerrorStructure(MC)
 //		FUNCREF MonteCarloFuncitonProto func = genericRadius
+//		MC.Nmax = 10000
 //		MC.Nx = 3
 //		MC.xVal[0] = 3		;	MC.xErr[0] = 0.01
 //		MC.xVal[1] = 1		;	MC.xErr[1] = 1
 //		MC.xVal[2] = 0.2	;	MC.xErr[2] = 0.1
 //		MC.funcName = StringByKey("NAME",FuncRefInfo(func))
-//		if (MCerror#ErrorFromMonteCarlo(MC))				// returns value and error of func(xVal,xErr)
+//		if (MCerror#ErrorFromMonteCarlo(MC,1))		// returns value and error of func(xVal,xErr)
 //			print "ERROR -- failure calling ErrorFromMonteCarlo()"
 //		else
 //			print MCerror#MCerrorStructure2str(MC)
@@ -98,15 +102,17 @@ End
 
 
 
-Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, Nmax, printIt])
+Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, Nmax, hist, printIt])
 	// returns result of error propogation as a "key=value;" list
 	String funcName						// function(vector), returns either a scalar or a vector
 	Wave xWave								// x values (or 2 columns with x & err)
 	Wave errWave							// errors, if xWave has 2 columns, then errWave can be NULL
 	STRUCT MCerrorStructure &MC		// OPTIONAL, will be filled by this function (only an output)
 	Variable Nmax							// OPTIONAL, max number of evaluations to use. If not passed, use 1e6, it usually stops first
+	Variable hist							// OPTIONAL, if True, also save a histogram of compupted values named HistMCerror
 	Variable printIt
 	Nmax = ParamIsDefault(Nmax) || numtype(Nmax) || Nmax<2 ? 1e6 : Nmax
+	hist = ParamIsDefault(hist) || numtype(hist) ? 0 : hist
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRtStackInfo(2))==0 : printIt
 
 	if (!WaveExists(xWave) || strlen(FunctionInfo(funcName))<1)
@@ -117,10 +123,13 @@ Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, Nmax, printIt])
 		Prompt funcName, "Function Name", popup, flist
 		Prompt xName, "X Values", popup, wlist1+wlist2
 		Prompt errName, "Errors of X Values", popup, wlist1+"--none--"
-		DoPrompt "Choose for Errors", funcName, xName, errName
+		Prompt hist, "make histograms", popup, "NO Histogram Wave;Make Histogram Wave"
+		hist = hist ? 2 : 1
+		DoPrompt "Choose for Errors", funcName, xName, errName, hist
 		if (V_flag)
 			return ""
 		endif
+		hist = hist==2
 		errName = ReplaceString("--none--",errName,"")
 		Wave xWave=$xName
 		Wave errWave=$errName
@@ -177,7 +186,7 @@ Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, Nmax, printIt])
 		MClocal.xErr[i] = errs[i]
 	endfor
 
-	Variable err = ErrorFromMonteCarlo(MClocal)// get errors for func(xVal,xErr)
+	Variable err = ErrorFromMonteCarlo(MClocal,hist)// get errors for func(xVal,xErr)
 	if (!ParamIsDefault(MC))							// MC was passed, fill it
 		MC = MClocal
 	endif
@@ -192,8 +201,9 @@ Function/S ErrorThruFunction(funcName, xWave, errWave, [MC, Nmax, printIt])
 End
 
 
-Static Function ErrorFromMonteCarlo(MC)		// fills MC structure with info about errors of func(xVal), loops until avg is stable
+Static Function ErrorFromMonteCarlo(MC,hist)// fills MC structure with info about errors of func(xVal), loops until avg is stable
 	STRUCT MCerrorStructure &MC					// describes the error from a Monte Carlo error analysis
+	Variable hist										// if True, also save a histogram named HistMCerror
 
 	Variable tick=stopMSTimer(-2)
 	Make/N=(MC.NX)/D/FREE xVal = MC.xVal[p]
@@ -230,7 +240,11 @@ Static Function ErrorFromMonteCarlo(MC)		// fills MC structure with info about e
 		return 1
 	endif
 
+	if (hist)
+		Make/N=(MC.Nmax,MC.Ny)/D/FREE AllValues=NaN	// holds values to be histogramed
+	endif
 	Make/N=(MC.NY)/D/FREE sumY2=0, sumY=0, avg=NaN, sdev, diff, xbar, changing
+	Variable tol = hist ? TOL_FRACT/100 : TOL_FRACT	// use finer tol when histograming, to make a nicer histogram
 	Variable i, N, Ntotal
 	for (i=0,N=0,Ntotal=0; i< MC.Nmax; i+=1)// loop until errors are good enough, or reach Nmax evaluations
 		xs = xVal[p] + gnoise(xErr[p])			// next set of x values with errors added
@@ -244,6 +258,9 @@ Static Function ErrorFromMonteCarlo(MC)		// fills MC structure with info about e
 		if (numtype(sum(ys))==0)
 			sumY2 += ys*ys								// accumumlate valid values for statistics
 			sumY += ys
+			if (hist)
+				AllValues[N][] = ys[q]				// a valid result, accumumlate it for statistics
+			endif
 			N += 1										// this is a valid result (ys is not Inf or NaN)
 		endif
 
@@ -258,17 +275,51 @@ Static Function ErrorFromMonteCarlo(MC)		// fills MC structure with info about e
 			endif
 		endif
 	endfor
+	if (hist)
+		Redimension/N=(N,-1) AllValues			// trim off NaN's
+	endif
 
 	// assign results
 	MC.N = N												// number of VALID evaluations of function
 	MC.Ntotal = Ntotal								// total number of times function was called
-	for (i=0;i<MC.NY;i+=1)
+	for (i=0; i<MC.NY; i+=1)
 		MC.value[i] = value[i]						// set the target value and standard deviation about target value
-		MC.err[i] = sqrt( (sumY2[i] - 2*value[i]*sumY[i] + N*value[i]*value[i])/(N-1) )
+		MC.err[i] = sqrt( (sumY2[i] - 2*value[i]*sumY[i] + N*value[i]*value[i])/N )
 		MC.avg[i] = avg[i]							// average value of function (using only valid values), NOT value
 		MC.sdev[i] = sdev[i]						// standard deviation using N evaluations
 	endfor
 	MC.seconds = (stopMSTimer(-2)-tick)*1e-6
+
+	if (hist)											// make the histograms
+		String names="HistMCerror;"
+		for (i=1;i<MC.NY;i+=1)
+			names += "HistMCerror"+num2istr(i)+";"
+		endfor
+		names = TrimBoth(names,chars=";")
+		String wnote = ReplaceStringByKey("waveClass","", "errorHistogramMC","=")
+		wnote = ReplaceStringByKey("funcName",wnote, MC.funcName,"=")
+		wnote = ReplaceNumberByKey("Ny",wnote,MC.Ny,"=")
+		wnote = ReplaceNumberByKey("Nx",wnote,MC.Nx,"=")
+		wnote = ReplaceNumberByKey("N",wnote,N,"=")
+		wnote = ReplaceNumberByKey("Ntotal",wnote,Ntotal,"=")
+		wnote = ReplaceNumberByKey("seconds",wnote,MC.seconds,"=")
+		Variable binWidth, numBins=min(1.5*sqrt(N),150)
+		Make/N=(N)/D/FREE deltas
+		for (i=0;i<MC.NY;i+=1)
+			Make/N=(numBins, MC.Ny)/D/O $StringFromList(i,names)/Wave=hhh =NaN
+			deltas = AllValues[p][i]				// calculated values, used to make a histogram for each y
+			WaveStats/M=1/Q deltas
+			binWidth = (V_max-V_min)/(numBins-1)
+			Histogram/B={V_min,binWidth,numBins}/P deltas, hhh
+			wnote = ReplaceNumberByKey("yIndex",wnote,i,"=")
+			wnote = ReplaceNumberByKey("yActual",wnote,value[i],"=")
+			wnote = ReplaceNumberByKey("errActual",wnote,MC.err[i],"=")
+			wnote = ReplaceNumberByKey("avg",wnote,MC.avg[i],"=")
+			wnote = ReplaceNumberByKey("sdev",wnote,MC.sdev[i],"=")
+			Note/K hhh, wnote
+		endfor
+		printf "Made Histograms: {%s}\r", names
+	endif
 
 	return (N<3)
 End
@@ -281,6 +332,65 @@ End
 Function/WAVE MonteCarloFuncitonProtoW(xVal)	// function(vector) --> vector (a wave with Y values)
 	Wave xVal											// the input X values
 	return $""											// should contain wave with Y values
+End
+
+
+// Graph a histogram computed by ErrorFromMonteCarlo(), for a single Y-value
+Function GraphMCerrorHistogram(hist)
+	Wave hist
+	if (!WaveExists(hist))
+		String wList=WaveListClass("errorHistogramMC","*","DIMS:1"), name=""
+		if (ItemsInList(wList) == 1)
+			name = StringFromList(0,wList)
+		elseif (ItemsInList(wList) >= 2)
+			Prompt name, "Histogram to Graph", popup, wList
+			DoPrompt "Histogram", name
+			if (V_flag)
+				return 1
+			endif
+		endif
+		Wave hist = $name
+	endif
+	if (!WaveExists(hist))
+		return 1
+	endif
+
+	String win=StringFromList(0,WindowsWithWave(hist,1))
+	if (strlen(win))							// hist is already graphed in win, bring win to front
+		DoWindow/F $win
+		return 0
+	endif
+
+	String wnote=note(hist)
+	Variable yActual = NumberByKey("yActual",wnote,"=")
+	Variable err = NumberByKey("errActual",wnote,"=")
+	Variable Ny = NumberByKey("Ny",wnote,"=")
+	Variable N = NumberByKey("N",wnote,"=")
+	Variable Ntotal = NumberByKey("Ntotal",wnote,"=")
+	Variable yIndex = NumberByKey("yIndex",wnote,"=")
+	String funcName = StringByKey("funcName",wnote,"=")
+	if (numtype(yIndex+N+Ny))
+		return 1
+	endif
+
+	Variable left=110+100*yIndex, top=60+50*yIndex
+	Display /W=(left,top,left+550,top+400) hist		// /W=(left, top, right, bottom )
+	ModifyGraph tick=2, mirror=1, minor=1, lowTrip=0.001
+
+	String title, errStr=ValErrStr(yActual,err)
+	if (Ny<2)
+		sprintf title, "%s(...) = %s\rfrom %d evaluations", funcName,errStr,N
+	else
+		sprintf title, "%s(...)[%d] = %s\rfrom %d evaluations", funcName,yIndex,errStr,N
+	endif
+	TextBox/C/N=title/F=0/S=3/B=1/A=LT title
+
+	if (numtype(yActual)==0)
+		SetDrawLayer UserFront
+		SetDrawEnv xcoord= bottom,ycoord= prel,dash= 1
+		DrawLine yActual,0,yActual,1
+	endif
+	return 0
 End
 
 
@@ -301,8 +411,8 @@ Structure MCerrorStructure			// describes the error from a Monte Carlo error ana
 	double	avg[MCerrorMaxYvals]	// average value of function (this may be different than value)
 	double	sdev[MCerrorMaxYvals]	// standard deviation of N evaluations about average
 	double	seconds						// execution time (second)
-	// NOTE, avg is likely to be shifted a bit from value if func(...) is not flat at xVal.
-	//		Consider the case of func(x) = exp(x), then symmetric errors in x tend to favor + excursions over - ones.
+	// NOTE, avg is likely to be shifted a bit from value if func(...) is not flat at xVal, or not symmetric.
+	//		Consider the case of func(x) = exp(x), then symmetric errors in x tend to favor +excursions over -excursions.
 EndStructure
 
 
