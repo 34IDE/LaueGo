@@ -343,7 +343,7 @@ Function GraphMCerrorHistogram(hist)
 		if (ItemsInList(wList) == 1)
 			name = StringFromList(0,wList)
 		elseif (ItemsInList(wList) >= 2)
-			Prompt name, "Histogram to Graph", popup, wList+"all;"
+			Prompt name, "Histogram to Graph", popup, wList+"-all-;"
 			DoPrompt "Histogram", name
 			if (V_flag)
 				return 1
@@ -351,7 +351,7 @@ Function GraphMCerrorHistogram(hist)
 		endif
 		Wave hist = $name
 
-		if (cmpstr(name,"all")==0)
+		if (cmpstr(name,"-all-")==0)
 			Variable i
 			for (i=0;i<ItemsInList(wList);i+=1)
 				Wave hist = $StringFromList(i,wList)
