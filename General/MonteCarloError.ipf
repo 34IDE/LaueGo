@@ -49,7 +49,7 @@ End
 //
 //
 //
-// two examples of its use is:
+// //	two examples of its use is:
 //
 //	Function test1()									// test using ErrorThruFunction()
 //		Make/N=3/D/FREE xWave={3,1,0.2}, xErr={0.01,1,0.1}			// separate wave for x and x-error
@@ -60,7 +60,7 @@ End
 //		ErrorThruFunction("genericRadius", xValErr, $"", printIt=1)
 //
 //		print " "
-//		ErrorThruFunction("genericRadiusW", xValErr, $"", printIt=1)
+//		ErrorThruFunction("genericRadiusW", xValErr, $"", hist=1, printIt=1)
 //	End
 //
 //
@@ -343,20 +343,32 @@ Function GraphMCerrorHistogram(hist)
 		if (ItemsInList(wList) == 1)
 			name = StringFromList(0,wList)
 		elseif (ItemsInList(wList) >= 2)
-			Prompt name, "Histogram to Graph", popup, wList
+			Prompt name, "Histogram to Graph", popup, wList+"all;"
 			DoPrompt "Histogram", name
 			if (V_flag)
 				return 1
 			endif
 		endif
 		Wave hist = $name
+
+		if (cmpstr(name,"all")==0)
+			Variable i
+			for (i=0;i<ItemsInList(wList);i+=1)
+				Wave hist = $StringFromList(i,wList)
+				if (!(WaveExists(hist)))
+					return 1
+				endif
+				GraphMCerrorHistogram(hist)	// graph all of them, this part cannot be called on this reentrant part
+			endfor
+			return 0									// end here
+		endif
 	endif
 	if (!WaveExists(hist))
 		return 1
 	endif
 
 	String win=StringFromList(0,WindowsWithWave(hist,1))
-	if (strlen(win))							// hist is already graphed in win, bring win to front
+	if (strlen(win))								// hist is already graphed in win, bring win to front
 		DoWindow/F $win
 		return 0
 	endif
