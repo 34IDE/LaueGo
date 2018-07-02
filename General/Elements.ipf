@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.08
+#pragma version = 2.09
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -69,13 +69,13 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //	Nov 17, 2015		2.00
 //		ALL other element data now comes from data/elementData.xml
 //
-//	May 3, 2015		2.01
+//	May 3, 2015			2.01
 //		moved #include "MaterialsLocate" to the ElementDataInitPackage() funciton
 //
-//	Jun 2, 2017		2.04
+//	Jun 2, 2017			2.04
 //		modified EmissionEnergies(), It can now return the average K-emission, or L, or M, or even <Ka>
 //
-//	Dec 1, 2017		2.06
+//	Dec 1, 2017			2.06
 //		added ChemFormula2IgorStr(), returns a chemical formula suitable for a graph annotation, versions for Igor 6 & 7 
 //
 //	Mar 12, 2018		2.07
@@ -83,6 +83,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	Mar 19, 2018		2.08
 //		now also reads in valenceList from the xml file
+//
+//	Jul 2, 2018			2.09
+//		fixed ProcessMTLfileContentsXML()
 
 Menu "Analysis"
       Submenu "Element"
@@ -446,7 +449,7 @@ Static Function/T ProcessMTLfileContentsXML(buf)
 	String part, symbol, formula=""
 	Variable i=0, fraction, Z
 	do
-		part = XMLattibutes2KeyList("part",buf,occurance=i)
+		part = XMLattibutes2KeyList("part",mix,occurance=i)
 		symbol = StringByKey("symbol",part,"=")
 		if (strlen(symbol)<1)
 			Z = NumberByKey("Z",part,"=")
