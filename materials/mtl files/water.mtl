@@ -3,6 +3,6 @@
 <chemical_mixture name="Water" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>H2O</chemical_formula>
 	<density unit="g/cm^3">1.0</density>
-	<part symbol="H" fraction="0.333333"></part>
-	<part symbol="O" fraction="0.666667"></part>
+	<part symbol="O" fraction="0.333333"></part>
+	<part symbol="H" fraction="0.666667"></part>
 </chemical_mixture>
