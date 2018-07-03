@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.09
+#pragma version = 2.10
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -86,6 +86,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	Jul 2, 2018			2.09
 //		fixed ProcessMTLfileContentsXML()
+//
+//	Jul 3, 2018			2.10
+//		changed ProcessMTLfileContentsXML(), it now can use fraction or massfraction (fraction is atomic)
 
 Menu "Analysis"
       Submenu "Element"
@@ -428,13 +431,12 @@ Static Function/T ProcessMTLfileContentsXML(buf)
 	String buf						// contents of a new mtl file in xml format
 
 	buf = XMLremoveComments(buf)
-	String mix = XMLtagContents("chemical_mixture",buf)
-
 	String name = StringByKey("name", XMLattibutes2KeyList("chemical_mixture",buf),"="), list=""
 	if (strlen(name))
 		list = ReplaceStringByKey("name",list,name,"=")
 	endif
 
+	String mix = XMLtagContents("chemical_mixture",buf)
 	Variable density=str2num(XMLtagContents("density",mix))
 	String unit = StringByKey("unit", XMLattibutes2KeyList("density",mix),"=")
 	unit = SelectString(strlen(unit),"g/cm^3",unit)	// no unit specified, set to default
@@ -446,25 +448,49 @@ Static Function/T ProcessMTLfileContentsXML(buf)
 		list = ReplaceNumberByKey("density",list,density,"=")
 	endif
 
-	String part, symbol, formula=""
+	String item="x", nodeList=XMLNodeList(mix)
+	Variable m=0, Npart=0
+	for (m=0;strlen(item);m+=1)								// count the number of <part> tags
+		item = StringFromList(m,nodeList)
+		Npart += cmpstr(item,"part")==0
+	endfor
+
+	Make/N=(Npart)/D/FREE fractions=0
+	Make/N=(Npart)/T/FREE symbols=""
+	String part, symbol
 	Variable i=0, fraction, Z
 	do
 		part = XMLattibutes2KeyList("part",mix,occurance=i)
+		if (strlen(part)<1)
+			break
+		endif
 		symbol = StringByKey("symbol",part,"=")
 		if (strlen(symbol)<1)
 			Z = NumberByKey("Z",part,"=")
 			symbol = StringFromList(Z-1,ELEMENT_Symbols)
 		endif
-		fraction = NumberByKey("fraction",part,"=")
-		fraction = numtype(fraction) ? 1 : fraction
-		if (strlen(symbol))
-			formula += symbol
-			if (fraction!=1)
-				formula += elements#niceFloatStr(fraction)
-			endif
+		fraction = NumberByKey("fraction",part,"=")	// atomic fraction
+		if (numtype(fraction))									// perhaps there is a mass fraction
+			fraction = NumberByKey("massfraction",part,"=")	// mass fraction, convert to atomic
+			fraction /= Element_amu( WhichListItem(symbol,ELEMENT_Symbols)+1 )
 		endif
+		fraction = numtype(fraction) ? 1 : fraction
+		fractions[i] = fraction
+		symbols[i] = symbol
 		i += 1
 	while (strlen(symbol))
+
+	Variable total = sum(fractions)							// normalize so the total fraction is 1
+	fractions /= total
+	String formula=""
+	for (i=0;i<Npart;i+=1)
+		formula += symbols[i]
+		fraction = fractions[i]
+		if (fraction!=1)
+			formula += elements#niceFloatStr(fraction)
+		endif
+	endfor
+
 	if (strlen(formula))
 		list += "formula="+formula+";"
 	endif
