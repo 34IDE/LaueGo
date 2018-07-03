@@ -42,7 +42,7 @@ density  ncomp  zed fract
 -->
 <!--   
 	SRM 1834
-	Parameter			Value
+	Parameter			Value (wt. %)
 
 	SiO2			Si	20.19
 					O	23.00 = 20.19*2*15.9994/28.0855
@@ -75,6 +75,9 @@ density  ncomp  zed fract
 
 	sum of Oxygen is 49.601
 	total is 98.808  1.2% of the mass is missing
+
+	also see:  DOI: 10.1111/j.1751-908X.1995.tb00149.x
+
 -->
 
 

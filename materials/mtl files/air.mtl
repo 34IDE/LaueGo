@@ -2,13 +2,51 @@
 
 <chemical_mixture name="air" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">1.205E-3</density>
-	<part symbol="N" fraction="0.78392"></part>
-	<part symbol="O" fraction="0.21106"></part>
-	<part symbol="Ar" fraction="0.00502"></part>
+	<part symbol="N" fraction="0.784307"></part>
+	<part symbol="O" fraction="0.210792"></part>
+	<part symbol="Ar" fraction="0.00469073"></part>
+	<part symbol="C" fraction="0.000200888"></part>
+	<part symbol="Ne" fraction="9.13036e-06"></part>
 </chemical_mixture>
 
 <!--
 AIR
 density  ncomp  zed fract
 1.205E-3   3     7  0.78392  8   0.21106   18    0.00502
+
+	https://en.wikipedia.org/wiki/Atmosphere_of_Earth
+		mole fraction		moles
+		(vol fraction)
+	N2	0.78084		-->		2*0.78084 (N)
+	O2	0.20946		-->		2*0.20946 (O)
+	Ar	0.009340	-->		0.009340 (Ar)
+	Ne	0.00001818	-->		0.00001818 (Ne)
+	CO2	0.0004		-->		0.0004 (C) + 2*0.0004 (O)
+
+
+	N2	0.78084		-->		2*0.78084 (N)
+	O2	0.20946		-->		2*0.20946 (O)
+	Ar	0.009340	-->		0.009340 (Ar)
+	Ne	0.00001818	-->		0.00001818 (Ne)
+	CO2	0.0004		-->		0.0004 (C) + 2*0.0004 (O)
+							1.99116 (total moles)
+  
+								atomic fractions
+	N	2*0.78084/1.99116	-->	0.784307
+	O2	2*0.20946/1.99116	-->	0.21039
+	Ar	0.009340/1.99116	-->	0.00469073
+	Ne	0.00001818/1.99116	-->	9.13036e-06
+	from CO2:
+	C	0.0004/1.99116		-->	0.000200888
+	O	2*0.0004/1.99116	-->	0.000401776
+
+		atomic fractions
+	N	0.784307
+	O	0.21039 + 0.000401776 = 0.210792
+	Ar	0.00469073
+	C	0.000200888
+	Ne	9.13036e-06
+total	0.99999974836
 -->
+
+

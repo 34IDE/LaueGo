@@ -59,8 +59,9 @@ Function Get_MuFormula(formula,keV)			// get mu (1/µm)
 		density = str2num(StringByKey(formula,densityList))
 	endif
 	if (numtype(density))
-		density = NumberByKey("density",LookUpMaterial(formula),"=")
-		formula = StringByKey("formula",LookUpMaterial(formula),"=")
+		list = LookUpMaterial(formula)
+		density = NumberByKey("density",list,"=")
+		formula = StringByKey("formula",list,"=")
 	endif
 
 	Variable mu = MuOverRhoFormula(formula,keV)*density/1e4
