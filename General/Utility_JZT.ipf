@@ -5793,7 +5793,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	Angstrom, Ang,ARING	1e-10 m
 	//	micron, micrometer	1e-6 m
 	//	parsec, pc				1 parsec = AU / tan(pi/(180*3600))		# = 3.08568025e16 (m)
-	//	lightYear, ly			9.4607304725808e+15 m  =  c * julianYear (this is the IAU definition)
+	//	lightYear, ly			9460730472580800 m  =  c * julianYear (this is the IAU definition)
 	//	astronomicalunit, au	149597870700 m
 	//	BohrRadius, ao, a0	0.52917721092e-10 m
 	//	fermi, fm				1e-15 m == 1 fm
@@ -5864,7 +5864,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 		i = StringMatch(unit,"*parsec") ? 7 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*ly") || StringMatch(unit,"*lightYear"))
-		value = c * julianYear				// = 9.4607304725808e+15
+		value = c * julianYear				// = 9460730472580800 m
 		i = StringMatch(unit,"*lightYear") ? 10 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*au") || StringMatch(unit,"*astronomicalunit"))
