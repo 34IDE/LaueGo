@@ -14,11 +14,20 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ni</label>
 		<symbol>Ni</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
+		<occupancy>0.8</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 0</fract>
+		<occupancy>0.2</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 </cif>
