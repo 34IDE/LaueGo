@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.62
+#pragma version = 4.63
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5713,6 +5713,7 @@ Static Constant inch = 0.0254						// length of inch (m)
 Static Constant kgPerPound = 0.45359237			// 1 pound = 0.45359237 kgm [definition of pound]
 Static Constant gStd = 9.80665						// std acceleration of gravity (m * s^-2)
 Static Constant tropicalYear = 31556925.216	// = 365.24219 * 24*3600, seconds in a tropical year (NOT sidereal), there are 365.24219 days in 1 tropical year
+Static Constant julianYear = 31557600				// = 365.25 * 24*3600, seconds in a Julian, there are 365.25 days in 1 Julian year
 Static Constant AstronomicalUnit = 149597870700
 Static Constant stdAtmosphere = 101325			// standard atmospheric pressure (Pascal)
 Static Constant inH2O = 249.082						// pressure of 1 inch of water (Pascal)
@@ -5792,7 +5793,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	Angstrom, Ang,ARING	1e-10 m
 	//	micron, micrometer	1e-6 m
 	//	parsec, pc				1 parsec = AU / tan(pi/(180*3600))		# = 3.08568025e16 (m)
-	//	lightYear, ly			9.4605284e15 m  =  c * tropicalYear
+	//	lightYear, ly			9.4607304725808e+15 m  =  c * julianYear (this is the IAU definition)
 	//	astronomicalunit, au	149597870700 m
 	//	BohrRadius, ao, a0	0.52917721092e-10 m
 	//	fermi, fm				1e-15 m == 1 fm
@@ -5863,7 +5864,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 		i = StringMatch(unit,"*parsec") ? 7 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*ly") || StringMatch(unit,"*lightYear"))
-		value = c * tropicalYear				// = 9.4605284e15
+		value = c * julianYear				// = 9.4607304725808e+15
 		i = StringMatch(unit,"*lightYear") ? 10 : 3
 		prefix = unit[0,strlen(unit)-i]
 	elseif(StringMatch(unit,"*au") || StringMatch(unit,"*astronomicalunit"))
