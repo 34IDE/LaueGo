@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.56
+#pragma version = 2.57
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -984,6 +984,7 @@ Function MakeOtherQhistWaves(Q_Positions,[printIt,Qlo,Qhi])	// make waves for pl
 		printf ")\r"
 	endif
 
+	Variable tick0=stopMSTimer(-2)
 	if (WaveDims(Q_Positions)==1)
 		Note/K Q_Positions, ReplaceStringByKey("waveClass",note(Q_Positions),"Qhistogram","=")
 		Wave Qhist = Q_Positions
@@ -1008,6 +1009,8 @@ Function MakeOtherQhistWaves(Q_Positions,[printIt,Qlo,Qhi])	// make waves for pl
 		endif
 		Wave Qhist = QhistFromQpositions(Q_Positions,imax,jmax,kmax)	// re-make Qhist, and fit it
 	endif
+	Variable seconds=(stopMSTimer(-2)-tick0)*1e-6
+
 	if (printIt)
 		String list = fitOneQhist(Qhist,quiet=0,printIt=0)
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", list,"="),NumberByKey("Qfwhm", list,"=")
@@ -1016,6 +1019,9 @@ Function MakeOtherQhistWaves(Q_Positions,[printIt,Qlo,Qhi])	// make waves for pl
 			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("ÆQ", list,"="),strainPeak
 		endif
 		printf "\r"
+		if (seconds>10)
+			printf "\t\texecution took  %s\r",ElapsedTime2Str(seconds)
+		endif
 		String win = MakeGraph_Qhist(Qhist)
 		Variable i = MoveWinToTopRight(win,-1,-1)
 
@@ -5621,7 +5627,7 @@ Static Function EscanButtonProc(ctrlName) : ButtonControl
 	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions","*","MINCOLS:1")))
 //	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions,Qhistogram","*","MINCOLS:1")))
 //	elseif (stringmatch(ctrlName,"buttonRePlotQDistn") && strlen(WaveListClass("QdistAtPositions,Qhistogram","*","")))
-		MakeOtherQhistWaves($"")
+		MakeOtherQhistWaves($"", printIt=1)
 	elseif (stringmatch(ctrlName,"buttonRGBforQDistn") && strlen(WaveListClass("Q_Positions,Qhistogram","*","")))
 		MakeRGBforQdistribution($"",$"")
 	elseif (stringmatch(ctrlName,"buttonlayoutQDistn") && strlen(WinList("Graph*_Q",";","WIN:1")))
