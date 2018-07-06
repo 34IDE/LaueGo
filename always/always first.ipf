@@ -1,6 +1,6 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.82
+#pragma version = 2.83
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
@@ -253,6 +253,7 @@ Static Function SetMaskFromPrefsStruct(prefs)
 	mask += 32*(prefs.LocalPackages)
 	NewDataFolder/O root:Packages
 	Variable/G root:Packages:SHOW_PACKAGES_MASK_JZT = mask
+	String/G root:Packages:LocalUserPackagesMenu = "=refresh menu=;"
 
 	Execute "SetIgorOption poundDefine=DOESNTMATTER"		// mark all procedures as needing compile
 	Execute "SetIgorOption poundUnDefine=DOESNTMATTER"	// don't leave this defined. note, DOESNTMATTER is an arbitrary string

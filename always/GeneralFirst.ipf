@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.46
+#pragma version = 3.47
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.58
@@ -89,7 +89,7 @@ End
 Menu "File"
 	"-"
 	SubMenu "Add Local User Package -->"
-		JZTgeneral#CheckForUserPackages(""), /Q,JZTgeneral#StartUpLocalPackage()
+		JZTgeneral#GetUserPackagesMenuStr(), /Q, JZTgeneral#StartUpLocalPackage()
 	End
 End
 #endif
@@ -638,6 +638,28 @@ End
 //	e.g. if you load abc.ipf (and abc.ipf has #include "xyz"), then Init_abcPackage() should call Init_xyzPackage(). 
 //	Otherwise xyz will not be inited.  Note, the init function is not required, it is just available.
 
+
+Static Function/T GetUserPackagesMenuStr()
+	SVAR/Z str = root:Packages:LocalUserPackagesMenu
+	if (!SVAR_Exists(str))
+		UserPackagesMenuStr("")			// does not exists, make it
+	endif
+	SVAR str = root:Packages:LocalUserPackagesMenu
+	if (cmpstr(str,"=refresh menu=;")==0)
+		UserPackagesMenuStr("")			// refill menu string
+	endif
+	return str
+End
+
+Static Function/T UserPackagesMenuStr(dirPath)
+	String dirPath				// OPTIONAL, full path to a directory, usually "" when called
+	String str = "=refresh menu=;-;" + CheckForUserPackages(dirPath)
+	NewDataFolder/O root:Packages
+	String/G root:Packages:LocalUserPackagesMenu = str
+	return str
+End
+
+
 Static Function/T CheckForUserPackages(dirPath)
 	String dirPath				// full path to a directory
 	String PackagesFolder = StrVarOrDefault("root:Packages:PackagesFolder_JZT","LocalPackages")
@@ -728,6 +750,12 @@ End
 Static Function StartUpLocalPackage()
 	GetLastUserMenuInfo								// sets S_value, V_value, etc.
 	String pkg=S_value
+
+	if (!V_flag && cmpstr(pkg,"=refresh menu=")==0)
+		UserPackagesMenuStr("")					// re-set the root:Packages:LocalUserPackagesMenu
+		return 0
+	endif
+
 	if (V_flag || !stringmatch(pkg,"*.ipf" ))
 		return 1
 	endif
