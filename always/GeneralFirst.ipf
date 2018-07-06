@@ -708,6 +708,8 @@ Static Function/T CheckForUserPackages(dirPath)
 			continue
 		elseif (strsearch(dirName,"(no copy)",dirLast,3)>=0)			// contains "(no copy)"
 			continue
+		elseif ( (strsearch(dirName,".app",dirLast,3)+3)==dirLast )	// skip ends with ".app"
+			continue
 		endif
 		addMenus = CheckForUserPackages(dirName)	// check inside this sub-directory recursively
 		menuList += SelectString(strlen(addMenus),"","-;") + addMenus
