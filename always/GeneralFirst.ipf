@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.48
+#pragma version = 3.49
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.58
@@ -777,6 +777,7 @@ Static Function StartUpLocalPackage()
 	endif
 	//	print "cmd = ",cmd
 	Execute cmd
+	Execute/P "JZTgeneral#UserPackagesMenuStr(\"\")"		// update menu string after loading
 	return 0
 End
 //
