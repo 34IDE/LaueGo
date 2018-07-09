@@ -1,18 +1,18 @@
 #pragma rtGlobals= 2
 // Constant JZTalwaysFirst_Version=2.7
-#pragma version = 2.83
+#pragma version = 2.84
 #pragma ModuleName=JZTalwaysFirst
 #pragma hide = 1
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 1
 #include "GeneralFirst", version>=3.40
 #endif
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & (4+8+16)	// LauGo or Scattering or APS Specific
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & (4+8+16)	// LauGo or Scattering or APS Specific
 #include "LaueGoFirst", version>=2.10
 #endif
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 32
 //#include "LocalPackagesFirst", version>=2.07
 #include "LocalPackagesFirst", optional
 #endif
@@ -177,9 +177,18 @@ EndStructure
 
 
 Static Function CheckStartupPrefs()
-	if (exists("root:Packages:SHOW_PACKAGES_MASK_JZT"))
-		return 0									// nothing to do
+	if (exists("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT"))
+		return 0									// nothing to do, mask exists
 	endif
+
+	NVAR maskOld = root:Packages:SHOW_PACKAGES_MASK_JZT
+	if (NVAR_Exists(maskOld))				// convert old mask locatoin to new style, move mask to PackagesJZT
+		NewDataFolder/O root:Packages:PackagesJZT
+		Variable/G root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT = maskOld
+		KillVariables/Z maskOld
+		return 0									// nothing more to do
+	endif
+
 	STRUCT StartUpPrefsJZT prefs
 	LoadPackagePreferences/MIS=1 "JZT","startup",0,prefs
 	if (V_bytesRead<5)						// looks like valid values
@@ -252,8 +261,10 @@ Static Function SetMaskFromPrefsStruct(prefs)
 	mask += 16*(prefs.APSspecific)
 	mask += 32*(prefs.LocalPackages)
 	NewDataFolder/O root:Packages
-	Variable/G root:Packages:SHOW_PACKAGES_MASK_JZT = mask
-	String/G root:Packages:LocalUserPackagesMenu = "=refresh menu=;"
+	NewDataFolder/O root:Packages:PackagesJZT
+	Variable/G root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT = mask
+	String/G root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT = "=refresh menu=;"
+	Variable/G root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT = 0
 
 	Execute "SetIgorOption poundDefine=DOESNTMATTER"		// mark all procedures as needing compile
 	Execute "SetIgorOption poundUnDefine=DOESNTMATTER"	// don't leave this defined. note, DOESNTMATTER is an arbitrary string

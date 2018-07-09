@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.47
+#pragma version = 3.48
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.58
@@ -7,7 +7,7 @@
 
 strConstant TEST_TEST="test test"
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
 #if (IgorVersion()<7)
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
@@ -17,6 +17,10 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpSize,\"Square Up Gizmo\", \"SquareUpGizmo(\\\"\\\")\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpAsptec1,\"Set Aspect 1, True\", \"ModifyGizmo aspectRatio = 1\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpAsptec0,\"Set Aspect 0, Std\", \"ModifyGizmo aspectRatio = 0\"}"
+	endif
+	NVAR seconds = root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT
+	if (NVAR_Exists(seconds))
+		seconds = 0						// force remake of Local Packages Menu at startup
 	endif
 	return 0
 End
@@ -36,13 +40,26 @@ End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	JZTgeneral#PeriodicCheckLaueGoVersion()
+	NVAR seconds = root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT
+	if (NVAR_Exists(seconds))
+		seconds = 0						// force remake of Local Packages Menu at startup
+	endif
 	return 0
 End
 #endif
+#else
+Static Function IgorStartOrNewHook(IgorApplicationNameStr)
+	String IgorApplicationNameStr
+	NVAR seconds = root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT
+	if (NVAR_Exists(seconds))
+		seconds = 0						// force remake of Local Packages Menu at startup
+	endif
+	return 0
+End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 1
 Menu "Analysis"
 	Submenu "Packages"
 		"-"
@@ -58,7 +75,7 @@ Menu "Analysis"
 End
 #endif
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 2
 #if (IgorVersion()<7)			// GizmoZoomTranslate only works for Igor 7 & 8
 Menu "Analysis"
 	Submenu "Packages"
@@ -85,7 +102,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 32
 Menu "File"
 	"-"
 	SubMenu "Add Local User Package -->"
@@ -95,7 +112,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 1
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 1
 Menu "Graph"
 	"Set Aspect Ratio to Get Square Pixels \ Range",SetAspectToSquarePixels("")
 End
@@ -117,7 +134,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 16
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 16
 Menu "Data"
 	SubMenu "Packages"
 		"MDA files from APS",Execute/P "INSERTINCLUDE  \"mdaFiles\"";Execute/P "COMPILEPROCEDURES "
@@ -151,7 +168,7 @@ End
 #endif
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 2		// want to include Gizmo support
 Static Function LoadAllGizmoUtilities()
 #if (IgorVersion()<7)
 	Execute/P "INSERTINCLUDE \"GizmoZoomTranslate\", version>=2.00"
@@ -590,7 +607,7 @@ End
 
 
 
-#if NumVarOrDefault("root:Packages:SHOW_PACKAGES_MASK_JZT",-1) & 32		// want to include support for User LocalPackages
+#if NumVarOrDefault("root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT",-1) & 32		// want to include support for User LocalPackages
 //  ====================================================================================  //
 //  =========================== Start of User Packages Menu  ===========================  //
 //
@@ -640,13 +657,14 @@ End
 
 
 Static Function/T GetUserPackagesMenuStr()
-	SVAR/Z str = root:Packages:LocalUserPackagesMenu
-	if (!SVAR_Exists(str))
-		UserPackagesMenuStr("")			// does not exists, make it
+	SVAR/Z str = root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
+	Variable dt=NumVarOrDefault("root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT", 0)
+	if (!SVAR_Exists(str) || dt>10800)	// does not exist, or more than 3 hour old
+		UserPackagesMenuStr("")			// re-make LocalUserPackagesMenu_JZT
 	endif
-	SVAR str = root:Packages:LocalUserPackagesMenu
+	SVAR str = root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
 	if (cmpstr(str,"=refresh menu=;")==0)
-		UserPackagesMenuStr("")			// refill menu string
+		UserPackagesMenuStr("")			// user request to re-make menu string
 	endif
 	return str
 End
@@ -655,7 +673,9 @@ Static Function/T UserPackagesMenuStr(dirPath)
 	String dirPath				// OPTIONAL, full path to a directory, usually "" when called
 	String str = "=refresh menu=;-;" + CheckForUserPackages(dirPath)
 	NewDataFolder/O root:Packages
-	String/G root:Packages:LocalUserPackagesMenu = str
+	NewDataFolder/O root:Packages:PackagesJZT
+	String/G root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT = str
+	Variable/G root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT = datetime
 	return str
 End
 
@@ -754,7 +774,7 @@ Static Function StartUpLocalPackage()
 	String pkg=S_value
 
 	if (!V_flag && cmpstr(pkg,"=refresh menu=")==0)
-		UserPackagesMenuStr("")					// re-set the root:Packages:LocalUserPackagesMenu
+		UserPackagesMenuStr("")					// re-set the root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
 		return 0
 	endif
 
