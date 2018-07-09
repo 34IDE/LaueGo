@@ -264,7 +264,6 @@ Static Function SetMaskFromPrefsStruct(prefs)
 	NewDataFolder/O root:Packages:PackagesJZT
 	Variable/G root:Packages:PackagesJZT:SHOW_PACKAGES_MASK_JZT = mask
 	String/G root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT = "=refresh menu=;"
-	Variable/G root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT = 0
 
 	Execute "SetIgorOption poundDefine=DOESNTMATTER"		// mark all procedures as needing compile
 	Execute "SetIgorOption poundUnDefine=DOESNTMATTER"	// don't leave this defined. note, DOESNTMATTER is an arbitrary string

@@ -18,10 +18,6 @@ Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpAsptec1,\"Set Aspect 1, True\", \"ModifyGizmo aspectRatio = 1\"}"
 		Execute/Q/Z "GizmoMenu AppendItem={JZTcpAsptec0,\"Set Aspect 0, Std\", \"ModifyGizmo aspectRatio = 0\"}"
 	endif
-	NVAR seconds = root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT
-	if (NVAR_Exists(seconds))
-		seconds = 0						// force remake of Local Packages Menu at startup
-	endif
 	return 0
 End
 #else
@@ -40,22 +36,9 @@ End
 Static Function IgorStartOrNewHook(IgorApplicationNameStr)
 	String IgorApplicationNameStr
 	JZTgeneral#PeriodicCheckLaueGoVersion()
-	NVAR seconds = root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT
-	if (NVAR_Exists(seconds))
-		seconds = 0						// force remake of Local Packages Menu at startup
-	endif
 	return 0
 End
 #endif
-#else
-Static Function IgorStartOrNewHook(IgorApplicationNameStr)
-	String IgorApplicationNameStr
-	NVAR seconds = root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT
-	if (NVAR_Exists(seconds))
-		seconds = 0						// force remake of Local Packages Menu at startup
-	endif
-	return 0
-End
 #endif
 
 
@@ -658,8 +641,7 @@ End
 
 Static Function/T GetUserPackagesMenuStr()
 	SVAR/Z str = root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
-	Variable dt=NumVarOrDefault("root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT", 0)
-	if (!SVAR_Exists(str) || dt>10800)	// does not exist, or more than 3 hour old
+	if (!SVAR_Exists(str))					// does not exist
 		UserPackagesMenuStr("")			// re-make LocalUserPackagesMenu_JZT
 	endif
 	SVAR str = root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
@@ -675,7 +657,6 @@ Static Function/T UserPackagesMenuStr(dirPath)
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:PackagesJZT
 	String/G root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT = str
-	Variable/G root:Packages:PackagesJZT:LocalUserPackagesMenuSec_JZT = datetime
 	return str
 End
 
