@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.53
+#pragma version = 6.54
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -216,6 +216,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.52, modified crystalStructure2xml() and writeCrystalStructure2xmlFile() to write v2 files
 //								also fixed bug in readCrystalStructureXML()
 //	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
+//	with version 6.54, fixed dSpacing(), was not using T properly
 
 
 //	Rhombohedral Transformation:
@@ -1723,7 +1724,7 @@ ThreadSafe Function dSpacing(xtal,h,k,l,[T])		// returns d-spacing for the hkl (
 	yy = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
 	zz = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
 	Variable d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
-	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T) && numtype(T) && T>=0)	// do if T passed, and valid alphaT
+	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T) && numtype(T)==0 && T>=-273.15)	// do if T passed, and valid alphaT
 		T = limit(T,-273.15,Inf)				// limit T to > absolute zero
 		d = d*(1+xtal.alphaT*(T-22.5))		// apply temperature correction
 	endif
