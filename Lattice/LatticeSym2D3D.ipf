@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.00
+#pragma version = 7.01
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -351,7 +351,7 @@ Structure crystalStructure	// structure definition for a crystal lattice
 	double density					// calculated density (g/cm^3)
 	double Temperature			// Temperature (C)
 	double Pressure				// Temperature (Pa = Pascal)
-	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -382,7 +382,7 @@ Structure crystalStructure7	// structure definition for a crystal lattice
 	double Vc						// volume of cell, triple product of (a[]xb[]).c
 	double density					// calculated density (g/cm^3)
 	double Temperature			// Temperature (C)
-	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -412,7 +412,7 @@ Structure crystalStructure6	// structure definition for a crystal lattice
 	double Vc						// volume of cell, triple product of (a[]xb[]).c
 	double density					// calculated density (g/cm^3)
 	double Temperature			// Temperature (C)
-	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -440,7 +440,7 @@ Structure crystalStructure5	// structure definition for a crystal lattice
 	double Vc						// volume of cell, triple product of (a[]xb[]).c
 	double density					// calculated density (g/cm^3)
 	double Temperature			// Temperature (C)
-	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-22.5))
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -1678,7 +1678,7 @@ Function get_dhkl(h,k,l,[T])
 		Prompt h,"H"
 		Prompt k,"K"
 		Prompt l,"L"
-		Prompt T,"Temperature, standard is 22.5, (C)"
+		Prompt T,"Temperature, standard is 20, (C)"
 		Variable askForT = (!ParamIsDefault(T) && !alphaTbad)
 		if (askForT)
 			DoPrompt "(hkl)",h,k,l,T
@@ -1720,7 +1720,7 @@ ThreadSafe Function dSpacing(xtal,h,k,l,[T])		// returns d-spacing for the hkl (
 	Variable d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
 	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T) && numtype(T) && T>=0)	// do if T passed, and valid alphaT
 		T = limit(T,-273.15,Inf)				// limit T to > absolute zero
-		d = d*(1+xtal.alphaT*(T-22.5))		// apply temperature correction
+		d = d*(1+xtal.alphaT*(T-20))		// apply temperature correction
 	endif
 	return d
 End
@@ -2365,7 +2365,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 		alphaT=xtal.alphaT
 		desc=xtal.desc
 		T_C = xtal.Temperature
-		T_C = numtype(T_C) || T_C<-273.14 ? 22.5 : T_C
+		T_C = numtype(T_C) || T_C<-273.15 ? 20 : T_C
 		T_C = (xtal.haveDebyeT) ? T_C : NaN		// if no Debye Temperatuers, no temperature needed
 		dirty = 0
 		StructPut/S xtal, crystalStructStr
@@ -2826,7 +2826,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		desc = xtal.desc
 		alphaT = xtal.alphaT
 		T_C = xtal.Temperature
-		T_C = (xtal.haveDebyeT && numtype(T_C)) ? 22.5 : T_C
+		T_C = (xtal.haveDebyeT && numtype(T_C)) ? 20 : T_C
 		dirty = 2														// yes, it is dirty, but xtal.sourceFile is valid
 		StructPut/S xtal, crystalStructStr
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
@@ -4036,7 +4036,7 @@ Static Function/T crystalStructure2xml(xtal,NL)	// convert contents of xtal stru
 	endif
 	if (numtype(alphaT)==0)
 		cif += "\t\t<alphaT>"+num2StrFull(alphaT)+"</alphaT>"
-		cif += "\t\t	<!-- a = ao*(1+alphaT*(TempC-22.5)) -->"+NL
+		cif += "\t\t	<!-- a = ao*(1+alphaT*(TempC-20)) -->"+NL
 	endif
 	if (numtype(xtal.Unconventional00)==0)
 		str="{"
@@ -4195,7 +4195,7 @@ Static Function/T convertOneXTL2XML(xtl,NL)	// read in the xtl file, returns str
 	endif
 
 	Variable alphaT = NumberByKey("latticeAlphaT",keyVals,"=")
-	Variable temperature = numtype(alphaT) ? NaN : 22.5	// temperature (C)
+	Variable temperature = numtype(alphaT) ? NaN : 20	// temperature (C)
 	if (numtype(NumberByKey("temperatureK",keyVals,"="))==0)
 		temperature = NumberByKey("temperatureK",keyVals,"=") - 273.15
 	endif
@@ -4219,7 +4219,7 @@ Static Function/T convertOneXTL2XML(xtl,NL)	// read in the xtl file, returns str
 	endif
 	if (numtype(alphaT)==0)
 		cif += "\t\t<alphaT>"+num2StrFull(alphaT)+"</alphaT>"
-		cif += "\t\t	<!-- a = ao*(1+alphaT*(TempC-"+SelectString(numtype(temperature),num2StrFull(temperature),"22.5")+")) -->"+NL
+		cif += "\t\t	<!-- a = ao*(1+alphaT*(TempC-"+SelectString(numtype(temperature),num2StrFull(temperature),"20")+")) -->"+NL
 	endif
 	str = StringByKey("Unconventional",keyVals,"=")
 	if (strlen(str)>0)
@@ -6926,7 +6926,7 @@ End
 //		xtal.as1 = 7.6242091813124	;	xtal.bs1 = 15.248418362625	;	xtal.cs1 = -0
 //		xtal.as2 = 0						;	xtal.bs2 = 0		;	xtal.cs2 = 4.8365678601952
 //		xtal.Vc = 0.25469597973584	;	xtal.density = 3.9885352190818
-//		xtal.Temperature = 22.5		;	xtal.alphaT = nan
+//		xtal.Temperature = 20		;	xtal.alphaT = nan
 //	
 //		xtal.N = 2
 //		xtal.atom[0].name = "Al"

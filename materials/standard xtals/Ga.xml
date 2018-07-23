@@ -15,7 +15,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<volume>0.156759780372</volume>
-		<temperature unit="C">22.5</temperature>
+		<temperature unit="C">20</temperature>
 	</cell>
 	<atom_site>
 		<label>Ga</label>

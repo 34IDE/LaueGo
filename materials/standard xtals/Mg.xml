@@ -14,7 +14,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<temperature unit="C">22.5</temperature>
+		<temperature unit="C">20</temperature>
 	</cell>
 	<atom_site>
 		<label>Mg</label>

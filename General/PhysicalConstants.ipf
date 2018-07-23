@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.16
+#pragma version = 2.17
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
 Static StrConstant NISTserverASCII_URL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -535,7 +535,7 @@ End
 ThreadSafe Function SiLatticeConst(TempC)
 	Variable TempC							// temperature in degrees C
 	Variable alpha=2.56E-6				// coefficient of expansion (1/°K)
-	Variable dT = TempC - 22.5
+	Variable dT = TempC - 22.5			// normal T is 20, but for Si use 22.5
 	return 5.4310205052*(1+alpha*dT)	// 5.4310205052 = aoSi at 22.5° (Å), 2010 CODATA
 End
 

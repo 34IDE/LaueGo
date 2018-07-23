@@ -15,7 +15,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<alphaT>7.5e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
+		<alphaT>7.5e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-20)) -->
 	</cell>
 
 	<atom_site>
