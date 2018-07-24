@@ -1,14 +1,13 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.56
+#pragma version = 6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
 //	#define DO_HEXAGONAL_EXTRA							// If this is used, then Hex & Trigonal F's are too big
 // #define SHOW_XML_BONDS_ON_READIN					// Put this in your "Procedure" window if you want to see the <bond_chemical ...</bond_chemical>
-// #define TEST_LATTICE_2D
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Constant LatticeSym_minBondLen = 0.050				// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
@@ -259,16 +258,6 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //
 //											SG										idNum
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
-//
-//
-//		**************************************************
-//	for 2D xtals
-//							SG				  idNum			#IDs		#SpaceGroups
-//	Hexagonal		[13,17]			[13-17]			5			5
-//	Square			[10,12]			[10,12]			3			3
-//	Rhombic			{5,9}				{5,9}				2			2
-//	Rectangular		{3,4,6,7,8}		{3,4,6,7,8}		5			5
-//	Oblique			[1,2]				[1,2]				2			2
 
 
 Menu "Analysis"
@@ -2344,7 +2333,6 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Variable/G root:Packages:Lattices:PanelValues:alpha
 	Variable/G root:Packages:Lattices:PanelValues:bet
 	Variable/G root:Packages:Lattices:PanelValues:gam
-	Variable/G root:Packages:Lattices:PanelValues:dim
 	Variable/G root:Packages:Lattices:PanelValues:alphaT
 	Variable/G root:Packages:Lattices:PanelValues:dirty		// =1 (xtal.sourceFile bad too),  =2 (values changed, but xtal.sourceFile is OK)
 	Variable/G root:Packages:Lattices:PanelValues:T_C
@@ -2356,7 +2344,6 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	NVAR alpha=root:Packages:Lattices:PanelValues:alpha
 	NVAR bet=root:Packages:Lattices:PanelValues:bet
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
-	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR alphaT=root:Packages:Lattices:PanelValues:alphaT
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 	NVAR dirty=root:Packages:Lattices:PanelValues:dirty
@@ -2432,11 +2419,6 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_alpha, fSize=12, title="\xCE\xB1"+DEGREESIGN
 	SetVariable set_beta, fSize=12, title="\xCE\xB2"+DEGREESIGN
 	SetVariable set_gamma, fSize=12, title="\xC9\xA3"+DEGREESIGN	// there are two gamma's, this (latin small letter gamma) looks better than "\xCE\xB3"
-#endif
-
-#ifdef TEST_LATTICE_2D
-	PopupMenu popupLatticeDim,pos={155,163},size={56,20}, proc=LatticeSym#LatticeDimPopMenuProc
-	PopupMenu popupLatticeDim,title="Dim",mode=(dim==2 ? 1:2),value= #"\"2;3\""
 #endif
 
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
@@ -2518,55 +2500,11 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	NVAR alpha=root:Packages:Lattices:PanelValues:alpha
 	NVAR bet=root:Packages:Lattices:PanelValues:bet
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
-	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 
 	Variable SG = str2num(SpaceGroupID)		// first part of id is space group number
 	String titleStr="\\JC"+SpaceGroupID+" "
-
-#ifdef TEST_LATTICE_2D
-	if (dim==2)
-		SetVariable set_c_nm,disable=1,win=$subWin				// alwasy for dim==2
-		SetVariable set_beta,disable=1,win=$subWin
-		SetVariable set_gamma,disable=1,win=$subWin
-	else
-		SetVariable set_c_nm,disable=0,win=$subWin				// alwasy for dim==3
-		SetVariable set_beta,disable=0,win=$subWin
-		SetVariable set_gamma,disable=0,win=$subWin
-	endif
-#endif
-
-	if (dim==2 && SG>=13)												// Hexagonal, a [13 17]
-		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
-		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
-		SetVariable set_alpha,noedit=1,frame=0,win=$subWin
-		b = a  ;  alpha = 120
-		titleStr += "Hexagonal"
-	elseif (dim==2 && SG>=10)											// Square, a [10,12]
-		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
-		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
-		SetVariable set_alpha,noedit=1,frame=0,win=$subWin
-		b = a  ;  alpha = 90
-		titleStr += "Square"
-	elseif (dim==2 && (SG==5 || SG==9))							// Rhombic, a, alpha {5,9}
-		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
-		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
-		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
-		b = a
-		titleStr += "Rhombic"
-	elseif (dim==2 && SG>=3)											// Rectangular, a,b {3,4,6,7,8}
-		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
-		SetVariable set_b_nm,noedit=0,frame=1,win=$subWin
-		SetVariable set_alpha,noedit=1,frame=0,win=$subWin	// disable
-		alpha=90
-		titleStr += "Rectangular"
-	elseif (dim==2)														// Oblique, a, b, alpha {1,2}
-		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
-		SetVariable set_b_nm,noedit=0,frame=1,win=$subWin
-		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
-		titleStr += "Oblique"
-
-	elseif (SG>=195)														// Cubic, a
+	if (SG>=195)															// Cubic, a
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
 		SetVariable set_c_nm,noedit=1,frame=0,win=$subWin
@@ -2650,16 +2588,16 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 
 	if (exists("Init_AtomViewLattice")==6)
 		Button buttonAtomView,win=$subWin,disable=1			// hide the button
-		PopupMenu popupAtomView,win=$subWin,disable=0			// show the popup
+		PopupMenu popupAtomView,win=$subWin,disable=0	// show the popup
 	else
 		Button buttonAtomView,win=$subWin,disable=0			// show the button
-		PopupMenu popupAtomView,win=$subWin,disable=1			// hide the popup
+		PopupMenu popupAtomView,win=$subWin,disable=1	// hide the popup
 	endif
 	if (exists("Init_PowderPatternLattice")==6)
-		Button buttonPowderPattern,win=$subWin,disable=1		// hide the button
+		Button buttonPowderPattern,win=$subWin,disable=1	// hide the button
 		PopupMenu popupPowderPattern,win=$subWin,disable=0	// show the popup
 	else
-		Button buttonPowderPattern,win=$subWin,disable=0		// show the button
+		Button buttonPowderPattern,win=$subWin,disable=0	// show the button
 		PopupMenu popupPowderPattern,win=$subWin,disable=1	// hide the popup
 	endif
 	return 0
@@ -2696,7 +2634,6 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 		case "set_alpha":
 		case "set_beta":
 		case "set_gamma":
-		case "popupLatticeDim":
 		case "setDesc":
 		case "T_C":
 			dirty = 1								// a big change, xtal.sourceFile no longer valid
@@ -2824,7 +2761,6 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 	NVAR alpha=root:Packages:Lattices:PanelValues:alpha
 	NVAR bet=root:Packages:Lattices:PanelValues:bet
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
-	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR alphaT=root:Packages:Lattices:PanelValues:alphaT
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 	NVAR dirty = root:Packages:Lattices:PanelValues:dirty
@@ -2930,40 +2866,6 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		Execute/P "Init_PowderPatternLattice()"
 		Execute/P cmd
 	endif
-	return 0
-End
-
-
-Static Function LatticeDimPopMenuProc(pa) : PopupMenuControl		// used in the LatticeSym Panel
-	STRUCT WMPopupAction &pa
-	if (pa.eventCode != 2)
-		return 0
-	endif
-
-	Variable dimPop = str2num(pa.popStr)	// requested dim
-	if (dimPop != 3)
-		Abort "LatticeDimPopMenuProc(), not yet ready for dim==2"
-	endif
-	NVAR dim = root:Packages:Lattices:PanelValues:dim
-	SVAR SpaceGroupID = root:Packages:Lattices:PanelValues:SpaceGroupID
-
-	if (!StringMatch(pa.ctrlName,"popupLatticeDim"))
-		return 1
-	elseif (!NVAR_Exists(dim) || !SVAR_Exists(SpaceGroupID) || numtype(dimPop))
-		return 1
-	elseif (dimPop!=2 && dimPop!=3)
-		return 1
-	endif
-
-	String win = pa.win
-	STRUCT WMSetVariableAction sva
-	sva.win = win
-	sva.eventCode = 2
-	sva.ctrlname = ""
-	dim = dimPop
-	UpdatePanelLatticeConstControls(win,SpaceGroupID)
-	LatticePanelParamProc(sva)
-	print "set dim to",dim
 	return 0
 End
 
@@ -3768,8 +3670,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-	Variable/G root:Packages:Lattices:dim = dim
-#ifndef TEST_LATTICE_2D
+//	Variable/G root:Packages:Lattices:dim = dim
+#ifndef TESTING_2D
 	if (dim != 3)
 		sprintf str, "only understand dim=3, not \"%s\"", StringByKey("dim",keyVals,"=")
 		DoAlert 0, str
@@ -10015,16 +9917,11 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	NVAR alpha = root:Packages:Lattices:PanelValues:alpha
 	NVAR bet = root:Packages:Lattices:PanelValues:bet
 	NVAR gam = root:Packages:Lattices:PanelValues:gam
-	NVAR dim = root:Packages:Lattices:PanelValues:dim
 	if (NVAR_Exists(a) && NVAR_Exists(b) && NVAR_Exists(c))
 		a = xtal.a	;	b = xtal.b	;	c = xtal.c
 	endif
 	if (NVAR_Exists(alpha) && NVAR_Exists(bet) && NVAR_Exists(gam))
 		alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
-	endif
-	if (NVAR_Exists(dim))
-//		dim = xtal.dim
-		Abort "ERROR -- ChangeSettingCurrentXtal(), need to make xtal support dim"
 	endif
 	if (NVAR_Exists(dirty))
 		dirty = 1
