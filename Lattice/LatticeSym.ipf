@@ -2115,19 +2115,26 @@ Function hkl2Q(h,k,l, qvec,[normal])				// compute qvector for (h,k,l), returns 
 	Wave qvec
 	Variable normal									// TRUE -> normalize Q, but always return full length
 	normal = ParamIsDefault(normal) ? 0 : normal
-	if (numtype(h+k+l) || !WaveExists(qvec))
-		if (WaveExists(qvec))
-			qvec = NaN
-		endif
-		return NaN
-	endif
+
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with current values
 		DoAlert 0, "No Lattice, please set one"
 		return 1
 	endif
+	Variable dim = xtal.dim
 
-	if (xtal.dim == 2)
+	l = (dim == 2) ? 0 : l
+	Variable bad = numtype(h+k+l) || !WaveExists(qvec)
+	bad = !bad ? numpnts(qvec)<dim : bad
+	if (bad)
+		if (WaveExists(qvec))								// ERROR, bad hkl or no qvec
+			qvec = NaN
+		endif
+		return NaN
+	endif
+
+	qvec = 0
+	if (dim == 2)
 		qvec[0] = h*xtal.as0+k*xtal.bs0					// qvec =  recip x hkl
 		qvec[1] = h*xtal.as1+k*xtal.bs1
 	else
@@ -2371,7 +2378,7 @@ Static Function SetToDummyXTAL(xtal,dim)		// fill the crystal structure with val
 
 	xtal.N = 1
 	SetToDummyATOM(xtal.atom[0])
-	LatticeSym#ForceLatticeToStructure(xtal)
+	ForceLatticeToStructure(xtal)
 End
 //
 Static Function SetToDummyATOM(atom)		// fill the atom structure with valid dummy values
@@ -2437,8 +2444,7 @@ Static Function/T OverOccupyList(xtalIN,[occMax,printIt])	// checks if sites in 
 	for (iatom=0;iatom<Natoms;iatom+=1)
 		x0 = xtal.atom[iatom].x
 		y0 = xtal.atom[iatom].y
-		z0 = xtal.atom[iatom].z
-		z0 = dim==2 ? 0 : z0
+		z0 = (dim==2) ? 0 : (xtal.atom[iatom].z)
 		if (numtype(x0+y0+z0))
 			continue
 		endif
