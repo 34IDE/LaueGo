@@ -705,7 +705,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetSymOpsForSpaceGroup(xtal.SpaceGroupID,dim)	// ensure that symmetry ops are right
 	Variable Natoms = round(xtal.N)						// number of predefined atoms
 	Natoms = numtype(Natoms) ? 0 : limit(Natoms,0,STRUCTURE_ATOMS_MAX)
-	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroupID)+"\""
+	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroupID,dim)+"\""
 
 	if (Natoms<1)
 		DoAlert 1, "No atoms defined, create one?"
@@ -1057,7 +1057,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 		ControlInfo/W=$win setAtomRelZ	;		zz = V_Value
 	endif
 	if (StringMatch(ctrlName,"setAtomWyckoff") && strlen(symbol)>0)	// changed Wyckoff, force xyz to conform
-		if (!ForceXYZtoWyckoff(xtal.SpaceGroupID,symbol,xx,yy,zz))
+		if (!ForceXYZtoWyckoff(xtal.SpaceGroupID,dim,symbol,xx,yy,zz))
 			SetVariable setAtomRelX,win=$win,value= _NUM:xx
 			SetVariable setAtomRelY,win=$win,value= _NUM:yy
 			if (!(dim==2))
@@ -1066,7 +1066,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 		endif
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
-		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,xx,yy,zz,mult)
+		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,dim,xx,yy,zz,mult)
 		if (char2num(symbol)==65)
 			mm = 27+1
 		else
@@ -1082,7 +1082,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	xtal.atom[m].z = zz
 	xtal.atom[m].WyckoffSymbol = symbol[0]
 	if (char2num(symbol)>32 && !(mult>0))
-		mult = WyckoffMultiplicity(xtal.SpaceGroupID,symbol)
+		mult = WyckoffMultiplicity(xtal.SpaceGroupID,dim,symbol)
 	endif
 	if (mult>0)
 		xtal.atom[m].mult = mult
@@ -4157,7 +4157,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.dim = dim
 #endif
 
-	// process the space gorup info
+	// process the space group info
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
 	String id_Name="id", IT_name="IT_number"							// version 2 names
@@ -4284,11 +4284,11 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		if (!WaveExists(xyz))
 			Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))	// 2nd try v1 name for fractional coords
 		endif
-		if (WaveExists(xyz) && dim==3 && numpnts(xyz)==3)
+		if (WaveExists(xyz) && dim==3 && numpnts(xyz)>=3)
 			fracX = xyz[0]
 			fracY = xyz[1]
 			fracZ = xyz[2]
-		elseif (WaveExists(xyz) && dim==2 && numpnts(xyz)==2)
+		elseif (WaveExists(xyz) && dim==2 && numpnts(xyz)>=2)
 			fracX = xyz[0]
 			fracY = xyz[1]
 		else
@@ -4296,8 +4296,9 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			fracY = str2num(XMLtagContents("fract_y",atomSite))
 			fracZ = str2num(XMLtagContents("fract_z",atomSite))
 		endif
-		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))	// try to get x,y,z from Wyckoff symbol
-			if (ForceXYZtoWyckoff(SpaceGroupID,WyckoffSymbol,fracX,fracY,fracZ))
+		fracZ = dim==2 ? 0 : fracZ											// valid dummy value for dim=2
+		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol) && dim>2)	// try to get x,y,z from Wyckoff symbol
+			if (ForceXYZtoWyckoff(SpaceGroupID,dim,WyckoffSymbol,fracX,fracY,fracZ))
 				fracX = NaN															// will cause a break in next if()
 			endif
 		endif
@@ -4305,8 +4306,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			break
 		endif
 		mult = 0
-		if (strlen(WyckoffSymbol)==0)										// try to set Wyckoff symbol from coordinates
-			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,fracX,fracY,fracZ,mult)
+		if (strlen(WyckoffSymbol)==0 && dim>2)							// try to set Wyckoff symbol from coordinates
+			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,dim,fracX,fracY,fracZ,mult)
 		endif
 
 		valence = str2num(XMLtagContents("valence",atomSite))
@@ -4354,7 +4355,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		xtal.atom[N].Zatom = Zatom
 		xtal.atom[N].x = fracX
 		xtal.atom[N].y = fracY
-		xtal.atom[N].z = fracZ
+		xtal.atom[N].z = (dim==2) ? NaN : fracZ		// invalid value for dim=2
 		xtal.atom[N].valence = valence
 		xtal.atom[N].occ = occupy
 		xtal.atom[N].WyckoffSymbol = WyckoffSymbol[0]
@@ -10732,11 +10733,13 @@ End
 //			ONLY used by other Wyckoff routines (below this):
 //				GetWyckoffSymStrings()
 
-Static Function WyckoffMultiplicity(SpaceGroupID,letter)
+Static Function WyckoffMultiplicity(SpaceGroupID,dim,letter)
 	String SpaceGroupID
+	Variable dim
 	String letter
+	dim = dim==2 ? 2 : 3
 
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID,dim)	// col0=letter, col1=symOp, col2=mult
 	Variable i, N=DimSize(Wlist,0), mult=NaN
 	for (i=0;i<N;i+=1)
 		if (cmpstr(Wlist[i][0],letter)==0)
@@ -10750,9 +10753,11 @@ Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 	return mult
 End
 //
-Static Function/T WyckoffMenuStr(SpaceGroupID)
+Static Function/T WyckoffMenuStr(SpaceGroupID,dim)
 	String SpaceGroupID
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID,dim)	// col0=letter, col1=symOp, col2=mult
 	Variable i, N=DimSize(Wlist,0)
 	String mStr=""
 	for (i=0;i<N;i+=1)
@@ -10765,8 +10770,8 @@ End
 //	Variable SG
 //	String letter
 //
-//	String mStr = LatticeSym#WyckoffMenuStr(SG)
-//	Variable mult = LatticeSym#WyckoffMultiplicity(SG,letter)
+//	String mStr = LatticeSym#WyckoffMenuStr(SG,3)
+//	Variable mult = LatticeSym#WyckoffMultiplicity(SG,3,letter)
 //	printf "mStr = '%s'\r",mStr
 //	printf "for '%s',  mult = %g\r",letter,mult
 //	return 0
@@ -10781,13 +10786,15 @@ End
 
 
 
-Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
+Static Function/T FindWyckoffSymbol(SpaceGroupID,dim, x0,y0,z0, mult)
 	String SpaceGroupID
+	Variable dim
 	Variable x0,y0,z0
 	Variable &mult
+	dim = dim==2 ? 2 : 3
 
 	Make/D/FREE vec4={x0,y0,z0,1}, vec3={x0,y0,z0}
-	Wave/T WyckList = GetWyckoffSymStrings(SpaceGroupID)
+	Wave/T WyckList = GetWyckoffSymStrings(SpaceGroupID,dim)
 	String symbol=""
 	mult = 0
 	Variable m, N=DimSize(WyckList,0)
@@ -10855,11 +10862,13 @@ End
 
 
 
-Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
+Static Function ForceXYZtoWyckoff(SpaceGroupID,dim,symbol,x0,y0,z0)
 	String SpaceGroupID
+	Variable dim
 	String symbol
 	Variable &x0,&y0,&z0
-	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
+	dim = dim==2 ? 2 : 3
+	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID,dim)
 
 	String item, symOp=""
 	Variable xop,yop,zop
@@ -10874,14 +10883,20 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 	endif
 	symOp = ReplaceString("2x",symOp,"2*x")
 	symOp = ReplaceString("2y",symOp,"2*y")
-	symOp = ReplaceString("2z",symOp,"2*z")
+	if (!(dim==2))
+		symOp = ReplaceString("2z",symOp,"2*z")
+	endif
 	symOp = ReplaceString("x",symOp,num2str(x0))
 	symOp = ReplaceString("y",symOp,num2str(y0))
-	symOp = ReplaceString("z",symOp,num2str(z0))
+	if (!(dim==2))
+		symOp = ReplaceString("z",symOp,num2str(z0))
+	endif
 
 	x0 = arithmetic(StringFromList(0,symOp,","))
 	y0 = arithmetic(StringFromList(1,symOp,","))
-	z0 = arithmetic(StringFromList(2,symOp,","))
+	if (!(dim==2))
+		z0 = arithmetic(StringFromList(2,symOp,","))
+	endif
 
 	return 0
 End
@@ -10906,8 +10921,11 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	endif
 
 	STRUCT crystalStructure xtal
-	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with test values
+	if (FillCrystalStructDefault(xtal))						//fill the lattice structure with test values
 		DoAlert 0, "no crystal structure found"
+		return 1
+	elseif (!(xtal.dim == 3))
+		DoAlert 0, "Can only change setting of xtal with dim = 3"
 		return 1
 	endif
 
@@ -10974,6 +10992,10 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 	String id										// the requested target id, if not valid user is prompted
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	if (xtal.dim == 2)
+		printf "ERROR -- ChangeXtalSetting(\"%s\"), Cannot process 2D xtals\r", xtal.desc
+		return 1
+	endif
 
 	Variable SG = xtal.SpaceGroup			// Space Group number from international tables, allowed range is [1, 230]
 	String idSource = xtal.SpaceGroupID
@@ -11049,6 +11071,9 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 	String target								// the new desired setting, if target="", then convert to default setting
 	if (!isValidLatticeConstants(xtal))
 		return 1											// given xtal is invalid	
+	elseif (xtal.dim == 2)
+		printf "ERROR -- ConvertSetting(\"%s\"), Cannot process 2D xtals\r", xtal.desc
+		return 1
 	endif
 
 	String source = xtal.SpaceGroupID			// current SpaceGroupID
@@ -11138,13 +11163,23 @@ End
 
 
 
-Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
+Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID,dim)
 	String SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID,3))
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
 		return $""
 	endif
-	// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains 27 Wyckoff symbols "a"-"A".
 
+	if (dim==2)									// This is wrong, just a place holder
+		Make/N=(1,3)/FREE/T WyckList2D ={{"a"},{"x,y,z"},{"1"}}
+		SetDimLabel 1,0,letter,WyckList2D
+		SetDimLabel 1,1,symOp,WyckList2D
+		SetDimLabel 1,2,mult,WyckList2D
+		return WyckList2D
+	endif
+
+	// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains 27 Wyckoff symbols "a"-"A".
 	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID, dim=3)
 	Make/N=(530)/T/FREE WyckoffSyms
 	// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
@@ -11800,7 +11835,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 End
 //	Function test_GetWyckoffSymStrings(SpaceGroupID)
 //		String SpaceGroupID
-//		Wave WyckList=LatticeSym#GetWyckoffSymStrings230(SpaceGroupID)
+//		Wave WyckList=LatticeSym#GetWyckoffSymStrings230(SpaceGroupID,3)
 //		// print WyckList
 //		Duplicate/O WyckList, WyckListView
 //		DisplayTableOfWave(WyckListView)
