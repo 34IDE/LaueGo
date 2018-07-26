@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #requiredPackages "xmlMultiIndex;"
 #pragma ModuleName=CuteCells
-#pragma version=0.20
+#pragma version=0.21
 
 Menu "Rotations"
 	SubMenu("Cute Cells on Graph")
@@ -396,7 +396,7 @@ Static Function/T DrawUnitCellOnGraph(grpName,direct,xOff,yOff,[SpaceGroupID,win
 	endif
 
 	//	print "SpaceGroupID =",SpaceGroupID
-	Variable system = LatticeSym#latticeSystem(SpaceGroupID)
+	Variable system = LatticeSym#latticeSystem(SpaceGroupID,3)
 	//	TRICLINIC=0,MONOCLINIC=1,ORTHORHOMBIC=2,TETRAGONAL=3,TRIGONAL=4,HEXAGONAL=5,CUBIC=6
 	if (system==4 || system==5)		// trigonal or hexagonal, special, use a hexagonal cell
 		Wave lines=MakeAllLinesAroundHexagonalCell(direct,xhat=xhat,yhat=yhat)

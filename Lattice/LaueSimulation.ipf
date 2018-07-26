@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.18
+#pragma version = 1.19
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -689,7 +689,7 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	endif
 	sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d",h,k,l,keV,px,py,m
 	tagStr = "\\Zr090Indexed peak position\r" + str
-	if (latticeSym#isValidSpaceGroupID(SpaceGroupID))
+	if (latticeSym#isValidSpaceGroupID(SpaceGroupID,3))
 		sprintf str, "\r%s    Space Group %s", getHMsym2(SpaceGroupID2num(SpaceGroupID)),SpaceGroupID
 		tagStr += str
 	endif

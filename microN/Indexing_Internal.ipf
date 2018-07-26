@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.31
+#pragma version = 0.32
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -4140,7 +4140,7 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	Variable SpaceGroup = str2num(SpaceGroupID)
 	Variable SpaceGroupIDnum = SpaceGroupID2num(SpaceGroupID)
 	Variable Vc = MatrixDet(direct)
-	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID)
+	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID,3)
 
 	MatrixOP/FREE/O recip = 2*PI * (Inv(direct))^t
 	recip = recip==0 ? 0 : recip
@@ -4422,7 +4422,7 @@ End
 //	endif
 //
 //	Variable Vc = MatrixDet(direct)
-//	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup)
+//	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup,3)
 //
 //	MatrixOP/FREE/O recip = 2*PI * (Inv(direct))^t
 //	recip = recip==0 ? 0 : recip
@@ -4801,7 +4801,7 @@ SpaceGroupID = "227:1"
 	Variable SpaceGroup = str2num(SpaceGroupID)
 	Variable SpaceGroupIDnum = SpaceGroupID2num(SpaceGroupID)
 	Variable Vc = MatrixDet(direct)
-	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID)
+	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID,3)
 
 	MatrixOP/FREE/O recip   = 2*PI * (Inv(direct))^t
 	recip = recip==0 ? 0 : recip

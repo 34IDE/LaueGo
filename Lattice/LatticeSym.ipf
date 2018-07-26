@@ -218,6 +218,8 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //								also fixed bug in readCrystalStructureXML()
 //	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
 //	with version 6.54, fixed dSpacing(), was not using T properly
+//	with version 6.55, changed room temperaure from 22.5 --> 20
+//	with version 6.56, put in much of the support for dim=2,  2D structures,  #define TEST_LATTICE_2D
 
 
 //	Rhombohedral Transformation:
@@ -351,6 +353,39 @@ End
 //	Start of Structure definitions
 
 Structure crystalStructure	// structure definition for a crystal lattice
+	int16	dim						// dimension of xtal, either 2 or 3 (3 is the default)
+	char desc[100]					// name or decription of this crystal
+	char formula[100]				// chemical formula structural
+	double a,b,c					// lattice constants, length (nm)
+	double alpha,beta,gam		// angles (degree)
+	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
+	char SpaceGroupID[12]		// id of SpaceGroup, e.g. "15:-b2", not just a number anymore
+	int16 SpaceGroupIDnum		// index to the SpaceGroupID, allowed range is [1, 530]
+	double  a0,  b0,  c0		// direct lattice from constants { a[], b[], c[] }
+	double  a1,  b1,  c1
+	double  a2,  b2,  c2
+	double  as0,  bs0,  cs0	// reciprocal lattice { a*[], b*[], c*[] }
+	double  as1,  bs1,  cs1	// a*,b*,c* already have the 2PI in them
+	double  as2,  bs2,  cs2
+	double Vc						// volume of cell, triple product of (a[]xb[]).c, (area for 2D)
+	double density					// calculated density (g/cm^3)
+	double Temperature			// Temperature (C)
+	double Pressure				// Temperature (Pa = Pascal)
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
+	int16 N							// number of atoms described here
+	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
+	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
+	int16 haveDebyeT				// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
+	int16 Nbonds					// number of bonds described here
+	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
+	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
+	double Unconventional10,Unconventional11,Unconventional12
+	double Unconventional20,Unconventional21,Unconventional22
+	char sourceFile[MAX_FILE_LEN]	// name of source file
+	char hashID[HASHID_LEN]	// hash function for this strucutre (needs to hold at least 64 chars), This MUST be the LAST item
+EndStructure
+//
+Structure crystalStructure8	// structure definition for a crystal lattice
 	char desc[100]					// name or decription of this crystal
 	char formula[100]				// chemical formula structural
 	double a,b,c					// lattice constants, length (nm)
@@ -503,6 +538,7 @@ EndStructure
 Function init_crystalStructure(xtal)		// set all values to empty or invalid values
 	STRUCT crystalStructure &xtal
 	
+	xtal.dim = 3
 	xtal.desc = ""
 	xtal.formula = ""
 	xtal.a = NaN		;		xtal.b = NaN		;	xtal.c = NaN
@@ -588,8 +624,13 @@ Function showCrystalStructure()						// prints the structure that is currently b
 		DoAlert 0, "no crystal structure found"
 		return 1
 	endif
-	String str, sym = getHMboth(xtal.SpaceGroupIDnum)
-	sprintf str, "'%s'  %d atoms,  SG %s   %s\r%.9g, %.9g, %.9gnm,\r%g%s, %g%s, %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+	Variable dim = xtal.dim
+	String str, sym=getHMboth(xtal.SpaceGroupIDnum, dim=dim)
+	if (dim==2)
+		sprintf str, "'%s'  %d atoms,  SG %s   %s\r%.9g, %.9gnm  %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.alpha,DEGREESIGN
+	else
+		sprintf str, "'%s'  %d atoms,  SG %s   %s\r%.9g, %.9g, %.9gnm,\r%g%s, %g%s, %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+	endif
 	Variable netCharge = NetChargeCell(xtal)
 	if (netCharge)
 		str += "\r  *** Charge imbalance in cell = "+num2str(netCharge)+" ***"
@@ -598,7 +639,12 @@ Function showCrystalStructure()						// prints the structure that is currently b
 	if (V_flag==1)
 		print_crystalStructure(xtal)					// prints out the value in a crystalStructure structure
 	else
-		printf "currently using  '%s'  lattice is  SG %s   %s     %.9gnm, %.9gnm, %.9gnm,   %g%s, %g%s, %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+		if (dim==2)
+			printf "currently using  '%s'  lattice is  SG %s   %s     %.9gnm, %.9gnm,   %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.alpha,DEGREESIGN
+		else
+			printf "currently using  '%s'  lattice is  SG %s   %s     %.9gnm, %.9gnm, %.9gnm,   %g%s, %g%s, %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+		endif
+
 		if (xtal.N > 0)
 			printf ",   %g defined atom types\r",xtal.N
 		else
@@ -650,8 +696,14 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	STRUCT crystalStructure xtal					// the working copy
 	xtal = xtal_IN										// copy xtal_IN to a working copy, was:  copy_xtal(xtal,xtal_IN)
 
-	SetSymOpsForSpaceGroup(xtal.SpaceGroupID)	// ensure that symmetry ops are right
-	Variable Natoms = round(xtal.N)				// number of predefined atoms
+#ifdef TEST_LATTICE_2D
+	Variable dim = xtal.dim
+#else
+	Variable dim = 3
+#endif
+
+	SetSymOpsForSpaceGroup(xtal.SpaceGroupID,dim)	// ensure that symmetry ops are right
+	Variable Natoms = round(xtal.N)						// number of predefined atoms
 	Natoms = numtype(Natoms) ? 0 : limit(Natoms,0,STRUCTURE_ATOMS_MAX)
 	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroupID)+"\""
 
@@ -705,8 +757,10 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomRelX,fSize=12,limits={0,1,0},value= _NUM:0
 	SetVariable setAtomRelY,pos={123,118},size={91,19},bodyWidth=80,title="y/b",proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomRelY,fSize=12,limits={0,1,0},value= _NUM:0
-	SetVariable setAtomRelZ,pos={234,118},size={91,19},bodyWidth=80,title="z/c",proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomRelZ,fSize=12,limits={0,1,0},value= _NUM:0
+	if (!(dim==2))
+		SetVariable setAtomRelZ,pos={234,118},size={91,19},bodyWidth=80,title="z/c",proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomRelZ,fSize=12,limits={0,1,0},value= _NUM:0
+	endif
 	SetVariable setAtomOcc,pos={10,141},size={110,19},title="Occupancy",fSize=12,proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomOcc,limits={0,1,0},value= _NUM:1
 
@@ -720,18 +774,24 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomU11,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomU22,pos={113,173},size={73,21},bodyWidth=50,title="U\\B22\\M"
 	SetVariable setAtomU22,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU33,pos={211,173},size={73,21},bodyWidth=50,title="U\\B33\\M"
-	SetVariable setAtomU33,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU12,pos={11,204},size={73,21},bodyWidth=50,title="U\\B12\\M"
-	SetVariable setAtomU12,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU13,pos={114,204},size={73,21},bodyWidth=50,title="U\\B13\\M"
-	SetVariable setAtomU13,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU23,pos={212,204},size={73,21},bodyWidth=50,title="U\\B23\\M"
-	SetVariable setAtomU23,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+	if (!(dim==2))
+		SetVariable setAtomU33,pos={211,173},size={73,21},bodyWidth=50,title="U\\B33\\M"
+		SetVariable setAtomU33,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomU12,pos={11,204},size={73,21},bodyWidth=50,title="U\\B12\\M"
+		SetVariable setAtomU12,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomU13,pos={114,204},size={73,21},bodyWidth=50,title="U\\B13\\M"
+		SetVariable setAtomU13,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomU23,pos={212,204},size={73,21},bodyWidth=50,title="U\\B23\\M"
+		SetVariable setAtomU23,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+	else
+		SetVariable setAtomU12,pos={11,204},size={73,21},bodyWidth=50,title="U\\B12\\M"
+		SetVariable setAtomU12,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+	endif
 	TitleBox titleUij1,pos={290,171},size={14,21},title=ARING+"\\S2\\M",fSize=12,frame=0
 	TitleBox titleUij2,pos={291,203},size={14,21},title=ARING+"\\S2\\M",fSize=12,frame=0
 
 	String win=StringFromList(0,WinList("*",";","WIN:64"))
+	SetWindow $win userdata(dim)=num2istr(dim)
 	if (Natoms>0)
 		SetAtomEditPanelValues(win,xtal.atom[0])
 	endif
@@ -798,6 +858,9 @@ Static Function ChangeAtomEditPanelSize(win,mode)		// changes size of AtomEditPa
 	String win									// window to set
 	Variable mode								// Thermal Mode, 0=None, 1=Debye, 2=Biso, 3=Uiso, 4=Uaniso[ij]
 
+	Variable dim = str2num(GetUserData("","","dim"))
+	dim = numtype(dim) ? 3 : dim
+
 	PopupMenu useThermalPopUp,win=$win,mode=(mode+1)		// set the Thermal popup to corrct value
 	SetVariable setAtomDebyeT,win=$win, disable=1			// first disable all
 	SetVariable setAtomBiso,win=$win, disable=1
@@ -834,10 +897,13 @@ Static Function ChangeAtomEditPanelSize(win,mode)		// changes size of AtomEditPa
 			V_bottom -= 24
 			SetVariable setAtomU11,win=$win, disable=0
 			SetVariable setAtomU22,win=$win, disable=0
-			SetVariable setAtomU33,win=$win, disable=0
-			SetVariable setAtomU12,win=$win, disable=0
-			SetVariable setAtomU13,win=$win, disable=0
-			SetVariable setAtomU23,win=$win, disable=0
+			if (dim==2)
+				SetVariable setAtomU12,win=$win, disable=0
+			else
+				SetVariable setAtomU33,win=$win, disable=1
+				SetVariable setAtomU13,win=$win, disable=1
+				SetVariable setAtomU23,win=$win, disable=1
+			endif
 			TitleBox titleUij1, disable=0
 			TitleBox titleUij2, disable=0
 	endswitch
@@ -959,6 +1025,9 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	String win
 	String ctrlName
 
+	Variable dim = str2num(GetUserData("","","dim"))
+	dim = numtype(dim) ? 3 : dim
+
 	SVAR strStruct = $GetUserData(win,"","xtalSname")
 	if (!SVAR_Exists(strStruct))
 		print "ERROR -- Cannot find strStruct from panel userdata"
@@ -984,12 +1053,16 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	ControlInfo/W=$win setAtomWyckoff	;		symbol = SelectString(StringMatch(S_Value," "),S_Value,"")
 	ControlInfo/W=$win setAtomRelX		;		xx = V_Value
 	ControlInfo/W=$win setAtomRelY		;		yy = V_Value
-	ControlInfo/W=$win setAtomRelZ		;		zz = V_Value
+	if (!(dim==2))
+		ControlInfo/W=$win setAtomRelZ	;		zz = V_Value
+	endif
 	if (StringMatch(ctrlName,"setAtomWyckoff") && strlen(symbol)>0)	// changed Wyckoff, force xyz to conform
 		if (!ForceXYZtoWyckoff(xtal.SpaceGroupID,symbol,xx,yy,zz))
 			SetVariable setAtomRelX,win=$win,value= _NUM:xx
 			SetVariable setAtomRelY,win=$win,value= _NUM:yy
-			SetVariable setAtomRelZ,win=$win,value= _NUM:zz
+			if (!(dim==2))
+				SetVariable setAtomRelZ,win=$win,value= _NUM:zz
+			endif
 		endif
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
@@ -1021,10 +1094,12 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	ControlInfo/W=$win setAtomUiso		;		xtal.atom[m].Uiso = V_Value * 0.01
 	ControlInfo/W=$win setAtomU11		;		xtal.atom[m].U11 = V_Value * 0.01
 	ControlInfo/W=$win setAtomU22		;		xtal.atom[m].U22 = V_Value * 0.01
-	ControlInfo/W=$win setAtomU33		;		xtal.atom[m].U33 = V_Value * 0.01
 	ControlInfo/W=$win setAtomU12		;		xtal.atom[m].U12 = V_Value * 0.01
-	ControlInfo/W=$win setAtomU13		;		xtal.atom[m].U13 = V_Value * 0.01
-	ControlInfo/W=$win setAtomU23		;		xtal.atom[m].U23 = V_Value * 0.01
+	if (!(dim==2))
+		ControlInfo/W=$win setAtomU33	;		xtal.atom[m].U33 = V_Value * 0.01
+		ControlInfo/W=$win setAtomU13	;		xtal.atom[m].U13 = V_Value * 0.01
+		ControlInfo/W=$win setAtomU23	;		xtal.atom[m].U23 = V_Value * 0.01
+	endif
 
 	Wave/T atomNameList = $GetUserData(win,"","listWave")
 	if (WaveExists(atomNameList))				// update name in atomNameList from label
@@ -1054,6 +1129,19 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 	Variable brief										// if true, print short version
 	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : brief
 
+	Variable dim = xtal.dim
+	if (dim==2)
+		print_crystalStructure2D(xtal, brief)			// prints out the value in a crystalStructure
+	else
+		print_crystalStructure3D(xtal, brief)			// prints out the value in a crystalStructure
+	endif
+End
+//
+Static Function print_crystalStructure3D(xtal, brief)			// prints out the value in a crystalStructure
+	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
+	Variable brief										// if true, print short version
+	brief = numtype(brief) ? 0 : brief
+
 	Variable i,N=xtal.N
 	if (WhichListItem("LatticePanelButtonProc",GetRTStackInfo(0))>=0)
 		printf "%sshowCrystalStructure()\r",BULLET
@@ -1065,7 +1153,7 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 	endif
 	Variable SG = xtal.SpaceGroup, idNum=xtal.SpaceGroupIDnum
 	String id = xtal.SpaceGroupID
-	printf "Space Group=%s   %s   %s       Vc = %g (nm^3)",id,StringFromList(latticeSystem(id),LatticeSystemNames), getHMboth(idNum),xtal.Vc
+	printf "Space Group=%s   %s   %s       Vc = %g (nm^3)",id,StringFromList(latticeSystem(id,3),LatticeSystemNames), getHMboth(idNum),xtal.Vc
 	if (xtal.density>0)
 		printf "       density = %g (g/cm^3)",xtal.density
 	endif
@@ -1205,6 +1293,151 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 		printf "hash id = '%s'\r",xtal.hashID
 	endif
 End
+//
+Static Function print_crystalStructure2D(xtal, brief)			// prints out the value in a crystalStructure
+	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
+	Variable brief										// if true, print short version
+	brief = numtype(brief) ? 0 : brief
+
+	Variable i,N=xtal.N
+	if (WhichListItem("LatticePanelButtonProc",GetRTStackInfo(0))>=0)
+		printf "%sshowCrystalStructure()\r",BULLET
+	endif
+	if (strlen(xtal.desc))
+		printf "'%s'   \t",xtal.desc
+	else
+		printf "\t\t\t"
+	endif
+	Variable SG = xtal.SpaceGroup, idNum=xtal.SpaceGroupIDnum
+	String id = xtal.SpaceGroupID
+	printf "Space Group=%s   %s   %s       Ac = %g (nm^2)",id,StringFromList(latticeSystem(id,2),LatticeSystemNames2D), getHMboth(idNum),xtal.Vc
+	if (xtal.density>0)
+		printf "       area density = %g (g/cm^2)",xtal.density
+	endif
+	if (xtal.alphaT>0)
+		printf "     coefficient of thermal expansion is %g\r",xtal.alphaT
+	else
+		printf "\r"
+	endif
+	printf "lattice constants  { %.15gnm, %.15gnm,   %.15g%s}",xtal.a,xtal.b,xtal.alpha,DEGREESIGN
+	if (numtype(xtal.Temperature)==0)
+		Variable Temperature = xtal.Temperature
+		String unit = "C"
+		if (Temperature < -100)					// display in Kelvin
+			unit = "K"
+			Temperature = ConvertTemperatureUnits(Temperature,"C",unit)		// xtal.Temperature is always C
+		endif
+		printf ",   Temperature = %g %s%s",Temperature,DEGREESIGN,unit
+	endif
+	if (xtal.Pressure>0)
+		printf ",   Pressure = %.3W1PPa",xtal.Pressure
+	endif
+	printf "\r"
+
+	if (strlen(xtal.sourceFile)>1)
+		printf "xtal read from file: \"%s\"\r",xtal.sourceFile
+	endif
+
+	if (N<1)
+		print "No Atoms Defined"
+	else
+		reMakeAtomXYZs(xtal)						// only execute reMakeAtomXYZs(xtal) once
+		if (strlen(xtal.formula)>0)
+			printf "atom types & locations:\t chemical formula = \"%s\"\r",xtal.formula
+		else
+			printf "atom type locations:\r"
+		endif
+		Variable mult, itemp
+		for (i=0;i<xtal.N;i+=1)					// loop over the defined atoms
+			String vstr=""
+			if (xtal.atom[i].valence)
+				sprintf vstr, ", %+d",xtal.atom[i].valence
+			endif
+			if (strlen(xtal.atom[i].WyckoffSymbol))
+				printf "     %s (Z=%g%s)\t%s\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].WyckoffSymbol,xtal.atom[i].x,xtal.atom[i].y
+			else
+				printf "     %s (Z=%g%s)\t\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].x,xtal.atom[i].y
+			endif
+			if (xtal.atom[i].occ != 1)
+				printf "    occ = %g",xtal.atom[i].occ
+			endif
+
+			mult = DimSize($("root:Packages:Lattices:atom"+num2istr(i)),0)
+			mult = !(mult>0) ? xtal.atom[i].mult : mult
+			if (mult>1)
+				printf "\tmultiplicity = %d",mult
+			endif
+
+			itemp = atomThermalInfo(xtal.atom[i])
+			if (itemp==1)					// Thermal vibration information, print at most one kind of info
+				printf "\t    Debye Temperature = %g K",xtal.atom[i].DebyeT
+			elseif (itemp==2)
+				printf "    Isotropic B = %g (%s^2)",(xtal.atom[i].Biso * 100),ARING
+			elseif (itemp==3)
+				printf "    Isotropic U = %g (%s^2)",(xtal.atom[i].Uiso * 100),ARING
+			elseif (itemp>=4)
+				printf "    Anisotropic U: U11=%+g, U22=%+g",(xtal.atom[i].U11 *100),(xtal.atom[i].U22 *100)
+			if (itemp==5)
+				printf "    U12=%+g",(xtal.atom[i].U12 *100)
+			endif
+				printf " ("+ARING+"^2)"
+			endif
+			printf "\r"
+		endfor
+
+		String list = OverOccupyList(xtal)						// check if some sites have occ>1
+		if (strlen(list))
+			print "*************************************************"
+			print "\t\t Found over occupied sites:"
+			print OverOccupyList2Str(list)
+			print "*************************************************"
+		endif
+
+		Variable netCharge = NetChargeCell(xtal)
+		if (netCharge != 0)
+			print "\t*************************************************"
+			printf "\t\tnetCharge in cell = %g\r",netCharge
+			print "\t*************************************************"
+		else
+			print "\t\tCharge Neutral"
+		endif
+
+		if (xtal.Nbonds > 0)
+			printf "defined bonds (nm):\r"
+			for (i=0;i<xtal.Nbonds;i+=1)
+				Make/N=(xtal.bond[i].N)/FREE/D lens
+				lens = xtal.bond[i].len[p]
+				printf "     %s  <-->  %s:  %s\r",xtal.bond[i].label0,xtal.bond[i].label1,vec2str(lens,bare=1)
+			endfor
+		endif
+		if (brief)
+			return 0
+		endif
+
+		printf "\rindividual atom positions:\rtype	frac xyz\r"
+		Variable j
+		for (i=0;i<xtal.N;i+=1)
+			Wave wa = $("root:Packages:Lattices:atom"+num2istr(i))
+			if (!WaveExists(wa))
+				break
+			endif
+			for (j=0;j<DimSize(wa,0);j+=1)
+				printf "%d\t\t{%g,  %g}\r"i,wa[j][0],wa[j][1]
+			endfor
+		endfor
+	endif
+	printf "\r"
+	printf "					a				b   (nm)\r"
+	printf "direct	\t%+10.7f\t%+10.7f\r",xtal.a0,xtal.b0
+	printf "lattice\t%+10.7f\t%+10.7f\r",xtal.a1,xtal.b1
+	printf "\r					a*				b*  (1/nm)\r"
+	printf "recip	\t%+10.6f\t%+10.6f\r",xtal.as0,xtal.bs0
+	printf "lattice\t%+10.6f\t%+10.6f\r",xtal.as1,xtal.bs1
+	if (strlen(xtal.hashID)<2)
+		printf "hash id = '%s'\r",xtal.hashID
+	endif
+End
+
 
 
 Static Function/S xtalHashID(xtalIN)		// Calculates the hashID for xtal
@@ -1240,16 +1473,24 @@ Static Function LatticeBad(xtal,[atomsToo])
 	Variable atomsToo			// also check atom definitions
 	atomsToo = ParamIsDefault(atomsToo) ? 0 : atomsToo
 	atomsToo = numtype(atomsToo) ? 0 : !(!atomsToo)
-
 	Variable i, vibrate=0, bad=0, haveDebyeT=0
-	bad += numtype(xtal.a + xtal.b + xtal.c)
-	bad += !(xtal.a > 0) || !(xtal.b > 0) || !(xtal.c > 0)
-	bad += numtype(xtal.alpha + xtal.beta + xtal.gam)
-	bad += !(xtal.alpha > 0) || !(xtal.beta > 0) || !(xtal.gam > 0)
-	bad += xtal.alpha >=180 || xtal.beta >= 180 || xtal.gam >= 180
-	bad += !isValidSpaceGroup(xtal.SpaceGroup)
+
+	Variable dim = xtal.dim
+	if (dim==2)
+		bad += numtype(xtal.a + xtal.b + xtal.alpha)
+		bad += (xtal.a < 0) || (xtal.b < 0)
+		bad += (xtal.alpha < 0) || (xtal.alpha >=180 )
+	else
+		bad += numtype(xtal.a + xtal.b + xtal.c)
+		bad += !(xtal.a > 0) || !(xtal.b > 0) || !(xtal.c > 0)
+		bad += numtype(xtal.alpha + xtal.beta + xtal.gam)
+		bad += !(xtal.alpha > 0) || !(xtal.beta > 0) || !(xtal.gam > 0)
+		bad += xtal.alpha >=180 || xtal.beta >= 180 || xtal.gam >= 180
+	endif
+
+	bad += !isValidSpaceGroup(xtal.SpaceGroup,dim)
 	for (i=0;i<xtal.N && atomsToo;i+=1)
-		bad += atomBAD(xtal.atom[i])
+		bad += atomBAD(xtal.atom[i], dim)
 		vibrate = vibrate || atomThermalInfo(xtal.atom[i])
 		haveDebyeT = haveDebyeT || (xtal.atom[i].DebyeT)>0
 	endfor
@@ -1260,11 +1501,13 @@ Static Function LatticeBad(xtal,[atomsToo])
 	return (bad>0)
 End
 //
-Static Function atomBAD(atom)
+Static Function atomBAD(atom,dim)
 	Struct atomTypeStructure &atom
+	Variable dim			// must be strictly 2 or 3
+	dim = dim==2 ? 2 : 3
+
 	Variable bad=0
 	bad += strlen(atom.name)<1
-	bad += numtype(atom.x+atom.y+atom.z)>0
 	bad += numtype(atom.occ) || atom.occ<0 || atom.occ>1
 	bad += atom.Zatom != limit(round(atom.Zatom),1,92)
 	bad += !(abs(atom.valence)<10)					// a valence of 10 is too big
@@ -1272,13 +1515,25 @@ Static Function atomBAD(atom)
 	bad += atom.Biso < 0 || numtype(atom.Biso)==1
 	bad += atom.Uiso < 0 || numtype(atom.Uiso)==1
 
-	// Note, anisotropic Uij can be negative
-	if (numtype(atom.U11)==0 || numtype(atom.U22)==0 || numtype(atom.U33)==0)	// using anisotropic Uii
-		// if one is Uii valid, all symmetric Uii must be valid
-		bad += numtype(atom.U11 + atom.U22 + atom.U33)!=0
-		if (numtype(atom.U12)==0 || numtype(atom.U13)==0 || numtype(atom.U23)==0)	// using anisotropic Uij
-			// if one Uij is valid, all asymmetric Uij must be valid
-			bad += numtype(atom.U12 + atom.U13 + atom.U23)!=0
+	if (dim==2)
+		bad += numtype(atom.x+atom.y)>0
+		// Note, anisotropic Uij can be negative
+		if (numtype(atom.U11)==0 || numtype(atom.U22)==0)	// using anisotropic Uii
+			// if one is Uii valid, all symmetric Uii must be valid
+			bad += numtype(atom.U11 + atom.U22)!=0
+			bad += numtype(atom.U12)!=0
+		endif
+	else
+
+		bad += numtype(atom.x+atom.y+atom.z)>0
+		// Note, anisotropic Uij can be negative
+		if (numtype(atom.U11)==0 || numtype(atom.U22)==0 || numtype(atom.U33)==0)	// using anisotropic Uii
+			// if one is Uii valid, all symmetric Uii must be valid
+			bad += numtype(atom.U11 + atom.U22 + atom.U33)!=0
+			if (numtype(atom.U12)==0 || numtype(atom.U13)==0 || numtype(atom.U23)==0)	// using anisotropic Uij
+				// if one Uij is valid, all asymmetric Uij must be valid
+				bad += numtype(atom.U12 + atom.U13 + atom.U23)!=0
+			endif
 		endif
 	endif
 	return (bad>0)
@@ -1320,20 +1575,24 @@ End
 Static Function ForceLatticeToStructure(xtal)
 	STRUCT crystalStructure &xtal					// this sruct is set in this routine
 
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3				// dim is strictly 2 or 3
+	xtal.dim = dim							// make sure xtal is the same
+
 	// Make sure that the SpaceGroup, SpaceGroupID, and SpaceGroupIDnum all agree
 	Variable SG, idNum
 	String id = xtal.SpaceGroupID	// first try to use the id to identify the material			
-	if (isValidSpaceGroupID(id))
+	if (isValidSpaceGroupID(id,dim))
 		SG = str2num(id)
-		idNum = SpaceGroupID2num(id)
+		idNum = SpaceGroupID2num(id, dim=dim)
 	else
 		SG = xtal.SpaceGroup			// failed with SpaceGroupID, try just SpaceGroup
 		id = FindDefaultIDforSG(SG)	
-		idNum = SpaceGroupID2num(id)
+		idNum = SpaceGroupID2num(id, dim=dim)
 		xtal.SpaceGroupID = id			// set id & idNum using values from SpaceGroup
 		xtal.SpaceGroupIDnum = idNum
 	endif
-	if (!isValidSpaceGroupIDnum(idNum))	// SpaceGroupIDnum must be in range [1,530]
+	if (!isValidSpaceGroupIDnum(idNum,dim))	// SpaceGroupIDnum must be in range [1,530]
 		DoAlert 0, "invalid Space Group ID "+id+"     or SpaceGroup #"+num2str(SG)
 		return 1
 	endif
@@ -1350,65 +1609,102 @@ Static Function ForceLatticeToStructure(xtal)
 	//	for Rhombohedral		a,alpha
 	//	SG =		[146,148,155,160,161,166,167]
 	//	idNum =	[434,437,445,451,453,459,461]
+	//
+	//
+	//	for 2D xtals
+	//							SG				  idNum
+	//	Hexagonal		[13,17]			[13-17]			a
+	//	Square			[10,12]			[10,12]			a
+	//	Rhombic			{5,9}				{5,9}				a,alpha
+	//	Rectangular		{3,4,6,7,8}		{3,4,6,7,8}		a,b
+	//	Oblique			[1,2]				[1,2]				a,b,alpha
 
-	// force the lattice constant to confomr to system
-	Variable system = latticeSystem(id)
-	if (system == CUBIC)					// Cubic space groups [195,230]
-			xtal.b = xtal.a
-			xtal.c = xtal.a
-			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+	// force the lattice constant to conform to system
+	Variable system = latticeSystem(id,dim)
 
-	elseif (system == HEXAGONAL)			// Hexagonal space groups [168,194]
-			xtal.b = xtal.a
-			xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
-
-	elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
-		// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
-		Variable useRhom = 0
-		if (isRhombohedralSG(SG))
-			useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1	// looks rhombohedral
-			useRhom = useRhom | ( strsearch(id,":R",0,2)>0 )
-		endif
-		if (useRhom)
-			// looks like a rhombohedral structure using rhombohedral lattice constants
-			xtal.b = xtal.a					// set to rhombohedral a=b=c, alpha=beta=gamma
-			xtal.c = xtal.a
-			xtal.beta = xtal.alpha
-			xtal.gam = xtal.alpha
-		else										// set to hexagonal lattice constants
-			xtal.b = xtal.a
-			xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
-		endif
-
-	elseif (system == TETRAGONAL)		// Tetragonal space groups [75,142]
-		xtal.b = xtal.a
-		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-
-	elseif (system == ORTHORHOMBIC)		// Orthorhombic space groups [16,74]
-		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-
-	elseif (system == MONOCLINIC)		// Monoclinic space groups [3,15]
-		xtal.alpha=90;  xtal.gam=90
-
-	elseif (system == TRICLINIC)			// Triclinic space groups 1,2]
-		// nothing to fix
-	else
-		return 1									// system is invalid, NOT valid
-	endif
-
-	// check that lattice constants appear valid (non NaN or negatives or zero...)
+	Variable alpha=xtal.alpha, bet=xtal.beta, gam=xtal.gam
 	String str
-	if (xtal.a<=0 || xtal.b<=0 || xtal.c<=0 || numtype(xtal.a+xtal.b+xtal.c))
-		sprintf str,"invalid, (a,b,c) = (%g,%g,%g)",xtal.a,xtal.b,xtal.c
-		DoAlert 0, str
-		return 1
+	if (dim==2)
+		if (system == HEXAGONAL)				// Hexagonal space groups [13-17]
+				xtal.b = xtal.a
+				xtal.alpha=120
+		elseif (system == SQUARE)				// Square space groups [10-12]
+				xtal.b = xtal.a
+				xtal.alpha=90
+		elseif (system == RHOMBIC)			// Rhombic space groups {5, 9}
+				xtal.b = xtal.a
+		elseif (system == RECTANGULAR)		// Rectangular space groups {3,4,6,7,8}, not 5
+			xtal.b = xtal.a
+			xtal.alpha=90
+		elseif (system == OBLIQUE)			// Oblique space groups [3,15]
+			// nothing to fix
+		else
+			return 1									// system is invalid, NOT valid
+		endif
+
+		// check that lattice constants appear valid (non NaN or negatives or zero...)
+		if (xtal.a<=0 || xtal.b<=0 || numtype(xtal.a+xtal.b))
+			sprintf str,"invalid, (a,b) = (%g,%g)",xtal.a,xtal.b
+			DoAlert 0, str
+			return 1
+		endif
+		if (alpha<=0 || alpha>=180 || numtype(alpha))
+			sprintf str,"invalid, alpha = %g",alpha
+			DoAlert 0, str
+			return 1
+		endif
+
+	else
+		if (system == CUBIC)					// Cubic space groups [195,230]
+				xtal.b = xtal.a
+				xtal.c = xtal.a
+				xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+		elseif (system == HEXAGONAL)			// Hexagonal space groups [168,194]
+				xtal.b = xtal.a
+				xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
+		elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
+			// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
+			Variable useRhom = 0
+			if (isRhombohedralSG(SG))
+				useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1	// looks rhombohedral
+				useRhom = useRhom | ( strsearch(id,":R",0,2)>0 )
+			endif
+			if (useRhom)
+				// looks like a rhombohedral structure using rhombohedral lattice constants
+				xtal.b = xtal.a					// set to rhombohedral a=b=c, alpha=beta=gamma
+				xtal.c = xtal.a
+				xtal.beta = xtal.alpha
+				xtal.gam = xtal.alpha
+			else										// set to hexagonal lattice constants
+				xtal.b = xtal.a
+				xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
+			endif
+		elseif (system == TETRAGONAL)		// Tetragonal space groups [75,142]
+			xtal.b = xtal.a
+			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+		elseif (system == ORTHORHOMBIC)		// Orthorhombic space groups [16,74]
+			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+		elseif (system == MONOCLINIC)		// Monoclinic space groups [3,15]
+			xtal.alpha=90;  xtal.gam=90
+		elseif (system == TRICLINIC)			// Triclinic space groups 1,2]
+			// nothing to fix
+		else
+			return 1									// system is invalid, NOT valid
+		endif
+
+		// check that lattice constants appear valid (non NaN or negatives or zero...)
+		if (xtal.a<=0 || xtal.b<=0 || xtal.c<=0 || numtype(xtal.a+xtal.b+xtal.c))
+			sprintf str,"invalid, (a,b,c) = (%g,%g,%g)",xtal.a,xtal.b,xtal.c
+			DoAlert 0, str
+			return 1
+		endif
+		if (alpha<=0 || bet<=0 || gam<=0 || alpha>=180 || bet>=180 || gam>=180 || numtype(alpha+bet+gam))
+			sprintf str,"invalid, (alpha,beta,gam) = (%g,%g,%g)",alpha,bet,gam
+			DoAlert 0, str
+			return 1
+		endif
 	endif
-	Variable alpha=xtal.alpha,bet=xtal.beta,gam=xtal.gam
-	if (alpha<=0 || bet<=0 || gam<=0 || alpha>=180 || bet>=180 || gam>=180 || numtype(alpha+bet+gam))
-		sprintf str,"invalid, (alpha,beta,gam) = (%g,%g,%g)",alpha,bet,gam
-		DoAlert 0, str
-		return 1
-	endif
+
 	setDirectRecip(xtal)									// update Vc, direct and recip, density, and also calculates atom positions
 	CleanOutCrystalStructure(xtal)
 	xtal.Vibrate = xtalVibrates(xtal)					// True if some Thermal vibration info present in xtal
@@ -1430,52 +1726,82 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	//	see:		https://en.wikipedia.org/wiki/Fractional_coordinates
 	//  and		International Tables (2006) Vol. B, chapter 3.3 page 360
 	//
-	Variable a=xtal.a, b=xtal.b, c=xtal.c
-	Variable ca = cos((xtal.alpha)*PI/180), cb = cos((xtal.beta)*PI/180)
-	Variable cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
-	Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
-	Variable Vc = a*b*c * phi							// volume of unit cell
-	Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
-
+	if (strsearch(GetRTStackInfo(0),"reMakeAtomXYZs",2) >= 0)
+		return 0
+	endif
+	Variable dim = xtal.dim
 	Variable a0,a1,a2,  b0,b1,b2,  c0,c1,c2		//components of the direct lattice vectors
-	if (!isRhombohedralXtal(xtal))
-		// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
-		a0=a				; a1=0						; a2=0
-		b0=b*cg			; b1=b*sg					; b2=0
-		c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+	Variable a, b, c, Vc
+	Variable ca=cos((xtal.alpha)*PI/180)
+	if (dim==2)
+		Variable sa=sin((xtal.alpha)*PI/180)
+		a = xtal.a	;	b = xtal.b	;	c = NaN
+		a0 = a		;	a1 = 0		;	a2 = NaN
+		b0 = b*ca	;	b1 = b*sa	;	b2 = NaN
+		c0 = NaN		;	c1 = NaN		;	c2 = NaN
+		Vc = a*b * sa										// actually the area, not volume
+		//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
 	else
-		// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
-		// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
-		Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
-		Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
-		a0=p2q			; a1=pmq					; a2=pmq
-		b0=pmq			; b1=p2q					; b2=pmq
-		c0=pmq			; c1=pmq					; c2=p2q
+		a=xtal.a		;	b=xtal.b		;	c=xtal.c
+		Variable cb = cos((xtal.beta)*PI/180)
+		Variable cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
+		Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
+		Vc = a*b*c * phi							// volume of unit cell
+		Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
+
+		if (!isRhombohedralXtal(xtal))
+			// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
+			a0=a				; a1=0						; a2=0
+			b0=b*cg			; b1=b*sg					; b2=0
+			c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+		else
+			// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
+			// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
+			Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
+			Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
+			a0=p2q			; a1=pmq					; a2=pmq
+			b0=pmq			; b1=p2q					; b2=pmq
+			c0=pmq			; c1=pmq					; c2=p2q
+		endif
 	endif
 
 	xtal.Vc = Vc
-	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2	// assign to xtal values
+	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2			// assign direct lattice to xtal values
 	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
 	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
-	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2PI/Vc
-	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2PI/Vc
-	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2PI/Vc
 
-	Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
-	allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
-	allZero += abs(xtal.Unconventional20)+abs(xtal.Unconventional21)+abs(xtal.Unconventional22)
-	xtal.Unconventional00 = allZero==0 ? NaN : xtal.Unconventional00
-	if (numtype(xtal.Unconventional00)==0 && xtal.Unconventional00>-100 && xtal.Unconventional00<100)
-		Make/N=(3,3)/O/D root:Packages:Lattices:Unconventional
-		Wave Unconventional=root:Packages:Lattices:Unconventional
-		Unconventional[0][0]=xtal.Unconventional00;	Unconventional[0][1]=xtal.Unconventional01;	Unconventional[0][2]=xtal.Unconventional02
-		Unconventional[1][0]=xtal.Unconventional10;	Unconventional[1][1]=xtal.Unconventional11;	Unconventional[1][2]=xtal.Unconventional12
-		Unconventional[2][0]=xtal.Unconventional20;	Unconventional[2][1]=xtal.Unconventional21;	Unconventional[2][2]=xtal.Unconventional22
+	// next the reciprocal lattice
+	if (dim==2)
+		Make/N=(2,2)/D/FREE direct = { {a0,a1}, {b0,b1} }
+		MatrixOP/FREE recip = 2*PI * (Inv(direct))^t
+		xtal.as0 = recip[0][0]		;	xtal.as1 = recip[1][0]		;	xtal.as2 = NaN
+		xtal.bs0 = recip[0][1]		;	xtal.bs1 = recip[1][1]		;	xtal.bs2 = NaN
+		xtal.cs0 = NaN					;	xtal.cs1 = NaN					;	xtal.cs2 = NaN
 	else
-		KillWaves/Z root:Packages:Lattices:Unconventional
+		xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2PI/Vc
+		xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2PI/Vc
+		xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2PI/Vc
 	endif
 
-	xtal.density = densityOfCrystalStructure(xtal)
+	if (dim==2)
+		xtal.Unconventional00 = NaN					// cannot use Unconventional with dim==2
+		KillWaves/Z root:Packages:Lattices:Unconventional
+	else
+		Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
+		allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
+		allZero += abs(xtal.Unconventional20)+abs(xtal.Unconventional21)+abs(xtal.Unconventional22)
+		xtal.Unconventional00 = allZero==0 ? NaN : xtal.Unconventional00
+		if (numtype(xtal.Unconventional00)==0 && xtal.Unconventional00>-100 && xtal.Unconventional00<100)
+			Make/N=(3,3)/O/D root:Packages:Lattices:Unconventional
+			Wave Unconventional=root:Packages:Lattices:Unconventional
+			Unconventional[0][0]=xtal.Unconventional00;	Unconventional[0][1]=xtal.Unconventional01;	Unconventional[0][2]=xtal.Unconventional02
+			Unconventional[1][0]=xtal.Unconventional10;	Unconventional[1][1]=xtal.Unconventional11;	Unconventional[1][2]=xtal.Unconventional12
+			Unconventional[2][0]=xtal.Unconventional20;	Unconventional[2][1]=xtal.Unconventional21;	Unconventional[2][2]=xtal.Unconventional22
+		else
+			KillWaves/Z root:Packages:Lattices:Unconventional
+		endif
+	endif
+
 	if (xtal.N==0)								// no atom defined, make one dummy atom
 		xtal.N = 1
 		xtal.atom[0].x = 0
@@ -1486,6 +1812,10 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		xtal.atom[0].occ = 1
 		xtal.atom[0].valence = 0
 	endif
+
+	reMakeAtomXYZs(xtal)
+	xtal.density = densityOfCrystalStructure(xtal)
+
 	return 0
 End
 #else													// OLD_LATTICE_ORIENTATION was defined, this gives c||z which is non-standard
@@ -1526,7 +1856,6 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		KillWaves/Z root:Packages:Lattices:Unconventional
 	endif
 
-	xtal.density = densityOfCrystalStructure(xtal)
 	if (xtal.N==0)								// no atom defined, make one dummy atom
 		xtal.N = 1
 		xtal.atom[0].x = 0
@@ -1537,6 +1866,10 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		xtal.atom[0].occ = 1
 		xtal.atom[0].valence = 0
 	endif
+
+	reMakeAtomXYZs(xtal)
+	xtal.density = densityOfCrystalStructure(xtal)
+
 	return 0
 End
 #endif
@@ -1650,19 +1983,19 @@ Static Function CleanOutCrystalStructure(xtal)	// clean out all unused values an
 End
 
 
-Function densityOfCrystalStructure(xtal)		// returns the density (g/cm^3)
+Static Function densityOfCrystalStructure(xtal)	// returns the density (g/cm^3)
 	STRUCT crystalStructure &xtal					// this sruct is filled  by this routine
 	Variable NA=6.02214199e23							// Avagadro's number
 	String name
-
-	reMakeAtomXYZs(xtal)
 	Variable m, amuAll									// atomic mass of all atoms in cell
 	for (m=0,amuAll=0; m<(xtal.N); m+=1)			// for each atom type
 		name="root:Packages:Lattices:atom"+num2istr(m)
 		Wave ww = $name
 		amuAll += Element_amu(xtal.atom[m].Zatom)*DimSize(ww,0) * xtal.atom[m].occ
 	endfor
-	return (amuAll/NA)/(xtal.Vc * 1e-21)			// grams / cm^3
+
+	Variable scale = (xtal.dim == 2) ?  1e-14 : 1e-21	// grams/cm^3  or  grams/cm^2
+	return (amuAll/NA)/(xtal.Vc * scale)
 End
 
 Static Function NetChargeCell(xtal)				// find the net charge in a cell (from valences), should be zero
@@ -1687,6 +2020,7 @@ Function get_dhkl(h,k,l,[T])
 		DoAlert 0, "no lattice structure found"
 		return NaN
 	endif
+	Variable dim = xtal.dim
 	Variable alphaTbad = !(abs(xtal.alphaT)<0.1)	// if  |alphaT| > 0.1 then it must be wrong
 	if (numtype(h+k+l))
 		h = numtype(h) ? 0 : h
@@ -1698,14 +2032,23 @@ Function get_dhkl(h,k,l,[T])
 		Prompt T,"Temperature, standard is 20, (C)"
 		Variable askForT = (!ParamIsDefault(T) && !alphaTbad)
 		if (askForT)
-			DoPrompt "(hkl)",h,k,l,T
+			if (dim==2)
+				DoPrompt "(hk)",h,k,T
+			else
+				DoPrompt "(hkl)",h,k,l,T
+			endif
 		else
-			DoPrompt "(hkl)",h,k,l
+			if (dim==2)
+				DoPrompt "(hk)",h,k
+			else
+				DoPrompt "(hkl)",h,k,l
+			endif
 		endif
 		if (V_flag)
 			return NaN
 		endif
 	endif
+	l = dim==2 ? 0 : l
 	if (numtype(h+k+l))
 		return NaN
 	endif
@@ -1730,11 +2073,17 @@ ThreadSafe Function dSpacing(xtal,h,k,l,[T])		// returns d-spacing for the hkl (
 	STRUCT crystalStructure &xtal		// this sruct is set in this routine
 	Variable h,k,l
 	Variable T									// OPTIONAL Temperature (C)
-	Variable xx,yy,zz
-	xx = h*xtal.as0 + k*xtal.bs0 + l*xtal.cs0
-	yy = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
-	zz = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
-	Variable d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
+	Variable xx,yy,zz, d
+	if (xtal.dim == 2)
+		xx = h*xtal.as0 + k*xtal.bs0
+		yy = h*xtal.as1 + k*xtal.bs1
+		d = 2*PI/sqrt(xx*xx + yy*yy)
+	else
+		xx = h*xtal.as0 + k*xtal.bs0 + l*xtal.cs0
+		yy = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
+		zz = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
+		d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
+	endif
 	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T) && numtype(T)==0 && T>=-273.15)	// do if T passed, and valid alphaT
 		T = limit(T,-273.15,Inf)				// limit T to > absolute zero
 		d = d*(1+xtal.alphaT*(T-20))		// apply temperature correction
@@ -1777,9 +2126,15 @@ Function hkl2Q(h,k,l, qvec,[normal])				// compute qvector for (h,k,l), returns 
 		DoAlert 0, "No Lattice, please set one"
 		return 1
 	endif
-	qvec[0] = h*xtal.as0+k*xtal.bs0+l*xtal.cs0	// qvec =  recip x hkl
-	qvec[1] = h*xtal.as1+k*xtal.bs1+l*xtal.cs1
-	qvec[2] = h*xtal.as2+k*xtal.bs2+l*xtal.cs2
+
+	if (xtal.dim == 2)
+		qvec[0] = h*xtal.as0+k*xtal.bs0					// qvec =  recip x hkl
+		qvec[1] = h*xtal.as1+k*xtal.bs1
+	else
+		qvec[0] = h*xtal.as0+k*xtal.bs0+l*xtal.cs0	// qvec =  recip x hkl
+		qvec[1] = h*xtal.as1+k*xtal.bs1+l*xtal.cs1
+		qvec[2] = h*xtal.as2+k*xtal.bs2+l*xtal.cs2
+	endif
 
 	Variable Qlen = norm(qvec)
 	if (normal)
@@ -1977,7 +2332,7 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 			return 1											// did nothing, nothing found, give up
 		endif
 		if (!isValidLatticeConstants(xtal))
-			SetToDummyXTAL(xtal)						// set to valid dummy values
+			SetToDummyXTAL(xtal,3)						// set to valid dummy values
 		endif
 		StructPut/S/B=2 xtal, strStruct				// keep a local copy after loading from PackagePreferences
 		String/G root:Packages:Lattices:crystalStructStr = strStruct
@@ -1989,30 +2344,40 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 	return 0
 End
 //
-Static Function SetToDummyXTAL(xtal)				// fill the crystal structure with valid dummy values
+Static Function SetToDummyXTAL(xtal,dim)		// fill the crystal structure with valid dummy values
 	STRUCT crystalStructure &xtal
-	xtal.desc = "Dummy Structure"
-	xtal.SpaceGroupID = "195"							// simple cubic
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
-	xtal.SpaceGroup = 195
-	xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
-	xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
-	xtal.Vc = 0.125
-	xtal.Vibrate = 0	;	xtal.haveDebyeT = 0
-	xtal.Nbonds = 0
+	Variable dim
+	init_crystalStructure(xtal)
+	xtal.dim = dim
+	xtal.desc = "Dummy Structure " + SelectString(dim==2,"3D","2D")
+	xtal.formula = ""
+
+	xtal.SpaceGroupID = SelectString(dim==2,"195","2")	// simple cubic or oblique
+	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=dim)
+
+	if (dim==2)
+		xtal.a = 0.5		;	xtal.b = 0.5
+		xtal.alpha = 90	;	xtal.beta = NaN
+		//	xtal.Vc = 0.25
+	else
+		xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
+		xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
+		//	xtal.Vc = 0.125
+	endif
 	xtal.N = 1
 	xtal.sourceFile=""
 	xtal.hashID = ""
 
 	xtal.N = 1
 	SetToDummyATOM(xtal.atom[0])
-	xtal.atom[0].name = "H1"
+	LatticeSym#ForceLatticeToStructure(xtal)
 End
 //
 Static Function SetToDummyATOM(atom)		// fill the atom structure with valid dummy values
 	STRUCT atomTypeStructure &atom
-	atom.name = ""
-	atom.Zatom = 1
+	atom.name = "Si"
+	atom.Zatom = 14
 	atom.x = 0	;	atom.y = 0	;	atom.z = 0
 	atom.occ = 1
 	atom.valence = 0
@@ -2028,14 +2393,9 @@ Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local
 	STRUCT crystalStructure &xtal						// returns 0 if something set, 1 is nothing done
 
 	xtal.hashID = xtalHashID(xtal)						// re-set hash function to identify associated waves
-//	String strStruct
-//	xtal.hashID = ""											// re-set hash function to identify associated waves
-//	StructPut/S xtal, strStruct
-//	xtal.hashID = hash(strStruct,1)
 
 	Wave atom0 = root:Packages:Lattices:atom0
 	if (WaveExists(atom0))
-//		String wnote=StringByKey("ID",note(atom0),"=")
 		String wnote=note(atom0)
 		if (!stringmatch(StringByKey("ID",wnote,"="),xtal.hashID))
 			Note/K atom0, ReplaceStringByKey("ID",wnote,"","=")
@@ -2051,15 +2411,6 @@ Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local
 	endif
 	SavePackagePreferences/FLSH=1 "LatticeSym","LatticeSymPrefs",1,xtal
 	return 0
-//	if (exists(":crystalStructStr")==2)				// use the global in this data folder
-//		SVAR crystalStructStr=:crystalStructStr
-//		crystalStructStr = strStruct
-//	elseif (exists("root:crystalStructStr")==2)	// global exists in root
-//		SVAR crystalStructStr=root:crystalStructStr// update global in root
-//		crystalStructStr = strStruct
-//	else	
-//		String/G root:Packages:Lattices:crystalStructStr=strStruct	// neither exist, make global in Packages
-//	endif
 End
 
 
@@ -2080,24 +2431,34 @@ Static Function/T OverOccupyList(xtalIN,[occMax,printIt])	// checks if sites in 
 	String str, out=""
 
 	Variable Natoms=xtal.N		// nuber of atom types
+	Variable dim = xtal.dim
 	Variable iatom, occ, i
 	Variable x0,y0,z0, dist
 	for (iatom=0;iatom<Natoms;iatom+=1)
 		x0 = xtal.atom[iatom].x
 		y0 = xtal.atom[iatom].y
 		z0 = xtal.atom[iatom].z
+		z0 = dim==2 ? 0 : z0
 		if (numtype(x0+y0+z0))
 			continue
 		endif
 		for (i=iatom,occ=0; i<Natoms; i+=1)	// now loop over iatom and all of the following atoms
-			dist = sqrt((x0-xtal.atom[i].x)^2 + (y0-xtal.atom[i].y)^2 + (z0-xtal.atom[i].z)^2)
+			if (dim==2)
+				dist = sqrt((x0-xtal.atom[i].x)^2 + (y0-xtal.atom[i].y)^2)
+			else
+				dist = sqrt((x0-xtal.atom[i].x)^2 + (y0-xtal.atom[i].y)^2 + (z0-xtal.atom[i].z)^2)
+			endif
 			if (dist < 0.01)							// within 0.01 of a cell, assume same position
 				occ += xtal.atom[i].occ			// accumulate occupancy
 				xtal.atom[i].x = NaN				// this atom has been used, remove from further consideration
 			endif
 		endfor
 		if (occ>occMax)
-			sprintf str, "%g,%g,%g,%g;",x0,y0,z0,occ
+			if (dim==2)
+				sprintf str, "%g,%g,%g;",x0,y0,occ
+			else
+				sprintf str, "%g,%g,%g,%g;",x0,y0,z0,occ
+			endif
 			out += str
 		endif
 	endfor
@@ -2114,6 +2475,7 @@ Static Function/T OverOccupyList2Str(list,[occMax])
 	occMax = ParamIsDefault(occMax) ? 1 : occMax	// default is 1, only print if occ>1
 	occMax = numtype(occMax)==2 ? 1 : occMax
 
+	Variable dim = (ItemsInList(list)==3) ? 2 : 3
 	String out="", item, str
 	Variable i, N=ItemsInList(list), x,y,z,occ
 	for (i=0;i<N;i+=1)
@@ -2121,9 +2483,14 @@ Static Function/T OverOccupyList2Str(list,[occMax])
 		x = str2num(StringFromlist(0,item,","))
 		y = str2num(StringFromlist(1,item,","))
 		z = str2num(StringFromlist(2,item,","))
+		z = dim==2 ? 0 : z
 		occ = str2num(StringFromlist(3,item,","))
 		if (numtype(x+y+z+occ)==0 && occ>occMax)
-			sprintf str, "site {%g, %g, %g}, occupancy = %g",x,y,z,occ
+			if (dim==2)
+				sprintf str, "site {%g, %g}, occupancy = %g",x,y,occ
+			else
+				sprintf str, "site {%g, %g, %g}, occupancy = %g",x,y,z,occ
+			endif
 			out += SelectString(strlen(out),"","\r") + str
 		endif
 	endfor
@@ -2213,7 +2580,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		structures = xtal.desc+":"+num2istr(SpaceGroup)+";"+structures
 	endif
 	Variable i,N=ItemsInList(structures)
-	if (isValidSpaceGroup(SpaceGroup))				// valid SpaceGroup number
+	if (isValidSpaceGroup(SpaceGroup,3))		// valid SpaceGroup number
 		structureName = ""
 		for(i=0;i<N;i+=1)
 			item = StringFromList(i,structures)
@@ -2253,7 +2620,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		SpaceGroup=str2num(StringFromList(1,item,":"))
 		structureName = StringFromList(0,item,":")
 	endif
-	if (!isValidSpaceGroup(SpaceGroup))
+	if (!isValidSpaceGroup(SpaceGroup,3))
 		return 1
 	endif
 
@@ -2313,7 +2680,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	xtal.alpha = alpha	;	xtal.beta = bet	;	xtal.gam = gam
 	xtal.SpaceGroup=SpaceGroup
 	xtal.SpaceGroupID = FindDefaultIDforSG(SpaceGroup)
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=3)
 	xtal.Unconventional00=NaN
 	xtal.sourceFile = ""
 	ForceLatticeToStructure(xtal)
@@ -2508,10 +2875,6 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	String subWin
 	String SpaceGroupID
 
-	if (!isValidSpaceGroupID(SpaceGroupID))
-		return 1
-	endif
-
 	NVAR a=root:Packages:Lattices:PanelValues:a
 	NVAR b=root:Packages:Lattices:PanelValues:b
 	NVAR c=root:Packages:Lattices:PanelValues:c
@@ -2521,19 +2884,23 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
+		return 1
+	endif
 	Variable SG = str2num(SpaceGroupID)		// first part of id is space group number
 	String titleStr="\\JC"+SpaceGroupID+" "
 
 #ifdef TEST_LATTICE_2D
 	if (dim==2)
-		SetVariable set_c_nm,disable=1,win=$subWin				// alwasy for dim==2
+		SetVariable set_c_nm,disable=1,win=$subWin				// always for dim==2
 		SetVariable set_beta,disable=1,win=$subWin
 		SetVariable set_gamma,disable=1,win=$subWin
 	else
-		SetVariable set_c_nm,disable=0,win=$subWin				// alwasy for dim==3
+		SetVariable set_c_nm,disable=0,win=$subWin				// always for dim==3
 		SetVariable set_beta,disable=0,win=$subWin
 		SetVariable set_gamma,disable=0,win=$subWin
 	endif
+	PopupMenu popupLatticeDim,mode=(dim==2 ? 1:2)
 #endif
 
 	if (dim==2 && SG>=13)												// Hexagonal, a [13 17]
@@ -2566,6 +2933,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
 		titleStr += "Oblique"
 
+	// Now the 3D Space Group numbers
 	elseif (SG>=195)														// Cubic, a
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
@@ -2641,7 +3009,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		titleStr += "Triclinic"
 	endif
 //	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
-	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID, dim=dim))
 
 	titleStr = minus2bar(titleStr, single=1)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
@@ -2711,7 +3079,6 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 		STRUCT crystalStructure xtal			// returns 0 if something set, 1 is nothing done
 		FillCrystalStructDefault(xtal)		//fill the crystal structure with 'current' values
 		dspace_nm = dSpacing(xtal,h,k,l)
-//		Variable/C Fc = Fstruct(xtal,h,k,l,T_K=(xtal.Temperature)+273.15)
 		Variable/C Fc = Fstruct(xtal,h,k,l,T_K=T_C+273.15)
 		Fr = real(Fc)
 		Fi = imag(Fc)
@@ -2729,8 +3096,9 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 	return 0
 End
 //
-Static Function/T SelectNewSG(find)
+Static Function/T SelectNewSG(find, dim)
 	String find
+	Variable dim			// must be 2 or 3 only
 	if (strlen(find)<1)
 		find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
 		Prompt find, "Space Group Search, use * for wild card"
@@ -2758,20 +3126,20 @@ Static Function/T SelectNewSG(find)
 	String list = symmtry2SG(find,types=-1,printIt=0), sym
 	list = RemoveDuplicatesFromList(list)
 	String system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
-	String id, allIDs=MakeAllIDs()
+	String id, allIDs=MakeAllIDs(dim)
 	Variable Nlist=ItemsInList(list), idNum
 	for (i=0; i<Nlist; i+=1)
 		idNum = str2num(StringFromList(i,list))
-		if (isValidSpaceGroupIDnum(idNum))
+		if (isValidSpaceGroupIDnum(idNum, dim))
 			id = StringFromList(idNum-1,allIDs)
-			system = StringFromList(latticeSystem(id),systemNames)
-			sprintf str, "%s  %s  %s  [%s];", id,system,getHMsym2(idNum),getHallSymbol(idNum)
+			system = StringFromList(latticeSystem(id,dim),systemNames)
+			sprintf str, "%s  %s  %s  [%s];", id,system,getHMsym2(idNum),getHallSymbol(idNum, dim=dim)
 			symList += str
 		endif
 	endfor
 	Variable N=ItemsInList(symList)
 	if (strsearch(find,"*",0)<0 && N<1)
-		symList = SelectNewSG(find+"*")
+		symList = SelectNewSG(find+"*",dim)
 		N = ItemsInList(symList)
 	endif
 	if (N<1)
@@ -2843,6 +3211,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		SpaceGroupID = xtal.SpaceGroupID
 		alphaT = xtal.alphaT
 		desc = xtal.desc
+		PopupMenu popupLatticeDim,mode=((xtal.dim)==2 ? 1:2)
 		T_C = xtal.Temperature
 		dirty = 0
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
@@ -2852,6 +3221,11 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 		xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 		xtal.SpaceGroupID = SpaceGroupID
+#ifdef TEST_LATTICE_2D
+		xtal.dim = dim
+#else
+		xtal.dim = 3
+#endif
 		xtal.alphaT = alphaT
 		xtal.Temperature = T_C
 		xtal.desc = desc[0,99]								// desc is limited to 100 chars
@@ -2866,7 +3240,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		StructPut/S xtal, crystalStructStr				// update the local copy too
 		OverOccupyList(xtal,printIt=1)					// print notice if some sites have occ>1
 	elseif (stringmatch(ctrlName,"buttonFindSpaceGroup"))
-		String id = SelectNewSG("")
+		String id = SelectNewSG("",dim)
 		if (strlen(id)<1)
 			return 0
 		endif
@@ -2893,6 +3267,9 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		a = xtal.a  ;  b = xtal.b  ;  c = xtal.c
 		alpha = xtal.alpha  ;  bet = xtal.beta  ;  gam = xtal.gam
 		SpaceGroupID = xtal.SpaceGroupID
+#ifdef TEST_LATTICE_2D
+		PopupMenu popupLatticeDim,mode=((xtal.dim)==2 ? 1:2)	// set the popup menu
+#endif
 		desc = xtal.desc
 		alphaT = xtal.alphaT
 		T_C = xtal.Temperature
@@ -2934,16 +3311,14 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 End
 
 
-Static Function LatticeDimPopMenuProc(pa) : PopupMenuControl		// used in the LatticeSym Panel
+Static Function LatticeDimPopMenuProc(pa) : PopupMenuControl
+	// used in the LatticeSym Panel, sets the dim, 2 or 3
 	STRUCT WMPopupAction &pa
 	if (pa.eventCode != 2)
 		return 0
 	endif
 
 	Variable dimPop = str2num(pa.popStr)	// requested dim
-	if (dimPop != 3)
-		Abort "LatticeDimPopMenuProc(), not yet ready for dim==2"
-	endif
 	NVAR dim = root:Packages:Lattices:PanelValues:dim
 	SVAR SpaceGroupID = root:Packages:Lattices:PanelValues:SpaceGroupID
 
@@ -2951,7 +3326,7 @@ Static Function LatticeDimPopMenuProc(pa) : PopupMenuControl		// used in the Lat
 		return 1
 	elseif (!NVAR_Exists(dim) || !SVAR_Exists(SpaceGroupID) || numtype(dimPop))
 		return 1
-	elseif (dimPop!=2 && dimPop!=3)
+	elseif (dimPop!=2 && dimPop!=3)		// only choices are 2 or 3
 		return 1
 	endif
 
@@ -2959,11 +3334,10 @@ Static Function LatticeDimPopMenuProc(pa) : PopupMenuControl		// used in the Lat
 	STRUCT WMSetVariableAction sva
 	sva.win = win
 	sva.eventCode = 2
-	sva.ctrlname = ""
+	sva.ctrlName = "popupLatticeDim"
 	dim = dimPop
 	UpdatePanelLatticeConstControls(win,SpaceGroupID)
 	LatticePanelParamProc(sva)
-	print "set dim to",dim
 	return 0
 End
 
@@ -3071,7 +3445,7 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 	xtal.SpaceGroup = SpaceGroup
 	String id = FindDefaultIDforSG(xtal.SpaceGroup)
 	xtal.SpaceGroupID = id
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1,530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id, dim=xtal.dim)		// change id to id number in [1,530]
 	xtal.alphaT = !(alphaT>0) ? 0 : alphaT
 	ForceLatticeToStructure(xtal)
 
@@ -3143,6 +3517,7 @@ Function read_cri_fileOLD(xtal,fname)
 	Variable SpaceGroup, a,b,c,alpha,bet,gam
 	String line
 	xtal.hashID = ""
+	xtal.dim = 3
 
 	FReadLine f, line
 	line = ReplaceString("\r",line,"")
@@ -3150,7 +3525,7 @@ Function read_cri_fileOLD(xtal,fname)
 	xtal.formula = ""
 	FReadLine f, line
 	SpaceGroup = str2num(line)
-	if (!isValidSpaceGroup(SpaceGroup))
+	if (!isValidSpaceGroup(SpaceGroup,3))
 		Close f
 		return 1
 	endif
@@ -3768,13 +4143,12 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-	Variable/G root:Packages:Lattices:dim = dim
-#ifndef TEST_LATTICE_2D
-	if (dim != 3)
-		sprintf str, "only understand dim=3, not \"%s\"", StringByKey("dim",keyVals,"=")
+#ifdef TEST_LATTICE_2D
+	if (!(dim==3))
+		sprintf str, "Caution -- reading a file with dim = \"%s\"", StringByKey("dim",keyVals,"=")
 		DoAlert 0, str
-		return 1
 	endif
+	xtal.dim = dim
 #endif
 
 	// process the space gorup info
@@ -3795,14 +4169,14 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = XMLtagContents("H-M",space_group)				//	Hermann-Manguin symbol, e.g. 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0,0)					// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0,0,dim)				// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1,0)							// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0,dim)					// checks in getHMsym2 again, but ignoring minus signs
 		endif
 		if (ItemsInList(nlist)==1)											// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))								// found valid SpaceGroupIDnum
-				String allIDs = MakeAllIDs()
+			if (isValidSpaceGroupIDnum(idNum, dim))						// found valid SpaceGroupIDnum
+				String allIDs = MakeAllIDs(dim)
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
 			endif
@@ -3820,10 +4194,10 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			xtal.SpaceGroupID = FindDefaultIDforSG(SG)					// try to get id from SG [1,230]
 		endif
 	endif
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))						// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,dim))					// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)	// change id to id number in [1,530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=dim)	// change id to id number in [1,530]
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)						// the IT space group number [1,230]
 	String SpaceGroupID = xtal.SpaceGroupID								// local string for convienence
 
@@ -4150,7 +4524,8 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 	Variable symOp										// if True, write the symmetry ops into the <space_group> section
 	symOp = ParamIsDefault(symOp) || numtype(symOp) ? 0 : symOp
 
-	Variable dim=3, m, N=0
+	Variable dim = xtal.dim
+	Variable m, N=0
 	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
 	String str, unit=" unit=\"nm\""
 
@@ -4236,7 +4611,11 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		cif += "\t<atom_site>"+NL
 		cif += "\t\t<label>"+xtal.atom[i].name+"</label>"+NL
 		cif += "\t\t<symbol>"+Z2symbol(xtal.atom[i].Zatom)+"</symbol>"+NL
-		cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract>"+NL
+		if (dim==2)
+			cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+"</fract>"+NL
+		else
+			cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract>"+NL
+		endif
 		if (numtype(xtal.atom[i].valence)==0 && abs(xtal.atom[i].valence)<10 && abs(xtal.atom[i].valence)>0)
 			cif += "\t\t<valence>"+num2StrFull(xtal.atom[i].valence)+"</valence>"+NL
 		endif
@@ -4257,11 +4636,15 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		elseif (itemp>=4)
 			cif += "\t\t<aniso_U_11 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U11)+"</aniso_U_11>"+NL
 			cif += "\t\t<aniso_U_22 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U22)+"</aniso_U_22>"+NL
-			cif += "\t\t<aniso_U_33 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U33)+"</aniso_U_33>"+NL
+			if (!(dim==2))
+				cif += "\t\t<aniso_U_33 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U33)+"</aniso_U_33>"+NL
+			endif
 			if (itemp==5)
 				cif += "\t\t<aniso_U_12 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U12)+"</aniso_U_12>"+NL
-				cif += "\t\t<aniso_U_13 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U13)+"</aniso_U_13>"+NL
-				cif += "\t\t<aniso_U_23 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U23)+"</aniso_U_23>"+NL
+				if (!(dim==2))
+					cif += "\t\t<aniso_U_13 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U13)+"</aniso_U_13>"+NL
+					cif += "\t\t<aniso_U_23 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U23)+"</aniso_U_23>"+NL
+				endif
 			endif
 		endif
 		cif += "\t</atom_site>"+NL
@@ -4363,6 +4746,7 @@ Static Function/T convertOneXTL2XML(xtl,NL)	// read in the xtl file, returns str
 	endif
 
 	String sval, str, cif="<cif>"+NL
+//	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
 
 	sval = StringByKey("structureDesc",keyVals,"=")
 	if (strlen(sval))
@@ -4639,6 +5023,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		name = CIF_readString("_chemical_name_structure_type",buf)
 	endif
 	String str = SelectString(strlen(name),desc,name)
+	xtal.dim = 3
 	xtal.desc = str[0,99]
 	xtal.formula = formula[0,99]
 
@@ -4658,14 +5043,14 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0,0)		// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0,0,3)	// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1,0)				// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0,3)			// checks in getHMsym2 again, but ignoring minus signs
 		endif
 		if (ItemsInList(nlist)==1)								// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))					// found valid SpaceGroupIDnum
-				String allIDs=MakeAllIDs()
+			if (isValidSpaceGroupIDnum(idNum,3))				// found valid SpaceGroupIDnum, only 3D
+				String allIDs=MakeAllIDs(3)
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
 			endif
@@ -4683,11 +5068,11 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1,230]
 		endif
 	endif
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,3))		// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=3)
 	xtal.Pressure = CIF_readNumber("_cell_measurement_pressure",buf) 	// pressure (kPa) for cell parameters
 	xtal.Pressure *= 1000										 	// convert kPa --> Pa
 	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
@@ -4820,7 +5205,7 @@ Static Function/T FindIDfromSymOps(symList)
 	endif
 
 	Variable idNum, N=ItemsInList(symList)
-	String str, allIDs=MakeAllIDs(), id
+	String str, allIDs=MakeAllIDs(3), id
 	for (idNum=1;idNum<=530;idNum+=1)
 		id = StringFromList(idNum-1, allIDs)
 		if (SymOpsMatchesID(id,symList))
@@ -5008,6 +5393,9 @@ Static Constant TRICLINIC=0,MONOCLINIC=1,ORTHORHOMBIC=2,TETRAGONAL=3,TRIGONAL=4,
 Static Constant P_CENTER=0,F_CENTER=1,B_CENTER=2,RHOMBOHEDRAL=3,C_CENTER=4,A_CENTER=5
 Static Constant FCC=225,BCC=229,DIA=227,SIMPLE_CUBIC=195,SAPPHIRE=167	// generic Space Group numbers
 Strconstant LatticeSystemNames="Triclinic;Monoclinic;Orthorhombic;Tetragonal;Trigonal;Hexagonal;Cubic"
+Static Constant OBLIQUE=1,RECTANGULAR=2,RHOMBIC=3,SQUARE=4	// HEXAGONAL already defined
+Strconstant LatticeSystemNames2D="Oblique;Rectangular;Rhombic;Square;Hexagonal"
+
 
 
 Function/C getFstruct(h,k,l,[keV,T,printIt])	// user interface to getting F for current crystal structure
@@ -5118,15 +5506,20 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	keV = ParamIsDefault(keV) || keV<0 ? NaN : keV
 	T_K = ParamIsDefault(T_K) ? NaN : max(0,T_K)
 
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	l = dim==2 ? 0 : l
 	String SpaceGroupID = xtal.SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID) || numtype(h+k+l))
+	if (!isValidSpaceGroupID(SpaceGroupID,3) || numtype(h+k+l))
 		return cmplx(NaN,NaN)	// bad inputs
 	endif
 	Variable/C zero=cmplx(0,0)
-	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
-	Variable system = latticeSystem(SpaceGroupID)
 
-	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
+	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6 && (dim==3)
+	Variable system = latticeSystem(SpaceGroupID,dim)
+
+
+	if ((dim==3) && !(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed, skip this for dim=2
 		String sym = getHMsym2(xtal.SpaceGroupIDnum)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
@@ -5164,7 +5557,11 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		endif
 	endif
 
-	Make/N=3/D/FREE hkl={h,k,l}
+	if (dim==2)
+		Make/N=2/D/FREE hkl={h,k}
+	else
+		Make/N=3/D/FREE hkl={h,k,l}
+	endif
 	Variable Qmag = 2*PI/dSpacing(xtal,h,k,l)	// |Q| vector (nm)
 	if (numtype(xtal.atom[0].U11)==0)				// need Q-vector
 		Wave recip = recipFrom_xtal(xtal)			// get reicprocal lattice from xtal
@@ -5219,12 +5616,22 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 				fatomMag *= exp(-Qmag*Qmag*Uiso/2)				// B = (8*PI^2 U)
 			elseif (itemp>=4)
 				// qUq = q^t x U x q
-				Variable qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2 + (xtal.atom[m].U33)*qvec[2]^2
-				if (itemp==5)
-					qUq += 2*(xtal.atom[m].U23)*qvec[1]*qvec[2] + 2*(xtal.atom[m].U13)*qvec[2]*qvec[0] + 2*(xtal.atom[m].U12)*qvec[0]*qvec[1]
+				Variable qUq
+				if (dim==2)
+					qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2
+					if (itemp==5)
+						qUq += 2*(xtal.atom[m].U12)*qvec[0]*qvec[1]
+					endif
+					DW = numtype(qUq) && qUq>0 ? 1 : exp(-qUq/2)
+					fatomMag *= DW>0 ? DW : 1
+				else
+					qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2 + (xtal.atom[m].U33)*qvec[2]^2
+					if (itemp==5)
+						qUq += 2*(xtal.atom[m].U23)*qvec[1]*qvec[2] + 2*(xtal.atom[m].U13)*qvec[2]*qvec[0] + 2*(xtal.atom[m].U12)*qvec[0]*qvec[1]
+					endif
+					DW = numtype(qUq) && qUq>0 ? 1 : exp(-qUq/2)
+					fatomMag *= DW>0 ? DW : 1
 				endif
-				DW = numtype(qUq) && qUq>0 ? 1 : exp(-qUq/2)
-				fatomMag *= DW>0 ? DW : 1
 			endif
 		endif
 		ifatomArg = cmplx(0,fatomArg)
@@ -5234,17 +5641,19 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 
 	Variable Fr, Fi
 #ifdef DO_HEXAGONAL_EXTRA
-	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
-		Variable arg = 2*PI*((h+2*k)/3 + l*0.5)	// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
-		Fr = 1. + cos(arg)
-		Fi = sin(arg)
-		Variable rr=real(Fc), ii=imag(Fc)
-		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
-		//  for hexagonal:
-		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3n±1,	l=even;		F = f			1/4
-		//	h+2k=3n,		l=odd; 		F = 0			0
+	if (dim==3)
+		if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
+			Variable arg = 2*PI*((h+2*k)/3 + l*0.5)	// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
+			Fr = 1. + cos(arg)
+			Fi = sin(arg)
+			Variable rr=real(Fc), ii=imag(Fc)
+			Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
+			//  for hexagonal:
+			//	h+2k=3n,		l=even;		F = 4*f			1
+			//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+			//	h+2k=3n±1,	l=even;		F = f			1/4
+			//	h+2k=3n,		l=odd; 		F = 0			0
+		endif
 	endif
 #endif
 
@@ -5392,6 +5801,8 @@ Function get_muOfXtal(keV, [printIt])					// returns mu of xtal (1/micron)
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
 		DoAlert 0, "ERROR get_muOfXtal()\rno lattice structure found"
 		return NaN
+	elseif (!(xtal.dim == 3))								// only 3D
+		return NaN
 	endif
 
 	if (numtype(keV) || keV<=0)
@@ -5421,6 +5832,8 @@ Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 	FUNCREF Get_f_proto fa = $"Get_f"	// if Get_f() does not exist, then cannot calc mu
 	if (numtype(keV) || keV<=0 || NumberByKey("ISPROTO",FuncRefInfo(fa)))
 		return NaN								// return NaN if no Cromer or invalid energy
+	elseif (!(xtal.dim == 3))				// only 3D
+		return NaN
 	endif
 	// f" = sigma / (2 * re * lambda)
 	// sigma = f" * (2 * re * lambda)
@@ -5476,7 +5889,16 @@ ThreadSafe Static Function Element_amu(Z)
 	return (str2num(StringFromList(Z-1,amuList)))
 End
 
+
 Function reMakeAtomXYZs(xtal)
+	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
+	if (xtal.dim == 2)
+		return reMakeAtomXYZs2D(xtal)
+	endif
+	return reMakeAtomXYZs3D(xtal)
+End
+//
+Static Function reMakeAtomXYZs3D(xtal)
 	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
 	if (Exists("root:Packages:Lattices:atom0")==1)
 		Wave ww = root:Packages:Lattices:atom0
@@ -5504,6 +5926,38 @@ Function reMakeAtomXYZs(xtal)
 	endfor
 	return 0
 End
+//
+Static Function reMakeAtomXYZs2D(xtal)
+	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
+	if (Exists("root:Packages:Lattices:atom0")==1)
+		Wave ww = root:Packages:Lattices:atom0
+		if (WaveExists(ww) && strlen(xtal.hashID))	// if first atom has correct hash, assume the rest are OK too
+			if (stringmatch(StringByKey("ID",note(ww),"="),xtal.hashID))
+				return 0									// waves have correct hash, so return
+			endif
+		endif
+	endif
+	if (strlen(xtal.hashID)<1)
+		xtal.hashID = xtalHashID(xtal)			// re-set hash function to identify associated waves
+	endif
+	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
+	Variable m
+	for (m=0;m<xtal.N;m+=1)						// loop over each atom type
+		name = "root:Packages:Lattices:atom"+num2istr(m)
+		Make/N=2/O/D $name
+		Wave ww = $name
+		positionsOfOneAtomType(xtal,xtal.atom[m].x,xtal.atom[m].y,NaN,ww)
+		wnote = ReplaceStringByKey("atomType",wnote,xtal.atom[m].name,"=")
+		wnote = ReplaceNumberByKey("Zatom",wnote,xtal.atom[m].Zatom,"=")
+		wnote = ReplaceNumberByKey("occupy",wnote,xtal.atom[m].occ,"=")
+		wnote = ReplaceNumberByKey("valence",wnote,xtal.atom[m].valence,"=")
+		Note/K ww, wnote
+	endfor
+	return 0
+End
+
+
+
 //Function testFstruct(h,k,l)
 //	Variable h,k,l
 //	STRUCT crystalStructure xtal				// this sruct is filled  by this routine
@@ -5523,7 +5977,9 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 	Wave xyzIN				// result, list of all equiv positions for this atom in fractional coords
 
 	String SpaceGroupID=xtal.SpaceGroupID
-	SetSymOpsForSpaceGroup(SpaceGroupID)		// ensure existance of symmetry op mats and vecs
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	SetSymOpsForSpaceGroup(SpaceGroupID,dim)	// ensure existance of symmetry op mats and vecs
 	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+xtal.SpaceGroupID,0))
 	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+xtal.SpaceGroupID,0))
 	if (!WaveExists(mats) || !WaveExists(bvecs))
@@ -5532,14 +5988,25 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 	Wave direct = directFrom_xtal(xtal)		// get direct lattice from xtal
 	Variable minDist2 = LatticeSym_minBondLen^2
 
-	Make/N=(3,3)/D/FREE mat
-	Make/N=3/D/FREE bv, in={xx,yy,zz}, vec
+	Make/N=(dim,dim)/D/FREE mat
+	if (dim==2)
+		Make/N=(dim)/D/FREE bv, in={xx,yy}, vec
+	else
+		Make/N=(dim)/D/FREE bv, in={xx,yy,zz}, vec
+	endif
 	Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
 
-	Make/N=(Neq,3)/D/FREE xyz=NaN				// internal copy of fractional coords
-	Make/N=(Neq,3)/D/FREE xyznm=NaN				// real positions (in nm), NOT fractional coords (in sync with xyz[][])
-	Variable N, i, isDup
-	Make/N=(8,3)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
+	Make/N=(Neq,dim)/D/FREE xyz=NaN				// internal copy of fractional coords
+	Make/N=(Neq,dim)/D/FREE xyznm=NaN			// real positions (in nm), NOT fractional coords (in sync with xyz[][])
+	Variable N, i, isDup, Ncorners
+	if (dim==2)
+		Ncorners = 4
+		Make/N=(Ncorners,dim)/D/FREE rr8, add8={ {0,1,0,1}, {0,0,1,1} }
+	else
+		Ncorners = 8
+		Make/N=(Ncorners,dim)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
+	endif
+
 	// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
 	for (m=0,N=0;m<Neq;m+=1)						// for each of the symmetry operations
 		mat = mats[m][p][q]
@@ -5552,7 +6019,7 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		if (Neq<2)
 			isDup = 0									// 1 symmetry op, there cannot be any duplicates (only for SG=1, triclinic)
 		else
-			for (i=0,isDup=0; i<8 && !isDup; i+=1)	// check all 8 of the add8's for duplicates
+			for (i=0,isDup=0; i<Ncorners && !isDup; i+=1)	// check all Ncorners of the add8's for duplicates
 				vec = vec8[i][p]
 				MatrixOP/FREE isDup0 = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
 				isDup = isDup || isDup0[0]
@@ -5570,7 +6037,8 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		MatrixOP/FREE xyz = ( Unconventional x (xyz^t) )^t
 	endif
 
-	Redimension/N=(N,3) xyzIN						// remove extra space (it is all filled with NaN's)
+//	Redimension/N=(N,3) xyzIN						// remove extra space (it is all filled with NaN's)
+	Redimension/N=(N,dim) xyzIN					// remove extra space (it is all filled with NaN's)
 	xyzIN = xyz[p][q]									// and, update xyzIN with correct values
 	return N
 End
@@ -5593,14 +6061,17 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	STRUCT crystalStructure &xtal
 	Wave/WAVE atomWaves									// ONLY needed when calling this with MultiThread
 
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID) || numtype(h+k+l))
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	l = dim==2 ? 0 : l
+
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,3) || numtype(h+k+l))
 		return 0												// bad inputs (not allowed)
 	endif
 	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
-	Variable system = latticeSystem(xtal.SpaceGroupID)
+	Variable system = latticeSystem(xtal.SpaceGroupID,3)
 
-	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
-//		String sym = getHMsym(xtal.SpaceGroupIDnum)	// get symmetry symbol
+	if ((dim==3) && !(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed, skip for dim=2
 		String sym = getHMsym2(xtal.SpaceGroupIDnum)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
@@ -5638,7 +6109,6 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		endif
 	endif
 
-//	reMakeAtomXYZs(xtal)								// NOT ThreadSafe
 	if (xtal.N<1)
 		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
@@ -5646,7 +6116,11 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	Variable fatomMag, m, FMax=0
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
-	Make/N=3/D/FREE hkl={h,k,l}
+	if (dim==2)
+		Make/N=2/D/FREE hkl={h,k}
+	else
+		Make/N=3/D/FREE hkl={h,k,l}
+	endif
 	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
 		if (WaveExists(atomWaves))
 			Wave ww = atomWaves[m]						// needed when running in a separate thread
@@ -5665,6 +6139,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	endfor
 
 #ifdef DO_HEXAGONAL_EXTRA
+	if (dim==3)
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
 		Variable arg, Fr, Fi
 		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
@@ -5677,6 +6152,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
 		//	h+2k=3n±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
+	endif
 	endif
 #endif
 
@@ -5759,6 +6235,9 @@ End
 ThreadSafe Function/S MakeSymmetryOps(xtal)			// make a wave with the symmetry operation
 	STRUCT crystalStructure &xtal
 
+	if (!(xtal.dim ==3))
+		return ""
+	endif
 	String SG = num2istr(xtal.SpaceGroup), wName
 	wName = ReplaceString(":",xtal.SpaceGroupID,"_")	// cannot use CleanUpName() here, not ThreadSafe
 	wName = "root:Packages:Lattices:SymOps:equivXYZM"+ReplaceString("-",wName,"_")
@@ -5837,7 +6316,7 @@ End
 //
 //	Variable SpaceGroup, err
 //	for (SpaceGroup=1; SpaceGroup<=230 && !err; SpaceGroup+=1)
-//		LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup)
+//		LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup,3)
 //		err = testOneSymmetryOp(SpaceGroup)
 //		Wave Mwave = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup))
 //		NtestAll[SpaceGroup-1][0] = DimSize(Mwave,0)
@@ -5901,12 +6380,12 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	STRUCT crystalStructure xtal
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,3))
 		if (FillCrystalStructDefault(xtal))
 			return ""
 		endif
 		SpaceGroupID = xtal.SpaceGroupID
-		String allIDs=MakeAllIDs()
+		String allIDs=MakeAllIDs(xtal.dim)
 		Prompt SpaceGroupID, "Space Group ID",popup,allIDs
 		DoPrompt "Space Group", SpaceGroupID
 		if (V_flag)
@@ -5914,10 +6393,13 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 		endif
 		printIt = 1
 	endif
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,3))
 		if (printIt)
 			printf "ERROR -- the SpaceGroupID = \"%s\" is invalid\r",SpaceGroupID
 		endif
+		return ""
+	endif
+	if (!(xtal.dim == 3))
 		return ""
 	endif
 	if (!StringMatch(xtal.SpaceGroupID,SpaceGroupID))
@@ -5942,8 +6424,8 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 	Make/N=3/D/FREE vec
 	Variable Nops=ItemsInList(AllSymOps), i, Nproper=0, Nimproper=0, invert, determinanat
 	if (printIt)
-		String system = StringFromList(latticeSystem(SpaceGroupID),LatticeSystemNames)
-		Variable idNum = SpaceGroupID2num(SpaceGroupID)
+		String system = StringFromList(latticeSystem(SpaceGroupID,3),LatticeSystemNames)
+		Variable idNum = SpaceGroupID2num(SpaceGroupID, dim=3)
 		printf "For Space Group \"%s\"  (%s) %s,  there are %g symmetry operations\r",SpaceGroupID,system,getHMsym2(idNum),Nops
 	endif
 	for (i=0;i<Nops;i+=1)
@@ -6252,13 +6734,13 @@ End
 //			endif
 //	
 //			Variable useWave=0, useXtal=0
-//			if (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID) && StringMatch(xtal.SpaceGroupID,id))
+//			if (isValidSpaceGroupID(id,3) && isValidSpaceGroupID(xtal.SpaceGroupID,3) && StringMatch(xtal.SpaceGroupID,id))
 //				useWave = 1
-//			elseif (isValidSpaceGroupID(id) && !isValidSpaceGroupID(xtal.SpaceGroupID))		// use wave
+//			elseif (isValidSpaceGroupID(id.3) && !isValidSpaceGroupID(xtal.SpaceGroupID,3))		// use wave
 //				useWave = 1
-//			elseif (!isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// use xtal
+//			elseif (!isValidSpaceGroupID(id,3) && isValidSpaceGroupID(xtal.SpaceGroupID,3))		// use xtal
 //				useXtal = 1
-//			elseif (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// ask
+//			elseif (isValidSpaceGroupID(id,3) && isValidSpaceGroupID(xtal.SpaceGroupID,3))		// ask
 //				DoAlert 2, "SymmetryOpsPath and Lattice Panel Disagree,\r  Remake SymmetryOps"+num2istr(SGw)+" to match Panel?"
 //				if (V_flag>2)
 //					return ""
@@ -6283,7 +6765,7 @@ End
 //			return ""
 //		endif
 //		if (printIt)
-//			String system = StringFromList(latticeSystem(SpaceGroupID),LatticeSystemNames)
+//			String system = StringFromList(latticeSystem(SpaceGroupID,3),LatticeSystemNames)
 //			Variable idNum = SpaceGroupID2num(SpaceGroupID)
 //			printf "For Space Group %s  (%s) %s,  %g proper rotations\r",SpaceGroupID,system,getHMsym2(idNum),Nproper
 //		endif
@@ -6334,60 +6816,78 @@ End
 //	End
 
 
-ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
+ThreadSafe Static Function isValidSpaceGroup(SG,dim)			// returns TRUE if SG is an int in range [1,230]
 	Variable SG
+	Variable dim			// only 2 or 3
+	if (dim==2)
+		return ( SG == limit(round(SG), 1, 17) )
+	endif
 	return ( SG == limit(round(SG), 1, 230) )
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupID(id)			// returns TRUE if id is valid
+ThreadSafe Static Function isValidSpaceGroupID(id, dim)	// returns TRUE if id is valid
 	String id																// a space group id, e.g. "15" or "15:-b2"
-	String allIDs=MakeAllIDs()
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	String allIDs=MakeAllIDs(dim)
 	return WhichListItem(id,allIDs,";",0,0)>=0
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
+ThreadSafe Static Function isValidSpaceGroupIDnum(idNum, dim)	// returns TRUE if SG is an int in range [1,530]
 	Variable idNum
-	return ( idNum == limit(round(idNum), 1, 530) )
+	Variable dim				// must be either 2 or 3
+	Variable iMax = dim==2 ? 17 : 530
+	return ( idNum == limit(round(idNum), 1, iMax) )
 End
 
 
-Function SpaceGroupID2num(id)
+Function SpaceGroupID2num(id, [dim])
 	String id									// a space group id, e.g. "15" or "15:-b2"
+	Variable dim								// only 2 or 3
+	dim = dim==2 ? 2 : 3
 
-	String allIDs=MakeAllIDs()
+	String allIDs=MakeAllIDs(dim)
 	Variable idNum = 1+WhichListItem(id,allIDs,";",0,0)
-	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum,dim) ? idNum : NaN
 	if (numtype(idNum))
-		idNum = FindDefaultIDnumForSG(round(str2num(id)))
+		idNum = FindDefaultIDnumForSG(round(str2num(id)), dim=dim)
 	endif
-	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum,dim) ? idNum : NaN
 	return idNum
 End
 
 
-Function/T IDnum2SpaceGroupID(idNum)
+Function/T IDnum2SpaceGroupID(idNum, [dim])
 	Variable idNum								// a SpaceGroup id num should be in [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
+	Variable dim								// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupIDnum(idNum,dim))
 		return ""
 	endif
-	String allIDs=LatticeSym#MakeAllIDs()
+	String allIDs=MakeAllIDs(dim)
 	String SpaceGroupID = StringFromList(idNum-1,allIDs)
 	return SpaceGroupID
 End
 
 
 
-ThreadSafe Static Function/T FindDefaultIDforSG(SG)
+ThreadSafe Static Function/T FindDefaultIDforSG(SG, [dim])
 	Variable SG								// space group number [1,230]
-	if (!isValidSpaceGroup(SG))		// invalid
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroup(SG,dim))	// invalid
 		return ""
+	endif
+
+	if (dim == 2)
+		return num2istr(SG)				// 2D is easy
 	endif
 
 	// find first space group starting with "SG:"
 	string str=num2istr(SG)+":*", str2=num2istr(SG)
-	String allIDs=MakeAllIDs(), id
+	String allIDs=MakeAllIDs(dim), id
 	Variable i
 	for (i=0;i<ItemsInList(allIDs);i+=1)
 		id = StringFromList(i,allIDs)
@@ -6399,16 +6899,21 @@ ThreadSafe Static Function/T FindDefaultIDforSG(SG)
 End
 
 
-ThreadSafe Static Function FindDefaultIDnumForSG(SG)
+ThreadSafe Static Function FindDefaultIDnumForSG(SG, [dim])
 	// look for exatly "SG", or the first occurance of "SG:"
 	Variable SG					// space group number [1,230]
-	if (!isValidSpaceGroup(SG))		// invalid
+	Variable dim				// only 2 or 3
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroup(SG,dim))	// invalid
 		return NaN
+	endif
+	if (dim == 2)
+		return SG							// 2D is easy
 	endif
 
 	// find first space group starting with "id:"
 	string str=num2istr(SG)+":*", str2=num2istr(SG)
-	String allIDs=MakeAllIDs(), id
+	String allIDs=MakeAllIDs(dim), id
 	Variable i
 	for (i=0;i<ItemsInList(allIDs);i+=1)
 		id = StringFromList(i,allIDs)
@@ -6422,7 +6927,8 @@ End
 
 
 
-ThreadSafe Static Function/T MakeAllIDs()
+ThreadSafe Static Function/T MakeAllIDs(dim)
+	Variable dim				// must be only 2 or 3
 	// Returns the list with all of the 530 Space Group types.
 	//	In the 230 SpaceGroups, there are:
 	//	  140 Space Groups of   1 types
@@ -6433,6 +6939,10 @@ ThreadSafe Static Function/T MakeAllIDs()
 	//	    1 Space Groups of  12 types
 	//	    2 Space Groups of  18 types
 	// for the full list, use  NumbersOfTypes(), which is shown below.
+
+	if (dim==2)
+		return "1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17"
+	endif
 
 	String allIDs = "1;2;3:b;3:c;3:a;4:b;4:c;4:a;5:b1;5:b2;5:b3;5:c1;5:c2;5:c3;5:a1;5:a2;"
 	allIDs += "5:a3;6:b;6:c;6:a;7:b1;7:b2;7:b3;7:c1;7:c2;7:c3;7:a1;7:a2;7:a3;8:b1;8:b2;8:b3;"
@@ -6477,7 +6987,7 @@ ThreadSafe Static Function/T MakeAllIDs()
 End
 //
 //	Function NumbersOfTypes()
-//		String allIDs = LatticeSym#MakeAllIDs()
+//		String allIDs = LatticeSym#MakeAllIDs(3)
 //		Make/N=230/I/O types=0
 //		SetScale/P x 1,1,"SpaceGroup", types
 //		Variable i,m
@@ -6542,11 +7052,13 @@ End
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
 
 
-ThreadSafe Function/S getHMboth(SpaceGroupIDnum)	// returns short and (full) Hermann-Mauguin symbol
+ThreadSafe Function/S getHMboth(SpaceGroupIDnum, [dim])	// returns short and (full) Hermann-Mauguin symbol
 	Variable SpaceGroupIDnum								//Space Group number, from International Tables
+	Variable dim												// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
 
-	String short = getHMsym(SpaceGroupIDnum)
-	String full = getHMsym2(SpaceGroupIDnum)
+	String short = getHMsym(SpaceGroupIDnum, dim=dim)
+	String full = getHMsym2(SpaceGroupIDnum, dim=dim)
 	if (StringMatch(short,full))
 		return short
 	else
@@ -6557,73 +7069,86 @@ End
 
 //	see:		https://en.wikipedia.org/wiki/HermannÐMauguin_notation
 //		or:	https://bruceravel.github.io/demeter/artug/atoms/space.html#decodingthehermann-maguinnotation
-ThreadSafe Function/T getHMsym(idNum)		// returns short Hermann-Mauguin symbol
-	Variable idNum									// index into the SpaceGroup IDs [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
-		return ""									// invalid SpaceGroup ID number
+ThreadSafe Function/T getHMsym(idNum, [dim])	// returns short Hermann-Mauguin symbol
+	Variable idNum											// index into the SpaceGroup IDs [1,530]
+	Variable dim											// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
+	if (!isValidSpaceGroupIDnum(idNum, dim))
+		return ""											// invalid SpaceGroup ID number
 	endif
 
-	String HM1=""									// there are 530 items in this list
-	HM1  = "P1;P-1;P2:b;P2:c;P2:a;P21:b;P21:c;P21:a;C2:b1;C2:b2;C2:b3;C2:c1;C2:c2;C2:c3;C2:a1;C2:a2;C2:a3;Pm:b;Pm:c;Pm:a;Pc:b1;Pc:b2;Pc:b3;"
-	HM1 += "Pc:c1;Pc:c2;Pc:c3;Pc:a1;Pc:a2;Pc:a3;Cm:b1;Cm:b2;Cm:b3;Cm:c1;Cm:c2;Cm:c3;Cm:a1;Cm:a2;Cm:a3;Cc:b1;Cc:b2;Cc:b3;Cc:-b1;Cc:-b2;Cc:-b3;"
-	HM1 += "Cc:c1;Cc:c2;Cc:c3;Cc:-c1;Cc:-c2;Cc:-c3;Cc:a1;Cc:a2;Cc:a3;Cc:-a1;Cc:-a2;Cc:-a3;P2/m:b;P2/m:c;P2/m:a;P21/m:b;P21/m:c;P21/m:a;C2/m:b1;"
-	HM1 += "C2/m:b2;C2/m:b3;C2/m:c1;C2/m:c2;C2/m:c3;C2/m:a1;C2/m:a2;C2/m:a3;P2/c:b1;P2/c:b2;P2/c:b3;P2/c:c1;P2/c:c2;P2/c:c3;P2/c:a1;P2/c:a2;"
-	HM1 += "P2/c:a3;P21/c:b1;P21/c:b2;P21/c:b3;P21/c:c1;P21/c:c2;P21/c:c3;P21/c:a1;P21/c:a2;P21/c:a3;C2/c:b1;C2/c:b2;C2/c:b3;C2/c:-b1;C2/c:-b2;"
-	HM1 += "C2/c:-b3;C2/c:c1;C2/c:c2;C2/c:c3;C2/c:-c1;C2/c:-c2;C2/c:-c3;C2/c:a1;C2/c:a2;C2/c:a3;C2/c:-a1;C2/c:-a2;C2/c:-a3;P222;P2221;P2122;"
-	HM1 += "P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;Pcm21;P21ma;P21am;Pb21m;"
-	HM1 += "Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;Pb2n;Pn2b;Pmn21;Pnm21;"
-	HM1 += "P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;Cmc21;Ccm21;A21ma;A21am;"
-	HM1 += "Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;Cc2m;Am2a;Aba2;Bba2;"
-	HM1 += "B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;Pmmm;Pnnn:1;Pnnn:2;"
-	HM1 += "Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;Pnan;Pmna;Pnmb;"
-	HM1 += "Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;Pmnn;Pnmn;"
-	HM1 += "Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;Ccmm;Amma;"
-	HM1 += "Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;Cccb:1;"
-	HM1 += "Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;Ibmm;"
-	HM1 += "Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;P41212;"
-	HM1 += "P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;P-421c;"
-	HM1 += "P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;P4/nmm:2;"
-	HM1 += "P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;P42/ncm:2;"
-	HM1 += "I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;P3221;R32:H;"
-	HM1 += "R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;P64;P63;P-6;"
-	HM1 += "P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;P63/mmc;P23;F23;"
-	HM1 += "I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;P-43m;F-43m;I-43m;"
-	HM1 += "P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;Ia-3d;"
+	String HM1=""											// there are 530 or 17 items in this list
+	if (dim==2)
+		HM1 = "p1;p2;pm;pg;cm;pmm;pmg;pgg;cmm;p4;p4m;p4g;p3;p3m1;p31m;p6;p6m"
+	else
+		HM1  = "P1;P-1;P2:b;P2:c;P2:a;P21:b;P21:c;P21:a;C2:b1;C2:b2;C2:b3;C2:c1;C2:c2;C2:c3;C2:a1;C2:a2;C2:a3;Pm:b;Pm:c;Pm:a;Pc:b1;Pc:b2;Pc:b3;"
+		HM1 += "Pc:c1;Pc:c2;Pc:c3;Pc:a1;Pc:a2;Pc:a3;Cm:b1;Cm:b2;Cm:b3;Cm:c1;Cm:c2;Cm:c3;Cm:a1;Cm:a2;Cm:a3;Cc:b1;Cc:b2;Cc:b3;Cc:-b1;Cc:-b2;Cc:-b3;"
+		HM1 += "Cc:c1;Cc:c2;Cc:c3;Cc:-c1;Cc:-c2;Cc:-c3;Cc:a1;Cc:a2;Cc:a3;Cc:-a1;Cc:-a2;Cc:-a3;P2/m:b;P2/m:c;P2/m:a;P21/m:b;P21/m:c;P21/m:a;C2/m:b1;"
+		HM1 += "C2/m:b2;C2/m:b3;C2/m:c1;C2/m:c2;C2/m:c3;C2/m:a1;C2/m:a2;C2/m:a3;P2/c:b1;P2/c:b2;P2/c:b3;P2/c:c1;P2/c:c2;P2/c:c3;P2/c:a1;P2/c:a2;"
+		HM1 += "P2/c:a3;P21/c:b1;P21/c:b2;P21/c:b3;P21/c:c1;P21/c:c2;P21/c:c3;P21/c:a1;P21/c:a2;P21/c:a3;C2/c:b1;C2/c:b2;C2/c:b3;C2/c:-b1;C2/c:-b2;"
+		HM1 += "C2/c:-b3;C2/c:c1;C2/c:c2;C2/c:c3;C2/c:-c1;C2/c:-c2;C2/c:-c3;C2/c:a1;C2/c:a2;C2/c:a3;C2/c:-a1;C2/c:-a2;C2/c:-a3;P222;P2221;P2122;"
+		HM1 += "P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;Pcm21;P21ma;P21am;Pb21m;"
+		HM1 += "Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;Pb2n;Pn2b;Pmn21;Pnm21;"
+		HM1 += "P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;Cmc21;Ccm21;A21ma;A21am;"
+		HM1 += "Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;Cc2m;Am2a;Aba2;Bba2;"
+		HM1 += "B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;Pmmm;Pnnn:1;Pnnn:2;"
+		HM1 += "Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;Pnan;Pmna;Pnmb;"
+		HM1 += "Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;Pmnn;Pnmn;"
+		HM1 += "Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;Ccmm;Amma;"
+		HM1 += "Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;Cccb:1;"
+		HM1 += "Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;Ibmm;"
+		HM1 += "Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;P41212;"
+		HM1 += "P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;P-421c;"
+		HM1 += "P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;P4/nmm:2;"
+		HM1 += "P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;P42/ncm:2;"
+		HM1 += "I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;P3221;R32:H;"
+		HM1 += "R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;P64;P63;P-6;"
+		HM1 += "P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;P63/mmc;P23;F23;"
+		HM1 += "I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;P-43m;F-43m;I-43m;"
+		HM1 += "P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;Ia-3d;"
+	endif
 	return StringFromList(idNum-1,HM1)
 End
 
-ThreadSafe Function/T getHMsym2(idNum)	// returns longer Hermann-Mauguin symbol
-	Variable idNum									// index into the SpaceGroup IDs [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
-		return ""									// invalid SpaceGroup ID number
+ThreadSafe Function/T getHMsym2(idNum, [dim])	// returns longer Hermann-Mauguin symbol
+	Variable idNum											// index into the SpaceGroup IDs [1,530]
+	Variable dim											// must be only 2 or 3
+
+	if (!isValidSpaceGroupIDnum(idNum,dim))
+		return ""											// invalid SpaceGroup ID number
 	endif
 
-	String HM2=""									// there are 530 items in this list
-	HM2  = "P1;P-1;P121;P112;P211;P1211;P1121;P2111;C121;A121;I121;A112;B112;I112;B211;C211;I211;P1m1;P11m;Pm11;P1c1;P1n1;P1a1;P11a;P11n;P11b;"
-	HM2 += "Pb11;Pn11;Pc11;C1m1;A1m1;I1m1;A11m;B11m;I11m;Bm11;Cm11;Im11;C1c1;A1n1;I1a1;A1a1;C1n1;I1c1;A11a;B11n;I11b;B11b;A11n;I11a;Bb11;Cn11;"
-	HM2 += "Ic11;Cc11;Bn11;Ib11;P12/m1;P112/m;P2/m11;P121/m1;P1121/m;P21/m11;C12/m1;A12/m1;I12/m1;A112/m;B112/m;I112/m;B2/m11;C2/m11;I2/m11;"
-	HM2 += "P12/c1;P12/n1;P12/a1;P112/a;P112/n;P112/b;P2/b11;P2/n11;P2/c11;P121/c1;P121/n1;P121/a1;P1121/a;P1121/n;P1121/b;P21/b11;P21/n11;"
-	HM2 += "P21/c11;C12/c1;A12/n1;I12/a1;A12/a1;C12/n1;I12/c1;A112/a;B112/n;I112/b;B112/b;A112/n;I112/a;B2/b11;C2/n11;I2/c11;C2/c11;B2/n11;"
-	HM2 += "I2/b11;P222;P2221;P2122;P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;"
-	HM2 += "Pcm21;P21ma;P21am;Pb21m;Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;"
-	HM2 += "Pb2n;Pn2b;Pmn21;Pnm21;P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;"
-	HM2 += "Cmc21;Ccm21;A21ma;A21am;Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;"
-	HM2 += "Cc2m;Am2a;Aba2;Bba2;B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;"
-	HM2 += "Pmmm;Pnnn:1;Pnnn:2;Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;"
-	HM2 += "Pnan;Pmna;Pnmb;Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;"
-	HM2 += "Pmnn;Pnmn;Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;"
-	HM2 += "Ccmm;Amma;Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;"
-	HM2 += "Cccb:1;Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;"
-	HM2 += "Ibmm;Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;"
-	HM2 += "P41212;P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
-	HM2 += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;"
-	HM2 += "P4/nmm:2;P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;"
-	HM2 += "P42/ncm:2;I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;"
-	HM2 += "P3221;R32:H;R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;"
-	HM2 += "P64;P63;P-6;P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
-	HM2 += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;"
-	HM2 += "P-43m;F-43m;I-43m;P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;"
-	HM2 += "Ia-3d;"
+	String HM2=""											// there are 530 or 17 items in this list
+	if (dim==2)
+		HM2 = "p1;p2;p1m1;p1g1;c1m1;p2mm;p2mg;p2gg;c2mm;p4;p4mm;p4gm;p3;p3m1;p31m;p6;p6mm"
+	else
+		HM2  = "P1;P-1;P121;P112;P211;P1211;P1121;P2111;C121;A121;I121;A112;B112;I112;B211;C211;I211;P1m1;P11m;Pm11;P1c1;P1n1;P1a1;P11a;P11n;P11b;"
+		HM2 += "Pb11;Pn11;Pc11;C1m1;A1m1;I1m1;A11m;B11m;I11m;Bm11;Cm11;Im11;C1c1;A1n1;I1a1;A1a1;C1n1;I1c1;A11a;B11n;I11b;B11b;A11n;I11a;Bb11;Cn11;"
+		HM2 += "Ic11;Cc11;Bn11;Ib11;P12/m1;P112/m;P2/m11;P121/m1;P1121/m;P21/m11;C12/m1;A12/m1;I12/m1;A112/m;B112/m;I112/m;B2/m11;C2/m11;I2/m11;"
+		HM2 += "P12/c1;P12/n1;P12/a1;P112/a;P112/n;P112/b;P2/b11;P2/n11;P2/c11;P121/c1;P121/n1;P121/a1;P1121/a;P1121/n;P1121/b;P21/b11;P21/n11;"
+		HM2 += "P21/c11;C12/c1;A12/n1;I12/a1;A12/a1;C12/n1;I12/c1;A112/a;B112/n;I112/b;B112/b;A112/n;I112/a;B2/b11;C2/n11;I2/c11;C2/c11;B2/n11;"
+		HM2 += "I2/b11;P222;P2221;P2122;P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;"
+		HM2 += "Pcm21;P21ma;P21am;Pb21m;Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;"
+		HM2 += "Pb2n;Pn2b;Pmn21;Pnm21;P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;"
+		HM2 += "Cmc21;Ccm21;A21ma;A21am;Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;"
+		HM2 += "Cc2m;Am2a;Aba2;Bba2;B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;"
+		HM2 += "Pmmm;Pnnn:1;Pnnn:2;Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;"
+		HM2 += "Pnan;Pmna;Pnmb;Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;"
+		HM2 += "Pmnn;Pnmn;Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;"
+		HM2 += "Ccmm;Amma;Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;"
+		HM2 += "Cccb:1;Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;"
+		HM2 += "Ibmm;Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;"
+		HM2 += "P41212;P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
+		HM2 += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;"
+		HM2 += "P4/nmm:2;P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;"
+		HM2 += "P42/ncm:2;I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;"
+		HM2 += "P3221;R32:H;R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;"
+		HM2 += "P64;P63;P-6;P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
+		HM2 += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;"
+		HM2 += "P-43m;F-43m;I-43m;P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;"
+		HM2 += "Ia-3d;"
+	endif
 	return StringFromList(idNum-1,HM2)
 End
 
@@ -6669,10 +7194,15 @@ End
 //End
 
 
-ThreadSafe Function/S getHallSymbol(idNum)
+ThreadSafe Function/S getHallSymbol(idNum, [dim])
 	Variable idNum									// index into the SpaceGroup IDs [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
+	Variable dim									// only 2 or 3
+	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""									// invalid SpaceGroup ID number
+	endif
+
+	if (dim==2)
+		return ""									// no Hall Symbols in 2D
 	endif
 
 	String Hall=""									// there are 530 items in this list
@@ -6766,10 +7296,30 @@ End
 //End
 
 
-ThreadSafe Static Function latticeSystem(SpaceGroupID)
+ThreadSafe Static Function latticeSystem(SpaceGroupID, dim)
 	String SpaceGroupID
+	Variable dim						// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
 
 	Variable SG=str2num(SpaceGroupID)	//Space Group number, from International Tables [1,230]
+	if (dim==2)
+		if (SG>17)
+			return -1				  	// invalid
+		elseif (SG>=13)				// Hexagonal, a [13 17]
+			return HEXAGONAL
+		elseif (SG>=10)				// Square, a [10,12]
+			return SQUARE
+		elseif (SG==5 || SG==9)	// Rhombic, a, alpha {5,9}
+			return RHOMBIC
+		elseif (SG>=3)					// Rectangular, a,b {3,4,6,7,8}
+			return RECTANGULAR
+		else								// Oblique, a, b, alpha {1,2}
+			return OBLIQUE
+		endif
+		return -1						// invalid
+	endif
+
+	// for dim==3
 	if (SG>230)
 		return -1					  	// invalid
 	elseif (SG>=195)
@@ -6825,28 +7375,28 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 	if (strlen(strIN)<1)
 		return ""
 	endif
-	Variable ignoreMinus = !(!(types & 32))					// 1 means ignore minus signs in matching
+	Variable ignoreMinus = !(!(types & 32))						// 1 means ignore minus signs in matching
 
 	String list="", nameList=""
 	Variable idNum
 	if (types & 1)
-		list += SymString2SGtype(strIN,1,ignoreMinus,id)	// 1 = Hermann-Mauguin
+		list += SymString2SGtype(strIN,1,ignoreMinus,id,3)	// 1 = Hermann-Mauguin
 		nameList += "Hermann-Mauguin, "
 	endif
 	if (types & 2)
-		list += SymString2SGtype(strIN,2,ignoreMinus,id)	// 2 = Full Hermann-Mauguin, HM2
+		list += SymString2SGtype(strIN,2,ignoreMinus,id,3)	// 2 = Full Hermann-Mauguin, HM2
 		nameList += "FULL Hermann-Mauguin, "
 	endif
 	if (types & 4)
-		list += SymString2SGtype(strIN,4,ignoreMinus,id)	// 4 = Hall
+		list += SymString2SGtype(strIN,4,ignoreMinus,id,3)	// 4 = Hall
 		nameList += "Hall, "
 	endif
 	if (types & 8)
-		list += SymString2SGtype(strIN,8,ignoreMinus,id)	// 8 = Lattice System
+		list += SymString2SGtype(strIN,8,ignoreMinus,id,3)	// 8 = Lattice System
 		nameList += "Lattice System, "
 	endif
 	if (types & 16)
-		list += SymString2SGtype(strIN,16,ignoreMinus,id)// 16 = space group ID, e.g. "15:b3"
+		list += SymString2SGtype(strIN,16,ignoreMinus,id,3)	// 16 = space group ID, e.g. "15:b3"
 		nameList += "Space Group ID, "
 	endif
 	nameList = TrimBoth(nameList,chars=", ")
@@ -6861,28 +7411,28 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		elseif (Nlist>1)
 			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
-		String allIDs = MakeAllIDs()
+		String allIDs = MakeAllIDs(3)
 		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
 		String SGid, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
 		for (i=0; i<Nlist; i+=1)
 			idNum = str2num(StringFromList(i,list))
-			if (isValidSpaceGroupIDnum(idNum))
+			if (isValidSpaceGroupIDnum(idNum, 3))	// only for 3D
 				fullHM = getHMsym2(idNum)			// usually fullHM is the same as HM
-				HM = getHMSym(idNum)
+				HM = getHMSym(idNum, dim=3)
 				fullHM = SelectString(StringMatch(fullHM,HM),"\t\t\t"+fullHM,"")
 				tab = SelectString(strlen(getHMsym2(idNum))>5,"\t","")
 
 				SGid = StringFromList(idNum-1,allIDs)
-				system = StringFromList(latticeSystem(SGid),systemNames)
+				system = StringFromList(latticeSystem(SGid,3),systemNames)
 				showDefault = strsearch(SGid,":",0)>=0 && StringMatch(SGid,FindDefaultIDforSG(str2num(SGid)))
-				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
+				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum, dim=3),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
 			endif
 		endfor
 	endif
 
 //	if (id)												// convert list from idNumbers to ID's
 //		if (!strlen(allIDs))
-//			allIDs = MakeAllIDs()
+//			allIDs = MakeAllIDs(3)
 //		endif
 //		String temp = list
 //		list = ""
@@ -6897,12 +7447,14 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 End
 
 
-Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
+Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID,dim)
 	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed, return list of idNums [1,530]
 	String symIN						// requested symbol, if empty, then a dialog will come up
 	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=space group ID
 	Variable ignoreMinus			// if true, then ignore any minus signs when matching
 	Variable returnID					// if true, convert idNumbers to id's
+	Variable dim						// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
 	if (ignoreMinus)
@@ -6914,35 +7466,55 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
 		return ""
 	endif
 
-	String sym,list="", allIDs=MakeAllIDs()
+	Variable Nids = dim==2 ? 17 : 530
+	String sym,list="", allIDs=MakeAllIDs(dim)
 	Variable idNum
 	if (type==8)						// searching for a Lattice System
-		if (StringMatch("Triclinic",find))
-			list += expandRange("1-2",";")+";"
-		endif
-		if (StringMatch("Monoclinic",find))
-			list += expandRange("3-107",";")+";"
-		endif
-		if (StringMatch("Orthorhombic",find))
-			list += expandRange("108-348",";")+";"
-		endif
-		if (StringMatch("Tetragonal",find))
-			list += expandRange("349-429",";")+";"
-		endif
-		if (StringMatch("Trigonal",find))
-			list += expandRange("430-461",";")+";"
-		elseif (StringMatch("Rhombohedral",find))
-			list += expandRange("434,437,445,451,453,459,461",";")+";"
-		endif
-		if (StringMatch("Hexagonal",find))
-			list += expandRange("462-488",";")+";"
-		endif
-		if (StringMatch("Cubic",find))
-			list += expandRange("489-530",";")+";"
+		if (dim==2)
+			if (StringMatch("Oblique",find))
+				list += "1;2;"
+			endif
+			if (StringMatch("Rectangular",find))
+				list += "3;4;6;7;8;"						// not 5
+			endif
+			if (StringMatch("Rhombic",find))
+				list += "5;9;"
+			endif
+			if (StringMatch("Square",find))
+				list += "10;11;12;"
+			endif
+			if (StringMatch("Hexagonal",find))
+				list += "13;14;15;16;17;"
+			endif
+
+		else				// dim==3
+			if (StringMatch("Triclinic",find))
+				list += expandRange("1-2",";")+";"
+			endif
+			if (StringMatch("Monoclinic",find))
+				list += expandRange("3-107",";")+";"
+			endif
+			if (StringMatch("Orthorhombic",find))
+				list += expandRange("108-348",";")+";"
+			endif
+			if (StringMatch("Tetragonal",find))
+				list += expandRange("349-429",";")+";"
+			endif
+			if (StringMatch("Trigonal",find))
+				list += expandRange("430-461",";")+";"
+			elseif (StringMatch("Rhombohedral",find))
+				list += expandRange("434,437,445,451,453,459,461",";")+";"
+			endif
+			if (StringMatch("Hexagonal",find))
+				list += expandRange("462-488",";")+";"
+			endif
+			if (StringMatch("Cubic",find))
+				list += expandRange("489-530",";")+";"
+			endif
 		endif
 
 	elseif (type==16)										// searching for a Space Group ID, e.g. "15:b3"
-		for (idNum=1; idNum<=530; idNum+=1)
+		for (idNum=1; idNum<=Nids; idNum+=1)
 			sym = StringFromList(idNum-1,allIDs)
 			if (ignoreMinus)
 				sym = ReplaceString("-",sym,"")		// do not include minus signs in match
@@ -6962,7 +7534,7 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
 
 	if (type<5)
 		// symbolFunc has been set, check all idNums in symbolFunc(idNum)
-		for (idNum=1;idNum<=530;idNum+=1)		// check all 530 space group types using symbolFunc
+		for (idNum=1;idNum<=Nids;idNum+=1)		// check all 530 space group types using symbolFunc
 			sym = ReplaceString(" ",symbolFunc(idNum),"")	// ignore spaces
 			if (ignoreMinus)
 				sym = ReplaceString("-",sym,"")	// optionally, do not include minus signs
@@ -7185,7 +7757,7 @@ End
 
 ThreadSafe Function isRhombohedralXtal(xtal)	// returns True if a Rhombohedral space group with Rhombohedral axes
 	STRUCT crystalStructure &xtal
-	return (isRhombohedralSG(xtal.SpaceGroup) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
+	return (isRhombohedralSG(xtal.SpaceGroup) && (xtal.dim == 3) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
 End
 
 ThreadSafe Static Function isRhombohedralSG(SpaceGroup)
@@ -7208,7 +7780,7 @@ End
 ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells in conventional cell, or number of atoms in conventional cell
 	STRUCT crystalStructure &xtal
 
-	String sym = getHMsym(xtal.SpaceGroupIDnum)	// symmetry string
+	String sym = getHMsym(xtal.SpaceGroupIDnum, dim=xtal.dim)	// symmetry string
 	strswitch(sym[0,0])
 		case "F":										// Face Centered
 			return 4
@@ -7225,6 +7797,7 @@ ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells
 			endif
 	endswitch
 
+
 //	Variable SG = xtal.SpaceGroup
 //	if (SG<=194 && SG>=168)						// Hexagonal
 //		return 1											// Hexagonal is a primitive cell
@@ -7239,7 +7812,9 @@ End
 
 ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
 	STRUCT crystalStructure &xtal							// this sruct is set in this routine
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))		// check if Space Group ID is valid
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,dim))		// check if Space Group ID is valid
 		return 0
 	endif
 
@@ -7247,37 +7822,60 @@ ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice consta
 	Variable alpha=xtal.alpha, bet=xtal.beta, gam=xtal.gam
 	Variable SG = str2num(xtal.SpaceGroupID)
 
-	switch(latticeSystem(xtal.SpaceGroupID))
-		case CUBIC:									// Cubic space groups [195,230]
-			return isCUBIC_LC(a,b,c,alpha,bet,gam)
+	if (dim==2)
+		switch(latticeSystem(xtal.SpaceGroupID,2))
+			case HEXAGONAL:							// Hexagonal space groups [13,17]
+				return isHEXAGONAL2D_LC(a,b,alpha)
 
-		case HEXAGONAL:							// Hexagonal space groups [168,194]
-			return isHEXAGONAL_LC(a,b,c,alpha,bet,gam)
+			case SQUARE:								//Square space groups [10,12]
+				return isSQUARE_LC(a,b,alpha)
 
-		case TRIGONAL:								// Trigonal space groups [143,167]
-			// generally use hexagonal cell, for rhomohedral use rhomohedral cell, unless obviously the hexagonal
-			if (isHEXAGONAL_LC(a,b,c,alpha,bet,gam))	// hexagonal is always permitted
-				return 1
-			elseif (isRhombohedralSG(SG))	// a rhomohedral space group, may have rhom axes
-				return (isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam))
-			endif
-			return 0
+			case RHOMBIC:								// Rhombic space groups {5,9}
+				return isRHOMBIC_LC(a,b,alpha)
+	
+			case RECTANGULAR	:						// Rectangular space groups {3,4,6,7,8}
+				return isRECTANGULAR_LC(a,b,alpha)
+	
+			case OBLIQUE:						// Oblique space groups [1,2]
+				return isOBLIQUE_LC(a,b,alpha)
+		
+			default:
+				return 0									// system is invalid, NOT valid
+		endswitch
 
-		case TETRAGONAL	:						// Tetragonal space groups [75,142]
-			return isTETRAGONAL_LC(a,b,c,alpha,bet,gam)
-
-		case ORTHORHOMBIC:						// Orthorhombic space groups [16,74]
-			return isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)
-
-		case MONOCLINIC:							// Monoclinic space groups [3,15]
-			return isMONOCLINIC_LC(a,b,c,alpha,bet,gam)
-
-		case TRICLINIC:							// Triclinic space groups 1,2]
-			return isTRICLINIC_LC(a,b,c,alpha,bet,gam)
-
-		default:
-			return 0									// system is invalid, NOT valid
-	endswitch
+	else
+		switch(latticeSystem(xtal.SpaceGroupID,3))
+			case CUBIC:									// Cubic space groups [195,230]
+				return isCUBIC_LC(a,b,c,alpha,bet,gam)
+	
+			case HEXAGONAL:							// Hexagonal space groups [168,194]
+				return isHEXAGONAL_LC(a,b,c,alpha,bet,gam)
+	
+			case TRIGONAL:								// Trigonal space groups [143,167]
+				// generally use hexagonal cell, for rhomohedral use rhomohedral cell, unless obviously the hexagonal
+				if (isHEXAGONAL_LC(a,b,c,alpha,bet,gam))	// hexagonal is always permitted
+					return 1
+				elseif (isRhombohedralSG(SG))	// a rhomohedral space group, may have rhom axes
+					return (isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam))
+				endif
+				return 0
+	
+			case TETRAGONAL	:						// Tetragonal space groups [75,142]
+				return isTETRAGONAL_LC(a,b,c,alpha,bet,gam)
+	
+			case ORTHORHOMBIC:						// Orthorhombic space groups [16,74]
+				return isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)
+	
+			case MONOCLINIC:							// Monoclinic space groups [3,15]
+				return isMONOCLINIC_LC(a,b,c,alpha,bet,gam)
+	
+			case TRICLINIC:							// Triclinic space groups 1,2]
+				return isTRICLINIC_LC(a,b,c,alpha,bet,gam)
+	
+			default:
+				return 0									// system is invalid, NOT valid
+		endswitch
+	endif
 End
 //
 ThreadSafe Static Function isCUBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Cubic
@@ -7293,11 +7891,11 @@ End
 ThreadSafe Static Function isHEXAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Hexagonal
 	// requires a=b, alpha=beta=90, gamma=120
 	Variable a,b,c,alpha,bet,gam
-	Variable lenTol = max(max(a,b),c) * 1e-4, angleTol=0.00573		// 1e-4 degree
-
-	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && c>0
-	Variable anglesOK = abs(alpha-90)<angletol && abs(bet-90)<angletol && abs(gam-120)<angleTol
-	return anglesOK &&  (abs(a-b)<lenTol)
+	Variable lenTol, basic, anglesOK, angleTol=0.00573
+	lenTol = max(max(a,b),c) * 1e-4											// 1e-4 degree
+	basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && c>0
+	anglesOK = abs(alpha-90)<angletol && abs(bet-90)<angletol && abs(gam-120)<angleTol
+	return basic && anglesOK &&  (abs(a-b)<lenTol)
 End
 //
 ThreadSafe Static Function isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Rhombohedral
@@ -7307,7 +7905,7 @@ ThreadSafe Static Function isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam)	// returns 1 i
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && alpha>0
 	Variable anglesOK = abs(alpha-bet)<angleTol && (alpha-gam)<angleTol
-	return anglesOK && abs(a-b)<lenTol && abs(a-c)<lenTol
+	return basic && anglesOK && abs(a-b)<lenTol && abs(a-c)<lenTol
 End
 //
 ThreadSafe Static Function isTETRAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Tetragonal
@@ -7317,7 +7915,7 @@ ThreadSafe Static Function isTETRAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if 
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0
 	Variable anglesOK = (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
-	return anglesOK && ( abs(a-b) || abs(a-c) || abs(b-c) )
+	return basic && anglesOK && ( abs(a-b) || abs(a-c) || abs(b-c) )
 End
 //
 ThreadSafe Static Function isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Orthorhombic
@@ -7326,7 +7924,7 @@ ThreadSafe Static Function isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 i
 	Variable angleTol=0.00573		// 1e-4 degree
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0
-	return (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
+	return basic && (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
 End
 //
 ThreadSafe Static Function isMONOCLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Monoclinic
@@ -7336,13 +7934,57 @@ ThreadSafe Static Function isMONOCLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if 
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
 	Variable num90s = (abs(alpha-90)<angleTol) + (abs(bet-90)<angleTol) + (abs(gam-90)<angleTol)
-	return num90s >= 2
+	return basic && (num90s >= 2)
 End
 //
 ThreadSafe Static Function isTRICLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Triclinic
 	// no conditions, always 1 if no numbers are NaN, Inf, or negative
 	Variable a,b,c,alpha,bet,gam
 	return numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
+End
+//
+//
+//
+ThreadSafe Static Function isHEXAGONAL2D_LC(a,b,alpha)			// returns 1 if LC are Hexagonal 2D
+	// requires a=b, alpha=beta=90, gamma=120
+	Variable a,b,alpha
+	Variable lenTol, basic, anglesOK, angleTol=0.00573
+	lenTol = max(a,b) * 1e-4												// 1e-4 degree
+	basic = numtype(a+b+alpha)==0 && a>0
+	anglesOK = abs(alpha-120)<angleTol
+	return basic && anglesOK &&  (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isSQUARE_LC(a,b,alpha)				// returns 1 if LC are Square
+	// requires a=b, alpha=120
+	Variable a,b,alpha
+	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
+	Variable basic = numtype(a+b+alpha)==0 && a>0
+	Variable anglesOK = (abs(alpha-120)<angleTol)
+	return basic & anglesOK && (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isRHOMBIC_LC(a,b,alpha)				// returns 1 if LC are Rhombic
+	// requires a=b
+	Variable a,b,alpha
+	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
+	Variable basic = numtype(a+b+alpha)==0 && a>0
+	return basic & (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isRECTANGULAR_LC(a,b,alpha)			// returns 1 if LC are Rectangular
+	// requires a=b, alpha=90
+	Variable a,b,alpha
+	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
+	Variable basic = numtype(a+b+alpha)==0 && a>0
+	Variable anglesOK = (abs(alpha-90)<angleTol)
+	return basic & anglesOK && (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isOBLIQUE_LC(a,b,alpha)				// returns 1 if LC are Oblique
+	// no conditions, always 1 if no numbers are NaN, Inf, or negative
+	Variable a,b,alpha
+	return numtype(a+b+alpha)==0 && a>0 && b>0 && alpha>0
 End
 //Function TestisValidLatticeConstants()	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
 //	STRUCT crystalStructure xtal
@@ -7681,24 +8323,42 @@ End
 //	Start of some utility routines
 
 // changes hkl[3] to the lowest order hkl, ignores whether a reflection is allowed, just removes common factors
-ThreadSafe Function lowestOrderHKL(h,k,l)
+ThreadSafe Function lowestOrderHKL(h,k,l, [dim])
 	Variable &h,&k,&l									// these hkl are returned with all common factors removed
+	Variable dim										// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
 	Variable f, i, maxDiv = gcdZero(h,k)		// max possible divisor
-	maxDiv = min(maxDiv, gcdZero(h,l))
-	maxDiv = min(maxDiv, gcdZero(k,l))
-	maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k,l all zero
-	for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
-		if (mod(h,i) || mod(k,i) || mod(l,i))	// i is not a factor of h, k, and l
-			continue
-		endif
-		h /= i
-		k /= i
-		l /= i
-		f *= i
-	endfor
-	h = h==0 ? 0 : h									// rmove "-0"
-	k = k==0 ? 0 : k
-	l = l==0 ? 0 : l
+	if (dim == 2)
+		maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k all zero
+		for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
+			if (mod(h,i) || mod(k,i))					// i is not a factor of h, k
+				continue
+			endif
+			h /= i
+			k /= i
+			f *= i
+		endfor
+		h = h==0 ? 0 : h									// remove "-0"
+		k = k==0 ? 0 : k
+
+	else
+		maxDiv = min(maxDiv, gcdZero(h,l))
+		maxDiv = min(maxDiv, gcdZero(k,l))
+		maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k,l all zero
+		for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
+			if (mod(h,i) || mod(k,i) || mod(l,i))	// i is not a factor of h, k, and l
+				continue
+			endif
+			h /= i
+			k /= i
+			l /= i
+			f *= i
+		endfor
+		h = h==0 ? 0 : h									// remove "-0"
+		k = k==0 ? 0 : k
+		l = l==0 ? 0 : l
+	endif
 	return f
 End
 //
@@ -7734,19 +8394,20 @@ End
 
 
 // changes hkl[3] to the lowest order allowed hkl (ie for FCC, 0,0,12 -> 002 not 001
-Function lowestAllowedHKL(h,k,l)
+Function lowestAllowedHKL(h,k,l, [dim])
 	Variable &h,&k,&l
+	Variable dim
+	dim = dim==2 ? 2 : 3
 
-	STRUCT crystalStructure xtal		// temporary crystal structure
-	FillCrystalStructDefault(xtal)	//fill the lattice structure with default values
-//	ForceLatticeToStructure(xtal)
+	STRUCT crystalStructure xtal			// temporary crystal structure
+	FillCrystalStructDefault(xtal)		//fill the lattice structure with default values
 
 	Variable i
 	Variable hh=h, kk=k, ll=l
-	lowestOrderHKL(hh,kk,ll)			// remove all common factors
+	lowestOrderHKL(hh,kk,ll, dim=dim)	// remove all common factors
 
-	for (i=1;i<16;i+=1)					// never need more than 16 to reach an allowed reflection
-		h = i*hh								// try each of the multiples to reach an allowed reflection
+	for (i=1;i<16;i+=1)						// never need more than 16 to reach an allowed reflection
+		h = i*hh									// try each of the multiples to reach an allowed reflection
 		k = i*kk
 		l = i*ll
 		if (allowedHKL(h,k,l,xtal))
@@ -7763,23 +8424,41 @@ Function NearestAllowedHKL(xtal,hkl,[dhklMax])
 	Wave hkl				// wave with input hkl, returned as nearest allowed hkl
 	Variable dhklMax	// distance in hkl to search around hkl input
 	dhklMax = ParamIsDefault(dhklMax) || numtype(dhklMax) || dhklMax<1 ? 1 : dhklMax
+	Variable dim = xtal.dim
+	dim = (dim==2) ? 2 : 3
 
-	Variable N=(2*dhklMax+1)^3			// number of hkl's to check
-	Variable h0=round(hkl[0]), k0=round(hkl[1]), l0=round(hkl[2])
+	Variable N=(2*dhklMax+1)^dim			// number of hkl's to check
+	Variable h0=round(hkl[0]), k0=round(hkl[1]), l0
+	l0 = dim==2 ? 0 : round(hkl[2])
 	if (N<=1)
-		hkl={h0,k0,l0}
+		if (dim==2)
+			hkl={h0,k0}
+		else
+			hkl={h0,k0,l0}
+		endif
 	endif
-	Make/N=(N,3)/FREE/I hklTest
+	Make/N=(N,dim)/FREE/I hklTest
 	Variable i, m, dh,dk,dl
-	for (dl=0; dl<=dhklMax; dl=incrementIndex(dl))
+
+	if (dim==2)
 		for (dk=0; dk<=dhklMax; dk=incrementIndex(dk))
 			for (dh=0; dh<=dhklMax; dh=incrementIndex(dh), m+=1)
-				hklTest[m][0] = dh+h0		// list of possibel nearest allowed hkl's
+				hklTest[m][0] = dh+h0		// list of possibel nearest allowed hk's
 				hklTest[m][1] = dk+k0
-				hklTest[m][2] = dl+l0
 			endfor
 		endfor
-	endfor
+	else
+		for (dl=0; dl<=dhklMax; dl=incrementIndex(dl))
+			for (dk=0; dk<=dhklMax; dk=incrementIndex(dk))
+				for (dh=0; dh<=dhklMax; dh=incrementIndex(dh), m+=1)
+					hklTest[m][0] = dh+h0		// list of possibel nearest allowed hkl's
+					hklTest[m][1] = dk+k0
+					hklTest[m][2] = dl+l0
+				endfor
+			endfor
+		endfor
+	endif
+
 	Wave recip = recipFrom_xtal(xtal)	// reciprocal lattice vectors
 	MatrixOp/FREE qIn = recip x hkl		// q of input hkl
 	MatrixOp/FREE dqs = sumRows(magSqr((recip x (hklTest)^t)^t - RowRepeat(qIn,N)))
@@ -7815,17 +8494,30 @@ End
 
 Function/WAVE recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal lattice
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE RL								// the reciprocal lattice
-	RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
-	if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
-		setDirectRecip(xtal)							// re-make the as0, as1, ...
+
+	String str
+	if (xtal.dim == 2)
+		Make/N=(2,2)/D/FREE RL								// the reciprocal lattice
+		RL = { {xtal.as0,xtal.as1}, {xtal.bs0,xtal.bs1} }
+		if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+			setDirectRecip(xtal)							// re-make the as0, as1, ...
+			RL = { {xtal.as0,xtal.as1}, {xtal.bs0,xtal.bs1} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.alpha
+
+	else
+		Make/N=(3,3)/D/FREE RL								// the reciprocal lattice
 		RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
+		if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+			setDirectRecip(xtal)							// re-make the as0, as1, ...
+			RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	endif
+
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
 	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
-	String str
-	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	Note/K RL, wnote
 	return RL
@@ -7834,27 +8526,54 @@ End
 
 Function/WAVE directFrom_xtal(xtal)				// returns a FREE wave with real lattice (a,b,c, are the columns)
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE DL								// the direct lattice
-	DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
-	if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
-		setDirectRecip(xtal)							// re-make the a0, a1, ...
+
+	String str
+	if (xtal.dim == 2)
+		Make/N=(2,2)/D/FREE DL								// the direct lattice
+		DL = { {xtal.a0,xtal.a1}, {xtal.b0,xtal.b1} }
+		if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
+			setDirectRecip(xtal)							// re-make the a0, a1, ...
+			DL = { {xtal.a0,xtal.a1}, {xtal.b0,xtal.b1} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.alpha
+
+	else
+		Make/N=(3,3)/D/FREE DL								// the direct lattice
 		DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
+		if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
+			setDirectRecip(xtal)							// re-make the a0, a1, ...
+			DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	endif
+
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
 	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
-	String str
-	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	Note/K DL, wnote
 	return DL
 End
 
 
-ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal lattice
+ThreadSafe Function/WAVE str2recip(str, [dim])	// returns a FREE wave with reciprocal lattice
 	String str
+	Variable dim
+	dim = dim==2 ? 2 : 3
 	Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	str = ReplaceString("},{",str,"}{")		// sometimes string is like: "{{1,2,3},{4,5,6},{7,8,9}}"
+
+	if (dim == 2)
+		sscanf str, "{{%g,%g}{%g,%g}}",as0,as1,bs0,bs1
+		if (V_flag==4)
+			Make/N=(2,2)/D/FREE RL						// the reciprocal lattice
+			RL = { {as0,as1}, {bs0,bs1} }
+			return RL
+		else
+			return $""
+		endif
+	endif
+
 	sscanf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	if (V_flag==9)
 		Make/N=(3,3)/D/FREE RL						// the reciprocal lattice
@@ -7866,29 +8585,51 @@ ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal 
 End
 
 
-ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acceptable minimal length
+ThreadSafe Function/S hkl2str(h,k,l, [bar,dim])	// format h,k,l into a string of acceptable minimal length
 	Variable h,k,l
 	Variable bar											// OPTIONAL, return unicocde string with bars instead of negatives
+	Variable dim
+	dim = dim==2 ? 2 : 3
 	bar = ParamIsDefault(bar) || numtype(bar) ? 0 : bar	// default is negative signs
 	bar = IgorVersion()<7 ? 0 : bar					// bar not available for Igor 6 (requires unicode support)
 	h = abs(h)<1e-14 ? 0 : h
 	k = abs(k)<1e-14 ? 0 : k
 	l = abs(l)<1e-14 ? 0 : l
-	String hklStr
-	if (numtype(h+k+l))
-		hklStr = "nan,nan,nan"
-	elseif (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)
-		sprintf hklStr,"%g, %g, %g",h,k,l			// hkl are non-integers
-	elseif (bar)
-		String sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
-		hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
-	elseif (k<0 || l<0)
-		sprintf hklStr,"%.0f, %.0f, %.0f",h,k,l
-	elseif (abs(h)<10 && k<10 && l<10)
-		sprintf hklStr,"%.0f%.0f%.0f",h,k,l
+	String hklStr, sp
+
+	if (dim == 2)
+		if (numtype(h+k))
+			hklStr = "nan,nan"
+		elseif (abs(mod(h,1))+abs(mod(k,1)) > 1e-6)
+			sprintf hklStr,"%g, %g",h,k			// hk are non-integers
+		elseif (bar)
+			sp = SelectString(abs(h)<10 && abs(k)<10, " ", "")
+			hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k))
+		elseif (k<0)
+			sprintf hklStr,"%.0f, %.0f",h,k
+		elseif (abs(h)<10 && k<10)
+			sprintf hklStr,"%.0f%.0f",h,k
+		else
+			sprintf hklStr,"%.0f %.0f",h,k
+		endif
+
 	else
-		sprintf hklStr,"%.0f %.0f %.0f",h,k,l
+		if (numtype(h+k+l))
+			hklStr = "nan,nan,nan"
+		elseif (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)
+			sprintf hklStr,"%g, %g, %g",h,k,l			// hkl are non-integers
+		elseif (bar)
+			sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
+			hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
+		elseif (k<0 || l<0)
+			sprintf hklStr,"%.0f, %.0f, %.0f",h,k,l
+		elseif (abs(h)<10 && k<10 && l<10)
+			sprintf hklStr,"%.0f%.0f%.0f",h,k,l
+		else
+			sprintf hklStr,"%.0f %.0f %.0f",h,k,l
+		endif
 	endif
+
 #if (IgorVersion()>7)
 	if (bar)													// only Arial and Tahoma work properly with OVERLINE
 		hklStr = "\\[0\\F'"+BAR_FONT_ALWAYS+"'" + hklStr + "\\F]0"
@@ -7918,11 +8659,13 @@ End
 //End
 
 
-ThreadSafe Function str2hkl(hklStr,h,k,l)
+ThreadSafe Function str2hkl(hklStr,h,k,l, [dim])
 	// returns the hkl values from a string, pretty forgiving about format in string
 	// moved to here from Dynamical.ipf versions <=1.14
 	String hklStr
 	Variable &h,&k,&l
+	Variable dim
+	dim = dim==2 ? 2 : 3
 
 	h = NaN ;	k = NaN ;	l = NaN
 	hklStr = ReplaceString("+",hklStr," ")
@@ -7948,11 +8691,19 @@ ThreadSafe Function str2hkl(hklStr,h,k,l)
 		N=numpnts(w3)
 	endif
 
-	if (N>2 && numtype(sum(w3,0,2))==0)
-		h = w3[0]
-		k = w3[1]
-		l = w3[2]
-		return 0
+	if (dim == 2)
+		if (N>1 && numtype(sum(w3,0,1))==0)
+			h = w3[0]
+			k = w3[1]
+			return 0
+		endif
+	else
+		if (N>2 && numtype(sum(w3,0,2))==0)
+			h = w3[0]
+			k = w3[1]
+			l = w3[2]
+			return 0
+		endif
 	endif
 	return 1
 End
@@ -7965,8 +8716,18 @@ End
 
 
 #if (IgorVersion() > 7)
-ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar over the number, only for displaying, not printing
 	Variable h,k,l				// hkl value
+	Variable dim				// 2 or 3 (usually 3)
+
+	if (dim == 2)
+		if (numtype(h+k))
+			return num2str(h)+","+num2str(k)
+		endif
+		String sp=SelectString(abs(h)>9 || abs(k)>9,""," ")
+		return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k))
+	endif
+
 	if (numtype(h+k+l))
 		return num2str(h)+","+num2str(k)+","+num2str(l)
 	endif
@@ -8010,18 +8771,27 @@ ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string t
 	return out
 End
 #else
-ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar over the number, only for displaying, not printing
 	Variable h,k,l				// hkl value
+	Variable dim				// 2 or 3 (usually 3)
 
-	if (numtype(h+k+l))
-		return num2str(h)+","+num2str(k)+","+num2str(l)
+	String extra, str=""
+	if (dim == 2)
+		if (numtype(h+k))
+			return num2str(h)+","+num2str(k)
+		endif
+		extra=SelectString(abs(h)>9 || abs(k)>9,""," ")
+		str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
+		str += minus2bar(num2istr(k),spaces=floor(log(abs(k))))
+	else
+		if (numtype(h+k+l))
+			return num2str(h)+","+num2str(k)+","+num2str(l)
+		endif
+		extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+		str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
+		str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
+		str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
 	endif
-	//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
-	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
-	String str=""
-	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
-	str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
-	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
 	return str
 End
 //
@@ -8041,48 +8811,128 @@ End
 #endif
 
 
-Function StructGet_xtal(strStruct,xtal8)		// take value of strStruct, and fill xtal8, whether strStruct was v5, v6, or v7
+Function StructGet_xtal(strStruct,xtal9)		// take value of strStruct, and fill xtal8, whether strStruct was v5, v6, or v7
 	// this accepts strStruct for either the old v5 or new v6 crystalStructure
 	String strStruct										// pre vers 6.0 len=25672, after 6.0 it is 25686
-	STRUCT crystalStructure &xtal8					// structure that will be filled
+	STRUCT crystalStructure &xtal9					// structure that will be filled
 
-	if (strlen(strStruct)>=25794)					// string is for a version 8 xtal
+	if (strlen(strStruct)>=25796)					// string is for a version 9 xtal
+		StructGet/S/B=2 xtal9, strStruct
+	elseif (strlen(strStruct)>=25794)				// a bit shorter string is for a version 7 xtal
+		STRUCT crystalStructure8 xtal8
 		StructGet/S/B=2 xtal8, strStruct
+		copy_xtal89(xtal9,xtal8)						// copy xtal8 --> xtal9
 	elseif (strlen(strStruct)>=25786)				// a bit shorter string is for a version 7 xtal
 		STRUCT crystalStructure7 xtal7
 		StructGet/S/B=2 xtal7, strStruct
-		copy_xtal78(xtal8,xtal7)						// copy xtal7 --> xtal8
+		copy_xtal79(xtal9,xtal7)						// copy xtal7 --> xtal8
 	elseif (strlen(strStruct)>=25686)				// a still shorter string is for a version 6 xtal
 		STRUCT crystalStructure6 xtal6
 		StructGet/S/B=2 xtal6, strStruct
-		copy_xtal68(xtal8,xtal6)						// copy xtal6 --> xtal8
+		copy_xtal69(xtal9,xtal6)						// copy xtal6 --> xtal9
 	else														// shorter strings assumed to be older version 5 xtal
 		STRUCT crystalStructure5 xtal5
 		StructGet/S/B=2 xtal5, strStruct
-		copy_xtal58(xtal8,xtal5)						// copy xtal5 --> xtal8
+		copy_xtal59(xtal9,xtal5)						// copy xtal5 --> xtal8
 	endif
 End
 //
-Static Function copy_xtal58(xtal8,xtal5)		// copy a crystalStructure xtal5 --> xtal8
-	STRUCT crystalStructure &xtal8
+Static Function copy_xtal59(xtal9,xtal5)		// copy a crystalStructure xtal5 --> xtal9
+	STRUCT crystalStructure &xtal9
 	STRUCT crystalStructure5 &xtal5
+	STRUCT crystalStructure8 xtal8
 	STRUCT crystalStructure7 xtal7					// intermidiate
 	STRUCT crystalStructure6 xtal6					// intermidiate
 	copy_xtal56(xtal6,xtal5)							// 1st copy xtal5 --> xtal6
 	copy_xtal67(xtal7,xtal6)							// 2nd copy xtal6 --> xtal7
 	copy_xtal78(xtal8,xtal7)							// 3rd copy xtal7 --> xtal8
+	copy_xtal89(xtal9,xtal8)							// 4th copy xtal8 --> xtal9
 End
 //
-Static Function copy_xtal68(xtal8,xtal6)		// copy a crystalStructure xtal5 --> xtal8
-	STRUCT crystalStructure &xtal8
+Static Function copy_xtal69(xtal9,xtal6)		// copy a crystalStructure xtal6 --> xtal9
+	STRUCT crystalStructure &xtal9
 	STRUCT crystalStructure6 &xtal6
+	STRUCT crystalStructure8 xtal8					// intermidiate
 	STRUCT crystalStructure7 xtal7					// intermidiate
 	copy_xtal67(xtal7,xtal6)							// 1st copy xtal6 --> xtal7
 	copy_xtal78(xtal8,xtal7)							// 2nd copy xtal7 --> xtal8
+	copy_xtal89(xtal9,xtal8)							// 3rd copy xtal8 --> xtal9
 End
 //
-Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal7 --> xtal8
-	STRUCT crystalStructure &xtal8
+Static Function copy_xtal79(xtal9,xtal7)		// copy a crystalStructure xtal7 --> xtal9
+	STRUCT crystalStructure &xtal9
+	STRUCT crystalStructure7 &xtal7
+	STRUCT crystalStructure8 xtal8					// intermidiate
+	copy_xtal78(xtal8,xtal7)							// 1st copy xtal7 --> xtal8
+	copy_xtal89(xtal9,xtal8)							// 2nd copy xtal8 --> xtal9
+End
+//
+Static Function copy_xtal89(xtal9,xtal8)		// copy a crystalStructure xtal8 --> xtal9
+	STRUCT crystalStructure &xtal9
+	STRUCT crystalStructure8 &xtal8
+
+	xtal9.desc = xtal8.desc
+	xtal9.dim = 3														// this is the change with version 9
+
+	xtal9.a = xtal8.a				;	xtal9.b = xtal8.b				;	xtal9.c = xtal8.c
+	xtal9.alpha = xtal8.alpha	;	xtal9.beta = xtal8.beta	;	xtal9.gam = xtal8.gam
+	xtal9.SpaceGroup = xtal8.SpaceGroup						// in range [1,230]
+	xtal9.SpaceGroupIDnum = xtal8.SpaceGroupIDnum			// in range [1,530]
+	xtal9.SpaceGroupID = xtal8.SpaceGroupID					// id, e.g. "15:-b2", not just a number anymore
+
+	xtal9.Vc = xtal8.Vc
+	xtal9.density = xtal8.density
+	xtal9.alphaT = xtal8.alphaT
+
+	xtal9.Pressure = NaN											// Only difference between 7 and 8
+	xtal9.Temperature = xtal8.Temperature
+	xtal9.Vibrate = xtal8.Vibrate
+	xtal9.haveDebyeT = xtal8.haveDebyeT
+	xtal9.hashID = xtal8.hashID
+
+	xtal9.N = xtal8.N
+	Variable i, N=xtal8.N
+	for (i=0;i<N;i+=1)
+		xtal9.atom[i] = xtal8.atom[i]							// was:  copy_atomType(xtal9.atom[i],xtal8.atom[i])
+	endfor
+
+	xtal9.Nbonds = xtal8.Nbonds
+	N = xtal9.Nbonds
+	for (i=0;i<N;i+=1)
+		xtal9.bond[i] = xtal8.bond[i]							// was:  copy_bondType(xtal9.bond[i],xtal8.bond[i])
+	endfor
+
+	xtal9.a0 = xtal8.a0	;	xtal9.b0 = xtal8.b0	;	xtal9.c0 = xtal8.c0
+	xtal9.a1 = xtal8.a1	;	xtal9.b1 = xtal8.b1	;	xtal9.c1 = xtal8.c1
+	xtal9.a2 = xtal8.a2	;	xtal9.b2 = xtal8.b2	;	xtal9.c2 = xtal8.c2
+
+	xtal9.as0 = xtal8.as0	;	xtal9.bs0 = xtal8.bs0	;	xtal9.cs0 = xtal8.cs0
+	xtal9.as1 = xtal8.as1	;	xtal9.bs1 = xtal8.bs1	;	xtal9.cs1 = xtal8.cs1
+	xtal9.as2 = xtal8.as2	;	xtal9.bs2 = xtal8.bs2	;	xtal9.cs2 = xtal8.cs2
+
+	xtal9.Unconventional00 = xtal8.Unconventional00
+	xtal9.Unconventional01 = xtal8.Unconventional01
+	xtal9.Unconventional02 = xtal8.Unconventional02
+	xtal9.Unconventional10 = xtal8.Unconventional10
+	xtal9.Unconventional11 = xtal8.Unconventional11
+	xtal9.Unconventional12 = xtal8.Unconventional12
+	xtal9.Unconventional20 = xtal8.Unconventional20
+	xtal9.Unconventional21 = xtal8.Unconventional21
+	xtal9.Unconventional22 = xtal8.Unconventional22
+
+	String fullFile = xtal8.sourceFile
+	fullFile = fullFile[0,MAX_FILE_LEN-1]
+	xtal9.sourceFile = fullFile
+
+	if (strlen(xtal8.formula)<1)
+		xtal9.formula = MinimalChemFormula(xtal9, maximal=1)	// this is the only difference between xtal6 & 7
+	else
+		xtal9.formula =xtal8.formula
+	endif
+End
+//
+Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal8 --> xtal8
+	STRUCT crystalStructure8 &xtal8
 	STRUCT crystalStructure7 &xtal7
 
 	xtal8.desc = xtal7.desc
@@ -8136,8 +8986,8 @@ Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal7 --> x
 	String fullFile = xtal7.sourceFile
 	fullFile = fullFile[0,MAX_FILE_LEN-1]
 	xtal8.sourceFile = fullFile
-
-	xtal8.formula = MinimalChemFormula(xtal8, maximal=1)	// this is the only difference between xtal6 & 7
+	xtal8.formula = ""
+	//	xtal8.formula = MinimalChemFormula(xtal9, maximal=1)	// this is the only difference between xtal6 & 7
 End
 //
 Static Function copy_xtal67(xtal7,xtal6)		// copy a crystalStructure xtal6 --> xtal7
@@ -8208,7 +9058,7 @@ Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --
 
 	String id = FindDefaultIDforSG(xtal5.SpaceGroup)
 	xtal6.SpaceGroupID = id										// change SG number to id string
-	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id)			// change id to id number in [1,530]
+	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id, dim=3)	// change id to id number in [1,530]
 
 	xtal6.Vc = xtal5.Vc
 	xtal6.density = xtal5.density
@@ -8276,9 +9126,6 @@ Function InitLatticeSymPackage([showPanel])			// used to initialize this package
 	if (!exists("root:Packages:Lattices:keV"))
 		Variable/G root:Packages:Lattices:keV = 10		// only used when calculating Cromer-Liberman values
 	endif
-	if (!exists("root:Packages:Lattices:dim"))
-		Variable/G root:Packages:Lattices:dim = 3		// default, set to dim=2 for 2D values
-	endif
 	if (showPanel)
 		MakeLatticeParametersPanel("")
 	endif
@@ -8295,12 +9142,12 @@ End
 Static Function/WAVE GetSettingTransForm(id)
 	String id					// SpaceGroup ID name, e.g. "146:H"
 
-	Variable i = SpaceGroupID2num(id)		// in range [1,530]
-	if (numtype(i))								// check for valid id
+	Variable i = SpaceGroupID2num(id, dim=3)	// in range [1,530]
+	if (numtype(i))										// check for valid id
 		return $""
 	endif
 
-	Make/N=(530)/T/FREE CBMs=""				// the transform from id to the "standard" setting
+	Make/N=(530)/T/FREE CBMs=""						// the transform from id to the "standard" setting
 	CBMs[0]   = {"x,y,z","x,y,z","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y"}
 	CBMs[15]  = {"y-z,x,-z","-y,x,-y+z","x,y,z","y,z,x","z,x,y","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z"}
 	CBMs[28]  = {"-y,x,-y+z","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x"}
@@ -8371,16 +9218,16 @@ End
 //	End
 //
 // makes one matrix either (3,3) or (4,4) from the symmetry op string
-Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x3 or 3x4 matrix
+Static Function/WAVE MatrixFromSymLine(symOp,cols,[zeroBad])	// returns either 3x3 or 3x4 matrix
 	String symOp													// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
-	Variable dim													// either 3 or 4
+	Variable cols													// either 3 or 4
 	Variable zeroBad												// if 1, do not allow |mat3| near zero
 	zeroBad = ParamIsDefault(zeroBad) || numtype(zeroBad) ? 0 : zeroBad
 
-	if (dim!=3 && dim!=4)
+	if (cols!=3 && cols!=4)
 		return $""
 	endif
-	Make/N=(3,dim)/D/FREE mat=0								// either (3,3) or (3,4)
+	Make/N=(3,cols)/D/FREE mat=0								// either (3,3) or (3,4)
 
 	String expression
 	Variable i, err
@@ -8392,7 +9239,7 @@ Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x
 			err = 1
 			break
 		endif
-		mat[i][] = vec[q]											// vec is always [4], but this still works for dim=3
+		mat[i][] = vec[q]											// vec is always [4], but this still works for cols=3
 	endfor
 
 	if (!err && zeroBad)										// skip this if !zeroBad
@@ -8493,8 +9340,11 @@ End
 //			This section is for making the matricies for the symmetry operations for Space Groups
 //
 
-Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
+Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry operations mats and vecs (if needed), returns number of operations
 	String SpaceGroupID
+	Variable dim
+	dim = dim==2 ? 2 : 3
+
 	Variable SG=str2num(SpaceGroupID)
 	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
 	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
@@ -8505,7 +9355,7 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 			return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
 		endif
 	endif
-	if (!isValidSpaceGroup(SG))								// Space Group must be in range [1, 230]
+	if (!isValidSpaceGroup(SG,dim))								// Space Group must be in range [1, 230]
 		DoAlert 0, "Bad Space Group = "+SpaceGroupID+", in SetSymOpsForSpaceGroup"
 		return 1
 	endif
@@ -8516,13 +9366,16 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 	endif
 
 	String symOperations=setSymLineID(SpaceGroupID)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+	if (dim==2)
+		symOperations = "x,y"
+	endif
 
 	Variable i,N=ItemsInList(symOperations)
 	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
-	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
+	Make/N=(N,dim,dim)/O/B $wName									// this only holds 0 or ±1
 	Wave equivM = $wName
 	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
-	Make/N=(N,3)/O/D $wName
+	Make/N=(N,dim)/O/D $wName
 	Wave equivB = $wName
 
 	Make/N=(3,3)/O/D mat_SymItem
@@ -8547,6 +9400,60 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 	Note/K equivB, wnote
 	return N
 End
+//Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
+//	String SpaceGroupID
+//	Variable SG=str2num(SpaceGroupID)
+//	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
+//	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
+//	Variable numSymOps
+//	if (WaveExists(mats) && WaveExists(bvecs))				// check if they exist
+//		if (StringMatch(StringByKey("SpaceGroupID",note(mats),"="), SpaceGroupID))
+//			numSymOps = NumberByKey("numSymOps",note(mats),"=")
+//			return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
+//		endif
+//	endif
+//	if (!isValidSpaceGroup(SG,3))								// Space Group must be in range [1, 230]
+//		DoAlert 0, "Bad Space Group = "+SpaceGroupID+", in SetSymOpsForSpaceGroup"
+//		return 1
+//	endif
+//	if (!DataFolderExists("root:Packages:Lattices:SymOps:"))
+//		DoAlert 0, "Cannot make symmetry matricies, the target data folder does not exist"
+//		print "Cannot make symmetry matricies, the target data folder does not exist,  'root:Packages:Lattices:SymOps:'\r"
+//		return 0
+//	endif
+//
+//	String symOperations=setSymLineID(SpaceGroupID)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+//
+//	Variable i,N=ItemsInList(symOperations)
+//	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
+//	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
+//	Wave equivM = $wName
+//	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
+//	Make/N=(N,3)/O/D $wName
+//	Wave equivB = $wName
+//
+//	Make/N=(3,3)/O/D mat_SymItem
+//	Make/N=3/O/D vec_SymItem
+//	Wave mat=mat_SymItem, vec=vec_SymItem
+//	Variable err = 0
+//	for (i=0;i<N;i+=1)
+//		err = err || make1MatrixAndVecFromSymLine(StringFromList(i,symOperations))
+//		equivM[i][][] = mat[q][r]
+//		equivB[i][] = vec[q]
+//	endfor
+//	KillWaves/Z mat_SymItem,vec_SymItem
+//	if (err)
+//		Abort "error making symmetry matricies in SetSymOpsForSpaceGroup()"
+//	endif
+//
+//	String wnote="waveClass=SymmetryOperations;"
+//	wnote = ReplaceNumberByKey("numSymOps",wnote,N,"=")
+//	wnote = ReplaceNumberByKey("SpaceGroup",wnote,SG,"=")
+//	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+//	Note/K equivM, wnote
+//	Note/K equivB, wnote
+//	return N
+//End
 //
 // makes one matrix[3][3] and one vector[3] from the expression like "x+1/3,y+2/3,z+2/3"
 Static Function make1MatrixAndVecFromSymLine(symItem)		// returns result in mat_SymItem and vec_SymItem, return value is error flag
@@ -8687,7 +9594,7 @@ Static Function/WAVE SymOpMatricies34N(SpaceGroupID, [printIt])
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	String symOp, symOperations
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,3))
 		SpaceGroupID = FindDefaultIDforSG(str2num(SpaceGroupID))	// not found, try the default Space Group
 	endif
 	symOperations = setSymLineID(SpaceGroupID)					// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
@@ -8730,22 +9637,22 @@ End
 Static Function/T setSymLineID(id)
 	String id									// a space group id, e.g. "15" or "15:-b2"
 
-	if (!isValidSpaceGroupID(id))		// perhaps only a number was passed
+	if (!isValidSpaceGroupID(id,3))		// perhaps only a number was passed
 		Variable SG
 		SG = str2num(id)
 		SG = strsearch(id,":",0)>0 ? NaN : SG
 		id = FindDefaultIDforSG(SG)		// find first space group starting with "id:"
 	endif
-	if (!isValidSpaceGroupID(id))
+	if (!isValidSpaceGroupID(id,3))
 		return ""								// invalid
 	endif
 
-	return setSymLineIDnum(SpaceGroupID2num(id))
+	return setSymLineIDnum(SpaceGroupID2num(id, dim=3))
 End
 //
 Static Function/T setSymLineIDnum(idNum)
 	Variable idNum								// Space Group ID number [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
+	if (!isValidSpaceGroupIDnum(idNum, 3))	// only for 3D
 		return ""								// invalid
 	endif
 
@@ -9812,7 +10719,7 @@ End
 //			This section is for making the matricies for the symmetry operations for Wyckoff Symbols
 //			Wyckoff info can be found at:	http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list
 //
-// 		the Funcitons associated with Wyckoff symbols are:
+// 		the Functions associated with Wyckoff symbols are:
 //			used by regular routines (above this):
 //				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
 //
@@ -10015,16 +10922,11 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	NVAR alpha = root:Packages:Lattices:PanelValues:alpha
 	NVAR bet = root:Packages:Lattices:PanelValues:bet
 	NVAR gam = root:Packages:Lattices:PanelValues:gam
-	NVAR dim = root:Packages:Lattices:PanelValues:dim
 	if (NVAR_Exists(a) && NVAR_Exists(b) && NVAR_Exists(c))
 		a = xtal.a	;	b = xtal.b	;	c = xtal.c
 	endif
 	if (NVAR_Exists(alpha) && NVAR_Exists(bet) && NVAR_Exists(gam))
 		alpha = xtal.alpha	;	bet = xtal.beta	;	gam = xtal.gam
-	endif
-	if (NVAR_Exists(dim))
-//		dim = xtal.dim
-		Abort "ERROR -- ChangeSettingCurrentXtal(), need to make xtal support dim"
 	endif
 	if (NVAR_Exists(dirty))
 		dirty = 1
@@ -10069,7 +10971,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 
 	Variable SG = xtal.SpaceGroup			// Space Group number from international tables, allowed range is [1, 230]
 	String idSource = xtal.SpaceGroupID
-	if (!isValidSpaceGroup(SG))
+	if (!isValidSpaceGroup(SG,3))
 		printf "ERROR -- ChangeXtalSetting(\"%s\") xtal is invalid, nothing done.\r",id
 		return 1
 	elseif (numtype(str2num(id))==0 && SG != str2num(id))
@@ -10079,7 +10981,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 
 	if (!(SG==str2num(id)))					// no id given, ask the user
 		String defaultID = FindDefaultIDforSG(xtal.SpaceGroup)
-		String allIDs=MakeAllIDs()
+		String allIDs=MakeAllIDs(3)
 		String idList="", idNumList=symmtry2SG(num2str(SG)+"*",types=16)	// find the Space Group number from the symmetry string
 		if (ItemsInList(idNumList)<1)
 			if (printIt)
@@ -10145,10 +11047,10 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 
 	String source = xtal.SpaceGroupID			// current SpaceGroupID
 	String defalt = FindDefaultIDforSG(xtal.SpaceGroup)	// default SpaceGroupID
-	if (!isValidSpaceGroupID(source))			// if source is invalid, do nothing
+	if (!isValidSpaceGroupID(source,3))		// if source is invalid, do nothing
 		return 1
 	endif
-	if (!isValidSpaceGroupID(target))			// if target is invalid, set to the default setting for this space group
+	if (!isValidSpaceGroupID(target,3))		// if target is invalid, set to the default setting for this space group
 		target = defalt
 	endif
 	if (StringMatch(source,target))				// converting to itself, nothing to do
@@ -10156,7 +11058,7 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 	endif
 
 	xtal.SpaceGroupID = target
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(target)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(target, dim=3)
 	Wave CBM = GetSettingTransForm(target)	// converts Defalt --> Target
 	Wave CBM0 = GetSettingTransForm(source)	// converts Defalt --> Source
 	Redimension/N=(3,3) CBM, CBM0
@@ -10232,12 +11134,12 @@ End
 
 Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	String SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,3))
 		return $""
 	endif
 	// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains 27 Wyckoff symbols "a"-"A".
 
-	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID)
+	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID, dim=3)
 	Make/N=(530)/T/FREE WyckoffSyms
 	// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
 	WyckoffSyms[0]   = "a:x,y,z:1;"
