@@ -8,7 +8,7 @@
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
 //	#define DO_HEXAGONAL_EXTRA							// If this is used, then Hex & Trigonal F's are too big
 // #define SHOW_XML_BONDS_ON_READIN					// Put this in your "Procedure" window if you want to see the <bond_chemical ...</bond_chemical>
-// #define TEST_LATTICE_2D
+#define LATTICE_SYM_2D_3D
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Constant LatticeSym_minBondLen = 0.050				// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
@@ -219,7 +219,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
 //	with version 6.54, fixed dSpacing(), was not using T properly
 //	with version 6.55, changed room temperaure from 22.5 --> 20
-//	with version 6.56, put in much of the support for dim=2,  2D structures,  #define TEST_LATTICE_2D
+//	with version 6.56, put in much of the support for dim=2,  2D structures,  #define LATTICE_SYM_2D_3D
 
 
 //	Rhombohedral Transformation:
@@ -696,7 +696,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	STRUCT crystalStructure xtal					// the working copy
 	xtal = xtal_IN										// copy xtal_IN to a working copy, was:  copy_xtal(xtal,xtal_IN)
 
-#ifdef TEST_LATTICE_2D
+#ifdef LATTICE_SYM_2D_3D
 	Variable dim = xtal.dim
 #else
 	Variable dim = 3
@@ -2807,7 +2807,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_gamma, fSize=12, title="\xC9\xA3"+DEGREESIGN	// there are two gamma's, this (latin small letter gamma) looks better than "\xCE\xB3"
 #endif
 
-#ifdef TEST_LATTICE_2D
+#ifdef LATTICE_SYM_2D_3D
 	PopupMenu popupLatticeDim,pos={155,163},size={56,20}, proc=LatticeSym#LatticeDimPopMenuProc
 	PopupMenu popupLatticeDim,title="Dim",mode=(dim==2 ? 1:2),value= #"\"2;3\""
 #endif
@@ -2896,7 +2896,7 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	Variable SG = str2num(SpaceGroupID)		// first part of id is space group number
 	String titleStr="\\JC"+SpaceGroupID+" "
 
-#ifdef TEST_LATTICE_2D
+#ifdef LATTICE_SYM_2D_3D
 	if (dim==2)
 		SetVariable set_c_nm,disable=1,win=$subWin				// always for dim==2
 		SetVariable set_beta,disable=1,win=$subWin
@@ -3227,7 +3227,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 		xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 		xtal.SpaceGroupID = SpaceGroupID
-#ifdef TEST_LATTICE_2D
+#ifdef LATTICE_SYM_2D_3D
 		xtal.dim = dim
 #else
 		xtal.dim = 3
@@ -3273,7 +3273,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		a = xtal.a  ;  b = xtal.b  ;  c = xtal.c
 		alpha = xtal.alpha  ;  bet = xtal.beta  ;  gam = xtal.gam
 		SpaceGroupID = xtal.SpaceGroupID
-#ifdef TEST_LATTICE_2D
+#ifdef LATTICE_SYM_2D_3D
 		PopupMenu popupLatticeDim,mode=((xtal.dim)==2 ? 1:2)	// set the popup menu
 #endif
 		desc = xtal.desc
@@ -4149,7 +4149,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-#ifdef TEST_LATTICE_2D
+#ifdef LATTICE_SYM_2D_3D
 	if (!(dim==3))
 		sprintf str, "Caution -- reading a file with dim = \"%s\"", StringByKey("dim",keyVals,"=")
 		DoAlert 0, str

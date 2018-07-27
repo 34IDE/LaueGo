@@ -4140,7 +4140,11 @@ Function/WAVE MakeSimulatedTestPattern(Nreq,[lattice,angle,axis,tol,keVmax,dNum,
 	Variable SpaceGroup = str2num(SpaceGroupID)
 	Variable SpaceGroupIDnum = SpaceGroupID2num(SpaceGroupID)
 	Variable Vc = MatrixDet(direct)
+#ifdef LATTICE_SYM_2D_3D
 	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID,3)
+#else
+	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID)
+#endif
 
 	MatrixOP/FREE/O recip = 2*PI * (Inv(direct))^t
 	recip = recip==0 ? 0 : recip
@@ -4422,7 +4426,11 @@ End
 //	endif
 //
 //	Variable Vc = MatrixDet(direct)
+//#ifdef LATTICE_SYM_2D_3D
 //	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup,3)
+//#else
+//	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup)
+//#endif
 //
 //	MatrixOP/FREE/O recip = 2*PI * (Inv(direct))^t
 //	recip = recip==0 ? 0 : recip
@@ -4801,8 +4809,11 @@ SpaceGroupID = "227:1"
 	Variable SpaceGroup = str2num(SpaceGroupID)
 	Variable SpaceGroupIDnum = SpaceGroupID2num(SpaceGroupID)
 	Variable Vc = MatrixDet(direct)
+#ifdef LATTICE_SYM_2D_3D
 	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID,3)
-
+#else
+	LatticeSym#SetSymOpsForSpaceGroup(SpaceGroupID)
+#endif
 	MatrixOP/FREE/O recip   = 2*PI * (Inv(direct))^t
 	recip = recip==0 ? 0 : recip
 	String directStr=encodeMatAsStr(direct), recipStr=encodeMatAsStr(recip)
