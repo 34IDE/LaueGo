@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.02										// based on LatticeSym_6.55
+#pragma version = 7.03										// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -220,6 +220,8 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.54, fixed dSpacing(), was not using T properly
 //	with version 6.55, changed room temperaure from 22.5 --> 20
 //	with version 6.56, put in much of the support for dim=2,  2D structures,  #define LATTICE_SYM_2D_3D
+//
+//	with version 7.00, starting to make is all 2D & 3D compatible
 
 
 //	Rhombohedral Transformation:
@@ -695,12 +697,7 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	endif
 	STRUCT crystalStructure xtal					// the working copy
 	xtal = xtal_IN										// copy xtal_IN to a working copy, was:  copy_xtal(xtal,xtal_IN)
-
-#ifdef LATTICE_SYM_2D_3D
-	Variable dim = xtal.dim
-#else
-	Variable dim = 3
-#endif
+	Variable dim = dim==2 ? 2 : 3
 
 	SetSymOpsForSpaceGroup(xtal.SpaceGroupID,dim)	// ensure that symmetry ops are right
 	Variable Natoms = round(xtal.N)						// number of predefined atoms
@@ -2751,6 +2748,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 		crystalStructStr = strStruct
 	elseif(new)												// no old values present, use usual defaults
 		FillCrystalStructDefault(xtal)
+		dim = xtal.dim
 		a=xtal.a  ;  b=xtal.b  ;  c=xtal.c
 		alpha=xtal.alpha  ;  bet=xtal.beta  ;  gam=xtal.gam
 		SpaceGroupID = xtal.SpaceGroupID
@@ -2790,7 +2788,6 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_alpha,help={"lattice constant (degree), angle between b & c vectors"}
 	SetVariable set_beta,help={"lattice constant (degree), angle between a & c vectors"}
 	SetVariable set_gamma,help={"lattice constant (degree), angle between a & b vectors"}
-
 	SetVariable set_alpha,pos={45,163},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
 	SetVariable set_beta,pos={45,183},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
 	SetVariable set_gamma,pos={45,203},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
@@ -2808,8 +2805,8 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 #endif
 
 #ifdef LATTICE_SYM_2D_3D
-	PopupMenu popupLatticeDim,pos={155,163},size={56,20}, proc=LatticeSym#LatticeDimPopMenuProc
-	PopupMenu popupLatticeDim,title="Dim",mode=(dim==2 ? 1:2),value= #"\"2;3\""
+	TitleBox LatticeDimTitle,pos={190,92},size={19,19},fSize=14,frame=0,anchor= LC
+	TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
 #endif
 
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
@@ -2906,7 +2903,6 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_beta,disable=0,win=$subWin
 		SetVariable set_gamma,disable=0,win=$subWin
 	endif
-	PopupMenu popupLatticeDim,mode=(dim==2 ? 1:2)
 #endif
 
 	if (dim==2 && SG>=13)												// Hexagonal, a [13 17]
@@ -3014,8 +3010,8 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_gamma,noedit=0,frame=1,win=$subWin
 		titleStr += "Triclinic"
 	endif
-//	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
-	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID, dim=dim))
+	//	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID, dim=dim), dim=dim)
 
 	titleStr = minus2bar(titleStr, single=1)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
@@ -3070,7 +3066,6 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 		case "set_alpha":
 		case "set_beta":
 		case "set_gamma":
-		case "popupLatticeDim":
 		case "setDesc":
 		case "T_C":
 			dirty = 1								// a big change, xtal.sourceFile no longer valid
@@ -3105,15 +3100,33 @@ End
 Static Function/T SelectNewSG(find, dim)
 	String find
 	Variable dim			// must be 2 or 3 only
-	if (strlen(find)<1)
-		find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
+	if (strlen(find)<1 || !(dim==2 || dim==3))
+		if (strlen(find)<1)
+			find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
+		endif
+		dim = (dim==2 || dim==3) ? dim : NumVarOrDefault("root:Packages:Lattices:PanelValues:dimSearch",3)
+#ifdef LATTICE_SYM_2D_3D
+		dim = 3
+#endif
 		Prompt find, "Space Group Search, use * for wild card"
+		Prompt dim, "Lattice Dimension", popup, "2;3"
+		dim = dim==2 ? 1 : 2
+#ifdef LATTICE_SYM_2D_3D
+		DoPrompt "Search String", find, dim
+#else
 		DoPrompt "Search String", find
+#endif
 		if (V_flag)
 			return ""
 		endif
+		dim = dim==1 ? 2 : 3
 	endif
+	dim = dim==2 ? 2 : 3
+#ifdef LATTICE_SYM_2D_3D
+		dim = 3
+#endif
 	String/G root:Packages:Lattices:PanelValues:SpaceGroupSearch=find
+	Variable/G root:Packages:Lattices:PanelValues:dimSearch=dim
 
 	String str,list0="", symList=""
 	Variable i
@@ -3146,6 +3159,9 @@ Static Function/T SelectNewSG(find, dim)
 	Variable N=ItemsInList(symList)
 	if (strsearch(find,"*",0)<0 && N<1)
 		symList = SelectNewSG(find+"*",dim)
+		dim = str2num(StringFromList(1,symList))
+		dim = dim==2 ? 2 : 3
+		symList = StringFromList(0,symList)
 		N = ItemsInList(symList)
 	endif
 	if (N<1)
@@ -3153,14 +3169,14 @@ Static Function/T SelectNewSG(find, dim)
 		return ""
 	elseif (N==1)
 		sym = StringFromList(0,symList)
-		return StringFromList(0,sym," ")
+		return StringFromList(0,sym," ")+";"+num2istr(dim)
 	endif
 	Prompt sym,"Space Group",popup,addDefaults2symList(symList)
 	DoPrompt "Space Group",sym
 	if (V_flag)
 		return ""
 	endif
-	return StringFromList(0,sym," ")
+	return StringFromList(0,sym," ")+";"+num2istr(dim)
 End
 //
 Static Function/S addDefaults2symList(in)	// add "Default" to the default Space Groups
@@ -3217,7 +3233,9 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		SpaceGroupID = xtal.SpaceGroupID
 		alphaT = xtal.alphaT
 		desc = xtal.desc
-		PopupMenu popupLatticeDim,mode=((xtal.dim)==2 ? 1:2)
+#ifdef LATTICE_SYM_2D_3D
+		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+#endif
 		T_C = xtal.Temperature
 		dirty = 0
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
@@ -3272,9 +3290,10 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		endif
 		a = xtal.a  ;  b = xtal.b  ;  c = xtal.c
 		alpha = xtal.alpha  ;  bet = xtal.beta  ;  gam = xtal.gam
+		dim = xtal.dim
 		SpaceGroupID = xtal.SpaceGroupID
 #ifdef LATTICE_SYM_2D_3D
-		PopupMenu popupLatticeDim,mode=((xtal.dim)==2 ? 1:2)	// set the popup menu
+		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
 #endif
 		desc = xtal.desc
 		alphaT = xtal.alphaT
@@ -3313,37 +3332,6 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		Execute/P "Init_PowderPatternLattice()"
 		Execute/P cmd
 	endif
-	return 0
-End
-
-
-Static Function LatticeDimPopMenuProc(pa) : PopupMenuControl
-	// used in the LatticeSym Panel, sets the dim, 2 or 3
-	STRUCT WMPopupAction &pa
-	if (pa.eventCode != 2)
-		return 0
-	endif
-
-	Variable dimPop = str2num(pa.popStr)	// requested dim
-	NVAR dim = root:Packages:Lattices:PanelValues:dim
-	SVAR SpaceGroupID = root:Packages:Lattices:PanelValues:SpaceGroupID
-
-	if (!StringMatch(pa.ctrlName,"popupLatticeDim"))
-		return 1
-	elseif (!NVAR_Exists(dim) || !SVAR_Exists(SpaceGroupID) || numtype(dimPop))
-		return 1
-	elseif (dimPop!=2 && dimPop!=3)		// only choices are 2 or 3
-		return 1
-	endif
-
-	String win = pa.win
-	STRUCT WMSetVariableAction sva
-	sva.win = win
-	sva.eventCode = 2
-	sva.ctrlName = "popupLatticeDim"
-	dim = dimPop
-	UpdatePanelLatticeConstControls(win,SpaceGroupID)
-	LatticePanelParamProc(sva)
 	return 0
 End
 
@@ -5401,7 +5389,8 @@ Static Constant TRICLINIC=0,MONOCLINIC=1,ORTHORHOMBIC=2,TETRAGONAL=3,TRIGONAL=4,
 Static Constant P_CENTER=0,F_CENTER=1,B_CENTER=2,RHOMBOHEDRAL=3,C_CENTER=4,A_CENTER=5
 Static Constant FCC=225,BCC=229,DIA=227,SIMPLE_CUBIC=195,SAPPHIRE=167	// generic Space Group numbers
 Strconstant LatticeSystemNames="Triclinic;Monoclinic;Orthorhombic;Tetragonal;Trigonal;Hexagonal;Cubic"
-Static Constant OBLIQUE=1,RECTANGULAR=2,RHOMBIC=3,SQUARE=4	// HEXAGONAL already defined
+//Static Constant OBLIQUE=1,RECTANGULAR=2,RHOMBIC=3,SQUARE=4	// HEXAGONAL already defined
+Static Constant OBLIQUE=0,RECTANGULAR=1,RHOMBIC=2,SQUARE=3,HEXAGONAL2D=4
 Strconstant LatticeSystemNames2D="Oblique;Rectangular;Rhombic;Square;Hexagonal"
 
 
@@ -7315,14 +7304,14 @@ ThreadSafe Static Function latticeSystem(SpaceGroupID, dim)
 		if (SG>17)
 			return -1				  	// invalid
 		elseif (SG>=13)				// Hexagonal, a [13 17]
-			return HEXAGONAL
+			return HEXAGONAL2D
 		elseif (SG>=10)				// Square, a [10,12]
 			return SQUARE
 		elseif (SG==5 || SG==9)	// Rhombic, a, alpha {5,9}
 			return RHOMBIC
 		elseif (SG>=3)					// Rectangular, a,b {3,4,6,7,8}
 			return RECTANGULAR
-		else								// Oblique, a, b, alpha {1,2}
+		elseif (SG>0)					// Oblique, a, b, alpha {1,2}
 			return OBLIQUE
 		endif
 		return -1						// invalid
@@ -7350,17 +7339,20 @@ ThreadSafe Static Function latticeSystem(SpaceGroupID, dim)
 End
 
 
-Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number from the symmetry string
+Function/S symmtry2SG(strIN,[types,id,dim,printIt])	// find the Space Group number from the symmetry string
 	String strIN
 	Variable types						// -1=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=SpaceGroupID, 32=Ignore Minuses
 	Variable id							// if true, convert idNumbers to id's
+	Variable dim						// must be 2 or 3
 	Variable printIt
 	types = ParamIsDefault(types) ? -1 : round(types)
 	id = ParamIsDefault(id) || numtype(id) ? 0 : id
+	dim = dim==2 ? 2 : 3
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	if (strlen(strIN)<1 || numtype(types))
 		Prompt strIN, "Symmetry Symbol or Space Group Number, (e.g. \"Pmm*\"), wild cards allowed"
+		Prompt dim, "Lattice Dimension", popup, "2;3"
 		Variable t1=!(!(types&1))+1, t2=!(!(types&2))+1, t4=!(!(types&4))+1, t8=!(!(types&8))+1, t16=!(!(types&16))+1, t32=!(!(types&32))+1
 		Prompt t1, "Hermann-Mauguin", popup "-;Hermann-Mauguin"
 		Prompt t2, "Full Hermann-Mauguin", popup "-;Full Hermann-Mauguin"
@@ -7368,7 +7360,8 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		Prompt t8, "Lattice System", popup "-;Lattice System"
 		Prompt t16, "SpaceGroup ID", popup "-;SpaceGroup ID"
 		Prompt t32, "Ignore All Minus Signs", popup "-;Ignore Minus Signs"
-		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16,t32
+		dim = dim==2 ? 1 : 2
+		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16,t32, dim
 		if (V_flag)
 			return ""
 		endif
@@ -7379,33 +7372,34 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		types += t8==2 ? 8 : 0
 		types += t16==2 ? 16 : 0
 		types += t32==2 ? 32 : 0
+		dim = dim==1 ? 2 : 3
 		printIt = 1
 	endif
 	if (strlen(strIN)<1)
 		return ""
 	endif
-	Variable ignoreMinus = !(!(types & 32))						// 1 means ignore minus signs in matching
+	Variable ignoreMinus = !(!(types & 32))							// 1 means ignore minus signs in matching
 
 	String list="", nameList=""
 	Variable idNum
 	if (types & 1)
-		list += SymString2SGtype(strIN,1,ignoreMinus,id,3)	// 1 = Hermann-Mauguin
+		list += SymString2SGtype(strIN,1,ignoreMinus,id,dim)	// 1 = Hermann-Mauguin
 		nameList += "Hermann-Mauguin, "
 	endif
 	if (types & 2)
-		list += SymString2SGtype(strIN,2,ignoreMinus,id,3)	// 2 = Full Hermann-Mauguin, HM2
+		list += SymString2SGtype(strIN,2,ignoreMinus,id,dim)	// 2 = Full Hermann-Mauguin, HM2
 		nameList += "FULL Hermann-Mauguin, "
 	endif
 	if (types & 4)
-		list += SymString2SGtype(strIN,4,ignoreMinus,id,3)	// 4 = Hall
+		list += SymString2SGtype(strIN,4,ignoreMinus,id,dim)	// 4 = Hall
 		nameList += "Hall, "
 	endif
 	if (types & 8)
-		list += SymString2SGtype(strIN,8,ignoreMinus,id,3)	// 8 = Lattice System
+		list += SymString2SGtype(strIN,8,ignoreMinus,id,dim)	// 8 = Lattice System
 		nameList += "Lattice System, "
 	endif
 	if (types & 16)
-		list += SymString2SGtype(strIN,16,ignoreMinus,id,3)	// 16 = space group ID, e.g. "15:b3"
+		list += SymString2SGtype(strIN,16,ignoreMinus,id,dim)	// 16 = space group ID, e.g. "15:b3"
 		nameList += "Space Group ID, "
 	endif
 	nameList = TrimBoth(nameList,chars=", ")
@@ -7420,21 +7414,26 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		elseif (Nlist>1)
 			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
-		String allIDs = MakeAllIDs(3)
+		String allIDs = MakeAllIDs(dim)
 		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
-		String SGid, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
+		String SGid, tab,fullHM,HM, system, systemNames
+		if (dim==2)
+			systemNames="Oblique\t;Rectangular\t;Rhombic;Square\t\t;Hexagonal\t"
+		else
+			systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
+		endif
 		for (i=0; i<Nlist; i+=1)
 			idNum = str2num(StringFromList(i,list))
-			if (isValidSpaceGroupIDnum(idNum, 3))	// only for 3D
-				fullHM = getHMsym2(idNum)			// usually fullHM is the same as HM
-				HM = getHMSym(idNum, dim=3)
+			if (isValidSpaceGroupIDnum(idNum, dim))
+				fullHM = getHMsym2(idNum, dim=dim)					// usually fullHM is the same as HM
+				HM = getHMSym(idNum, dim=dim)
 				fullHM = SelectString(StringMatch(fullHM,HM),"\t\t\t"+fullHM,"")
-				tab = SelectString(strlen(getHMsym2(idNum))>5,"\t","")
+				tab = SelectString(strlen(getHMsym2(idNum, dim=dim))>5,"\t","")
 
 				SGid = StringFromList(idNum-1,allIDs)
-				system = StringFromList(latticeSystem(SGid,3),systemNames)
-				showDefault = strsearch(SGid,":",0)>=0 && StringMatch(SGid,FindDefaultIDforSG(str2num(SGid)))
-				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum, dim=3),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
+				system = StringFromList(latticeSystem(SGid,dim),systemNames)
+				showDefault = strsearch(SGid,":",0)>=0 && StringMatch(SGid,FindDefaultIDforSG(str2num(SGid),dim=dim))
+				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum, dim=dim),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
 			endif
 		endfor
 	endif
@@ -7833,7 +7832,7 @@ ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice consta
 
 	if (dim==2)
 		switch(latticeSystem(xtal.SpaceGroupID,2))
-			case HEXAGONAL:							// Hexagonal space groups [13,17]
+			case HEXAGONAL2D:							// Hexagonal space groups [13,17]
 				return isHEXAGONAL2D_LC(a,b,alpha)
 
 			case SQUARE:								//Square space groups [10,12]
@@ -8066,6 +8065,8 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	STRUCT crystalStructure &xtal
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
 
 	Variable tick0=stopMSTimer(-2)
 	reMakeAtomXYZs(xtal)						// ensure that atom positions are current
@@ -8090,8 +8091,8 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	WaveStats/M=1/Q ElectroNeg
 	Variable useValence = (V_max-V_min) > 0.7	// if useValence, then take into account the ElectroNegativity
 
-	Make/N=(1,3)/D/FREE xyz					// Note: these xyz are in fractional coordinates, and then get changed to nm
-	Make/N=1/I/FREE itypes						// type index for each atom xyz[][3]
+	Make/N=(1,dim)/D/FREE xyz					// Note: these xyz are in fractional coordinates, and then get changed to nm
+	Make/N=1/I/FREE itypes						// type index for each atom xyz[][dim]
 	Make/N=(Ntype)/WAVE/FREE xyzRef			// holds atom locations for each atom type
 
 	for (i=0; i<Ntype; i+=1)					// generate free versions of xyz,Zs,Types for bond finding
@@ -8195,17 +8196,18 @@ End
 Static Function/WAVE FindCentralAtom(xyz)
 	// from the set of atom positions xyz[N][3], return the central most position
 	Wave xyz							// atomic positions (nm),  NOT fractional
-
+	Variable dim = DimSize(xyz,1)
+	dim = dim==2 ? 2 : 3
 	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
 	Variable N=DimSize(xyz,0)
 	MatrixOP/FREE xyzAvg = sumCols(xyz)/N	// average position, represents the center
 	if (N==1)
-		Make/N=3/D/FREE xyz0 = xyz[0][p]
+		Make/N=(dim)/D/FREE xyz0 = xyz[0][p]
 	else
 		MatrixOP/FREE dmag2 = SumRows(magSqr(xyz-RowRepeat(xyzAvg,N)))
 		dmag2 = dmag2<min2 ? Inf : dmag2	// ignore atoms that are too close
 		WaveStats/M=1/Q dmag2
-		Make/N=3/D/FREE xyz0 = xyz[max(V_minloc,0)][p]
+		Make/N=(dim)/D/FREE xyz0 = xyz[max(V_minloc,0)][p]
 	endif
 	return xyz0
 End
@@ -8215,9 +8217,10 @@ Static Function/WAVE FindClosestAtomDirection(xyz0, xyz)
 	Wave xyz0						// xyz0[3]  the reference location
 	Wave xyz							// xyz[N,3] set of atom positions (nm),  NOT fractional
 	Variable N=DimSize(xyz,0)
-
+	Variable dim=numpnts(xyz0)
+	dim = dim==2 ? 2 : 3
 	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
-	Make/N=3/D/FREE delta
+	Make/N=(dim)/D/FREE delta
 	if (N>1)
 		MatrixOP/FREE dxyz = xyz - RowRepeat(xyz0,N)
 		MatrixOP/FREE dmag2 = SumRows(magSqr(dxyz))
@@ -8232,19 +8235,29 @@ End
 //
 Static Function ExtendFractional(xyz,delta)
 	// extend xyz in all directions by delta
-	Wave xyz											// xyz[N][3], atom positions, FRACTIONAL coordinates
+	Wave xyz											// xyz[N][3 or 2], atom positions, FRACTIONAL coordinates
 	Variable delta									// distance to extend in all directions [0,1)
+	Variable dim=DimSize(xyz,1)				// should be 2 or 3
+	dim = dim==2 ? 2 : 3
 
 	Duplicate/FREE xyz, xyz0
-	Make/N=3/D/FREE offset
-	Make/N=(26,3)/D/FREE offsets				// offsets by ±1 in x, y, & z around the center cell
-	offsets[0][0]= {-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1}
-	offsets[0][1]= {-1,-1,-1, 0, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 0, 1, 1, 1}
-	offsets[0][2]= {-1,-1,-1,-1,-1,-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	Variable Noff, Natom=DimSize(xyz,0)
+	Make/N=(dim)/D/FREE offset
+	if (dim==2)
+		Noff = 8
+		Make/N=(Noff,2)/D/FREE offsets			// offsets by ±1 in x, & y around the center cell
+		offsets[0][0]= {	-1, 0, 1,-1, 1,-1, 0, 1}
+		offsets[0][1]= {	-1,-1,-1, 0, 0, 1, 1, 1}
+	else
+		Noff = 26
+		Make/N=(Noff,3)/D/FREE offsets			// offsets by ±1 in x, y, & z around the center cell
+		offsets[0][0]= {-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1}
+		offsets[0][1]= {-1,-1,-1, 0, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 0, 1, 1, 1}
+		offsets[0][2]= {-1,-1,-1,-1,-1,-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	endif
 
-	Variable Natom=DimSize(xyz0,0)
 	Variable i,j, Nadd, Nxyz=Natom
-	for (j=0;j<26;j+=1)							// for each of the offsets, add atoms to xyz, & Types
+	for (j=0;j<Noff;j+=1)							// for each of the offsets, add atoms to xyz, & Types
 		offset = offsets[j][p]
 		if (Natom<2)
 			Duplicate/FREE xyz0, xyzTest
@@ -8254,8 +8267,12 @@ Static Function ExtendFractional(xyz,delta)
 		endif
 		MatrixOP/FREE flagX = greater(col(xyzTest,0),-0.5) && greater(1.5,col(xyzTest,0))
 		MatrixOP/FREE flagY = greater(col(xyzTest,1),-0.5) && greater(1.5,col(xyzTest,1))
-		MatrixOP/FREE flagZ = greater(col(xyzTest,2),-0.5) && greater(1.5,col(xyzTest,2))
-		MatrixOP/FREE flags = flagX && flagY && flagZ	// flags is 1 if x, y, & z are all in range (-0.5, 1.5)
+		if (dim==2)
+			MatrixOP/FREE flags = flagX && flagY				// flags is 1 if x & y are all in range (-0.5, 1.5)
+		else
+			MatrixOP/FREE flagZ = greater(col(xyzTest,2),-0.5) && greater(1.5,col(xyzTest,2))
+			MatrixOP/FREE flags = flagX && flagY && flagZ	// flags is 1 if x, y, & z are all in range (-0.5, 1.5)
+		endif
 		Nadd = sum(flags)							// number of points in xyzTest that I will add to xyz
 		Redimension/N=(Nxyz+Nadd,-1) xyz
 		for (i=0;i<Natom;i+=1)					// for each atom in center cell (xyz0), add points that are within 1/2 of a cell
