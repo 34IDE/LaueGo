@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #requiredPackages "xmlMultiIndex;imageDisplayScaling;"
 #pragma ModuleName=CuteCells
-#pragma version=0.21
+#pragma version=0.22
 #include "imageDisplayScaling"
 
 Menu "Rotations"
@@ -691,8 +691,8 @@ Static Function/WAVE MakeAllLinesAroundCell(cell,[xhat,yhat])		// returns a (12x
 	MatrixOp/FREE minY0 = minVal(col(lines,1))
 	MatrixOp/FREE minY1 = minVal(col(lines,3))
 
-	Variable xc = (max(maxX0,maxX1) + min(minX0,minX1)) / 2
-	Variable yc = (max(maxY0,maxY1) + min(minY0,minY1)) / 2
+	Variable xc = (max(maxX0[0],maxX1[0]) + min(minX0[0],minX1[0])) / 2
+	Variable yc = (max(maxY0[0],maxY1[0]) + min(minY0[0],minY1[0])) / 2
 	lines[][0] -= xc					// offset so lines are centered about (0,0)
 	lines[][2] -= xc
 	lines[][1] -= yc
