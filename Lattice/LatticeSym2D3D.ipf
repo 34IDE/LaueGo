@@ -8746,11 +8746,12 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar
 	Variable h,k,l				// hkl value
 	Variable dim				// 2 or 3 (usually 3)
 
+	String sp
 	if (dim == 2)
 		if (numtype(h+k))
 			return num2str(h)+","+num2str(k)
 		endif
-		String sp=SelectString(abs(h)>9 || abs(k)>9,""," ")
+		sp = SelectString(abs(h)>9 || abs(k)>9,""," ")
 		return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k))
 	endif
 
@@ -8758,7 +8759,7 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar
 		return num2str(h)+","+num2str(k)+","+num2str(l)
 	endif
 	//	String sp=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
-	String sp=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+	sp = SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
 	//	print h,k,l,"     ",minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
 	return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
 End
