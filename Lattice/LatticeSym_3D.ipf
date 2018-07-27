@@ -217,6 +217,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //								also fixed bug in readCrystalStructureXML()
 //	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
 //	with version 6.54, fixed dSpacing(), was not using T properly
+//	with version 6.55, changed room temperaure from 22.5 --> 20
 
 
 //	Rhombohedral Transformation:
