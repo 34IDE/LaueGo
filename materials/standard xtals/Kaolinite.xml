@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Kaolinite</chemical_name_common>
+	<chemical_formula_structural>Al2Si2O9</chemical_formula_structural>
+	<amcsd>0017947</amcsd>
+	<cod>1011045</cod>
+	<space_group>
+		<id>9:b1</id>
+		<IT_number>9</IT_number>
+		<H-M>C1c1</H-M>
+		<!--   9:b1, Monoclinic, H-M='Cc:b1',  H-M='C1c1',  Hall='C -2yc' -->
+	</space_group>
+	<cell>
+		<a unit="nm">0.5148</a>
+		<b unit="nm">0.892</b>
+		<c unit="nm">1.4535</c>
+		<alpha>90</alpha>
+		<beta>100.2</beta>
+		<gamma>90</gamma>
+	</cell>
+
+	<atom_site>
+		<label>Al1</label>
+		<symbol>Al</symbol>
+		<fract>0.25 -0.167 0</fract>
+	</atom_site>
+	<atom_site>
+		<label>Al2</label>
+		<symbol>Al</symbol>
+		<fract>0.25 0.167 0</fract>
+	</atom_site>
+
+	<atom_site>
+		<label>Si1</label>
+		<symbol>Si</symbol>
+		<fract>0.008 0.5 0.188</fract>
+	</atom_site>
+	<atom_site>
+		<label>Si2</label>
+		<symbol>Si</symbol>
+		<fract>0.008 0.167 0.188</fract>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>-0.046 0.5 0.076</fract>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>-0.046 0.167 0.076</fract>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>-0.046 -0.167 0.076</fract>
+	</atom_site>
+	<atom_site>
+		<label>O4</label>
+		<symbol>O</symbol>
+		<fract>0.033 0.333 0.229</fract>
+	</atom_site>
+	<atom_site>
+		<label>O5</label>
+		<symbol>O</symbol>
+		<fract>0.283 -0.417 0.229</fract>
+	</atom_site>
+	<atom_site>
+		<label>O6</label>
+		<symbol>O</symbol>
+		<fract>0.283 0.083 0.229</fract>
+	</atom_site>
+	<atom_site>
+		<label>O7</label>
+		<symbol>O</symbol>
+		<fract>0.046 0 0.424</fract>
+	</atom_site>
+	<atom_site>
+		<label>O8</label>
+		<symbol>O</symbol>
+		<fract>-0.454 0.167 0.424</fract>
+	</atom_site>
+	<atom_site>
+		<label>O9</label>
+		<symbol>O</symbol>
+		<fract>0.046 0.333 0.424</fract>
+	</atom_site>
+
+	<citation>
+		W. Gruner, Zeitschrift fur Kristallographie 83 (1932) 75-88
+		"The Crystal Structure of Kaolinite"
+	</citation>
+</cif>
+
+
+
+

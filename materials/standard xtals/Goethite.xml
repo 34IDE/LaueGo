@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Goethite</chemical_name_common>
+	<chemical_formula_structural>FeO2H</chemical_formula_structural>
+	<amcsd>0010471</amcsd>
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<H-M>Pbnm</H-M>
+	</space_group>
+	<cell>
+		<a unit="nm">0.45979</a>
+		<b unit="nm">0.99510</b>
+		<c unit="nm">0.30178</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>0.04892 0.85366 0.25</fract>
+		<U_iso>0.00588</U_iso>
+		<aniso_U_11>0.00664</aniso_U_11>
+		<aniso_U_22>0.00537</aniso_U_22>
+		<aniso_U_33>0.00565</aniso_U_33>
+		<aniso_U_12>0.00004</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.70569 0.19914 0.25</fract>
+		<U_iso>0.00716</U_iso>
+		<aniso_U_11>0.00710</aniso_U_11>
+		<aniso_U_22>0.00727</aniso_U_22>
+		<aniso_U_33>0.00712</aniso_U_33>
+		<aniso_U_12>0.00201</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O-h2</label>
+		<symbol>O</symbol>
+		<fract>0.19871 0.05298 0.25</fract>
+		<U_iso>0.00738</U_iso>
+		<aniso_U_11>0.00687</aniso_U_11>
+		<aniso_U_22>0.00643</aniso_U_22>
+		<aniso_U_33>0.00886</aniso_U_33>
+		<aniso_U_12>-0.00042</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>H</label>
+		<symbol>H</symbol>
+		<fract>0.37813 0.08170 0.25</fract>
+		<U_iso>0.01942</U_iso>
+	</atom_site>
+
+	<citation>
+		H. Yangm, R.T. Downs, G. Costin, Acta Crystallographica, Section E 62 (2006) i250-i252
+		"Goethite, alpha-FeO(OH), from single-crystal data"
+		source: Park County, Colorado, USA
+	</citation>
+</cif>
