@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.03										// based on LatticeSym_6.55
+#pragma version = 7.04										// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -7954,7 +7954,7 @@ End
 //
 //
 ThreadSafe Static Function isHEXAGONAL2D_LC(a,b,alpha)			// returns 1 if LC are Hexagonal 2D
-	// requires a=b, alpha=beta=90, gamma=120
+	// requires a=b, alpha=120
 	Variable a,b,alpha
 	Variable lenTol, basic, anglesOK, angleTol=0.00573
 	lenTol = max(a,b) * 1e-4												// 1e-4 degree
@@ -7964,11 +7964,11 @@ ThreadSafe Static Function isHEXAGONAL2D_LC(a,b,alpha)			// returns 1 if LC are 
 End
 //
 ThreadSafe Static Function isSQUARE_LC(a,b,alpha)				// returns 1 if LC are Square
-	// requires a=b, alpha=120
+	// requires a=b, alpha=90
 	Variable a,b,alpha
 	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
 	Variable basic = numtype(a+b+alpha)==0 && a>0
-	Variable anglesOK = (abs(alpha-120)<angleTol)
+	Variable anglesOK = (abs(alpha-90)<angleTol)
 	return basic & anglesOK && (abs(a-b)<lenTol)
 End
 //
