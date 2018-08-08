@@ -1,3 +1,47 @@
+
+********************************************************************
+********************************************************************
+
+CHECK for adding 2D
+
+***************** Left to Do ***************** Left to Do
+work on AtomView.ipf (implement 2D as a Graph, not Gizmo)
+
+	***************** LocalPackages *****************
+spurr:LocalPackages tischler$ grep -ilr LatticeSym *
+
+NA	Diffraction/BraggLaw.ipf
+NA	Diffraction/DiffractometerSim.ipf
+NA	Diffraction/Dynamical.ipf
+NA	Diffraction/ForwardNotches.ipf
+NA	Diffraction/MirrorReflectivity.ipf
+
+	***************** LaueGo *****************
+spurr:LaueGo tischler$ grep -ilr LatticeSym *
+
+NA	always/LaueGoFirst.ipf
+NA	microN/CuteCells.ipf
+NA	microN/Indexing_Internal.ipf
+NA	microN/IndexingN.ipf
+NA	microN/indexLotsN.ipf
+NA	microN/microGeometryN.ipf
+NA	microN/xmlMultiIndex.ipf
+x	Diffractometer/Diffractometer.ipf		// add check that xtal.dim == 3
+NA	General/Gizmo/GizmoMarkers.ipf
+NA	General/new/GeneralFirstNew.ipf
+	Lattice/AtomView.ipf
+NA	Lattice/LaueSimulation.ipf
+x	Lattice/PowderPatterns.ipf
+NA	Lattice/QspaceVolumesView.ipf
+NA	Lattice/StereographicProjection.ipf
+
+
+
+********************************************************************
+********************************************************************
+
+
+
 in 
 OK	XMLtagContents, and probably startOfxmltag() check use of occurance with start
 
@@ -14,6 +58,10 @@ OK	always/GeneralFirst.ipf
 OK	microN/microGeometryN.ipf
 OK	APS/VTIfiles.ipf
 	microN/xmlMultiIndex.ipf
+
+********************************************************************
+********************************************************************
+
 
 
 

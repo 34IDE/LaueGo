@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.62
+#pragma version = 0.63
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -739,6 +739,12 @@ Static Function SetSampleReferenceReflections(name,hklStr0,Astr0,hklStr1,Astr1,p
 		DoAlert 0, "No Lattice, please set one"
 		return 1
 	endif
+#ifdef LATTICE_SYM_2D_3D
+	if (!(xtal.dim == 3))
+		DoAlert 0, "A diffractometer only understands 3D structures"
+		return 1
+	endif
+#endif
 
 	Variable Naxes=NumVarOrDefault("root:Packages:Diffractometer:Naxes",DEFAULT_Naxes)
 	String str, fmt="%.13g", fmtSpace="%.13g"
@@ -3039,15 +3045,16 @@ End
 //  ======================================================================================  //
 //  ============================= Start of Utility Routines ==============================  //
 
-//ThreadSafe Static Function/WAVE recip_from_xtal(xtal)
-Static Function/WAVE recip_from_xtal(xtal)
-	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE recip
-	recip[0][0] = {xtal.as0, xtal.as1, xtal.as2}
-	recip[0][1] = {xtal.bs0, xtal.bs1, xtal.bs2}
-	recip[0][2] = {xtal.cs0, xtal.cs1, xtal.cs2}
-	return recip
-End
+//	If you need this, use the recipFrom_xtal(xtal) function in LatticeSym.ipf instead
+//	//ThreadSafe Static Function/WAVE recip_from_xtal(xtal)
+//	Static Function/WAVE recip_from_xtal(xtal)
+//		STRUCT crystalStructure &xtal
+//		Make/N=(3,3)/D/FREE recip
+//		recip[0][0] = {xtal.as0, xtal.as1, xtal.as2}
+//		recip[0][1] = {xtal.bs0, xtal.bs1, xtal.bs2}
+//		recip[0][2] = {xtal.cs0, xtal.cs1, xtal.cs2}
+//		return recip
+//	End
 
 
 //	// set mat to be a rotation matrix about axis with angle
