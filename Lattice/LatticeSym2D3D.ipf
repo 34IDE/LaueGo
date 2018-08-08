@@ -221,7 +221,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.55, changed room temperaure from 22.5 --> 20
 //	with version 6.56, put in much of the support for dim=2,  2D structures,  #define LATTICE_SYM_2D_3D
 //
-//	with version 7.00, starting to make is all 2D & 3D compatible
+//	with version 7.00, starting to make it all 2D & 3D compatible
 
 
 //	Rhombohedral Transformation:
