@@ -5507,7 +5507,7 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	dim = dim==2 ? 2 : 3
 	l = dim==2 ? 0 : l
 	String SpaceGroupID = xtal.SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID,3) || numtype(h+k+l))
+	if (!isValidSpaceGroupID(SpaceGroupID,dim) || numtype(h+k+l))
 		return cmplx(NaN,NaN)	// bad inputs
 	endif
 	Variable/C zero=cmplx(0,0)
