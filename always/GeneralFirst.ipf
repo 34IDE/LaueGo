@@ -449,7 +449,8 @@ Static Function/T DeepCheckActualFiles(source,[printIt])
 		endif
 		printf (")\r")
 		if (strlen(mismatch))
-			printf "mismatched files are:  %s\r",PrintLongStrings(mismatch,sep=";")
+			print "mismatched files are:"
+			PrintLongStrings(mismatch,sep=";")
 		else
 			print "All files match."
 		endif

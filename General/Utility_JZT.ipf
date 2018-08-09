@@ -4413,7 +4413,7 @@ Function PrintLongStrings(buf,[sep])	// prints really long strings, returns numb
 		endif
 
 		for(m=0,imax=0; m<Nch; m+=1)		// loop over characters in sep to find best break
-			i = strsearch(buf,sep[i],200,1)
+			i = strsearch(buf,sep[m],200,1)
 			i = numtype(i) ? Inf : i
 			imax = max(i,imax)
 		endfor
