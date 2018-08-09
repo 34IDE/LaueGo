@@ -9,7 +9,7 @@
 #endif
 #include "GizmoClip", version>=2.00
 #include "GizmoMarkers", version>=2.00
-#include "LatticeSym", version>=5.10
+#include "LatticeSym", version>=7.00
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"
 #define LATTICE_SYM_2D_3D
@@ -510,9 +510,8 @@ Static Function/WAVE MakeCellOutline(prefix,direct,[Na,Nb,Nc,name])	// makes a g
 	endif
 
 	name = SelectString(strlen(name),prefix+"_CellOutline",name)
-	Variable Ncell = dim==2 ? 5 : 23
-	Make/N=(Ncell,dim)/D/O $name/WAVE=cell = NaN
 	if (dim==2)
+		Make/N=(5,2)/D/O $name/WAVE=cell = NaN
 		cell[0][] = 0							// form the a-b base
 		cell[1][] = Na*a[q]
 		cell[2][] = Na*a[q] + Nb*b[q]
@@ -520,6 +519,7 @@ Static Function/WAVE MakeCellOutline(prefix,direct,[Na,Nb,Nc,name])	// makes a g
 		cell[4][] = 0
 
 	else
+		Make/N=(23,3)/D/O $name/WAVE=cell = NaN
 		cell[0][] = 0							// form the a-b base
 		cell[1][] = Na*a[q]
 		cell[2][] = Na*a[q] + Nb*b[q]
@@ -549,7 +549,6 @@ Static Function/WAVE MakeCellOutline(prefix,direct,[Na,Nb,Nc,name])	// makes a g
 		cell[21][] = Nb*b[q] + Nc*c[q]
 		cell[22][] = Nc*c[q]
 	endif
-
 	cell = abs(cell)<AtomView_zero ? 0 : cell
 
 	String wNote = ReplaceStringByKey("prefix","waveClass=atomViewCellOutline;",prefix,"=")

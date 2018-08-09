@@ -711,7 +711,7 @@ Static Function ShowPowderLinesWindowHook(s)
 		Wave/T hklStr = $(GetWavesDataFolder(lines,1)+StringByKey("hklStrWave",wNote,"="))
 		Wave/T hklStrAll = $(GetWavesDataFolder(lines,1)+StringByKey("hklStrWave",wNote,"=")+"All")
 
-		Variable dim=NumberByKey("dim",note(lines),"=")
+		Variable dim=NumberByKey("dim",wNote,"=")
 		dim = dim==2 ? 2 : 3
 		Variable Xval = AxisValFromPixel(win,"bottom",s.mouseLoc.h)
 		String xrange=StringByKey("XRANGE",TraceInfo(win,NameOfWave(lines),0))
