@@ -2831,7 +2831,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Button buttonAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
 	PopupMenu popupAtomView,pos={35,383},size={150,20},proc=AtomView#AtomViewPopMenuProc,title="Atom View...",disable= 1
 	PopupMenu popupAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
-	PopupMenu popupAtomView,fSize=14,mode=0,value= #"\"Make Cells of Atoms...;  Bond Info;  Gizmo of Atoms;    Atom Type at Cursor\""
+	PopupMenu popupAtomView,fSize=14,mode=0,value= #"\"Make Cells of Atoms...;  Bond Info;  Display Atoms in Cell;    Atom Type at Cursor\""
 	Button buttonPowderPattern,pos={35,408},size={150,20},proc=LatticePanelButtonProc,title="Add Powder Patterns..."
 	Button buttonPowderPattern,help={"Provides supprort creating a powder pattern simulation for this lattice"}
 	PopupMenu popupPowderPattern,pos={35,408},size={150,20},proc=powder#PowderPatternPopMenuProc,title="Powder Pattern...",disable= 1
