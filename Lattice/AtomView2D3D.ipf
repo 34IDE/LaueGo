@@ -1926,7 +1926,6 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 	endif
 	Wave cell = $StringByKey("cellOutlineWave",wNote,"=")
 	Wave cell0 = $StringByKey("cellOutlineWave0",wNote,"=")
-	Wave rhomCell0 = $StringByKey("rhomOutlineWave0",wNote,"=")
 	Variable bondLenMax = NumberByKey("bondLenMax",wNote,"=")
 	String sourceFldr=StringByKey("sourceFldr",wNote,"=")
 	String title=StringByKey("title",wNote,"="), formula=StringByKey("formula",wNote,"=")
@@ -1967,7 +1966,7 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 
 	Display/N=$wName/W=(200,70,200+50,70+500)/T=wName
 	AppendToGraph xyz[*][1] vs xyz[*][0]
-	ModifyGraph mode=2, marker=19, tick=2, mirror=1, minor=1, lowTrip=0.001, msize=1
+	ModifyGraph mode=2, marker=19, tick=2, mirror=1, minor=1, lowTrip=0.001, lsize=0
 	DoUpdate
 	SetAspectToSquarePixels("")
 
@@ -1982,6 +1981,9 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 
 	Variable rad, Trgb, scale=NumberByKey("scale",note(size),"=")
 	Make/N=3/D/FREE rgb
+	if (IgorVersion()>7)
+		SetDrawLayer UserBack
+	endif
 	for (i=0;i<N;i+=1)
 		rad = size[i][0] / scale
 		rgb = rgba[i][p] * 65535
@@ -1994,7 +1996,11 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 		endif
 	endfor
 
-	TextBox/C/N=title/F=0/S=3/A=LT/X=4/Y=4 title
+#if (IgorVersion()>7)
+		TextBox/C/N=title/F=0/S=3/A=LT/X=4/Y=4/B=(65535,65535,65535,32768) title
+#else
+		TextBox/C/N=title/F=0/S=3/A=LT/X=4/Y=4 title
+#endif
 	if (strlen(title2))
 		AppendText/N=title title2
 	endif
@@ -2014,17 +2020,15 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 		// showNames is not implemented
 	endif
 
-	if (WaveExists(cell))
+	if (WaveExists(cell) && max(Na,Nb)>=2)
 		name = NameOfWave(cell)
 		AppendToGraph cell[][1] vs cell[][0]
-		ModifyGraph lsize($name)=1,gaps($name)=0
-		ModifyGraph rgb($name)=(AtomView_CellOutlineR,AtomView_CellOutlineG,AtomView_CellOutlineB)
+		ModifyGraph lsize($name)=1,gaps($name)=0, lstyle($name)=7, rgb($name)=(40000,0,15000)
 	endif
 	if (WaveExists(cell0))
 		name = NameOfWave(cell0)
 		AppendToGraph cell0[][1] vs cell0[][0]
-		ModifyGraph lsize($name)=2,gaps($name)=0
-		ModifyGraph rgb($name)=(AtomView_CellOutlineR,AtomView_CellOutlineG,AtomView_CellOutlineB)
+		ModifyGraph lsize($name)=4,gaps($name)=0, lstyle($name)=8, rgb($name)=(40000,40000,40000)
 	endif
 
 	Label left "Y (nm)"
