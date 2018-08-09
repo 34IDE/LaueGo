@@ -1,8 +1,8 @@
 #pragma rtGlobals= 2
-#pragma version = 3.49
+#pragma version = 3.50
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
-#include "Utility_JZT", version>=4.58
+#include "Utility_JZT", version>=4.64
 //	DefaultFont "Consolas"		// This is in "JonFirst.ipf", that is enough
 
 strConstant TEST_TEST="test test"
@@ -449,7 +449,7 @@ Static Function/T DeepCheckActualFiles(source,[printIt])
 		endif
 		printf (")\r")
 		if (strlen(mismatch))
-			printf "mismatched files are:  %s\r",mismatch
+			printf "mismatched files are:  %s\r",PrintLongStrings(mismatch,sep=";")
 		else
 			print "All files match."
 		endif

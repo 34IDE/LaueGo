@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.63
+#pragma version = 4.64
 // #pragma hide = 1
 
 Menu "Graph"
@@ -153,6 +153,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		RemoveTrailingString(str,tail,ignoreCase), removes tail from end of str
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
 //		use functions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
+//		PrintLongStrings(buf,[sep]), prints really long strings, returns number of lines printed
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
 //		StopAllTimers(), stops all the Igor timers
@@ -4382,8 +4383,47 @@ ThreadSafe Function/S TrimEnd(str,[chars,ignoreCase])		// remove specified trail
 	endif
 	return str[0,i]
 End
-//
 //	DEPRECATED, the old functions: TrimFrontBackWhiteSpace(), TrimLeadingWhiteSpace(), and TrimTrailingWhiteSpace() are DEPRECATED
+
+
+Function PrintLongStrings(buf,[sep])	// prints really long strings, returns number of lines printed
+	String buf
+	String sep
+	String white=" \t\r\n"
+	sep = SelectString(ParamIsDefault(sep),sep,white)	// white space {space,tab,return,newline}
+	String trim = SelectString(ParamIsDefault(sep), sep+white, sep)
+
+	if (strlen(buf)<1)						// nothing
+		return 0
+	elseif (strlen(buf)<250)				// not that long
+		print TrimBoth(buf,chars=trim)
+		return 1
+	endif
+
+	String ch
+	Variable m,i,imax, lines=0, Nch=strlen(sep)
+	do
+		buf = TrimBoth(buf,chars=trim)
+		if (strlen(buf)<1)
+			break
+		elseif (strlen(buf)<=200)			// only a little bit left, print and end
+			print TrimBoth(buf,chars=trim)
+			lines += 1
+			break
+		endif
+
+		for(m=0,imax=0; m<Nch; m+=1)		// loop over characters in sep to find best break
+			i = strsearch(buf,sep[i],200,1)
+			i = numtype(i) ? Inf : i
+			imax = max(i,imax)
+		endfor
+		imax = imax<10 ? 200 : imax
+		print TrimBoth(buf[0,imax],chars=trim)
+		lines += 1
+		buf = buf[imax+1,Inf]
+	while (strlen(buf)>0)
+	return lines
+End
 
 
 ThreadSafe Function/T IgorFileTypeString(itype)		// string associated with NUMTYPE from WaveInfo() function, or a WaveType() function
