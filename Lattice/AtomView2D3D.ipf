@@ -1944,8 +1944,8 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 			fldrName = SelectString(strsearch(fldrName,"root:",0) && strsearch(fldrName,":",0),"",":")+fldrName	// add leading ":" unless "root:..."
 			String key=ParseFilePath(0,fldrName,":",1,0)
 			i = strsearch(key,"_AtomView",-Inf)
-			key = SelectString(i>1,key,key[0,i-1])		// remove trailing "_AtomView"
-			name = fldrName+key+"_XYZ"						// add the "_XYZ"
+			key = SelectString(i>1,key,key[0,i-1])	// remove trailing "_AtomView"
+			name = fldrName+key+"_XYZ"					// add the "_XYZ"
 		endif
 		Wave xyz = $name
 	endif
@@ -1953,10 +1953,17 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 		return ""
 	endif
 
-	String wName = StringFromlist(0,WindowsWithWave(xyz,1))		// find the Gizmo which contains the specified wave
+	String wName = Find2DAtomViewWindow(xyz)		// find the Graph which contains the specified wave
+	Variable left=200, top=70, bottom=200+500, right=70+500
 	if (strlen(wName))
-		DoWindow/F $wName
-		return wName
+		GetWindow/Z $wName wsize
+		if (V_flag==0)
+			left = V_left										// recreate close to same size as previous
+			top = V_top
+			bottom = V_bottom
+			right = V_right
+		endif
+		DoWindow/K $wName										// kill graph and re-creaate it
 	endif
 
 	String wNote=note(xyz)
@@ -2014,11 +2021,12 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 		title2 += "   "+ChemFormula2IgorStr(formula)
 	endif
 
-	Display/N=$wName/W=(200,70,200+500,70+500)/T=wName
+	Display/N=$wName/W=(left,top,right,bottom)/K=1/T=wName
 	AppendToGraph xyz[*][1] vs xyz[*][0]
 	ModifyGraph mode=2, marker=19, tick=2, mirror=1, minor=1, lowTrip=0.001, lsize=0
 	DoUpdate
 	SetAspectToSquarePixels("")
+	SetWindow kwTopWin userdata(AtomView2DGraph)="folder="+GetWavesDataFolder(xyz,1)+";xyz="+NameOfWave(xyz)+";"
 
 	if (WaveExists(bonds))
 		name = NameOfWave(bonds)
@@ -2086,6 +2094,34 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns 
 
 	return wName
 End
+
+Static Function/T Find2DAtomViewWindow(xyz)
+	Wave xyz								// find graph displaying xyz
+	if (!WaveExists(xyz))
+		return ""
+	endif
+
+	String list=WindowsWithWave(xyz,1), win=""
+	Variable i, N=ItemsInList(list)
+	if (N<1)
+		return ""
+	elseif (N==1 && 0)
+		win = StringFromList(0,list)
+	else
+		String fullName0=GetWavesDataFolder(xyz,2), full, userData
+		for (i=0;i<N;i+=1)
+			win = StringFromList(i,list)
+			userData = GetUserData(win,"", "AtomView2DGraph")
+			full = StringByKey("folder",userData, "=") + StringByKey("xyz",userData, "=")
+			if (StringMatch(full, fullName0))
+				break
+			endif
+			win = ""	
+		endfor
+	endif
+	return win
+End
+
 //  =========================== End 2D Atoms Display ===========================  //
 
 //  ============================= End Display Atoms ============================  //
