@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.10
+#pragma version = 2.11
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -9,6 +9,10 @@
 Constant MIN_LINE_SEPARATION_FRACTION = 0.15	// you can over ride this in your main procedure window.
 Constant ELEMENT_Zmax = 118
 Constant ELEMENT_MAX_N_EMISSION = 20
+
+Static strConstant edgeTypes = "K;L1;L2;L3;M1;M2;M3;M4;M5;N1;N2;N3;N4;N5;N6;N7;O1;O2;O3;O4;O5;P1;P2;P3"
+Static strConstant electronStates = "1s;2s;2p1/2;2p3/2;3s;3p1/2;3p3/2;3d3/2;3d5/2;4s;4p1/2;4p3/2;4d3/2;4d5/2;4f5/2;4f7/2;5s;5p1/2;5p3/2;5d3/2;5d5/2;6s;6p1/2;6p3/2"
+Static strConstant emissionTypes = "Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
 
 //	Sept 14, 2005
 //		updated amu using NIST values
@@ -89,6 +93,9 @@ Constant ELEMENT_MAX_N_EMISSION = 20
 //
 //	Jul 3, 2018			2.10
 //		changed ProcessMTLfileContentsXML(), it now can use fraction or massfraction (fraction is atomic)
+//
+//	Aug 11, 2018		2.11
+//		added electronStates (that match up with edgeTypes)
 
 Menu "Analysis"
       Submenu "Element"
@@ -705,7 +712,6 @@ Function BindingEnergy(symb,edgeType)
 
 	Variable topLevel = ItemsInList(GetRTStackInfo(0))<2
 	if ((strlen(symb)<1 || strlen(edgeType)<1) && topLevel)
-		String edgeTypes="K;L1;L2;L3;M1;M2;M3;M4;M5;N1;N2;N3;N4;N5;N6;N7;O1;O2;O3;O4;O5;P1;P2;P3"
 		Prompt edgeType, "edge type",popup, edgeTypes
 		Prompt symb, "atomic symbol", popup, ELEMENT_Symbols
 		DoPrompt "select", symb,edgeType
@@ -727,6 +733,16 @@ Function BindingEnergy(symb,edgeType)
 	return eV
 End
 
+
+Function/T edgeType2electronState(type)	// takes "L2" returns 2p1/2
+	String type
+	Variable i = WhichListItem(type, edgeTypes,";",0,0)
+	if (i<0)
+		return ""
+	endif
+	return StringFromList(i,electronStates)
+End
+
 //  ======================== End of Convienent element functions =========================  //
 //  ======================================================================================  //
 
@@ -735,37 +751,36 @@ End
 //  ======================================================================================  //
 //  ========================== Start of emission line functions ==========================  //
 
-Function EmissionEnergies(symb,edgeType,[printIt])		// display or return am average or a single emission line energy
+Function EmissionEnergies(symb,linetype,[printIt])		// display or return am average or a single emission line energy
 	String symb				// atomic symbol
-	String edgeType		// item to return
+	String linetype		// item to return
 	Variable printIt
 	Variable topLevel=strlen(GetRTStackInfo(2))==0
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? topLevel : printIt
-	edgeType = ReplaceString("<",edgeType,"")
-	edgeType = ReplaceString(">",edgeType,"")
+	linetype = ReplaceString("<",linetype,"")
+	linetype = ReplaceString(">",linetype,"")
 
 	Wave/T FullEmissionLineInfo = root:Packages:Elements:FullEmissionLineInfo
 	if (!WaveExists(FullEmissionLineInfo))
 		ElementDataInitPackage()
 	endif
 
-	String edgeTypesMenu="All;<K>;<Ka>;<Kb>;<Kg>;Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;<L>;<La>;<Lb>;<Lg>;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
-	String edgeTypes="Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
+	String emissionTypesMenu="All;<K>;<Ka>;<Kb>;<Kg>;Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;<L>;<La>;<Lb>;<Lg>;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
 
 	Variable Z=element2Z(symb)
-	if (topLevel && (numtype(Z) || !edgeTypeInLines(edgeType,edgeTypes)))
-		Prompt edgeType, "edge type",popup, edgeTypesMenu
+	if (topLevel && (numtype(Z) || !edgeTypeInLines(linetype,emissionTypes)))
+		Prompt linetype, "emission line type",popup, emissionTypesMenu
 		Prompt symb, "atomic symbol", popup, ELEMENT_Symbols
-		DoPrompt "select", symb,edgeType
+		DoPrompt "select", symb,linetype
 		if (V_flag)
 			return NaN
 		endif
-		edgeType = ReplaceString("<",edgeType,"")
-		edgeType = ReplaceString(">",edgeType,"")
+		linetype = ReplaceString("<",linetype,"")
+		linetype = ReplaceString(">",linetype,"")
 		printIt = 1
 	endif
 	Z = element2Z(symb)
-	if (numtype(Z) || !edgeTypeInLines(edgeType,edgeTypes))
+	if (numtype(Z) || !edgeTypeInLines(linetype,emissionTypes))
 		return NaN
 	endif
 
@@ -773,7 +788,7 @@ Function EmissionEnergies(symb,edgeType,[printIt])		// display or return am aver
 	StructGet/S em, FullEmissionLineInfo[Z]
 
 	Variable i, eV, rel
-	if (stringmatch(edgeType,"All"))		// print out all the emission lines for symb
+	if (stringmatch(linetype,"All"))		// print out all the emission lines for symb
 		printEmissionLineStruct(em)
 		if (em.N >0)
 			eV = em.line[em.N - 1].eV			// return the highest energy
@@ -782,7 +797,7 @@ Function EmissionEnergies(symb,edgeType,[printIt])		// display or return am aver
 	else												// looking for a single or an average
 		Variable relSum, N
 		for (i=0,eV=0,relSum=0,N=0; i<em.N; i+=1)
-			if (strsearch(em.line[i].name, edgeType,0,2)==0)	// starts with edgeType
+			if (strsearch(em.line[i].name, linetype,0,2)==0)	// starts with linetype
 				rel = em.line[i].rel
 				eV += em.line[i].eV * rel		// accumulate for average
 				relSum += rel
@@ -795,7 +810,7 @@ Function EmissionEnergies(symb,edgeType,[printIt])		// display or return am aver
 			if (N>1)
 				sprintf str, ",  the weighted average of %d lines",N
 			endif	
-			printf "  %s(%s) is at %g eV  (relative strength = %g%s)\r",symb,edgeType,eV,relSum,str
+			printf "  %s(%s) is at %g eV  (relative strength = %g%s)\r",symb,linetype,eV,relSum,str
 		endif
 	endif
 	return eV
@@ -957,7 +972,7 @@ End
 Function/T FindBestElementFromEmissionLine(eV,acceptableLines,[dE,excitation])	// searches for the right element
 	Variable eV
 	String acceptableLines	// acceptable lines, check all if "",  examples: "Ka*;Kb*", or "K*", "", "Lb1",  or "*L*"
-	Variable dE					// resolution, find strongest line within eV±dE, for dE=0, just use closest line
+	Variable dE					// HW resolution, find strongest line within eV±dE, for dE=0, just use closest line
 	Variable excitation		// excitation energy (eV), defaults to Inf
 	dE = ParamIsDefault(dE) || numtype(dE) || dE<0? 0 : dE
 	excitation = ParamIsDefault(excitation) || !(excitation>0) ? Inf : excitation
@@ -972,7 +987,7 @@ Function/T FindBestElementFromEmissionLine(eV,acceptableLines,[dE,excitation])	/
 			eni = str2num(StringFromList(0,item,":"))		// energy of this line
 			line = StringFromList(2,item,":")					// name of this line
 			strength = str2num(StringFromList(1,item,":"))
-			if (!acceptableLine(acceptableLines,line))		// if line is not of desired type, continue
+			if (!acceptableType(acceptableLines,line))		// if line is not of desired type, continue
 				continue
 			endif
 
@@ -997,20 +1012,108 @@ Function/T FindBestElementFromEmissionLine(eV,acceptableLines,[dE,excitation])	/
 	return str
 End
 //
-Static Function acceptableLine(acceptableLines,line)	// returns 1 if line is in acceptableLines
-	String acceptableLines, line
-	if (strlen(acceptableLines)<1)								// if no lines specified, accept all
+Static Function acceptableType(acceptableTypes,type)	// returns 1 if type is in acceptableTypes
+	String acceptableTypes, type
+	if (strlen(acceptableTypes)<1)								// if no types specified, accept all
 		return 1
 	endif
 	Variable i
-	for (i=0;i<ItemsInList(acceptableLines);i+=1)
-		if (StringMatch(line,StringFromList(i,acceptableLines)))
+	for (i=0;i<ItemsInList(acceptableTypes);i+=1)
+		if (StringMatch(type,StringFromList(i,acceptableTypes)))
 			return 1
 		endif
 	endfor
 	return 0
 End
+//Static Function acceptableLine(acceptableLines,line)	// returns 1 if line is in acceptableLines
+//	String acceptableLines, line
+//	if (strlen(acceptableLines)<1)								// if no lines specified, accept all
+//		return 1
+//	endif
+//	Variable i
+//	for (i=0;i<ItemsInList(acceptableLines);i+=1)
+//		if (StringMatch(line,StringFromList(i,acceptableLines)))
+//			return 1
+//		endif
+//	endfor
+//	return 0
+//End
 
+
+Function/T FindBestElementFromEdge(eV,acceptableEdges,[symbols,dE,all])	// searches for the right element
+	// returns symbol:Z:edge:eV   e.g.   "Ti:22:L2:460.2"
+	Variable eV
+	String acceptableEdges	// acceptable edges, check all if "",  examples: "Ka*;Kb*", or "K*", "", "Lb1",  or "*L*"
+	String symbols				// list of allowed element symbols, "" means all
+	Variable dE					// HW resolution, find strongest edge within eV±dE, for dE=0, just use closest edge
+	Variable all				// return list of all elements within ±dE (dE is required for all)
+	symbols = SelectString(ParamIsDefault(symbols),symbols,"")
+	dE = ParamIsDefault(dE) || numtype(dE) || dE<0? 0 : dE
+	all = ParamIsDefault(all) || numtype(all) || dE<=0 ? 0 : all
+	acceptableEdges = ReplaceString(",", acceptableEdges, ";")
+	acceptableEdges = ReplaceString(" ", acceptableEdges, ";")
+	symbols = ReplaceString(",", symbols, ";")
+	symbols = ReplaceString(" ", symbols, ";")
+
+	Wave/T edgeStrings = root:Packages:Elements:edgeStrings
+	Make/N=1000/T/FREE edges=""
+	Make/N=1000/D/FREE deltas=Inf
+	String list, edge, item, edgeBest="", symb, str
+	Variable dEmin=Inf,eBest,Zbest=0, Nedges=0
+	Variable iedge, Z, eni, deltaE, better
+	for (Z=1;Z<=92;Z+=1)											// for each element
+		list = edgeStrings(Z)
+		if (strlen(symbols)>0)
+			symb = StringFromList(Z-1, ELEMENT_Symbols)
+			if (WhichListItem(symb, symbols)<0)
+				continue
+			endif
+		endif
+		for (iedge=0;iedge<ItemsInList(list);iedge+=1)	// for each edge in an element
+			item = StringFromList(iedge,list)					// a single edge for element Z
+			edge = StringFromList(0,item,":")					// name of this edge
+			eni = str2num(StringFromList(1,item,":"))		// energy of this edge (eV)
+			if (!elements#acceptableType(acceptableEdges,edge))		// if edge is not of desired type, continue
+				continue
+			endif
+
+			deltaE = abs(eni-eV)
+			if (all && deltaE<dE)
+				sprintf str, "%s:%d:%s:%g", StringFromList(Z-1,ELEMENT_Symbols),Z,edge,eni
+				edges[Nedges] = str
+				deltas[Nedges] = eV-eni
+				Nedges += 1
+				if (Nedges>=1000)
+					break
+				endif
+			endif
+			better = (deltaE<dEmin)								// eni is close enough, look for best edge, dE>0
+//			better = better || (dE==0 && deltaE<dEmin)		// find closest edge, no width specified
+			if (better)
+				dEmin = deltaE
+				eBest = eni
+				edgeBest = edge
+				Zbest = Z
+			endif
+		endfor
+	endfor
+
+	String out=""
+	if (!all && Zbest>0)
+		sprintf out, "%s:%d:%s:%g:%g", StringFromList(Zbest-1,ELEMENT_Symbols),Zbest,edgeBest,eBest,abs(eBest-eV)
+	elseif (all)
+		Redimension/N=(Nedges) edges, deltas
+		Duplicate/FREE deltas, ABSdeltas
+		ABSdeltas = abs(deltas)
+		Sort ABSdeltas, edges ,deltas
+		Variable i
+		for (i=0;i<Nedges;i+=1)
+			sprintf str, "%s:%g;", edges[i],deltas[i]
+			out += str
+		endfor
+	endif
+	return out
+End
 //  =========================== End of Find Element From Line ============================  //
 //  ======================================================================================  //
 
