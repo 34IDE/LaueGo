@@ -11,7 +11,7 @@ Constant ELEMENT_Zmax = 118
 Constant ELEMENT_MAX_N_EMISSION = 20
 
 Static strConstant edgeTypes = "K;L1;L2;L3;M1;M2;M3;M4;M5;N1;N2;N3;N4;N5;N6;N7;O1;O2;O3;O4;O5;P1;P2;P3"
-Static strConstant electronStates = "1s;2s;2p1/2;2p3/2;3s;3p1/2;3p3/2;3d3/2;3d5/2;4s;4p1/2;4p3/2;4d3/2;4d5/2;4f5/2;4f7/2;5s;5p1/2;5p3/2;5d3/2;5d5/2;6s;6p1/2;6p3/2"
+Static strConstant electronStates = "1s;2s;2p 1/2;2p 3/2;3s;3p 1/2;3p 3/2;3d 3/2;3d 5/2;4s;4p 1/2;4p 3/2;4d 3/2;4d 5/2;4f 5/2;4f 7/2;5s;5p 1/2;5p 3/2;5d 3/2;5d 5/2;6s;6p 1/2;6p 3/2"
 Static strConstant emissionTypes = "Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;Lb1;Lb2;Lg1;Lb2,15;Ma1;"
 
 //	Sept 14, 2005
