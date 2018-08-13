@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.04										// based on LatticeSym_6.55
+#pragma version = 7.05										// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -3925,8 +3925,8 @@ Function readCrystalStructure(xtal,fname,[printIt])
 			OverOccupyList(xtal,printIt=1)			// print notice if some sites have occ>1
 		endif
 	endif
-	if (xtal.Nbonds < 1)								// do NOT recalc bonds if already there
-		ComputeBonds(xtal, printIt=printIt)
+	if (xtal.Nbonds < 1 && !(xtal.dim==2))		// do NOT recalc bonds if already there (don't for dim=2)
+		ComputeBonds(xtal, printIt=printIt)		// bonds don't make a lot of sense for 2D structures
 	endif
 
 	// for fractional positions of 0.3333 or 0.1667, extend precision to exactly 1/3 or 1/6, etc.
