@@ -9397,9 +9397,6 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry o
 	endif
 
 	String symOperations=setSymLineID(SpaceGroupID,dim)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
-	if (dim==2)
-		symOperations = "x,y"
-	endif
 
 	Variable i,N=ItemsInList(symOperations)
 	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
