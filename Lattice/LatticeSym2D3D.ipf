@@ -2805,8 +2805,10 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 #endif
 
 #ifdef LATTICE_SYM_2D_3D
-	TitleBox LatticeDimTitle,pos={190,92},size={19,19},fSize=14,frame=0,anchor= LC
-	TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+//	TitleBox LatticeDimTitle,pos={190,92},size={19,19},fSize=14,frame=0,anchor= LC
+//	TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+	TitleBox LatticeDimTitle,pos={77,138},size={19,19},fSize=14,frame=0,anchor= LC
+	TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
 #endif
 
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
@@ -3234,7 +3236,8 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		alphaT = xtal.alphaT
 		desc = xtal.desc
 #ifdef LATTICE_SYM_2D_3D
-		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+//		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+		TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
 #endif
 		T_C = xtal.Temperature
 		dirty = 0
@@ -3293,7 +3296,8 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		dim = xtal.dim
 		SpaceGroupID = xtal.SpaceGroupID
 #ifdef LATTICE_SYM_2D_3D
-		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+//		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+		TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
 #endif
 		desc = xtal.desc
 		alphaT = xtal.alphaT
