@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.11
+#pragma version = 2.12
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -96,6 +96,9 @@ Static strConstant emissionTypes = "Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;L
 //
 //	Aug 11, 2018		2.11
 //		added electronStates (that match up with edgeTypes)
+//
+//	Aug 12, 2018		2.12
+//		added Function MakePeriodicTablePanel(list)
 
 Menu "Analysis"
       Submenu "Element"
@@ -1304,6 +1307,111 @@ Function/WAVE Make_IsotopesList()
 End
 
 //  ============================== End of isotope functions ==============================  //
+//  ======================================================================================  //
+
+
+//  ======================================================================================  //
+//  ======================== Start of Make Element Table Selector ========================  //
+
+Function/T MakePeriodicTablePanel(list, [wait])
+	String list									// list of elements to start with
+	Variable wait
+	wait = ParamIsDefault(wait) || numtype(wait) ? 0 : wait
+
+	Variable N=ItemsInList(ELEMENT_Symbols)
+	Make/N=(N,2)/FREE/I rc=-1
+
+	rc[0][0] = {0,0}							// first row, [H,He]
+	rc[0][1] = {0,17}
+
+	rc[2][0] = {1,1,1,1,1,1,1,1}			// second row, [Li,Ne]
+	rc[2][1] = {0,1,12,13,14,15,16,17}
+
+	rc[10][0] = {2,2,2,2,2,2,2,2}		// third row, [Na,Ar]
+	rc[10][1] = {0,1,12,13,14,15,16,17}
+
+	rc[18][0] = {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3}	// fourth row, [K,Kr]
+	rc[18][1] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}
+
+	rc[36][0] = {4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4}		// fifth row, [Rb,Xe]
+	rc[36][1] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}
+
+	rc[54][0] = {5,5,5}						// sixth row, [Cs,Rn]
+	rc[54][1] = {0,1,2}
+	rc[57][0] = {8,8,8,8,8,8,8,8,8,8,8,8,8,8}
+	rc[57][1] = {2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+	rc[71][0] = {5,5,5,5,5,5,5,5,5,5,5,5,5,5,5}
+	rc[71][1] = {3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}
+
+	rc[86][0] = {6,6,6}						// seventh row, [Fr,Og]
+	rc[86][1] = {0,1,2}
+	rc[89][0] = {9,9,9,9,9,9,9,9,9,9,9,9,9,9}
+	rc[89][1] = {2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+	rc[103][0] = {6,6,6,6,6,6,6,6,6,6,6,6,6,6,6}
+	rc[103][1] = {3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}
+
+	String symb, name
+	Variable i,top,left
+	NewPanel /W=(342,65,893,349)/N=ElementsPanel/K=1
+	for (i=0;i<N;i+=1)
+		left = 5 + 30*rc[i][1]
+		top = 5 + 29*rc[i][0]
+		top -= top >230 ? 17 : 0			// shift for the Lanthanides
+		symb = StringFromList(i,ELEMENT_Symbols)
+		name = "button_"+symb
+		Button $name,pos={left,top},size={30,30},title=symb, proc=elements#ElementsPanelButtonProc
+		if (WhichListItem(symb,list) >= 0)
+			Button $name, userdata(ON_OFF)="1", fColor=(65535,32768,32768)
+		endif
+	endfor
+
+	SetWindow ElementsPanel userdata(listON)=list
+
+	if (wait)
+		DoWindow /T ElementsPanel, "Close When Done..."
+		String/G ElementsPanelList_JZT = list
+		PauseForUser ElementsPanel
+		list = ElementsPanelList_JZT
+	endif
+	return list
+End
+//
+Static Function ElementsPanelButtonProc(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+	if (ba.eventCode == 2)
+		if (strsearch(ba.ctrlName,"button_",0)!=0 || cmpstr(ba.win,"ElementsPanel")!=0)
+			return 0
+		endif
+		String symb = ReplaceString("button_",ba.ctrlName,"")
+		FUNCREF ElementPanelProtoFunc f = $"ElementPanelFunc"
+			String list = GetUserData(ba.win,"","listON" )
+			Variable on = str2num(GetUserData(ba.win,ba.ctrlName,"ON_OFF"))
+			on = numtype(on) ? 0 : on
+			if (on)
+				Button $(ba.ctrlName), win=$(ba.win), userdata(ON_OFF)="0", fColor=(65535,65535,65535)
+				list = RemoveFromList(symb,list)
+			else
+				Button $(ba.ctrlName), win=$(ba.win), userdata(ON_OFF)="1", fColor=(65535,32768,32768)
+				//	list += symb+";"
+				list = AddListItem(symb,list,";",Inf)
+			endif
+			SetWindow $(ba.win) userdata(listON)=list
+			SVAR gList = ElementsPanelList_JZT
+			if (SVAR_Exists(gList))
+				gList = list
+			endif
+			// print "list = ",list,"    symb =",symb
+		f(symb)
+	endif
+	return 0
+End
+//
+Function ElementPanelProtoFunc(symb)
+	String symb
+	// print "in ElementPanelProtoFunc with symb= ",symb
+End
+
+//  ========================= End of Make Element Table Selector =========================  //
 //  ======================================================================================  //
 
 
