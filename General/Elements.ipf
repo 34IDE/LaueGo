@@ -1312,7 +1312,16 @@ End
 
 //  ======================================================================================  //
 //  ======================== Start of Make Element Table Selector ========================  //
-
+//
+//		To use MakePeriodicTablePanel(), try:
+//
+//		String list = "Sr;Ti;O"			// preselected starting values (semi-colon separated)
+//		list = MakePeriodicTablePanel(list, wait=1)		// list will contain the user selected values
+//
+// 	or do not use wait=1, and use:  GetUserData("ElementsPanel","ON_OFF"))
+//
+//		or make your own:  Function ElementPanelFunc(symb)
+//
 Function/T MakePeriodicTablePanel(list, [wait])
 	String list									// list of elements to start with
 	Variable wait
