@@ -2136,9 +2136,9 @@ Function/WAVE runIndexingEulerCommand(args)
 	String upath=SpecialDirPath("Temporary",0,1,0)// local path (probably unix path) for the command line
 	String mpath=SpecialDirPath("Temporary",0,0,0)// mac style path for use only within Igor
 	PathInfo home
-	if (V_flag)													// the path "home" exists, use it
+	if (V_flag && !isWin)						// the path "home" exists, use it (but not on windows, to avoid certain permission issue since 2018)
 		mpath = S_path
-		if (stringmatch(igorInfo(2),"Macintosh"))
+		if (isMac)
 			upath = ParseFilePath(5,S_path,"/",0,0)	// Convert HFS>POSIX only on Mac, not Windows
 		endif
 	endif
@@ -2988,9 +2988,9 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 	endif	
 	// first write the command file to drive peaksearch program
 	PathInfo home
-	if (V_flag)									// the path "home" exists, use it
+	if (V_flag && !isWin)						// the path "home" exists, use it (but not on windows, to avoid certain permission issue since 2018)
 		mpath = S_path
-		if (isMac)		// RX, JZT
+		if (isMac)
 			upath = ParseFilePath(5,S_path,"/",0,0)
 		endif
 	endif
@@ -3094,7 +3094,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 		close BatchFileRN
 		sprintf cmd "\"%s\"", MacToWindows(FullBatchFileName)
 		ExecuteScriptText cmd
-		open /R/Z OutputFileRN as (mpath + peakFile)
+		open /R/Z OutputFileRN as peakFile
 		if (V_flag != 0)
 			print "Error opening peakSearch batch output file ", peakFile
 		else
