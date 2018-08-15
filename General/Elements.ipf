@@ -1377,7 +1377,7 @@ Function/T MakePeriodicTablePanel(list, [wait,extra])
 	endfor
 	Button buttonClearAll,pos={201,64},size={60,20},fColor=(65535,65535,65535),proc=elements#ElementsPanelButtonProc,title="Clear All"
 	SetWindow ElementsPanel userdata(listON)=list
-	SetWindow ElementsPanel userdata(extraFunc)=extra		// set extra function
+	SetWindow ElementsPanel userdata(extraFunc)=extra		// store extra function name
 
 	if (wait)
 		DoWindow /T ElementsPanel, "Close When Done Seclecting Elements..."
@@ -1414,8 +1414,7 @@ Static Function ElementsPanelButtonProc(ba) : ButtonControl
 		endif
 
 		String symb = ReplaceString("button_",ba.ctrlName,"")
-		String extra = GetUserData(ba.win,"","extraFunc")	// name of extra function
-		FUNCREF ElementPanelProtoFunc extraFunc = $extra
+		FUNCREF ElementPanelProtoFunc extraFunc = $GetUserData(ba.win,"","extraFunc")// assign extra function
 		list = GetUserData(ba.win,"","listON" )
 		Variable on = str2num(GetUserData(ba.win,ba.ctrlName,"ON_OFF"))
 		on = numtype(on) ? 0 : on
@@ -1433,7 +1432,7 @@ Static Function ElementsPanelButtonProc(ba) : ButtonControl
 			gList = list
 		endif
 		// print "list = ",list,"    symb =",symb
-		extraFunc(ba.win,symb)
+		extraFunc(ba.win,symb)						// call the extra function, defaults to ElementPanelProtoFunc()
 	endif
 	return 0
 End
