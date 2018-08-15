@@ -1318,14 +1318,16 @@ End
 //		String list = "Sr;Ti;O"			// preselected starting values (semi-colon separated)
 //		list = MakePeriodicTablePanel(list, wait=1)		// list will contain the user selected values
 //
-// 	or do not use wait=1, and use:  GetUserData("ElementsPanel","ON_OFF"))
+// 	or do not use wait=1, and use:  GetUserData("ElementsPanel","","ON_OFF"))
 //
 //		or make your own:  Function ElementPanelFunc(symb)
 //
-Function/T MakePeriodicTablePanel(list, [wait])
+Function/T MakePeriodicTablePanel(list, [wait,extra])
 	String list									// list of elements to start with
 	Variable wait
+	String extra								// name of extra function, prototype is ElementPanelProtoFunc()
 	wait = ParamIsDefault(wait) || numtype(wait) ? 0 : wait
+	extra = SelectString(ParamIsDefault(extra),extra,"")
 
 	Variable N=ItemsInList(ELEMENT_Symbols)
 	Make/N=(N,2)/FREE/I rc=-1
@@ -1375,6 +1377,7 @@ Function/T MakePeriodicTablePanel(list, [wait])
 	endfor
 	Button buttonClearAll,pos={201,64},size={60,20},fColor=(65535,65535,65535),proc=elements#ElementsPanelButtonProc,title="Clear All"
 	SetWindow ElementsPanel userdata(listON)=list
+	SetWindow ElementsPanel userdata(extraFunc)=extra		// set extra function
 
 	if (wait)
 		DoWindow /T ElementsPanel, "Close When Done Seclecting Elements..."
@@ -1411,30 +1414,32 @@ Static Function ElementsPanelButtonProc(ba) : ButtonControl
 		endif
 
 		String symb = ReplaceString("button_",ba.ctrlName,"")
-		FUNCREF ElementPanelProtoFunc f = $"ElementPanelFunc"
-			list = GetUserData(ba.win,"","listON" )
-			Variable on = str2num(GetUserData(ba.win,ba.ctrlName,"ON_OFF"))
-			on = numtype(on) ? 0 : on
-			if (on)
-				Button $(ba.ctrlName), win=$(ba.win), userdata(ON_OFF)="0", fColor=(65535,65535,65535)
-				list = RemoveFromList(symb,list)
-			else
-				Button $(ba.ctrlName), win=$(ba.win), userdata(ON_OFF)="1", fColor=(65535,32768,32768)
-				//	list += symb+";"
-				list = AddListItem(symb,list,";",Inf)
-			endif
-			SetWindow $(ba.win) userdata(listON)=list
-			SVAR gList = ElementsPanelList_JZT
-			if (SVAR_Exists(gList))
-				gList = list
-			endif
-			// print "list = ",list,"    symb =",symb
-		f(symb)
+		String extra = GetUserData(ba.win,"","extraFunc")	// name of extra function
+		FUNCREF ElementPanelProtoFunc extraFunc = $extra
+		list = GetUserData(ba.win,"","listON" )
+		Variable on = str2num(GetUserData(ba.win,ba.ctrlName,"ON_OFF"))
+		on = numtype(on) ? 0 : on
+		if (on)
+			Button $(ba.ctrlName), win=$(ba.win), userdata(ON_OFF)="0", fColor=(65535,65535,65535)
+			list = RemoveFromList(symb,list)
+		else
+			Button $(ba.ctrlName), win=$(ba.win), userdata(ON_OFF)="1", fColor=(65535,32768,32768)
+			//	list += symb+";"
+			list = AddListItem(symb,list,";",Inf)
+		endif
+		SetWindow $(ba.win) userdata(listON)=list
+		SVAR gList = ElementsPanelList_JZT
+		if (SVAR_Exists(gList))
+			gList = list
+		endif
+		// print "list = ",list,"    symb =",symb
+		extraFunc(ba.win,symb)
 	endif
 	return 0
 End
 //
-Function ElementPanelProtoFunc(symb)
+Function ElementPanelProtoFunc(win,symb)
+	String win
 	String symb
 	// print "in ElementPanelProtoFunc with symb= ",symb
 End
