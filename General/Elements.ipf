@@ -1373,11 +1373,11 @@ Function/T MakePeriodicTablePanel(list, [wait])
 			Button $name, userdata(ON_OFF)="1", fColor=(65535,32768,32768)
 		endif
 	endfor
-
+	Button buttonClearAll,pos={201,64},size={60,20},fColor=(65535,65535,65535),proc=elements#ElementsPanelButtonProc,title="Clear All"
 	SetWindow ElementsPanel userdata(listON)=list
 
 	if (wait)
-		DoWindow /T ElementsPanel, "Close When Done..."
+		DoWindow /T ElementsPanel, "Close When Done Seclecting Elements..."
 		String/G ElementsPanelList_JZT = list
 		PauseForUser ElementsPanel
 		list = ElementsPanelList_JZT
@@ -1388,12 +1388,31 @@ End
 Static Function ElementsPanelButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventCode == 2)
-		if (strsearch(ba.ctrlName,"button_",0)!=0 || cmpstr(ba.win,"ElementsPanel")!=0)
+		if (cmpstr(ba.ctrlName,"buttonClearAll",0)==0 && cmpstr(ba.win,"ElementsPanel")==0)
+			SVAR gList = ElementsPanelList_JZT
+			String list, name
+			if (SVAR_Exists(gList))
+				gList = ""
+			endif
+			SetWindow $(ba.win) userdata(listON)=""
+
+			list = ControlNameList(ba.win)
+			Variable i, N=ItemsInList(list)
+			for (i=0;i<N;i+=1)
+				name = StringFromList(i,list)
+				if (strsearch(name,"button_",0)==0)
+				Button $name, win=$(ba.win), userdata(ON_OFF)="0", fColor=(65535,65535,65535)
+				endif
+			endfor
+			return 0
+
+		elseif (strsearch(ba.ctrlName,"button_",0)!=0 || cmpstr(ba.win,"ElementsPanel")!=0)
 			return 0
 		endif
+
 		String symb = ReplaceString("button_",ba.ctrlName,"")
 		FUNCREF ElementPanelProtoFunc f = $"ElementPanelFunc"
-			String list = GetUserData(ba.win,"","listON" )
+			list = GetUserData(ba.win,"","listON" )
 			Variable on = str2num(GetUserData(ba.win,ba.ctrlName,"ON_OFF"))
 			on = numtype(on) ? 0 : on
 			if (on)
