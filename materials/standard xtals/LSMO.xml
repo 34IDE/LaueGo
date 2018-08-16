@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>LSMO</chemical_name_common>
+	<chemical_formula_structural>La0.7MnSr0.3O3</chemical_formula_structural>
+	<space_group>
+		<id>167:H</id>
+		<H-M>R-3c:H</H-M>
+	</space_group>
+	<icsd>50717</icsd>
+	<cell>
+		<a unit="nm">0.54967</a>
+		<b unit="nm">0.54967</b>
+		<c unit="nm">1.33321</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="K">300</temperature>
+	</cell>
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>0 0 0.25</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<B_iso unit="Å^2">0.51</B_iso>
+		<occupancy>0.7</occupancy>
+		<valence>3</valence>
+	</atom_site>
+	<atom_site>
+		<label>Sr</label>
+		<symbol>Sr</symbol>
+		<fract>0 0 0.25</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<B_iso unit="Å^2">0.51</B_iso>
+		<occupancy>0.3</occupancy>
+		<valence>2</valence>
+	</atom_site>
+	<atom_site>
+		<label>Mn</label>
+		<symbol>Mn</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<B_iso unit="Å^2">0.11</B_iso>
+		<valence>3.3</valence>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.4582 0 0.25</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<B_iso unit="Å^2">0.79</B_iso>
+		<occupancy>0.7</occupancy>
+		<valence>-2</valence>
+	</atom_site>
+	<citation>
+		A.N. Petrov, V.I. Voronin, T. Norby, P. Kofstad
+		Journal of Solid State Chemistry (1999) 143 52-57
+		"Crystal structure of the mixed oxides La0.7 Sr0.3 Co(1-z) Mn(z) O(3+-y) (0 ≤z ≤ 1)"
+	</citation>
+</cif>

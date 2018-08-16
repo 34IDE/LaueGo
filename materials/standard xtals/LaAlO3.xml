@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Lanthnum Aluminate</chemical_name_common>
+	<chemical_formula_structural>LaAlO3</chemical_formula_structural>
+	<space_group>
+		<id>167:H</id>
+		<H-M>R-3c:H</H-M>
+	</space_group>
+	<icsd>92555</icsd>
+	<cell>
+		<a unit="nm">0.536382</a>
+		<b unit="nm">0.536382</b>
+		<c unit="nm">1.31091</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="C">20</temperature>
+	</cell>
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>0 0 .25</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<B_iso unit="Å^2">0.23</B_iso>
+		<valence>3</valence>
+	</atom_site>
+	<atom_site>
+		<label>Al</label>
+		<symbol>Ti</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<B_iso unit="Å^2">0.21</B_iso>
+		<valence>3</valence>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.4749 0 0.25</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.080</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.023</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.039</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.012</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.008</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.017</aniso_U_23>
+		<valence>-2</valence>
+	</atom_site>
+	<citation>
+		H. Lehnert, H. Boysen, J. Schneider, F. Frey, D. Hohlwein, P. Radaelli, H. Ehrenberg
+		Zeitschrift für Kristallographie (1979-2010) (2000) 215, 536-541
+		"A powder diffraction study of the phase transition in La Al O3"
+	</citation>
+</cif>
