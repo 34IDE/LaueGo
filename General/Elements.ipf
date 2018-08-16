@@ -1322,13 +1322,11 @@ End
 //
 //		or make your own:  Function ElementPanelFunc(symb)
 //
-Function/T MakePeriodicTablePanel(list, [wait, extra, extraFunc])
+Function/T MakePeriodicTablePanel(list, [wait, extra])
 	String list									// list of elements to start with
 	Variable wait
-	String extra								// text to store in the extra userdata
-	String extraFunc							// name of extra function, prototype is ElementPanelProtoFunc()
+	String extra								// text to store in the extra userdata, e.g. "key=value;"
 	wait = ParamIsDefault(wait) || numtype(wait) ? 0 : wait
-	extraFunc = SelectString(ParamIsDefault(extraFunc),extraFunc,"")
 
 	Variable N=ItemsInList(ELEMENT_Symbols)
 	Make/N=(N,2)/FREE/I rc=-1
@@ -1379,7 +1377,6 @@ Function/T MakePeriodicTablePanel(list, [wait, extra, extraFunc])
 	Button buttonClearAll,pos={201,64},size={60,20},fColor=(65535,65535,65535),proc=elements#ElementsPanelButtonProc,title="Clear All"
 	SetWindow ElementsPanel userdata(listON)=list
 	SetWindow ElementsPanel userdata(extra)=extra					// store extra information, as text
-	SetWindow ElementsPanel userdata(extraFunc)=extraFunc		// store extra function name
 
 	if (wait)
 		DoWindow /T ElementsPanel, "Close When Done Seclecting Elements..."
@@ -1393,7 +1390,8 @@ End
 Static Function ElementsPanelButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	if (ba.eventCode == 2)
-		FUNCREF ElementPanelProtoFunc extraFunc = $GetUserData(ba.win,"","extraFunc")// assign extra function
+		String extra = GetUserData(ba.win,"","extra")
+		FUNCREF ElementPanelProtoFunc extraFunc = $StringByKey("func",extra,"=")// assign extra function
 		if (cmpstr(ba.ctrlName,"buttonClearAll",0)==0 && cmpstr(ba.win,"ElementsPanel")==0)
 			SVAR gList = ElementsPanelList_JZT
 			String list, name
