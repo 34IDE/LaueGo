@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.65
+#pragma version = 4.66
 // #pragma hide = 1
 
 Menu "Graph"
@@ -175,6 +175,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
 //		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
+//		GetGraphAspectRatio(gName), returns aspect ratio of graph in units
 //		SquareUpGizmo(gName), Used to square up a graph gizmo
 //		SetGizmoZoom(zoom), Interactive Set zoomFactor for a Gizmo (only for Igor 7)
 //		Name2SymbolCharacter(name), return character equivalent in Symbol font, "theta" returns "q"
@@ -5385,16 +5386,33 @@ End
 
 //  ====================================================================================  //
 //  ============================== Start of Square Pixels ==============================  //
-Function SetAspectToSquarePixels(gName)
+Function SetAspectToSquarePixels(gName, [printIt])
 	// Used to square up a graph window
 	String gName										// name of the graph, use "" for the top graph
-	Variable printIt = strlen(GetRTStackInfo(2))<=0
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+
+	Variable aspect = GetGraphAspectRatio(gName, printIt=printIt)
+	if (aspect<1)
+		ModifyGraph/W=$gName height={Aspect,aspect}, width=0
+	elseif (aspect>=1)
+		ModifyGraph/W=$gName width={Aspect,1/aspect}, height=0
+	endif
+	return aspect
+End
+
+
+Function GetGraphAspectRatio(gName, [printIt])
+	// returns aspect ratio of graph in units
+	String gName										// name of the graph, use "" for the top graph
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 	if (strlen(gName)<1)
 		gName = StringFromList(0,WinList("*",";","WIN:1"))
 	endif
 	if (WinType(gName)!=1)
 		if (printIt)
-			DoAlert 0, "ERROR, in SetAspectToSquarePixels(), '"+gName+"' is not an graph"
+			print "ERROR -- GetGraphAspectRatio(), '"+gName+"' is not an graph"
 		endif
 		return NaN										// if no image on graph, do not try to set aspect ratio
 	endif
@@ -5405,7 +5423,7 @@ Function SetAspectToSquarePixels(gName)
 	endif
 	if (V_flag)
 		if (printIt)
-			DoAlert 0, "ERROR, SetAspectToSquarePixels(), unable to get size of vertical axis"
+			print "ERROR --- GetGraphAspectRatio(), unable to get size of vertical axis"
 		endif
 		return NaN
 	endif
@@ -5417,22 +5435,16 @@ Function SetAspectToSquarePixels(gName)
 	endif
 	if (V_flag)
 		if (printIt)
-			DoAlert 0, "ERROR, SetAspectToSquarePixels(), unable to get size of horizontal axis"
+			print "ERROR -- GetGraphAspectRatio(), unable to get size of horizontal axis"
 		endif
 		return NaN
 	endif
 	Variable height = abs(V_max-V_min)
 
 	Variable aspect = height / width
-	//	printf "size ,  width = %g,  height = %g,   aspect = height/width = %g\r",width,height,aspect
 	if (numtype(aspect) || aspect<=0)
 		return NaN
-	elseif (aspect<1)
-		ModifyGraph/W=$gName height={Aspect,aspect}, width=0
-	elseif (aspect>=1)
-		ModifyGraph/W=$gName width={Aspect,1/aspect}, height=0
 	endif
-
 	return aspect
 End
 
