@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.12
+#pragma version = 2.13
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -99,6 +99,9 @@ Static strConstant emissionTypes = "Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;L
 //
 //	Aug 12, 2018		2.12
 //		added Function MakePeriodicTablePanel(list)
+//
+//	Aug 18, 2018		2.13
+//		changed Make_ElementDataWaves() and  Make_IsotopesList(), changed the call to XMLtagContents() to speed things up.
 
 Menu "Analysis"
       Submenu "Element"
@@ -1287,9 +1290,9 @@ Function/WAVE Make_IsotopesList()
 	IsotopeLists[0] = "MassNumber:AtomicMass,NaturalFraction;"
 
 	String oneZ, item, line
-	Variable iZ, m, massNumber,atomicMass,Fraction
+	Variable iZ, m, massNumber,atomicMass,Fraction, start=0
 	for (iZ=1;iZ<=Zmax;iZ+=1)
-		oneZ = XMLtagContents("Z"+num2istr(iZ),isotopes)
+		oneZ = XMLtagContents("Z"+num2istr(iZ),isotopes, start=start)
 		line = ""
 		item = "X"
 		for (m=0; ;m+=1)
@@ -1327,6 +1330,7 @@ Function/T MakePeriodicTablePanel(list, [wait, extra])
 	Variable wait
 	String extra								// text to store in the extra userdata, e.g. "key=value;"
 	wait = ParamIsDefault(wait) || numtype(wait) ? 0 : wait
+	extra = SelectString(ParamIsDefault(extra),extra,"")
 
 	Variable N=ItemsInList(ELEMENT_Symbols)
 	Make/N=(N,2)/FREE/I rc=-1
@@ -1533,9 +1537,9 @@ Static Function Make_ElementDataWaves()
 
 	STRUCT EmissionLineStruct em
 	String oneZ, edges, emission, ename, str, strStruct
-	Variable iZ, i, N, eV,rel
+	Variable iZ, i, N, eV,rel, start=0
 	for (iZ=1;iZ<=Zmax;iZ+=1)
-		oneZ = XMLtagContents("Z"+num2istr(iZ),elementData)
+		oneZ = XMLtagContents("Z"+num2istr(iZ),elementData, start=start)
 
 		name[iZ] = XMLtagContents("name",oneZ)
 		amu[iZ] = str2num(XMLtagContents("amu",oneZ))
