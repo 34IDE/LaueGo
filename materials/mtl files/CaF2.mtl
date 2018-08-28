@@ -3,6 +3,4 @@
 <chemical_mixture name="Calcium Fluoride" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>CaF2</chemical_formula>
 	<density unit="g/cm^3">3.18</density>
-	<part symbol="Ca" fraction="0.333333"></part>
-	<part symbol="F" fraction="0.666667"></part>
 </chemical_mixture>

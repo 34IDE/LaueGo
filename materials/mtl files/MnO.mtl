@@ -3,6 +3,4 @@
 <chemical_mixture name="Manganese Oxide" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>MnO</chemical_formula>
 	<density unit="g/cm^3">5.36246</density>
-	<part symbol="Mn" fraction="0.5"></part>
-	<part symbol="O" fraction="0.5"></part>
 </chemical_mixture>

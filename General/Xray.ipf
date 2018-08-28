@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.24
+#pragma version = 2.25
 #include "Elements", version>=2.00
 #include "CromerLiberman", version>=1.9
 
@@ -12,9 +12,12 @@
 //		updated a few things
 //	May 3, 2016
 //		added the calls to ElementDataInitPackage()
+//	Aug 28, 2018
+//		changes to Get_MuFormula()
 
 
 //	#define USE_OBSOLETE		// use this define to use the obsolete functions at the end of this procedure file
+Static strConstant DEFAULT_DENSITY_LIST = "TiO2:4.26;NiO:6.67;CoO:6.45;Fe2O3:5.24"	// air:1.205E-3
 
 
 Menu "Analysis"
@@ -26,15 +29,15 @@ End
 
 
 
-Function Get_MuFormula(formula,keV)			// get mu (1/µm)
+Function Get_MuFormula(formula,keV, [density, printIt])			// get mu (1/µm)
 	// includes the data base of densities
 	String formula		// chemical formula, Elements start with a capital letter.
 	Variable keV		// photon energy (keV)
-	Variable topLevel = ItemsInList(GetRTStackInfo(0))<2
-	if (strlen(formula)<1 || numtype(keV) || keV<1e-3)
-		if (!topLevel)
-			return NaN
-		endif
+	Variable density	// (g/cm^3)
+	Variable printIt
+	density = ParamIsDefault(density) || numtype(density) ? NaN : density
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if ((strlen(formula)<1 || numtype(keV) || keV<1e-3) && printIt)
 		Prompt formula, "chemical formula"
 		Prompt keV, "energy (keV)"
 		DoPrompt "formula and energy",formula,keV
@@ -50,12 +53,11 @@ Function Get_MuFormula(formula,keV)			// get mu (1/µm)
 		ElementDataInitPackage()
 	endif
 
-	Variable density
 	String list = ChemicalFormulaToList(formula)	// parse the chemical formula into a list
-	if (ItemsInList(list)==1)				// a single element, look it up
+	if (numtype(density) && ItemsInList(list)==1)				// a single element, look it up
 		density = Element_density(element2Z(StringFromList(0,list)))
-	else										// check in the density list
-		String densityList=StrVarOrDefault("root:Packages:Elements:densityList","TiO2:4.26;NiO:6.67;CoO:6.45;Fe2O3:5.24;")
+	elseif (numtype(density))			// check in the density list
+		String densityList=StrVarOrDefault("root:Packages:Elements:densityList",DEFAULT_DENSITY_LIST)
 		density = str2num(StringByKey(formula,densityList))
 	endif
 	if (numtype(density))
@@ -65,11 +67,11 @@ Function Get_MuFormula(formula,keV)			// get mu (1/µm)
 	endif
 
 	Variable mu = MuOverRhoFormula(formula,keV)*density/1e4
-	if (topLevel)
+	if (printIt)
 		if (numtype(mu))
 			printf  "   unable to compute mu of '%s' at %g keV\r",formula_In,keV
 		else
-			printf  "   mu of '%s' at %g keV  is %g (1/micron)  -->  absorption length %g (micron)\r",formula_In,keV,mu,1/mu
+			printf  "   mu of '%s' at %g keV  is %g (1/micron)  -->  absorption length %.2W1Pm\r",formula_In,keV,mu,1e-6/mu
 		endif
 	endif
 	return mu

@@ -3,6 +3,4 @@
 <chemical_mixture name="Nickel Oxide" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>NiO</chemical_formula>
 	<density unit="g/cm^3">6.67</density>
-	<part symbol="Ni" fraction="0.5"></part>
-	<part symbol="O" fraction="0.5"></part>
 </chemical_mixture>

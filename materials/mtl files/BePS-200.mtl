@@ -3,24 +3,24 @@
 <chemical_mixture name="Be PS-200 (Brush-Wellman)" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>Be</chemical_formula>
 	<density unit="g/cm^3">1.85</density>
-	<part symbol="Be" fraction="0.986212"></part>
-	<part symbol="O" fraction="0.0075"></part>
-	<part symbol="Al" fraction="0.001"></part>
-	<part symbol="C" fraction="0.0015"></part>
-	<part symbol="Fe" fraction="0.0013"></part>
-	<part symbol="Mg" fraction="0.0008"></part>
-	<part symbol="Si" fraction="0.0006"></part>
-	<part symbol="B" fraction="0.000003"></part>
-	<part symbol="Cd" fraction="0.000002"></part>
-	<part symbol="Ca" fraction="00.0001"></part>
-	<part symbol="Cr" fraction="0.0001"></part>
-	<part symbol="Co" fraction="0.00001"></part>
-	<part symbol="Cu" fraction="0.0001"></part>
-	<part symbol="Pb" fraction="0.00002"></part>
-	<part symbol="Li" fraction="0.000003"></part>
-	<part symbol="Mn" fraction="0.00012"></part>
-	<part symbol="Mo" fraction="0.00002"></part>
-	<part symbol="Ni" fraction="0.0002"></part>
-	<part symbol="N" fraction="0.0004"></part>
-	<part symbol="Ag" fraction="0.00001"></part>
+	<part symbol="Be" atomic="0.986212"></part>
+	<part symbol="O" atomic="0.0075"></part>
+	<part symbol="Al" atomic="0.001"></part>
+	<part symbol="C" atomic="0.0015"></part>
+	<part symbol="Fe" atomic="0.0013"></part>
+	<part symbol="Mg" atomic="0.0008"></part>
+	<part symbol="Si" atomic="0.0006"></part>
+	<part symbol="B" atomic="0.000003"></part>
+	<part symbol="Cd" atomic="0.000002"></part>
+	<part symbol="Ca" atomic="00.0001"></part>
+	<part symbol="Cr" atomic="0.0001"></part>
+	<part symbol="Co" atomic="0.00001"></part>
+	<part symbol="Cu" atomic="0.0001"></part>
+	<part symbol="Pb" atomic="0.00002"></part>
+	<part symbol="Li" atomic="0.000003"></part>
+	<part symbol="Mn" atomic="0.00012"></part>
+	<part symbol="Mo" atomic="0.00002"></part>
+	<part symbol="Ni" atomic="0.0002"></part>
+	<part symbol="N" atomic="0.0004"></part>
+	<part symbol="Ag" atomic="0.00001"></part>
 </chemical_mixture>

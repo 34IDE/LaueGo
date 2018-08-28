@@ -3,6 +3,4 @@
 <chemical_mixture name="Ferrous Oxide" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>FeO</chemical_formula>
 	<density unit="g/cm^3">5.97279</density>
-	<part symbol="Fe" fraction="0.5"></part>
-	<part symbol="O" fraction="0.5"></part>
 </chemical_mixture>

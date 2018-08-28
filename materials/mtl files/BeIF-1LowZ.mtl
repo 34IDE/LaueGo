@@ -3,10 +3,10 @@
 <chemical_mixture name="Be IF-1 low Z (Brush-Wellman)" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>Be</chemical_formula>
 	<density unit="g/cm^3">1.85</density>
-	<part symbol="Be" fraction="0.99835"></part>
-	<part symbol="C" fraction="0.0003"></part>
-	<part symbol="O" fraction="0.00015"></part>
-	<part symbol="Mg" fraction="0.00006"></part>
-	<part symbol="Al" fraction="0.0001"></part>
-	<part symbol="Si" fraction="0.0001"></part>
+	<part symbol="Be" atomic="0.99835"></part>
+	<part symbol="C" atomic="0.0003"></part>
+	<part symbol="O" atomic="0.00015"></part>
+	<part symbol="Mg" atomic="0.00006"></part>
+	<part symbol="Al" atomic="0.0001"></part>
+	<part symbol="Si" atomic="0.0001"></part>
 </chemical_mixture>

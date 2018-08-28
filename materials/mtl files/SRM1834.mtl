@@ -26,14 +26,9 @@
 
 	You can specify the element with either the atomic symbol or Z. 
 		If the symbol is not specified, then it looks for Z.
-	Default fraction is 1 if fraction is not specified
 
-	for a fully defined mixture, fraction_present=1, and you do not have to include it, 
-	BUT if your list only defines 90% of the sample, then add fraction_present="0.9"
-
-	***********************************************************************
-	NOTE,  you can use "fraction" or "massfraction", and it will now convert
-	***********************************************************************
+	The fraction is the atom fraction (number of atoms), NOT mass fraction
+	For mass fraction, change all of the "atomic" -> "mass", you cannot mix them.
 -->
 
 

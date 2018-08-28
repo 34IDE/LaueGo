@@ -1,6 +1,6 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 2.13
+#pragma version = 2.14
 #pragma ModuleName=elements
 #if strlen(WinList("LaueGoFirst.ipf",";","INDEPENDENTMODULE:1"))
 #include "MaterialsLocate"						// used to find the path to the materials files, moved to ElementDataInitPackage()
@@ -102,6 +102,9 @@ Static strConstant emissionTypes = "Ka1;Ka2;Ka1,2;Kb1;Kb2;Kb3;L1;La1;La2;La1,2;L
 //
 //	Aug 18, 2018		2.13
 //		changed Make_ElementDataWaves() and  Make_IsotopesList(), changed the call to XMLtagContents() to speed things up.
+//
+//	Aug 12, 2018		2.14
+//		changed ProcessMTLfileContentsXML() it can now use <chemical_formula>, also fraction is now either mass or atomic.
 
 Menu "Analysis"
       Submenu "Element"
@@ -461,6 +464,12 @@ Static Function/T ProcessMTLfileContentsXML(buf)
 		list = ReplaceNumberByKey("density",list,density,"=")
 	endif
 
+	String formula = XMLtagContents("chemical_formula",mix)
+	if (strlen(formula))
+		list += "formula="+formula+";"
+		return list													// have the formula, no need to look further
+	endif
+
 	String item="x", nodeList=XMLNodeList(mix)
 	Variable m=0, Npart=0
 	for (m=0;strlen(item);m+=1)								// count the number of <part> tags
@@ -471,7 +480,7 @@ Static Function/T ProcessMTLfileContentsXML(buf)
 	Make/N=(Npart)/D/FREE fractions=0
 	Make/N=(Npart)/T/FREE symbols=""
 	String part, symbol
-	Variable i=0, fraction, Z
+	Variable i=0, fraction, Z, massFlag=0, atomicFlag=0
 	do
 		part = XMLattibutes2KeyList("part",mix,occurance=i)
 		if (strlen(part)<1)
@@ -482,20 +491,27 @@ Static Function/T ProcessMTLfileContentsXML(buf)
 			Z = NumberByKey("Z",part,"=")
 			symbol = StringFromList(Z-1,ELEMENT_Symbols)
 		endif
-		fraction = NumberByKey("fraction",part,"=")	// atomic fraction
-		if (numtype(fraction))									// perhaps there is a mass fraction
-			fraction = NumberByKey("massfraction",part,"=")	// mass fraction, convert to atomic
-			fraction /= Element_amu( WhichListItem(symbol,ELEMENT_Symbols)+1 )
+		if (strlen(StringByKey("atomic",part,"=")))
+			fraction = NumberByKey("atomic",part,"=")	// atomic fraction
+			atomicFlag = 1
+		else
+			fraction = NumberByKey("mass",part,"=")		// mass fraction
+			fraction /= Element_amu( WhichListItem(symbol,ELEMENT_Symbols)+1 )	// convert mass fraction --> atomic
+			massFlag = 1
 		endif
-		fraction = numtype(fraction) ? 1 : fraction
-		fractions[i] = fraction
-		symbols[i] = symbol
+		if (numtype(fraction)==0)
+			fractions[i] = fraction
+			symbols[i] = symbol
+		endif
 		i += 1
-	while (strlen(symbol))
+	while (strlen(symbol) && numtype(fraction)==0)
+	if (massFlag && atomicFlag)								// cannot mix atomic and mass fractions
+		return ""
+	endif
 
 	Variable total = sum(fractions)							// normalize so the total fraction is 1
 	fractions /= total
-	String formula=""
+	formula = ""
 	for (i=0;i<Npart;i+=1)
 		formula += symbols[i]
 		fraction = fractions[i]

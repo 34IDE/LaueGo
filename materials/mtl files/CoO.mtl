@@ -3,6 +3,4 @@
 <chemical_mixture name="Cobalt Oxide" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>CuO</chemical_formula>
 	<density unit="g/cm^3">6.45</density>
-	<part symbol="Co" fraction="0.5"></part>
-	<part symbol="O" fraction="0.5"></part>
 </chemical_mixture>

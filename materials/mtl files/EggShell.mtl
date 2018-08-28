@@ -3,9 +3,9 @@
 <chemical_mixture name="Egg Shell (Calcium Carbonate)" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<chemical_formula>CaCO3</chemical_formula>
 	<density unit="g/cm^3">2.24</density>
-	<part symbol="Ca" fraction="0.2"></part>
-	<part symbol="C" fraction="0.2"></part>
-	<part symbol="O" fraction="0.6"></part>
+	<part symbol="Ca" atomic="0.2"></part>
+	<part symbol="C" atomic="0.2"></part>
+	<part symbol="O" atomic="0.6"></part>
 </chemical_mixture>
 
 <!-- density of solid CaCO3 is 2.711 g/cm^3, but egg shells are more porous and so less dense -->
