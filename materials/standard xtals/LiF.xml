@@ -18,9 +18,7 @@
 	<atom_site>
 		<label>Li</label>
 		<symbol>Li</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<valence>1</valence>
 		<B_iso>1.045</B_iso>
@@ -28,9 +26,7 @@
 	<atom_site>
 		<label>F</label>
 		<symbol>F</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0.5</fract_y>
-		<fract_z>0.5</fract_z>
+		<fract>0.5 0.5 0.5</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<valence>-1</valence>
 		<B_iso>0.670</B_iso>
