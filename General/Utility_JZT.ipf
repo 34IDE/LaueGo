@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.66
+#pragma version = 4.67
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1544,14 +1544,15 @@ ThreadSafe Function/T XMLattibutes2KeyList(xmltag,buf,[occurance,start])// retur
 	if (i0<0)
 		return ""
 	endif
-	i0 += strlen(xmltag)+2								// start of attributes
-	i1 = strsearch(buf,">",i0)-1						// end of attributes
-	String key, value, keyVals=""
+	i0 += strlen(xmltag)+2								// first char of the attributes
+	i1 = strsearch(buf,">",i0)-1						// last char of the attributes
 
+	String key, value, keyVals=""
 	if (i1 < i0)											// this is an ERROR
 		startLocal = -1
 	else
-		startLocal = XMLfindCloser(buf,xmltag,i1+2)// character just after closing '>'
+		i1 -= (cmpstr(buf[i1],"/")==0) ? 1 : 0			// in case of a short tag, i.e. ends with "/>"
+		startLocal = XMLfindCloser(buf,xmltag,i1+1)	// get character just AFTER closing '>'
 		// parse buf into key=value pairs
 		buf = buf[i0,i1]
 		buf = ReplaceString("\t",buf," ")
@@ -1678,17 +1679,22 @@ ThreadSafe Static Function XMLfindCloser(buf,xmltag,start)
 	Variable j0,j1, i1,i2, iClose						// jn are openers, in are closers
 
 	do
-		j0 = strsearch(buf,"<"+xmltag+" ",start)	// next opener of type "<tag>"
+		j0 = strsearch(buf,"<"+xmltag+" ",start)	// next opener of type "<tag ...>"
 		j0 = j0<0 ? Inf : j0
-		j1 = strsearch(buf,"<"+xmltag+">",start)	// next opener of type "<tag ...>"
+		j1 = strsearch(buf,"<"+xmltag+">",start)	// next opener of type "<tag>"
 		j1 = j1<0 ? Inf : j1
-		j0 = min(j0,j1)
+		j0 = min(j0,j1)										// next opener of tag
+		// j0 is position of next tag opener (j1 no longer used)
 
 		i1 = strsearch(buf,close1,start)				// next closer of type "</tag>"
 		i1 = i1<0 ? Inf : i1
 		i2 = strsearch(buf,close2,start)				// next closing of type "/>"
 		i2 = i2<0 ? Inf : i2
 		i2 = i2<strsearch(buf,"<",start) ? i2 : Inf	// required for sort tags
+
+		// j0 is position of next tag opener (ignore j1)
+		//	i1 is next "</tag>"
+		//	i2 is next "/>" (it is inf if a </tag> comes first
 
 		if (j0<i1 && j0<i2)									// found another open before the close, dig deeper
 			start = XMLfindCloser(buf,xmltag,j0+strlen(xmltag))
