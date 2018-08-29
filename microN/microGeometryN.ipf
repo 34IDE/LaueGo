@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 2.02
+#pragma version = 2.03
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -4856,7 +4856,10 @@ Function GeoFromWeb(epoch,gIn)
 		printf "About to get geometry information from web using date: %s,  %s\r",Secs2Date(epoch,2),Secs2Time(epoch,1)
 	endif
 	String url
-	sprintf url "http://%s/index.php?tag=geoN&date=%sT%s",GeoWebServer,ddate,ttime
+	sprintf url "https://%s/index.php?tag=geoN&date=%sT%s",GeoWebServer,ddate,ttime
+	if (IgorVersion()<7)
+		url = ReplaceString("https:",url,"http:")	// version 6 does not support "https:"
+	endif
 	//	printf "url = %s\r\r",url
 	String result = FetchURL(url)
 	if (strsearch(result,"ERROR",0)==0)

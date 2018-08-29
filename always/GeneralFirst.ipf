@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.50
+#pragma version = 3.51
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.64
@@ -181,7 +181,7 @@ Menu "Help"
 		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
 		"   LaueGo Version Info Deep Check...", /Q, JZTgeneral#DeepCheckActualFiles("")
 		"   Schedule Regular Update Checks...", JZTgeneral#SetPeriodicCheckLaueGoVersion(NaN,printIt=1)
-		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
+		"Open LaueGo Web Page", /Q, BrowseHelpFile("https://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Roman"
 			"*CHARACTER*(Times New Roman,36)", /Q, GetLastUserMenuInfo; printf "\r  Roman('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
@@ -198,7 +198,7 @@ Menu "Help"
 		"LaueGo Version Info", /Q, CheckLaueGoVersion(1)
 		"   LaueGo Version Info Deep Check...", /Q, JZTgeneral#DeepCheckActualFiles("")
 		"   Schedule Regular Update Checks...", JZTgeneral#SetPeriodicCheckLaueGoVersion(NaN,printIt=1)
-		"Open LaueGo Web Page", /Q, BrowseHelpFile("http://sector33.xray.aps.anl.gov/~tischler")
+		"Open LaueGo Web Page", /Q, BrowseHelpFile("https://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Characters"
 			"*CHARACTER*(,36)", /Q, GetLastUserMenuInfo; printf "\r  Character('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
@@ -217,7 +217,7 @@ Function BrowseHelpFile(urlStr)
 	// search order: User/Docs/WaveMetrics/LocalPackages/doc, User/Docs/WaveMetrics/LaueGo/doc, Applications/Igor Pro/LaueGo/doc
 	String urlStr
 
-	if (!StringMatch(urlStr,"http:*") && !StringMatch(urlStr,"file:*")) // not a complete url
+	if (!StringMatch(urlStr,"http:*") && !StringMatch(urlStr,"https:*") && !StringMatch(urlStr,"file:*")) // not a complete url
 		// assume that urlStr is just a file name in doc's folder
 		String filePath = SpecialDirPath("Igor Pro User Files",0,0,0)+"User Procedures:LocalPackages:doc:"+urlStr
 		GetFileFolderInfo/Q/Z=1 filePath
@@ -553,7 +553,10 @@ End
 //
 Static Function/T VersionStatusFromWeb()
 	// return the full body of VersionStatus.xml from the web site
-	String VersionStatusURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
+	String VersionStatusURL = "https://sector33.xray.aps.anl.gov/~tischler/igor/VersionStatus.xml"
+	if (IgorVersion()<7)
+		VersionStatusURL = ReplaceString("https:",VersionStatusURL,"http:")	// version 6 does not support "https:"
+	endif
 	String vs = FetchURL(VersionStatusURL)
 	if (GetRTError(0))
 		print "***",GetRTErrMessage(), "  Check your network connection."

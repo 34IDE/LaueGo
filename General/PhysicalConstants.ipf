@@ -1,9 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.17
+#pragma version = 2.18
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
-Static StrConstant NISTserverASCII_URL="http://physics.nist.gov/cuu/Constants/Table/allascii.txt"
+Static StrConstant NISTserverASCII_URL="https://physics.nist.gov/cuu/Constants/Table/allascii.txt"
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
 //
@@ -390,6 +390,11 @@ Static Function UpdateLocalCopyOfConstants([printIt])
 End
 //
 Static Function/T getFullASCIIfromWeb()
+	if (IgorVersion()<7)
+		String str="NIST only supports 'https', but Igor 6, can only fetch with 'http', You need to use version 7 or greater"
+		DoAlert 0, str
+		print str
+	endif
 	String ascii = FetchURL(NISTserverASCII_URL)
 	String errMsg = GetRTErrMessage()
 	if (GetRTError(1))

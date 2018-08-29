@@ -1,10 +1,10 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LaueGoInstall
-#pragma version = 0.11
+#pragma version = 0.12
 
 Constant LaueGo_Install_Test = 0
-Static strConstant gitHubArchiveURL = "http://github.com/34IDE/LaueGo/archive/master.zip"
-Static strConstant JZTArchiveURL = "http://sector33.xray.aps.anl.gov/~tischler/igor/LaueGo.zip"
+Static strConstant gitHubArchiveURL = "https://github.com/34IDE/LaueGo/archive/master.zip"
+Static strConstant JZTArchiveURL = "https://sector33.xray.aps.anl.gov/~tischler/igor/LaueGo.zip"
 Static Constant minimumArchiveLen = 16777216	// 16MB (16*1024*1024), it must be larger than this.
 #if (IgorVersion()<7)
 	strConstant xopList = "HDF5.xop;HDF5 Help.ihf;MultiPeakFit.xop;MultiPeakFit Help.ihf;"	// list of xop's to install, this can be overidden
@@ -286,7 +286,7 @@ Static Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo
 		str += "On the Web Page, Push the 'Download ZIP' button (on the right)\rThen Follow instructions in Igor History"
 		Append2Log(str,0)
 		DoAlert 0, str
-		BrowseURL/Z "http://github.com/34IDE/LaueGo/"
+		BrowseURL/Z "https://github.com/34IDE/LaueGo/"
 		if (V_flag)
 			str = "Could NOT get gitHub zip archive using Web Browser"
 			Append2Log(str,0)
@@ -297,7 +297,9 @@ Static Function/T FetchLaueGoArchive(urlStr)			// download and expand new LaueGo
 		Append2Log(str,0)
 		return ""
 	endif
-
+	if (IgorVersion()<7)
+		urlStr = ReplaceString("https:",urlStr,"http:")	// version 6 does not support "https:"
+	endif
 	String response = FetchURL(urlStr)
 	if (strlen(response)< minimumArchiveLen)
 		sprintf str, "\rDownloaded zip archive is too short, length = %d\rProbably a download error.\rTry again.",strlen(response)

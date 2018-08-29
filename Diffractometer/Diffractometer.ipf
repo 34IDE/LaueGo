@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.63
+#pragma version = 0.64
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -1971,7 +1971,10 @@ Function LoadDetectorFromWeb(dateStr,timeStr,[tagName,epoch,printIt])
 	timeStr = Secs2Time(epoch,3)
 
 	String url
-	sprintf url "http://%s/index.php?tag=%s&date=%sT%s",GeoWebServer,tagName,dateStr,timeStr
+	sprintf url "https://%s/index.php?tag=%s&date=%sT%s",GeoWebServer,tagName,dateStr,timeStr
+	if (IgorVersion()<7)
+		url = ReplaceString("https:",url,"http:")	// version 6 does not support "https:"
+	endif
 	//	printf "url = %s\r\r",url
 	String result = FetchURL(url)
 	if (strsearch(result,"ERROR",0)==0)
