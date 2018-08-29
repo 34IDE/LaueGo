@@ -2,12 +2,12 @@
 
 <chemical_mixture name="Al 1100" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">1.43</density>
-	<part symbol="Al" atomic="0.99"></part>
-	<part symbol="Cu" atomic="0.001"></part>
-	<part symbol="Mn" atomic="0.0005"></part>
-	<part symbol="Zn" atomic="0.001"></part>
-	<part symbol="Fe" atomic="0.005"></part>
-	<part symbol="Si" atomic="0.0025"></part>
+	<part symbol="Al" atomic="0.99"/>
+	<part symbol="Cu" atomic="0.001"/>
+	<part symbol="Mn" atomic="0.0005"/>
+	<part symbol="Zn" atomic="0.001"/>
+	<part symbol="Fe" atomic="0.005"/>
+	<part symbol="Si" atomic="0.0025"/>
 </chemical_mixture>
 
 

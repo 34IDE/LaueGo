@@ -2,22 +2,22 @@
 
 <chemical_mixture name="SRM1834 NIST" fraction_present="0.98808" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">3.3</density>
-	<part symbol="O" atomic="1"></part>
-	<part symbol="Si" atomic="0.2319"></part>
-	<part symbol="Al" atomic="0.2476"></part>
-	<part symbol="Ti" atomic="0.00748"></part>
-	<part symbol="Zr" atomic="0.0001662"></part>
-	<part symbol="Ca" atomic="0.0007646"></part>
-	<part symbol="Ba" atomic="0.0001456"></part>
-	<part symbol="Li" atomic="0.2138"></part>
-	<part symbol="Mg" atomic="0.001168"></part>
-	<part symbol="K" atomic="0.003465"></part>
-	<part symbol="Na" atomic="0.001964"></part>
-	<part symbol="B" atomic="0.03282"></part>
-	<part symbol="P" atomic="0.001583"></part>
-	<part symbol="Cr" atomic="0.0001241"></part>
-	<part symbol="Sr" atomic="0.0005633"></part>
-	<part symbol="Fe" atomic="0.001848"></part>
+	<part symbol="O" atomic="1"/>
+	<part symbol="Si" atomic="0.2319"/>
+	<part symbol="Al" atomic="0.2476"/>
+	<part symbol="Ti" atomic="0.00748"/>
+	<part symbol="Zr" atomic="0.0001662"/>
+	<part symbol="Ca" atomic="0.0007646"/>
+	<part symbol="Ba" atomic="0.0001456"/>
+	<part symbol="Li" atomic="0.2138"/>
+	<part symbol="Mg" atomic="0.001168"/>
+	<part symbol="K" atomic="0.003465"/>
+	<part symbol="Na" atomic="0.001964"/>
+	<part symbol="B" atomic="0.03282"/>
+	<part symbol="P" atomic="0.001583"/>
+	<part symbol="Cr" atomic="0.0001241"/>
+	<part symbol="Sr" atomic="0.0005633"/>
+	<part symbol="Fe" atomic="0.001848"/>
 </chemical_mixture>
 
 

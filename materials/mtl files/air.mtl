@@ -2,11 +2,11 @@
 
 <chemical_mixture name="air" xmlns="http://sector34.xray.aps.anl.gov/34ide">
 	<density unit="g/cm^3">1.205E-3</density>
-	<part symbol="N" atomic="0.784307"></part>
-	<part symbol="O" atomic="0.210792"></part>
-	<part symbol="Ar" atomic="0.00469073"></part>
-	<part symbol="C" atomic="0.000200888"></part>
-	<part symbol="Ne" atomic="9.13036e-06"></part>
+	<part symbol="N" atomic="0.784307"/>
+	<part symbol="O" atomic="0.210792"/>
+	<part symbol="Ar" atomic="0.00469073"/>
+	<part symbol="C" atomic="0.000200888"/>
+	<part symbol="Ne" atomic="9.13036e-06"/>
 </chemical_mixture>
 
 <!--
