@@ -1337,7 +1337,7 @@ End
 //		String list = "Sr;Ti;O"			// preselected starting values (semi-colon separated)
 //		list = MakePeriodicTablePanel(list, wait=1)		// list will contain the user selected values
 //
-// 	or do not use wait=1, and use:  GetUserData("ElementsPanel","","ON_OFF"))
+// 	or do not use wait=1, and use:  GetUserData("ElementsPanel","","listON"))
 //
 //		or make your own:  Function ElementPanelFunc(symb)
 //
