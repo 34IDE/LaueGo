@@ -331,7 +331,7 @@ Static Function PrintStartUpPrefsJZT(prefs)
 End
 
 
-// Set those items that are passed in the funciton
+// Set those items that are passed in the function
 Static Function ChangeStartupPrefsJZT([General, Gizmo, LaueGo, Scattering, APS, LocalPackages, printIt])
 	Variable General, Gizmo, LaueGo, Scattering, APS, LocalPackages
 	Variable printIt

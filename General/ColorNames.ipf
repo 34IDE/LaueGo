@@ -1,8 +1,8 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.04
+#pragma version = 2.05
 #pragma IgorVersion = 6.22
 #pragma ModuleName=ColorNames
-#pragma hide = 1
+//#pragma hide = 1
 
 
 
