@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.96
+#pragma version = 4.97
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -917,7 +917,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	// use shift to look at the indexing result, use command to look at fitted peaks
 	String win = (s.winName)
 	Variable process = (s.eventMod&10 && (s.eventCode==4 || s.eventCode==3)) && (s.keycode==0 || s.keycode==255)		// eventMod==2 is shift key, 8 is command, 1 is mouse, and no regular key held down
-	if (!process)
+	if (s.eventCode==8)
+		return 0							// graph modified occurs when the tag is made or changed, ignore this
+	elseif (!process)
 		Tag/K/N=indexedPeakInfo/W=$win
 		s.doSetCursor= 0
 		s.cursorCode = 0				// for nothing
@@ -1293,7 +1295,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	str = SelectString(strlen(imageName), TraceName, imageName)
 	Tag/C/N=indexedPeakInfo/W=$win/A=$anchor/F=2/L=2/X=(x0)/Y=(y0)/P=1 $str, wIndex, tagStr
 	DoUpdate
-	return 1																// 1 means do not send back to Igor for more processing
+	return 0																// 1 means do not send back to Igor for more processing, 0 means all OK
 End
 
 
