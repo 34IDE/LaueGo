@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, September 04, 2018" time="12:12:10 PM CDT" isoTime="2018-09-04T12:12:10"></written>
+	<written date="Tuesday, September 04, 2018" time="02:21:24 PM CDT" isoTime="2018-09-04T14:21:24"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>e0728190228af1087a2073b9d044a01d6d9d5d09</gitHash>
+	<gitHash>8dbece13fedcdfe1d90431f4f91eb99c04fe0135</gitHash>
 	<fileCount>288</fileCount>
 	<file version="nan" time="2018-05-11T14:42:56" md5="98c41152da7679572f5211e177a78f7e" sha256="db624651b52445230d522cf392c820dc814f396e4147f8fbb48746e4b59e00c6" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
 	<file version="nan" time="2018-05-11T14:42:34" md5="ee580fe3f50506af78059bb2d47ac706" sha256="7f907efb1dbd8b4b28fe9dd35476bff99620122e4b79a2267c1811a65567971f" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -240,7 +240,7 @@
 	<file version="nan" time="2018-05-11T14:42:24" md5="5dc3874e86e588831dec0af3db4fe412" sha256="9de0785744218e0e52a303aea6e98bb3afef89bc172999956f267a7cd2adb642" ext=".xml">materials/standard xtals/Pu-delta.xml</file>
 	<file version="2.11" time="2018-07-09T12:21:25" md5="310695a0afad895d3b2d61f420072f4f" sha256="b8922948f311425cf3e02f31cbfaf748c0d09b3e57067a8778e3818e7925e6cc" ext=".ipf">always/LaueGoFirst.ipf</file>
 	<file version="nan" time="2018-08-29T14:16:55" md5="2958eb70297c66bdfffd85301e0035c1" sha256="256993132bc03a332359443c58e99dde00a4bc5f19b2c7856601aad10eee97a4" ext=".mtl">materials/mtl files/BePF-60.mtl</file>
-	<file version="2.84" time="2018-07-09T12:46:50" md5="f93c749f1f4b2e46fd6d5b7624b1e5a3" sha256="34009a4345890c9d9e170a7641c9dea0a6ee88b576d8f3fed341b82f99cc4a54" ext=".ipf">always/always first.ipf</file>
+	<file version="2.84" time="2018-09-04T14:19:44" md5="03bdeec6505178e93bb2ee9920b06ea1" sha256="e01031b2c4309cb0ddf657a2d2b30e322f2c9b210cea2698df747262ac547486" ext=".ipf">always/always first.ipf</file>
 	<file version="nan" time="2018-05-11T14:43:04" md5="91aa0d040c78e6a3efb2833102de5031" sha256="68f26d3a26a788f43efde8344bb3803421d87993d4a8d67f6dcf48e7221f0cfb" ext=".xml">materials/standard xtals/Co.xml</file>
 	<file version="2.14" time="2018-08-30T08:59:03" md5="77860542041b447d6f881a7c39c675bf" sha256="6c2983b2383cf4ccebe48402270135d10314f137e98339f4c0e5e10476f06cee" ext=".ipf">General/Elements.ipf</file>
 	<file version="1.19" time="2018-07-27T11:20:22" md5="2a716b7e6f1c782cc32e5613e0d3b500" sha256="54190e7caf254c13d74681ade73eedb93d737027e96bf1f230c2192c80610522" ext=".ipf">Lattice/LaueSimulation.ipf</file>
@@ -258,7 +258,7 @@
 	<file version="nan" time="2018-08-28T14:08:30" md5="6c41659b6d368864db66286b6f71b7b6" sha256="f2becb34f272a445a1cf565bbc00937e0493a7ad675ae5a22a81bc20562b78eb" ext=".mtl">materials/mtl files/LiF.mtl</file>
 	<file version="2.38" time="2016-09-26T10:10:34" md5="8d01ddfdf06b1461ac5a03f1c0669967" sha256="6a6a251ac1e2a6565a76f924fcca1cd91287e70e4320ff80ccfe97c4d39d21b7" ext=".ipf">microN/EnergyScansN_NEW.ipf</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="84398fad82b39f7cee9bec483ffd334a" sha256="162216bc6a2d1d338710ae639350c4c844f16ad59daa1258872358ccf79ea7a9" ext=".xml">materials/standard xtals/Si.xml</file>
-	<file version="2.04" time="2013-10-28T11:28:48" md5="7937e08585179b84a3ca9d1d53c2eca7" sha256="5f3915e8e7e16ae19609158b4716ffa27366b68fdf159e3ce6d2dc284fd9f040" ext=".ipf">General/ColorNames.ipf</file>
+	<file version="2.05" time="2018-09-04T14:17:22" md5="1a4feb842341babb9b3ca3dcaa0e8da8" sha256="6c17615914439cbf33d08cb3b4a8120afb04536feaf2f4a6306c04c984876463" ext=".ipf">General/ColorNames.ipf</file>
 	<file version="nan" time="2018-05-11T15:07:00" md5="777a33f5ee13ee0d4db645401b8f5943" sha256="ce08429d2b4d86bf5a39a4b5c95476d15a6d8174a5b6a227a14eee29563a71d8" ext=".xml">materials/standard xtals/Al2O3r.xml</file>
 	<file version="0.35" time="2018-04-26T12:08:14" md5="95b5c71f04edce6cb16eab48a5575d71" sha256="95b8267325e0c338f661594ed0ef90a97592d3d006da8a9835bf980cb571cab9" ext=".ipf">General/Images/HDF5images.ipf</file>
 	<file version="nan" time="2018-08-29T14:16:24" md5="b8799be9ed36a1ca13f79a7b0877bdeb" sha256="57ae1bd9947b3b0a9503cadda10275726bb763c2d6aa2c4255e336d99fc38f21" ext=".mtl">materials/mtl files/air.mtl</file>
