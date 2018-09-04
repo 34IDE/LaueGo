@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, September 04, 2018" time="10:40:43 AM CDT" isoTime="2018-09-04T10:40:43"></written>
+	<written date="Tuesday, September 04, 2018" time="12:12:10 PM CDT" isoTime="2018-09-04T12:12:10"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>7f5f070386c3d65de332b505706aca9e1a608ff5</gitHash>
+	<gitHash>e0728190228af1087a2073b9d044a01d6d9d5d09</gitHash>
 	<fileCount>288</fileCount>
 	<file version="nan" time="2018-05-11T14:42:56" md5="98c41152da7679572f5211e177a78f7e" sha256="db624651b52445230d522cf392c820dc814f396e4147f8fbb48746e4b59e00c6" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
 	<file version="nan" time="2018-05-11T14:42:34" md5="ee580fe3f50506af78059bb2d47ac706" sha256="7f907efb1dbd8b4b28fe9dd35476bff99620122e4b79a2267c1811a65567971f" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -104,7 +104,7 @@
 	<file version="nan" time="2018-05-11T15:13:32" md5="2dc306b7561751deaf2b8f165e596887" sha256="2c050ddc818aa56ffd59fae96b71712f3beb7329d9fb7b5ba9429cd2b3e5aec1" ext=".xml">materials/standard xtals/CdTe.xml</file>
 	<file version="nan" time="2018-05-11T15:41:05" md5="235ed3f2e4857e141495df7baa593539" sha256="f09342c64e1e317efd253884047e0e058265785e1d632537b40d4b1e8cf4aca0" ext=".xml">materials/standard xtals/Sn.xml</file>
 	<file version="7.05" time="2018-08-13T02:55:17" md5="edc56a69b36ca04d87935bec3c9e2ff3" sha256="0b5ef72c6238c137984a05eabf10dad2bb0f8bb790d779d46bedf41383ef5331" ext=".ipf">Lattice/LatticeSym2D3D.ipf</file>
-	<file version="6.55" time="2018-07-27T11:41:03" md5="67c5111c0322967d8b5b9417c90dc450" sha256="6659714e719a5aa978598797f8eb505ecade524b6953c10cdf45b4e4f62b5ea2" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="6.56" time="2018-09-04T12:10:06" md5="fbd4730fa47792237377748997bf558f" sha256="076d53c0986a853421c369cd8d38cb33b984ccc4ca667a211ef5c388deb4623e" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="2.23" time="2018-06-22T10:45:14" md5="deb05750834055ae103c87ac2008d745" sha256="ecad5350f5834226b606742c87443a5a5de49988e8e576548987bc04a16f42a8" ext=".ipf">General/Gizmo/GizmoMarkers.ipf</file>
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="04f33d6571b22539fd6d5b31f80b6c10" sha256="07c0adc672c5948e96793eb83e68522f863546045f1743cf4268e08b7100fc75" ext=".xml">materials/standard xtals/Fe2O3h.xml</file>
