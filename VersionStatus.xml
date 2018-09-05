@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, September 04, 2018" time="02:21:24 PM CDT" isoTime="2018-09-04T14:21:24"></written>
+	<written date="Wednesday, September 05, 2018" time="02:18:24 PM CDT" isoTime="2018-09-05T14:18:24"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>8dbece13fedcdfe1d90431f4f91eb99c04fe0135</gitHash>
-	<fileCount>288</fileCount>
+	<gitHash>4efcd212fbfde7fa82ad8569b52f5e59b92152de</gitHash>
+	<fileCount>289</fileCount>
 	<file version="nan" time="2018-05-11T14:42:56" md5="98c41152da7679572f5211e177a78f7e" sha256="db624651b52445230d522cf392c820dc814f396e4147f8fbb48746e4b59e00c6" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
 	<file version="nan" time="2018-05-11T14:42:34" md5="ee580fe3f50506af78059bb2d47ac706" sha256="7f907efb1dbd8b4b28fe9dd35476bff99620122e4b79a2267c1811a65567971f" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2018-05-11T14:42:37" md5="9a128ee7cce51751d7d67b61a6a5322a" sha256="db437deb3dce657a84fa245d1c5ebe064964eb1235e5e7605cbe29f532d7bb33" ext=".xml">materials/standard xtals/Iron Nickel/Ni.xml</file>
@@ -240,6 +240,7 @@
 	<file version="nan" time="2018-05-11T14:42:24" md5="5dc3874e86e588831dec0af3db4fe412" sha256="9de0785744218e0e52a303aea6e98bb3afef89bc172999956f267a7cd2adb642" ext=".xml">materials/standard xtals/Pu-delta.xml</file>
 	<file version="2.11" time="2018-07-09T12:21:25" md5="310695a0afad895d3b2d61f420072f4f" sha256="b8922948f311425cf3e02f31cbfaf748c0d09b3e57067a8778e3818e7925e6cc" ext=".ipf">always/LaueGoFirst.ipf</file>
 	<file version="nan" time="2018-08-29T14:16:55" md5="2958eb70297c66bdfffd85301e0035c1" sha256="256993132bc03a332359443c58e99dde00a4bc5f19b2c7856601aad10eee97a4" ext=".mtl">materials/mtl files/BePF-60.mtl</file>
+	<file version="nan" time="2018-09-05T14:05:53" md5="ecb959f208684621516911bbd73c4f6f" sha256="b1ba708d094e17c563a29bac6feed96da9573db839771bbbf3db1b391c629cab" ext=".xml">materials/standard xtals/CZT.xml</file>
 	<file version="2.84" time="2018-09-04T14:19:44" md5="03bdeec6505178e93bb2ee9920b06ea1" sha256="e01031b2c4309cb0ddf657a2d2b30e322f2c9b210cea2698df747262ac547486" ext=".ipf">always/always first.ipf</file>
 	<file version="nan" time="2018-05-11T14:43:04" md5="91aa0d040c78e6a3efb2833102de5031" sha256="68f26d3a26a788f43efde8344bb3803421d87993d4a8d67f6dcf48e7221f0cfb" ext=".xml">materials/standard xtals/Co.xml</file>
 	<file version="2.14" time="2018-08-30T08:59:03" md5="77860542041b447d6f881a7c39c675bf" sha256="6c2983b2383cf4ccebe48402270135d10314f137e98339f4c0e5e10476f06cee" ext=".ipf">General/Elements.ipf</file>
@@ -251,7 +252,7 @@
 	<file version="nan" time="2018-08-29T14:16:50" md5="9c8c9ecf3360dde6a3616d53b4224f9b" sha256="057d836a90e40de98d716d8bb7e6d8ee7cf21cbfeeb53a2d69fce87b4b6932de" ext=".mtl">materials/mtl files/BePS-200.mtl</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="dbb5f3994121767cc4a677136fe3ef2a" sha256="046d4254c47b4f09b6431ab4ed90abcec16510aaf6bf5486985ea6ad6ed98e84" ext=".hlp">materials/mtl files/absorb.hlp</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="2c0ed9d205a97ae689fffff8be6c5748" sha256="70f592f0217679888c33725f784e1ba49a98fe79c4672b0c7b49cc8e571f03ec" ext="">micro/indexAll_i386</file>
-	<file version="nan" time="2018-07-23T14:47:50" md5="1972c04a891ea21ad5b280f9cd90a3e6" sha256="821e95f48ad11a25570922618f7ab202540071de699a3e92f289c536422db89f" ext=".rtf">materials/structure xml desctiption.rtf</file>
+	<file version="nan" time="2018-09-05T13:54:43" md5="57a7524c6f56abce67426eb39418790f" sha256="3443c5031c88f470e04d4eb7a0aecaa3c7dda6ea2351154a6c5fefd97f35785b" ext=".rtf">materials/structure xml desctiption.rtf</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="027f5075c7df93de34c6f72fa2fbce55" sha256="81b9ef681fd097936e87e728ff8680edfb6d1958edddfafdb579be9af6b37e72" ext=".xml">materials/standard xtals/quartz_alpha.xml</file>
 	<file version="1.83" time="2018-01-15T14:15:55" md5="fb939723030298517a648a26f427b0b3" sha256="bb1bb0d5c63c827c14db8a9a34ccaad35295f4a2685f5360d25629eb273d4313" ext=".ipf">APS/epics.ipf</file>
 	<file version="nan" time="2018-05-11T15:15:20" md5="9ed3b41e676fc824b0d79a0a710bf5b0" sha256="5270e4385e6aaaa03b40fe2164e303138d008dae4ace4fac13ad908e17c7ecf8" ext=".xml">materials/standard xtals/Cubic Zirconia.xml</file>
