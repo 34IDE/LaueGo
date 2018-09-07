@@ -3744,15 +3744,15 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	unit = StringByKey("unit", XMLattibutes2KeyList("c",cell),"=")
 	xtal.c *= ConvertUnits2meters(unit,defaultLen=1e-10)*1e9
 
-
-
 	xtal.alpha = str2num(XMLtagContents("alpha",cell))
-	xtal.alpha *= ConvertUnits2meters(unit,defaultLen=1e-10)*1e9
-
-
+	unit = StringByKey("unit", XMLattibutes2KeyList("alpha",cell),"=")
+	xtal.alpha = ConvertAngleUnits(xtal.alpha, unit, "degree", defaultUnit="degree")
 	xtal.beta = str2num(XMLtagContents("beta",cell))
+	unit = StringByKey("unit", XMLattibutes2KeyList("beta",cell),"=")
+	xtal.beta = ConvertAngleUnits(xtal.beta, unit, "degree", defaultUnit="degree")
 	xtal.gam = str2num(XMLtagContents("gamma",cell))
-
+	unit = StringByKey("unit", XMLattibutes2KeyList("gamma",cell),"=")
+	xtal.gam = ConvertAngleUnits(xtal.gam, unit, "degree", defaultUnit="degree")
 
 	xtal.alphaT = str2num(XMLtagContents("alphaT",cell))
 	Variable Temperature = str2num(XMLtagContents("temperature",cell))
