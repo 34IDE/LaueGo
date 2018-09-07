@@ -12,8 +12,21 @@
 \f1 <!-- Comment Text -->\
 The "//" comments that are used here are INVALID, and must not appear in the xml file. They are only here for explanation.
 \f0 \
+\
 The ONLY required tags are:
-\f1  <cif>, <chemical_name_common>, <space_group_IT_number>, <cell>, <a>, <b>, <c>, <alpha>, <beta>, <gamma>
+\f1  <cif>, <chemical_name_common>, <cell>, <a>, <b>, <c>, <alpha>, <beta>, <gamma>
+\f0 \
+	In version 2, the 
+\f1 <space_group> with one or more of \{
+\f0 <id>, <H-M>, <Hall>, <
+\f1 IT_number>, or 
+\f0 <symops>\} 
+\f1 is required
+\f0 \
+	In version 1, the <
+\f1 space_group_IT_number> or 
+\f0 <
+\f1 space_group_id>
 \f0 \
 \
 In cif version 2, added dim=3 (or dim=2) attribute, to allow for 2D lattices, default is dim=3\
@@ -26,12 +39,30 @@ The
 Any 
 \f1 <atom_site>
 \f0 , must contain at lease  
-\f1 <label>, <symbol>, 
-\f0 and  <
-\f1 fract> or 
-\f0 <
-\f1 fract_xyz> or (<fract_x>, <fract_y>, and <fract_z>)\
-Note, <fract> is used because if dim==2, then there is only x,y, not x,y,z.\
+\f1 <label>
+\f0\fs22 , 
+\f1\fs24 <symbol>
+\f0\fs22 , and  
+\fs24 <
+\f1 fract>
+\f0\fs22  or 
+\fs24 <
+\f1 fract_xyz>
+\f0\fs22  or 
+\f1\fs24 (<fract_x>
+\f0\fs22 , 
+\f1\fs24 <fract_y>
+\f0\fs22 , and 
+\f1\fs24 <fract_z>)\
+
+\f0\fs22 Note, 
+\f1\fs24 <fract>
+\f0\fs22  is used because if dim==2, then there is only 
+\f1\fs24 <fract>x y</fract>
+\f0\fs22   
+\fs32 not
+\fs22   
+\f1\fs24 <fract>x y z</fract>\
 \
 A
 \f0 ll other tags in  the 
@@ -41,16 +72,52 @@ A
 \f0 \
 \
 \
-NOTE:\
-	To determine the symmetry, the best thing is to use is 
-\f1 <space_group_id>\
-	If you use <space_group_IT_number>, then you leave an ambiguity (space group 15 has 18 different variants)
-\f0 \
+allowed length units:	\{ \'c5, m, inch, ft, yard, mile, nauticalmile, micron, parsec, lightYear, au, BohrRadius, fermi, mil, CuXU, MoXU, XU, Planck,\
+				fathom, chain, rod, league, furlong, cubit, point, pica, Li \}\
+allowed temperature units are:	C,K,F,R,Planck\
+allowed angle units are:	deg, \'b0, rad, circle, arcmin, arcsec, grad, cos\
+and common abbreviations are also allowed, e.g.  deg == \{deg, degree, degrees, \'b0\},  arcmin == \{min, arcmin, arc minute, arcminute, '\}, etc.\
 
-\f1 	<H-M> is Hermann-Mauguin symbol, that can also uniquely id the space group, but is sometimes ambiguous.\
-
-\f0 	It should also be possible to figure out the symmetry from the symmetry operations.\
+\b Also
+\b0 , for all units you can use 
+\b SI 
+\b0 prefixes  \{d, c, m, \'b5, n, p, f, a, z, y,   H, K, M, G, T, P, E, Z, Y \}\
+	e.g. 'meter' implies you can also use \'b5m, nm, pm, fm, ...., and ypc ( = 10^-24 parsec = 30.8568 nm)\
 \
+\
+\
+NOTE:\
+	To determine the symmetry, the best thing is to use is <id>  (called 
+\f1 <space_group_id>
+\f0\fs22  in version 1)
+\f1\fs24 \
+
+\f0\fs22 	If you use 
+\f1\fs24 <space_group_IT_number>
+\f0\fs22 , then you leave an ambiguity (space group 15 has 18 different variants)\
+
+\f1\fs24 	<H-M>
+\f0\fs22  is Hermann-Mauguin symbol, that can also uniquely 
+\f1\fs24 id
+\f0\fs22  the space group, but is sometimes ambiguous.\
+
+\fs24 	It should also be possible to figure out the symmetry from the symmetry operations from a <
+\f1 symops>
+\f0  section\
+	<
+\f1 space_group_IT_number
+\f0 > is an integer in range [1-230]\
+	<id> and <
+\f1 space_group_id
+\f0 > are a string like "
+\f1 166:H"
+\f0  or 
+\f1 "227:1"
+\f0\fs22 	there are 530 possible 
+\f1\fs24 id
+\f0\fs22 's in or3D (17 in 2D)\
+
+\fs24 \
 \
 
 \f1 <?xml version="1.0" encoding="UTF-8" ?>
@@ -112,10 +179,17 @@ NOTE:\
 \f0 //	default units are Angstroms, this example shows pico-meters.
 \f1 \
 		<alpha>90</alpha>						
-\f0 // angles (degree)
+\f0 // angles (with optional units)
 \f1 \
-		<beta>90</beta>\
-		<gamma>90</gamma>\
+		<beta unit="deg">90</beta>				
+\f0 //   the units here are superfluous since degree is the default
+\f1 \
+		<gamma unit="mcos">0</gamma>				
+\f0 //   the unit here is cos(angle)*1000, so angle = acos(0) = 90\'b0
+\f1 \
+											
+\f0\fs22 //   e.g. unit="mcos", angle=2 --> acos(2/1000) --> 89.8854\'b0
+\f1\fs24 \
 		<temperature unit="C">20</temperature>		
 \f0 // OPTIONAL, temperature if known, and alphaT is the thermal expansion coefficient
 \f1 \
@@ -178,7 +252,7 @@ NOTE:\
 		<label>Cl001</label>\
 		<symbol>Cl</symbol>\
 		<fract>0.5 0.5 0.5</fract>\
-		<valence>-1</valence>						
+		<valence>-1</valence>					
 \f0 // OPTIONAL, valence, default is 0
 \f1 \
 		<WyckoffSymbol>b</WyckoffSymbol>\
