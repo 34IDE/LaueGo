@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.55
+#pragma version = 6.56
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -218,6 +218,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
 //	with version 6.54, fixed dSpacing(), was not using T properly
 //	with version 6.55, changed room temperaure from 22.5 --> 20
+//	with version 6.56, fixed error in copy_xtal56(), copy_xtal67(), copy_xtal78()
 
 
 //	Rhombohedral Transformation:
@@ -3742,9 +3743,17 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.c = str2num(XMLtagContents("c",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("c",cell),"=")
 	xtal.c *= ConvertUnits2meters(unit,defaultLen=1e-10)*1e9
+
 	xtal.alpha = str2num(XMLtagContents("alpha",cell))
+	unit = StringByKey("unit", XMLattibutes2KeyList("alpha",cell),"=")
+	xtal.alpha = ConvertAngleUnits(xtal.alpha, unit, "degree", defaultUnit="degree")
 	xtal.beta = str2num(XMLtagContents("beta",cell))
+	unit = StringByKey("unit", XMLattibutes2KeyList("beta",cell),"=")
+	xtal.beta = ConvertAngleUnits(xtal.beta, unit, "degree", defaultUnit="degree")
 	xtal.gam = str2num(XMLtagContents("gamma",cell))
+	unit = StringByKey("unit", XMLattibutes2KeyList("gamma",cell),"=")
+	xtal.gam = ConvertAngleUnits(xtal.gam, unit, "degree", defaultUnit="degree")
+
 	xtal.alphaT = str2num(XMLtagContents("alphaT",cell))
 	Variable Temperature = str2num(XMLtagContents("temperature",cell))
 	unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
@@ -8012,8 +8021,8 @@ Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal7 --> x
 		xtal8.atom[i] = xtal7.atom[i]							// was:  copy_atomType(xtal8.atom[i],xtal7.atom[i])
 	endfor
 
-	xtal8.Nbonds = xtal7.Nbonds
-	N = xtal8.Nbonds
+	N = min(xtal7.Nbonds, 2*STRUCTURE_ATOMS_MAX)
+	xtal8.Nbonds = N
 	for (i=0;i<N;i+=1)
 		xtal8.bond[i] = xtal7.bond[i]							// was:  copy_bondType(xtal8.bond[i],xtal7.bond[i])
 	endfor
@@ -8070,8 +8079,8 @@ Static Function copy_xtal67(xtal7,xtal6)		// copy a crystalStructure xtal6 --> x
 		xtal7.atom[i] = xtal6.atom[i]							// was:  copy_atomType(xtal7.atom[i],xtal6.atom[i])
 	endfor
 
-	xtal7.Nbonds = xtal6.Nbonds
-	N = xtal7.Nbonds
+	N = min(xtal6.Nbonds, 2*STRUCTURE_ATOMS_MAX)
+	xtal7.Nbonds = N
 	for (i=0;i<N;i+=1)
 		xtal7.bond[i] = xtal6.bond[i]							// was:  copy_bondType(xtal7.bond[i],xtal6.bond[i])
 	endfor
@@ -8128,8 +8137,8 @@ Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --
 		xtal6.atom[i] = xtal5.atom[i]							// was:  copy_atomType(xtal6.atom[i],xtal5.atom[i])
 	endfor
 
-	xtal6.Nbonds = xtal5.Nbonds
-	N = xtal6.Nbonds
+	N = min(xtal5.Nbonds, 2*STRUCTURE_ATOMS_MAX)
+	xtal6.Nbonds = N
 	for (i=0;i<N;i+=1)
 		xtal6.bond[i] = xtal5.bond[i]							// was:  copy_bondType(xtal6.bond[i],xtal5.bond[i])
 	endfor
