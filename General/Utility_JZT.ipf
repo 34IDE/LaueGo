@@ -6859,7 +6859,7 @@ End
 //	Function test_AngleUnits()
 //		Variable err = 0
 //	
-//		String ch, all="¡;deg;degree;degree;rad;grad;min;arcmin;sec;arcsec;\";';'';mcos;Cosine"
+//		String ch, all="¡;deg;degree;degree;rad;radian;grad;min;arcmin;';sec;arcsec;\";'';mcos;Cosine"
 //		Variable i
 //		for (i=0;i<ItemsInList(all);i+=1)
 //			ch = StringFromList(i,all)
@@ -6875,6 +6875,8 @@ End
 //		err += test_ConvertAngle(0.5,"mcos","degree", expected=89.9, explanation="intentional")
 //		err += test_ConvertAngle(0.0005,"cos", "degree", expected=89.9713521090498)
 //		err += test_ConvertAngle(0.5,"mcos","degree", expected=89.9713521090498)
+//		err += test_ConvertAngle(0.5,"mco","degree", expected=89.9713521090498)
+//		err += test_ConvertAngle(0.5,"mCosine","degree", expected=89.9713521090498)
 //	
 //		print " "
 //		err += test_ConvertAngle(0.01,"deg","cos")
@@ -6887,11 +6889,21 @@ End
 //		err += test_ConvertAngle(50,"mcos","deg")
 //		err += test_ConvertAngle(0.01,"mCosine","mdegree")
 //		err += test_ConvertAngle(89999.42704220486,"mdegree","mCosine")
+//		err += test_ConvertAngle(0,"co","mcir")
 //		print " "
 //		err += test_ConvertAngle(0.324,"M\"","deg")
 //		err += test_ConvertAngle(324,"k''","deg")
 //		err += test_ConvertAngle(5.4,"k'","deg")
+//		err += test_ConvertAngle(1,"arcsec","µrad")
+//		err += test_ConvertAngle(4.85,"µr","arcsec")
+//		err += test_ConvertAngle(1,"min","mrad")
+//		err += test_ConvertAngle(1,"min","mr")
+//		err += test_ConvertAngle(1,"min","r")
 //		print " "
+//		err += test_ConvertAngle(1, "deg^2", "min^2", expected=3600)
+//		err += test_ConvertAngle(1, "min^2", "sec^2", expected=3600)
+//		err += test_ConvertAngle(1, "min^-1", "deg^-1", expected=60)
+//		err += test_ConvertAngle(1, "sec^-2", "min^-2", expected=3600)
 //		err += test_ConvertAngle(.05,"s","deg", explanation="'s' is not an angular unit")
 //		if (err)
 //			print "\r  	*********** Finished with ERROR ! ***********"
@@ -6900,7 +6912,7 @@ End
 //		endif
 //		return err
 //	End
-//	//
+//
 //	Static Function test_ConvertAngle(valueIN, unitIN, unitOUT, [expected, explanation])
 //		Variable valueIN
 //		String unitIN, unitOUT
@@ -6932,6 +6944,19 @@ End
 //			printf "\r"
 //		endif
 //		return (strlen(explanation)<1)
+//	End
+//
+//	ThreadSafe Function endswith(str, ending, case)		// returns True if str ends with ending
+//		String str				// string to check
+//		String ending			// ending to find
+//		Variable case			// true=match case,  false, ignore case
+//	
+//		Variable i, Nstr=strlen(str), Nend=strlen(ending)
+//		if (Nend<1)
+//			return 1				// everything ends with nothing
+//		endif
+//		i = strsearch(str,ending,Inf,case?1:3)
+//		return i == (Nstr-Nend) && (i>=0)
 //	End
 
 //  ============================== End of Unit Conversions =============================  //
