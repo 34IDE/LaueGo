@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.68
+#pragma version = 4.69
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3678,6 +3678,9 @@ Function/C RangeOfValuesContainingFraction(wwIN,frac, [zero])	// this is a 1D ca
 	Duplicate/FREE wwIN, ww
 	Sort ww, ww
 	WaveStats/M=1/Q ww
+	if (V_npnts<2)
+		return cmplx(NaN,NaN)
+	endif
 	Redimension/N=(V_npnts) ww				// this is needed since wwIN may contain NaN
 
 	Variable N=DimSize(ww,0), xlo=NaN, xhi=NaN
