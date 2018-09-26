@@ -30,9 +30,10 @@
 		<valence>-4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
-	<citation doi="10.1016/0001-6160(72)90020-X">
+	<citation>
 		Y. Hirotsu, S. Nagakura,
 		Acta Metallurgica 20 (1972) pg. 645-655,
 		"Crystal structure and morphology of the carbide precipitated from martensitic high carbon steel during the first stage of tempering"
+		<doi>10.1016/0001-6160(72)90020-X</doi>
 	</citation>
 </cif>

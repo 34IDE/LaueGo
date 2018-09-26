@@ -42,14 +42,13 @@
 		<aniso_U_13>0.0003</aniso_U_13>
 		<aniso_U_23>0.0006</aniso_U_23>
 	</atom_site>
-	<citation>
+	<citation id="primary">
 		R.E. Newnham, Y.M. de Haan,
 		Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie 117 (1977), pg. 235 237
 		"Refinement of the Al2 O3-alpha, Ti2 O3, V2 O3 and Cr2 O3 structures"
 		icsd = 25778
-
-			and 
-
+	</citation>
+	<citation id="2">
 		A.S. Brown, M.A. Spackman, R.J. Hill, 
 		Acta Crystallographica. Section A: Foundations of Crystallography 49 (1993), pg. 513-527
 		"The electron distribution in corundum. A study of the utility of merging single-crystal and powder diffraction data"

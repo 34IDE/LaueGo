@@ -32,6 +32,15 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ca" n1="F">0.236538</bond_chemical>
 
-	<citation doi="10.1038/328606a0">R.W.G. Wyckoff, Crystal Structures 1 (1963) 239-444 "Fluorite structure"</citation>
-	<!--   also doi="10.1038/328606a0", Speziale S, Duffy T S, Physics and Chemistry of Minerals 29 (2002) 465-472,  a=0.54626	-->
+	<citation id="primary">
+		<doi>10.1038/328606a0</doi>
+		"Fluorite structure"
+		R.W.G. Wyckoff
+		Crystal Structures 1 (1963) 239-444
+	</citation>
+	<citation id="2">
+		<doi>10.1038/328606a0</doi>
+		S. Speziale, T.S. Duffy
+		Physics and Chemistry of Minerals 29 (2002) 465-472,  a=0.54626
+	</citation>
 </cif>

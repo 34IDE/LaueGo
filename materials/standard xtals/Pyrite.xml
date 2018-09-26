@@ -29,5 +29,9 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Fe" n1="S">0.22647</bond_chemical>
 	<bond_chemical unit="nm" n0="S" n1="S">0.21587</bond_chemical>
-	<citation doi="10.1103/PhysRevB.43.11926">M. Birkholz, S. Fiechter, A. Hartmann, and H. Tributsch, Phys. Rev. B 43, 11926 (1991)</citation>
+	<citation>
+		M. Birkholz, S. Fiechter, A. Hartmann, and H. Tributsch
+		Phys. Rev. B 43, 11926 (1991)
+		<doi>10.1103/PhysRevB.43.11926</doi>
+	</citation>
 </cif>

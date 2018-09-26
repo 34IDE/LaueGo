@@ -48,7 +48,8 @@
 		<valence>-2</valence>
 		<B_iso>2.3</B_iso>
 	</atom_site>
-	<citation doi="10.1021/ja800073m">
+	<citation>
+		<doi>10.1021/ja800073m</doi>
 		Y. Kamihara, T. Watanabe, M. Hirano, H. Hosono,
 		Journal of the American Chemical Society' 130 (2008) pg. 3296-3297
 		"Iron-based layered superconductor La [O(1-x) F(x)] Fe As (x = 0.05-0.12) with T(c) = 26 K"

@@ -21,8 +21,11 @@
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<DebyeTemperature unit="K">420</DebyeTemperature>
 	</atom_site>
-	<citation>Wyckoff R W G Second edition. Interscience Publishers, New York, New York, Crystal Structures (1963) 83;
-	R. R. Pawar, and V. T. Deshpande, Acta Crystallogr., 1968, 24A, 316.
-	http://www.webelements.com/titanium/crystal_structure.html;
+	<citation id="primary">
+		Wyckoff R W G Second edition. Interscience Publishers, New York, New York, Crystal Structures (1963) 83;
+	</citation>
+	<citation id="2">
+		R. R. Pawar, and V. T. Deshpande, Acta Crystallogr., 1968, 24A, 316.
+		http://www.webelements.com/titanium/crystal_structure.html;
 	</citation>
 </cif>

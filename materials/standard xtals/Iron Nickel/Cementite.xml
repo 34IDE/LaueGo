@@ -34,9 +34,10 @@
 		<fract>0.8764 0.25 0.4426</fract>
 		<U_iso>0.0114</U_iso>
 	</atom_site>
-	<citation doi="10.1016/0022-4596(84)90340-2">
+	<citation>
 		D. Fruchart, P. Chaudouet, R. Fruchart, A. Rouault, J.P. Senateur,
 		Journal of Solid State Chemistry, 51 (1984), pg. 246-252
 		"Etudes structurales de composes de type cementite: effet de l'hydrogene sur Fe3C suivi par diffraction neutronique. Spectrometrie Mossbauer sur FeCo2B et  Co3B dopes au 57Fe"
+		<doi>10.1016/0022-4596(84)90340-2</doi>
 	</citation>
 </cif>

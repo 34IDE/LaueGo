@@ -37,7 +37,8 @@
 		<aniso_U_13>0.00052</aniso_U_13>
 		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
-	<citation doi="10.1107/S0108768194002284">
+	<citation>
+		<doi>10.1107/S0108768194002284</doi>
 		E.N. Maslen, V.A. Streltsov, N.R. Streltsova, N. Ishizawa,
 		Acta Crystallographica B50 (1994) 435-441
 		"Synchrotron X-ray study of the electron density in α-Fe2O3"
