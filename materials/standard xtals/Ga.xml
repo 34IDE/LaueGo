@@ -24,8 +24,11 @@
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ga" n1="Ga">0.275</bond_chemical>
-	<citation> Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie (-144,1977) ; 
-		1962 117 293 300 ZEKGAX, Sharma, B.D.; Donohue, J.
+
+	<citation>
+		Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie (-144,1977)
+		vol 117 (1962) pg. 293-300
+		B.D. Sharma, J. Donohue
 	</citation>
 </cif>
 

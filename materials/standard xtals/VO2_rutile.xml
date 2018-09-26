@@ -31,5 +31,6 @@
 		<fract_z>0</fract_z>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
-	<citation>Physical Review, Series 3. B, (1974) V10, 490-495;Phase Transition (1992) V38, 127-220;</citation>
+	<citation id="primary">Physical Review, Series 3. B, (1974) V10, 490-495</citation>
+	<citation>Phase Transition (1992) V38, 127-220</citation>
 </cif>
