@@ -20,6 +20,6 @@
 		<symbol>Ni</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<DebyeTemperature unit="K">450</DebyeTemperature>
+		<DebyeTemperature unit="K">345</DebyeTemperature>
 	</atom_site>
 </cif>
