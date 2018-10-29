@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.97
+#pragma version = 4.98
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -29,6 +29,7 @@ Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your M
 //	with version 4.18, changed default name of FullPeakList to something like FullPeakListOrange
 //	with version 4.60, changed how pick_keV_calc() works
 //	with version 4.88, changed number of columns in FullPeakList from 11 to 12
+//	with version 4.98, added support of showing hkl on an image from a user supplied reciprocal lattice
 
 //	#define USE_ENERGY_STRAIN_REFINE		// paste this line (uncommented) in your Procedure Window to use newer strain refinement
 
@@ -951,10 +952,23 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 		s.doSetCursor= 0
 	endif
 
-	Variable i,N, useMissing=0
+	Variable i,N, useMissing=0, useUser=0
 	if (useFitted)							// check if useFitted also include Missing
-		Wave missing = TraceNameToWaveRef(win,StringFromLIst(0,TraceNamesInClass("MissingPeakList*",win)))
+		String tname = StringFromLIst(0,TraceNamesInClass("MissingPeakList*",win))
+		if (strlen(tname))
+			Wave missing = TraceNameToWaveRef(win,tname)
+		else
+			Wave missing = $""
+		endif
 		useMissing = WaveExists(missing)
+
+		tname = StringFromLIst(0,TraceNamesInClass("UserRecipPeakList*",win))
+		if (strlen(tname))
+			Wave userHKL = TraceNameToWaveRef(win,tname)
+		else
+			Wave userHKL = $""
+		endif
+		useUser = WaveExists(userHKL)
 	endif
 
 	String imageName = StringFromList(0,ImageNameList(win,";")), wnote=""
@@ -1038,7 +1052,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	Variable useDistortion = NumVarOrDefault("root:Packages:geometry:useDistortion",USE_DISTORTION_DEFAULT)
 	Variable wIndex=NaN
 
-	if (useFitted || useMouse)				// examining fitted peaks (or mouse position)
+	if (useFitted || useMouse)				// examining fitted peaks (or mouse position), also includes missing & userHKL
 		if (!WaveExists(FullPeakList))
 			Wave FullPeakList=$(StringByKey("FullPeakList",GetUserData("","","FitPeaks"),"="))
 			FullPeakName = NameOfWave(FullPeakList)
@@ -1052,7 +1066,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 		Variable fwx=NaN, fwy=NaN, xc=NaN
 		if (useFitted)
-			Variable dmiss=Inf, imiss = -1
+			Variable dmiss=Inf, imiss=-1, duser=Inf, iuser=-1
 			if (useMissing)
 				N = DimSize(missing,0)
 				Make/N=2/FREE mxmy={mx,my}								// location from mouse
@@ -1064,8 +1078,19 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				wIndex = imiss
 				TraceName = NameOfWave(missing)
 			endif
+			if (useUser)
+				N = DimSize(userHKL,0)
+				Make/N=2/FREE mxmy={mx,my}								// location from mouse
+				Make/N=(N,2)/FREE pxpy = userHKL[p][3+q] - mxmy[q]
+				MatrixOP/FREE dpxpy2 = sumRows(magSqr(pxpy))		// dist^2 from mxmy to all fitted peaks
+				WaveStats/M=1/Q dpxpy2
+				iuser = V_minLoc
+				duser = V_min
+				wIndex = iuser
+				TraceName = NameOfWave(userHKL)
+			endif
 			dist2=Inf
-			m=-1								// find the indexed peak closest to the mouse-click
+			m=-1								// find the fitted peak closest to the mouse-click
 			N = DimSize(FullPeakList,0)
 			Make/N=2/FREE mxmy={mx,my}								// location from mouse
 			Make/N=(N,2)/FREE pxpy = FullPeakList[p][q] - mxmy[q]
@@ -1079,14 +1104,22 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				return 1						// no fitted or missing peak found
 			endif
 
-			if (dmiss<dist2)				// use missing peak
+			if (duser<dmiss && duser<dist2)	// use userHKL
 				useFitted = 0			
-				px = missing[imiss][3]	// missing peaks, already binned
+				useMissing = 0			
+				px = userHKL[iuser][3]			// user peaks, already binned
+				py = userHKL[iuser][4]
+				keV = userHKL[iuser][5]
+			elseif (dmiss<dist2)					// use missing peak
+				useFitted = 0			
+				useUser = 0
+				px = missing[imiss][3]			// missing peaks, already binned
 				py = missing[imiss][4]
 				keV = missing[imiss][5]
-			else
+			else										// use fitted peaks
 				useMissing = 0
-				px = FullPeakList[m][0]// binned peaks
+				useUser = 0
+				px = FullPeakList[m][0]			// binned peaks
 				py = FullPeakList[m][1]
 				fwx=FullPeakList[m][4]
 				fwy=FullPeakList[m][5]
@@ -1138,6 +1171,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				tagStr +="\r pattern "+num2istr(ip)
 			endif
 			tagStr +="\\F]0"
+		elseif (useUser)
+			hklStr = hkl2str(userHKL[iuser][0],userHKL[iuser][1],userHKL[iuser][2], bar=1)
+			sprintf tagStr,"\\Zr090User Recip peak: (%.2f, %.2f)\r(%s) at %.4f keV,   #%d\r%s\\F]0",px,py,hklStr,keV,iuser,NameOfWave(userHKL)
 		elseif (useMouse)
 			if (useDistortion)
 				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'°\\F]0,     distort=%.2f px",px,py,theta*180/PI,cabs(pz)
@@ -1153,7 +1189,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			tagStr += str
 		endif
 
-		if (WaveExists(FullPeakIndexed) && !useMissing)	// an indexation exists, so try to add some hkl info too
+		if (WaveExists(FullPeakIndexed) && !useMissing && !useUser)	// an indexation exists, so try to add some hkl info too
 			wnote = note(FullPeakIndexed)
 			Wave recip = str2recip(StringByKey("recip_lattice"+num2istr(ip),wnote,"="))
 			if (WaveExists(recip))
@@ -1731,6 +1767,292 @@ Static Function setXtalFromNote(wnote,xtal)
 	xtal.N = N
 	LatticeSym#setDirectRecip(xtal)	
 	return 0
+End
+
+
+
+
+
+// supprot for adding hkl from a user supplied reicprocal lattice
+Function RemoveUserRecipFromGraph(gName)
+	String gName					// name of graph to use
+	if (strlen(gName)<1)
+		gName=WinName(0,1)				// name of top graph
+	endif
+	String traceName, traceList = TraceNameList(gName,";",1)
+	Variable i, N = ItemsInLIst(traceList)
+	for (i=0;i<N;i+=1)
+		traceName = StringFromLIst(i,traceList)
+		if (WaveInClass(TraceNameToWaveRef(gName,traceName),"UserRecipPeakList*"))
+			RemoveFromGraph/W=$gName $traceName
+		endif
+	endfor
+End
+//
+Function AddReflectionsFromUserRecip(recip,[keVmax,detector])	// calculate reflections based on user supplied recip[3][3]
+	Wave recip										// a 3x3 matrix of the reciprocal lattice
+	Variable keVmax
+	Variable detector								// defaults to 0, probably never use this
+	keVmax = ParamIsDefault(keVmax) || keVmax<=0 ? NaN : keVmax
+	detector = ParamIsDefault(detector) ? NaN : detector
+
+	if (!WaveExists(recip) || WaveDims(recip)!=2 || DimSize(recip,0)!=3 || DimSize(recip,1)!=3)
+		String rname, rlist=WaveList("*",";", "DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
+		if (ItemsInList(rlist)<1)
+			return 1
+		elseif (ItemsInList(rlist)==1)
+			Wave recip = $StringFromList(0,rlist)
+		else
+			Prompt rname, "Pick reciprocal lattice", popup, WaveList("*",";", "DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
+			DoPrompt "Reciprocal Lattice", rname
+			if (V_flag)
+				return 1
+			endif
+			Wave recip = $rname
+		endif
+	endif
+	if (!WaveExists(recip) || WaveDims(recip)!=2 || DimSize(recip,0)!=3 || DimSize(recip,1)!=3)
+		return 1
+	endif
+
+	String gName=WinName(0,1)					// name of top graph
+	Wave image = ImageNameToWaveRef(gName, StringFromLIst(0,ImageNameList(gName,";")) )
+	if (!WaveExists(image))
+		return 1
+	endif
+	String wnote = note(image)
+
+	if (!(detector>=0))
+		STRUCT microGeometry geo
+		if (FillGeometryStructDefault(geo, alert=1))	//fill the geometry structure with test values
+			return 1
+		endif
+		detector = detectorNumFromID(geo, StringByKey("detectorID",wnote,"="))
+	endif
+	detector = detector>=0 ? detector : 0
+
+	STRUCT ROIstructure roi
+	roi.startx = NumberByKey("startx",wnote,"=")
+	roi.endx = NumberByKey("endx",wnote,"=")
+	roi.groupx = NumberByKey("groupx",wnote,"=")
+	roi.starty = NumberByKey("starty",wnote,"=")
+	roi.endy = NumberByKey("endy",wnote,"=")
+	roi.groupy = NumberByKey("groupy",wnote,"=")
+	if (numtype(roi.startx + roi.endx + roi.groupx + roi.starty + roi.endy + roi.groupy))
+		return 1
+	endif
+
+	if (numtype(keVmax) || keVmax<=0)						// valid keVmax was not supplied, check FullPeakIndexed[][]
+		Wave FullPeakIndexed = $StringByKey("FullPeakIndexed",GetUserData(gName,"","Indexing"),"=")
+		if (WaveExists(FullPeakIndexed))
+			keVmax = NumberByKey("keVmaxTest",note(FullPeakIndexed),"=")
+		endif
+	endif
+	if (numtype(keVmax) || keVmax<=0)						// still no valid keVmax, ask user
+		keVmax = 25
+		Prompt keVmax, "Upper cut-off energy (keV)"
+		DoPrompt "cut-off energy", keVmax
+		if (V_flag)
+			return 1
+		endif
+	endif
+	keVmax = numtype(keVmax) ? 30 : keVmax
+
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))
+		DoAlert 0, "ERROR AddReflectionsFromUserRecip()\r   no lattice structure found,\r   did you forget to set it?"
+		return 1
+	endif
+	xtal.as0 = recip[0][0];		xtal.bs0 = recip[0][1];		xtal.cs0 = recip[0][2]				// put actual recip into xtal
+	xtal.as1 = recip[1][0];		xtal.bs1 = recip[1][1];		xtal.cs1 = recip[1][2]
+	xtal.as2 = recip[2][0];		xtal.bs2 = recip[2][1];		xtal.cs2 = recip[2][2]
+
+	String mName = "hkl_" + NameOfWave(recip) + SelectString(detector, "", "_"+num2istr(detector))
+	mName = CleanupName(mName,0)
+	Wave userHKL = CalcReflections(roi,xtal,keVmax,detector=detector, name=mName)
+	if (!WaveExists(userHKL))
+		return 1
+	endif
+	if (strlen(GetRTStackInfo(2))<1 || WhichListItem("hklTagsPopMenuProc",GetRTStackInfo(0))>=0)
+		printf "found %d reflections from %s,  created wave: \"%s\"\r",DimSize(userHKL,0),NameOfWave(recip), mName
+	endif
+
+	if (WhichListItem(NameOfWave(userHKL),TraceNameList(gName,";",1))<0)		// userHKL not on graph
+		AppendToGraph/W=$gName userHKL[*][4] vs userHKL[*][3]
+		ModifyGraph mode($mName)=3, marker($mName)=7, rgb($mName)=(0,52000,0)
+	endif
+
+	return 0
+End
+//
+Static Function/WAVE CalcReflections(roi,xtal,keVmax,[detector,depth,name])	// calculate the missing reflections
+	STRUCT ROIstructure &roi
+	STRUCT crystalStructure &xtal
+	Variable keVmax
+	Variable detector									// defaults to 0, probably never use this
+	Variable depth
+	String name											// name to use for output wave, may be empty
+	detector = ParamIsDefault(detector) ? 0 : round(detector)
+	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+	name = SelectString(ParamIsDefault(name) , name, "")
+	Variable is4500s=NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,0)&2
+	Variable keVmin = is4500s ? 3 : 7
+	if (!(keVmin<keVmax))
+		return $""
+	endif
+
+	Wave recip = recipFrom_xtal(xtal)				// returns a FREE wave with reciprocal lattice
+	STRUCT microGeometry g	
+	FillGeometryStructDefault(g)					//fill the geometry structure with current values
+
+	Variable xlo, xhi,ylo,yhi
+	xlo = (roi.startx-(roi.startx-FIRST_PIXEL)-(roi.groupx-1)/2)/roi.groupx		// get range of this ROI in binned pixels
+	ylo = (roi.starty-(roi.starty-FIRST_PIXEL)-(roi.groupy-1)/2)/roi.groupy
+	xhi = (roi.endx-(roi.startx-FIRST_PIXEL)-(roi.groupx-1)/2)/roi.groupx
+	yhi = (roi.endy-(roi.starty-FIRST_PIXEL)-(roi.groupy-1)/2)/roi.groupy
+
+	// find Qvector to center of roi, and max cone angle
+	Variable px=(roi.startx+roi.endx)/2, py=(roi.starty+roi.endy)/2
+	Make/N=3/D/FREE q00, qC, q00,q10,q01,q11			// q vectors to center of detector and each of its corners
+	pixel2q(g.d[detector],px,py,qC,depth=depth)							// find q vectors to center and all 4 corners too
+	pixel2q(g.d[detector],roi.startx,roi.starty,q00,depth=depth)
+	pixel2q(g.d[detector],roi.endx,roi.starty,q10,depth=depth)
+	pixel2q(g.d[detector],roi.startx,roi.endy,q01,depth=depth)
+	pixel2q(g.d[detector],roi.endx,roi.endy,q11,depth=depth)
+
+	Variable hlo,hhi, klo,khi, llo,lhi, Qmag
+	Qmag = 4*PI*keVMin/hc * (-qC[2])					// since ki={0,0,1}, MatrixDot(ki,qC) = qC[2]
+	MatrixOP/FREE/O hkl = (Inv(recip) x qC) * Qmag
+	hlo = hkl[0]	;	klo = hkl[1]	;	llo = hkl[2]
+	hhi = hlo		;	khi = klo		;	lhi = llo
+	Qmag = 4*PI*keVMax/hc * (-qC[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x qC) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+
+	Qmag = 4*PI*keVMin/hc * (-q00[2])					// since ki={0,0,1}, MatrixDot(ki,q00) = q00[2]
+	MatrixOP/FREE/O hkl = (Inv(recip) x q00) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+	Qmag = 4*PI*keVMax/hc * (-q00[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q00) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+
+	Qmag = 4*PI*keVMin/hc * (-q10[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q10) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+	Qmag = 4*PI*keVMax/hc * (-q10[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q10) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+
+	Qmag = 4*PI*keVMin/hc * (-q01[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q01) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+	Qmag = 4*PI*keVMax/hc * (-q01[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q01) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+
+	Qmag = 4*PI*keVMin/hc * (-q11[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q11) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+	Qmag = 4*PI*keVMax/hc * (-q11[2])
+	MatrixOP/FREE/O hkl = (Inv(recip) x q11) * Qmag
+	hlo = min(hkl[0],hlo)	;	klo = min(hkl[1],klo)	;	llo = min(hkl[2],llo)
+	hhi = max(hkl[0],hhi)	;	khi = max(hkl[1],khi)	;	lhi = max(hkl[2],lhi)
+
+	hlo=floor(hlo)			;	hhi = ceil(hhi)
+	klo=floor(klo)			;	khi = ceil(khi)
+	llo=floor(llo)			;	lhi = ceil(lhi)
+
+	Variable m, Nm=100
+
+	if (strlen(name)<1)
+		name = "hkl_"+num2istr(detector)
+	endif
+	Make/N=(Nm,6)/O $name=NaN
+	Wave userHKL=$name
+	SetScale d,0,1,"pixel",userHKL
+	SetDimLabel 1,0,H,userHKL		;	SetDimLabel 1,1,K,userHKL		;	SetDimLabel 1,2,L,userHKL
+	SetDimLabel 1,3,px,userHKL		;	SetDimLabel 1,4,py,userHKL
+	SetDimLabel 1,5,keV,userHKL
+
+	String str, noteStr=ReplaceStringByKey("waveClass","","UserRecipPeakList","=")
+	sprintf str,"%d,%d",hlo,hhi
+	noteStr=ReplaceStringByKey("Hrange",noteStr,str,"=")
+	sprintf str,"%d,%d",klo,khi
+	noteStr=ReplaceStringByKey("Krange",noteStr,str,"=")
+	sprintf str,"%d,%d",llo,lhi
+	noteStr=ReplaceStringByKey("Lrange",noteStr,str,"=")
+	noteStr=ReplaceNumberByKey("keVmin",noteStr,keVmin,"=")
+	noteStr=ReplaceNumberByKey("keVmax",noteStr,keVmax,"=")
+	if (!ParamIsDefault(detector))
+		noteStr=ReplaceNumberByKey("detectorNum",noteStr,detector,"=")
+	endif
+	if (numtype(depth)==0)
+		noteStr=ReplaceNumberByKey("depth",noteStr,depth,"=")
+	endif
+	str = ReplaceString(";",xtal.desc, "_")
+	str = ReplaceString("=",xtal.desc, "_")
+	noteStr=ReplaceStringByKey("xtalDesc", noteStr, str,"=")
+	noteStr=ReplaceStringByKey("recip", noteStr, encodeMatAsStr(recip),"=")
+	Note/K userHKL, noteStr
+
+	Make/N=3/FREE/D hkli,hklt
+	Variable/C pz
+	Variable h,k,l,  keV, theta
+	Variable i
+	for (l=llo; l<=lhi; l+=1)										// loop symmetrically outward from (h0,k0,l0)
+		for (k=klo; k<=khi; k+=1)
+			for (h=hlo; h<=hhi; h+=1)
+				hklt = {h,k,l}
+				MatrixOP/FREE/O qvec = recip x hklt				// find point on detector
+				Qmag = norm(qvec)
+				pz = q2pixel(g.d[detector],qvec)	
+				px = (real(pz)-(roi.startx-FIRST_PIXEL)-(roi.groupx-1)/2)/roi.groupx	// binned pixels
+				py = (imag(pz)-(roi.starty-FIRST_PIXEL)-(roi.groupy-1)/2)/roi.groupy
+				if (!(xlo<px && px<xhi && ylo<py && py<yhi))	// must land on detector
+					continue
+				endif
+				theta = pixel2q(g.d[detector],real(pz),imag(pz),qvec,depth=depth)	// get theta to calc energy
+				keV = Qmag * hc / (4*PI*sin(theta))				// energy(keV)
+				if (!(keVmin<keV && keV<keVmax))
+					continue
+				endif
+				if (!allowedHKL(h,k,l,xtal))						// reject forbidden reflections
+					continue
+				endif
+
+				// check for duplicates
+				for (i=0;i<m;i+=1)
+					if ((abs(px-userHKL[i][3])+abs(py-userHKL[i][4]))<1)
+						break
+					endif
+				endfor
+				if (i<m)
+					continue												// skip duplicate location
+				endif
+
+				if (m>=Nm)												// extend wave if necessary
+					Nm += 100
+					Redimension/N=(Nm,-1) userHKL
+				endif
+				userHKL[m][0,2] = hklt[q]
+				userHKL[m][3] = px
+				userHKL[m][4] = py
+				userHKL[m][5] =keV										// energy(keV)
+				m += 1
+			endfor
+		endfor
+	endfor
+	Nm = m
+	Redimension/N=(Nm,-1) userHKL
+	return userHKL
 End
 
 
@@ -4913,6 +5235,33 @@ Function TableMissingPeakList(ww)
 	DisplayTableOfWave(ww)
 End
 
+Function TableUserRecipPeaks(ww)
+	Wave ww
+	if (!WaveExists(ww))
+		String list = reverseList(WaveListClass("UserRecipPeakList*","*",""))
+		Variable i = ItemsInLIst(list)
+		if (i<1)
+			DoAlert 0, "No waves of this type in current folder"
+			return 1
+		elseif (i==1)
+			Wave ww = $StringFromList(0,list)
+		else
+			String wName = StringFromList(i-1,list)
+			Prompt wName, "Wave with list of User hkl peaks",popup,list
+			DoPrompt "User hkl list",wName
+			if (V_flag)
+				return 1
+			endif			
+			Wave ww = $wName
+		endif
+		if (!WaveExists(ww))
+			DoAlert 0, "No waves of name "+wName
+			return 1
+		endif
+	endif
+	DisplayTableOfWave(ww)
+End
+
 
 
 Function/T MakeMeasured_hkl_EnergiesWave(N,type)
@@ -7572,7 +7921,9 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 	PopupMenu popuphklTags,help={"re-draw or clear the hkl tags from a plot"}
 	PopupMenu popuphklTags,fSize=14
 	PopupMenu popuphklTags,mode=0,value= #"\"Re-Draw hkl tags;Clear hkl tags off Graph;Add Missing Peaks;Remove Missing Peaks;Rotation Between Orientations...;\""
-
+	if (strlen(WaveList("*",";", "DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3"))>1)
+		PopupMenu popuphklTags,value= #"\"Re-Draw hkl tags;Clear hkl tags off Graph;Add Missing Peaks;Remove Missing Peaks;Rotation Between Orientations...;Add Peaks from a user recip;Remove All Peaks from user recips;\""
+	endif
 	Button buttonReportIndex,pos={130,125},size={90,20},proc=IndexButtonProc,title="Report"
 	Button buttonReportIndex,help={"if the top window is an images showing the hkl's, this makes a layout with reflections for printing"}
 
@@ -7597,6 +7948,9 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 	PopupMenu popupTables,pos={62,240+30},size={66,20},proc=TablesPopMenuProc,title="Display Tables..."
 	PopupMenu popupTables,help={"Show table of identified peak positions indexed peaks, or the peaks for strain refinement"}
 	PopupMenu popupTables,fSize=14,mode=0,value= #"\"Fitted Peaks;Indexed Peaks;Strain Peaks;Missing Peaks;Measured Energies...\""
+	if (strlen(WaveListClass("UserRecipPeakList","*","")))
+		PopupMenu popupTables,value= #"\"Fitted Peaks;Indexed Peaks;Strain Peaks;Missing Peaks;Measured Energies...;Peaks from User recip\""
+	endif
 
 	Variable offset = 0
 	if (exists("Load3dRecipLatticesFileXML")==6)
@@ -8006,6 +8360,10 @@ Function hklTagsPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 		RemoveMissingPeaksFromGraph("")
 	elseif (stringmatch(popStr,"Rotation Between Orientations..."))
 		RotationBetweenTwoIndexations($"",NaN,$"",NaN)
+	elseif (stringmatch(popStr,"Add Peaks from a user recip"))
+		AddReflectionsFromUserRecip($"")
+	elseif (stringmatch(popStr,"Remove All Peaks from user recips"))
+		RemoveUserRecipFromGraph("")
 	endif
 	Indexing#EnableDisableIndexControls(GetUserData("microPanel","","IndexPanelName"))
 End
@@ -8042,6 +8400,8 @@ Function TablesPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 		TableMissingPeakList($"")
 	elseif (stringmatch(popStr,"Measured Energies*"))
 		MakeMeasured_hkl_EnergiesWave(NaN,"")
+	elseif (stringmatch(popStr,"Peaks from User recip"))
+		TableUserRecipPeaks($"")
 	endif
 End
 //
