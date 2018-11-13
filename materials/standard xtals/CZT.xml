@@ -34,12 +34,12 @@
 	</atom_site>
 	<atom_site>
 		<label>Te</label>
-		<symbol>S</symbol>
+		<symbol>Te</symbol>
 		<fract>0.25 0.25 0.25</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-	<bond_chemical unit="nm" n0="Zn" n1="S">0.23423</bond_chemical>
+	<bond_chemical unit="nm" n0="Zn" n1="Te">0.23423</bond_chemical>
 	<citation>
 		Fuju Yu, Sanbao Xu, Shuming Zhang,
 		Bandaoti Xuebao 8 (1987) 548-550
