@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.57
+#pragma version = 2.58
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -16,6 +16,7 @@
 // version 2.51 changed all special Mac character, should print better with Windows & Igor7
 // version 2.52 moved defn. of Gmu & PLUSMINUS to Utility_JZT.ipf
 // version 2.56 Fixed bug in Fill_Q_Positions(), it now recalculates sinTheta array when the depth changes
+//	version 2.58 fixed printing values with errors in textQ_fromWnote()
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -2849,20 +2850,23 @@ Static Function/S textQ_fromWnote(wnote)
 	Variable fwhmErr = NumberByKey("fwhmErr",wnote,"=")
 	Variable strainErr = NumberByKey("strainErr",wnote,"=")
 	if (numtype(QcErr)==0)
-		sprintf str, "Q\\Bc\\M = %g%s%.2g (nm\\S-1\\M)",Qc,PLUSMINUS,QcErr
+//		sprintf str, "Q\\Bc\\M = %g%s%.2g (nm\\S-1\\M)",Qc,PLUSMINUS,QcErr
+		sprintf str, "Q\\Bc\\M = %s (nm\\S-1\\M)",ValErrStr(Qc,QcErr)
 	else
 		sprintf str, "Q\\Bc\\M = %g (nm\\S-1\\M)",Qc
 	endif
 	textQ = str
 	if (numtype(fwhmErr)==0)
-		sprintf str, "\rFWHM = %.2g%s%.1g",fwhm,PLUSMINUS,fwhmErr
+//		sprintf str, "\rFWHM = %.2g%s%.1g",fwhm,PLUSMINUS,fwhmErr
+		sprintf str, "\rFWHM = "+ValErrStr(fwhm,fwhmErr)
 	else
 		sprintf str, "\rFWHM = %.2g",fwhm
 	endif
 	textQ += str
 	if (numtype(strain)==0 && numtype(strainErr)==0)
 //		sprintf str,"\rstrain = %.1e %s%.1e",strain,PLUSMINUS,strainErr
-		sprintf str,"\r\\F'Symbol'e\\F]0 = %.1e %s%.1e",strain,PLUSMINUS,strainErr
+//		sprintf str,"\r\\F'Symbol'e\\F]0 = %.1e %s%.1e",strain,PLUSMINUS,strainErr
+		sprintf str,"\r\\F'Symbol'e\\F]0 = %s",ValErrStr(strain,strainErr)
 		textQ += str
 	elseif (numtype(strain)==0)
 //		sprintf str,"\rstrain = %.1e",strain

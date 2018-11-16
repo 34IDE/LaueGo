@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.69
+#pragma version = 4.70
 // #pragma hide = 1
 
 Menu "Graph"
@@ -31,12 +31,12 @@ End
 	// Igor 6 Windows
 	strConstant BULLET = "\7"					// Bullet, MS Alt-7
 	strConstant HORIZ_ELLIPSIS = "\0133"	// MS Alt-0133
-	strConstant DEGREESIGN = "\248"			// Degree sign, MS Alt-248
-	strConstant ARING = "\143"				// Angstrom sign, MS Alt-143
+	strConstant DEGREESIGN = "\370"			// Degree sign, MS Alt-248d=o370
+	strConstant ARING = "\217"				// Angstrom sign, MS Alt-143d=217o
 	strConstant BCHAR = "\257"				// EM DASH, MS Alt-257
-	strConstant GDELTA = "\916"				// MS Alt-241
-	strConstant PLUSMINUS = "\241"			// MS Alt-241, plus-minus sign
-	strConstant Gmu = "\230"					// MS Alt-230, Greek mu
+	strConstant GDELTA = "\916"				// ???
+	strConstant PLUSMINUS = "\361"			// MS Alt-241, 241d=361, oplus-minus sign
+	strConstant Gmu = "\346"					// MS Alt-230d=346o, Greek mu
 	strConstant INTEGRAL_SIGN = "\222B"	// Degree sign, MS Alt-222B
 #else
 	// Igor 6 Mac
@@ -3734,8 +3734,8 @@ End
 
 
 ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val ± err"
-	Variable val								// value
-	Variable err								// err in value
+	Variable val							// value
+	Variable err							// err in value
 	Variable sp								// optionally put spaces around the ±
 	sp = ParamIsDefault(sp) ? 0 : !(!sp)
 	sp = numtype(sp) ? 0 : sp
@@ -3746,7 +3746,7 @@ ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val ± err"
 	n = limit(n,1,15)
 
 	String vfmt, evfmt, str
-	vfmt = "%."+num2istr(n)+"g"			// format for value
+	vfmt = "%."+num2istr(n+1)+"g"				// format for value
 	String pm = SelectString(sp,PLUSMINUS," "+PLUSMINUS+" ")
 	evfmt = vfmt + pm + SelectString(n>=2,"%.1g","%.2g")
 
