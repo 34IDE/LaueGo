@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.70
+#pragma version = 4.71
 // #pragma hide = 1
 
 Menu "Graph"
@@ -133,6 +133,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
+//		num2strFull(n,[fmt,tol]), like num2str, but for integers, gives full precision (needed in the range processing)
 //		normalize(a), normalizes a if it is a vector or square matrix
 //		isPositiveInts(ww), returns 1 only if ww is positive ints, useful for determining if ww are counts
 //		arithmetic(expression), return value of expression as a real number, e.g. "1/3 + 5" --> 5.33333   or "sqrt(2)" --> 1.41421
@@ -988,16 +989,16 @@ ThreadSafe Function/S expandRange(range,sep)	// expand a string like "2-5,7,9-12
 		endif
 		
 		i1 = str2num(item0)                        // i1 is the start of the range
-		i = strsearch(item0,"-",strlen(num2str(i1)))		// position of "-" after first number
+		i = strsearch(item0,"-",strlen(num2strFull(i1)))		// position of "-" after first number
 		if (i>0)
 			i2 = str2num(item0[i+1,inf])  // i2 is the specified end of the range
 			i = i1
 			do
-				out += num2str(i)+sep
+				out += num2strFull(i)+sep
 				i += step
 			while (i<=i2)
 		else
-			out += num2str(i1)+sep
+			out += num2strFull(i1)+sep
 		endif
 		j += 1
 	while (j<N)
@@ -1054,13 +1055,13 @@ ThreadSafe Function/S compressRange(range,sep) 	// take a range like "1;2;3;4;5;
 				elseif(i==(N-1)) // if hit the last number, and there's no active subrange, then write down the last two numbers
 					writeend = 2
 				endif
-			else  // if the3 are not equally spaced
+			else  // if they are not equally spaced
 				if(in_subrange) // already started a subrange, then close it out
 					in_subrange = 0
 				elseif(aa==last) // no active subrange, but aa is the end of previous subrange, then write down the subrange
 					write_subrange = 1
 				else  // no active or recent subrange at all, then write down single item aa
-					comp += ","+num2str(aa) 
+					comp += ","+num2strFull(aa) 
 				endif
 				if(i == (N-1)) // if hitting the last number, then write down single elements cc or bb&cc
 					if(bb == last)  // if bb is the end of the recently-closed subrange
@@ -1073,20 +1074,20 @@ ThreadSafe Function/S compressRange(range,sep) 	// take a range like "1;2;3;4;5;
 			endif
 			if(write_subrange)
 				if(step ==1)
-					comp += ","+num2str(first)+"-"+num2str(last)
+					comp += ","+num2strFull(first)+"-"+num2strFull(last)
 				elseif (step==0)
-					comp += ","+num2str(first)
+					comp += ","+num2strFull(first)
 				else
-					comp += ","+num2str(first)+"-"+num2str(last)+":"+num2str(step)
+					comp += ","+num2strFull(first)+"-"+num2strFull(last)+":"+num2strFull(step)
 				endif
 				write_subrange = 0
 			endif
 			switch(writeend)
 				case 1:
-					comp += ","+num2str(cc) 
+					comp += ","+num2strFull(cc) 
 					break
 				case 2:
-					comp += ","+num2str(bb) + ","+num2str(cc) 
+					comp += ","+num2strFull(bb) + ","+num2strFull(cc) 
 			endswitch
 		endfor
 	endif
@@ -3755,6 +3756,21 @@ ThreadSafe Function/T ValErrStr(val,err,[sp])	// returns string  "val ± err"
 	else
 		sprintf str,vfmt,val					// no valid err, just show value
 	endif
+	return str
+End
+
+
+ThreadSafe Function/S num2strFull(n,[fmt,tol])// like num2str, but for integers, gives full precision
+	Variable n
+	String fmt										// format to use for non-integers
+	Variable tol									// tolerance for identifying integers
+	tol = ParamIsDefault(tol) || tol<=0 || numtype(tol) ? 1e-13 : tol
+	if (abs(mod(n,1))<tol)						// this is an integer
+		return num2istr(n)						// return integer format
+	endif
+	String str
+	fmt = SelectString(ParamIsDefault(fmt), fmt, "%.15g")
+	sprintf str, fmt, n							// real format
 	return str
 End
 
