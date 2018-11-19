@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.59
+#pragma version = 2.58
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -1488,18 +1488,17 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 	Nm[nDim-1] = 0					// dimension index for the Q, the last one, zero out the Q dimension
 	// create the waves for displaying
 	String name=NameOfWave(Q_Positions)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qwidth")/WAVE=Qwidth =NaN		// holds the image to plot, width of Q peak (1/nm)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Intens")/WAVE=Qsum =NaN		// holds the image to plot, sum of all intensity
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Sum")/WAVE=Intens =NaN			// holds the image to plot, max intensity
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qcenter")/WAVE=Qc =NaN			// holds the image to plot, center of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qwidth")/WAVE=Qwidth =NaN	// holds the image to plot, width of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Intens")/WAVE=Intens =NaN	// holds the image to plot, max intensity
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qcenter")/WAVE=Qc =NaN		// holds the image to plot, center of Q peak (1/nm)
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QpkArea")/WAVE=QpkArea =NaN	// holds the image to plot, center of Q peak (1/nm)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QcenterErr")/WAVE=QcErr =NaN	// errors
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QcenterErr")/WAVE=QcErr =NaN// errors
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QwidthErr")/WAVE=QwidthErr =NaN
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qbkg")/WAVE=Qbkg =NaN
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QbkgErr")/WAVE=QbkgErr =NaN
 	if (numtype(Q0)==0)
 		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_dQ")/WAVE=dQ =NaN			// holds the image to plot, delta peak position (1/nm)
-		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strain")/WAVE=strain =NaN	// strain is available
+		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strain")/WAVE=strain =NaN		// strain is available
 		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strainErr")/WAVE=strainErr =NaN
 	endif
 	Nm[nDim-1] = 0
@@ -1507,17 +1506,16 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 	String list
 	Variable quiet=0												// first time through, not quiet
 	Variable i,j,k, center
-	for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)							// execute z-loop at least once
-		for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)						// execute y-loop at least once
-			for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)					// execute x-loop at least once
-				Wave Qhist = QhistFromQpositions(Q_Positions,i,j,k)	// from a Q_positions type array, re-make Qhist, and fit it
+	for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)						// execute z-loop at least once
+		for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)					// execute y-loop at least once
+			for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)				// execute x-loop at least once
+				Wave Qhist = QhistFromQpositions(Q_Positions,i,j,k)		// from a Q_positions type array, re-make Qhist, and fit it
 				list = fitOneQhist(Qhist,quiet=quiet,printIt=0)
 				quiet = 1
 				center = NumberByKey("Qcenter",list,"=")
 				Qc[i][j][k] = center											// Q of peak
 				Qwidth[i][j][k] = NumberByKey("Qfwhm",list,"=")		// Q width
 				Intens[i][j][k] = WaveMax(Qhist)							// max intensity
-				Qsum[i][j][k] = sum(Qhist)									// sum of all intensity
 				QpkArea[i][j][k] = NumberByKey("QpkArea",list,"=")	// area peak
 				Qbkg[i][j][k] = NumberByKey("QpkBkg",list,"=")		// bkg of the Lorentzian
 				QwidthErr[i][j][k] = NumberByKey("fwhmErr",list,"=")// the errors
@@ -1526,9 +1524,9 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 			endfor
 		endfor
 	endfor
-	CopyScales/I Q_Positions, Intens, Qsum, Qc,QcErr, Qwidth,QwidthErr, QpkArea, Qbkg, QbkgErr
+	CopyScales/I Q_Positions, Intens, Qc,QcErr, Qwidth,QwidthErr, QpkArea, Qbkg, QbkgErr
 	if (numtype(Q0)==0)
-		dQ = Qc-Q0												// delta Q
+		dQ = Qc-Q0													// delta Q
 		strain = -dQ/Q0
 		strainErr = QcErr/Q0
 		CopyScales/I Q_Positions, dQ, strain, strainErr
@@ -1540,7 +1538,7 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 		SetScale d Qlo,Qhi,"1/nm", dQ
 	else
 		WaveStats/M=1/Q Qc
-		Qlo = V_min												// RGB scaling uses Qc, set range of color scale
+		Qlo = V_min													// RGB scaling uses Qc, set range of color scale
 		Qhi = V_max
 		SetScale d Qlo,Qhi,"1/nm", Qc
 	endif
@@ -1577,7 +1575,6 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 	wnote = ReplaceStringByKey("labelValue",wnote,str,"=")
 	Note/K Q_Positions, ReplaceStringByKey("waveClass",wnote,"QdistAtPositions","=")
 	Note/K Intens, wnote
-	Note/K Qsum, wnote
 	Note/K Qc, wnote
 	Note/K Qwidth, wnote
 	Note/K QpkArea, wnote
@@ -4277,7 +4274,7 @@ Function MakeEsumPlot()
 		ModifyGraph mirror=2,nticks(left)=3,minor=1,fSize=9,standoff=0
 		ModifyGraph tkLblRot(left)=90,btLen=3,tlOffset=-2
 		SetAxis/A/R left
-		TextBox/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Energys)"
+		TextBox/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\Zr200S\\Zr050\\F]0(Energys)"
 		SetVariable EsumDepthDisp,pos={2,2},size={121,18},proc=SetEsumDepthProc,title="Depth Slice"
 		SetVariable EsumDepthDisp,fSize=12
 		SetVariable EsumDepthDisp,limits={-1,DimSize(imageEsum,2),1},value=EsumDepth,bodyWidth= 50
@@ -4323,7 +4320,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 		imageplane = imageSumAll
 		WaveStats/M=1/Q imageSumAll
 		ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
-		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Energys)   \\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Depths)"
+		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\Zr200S\\Zr050\\F]0(Energys)   \\F'symbol'\\Zr200S\\Zr050\\F]0(Depths)"
 	else
 		list = GetUserData("","","ctab")
 		if (NumberByKey("sum",list,"="))		// coming off of a sum frame, so reset ctab limits to stored values
@@ -4335,7 +4332,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 		endif
 		imageplane = imageEsum[p][q][i]
 		depth = DimOffset(imageEsum,2) + i*DimDelta(imageEsum,2)
-		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Energys)  Depth = "+num2str(depth)+" "+Gmu+"m"
+		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\Zr200S\\Zr050\\F]0(Energys)  Depth = "+num2str(depth)+" "+Gmu+"m"
 	endif
 	String title = StrVarOrDefault(path+"title","")
 	if (strlen(title))
