@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, November 19, 2018" time="02:44:37 PM CST" isoTime="2018-11-19T14:44:37"></written>
+	<written date="Tuesday, November 20, 2018" time="11:55:01 AM CST" isoTime="2018-11-20T11:55:01"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>8602bccca50f2d1737497105536b74afa1c6bfbc</gitHash>
-	<fileCount>289</fileCount>
+	<gitHash>ae09104598b3ff6e87e2a74ca2fbc724d56bfa24</gitHash>
+	<fileCount>288</fileCount>
 	<file version="nan" time="2018-09-26T12:14:26" md5="aea14bbe32bacd116a5ceeec260866a8" sha256="7e0d2e4620a5002fbc48dce30bdff57c9a4e5dd52f0be50a79ce6f6f5d97307a" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
 	<file version="nan" time="2018-05-11T14:42:34" md5="ee580fe3f50506af78059bb2d47ac706" sha256="7f907efb1dbd8b4b28fe9dd35476bff99620122e4b79a2267c1811a65567971f" ext=".xml">materials/standard xtals/Pb.xml</file>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
@@ -149,7 +149,7 @@
 	<file version="2.86" time="2017-02-13T15:52:25" md5="2b293e1da37ab1abb222f9f661d123ca" sha256="709a2134c9a9aad747d4f07a47c69d53866c4ff5b3cf83e882a9f14a9ead808a" ext=".ipf">Lattice/StereographicProjection.ipf</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="d902bfc91fc61951b72b750672ae547c" sha256="d501edf2446d709b4fca1976fbc757ab7cb05e0cacb449565f322eb777d2dcf7" ext=".xml">materials/standard xtals/CdSe Wurtzite.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="58e26315c8dc8e1866026785b6771677" sha256="79b9998e9e4a53be517fc9be4bf9e54586f9ac9a7fa98db0666c5eba47caa333" ext="">micro/Euler_Debug_ppc</file>
-	<file version="2.58" time="2018-11-16T17:35:23" md5="9dd0a56df2bb68c7a8d75371f6f82bb3" sha256="db78076756fea91f5bba0aca0916ab929e8641960f269d0f0dce091562cef8a4" ext=".ipf">microN/EnergyScansN.ipf</file>
+	<file version="2.59" time="2018-11-20T11:53:36" md5="55b382dfbbcb46149b2e3ec73b1d205d" sha256="73b6712dfa17558ec1c85c3cf45900c8fed92fd86f9baacd6d425d299d4547c8" ext=".ipf">microN/EnergyScansN.ipf</file>
 	<file version="0.01" time="2013-10-28T11:28:48" md5="6e43ad9458bd1eb3e4331bf8cc6ff64c" sha256="93ec0b54c4c2a1e3a276fbb5ed400d5126aca93ebbd6d9096fe52d18e9e211dc" ext=".ipf">General/absorption.ipf</file>
 	<file version="nan" time="2017-05-19T11:01:06" md5="8a125782a1333f8176155f354604c663" sha256="609d8f2100d577a60e9b2559fc77e7a646c5af65ba579dd16009627ed8846f99" ext=".txt">geometrys/geometry description.txt</file>
 	<file version="nan" time="2018-09-26T12:11:07" md5="ca31e52779ff2f0d8cab436d89994dd6" sha256="b0a814dc947c4bf9388942947f9905017635f6715eacb10416adf1c9b099b2b1" ext=".xml">materials/standard xtals/SrTiO3.xml</file>
@@ -186,7 +186,7 @@
 	<file version="nan" time="2018-08-28T14:08:58" md5="0579163f06daea66490166e4630caf71" sha256="b134771a8d25831627cf1b7726b6a5a341f569997c9e478d24b26c7e9e76920a" ext=".mtl">materials/mtl files/SrTiO3.mtl</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="e3ff2de3a371d9f3423213edf18edbf8" sha256="d59c0b76de98fafc6207439d1335ee22a8c893bc23fd681660baab9822f0daa8" ext=".xml">materials/standard xtals/Barite.xml</file>
 	<file version="nan" time="2018-08-07T13:32:26" md5="034968ad0387537a79076c7eabcebd44" sha256="36c8117f280d930c3d33273d201fadf2b319eebfde9ffcadb2378ddd841ad80c" ext=".xml">materials/standard xtals/Goethite.xml</file>
-	<file version="4.71" time="2018-11-19T14:41:08" md5="b367b0b3786f8ef5a7138b644c19ae01" sha256="9c5945980ff46f49f08ee729e7dc31cfc58a6326c2303226dfd20c0784c6c696" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="4.72" time="2018-11-20T10:35:58" md5="5a337a2881c0dda9e93dfb2535e9a203" sha256="c00e531d6e5defccf2d02523da05bfef11f6164bc49f4722183bf67a58f570ca" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="2.72" time="2017-07-24T12:38:46" md5="bfc326a040c5c45243b84bd242bd2d8d" sha256="4411e382bdfe5b91561656e0bfd40e990405fdec57cbce78468cefc46981604d" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="nan" time="2018-05-11T14:43:10" md5="102bf7a38264872a0007fdd4f0e97826" sha256="f47fbe34e145ae0fcfc7d5d30ff4a7020300aba8ea6add2762c06ddeaa29e328" ext=".xml">materials/standard xtals/Al.xml</file>
 	<file version="0.22" time="2018-07-27T11:51:48" md5="75921e6eb1904f9597bc19cb6b850cdd" sha256="7936acbcdad01cd09a9257cef6a9102531d13d563866fa208491ad3e2c721b47" ext=".ipf">microN/CuteCells.ipf</file>
@@ -280,7 +280,6 @@
 	<file version="1" time="2017-04-04T13:18:53" md5="248ea8b361ecd3c0fdfe0061befe5baa" sha256="5520293afb313f129522f38b2f40e6d68b5069594c062989d9277759cfdd7805" ext=".ipf">APS/xyeFiles.ipf</file>
 	<file version="2.66" time="2014-10-06T09:42:00" md5="4cf4f2ae776b8beb5ec5c74048c71994" sha256="25611ca90d6e4d4825aae5f37666559f8e0d23ea835fdb2d106c3b696d486599" ext=".ipf">micro/Indexing.ipf</file>
 	<file version="nan" time="2018-05-11T14:42:27" md5="4a1f98ca7085f4992dbc1a7a4cf63fee" sha256="8f0ba2099e209f272a3bfe93dad3c7ba5ed001b209930ccf7f34f4dd29a23ce1" ext=".xml">materials/standard xtals/Pt.xml</file>
-	<file version="4.94" time="2018-04-27T10:55:51" md5="6bde588cc7c752e1b464e30387ce8d64" sha256="339ece920e0c8798b1a02ccf7031bda922197399d7eec2f5519526ce16c0ffa0" ext=".ipf">microN/IndexingN_4.94.ipf</file>
 	<file version="4.98" time="2018-10-29T17:27:47" md5="b20d5a0fa43b147faecae261cafa534a" sha256="b12118c3e6d12584bfdda51e1127c09fa774993ec10f71b0091f2a915671e38c" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="nan" time="2018-09-06T13:17:42" md5="a8f335dbaf424299f6cbe07986c3a5a3" sha256="a5bf11dd9d1f4c598fdf7fbdaee2f64d8b9771bb590389662ed213f8ffc28436" ext=".xml">materials/standard xtals/Au.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="db51209204f865eee5041d9786cc58b5" sha256="9c72ac47011dc60ca0e5050dcef36d69cc9a1fe10323bcf7a4fc5213efee3e1e" ext=".xml">geometrys/geoN_2013-06-28_19-49-18.xml</file>
