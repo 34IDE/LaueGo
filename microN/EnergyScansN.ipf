@@ -1,3 +1,4 @@
+#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
 #pragma version = 2.59
@@ -17,6 +18,7 @@
 // version 2.52 moved defn. of Gmu & PLUSMINUS to Utility_JZT.ipf
 // version 2.56 Fixed bug in Fill_Q_Positions(), it now recalculates sinTheta array when the depth changes
 //	version 2.58 fixed printing values with errors in textQ_fromWnote()
+//	version 2.59 added more waves to reFitAllQdistributions(), improved MakeRGBforQdistribution() & fitOneQhist()
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -58,7 +60,7 @@ Static Constant DEFAULT_dQfactor = 1.1
 //
 //	new for May 3, 2006
 //	sz = sample z position
-//	s = Æz/Æy of ray from sample to pixel on CCD
+//	s = âˆ†z/âˆ†y of ray from sample to pixel on CCD
 //
 //	z = (  zs - s*Fo/cos(angle) - R*sqrt(1-s*s)  ) / (1-s*tan(angle) )
 //	H = [z/cos(angle) - Fo*tan(angle)]] = [z - Fo*sin(angle)] / cos(angle)
@@ -1017,7 +1019,7 @@ Function MakeOtherQhistWaves(Q_Positions,[printIt,Qlo,Qhi])	// make waves for pl
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", list,"="),NumberByKey("Qfwhm", list,"=")
 		Variable strainPeak = NumberByKey("strain", list,"=")
 		if (numtype(strainPeak)==0)
-			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("ÆQ", list,"="),strainPeak
+			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("âˆ†Q", list,"="),strainPeak
 		endif
 		printf "\r"
 		if (seconds>10)
@@ -1488,19 +1490,21 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 	Nm[nDim-1] = 0					// dimension index for the Q, the last one, zero out the Q dimension
 	// create the waves for displaying
 	String name=NameOfWave(Q_Positions)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qwidth")/WAVE=Qwidth =NaN		// holds the image to plot, width of Q peak (1/nm)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Intens")/WAVE=Qsum =NaN		// holds the image to plot, sum of all intensity
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Sum")/WAVE=Intens =NaN			// holds the image to plot, max intensity
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qcenter")/WAVE=Qc =NaN			// holds the image to plot, center of Q peak (1/nm)
-	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QpkArea")/WAVE=QpkArea =NaN	// holds the image to plot, center of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qwidth")/WAVE=Qwidth =NaN		// holds an image to plot, width of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Sum")/WAVE=Qsum =NaN			// holds an image to plot, sum of all intensity
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Intens")/WAVE=Intens =NaN		// holds an image to plot, max intensity
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qcenter")/WAVE=Qc =NaN			// holds an image to plot, center of Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QpkArea")/WAVE=QpkArea =NaN	// holds an image to plot, area of fitted Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_amp")/WAVE=amp =NaN				// holds an image to plot, amplitude of fitted Q peak (1/nm)
+	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_ampErr")/WAVE=ampErr =NaN		// holds an image to plot, error in amplitude of fitted Q peak (1/nm)
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QcenterErr")/WAVE=QcErr =NaN	// errors
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QwidthErr")/WAVE=QwidthErr =NaN
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_Qbkg")/WAVE=Qbkg =NaN
 	Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_QbkgErr")/WAVE=QbkgErr =NaN
 	if (numtype(Q0)==0)
 		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_dQ")/WAVE=dQ =NaN			// holds the image to plot, delta peak position (1/nm)
-		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strain")/WAVE=strain =NaN	// strain is available
-		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"strainErr")/WAVE=strainErr =NaN
+		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_strain")/WAVE=strain =NaN	// strain is available
+		Make/N=(Nm[0],Nm[1],Nm[2])/O $(name+"_strainErr")/WAVE=strainErr =NaN
 	endif
 	Nm[nDim-1] = 0
 	Variable Nx=Nm[0], Ny=Nm[1], Nz=Nm[2]
@@ -1517,23 +1521,25 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 				Qc[i][j][k] = center											// Q of peak
 				Qwidth[i][j][k] = NumberByKey("Qfwhm",list,"=")		// Q width
 				Intens[i][j][k] = WaveMax(Qhist)							// max intensity
-				Qsum[i][j][k] = sum(Qhist)									// sum of all intensity
-				QpkArea[i][j][k] = NumberByKey("QpkArea",list,"=")	// area peak
+				Qsum[i][j][k] = sum(Qhist)									// sum of all intensity in histogram
+				QpkArea[i][j][k] = NumberByKey("QpkArea",list,"=")	// area of fitted peak
+				amp[i][j][k] = NumberByKey("amp",list,"=")				// amplitude of fitted peak
 				Qbkg[i][j][k] = NumberByKey("QpkBkg",list,"=")		// bkg of the Lorentzian
 				QwidthErr[i][j][k] = NumberByKey("fwhmErr",list,"=")// the errors
 				QcErr[i][j][k] = NumberByKey("QcErr",list,"=")
 				QbkgErr[i][j][k] = NumberByKey("QpkBkgErr",list,"=")
+				ampErr[i][j][k] = NumberByKey("ampErr",list,"=")	
 			endfor
 		endfor
 	endfor
-	CopyScales/I Q_Positions, Intens, Qsum, Qc,QcErr, Qwidth,QwidthErr, QpkArea, Qbkg, QbkgErr
+	CopyScales/I Q_Positions, Intens, Qsum, Qc,QcErr, Qwidth,QwidthErr, QpkArea, amp, Qbkg, QbkgErr
 	if (numtype(Q0)==0)
 		dQ = Qc-Q0												// delta Q
 		strain = -dQ/Q0
 		strainErr = QcErr/Q0
 		CopyScales/I Q_Positions, dQ, strain, strainErr
 		WaveStats/M=1/Q Qc
-		if (Qhi<=Qlo || numtype(Qlo+Qhi))					// figure out ÆQrange if valid number not passed
+		if (Qhi<=Qlo || numtype(Qlo+Qhi))					// figure out âˆ†Qrange if valid number not passed
 			Qhi = max(abs(V_min),abs(V_max))				// used to scale the color of _dQ waves, a symmetric Q range
 			Qlo = -Qhi
 		endif
@@ -1575,20 +1581,24 @@ Static Function/WAVE reFitAllQdistributions(Q_Positions,[Qlo,Qhi])// re-fit all 
 	endif
 	str = SelectString(I0normalize,"Intensity","Intensity / I\\B0\\M")
 	wnote = ReplaceStringByKey("labelValue",wnote,str,"=")
+	String errNote = AddClassToWaveNote(wnote,"error")
 	Note/K Q_Positions, ReplaceStringByKey("waveClass",wnote,"QdistAtPositions","=")
 	Note/K Intens, wnote
 	Note/K Qsum, wnote
 	Note/K Qc, wnote
 	Note/K Qwidth, wnote
 	Note/K QpkArea, wnote
+	Note/K amp, wnote
 	Note/K Qbkg, wnote
-	Note/K QcErr, wnote
-	Note/K QwidthErr, wnote
-	Note/K QbkgErr, wnote
+	Note/K QcErr, errNote
+	Note/K QwidthErr, errNote
+	Note/K QbkgErr, errNote
+	Note/K ampErr, errNote
+	SetScale d 0,0,"1/nm", Qc,Qwidth,QpkArea,QcErr,QwidthErr
 	if (numtype(Q0)==0)
 		Note/K dQ, wnote
-		Note/K strain, wnote
-		Note/K strainErr, wnote
+		Note/K strain, AddClassToWaveNote(wnote,"strain")
+		Note/K strainErr, AddClassToWaveNote(errNote,"strain")
 		Wave RGB=MakeRGBforQdistribution(dQ,Intens,Qlo=Qlo,Qhi=Qhi,printIt=1)	// recalc the RGB for fancy plots
 	else
 		Wave RGB=MakeRGBforQdistribution(Qc,Intens,Qlo=Qlo,Qhi=Qhi,printIt=1)
@@ -1614,51 +1624,68 @@ End
 
 
 
-Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi,power,printIt])				// this is for user input
+Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi, secondary,QloS, QhiS, power, printIt])	// this is for user input
 	Wave dQ, IntensIN
-	Variable Qlo,Qhi				// used to scale the color of _Qc wave, uses a symmetric Q range
+	Variable Qlo,Qhi				// used to scale the color of _Qc wave
+	Wave secondary					// wave to use for secondary color
+	Variable QloS,QhiS				// used to scale the color of secondary wave, uses a symmetric Q range
 	Variable power					// power for scaling intensity, e.g. using IntensIN^power
 	Variable printIt
-	Qlo = ParamIsDefault(Qlo) ? NaN : Qlo
-	Qlo = numtype(Qlo) ? NaN : Qlo
-	Qhi = ParamIsDefault(Qhi) ? NaN : Qhi
-	Qhi = numtype(Qhi) ? NaN : Qhi
-	power = ParamIsDefault(power) ? 1 : power
-	power = numtype(power) ? 1 : power
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? 0 : !(!printIt)
-
+	Qlo = ParamIsDefault(Qlo) || numtype(Qlo) ? NaN : Qlo
+	Qhi = ParamIsDefault(Qhi) || numtype(Qhi) ? NaN : Qhi
+	QloS = ParamIsDefault(QloS) || numtype(QloS) ? NaN : QloS
+	QhiS = ParamIsDefault(QhiS) || numtype(QhiS) ? NaN : QhiS
+	power = ParamIsDefault(power) || numtype(power) ? 0.5 : power
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	String secondaryS=""
 	String wlist=WaveListClass("Q_positions","*","")
 	if (!WaveExists(dQ) || !WaveExists(IntensIN))
 		String sdQ=NameOfWave(dQ), sIntens=NameOfWave(IntensIN)
 		sdQ = SelectString(strlen(sdQ),"Q_Positions_dQ",sdQ)
 		sIntens = SelectString(strlen(sIntens),"Q_Positions_Intens",sIntens)
+		if (WaveExists(secondary))
+			secondaryS = NameOfWave(secondary)
+		else
+			secondaryS = "-none-"
+		endif
 		Prompt sdQ,"dQ wave (for color)",popup,wlist
 		Prompt sIntens,"Intensity wave (for blackness)",popup,wlist+";-none-"
 		Prompt Qlo, "Lower scaling range of Q (use NaN for default)"
 		Prompt Qhi, "High scaling range of Q (use NaN for default)"
+		Prompt secondaryS, "secondary wave (for other color)",popup,wlist+";-none-"
+		Prompt QloS, "Lower scaling range of secondary (use NaN for default)"
+		Prompt QhiS, "High scaling range of secondary (use NaN for default)"
 		Prompt power, "power for scaling intensity (Intens^power)"
-		DoPrompt "Waves for RGB", sdQ,sIntens,Qlo,Qhi,power
+		DoPrompt "Waves for RGB", sdQ,sIntens,Qlo,Qhi,secondaryS,power, QloS,QhiS
 		if (V_flag)
 			return $""
 		endif
-		Wave dQ=$sdQ, IntensIN=$sIntens
+		Wave dQ=$sdQ, IntensIN=$sIntens					// set dQ wave
+		if (cmpstr(secondaryS,"-none-"))
+			Wave secondary = $secondaryS					// set secondary wave
+		endif
 		printIt = 1
 	endif
 	if (!WaveExists(dQ))										//	if (!WaveExists(dQ) || !WaveExists(IntensIN))
 		return $""
 	endif
 	Variable nDim=WaveDims(dQ)								// number of dimensions
-	if (nDim<1 || nDim>=4)										// want to make the RGB wave
+	if (nDim<1 || nDim>=4)									// want to make the RGB wave
 		return $""
-	elseif (Qhi<=Qlo || numtype(Qlo+Qhi))					// figure out Qrange if valid numbers not passed
-		WaveStats/M=1/Q dQ
-		if (StringMatch(NameOfWave(dQ),"*_dQ"))			// for dQ, prefer symmetric range
-			Qhi = max(abs(V_min),abs(V_max))				// used to scale the color of _dQ waves
-			Qlo = -Qhi												// need a symmetric Q range
-		else
-			Qhi = V_max												// an asymmetric Q range
-			Qlo = V_min
+	elseif (Qhi<=Qlo || numtype(Qlo+Qhi))				// figure out Qrange if valid numbers not passed
+		Qlo = fractionalLevelFind(dQ,0.1)					// default to [10%, 90%]
+		Qhi = fractionalLevelFind(dQ,0.9)
+		if (Qlo*Qhi<0)											// for a bipolar value, make symmetric about zero
+			Qhi = max(Qhi, -Qlo)
+			Qlo = -Qhi
+		endif
+	endif
+	if (WaveExists(secondary) && (QhiS<=QloS || numtype(QloS+QhiS)))
+		QloS = fractionalLevelFind(secondary,0.1)		// default to [10%, 90%]
+		QhiS = fractionalLevelFind(secondary,0.9)
+		if (QloS*QhiS<0)										// for a bipolar value, make symmetric about zero
+			QhiS = max(QhiS, -QloS)
+			QloS = -QhiS
 		endif
 	endif
 	power = numtype(power) ? 1 : power
@@ -1669,8 +1696,8 @@ Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi,power,printIt])				//
 			sIntens = "$\"\""
 		endif
 		printf "MakeRGBforQdistribution(%s, %s, Qlo=%g, Qhi=%g",NameOfWave(dQ),sIntens,Qlo, Qhi
-		if (!ParamIsDefault(printIt))
-			printf ", printIt=%g",printIt
+		if (WaveExists(secondary))
+			printf ", secondary=%s, QloS=%g, QhiS=%g", NameOfWave(secondary), QloS, QhiS
 		endif
 		if (power!=1)
 			printf ", power=%g",power
@@ -1688,39 +1715,48 @@ Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi,power,printIt])				//
 	Variable cMax=65535, useIntensity=WaveExists(IntensIN)
 	if (useIntensity)
 		Duplicate/FREE IntensIN, Intens
-		Intens = abs(IntensIN)^power							// scaled intensity to use
-		WaveStats/M=1/Q Intens
-		Variable maxIntens=V_max, minIntens=V_min
+		Intens = abs(IntensIN)^power						// scaled intensity to use
+		// WaveStats/M=1/Q Intens
+		// Variable maxIntens=V_max, minIntens=V_min
+		Variable maxIntens, minIntens=0
+		minIntens = fractionalLevelFind(Intens,0.1)	// default to [10%, 90%]
+//		maxIntens = fractionalLevelFind(Intens,0.9)
 	endif
 	// set the RGB wave based on dQ and Intensity
-	//	minIntens = 0
 	Variable i,j,k, Nx=Nm[0], Ny=Nm[1], Nz=Nm[2]
-	Variable red,green,blue, maxc, iScaling=1
+	Variable red,green,blue, maxC, iScaling=1
 	for (k=0;k<(Nz<1 ? 1 : Nz);k+=1)						// execute z-loop at least once
 		for (j=0;j<(Ny<1 ? 1 : Ny);j+=1)					// execute y-loop at least once
 			for (i=0;i<(Nx<1 ? 1 : Nx);i+=1)				// execute x-loop at least once
-				blue = (dQ[i][j][k] - Qlo)/(Qhi-Qlo)		// set the hue, was blue = (dQ[i][j][k] + Qrange)/(2*Qrange)
-				red = 1-blue
-				green= min(red,blue)
-				maxC = max(max(red,green),blue)				// max RGB value
+				blue = (dQ[i][j][k] - Qlo)/(Qhi-Qlo)		// set the hue, blue = [0,1] for dQ=[Qlo,Qhi]
+				blue = limit(blue,0,1)
+				if (WaveExists(secondary))
+					red = (secondary[i][j][k] - QloS)/(QhiS-QloS)	// set secondary with red, red = [0,1] for secondary[QloS,QhiS]
+					red = limit(red,0,1)
+				else
+					red = 1-blue									// no secondary, use red to extend blue
+				endif
+				green= min(red,blue)							// fill in with green
+				maxC = max(max(red,green),blue)			// max RGB value present
 				if (useIntensity)
 					iScaling = (Intens[i][j][k]-minIntens)/maxIntens// intensity scaling of this point
+					iScaling = limit(iScaling,0,1)
 				endif
-				red = cMax * red/maxC * iScaling			// set to saturated values scaled down by iScaling
-				green = cMax * green/maxC * iScaling
-				blue = cMax * blue/maxC * iScaling
+				red = limit(cMax * red/maxC * iScaling, 0,cMax)		// set to saturated values scaled by iScaling
+				green = limit(cMax * green/maxC * iScaling, 0,cMax)
+				blue = limit(cMax * blue/maxC * iScaling, 0,cMax)
 				if (nDim==3)
-					RGB[i][j][k][0] = limit(red,0,cMax)	// red
-					RGB[i][j][k][1] = limit(green,0,cMax)	// green
-					RGB[i][j][k][2] = limit(blue,0,cMax)	// blue
+					RGB[i][j][k][0] = red
+					RGB[i][j][k][1] = green
+					RGB[i][j][k][2] = blue
 				elseif (nDim==2)
-					RGB[i][j][0] = limit(red,0,cMax)
-					RGB[i][j][1] = limit(green,0,cMax)
-					RGB[i][j][2] = limit(blue,0,cMax)
+					RGB[i][j][0] = red
+					RGB[i][j][1] = green
+					RGB[i][j][2] = blue
 				elseif (nDim==1)
-					RGB[i][0] = limit(red,0,cMax)
-					RGB[i][1] = limit(green,0,cMax)
-					RGB[i][2] = limit(blue,0,cMax)
+					RGB[i][0] = red
+					RGB[i][1] = green
+					RGB[i][2] = blue
 				endif
 			endfor
 		endfor
@@ -2359,7 +2395,7 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 //		CurveFit/Q lor Qhist/D /C=T_Constraints 
 //		KillWaves/Z T_Constraints
 	Variable V_FitOptions=4, V_FitError=0		//suppress window & ignore errors, I will trap them
-	Variable fwhm=NaN, Qc=NaN, QpkArea=NaN
+	Variable fwhm=NaN, Qc=NaN, QpkArea=NaN, amp=NaN, ampErr=NaN
 	Variable fwhmErr=NaN, QcErr=NaN
 	Variable bkg=NaN, bkgErr=NaN
 	Variable VoigtShape=NaN, VoigtShapeErr=NaN
@@ -2386,25 +2422,31 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 			if (fitLineShape==0)
 				fwhm = 2*sqrt(K3)							// for Lorentzian
 				Qc = K2
+				amp = abs(K1/K3)
 				QpkArea = K1*2*PI/fwhm
 				Wave W_sigma=W_sigma
 				fwhmErr = 2*abs(W_sigma[3])/2
 				QcErr = abs(W_sigma[2])
 				bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+				Variable rel1=K1/W_sigma[1], rel3=K3/W_sigma[3]
+				ampErr = amp * sqrt(rel1*rel1 + rel3*rel3)
 			elseif (fitLineShape==1)
 				fwhm = 2*K3*sl2							// for Gaussian
 				Qc = K2
+				amp = K1
 				QpkArea = K1 * abs(K3)*sqrt(PI)
 				Wave W_sigma=W_sigma
 				fwhmErr = 2*W_sigma[3]*sl2
 				QcErr = abs(W_sigma[2])
 				bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+				ampErr = W_sigma[1]
 			elseif (fitLineShape==2)
 				Variable c2=W_coef[2], c4=W_coef[4]
 				Variable hwg=sl2/c2
 				Variable hwl=c4/c2 
 				fwhm = 2* (hwl/2 + sqrt( hwl^2/4 + hwg^2) )	// for Voigt
 				Qc = W_coef[3]
+				amp = W_coef[1]
 				QpkArea = W_coef[1]*sqrt(PI)/c2
 				VoigtShape = c4
 				Wave W_sigma=W_sigma
@@ -2416,6 +2458,7 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 				fwhmErr = 2 * (abs(e4*W_sigma[4]) + abs(e2*W_sigma[2]) )
 				QcErr = abs(W_sigma[3])
 				bkg = K0 ; 	bkgErr = abs(W_sigma[0])
+				ampErr = W_sigma[1]
 				VoigtShapeErr = W_sigma[4]
 			endif
 		endif
@@ -2424,6 +2467,7 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 	String list = ReplaceNumberByKey("Qcenter","",Qc,"=")
 	list = ReplaceNumberByKey("Qfwhm",list,fwhm,"=")
 	list = ReplaceNumberByKey("QpkArea",list,QpkArea,"=")
+	list = ReplaceNumberByKey("amp",list,amp,"=")
 	list = ReplaceNumberByKey("QcErr",list,QcErr,"=")
 	list = ReplaceNumberByKey("fwhmErr",list,fwhmErr,"=")
 	String wnote = note(Qhist)
@@ -2431,6 +2475,9 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 	wnote = ReplaceNumberByKey("Qfwhm",wnote,fwhm,"=")
 	if (numtype(QpkArea)==0)
 		wnote = ReplaceNumberByKey("QpkArea",wnote,QpkArea,"=")
+	endif
+	if (numtype(amp)==0)
+		wnote = ReplaceNumberByKey("amp",wnote,amp,"=")
 	endif
 	wnote = ReplaceNumberByKey("QcErr",wnote,QcErr,"=")
 	wnote = ReplaceNumberByKey("fwhmErr",wnote,fwhmErr,"=")
@@ -2442,7 +2489,7 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 //	Variable printIt = !quiet && (stringmatch(caller,"EscanButtonProc") || stringmatch(caller,"refitQhistogramButtonProc"))
 //	Variable printIt = !quiet && (stringmatch(caller,"EscanButtonProc"))
 	if (printIt)
-		printf "at peak, Q = %s(1/nm),   fwhm = %s(1/nm),   area = %.3g",ValErrStr(Qc,QcErr),ValErrStr(fwhm,fwhmErr),QpkArea
+		printf "at peak, Q = %s(1/nm),   fwhm = %s(1/nm),   area = %.3g,   amp = %.3g",ValErrStr(Qc,QcErr),ValErrStr(fwhm,fwhmErr),QpkArea,amp
 		if (fitLineShape==0)
 			printf ",  Lorentzian shape"
 		elseif (fitLineShape==1)
@@ -2463,8 +2510,8 @@ Function/T fitOneQhist(Qhist, [quiet,printIt,lo,hi,d0])
 		if (printIt)
 			printf "   d0 = %g (nm),   Q0 = %g (1/nm),   strain = %s\r",d0,Q0,ValErrStr(strain,strainErr)
 		endif
-		list = ReplaceNumberByKey("ÆQ",list,Qc-Q0,"=")
-		wnote = ReplaceNumberByKey("ÆQ",wnote,Qc-Q0,"=")
+		list = ReplaceNumberByKey("âˆ†Q",list,Qc-Q0,"=")
+		wnote = ReplaceNumberByKey("âˆ†Q",wnote,Qc-Q0,"=")
 		wnote = ReplaceNumberByKey("strain",wnote,strain,"=")
 		wnote = ReplaceNumberByKey("strainErr",wnote,strainErr,"=")
 	endif
@@ -2647,7 +2694,7 @@ Function/S MakeGraph_Qhist(Qhist,[printIt])	// display a Qhist[] wave
 	TextBox/A=RT/C/N=textTitle/F=0 str
 
 	Variable Qc = NumberByKey("Qcenter",wnote,"="), fwhm = NumberByKey("Qfwhm",wnote,"=")
-	Variable dQ = NumberByKey("ÆQ",wnote,"="), strain = NumberByKey("strain",wnote,"=")
+	Variable dQ = NumberByKey("âˆ†Q",wnote,"="), strain = NumberByKey("strain",wnote,"=")
 	Variable Q0 = NumberByKey("Q0",wnote,"=")
 	TextBox/C/N=textQ/F=0/A=LT/B=1 SelectString(numtype(Qc+fwhm),textQ_fromWnote(wnote),"")
 	if (Q0>0)
@@ -2853,27 +2900,28 @@ Static Function/S textQ_fromWnote(wnote)
 	Variable fwhmErr = NumberByKey("fwhmErr",wnote,"=")
 	Variable strainErr = NumberByKey("strainErr",wnote,"=")
 	if (numtype(QcErr)==0)
-//		sprintf str, "Q\\Bc\\M = %g%s%.2g (nm\\S-1\\M)",Qc,PLUSMINUS,QcErr
 		sprintf str, "Q\\Bc\\M = %s (nm\\S-1\\M)",ValErrStr(Qc,QcErr)
 	else
 		sprintf str, "Q\\Bc\\M = %g (nm\\S-1\\M)",Qc
 	endif
 	textQ = str
 	if (numtype(fwhmErr)==0)
-//		sprintf str, "\rFWHM = %.2g%s%.1g",fwhm,PLUSMINUS,fwhmErr
 		sprintf str, "\rFWHM = "+ValErrStr(fwhm,fwhmErr)
 	else
 		sprintf str, "\rFWHM = %.2g",fwhm
 	endif
 	textQ += str
+
+#if (IgorVersion()<7)
+	String epsilon = "\\F'Symbol'e\\F]0"
+#else
+	String epsilon = "\xCE\xB5"			// a unicode epsilon
+#endif
 	if (numtype(strain)==0 && numtype(strainErr)==0)
-//		sprintf str,"\rstrain = %.1e %s%.1e",strain,PLUSMINUS,strainErr
-//		sprintf str,"\r\\F'Symbol'e\\F]0 = %.1e %s%.1e",strain,PLUSMINUS,strainErr
-		sprintf str,"\r\\F'Symbol'e\\F]0 = %s",ValErrStr(strain,strainErr)
+		sprintf str,"\r%s = %s",epsilon,ValErrStr(strain,strainErr)
 		textQ += str
 	elseif (numtype(strain)==0)
-//		sprintf str,"\rstrain = %.1e",strain
-		sprintf str,"\r\\F'Symbol'e\\F]0 = %.1e",strain
+		sprintf str,"\r%s = %.1e",epsilon,strain
 		textQ += str
 	endif
 	Wave wav = $StringByKey("sourceWave",wnote,"=")
@@ -3206,7 +3254,7 @@ Function Fill_Q_1image(d0,image,[depth,mask,maskNorm,dark,I0normalize,printIt,as
 		printf "at peak, Q = %.3f(1/nm),   fwhm = %.2g(1/nm)",NumberByKey("Qcenter", QfitInfo,"="),NumberByKey("Qfwhm", QfitInfo,"=")
 		Variable strain = NumberByKey("strain", QfitInfo,"=")
 		if (numtype(strain)==0)
-			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("ÆQ", QfitInfo,"="),strain
+			printf ",   %sQ = %.3f,   strain = %.1e",GDELTA,NumberByKey("âˆ†Q", QfitInfo,"="),strain
 		endif
 		printf "\r"
 		String win = MakeGraph_Qhist(Qhist)
@@ -3587,7 +3635,7 @@ End
 #endif
 
 
-Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index in to pkWave of the ±50% of peak points, or use cursors A & B
+Static Function getPercentOfPeak(pkWave,fraction,lo,hi,minWid)	// return index in to pkWave of the Â±50% of peak points, or use cursors A & B
 	Wave pkWave					// wave with peak
 	Variable fraction			// fraction of peak to go on each side
 	Variable &lo, &hi
@@ -4265,6 +4313,7 @@ Function MakeEsumPlot()
 	if (strlen(wName))
 		DoWindow/F $wName
 	else
+		Variable depth = NumberByKey("depth",note(imagePlane),"=")
 		Variable/G EsumDepth=-1
 		Display /W=(40,44,736,505)
 		AppendImage/T imagePlane
@@ -4277,7 +4326,7 @@ Function MakeEsumPlot()
 		ModifyGraph mirror=2,nticks(left)=3,minor=1,fSize=9,standoff=0
 		ModifyGraph tkLblRot(left)=90,btLen=3,tlOffset=-2
 		SetAxis/A/R left
-		TextBox/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Energys)"
+		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\Zr200"+INTEGRAL_SIGN+"\\Zr050(Energys)  Depth = "+num2str(depth)+" "+Gmu+"m"
 		SetVariable EsumDepthDisp,pos={2,2},size={121,18},proc=SetEsumDepthProc,title="Depth Slice"
 		SetVariable EsumDepthDisp,fSize=12
 		SetVariable EsumDepthDisp,limits={-1,DimSize(imageEsum,2),1},value=EsumDepth,bodyWidth= 50
@@ -4323,7 +4372,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 		imageplane = imageSumAll
 		WaveStats/M=1/Q imageSumAll
 		ImageDisplayScaling#ModifyOnly_ctab_range("","imagePlane",V_min,V_max*0.7)
-		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Energys)   \\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Depths)"
+		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\Zr200"+INTEGRAL_SIGN+"\\Zr050(Energys)   \\Zr200"+INTEGRAL_SIGN+"\\Zr050(Depths)"
 	else
 		list = GetUserData("","","ctab")
 		if (NumberByKey("sum",list,"="))		// coming off of a sum frame, so reset ctab limits to stored values
@@ -4335,7 +4384,7 @@ Function SetEsumDepthProc(ctrlName,i,varStr,varName) : SetVariableControl
 		endif
 		imageplane = imageEsum[p][q][i]
 		depth = DimOffset(imageEsum,2) + i*DimDelta(imageEsum,2)
-		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\F'symbol'\\\\\\\\Zr200S\\\\\\\\Zr050\\F]0(Energys)  Depth = "+num2str(depth)+" "+Gmu+"m"
+		TextBox/C/N=textEsumDepth/F=0/S=3/A=LT/X=3.14/Y=3.46 "\\Zr200"+INTEGRAL_SIGN+"\\Zr050(Energys)  Depth = "+num2str(depth)+" "+Gmu+"m"
 	endif
 	String title = StrVarOrDefault(path+"title","")
 	if (strlen(title))
@@ -4898,7 +4947,7 @@ Function/WAVE Fill1_3DQspace(recipSource,pathName,nameFmt,range,[depth,mask,dark
 	endif																	// distortion map now ready
 
 	ProgressPanelUpdate(progressWin,0,status="pre-computing Qvecs array, may take 90 sec.",resetClock=1)
-	// make an array the same size as an roiAll, but filled with Q's at 1keV for this depth, |Q| = 4*¹*sin(theta) * E/hc
+	// make an array the same size as an roiAll, but filled with Q's at 1keV for this depth, |Q| = 4*Ï€*sin(theta) * E/hc
 	// print "roiAll =",imageROIstruct2str(roiAll)
 	Wave Qvecs1keVall = MakeQvecsArray(roiAll,geo.d[dNum],wnoteFull,recip,Elo,Ehi,mask=maskLocal,depth=depth,printIt=printIt)
 	// print "Qvecs1keVall",NumberByKey("startx",note(Qvecs1keVall),"="), NumberByKey("endx",note(Qvecs1keVall),"="), NumberByKey("starty",note(Qvecs1keVall),"="), NumberByKey("endy",note(Qvecs1keVall),"="),"  ",DimSize(Qvecs1keVall,0), DimSize(Qvecs1keVall,1)
@@ -5263,7 +5312,7 @@ Static Function/WAVE MakeQvecsArray(roi,d,wnote,recip,Elo,Ehi,[depth,mask,printI
 		WaveClear maskLocal
 	endif
 
-	MatrixOp/FREE QxLo0 = minVal(ReplaceNaNs(col(hkl,0),Inf))	// minVal() & maxVal don't support NaN's, but ±Inf is OK
+	MatrixOp/FREE QxLo0 = minVal(ReplaceNaNs(col(hkl,0),Inf))	// minVal() & maxVal don't support NaN's, but Â±Inf is OK
 	MatrixOp/FREE QyLo0 = minVal(ReplaceNaNs(col(hkl,1),Inf))
 	MatrixOp/FREE QzLo0 = minVal(ReplaceNaNs(col(hkl,2),Inf))
 	MatrixOp/FREE QxHi0 = maxVal(ReplaceNaNs(col(hkl,0),-Inf))

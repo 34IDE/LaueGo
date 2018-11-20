@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.72
+#pragma version = 4.71
 // #pragma hide = 1
 
 Menu "Graph"
@@ -130,7 +130,6 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		FindScalingFromVec(), find the scaling (for a SetScale command) that fit the values of vec[] (position of a step scan)
 //		FindStepSizeInVec(),  find the step size in a vec (positions of a step scan) by examining the values
 //		RangeOfValuesContainingFraction(),  returns range of VALUES of wave that constitute a given fraction of all values in wave
-//		fractionalLevelFind(wwIN,frac), find the val such that frac of the values in wwIN are < val.  Faster than sorting for large waves
 //		roundSignificant(val,N), returns val rounded to N places
 //		placesOfPrecision(a), returns number of places of precision in a
 //		ValErrStr(val,err), returns string  "val ± err" formatted correctly
@@ -3668,8 +3667,8 @@ Function/C RangeOfValuesContainingFraction(wwIN,frac, [zero])	// this is a 1D ca
 	// returns range of VALUES of wave that constitute a given fraction of all values in wave
 	// if zero is True, then values are assumed to be all positive, and returns rad s.t. frac of wwIN are < rad
 	Wave wwIN							// a 1D wave
-	Variable frac					// want range that contains frac, either [lo,hi], or [0,rad]
-	Variable zero					// if True, then want only fraction starting from zero, assumes no negatives
+	Variable frac						// want range that contains frac, either [lo,hi], or [0,rad]
+	Variable zero						// if True, then want only fraction starting from zero, assumes no negatives
 	zero = ParamIsDefault(zero) || numtype(zero) ? 0 : zero
 
 	if (frac<=0 || numtype(frac)==2)
@@ -3677,116 +3676,34 @@ Function/C RangeOfValuesContainingFraction(wwIN,frac, [zero])	// this is a 1D ca
 	endif
 	frac = min(frac,1)
 
-	Variable ylo, yhi
-	ylo = fractionalLevelFind(wwIN,frac)
-	yhi = zero ? NaN : fractionalLevelFind(wwIN,1-frac)
-	return cmplx(ylo,yhi)
-End
-//Function/C RangeOfValuesContainingFraction(wwIN,frac, [zero])	// this is a 1D calculation
-//	// returns range of VALUES of wave that constitute a given fraction of all values in wave
-//	// if zero is True, then values are assumed to be all positive, and returns rad s.t. frac of wwIN are < rad
-//	Wave wwIN							// a 1D wave
-//	Variable frac						// want range that contains frac, either [lo,hi], or [0,rad]
-//	Variable zero						// if True, then want only fraction starting from zero, assumes no negatives
-//	zero = ParamIsDefault(zero) || numtype(zero) ? 0 : zero
-//
-//	if (frac<=0 || numtype(frac)==2)
-//		return cmplx(NaN,NaN)
-//	endif
-//	frac = min(frac,1)
-//
-//	Duplicate/FREE wwIN, ww
-//	Sort ww, ww
-//	WaveStats/M=1/Q ww
-//	if (V_npnts<2)
-//		return cmplx(NaN,NaN)
-//	endif
-//	Redimension/N=(V_npnts) ww				// this is needed since wwIN may contain NaN
-//
-//	Variable N=DimSize(ww,0), xlo=NaN, xhi=NaN
-//	Variable x0=(1/N), dx=(1-1/N)/(N-1)	// a scaling for ww
-//	if (zero)
-//		Variable i = (frac-x0)/dx + 0.5
-//		if (i<0)
-//			xlo = ww[0]/2	
-//		else
-//			i = limit(i,0,N-1)
-//			xlo = ww[i]									// xhi is left as NaN
-//		endif
-//	else
-//		Variable lo = ((1-frac)/2 - x0)/dx - 0.5
-//		Variable hi = ((1+frac)/2 - x0)/dx + 0.5
-//		lo = limit(lo,0,N-1)
-//		hi = limit(hi,0,N-1)
-//		xlo = ww[lo]
-//		xhi = ww[hi]
-//	endif
-//	return cmplx(xlo,xhi)
-//End
-
-
-ThreadSafe Function fractionalLevelFind(wwIN,frac)
-	// find the val such that frac of the values in wwIN are < val
-	// e.g. if frac is 0.05, then find val such that 5% of all elements in ww have values <= val
-	// you can use this to get the [5%, 95%] range by calling it twice
-	// Note, this ignores NaN's
-	//
-	// I use this routine since sorting to find the median can take a long time for large waves.
-	// for 8e6 points, this routine take 1 sec, sorting takes 30 sec
-	// at 1000 pnts they are about the same, so I Sort for smaller waves
-	Wave wwIN					// wave with values
-	Variable frac			// fraction to exclude
-
-	Duplicate/FREE wwIN, ww							// don't change the original ww
-	Redimension/N=(numpnts(ww)) ww
-	SetScale/P x,0,1,"" ww
-	Note/K ww
-	WaveStats/Q/M=1 ww
-	Variable lo=V_min, hi=V_max, Ntotal=V_npnts
-	if (numtype(frac) || frac<0 || Ntotal<1)
-		return NaN
-	elseif (frac==0)
-		return lo
-	elseif (frac>=1)
-		return hi
+	Duplicate/FREE wwIN, ww
+	Sort ww, ww
+	WaveStats/M=1/Q ww
+	if (V_npnts<2)
+		return cmplx(NaN,NaN)
 	endif
+	Redimension/N=(V_npnts) ww				// this is needed since wwIN may contain NaN
 
-	Variable Nfind = round(frac*Ntotal)			// number of points that should have ww[i] > val
-	if (Ntotal<1001)									// for wave smaller than 1000, sorting is faster
-		Sort ww,ww
-		return ww[limit(Nfind-0.5, 0, Ntotal-1)]
-	endif
-	Variable val, Nval	, minDelta=(hi-lo)*1e-10
-	Variable count=0
-	do
-		count += 1
-		val = (lo + hi)/2								// trial value
-		MatrixOp/FREE Nval0 = sum(greater(ww,val))
-		Nval = Ntotal - Nval0[0]						// number below val
-		if (Nval > Nfind)								// number found is too big, this is the new hi
-			hi = val
-		elseif (Nval < Nfind)							// number found is too small, this is the new lo
-			lo = val
+	Variable N=DimSize(ww,0), xlo=NaN, xhi=NaN
+	Variable x0=(1/N), dx=(1-1/N)/(N-1)	// a scaling for ww
+	if (zero)
+		Variable i = (frac-x0)/dx + 0.5
+		if (i<0)
+			xlo = ww[0]/2	
+		else
+			i = limit(i,0,N-1)
+			xlo = ww[i]									// xhi is left as NaN
 		endif
-	while (Nval!=Nfind && (hi-lo)>minDelta && count<40)
-	return val
+	else
+		Variable lo = ((1-frac)/2 - x0)/dx - 0.5
+		Variable hi = ((1+frac)/2 - x0)/dx + 0.5
+		lo = limit(lo,0,N-1)
+		hi = limit(hi,0,N-1)
+		xlo = ww[lo]
+		xhi = ww[hi]
+	endif
+	return cmplx(xlo,xhi)
 End
-//	Function test_fractionalLevelFind(N)
-//		Variable N
-//		Variable val, timer, ss0,ss1
-//		Make/N=(N)/D/FREE wav=enoise(1)
-//		wav += 1
-//	
-//		timer = StartMSTimer
-//		val = fractionalLevelFind(wav,0.3)
-//		ss0 = StopMSTimer(timer )
-//		printf "for N=%d,  val=%g,   time=%g\r",N,val,ss0*1e-6
-//	
-//		timer = StartMSTimer
-//		Sort wav, wav
-//		ss1 = StopMSTimer(timer )
-//		printf "sorting took %g,   %.2g times longer\r",ss1*1e-6, ss1/ss0
-//	End
 
 
 // This routine is much faster than going through an [sprintf str,"%g",val] conversion
