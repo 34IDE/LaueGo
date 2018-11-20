@@ -17,8 +17,8 @@
 // version 2.51 changed all special Mac character, should print better with Windows & Igor7
 // version 2.52 moved defn. of Gmu & PLUSMINUS to Utility_JZT.ipf
 // version 2.56 Fixed bug in Fill_Q_Positions(), it now recalculates sinTheta array when the depth changes
-//	version 2.58 fixed printing values with errors in textQ_fromWnote()
-//	version 2.59 added more waves to reFitAllQdistributions(), improved MakeRGBforQdistribution() & fitOneQhist()
+// version 2.58 fixed printing values with errors in textQ_fromWnote()
+// version 2.59 added more waves to reFitAllQdistributions(), improved MakeRGBforQdistribution() & fitOneQhist()
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -1716,11 +1716,7 @@ Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi, secondary,QloS, QhiS
 	if (useIntensity)
 		Duplicate/FREE IntensIN, Intens
 		Intens = abs(IntensIN)^power						// scaled intensity to use
-		// WaveStats/M=1/Q Intens
-		// Variable maxIntens=V_max, minIntens=V_min
-		Variable maxIntens, minIntens=0
-		minIntens = fractionalLevelFind(Intens,0.1)	// default to [10%, 90%]
-//		maxIntens = fractionalLevelFind(Intens,0.9)
+		Variable maxIntens=fractionalLevelFind(Intens,0.9)	// default to 90% from zero
 	endif
 	// set the RGB wave based on dQ and Intensity
 	Variable i,j,k, Nx=Nm[0], Ny=Nm[1], Nz=Nm[2]
@@ -1739,7 +1735,7 @@ Function/WAVE MakeRGBforQdistribution(dQ,IntensIN,[Qlo,Qhi, secondary,QloS, QhiS
 				green= min(red,blue)							// fill in with green
 				maxC = max(max(red,green),blue)			// max RGB value present
 				if (useIntensity)
-					iScaling = (Intens[i][j][k]-minIntens)/maxIntens// intensity scaling of this point
+					iScaling = Intens[i][j][k]/maxIntens	// intensity scaling of this point
 					iScaling = limit(iScaling,0,1)
 				endif
 				red = limit(cMax * red/maxC * iScaling, 0,cMax)		// set to saturated values scaled by iScaling
