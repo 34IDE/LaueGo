@@ -6123,7 +6123,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
 
-	Variable fatomMag, m, FMax=0
+	Variable fatomMag, m, Fmax=0					// Fmax is F with no phase factor cancelations
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
 	if (dim==2)
@@ -6141,10 +6141,10 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		if (WaveExists(ww))
 			MatrixOP/O/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl)))
 			Fc += Fcm[0]									// accumulate for this atom
-			FMax += max(fatomMag,0.01) * DimSize(ww,0)
+			Fmax += max(fatomMag,0.01) * DimSize(ww,0)
 		else
 			Fc += cmplx(fatomMag,0)					// no atom position, just make it in phase
-			FMax += max(fatomMag,0.01)				// always at least 0.01 electrons/atom
+			Fmax += max(fatomMag,0.01)				// always at least 0.01 electrons/atom
 		endif
 	endfor
 
@@ -6166,7 +6166,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	endif
 #endif
 
-	return (magsqr(Fc)/(xtal.N)^2 > (FMax/50)^2)			// allowed means more than 0.01 electron/atom
+	return (magsqr(Fc) > (Fmax/100)^2)			// allowed means more than 1% of max F
+//	return (magsqr(Fc)/(xtal.N)^2 > (Fmax/50)^2)			// allowed means more than 0.01 electron/atom
 //	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
 End
 

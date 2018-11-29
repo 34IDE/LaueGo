@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.56
+#pragma version = 6.57
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -219,6 +219,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.54, fixed dSpacing(), was not using T properly
 //	with version 6.55, changed room temperaure from 22.5 --> 20
 //	with version 6.56, fixed error in copy_xtal56(), copy_xtal67(), copy_xtal78()
+//	with version 6.57, modified allowedHKL(), how it determines wheter hkl is allowed
 
 
 //	Rhombohedral Transformation:
@@ -5501,6 +5502,7 @@ End
 //	MultiThread testAllowed = allowedHKL(h[p],k[p],l[p],xtal, atomWaves=atomWaves)
 //
 ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, but can be multi-threaded
+	// returns True if phase factors do not reduce F to less than 1% of value when all atoms in phase
 	Variable h,k,l											// the hkl may be non-integers
 	STRUCT crystalStructure &xtal
 	Wave/WAVE atomWaves									// ONLY needed when calling this with MultiThread
@@ -5555,7 +5557,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
 
-	Variable fatomMag, m, FMax=0
+	Variable fatomMag, m, Fmax=0					// Fmax is F with no phase factor cancelations
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
 	Make/N=3/D/FREE hkl={h,k,l}
@@ -5569,10 +5571,10 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		if (WaveExists(ww))
 			MatrixOP/O/FREE Fcm = fatomMag * sum(exp(c2PI*(ww x hkl)))
 			Fc += Fcm[0]									// accumulate for this atom
-			FMax += max(fatomMag,0.01) * DimSize(ww,0)
+			Fmax += max(fatomMag,0.01) * DimSize(ww,0)
 		else
 			Fc += cmplx(fatomMag,0)					// no atom position, just make it in phase
-			FMax += max(fatomMag,0.01)				// always at least 0.01 electrons/atom
+			Fmax += max(fatomMag,0.01)				// always at least 0.01 electrons/atom
 		endif
 	endfor
 
@@ -5592,7 +5594,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	endif
 #endif
 
-	return (magsqr(Fc)/(xtal.N)^2 > (FMax/50)^2)			// allowed means more than 0.01 electron/atom
+	return (magsqr(Fc) > (Fmax/100)^2)			// allowed means more than 1% of max F
+//	return (magsqr(Fc)/(xtal.N)^2 > (Fmax/50)^2)			// allowed means more than 0.01 electron/atom
 //	return (magsqr(Fc)/(xtal.N)^2 > 0.0001)			// allowed means more than 0.01 electron/atom
 End
 
@@ -7665,6 +7668,9 @@ Function lowestAllowedHKL(h,k,l)
 			return 0
 		endif
 	endfor
+	h = h==0 ? 0 : h						// avoid "-0"
+	k = k==0 ? 0 : k
+	l = l==0 ? 0 : l
 	return 0
 End
 

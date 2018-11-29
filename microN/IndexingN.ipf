@@ -1,7 +1,8 @@
+#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.98
+#pragma version = 4.99
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -30,8 +31,20 @@ Constant INDEXING_ASK_BEFORE_DISPLAYING = 0		// This can be overridden in your M
 //	with version 4.60, changed how pick_keV_calc() works
 //	with version 4.88, changed number of columns in FullPeakList from 11 to 12
 //	with version 4.98, added support of showing hkl on an image from a user supplied reciprocal lattice
+//	with version 4.99, improved CloseAllowedhkl(), more UTF8 and less symbol font
 
 //	#define USE_ENERGY_STRAIN_REFINE		// paste this line (uncommented) in your Procedure Window to use newer strain refinement
+
+#if (IgorVersion()>7)
+	// Igor 7 use UNICODE
+	Static strConstant S_DEGREE = "\xC2\xB0"						// UTF8, degree sign
+	Static strConstant S_THETA = "\xCE\xB8"							// UTF8, lower case theta
+	Static strConstant S_DELTA_THETA = "\xCE\x94\xCE\xB8"		// UTF8, lower case theta
+#else
+	Static strConstant S_DEGREE = "\\F'Symbol'\260\\F]0"		// degree sign in Symbol font
+	Static strConstant S_THETA = "\\F'Symbol'q\\F]0"				// theta in Symbol font
+	Static strConstant S_DELTA_THETA = "\\F'Symbol'Dq\\F]0"	// Delta-theta in Symbol font
+#endif
 
 
 Menu LaueGoMainMenuName
@@ -126,15 +139,15 @@ Static Constant SMALLEST1 = 1.2e-16
 
 Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,printIt])
 	Wave FullPeakList0				// contains the result of a peak fitting
-	Variable keVmaxCalc				// 17, maximum energy to calculate (keV)
-	Variable keVmaxTest				// 30, maximum energy to test (keV)  [-t]
+	Variable keVmaxCalc			// 17, maximum energy to calculate (keV)
+	Variable keVmaxTest			// 30, maximum energy to test (keV)  [-t]
 	Variable angleTolerance		// 0.25, angular tolerance (deg)
-	Variable hp,kp,lp					// preferred hkl
-	Variable cone						// angle from preferred hkl, (0 < cone ≤ 180°)
-	Variable maxSpots					// -n max num. of spots from data file to use, default is 250
+	Variable hp,kp,lp				// preferred hkl
+	Variable cone					// angle from preferred hkl, (0 < cone ‚â§ 180¬∞)
+	Variable maxSpots				// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1				// contains the result of a peak fitting
 	Wave FullPeakList2				// contains the result of a peak fitting
-	Variable printIt					// forces print out
+	Variable printIt				// forces print out
 	maxSpots = ParamIsDefault(maxSpots) ? -1 : maxSpots
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
 	if (ParamIsDefault(FullPeakList1))
@@ -184,7 +197,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		String hkl
 		sprintf hkl,"%d, %d, %d",hp,kp,lp
 		Prompt hkl,"preferred hkl of center"
-		Prompt cone,"max angle° from hkl prefer to spot"
+		Prompt cone,"max angle"+DEGREESIGN+" from hkl prefer to spot"
 		String pkList=WaveListClass("FittedPeakList*","*","DIMS:2,MAXCOLS:12,MINCOLS:11")
 		String peakListStr0="", peakListStr1="", peakListStr2=""
 		Variable multi=0
@@ -213,7 +226,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		Prompt peakListStr2,"wave2 with fitted peaks",popup,"-none-;"+pkList
 		Prompt keVmaxCalc,"max energy for searching (keV)"
 		Prompt keVmaxTest,"max energy for matching (keV)"
-		Prompt angleTolerance "max angle° between peak & hkl"
+		Prompt angleTolerance "max angle"+DEGREESIGN+" between peak & hkl"
 		if (multi)
 			DoPrompt/Help="3D-Xray Diffraction[Indexing]" "index",peakListStr0,keVmaxCalc,peakListStr1,hkl,peakListStr2,keVmaxTest,cone,angleTolerance
 		else
@@ -258,7 +271,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		badNums += numtype(hp+kp+lp) + !(cone>1 && cone<=180)
 		badNums += (abs(hp)+abs(kp)+abs(lp))==0
 		sscanf hkl,"%d, %d, %d", hp,kp,lp
-		printf "•IndexAndDisplay(%s,%g,%g,%g, %d,%d,%d,%g",peakListStr0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone
+		printf "‚Ä¢IndexAndDisplay(%s,%g,%g,%g, %d,%d,%d,%g",peakListStr0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone
 		if (maxSpots>0)
 			printf ",maxSpots=%g",maxSpots
 		endif
@@ -334,7 +347,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		String timeStr=SelectString(executionTime>=60,secStr+" sec", Secs2Time(executionTime,5,1)+" ("+secStr+" sec)")
 		String str = ReplaceString(";", GetIndexingFuncOrExec(), "")		// removes all ";" is like a concatenate
 		str = SelectString(strlen(str),"Euler",str)
-		printf "from \"%s\", found %d patterns, indexed %d out of %d spots (Emax=%.3f keV)  with rms=%.3g° in %s",str,NpatternsFound,Nindexed,NiData,keVmax,rms_error,timeStr
+		printf "from \"%s\", found %d patterns, indexed %d out of %d spots (Emax=%.3f keV)  with rms=%.3g"+DEGREESIGN+" in %s",str,NpatternsFound,Nindexed,NiData,keVmax,rms_error,timeStr
 		printf ",   "+SurfaceNormalString(FullPeakIndexed)+"\r"
 		if (NpatternsFound>1)
 			Wave RL0=str2recip(StringByKey("recip_lattice0",wnote,"="))
@@ -344,11 +357,11 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 				keVs = numtype(keVs) ? -Inf : keVs
 				keVmax = WaveMax(keVs)
 				rms_error = NumberByKey("rms_error"+num2istr(pat),wnote,"=")
-				printf "  also found pattern %d (Emax=%.3f keV)  with rms=%g°,   %s\r",pat,keVmax,rms_error,SurfaceNormalString(FullPeakIndexed,pattern=pat)
+				printf "  also found pattern %d (Emax=%.3f keV)  with rms=%g"+DEGREESIGN+",   %s\r",pat,keVmax,rms_error,SurfaceNormalString(FullPeakIndexed,pattern=pat)
 				Wave RL=str2recip(StringByKey("recip_lattice"+num2istr(pat),wnote,"="))
 				Make/N=3/D/FREE hkl3
 				angle = rotationBetweenRecipLattices(RL0,RL,hkl3,ints=1)
-				printf "  pattern%d  is a rotation of %.3f° about an (%s)  from pattern0\r",pat,angle,hkl2str(hkl3[0],hkl3[1],hkl3[2])
+				printf "  pattern%d  is a rotation of %.3f"+DEGREESIGN+" about an (%s)  from pattern0\r",pat,angle,hkl2str(hkl3[0],hkl3[1],hkl3[2])
 			endfor
 		endif
 		if (INDEXING_ASK_BEFORE_DISPLAYING)
@@ -427,9 +440,9 @@ Static Function/T SurfaceNormalString(FullPeakIndexed,[pattern])
 	normal = {0,1,-1}
 	Variable angle = angleVec2Vec(normal,qvec)
 	if (pattern>0)
-		sprintf str, "surface normal(pattern=%d) is near (%s), which is %g° from assumed normal",pattern,hkl2str(h,k,l),angle
+		sprintf str, "surface normal(pattern=%d) is near (%s), which is %g"+DEGREESIGN+" from assumed normal",pattern,hkl2str(h,k,l),angle
 	else
-		sprintf str, "surface normal is near (%s), which is %g° from assumed normal",hkl2str(h,k,l),angle
+		sprintf str, "surface normal is near (%s), which is %g"+DEGREESIGN+" from assumed normal",hkl2str(h,k,l),angle
 	endif
 	return str
 End
@@ -546,7 +559,6 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 			recipInv = recipInvN[p][q][ipat]
 			MatrixOp/FREE/O hkl = recipInv x qmeas				// un-rotate from measured to reference orientation
 			normalize(hkl)
-//			CloseAllowedhkl(hkl,maxMultiply=0.5)
 			CloseAllowedhkl(hkl)
 			recip = recipN[p][q][ipat]
 			MatrixOp/FREE/O qcalc = recip x hkl
@@ -579,9 +591,7 @@ Function/T MakeIndexedWaveForAuxDetector(dNum,peakList,indexedList)	// create th
 		rmsPix = NaN
 		rmsAng = NaN
 	endif
-
-//	printf "rms error = %.3gpixels,   or   %.4g°\r",rmsPix,rmsAng
-	printf "rms error = %spixels,   or   %s°\r",vec2str(rmsPix,places=3,bare=Npatterns<2),vec2str(rmsAng,places=4,bare=Npatterns<2)
+	printf "rms error = %spixels,   or   %s%s\r",vec2str(rmsPix,places=3,bare=Npatterns<2),vec2str(rmsAng,places=4,bare=Npatterns<2),DEGREESIGN
 
 	pixel2q(g.d[0],925,1095,qcalc,depth=depth)
 	recipInv = recipInvN[p][q][0]
@@ -843,13 +853,13 @@ End
 //	String str
 //	sprintf str,"\\F'Comic Sans MS'\\Zr%03d\\[0",tsize		// use for gfMult=100
 //	if (stringmatch(IgorInfo(2),"Macintosh"))
-//		str += SelectString(h<0,"","\\S \\f01—\\f00\\M\\X0")+" "+num2istr(abs(h))	// mac
-//		str += SelectString(k<0,"","\\[1\\S\\f01 —\\f00\\M\\X1")+" "+num2istr(abs(k))
-//		str += SelectString(l<0,"","\\[2\\S \\f01—\\f00\\M\\X2")+" "+num2istr(abs(l))
+//		str += SelectString(h<0,"","\\S \\f01‚Äî\\f00\\M\\X0")+" "+num2istr(abs(h))	// mac
+//		str += SelectString(k<0,"","\\[1\\S\\f01 ‚Äî\\f00\\M\\X1")+" "+num2istr(abs(k))
+//		str += SelectString(l<0,"","\\[2\\S \\f01‚Äî\\f00\\M\\X2")+" "+num2istr(abs(l))
 //	else
-//		str += SelectString(h<0,"","\\S \\f01Ø\\f00\\M\\X0")+" "+num2istr(abs(h))	// windows
-//		str += SelectString(k<0,"","\\[1\\S\\f01 Ø\\f00\\M\\X1")+" "+num2istr(abs(k))
-//		str += SelectString(l<0,"","\\[2\\S \\f01Ø\\f00\\M\\X2")+" "+num2istr(abs(l))
+//		str += SelectString(h<0,"","\\S \\f01√ò\\f00\\M\\X0")+" "+num2istr(abs(h))	// windows
+//		str += SelectString(k<0,"","\\[1\\S\\f01 √ò\\f00\\M\\X1")+" "+num2istr(abs(k))
+//		str += SelectString(l<0,"","\\[2\\S \\f01√ò\\f00\\M\\X2")+" "+num2istr(abs(l))
 //	endif
 //	Wave image = ImageNameToWaveRef("",StringFromList(0,ImageNameList("",";")))
 //	px = limit(px,0,DimSize(image,0)-1)
@@ -894,9 +904,9 @@ Function IndexedPeakInfoFromMarquee()	// find the energy of a spot in the marque
 	Variable Intens=FullPeakIndexed[i][6][ip], keV=FullPeakIndexed[i][7][ip],angleErr=FullPeakIndexed[i][8][ip]
 	Variable Np = NumberByKey("NpatternsFound",note(FullPeakIndexed),"=")
 	if (Np>1)
-		printf "Indexed peak %d at pixel(%g, %g),     in pattern %d of %d, hkl=(%d %d %d),   Intensity=%g,  Energy=%.4f keV,  angleErr=%.3f (deg)\r",i,px,py,ip,Np,h,k,l,Intens,keV,angleErr
+		printf "Indexed peak %d at pixel(%g, %g),     in pattern %d of %d, hkl=(%d %d %d),   Intensity=%g,  Energy=%.4f keV,  angleErr=%.3f%s\r",i,px,py,ip,Np,h,k,l,Intens,keV,angleErr,DEGREESIGN
 	else
-		printf "Indexed peak %d at pixel(%g, %g),     hkl=(%d %d %d),   Intensity=%g,  Energy=%.4f keV,  angleErr=%.3f (deg)\r",i,px,py,h,k,l,Intens,keV,angleErr
+		printf "Indexed peak %d at pixel(%g, %g),     hkl=(%d %d %d),   Intensity=%g,  Energy=%.4f keV,  angleErr=%.3f%s\r",i,px,py,h,k,l,Intens,keV,angleErr,DEGREESIGN
 	endif
 End
 // This puts up a window with info about an indexed peak on the current graph, when you shift-click on a spot
@@ -1009,7 +1019,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 	Variable dangleY = groupy * geo.d[dNum].sizeY / geo.d[dNum].Ny
 	Variable anglePlaces = -floor( log(min(dangleX,dangleY)/4 / perpDist * 180/PI) )
 	anglePlaces = numtype(anglePlaces) ? 4 : limit(anglePlaces,1,8)
-	String angFmt = "%."+num2istr(anglePlaces)+"f"
+	String angFmt = "%."+num2istr(anglePlaces)+"f"+S_DEGREE
 
 	GetWindow $win psize
 	Variable vert = limit((s.mouseLoc.v-V_top)/(V_bottom-V_top),0,1)	// fractional position on graph
@@ -1158,7 +1168,7 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 				sprintf str,"\rFWHM: x=%.2f, y=%.2f,  x-corr=%.3f",fwx,fwy,xc
 				tagStr += str
 			endif
-			sprintf str,"\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'∞\\F]0,   #%d",theta*180/PI,m
+			sprintf str,"\r"+S_THETA+" = "+angFmt+",   #%d",theta*180/PI,m
 			tagStr += str
 		elseif (useMissing)
 			hklStr = hkl2str(missing[imiss][0],missing[imiss][1],missing[imiss][2], bar=1)
@@ -1176,9 +1186,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 			sprintf tagStr,"\\Zr090User Recip peak: (%.2f, %.2f)\r(%s) at %.4f keV,   #%d\r%s\\F]0",px,py,hklStr,keV,iuser,NameOfWave(userHKL)
 		elseif (useMouse)
 			if (useDistortion)
-				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'∞\\F]0,     distort=%.2f px",px,py,theta*180/PI,cabs(pz)
+				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r"+S_THETA+" = "+angFmt+",     distort=%.2f px",px,py,theta*180/PI,cabs(pz)
 			else
-				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r\\F'Symbol'q\\F]0 = "+angFmt+"\\F'Symbol'∞\\F]0",px,py,theta*180/PI
+				sprintf tagStr,"\\Zr090Mouse position (%.2f, %.2f)\r"+S_THETA+" = "+angFmt,px,py,theta*180/PI
 			endif
 			if (numtype(keV))
 				sprintf str,"\r\[0\\Zr075q\X0\y+20^\y-20\BBL\\M\\Zr075 = {%.3f, %.3f, %.3f}\M\\Zr090",qBL[0],qBL[1],qBL[2]
@@ -1207,9 +1217,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 					MatrixOp/O/FREE hkl = recip x hkli			// go from integral hkl to Q in BL
 					Variable dtheta = angleVec2Vec(hkl,qBL)	// angle between fitted peak and indexed peak
 					if (useDistortion)
-						sprintf str,"\r\\F'Symbol'Dq\\F]0 = "+angFmt+"\\F'Symbol'∞\\F]0,   distort=%.2f px",dtheta,cabs(pz)
+						sprintf str,"\r"+S_DELTA_THETA+" = "+angFmt+",   distort=%.2f px",dtheta,cabs(pz)
 					else
-						sprintf str,"\r\\F'Symbol'Dq\\F]0 = "+angFmt+"\\F'Symbol'∞\\F]0",dtheta
+						sprintf str,"\r"+S_DELTA_THETA+" = "+angFmt,dtheta
 					endif
 					tagStr += str
 				endif
@@ -1273,9 +1283,9 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 
 		hklStr = hkl2str(h,k,l, bar=1)
 		if (ip>0)
-			sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+angFmt+" (deg)",hklStr,keV,px,py,m,ip,angleErr
+			sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d, %d\rangleErr="+angFmt,hklStr,keV,px,py,m,ip,angleErr
 		else
-			sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+angFmt+" (deg)",hklStr,keV,px,py,m,angleErr
+			sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d\rangleErr="+angFmt,hklStr,keV,px,py,m,angleErr
 		endif
 		tagStr = "\\Zr090Indexed peak position\r" + str
 		tagStr += SelectString(numtype(SpaceGroupIDnum),"\r"+getHMsym2(SpaceGroupIDnum)+"    Space Group "+SpaceGroupID,"")
@@ -1311,10 +1321,10 @@ Function getFittedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak,  
 #ifdef USE_ENERGY_STRAIN_REFINE
 		String angleErrUnit = " nm\S-1\M"
 #else
-		String angleErrUnit = "°"
+		String angleErrUnit = DEGREESIGN
 #endif
 		hklStr = hkl2str(h,k,l, bar=1)
-		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r∆=%.2g%s\rhkl=(%s),   #%d",px,py, keV,angleErr,angleErrUnit,hklStr,m
+		sprintf str,"pixel(%.2f, %.2f)\r%.4f keV\r%s=%.2g%s\rhkl=(%s),   #%d",px,py, keV,GDELTA,angleErr,angleErrUnit,hklStr,m
 		tagStr = "\\Zr090Strained peak position\r" + str
 	endif
 	if (WaveExists(image))
@@ -1725,7 +1735,7 @@ Static Function setXtalFromNote(wnote,xtal)
 	endif
 
 	str = StringByKey("lengthUnit",wnote,"=")
-	if (stringmatch(str,"Å") || stringmatch(str,"Angstrom)"))
+	if (stringmatch(str,"√Ö") || stringmatch(str,"Angstrom)"))
 		a /= 10
 		b /= 10
 		c /= 10
@@ -2229,7 +2239,7 @@ Static Function/S ParagraphsFromIndexing(fpi,ip)
 	Variable maxLines=17					// max number of lines in one paragraph
 	String line, par1="",par2=""
 
-	String deg = SelectString(stringmatch(IgorInfo(2),"Macintosh"),"\F'Symbol'∞\F]0","°")
+	String deg = SelectString(cmpstr(IgorInfo(2),"Windows")==0 && IgorVersion()<7, DEGREESIGN, S_DEGREE)	// use symbol font for old Windows
 	String topLine = "\\Z09 (hkl)\t keV\t           pixel\t err"+deg
 
 	Variable i, N = DimSize(fpi,0)
@@ -2418,7 +2428,7 @@ Function/WAVE runIndexingEulerCommand(args)
 	Variable hp = NumberByKey("hp",args)										// preferred hkl
 	Variable kp = NumberByKey("kp",args)
 	Variable lp = NumberByKey("lp",args)
-	Variable cone = NumberByKey("cone",args)								// angle from preferred hkl, (0 < cone ≤ 180°)
+	Variable cone = NumberByKey("cone",args)								// angle from preferred hkl, (0 < cone ‚â§ 180¬∞)
 	Variable maxSpots = NumberByKey("maxSpots",args)						// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
@@ -2974,7 +2984,7 @@ Function/T MakeMaskThreshold(image,threshold,[dilate,printIt])
 			return ""
 		endif
 		Wave image = $imageName
-		printf "•MakeMaskThreshold(%s,%g",imageName,threshold
+		printf "‚Ä¢MakeMaskThreshold(%s,%g",imageName,threshold
 		if (dilate>0)
 			printf ",dilate=%g",dilate
 		endif
@@ -3041,7 +3051,7 @@ End
 //			return ""
 //		endif
 //		Wave image = $imageName
-//		printf "•MakeMaskThreshold(%s,%g",imageName,threshold
+//		printf "‚Ä¢MakeMaskThreshold(%s,%g",imageName,threshold
 //		if (dilate>0)
 //			printf ",dilate=%g",dilate
 //		endif
@@ -3161,7 +3171,7 @@ Function/S FitPeaksWithExternal(image,minPeakWidth,boxSize,maxRfactor,threshAbov
 			line += ", maxNum="+num2str(maxNum)
 		endif
 		if (strlen(GetRTStackInfo(2)))
-			line = "•"+line
+			line = "‚Ä¢"+line
 		endif
 	endif
 	if (!WaveExists(image) || WaveDims(image)!=2)
@@ -3636,7 +3646,7 @@ Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAbo
 		Wave image = $imageName
 		// printf "FitPeaksWithSeedFill(%s,%g,%g,%g,%g)\r",imageName,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg
 		sprintf line, "FitPeaksWithSeedFill(%s,%g,%g,%g,%g",imageName,minPeakWidth,maxPeakWidth,minSep,threshAboveAvg
-		line = SelectString(strlen(GetRTStackInfo(2)),"","•")+line
+		line = SelectString(strlen(GetRTStackInfo(2)),"","‚Ä¢")+line
 		printIt = 1
 	endif
 	if (!WaveExists(image) || WaveDims(image)!=2)
@@ -3824,7 +3834,7 @@ Function/S FitPeaksWithSeedFill(image,minPeakWidth,maxPeakWidth,minSep,threshAbo
 		amp = abs(W_coef[1])
 
 //		if (ItemsInList(GetRTStackInfo(0))<2)
-//			printf "%d    Gaussian peak in at (%.2f±%.2f, %.2f±%.2f) with FWHM of (%.2f±%.2f, %.2f±%.2f),   amp=%g,  image[x,y]= %g\r",Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,amp,image[xx][yy]
+//			printf "%d    Gaussian peak in at (%.2f¬±%.2f, %.2f¬±%.2f) with FWHM of (%.2f¬±%.2f, %.2f¬±%.2f),   amp=%g,  image[x,y]= %g\r",Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,amp,image[xx][yy]
 //		endif
 		err = ( sigX>maxPeakWidth || sigY>maxPeakWidth || numtype(sigX+sigY) )						// errors bars are huge
 		if (!(min(fwx,fwy)>minPeakWidth) || !(max(fwx,fwy)<maxPeakWidth) || !(max(amp,image[xx][yy])>bkg) || err)	// cannot have spots too wide or too narrow
@@ -4029,7 +4039,7 @@ Function/S FitPeaksStepWise(image,minPeakWidth,maxPeakWidth,minSep,threshAboveAv
 		amp = abs(W_coef[1])
 		sigAmp = W_sigma[2]
 		//	if (ItemsInList(GetRTStackInfo(0))<2)
-		//		printf "%d    Gaussian peak in at (%.2f±%.2f, %.2f±%.2f) with FWHM of (%.2f±%.2f, %.2f±%.2f),   amp=%g\r",Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,W_coef[1]*fwx*fwy
+		//		printf "%d    Gaussian peak in at (%.2f¬±%.2f, %.2f¬±%.2f) with FWHM of (%.2f¬±%.2f, %.2f¬±%.2f),   amp=%g\r",Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,W_coef[1]*fwx*fwy
 		//	endif
 
 		if (min(fwx,fwy)<minPeakWidth || max(fwx,fwy)>maxPeakWidth || sigX>maxPeakWidth || sigY>maxPeakWidth || amp<threshAboveAvg || amp/sigAmp<3)	// cannot have spots too wide or too narrow
@@ -4307,7 +4317,7 @@ endif
 			FitPeaks_ImageMask[left,right][top,bot] = 255		// extend the FitPeaks_ImageMask to include this spot
 			continue
 		endif
-		// printf "%d  %d  Gaussian peak in at (%.2f±%.2f, %.2f±%.2f) with FWHM of (%.2f±%.2f, %.2f±%.2f),   amp=%g\r",i,Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,W_coef[1]*fwx*fwy
+		// printf "%d  %d  Gaussian peak in at (%.2f¬±%.2f, %.2f¬±%.2f) with FWHM of (%.2f¬±%.2f, %.2f¬±%.2f),   amp=%g\r",i,Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,W_coef[1]*fwx*fwy
 		// check here that the found xx,yy is not too close to existing peaks (if if is stamp out with roi again)
 		for (i=0;i<Nu;i+=1)									// check that this is not too close to an existing peak
 			if (sqrt((FullPeakList[i][0]-xx)^2 + (FullPeakList[i][1]-yy)^2)<dist)
@@ -4666,7 +4676,7 @@ Static Function reFit_GaussianPkList(image,dist)
 		if (fwx>dist || fwy>dist || fwx<1 || fwy<1 || sigX>dist || sigY>dist)	// cannot have spots wider than dist
 			continue
 		endif
-		// printf "%d  %d  Gaussian peak in at (%.2f±%.2f, %.2f±%.2f) with FWHM of (%.2f±%.2f, %.2f±%.2f),   amp=%g\r",i,Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,W_coef[1]*fwx*fwy
+		// printf "%d  %d  Gaussian peak in at (%.2f¬±%.2f, %.2f¬±%.2f) with FWHM of (%.2f¬±%.2f, %.2f¬±%.2f),   amp=%g\r",i,Nu,xx,sigX,yy,sigY,fwx,W_sigma[3]*fw,fwy,W_sigma[5]*fw,W_coef[1]*fwx*fwy
 
 		tooClose = 0													// check that this spot is not too close to another already included
 		for (j=0;j<Nu-1;j+=1)					// check all spots already fitted
@@ -5479,39 +5489,72 @@ End
 
 
 
-// find hkl that is paralllel to the input and allowed
-Static Function CloseAllowedhkl(hkl,[maxMultiply])	// in and out can be the same wave
-	Wave hkl							// real numbers on intput, set to h,k,l on output
-	Variable maxMultiply				// used to determine maxFactor, maxFactor = maxMultiply*60
-	maxMultiply = ParamIsDefault(maxMultiply) ? 1 : maxMultiply
-	maxMultiply = maxMultiply>0 && numtype(maxMultiply)==0 ? maxMultiply : 1
+// find best hkl that is most paralllel to the input and allowed
+Static Function CloseAllowedhkl(hklIN,[qmax])	// in and out can be the same wave
+	Wave hklIN						// real numbers on intput, set to h,k,l on output
+	Variable qmax					// maximum allowed value of |q| (1/nm), used to determine maxFactor
+	qmax = ParamIsDefault(qmax) || numtype(qmax) || qmax<=0 ? 230 : qmax	// 230(1/nm) puts 32keV at 2theta=90¬∞
+	//	Variable lambda = 4*PI/sqrt(2)/qmax, keV=hc/lambda
+	//	print "lambda =",lambda, "   ",keV
 
 	STRUCT crystalStructure xtal			// temporary crystal structure
 	FillCrystalStructDefault(xtal)			//fill the lattice structure with default values
-	Variable maxFactor = round(max(max(xtal.a,xtal.b),xtal.c)*maxMultiply*60)
-	Variable xin=hkl[0],yin=hkl[1],zin=hkl[2]		// save input values
-	hkl = abs(hkl)
-	Variable i, maxVal = WaveMax(hkl)
-	Variable ibest=0, dotMax=-Inf, dot
-	for (i=1;i<=maxFactor;i+=1)			// maxFactor was 25, which was good for Si
-		hkl = {xin,yin,zin}
-		hkl = round(hkl*i/maxVal)
-		dot = (hkl[0]*xin + hkl[1]*yin + hkl[2]*zin)/norm(hkl)
-		if (dot > (dotMax+SMALLEST1))
-			ibest = i
-			dotMax = dot
-		endif
-	endfor
-	hkl = {xin,yin,zin}
-	hkl = round(hkl*ibest/maxVal)
-	xin = hkl[0]
-	yin = hkl[1]
-	zin = hkl[2]
-	lowestAllowedHKL(xin,yin,zin)
-	hkl = {xin,yin,zin}
-	hkl = hkl[p]==0 ? 0 : hkl[p]		// avoid "-0"
+
+	WaveStats/Q/M=1 hklIN
+	Variable maxVal=max(V_max,-V_min)
+	Make/N=3/D/FREE hkl1 = hklIN/maxVal	// make largest value in |hkl1| = 1
+
+	Wave recip = recipFrom_xtal(xtal)		// FREE wave with reciprocal lattice
+	MatrixOP/FREE qvec0 = recip x hkl1	// qvec for hkl1
+	Variable maxFactor = max(qmax/norm(qvec0), 2.1)	// I can multiply hkl1 by maxFactor without exceeding qmax
+	Variable N=floor(maxFactor)
+	MatrixOP/FREE hkls = colRepeat(hkl1,N)
+	hkls *= (q+1)
+
+	MatrixOP/FREE dots = sumCols( normalizeCols(recip x round(hkls)) * colRepeat(normalize(qvec0),N) )
+	Redimension/N=(N) dots					// want (N), not (1,N)
+	dots += (N-1-p)*SMALLEST1				// selects the lowest index when getting V_maxloc
+	WaveStats/Q/M=1 dots
+	Variable ibest = limit(V_maxloc+1,1,N)
+	Variable xx=round(ibest*hkl1[0]), yy=round(ibest*hkl1[1]), zz=round(ibest*hkl1[2])
+	lowestAllowedHKL(xx,yy,zz)
+	hklIN = {xx,yy,zz}
 	return 0
 End
+//
+//// find hkl that is paralllel to the input and allowed
+//Static Function CloseAllowedhkl(hkl,[maxMultiply])	// in and out can be the same wave
+//	Wave hkl							// real numbers on intput, set to h,k,l on output
+//	Variable maxMultiply				// used to determine maxFactor, maxFactor = maxMultiply*60
+//	maxMultiply = ParamIsDefault(maxMultiply) ? 1 : maxMultiply
+//	maxMultiply = maxMultiply>0 && numtype(maxMultiply)==0 ? maxMultiply : 1
+//
+//	STRUCT crystalStructure xtal			// temporary crystal structure
+//	FillCrystalStructDefault(xtal)			//fill the lattice structure with default values
+//	Variable maxFactor = round(max(max(xtal.a,xtal.b),xtal.c)*maxMultiply*60)
+//	Variable xin=hkl[0],yin=hkl[1],zin=hkl[2]		// save input values
+//	hkl = abs(hkl)
+//	Variable i, maxVal = WaveMax(hkl)
+//	Variable ibest=0, dotMax=-Inf, dot
+//	for (i=1;i<=maxFactor;i+=1)			// maxFactor was 25, which was good for Si
+//		hkl = {xin,yin,zin}
+//		hkl = round(hkl*i/maxVal)
+//		dot = (hkl[0]*xin + hkl[1]*yin + hkl[2]*zin)/norm(hkl)
+//		if (dot > (dotMax+SMALLEST1))
+//			ibest = i
+//			dotMax = dot
+//		endif
+//	endfor
+//	hkl = {xin,yin,zin}
+//	hkl = round(hkl*ibest/maxVal)
+//	xin = hkl[0]
+//	yin = hkl[1]
+//	zin = hkl[2]
+//	lowestAllowedHKL(xin,yin,zin)
+//	hkl = {xin,yin,zin}
+//	hkl = hkl[p]==0 ? 0 : hkl[p]		// avoid "-0"
+//	return 0
+//End
 //Static Function CloseAllowedhkl(hkl)	// in and out can be the same wave
 //	Wave hkl							// real numbers on intput, set to h,k,l on output
 //
@@ -5573,7 +5616,7 @@ End
 //	printf "1 - %g ,  is as close as you can get to one\r",best
 //End
 //
-//	•smallest()
+//	‚Ä¢smallest()
 //	  1 - 1.11022e-16 ,  is as close as you can get to one
 //
 //
@@ -5774,7 +5817,7 @@ Function EnergyOfhkl(FullPeakIndexed,pattern,h,k,l,[printIt])
 			py = (imag(pz)-(starty-FIRST_PIXEL)-(groupy-1)/2)/groupy		// pixels are still zero based
 		endif
 		if (printIt)
-			printf "for %s pattern #%d,  d[(%s)] = %.9g nm,   E(%s) = %.4f keV   (theta=%.3f°)",NameOfWave(FullPeakIndexed),pattern,hkl2str(h,k,l),d,hkl2str(h,k,l),keV,asin(sineTheta)*180/PI
+			printf "for %s pattern #%d,  d[(%s)] = %.9g nm,   E(%s) = %.4f keV   (theta=%.3f%s)",NameOfWave(FullPeakIndexed),pattern,hkl2str(h,k,l),d,hkl2str(h,k,l),keV,asin(sineTheta)*180/PI,DEGREESIGN
 			if (numtype(px+py)==0)
 				printf "       should be at pixel [%.2f, %.2f]",px,py
 			endif
@@ -5824,7 +5867,7 @@ Function EstimateConeAngle(dnum, [image, printIt])
 
 	Variable cone=EstimateConeAngleFromDet(g.d[dnum])
 	if (printIt)
-		printf "cone angle to fill detector %g is probably %.3g°\r",dnum,cone
+		printf "cone angle to fill detector %g is probably %.3g%s\r",dnum,cone,DEGREESIGN
 	endif
 	return cone
 End
@@ -5884,7 +5927,7 @@ Function RotationBetweenTwoIndexations(windex0,pattern0,windex1,pattern1,[printI
 			return NaN
 		endif
 		Wave windex0=$wName0, windex1=$wName1
-		printf "•RotationBetweenTwoIndexations(%s,%g, %s,%g)",NameOfWave(windex0),pattern0,NameOfWave(windex1),pattern1
+		printf "‚Ä¢RotationBetweenTwoIndexations(%s,%g, %s,%g)",NameOfWave(windex0),pattern0,NameOfWave(windex1),pattern1
 		if (!ParamIsDefault(printIt))
 			printf ", printIt=%g",printIt
 		endif
@@ -5911,8 +5954,8 @@ Function RotationBetweenTwoIndexations(windex0,pattern0,windex1,pattern1,[printI
 		lowestOrderHKL(h,k,l)
 		Make/FREE hkl0 = {h,k,l}
 
-		printf "rotation from point %s pattern%d  to  %s pattern%d is about the axis {XYZ} = %s  by  %.3g°\r",NameOfWave(windex0),pattern0,NameOfWave(windex1),pattern1,vec2str(axis),angle
-		printf "in both crystals, the axis is an hkl=%s,    approximately {%s} (off by %.2f°)\r",vec2str(hkl),hkl2str(h,k,l),angleVec2Vec(hkl0,hkl)
+		printf "rotation from point %s pattern%d  to  %s pattern%d is about the axis {XYZ} = %s  by  %.3g%s\r",NameOfWave(windex0),pattern0,NameOfWave(windex1),pattern1,vec2str(axis),angle,DEGREESIGN
+		printf "in both crystals, the axis is an hkl=%s,    approximately {%s} (off by %.2f%s)\r",vec2str(hkl),hkl2str(h,k,l),angleVec2Vec(hkl0,hkl),DEGREESIGN
 	endif
 	return angle									// total rotation angle (degrees)
 End
@@ -6046,9 +6089,9 @@ Function AngleBetweenTwoPointsGeneral(image0,image1, px0,py0, px1,py1)
 	angle = acos(cosine)*180/PI
 	if (printIt)
 		if (StringMatch(GetWavesDataFolder(image0,2),GetWavesDataFolder(image1,2)))
-			printf "Between points [%.2f, %.2f],  and [%.2f, %.2f]  the angle between Q vectors is %.3f°\r",px0,py0,px1,py1,angle
+			printf "Between points [%.2f, %.2f],  and [%.2f, %.2f]  the angle between Q vectors is %.3f%s\r",px0,py0,px1,py1,angle,DEGREESIGN
 		else
-			printf "Between points %s[%.2f, %.2f],  and %s[%.2f, %.2f]  the angle between Q vectors is %.3f°\r",NameOfWave(image0),px0,py0,NameOfWave(image0),px1,py1,angle
+			printf "Between points %s[%.2f, %.2f],  and %s[%.2f, %.2f]  the angle between Q vectors is %.3f%s\r",NameOfWave(image0),px0,py0,NameOfWave(image0),px1,py1,angle,DEGREESIGN
 		endif
 	endif
 	return angle
@@ -6359,7 +6402,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Astart = DL														// the starting direct lattice
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
-			printf "•"
+			printf "‚Ä¢"
 		endif
 		printf "TotalStrainRefine(%d,\"%d%d%d%d%d%d\"",pattern,aFit,bFit,cFit,alphaFit,betFit,gamFit
 		if (!ParamIsDefault(coords))
@@ -6385,7 +6428,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		printf "							b* = {%+.6f, %+.6f, %+.6f}\r",bs0,bs1,bs2
 		printf "							c* = {%+.6f, %+.6f, %+.6f}\r",cs0,cs1,cs2
 		print " "
-		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g°,   beta = %.8g°,   gamma = %.8g°,   Vc = %.7g (nm^3)\r",LC[0],LC[1],LC[2],LC[3],LC[4],LC[5],Vc
+		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g%s,   beta = %.8g%s,   gamma = %.8g%s,   Vc = %.7g (nm^3)\r",LC[0],LC[1],LC[2],LC[3],DEGREESIGN,LC[4],DEGREESIGN,LC[5],DEGREESIGN,Vc
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r"LC[0]/LC[2],LC[1]/LC[2],LC[0]/LC[1]
 	endif
 
@@ -6443,7 +6486,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 			qqs = Qs[p][q]*qhat[q]
 			MatrixOP/FREE/O dots = sumRows(qqs)
 			WaveStats/M=1/Q dots
-			if (V_max>0.99)										// require that Q's are parallel to within cos(0.99)=8.11°
+			if (V_max>0.99)										// require that Q's are parallel to within cos(0.99)=8.11¬∞
 				PeaksForStrain[m][0,2] = hkl[q]				// set the hkl
 				qmeas = Qs[V_maxloc][p]						// closest measured peak to this hkl
 				d = dSpacingFromLatticeConstants(hkl[0],hkl[1],hkl[2],LC[0],LC[1],LC[2],LC[3],LC[4],LC[5])
@@ -6477,9 +6520,9 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 				if (strsearch(measuredType,"keV",0,2)==0)
 					sine = -qhat[2]								// measured sin(Bragg angle)
 					keV = hklEmeasured[j][3]					// measured energy
-					qLen = 4*PI*sine*keV/hc					// Q = 4π sin(theta)/lambda
+					qLen = 4*PI*sine*keV/hc					// Q = 4œÄ sin(theta)/lambda
 				elseif (strsearch(measuredType,"d",0,2)==0)
-					qLen = 2*PI/hklEmeasured[j][3]			// passing d-spacing,  Q=2π/d
+					qLen = 2*PI/hklEmeasured[j][3]			// passing d-spacing,  Q=2œÄ/d
 				elseif (strsearch(measuredType,"Q",0,2)==0)
 					qLen = hklEmeasured[j][3]					// directly passing Q
 				endif
@@ -6492,7 +6535,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 
 	Variable rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)
 	if (printIt)
-		printf "at start, rms error = %.5f°",rmsErr*180/PI
+		printf "at start, rms error = %.5f%s",rmsErr*180/PI,DEGREESIGN
 		printf " \t\t****** %s ******\r",SelectString(deviatoric,"Total Strain Refinement, Vc can vary","Deviatoric Strain Refinement, Vc is fixed")
 	endif
 
@@ -6587,7 +6630,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 	Rlocal[1,2][1,2] = 1/sqrt(2)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonXHF = Rlocal x epsilonBL x Inv(Rlocal)	// get epsilon in the XHF coordinate system
-	Rlocal[1,2][1,2] = -1/sqrt(2)							// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45°)
+	Rlocal[1,2][1,2] = -1/sqrt(2)							// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45¬∞)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonSample = Rlocal x epsilonBL x Inv(Rlocal)// get epsilon in the Sample coordinate system
 
@@ -6611,7 +6654,7 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 			keVmeasured = hc / (2*d*sine)					// lambda = 2 d sin(theta)
 		elseif (strsearch(measuredType,"Q",0,2)==0)
 			qLen = PeaksForStrain[i][15]						// Q (1/nm)
-			keVmeasured = qLen*hc/(4*PI*sine)				// Q = 4π sin(theta)/lambda
+			keVmeasured = qLen*hc/(4*PI*sine)				// Q = 4œÄ sin(theta)/lambda
 		else
 			keVmeasured = NaN										// unknown measuredType
 		endif
@@ -6647,9 +6690,9 @@ Function/T TotalStrainRefine(pattern,constrain,[coords,FullPeakIndexed,FullPeakI
 		printf "				b = {%+.6f, %+.6f, %+.6f}\r",DL[0][1],DL[1][1],DL[2][1]
 		printf "				c = {%+.6f, %+.6f, %+.6f}\r",DL[0][2],DL[1][2],DL[2][2]
 		print " "
-		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g°,   beta = %.8g°,   gamma = %.8g°,   Vc = %.7g (nm^3)\r",a,b,c,alpha,bet,gam,Vc
+		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g%s,   beta = %.8g%s,   gamma = %.8g%s,   Vc = %.7g (nm^3)\r",a,b,c,alpha,DEGREESIGN,bet,DEGREESIGN,gam,DEGREESIGN,Vc
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r",a/c,b/c,a/b
-		printf "at end, rms error    = %.5f°\r",rmsErr*180/PI
+		printf "at end, rms error    = %.5f%s\r",rmsErr*180/PI,DEGREESIGN
 		print " "
 		sprintf str,"  \t%sTr(epsilon) = %.2g%s",star1,trace,star2
 		printf "epsilonCrystal =	{%+.6f, %+.6f, %+.6f}  \tvon Mises strain = %.3g%s\r",epsilon[0][0],epsilon[0][1],epsilon[0][2], epsilonvM, SelectString(abs(trace)>1e-12,"",str)
@@ -6905,7 +6948,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Astart = DL														// the starting direct lattice
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
-			printf "•"
+			printf "‚Ä¢"
 		endif
 		printf "DeviatoricStrainRefine(%d,\"%d%d%d%d%d%d\"",pattern,aFit,bFit,cFit,alphaFit,betFit,gamFit
 		if (!ParamIsDefault(coords))
@@ -6926,7 +6969,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		printf "							b* = {%+.6f, %+.6f, %+.6f}\r",bs0,bs1,bs2
 		printf "							c* = {%+.6f, %+.6f, %+.6f}\r",cs0,cs1,cs2
 		print " "
-		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g°,   beta = %.8g°,   gamma = %.8g°,   Vc = %.7g (nm^3)\r",LC[0],LC[1],LC[2],LC[3],LC[4],LC[5],Vc
+		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g%s,   beta = %.8g%s,   gamma = %.8g%s,   Vc = %.7g (nm^3)\r",LC[0],LC[1],LC[2],LC[3],DEGREESIGN,LC[4],DEGREESIGN,LC[5],DEGREESIGN,Vc
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r"LC[0]/LC[2],LC[1]/LC[2],LC[0]/LC[1]
 	endif
 
@@ -6970,8 +7013,7 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	Redimension/N=(N,-1) PeaksForStrain						// trim to number of valid points in PeaksForStrain
 	Variable rmsErr = latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)
 	if (printIt)
-//		printf "at start, rms error = %.5f°\r",latticeMismatchAll(PeaksForStrain,axis[0],axis[1],axis[2],LC)		// 3 rotations and all 6 lattice constants
-		printf "at start, rms error = %.5f°\r",rmsErr*180/PI	// 3 rotations and all 6 lattice constants
+		printf "at start, rms error = %.5f%s\r",rmsErr*180/PI,DEGREESIGN	// 3 rotations and all 6 lattice constants
 	endif
 	if ((Nfit+3)>=(2*N))											// there are (Nfit+3) free parameters (Nfit lattice constants + 3 rotations),  requires 1 more 
 		return ""														// each measured spot provides 2 values
@@ -7029,10 +7071,10 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	RLfromLatticeConstants(LC,DL,RL,Vc=Vc)			// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
 	MatrixOp/O RL = rho x RL								// rotate the reciprocal lattice by rho, this is the strained RL
 	MatrixOp/O DL = rho x DL
-	Ameas = DL													// Vcartesian = A x Vcell,   used to make the strain tensor
+	Ameas = DL												// Vcartesian = A x Vcell,   used to make the strain tensor
 
-	MatrixOp/FREE F = Ameas x Inv(Astart)				// transformed un-strained to strained,  Ameas = F x Ao,  F = R x U
-	MatrixOp/FREE U = F^t x F								// U is symmetric, so F^t x F = U^t x R^t x R x U = U x R^-1 x R x U = U x U = U^2
+	MatrixOp/FREE F = Ameas x Inv(Astart)			// transformed un-strained to strained,  Ameas = F x Ao,  F = R x U
+	MatrixOp/FREE U = F^t x F							// U is symmetric, so F^t x F = U^t x R^t x R x U = U x R^-1 x R x U = U x U = U^2
 	if (sqrtSymmetricMat(U))								// U starts as F^t x F, and is replaced by sqrt(U^2)
 		KillWaves/Z axis_latticeMismatch, rho_latticeMismatch
 		return ""
@@ -7040,8 +7082,8 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 	MatrixOp/O epsilon = U - Identity(3)				// U = I + epsilon
 
 	Variable trace = MatrixTrace(epsilon)
-	epsilon -= (p==q)*trace/3								// only deviatoric part, subtract trace/3 from diagonal
-	trace = MatrixTrace(epsilon)							// re-set trace to be just the epsilon part, should be zero
+	epsilon -= (p==q)*trace/3							// only deviatoric part, subtract trace/3 from diagonal
+	trace = MatrixTrace(epsilon)						// re-set trace to be just the epsilon part, should be zero
 	trace = abs(trace)<1e-15 ? 0 : trace				// set really small numbers to zero
 	Wave epsilonAbs = $(microGeo#MakeUnique3x3Mat($""))
 	epsilonAbs = abs(epsilon)
@@ -7055,13 +7097,13 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 
 	MatrixOp/O epsilonBL = rho x epsilon x Inv(rho)		// epsilon in beam line coordinates
 
-	Make/N=(3,3)/D/FREE Rlocal							// make a new 3x3 matrix,for the rotation from BL --> XHF coordinates (45° about X)
+	Make/N=(3,3)/D/FREE Rlocal							// make a new 3x3 matrix,for the rotation from BL --> XHF coordinates (45¬∞ about X)
 	Rlocal = 0
 	Rlocal[0][0] = 1
 	Rlocal[1,2][1,2] = 1/sqrt(2)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonXHF = Rlocal x epsilonBL x Inv(Rlocal)	// get epsilon in the XHF coordinate system
-	Rlocal[1,2][1,2] = -1/sqrt(2)						// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45°)
+	Rlocal[1,2][1,2] = -1/sqrt(2)						// now Rlocal transforms BL -->  "sample system" (uses outward surface normal for sample at 45¬∞)
 	Rlocal[2][1] *= -1
 	MatrixOp/O epsilonSample = Rlocal x epsilonBL x Inv(Rlocal)// get epsilon in the Sample coordinate system
 
@@ -7106,9 +7148,9 @@ Function/T DeviatoricStrainRefine(pattern,constrain,[coords,FullPeakList,FullPea
 		printf "				b = {%+.6f, %+.6f, %+.6f}\r",DL[0][1],DL[1][1],DL[2][1]
 		printf "				c = {%+.6f, %+.6f, %+.6f}\r",DL[0][2],DL[1][2],DL[2][2]
 		print " "
-		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g°,   beta = %.8g°,   gamma = %.8g°,   Vc = %.7g (nm^3)\r",a,b,c,alpha,bet,gam,Vc
+		printf "a = %.7g nm,   b = %.7g,   c = %.7g,   alpha = %.8g%s,   beta = %.8g%s,   gamma = %.8g%s,   Vc = %.7g (nm^3)\r",a,b,c,alpha,DEGREESIGN,bet,DEGREESIGN,gam,DEGREESIGN,Vc
 		printf "a/c = %.7g,   b/c = %.7g,   a/b = %.7g\r",a/c,b/c,a/b
-		printf "at end, rms error    = %.5f°\r",rmsErr*180/PI
+		printf "at end, rms error    = %.5f%s\r",rmsErr*180/PI,DEGREESIGN
 		print " "
 		sprintf str,"  \t*****  Tr(epsilon) = %.2g  *****",trace
 		printf "epsilonCrystal =	{%+.6f, %+.6f, %+.6f}  \tvon Mises strain = %.3g%s\r",epsilon[0][0],epsilon[0][1],epsilon[0][2], epsilonvM, SelectString(abs(trace)>1e-12,"",str)
@@ -7171,7 +7213,7 @@ End
 Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations and all 6 lattice constants (uses MatrixOP for speed)
 	Wave PeaksForStrain
 	Variable rx,ry,rz
-	Wave LC															//	lattice parameters:   LC = {a,b,c,alpha,bet,gam}
+	Wave LC									//	lattice parameters:   LC = {a,b,c,alpha,bet,gam}
 
 	Wave axis=axis_latticeMismatch, rho=rho_latticeMismatch
 	Wave RL=RL_latticeMismatch, LC=optimize_LatticeConstantsWave
@@ -7182,21 +7224,21 @@ Static Function latticeMismatchAll(PeaksForStrain,rx,ry,rz,LC)			// 3 rotations 
 
 	axis = {rx,ry,rz}
 	Variable angle= norm(axis)
-	rotationMatAboutAxis(axis,angle,rho)								// calculate rho, the rotation matrix from {rx,ry,rz}
+	rotationMatAboutAxis(axis,angle,rho)									// calculate rho, the rotation matrix from {rx,ry,rz}
 
-	RLfromLatticeConstants(LC,$"",RL,Vc=Vc)							// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
-	MatrixOp/O RL = rho x RL											// rotate the reciprocal lattice by rho
+	RLfromLatticeConstants(LC,$"",RL,Vc=Vc)								// calculate the reciprocal lattice from {a,b,c,alpha,bet,gam}
+	MatrixOp/O RL = rho x RL													// rotate the reciprocal lattice by rho
 
 	Variable N = DimSize(PeaksForStrain,0)
 	Make/N=(N,3)/D/FREE qhats, ghats
 	Make/N=(N)/D/FREE weight=1,  ones=1
-	qhats = PeaksForStrain[p][q+3]									// measured directions (assumed normalized)
-	ghats = PeaksForStrain[p][q]										// hkl of reflection
+	qhats = PeaksForStrain[p][q+3]											// measured directions (assumed normalized)
+	ghats = PeaksForStrain[p][q]											// hkl of reflection
 	MatrixOp/O/FREE ghats = NormalizeCols(RL x ghats^t)^t			// calcualted normalized direction from hkls
 	PeaksForStrain[][6,8] = ghats[p][q-6]								// save for later checking
 	// weight = sqrt(sqrt(PeaksForStrain[p][9]))
-	MatrixOP/FREE errw = sum((ones-sumRows(ghats*qhats))*weight)// 1-dot is ~ 0.5*∆theta^2,  using cos(theta) ~ 1-(theta^2)/2!
-	Variable err =sqrt(errw[0]*2/sum(weight))						// change to rms
+	MatrixOP/FREE errw = sum((ones-sumRows(ghats*qhats))*weight)	// 1-dot is ~ 0.5*‚àÜtheta^2,  using cos(theta) ~ 1-(theta^2)/2!
+	Variable err =sqrt(errw[0]*2/sum(weight))							// change to rms
 	err = numtype(err) ? Inf : err
 	if (numtype(err) && NumVarOrDefault("printOnlyFirstStrainNaN",1))
 		printf "err = %g,    LC={%g, %g, %g, %g, %g, %g}\r",err,LC[0],LC[1],LC[2],LC[3],LC[4],LC[5]
@@ -7368,7 +7410,7 @@ Static Function RLfromLatticeConstants(LC,DL,RL[,Vc])	// set a*, b*, c* from lat
 		DL[2][0] = a2	;	DL[2][1] = b2	;	DL[2][2] = c2
 	endif
 	if (WaveExists(RL))								// set reciprocal lattice
-		// a* = (b x c)*2π/Vc				b* = (c x a)*2π/Vc					c*=(a x b)*2π/Vc
+		// a* = (b x c)*2œÄ/Vc				b* = (c x a)*2œÄ/Vc					c*=(a x b)*2œÄ/Vc
 		RL[0][0]=(b1*c2-b2*c1)*pv	;	RL[0][1]=(c1*a2-c2*a1)*pv ;	RL[0][2]=(a1*b2-a2*b1)*pv
 		RL[1][0]=(b2*c0-b0*c2)*pv ;	RL[1][1]=(c2*a0-c0*a2)*pv ;	RL[1][2]=(a2*b0-a0*b2)*pv
 		RL[2][0]=(b0*c1-b1*c0)*pv ;	RL[2][1]=(c0*a1-c1*a0)*pv ;	RL[2][2]=(a0*b1-a1*b0)*pv
@@ -7845,7 +7887,7 @@ Function StereoOfIndexedPattern(FullPeakIndexed,pattern,[centerType,showDetector
 	hklAz = round(hklAz*10000)/1000
 	if (printIt)
 		if (stringmatch(StringFromList(0,GetRTStackInfo(0)),"IndexButtonProc"))
-			printf "•"
+			printf "‚Ä¢"
 		endif
 		printf "StereoOfIndexedPattern(%s,%d)\r",NameOfWave(FullPeakIndexed),pattern
 		printf "Making Stereographic projection with pole at (%g, %g, %g),  and  x toward (%g, %g, %g)",h,k,l,round(hklAz[0]*1000)/100, round(hklAz[1]*1000)/100, round(hklAz[2]*1000)/100
