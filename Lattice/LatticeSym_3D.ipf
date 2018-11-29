@@ -5554,7 +5554,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 
 //	reMakeAtomXYZs(xtal)								// NOT ThreadSafe
 	if (xtal.N<1)
-		return 1												// No atom defined, but passed simple tests, it is allowed
+		return 1											// No atom defined, but passed simple tests, it is allowed
 	endif
 
 	Variable fatomMag, m, Fmax=0					// Fmax is F with no phase factor cancelations
@@ -5563,7 +5563,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	Make/N=3/D/FREE hkl={h,k,l}
 	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
 		if (WaveExists(atomWaves))
-			Wave ww = atomWaves[m]						// needed when running in a separate thread
+			Wave ww = atomWaves[m]					// needed when running in a separate thread
 		else
 			Wave ww = $("root:Packages:Lattices:atom"+num2istr(m))	// not available from a separate thread
 		endif
