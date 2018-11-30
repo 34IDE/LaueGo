@@ -2128,7 +2128,14 @@ endif
 	SetDimLabel 1,10,pixelY,IndexedWave	;	SetDimLabel 1,11,detNum,IndexedWave
 
 	String str, wnote=ReplaceStringByKey("waveClass",noteMeasured,"IndexedPeakList","=")
-	wnote = ReplaceStringByKey("peakListWave",wnote,GetWavesDataFolder(GhatsMeasured,2),"=")
+	str = GetWavesDataFolder(FullPeakList,2)
+	if (WaveExists(FullPeakList1))
+		str+= ","+GetWavesDataFolder(FullPeakList1,2)
+	endif
+	if (WaveExists(FullPeakList2))
+		str+= ","+GetWavesDataFolder(FullPeakList2,2)
+	endif
+	wnote = ReplaceStringByKey("peakListWave",wnote,str,"=")
 
 	wnote = ReplaceStringByKey("structureDesc",wnote,xtal.desc,"=")
 	sprintf str,"{ %g, %g, %g, %g, %g, %g }",xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
