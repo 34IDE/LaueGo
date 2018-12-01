@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern globala access method and strict wave access.
 #pragma ModuleName=IndexingInternal
-#pragma version = 0.32
+#pragma version = 0.33
 #include "IndexingN", version>=4.80
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
@@ -72,6 +72,7 @@ Function/WAVE runIndexingQsZones(args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
 	Variable minSpotsForZone = NumberByKey("minSpotsForZone",args)// need at least this many spots to define a zone
 	Variable minNQsMatch = NumberByKey("minNQsMatch",args)// number of Q's in a zone that need to match before I will use it to calc a possible angle
+	Variable depth = NumberByKey("depth",args)
 	Variable printIt = NumberByKey("printIt",args)
 	maxSpots = numtype(maxSpots) || maxSpots<3 ? 250 : maxSpots
 	minSpotsForZone = numtype(minSpotsForZone) || minSpotsForZone<3 || minSpotsForZone>30 ? 5 : round(minSpotsForZone)
@@ -94,7 +95,7 @@ Function/WAVE runIndexingQsZones(args)
 	Variable sec0=stopMSTimer(-2)*1e-6
 	Make/N=3/D/FREE ki={0,0,1}										// use this for the incident beam direction
 
-	Wave GhatsMeasured=FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2)	// convert peaks to a Qlist+intens+dNum
+	Wave GhatsMeasured=FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,depth=depth)	// convert peaks to a Qlist+intens+dNum
 	String noteMeasured=note(GhatsMeasured)
 	Variable NG0=DimSize(GhatsMeasured,0)
 	Make/N=(NG0,3)/FREE GhatsOnly=GhatsMeasured[p][q]
@@ -1293,6 +1294,7 @@ Function/WAVE runIndexingQs(args)
 	Variable lp = NumberByKey("lp",args)	
 	Variable cone = NumberByKey("cone",args)					// for possible Qhats, range of allowed tilts from central hkl (degree)
 	Variable maxSpots = NumberByKey("maxSpots",args)			// -n max num. of spots from FullPeakList to use, default is 250
+	Variable depth = NumberByKey("depth",args)
 	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
 	Variable printIt = NumberByKey("printIt",args)
@@ -1315,7 +1317,7 @@ Function/WAVE runIndexingQs(args)
 	Variable NmaxHKL = 500												// max number of Possible hkl to create
 	Make/N=3/D/FREE ki={0,0,1}										// use this for the incident beam direction
 	Wave kfsMeasured = FullPeakList2kfHats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2)	// convert peaks to kf^s
-	Wave GhatsMeasured=FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2)	// convert peaks to a Qlist+intens+dNum
+	Wave GhatsMeasured=FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,depth=depth)	// convert peaks to a Qlist+intens+dNum
 	String noteMeasured=note(GhatsMeasured)
 	Variable NG0=DimSize(GhatsMeasured,0)
 	Make/N=(NG0,3)/FREE GhatsOnly=GhatsMeasured[p][q]
@@ -1858,6 +1860,7 @@ Function/WAVE runIndexingZones(args)
 	Variable maxSpots = NumberByKey("maxSpots",args)			// -n max num. of spots from FullPeakList to use, default is 250
 	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
+	Variable depth = NumberByKey("depth",args)
 	Variable printIt = NumberByKey("printIt",args)
 	maxSpots = numtype(maxSpots) || maxSpots<3 ? 250 : maxSpots
 	printIt = numtype(printIt) ? 0 : printIt
@@ -1872,7 +1875,7 @@ Function/WAVE runIndexingZones(args)
 	endif
 	Variable sec0=stopMSTimer(-2)*1e-6, sec1=sec0
 
-	Wave GhatsMeasured=FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2)	// convert peaks to a Qlist+intens+dNum
+	Wave GhatsMeasured=FullPeakList2Ghats(maxSpots,FullPeakList,FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,depth=depth)	// convert peaks to a Qlist+intens+dNum
 	String noteMeasured=note(GhatsMeasured)
 	Wave ZonesWave=MakeZonesWave(GhatsMeasured, 4, tolAngle=angTol)
 
@@ -2989,22 +2992,23 @@ Static Function/WAVE FullPeakList2kfHats(maxSpots,FullPeakList,[FullPeakList1,Fu
 	return kfs
 End
 //
-Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,FullPeakList2])	// convert peaks to a Qlist+intens, peaks file for analysis by Euler
+Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,FullPeakList2,depth])	// convert peaks to a Qlist+intens, peaks file for analysis by Euler
 	Variable maxSpots
 	Wave FullPeakList
 	Wave FullPeakList1
 	Wave FullPeakList2
-
-	if (numtype(maxSpots) || maxSpots<3)
-		return $""
-	endif
+	Variable depth				// optional user supplied depth to override value in FullPeakList
 	if (ParamIsDefault(FullPeakList1))
 		Wave FullPeakList1=$""
 	endif
 	if (ParamIsDefault(FullPeakList2))
 		Wave FullPeakList2=$""
 	endif
+	depth = ParamIsDefault(depth) || numtype(depth) ? NaN : depth
 
+	if (numtype(maxSpots) || maxSpots<3)
+		return $""
+	endif
 	if (!WaveExists(FullPeakList))
 		DoAlert 0, "input wave for FullPeakList2File() does not exists"
 		return $""
@@ -3063,13 +3067,13 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	groupx = numtype(groupx) ? 1 : groupx
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
-	Variable depth = NumberByKey("depth",wnotePeak,"=")
 
 	Variable i, px,py
+	Variable depthFile = numtype(depth) ? NumberByKey("depth",wnotePeak,"=") : depth
 	for (i=0,N=0;i<min(maxSpots,N0);i+=1)
 		px = (startx-FIRST_PIXEL) + groupx*FullPeakList[i][0] + (groupx-1)/2		// change to un-binned pixels
 		py = (starty-FIRST_PIXEL) + groupy*FullPeakList[i][1] + (groupy-1)/2		// pixels are still zero based
-		pixel2q(geo.d[dNum],px,py,qhat,depth=depth)	// was in Wenge-coord system (OLD) or BeamLine(New)
+		pixel2q(geo.d[dNum],px,py,qhat,depth=depthFile)	// was in Wenge-coord system (OLD) or BeamLine(New)
 		if (norm(qhat)>0)											// check for a valid Q
 			GhatMeasured[N][0,2] = qhat[q]
 			GhatMeasured[N][3] = FullPeakList[i][10]	// the integral
@@ -3089,11 +3093,11 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 		groupx = numtype(groupx) ? 1 : groupx
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
-		depth = NumberByKey("depth",wnote,"=")
+		depthFile = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
 		for (i=0; i<N1 && N<maxSpots; i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
-			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)	// was in Wenge-coord system (OLD) or BeamLine(New)
+			pixel2q(geo.d[dNum],px,py,qhat,depth=depthFile)	// was in Wenge-coord system (OLD) or BeamLine(New)
 			if (norm(qhat)>0)											// check for a valid Q
 				GhatMeasured[N][0,2] = qhat[q]
 				GhatMeasured[N][3] = FullPeakList1[i][10]	// the integral
@@ -3114,11 +3118,11 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 		groupx = numtype(groupx) ? 1 : groupx
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
-		depth = NumberByKey("depth",wnote,"=")
+		depthFile = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
 		for (i=0; i<N2 && N<maxSpots; i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based
-			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)	// was in Wenge-coord system (OLD) or BeamLine(New)
+			pixel2q(geo.d[dNum],px,py,qhat,depth=depthFile)	// was in Wenge-coord system (OLD) or BeamLine(New)
 			if (norm(qhat)>0)											// check for a valid Q
 				GhatMeasured[N][0,2] = qhat[q]
 				GhatMeasured[N][3] = FullPeakList2[i][10]	// the integral
@@ -3153,6 +3157,10 @@ Static Function/WAVE FullPeakList2Ghats(maxSpots,FullPeakList,[FullPeakList1,Ful
 	endfor
 
 	// copy a bunch of key=value pairs from wnotePeaks to wnote
+	depth = numtype(depth) ? NumberByKey("depth",wnotePeak,"=") : depth
+	if (numtype(depth)==0)
+		wnotePeak = ReplaceNumberByKey("depth", wnotePeak, depth,"=")
+	endif
 	String commonKeys="imageFileName;exposure;dateExposed;rawIgorImage;fittedIgorImage;fractionBkg;"
 	commonKeys += "minSpotSeparation;minPeakWidth;maxPeakWidth;totalPeakIntensity;totalIntensity;"
 	commonKeys += "startx;groupx;endx;starty;groupy;endy;depth;"

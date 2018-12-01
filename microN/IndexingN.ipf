@@ -2,7 +2,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 4.99
+#pragma version = 5.00
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -137,7 +137,7 @@ Static Constant hc = 1.239841857			// keV-nm
 Static Constant SMALLEST1 = 1.2e-16
 
 
-Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,printIt])
+Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance,hp,kp,lp,cone,[maxSpots,FullPeakList1,FullPeakList2,depth,printIt])
 	Wave FullPeakList0				// contains the result of a peak fitting
 	Variable keVmaxCalc			// 17, maximum energy to calculate (keV)
 	Variable keVmaxTest			// 30, maximum energy to test (keV)  [-t]
@@ -147,6 +147,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable maxSpots				// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1				// contains the result of a peak fitting
 	Wave FullPeakList2				// contains the result of a peak fitting
+	Variable depth					// optional depth (normally get depth from FullPeakList0 wave note)
 	Variable printIt				// forces print out
 	maxSpots = ParamIsDefault(maxSpots) ? -1 : maxSpots
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
@@ -156,6 +157,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	if (ParamIsDefault(FullPeakList2))
 		Wave FullPeakList2=$""
 	endif
+	depth = ParamIsDefault(depth) || numtype(depth) ? NaN : depth
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : !(!printIt)
 
 	if (NumVarOrDefault("root:Packages:geometry:PanelValues:dirty",0))	// geo waiting
@@ -227,10 +229,11 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		Prompt keVmaxCalc,"max energy for searching (keV)"
 		Prompt keVmaxTest,"max energy for matching (keV)"
 		Prompt angleTolerance "max angle"+DEGREESIGN+" between peak & hkl"
+		Prompt depth "depth ("+Gmu+"m) (NaN for default)"
 		if (multi)
-			DoPrompt/Help="3D-Xray Diffraction[Indexing]" "index",peakListStr0,keVmaxCalc,peakListStr1,hkl,peakListStr2,keVmaxTest,cone,angleTolerance
+			DoPrompt/Help="3D-Xray Diffraction[Indexing]" "index",peakListStr0,keVmaxCalc,peakListStr1,hkl,peakListStr2,keVmaxTest,cone,angleTolerance, depth
 		else
-			DoPrompt/Help="3D-Xray Diffraction[Indexing]" "index",peakListStr0,keVmaxCalc,hkl,keVmaxTest,cone,angleTolerance
+			DoPrompt/Help="3D-Xray Diffraction[Indexing]" "index",peakListStr0,keVmaxCalc,hkl,keVmaxTest,cone,angleTolerance,depth
 		endif
 		if (V_flag)
 			return $""
@@ -281,9 +284,12 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		if (strlen(peakListStr2))
 			printf ", FullPeakList2=%s",peakListStr2
 		endif
-		if (!ParamIsDefault(printIt))
-			printf ", printIt=%g",printIt
+		if (numtype(depth)==0)
+			printf ", depth=%g",depth
 		endif
+//		if (!ParamIsDefault(printIt))
+//			printf ", printIt=%g",printIt
+//		endif
 		printf ")\r"
 		if (badWave || badNums)
 			DoAlert 0, "Invalid inputs sent to IndexAndDisplay()"
@@ -299,6 +305,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	Variable/G root:Packages:micro:Index:keVmaxCalc=keVmaxCalc, root:Packages:micro:Index:keVmaxTest=keVmaxTest
 	String/G root:Packages:micro:Index:FullPeakList0=NameOfWave(FullPeakList0), root:Packages:micro:Index:FullPeakList1=NameOfWave(FullPeakList1), root:Packages:micro:Index:FullPeakList2=NameOfWave(FullPeakList2)
 
+	depth = numtype(depth) ? NumberByKey("depth",note(FullPeakList0),"=") : depth
 	String args=""
 	args = ReplaceStringByKey("FullPeakList",args, GetWavesDataFolder(FullPeakList0,2))
 	if (WaveExists(FullPeakList1))
@@ -315,6 +322,7 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 	args = ReplaceNumberByKey("lp",args,lp)
 	args = ReplaceNumberByKey("cone",args,cone)
 	args = ReplaceNumberByKey("maxSpots",args,maxSpots)
+	args = ReplaceNumberByKey("depth",args,depth)
 	args = ReplaceNumberByKey("printIt",args,printIt)
 
 	String funcName = StringFromList(0,GetIndexingFuncOrExec())
@@ -327,7 +335,6 @@ Function/WAVE IndexAndDisplay(FullPeakList0,keVmaxCalc,keVmaxTest,angleTolerance
 		return $""
 	endif
 	String wnote = note(FullPeakIndexed)
-	Variable depth=NumberByKey("depth",note(FullPeakList0),"=")
 	if (numtype(depth)==0)									// transfer valid depth to FullPeakIndexed wave note
 		Note/K FullPeakIndexed, ReplaceNumberByKey("depth",wnote,depth,"=")
 	endif
@@ -1903,7 +1910,7 @@ Static Function/WAVE CalcReflections(roi,xtal,keVmax,[detector,depth,name])	// c
 	Variable depth
 	String name											// name to use for output wave, may be empty
 	detector = ParamIsDefault(detector) ? 0 : round(detector)
-	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth
+	depth = ParamIsDefault(depth) || numtype(depth) ? NaN : depth
 	name = SelectString(ParamIsDefault(name) , name, "")
 	Variable is4500s=NumVarOrDefault(MICRO_GEOMETRY_VERSION_PATH,0)&2
 	Variable keVmin = is4500s ? 3 : 7
@@ -2432,6 +2439,7 @@ Function/WAVE runIndexingEulerCommand(args)
 	Variable maxSpots = NumberByKey("maxSpots",args)						// -n max num. of spots from data file to use, default is 250
 	Wave FullPeakList1 = $StringByKey("FullPeakList1",args)
 	Wave FullPeakList2 = $StringByKey("FullPeakList2",args)
+	Variable depth = NumberByKey("depth",args)								// depth (micron)
 	Variable printIt = NumberByKey("printIt",args)
 	maxSpots = ((maxSpots>2) && numtype(maxSpots)==0) ? maxSpots : -1
 	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : printIt
@@ -2482,7 +2490,7 @@ Function/WAVE runIndexingEulerCommand(args)
 		return $""
 	endif
 	String peakFile="generic_Peaks.txt"				// name of file with input peak positions
-	if(FullPeakList2Qfile(FullPeakList,peakFile,"EulerCalcFolder",FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2))// convert peaks to a Qlist+intens, and write to a file
+	if(FullPeakList2Qfile(FullPeakList,peakFile,"EulerCalcFolder",FullPeakList1=FullPeakList1,FullPeakList2=FullPeakList2,depth=depth))// convert peaks to a Qlist+intens, and write to a file
 		return $""												// nothing happened
 	endif
 
@@ -4870,18 +4878,20 @@ End
 
 
 
-Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,FullPeakList2])	// convert peaks to a Qlist+intens, peaks file for analysis by Euler
+Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,FullPeakList2,depth])	// convert peaks to a Qlist+intens, peaks file for analysis by Euler
 	Wave FullPeakList
 	String fname
 	String pathName
 	Wave FullPeakList1
 	Wave FullPeakList2
+	Variable depth				// optional, depth to use (micron)
 	if (ParamIsDefault(FullPeakList1))
 		Wave FullPeakList1=$""
 	endif
 	if (ParamIsDefault(FullPeakList2))
 		Wave FullPeakList2=$""
 	endif
+	depth = ParamIsDefault(depth) || numtype(depth) ? NaN : depth
 
 	fname = SelectString(strlen(fname),"generic_Peaks.txt",fname)
 	if (!WaveExists(FullPeakList))
@@ -4937,15 +4947,15 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	groupx = numtype(groupx) ? 1 : groupx
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
-	Variable depth = NumberByKey("depth",wnote,"=")
 	String fittedIgorImages=StringByKey("fittedIgorImage",wnote,"=")
 	String PeakListWaves=GetWavesDataFolder(FullPeakList,2)
 
 	Variable i, px,py
+	Variable depthFile = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
 	for (i=0,N=0;i<N0;i+=1)
 		px = (startx-FIRST_PIXEL) + groupx*FullPeakList[i][0] + (groupx-1)/2		// change to un-binned pixels
 		py = (starty-FIRST_PIXEL) + groupy*FullPeakList[i][1] + (groupy-1)/2		// pixels are still zero based
-		pixel2q(geo.d[dNum],px,py,qhat,depth=depth)		// was in Wenge-coord system (OLD) or BeamLine(New)
+		pixel2q(geo.d[dNum],px,py,qhat,depth=depthFile)		// was in Wenge-coord system (OLD) or BeamLine(New)
 		if (norm(qhat)>0)									// check for a valid Q
 			Qs[N][0,2] = qhat[q]
 			Qs[N][3] = FullPeakList[i][10]			// the integral
@@ -4964,13 +4974,13 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		groupx = numtype(groupx) ? 1 : groupx
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
-		depth = NumberByKey("depth",wnote,"=")
+		depthFile = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
 		fittedIgorImages += ","+StringByKey("fittedIgorImage",wnote,"=")
 		PeakListWaves += ","+GetWavesDataFolder(FullPeakList1,2)
 		for (i=0;i<N1;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList1[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList1[i][1] + (groupy-1)/2		// pixels are still zero based
-			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)		// was in Wenge-coord system (OLD) or BeamLine(New)
+			pixel2q(geo.d[dNum],px,py,qhat,depth=depthFile)		// was in Wenge-coord system (OLD) or BeamLine(New)
 			if (norm(qhat)>0)								// check for a valid Q
 				Qs[N][0,2] = qhat[q]
 				Qs[N][3] = FullPeakList1[i][10]		// the integral
@@ -4990,13 +5000,13 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 		groupx = numtype(groupx) ? 1 : groupx
 		starty = numtype(starty) ? FIRST_PIXEL : starty
 		groupy = numtype(groupy) ? 1 : groupy
-		depth = NumberByKey("depth",wnote,"=")
+		depthFile = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
 		fittedIgorImages += ","+StringByKey("fittedIgorImage",wnote,"=")
 		PeakListWaves += ","+GetWavesDataFolder(FullPeakList2,2)
 		for (i=0;i<N2;i+=1)
 			px = (startx-FIRST_PIXEL) + groupx*FullPeakList2[i][0] + (groupx-1)/2		// change to un-binned pixels
 			py = (starty-FIRST_PIXEL) + groupy*FullPeakList2[i][1] + (groupy-1)/2		// pixels are still zero based
-			pixel2q(geo.d[dNum],px,py,qhat,depth=depth)		// was in Wenge-coord system (OLD) or BeamLine(New)
+			pixel2q(geo.d[dNum],px,py,qhat,depth=depthFile)		// was in Wenge-coord system (OLD) or BeamLine(New)
 			if (norm(qhat)>0)								// check for a valid Q
 				Qs[N][0,2] = qhat[q]
 				Qs[N][3] = FullPeakList2[i][10]		// the integral
@@ -5015,7 +5025,6 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	groupx = numtype(groupx) ? 1 : groupx
 	starty = numtype(starty) ? FIRST_PIXEL : starty
 	groupy = numtype(groupy) ? 1 : groupy
-	depth = NumberByKey("depth",wnote,"=")
 	do
 		fittedIgorImages = ReplaceString(",,",fittedIgorImages,"")
 	while (strsearch(fittedIgorImages,",,",0)>0)
@@ -5127,6 +5136,11 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 	if (!numtype(val))
 		fprintf refNum,"$CCDy	%g\n",val
 	endif
+	val = numtype(depth) ? NumberByKey("depth",wnote,"=") : depth
+	if (!numtype(val))
+		fprintf refNum,"$depth	%g\n",val
+	endif
+
 	fprintf refNum,"\n// the following table contains xyz compotnents of G^ and the integral of the peak\n"
 	fprintf refNum,"$N_Ghat+Intens 	%d		// number of G^ vectors\n",N
 	for (i=0;i<N;i+=1)
