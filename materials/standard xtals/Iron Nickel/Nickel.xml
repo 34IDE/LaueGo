@@ -20,6 +20,6 @@
 		<symbol>Ni</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<DebyeTemperature unit="K">345</DebyeTemperature>
+		<DebyeTemperature unit="K">397</DebyeTemperature>	<!-- T. Paakkari, Acta Cryst. A30 (1974), pgs. 83-86, doi=10.1107/S0567739474000131 -->
 	</atom_site>
 </cif>
