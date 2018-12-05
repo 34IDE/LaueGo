@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, November 30, 2018" time="03:54:36 PM CST" isoTime="2018-11-30T15:54:36"></written>
+	<written date="Wednesday, December 05, 2018" time="11:06:41 AM CST" isoTime="2018-12-05T11:06:41"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>289</fileCount>
 	<file version="nan" time="2018-09-26T12:14:26" md5="aea14bbe32bacd116a5ceeec260866a8" sha256="7e0d2e4620a5002fbc48dce30bdff57c9a4e5dd52f0be50a79ce6f6f5d97307a" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
@@ -81,7 +81,7 @@
 	<file version="nan" time="2018-05-11T15:01:07" md5="1d2cb420394a2a3343e83cf95c333e55" sha256="684dbf9f2fbdd60a6a1deb3a5101e052d22029f0e30ae49350c2316d3b61bff7" ext=".xml">materials/standard xtals/Mo.xml</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="dc529c3fcab8d5e92f9e4e14ca01f78b" sha256="3b233c8f9aba21051c8e61b6577e15f571fbda3b68bea435609e45bf448c2368" ext=".xml">materials/standard xtals/Anglesite.xml</file>
 	<file version="2.07" time="2016-10-04T09:42:38" md5="12354c7aef3ed0b12598f19cde428264" sha256="156569f6266724525c85fe3e8e67211f3f6fc3b31b61df8a80ea0d34bba70527" ext=".ipf">General/Gizmo/GizmoMovies.ipf</file>
-	<file version="0.32" time="2018-11-30T15:15:12" md5="287389708697c95cab2168ce71073c3c" sha256="20c31c56b90efb48e98344ad7c69255ebe6f18854d108f9f0301088df44ecde6" ext=".ipf">microN/Indexing_Internal.ipf</file>
+	<file version="0.33" time="2018-12-03T17:32:10" md5="39bd247bf2500c7cf03d3371d6f20487" sha256="52a168560fe915de29bc709974046194dd79737a3ab789e6738f2317838c644f" ext=".ipf">microN/Indexing_Internal.ipf</file>
 	<file version="nan" time="2018-09-26T12:10:03" md5="1538975f3d80f6a325908377f5c3898c" sha256="7e80615c1821bd1ff5e691be57aa832ee1221ef077bb0ef605d3fc7b121b385b" ext=".xml">materials/standard xtals/SrRuO3.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="5fd4be5e4a6a5528e4b2815977ed4600" sha256="a393e2454c417c2d59e1c4ceb5c64f6239f2aae1c645a63a3e5ef8f8a2d093ea" ext=".png">doc/microDiffractionMedia/Picture4.png</file>
 	<file version="nan" time="2018-05-11T15:11:52" md5="524f9fce89f05e9d5937390298b37bf0" sha256="2eb52f65787356eb4962b1f58c61131f7d06401cd4de3770b11a7bbf97c8d7b5" ext=".xml">materials/standard xtals/Be.xml</file>
@@ -282,7 +282,7 @@
 	<file version="0.59" time="2018-03-26T17:53:24" md5="94c66a3779fcb31cf6c717c4c1372ffe" sha256="ee4ccc33e5d633048fbad0c7cacb62b4c1e02f2a1bfba35086e9dec2b4846eef" ext=".ipf">Diffractometer/specImages.ipf</file>
 	<file version="2.66" time="2014-10-06T09:42:00" md5="4cf4f2ae776b8beb5ec5c74048c71994" sha256="25611ca90d6e4d4825aae5f37666559f8e0d23ea835fdb2d106c3b696d486599" ext=".ipf">micro/Indexing.ipf</file>
 	<file version="2.72" time="2017-07-24T12:38:46" md5="bfc326a040c5c45243b84bd242bd2d8d" sha256="4411e382bdfe5b91561656e0bfd40e990405fdec57cbce78468cefc46981604d" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
-	<file version="4.99" time="2018-11-29T16:48:57" md5="ad208e48b5c7539261656cca609b095a" sha256="affeaefd901a565b3891333a9ece6b66daa6fc47f749468f794077d77f26ecf2" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="5" time="2018-12-03T17:32:10" md5="6d5d9d17ffff50cf166f9e73be0838ab" sha256="2aeceb7c4ad5e8701671ed8b7c539fe49383f72b1f631ba68a9ad613cb49c8d9" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="nan" time="2018-09-06T13:17:42" md5="a8f335dbaf424299f6cbe07986c3a5a3" sha256="a5bf11dd9d1f4c598fdf7fbdaee2f64d8b9771bb590389662ed213f8ffc28436" ext=".xml">materials/standard xtals/Au.xml</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="db51209204f865eee5041d9786cc58b5" sha256="9c72ac47011dc60ca0e5050dcef36d69cc9a1fe10323bcf7a4fc5213efee3e1e" ext=".xml">geometrys/geoN_2013-06-28_19-49-18.xml</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="2b2f5f09b296bf027910e24dfdd4a9fb" sha256="96017c50e761711edfa48e86891ff4ae12774aa8fb1c0d99fef87678daf816e1" ext=".xml">materials/standard xtals/SilverOxide.xml</file>

@@ -1,4 +1,6 @@
 find . -name "*.xml" -type f -exec xmllint -noout {} \;
+# echo " "
+# diff --brief -r . /Users/tischler/Documents/WaveMetrics/Igor\ Pro\ 6\ User\ Files/User\ Procedures/LaueGo/materials/standard\ xtals/ | grep -v ".DS_Store"
 
 #	find *.xml -type f -exec xmllint -noout {} \;
 #
