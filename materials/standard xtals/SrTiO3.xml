@@ -47,17 +47,15 @@
 		<aniso_U_33 unit="Å^2">0.01205</aniso_U_33>
 		<valence>-2</valence>
 	</atom_site>
-	<citation id="primary">
+	<citation id="primary" doi="10.1107/S0108768111046738">
 		M. Schmidbauer, A. Kwasniewski, J. Schwarzkopf
 		Acta Crystallographica, Section B: Structural Science B68 (2012) pg. 8-14
 		"High-precision absolute lattice parameter determination of Sr Ti O3, Dy Sc O3 and Nd Ga O3 single crystals"
-		<doi>10.1107/S0108768111046738</doi>
 	</citation>
-	<citation id="2">
+	<citation id="2" doi="10.1107/S0108768195003752">
 		ONLY for the U_ij:
 		Yu.A. Abramov, V.G. Tsirel'son, V.E. Zavodnik, S.A. Ivanov, I.D. Brown,
 		Acta Crystallographica, Section B: Structural Science B51 (1995), pg.942-951
 		"The chemical bond and atomic displacements in Sr Ti O3 from x-ray diffraction analysis"
-		<doi>10.1107/S0108768195003752</doi>
 	</citation>
 </cif>

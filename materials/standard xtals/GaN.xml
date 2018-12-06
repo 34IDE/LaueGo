@@ -56,8 +56,7 @@
 		<aniso_U_23>0</aniso_U_23>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
-	<citation id="2">
-		<doi>10.1016/0038-1098(77)90959-0</doi>
+	<citation id="2" doi="10.1016/0038-1098(77)90959-0">
 		H. Schulz, K.H. Thiemann,
 		Solid State Communications 23 (1977) pg. 815-819
 		"Crystal structure refinement of AlN and GaN"
@@ -69,7 +68,7 @@
 		<c unit="nm">0.5189</c>
 		-->
 	</citation>
-	<citation id="primary">
+	<citation id="primary" doi="10.1016/0038-1098(77)90959-0">
 		<title>Crystal structure refinement of Al N and Ga N</title>
 		<author>H. Schulz</author>
 		<author>K.H. Thiemann</author>
@@ -78,6 +77,5 @@
 		<volume>23</volume>
 		<pages>815 819</pages>
 		<ASTM>SSCOA4</ASTM>
-		<doi>10.1016/0038-1098(77)90959-0</doi>
 	</citation>
 </cif>

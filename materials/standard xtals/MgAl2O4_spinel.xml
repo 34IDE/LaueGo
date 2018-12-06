@@ -41,8 +41,7 @@
 		<valence>-2</valence>
 		<B_iso unit="Å^2">0.5</B_iso>	<!-- B = 8 * pi^2 <u^2> -->
 	</atom_site>
-	<citation>
-		<doi>10.1088/0022-3719/9/9/002</doi>
+	<citation doi="10.1088/0022-3719/9/9/002">
 		1976 J. Phys. C: Solid State Phys. 9 L231, K D Rouse, M W Thomas and B T M Willis
 		also http://phycomp.technion.ac.il/~ira/types.html#MgAl2O4
 	</citation>

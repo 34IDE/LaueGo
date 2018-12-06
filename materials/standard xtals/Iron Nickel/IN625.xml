@@ -45,12 +45,11 @@
 		<occupancy>0.039</occupancy>
 	</atom_site>
 
-	<citation>
+	<citation doi="10.1016/j.scriptamat.2004.03.017">
 		Sanjay K. Rai, Anish Kumar, Vani Shankar, T. Jayakumar *, K. Bhanu Sankara Rao, Baldev Raj,
 		"Characterization of microstructures in Inconel 625 using X-ray diffraction peak broadening and lattice parameter measurements"
 		Scripta Materialia 51 (2004) 59–63
 		Cr-21.7, Fe-3.9, Mo-8.8, Nb-3.9, C-0.05, Mn-0.14, Si-0.15, Al-0.17, Ti-0.23, Co-0.08 and Ni-balance
-		<doi>10.1016/j.scriptamat.2004.03.017</doi>
 	</citation>
 </cif>
 
