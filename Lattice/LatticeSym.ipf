@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.57
+#pragma version = 6.58
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -1572,10 +1572,10 @@ Static Function CleanOutCrystalStructure(xtal)	// clean out all unused values an
 	STRUCT crystalStructure &xtal					// the structure to fix up
 	Variable m, i, itemp, N=xtal.N, Nbonds=xtal.Nbonds
 
-	if (N>=STRUCTURE_ATOMS_MAX || N<0)		// invalid number of atoms
+	if (N>STRUCTURE_ATOMS_MAX || N<0)		// invalid number of atoms
 		xtal.N = 0
 		return 1
-	elseif (Nbonds>=(2*STRUCTURE_ATOMS_MAX) || Nbonds<0)
+	elseif (Nbonds>(2*STRUCTURE_ATOMS_MAX) || Nbonds<0)
 		xtal.Nbonds = 0
 		return 1
 	elseif (strlen(xtal.desc)>99)
@@ -3456,14 +3456,18 @@ Function readCrystalStructure(xtal,fname,[printIt])
 		return 1												// nothing read, an error
 	endif
 	if (printIt)
-		printf "\r%s xtal structure from '%s'\r\r",SelectString(err,"Loaded","ERROR -- Loading"),fname
+		if (err)
+			printf "\rERROR -- Loading xtal structure from '%s'\r\r",fname
+		else
+			printf "\rLoaded xtal structure from '%s',  (found %d atoms)\r\r",fname, xtal.N
+		endif
 		if (!err)
 			OverOccupyList(xtal,printIt=1)			// print notice if some sites have occ>1
 		endif
 	endif
-	if (xtal.Nbonds < 1)								// do NOT recalc bonds if already there
-		ComputeBonds(xtal, printIt=printIt)
-	endif
+//	if (xtal.Nbonds < 1)								// do NOT recalc bonds if already there
+//		ComputeBonds(xtal, printIt=printIt)
+//	endif
 
 	// for fractional positions of 0.3333 or 0.1667, extend precision to exactly 1/3 or 1/6, etc.
 	Variable i
