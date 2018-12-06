@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, December 05, 2018" time="05:56:00 PM CST" isoTime="2018-12-05T17:56:00"></written>
+	<written date="Thursday, December 06, 2018" time="04:59:11 PM CST" isoTime="2018-12-06T16:59:11"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>289</fileCount>
 	<file version="nan" time="2018-09-26T12:14:26" md5="aea14bbe32bacd116a5ceeec260866a8" sha256="7e0d2e4620a5002fbc48dce30bdff57c9a4e5dd52f0be50a79ce6f6f5d97307a" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
@@ -15,7 +15,7 @@
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/Images/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="927455be35d34bf51c034d7b650dc6ce" sha256="a9f099ef1689f9637c94db6ab29a4071999b2d57d56ea0d8f0faeea05eab34d8" ext=".exe">microN/binary/peaksearch_win32.exe</file>
-	<file version="6.57" time="2018-11-29T16:38:07" md5="926b5e6c07b8c96f7b3cc71fc5e16bdc" sha256="a7a3995b1a35b5236dbfb571524a7ff6a1d9f3f71b06288c489692b02ae6fe47" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="6.58" time="2018-12-06T16:56:06" md5="e46b3aae50541a2eb7513a32a87c5785" sha256="1d5a45fc466a66e18d4ea9d97661e9495484a7b0e7064b59ef0e17a5d138f03d" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2018-07-23T14:15:16" md5="404ae1e1d5be8ca8789f6c93a22b3302" sha256="0007eedb29263b2e88e5f1b16a7ed153726c8ffde3651b780b9b02fb1f6e1f22" ext=".xml">materials/standard xtals/RuO2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="3dda90a250836b5ea6408c1dfc55da10" sha256="9c6c829aea6709cf1cb96a902abb8b0d08e1de353feb88e175fed365e4bd7706" ext="">microN/binary/peaksearch_i386</file>
 	<file version="nan" time="2016-03-14T09:37:51" md5="d5b2a33015a7b019ff5384a1771e75a3" sha256="1915fa02fdce0aa052a38cb3da002aeb11f71310f1bdb3951d4a1b9cf6d837a4" ext=".exe">microN/binary/Euler4.exe</file>
@@ -62,7 +62,7 @@
 	<file version="3.3" time="2014-04-30T10:24:06" md5="f96c79c6fa5fd2cb2352f3cbd380c2df" sha256="0b6abd4c56e4c6d47569bf63e059ba6eed35847565e373287820bb4eb31b5323" ext=".ipf">APS/IonChamber.ipf</file>
 	<file version="nan" time="2017-02-13T17:40:31" md5="3e3ef5ddca2ad98a3aa250f2c02d0710" sha256="05b2225323ca193a9a83cda457f3260caf47c8d30e1e8fe3328046095b422a15" ext=".txt">doc/change to 530.txt</file>
 	<file version="nan" time="2018-08-28T14:07:45" md5="fc37365850718bcbe2a0854913afa2c0" sha256="f829a6c384fbc79f1708e0b1100f6abec7120d39229ad3c3891dcde277fa584b" ext=".mtl">materials/mtl files/CaF2.mtl</file>
-	<file version="nan" time="2018-12-05T17:34:53" md5="a91b004b321d7819e7b80ec7733f6526" sha256="d0be7f086844ddb1040a11cbc9832de764aa390da35a4dcf93bdcf09d55a37ed" ext=".xml">materials/standard xtals/VO2_rutile.xml</file>
+	<file version="nan" time="2018-12-06T14:59:21" md5="a84b11de24e0bb1079c7aa01dd95d2e1" sha256="68397a53a06128d96a77db075451ff1c80d324046d3eb2078152363e280452b6" ext=".xml">materials/standard xtals/VO2_rutile.xml</file>
 	<file version="1.13" time="2018-01-15T13:24:12" md5="477eefde0b7ddaf318bdc10ca9f1cf78" sha256="508d481248a6c0ff14ac0a5e53e8f9ebb7b27999a1236a1aaaf1d2f99b06cd81" ext=".ipf">APS/mdaFiles.ipf</file>
 	<file version="nan" time="2018-05-18T14:11:10" md5="e040bd575c90fcaa1de09d8b9d14a567" sha256="fbd6826e30503f8ddef2f707fd05541ef916eafb8e242cea8e6ae429ea488b09" ext=".xml">materials/standard xtals/test/2D_sym.xml</file>
 	<file version="0.26" time="2018-04-27T14:24:21" md5="84faa3289c54533dc691174464763ff5" sha256="57f46c61643594919b71c99e85c7ce86a60653ea018f41709f57b3a69b2b912c" ext=".ipf">Lattice/PowderPatterns3D.ipf</file>
