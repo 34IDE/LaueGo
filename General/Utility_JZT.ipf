@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.72
+#pragma version = 4.73
 // #pragma hide = 1
 
 Menu "Graph"
@@ -30,14 +30,14 @@ End
 #elif StringMatch(IgorInfo(2),"Windows")
 	// Igor 6 Windows
 	strConstant BULLET = "\7"					// Bullet, MS Alt-7
-	strConstant HORIZ_ELLIPSIS = "\0133"	// MS Alt-0133
-	strConstant DEGREESIGN = "\370"			// Degree sign, MS Alt-248d=o370
+	strConstant HORIZ_ELLIPSIS = "\205"	// ellipsis, was: "\0133"  MS Alt-0133
+	strConstant DEGREESIGN = "\260"			// Degree sign, was: "\370"  MS Alt-248d=o370
 	strConstant ARING = "\217"				// Angstrom sign, MS Alt-143d=217o
-	strConstant BCHAR = "\257"				// EM DASH, MS Alt-257
+	strConstant BCHAR = "\257"				// EM DASH, MS Alt-257, or "\226" or "\227"
 	strConstant GDELTA = "\916"				// ???
-	strConstant PLUSMINUS = "\361"			// MS Alt-241, 241d=361, oplus-minus sign
-	strConstant Gmu = "\346"					// MS Alt-230d=346o, Greek mu
-	strConstant INTEGRAL_SIGN = "\222B"	// Degree sign, MS Alt-222B
+	strConstant PLUSMINUS = "\261"			// MS plus-minus sign, was: "\361"  MS Alt-241, 241d=361
+	strConstant Gmu = "\265"					// Greek mu, was: "\346"  MS Alt-230d=346o
+	strConstant INTEGRAL_SIGN = "\222B"	// Integral sign, MS Alt-222B
 #else
 	// Igor 6 Mac
 	strConstant BULLET = "\245"				// Mac option-8
