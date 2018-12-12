@@ -18,9 +18,9 @@ End
 
 #if (IgorVersion()>7)
 	// Igor 7 use UNICODE
-	strConstant DEGREESIGN = "\xC2\xB0"	// UTF8, DEGREE SIGN
+	strConstant DEGREESIGN = "\xC2\xB0"		// UTF8, DEGREE SIGN
 	strConstant BULLET = "\xE2\x80\xA2"
-	strConstant ARING = "\xC3\x85"			// Aring, Angstrom sign
+	strConstant ARING = "\xC3\x85"				// Aring, Angstrom sign
 	strConstant BCHAR = "\xE2\x80\x94"		// EM DASH
 	strConstant GDELTA = "\xCE\x94"			// UTF8, Greek DELTA
 	strConstant HORIZ_ELLIPSIS = "\xE2\x80\xA6"	// UTF8, Horizontal Ellipsis
@@ -29,10 +29,10 @@ End
 	strConstant INTEGRAL_SIGN = "\xE2\x88\xAB"		// UTF8, integral sign
 #elif StringMatch(IgorInfo(2),"Windows")
 	// Igor 6 Windows
-	strConstant BULLET = "\7"					// Bullet, MS Alt-7
+	strConstant BULLET = "\7"				// Bullet, MS Alt-7
 	strConstant HORIZ_ELLIPSIS = "\205"	// ellipsis, was: "\0133"  MS Alt-0133
-	strConstant DEGREESIGN = "\260"			// Degree sign, was: "\370"  MS Alt-248d=o370
-	strConstant ARING = "\217"				// Angstrom sign, MS Alt-143d=217o
+	strConstant DEGREESIGN = "\260"		// Degree sign, was: "\370"  MS Alt-248d=o370
+	strConstant ARING = "\305"				// Angstrom sign, was: "\217"  MS Alt-143d=217o
 	strConstant BCHAR = "\257"				// EM DASH, MS Alt-257, or "\226" or "\227"
 	strConstant GDELTA = "\916"				// ???
 	strConstant PLUSMINUS = "\261"			// MS plus-minus sign, was: "\361"  MS Alt-241, 241d=361
@@ -42,13 +42,13 @@ End
 	// Igor 6 Mac
 	strConstant BULLET = "\245"				// Mac option-8
 	strConstant HORIZ_ELLIPSIS = "\311"	// Mac option-; xC9, o311, d301
-	strConstant DEGREESIGN = "\241"			// option-shift-8
+	strConstant DEGREESIGN = "\241"		// option-shift-8
 	strConstant ARING = "\201"				// Angstrom sign, option-shift-A
 	strConstant BCHAR = "\321"				// EM DASH
 	strConstant PLUSMINUS = "\261"			// Mac option-+, plus-minus sign
 	strConstant GDELTA = "\306"				// Mac option-j, xC6, o306, d198
 	strConstant Gmu = "\265"					// Mac option-m, Greek mu
-	strConstant INTEGRAL_SIGN = "\272"		// option-b
+	strConstant INTEGRAL_SIGN = "\272"	// option-b
 #endif
 
 StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;Nh;Fl;Mc;Lv;Ts;Og"
