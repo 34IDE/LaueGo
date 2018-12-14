@@ -8,13 +8,13 @@
 		<H-M>Fd-3m:1</H-M>
 	</space_group>
 	<cell>
-		<a unit="nm">0.5657765</a>
-		<b unit="nm">0.5657765</b>
-		<c unit="nm">0.5657765</c>
+		<a unit="nm">0.56577973</a>
+		<b unit="nm">0.56577973</b>
+		<c unit="nm">0.56577973</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">20</temperature>
+		<temperature unit="C">22.5</temperature>
 		<alphaT>5.9e-06</alphaT>			<!-- a = ao*(1+alphaT*(TempC-20)) -->
 	</cell>
 	<atom_site>
@@ -26,28 +26,22 @@
 	<citation doi="10.1107/S0567739475000769">
 		Acta Cryst. A31 (1975) pg 364-367, Baker and Hart
 			d(Ge 008) / d(Si 355) = 1.0002458  at 25 C
-
+		using current value of dSi from CODATA
 		www.ioffe.rssi.ru/SVA/NSM/Semicond/Ge/thermal.html, for thermal expansion
 	</citation>
 </cif>
 
 <!-- 
-Function GeSi(TempC)
-	Variable TempC
-	Variable Ge008 = 1.0002458 * dhklSi(3,5,5, 25)		// from Baker and Hart
-	Variable Ge_25C = 8 * Ge008				// lattice constant at 25 C
-	Variable alphaT = 5.9e-06
-	return Ge_25C * (1+alphaT*(TempC-25))	// convert to lattice constant at 20 C
+Function Ge_225()		// returns lattice constant of Ge at 22.5 °C
+	Variable ratio = 1.0002348						// ratio of d(Ge008) / d(Si355) at 22.5 °C from Baker and Hart
+	Variable relErr = 0.0000035/5.6578437			// relative error from Baker and Hart
+	Variable aSi = 0.5431020505			 			// CODATA aSi (at T=22.5°C)
+	Variable Si355 = aSi/sqrt(59)					// Si(355) d-spacing at 22.5°C
+	Variable aGe = 8 * ratio * Si355				// from Baker and Hart measurement of Ge(008) at 22.5°
+	printf "ao(Ge, T=22.5°C) ==> %s\r",ValErrStr(aGe,aGe*relErr,sp=1)
+	return aGe
 End
 
-Function dhklSi(h,k,l, T)
-	Variable h,k,l
-	Variable T
-	Variable aSi = 0.5431020505 
-	Variable alphaT = 2.56e-6
-	return ( aSi*(1+alphaT*(T-22.5)) ) / sqrt(h*h+k*k+l*l)
-End
-
-
-
+Ge_225()
+  ao(Ge, T=22.5°C) ==> 0.56577973 ± 3.5e-07
 -->
