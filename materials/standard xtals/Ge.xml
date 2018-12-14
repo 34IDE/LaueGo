@@ -23,7 +23,7 @@
 		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">360</DebyeTemperature>
 	</atom_site>
-	<citation>
+	<citation doi="10.1107/S0567739475000769">
 		Acta Cryst. A31 (1975) pg 364-367, Baker and Hart
 			d(Ge 008) / d(Si 355) = 1.0002458  at 25 C
 
@@ -34,9 +34,20 @@
 <!-- 
 Function GeSi(TempC)
 	Variable TempC
-	Variable Ge008 = 1.0002458 * get_dhkl(3,5,5, T=25)		// from Baker and Hart
+	Variable Ge008 = 1.0002458 * dhklSi(3,5,5, 25)		// from Baker and Hart
 	Variable Ge_25C = 8 * Ge008				// lattice constant at 25 C
 	Variable alphaT = 5.9e-06
 	return Ge_25C * (1+alphaT*(TempC-25))	// convert to lattice constant at 20 C
 End
+
+Function dhklSi(h,k,l, T)
+	Variable h,k,l
+	Variable T
+	Variable aSi = 0.5431020505 
+	Variable alphaT = 2.56e-6
+	return ( aSi*(1+alphaT*(T-22.5)) ) / sqrt(h*h+k*k+l*l)
+End
+
+
+
 -->
