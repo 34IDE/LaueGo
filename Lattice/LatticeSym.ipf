@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.58
+#pragma version = 6.59
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -7444,11 +7444,13 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 			printf "     %s%s(%d)  <-->  %s%s(%d):  %.5g%s\r",sv1,atomTypes[type1[i]],Ztypes[type1[i]],sv2,atomTypes[type2[i]],Ztypes[type2[i]],blen[i],unit0
 		endfor
 	
-		String list=UnBondedAtomsList(xtal)
-		if (ItemsInList(list)<1)
-			print "    All atom types are associated with at least 1 bond"
-		else				// print list of those atoms not associated with a bond
-			printf "These atom types have NO bonds: {%s}\r",TrimEnd(ReplaceString(";",list,", "),chars=", ")
+		if (Nbond > 0)
+			String list=UnBondedAtomsList(xtal)
+			if (ItemsInList(list)<1)
+				print "    All atom types are associated with at least 1 bond"
+			else				// print list of those atoms not associated with a bond
+				printf "These atom types have NO bonds: {%s}\r",TrimEnd(ReplaceString(";",list,", "),chars=", ")
+			endif
 		endif
 	endif
 
