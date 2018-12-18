@@ -10924,6 +10924,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 	SetDimLabel 1,0,letter,WyckList
 	SetDimLabel 1,1,symOp,WyckList
 	SetDimLabel 1,2,mult,WyckList
+	SetDimLabel 1,3,siteSym,WyckList
 
 	return WyckList
 End
