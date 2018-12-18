@@ -22,6 +22,7 @@
 		<symbol>Ge</symbol>
 		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">360</DebyeTemperature>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<citation doi="10.1107/S0567739475000769">
 		Acta Cryst. A31 (1975) pg 364-367, Baker and Hart
