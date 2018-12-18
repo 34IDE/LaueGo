@@ -220,6 +220,7 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.55, changed room temperaure from 22.5 --> 20
 //	with version 6.56, fixed error in copy_xtal56(), copy_xtal67(), copy_xtal78()
 //	with version 6.57, modified allowedHKL(), how it determines wheter hkl is allowed
+//	with version 6.60, changed GetWyckoffSymStrings() to include site symmetry for every Wyckoff position, added siteSymmetry(SpaceGroupID,symbol).
 
 
 //	Rhombohedral Transformation:
@@ -1099,14 +1100,19 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 		else
 			printf "atom type locations:\r"
 		endif
+		String wyck, siteSym
 		Variable mult, itemp
 		for (i=0;i<xtal.N;i+=1)					// loop over the defined atoms
 			String vstr=""
 			if (xtal.atom[i].valence)
 				sprintf vstr, ", %+d",xtal.atom[i].valence
 			endif
-			if (strlen(xtal.atom[i].WyckoffSymbol))
-				printf "     %s (Z=%g%s)\t%s\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].WyckoffSymbol,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
+			wyck = xtal.atom[i].WyckoffSymbol
+			siteSym = siteSymmetry(id,wyck)
+			if (strlen(siteSym))
+				printf "     %s (Z=%g%s)\t%s \"%s\"\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
+			elseif (strlen(wyck))
+				printf "     %s (Z=%g%s)\t%s\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
 			else
 				printf "     %s (Z=%g%s)\t\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
 			endif
@@ -9759,6 +9765,20 @@ Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 //		mult /= 3													//   divide multiplicity by 3
 //	endif
 	return mult
+End
+//
+Static Function/T siteSymmetry(SpaceGroupID,symbol)
+	// return the site symmetry for a particular Wyckoff position
+	String SpaceGroupID
+	String symbol			// Wyckoff symbol (a letter)
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
+	Variable i, N=DimSize(Wlist,0)
+	for (i=0;i<N;i+=1)
+		if (CmpStr(symbol, Wlist[i][0], 1)==0)
+			return Wlist[i][3]
+		endif
+	endfor
+	return ""
 End
 //
 Static Function/T WyckoffMenuStr(SpaceGroupID)
