@@ -11282,25 +11282,25 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID,dim)
 	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID, dim=dim)
 
 	String list
-	if (dim==2)									// This is wrong, just a place holder
+	if (dim==2)
 		Make/N=(17)/T/FREE WyckoffSyms
 		WyckoffSyms[0]  = "a:x,y:1:1;"
-		WyckoffSyms[1]  = "a:0,0:1:1;b:0,0.5:1:1;c:0.5,0:1:1;d:0.5,0.5:1:1;e:x,y:2:1;"
-		WyckoffSyms[2]  = "a:0,y:1:1;b:0.5,y:1:1;c:x,y:2:1;"
+		WyckoffSyms[1]  = "a:0,0:1:2;b:0,0.5:1:2;c:0.5,0:1:2;d:0.5,0.5:1:2;e:x,y:2:1;"
+		WyckoffSyms[2]  = "a:0,y:1:.m.;b:0.5,y:1:.m.;c:x,y:2:1;"
 		WyckoffSyms[3]  = "a:x,y:2:1;"
-		WyckoffSyms[4]  = "a:0,y:2:1;b:x,y:4:1;"
-		WyckoffSyms[5]  = "a:0,0:1:1;b:0,0.5:1:1;c:0.5,0:1:1;d:0.5,0.5:1:1;e:x,0:2:1;f:x,0.5:2:1;g:0,y:2:1;h:0.5,y:2:1;i:x,y:4:1;"
-		WyckoffSyms[6]  = "a:0,0:2:1;b:0,0.5:2:1;c:0.25,y:2:1;d:x,y:4:1;"
-		WyckoffSyms[7]  = "a:0,0:2:1;b:0.5,0:2:1;c:x,y:4:1;"
-		WyckoffSyms[8]  = "a:0,0:2:1;b:0,0.5:2:1;c:0.25,0.25:4:1;d:x,0:4:1;e:0,y:4:1;f:x,y:8:1;"
-		WyckoffSyms[9]  = "a:0,0:1:1;b:0.5,0.5:1:1;c:0.5,0:2:1;d:x,y:4:1;"
-		WyckoffSyms[10]  = "a:0,0:1:1;b:0.5,0.5:1:1;c:0.5,0:2:1;d:x,0:4:1;e:x,0.5:4:1;f:x,x:4:1;g:x,y:8:1;"
-		WyckoffSyms[11]  = "a:0,0:2:1;b:0.5,0:2:1;c:x,x+0.5:4:1;d:x,y:8:1;"
-		WyckoffSyms[12]  = "a:0,0:1:1;b:1/3.,2/3.:1:1;c:2/3.,1/3.:1:1;d:x,y:3:1;"
-		WyckoffSyms[13]  = "a:0,0:1:1;b:1/3.,2/3.:1:1;c:2/3.,1/3.:1:1;d:x,-x:3:1;e:x,y:6:1;"
-		WyckoffSyms[14]  = "a:0,0:1:1;b:1/3.,2/3.:2:1;c:x,0:3:1;d:x,y:6:1;"
-		WyckoffSyms[15]  = "a:0,0:1:1;b:1/3.,2/3.:2:1;c:0.5,0:3:1;d:x,y:6:1;"
-		WyckoffSyms[16]  = "a:0,0:1:1;b:1/3.,2/3.:2:1;c:0.5,0:3:1;d:x,0:6:1;e:x,-x:6:1;f:x,y:6:1;"
+		WyckoffSyms[4]  = "a:0,y:2:.m.;b:x,y:4:1;"
+		WyckoffSyms[5]  = "a:0,0:1:2mm;b:0,0.5:1:2mm;c:0.5,0:1:2mm;d:0.5,0.5:1:2mm;e:x,0:2:..m;f:x,0.5:2:..m;g:0,y:2:.m.;h:0.5,y:2:.m.;i:x,y:4:1;"
+		WyckoffSyms[6]  = "a:0,0:2:2..;b:0,0.5:2:2..;c:0.25,y:2:.m.;d:x,y:4:1;"
+		WyckoffSyms[7]  = "a:0,0:2:2..;b:0.5,0:2:2..;c:x,y:4:1;"
+		WyckoffSyms[8]  = "a:0,0:2:2mm;b:0,0.5:2:2mm;c:0.25,0.25:4:2..;d:x,0:4:..m;e:0,y:4:.m.;f:x,y:8:1;"
+		WyckoffSyms[9]  = "a:0,0:1:4..;b:0.5,0.5:1:4..;c:0.5,0:2:2..;d:x,y:4:1;"
+		WyckoffSyms[10]  = "a:0,0:1:4mm;b:0.5,0.5:1:4mm;c:0.5,0:2:2mm.;d:x,0:4:.m.;e:x,0.5:4:.m.;f:x,x:4:..m;g:x,y:8:1;"
+		WyckoffSyms[11]  = "a:0,0:2:4..;b:0.5,0:2:2.mm;c:x,x+0.5:4:..m;d:x,y:8:1;"
+		WyckoffSyms[12]  = "a:0,0:1:3..;b:1/3.,2/3.:1:3..;c:2/3.,1/3.:1:3..;d:x,y:3:1;"
+		WyckoffSyms[13]  = "a:0,0:1:3m.;b:1/3.,2/3.:1:3m.;c:2/3.,1/3.:1:3m.;d:x,-x:3:.m.;e:x,y:6:1;"
+		WyckoffSyms[14]  = "a:0,0:1:3.m;b:1/3.,2/3.:2:3..;c:x,0:3:..m;d:x,y:6:1;"
+		WyckoffSyms[15]  = "a:0,0:1:6..;b:1/3.,2/3.:2:3..;c:0.5,0:3:2..;d:x,y:6:1;"
+		WyckoffSyms[16]  = "a:0,0:1:6mm;b:1/3.,2/3.:2:3m.;c:0.5,0:3:2mm;d:x,0:6:..m;e:x,-x:6:.m.;f:x,y:12:1;"
 
 	else				// dim = 3
 		// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains 27 Wyckoff symbols "a"-"A".
