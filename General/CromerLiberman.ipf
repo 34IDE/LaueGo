@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version=2.0
+#pragma version=2.1
 #pragma ModuleName=CromerLiberman
 
 //This is implementation of Cromer-Liberman code for calcualtions of fprime and f double prime, and mu-over-rho
@@ -25,6 +25,12 @@
 //		moved StripOffValence() from the many places it was called into Cromer_Get_fp(), now called one place
 //		put num2symb inside of Cromer_Get_fp() and Cromer_Get_f0(), and Atomic_f_Xray(), you can pass "14" and it will know "Si"
 //release 2.0 combined Tischler & Ilavsky versions, by JZT Jan 7, 2016, also changed Lw --> Lr (Lawrencium)
+//
+//release 2.1 found some errors in coefficients, mainly for Be, and Be+2, by JZT Jan 21, 2018
+//		Be_b,   changed {42.9165, 1.66379, 100.361}  -->  Be_b={0.04965, 42.9165, 1.66379, 100.361}
+//		Be+2_b, changed {0.01336, 0.39000, 1.97441, 4.90642} -->  {-0.01336, 0.39000, 1.97441, 4.90642}
+//		Mo+3_c, changed -12.9813 --> -12.9813		// a really small change
+
 
 //this code is translated from C translation of the Fortran source code. It is inefficient and difficult to read.
 //
@@ -1187,7 +1193,7 @@ static Function Initialize_f0()
 	make/N=4/O Be_a, Be_b
 	variable/g Be_c
 	Be_a={2.22744, 1.55249, 1.40060, 0.58290}
-	Be_b={42.9165, 1.66379, 100.361}
+	Be_b={0.04965, 42.9165, 1.66379, 100.361}
 	Be_c=-1.76339
 	//********************************
 	//	"BE",   2.22744, 1.55249, 1.40060, 0.58290, 0.04965, 42.9165, 1.66379, 100.361,-1.76339,
@@ -1195,7 +1201,7 @@ static Function Initialize_f0()
 	make/N=4/O 'Be+2_a', 'Be+2_b'
 	variable/g 'Be+2_c'
 	'Be+2_a'={5.69034, 1.19706, 1.03057, 0.20150}
-	'Be+2_b'={0.01336, 0.39000, 1.97441, 4.90642}
+	'Be+2_b'={-0.01336, 0.39000, 1.97441, 4.90642}
 	'Be+2_c'=-6.11950
 	//********************************
 	//	"BE+2", 5.69034, 1.19706, 1.03057, 0.20150,-0.01336, 0.39000, 1.97441, 4.90642,-6.11950,
@@ -1796,7 +1802,7 @@ static Function Initialize_f0()
 	variable/g 'Mo+3_c'
 	'Mo+3_a'={19.6761, 18.0893, 11.7086, 2.50624}
 	'Mo+3_b'={0.95118,-0.00669, 9.61097, 24.0356}
-	'Mo+3_c'=-12.981
+	'Mo+3_c'=-12.9813
 	//********************************
 	//	"MO+3", 19.6761, 18.0893, 11.7086, 2.50624, 0.95118,-0.00669, 9.61097, 24.0356,-12.9813,
 	//********************************     Mo+5
