@@ -727,8 +727,9 @@ Static Function ShowPowderLinesWindowHook(s)
 		tagStr += str
 
 		GetWindow/Z $win  psize
-		Variable X0 = Xval>AxisValFromPixel(win,"bottom",(V_left+V_right)/2) ? -3 : 3
-		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)/2) ? -7 : 7
+		Variable X0 = Xval>AxisValFromPixel(win,"bottom",(V_left+V_right)*0.5) ? -3 : 3
+//		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)*0.5) ? -7 : 7
+		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)*0.3) ? -7 : 7
 		anchor = SelectString(X0>0,"R","L")
 		anchor += SelectString(Y0>0,"T","B")
 #if (IgorVersion()<7)
