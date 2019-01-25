@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.26
+#pragma version = 0.27
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -668,7 +668,8 @@ End
 Static Function ShowPowderLinesWindowHook(s)
 	STRUCT WMWinHookStruct &s
 
-	if ((s.eventMod==3) && (s.eventCode ==3  || s.eventCode == 4))	// mouse down or moved with Shift key held down
+//	if ((s.eventMod==3) && (s.eventCode ==3  || s.eventCode == 4))	// mouse down or moved with Shift key held down
+	if (s.eventMod==3)	// mouse down and Shift key held down
 		String win = s.winName
 		String wList=TraceNameList(win,";",1)
 		Wave lines=$""
