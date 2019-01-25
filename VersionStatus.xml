@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Tuesday, December 18, 2018" time="05:19:22 PM CST" isoTime="2018-12-18T17:19:22"></written>
+	<written date="Friday, January 25, 2019" time="01:17:59 PM CST" isoTime="2019-01-25T13:17:59"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
 	<fileCount>290</fileCount>
 	<file version="nan" time="2018-12-06T17:37:31" md5="98c41152da7679572f5211e177a78f7e" sha256="db624651b52445230d522cf392c820dc814f396e4147f8fbb48746e4b59e00c6" ext=".xml">materials/standard xtals/Iron Nickel/IN625.xml</file>
@@ -40,7 +40,7 @@
 	<file version="2.04" time="2018-01-09T13:46:06" md5="81904df45d7f37eda4ee32d41a5b9e51" sha256="a0263f260d4ac387d4630f8584a252c31b9e51870ed40e41785f444c17be097c" ext=".ipf">General/Gizmo/GizmoZoomTranslate.ipf</file>
 	<file version="nan" time="2018-12-18T15:51:05" md5="15ebcba27d35f6f2c34d992d45bfc051" sha256="c90333f81fc0304ff1a684cfaa038529a5434740099e24594b3160c68b56ba95" ext=".xml">materials/standard xtals/Ge.xml</file>
 	<file version="nan" time="2018-12-05T13:00:47" md5="b4ab67b22178bca768b587e525cd3414" sha256="b73ee054e355c480d4a553c70ffed9944c380b910bdb690311ea5354b5cbf223" ext="">materials/standard xtals/checkAll</file>
-	<file version="0.26" time="2018-04-27T14:24:21" md5="84faa3289c54533dc691174464763ff5" sha256="57f46c61643594919b71c99e85c7ce86a60653ea018f41709f57b3a69b2b912c" ext=".ipf">Lattice/PowderPatterns.ipf</file>
+	<file version="0.27" time="2019-01-25T13:05:18" md5="ff8e996bb1ef0abc92f87e0332442c5c" sha256="250c0bda39840e7bc6bdd834edc0ac904d73f984340c39a262fa0c8252c7d020" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-29T11:45:34" md5="06b265dba793e384bed73d55cb20807b" sha256="038fd1b8ca5f63ffa6a8f546243e8bdd53efa824e51d2eb90f4be7e90fb27dd6" ext=".ipf">General/new/GeneralFirstNew.ipf</file>
 	<file version="nan" time="2018-05-11T15:12:22" md5="eef3fbce01aec78465f6d9b9c7fcd5c7" sha256="2ff592a6fef9e4f8b8487956dd787df53b3a25ce73fef961bce9c871b3c66110" ext=".xml">materials/standard xtals/BaTiO3.xml</file>
 	<file version="nan" time="2018-08-07T13:17:01" md5="9e759c8e9730b6cd3c04ff19a107c3f3" sha256="b3ae67ba6b222b1c00c885329914aa11484374fe19fe8c80c163b1df09f60266" ext=".xml">materials/standard xtals/Kaolinite.xml</file>
@@ -48,7 +48,7 @@
 	<file version="nan" time="2018-11-13T13:55:56" md5="e19befcf9b972702c3773d3d016ab1f4" sha256="55f6526230995601e749d462e423bd6d47ca153439aa335b1f9a25ece828421f" ext=".xml">materials/standard xtals/CZT.xml</file>
 	<file version="nan" time="2018-05-11T15:19:18" md5="4d4bd1af19c39714137ee92e28946851" sha256="f4080ca99fd2877e58a9b42687fc11f2d419853341bfb7e25a0cbda517938c79" ext=".xml">materials/standard xtals/Graphite.xml</file>
 	<file version="nan" time="2018-05-11T15:00:34" md5="ed0bfb1f91bc753536a32ca3aff4a188" sha256="2732dbddbf6fbd6e24ba5d52f269cdc094a43a21077a2f69472c9837fb5220fa" ext=".xml">materials/standard xtals/Iron Nickel/Ferrite.xml</file>
-	<file version="2" time="2016-01-08T10:13:18" md5="422f6a96eb0d40cc58391319010fe5ab" sha256="96c882280be5851b21b5fce994b6526f06276208da15c626d5aa7ba48aad9003" ext=".ipf">General/CromerLiberman.ipf</file>
+	<file version="2.1" time="2019-01-21T15:47:32" md5="8722787b173c5474e73c1c0ee9ad7d2d" sha256="17dee171a684542f8a2604172d598b84adeb4a1260d47e10d21876395341117f" ext=".ipf">General/CromerLiberman.ipf</file>
 	<file version="nan" time="2018-05-11T15:11:16" md5="f0c48aba07ea70ba660265eae8a27f57" sha256="24c6ff063bd5bd3adbbd57dc835176132aec659c43b84251b4af0b945a7dc289" ext=".xml">materials/standard xtals/BiFeO3.xml</file>
 	<file version="nan" time="2015-02-02T20:05:41" md5="39fb1bd59edc4f1ee215c776d6f51789" sha256="0ca02b95cfd3553009b11a862c3109e86fbe230ed9b7452c20990e04a23d5d0b" ext="">microN/binary/Euler4</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="3d08b21e7482c977c19d1b44c51a0b1c" sha256="2c59bbbfd6a3a24f5fca424e80959e02e316eae2e9eb12d7672d8fc36a4b4de5" ext="">microN/binary/Euler_i386</file>
