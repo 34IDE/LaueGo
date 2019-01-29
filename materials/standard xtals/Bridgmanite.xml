@@ -4,8 +4,11 @@
 	<chemical_name_common>Bridgmanite</chemical_name_common>
 	<chemical_formula_structural>MgSiO3</chemical_formula_structural>
 	<space_group>
+		<id>62:cab</id>
 		<IT_number>62</IT_number>
+		<H-M>Pbnm</H-M>
 	</space_group>
+	<database_code db="amcsd">3546</database_code>
 	<cell>
 		<a unit="nm">0.47780</a>
 		<b unit="nm">0.49298</b>
@@ -16,7 +19,8 @@
 		<temperature unit="C">20</temperature>
 	</cell>
 	<atom_site>
-		<symbol>Mg</symbol>
+        <label>Mg</label>
+        <symbol>Mg</symbol>
 		<fract>0.51378 0.55588 0.25</fract>
 		<U_iso unit="Å^2">0.0083</U_iso>
 		<aniso_U_11 unit="Å^2">0.0077</aniso_U_11>
@@ -27,6 +31,7 @@
 		<aniso_U_23 unit="Å^2">0</aniso_U_23>
 	</atom_site>
 	<atom_site>
+        <label>Si</label>
 		<symbol>Si</symbol>
 		<fract>0.5 0 0.5</fract>
 		<U_iso unit="Å^2">0.0058</U_iso>
@@ -38,6 +43,7 @@
 		<aniso_U_23 unit="Å^2">-0.0001</aniso_U_23>
 	</atom_site>
 	<atom_site>
+        <label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.10189 0.46645 0.25</fract>
 		<U_iso unit="Å^2">0.0073</U_iso>
@@ -49,6 +55,7 @@
 		<aniso_U_23 unit="Å^2">0</aniso_U_23>
 	</atom_site>
 	<atom_site>
+        <label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.19626 0.20133 0.55258</fract>
 		<U_iso unit="Å^2">0.0075</U_iso>
@@ -60,7 +67,6 @@
 		<aniso_U_23 unit="Å^2">0.0006</aniso_U_23>
 	</atom_site>
 	<citation>
-		_database_code_amcsd 0003546
 		Dobson D P, Jacobsen S D
 		American Mineralogist 89 (2004) 807-811
 		The flux growth of magnesium silicate perovskite single crystals.

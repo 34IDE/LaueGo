@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>RuO2 (Rutile)</chemical_name_common>
+	<chemical_name_common>Ruthenium Oxide (Rutile)</chemical_name_common>
 	<space_group>
 		<IT_number>136</IT_number>
 		<H-M>P42/mnm</H-M>

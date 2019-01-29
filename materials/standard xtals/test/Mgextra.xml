@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Magnesium</chemical_name_common>
+	<space_group>
+		<id>194</id>
+		<H-M>P63/mmc</H-M>
+	</space_group>
+	<database_code db="amcsd">0011183</database_code>
+	<database_code db="ICSD">771832</database_code>
+	<database_code db="amcsd">0011183</database_code>
+	<database_code db="ICSD">771832</database_code>
+	<cell>
+		<a unit="nm">0.320927</a>
+		<b unit="nm">0.320927</b>
+		<c unit="nm">0.521033</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="C">20</temperature>
+	</cell>
+	<atom_site>
+		<label>Mg</label>
+		<symbol>Mg</symbol>
+		<fract>0.333333333 0.666666667 0.25</fract>
+	</atom_site>
+	<database_code db="JZTdb">dummy code</database_code>
+	<citation>Wyckoff R W G, Crystal Structures, 1, 1963 pg 7-83</citation>
+</cif>

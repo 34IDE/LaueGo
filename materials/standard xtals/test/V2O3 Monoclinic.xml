@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>V2O3, Divanadium(III) oxide - LT</chemical_name_common>
+	<space_group_id>15:b3</space_group_id>
+	<space_group_IT_number>15</space_group_IT_number>
+	<H-M>I 1 2/a 1</H-M>		<!-- 'I 1 2/a 1'  15:b3   'with origin at -1 on a-glide plane.' http://img.chem.ucl.ac.uk/sgp/large/015gy1.htm -->
+	<icsd>95762</icsd>
+	<cell>
+		<a unit="Angstrom">7.2727</a>
+		<b unit="Angstrom">5.0027</b>
+		<c unit="Angstrom">5.5432</c>
+		<alpha>90</alpha>
+		<beta>96.762</beta>
+		<gamma>90</gamma>
+		<temperature unit="K">165</temperature>
+	</cell>
+
+	<atom_site>
+		<label>V</label>
+		<symbol>V</symbol>
+		<fract_xyz>0.3449 0.009 0.2983</fract_xyz>
+		<valence>3</valence>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.407 0.845 0.645</fract_xyz>
+		<valence>-2</valence>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.25 0.183 0</fract_xyz>
+		<valence>-2</valence>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+	<citation id="primary">
+		P. Rozier, A. Ratuszna, J. Galy,
+		Zeitschrift fuer Anorganische und Allgemeine Chemie (1950) (DE)' 2002 628 1236 1242 ZAACAB
+		"Comparative structural and electrical studies of V2 O3 and V2-x Nix O3 (0 &lt; x &lt; 0.75) solid solution"
+	</citation>
+	<citation doi="10.1103/PhysRevB.2.3734" id="2">
+		D.B. McWhan, J.P. Remeika, Phys. Rev. B 2 (1970) pg. 3734-3750
+		"Metal-Insulator Transition in (V(1-x)Crx)2 O3"
+	</citation>
+</cif>
+
+
+<!--   
+	V1 V3+ 8 f 0.3449(3) 0.009(1) 0.2983(4) 0.10(5) 1. 0
+	O1 O2- 8 f 0.407(1) 0.845(1) 0.645(1) 0.46(5) 1. 0
+	O2 O2- 4 e 0.25 0.183(2) 0 0.46(5) 1. 0
+-->

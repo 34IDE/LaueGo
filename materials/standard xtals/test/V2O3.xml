@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>V2O3, Karelianite</chemical_name_common>
+	<amcsd>0010595</amcsd>
+	<space_group_IT_number>167</space_group_IT_number>
+	<cell>
+		<a unit="nm">0.4952</a>
+		<b unit="nm">0.4952</b>
+		<c unit="nm">1.4002</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="C">86.85</temperature>
+	</cell>
+	<atom_site>
+		<label>V</label>
+		<symbol>V</symbol>
+		<fract_xyz>0 0 0.34630</fract_xyz>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract_xyz>0.315 0 0.25</fract_xyz>
+	</atom_site>
+	<citation>
+		R.E. Newnham, Y.M. de Haan
+		Zeitschrift fur Kristallographie, 117, (1962) 235-237,
+		"Refinement of the alpha Al2O3, Ti2O3, V2O3 and Cr2O3 structures"
+	</citation>
+</cif>

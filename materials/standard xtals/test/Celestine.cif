@@ -1,0 +1,64 @@
+data_global
+_chemical_name_mineral 'Celestine'
+loop_
+_publ_author_name
+'Jacobsen S D'
+'Smyth J R'
+'Swope R J'
+'Downs R T'
+_journal_name_full 'The Canadian Mineralogist'
+_journal_volume 36 
+_journal_year 1998
+_journal_page_first 1053
+_journal_page_last 1060
+_publ_section_title
+;
+ Rigid-body character of the SO4 groups in celestine, anglesite and
+ barite
+;
+_database_code_amcsd 0005557
+_chemical_formula_sum 'Sr S O4'
+_chemical_formula_sum ''
+_cell_length_a 6.8671
+_cell_length_b 8.3545
+_cell_length_c 5.3458
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_cell_volume 306.695
+_exptl_crystal_density_diffrn      3.978
+_symmetry_space_group_name_H-M 'P b n m'
+loop_
+_space_group_symop_operation_xyz
+  'x,y,z'
+  'x,y,1/2-z'
+  '-x,-y,1/2+z'
+  '1/2+x,1/2-y,1/2+z'
+  '1/2-x,1/2+y,1/2-z'
+  '1/2-x,1/2+y,z'
+  '1/2+x,1/2-y,-z'
+  '-x,-y,-z'
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Sr   0.15818   0.18395   0.25000
+S   0.18505   0.43797   0.75000
+O1   0.09230   0.59520   0.75000
+O2   0.04180   0.30710   0.75000
+O3   0.31070   0.42220   0.97440
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Sr 0.01005 0.00757 0.01681 0.00026 0.00000 0.00000
+S 0.00797 0.00762 0.00896 -0.00014 0.00000 0.00000
+O1 0.01950 0.01190 0.02990 0.00840 0.00000 0.00000
+O2 0.01260 0.01610 0.02100 -0.00660 0.00000 0.00000
+O3 0.01380 0.01560 0.01160 -0.00110 -0.00400 0.00060
+
