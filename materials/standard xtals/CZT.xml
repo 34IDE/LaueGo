@@ -7,7 +7,7 @@
 		<id>216</id>
 		<H-M>F -4 3 m</H-M>
 	</space_group>
-	<icsd>620556</icsd>
+	<database_code db="ICSD">620556</database_code>
 	<cell>
 		<a unit="nm">0.6438</a>
 		<b unit="nm">0.6438</b>

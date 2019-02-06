@@ -6,7 +6,7 @@
 		<id>194</id>
 		<H-M>P63/mmc</H-M>
 	</space_group>
-	<amcsd>0011183</amcsd>
+	<database_code db="amcsd">0011183</database_code>
 	<cell>
 		<a unit="nm">0.320927</a>
 		<b unit="nm">0.320927</b>

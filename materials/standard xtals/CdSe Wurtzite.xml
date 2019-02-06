@@ -6,7 +6,7 @@
 		<id>186</id>
 		<H-M>P 63 m c</H-M>
 	</space_group>
-	<amcsd>0019175</amcsd>
+	<database_code db="amcsd">0019175</database_code>
 	<cell>
 		<a unit="nm">0.4299</a>
 		<b unit="nm">0.4299</b>

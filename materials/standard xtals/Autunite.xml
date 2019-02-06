@@ -7,7 +7,7 @@
 		<id>62</id>
 		<H-M>Pnma</H-M>
 	</space_group>
-	<amcsd>0002977</amcsd>
+	<database_code db="amcsd">0002977</database_code>
 	<cell>
 		<a unit="nm">1.40135</a>
 		<b unit="nm">2.07121</b>

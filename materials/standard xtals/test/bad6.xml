@@ -4,8 +4,8 @@
 	<chemical_name_common>Quartz-alpha</chemical_name_common>
 	<chemical_formula_structural>SiO2</chemical_formula_structural>
 	<space_group>
-		<id>154</id>
 		<IT_number>154</IT_number>
+		<id>154</id>
 		<H-M>P 32 2 1</H-M>
 	</space_group>
 	<database_code db="ICSD">174</database_code>
@@ -21,7 +21,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract>0.46987 0 0.6667</fract>
+		<fract>0.46987 0 0.6667</fract>		<!-- This uses a single <fract> for x,y,z -->
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<aniso_U_11>0.0066</aniso_U_11>
@@ -34,7 +34,9 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0.4141 0.2681 0.7855</fract>
+		<fract_x>0.4141</fract_x>			<!-- This uses individual <fract_x>... for x,y,z -->
+		<fract_y>0.2681</fract_y>
+		<fract_z>0.7855</fract_z>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.0156</aniso_U_11>
@@ -45,7 +47,8 @@
 		<aniso_U_23>-0.0046</aniso_U_23>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
-	<citation doi="10.1107/S0567740876007966">
+	<citation>
+		<doi>10.1107/S0567740876007966</doi>
 		Y. le Page, G. Donnay,
 		Acta Crystallographica, B32 (1976) pg. 2456-2459
 		"Refinement of the crystal structure of low-quartz"

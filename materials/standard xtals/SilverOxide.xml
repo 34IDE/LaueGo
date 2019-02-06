@@ -7,7 +7,7 @@
 		<id>224:1</id>
 		<H-M>Pn-3m</H-M>
 	</space_group>
-	<amcsd>0017402</amcsd>
+	<database_code db="amcsd">0017402</database_code>
 	<cell>
 		<a unit="nm">0.4718</a>
 		<b unit="nm">0.4718</b>

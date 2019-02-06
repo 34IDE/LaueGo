@@ -3,7 +3,7 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Kaolinite</chemical_name_common>
 	<chemical_formula_structural>Al2Si2O9</chemical_formula_structural>
-	<amcsd>0017947</amcsd>
+	<database_code db="amcsd">0017947</database_code>
 	<cod>1011045</cod>
 	<space_group>
 		<id>9:b1</id>

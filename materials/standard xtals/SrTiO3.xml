@@ -7,7 +7,7 @@
 		<id>221</id>
 		<H-M>P m -3 m</H-M>
 	</space_group>
-	<icsd>262269</icsd>
+	<database_code db="ICSD">262269</database_code>
 	<cell>
 		<a unit="nm">0.3905268</a>
 		<b unit="nm">0.3905268</b>
@@ -16,6 +16,10 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<temperature unit="C">20</temperature>
+		<thermalExpansion>
+			<T unit="K">293 400 500 600 700 800 900 1000 1100 1200</T>
+			<dL_L>0 0.00106 0.00212 0.0032 0.0043 0.00545 0.0066 0.0078 0.009 0.01025</dL_L>
+		</thermalExpansion>
 	</cell>
 	<atom_site>
 		<label>Sr</label>

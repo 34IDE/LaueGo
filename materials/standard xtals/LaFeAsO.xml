@@ -7,7 +7,7 @@
 		<id>129:1</id>
 		<H-M>P4/nmm</H-M>
 	</space_group>
-	<icsd>173432</icsd>
+	<database_code db="ICSD">173432</database_code>
 	<cell>
 		<a unit="nm">0.403533</a>
 		<b unit="nm">0.403533</b>

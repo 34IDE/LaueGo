@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Silicon</chemical_name_common>
+	<space_group>
+		<id>227:1</id>
+		<IT_number>227</IT_number>
+		<H-M>Fd-3m:1</H-M>
+	</space_group>
+	<cell>
+		<!-- from CODATA Internationally recommended 2014 values, set May 2018 -->
+		<a unit="pm">543.1020505</a>
+		<b unit="pm">543.1020505</b>
+		<c unit="pm">543.1020505</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<temperature unit="C">22.5</temperature>
+		<!-- <alphaT>2.56e-06</alphaT>		a = ao*(1+alphaT*(TempC-22.5)) -->
+		<thermalExpansion>
+			<T unit="K">273.14 373.14 473.14 573.14 673.14 773.14 873.14 973.14 1073.14 1173.14 1273.14 1373.14 1473.14 1573.14 1673.14 1773.14 1873.14 1973.14 2073.14 2173.14</T>
+			<d_d>-5.7594e-05 0.000232406 0.000567406 0.000927406 0.00130741 0.00170741 0.00212741 0.00256241 0.00300741 0.00346241 0.00392241 0.00438241 0.00484491 0.00531241 0.00578241 0.00625241 0.00672241 0.00719241 0.00766241 0.00813241</d_d>
+		</thermalExpansion>
+	</cell>
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0 0 0</fract>
+		<DebyeTemperature unit="K">645</DebyeTemperature>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Si" n1="Si">0.2351700863</bond_chemical>
+	<citation>physics.nist.gov/cuu/Constants/index.html</citation>
+</cif>

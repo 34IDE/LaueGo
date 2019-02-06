@@ -1,27 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif version="2" dim="3">
+<cif>
 	<chemical_name_common>Quartz-alpha</chemical_name_common>
 	<chemical_formula_structural>SiO2</chemical_formula_structural>
-	<space_group>
-		<id>154</id>
-		<IT_number>154</IT_number>
-		<H-M>P 32 2 1</H-M>
-	</space_group>
+	<space_group_IT_number>154</space_group_IT_number>
+	<space_group_id>154</space_group_id>
+	<H-M>P 32 2 1</H-M>
 	<database_code db="ICSD">174</database_code>
+	<temperature unit="K">298</temperature>
 	<cell>
-		<a unit="nm">0.49134</a>
+		<A unit="nm">0.49134</A>
 		<b unit="nm">0.49134</b>
 		<c unit="nm">0.54052</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<temperature unit="K">298</temperature>
 	</cell>
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract>0.46987 0 0.6667</fract>
+		<fract_xyz>0.46987 0 0.6667</fract_xyz>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<aniso_U_11>0.0066</aniso_U_11>
@@ -34,7 +32,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0.4141 0.2681 0.7855</fract>
+		<fract_xyz>0.4141 0.2681 0.7855</fract_xyz>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<aniso_U_11>0.0156</aniso_U_11>
@@ -45,9 +43,10 @@
 		<aniso_U_23>-0.0046</aniso_U_23>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
-	<citation doi="10.1107/S0567740876007966">
+	<citation>
 		Y. le Page, G. Donnay,
 		Acta Crystallographica, B32 (1976) pg. 2456-2459
 		"Refinement of the crystal structure of low-quartz"
+		<doi>10.1107/S0567740876007966</doi>
 	</citation>
 </cif>
