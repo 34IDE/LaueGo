@@ -4,6 +4,7 @@
 	<chemical_name_common>V2O3, Divanadium(III) oxide - LT</chemical_name_common>
 	<space_group_id>15:b3</space_group_id>
 	<space_group_IT_number>15</space_group_IT_number>
+	<H-M>I 1 2/a 1</H-M>		<!-- 'I 1 2/a 1'  15:b3   'with origin at -1 on a-glide plane.' http://img.chem.ucl.ac.uk/sgp/large/015gy1.htm -->
 	<icsd>95762</icsd>
 	<cell>
 		<a unit="Angstrom">7.2727</a>
@@ -36,13 +37,12 @@
 		<valence>-2</valence>
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
-
 	<citation id="primary">
 		P. Rozier, A. Ratuszna, J. Galy,
 		Zeitschrift fuer Anorganische und Allgemeine Chemie (1950) (DE)' 2002 628 1236 1242 ZAACAB
 		"Comparative structural and electrical studies of V2 O3 and V2-x Nix O3 (0 &lt; x &lt; 0.75) solid solution"
 	</citation>
-	<citation id="2">
+	<citation doi="10.1103/PhysRevB.2.3734" id="2">
 		D.B. McWhan, J.P. Remeika, Phys. Rev. B 2 (1970) pg. 3734-3750
 		"Metal-Insulator Transition in (V(1-x)Crx)2 O3"
 	</citation>

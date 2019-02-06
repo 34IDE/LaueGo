@@ -1,0 +1,62 @@
+data_global
+_chemical_name_mineral 'Celestine'
+loop_
+_publ_author_name
+'Hawthorne F C'
+'Ferguson R B'
+_journal_name_full 'The Canadian Mineralogist'
+_journal_volume 13 
+_journal_year 1975
+_journal_page_first 181
+_journal_page_last 187
+_publ_section_title
+;
+ Anhydrous sulphates. I: Refinement of the crystal structure of celestite
+ with an appendix on the structure of thenardite
+;
+_database_code_amcsd 0005112
+_chemical_formula_sum 'Sr S O4'
+_chemical_formula_sum ''
+_cell_length_a 8.360
+_cell_length_b 5.352
+_cell_length_c 6.858
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_cell_volume 306.846
+_exptl_crystal_density_diffrn      3.976
+_symmetry_space_group_name_H-M 'P n m a'
+loop_
+_space_group_symop_operation_xyz
+  'x,y,z'
+  'x,1/2-y,z'
+  '-x,1/2+y,-z'
+  '1/2-x,1/2+y,1/2+z'
+  '1/2+x,1/2-y,1/2-z'
+  '1/2+x,y,1/2-z'
+  '1/2-x,-y,1/2+z'
+  '-x,-y,-z'
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Sr   0.18410   0.25000   0.15820
+S   0.43790   0.75000   0.18490
+O1   0.59700   0.75000   0.09370
+O2   0.31010   0.75000   0.04060
+O3   0.42190   0.97450   0.31010
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Sr 0.00952 0.01483 0.00796 0.00000 0.00029 0.00000
+S 0.00935 0.00644 0.00434 0.00000 0.00026 0.00000
+O1 0.01151 0.01512 0.01939 0.00000 0.00929 0.00000
+O2 0.01756 0.01570 0.01458 0.00000 -0.00555 0.00000
+O3 0.01406 0.00795 0.01592 -0.00243 0.00224 -0.00152
+
