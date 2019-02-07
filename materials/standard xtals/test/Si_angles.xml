@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Si</chemical_name_common>
+	<space_group>
+		<id>227:1</id>
+		<IT_number>227</IT_number>
+		<H-M>Fd-3m:1</H-M>
+	</space_group>
+	<cell>
+		<!-- from CODATA Internationally recommended 2014 values, set May 2018 -->
+		<a unit="nm">0.5431020505</a>
+		<b unit="nm">0.5431020505</b>
+		<c unit="nm">0.5431020505</c>
+		<!-- <alpha unit="grad">100</alpha>
+		<beta unit="cos">0</beta>
+		<gamma unit="mcir">250</gamma>
+		 -->
+		<alpha unit="mrad">1570.7963267949</alpha>
+		<beta unit="k'">5.4</beta>
+		<gamma unit="M&quot">0.324</gamma>
+		<temperature unit="C">22.5</temperature>
+		<alphaT>2.56e-06</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
+	</cell>
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0 0 0</fract>
+		<DebyeTemperature unit="K">645</DebyeTemperature>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Si" n1="Si">0.2351700863</bond_chemical>
+	<citation>physics.nist.gov/cuu/Constants/index.html;</citation>
+	<!--   old value $latticeParameters	{ 0.543102088, 0.543102088, 0.543102088, 90, 90, 90 } -->
+</cif>
