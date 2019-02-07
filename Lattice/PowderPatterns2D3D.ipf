@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 1.00
+#pragma version = 1.01
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -692,7 +692,8 @@ End
 Static Function ShowPowderLinesWindowHook(s)
 	STRUCT WMWinHookStruct &s
 
-	if ((s.eventMod==3) && (s.eventCode ==3  || s.eventCode == 4))	// mouse down or moved with Shift key held down
+//	if ((s.eventMod==3) && (s.eventCode ==3  || s.eventCode == 4))	// mouse down or moved with Shift key held down
+	if (s.eventMod==3)	// mouse down and Shift key held down
 		String win = s.winName
 		String wList=TraceNameList(win,";",1)
 		Wave lines=$""
@@ -752,8 +753,9 @@ Static Function ShowPowderLinesWindowHook(s)
 		tagStr += str
 
 		GetWindow/Z $win  psize
-		Variable X0 = Xval>AxisValFromPixel(win,"bottom",(V_left+V_right)/2) ? -3 : 3
-		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)/2) ? -7 : 7
+		Variable X0 = Xval>AxisValFromPixel(win,"bottom",(V_left+V_right)*0.5) ? -3 : 3
+//		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)*0.5) ? -7 : 7
+		Variable Y0 = Yval>AxisValFromPixel(win,"left",(V_top+V_bottom)*0.3) ? -7 : 7
 		anchor = SelectString(X0>0,"R","L")
 		anchor += SelectString(Y0>0,"T","B")
 #if (IgorVersion()<7)

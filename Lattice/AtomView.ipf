@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.53
+#pragma version = 0.54
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -9,9 +9,11 @@
 #endif
 #include "GizmoClip", version>=2.00
 #include "GizmoMarkers", version>=2.00
-#include "LatticeSym", version>=5.10
+#include "LatticeSym", version>=7.00
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"
+#define LATTICE_SYM_2D_3D
+
 
 // These Constant values can be OverRidden by adding the line in your Main Procedure window.  Don't change this file.
 Constant AtomView_GrayBkg = 0.75		// Can OverRide with :OverRide Constant AtomView_GrayBkg=0.95
@@ -51,7 +53,7 @@ Menu "Analysis"
 		"-"
 		"Make Cells of Atoms...",MakeCellsOfLattice(NaN,NaN,NaN)
 		MenuItemFolderWithClassExists("Print Bond Info","atomViewBonds","DIMS:2,MINCOLS:3,MAXCOLS:3"),AllUniqueBonds("")
-		MenuItemFolderWithClassExists("Gizmo of Atoms","atomViewXYZ","DIMS:2,MINCOLS:3,MAXCOLS:3"),MakeAtomViewGizmo($"")
+		MenuItemFolderWithClassExists("Gizmo of Atoms","atomViewXYZ","DIMS:2,MINCOLS:3,MAXCOLS:3"),MakeAtomViewDisplay($"")
 		MenuItemFolderWithClassExists("Atom Type at Cursor","atomViewBonds","DIMS:2,MINCOLS:3,MAXCOLS:3"),print AtomView#ShowAtomViewInfo(1)
 	End
 End
@@ -83,11 +85,11 @@ Static Function AtomViewPopMenuProc(pa) : PopupMenuControl		// used in the Latti
 		//	printf "%sMakeCellsOfLattice(NaN,NaN,NaN)\r", BULLET
 		MakeCellsOfLattice(NaN,NaN,NaN)
 	elseif (strsearch(pa.popStr,"Bond Info",0,2)>=0)
-		printf "%sMakeAtomViewGizmo($\"\")\r", BULLET
+		printf "%AllUniqueBonds($\"\")\r", BULLET
 		AllUniqueBonds("", printIt=1)
-	elseif (strsearch(pa.popStr,"Gizmo of Atoms",0,2)>=0)
-		printf "%sMakeAtomViewGizmo($\"\")\r", BULLET
-		MakeAtomViewGizmo($"")
+	elseif (strsearch(pa.popStr,"Display Atoms in Cell",0,2)>=0)
+		printf "%sMakeAtomViewDisplay($\"\")\r", BULLET
+		MakeAtomViewDisplay($"")
 	elseif (strsearch(pa.popStr,"Atom Type at Cursor",0,2)>=0)
 		printf "%sShowAtomViewInfo(1)\r", BULLET
 		print ShowAtomViewInfo(1)
@@ -167,11 +169,19 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		DoAlert 0, "no crystal structure found"
 		return $""
 	endif
+#ifdef LATTICE_SYM_2D_3D
+	Variable dim = xtal.dim
+#else
+	Variable dim = 3
+#endif
+	dim = dim==2 ? 2 : 3
+	Nc = dim==2 ? 0.1 : Nc
 
 	if (numtype(Na+Nb+Nc) || Na<0.1 || Nb<0.1 || Nc<0.1)
 		Na = numtype(Na) || Na<0.1 ? 1 : Na
 		Nb = numtype(Nb) || Nb<0.1 ? 1 : Nb
 		Nc = numtype(Nc) || Nc<0.1 ? 1 : Nc
+		Nc = dim==2 ? 0 : Nc
 		Prompt Na,"Number of Cells along a"
 		Prompt Nb,"Number of Cells along b"
 		Prompt Nc,"Number of Cells along c"
@@ -195,7 +205,8 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		printf ")\r"
 	endif
 	GizmoScaleSize = numtype(GizmoScaleSize) || GizmoScaleSize<=0 ? 1 : GizmoScaleSize
-	if (!(Na>0 && Nb>0 && Nc>0 && numtype(Na+Nb+Nc)==0))
+	Nc = dim==2 ? 0 : Nc
+	if (!(Na>0 && Nb>0 && Nc>=0 && numtype(Na+Nb+Nc)==0))
 		return $""
 	endif
 
@@ -217,7 +228,8 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 			printf "  prefix = '%s',  %g bonds (using given bond lengths)\r",prefix,Nbonds
 		endif
 	endif
-	MakeAtomViewGizmo(xyz)
+
+	MakeAtomViewDisplay(xyz)
 	return xyz
 End
 
@@ -238,9 +250,19 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	if (xtalN<1)
 		return $""
 	endif
+#ifdef LATTICE_SYM_2D_3D
+	Variable dim = xtal.dim
+#else
+	Variable dim = 3
+#endif
 
 	Wave direct = directFrom_xtal(xtal)
-	Make/N=3/D/FREE Ns={ceil(Na),ceil(Nb),ceil(Nc)}
+	if (dim==2)
+		Make/N=(dim)/D/FREE Ns={ceil(Na),ceil(Nb)}
+	else
+		Make/N=(dim)/D/FREE Ns={ceil(Na),ceil(Nb),ceil(Nc)}
+	endif
+
 	MatrixOp/FREE/O maxSize0 = maxVal(abs((direct x Ns)))		// find biggest size
 	Variable maxSize=maxSize0[0]
 
@@ -263,8 +285,8 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	reMakeAtomXYZs(xtal)									// ensure that atom positions are current
 
 	Variable Nmax=200
-	Make/N=(Nmax,3)/O $(prefix+"_XYZ")/WAVE=xyz = NaN
-	Make/N=(Nmax,3)/O $(prefix+"_Size")/WAVE=size = 1
+	Make/N=(Nmax,dim)/O $(prefix+"_XYZ")/WAVE=xyz = NaN
+	Make/N=(Nmax,dim)/O $(prefix+"_Size")/WAVE=size = 1
 	Make/N=(Nmax,4)/O $(prefix+"_RGBA")/WAVE=rgba = 0
 	Make/N=(Nmax)/O $(prefix+"_Z")/WAVE=zw = NaN
 	Make/N=(Nmax)/O $(prefix+"_Occupy")/WAVE=occw = NaN
@@ -345,9 +367,10 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		id = num2str(xtal.SpaceGroup)
 	endif
 	String title = desc + SelectString(strlen(id), "", "  "+id)
-	str = getHMsym2(xtal.SpaceGroupIDnum)
+	str = getHMsym2(xtal.SpaceGroupIDnum, dim=dim)
 	title += SelectString(strlen(str), "", "  "+str)
 	wNote = "waveClass=atomViewXYZ;"
+	wNote = ReplaceNumberByKey("dim",wNote,dim,"=")
 	wNote = ReplaceStringByKey("sourceFldr",wNote,GetWavesDataFolder(xyz,1),"=")
 	wNote = ReplaceStringByKey("SpaceGroupID",wNote,xtal.SpaceGroupID,"=")
 	wNote = ReplaceStringByKey("desc",wNote,desc,"=")
@@ -357,13 +380,21 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	endif
 	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
 	wNote = ReplaceNumberByKey("Natom",wNote,Natom,"=")
-	sprintf str,"%g %g %g",Na,Nb,Nc
+	if (dim==2)
+		sprintf str,"%g %g",Na,Nb
+	else
+		sprintf str,"%g %g %g",Na,Nb,Nc
+	endif
 	wNote = ReplaceStringByKey("Nabc",wNote,str,"=")
 
-	Make/N=3/D/FREE a={xtal.a0,xtal.a1,xtal.a2}, b={xtal.b0,xtal.b1,xtal.b2}, c={xtal.c0,xtal.c1,xtal.c2}
+	if (dim==2)
+		Make/N=2/D/FREE a={xtal.a0,xtal.a1}, b={xtal.b0,xtal.b1}
+	else
+		Make/N=3/D/FREE a={xtal.a0,xtal.a1,xtal.a2}, b={xtal.b0,xtal.b1,xtal.b2}, c={xtal.c0,xtal.c1,xtal.c2}
+		c = abs(c)<1e-12 ? 0 : c
+	endif
 	a = abs(a)<1e-12 ? 0 : a
 	b = abs(b)<1e-12 ? 0 : b
-	c = abs(c)<1e-12 ? 0 : c
 	wNote = ReplaceStringByKey("aVec",wNote,vec2str(a,bare=1,sep=","),"=")
 	wNote = ReplaceStringByKey("bVec",wNote,vec2str(b,bare=1,sep=","),"=")
 	wNote = ReplaceStringByKey("cVec",wNote,vec2str(c,bare=1,sep=","),"=")
@@ -398,11 +429,12 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	Note/K xyz, wNote
 
 	wNote = ReplaceStringByKey("source","waveClass=;",GetWavesDataFolder(xyz,2),"=")
-	Note/K size, ReplaceStringByKey("waveClass",wNote,"atomViewSize","=")
 	Note/K types, ReplaceStringByKey("waveClass",wNote,"atomViewAtomType","=")
 	Note/K zw, ReplaceStringByKey("waveClass",wNote,"atomViewZ","=")
 	Note/K occw, ReplaceStringByKey("waveClass",wNote,"atomViewOccupy","=")
 	Note/K rgba, ReplaceStringByKey("waveClass",wNote,"atomViewRGBA","=")
+	wnote = ReplaceNumberByKey("scale",wNote,2/maxSize*(GizmoScaleSize*GizmoScaleSize_BASE),"=")
+	Note/K size, ReplaceStringByKey("waveClass",wNote,"atomViewSize","=")
 	return xyz
 End
 
@@ -418,20 +450,26 @@ Static Function/WAVE RepeatOneAtomSet(atomi,Na,Nb,Nc)
 	if (Ni<1)
 		return $""
 	endif
+	Variable dim=DimSize(atomi,1)
+	dim = dim==2 ? 2 : 3
+	Nc = dim==2 ? 0 : Nc
 
-	Variable Nalloc=300, N
-	Make/N=(Nalloc,3)/FREE/D vecs
-	Make/N=3/D/FREE v, vi
+	Variable Nalloc=300, N, keep
+	Make/N=(Nalloc,dim)/FREE/D vecs
+	Make/N=(dim)/D/FREE v, vi
 	Variable ia,ib,ic, i
 	for (N=0,ic=0; ic<=ceil(Nc); ic+=1)	// the >= make ic go to Nc (over scans)
-		vi[2] = ic
+		if (dim>2)
+			vi[2] = ic
+		endif
 		for (ib=0; ib<=ceil(Nb); ib+=1)
 			vi[1] = ib
 			for (ia=0; ia<=ceil(Na); ia+=1)
 				vi[0] = ia
 				for (i=0;i<Ni;i+=1)				// loop over each atom in atomi
 					v = atomi[i][p] + vi
-					if (v[0]<=Na && v[1]<=Nb && v[2]<=Nc)	// keep this atom, not <=, not < to keep outside surface
+					keep = dim==2 ? (v[0]<=Na && v[1]<=Nb) : (v[0]<=Na && v[1]<=Nb && v[2]<=Nc)
+					if (keep)						// keep this atom, not <=, not < to keep outside surface
 						if (N>=Nalloc)
 							Nalloc += 300			// need to allocate more space
 							Redimension/N=(Nalloc,-1) vecs
@@ -460,44 +498,57 @@ Static Function/WAVE MakeCellOutline(prefix,direct,[Na,Nb,Nc,name])	// makes a g
 	Nb = numtype(Nb) || Nb<1 ? 1 : ceil(Nb)
 	Nc = numtype(Nc) || Nc<1 ? 1 : ceil(Nc)
 	name = SelectString(ParamIsDefault(name),name,"")
+	Variable dim=DimSize(direct,0)
+	dim = dim==2 ? 2 : 3
 
-	Make/N=3/FREE/D a,b,c			// the lattice vectors
+	Make/N=(dim)/FREE/D a,b			// the lattice vectors
 	a = direct[p][0]
 	b = direct[p][1]
-	c = direct[p][2]
+	if (dim>2)
+		Make/N=(dim)/FREE/D c			// the c lattice vector
+		c = direct[p][2]
+	endif
 
 	name = SelectString(strlen(name),prefix+"_CellOutline",name)
-	Make/N=(23,3)/D/O $name/WAVE=cell = NaN
+	if (dim==2)
+		Make/N=(5,2)/D/O $name/WAVE=cell = NaN
+		cell[0][] = 0							// form the a-b base
+		cell[1][] = Na*a[q]
+		cell[2][] = Na*a[q] + Nb*b[q]
+		cell[3][] = Nb*b[q]
+		cell[4][] = 0
 
-	cell[0][] = 0							// form the a-b base
-	cell[1][] = Na*a[q]
-	cell[2][] = Na*a[q] + Nb*b[q]
-	cell[3][] = Nb*b[q]
-	cell[4][] = 0
-	cell[5][] = NaN
+	else
+		Make/N=(23,3)/D/O $name/WAVE=cell = NaN
+		cell[0][] = 0							// form the a-b base
+		cell[1][] = Na*a[q]
+		cell[2][] = Na*a[q] + Nb*b[q]
+		cell[3][] = Nb*b[q]
+		cell[4][] = 0
+		cell[5][] = NaN
 
-	cell[6][] = 0							// the 4 connectors between c=0 and c=1 planes
-	cell[7][] = Nc*c[q]					// from 000
-	cell[8][] = NaN
+		cell[6][] = 0							// the 4 connectors between c=0 and c=1 planes
+		cell[7][] = Nc*c[q]					// from 000
+		cell[8][] = NaN
 
-	cell[9][] = Na*a[q]					// from a
-	cell[10][] = Na*a[q] + Nc*c[q]
-	cell[11][] = NaN
+		cell[9][] = Na*a[q]					// from a
+		cell[10][] = Na*a[q] + Nc*c[q]
+		cell[11][] = NaN
 
-	cell[12][] = Nb*b[q]				// from b
-	cell[13][] = Nb*b[q] + Nc*c[q]
-	cell[14][] = NaN
+		cell[12][] = Nb*b[q]				// from b
+		cell[13][] = Nb*b[q] + Nc*c[q]
+		cell[14][] = NaN
 
-	cell[15][] = Na*a[q] +Nb*b[q]	// from a-b corner
-	cell[16][] = Na*a[q] + Nb*b[q] + Nc*c[q]
-	cell[17][] = NaN
+		cell[15][] = Na*a[q] +Nb*b[q]	// from a-b corner
+		cell[16][] = Na*a[q] + Nb*b[q] + Nc*c[q]
+		cell[17][] = NaN
 
-	cell[18][] = Nc*c[q]				// form the a-b at c
-	cell[19][] = Na*a[q] + Nc*c[q]
-	cell[20][] = Na*a[q] + Nb*b[q] + Nc*c[q]
-	cell[21][] = Nb*b[q] + Nc*c[q]
-	cell[22][] = Nc*c[q]
-
+		cell[18][] = Nc*c[q]				// form the a-b at c
+		cell[19][] = Na*a[q] + Nc*c[q]
+		cell[20][] = Na*a[q] + Nb*b[q] + Nc*c[q]
+		cell[21][] = Nb*b[q] + Nc*c[q]
+		cell[22][] = Nc*c[q]
+	endif
 	cell = abs(cell)<AtomView_zero ? 0 : cell
 
 	String wNote = ReplaceStringByKey("prefix","waveClass=atomViewCellOutline;",prefix,"=")
@@ -511,10 +562,14 @@ Static Function/WAVE MakeBondList_Given(prefix,xtal,xyz)	// This makes the bond 
 	String prefix
 	STRUCT crystalStructure &xtal
 	Wave xyz				// list of atom xyz positions
-
+#ifdef LATTICE_SYM_2D_3D
+	Variable dim = xtal.dim
+#else
+	Variable dim = 3
+#endif
 	if (!WaveExists(xyz))
 		return $""
-	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1)<3)
+	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1)<dim)
 		return $""
 	elseif (xtal.Nbonds < 1)
 		return $""
@@ -529,16 +584,17 @@ Static Function/WAVE MakeBondList_Given(prefix,xtal,xyz)	// This makes the bond 
 
 	name = GetWavesDataFolder(xyz,1)+prefix+"_Bonds"
 	Variable Nmax=300, Nbonds=0
-	Make/N=(Nmax,3)/O $name/WAVE=bonds = NaN
+	Make/N=(Nmax,dim)/O $name/WAVE=bonds = NaN
 	name += "_Source"
 	Make/N=(Nmax)/O $name/WAVE=bsource = NaN
 
 	String wNote="waveClass=atomViewBonds;"
+	wNote = ReplaceNumberByKey("dim",wNote,dim,"=")
 	wNote = ReplaceStringByKey("source",wNote,GetWavesDataFolder(xyz,2),"=")
 	wNote = ReplaceStringByKey("prefix",wNote,prefix,"=")
 
 	String type, n0,n1
-	Make/N=3/D/FREE xyz0, dxyz
+	Make/N=(dim)/D/FREE xyz0, dxyz
 
 	Variable i,j, m, mswap, blenMax, Nb, len
 	for (Nb=0,m=0; m<Ntypes; m+=1)			// loop over each defined bond type
@@ -1031,8 +1087,68 @@ End
 
 
 
-//  ============================= Start Make Gizmo =============================  //
 //  ============================================================================  //
+//  ============================ Start Display Atoms ===========================  //
+
+Function/T MakeAtomViewDisplay(xyz,[showNames,scaleFactor,useBlend])	// returns name of Gizmo or Graph window
+	Wave xyz
+	Variable showNames					// if true, show a,b,c labels on lattice vectors
+	Variable scaleFactor				// scale up model in Gizmo Window
+	Variable useBlend					// 0=no blend, 1=blend, -1=auto
+	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
+	useBlend = ParamIsDefault(useBlend) || numtype(useBlend) ? AtomView_UseBlend : useBlend
+	showNames = ParamIsDefault(showNames) || numtype(showNames) ? 1 : showNames
+
+	Variable ilist,i
+	String name=""
+	if (!WaveExists(xyz))
+		String list = WaveListClass("atomViewXYZ","*","DIMS:2,MINCOLS:2,MAXCOLS:3")
+		ilist = ItemsInList(list)
+		if (ilist==1)
+			name = StringFromList(0,list)
+		elseif (ilist>1)
+			Prompt name,"Wave with Atom Positions",popup,list
+			DoPrompt "Atom Positions",name
+			if (V_flag)
+				return ""
+			endif
+		else									// maybe check a folder?
+			String fldrName
+			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			if (ItemsInList(list)<1)
+				return ""
+			elseif (ItemsInList(list)==1)
+				fldrName = StringFromList(0,list)
+			else
+				Prompt fldrName,"Atom View Folder with Waves", popup, reverseList(list)
+				DoPrompt "Atom View?", fldrName
+				if (V_flag)
+					return ""
+				endif
+			endif
+			fldrName += SelectString(StringMatch(fldrName,"*:"),":","")	// ensure fldrName ends with ":"
+			fldrName = SelectString(strsearch(fldrName,"root:",0) && strsearch(fldrName,":",0),"",":")+fldrName	// add leading ":" unless "root:..."
+			String key=ParseFilePath(0,fldrName,":",1,0)
+			i = strsearch(key,"_AtomView",-Inf)
+			key = SelectString(i>1,key,key[0,i-1])		// remove trailing "_AtomView"
+			name = fldrName+key+"_XYZ"						// add the "_XYZ"
+		endif
+		Wave xyz = $name
+	endif
+	if (!WaveExists(xyz))
+		return ""
+	endif
+	Variable dim = DimSize(xyz,1)
+	dim = dim==2 ? 2 : 3
+	if (dim==2)
+		return MakeAtomView2DGraph(xyz,showNames=showNames,scaleFactor=scaleFactor,useBlend=useBlend)	// returns name of Graph Window
+	else
+		return MakeAtomViewGizmo(xyz,showNames=showNames,scaleFactor=scaleFactor,useBlend=useBlend)	// returns name of Gizmo
+	endif
+End
+
+
+//  ============================= Start Make Gizmo =============================  //
 
 Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns name of Gizmo
 	Wave xyz
@@ -1510,7 +1626,6 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 End
 
 
-
 Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 	String groupName			// probably "RealLatticeAxesGroup0", If this is empty, then a unique name will be assigned
 	Wave ain,bin,cin
@@ -1720,7 +1835,6 @@ Function/T AddRealLatticeAxesGroup(groupName,ain,bin,cin,[font,showNames])
 End
 
 
-
 Static Function AtomViewGizmoFixHookProc(s)
 	STRUCT WMGizmoHookStruct &s
 	if (!StringMatch(s.eventName,"scale"))
@@ -1785,8 +1899,233 @@ Static Function AtomViewGizmoFixHookProc(s)
 	return 0
 End
 
-//  ============================================================================  //
 //  ============================== End Make Gizmo ==============================  //
+
+
+//  ========================== Start 2D Atoms Display ==========================  //
+
+Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns name of Graph Window
+	Wave xyz
+	Variable showNames					// if true, show a,b labels on lattice vectors
+	Variable scaleFactor				// scale up model in Gizmo Window
+	Variable useBlend						// 0=no blend, 1=blend, -1=auto
+	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
+	useBlend = ParamIsDefault(useBlend) || numtype(useBlend) ? AtomView_UseBlend : useBlend
+	showNames = ParamIsDefault(showNames) || numtype(showNames) ? 1 : showNames
+
+	Variable ilist,i
+	String name=""
+	if (!WaveExists(xyz))
+		String list = WaveListClass("atomViewXYZ","*","DIMS:2,MINCOLS:2,MAXCOLS:2")
+		ilist = ItemsInList(list)
+		if (ilist==1)
+			name = StringFromList(0,list)
+		elseif (ilist>1)
+			Prompt name,"Wave with Atom Positions",popup,list
+			DoPrompt "Atom Positions",name
+			if (V_flag)
+				return ""
+			endif
+		else									// maybe check a folder?
+			String fldrName
+			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			if (ItemsInList(list)<1)
+				return ""
+			elseif (ItemsInList(list)==1)
+				fldrName = StringFromList(0,list)
+			else
+				Prompt fldrName,"Atom View Folder with Waves", popup, reverseList(list)
+				DoPrompt "Atom View?", fldrName
+				if (V_flag)
+					return ""
+				endif
+			endif
+			fldrName += SelectString(StringMatch(fldrName,"*:"),":","")	// ensure fldrName ends with ":"
+			fldrName = SelectString(strsearch(fldrName,"root:",0) && strsearch(fldrName,":",0),"",":")+fldrName	// add leading ":" unless "root:..."
+			String key=ParseFilePath(0,fldrName,":",1,0)
+			i = strsearch(key,"_AtomView",-Inf)
+			key = SelectString(i>1,key,key[0,i-1])	// remove trailing "_AtomView"
+			name = fldrName+key+"_XYZ"					// add the "_XYZ"
+		endif
+		Wave xyz = $name
+	endif
+	if (!WaveExists(xyz))
+		return ""
+	endif
+
+	String wName = Find2DAtomViewWindow(xyz)		// find the Graph which contains the specified wave
+	Variable left=200, top=70, bottom=200+500, right=70+500
+	if (strlen(wName))
+		GetWindow/Z $wName wsize
+		if (V_flag==0)
+			left = V_left										// recreate close to same size as previous
+			top = V_top
+			bottom = V_bottom
+			right = V_right
+		endif
+		DoWindow/K $wName										// kill graph and re-creaate it
+	endif
+
+	String wNote=note(xyz)
+	String prefix=StringByKey("prefix",wNote,"=")
+	if (strlen(prefix)<1)
+		return ""
+	endif
+	wName = CleanupName("AtomView_"+prefix,0)
+
+	Wave size = $StringByKey("sizeWave",wNote,"=")
+	Wave rgba = $StringByKey("rgbaWave",wNote,"=")
+	Wave Zwave = $StringByKey("ZWave",wNote,"=")
+	Wave/T AtomTypewave = $StringByKey("atomAtomTypeWave",wNote,"=")
+	Wave bonds = $StringByKey("bondsWave",wNote,"=")
+	if (DimSize(bonds,0)<1)
+		Wave bonds = $""
+	endif
+	Wave cell = $StringByKey("cellOutlineWave",wNote,"=")
+	Wave cell0 = $StringByKey("cellOutlineWave0",wNote,"=")
+	Variable bondLenMax = NumberByKey("bondLenMax",wNote,"=")
+	String sourceFldr=StringByKey("sourceFldr",wNote,"=")
+	String title=StringByKey("title",wNote,"="), formula=StringByKey("formula",wNote,"=")
+	if (strlen(title)<1)
+		title = StringByKey("desc",wNote,"=")
+	endif
+	String SpaceGroupID = StringByKey("SpaceGroupID",wnote,"=")
+
+	Variable Na,Nb, N=DimSize(xyz,0)
+	String title2="", title3=""
+	sscanf StringByKey("Nabc",wNote,"="),"%g %g", Na,Nb
+	if ((Na>0.1 || Nb>0.1) && V_flag==2)
+		sprintf title2,"%g x %g cells",Na,Nb
+	endif
+	if (bondLenMax>0)
+		sprintf title3,"max bond length = %g nm",bondLenMax
+	endif
+	Wave a = str2vec(StringByKey("aVec",wNote,"="),sep=",")
+	Wave b = str2vec(StringByKey("bVec",wNote,"="),sep=",")
+
+	useBlend = IgorVersion() < 7 ? 0 : useBlend	// for Igor7 prefer blend, but turn off blend when long labels are used
+	useBlend = useBlend<0 && !StringMatch(AtomTypewave[0],"*001") ? 1 : useBlend
+	if (useBlend < 0)			// auto was chosen, decide on blending
+		Variable m
+		Make/N=3/D/FREE xyz0
+		// when useBlend == -1, then turn on blending when two atoms are at the same location
+		for (m=0;m<N && useBlend<0;m+=1)				// search for two atoms at same position if useBlend is auto (-1)
+			xyz0 = xyz[m][p]
+			MatrixOP/FREE/O dxyz = greater(AtomView_zero,sumRows(magSqr(xyz-rowRepeat(xyz0,N))))
+			useBlend = sum(dxyz)>=2 ? 1 : useBlend
+		endfor
+		useBlend = useBlend<0 ? 0 : !(!useBlend)	// if no duplicate atoms found, useBlend=0 (no blending)
+	endif
+
+	if (strlen(formula))
+		title2 += "   "+ChemFormula2IgorStr(formula)
+	endif
+
+	Display/N=$wName/W=(left,top,right,bottom)/K=1/T=wName
+	AppendToGraph xyz[*][1] vs xyz[*][0]
+	ModifyGraph mode=2, marker=19, tick=2, mirror=1, minor=1, lowTrip=0.001, lsize=0
+	DoUpdate
+	SetAspectToSquarePixels("")
+	SetWindow kwTopWin userdata(AtomView2DGraph)="folder="+GetWavesDataFolder(xyz,1)+";xyz="+NameOfWave(xyz)+";"
+
+	if (WaveExists(bonds))
+		name = NameOfWave(bonds)
+		Variable Nbonds = NumberByKey("Nbonds",note(bonds),"=")
+		Variable lineWidth = limit(2+3.9*exp(-0.0046*Nbonds),1,8)
+		lineWidth = numtype(lineWidth) ? 3 : round(lineWidth*5)/5
+		AppendToGraph bonds[*][1] vs bonds[*][0]
+		ModifyGraph rgb($name)=(50000,50000,50000), lsize($name)=lineWidth
+	endif
+
+	Variable rad, Trgb, scale=NumberByKey("scale",note(size),"=")
+	Make/N=3/D/FREE rgb
+	if (IgorVersion()>7)
+		SetDrawLayer UserBack
+	endif
+	for (i=0;i<N;i+=1)
+		rad = size[i][0] / scale
+		rgb = rgba[i][p] * 65535
+		SetDrawEnv xcoord=bottom, ycoord=left, linefgc=(65535,65535,65535), fillfgc=(rgb[0],rgb[1],rgb[2])
+		DrawOval xyz[i][0]-rad,xyz[i][1]-rad, xyz[i][0]+rad, xyz[i][1]+rad
+		if (showNames)
+			Trgb = sum(rgb) > 3*35000 ? 0 : 65535
+			SetDrawEnv xcoord=bottom, ycoord=left, textrgb=(Trgb,Trgb,Trgb), textxjust=1, textyjust=1, fsize=14
+			DrawText xyz[i][0],xyz[i][1],AtomTypewave[i]
+		endif
+	endfor
+
+#if (IgorVersion()>7)
+		TextBox/C/N=title/F=0/S=3/A=LT/X=4/Y=4/B=(65535,65535,65535,32768) title
+#else
+		TextBox/C/N=title/F=0/S=3/A=LT/X=4/Y=4 title
+#endif
+	if (strlen(title2))
+		AppendText/N=title title2
+	endif
+	if (strlen(title3))
+		AppendText/N=title title3
+	endif
+	if (strlen(sourceFldr))
+		AppendText/N=title "\Zr075" + sourceFldr
+	endif
+
+	if (numpnts(a)==2 && numpnts(b)==2)
+		SetDrawLayer UserFront
+		SetDrawEnv xcoord=bottom, ycoord=left, linethick=3, linefgc=(65535,0,0), arrow= 1
+		DrawLine 0,0, a[0],a[1]
+		SetDrawEnv xcoord=bottom, ycoord=left, linethick=3, linefgc=(0,0,65535), arrow= 1
+		DrawLine 0,0, b[0],b[1]
+		// showNames is not implemented
+	endif
+
+	if (WaveExists(cell) && max(Na,Nb)>=2)
+		name = NameOfWave(cell)
+		AppendToGraph cell[][1] vs cell[][0]
+		ModifyGraph lsize($name)=1,gaps($name)=0, lstyle($name)=7, rgb($name)=(40000,0,15000)
+	endif
+	if (WaveExists(cell0))
+		name = NameOfWave(cell0)
+		AppendToGraph cell0[][1] vs cell0[][0]
+		ModifyGraph lsize($name)=4,gaps($name)=0, lstyle($name)=8, rgb($name)=(40000,40000,40000)
+	endif
+
+	Label left "Y (nm)"
+	Label bottom "X (nm)"
+
+	return wName
+End
+
+Static Function/T Find2DAtomViewWindow(xyz)
+	Wave xyz								// find graph displaying xyz
+	if (!WaveExists(xyz))
+		return ""
+	endif
+
+	String list=WindowsWithWave(xyz,1), win=""
+	Variable i, N=ItemsInList(list)
+	if (N<1)
+		return ""
+	elseif (N==1 && 0)
+		win = StringFromList(0,list)
+	else
+		String fullName0=GetWavesDataFolder(xyz,2), full, userData
+		for (i=0;i<N;i+=1)
+			win = StringFromList(i,list)
+			userData = GetUserData(win,"", "AtomView2DGraph")
+			full = StringByKey("folder",userData, "=") + StringByKey("xyz",userData, "=")
+			if (StringMatch(full, fullName0))
+				break
+			endif
+			win = ""	
+		endfor
+	endif
+	return win
+End
+
+//  =========================== End 2D Atoms Display ===========================  //
+
+//  ============================= End Display Atoms ============================  //
+//  ============================================================================  //
 
 
 

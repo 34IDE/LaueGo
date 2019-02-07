@@ -1,13 +1,14 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 6.60
+#pragma version = 7.08										// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
 //	#define DO_HEXAGONAL_EXTRA							// If this is used, then Hex & Trigonal F's are too big
 // #define SHOW_XML_BONDS_ON_READIN					// Put this in your "Procedure" window if you want to see the <bond_chemical ...</bond_chemical>
+#define LATTICE_SYM_2D_3D
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Constant LatticeSym_minBondLen = 0.050				// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
@@ -17,6 +18,12 @@ Static Constant ELEMENT_Zmax = 118
 strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
 Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible symmetry operations
+Static Constant xtalStructLen5 = 25672				// length of crystalStructure5 in a string
+Static Constant xtalStructLen6 = 25686				// length of crystalStructure6 in a string
+Static Constant xtalStructLen7 = 25786				// length of crystalStructure7 in a string
+Static Constant xtalStructLen8 = 25794				// length of crystalStructure8 in a string
+Static Constant xtalStructLen9 = 25796				// length of crystalStructure9 in a string
+Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a string
 
 
 //	remember to execute    InitLatticeSymPackage()
@@ -218,9 +225,14 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //	with version 6.53, modified GetSymLinesFromXMLbuffer() to get symmetry lines in v2 files
 //	with version 6.54, fixed dSpacing(), was not using T properly
 //	with version 6.55, changed room temperaure from 22.5 --> 20
-//	with version 6.56, fixed error in copy_xtal56(), copy_xtal67(), copy_xtal78()
+//	with version 6.56, put in much of the support for dim=2,  2D structures,  #define LATTICE_SYM_2D_3D
+//
+//	with version 7.00, starting to make it all 2D & 3D compatible
+//	with version 7.06, fixed error in copy_xtal56(), copy_xtal67(), copy_xtal78()
 //	with version 6.57, modified allowedHKL(), how it determines wheter hkl is allowed
-//	with version 6.60, changed GetWyckoffSymStrings() to include site symmetry for every Wyckoff position, added siteSymmetry(SpaceGroupID,symbol).
+//	with version 7.07, changed GetWyckoffSymStrings() to include site symmetry for every Wyckoff position, added siteSymmetry(SpaceGroupID,symbol).
+//	with version 7.08, added expansion table supprot, now have new crystalStructure with NL_L,dL_L,dL_LT arrays, and can read them from xml file, updated dSpacing()
+//						also changed siteSymmetry(SpaceGroupID,symbol) --> siteSymmetry(SpaceGroupID,symbol,dim)
 
 
 //	Rhombohedral Transformation:
@@ -262,6 +274,16 @@ Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible
 //
 //											SG										idNum
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
+//
+//
+//		**************************************************
+//	for 2D xtals
+//							SG				  idNum			#IDs		#SpaceGroups
+//	Hexagonal		[13,17]			[13-17]			5			5
+//	Square			[10,12]			[10,12]			3			3
+//	Rhombic			{5,9}				{5,9}				2			2
+//	Rectangular		{3,4,6,7,8}		{3,4,6,7,8}		5			5
+//	Oblique			[1,2]				[1,2]				2			2
 
 
 Menu "Analysis"
@@ -343,7 +365,76 @@ End
 // =========================================================================
 //	Start of Structure definitions
 
-Structure crystalStructure	// structure definition for a crystal lattice
+Structure crystalStructure	// structure definition for a crystal lattice, this one added expansionTable: NL_L, dL_L, dL_LT
+	int16	dim						// dimension of xtal, either 2 or 3 (3 is the default)
+	char desc[100]					// name or decription of this crystal
+	char formula[100]				// chemical formula structural
+	double a,b,c					// lattice constants, length (nm)
+	double alpha,beta,gam			// angles (degree)
+	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
+	char SpaceGroupID[12]			// id of SpaceGroup, e.g. "15:-b2", not just a number anymore
+	int16 SpaceGroupIDnum			// index to the SpaceGroupID, allowed range is [1, 530]
+	double  a0,  b0,  c0			// direct lattice from constants { a[], b[], c[] }
+	double  a1,  b1,  c1
+	double  a2,  b2,  c2
+	double  as0,  bs0,  cs0		// reciprocal lattice { a*[], b*[], c*[] }
+	double  as1,  bs1,  cs1		// a*,b*,c* already have the 2PI in them
+	double  as2,  bs2,  cs2
+	double Vc						// volume of cell, triple product of (a[]xb[]).c, (area for 2D)
+	double density					// calculated density (g/cm^3)
+	double Temperature				// Temperature (C)
+	double Pressure					// Temperature (Pa = Pascal)
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
+	int16	NL_L						// number of point in dL_L vs dL_LT that are used (max of 201)
+	double dL_L[201]				// ÆL/L expansion table (dimensionless)
+	double dL_LT[201]				// T for ÆL/L expansion table (Kelvin)
+	int16 N							// number of atoms described here
+	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
+	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
+	int16 haveDebyeT				// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
+	int16 Nbonds						// number of bonds described here
+	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
+	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
+	double Unconventional10,Unconventional11,Unconventional12
+	double Unconventional20,Unconventional21,Unconventional22
+	char sourceFile[MAX_FILE_LEN]	// name of source file
+	char hashID[HASHID_LEN]		// hash function for this strucutre (needs to hold at least 64 chars), This MUST be the LAST item
+EndStructure
+//
+Structure crystalStructure9		// structure definition for a crystal lattice this one added dim
+	int16	dim						// dimension of xtal, either 2 or 3 (3 is the default)
+	char desc[100]					// name or decription of this crystal
+	char formula[100]				// chemical formula structural
+	double a,b,c					// lattice constants, length (nm)
+	double alpha,beta,gam			// angles (degree)
+	int16 SpaceGroup				// Space Group number from international tables, allowed range is [1, 230]
+	char SpaceGroupID[12]			// id of SpaceGroup, e.g. "15:-b2", not just a number anymore
+	int16 SpaceGroupIDnum			// index to the SpaceGroupID, allowed range is [1, 530]
+	double  a0,  b0,  c0			// direct lattice from constants { a[], b[], c[] }
+	double  a1,  b1,  c1
+	double  a2,  b2,  c2
+	double  as0,  bs0,  cs0		// reciprocal lattice { a*[], b*[], c*[] }
+	double  as1,  bs1,  cs1		// a*,b*,c* already have the 2PI in them
+	double  as2,  bs2,  cs2
+	double Vc						// volume of cell, triple product of (a[]xb[]).c, (area for 2D)
+	double density					// calculated density (g/cm^3)
+	double Temperature				// Temperature (C)
+	double Pressure					// Temperature (Pa = Pascal)
+	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
+	int16 N							// number of atoms described here
+	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
+	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
+	int16 haveDebyeT				// True if one of the atoms has a Debye Temperature (a Temperature dependent thermal parameter)
+	int16 Nbonds						// number of bonds described here
+	Struct bondTypeStructure bond[2*STRUCTURE_ATOMS_MAX]
+	double Unconventional00,Unconventional01,Unconventional02	// transform matrix for an unconventional unit cel
+	double Unconventional10,Unconventional11,Unconventional12
+	double Unconventional20,Unconventional21,Unconventional22
+	char sourceFile[MAX_FILE_LEN]	// name of source file
+	char hashID[HASHID_LEN]		// hash function for this strucutre (needs to hold at least 64 chars), This MUST be the LAST item
+EndStructure
+//
+Structure crystalStructure8	// structure definition for a crystal lattice, this one added Pressure
 	char desc[100]					// name or decription of this crystal
 	char formula[100]				// chemical formula structural
 	double a,b,c					// lattice constants, length (nm)
@@ -496,6 +587,7 @@ EndStructure
 Function init_crystalStructure(xtal)		// set all values to empty or invalid values
 	STRUCT crystalStructure &xtal
 	
+	xtal.dim = 3
 	xtal.desc = ""
 	xtal.formula = ""
 	xtal.a = NaN		;		xtal.b = NaN		;	xtal.c = NaN
@@ -508,7 +600,8 @@ Function init_crystalStructure(xtal)		// set all values to empty or invalid valu
 
 	xtal.Vc = NaN
 	xtal.density = NaN
-	xtal.Temperature = 0	;	xtal.alphaT = 0
+	xtal.Temperature = 0		;	xtal.alphaT = 0
+	xtal.NL_L = 0
 	xtal.Pressure = NaN
 	xtal.Vibrate = 0			;	xtal.haveDebyeT = 0
 
@@ -581,8 +674,13 @@ Function showCrystalStructure()						// prints the structure that is currently b
 		DoAlert 0, "no crystal structure found"
 		return 1
 	endif
-	String str, sym = getHMboth(xtal.SpaceGroupIDnum)
-	sprintf str, "'%s'  %d atoms,  SG %s   %s\r%.9g, %.9g, %.9gnm,\r%g%s, %g%s, %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+	Variable dim = xtal.dim
+	String str, sym=getHMboth(xtal.SpaceGroupIDnum, dim=dim)
+	if (dim==2)
+		sprintf str, "'%s'  %d atoms,  SG %s   %s\r%.9g, %.9gnm  %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.alpha,DEGREESIGN
+	else
+		sprintf str, "'%s'  %d atoms,  SG %s   %s\r%.9g, %.9g, %.9gnm,\r%g%s, %g%s, %g%s",xtal.desc,xtal.N,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+	endif
 	Variable netCharge = NetChargeCell(xtal)
 	if (netCharge)
 		str += "\r  *** Charge imbalance in cell = "+num2str(netCharge)+" ***"
@@ -591,7 +689,12 @@ Function showCrystalStructure()						// prints the structure that is currently b
 	if (V_flag==1)
 		print_crystalStructure(xtal)					// prints out the value in a crystalStructure structure
 	else
-		printf "currently using  '%s'  lattice is  SG %s   %s     %.9gnm, %.9gnm, %.9gnm,   %g%s, %g%s, %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+		if (dim==2)
+			printf "currently using  '%s'  lattice is  SG %s   %s     %.9gnm, %.9gnm,   %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.alpha,DEGREESIGN
+		else
+			printf "currently using  '%s'  lattice is  SG %s   %s     %.9gnm, %.9gnm, %.9gnm,   %g%s, %g%s, %g%s",xtal.desc,xtal.SpaceGroupID,sym,xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
+		endif
+
 		if (xtal.N > 0)
 			printf ",   %g defined atom types\r",xtal.N
 		else
@@ -599,6 +702,9 @@ Function showCrystalStructure()						// prints the structure that is currently b
 		endif
 		if (xtal.alphaT>0)
 			printf "coefficient of thermal expansion is %g\r",xtal.alphaT
+		endif
+		if (xtal.NL_L > 0)
+			printf "expansion table of %d values\r",xtal.NL_L
 		endif
 	endif
 	return 0
@@ -642,11 +748,12 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	endif
 	STRUCT crystalStructure xtal					// the working copy
 	xtal = xtal_IN										// copy xtal_IN to a working copy, was:  copy_xtal(xtal,xtal_IN)
+	Variable dim = dim==2 ? 2 : 3
 
-	SetSymOpsForSpaceGroup(xtal.SpaceGroupID)	// ensure that symmetry ops are right
-	Variable Natoms = round(xtal.N)				// number of predefined atoms
+	SetSymOpsForSpaceGroup(xtal.SpaceGroupID,dim)	// ensure that symmetry ops are right
+	Variable Natoms = round(xtal.N)						// number of predefined atoms
 	Natoms = numtype(Natoms) ? 0 : limit(Natoms,0,STRUCTURE_ATOMS_MAX)
-	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroupID)+"\""
+	String wyckMenuStr = "\" ;"+WyckoffMenuStr(xtal.SpaceGroupID,dim)+"\""
 
 	if (Natoms<1)
 		DoAlert 1, "No atoms defined, create one?"
@@ -698,8 +805,10 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomRelX,fSize=12,limits={0,1,0},value= _NUM:0
 	SetVariable setAtomRelY,pos={123,118},size={91,19},bodyWidth=80,title="y/b",proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomRelY,fSize=12,limits={0,1,0},value= _NUM:0
-	SetVariable setAtomRelZ,pos={234,118},size={91,19},bodyWidth=80,title="z/c",proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomRelZ,fSize=12,limits={0,1,0},value= _NUM:0
+	if (!(dim==2))
+		SetVariable setAtomRelZ,pos={234,118},size={91,19},bodyWidth=80,title="z/c",proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomRelZ,fSize=12,limits={0,1,0},value= _NUM:0
+	endif
 	SetVariable setAtomOcc,pos={10,141},size={110,19},title="Occupancy",fSize=12,proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomOcc,limits={0,1,0},value= _NUM:1
 
@@ -713,18 +822,24 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomU11,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomU22,pos={113,173},size={73,21},bodyWidth=50,title="U\\B22\\M"
 	SetVariable setAtomU22,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU33,pos={211,173},size={73,21},bodyWidth=50,title="U\\B33\\M"
-	SetVariable setAtomU33,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU12,pos={11,204},size={73,21},bodyWidth=50,title="U\\B12\\M"
-	SetVariable setAtomU12,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU13,pos={114,204},size={73,21},bodyWidth=50,title="U\\B13\\M"
-	SetVariable setAtomU13,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
-	SetVariable setAtomU23,pos={212,204},size={73,21},bodyWidth=50,title="U\\B23\\M"
-	SetVariable setAtomU23,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+	if (!(dim==2))
+		SetVariable setAtomU33,pos={211,173},size={73,21},bodyWidth=50,title="U\\B33\\M"
+		SetVariable setAtomU33,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomU12,pos={11,204},size={73,21},bodyWidth=50,title="U\\B12\\M"
+		SetVariable setAtomU12,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomU13,pos={114,204},size={73,21},bodyWidth=50,title="U\\B13\\M"
+		SetVariable setAtomU13,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+		SetVariable setAtomU23,pos={212,204},size={73,21},bodyWidth=50,title="U\\B23\\M"
+		SetVariable setAtomU23,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+	else
+		SetVariable setAtomU12,pos={11,204},size={73,21},bodyWidth=50,title="U\\B12\\M"
+		SetVariable setAtomU12,fSize=12,limits={0.0001,100,0},value= _NUM:0 , proc=LatticeSym#AtomEditSetVarProc
+	endif
 	TitleBox titleUij1,pos={290,171},size={14,21},title=ARING+"\\S2\\M",fSize=12,frame=0
 	TitleBox titleUij2,pos={291,203},size={14,21},title=ARING+"\\S2\\M",fSize=12,frame=0
 
 	String win=StringFromList(0,WinList("*",";","WIN:64"))
+	SetWindow $win userdata(dim)=num2istr(dim)
 	if (Natoms>0)
 		SetAtomEditPanelValues(win,xtal.atom[0])
 	endif
@@ -791,6 +906,9 @@ Static Function ChangeAtomEditPanelSize(win,mode)		// changes size of AtomEditPa
 	String win									// window to set
 	Variable mode								// Thermal Mode, 0=None, 1=Debye, 2=Biso, 3=Uiso, 4=Uaniso[ij]
 
+	Variable dim = str2num(GetUserData("","","dim"))
+	dim = numtype(dim) ? 3 : dim
+
 	PopupMenu useThermalPopUp,win=$win,mode=(mode+1)		// set the Thermal popup to corrct value
 	SetVariable setAtomDebyeT,win=$win, disable=1			// first disable all
 	SetVariable setAtomBiso,win=$win, disable=1
@@ -827,10 +945,13 @@ Static Function ChangeAtomEditPanelSize(win,mode)		// changes size of AtomEditPa
 			V_bottom -= 24
 			SetVariable setAtomU11,win=$win, disable=0
 			SetVariable setAtomU22,win=$win, disable=0
-			SetVariable setAtomU33,win=$win, disable=0
-			SetVariable setAtomU12,win=$win, disable=0
-			SetVariable setAtomU13,win=$win, disable=0
-			SetVariable setAtomU23,win=$win, disable=0
+			if (dim==2)
+				SetVariable setAtomU12,win=$win, disable=0
+			else
+				SetVariable setAtomU33,win=$win, disable=1
+				SetVariable setAtomU13,win=$win, disable=1
+				SetVariable setAtomU23,win=$win, disable=1
+			endif
 			TitleBox titleUij1, disable=0
 			TitleBox titleUij2, disable=0
 	endswitch
@@ -952,6 +1073,9 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	String win
 	String ctrlName
 
+	Variable dim = str2num(GetUserData("","","dim"))
+	dim = numtype(dim) ? 3 : dim
+
 	SVAR strStruct = $GetUserData(win,"","xtalSname")
 	if (!SVAR_Exists(strStruct))
 		print "ERROR -- Cannot find strStruct from panel userdata"
@@ -977,16 +1101,20 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	ControlInfo/W=$win setAtomWyckoff	;		symbol = SelectString(StringMatch(S_Value," "),S_Value,"")
 	ControlInfo/W=$win setAtomRelX		;		xx = V_Value
 	ControlInfo/W=$win setAtomRelY		;		yy = V_Value
-	ControlInfo/W=$win setAtomRelZ		;		zz = V_Value
+	if (!(dim==2))
+		ControlInfo/W=$win setAtomRelZ	;		zz = V_Value
+	endif
 	if (StringMatch(ctrlName,"setAtomWyckoff") && strlen(symbol)>0)	// changed Wyckoff, force xyz to conform
-		if (!ForceXYZtoWyckoff(xtal.SpaceGroupID,symbol,xx,yy,zz))
+		if (!ForceXYZtoWyckoff(xtal.SpaceGroupID,dim,symbol,xx,yy,zz))
 			SetVariable setAtomRelX,win=$win,value= _NUM:xx
 			SetVariable setAtomRelY,win=$win,value= _NUM:yy
-			SetVariable setAtomRelZ,win=$win,value= _NUM:zz
+			if (!(dim==2))
+				SetVariable setAtomRelZ,win=$win,value= _NUM:zz
+			endif
 		endif
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
-		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,xx,yy,zz,mult)
+		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,dim,xx,yy,zz,mult)
 		if (char2num(symbol)==65)
 			mm = 27+1
 		else
@@ -1002,7 +1130,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	xtal.atom[m].z = zz
 	xtal.atom[m].WyckoffSymbol = symbol[0]
 	if (char2num(symbol)>32 && !(mult>0))
-		mult = WyckoffMultiplicity(xtal.SpaceGroupID,symbol)
+		mult = WyckoffMultiplicity(xtal.SpaceGroupID,dim,symbol)
 	endif
 	if (mult>0)
 		xtal.atom[m].mult = mult
@@ -1014,10 +1142,12 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	ControlInfo/W=$win setAtomUiso		;		xtal.atom[m].Uiso = V_Value * 0.01
 	ControlInfo/W=$win setAtomU11		;		xtal.atom[m].U11 = V_Value * 0.01
 	ControlInfo/W=$win setAtomU22		;		xtal.atom[m].U22 = V_Value * 0.01
-	ControlInfo/W=$win setAtomU33		;		xtal.atom[m].U33 = V_Value * 0.01
 	ControlInfo/W=$win setAtomU12		;		xtal.atom[m].U12 = V_Value * 0.01
-	ControlInfo/W=$win setAtomU13		;		xtal.atom[m].U13 = V_Value * 0.01
-	ControlInfo/W=$win setAtomU23		;		xtal.atom[m].U23 = V_Value * 0.01
+	if (!(dim==2))
+		ControlInfo/W=$win setAtomU33	;		xtal.atom[m].U33 = V_Value * 0.01
+		ControlInfo/W=$win setAtomU13	;		xtal.atom[m].U13 = V_Value * 0.01
+		ControlInfo/W=$win setAtomU23	;		xtal.atom[m].U23 = V_Value * 0.01
+	endif
 
 	Wave/T atomNameList = $GetUserData(win,"","listWave")
 	if (WaveExists(atomNameList))				// update name in atomNameList from label
@@ -1047,6 +1177,19 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 	Variable brief										// if true, print short version
 	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : brief
 
+	Variable dim = xtal.dim
+	if (dim==2)
+		print_crystalStructure2D(xtal, brief)			// prints out the value in a crystalStructure
+	else
+		print_crystalStructure3D(xtal, brief)			// prints out the value in a crystalStructure
+	endif
+End
+//
+Static Function print_crystalStructure3D(xtal, brief)			// prints out the value in a crystalStructure
+	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
+	Variable brief										// if true, print short version
+	brief = numtype(brief) ? 0 : brief
+
 	Variable i,N=xtal.N
 	if (WhichListItem("LatticePanelButtonProc",GetRTStackInfo(0))>=0)
 		printf "%sshowCrystalStructure()\r",BULLET
@@ -1058,15 +1201,16 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 	endif
 	Variable SG = xtal.SpaceGroup, idNum=xtal.SpaceGroupIDnum
 	String id = xtal.SpaceGroupID
-	printf "Space Group=%s   %s   %s       Vc = %g (nm^3)",id,StringFromList(latticeSystem(id),LatticeSystemNames), getHMboth(idNum),xtal.Vc
+	printf "Space Group=%s   %s   %s       Vc = %g (nm^3)",id,StringFromList(latticeSystem(id,3),LatticeSystemNames), getHMboth(idNum),xtal.Vc
 	if (xtal.density>0)
 		printf "       density = %g (g/cm^3)",xtal.density
 	endif
-	if (xtal.alphaT>0)
-		printf "     coefficient of thermal expansion is %g\r",xtal.alphaT
-	else
-		printf "\r"
+	if (xtal.NL_L > 0)
+		printf "     expansion table with %d points",xtal.NL_L
+	elseif (xtal.alphaT>0)
+		printf "     coefficient of thermal expansion is %g",xtal.alphaT
 	endif
+	printf "\r"
 	printf "lattice constants  { %.15gnm, %.15gnm, %.15gnm,   %.15g%s, %.15g%s, %.15g%s }",xtal.a,xtal.b,xtal.c,xtal.alpha,DEGREESIGN,xtal.beta,DEGREESIGN,xtal.gam,DEGREESIGN
 	if (numtype(xtal.Temperature)==0)
 		Variable Temperature = xtal.Temperature
@@ -1108,7 +1252,7 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 				sprintf vstr, ", %+d",xtal.atom[i].valence
 			endif
 			wyck = xtal.atom[i].WyckoffSymbol
-			siteSym = siteSymmetry(id,wyck)
+			siteSym = siteSymmetry(id,wyck,3)
 			if (strlen(siteSym))
 				printf "     %s (Z=%g%s)\t%s \"%s\"\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
 			elseif (strlen(wyck))
@@ -1203,6 +1347,157 @@ Function print_crystalStructure(xtal, [brief])			// prints out the value in a cr
 		printf "hash id = '%s'\r",xtal.hashID
 	endif
 End
+//
+Static Function print_crystalStructure2D(xtal, brief)			// prints out the value in a crystalStructure
+	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
+	Variable brief										// if true, print short version
+	brief = numtype(brief) ? 0 : brief
+
+	Variable i,N=xtal.N
+	if (WhichListItem("LatticePanelButtonProc",GetRTStackInfo(0))>=0)
+		printf "%sshowCrystalStructure()\r",BULLET
+	endif
+	if (strlen(xtal.desc))
+		printf "'%s'   \t",xtal.desc
+	else
+		printf "\t\t\t"
+	endif
+	Variable SG = xtal.SpaceGroup, idNum=xtal.SpaceGroupIDnum
+	String id = xtal.SpaceGroupID
+	printf "Space Group=%s   %s   %s       Ac = %g (nm^2)",id,StringFromList(latticeSystem(id,2),LatticeSystemNames2D), getHMboth(idNum),xtal.Vc
+	if (xtal.density>0)
+		printf "       area density = %g (g/cm^2)",xtal.density
+	endif
+	if (xtal.NL_L > 0)
+		printf "     expansion table with %d points",xtal.NL_L
+	elseif (xtal.alphaT>0)
+		printf "     coefficient of thermal expansion is %g",xtal.alphaT
+	endif
+	printf "\r"
+	printf "lattice constants  { %.15gnm, %.15gnm,   %.15g%s}",xtal.a,xtal.b,xtal.alpha,DEGREESIGN
+	if (numtype(xtal.Temperature)==0)
+		Variable Temperature = xtal.Temperature
+		String unit = "C"
+		if (Temperature < -100)					// display in Kelvin
+			unit = "K"
+			Temperature = ConvertTemperatureUnits(Temperature,"C",unit)		// xtal.Temperature is always C
+		endif
+		printf ",   Temperature = %g %s%s",Temperature,DEGREESIGN,unit
+	endif
+	if (xtal.Pressure>0)
+		printf ",   Pressure = %.3W1PPa",xtal.Pressure
+	endif
+	printf "\r"
+
+	if (strlen(xtal.sourceFile)>1)
+		printf "xtal read from file: \"%s\"\r",xtal.sourceFile
+	endif
+
+	if (N<1)
+		print "No Atoms Defined"
+	else
+		reMakeAtomXYZs(xtal)						// only execute reMakeAtomXYZs(xtal) once
+		if (strlen(xtal.formula)>0)
+			printf "atom types & locations:\t chemical formula = \"%s\"\r",xtal.formula
+		else
+			printf "atom type locations:\r"
+		endif
+		String wyck, siteSym					// no siteSym for 2D yet
+		Variable mult, itemp
+		for (i=0;i<xtal.N;i+=1)					// loop over the defined atoms
+			String vstr=""
+			if (xtal.atom[i].valence)
+				sprintf vstr, ", %+d",xtal.atom[i].valence
+			endif
+			wyck = xtal.atom[i].WyckoffSymbol
+			siteSym = siteSymmetry(id,wyck,2)
+			if (strlen(siteSym))
+				printf "     %s (Z=%g%s)\t%s \"%s\"\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y
+			elseif (strlen(wyck))
+				printf "     %s (Z=%g%s)\t%s\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,xtal.atom[i].x,xtal.atom[i].y
+			else
+				printf "     %s (Z=%g%s)\t\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].x,xtal.atom[i].y
+			endif
+			if (xtal.atom[i].occ != 1)
+				printf "    occ = %g",xtal.atom[i].occ
+			endif
+
+			mult = DimSize($("root:Packages:Lattices:atom"+num2istr(i)),0)
+			mult = !(mult>0) ? xtal.atom[i].mult : mult
+			if (mult>1)
+				printf "\tmultiplicity = %d",mult
+			endif
+
+			itemp = atomThermalInfo(xtal.atom[i])
+			if (itemp==1)					// Thermal vibration information, print at most one kind of info
+				printf "\t    Debye Temperature = %g K",xtal.atom[i].DebyeT
+			elseif (itemp==2)
+				printf "    Isotropic B = %g (%s^2)",(xtal.atom[i].Biso * 100),ARING
+			elseif (itemp==3)
+				printf "    Isotropic U = %g (%s^2)",(xtal.atom[i].Uiso * 100),ARING
+			elseif (itemp>=4)
+				printf "    Anisotropic U: U11=%+g, U22=%+g",(xtal.atom[i].U11 *100),(xtal.atom[i].U22 *100)
+			if (itemp==5)
+				printf "    U12=%+g",(xtal.atom[i].U12 *100)
+			endif
+				printf " ("+ARING+"^2)"
+			endif
+			printf "\r"
+		endfor
+
+		String list = OverOccupyList(xtal)						// check if some sites have occ>1
+		if (strlen(list))
+			print "*************************************************"
+			print "\t\t Found over occupied sites:"
+			print OverOccupyList2Str(list)
+			print "*************************************************"
+		endif
+
+		Variable netCharge = NetChargeCell(xtal)
+		if (netCharge != 0)
+			print "\t*************************************************"
+			printf "\t\tnetCharge in cell = %g\r",netCharge
+			print "\t*************************************************"
+		else
+			print "\t\tCharge Neutral"
+		endif
+
+		if (xtal.Nbonds > 0)
+			printf "defined bonds (nm):\r"
+			for (i=0;i<xtal.Nbonds;i+=1)
+				Make/N=(xtal.bond[i].N)/FREE/D lens
+				lens = xtal.bond[i].len[p]
+				printf "     %s  <-->  %s:  %s\r",xtal.bond[i].label0,xtal.bond[i].label1,vec2str(lens,bare=1)
+			endfor
+		endif
+		if (brief)
+			return 0
+		endif
+
+		printf "\rindividual atom positions:\rtype	frac xyz\r"
+		Variable j
+		for (i=0;i<xtal.N;i+=1)
+			Wave wa = $("root:Packages:Lattices:atom"+num2istr(i))
+			if (!WaveExists(wa))
+				break
+			endif
+			for (j=0;j<DimSize(wa,0);j+=1)
+				printf "%d\t\t{%g,  %g}\r"i,wa[j][0],wa[j][1]
+			endfor
+		endfor
+	endif
+	printf "\r"
+	printf "					a				b   (nm)\r"
+	printf "direct	\t%+10.7f\t%+10.7f\r",xtal.a0,xtal.b0
+	printf "lattice\t%+10.7f\t%+10.7f\r",xtal.a1,xtal.b1
+	printf "\r					a*				b*  (1/nm)\r"
+	printf "recip	\t%+10.6f\t%+10.6f\r",xtal.as0,xtal.bs0
+	printf "lattice\t%+10.6f\t%+10.6f\r",xtal.as1,xtal.bs1
+	if (strlen(xtal.hashID)<2)
+		printf "hash id = '%s'\r",xtal.hashID
+	endif
+End
+
 
 
 Static Function/S xtalHashID(xtalIN)		// Calculates the hashID for xtal
@@ -1238,16 +1533,24 @@ Static Function LatticeBad(xtal,[atomsToo])
 	Variable atomsToo			// also check atom definitions
 	atomsToo = ParamIsDefault(atomsToo) ? 0 : atomsToo
 	atomsToo = numtype(atomsToo) ? 0 : !(!atomsToo)
-
 	Variable i, vibrate=0, bad=0, haveDebyeT=0
-	bad += numtype(xtal.a + xtal.b + xtal.c)
-	bad += !(xtal.a > 0) || !(xtal.b > 0) || !(xtal.c > 0)
-	bad += numtype(xtal.alpha + xtal.beta + xtal.gam)
-	bad += !(xtal.alpha > 0) || !(xtal.beta > 0) || !(xtal.gam > 0)
-	bad += xtal.alpha >=180 || xtal.beta >= 180 || xtal.gam >= 180
-	bad += !isValidSpaceGroup(xtal.SpaceGroup)
+
+	Variable dim = xtal.dim
+	if (dim==2)
+		bad += numtype(xtal.a + xtal.b + xtal.alpha)
+		bad += (xtal.a < 0) || (xtal.b < 0)
+		bad += (xtal.alpha < 0) || (xtal.alpha >=180 )
+	else
+		bad += numtype(xtal.a + xtal.b + xtal.c)
+		bad += !(xtal.a > 0) || !(xtal.b > 0) || !(xtal.c > 0)
+		bad += numtype(xtal.alpha + xtal.beta + xtal.gam)
+		bad += !(xtal.alpha > 0) || !(xtal.beta > 0) || !(xtal.gam > 0)
+		bad += xtal.alpha >=180 || xtal.beta >= 180 || xtal.gam >= 180
+	endif
+
+	bad += !isValidSpaceGroup(xtal.SpaceGroup,dim)
 	for (i=0;i<xtal.N && atomsToo;i+=1)
-		bad += atomBAD(xtal.atom[i])
+		bad += atomBAD(xtal.atom[i], dim)
 		vibrate = vibrate || atomThermalInfo(xtal.atom[i])
 		haveDebyeT = haveDebyeT || (xtal.atom[i].DebyeT)>0
 	endfor
@@ -1258,11 +1561,13 @@ Static Function LatticeBad(xtal,[atomsToo])
 	return (bad>0)
 End
 //
-Static Function atomBAD(atom)
+Static Function atomBAD(atom,dim)
 	Struct atomTypeStructure &atom
+	Variable dim			// must be strictly 2 or 3
+	dim = dim==2 ? 2 : 3
+
 	Variable bad=0
 	bad += strlen(atom.name)<1
-	bad += numtype(atom.x+atom.y+atom.z)>0
 	bad += numtype(atom.occ) || atom.occ<0 || atom.occ>1
 	bad += atom.Zatom != limit(round(atom.Zatom),1,92)
 	bad += !(abs(atom.valence)<10)					// a valence of 10 is too big
@@ -1270,13 +1575,25 @@ Static Function atomBAD(atom)
 	bad += atom.Biso < 0 || numtype(atom.Biso)==1
 	bad += atom.Uiso < 0 || numtype(atom.Uiso)==1
 
-	// Note, anisotropic Uij can be negative
-	if (numtype(atom.U11)==0 || numtype(atom.U22)==0 || numtype(atom.U33)==0)	// using anisotropic Uii
-		// if one is Uii valid, all symmetric Uii must be valid
-		bad += numtype(atom.U11 + atom.U22 + atom.U33)!=0
-		if (numtype(atom.U12)==0 || numtype(atom.U13)==0 || numtype(atom.U23)==0)	// using anisotropic Uij
-			// if one Uij is valid, all asymmetric Uij must be valid
-			bad += numtype(atom.U12 + atom.U13 + atom.U23)!=0
+	if (dim==2)
+		bad += numtype(atom.x+atom.y)>0
+		// Note, anisotropic Uij can be negative
+		if (numtype(atom.U11)==0 || numtype(atom.U22)==0)	// using anisotropic Uii
+			// if one is Uii valid, all symmetric Uii must be valid
+			bad += numtype(atom.U11 + atom.U22)!=0
+			bad += numtype(atom.U12)!=0
+		endif
+	else
+
+		bad += numtype(atom.x+atom.y+atom.z)>0
+		// Note, anisotropic Uij can be negative
+		if (numtype(atom.U11)==0 || numtype(atom.U22)==0 || numtype(atom.U33)==0)	// using anisotropic Uii
+			// if one is Uii valid, all symmetric Uii must be valid
+			bad += numtype(atom.U11 + atom.U22 + atom.U33)!=0
+			if (numtype(atom.U12)==0 || numtype(atom.U13)==0 || numtype(atom.U23)==0)	// using anisotropic Uij
+				// if one Uij is valid, all asymmetric Uij must be valid
+				bad += numtype(atom.U12 + atom.U13 + atom.U23)!=0
+			endif
 		endif
 	endif
 	return (bad>0)
@@ -1318,20 +1635,24 @@ End
 Static Function ForceLatticeToStructure(xtal)
 	STRUCT crystalStructure &xtal					// this sruct is set in this routine
 
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3				// dim is strictly 2 or 3
+	xtal.dim = dim							// make sure xtal is the same
+
 	// Make sure that the SpaceGroup, SpaceGroupID, and SpaceGroupIDnum all agree
 	Variable SG, idNum
 	String id = xtal.SpaceGroupID	// first try to use the id to identify the material			
-	if (isValidSpaceGroupID(id))
+	if (isValidSpaceGroupID(id,dim))
 		SG = str2num(id)
-		idNum = SpaceGroupID2num(id)
+		idNum = SpaceGroupID2num(id, dim=dim)
 	else
 		SG = xtal.SpaceGroup			// failed with SpaceGroupID, try just SpaceGroup
 		id = FindDefaultIDforSG(SG)	
-		idNum = SpaceGroupID2num(id)
+		idNum = SpaceGroupID2num(id, dim=dim)
 		xtal.SpaceGroupID = id			// set id & idNum using values from SpaceGroup
 		xtal.SpaceGroupIDnum = idNum
 	endif
-	if (!isValidSpaceGroupIDnum(idNum))	// SpaceGroupIDnum must be in range [1,530]
+	if (!isValidSpaceGroupIDnum(idNum,dim))	// SpaceGroupIDnum must be in range [1,530]
 		DoAlert 0, "invalid Space Group ID "+id+"     or SpaceGroup #"+num2str(SG)
 		return 1
 	endif
@@ -1348,65 +1669,102 @@ Static Function ForceLatticeToStructure(xtal)
 	//	for Rhombohedral		a,alpha
 	//	SG =		[146,148,155,160,161,166,167]
 	//	idNum =	[434,437,445,451,453,459,461]
+	//
+	//
+	//	for 2D xtals
+	//							SG				  idNum
+	//	Hexagonal		[13,17]			[13-17]			a
+	//	Square			[10,12]			[10,12]			a
+	//	Rhombic			{5,9}				{5,9}				a,alpha
+	//	Rectangular		{3,4,6,7,8}		{3,4,6,7,8}		a,b
+	//	Oblique			[1,2]				[1,2]				a,b,alpha
 
-	// force the lattice constant to confomr to system
-	Variable system = latticeSystem(id)
-	if (system == CUBIC)					// Cubic space groups [195,230]
-			xtal.b = xtal.a
-			xtal.c = xtal.a
-			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+	// force the lattice constant to conform to system
+	Variable system = latticeSystem(id,dim)
 
-	elseif (system == HEXAGONAL)			// Hexagonal space groups [168,194]
-			xtal.b = xtal.a
-			xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
-
-	elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
-		// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
-		Variable useRhom = 0
-		if (isRhombohedralSG(SG))
-			useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1	// looks rhombohedral
-			useRhom = useRhom | ( strsearch(id,":R",0,2)>0 )
-		endif
-		if (useRhom)
-			// looks like a rhombohedral structure using rhombohedral lattice constants
-			xtal.b = xtal.a					// set to rhombohedral a=b=c, alpha=beta=gamma
-			xtal.c = xtal.a
-			xtal.beta = xtal.alpha
-			xtal.gam = xtal.alpha
-		else										// set to hexagonal lattice constants
-			xtal.b = xtal.a
-			xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
-		endif
-
-	elseif (system == TETRAGONAL)		// Tetragonal space groups [75,142]
-		xtal.b = xtal.a
-		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-
-	elseif (system == ORTHORHOMBIC)		// Orthorhombic space groups [16,74]
-		xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
-
-	elseif (system == MONOCLINIC)		// Monoclinic space groups [3,15]
-		xtal.alpha=90;  xtal.gam=90
-
-	elseif (system == TRICLINIC)			// Triclinic space groups 1,2]
-		// nothing to fix
-	else
-		return 1									// system is invalid, NOT valid
-	endif
-
-	// check that lattice constants appear valid (non NaN or negatives or zero...)
+	Variable alpha=xtal.alpha, bet=xtal.beta, gam=xtal.gam
 	String str
-	if (xtal.a<=0 || xtal.b<=0 || xtal.c<=0 || numtype(xtal.a+xtal.b+xtal.c))
-		sprintf str,"invalid, (a,b,c) = (%g,%g,%g)",xtal.a,xtal.b,xtal.c
-		DoAlert 0, str
-		return 1
+	if (dim==2)
+		if (system == HEXAGONAL)				// Hexagonal space groups [13-17]
+				xtal.b = xtal.a
+				xtal.alpha=120
+		elseif (system == SQUARE)				// Square space groups [10-12]
+				xtal.b = xtal.a
+				xtal.alpha=90
+		elseif (system == RHOMBIC)			// Rhombic space groups {5, 9}
+				xtal.b = xtal.a
+		elseif (system == RECTANGULAR)		// Rectangular space groups {3,4,6,7,8}, not 5
+			xtal.b = xtal.a
+			xtal.alpha=90
+		elseif (system == OBLIQUE)			// Oblique space groups [3,15]
+			// nothing to fix
+		else
+			return 1									// system is invalid, NOT valid
+		endif
+
+		// check that lattice constants appear valid (non NaN or negatives or zero...)
+		if (xtal.a<=0 || xtal.b<=0 || numtype(xtal.a+xtal.b))
+			sprintf str,"invalid, (a,b) = (%g,%g)",xtal.a,xtal.b
+			DoAlert 0, str
+			return 1
+		endif
+		if (alpha<=0 || alpha>=180 || numtype(alpha))
+			sprintf str,"invalid, alpha = %g",alpha
+			DoAlert 0, str
+			return 1
+		endif
+
+	else
+		if (system == CUBIC)					// Cubic space groups [195,230]
+				xtal.b = xtal.a
+				xtal.c = xtal.a
+				xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+		elseif (system == HEXAGONAL)			// Hexagonal space groups [168,194]
+				xtal.b = xtal.a
+				xtal.alpha=90;  xtal.beta=90;  xtal.gam=120
+		elseif (system == TRIGONAL)			// Trigonal space groups [143,167]
+			// generally use hexagonal cell, for rhomohedral may use rhomohedral cell
+			Variable useRhom = 0
+			if (isRhombohedralSG(SG))
+				useRhom = abs(xtal.alpha - xtal.beta)<0.1 && abs(xtal.alpha - xtal.gam)<0.1	// looks rhombohedral
+				useRhom = useRhom | ( strsearch(id,":R",0,2)>0 )
+			endif
+			if (useRhom)
+				// looks like a rhombohedral structure using rhombohedral lattice constants
+				xtal.b = xtal.a					// set to rhombohedral a=b=c, alpha=beta=gamma
+				xtal.c = xtal.a
+				xtal.beta = xtal.alpha
+				xtal.gam = xtal.alpha
+			else										// set to hexagonal lattice constants
+				xtal.b = xtal.a
+				xtal.alpha=90  ;  xtal.beta=90  ;  xtal.gam=120
+			endif
+		elseif (system == TETRAGONAL)		// Tetragonal space groups [75,142]
+			xtal.b = xtal.a
+			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+		elseif (system == ORTHORHOMBIC)		// Orthorhombic space groups [16,74]
+			xtal.alpha=90;  xtal.beta=90;  xtal.gam=90
+		elseif (system == MONOCLINIC)		// Monoclinic space groups [3,15]
+			xtal.alpha=90;  xtal.gam=90
+		elseif (system == TRICLINIC)			// Triclinic space groups 1,2]
+			// nothing to fix
+		else
+			return 1									// system is invalid, NOT valid
+		endif
+
+		// check that lattice constants appear valid (non NaN or negatives or zero...)
+		if (xtal.a<=0 || xtal.b<=0 || xtal.c<=0 || numtype(xtal.a+xtal.b+xtal.c))
+			sprintf str,"invalid, (a,b,c) = (%g,%g,%g)",xtal.a,xtal.b,xtal.c
+			DoAlert 0, str
+			return 1
+		endif
+		if (alpha<=0 || bet<=0 || gam<=0 || alpha>=180 || bet>=180 || gam>=180 || numtype(alpha+bet+gam))
+			sprintf str,"invalid, (alpha,beta,gam) = (%g,%g,%g)",alpha,bet,gam
+			DoAlert 0, str
+			return 1
+		endif
 	endif
-	Variable alpha=xtal.alpha,bet=xtal.beta,gam=xtal.gam
-	if (alpha<=0 || bet<=0 || gam<=0 || alpha>=180 || bet>=180 || gam>=180 || numtype(alpha+bet+gam))
-		sprintf str,"invalid, (alpha,beta,gam) = (%g,%g,%g)",alpha,bet,gam
-		DoAlert 0, str
-		return 1
-	endif
+
 	setDirectRecip(xtal)									// update Vc, direct and recip, density, and also calculates atom positions
 	CleanOutCrystalStructure(xtal)
 	xtal.Vibrate = xtalVibrates(xtal)					// True if some Thermal vibration info present in xtal
@@ -1428,52 +1786,82 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	//	see:		https://en.wikipedia.org/wiki/Fractional_coordinates
 	//  and		International Tables (2006) Vol. B, chapter 3.3 page 360
 	//
-	Variable a=xtal.a, b=xtal.b, c=xtal.c
-	Variable ca = cos((xtal.alpha)*PI/180), cb = cos((xtal.beta)*PI/180)
-	Variable cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
-	Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
-	Variable Vc = a*b*c * phi							// volume of unit cell
-	Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
-
+	if (strsearch(GetRTStackInfo(0),"reMakeAtomXYZs",2) >= 0)
+		return 0
+	endif
+	Variable dim = xtal.dim
 	Variable a0,a1,a2,  b0,b1,b2,  c0,c1,c2		//components of the direct lattice vectors
-	if (!isRhombohedralXtal(xtal))
-		// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
-		a0=a				; a1=0						; a2=0
-		b0=b*cg			; b1=b*sg					; b2=0
-		c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+	Variable a, b, c, Vc
+	Variable ca=cos((xtal.alpha)*PI/180)
+	if (dim==2)
+		Variable sa=sin((xtal.alpha)*PI/180)
+		a = xtal.a	;	b = xtal.b	;	c = NaN
+		a0 = a		;	a1 = 0		;	a2 = NaN
+		b0 = b*ca	;	b1 = b*sa	;	b2 = NaN
+		c0 = NaN		;	c1 = NaN		;	c2 = NaN
+		Vc = a*b * sa										// actually the area, not volume
+		//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
 	else
-		// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
-		// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
-		Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
-		Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
-		a0=p2q			; a1=pmq					; a2=pmq
-		b0=pmq			; b1=p2q					; b2=pmq
-		c0=pmq			; c1=pmq					; c2=p2q
+		a=xtal.a		;	b=xtal.b		;	c=xtal.c
+		Variable cb = cos((xtal.beta)*PI/180)
+		Variable cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
+		Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
+		Vc = a*b*c * phi							// volume of unit cell
+		Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
+
+		if (!isRhombohedralXtal(xtal))
+			// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
+			a0=a				; a1=0						; a2=0
+			b0=b*cg			; b1=b*sg					; b2=0
+			c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+		else
+			// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
+			// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
+			Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
+			Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
+			a0=p2q			; a1=pmq					; a2=pmq
+			b0=pmq			; b1=p2q					; b2=pmq
+			c0=pmq			; c1=pmq					; c2=p2q
+		endif
 	endif
 
 	xtal.Vc = Vc
-	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2	// assign to xtal values
+	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2			// assign direct lattice to xtal values
 	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
 	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
-	xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2PI/Vc
-	xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2PI/Vc
-	xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2PI/Vc
 
-	Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
-	allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
-	allZero += abs(xtal.Unconventional20)+abs(xtal.Unconventional21)+abs(xtal.Unconventional22)
-	xtal.Unconventional00 = allZero==0 ? NaN : xtal.Unconventional00
-	if (numtype(xtal.Unconventional00)==0 && xtal.Unconventional00>-100 && xtal.Unconventional00<100)
-		Make/N=(3,3)/O/D root:Packages:Lattices:Unconventional
-		Wave Unconventional=root:Packages:Lattices:Unconventional
-		Unconventional[0][0]=xtal.Unconventional00;	Unconventional[0][1]=xtal.Unconventional01;	Unconventional[0][2]=xtal.Unconventional02
-		Unconventional[1][0]=xtal.Unconventional10;	Unconventional[1][1]=xtal.Unconventional11;	Unconventional[1][2]=xtal.Unconventional12
-		Unconventional[2][0]=xtal.Unconventional20;	Unconventional[2][1]=xtal.Unconventional21;	Unconventional[2][2]=xtal.Unconventional22
+	// next the reciprocal lattice
+	if (dim==2)
+		Make/N=(2,2)/D/FREE direct = { {a0,a1}, {b0,b1} }
+		MatrixOP/FREE recip = 2*PI * (Inv(direct))^t
+		xtal.as0 = recip[0][0]		;	xtal.as1 = recip[1][0]		;	xtal.as2 = NaN
+		xtal.bs0 = recip[0][1]		;	xtal.bs1 = recip[1][1]		;	xtal.bs2 = NaN
+		xtal.cs0 = NaN					;	xtal.cs1 = NaN					;	xtal.cs2 = NaN
 	else
-		KillWaves/Z root:Packages:Lattices:Unconventional
+		xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2PI/Vc
+		xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2PI/Vc
+		xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2PI/Vc
 	endif
 
-	xtal.density = densityOfCrystalStructure(xtal)
+	if (dim==2)
+		xtal.Unconventional00 = NaN					// cannot use Unconventional with dim==2
+		KillWaves/Z root:Packages:Lattices:Unconventional
+	else
+		Variable allZero = abs(xtal.Unconventional00)+abs(xtal.Unconventional01)+abs(xtal.Unconventional02)
+		allZero += abs(xtal.Unconventional10)+abs(xtal.Unconventional11)+abs(xtal.Unconventional12)
+		allZero += abs(xtal.Unconventional20)+abs(xtal.Unconventional21)+abs(xtal.Unconventional22)
+		xtal.Unconventional00 = allZero==0 ? NaN : xtal.Unconventional00
+		if (numtype(xtal.Unconventional00)==0 && xtal.Unconventional00>-100 && xtal.Unconventional00<100)
+			Make/N=(3,3)/O/D root:Packages:Lattices:Unconventional
+			Wave Unconventional=root:Packages:Lattices:Unconventional
+			Unconventional[0][0]=xtal.Unconventional00;	Unconventional[0][1]=xtal.Unconventional01;	Unconventional[0][2]=xtal.Unconventional02
+			Unconventional[1][0]=xtal.Unconventional10;	Unconventional[1][1]=xtal.Unconventional11;	Unconventional[1][2]=xtal.Unconventional12
+			Unconventional[2][0]=xtal.Unconventional20;	Unconventional[2][1]=xtal.Unconventional21;	Unconventional[2][2]=xtal.Unconventional22
+		else
+			KillWaves/Z root:Packages:Lattices:Unconventional
+		endif
+	endif
+
 	if (xtal.N==0)								// no atom defined, make one dummy atom
 		xtal.N = 1
 		xtal.atom[0].x = 0
@@ -1484,6 +1872,10 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		xtal.atom[0].occ = 1
 		xtal.atom[0].valence = 0
 	endif
+
+	reMakeAtomXYZs(xtal)
+	xtal.density = densityOfCrystalStructure(xtal)
+
 	return 0
 End
 #else													// OLD_LATTICE_ORIENTATION was defined, this gives c||z which is non-standard
@@ -1524,7 +1916,6 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		KillWaves/Z root:Packages:Lattices:Unconventional
 	endif
 
-	xtal.density = densityOfCrystalStructure(xtal)
 	if (xtal.N==0)								// no atom defined, make one dummy atom
 		xtal.N = 1
 		xtal.atom[0].x = 0
@@ -1535,6 +1926,10 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 		xtal.atom[0].occ = 1
 		xtal.atom[0].valence = 0
 	endif
+
+	reMakeAtomXYZs(xtal)
+	xtal.density = densityOfCrystalStructure(xtal)
+
 	return 0
 End
 #endif
@@ -1648,19 +2043,19 @@ Static Function CleanOutCrystalStructure(xtal)	// clean out all unused values an
 End
 
 
-Function densityOfCrystalStructure(xtal)		// returns the density (g/cm^3)
+Static Function densityOfCrystalStructure(xtal)	// returns the density (g/cm^3)
 	STRUCT crystalStructure &xtal					// this sruct is filled  by this routine
 	Variable NA=6.02214199e23							// Avagadro's number
 	String name
-
-	reMakeAtomXYZs(xtal)
 	Variable m, amuAll									// atomic mass of all atoms in cell
 	for (m=0,amuAll=0; m<(xtal.N); m+=1)			// for each atom type
 		name="root:Packages:Lattices:atom"+num2istr(m)
 		Wave ww = $name
 		amuAll += Element_amu(xtal.atom[m].Zatom)*DimSize(ww,0) * xtal.atom[m].occ
 	endfor
-	return (amuAll/NA)/(xtal.Vc * 1e-21)			// grams / cm^3
+
+	Variable scale = (xtal.dim == 2) ?  1e-14 : 1e-21	// grams/cm^3  or  grams/cm^2
+	return (amuAll/NA)/(xtal.Vc * scale)
 End
 
 Static Function NetChargeCell(xtal)				// find the net charge in a cell (from valences), should be zero
@@ -1685,7 +2080,8 @@ Function get_dhkl(h,k,l,[T])
 		DoAlert 0, "no lattice structure found"
 		return NaN
 	endif
-	Variable alphaTbad = !(abs(xtal.alphaT)<0.1)	// if  |alphaT| > 0.1 then it must be wrong
+	Variable dim = xtal.dim
+	Variable needT = (abs(xtal.alphaT)<0.1) || xtal.NL_L>=2	// either |alphaT| < 0.1 or have a table (dL_L,dL_LT)
 	if (numtype(h+k+l))
 		h = numtype(h) ? 0 : h
 		k = numtype(k) ? 0 : k
@@ -1694,28 +2090,37 @@ Function get_dhkl(h,k,l,[T])
 		Prompt k,"K"
 		Prompt l,"L"
 		Prompt T,"Temperature, standard is 20, (C)"
-		Variable askForT = (!ParamIsDefault(T) && !alphaTbad)
+		Variable askForT = (!ParamIsDefault(T) && needT)
 		if (askForT)
-			DoPrompt "(hkl)",h,k,l,T
+			if (dim==2)
+				DoPrompt "(hk)",h,k,T
+			else
+				DoPrompt "(hkl)",h,k,l,T
+			endif
 		else
-			DoPrompt "(hkl)",h,k,l
+			if (dim==2)
+				DoPrompt "(hk)",h,k
+			else
+				DoPrompt "(hkl)",h,k,l
+			endif
 		endif
 		if (V_flag)
 			return NaN
 		endif
 	endif
+	l = dim==2 ? 0 : l
 	if (numtype(h+k+l))
 		return NaN
 	endif
-	Variable d, usingT = !alphaTbad && numtype(T)==0
-	if (usingT)											// both alphaT and T are valid
+	Variable d, usingT = needT && numtype(T)==0
+	if (usingT)											// have valid T and either alphaT or expansion table
 		d = dSpacing(xtal,h,k,l,T=T)
 	else
 		d = dSpacing(xtal,h,k,l)
 	endif
 	if (ItemsInList(GetRTStackInfo(0))<2)
 		Variable places = placesOfPrecision(xtal.a)
-		if (usingT)										// both alphaT and T are valid
+		if (usingT)
 			printf "d['%s' (T=%g),  (%s)] = %.9g nm\r",xtal.desc,T,hkl2str(h,k,l),roundSignificant(d,places)
 		else
 			printf "d['%s',  (%s)] = %.9g nm\r",xtal.desc,hkl2str(h,k,l),roundSignificant(d,places)
@@ -1728,14 +2133,29 @@ ThreadSafe Function dSpacing(xtal,h,k,l,[T])		// returns d-spacing for the hkl (
 	STRUCT crystalStructure &xtal		// this sruct is set in this routine
 	Variable h,k,l
 	Variable T									// OPTIONAL Temperature (C)
-	Variable xx,yy,zz
-	xx = h*xtal.as0 + k*xtal.bs0 + l*xtal.cs0
-	yy = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
-	zz = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
-	Variable d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
-	if (abs(xtal.alphaT)<0.1 && !ParamIsDefault(T) && numtype(T)==0 && T>=-273.15)	// do if T passed, and valid alphaT
-		T = limit(T,-273.15,Inf)				// limit T to > absolute zero
-		d = d*(1+xtal.alphaT*(T-20))		// apply temperature correction
+	Variable xx,yy,zz, d
+	if (xtal.dim == 2)
+		xx = h*xtal.as0 + k*xtal.bs0
+		yy = h*xtal.as1 + k*xtal.bs1
+		d = 2*PI/sqrt(xx*xx + yy*yy)
+	else
+		xx = h*xtal.as0 + k*xtal.bs0 + l*xtal.cs0
+		yy = h*xtal.as1 + k*xtal.bs1 + l*xtal.cs1
+		zz = h*xtal.as2 + k*xtal.bs2 + l*xtal.cs2
+		d = 2*PI/sqrt(xx*xx + yy*yy + zz*zz)
+	endif
+
+	if (!ParamIsDefault(T) && numtype(T)==0 && T>=-273.15)	// do if a valid T (C)
+		Variable strain = 0
+		if (xtal.NL_L >= 2)						// an expansion table provided
+			Make/N=(xtal.NL_L)/D/FREE yWav = xtal.dL_L[p], xWav = xtal.dL_LT[p]
+			strain = interp(T+273.15, xWav, yWav)	// this will extrapolate outside of NL_L range
+		elseif (abs(xtal.alphaT)<0.1)			// a valid alphaT
+			T = limit(T,-273.15,Inf)				// limit T to > absolute zero
+			strain = 	xtal.alphaT*(T-20)			// strain temperature correction
+			// d = d*(1+xtal.alphaT*(T-20))	// apply temperature correction
+		endif
+		d *= (strain + 1)							// apply temperature correction
 	endif
 	return d
 End
@@ -1764,20 +2184,33 @@ Function hkl2Q(h,k,l, qvec,[normal])				// compute qvector for (h,k,l), returns 
 	Wave qvec
 	Variable normal									// TRUE -> normalize Q, but always return full length
 	normal = ParamIsDefault(normal) ? 0 : normal
-	if (numtype(h+k+l) || !WaveExists(qvec))
-		if (WaveExists(qvec))
-			qvec = NaN
-		endif
-		return NaN
-	endif
+
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with current values
 		DoAlert 0, "No Lattice, please set one"
 		return 1
 	endif
-	qvec[0] = h*xtal.as0+k*xtal.bs0+l*xtal.cs0	// qvec =  recip x hkl
-	qvec[1] = h*xtal.as1+k*xtal.bs1+l*xtal.cs1
-	qvec[2] = h*xtal.as2+k*xtal.bs2+l*xtal.cs2
+	Variable dim = xtal.dim
+
+	l = (dim == 2) ? 0 : l
+	Variable bad = numtype(h+k+l) || !WaveExists(qvec)
+	bad = !bad ? numpnts(qvec)<dim : bad
+	if (bad)
+		if (WaveExists(qvec))								// ERROR, bad hkl or no qvec
+			qvec = NaN
+		endif
+		return NaN
+	endif
+
+	qvec = 0
+	if (dim == 2)
+		qvec[0] = h*xtal.as0+k*xtal.bs0					// qvec =  recip x hkl
+		qvec[1] = h*xtal.as1+k*xtal.bs1
+	else
+		qvec[0] = h*xtal.as0+k*xtal.bs0+l*xtal.cs0	// qvec =  recip x hkl
+		qvec[1] = h*xtal.as1+k*xtal.bs1+l*xtal.cs1
+		qvec[2] = h*xtal.as2+k*xtal.bs2+l*xtal.cs2
+	endif
 
 	Variable Qlen = norm(qvec)
 	if (normal)
@@ -1814,7 +2247,7 @@ Function angleBetweenHKLs(h1,k1,l1,  h2,k2,l2, [printIt])	// find angle between 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))					//fill the lattice structure with current values
 		DoAlert 0, "No Lattice, please set one"
-		return 1
+		return NaN
 	endif
 	Make/N=3/O/D hkl_angleBetweenHKLs1, hkl_angleBetweenHKLs2
 	Wave q1=hkl_angleBetweenHKLs1, q2=hkl_angleBetweenHKLs2
@@ -1967,15 +2400,41 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 		strStruct=StrVarOrDefault("root:Packages:Lattices:crystalStructStr","")	// try the values in Packages
 	endif
 
-	if (strlen(strStruct)>1)							// found structure information, load into xtal
-		StructGet_xtal(strStruct,xtal)				// retrieve xtal from the string strStruct
+	if (strlen(strStruct)>1)								// found structure information, load into xtal
+		StructGet_xtal(strStruct,xtal)					// retrieve xtal from the string strStruct
 	else														// last chance, load from generic defaults
 		LoadPackagePreferences/MIS=1 "LatticeSym","LatticeSymPrefs",1,xtal
-		if (V_flag)
+		if (V_flag || V_bytesRead<xtalStructLen5)
+			SetToDummyXTAL(xtal,3)						// set to valid dummy values
 			return 1											// did nothing, nothing found, give up
 		endif
+
+//		if (V_bytesRead == xtalStructLen10)
+//			LoadPackagePreferences/MIS=0 "LatticeSym","LatticeSymPrefs",1,xtal
+		if (V_bytesRead == xtalStructLen9)
+			STRUCT crystalStructure9 xtal9
+			LoadPackagePreferences/MIS=0 "LatticeSym","LatticeSymPrefs",1,xtal9
+			copy_xtal910(xtal,xtal9)						// copy xtal9 --> xtal10
+		elseif (V_bytesRead == xtalStructLen8)
+			STRUCT crystalStructure8 xtal8
+			LoadPackagePreferences/MIS=0 "LatticeSym","LatticeSymPrefs",1,xtal8
+			copy_xtal810(xtal,xtal8)						// copy xtal8 --> xtal10
+		elseif (V_bytesRead == xtalStructLen7)
+			STRUCT crystalStructure7 xtal7
+			LoadPackagePreferences/MIS=0 "LatticeSym","LatticeSymPrefs",1,xtal7
+			copy_xtal710(xtal,xtal7)						// copy xtal7 --> xtal10
+		elseif (V_bytesRead == xtalStructLen6)
+			STRUCT crystalStructure6 xtal6
+			LoadPackagePreferences/MIS=0 "LatticeSym","LatticeSymPrefs",1,xtal6
+			copy_xtal610(xtal,xtal6)						// copy xtal6 --> xtal10	
+		elseif (V_bytesRead == xtalStructLen5)
+			STRUCT crystalStructure5 xtal5
+			LoadPackagePreferences/MIS=0 "LatticeSym","LatticeSymPrefs",1,xtal5
+			copy_xtal510(xtal,xtal5)						// copy xtal5 --> xtal10
+		endif
+
 		if (!isValidLatticeConstants(xtal))
-			SetToDummyXTAL(xtal)						// set to valid dummy values
+			SetToDummyXTAL(xtal,3)						// set to valid dummy values
 		endif
 		StructPut/S/B=2 xtal, strStruct				// keep a local copy after loading from PackagePreferences
 		String/G root:Packages:Lattices:crystalStructStr = strStruct
@@ -1987,30 +2446,40 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 	return 0
 End
 //
-Static Function SetToDummyXTAL(xtal)				// fill the crystal structure with valid dummy values
+Static Function SetToDummyXTAL(xtal,dim)		// fill the crystal structure with valid dummy values
 	STRUCT crystalStructure &xtal
-	xtal.desc = "Dummy Structure"
-	xtal.SpaceGroupID = "195"							// simple cubic
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
-	xtal.SpaceGroup = 195
-	xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
-	xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
-	xtal.Vc = 0.125
-	xtal.Vibrate = 0	;	xtal.haveDebyeT = 0
-	xtal.Nbonds = 0
+	Variable dim
+	init_crystalStructure(xtal)
+	xtal.dim = dim
+	xtal.desc = "Dummy Structure " + SelectString(dim==2,"3D","2D")
+	xtal.formula = ""
+
+	xtal.SpaceGroupID = SelectString(dim==2,"195","2")	// simple cubic or oblique
+	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=dim)
+
+	if (dim==2)
+		xtal.a = 0.5		;	xtal.b = 0.5
+		xtal.alpha = 90	;	xtal.beta = NaN
+		//	xtal.Vc = 0.25
+	else
+		xtal.a = 0.5		;	xtal.b = 0.5		;	xtal.c = 0.5
+		xtal.alpha = 90	;	xtal.beta = 90	;	xtal.gam = 90
+		//	xtal.Vc = 0.125
+	endif
 	xtal.N = 1
 	xtal.sourceFile=""
 	xtal.hashID = ""
 
 	xtal.N = 1
 	SetToDummyATOM(xtal.atom[0])
-	xtal.atom[0].name = "H1"
+	ForceLatticeToStructure(xtal)
 End
 //
 Static Function SetToDummyATOM(atom)		// fill the atom structure with valid dummy values
 	STRUCT atomTypeStructure &atom
-	atom.name = ""
-	atom.Zatom = 1
+	atom.name = "Si"
+	atom.Zatom = 14
 	atom.x = 0	;	atom.y = 0	;	atom.z = 0
 	atom.occ = 1
 	atom.valence = 0
@@ -2026,14 +2495,9 @@ Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local
 	STRUCT crystalStructure &xtal						// returns 0 if something set, 1 is nothing done
 
 	xtal.hashID = xtalHashID(xtal)						// re-set hash function to identify associated waves
-//	String strStruct
-//	xtal.hashID = ""											// re-set hash function to identify associated waves
-//	StructPut/S xtal, strStruct
-//	xtal.hashID = hash(strStruct,1)
 
 	Wave atom0 = root:Packages:Lattices:atom0
 	if (WaveExists(atom0))
-//		String wnote=StringByKey("ID",note(atom0),"=")
 		String wnote=note(atom0)
 		if (!stringmatch(StringByKey("ID",wnote,"="),xtal.hashID))
 			Note/K atom0, ReplaceStringByKey("ID",wnote,"","=")
@@ -2049,15 +2513,6 @@ Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local
 	endif
 	SavePackagePreferences/FLSH=1 "LatticeSym","LatticeSymPrefs",1,xtal
 	return 0
-//	if (exists(":crystalStructStr")==2)				// use the global in this data folder
-//		SVAR crystalStructStr=:crystalStructStr
-//		crystalStructStr = strStruct
-//	elseif (exists("root:crystalStructStr")==2)	// global exists in root
-//		SVAR crystalStructStr=root:crystalStructStr// update global in root
-//		crystalStructStr = strStruct
-//	else	
-//		String/G root:Packages:Lattices:crystalStructStr=strStruct	// neither exist, make global in Packages
-//	endif
 End
 
 
@@ -2078,24 +2533,33 @@ Static Function/T OverOccupyList(xtalIN,[occMax,printIt])	// checks if sites in 
 	String str, out=""
 
 	Variable Natoms=xtal.N		// nuber of atom types
+	Variable dim = xtal.dim
 	Variable iatom, occ, i
 	Variable x0,y0,z0, dist
 	for (iatom=0;iatom<Natoms;iatom+=1)
 		x0 = xtal.atom[iatom].x
 		y0 = xtal.atom[iatom].y
-		z0 = xtal.atom[iatom].z
+		z0 = (dim==2) ? 0 : (xtal.atom[iatom].z)
 		if (numtype(x0+y0+z0))
 			continue
 		endif
 		for (i=iatom,occ=0; i<Natoms; i+=1)	// now loop over iatom and all of the following atoms
-			dist = sqrt((x0-xtal.atom[i].x)^2 + (y0-xtal.atom[i].y)^2 + (z0-xtal.atom[i].z)^2)
+			if (dim==2)
+				dist = sqrt((x0-xtal.atom[i].x)^2 + (y0-xtal.atom[i].y)^2)
+			else
+				dist = sqrt((x0-xtal.atom[i].x)^2 + (y0-xtal.atom[i].y)^2 + (z0-xtal.atom[i].z)^2)
+			endif
 			if (dist < 0.01)							// within 0.01 of a cell, assume same position
 				occ += xtal.atom[i].occ			// accumulate occupancy
 				xtal.atom[i].x = NaN				// this atom has been used, remove from further consideration
 			endif
 		endfor
 		if (occ>occMax)
-			sprintf str, "%g,%g,%g,%g;",x0,y0,z0,occ
+			if (dim==2)
+				sprintf str, "%g,%g,%g;",x0,y0,occ
+			else
+				sprintf str, "%g,%g,%g,%g;",x0,y0,z0,occ
+			endif
 			out += str
 		endif
 	endfor
@@ -2112,6 +2576,7 @@ Static Function/T OverOccupyList2Str(list,[occMax])
 	occMax = ParamIsDefault(occMax) ? 1 : occMax	// default is 1, only print if occ>1
 	occMax = numtype(occMax)==2 ? 1 : occMax
 
+	Variable dim = (ItemsInList(list)==3) ? 2 : 3
 	String out="", item, str
 	Variable i, N=ItemsInList(list), x,y,z,occ
 	for (i=0;i<N;i+=1)
@@ -2119,9 +2584,14 @@ Static Function/T OverOccupyList2Str(list,[occMax])
 		x = str2num(StringFromlist(0,item,","))
 		y = str2num(StringFromlist(1,item,","))
 		z = str2num(StringFromlist(2,item,","))
+		z = dim==2 ? 0 : z
 		occ = str2num(StringFromlist(3,item,","))
 		if (numtype(x+y+z+occ)==0 && occ>occMax)
-			sprintf str, "site {%g, %g, %g}, occupancy = %g",x,y,z,occ
+			if (dim==2)
+				sprintf str, "site {%g, %g}, occupancy = %g",x,y,occ
+			else
+				sprintf str, "site {%g, %g, %g}, occupancy = %g",x,y,z,occ
+			endif
 			out += SelectString(strlen(out),"","\r") + str
 		endif
 	endfor
@@ -2211,7 +2681,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		structures = xtal.desc+":"+num2istr(SpaceGroup)+";"+structures
 	endif
 	Variable i,N=ItemsInList(structures)
-	if (isValidSpaceGroup(SpaceGroup))				// valid SpaceGroup number
+	if (isValidSpaceGroup(SpaceGroup,3))		// valid SpaceGroup number
 		structureName = ""
 		for(i=0;i<N;i+=1)
 			item = StringFromList(i,structures)
@@ -2251,7 +2721,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 		SpaceGroup=str2num(StringFromList(1,item,":"))
 		structureName = StringFromList(0,item,":")
 	endif
-	if (!isValidSpaceGroup(SpaceGroup))
+	if (!isValidSpaceGroup(SpaceGroup,3))
 		return 1
 	endif
 
@@ -2311,7 +2781,7 @@ Static Function GetLatticeConstants(xtal,SpaceGroup,structureName,a,b,c,alpha,be
 	xtal.alpha = alpha	;	xtal.beta = bet	;	xtal.gam = gam
 	xtal.SpaceGroup=SpaceGroup
 	xtal.SpaceGroupID = FindDefaultIDforSG(SpaceGroup)
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=3)
 	xtal.Unconventional00=NaN
 	xtal.sourceFile = ""
 	ForceLatticeToStructure(xtal)
@@ -2332,7 +2802,9 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	String hostWin										// name of home window
 	Variable left, top									// offsets from the left and top
 
-	NewDataFolder/O root:Packages:Lattices:PanelValues	// ensure that the needed data folders exist
+	NewDataFolder/O root:Packages								// ensure that the needed data folders exist
+	NewDataFolder/O root:Packages:Lattices
+	NewDataFolder/O root:Packages:Lattices:PanelValues
 	Variable new = !(NumVarOrDefault("root:Packages:Lattices:PanelValues:a",-1)>0)
 	String/G root:Packages:Lattices:PanelValues:desc		// create, but don't fill in the values for the panel
 	String/G root:Packages:Lattices:PanelValues:SpaceGroupID
@@ -2342,6 +2814,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Variable/G root:Packages:Lattices:PanelValues:alpha
 	Variable/G root:Packages:Lattices:PanelValues:bet
 	Variable/G root:Packages:Lattices:PanelValues:gam
+	Variable/G root:Packages:Lattices:PanelValues:dim
 	Variable/G root:Packages:Lattices:PanelValues:alphaT
 	Variable/G root:Packages:Lattices:PanelValues:dirty		// =1 (xtal.sourceFile bad too),  =2 (values changed, but xtal.sourceFile is OK)
 	Variable/G root:Packages:Lattices:PanelValues:T_C
@@ -2353,6 +2826,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	NVAR alpha=root:Packages:Lattices:PanelValues:alpha
 	NVAR bet=root:Packages:Lattices:PanelValues:bet
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
+	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR alphaT=root:Packages:Lattices:PanelValues:alphaT
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 	NVAR dirty=root:Packages:Lattices:PanelValues:dirty
@@ -2374,6 +2848,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 		crystalStructStr = strStruct
 	elseif(new)												// no old values present, use usual defaults
 		FillCrystalStructDefault(xtal)
+		dim = xtal.dim
 		a=xtal.a  ;  b=xtal.b  ;  c=xtal.c
 		alpha=xtal.alpha  ;  bet=xtal.beta  ;  gam=xtal.gam
 		SpaceGroupID = xtal.SpaceGroupID
@@ -2413,7 +2888,6 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_alpha,help={"lattice constant (degree), angle between b & c vectors"}
 	SetVariable set_beta,help={"lattice constant (degree), angle between a & c vectors"}
 	SetVariable set_gamma,help={"lattice constant (degree), angle between a & b vectors"}
-
 	SetVariable set_alpha,pos={45,163},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
 	SetVariable set_beta,pos={45,183},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
 	SetVariable set_gamma,pos={45,203},size={100,17},proc=LatticePanelParamProc,format="%10.5f"
@@ -2428,6 +2902,13 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_alpha, fSize=12, title="\xCE\xB1"+DEGREESIGN
 	SetVariable set_beta, fSize=12, title="\xCE\xB2"+DEGREESIGN
 	SetVariable set_gamma, fSize=12, title="\xC9\xA3"+DEGREESIGN	// there are two gamma's, this (latin small letter gamma) looks better than "\xCE\xB3"
+#endif
+
+#ifdef LATTICE_SYM_2D_3D
+//	TitleBox LatticeDimTitle,pos={190,92},size={19,19},fSize=14,frame=0,anchor= LC
+//	TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+	TitleBox LatticeDimTitle,pos={77,138},size={19,19},fSize=14,frame=0,anchor= LC
+	TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
 #endif
 
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
@@ -2452,7 +2933,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	Button buttonAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
 	PopupMenu popupAtomView,pos={35,383},size={150,20},proc=AtomView#AtomViewPopMenuProc,title="Atom View...",disable= 1
 	PopupMenu popupAtomView,help={"Provides supprort for viewing the lattice as a 3D Gizmo"}
-	PopupMenu popupAtomView,fSize=14,mode=0,value= #"\"Make Cells of Atoms...;  Bond Info;  Gizmo of Atoms;    Atom Type at Cursor\""
+	PopupMenu popupAtomView,fSize=14,mode=0,value= #"\"Make Cells of Atoms...;  Bond Info;  Display Atoms in Cell;    Atom Type at Cursor\""
 	Button buttonPowderPattern,pos={35,408},size={150,20},proc=LatticePanelButtonProc,title="Add Powder Patterns..."
 	Button buttonPowderPattern,help={"Provides supprort creating a powder pattern simulation for this lattice"}
 	PopupMenu popupPowderPattern,pos={35,408},size={150,20},proc=powder#PowderPatternPopMenuProc,title="Powder Pattern...",disable= 1
@@ -2499,21 +2980,65 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	String subWin
 	String SpaceGroupID
 
-	if (!isValidSpaceGroupID(SpaceGroupID))
-		return 1
-	endif
-
 	NVAR a=root:Packages:Lattices:PanelValues:a
 	NVAR b=root:Packages:Lattices:PanelValues:b
 	NVAR c=root:Packages:Lattices:PanelValues:c
 	NVAR alpha=root:Packages:Lattices:PanelValues:alpha
 	NVAR bet=root:Packages:Lattices:PanelValues:bet
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
+	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
+		return 1
+	endif
 	Variable SG = str2num(SpaceGroupID)		// first part of id is space group number
 	String titleStr="\\JC"+SpaceGroupID+" "
-	if (SG>=195)															// Cubic, a
+
+#ifdef LATTICE_SYM_2D_3D
+	if (dim==2)
+		SetVariable set_c_nm,disable=1,win=$subWin				// always for dim==2
+		SetVariable set_beta,disable=1,win=$subWin
+		SetVariable set_gamma,disable=1,win=$subWin
+	else
+		SetVariable set_c_nm,disable=0,win=$subWin				// always for dim==3
+		SetVariable set_beta,disable=0,win=$subWin
+		SetVariable set_gamma,disable=0,win=$subWin
+	endif
+#endif
+
+	if (dim==2 && SG>=13)												// Hexagonal, a [13 17]
+		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
+		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
+		SetVariable set_alpha,noedit=1,frame=0,win=$subWin
+		b = a  ;  alpha = 120
+		titleStr += "Hexagonal"
+	elseif (dim==2 && SG>=10)											// Square, a [10,12]
+		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
+		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
+		SetVariable set_alpha,noedit=1,frame=0,win=$subWin
+		b = a  ;  alpha = 90
+		titleStr += "Square"
+	elseif (dim==2 && (SG==5 || SG==9))							// Rhombic, a, alpha {5,9}
+		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
+		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
+		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
+		b = a
+		titleStr += "Rhombic"
+	elseif (dim==2 && SG>=3)											// Rectangular, a,b {3,4,6,7,8}
+		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
+		SetVariable set_b_nm,noedit=0,frame=1,win=$subWin
+		SetVariable set_alpha,noedit=1,frame=0,win=$subWin	// disable
+		alpha=90
+		titleStr += "Rectangular"
+	elseif (dim==2)														// Oblique, a, b, alpha {1,2}
+		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
+		SetVariable set_b_nm,noedit=0,frame=1,win=$subWin
+		SetVariable set_alpha,noedit=0,frame=1,win=$subWin
+		titleStr += "Oblique"
+
+	// Now the 3D Space Group numbers
+	elseif (SG>=195)														// Cubic, a
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
 		SetVariable set_b_nm,noedit=1,frame=0,win=$subWin	// disable
 		SetVariable set_c_nm,noedit=1,frame=0,win=$subWin
@@ -2587,8 +3112,8 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_gamma,noedit=0,frame=1,win=$subWin
 		titleStr += "Triclinic"
 	endif
-//	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
-	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+	//	titleStr += "   \\F'Courier'"+getHMboth(SpaceGroupID2num(SpaceGroupID))
+	titleStr += "   \\F'"+BAR_FONT_ALWAYS+"'"+getHMboth(SpaceGroupID2num(SpaceGroupID, dim=dim), dim=dim)
 
 	titleStr = minus2bar(titleStr, single=1)								// change all minuses to a bar over following character
 	Variable/C sizeLeft = titleStrLength(titleStr)
@@ -2597,16 +3122,16 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 
 	if (exists("Init_AtomViewLattice")==6)
 		Button buttonAtomView,win=$subWin,disable=1			// hide the button
-		PopupMenu popupAtomView,win=$subWin,disable=0	// show the popup
+		PopupMenu popupAtomView,win=$subWin,disable=0			// show the popup
 	else
 		Button buttonAtomView,win=$subWin,disable=0			// show the button
-		PopupMenu popupAtomView,win=$subWin,disable=1	// hide the popup
+		PopupMenu popupAtomView,win=$subWin,disable=1			// hide the popup
 	endif
 	if (exists("Init_PowderPatternLattice")==6)
-		Button buttonPowderPattern,win=$subWin,disable=1	// hide the button
+		Button buttonPowderPattern,win=$subWin,disable=1		// hide the button
 		PopupMenu popupPowderPattern,win=$subWin,disable=0	// show the popup
 	else
-		Button buttonPowderPattern,win=$subWin,disable=0	// show the button
+		Button buttonPowderPattern,win=$subWin,disable=0		// show the button
 		PopupMenu popupPowderPattern,win=$subWin,disable=1	// hide the popup
 	endif
 	return 0
@@ -2656,8 +3181,7 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 		NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 		STRUCT crystalStructure xtal			// returns 0 if something set, 1 is nothing done
 		FillCrystalStructDefault(xtal)		//fill the crystal structure with 'current' values
-		dspace_nm = dSpacing(xtal,h,k,l)
-//		Variable/C Fc = Fstruct(xtal,h,k,l,T_K=(xtal.Temperature)+273.15)
+		dspace_nm = dSpacing(xtal,h,k,l,T=T_C)
 		Variable/C Fc = Fstruct(xtal,h,k,l,T_K=T_C+273.15)
 		Fr = real(Fc)
 		Fi = imag(Fc)
@@ -2675,17 +3199,36 @@ Function LatticePanelParamProc(sva) : SetVariableControl
 	return 0
 End
 //
-Static Function/T SelectNewSG(find)
+Static Function/T SelectNewSG(find, dim)
 	String find
-	if (strlen(find)<1)
-		find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
+	Variable dim			// must be 2 or 3 only
+	if (strlen(find)<1 || !(dim==2 || dim==3))
+		if (strlen(find)<1)
+			find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
+		endif
+		dim = (dim==2 || dim==3) ? dim : NumVarOrDefault("root:Packages:Lattices:PanelValues:dimSearch",3)
+#ifdef LATTICE_SYM_2D_3D
+		dim = 3
+#endif
 		Prompt find, "Space Group Search, use * for wild card"
+		Prompt dim, "Lattice Dimension", popup, "2;3"
+		dim = dim==2 ? 1 : 2
+#ifdef LATTICE_SYM_2D_3D
+		DoPrompt "Search String", find, dim
+#else
 		DoPrompt "Search String", find
+#endif
 		if (V_flag)
 			return ""
 		endif
+		dim = dim==1 ? 2 : 3
 	endif
+	dim = dim==2 ? 2 : 3
+#ifdef LATTICE_SYM_2D_3D
+		dim = 3
+#endif
 	String/G root:Packages:Lattices:PanelValues:SpaceGroupSearch=find
+	Variable/G root:Packages:Lattices:PanelValues:dimSearch=dim
 
 	String str,list0="", symList=""
 	Variable i
@@ -2704,20 +3247,23 @@ Static Function/T SelectNewSG(find)
 	String list = symmtry2SG(find,types=-1,printIt=0), sym
 	list = RemoveDuplicatesFromList(list)
 	String system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
-	String id, allIDs=MakeAllIDs()
+	String id, allIDs=MakeAllIDs(dim)
 	Variable Nlist=ItemsInList(list), idNum
 	for (i=0; i<Nlist; i+=1)
 		idNum = str2num(StringFromList(i,list))
-		if (isValidSpaceGroupIDnum(idNum))
+		if (isValidSpaceGroupIDnum(idNum, dim))
 			id = StringFromList(idNum-1,allIDs)
-			system = StringFromList(latticeSystem(id),systemNames)
-			sprintf str, "%s  %s  %s  [%s];", id,system,getHMsym2(idNum),getHallSymbol(idNum)
+			system = StringFromList(latticeSystem(id,dim),systemNames)
+			sprintf str, "%s  %s  %s  [%s];", id,system,getHMsym2(idNum),getHallSymbol(idNum, dim=dim)
 			symList += str
 		endif
 	endfor
 	Variable N=ItemsInList(symList)
 	if (strsearch(find,"*",0)<0 && N<1)
-		symList = SelectNewSG(find+"*")
+		symList = SelectNewSG(find+"*",dim)
+		dim = str2num(StringFromList(1,symList))
+		dim = dim==2 ? 2 : 3
+		symList = StringFromList(0,symList)
 		N = ItemsInList(symList)
 	endif
 	if (N<1)
@@ -2725,14 +3271,14 @@ Static Function/T SelectNewSG(find)
 		return ""
 	elseif (N==1)
 		sym = StringFromList(0,symList)
-		return StringFromList(0,sym," ")
+		return StringFromList(0,sym," ")+";"+num2istr(dim)
 	endif
 	Prompt sym,"Space Group",popup,addDefaults2symList(symList)
 	DoPrompt "Space Group",sym
 	if (V_flag)
 		return ""
 	endif
-	return StringFromList(0,sym," ")
+	return StringFromList(0,sym," ")+";"+num2istr(dim)
 End
 //
 Static Function/S addDefaults2symList(in)	// add "Default" to the default Space Groups
@@ -2770,6 +3316,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 	NVAR alpha=root:Packages:Lattices:PanelValues:alpha
 	NVAR bet=root:Packages:Lattices:PanelValues:bet
 	NVAR gam=root:Packages:Lattices:PanelValues:gam
+	NVAR dim=root:Packages:Lattices:PanelValues:dim
 	NVAR alphaT=root:Packages:Lattices:PanelValues:alphaT
 	NVAR T_C=root:Packages:Lattices:PanelValues:T_C
 	NVAR dirty = root:Packages:Lattices:PanelValues:dirty
@@ -2788,6 +3335,10 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		SpaceGroupID = xtal.SpaceGroupID
 		alphaT = xtal.alphaT
 		desc = xtal.desc
+#ifdef LATTICE_SYM_2D_3D
+//		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+		TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
+#endif
 		T_C = xtal.Temperature
 		dirty = 0
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
@@ -2797,6 +3348,11 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 		xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 		xtal.SpaceGroupID = SpaceGroupID
+#ifdef LATTICE_SYM_2D_3D
+		xtal.dim = dim
+#else
+		xtal.dim = 3
+#endif
 		xtal.alphaT = alphaT
 		xtal.Temperature = T_C
 		xtal.desc = desc[0,99]								// desc is limited to 100 chars
@@ -2811,7 +3367,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		StructPut/S xtal, crystalStructStr				// update the local copy too
 		OverOccupyList(xtal,printIt=1)					// print notice if some sites have occ>1
 	elseif (stringmatch(ctrlName,"buttonFindSpaceGroup"))
-		String id = SelectNewSG("")
+		String id = SelectNewSG("",dim)
 		if (strlen(id)<1)
 			return 0
 		endif
@@ -2837,7 +3393,12 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		endif
 		a = xtal.a  ;  b = xtal.b  ;  c = xtal.c
 		alpha = xtal.alpha  ;  bet = xtal.beta  ;  gam = xtal.gam
+		dim = xtal.dim
 		SpaceGroupID = xtal.SpaceGroupID
+#ifdef LATTICE_SYM_2D_3D
+//		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
+		TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
+#endif
 		desc = xtal.desc
 		alphaT = xtal.alphaT
 		T_C = xtal.Temperature
@@ -2982,7 +3543,7 @@ Static Function readCrystalStructure_xtl(xtal,fname)
 	xtal.SpaceGroup = SpaceGroup
 	String id = FindDefaultIDforSG(xtal.SpaceGroup)
 	xtal.SpaceGroupID = id
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)		// change id to id number in [1,530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id, dim=xtal.dim)		// change id to id number in [1,530]
 	xtal.alphaT = !(alphaT>0) ? 0 : alphaT
 	ForceLatticeToStructure(xtal)
 
@@ -3054,6 +3615,7 @@ Function read_cri_fileOLD(xtal,fname)
 	Variable SpaceGroup, a,b,c,alpha,bet,gam
 	String line
 	xtal.hashID = ""
+	xtal.dim = 3
 
 	FReadLine f, line
 	line = ReplaceString("\r",line,"")
@@ -3061,7 +3623,7 @@ Function read_cri_fileOLD(xtal,fname)
 	xtal.formula = ""
 	FReadLine f, line
 	SpaceGroup = str2num(line)
-	if (!isValidSpaceGroup(SpaceGroup))
+	if (!isValidSpaceGroup(SpaceGroup,3))
 		Close f
 		return 1
 	endif
@@ -3471,8 +4033,8 @@ Function readCrystalStructure(xtal,fname,[printIt])
 			OverOccupyList(xtal,printIt=1)			// print notice if some sites have occ>1
 		endif
 	endif
-//	if (xtal.Nbonds < 1)								// do NOT recalc bonds if already there
-//		ComputeBonds(xtal, printIt=printIt)
+//	if (xtal.Nbonds < 1 && !(xtal.dim==2))		// do NOT recalc bonds if already there (don't for dim=2)
+//		ComputeBonds(xtal, printIt=printIt)		// bonds don't make a lot of sense for 2D structures
 //	endif
 
 	// for fractional positions of 0.3333 or 0.1667, extend precision to exactly 1/3 or 1/6, etc.
@@ -3683,16 +4245,15 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-//	Variable/G root:Packages:Lattices:dim = dim
-#ifndef TESTING_2D
-	if (dim != 3)
-		sprintf str, "only understand dim=3, not \"%s\"", StringByKey("dim",keyVals,"=")
+#ifdef LATTICE_SYM_2D_3D
+	if (!(dim==3))
+		sprintf str, "Caution -- reading a file with dim = \"%s\"", StringByKey("dim",keyVals,"=")
 		DoAlert 0, str
-		return 1
 	endif
+	xtal.dim = dim
 #endif
 
-	// process the space gorup info
+	// process the space group info
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
 	String id_Name="id", IT_name="IT_number"							// version 2 names
@@ -3710,14 +4271,14 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = XMLtagContents("H-M",space_group)				//	Hermann-Manguin symbol, e.g. 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0,0)					// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0,0,dim)				// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1,0)							// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0,dim)					// checks in getHMsym2 again, but ignoring minus signs
 		endif
 		if (ItemsInList(nlist)==1)											// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))								// found valid SpaceGroupIDnum
-				String allIDs = MakeAllIDs()
+			if (isValidSpaceGroupIDnum(idNum, dim))						// found valid SpaceGroupIDnum
+				String allIDs = MakeAllIDs(dim)
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
 			endif
@@ -3735,10 +4296,10 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			xtal.SpaceGroupID = FindDefaultIDforSG(SG)					// try to get id from SG [1,230]
 		endif
 	endif
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))						// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,dim))					// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)	// change id to id number in [1,530]
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=dim)	// change id to id number in [1,530]
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)						// the IT space group number [1,230]
 	String SpaceGroupID = xtal.SpaceGroupID								// local string for convienence
 
@@ -3770,6 +4331,30 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
 	unit = SelectString(strlen(unit),"C",unit)							// default Temperature units are C
 	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
+
+	String expansion = XMLtagContents("thermalExpansion",cell)
+	if (strlen(expansion)>1)
+		unit = StringByKey("unit", XMLattibutes2KeyList("T",expansion),"=")
+		unit = SelectString(strlen(unit),"K",unit)
+		Wave Ttemp = str2vec(XMLtagContents("T",expansion))
+		Wave dLtemp = str2vec(XMLtagContents("dL_L",expansion))
+		Variable NL_L = min(numpnts(dLtemp),201)
+		Variable dL_OK = (NL_L > 1 && (numpnts(Ttemp) == NL_L))
+		WaveStats/Q/M=1 Ttemp
+		dL_OK = dL_OK && V_numNans==0 && V_numINFs==0
+		WaveStats/Q/M=1 dLtemp
+		dL_OK = dL_OK && V_numNans==0 && V_numINFs==0
+		dl_OK = dl_OK && monotonic(Ttemp)
+		if (dL_OK)
+			xtal.NL_L = NL_L
+			Variable iex
+			for (iex=0;iex<NL_L;iex+=1)
+				xtal.dL_L[iex] = dLtemp[iex]
+				xtal.dL_LT[iex] = ConvertTemperatureUnits(Ttemp[iex],unit,"K")	// always store T in Kelvin
+			endfor
+		endif
+	endif
+
 	Variable Pressure = str2num(XMLtagContents("pressure",cif))
 	if (numtype(Pressure)==0)
 		unit = StringByKey("unit", XMLattibutes2KeyList("pressure",cif),"=")
@@ -3827,11 +4412,11 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		if (!WaveExists(xyz))
 			Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))	// 2nd try v1 name for fractional coords
 		endif
-		if (WaveExists(xyz) && dim==3 && numpnts(xyz)==3)
+		if (WaveExists(xyz) && dim==3 && numpnts(xyz)>=3)
 			fracX = xyz[0]
 			fracY = xyz[1]
 			fracZ = xyz[2]
-		elseif (WaveExists(xyz) && dim==2 && numpnts(xyz)==2)
+		elseif (WaveExists(xyz) && dim==2 && numpnts(xyz)>=2)
 			fracX = xyz[0]
 			fracY = xyz[1]
 		else
@@ -3839,8 +4424,9 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			fracY = str2num(XMLtagContents("fract_y",atomSite))
 			fracZ = str2num(XMLtagContents("fract_z",atomSite))
 		endif
-		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol))	// try to get x,y,z from Wyckoff symbol
-			if (ForceXYZtoWyckoff(SpaceGroupID,WyckoffSymbol,fracX,fracY,fracZ))
+		fracZ = dim==2 ? 0 : fracZ											// valid dummy value for dim=2
+		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol) && dim>2)	// try to get x,y,z from Wyckoff symbol
+			if (ForceXYZtoWyckoff(SpaceGroupID,dim,WyckoffSymbol,fracX,fracY,fracZ))
 				fracX = NaN															// will cause a break in next if()
 			endif
 		endif
@@ -3848,8 +4434,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			break
 		endif
 		mult = 0
-		if (strlen(WyckoffSymbol)==0)										// try to set Wyckoff symbol from coordinates
-			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,fracX,fracY,fracZ,mult)
+		if (strlen(WyckoffSymbol)==0 && dim>2)							// try to set Wyckoff symbol from coordinates
+			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,dim,fracX,fracY,fracZ,mult)
 		endif
 
 		valence = str2num(XMLtagContents("valence",atomSite))
@@ -3897,7 +4483,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		xtal.atom[N].Zatom = Zatom
 		xtal.atom[N].x = fracX
 		xtal.atom[N].y = fracY
-		xtal.atom[N].z = fracZ
+		xtal.atom[N].z = (dim==2) ? NaN : fracZ		// invalid value for dim=2
 		xtal.atom[N].valence = valence
 		xtal.atom[N].occ = occupy
 		xtal.atom[N].WyckoffSymbol = WyckoffSymbol[0]
@@ -4073,7 +4659,8 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 	Variable symOp										// if True, write the symmetry ops into the <space_group> section
 	symOp = ParamIsDefault(symOp) || numtype(symOp) ? 0 : symOp
 
-	Variable dim=3, m, N=0
+	Variable dim = xtal.dim
+	Variable m, N=0
 	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
 	String str, unit=" unit=\"nm\""
 
@@ -4096,7 +4683,7 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		if (idNum>0)
 			cif += "\t\t<H-M>"+getHMsym2(idNum)+"</H-M>"+NL
 			if (symOp)										// set symmetry ops if requested
-				symOps = setSymLineIDnum(idNum)
+				symOps = setSymLineIDnum(idNum,dim)
 				N = ItemsInList(symOps)
 			endif
 		endif
@@ -4159,7 +4746,11 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		cif += "\t<atom_site>"+NL
 		cif += "\t\t<label>"+xtal.atom[i].name+"</label>"+NL
 		cif += "\t\t<symbol>"+Z2symbol(xtal.atom[i].Zatom)+"</symbol>"+NL
-		cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract>"+NL
+		if (dim==2)
+			cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+"</fract>"+NL
+		else
+			cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract>"+NL
+		endif
 		if (numtype(xtal.atom[i].valence)==0 && abs(xtal.atom[i].valence)<10 && abs(xtal.atom[i].valence)>0)
 			cif += "\t\t<valence>"+num2StrFull(xtal.atom[i].valence)+"</valence>"+NL
 		endif
@@ -4180,11 +4771,15 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		elseif (itemp>=4)
 			cif += "\t\t<aniso_U_11 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U11)+"</aniso_U_11>"+NL
 			cif += "\t\t<aniso_U_22 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U22)+"</aniso_U_22>"+NL
-			cif += "\t\t<aniso_U_33 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U33)+"</aniso_U_33>"+NL
+			if (!(dim==2))
+				cif += "\t\t<aniso_U_33 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U33)+"</aniso_U_33>"+NL
+			endif
 			if (itemp==5)
 				cif += "\t\t<aniso_U_12 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U12)+"</aniso_U_12>"+NL
-				cif += "\t\t<aniso_U_13 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U13)+"</aniso_U_13>"+NL
-				cif += "\t\t<aniso_U_23 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U23)+"</aniso_U_23>"+NL
+				if (!(dim==2))
+					cif += "\t\t<aniso_U_13 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U13)+"</aniso_U_13>"+NL
+					cif += "\t\t<aniso_U_23 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U23)+"</aniso_U_23>"+NL
+				endif
 			endif
 		endif
 		cif += "\t</atom_site>"+NL
@@ -4286,6 +4881,7 @@ Static Function/T convertOneXTL2XML(xtl,NL)	// read in the xtl file, returns str
 	endif
 
 	String sval, str, cif="<cif>"+NL
+//	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
 
 	sval = StringByKey("structureDesc",keyVals,"=")
 	if (strlen(sval))
@@ -4562,6 +5158,7 @@ Static Function CIF_interpret(xtal,buf,[desc])
 		name = CIF_readString("_chemical_name_structure_type",buf)
 	endif
 	String str = SelectString(strlen(name),desc,name)
+	xtal.dim = 3
 	xtal.desc = str[0,99]
 	xtal.formula = formula[0,99]
 
@@ -4581,14 +5178,14 @@ Static Function CIF_interpret(xtal,buf,[desc])
 	// 2nd try using the H-M symbol to set the SpaceGroupID & SpaceGroupIDnum
 	if (strlen(xtal.SpaceGroupID)<1)
 		String HMsym = CIF_readString("_symmetry_space_group_name_H-M",buf)	//	_symmetry_space_group_name_H-M 'I 1 2/a 1'
-		String nlist = SymString2SGtype(HMsym,2,0,0)		// checks in getHMsym2
+		String nlist = SymString2SGtype(HMsym,2,0,0,3)	// checks in getHMsym2
 		if (strlen(nlist)<1)
-			nlist = SymString2SGtype(HMsym,2,1,0)				// checks in getHMsym2 again, but ignoring minus signs
+			nlist = SymString2SGtype(HMsym,2,1,0,3)			// checks in getHMsym2 again, but ignoring minus signs
 		endif
 		if (ItemsInList(nlist)==1)								// just one result, use it
 			Variable idNum = str2num(StringFromList(0,nlist))
-			if (isValidSpaceGroupIDnum(idNum))					// found valid SpaceGroupIDnum
-				String allIDs=MakeAllIDs()
+			if (isValidSpaceGroupIDnum(idNum,3))				// found valid SpaceGroupIDnum, only 3D
+				String allIDs=MakeAllIDs(3)
 				xtal.SpaceGroupID = StringFromList(idNum-1, allIDs)
 				printf "Setting Space Group from H-M = \"%s\"\r", HMsym
 			endif
@@ -4606,11 +5203,11 @@ Static Function CIF_interpret(xtal,buf,[desc])
 			xtal.SpaceGroupID = FindDefaultIDforSG(SG)		// try to get id from SG [1,230]
 		endif
 	endif
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))			// give up
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,3))		// give up
 		Abort "cannot find the Space Group from CIF file"
 	endif
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(xtal.SpaceGroupID, dim=3)
 	xtal.Pressure = CIF_readNumber("_cell_measurement_pressure",buf) 	// pressure (kPa) for cell parameters
 	xtal.Pressure *= 1000										 	// convert kPa --> Pa
 	xtal.Temperature = CIF_readNumber("_cell_measurement_temperature",buf)-273.15 	// temperature (K) for cell parameters
@@ -4743,7 +5340,7 @@ Static Function/T FindIDfromSymOps(symList)
 	endif
 
 	Variable idNum, N=ItemsInList(symList)
-	String str, allIDs=MakeAllIDs(), id
+	String str, allIDs=MakeAllIDs(3), id
 	for (idNum=1;idNum<=530;idNum+=1)
 		id = StringFromList(idNum-1, allIDs)
 		if (SymOpsMatchesID(id,symList))
@@ -4760,8 +5357,9 @@ Static Function SymOpsMatchesID(id,symList,[printIt])
 	String symList
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	Variable dim=3
 
-	String internal = setSymLineID(id)
+	String internal = setSymLineID(id,dim)
 	Variable i,N=ItemsInList(internal), NsymOps=ItemsInList(symList)
 	if (NsymOps != N)
 		return 0											// number of operations differ
@@ -4931,6 +5529,10 @@ Static Constant TRICLINIC=0,MONOCLINIC=1,ORTHORHOMBIC=2,TETRAGONAL=3,TRIGONAL=4,
 Static Constant P_CENTER=0,F_CENTER=1,B_CENTER=2,RHOMBOHEDRAL=3,C_CENTER=4,A_CENTER=5
 Static Constant FCC=225,BCC=229,DIA=227,SIMPLE_CUBIC=195,SAPPHIRE=167	// generic Space Group numbers
 Strconstant LatticeSystemNames="Triclinic;Monoclinic;Orthorhombic;Tetragonal;Trigonal;Hexagonal;Cubic"
+//Static Constant OBLIQUE=1,RECTANGULAR=2,RHOMBIC=3,SQUARE=4	// HEXAGONAL already defined
+Static Constant OBLIQUE=0,RECTANGULAR=1,RHOMBIC=2,SQUARE=3,HEXAGONAL2D=4
+Strconstant LatticeSystemNames2D="Oblique;Rectangular;Rhombic;Square;Hexagonal"
+
 
 
 Function/C getFstruct(h,k,l,[keV,T,printIt])	// user interface to getting F for current crystal structure
@@ -5041,15 +5643,20 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 	keV = ParamIsDefault(keV) || keV<0 ? NaN : keV
 	T_K = ParamIsDefault(T_K) ? NaN : max(0,T_K)
 
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	l = dim==2 ? 0 : l
 	String SpaceGroupID = xtal.SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID) || numtype(h+k+l))
+	if (!isValidSpaceGroupID(SpaceGroupID,dim) || numtype(h+k+l))
 		return cmplx(NaN,NaN)	// bad inputs
 	endif
 	Variable/C zero=cmplx(0,0)
-	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
-	Variable system = latticeSystem(SpaceGroupID)
 
-	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
+	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6 && (dim==3)
+	Variable system = latticeSystem(SpaceGroupID,dim)
+
+
+	if ((dim==3) && !(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed, skip this for dim=2
 		String sym = getHMsym2(xtal.SpaceGroupIDnum)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
@@ -5087,7 +5694,11 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		endif
 	endif
 
-	Make/N=3/D/FREE hkl={h,k,l}
+	if (dim==2)
+		Make/N=2/D/FREE hkl={h,k}
+	else
+		Make/N=3/D/FREE hkl={h,k,l}
+	endif
 	Variable Qmag = 2*PI/dSpacing(xtal,h,k,l)	// |Q| vector (nm)
 	if (numtype(xtal.atom[0].U11)==0)				// need Q-vector
 		Wave recip = recipFrom_xtal(xtal)			// get reicprocal lattice from xtal
@@ -5142,12 +5753,22 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 				fatomMag *= exp(-Qmag*Qmag*Uiso/2)				// B = (8*PI^2 U)
 			elseif (itemp>=4)
 				// qUq = q^t x U x q
-				Variable qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2 + (xtal.atom[m].U33)*qvec[2]^2
-				if (itemp==5)
-					qUq += 2*(xtal.atom[m].U23)*qvec[1]*qvec[2] + 2*(xtal.atom[m].U13)*qvec[2]*qvec[0] + 2*(xtal.atom[m].U12)*qvec[0]*qvec[1]
+				Variable qUq
+				if (dim==2)
+					qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2
+					if (itemp==5)
+						qUq += 2*(xtal.atom[m].U12)*qvec[0]*qvec[1]
+					endif
+					DW = numtype(qUq) && qUq>0 ? 1 : exp(-qUq/2)
+					fatomMag *= DW>0 ? DW : 1
+				else
+					qUq = (xtal.atom[m].U11)*qvec[0]^2 + (xtal.atom[m].U22)*qvec[1]^2 + (xtal.atom[m].U33)*qvec[2]^2
+					if (itemp==5)
+						qUq += 2*(xtal.atom[m].U23)*qvec[1]*qvec[2] + 2*(xtal.atom[m].U13)*qvec[2]*qvec[0] + 2*(xtal.atom[m].U12)*qvec[0]*qvec[1]
+					endif
+					DW = numtype(qUq) && qUq>0 ? 1 : exp(-qUq/2)
+					fatomMag *= DW>0 ? DW : 1
 				endif
-				DW = numtype(qUq) && qUq>0 ? 1 : exp(-qUq/2)
-				fatomMag *= DW>0 ? DW : 1
 			endif
 		endif
 		ifatomArg = cmplx(0,fatomArg)
@@ -5157,17 +5778,19 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 
 	Variable Fr, Fi
 #ifdef DO_HEXAGONAL_EXTRA
-	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
-		Variable arg = 2*PI*((h+2*k)/3 + l*0.5)	// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
-		Fr = 1. + cos(arg)
-		Fi = sin(arg)
-		Variable rr=real(Fc), ii=imag(Fc)
-		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
-		//  for hexagonal:
-		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3n±1,	l=even;		F = f			1/4
-		//	h+2k=3n,		l=odd; 		F = 0			0
+	if (dim==3)
+		if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
+			Variable arg = 2*PI*((h+2*k)/3 + l*0.5)	// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
+			Fr = 1. + cos(arg)
+			Fi = sin(arg)
+			Variable rr=real(Fc), ii=imag(Fc)
+			Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
+			//  for hexagonal:
+			//	h+2k=3n,		l=even;		F = 4*f			1
+			//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+			//	h+2k=3n±1,	l=even;		F = f			1/4
+			//	h+2k=3n,		l=odd; 		F = 0			0
+		endif
 	endif
 #endif
 
@@ -5315,6 +5938,8 @@ Function get_muOfXtal(keV, [printIt])					// returns mu of xtal (1/micron)
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
 		DoAlert 0, "ERROR get_muOfXtal()\rno lattice structure found"
 		return NaN
+	elseif (!(xtal.dim == 3))								// only 3D
+		return NaN
 	endif
 
 	if (numtype(keV) || keV<=0)
@@ -5344,6 +5969,8 @@ Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 	FUNCREF Get_f_proto fa = $"Get_f"	// if Get_f() does not exist, then cannot calc mu
 	if (numtype(keV) || keV<=0 || NumberByKey("ISPROTO",FuncRefInfo(fa)))
 		return NaN								// return NaN if no Cromer or invalid energy
+	elseif (!(xtal.dim == 3))				// only 3D
+		return NaN
 	endif
 	// f" = sigma / (2 * re * lambda)
 	// sigma = f" * (2 * re * lambda)
@@ -5399,7 +6026,16 @@ ThreadSafe Static Function Element_amu(Z)
 	return (str2num(StringFromList(Z-1,amuList)))
 End
 
+
 Function reMakeAtomXYZs(xtal)
+	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
+	if (xtal.dim == 2)
+		return reMakeAtomXYZs2D(xtal)
+	endif
+	return reMakeAtomXYZs3D(xtal)
+End
+//
+Static Function reMakeAtomXYZs3D(xtal)
 	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
 	if (Exists("root:Packages:Lattices:atom0")==1)
 		Wave ww = root:Packages:Lattices:atom0
@@ -5427,6 +6063,38 @@ Function reMakeAtomXYZs(xtal)
 	endfor
 	return 0
 End
+//
+Static Function reMakeAtomXYZs2D(xtal)
+	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
+	if (Exists("root:Packages:Lattices:atom0")==1)
+		Wave ww = root:Packages:Lattices:atom0
+		if (WaveExists(ww) && strlen(xtal.hashID))	// if first atom has correct hash, assume the rest are OK too
+			if (stringmatch(StringByKey("ID",note(ww),"="),xtal.hashID))
+				return 0									// waves have correct hash, so return
+			endif
+		endif
+	endif
+	if (strlen(xtal.hashID)<1)
+		xtal.hashID = xtalHashID(xtal)			// re-set hash function to identify associated waves
+	endif
+	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
+	Variable m
+	for (m=0;m<xtal.N;m+=1)						// loop over each atom type
+		name = "root:Packages:Lattices:atom"+num2istr(m)
+		Make/N=2/O/D $name
+		Wave ww = $name
+		positionsOfOneAtomType(xtal,xtal.atom[m].x,xtal.atom[m].y,NaN,ww)
+		wnote = ReplaceStringByKey("atomType",wnote,xtal.atom[m].name,"=")
+		wnote = ReplaceNumberByKey("Zatom",wnote,xtal.atom[m].Zatom,"=")
+		wnote = ReplaceNumberByKey("occupy",wnote,xtal.atom[m].occ,"=")
+		wnote = ReplaceNumberByKey("valence",wnote,xtal.atom[m].valence,"=")
+		Note/K ww, wnote
+	endfor
+	return 0
+End
+
+
+
 //Function testFstruct(h,k,l)
 //	Variable h,k,l
 //	STRUCT crystalStructure xtal				// this sruct is filled  by this routine
@@ -5446,7 +6114,9 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 	Wave xyzIN				// result, list of all equiv positions for this atom in fractional coords
 
 	String SpaceGroupID=xtal.SpaceGroupID
-	SetSymOpsForSpaceGroup(SpaceGroupID)		// ensure existance of symmetry op mats and vecs
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	SetSymOpsForSpaceGroup(SpaceGroupID,dim)	// ensure existance of symmetry op mats and vecs
 	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+xtal.SpaceGroupID,0))
 	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+xtal.SpaceGroupID,0))
 	if (!WaveExists(mats) || !WaveExists(bvecs))
@@ -5455,14 +6125,25 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 	Wave direct = directFrom_xtal(xtal)		// get direct lattice from xtal
 	Variable minDist2 = LatticeSym_minBondLen^2
 
-	Make/N=(3,3)/D/FREE mat
-	Make/N=3/D/FREE bv, in={xx,yy,zz}, vec
+	Make/N=(dim,dim)/D/FREE mat
+	if (dim==2)
+		Make/N=(dim)/D/FREE bv, in={xx,yy}, vec
+	else
+		Make/N=(dim)/D/FREE bv, in={xx,yy,zz}, vec
+	endif
 	Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
 
-	Make/N=(Neq,3)/D/FREE xyz=NaN				// internal copy of fractional coords
-	Make/N=(Neq,3)/D/FREE xyznm=NaN				// real positions (in nm), NOT fractional coords (in sync with xyz[][])
-	Variable N, i, isDup
-	Make/N=(8,3)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
+	Make/N=(Neq,dim)/D/FREE xyz=NaN				// internal copy of fractional coords
+	Make/N=(Neq,dim)/D/FREE xyznm=NaN			// real positions (in nm), NOT fractional coords (in sync with xyz[][])
+	Variable N, i, isDup, Ncorners
+	if (dim==2)
+		Ncorners = 4
+		Make/N=(Ncorners,dim)/D/FREE rr8, add8={ {0,1,0,1}, {0,0,1,1} }
+	else
+		Ncorners = 8
+		Make/N=(Ncorners,dim)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
+	endif
+
 	// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
 	for (m=0,N=0;m<Neq;m+=1)						// for each of the symmetry operations
 		mat = mats[m][p][q]
@@ -5475,7 +6156,7 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		if (Neq<2)
 			isDup = 0									// 1 symmetry op, there cannot be any duplicates (only for SG=1, triclinic)
 		else
-			for (i=0,isDup=0; i<8 && !isDup; i+=1)	// check all 8 of the add8's for duplicates
+			for (i=0,isDup=0; i<Ncorners && !isDup; i+=1)	// check all Ncorners of the add8's for duplicates
 				vec = vec8[i][p]
 				MatrixOP/FREE isDup0 = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
 				isDup = isDup || isDup0[0]
@@ -5493,7 +6174,8 @@ Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
 		MatrixOP/FREE xyz = ( Unconventional x (xyz^t) )^t
 	endif
 
-	Redimension/N=(N,3) xyzIN						// remove extra space (it is all filled with NaN's)
+//	Redimension/N=(N,3) xyzIN						// remove extra space (it is all filled with NaN's)
+	Redimension/N=(N,dim) xyzIN					// remove extra space (it is all filled with NaN's)
 	xyzIN = xyz[p][q]									// and, update xyzIN with correct values
 	return N
 End
@@ -5512,19 +6194,21 @@ End
 //	MultiThread testAllowed = allowedHKL(h[p],k[p],l[p],xtal, atomWaves=atomWaves)
 //
 ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, but can be multi-threaded
-	// returns True if phase factors do not reduce F to less than 1% of value when all atoms in phase
 	Variable h,k,l											// the hkl may be non-integers
 	STRUCT crystalStructure &xtal
 	Wave/WAVE atomWaves									// ONLY needed when calling this with MultiThread
 
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID) || numtype(h+k+l))
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	l = dim==2 ? 0 : l
+
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,3) || numtype(h+k+l))
 		return 0												// bad inputs (not allowed)
 	endif
 	Variable usingHexAxes = (abs(90-xtal.alpha)+abs(90-xtal.beta)+abs(120-xtal.gam))<1e-6
-	Variable system = latticeSystem(xtal.SpaceGroupID)
+	Variable system = latticeSystem(xtal.SpaceGroupID,3)
 
-	if (!(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed
-//		String sym = getHMsym(xtal.SpaceGroupIDnum)	// get symmetry symbol
+	if ((dim==3) && !(mod(h,1) || mod(k,1) || mod(l,1)))	// non-integral, always allowed, skip for dim=2
 		String sym = getHMsym2(xtal.SpaceGroupIDnum)	// get symmetry symbol
 		strswitch (sym[0,0])
 			case "F":
@@ -5562,18 +6246,21 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		endif
 	endif
 
-//	reMakeAtomXYZs(xtal)								// NOT ThreadSafe
 	if (xtal.N<1)
-		return 1											// No atom defined, but passed simple tests, it is allowed
+		return 1												// No atom defined, but passed simple tests, it is allowed
 	endif
 
 	Variable fatomMag, m, Fmax=0					// Fmax is F with no phase factor cancelations
 	Variable/C c2PI=cmplx(0,2*PI)
 	Variable/C Fc=cmplx(0,0)							// the result, complex structure factor
-	Make/N=3/D/FREE hkl={h,k,l}
+	if (dim==2)
+		Make/N=2/D/FREE hkl={h,k}
+	else
+		Make/N=3/D/FREE hkl={h,k,l}
+	endif
 	for (m=0;m<xtal.N;m+=1)							// loop over the defined atoms
 		if (WaveExists(atomWaves))
-			Wave ww = atomWaves[m]					// needed when running in a separate thread
+			Wave ww = atomWaves[m]						// needed when running in a separate thread
 		else
 			Wave ww = $("root:Packages:Lattices:atom"+num2istr(m))	// not available from a separate thread
 		endif
@@ -5589,6 +6276,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 	endfor
 
 #ifdef DO_HEXAGONAL_EXTRA
+	if (dim==3)
 	if (system==HEXAGONAL || (usingHexAxes && system==TRIGONAL))
 		Variable arg, Fr, Fi
 		arg = 2*PI*((h+2*k)/3 + l*0.5)				// hexagonal has atoms at (0,0,0) and (1/3, 2/3, 1/2)
@@ -5601,6 +6289,7 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
 		//	h+2k=3n±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
+	endif
 	endif
 #endif
 
@@ -5684,6 +6373,9 @@ End
 ThreadSafe Function/S MakeSymmetryOps(xtal)			// make a wave with the symmetry operation
 	STRUCT crystalStructure &xtal
 
+	if (!(xtal.dim ==3))
+		return ""
+	endif
 	String SG = num2istr(xtal.SpaceGroup), wName
 	wName = ReplaceString(":",xtal.SpaceGroupID,"_")	// cannot use CleanUpName() here, not ThreadSafe
 	wName = "root:Packages:Lattices:SymOps:equivXYZM"+ReplaceString("-",wName,"_")
@@ -5762,7 +6454,7 @@ End
 //
 //	Variable SpaceGroup, err
 //	for (SpaceGroup=1; SpaceGroup<=230 && !err; SpaceGroup+=1)
-//		LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup)
+//		LatticeSym#SetSymOpsForSpaceGroup(SpaceGroup,3)
 //		err = testOneSymmetryOp(SpaceGroup)
 //		Wave Mwave = $("root:Packages:Lattices:SymOps:equivXYZM"+num2istr(SpaceGroup))
 //		NtestAll[SpaceGroup-1][0] = DimSize(Mwave,0)
@@ -5825,13 +6517,14 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
+	Variable dim=3
 	STRUCT crystalStructure xtal
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
 		if (FillCrystalStructDefault(xtal))
 			return ""
 		endif
 		SpaceGroupID = xtal.SpaceGroupID
-		String allIDs=MakeAllIDs()
+		String allIDs=MakeAllIDs(xtal.dim)
 		Prompt SpaceGroupID, "Space Group ID",popup,allIDs
 		DoPrompt "Space Group", SpaceGroupID
 		if (V_flag)
@@ -5839,10 +6532,13 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 		endif
 		printIt = 1
 	endif
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
 		if (printIt)
 			printf "ERROR -- the SpaceGroupID = \"%s\" is invalid\r",SpaceGroupID
 		endif
+		return ""
+	endif
+	if (!(xtal.dim == dim))
 		return ""
 	endif
 	if (!StringMatch(xtal.SpaceGroupID,SpaceGroupID))
@@ -5861,21 +6557,21 @@ Function/T DescribeSymOps(SpaceGroupID, [printIt])	// prints description of symm
 	MatrixOp/FREE Adots = Abs((DL^t) x DL)
 	Variable orthogonal = (Adots[0][1]+Adots[0][2]+Adots[1][2]) < 1e-12
 
-	String AllSymOps=setSymLineID(SpaceGroupID)
+	String AllSymOps=setSymLineID(SpaceGroupID, dim)
 	String symOp, str, out=""
-	Make/N=(3,3)/D/FREE mat3
-	Make/N=3/D/FREE vec
+	Make/N=(dim,dim)/D/FREE mat3
+	Make/N=(dim)/D/FREE vec
 	Variable Nops=ItemsInList(AllSymOps), i, Nproper=0, Nimproper=0, invert, determinanat
 	if (printIt)
-		String system = StringFromList(latticeSystem(SpaceGroupID),LatticeSystemNames)
-		Variable idNum = SpaceGroupID2num(SpaceGroupID)
+		String system = StringFromList(latticeSystem(SpaceGroupID,dim),LatticeSystemNames)
+		Variable idNum = SpaceGroupID2num(SpaceGroupID, dim=dim)
 		printf "For Space Group \"%s\"  (%s) %s,  there are %g symmetry operations\r",SpaceGroupID,system,getHMsym2(idNum),Nops
 	endif
 	for (i=0;i<Nops;i+=1)
 		symOp = StringFromList(i,AllSymOps)
-		Wave mat4 = MatrixFromSymLine(symOp, 4, zeroBad=0)		// mat4 is (3,4)
+		Wave mat4 = MatrixFromSymLine(symOp, 4, zeroBad=0)		// mat4 is (dim, dim+1) = (3,4)
 		mat3 = mat4[p][q]
-		vec = mat4[p][3]
+		vec = mat4[p][dim]
 		determinanat = MatrixDet(mat3)
 		if (!orthogonal)
 			MatrixOp/O/FREE mat3 = DL x mat3 x DLI	// convert to cartesian, similarity transform
@@ -6177,13 +6873,13 @@ End
 //			endif
 //	
 //			Variable useWave=0, useXtal=0
-//			if (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID) && StringMatch(xtal.SpaceGroupID,id))
+//			if (isValidSpaceGroupID(id,3) && isValidSpaceGroupID(xtal.SpaceGroupID,3) && StringMatch(xtal.SpaceGroupID,id))
 //				useWave = 1
-//			elseif (isValidSpaceGroupID(id) && !isValidSpaceGroupID(xtal.SpaceGroupID))		// use wave
+//			elseif (isValidSpaceGroupID(id.3) && !isValidSpaceGroupID(xtal.SpaceGroupID,3))		// use wave
 //				useWave = 1
-//			elseif (!isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// use xtal
+//			elseif (!isValidSpaceGroupID(id,3) && isValidSpaceGroupID(xtal.SpaceGroupID,3))		// use xtal
 //				useXtal = 1
-//			elseif (isValidSpaceGroupID(id) && isValidSpaceGroupID(xtal.SpaceGroupID))		// ask
+//			elseif (isValidSpaceGroupID(id,3) && isValidSpaceGroupID(xtal.SpaceGroupID,3))		// ask
 //				DoAlert 2, "SymmetryOpsPath and Lattice Panel Disagree,\r  Remake SymmetryOps"+num2istr(SGw)+" to match Panel?"
 //				if (V_flag>2)
 //					return ""
@@ -6208,7 +6904,7 @@ End
 //			return ""
 //		endif
 //		if (printIt)
-//			String system = StringFromList(latticeSystem(SpaceGroupID),LatticeSystemNames)
+//			String system = StringFromList(latticeSystem(SpaceGroupID,3),LatticeSystemNames)
 //			Variable idNum = SpaceGroupID2num(SpaceGroupID)
 //			printf "For Space Group %s  (%s) %s,  %g proper rotations\r",SpaceGroupID,system,getHMsym2(idNum),Nproper
 //		endif
@@ -6259,60 +6955,78 @@ End
 //	End
 
 
-ThreadSafe Static Function isValidSpaceGroup(SG)			// returns TRUE if SG is an int in range [1,230]
+ThreadSafe Static Function isValidSpaceGroup(SG,dim)			// returns TRUE if SG is an int in range [1,230]
 	Variable SG
+	Variable dim			// only 2 or 3
+	if (dim==2)
+		return ( SG == limit(round(SG), 1, 17) )
+	endif
 	return ( SG == limit(round(SG), 1, 230) )
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupID(id)			// returns TRUE if id is valid
+ThreadSafe Static Function isValidSpaceGroupID(id, dim)	// returns TRUE if id is valid
 	String id																// a space group id, e.g. "15" or "15:-b2"
-	String allIDs=MakeAllIDs()
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	String allIDs=MakeAllIDs(dim)
 	return WhichListItem(id,allIDs,";",0,0)>=0
 End
 
 
-ThreadSafe Static Function isValidSpaceGroupIDnum(idNum)	// returns TRUE if SG is an int in range [1,530]
+ThreadSafe Static Function isValidSpaceGroupIDnum(idNum, dim)	// returns TRUE if SG is an int in range [1,530]
 	Variable idNum
-	return ( idNum == limit(round(idNum), 1, 530) )
+	Variable dim				// must be either 2 or 3
+	Variable iMax = dim==2 ? 17 : 530
+	return ( idNum == limit(round(idNum), 1, iMax) )
 End
 
 
-Function SpaceGroupID2num(id)
+Function SpaceGroupID2num(id, [dim])
 	String id									// a space group id, e.g. "15" or "15:-b2"
+	Variable dim								// only 2 or 3
+	dim = dim==2 ? 2 : 3
 
-	String allIDs=MakeAllIDs()
+	String allIDs=MakeAllIDs(dim)
 	Variable idNum = 1+WhichListItem(id,allIDs,";",0,0)
-	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum,dim) ? idNum : NaN
 	if (numtype(idNum))
-		idNum = FindDefaultIDnumForSG(round(str2num(id)))
+		idNum = FindDefaultIDnumForSG(round(str2num(id)), dim=dim)
 	endif
-	idNum = isValidSpaceGroupIDnum(idNum) ? idNum : NaN
+	idNum = isValidSpaceGroupIDnum(idNum,dim) ? idNum : NaN
 	return idNum
 End
 
 
-Function/T IDnum2SpaceGroupID(idNum)
+Function/T IDnum2SpaceGroupID(idNum, [dim])
 	Variable idNum								// a SpaceGroup id num should be in [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
+	Variable dim								// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupIDnum(idNum,dim))
 		return ""
 	endif
-	String allIDs=LatticeSym#MakeAllIDs()
+	String allIDs=MakeAllIDs(dim)
 	String SpaceGroupID = StringFromList(idNum-1,allIDs)
 	return SpaceGroupID
 End
 
 
 
-ThreadSafe Static Function/T FindDefaultIDforSG(SG)
+ThreadSafe Static Function/T FindDefaultIDforSG(SG, [dim])
 	Variable SG								// space group number [1,230]
-	if (!isValidSpaceGroup(SG))		// invalid
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroup(SG,dim))	// invalid
 		return ""
+	endif
+
+	if (dim == 2)
+		return num2istr(SG)				// 2D is easy
 	endif
 
 	// find first space group starting with "SG:"
 	string str=num2istr(SG)+":*", str2=num2istr(SG)
-	String allIDs=MakeAllIDs(), id
+	String allIDs=MakeAllIDs(dim), id
 	Variable i
 	for (i=0;i<ItemsInList(allIDs);i+=1)
 		id = StringFromList(i,allIDs)
@@ -6324,16 +7038,21 @@ ThreadSafe Static Function/T FindDefaultIDforSG(SG)
 End
 
 
-ThreadSafe Static Function FindDefaultIDnumForSG(SG)
+ThreadSafe Static Function FindDefaultIDnumForSG(SG, [dim])
 	// look for exatly "SG", or the first occurance of "SG:"
 	Variable SG					// space group number [1,230]
-	if (!isValidSpaceGroup(SG))		// invalid
+	Variable dim				// only 2 or 3
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroup(SG,dim))	// invalid
 		return NaN
+	endif
+	if (dim == 2)
+		return SG							// 2D is easy
 	endif
 
 	// find first space group starting with "id:"
 	string str=num2istr(SG)+":*", str2=num2istr(SG)
-	String allIDs=MakeAllIDs(), id
+	String allIDs=MakeAllIDs(dim), id
 	Variable i
 	for (i=0;i<ItemsInList(allIDs);i+=1)
 		id = StringFromList(i,allIDs)
@@ -6347,7 +7066,8 @@ End
 
 
 
-ThreadSafe Static Function/T MakeAllIDs()
+ThreadSafe Static Function/T MakeAllIDs(dim)
+	Variable dim				// must be only 2 or 3
 	// Returns the list with all of the 530 Space Group types.
 	//	In the 230 SpaceGroups, there are:
 	//	  140 Space Groups of   1 types
@@ -6358,6 +7078,10 @@ ThreadSafe Static Function/T MakeAllIDs()
 	//	    1 Space Groups of  12 types
 	//	    2 Space Groups of  18 types
 	// for the full list, use  NumbersOfTypes(), which is shown below.
+
+	if (dim==2)
+		return "1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17"
+	endif
 
 	String allIDs = "1;2;3:b;3:c;3:a;4:b;4:c;4:a;5:b1;5:b2;5:b3;5:c1;5:c2;5:c3;5:a1;5:a2;"
 	allIDs += "5:a3;6:b;6:c;6:a;7:b1;7:b2;7:b3;7:c1;7:c2;7:c3;7:a1;7:a2;7:a3;8:b1;8:b2;8:b3;"
@@ -6402,7 +7126,7 @@ ThreadSafe Static Function/T MakeAllIDs()
 End
 //
 //	Function NumbersOfTypes()
-//		String allIDs = LatticeSym#MakeAllIDs()
+//		String allIDs = LatticeSym#MakeAllIDs(3)
 //		Make/N=230/I/O types=0
 //		SetScale/P x 1,1,"SpaceGroup", types
 //		Variable i,m
@@ -6467,11 +7191,13 @@ End
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
 
 
-ThreadSafe Function/S getHMboth(SpaceGroupIDnum)	// returns short and (full) Hermann-Mauguin symbol
+ThreadSafe Function/S getHMboth(SpaceGroupIDnum, [dim])	// returns short and (full) Hermann-Mauguin symbol
 	Variable SpaceGroupIDnum								//Space Group number, from International Tables
+	Variable dim												// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
 
-	String short = getHMsym(SpaceGroupIDnum)
-	String full = getHMsym2(SpaceGroupIDnum)
+	String short = getHMsym(SpaceGroupIDnum, dim=dim)
+	String full = getHMsym2(SpaceGroupIDnum, dim=dim)
 	if (StringMatch(short,full))
 		return short
 	else
@@ -6482,73 +7208,86 @@ End
 
 //	see:		https://en.wikipedia.org/wiki/HermannÐMauguin_notation
 //		or:	https://bruceravel.github.io/demeter/artug/atoms/space.html#decodingthehermann-maguinnotation
-ThreadSafe Function/T getHMsym(idNum)		// returns short Hermann-Mauguin symbol
-	Variable idNum									// index into the SpaceGroup IDs [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
-		return ""									// invalid SpaceGroup ID number
+ThreadSafe Function/T getHMsym(idNum, [dim])	// returns short Hermann-Mauguin symbol
+	Variable idNum											// index into the SpaceGroup IDs [1,530]
+	Variable dim											// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
+	if (!isValidSpaceGroupIDnum(idNum, dim))
+		return ""											// invalid SpaceGroup ID number
 	endif
 
-	String HM1=""									// there are 530 items in this list
-	HM1  = "P1;P-1;P2:b;P2:c;P2:a;P21:b;P21:c;P21:a;C2:b1;C2:b2;C2:b3;C2:c1;C2:c2;C2:c3;C2:a1;C2:a2;C2:a3;Pm:b;Pm:c;Pm:a;Pc:b1;Pc:b2;Pc:b3;"
-	HM1 += "Pc:c1;Pc:c2;Pc:c3;Pc:a1;Pc:a2;Pc:a3;Cm:b1;Cm:b2;Cm:b3;Cm:c1;Cm:c2;Cm:c3;Cm:a1;Cm:a2;Cm:a3;Cc:b1;Cc:b2;Cc:b3;Cc:-b1;Cc:-b2;Cc:-b3;"
-	HM1 += "Cc:c1;Cc:c2;Cc:c3;Cc:-c1;Cc:-c2;Cc:-c3;Cc:a1;Cc:a2;Cc:a3;Cc:-a1;Cc:-a2;Cc:-a3;P2/m:b;P2/m:c;P2/m:a;P21/m:b;P21/m:c;P21/m:a;C2/m:b1;"
-	HM1 += "C2/m:b2;C2/m:b3;C2/m:c1;C2/m:c2;C2/m:c3;C2/m:a1;C2/m:a2;C2/m:a3;P2/c:b1;P2/c:b2;P2/c:b3;P2/c:c1;P2/c:c2;P2/c:c3;P2/c:a1;P2/c:a2;"
-	HM1 += "P2/c:a3;P21/c:b1;P21/c:b2;P21/c:b3;P21/c:c1;P21/c:c2;P21/c:c3;P21/c:a1;P21/c:a2;P21/c:a3;C2/c:b1;C2/c:b2;C2/c:b3;C2/c:-b1;C2/c:-b2;"
-	HM1 += "C2/c:-b3;C2/c:c1;C2/c:c2;C2/c:c3;C2/c:-c1;C2/c:-c2;C2/c:-c3;C2/c:a1;C2/c:a2;C2/c:a3;C2/c:-a1;C2/c:-a2;C2/c:-a3;P222;P2221;P2122;"
-	HM1 += "P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;Pcm21;P21ma;P21am;Pb21m;"
-	HM1 += "Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;Pb2n;Pn2b;Pmn21;Pnm21;"
-	HM1 += "P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;Cmc21;Ccm21;A21ma;A21am;"
-	HM1 += "Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;Cc2m;Am2a;Aba2;Bba2;"
-	HM1 += "B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;Pmmm;Pnnn:1;Pnnn:2;"
-	HM1 += "Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;Pnan;Pmna;Pnmb;"
-	HM1 += "Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;Pmnn;Pnmn;"
-	HM1 += "Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;Ccmm;Amma;"
-	HM1 += "Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;Cccb:1;"
-	HM1 += "Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;Ibmm;"
-	HM1 += "Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;P41212;"
-	HM1 += "P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;P-421c;"
-	HM1 += "P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;P4/nmm:2;"
-	HM1 += "P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;P42/ncm:2;"
-	HM1 += "I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;P3221;R32:H;"
-	HM1 += "R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;P64;P63;P-6;"
-	HM1 += "P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;P63/mmc;P23;F23;"
-	HM1 += "I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;P-43m;F-43m;I-43m;"
-	HM1 += "P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;Ia-3d;"
+	String HM1=""											// there are 530 or 17 items in this list
+	if (dim==2)
+		HM1 = "p1;p2;pm;pg;cm;pmm;pmg;pgg;cmm;p4;p4m;p4g;p3;p3m1;p31m;p6;p6m"
+	else
+		HM1  = "P1;P-1;P2:b;P2:c;P2:a;P21:b;P21:c;P21:a;C2:b1;C2:b2;C2:b3;C2:c1;C2:c2;C2:c3;C2:a1;C2:a2;C2:a3;Pm:b;Pm:c;Pm:a;Pc:b1;Pc:b2;Pc:b3;"
+		HM1 += "Pc:c1;Pc:c2;Pc:c3;Pc:a1;Pc:a2;Pc:a3;Cm:b1;Cm:b2;Cm:b3;Cm:c1;Cm:c2;Cm:c3;Cm:a1;Cm:a2;Cm:a3;Cc:b1;Cc:b2;Cc:b3;Cc:-b1;Cc:-b2;Cc:-b3;"
+		HM1 += "Cc:c1;Cc:c2;Cc:c3;Cc:-c1;Cc:-c2;Cc:-c3;Cc:a1;Cc:a2;Cc:a3;Cc:-a1;Cc:-a2;Cc:-a3;P2/m:b;P2/m:c;P2/m:a;P21/m:b;P21/m:c;P21/m:a;C2/m:b1;"
+		HM1 += "C2/m:b2;C2/m:b3;C2/m:c1;C2/m:c2;C2/m:c3;C2/m:a1;C2/m:a2;C2/m:a3;P2/c:b1;P2/c:b2;P2/c:b3;P2/c:c1;P2/c:c2;P2/c:c3;P2/c:a1;P2/c:a2;"
+		HM1 += "P2/c:a3;P21/c:b1;P21/c:b2;P21/c:b3;P21/c:c1;P21/c:c2;P21/c:c3;P21/c:a1;P21/c:a2;P21/c:a3;C2/c:b1;C2/c:b2;C2/c:b3;C2/c:-b1;C2/c:-b2;"
+		HM1 += "C2/c:-b3;C2/c:c1;C2/c:c2;C2/c:c3;C2/c:-c1;C2/c:-c2;C2/c:-c3;C2/c:a1;C2/c:a2;C2/c:a3;C2/c:-a1;C2/c:-a2;C2/c:-a3;P222;P2221;P2122;"
+		HM1 += "P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;Pcm21;P21ma;P21am;Pb21m;"
+		HM1 += "Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;Pb2n;Pn2b;Pmn21;Pnm21;"
+		HM1 += "P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;Cmc21;Ccm21;A21ma;A21am;"
+		HM1 += "Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;Cc2m;Am2a;Aba2;Bba2;"
+		HM1 += "B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;Pmmm;Pnnn:1;Pnnn:2;"
+		HM1 += "Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;Pnan;Pmna;Pnmb;"
+		HM1 += "Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;Pmnn;Pnmn;"
+		HM1 += "Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;Ccmm;Amma;"
+		HM1 += "Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;Cccb:1;"
+		HM1 += "Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;Ibmm;"
+		HM1 += "Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;P41212;"
+		HM1 += "P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;P-421c;"
+		HM1 += "P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;P4/nmm:2;"
+		HM1 += "P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;P42/ncm:2;"
+		HM1 += "I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;P3221;R32:H;"
+		HM1 += "R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;P64;P63;P-6;"
+		HM1 += "P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;P63/mmc;P23;F23;"
+		HM1 += "I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;P-43m;F-43m;I-43m;"
+		HM1 += "P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;Ia-3d;"
+	endif
 	return StringFromList(idNum-1,HM1)
 End
 
-ThreadSafe Function/T getHMsym2(idNum)	// returns longer Hermann-Mauguin symbol
-	Variable idNum									// index into the SpaceGroup IDs [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
-		return ""									// invalid SpaceGroup ID number
+ThreadSafe Function/T getHMsym2(idNum, [dim])	// returns longer Hermann-Mauguin symbol
+	Variable idNum											// index into the SpaceGroup IDs [1,530]
+	Variable dim											// must be only 2 or 3
+
+	if (!isValidSpaceGroupIDnum(idNum,dim))
+		return ""											// invalid SpaceGroup ID number
 	endif
 
-	String HM2=""									// there are 530 items in this list
-	HM2  = "P1;P-1;P121;P112;P211;P1211;P1121;P2111;C121;A121;I121;A112;B112;I112;B211;C211;I211;P1m1;P11m;Pm11;P1c1;P1n1;P1a1;P11a;P11n;P11b;"
-	HM2 += "Pb11;Pn11;Pc11;C1m1;A1m1;I1m1;A11m;B11m;I11m;Bm11;Cm11;Im11;C1c1;A1n1;I1a1;A1a1;C1n1;I1c1;A11a;B11n;I11b;B11b;A11n;I11a;Bb11;Cn11;"
-	HM2 += "Ic11;Cc11;Bn11;Ib11;P12/m1;P112/m;P2/m11;P121/m1;P1121/m;P21/m11;C12/m1;A12/m1;I12/m1;A112/m;B112/m;I112/m;B2/m11;C2/m11;I2/m11;"
-	HM2 += "P12/c1;P12/n1;P12/a1;P112/a;P112/n;P112/b;P2/b11;P2/n11;P2/c11;P121/c1;P121/n1;P121/a1;P1121/a;P1121/n;P1121/b;P21/b11;P21/n11;"
-	HM2 += "P21/c11;C12/c1;A12/n1;I12/a1;A12/a1;C12/n1;I12/c1;A112/a;B112/n;I112/b;B112/b;A112/n;I112/a;B2/b11;C2/n11;I2/c11;C2/c11;B2/n11;"
-	HM2 += "I2/b11;P222;P2221;P2122;P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;"
-	HM2 += "Pcm21;P21ma;P21am;Pb21m;Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;"
-	HM2 += "Pb2n;Pn2b;Pmn21;Pnm21;P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;"
-	HM2 += "Cmc21;Ccm21;A21ma;A21am;Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;"
-	HM2 += "Cc2m;Am2a;Aba2;Bba2;B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;"
-	HM2 += "Pmmm;Pnnn:1;Pnnn:2;Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;"
-	HM2 += "Pnan;Pmna;Pnmb;Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;"
-	HM2 += "Pmnn;Pnmn;Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;"
-	HM2 += "Ccmm;Amma;Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;"
-	HM2 += "Cccb:1;Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;"
-	HM2 += "Ibmm;Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;"
-	HM2 += "P41212;P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
-	HM2 += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;"
-	HM2 += "P4/nmm:2;P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;"
-	HM2 += "P42/ncm:2;I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;"
-	HM2 += "P3221;R32:H;R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;"
-	HM2 += "P64;P63;P-6;P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
-	HM2 += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;"
-	HM2 += "P-43m;F-43m;I-43m;P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;"
-	HM2 += "Ia-3d;"
+	String HM2=""											// there are 530 or 17 items in this list
+	if (dim==2)
+		HM2 = "p1;p2;p1m1;p1g1;c1m1;p2mm;p2mg;p2gg;c2mm;p4;p4mm;p4gm;p3;p3m1;p31m;p6;p6mm"
+	else
+		HM2  = "P1;P-1;P121;P112;P211;P1211;P1121;P2111;C121;A121;I121;A112;B112;I112;B211;C211;I211;P1m1;P11m;Pm11;P1c1;P1n1;P1a1;P11a;P11n;P11b;"
+		HM2 += "Pb11;Pn11;Pc11;C1m1;A1m1;I1m1;A11m;B11m;I11m;Bm11;Cm11;Im11;C1c1;A1n1;I1a1;A1a1;C1n1;I1c1;A11a;B11n;I11b;B11b;A11n;I11a;Bb11;Cn11;"
+		HM2 += "Ic11;Cc11;Bn11;Ib11;P12/m1;P112/m;P2/m11;P121/m1;P1121/m;P21/m11;C12/m1;A12/m1;I12/m1;A112/m;B112/m;I112/m;B2/m11;C2/m11;I2/m11;"
+		HM2 += "P12/c1;P12/n1;P12/a1;P112/a;P112/n;P112/b;P2/b11;P2/n11;P2/c11;P121/c1;P121/n1;P121/a1;P1121/a;P1121/n;P1121/b;P21/b11;P21/n11;"
+		HM2 += "P21/c11;C12/c1;A12/n1;I12/a1;A12/a1;C12/n1;I12/c1;A112/a;B112/n;I112/b;B112/b;A112/n;I112/a;B2/b11;C2/n11;I2/c11;C2/c11;B2/n11;"
+		HM2 += "I2/b11;P222;P2221;P2122;P2212;P21212;P22121;P21221;P212121;C2221;A2122;B2212;C222;A222;B222;F222;I222;I212121;Pmm2;P2mm;Pm2m;Pmc21;"
+		HM2 += "Pcm21;P21ma;P21am;Pb21m;Pm21b;Pcc2;P2aa;Pb2b;Pma2;Pbm2;P2mb;P2cm;Pc2m;Pm2a;Pca21;Pbc21;P21ab;P21ca;Pc21b;Pb21a;Pnc2;Pcn2;P2na;P2an;"
+		HM2 += "Pb2n;Pn2b;Pmn21;Pnm21;P21mn;P21nm;Pn21m;Pm21n;Pba2;P2cb;Pc2a;Pna21;Pbn21;P21nb;P21cn;Pc21n;Pn21a;Pnn2;P2nn;Pn2n;Cmm2;A2mm;Bm2m;"
+		HM2 += "Cmc21;Ccm21;A21ma;A21am;Bb21m;Bm21b;Ccc2;A2aa;Bb2b;Amm2;Bmm2;B2mm;C2mm;Cm2m;Am2m;Abm2;Bma2;B2cm;C2mb;Cm2a;Ac2m;Ama2;Bbm2;B2mb;C2cm;"
+		HM2 += "Cc2m;Am2a;Aba2;Bba2;B2cb;C2cb;Cc2a;Ac2a;Fmm2;F2mm;Fm2m;Fdd2;F2dd;Fd2d;Imm2;I2mm;Im2m;Iba2;I2cb;Ic2a;Ima2;Ibm2;I2mb;I2cm;Ic2m;Im2a;"
+		HM2 += "Pmmm;Pnnn:1;Pnnn:2;Pccm;Pmaa;Pbmb;Pban:1;Pban:2;Pncb:1;Pncb:2;Pcna:1;Pcna:2;Pmma;Pmmb;Pbmm;Pcmm;Pmcm;Pmam;Pnna;Pnnb;Pbnn;Pcnn;Pncn;"
+		HM2 += "Pnan;Pmna;Pnmb;Pbmn;Pcnm;Pncm;Pman;Pcca;Pccb;Pbaa;Pcaa;Pbcb;Pbab;Pbam;Pmcb;Pcma;Pccn;Pnaa;Pbnb;Pbcm;Pcam;Pmca;Pmab;Pbma;Pcmb;Pnnm;"
+		HM2 += "Pmnn;Pnmn;Pmmn:1;Pmmn:2;Pnmm:1;Pnmm:2;Pmnm:1;Pmnm:2;Pbcn;Pcan;Pnca;Pnab;Pbna;Pcnb;Pbca;Pcab;Pnma;Pmnb;Pbnm;Pcmn;Pmcn;Pnam;Cmcm;"
+		HM2 += "Ccmm;Amma;Amam;Bbmm;Bmmb;Cmca;Ccmb;Abma;Acam;Bbcm;Bmab;Cmmm;Ammm;Bmmm;Cccm;Amaa;Bbmb;Cmma;Cmmb;Abmm;Acmm;Bmcm;Bmam;Ccca:1;Ccca:2;"
+		HM2 += "Cccb:1;Cccb:2;Abaa:1;Abaa:2;Acaa:1;Acaa:2;Bbcb:1;Bbcb:2;Bbab:1;Bbab:2;Fmmm;Fddd:1;Fddd:2;Immm;Ibam;Imcb;Icma;Ibca;Icab;Imma;Immb;"
+		HM2 += "Ibmm;Icmm;Imcm;Imam;P4;P41;P42;P43;I4;I41;P-4;I-4;P4/m;P42/m;P4/n:1;P4/n:2;P42/n:1;P42/n:2;I4/m;I41/a:1;I41/a:2;P422;P4212;P4122;"
+		HM2 += "P41212;P4222;P42212;P4322;P43212;I422;I4122;P4mm;P4bm;P42cm;P42nm;P4cc;P4nc;P42mc;P42bc;I4mm;I4cm;I41md;I41cd;P-42m;P-42c;P-421m;"
+		HM2 += "P-421c;P-4m2;P-4c2;P-4b2;P-4n2;I-4m2;I-4c2;I-42m;I-42d;P4/mmm;P4/mcc;P4/nbm:1;P4/nbm:2;P4/nnc:1;P4/nnc:2;P4/mbm;P4/mnc;P4/nmm:1;"
+		HM2 += "P4/nmm:2;P4/ncc:1;P4/ncc:2;P42/mmc;P42/mcm;P42/nbc:1;P42/nbc:2;P42/nnm:1;P42/nnm:2;P42/mbc;P42/mnm;P42/nmc:1;P42/nmc:2;P42/ncm:1;"
+		HM2 += "P42/ncm:2;I4/mmm;I4/mcm;I41/amd:1;I41/amd:2;I41/acd:1;I41/acd:2;P3;P31;P32;R3:H;R3:R;P-3;R-3:H;R-3:R;P312;P321;P3112;P3121;P3212;"
+		HM2 += "P3221;R32:H;R32:R;P3m1;P31m;P3c1;P31c;R3m:H;R3m:R;R3c:H;R3c:R;P-31m;P-31c;P-3m1;P-3c1;R-3m:H;R-3m:R;R-3c:H;R-3c:R;P6;P61;P65;P62;"
+		HM2 += "P64;P63;P-6;P6/m;P63/m;P622;P6122;P6522;P6222;P6422;P6322;P6mm;P6cc;P63cm;P63mc;P-6m2;P-6c2;P-62m;P-62c;P6/mmm;P6/mcc;P63/mcm;"
+		HM2 += "P63/mmc;P23;F23;I23;P213;I213;Pm-3;Pn-3:1;Pn-3:2;Fm-3;Fd-3:1;Fd-3:2;Im-3;Pa-3;Ia-3;P432;P4232;F432;F4132;I432;P4332;P4132;I4132;"
+		HM2 += "P-43m;F-43m;I-43m;P-43n;F-43c;I-43d;Pm-3m;Pn-3n:1;Pn-3n:2;Pm-3n;Pn-3m:1;Pn-3m:2;Fm-3m;Fm-3c;Fd-3m:1;Fd-3m:2;Fd-3c:1;Fd-3c:2;Im-3m;"
+		HM2 += "Ia-3d;"
+	endif
 	return StringFromList(idNum-1,HM2)
 End
 
@@ -6594,10 +7333,15 @@ End
 //End
 
 
-ThreadSafe Function/S getHallSymbol(idNum)
+ThreadSafe Function/S getHallSymbol(idNum, [dim])
 	Variable idNum									// index into the SpaceGroup IDs [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
+	Variable dim									// only 2 or 3
+	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""									// invalid SpaceGroup ID number
+	endif
+
+	if (dim==2)
+		return ""									// no Hall Symbols in 2D
 	endif
 
 	String Hall=""									// there are 530 items in this list
@@ -6691,10 +7435,30 @@ End
 //End
 
 
-ThreadSafe Static Function latticeSystem(SpaceGroupID)
+ThreadSafe Static Function latticeSystem(SpaceGroupID, dim)
 	String SpaceGroupID
+	Variable dim						// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
 
 	Variable SG=str2num(SpaceGroupID)	//Space Group number, from International Tables [1,230]
+	if (dim==2)
+		if (SG>17)
+			return -1				  	// invalid
+		elseif (SG>=13)				// Hexagonal, a [13 17]
+			return HEXAGONAL2D
+		elseif (SG>=10)				// Square, a [10,12]
+			return SQUARE
+		elseif (SG==5 || SG==9)	// Rhombic, a, alpha {5,9}
+			return RHOMBIC
+		elseif (SG>=3)					// Rectangular, a,b {3,4,6,7,8}
+			return RECTANGULAR
+		elseif (SG>0)					// Oblique, a, b, alpha {1,2}
+			return OBLIQUE
+		endif
+		return -1						// invalid
+	endif
+
+	// for dim==3
 	if (SG>230)
 		return -1					  	// invalid
 	elseif (SG>=195)
@@ -6716,17 +7480,20 @@ ThreadSafe Static Function latticeSystem(SpaceGroupID)
 End
 
 
-Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number from the symmetry string
+Function/S symmtry2SG(strIN,[types,id,dim,printIt])	// find the Space Group number from the symmetry string
 	String strIN
 	Variable types						// -1=Check All, 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=SpaceGroupID, 32=Ignore Minuses
 	Variable id							// if true, convert idNumbers to id's
+	Variable dim						// must be 2 or 3
 	Variable printIt
 	types = ParamIsDefault(types) ? -1 : round(types)
 	id = ParamIsDefault(id) || numtype(id) ? 0 : id
+	dim = dim==2 ? 2 : 3
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
 
 	if (strlen(strIN)<1 || numtype(types))
 		Prompt strIN, "Symmetry Symbol or Space Group Number, (e.g. \"Pmm*\"), wild cards allowed"
+		Prompt dim, "Lattice Dimension", popup, "2;3"
 		Variable t1=!(!(types&1))+1, t2=!(!(types&2))+1, t4=!(!(types&4))+1, t8=!(!(types&8))+1, t16=!(!(types&16))+1, t32=!(!(types&32))+1
 		Prompt t1, "Hermann-Mauguin", popup "-;Hermann-Mauguin"
 		Prompt t2, "Full Hermann-Mauguin", popup "-;Full Hermann-Mauguin"
@@ -6734,7 +7501,8 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		Prompt t8, "Lattice System", popup "-;Lattice System"
 		Prompt t16, "SpaceGroup ID", popup "-;SpaceGroup ID"
 		Prompt t32, "Ignore All Minus Signs", popup "-;Ignore Minus Signs"
-		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16,t32
+		dim = dim==2 ? 1 : 2
+		DoPrompt "Symmetry Symbol",strIN,t1,t2,t4,t8,t16,t32, dim
 		if (V_flag)
 			return ""
 		endif
@@ -6745,33 +7513,34 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		types += t8==2 ? 8 : 0
 		types += t16==2 ? 16 : 0
 		types += t32==2 ? 32 : 0
+		dim = dim==1 ? 2 : 3
 		printIt = 1
 	endif
 	if (strlen(strIN)<1)
 		return ""
 	endif
-	Variable ignoreMinus = !(!(types & 32))					// 1 means ignore minus signs in matching
+	Variable ignoreMinus = !(!(types & 32))							// 1 means ignore minus signs in matching
 
 	String list="", nameList=""
 	Variable idNum
 	if (types & 1)
-		list += SymString2SGtype(strIN,1,ignoreMinus,id)	// 1 = Hermann-Mauguin
+		list += SymString2SGtype(strIN,1,ignoreMinus,id,dim)	// 1 = Hermann-Mauguin
 		nameList += "Hermann-Mauguin, "
 	endif
 	if (types & 2)
-		list += SymString2SGtype(strIN,2,ignoreMinus,id)	// 2 = Full Hermann-Mauguin, HM2
+		list += SymString2SGtype(strIN,2,ignoreMinus,id,dim)	// 2 = Full Hermann-Mauguin, HM2
 		nameList += "FULL Hermann-Mauguin, "
 	endif
 	if (types & 4)
-		list += SymString2SGtype(strIN,4,ignoreMinus,id)	// 4 = Hall
+		list += SymString2SGtype(strIN,4,ignoreMinus,id,dim)	// 4 = Hall
 		nameList += "Hall, "
 	endif
 	if (types & 8)
-		list += SymString2SGtype(strIN,8,ignoreMinus,id)	// 8 = Lattice System
+		list += SymString2SGtype(strIN,8,ignoreMinus,id,dim)	// 8 = Lattice System
 		nameList += "Lattice System, "
 	endif
 	if (types & 16)
-		list += SymString2SGtype(strIN,16,ignoreMinus,id)// 16 = space group ID, e.g. "15:b3"
+		list += SymString2SGtype(strIN,16,ignoreMinus,id,dim)	// 16 = space group ID, e.g. "15:b3"
 		nameList += "Space Group ID, "
 	endif
 	nameList = TrimBoth(nameList,chars=", ")
@@ -6786,28 +7555,33 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 		elseif (Nlist>1)
 			printf "There are %g possible matches of  \"%s\"  to a symbol in: {%s}\r",Nlist,strIN,nameList
 		endif
-		String allIDs = MakeAllIDs()
+		String allIDs = MakeAllIDs(dim)
 		printf "\t\tSG id\t\t\t\tSystem\t\t\t\tH-M\t\t\tHall\t\t\tfull H-M\r"
-		String SGid, tab,fullHM,HM, system, systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
+		String SGid, tab,fullHM,HM, system, systemNames
+		if (dim==2)
+			systemNames="Oblique\t;Rectangular\t;Rhombic;Square\t\t;Hexagonal\t"
+		else
+			systemNames="Triclinic\t;Monoclinic\t;Orthorhombic;Tetragonal\t;Trigonal\t;Hexagonal\t;Cubic\t\t"
+		endif
 		for (i=0; i<Nlist; i+=1)
 			idNum = str2num(StringFromList(i,list))
-			if (isValidSpaceGroupIDnum(idNum))
-				fullHM = getHMsym2(idNum)			// usually fullHM is the same as HM
-				HM = getHMSym(idNum)
+			if (isValidSpaceGroupIDnum(idNum, dim))
+				fullHM = getHMsym2(idNum, dim=dim)					// usually fullHM is the same as HM
+				HM = getHMSym(idNum, dim=dim)
 				fullHM = SelectString(StringMatch(fullHM,HM),"\t\t\t"+fullHM,"")
-				tab = SelectString(strlen(getHMsym2(idNum))>5,"\t","")
+				tab = SelectString(strlen(getHMsym2(idNum, dim=dim))>5,"\t","")
 
 				SGid = StringFromList(idNum-1,allIDs)
-				system = StringFromList(latticeSystem(SGid),systemNames)
-				showDefault = strsearch(SGid,":",0)>=0 && StringMatch(SGid,FindDefaultIDforSG(str2num(SGid)))
-				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
+				system = StringFromList(latticeSystem(SGid,dim),systemNames)
+				showDefault = strsearch(SGid,":",0)>=0 && StringMatch(SGid,FindDefaultIDforSG(str2num(SGid),dim=dim))
+				printf "%8s\t-->\t\t%s\t\t%s\t\t%s%s%s%s\r", SGid,system,HM,tab,getHallSymbol(idNum, dim=dim),fullHM,SelectString(showDefault,"","\t--DEFAULT--")
 			endif
 		endfor
 	endif
 
 //	if (id)												// convert list from idNumbers to ID's
 //		if (!strlen(allIDs))
-//			allIDs = MakeAllIDs()
+//			allIDs = MakeAllIDs(3)
 //		endif
 //		String temp = list
 //		list = ""
@@ -6822,12 +7596,14 @@ Function/S symmtry2SG(strIN,[types,id,printIt])	// find the Space Group number f
 End
 
 
-Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
+Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID,dim)
 	// finds space group of a Hermann-Mauguin or Hall symbol, wild cards allowed, return list of idNums [1,530]
 	String symIN						// requested symbol, if empty, then a dialog will come up
 	Variable type						// 1=Hermann-Mauguin, 2=Full Hermann-Mauguin, 4=Hall, 8=Lattice System, 16=space group ID
 	Variable ignoreMinus			// if true, then ignore any minus signs when matching
 	Variable returnID					// if true, convert idNumbers to id's
+	Variable dim						// must be only 2 or 3
+	dim = dim==2 ? 2 : 3
 
 	String find = ReplaceString(" ",symIN,"")	// do not include spaces in search
 	if (ignoreMinus)
@@ -6839,35 +7615,55 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
 		return ""
 	endif
 
-	String sym,list="", allIDs=MakeAllIDs()
+	Variable Nids = dim==2 ? 17 : 530
+	String sym,list="", allIDs=MakeAllIDs(dim)
 	Variable idNum
 	if (type==8)						// searching for a Lattice System
-		if (StringMatch("Triclinic",find))
-			list += expandRange("1-2",";")+";"
-		endif
-		if (StringMatch("Monoclinic",find))
-			list += expandRange("3-107",";")+";"
-		endif
-		if (StringMatch("Orthorhombic",find))
-			list += expandRange("108-348",";")+";"
-		endif
-		if (StringMatch("Tetragonal",find))
-			list += expandRange("349-429",";")+";"
-		endif
-		if (StringMatch("Trigonal",find))
-			list += expandRange("430-461",";")+";"
-		elseif (StringMatch("Rhombohedral",find))
-			list += expandRange("434,437,445,451,453,459,461",";")+";"
-		endif
-		if (StringMatch("Hexagonal",find))
-			list += expandRange("462-488",";")+";"
-		endif
-		if (StringMatch("Cubic",find))
-			list += expandRange("489-530",";")+";"
+		if (dim==2)
+			if (StringMatch("Oblique",find))
+				list += "1;2;"
+			endif
+			if (StringMatch("Rectangular",find))
+				list += "3;4;6;7;8;"						// not 5
+			endif
+			if (StringMatch("Rhombic",find))
+				list += "5;9;"
+			endif
+			if (StringMatch("Square",find))
+				list += "10;11;12;"
+			endif
+			if (StringMatch("Hexagonal",find))
+				list += "13;14;15;16;17;"
+			endif
+
+		else				// dim==3
+			if (StringMatch("Triclinic",find))
+				list += expandRange("1-2",";")+";"
+			endif
+			if (StringMatch("Monoclinic",find))
+				list += expandRange("3-107",";")+";"
+			endif
+			if (StringMatch("Orthorhombic",find))
+				list += expandRange("108-348",";")+";"
+			endif
+			if (StringMatch("Tetragonal",find))
+				list += expandRange("349-429",";")+";"
+			endif
+			if (StringMatch("Trigonal",find))
+				list += expandRange("430-461",";")+";"
+			elseif (StringMatch("Rhombohedral",find))
+				list += expandRange("434,437,445,451,453,459,461",";")+";"
+			endif
+			if (StringMatch("Hexagonal",find))
+				list += expandRange("462-488",";")+";"
+			endif
+			if (StringMatch("Cubic",find))
+				list += expandRange("489-530",";")+";"
+			endif
 		endif
 
 	elseif (type==16)										// searching for a Space Group ID, e.g. "15:b3"
-		for (idNum=1; idNum<=530; idNum+=1)
+		for (idNum=1; idNum<=Nids; idNum+=1)
 			sym = StringFromList(idNum-1,allIDs)
 			if (ignoreMinus)
 				sym = ReplaceString("-",sym,"")		// do not include minus signs in match
@@ -6887,7 +7683,7 @@ Static Function/S SymString2SGtype(symIN,type,ignoreMinus,returnID)
 
 	if (type<5)
 		// symbolFunc has been set, check all idNums in symbolFunc(idNum)
-		for (idNum=1;idNum<=530;idNum+=1)		// check all 530 space group types using symbolFunc
+		for (idNum=1;idNum<=Nids;idNum+=1)		// check all 530 space group types using symbolFunc
 			sym = ReplaceString(" ",symbolFunc(idNum),"")	// ignore spaces
 			if (ignoreMinus)
 				sym = ReplaceString("-",sym,"")	// optionally, do not include minus signs
@@ -7110,7 +7906,7 @@ End
 
 ThreadSafe Function isRhombohedralXtal(xtal)	// returns True if a Rhombohedral space group with Rhombohedral axes
 	STRUCT crystalStructure &xtal
-	return (isRhombohedralSG(xtal.SpaceGroup) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
+	return (isRhombohedralSG(xtal.SpaceGroup) && (xtal.dim == 3) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
 End
 
 ThreadSafe Static Function isRhombohedralSG(SpaceGroup)
@@ -7133,7 +7929,7 @@ End
 ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells in conventional cell, or number of atoms in conventional cell
 	STRUCT crystalStructure &xtal
 
-	String sym = getHMsym(xtal.SpaceGroupIDnum)	// symmetry string
+	String sym = getHMsym(xtal.SpaceGroupIDnum, dim=xtal.dim)	// symmetry string
 	strswitch(sym[0,0])
 		case "F":										// Face Centered
 			return 4
@@ -7150,6 +7946,7 @@ ThreadSafe Function PrimitiveCellFactor(xtal)		// number of primitive unit cells
 			endif
 	endswitch
 
+
 //	Variable SG = xtal.SpaceGroup
 //	if (SG<=194 && SG>=168)						// Hexagonal
 //		return 1											// Hexagonal is a primitive cell
@@ -7164,7 +7961,9 @@ End
 
 ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
 	STRUCT crystalStructure &xtal							// this sruct is set in this routine
-	if (!isValidSpaceGroupID(xtal.SpaceGroupID))		// check if Space Group ID is valid
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupID(xtal.SpaceGroupID,dim))		// check if Space Group ID is valid
 		return 0
 	endif
 
@@ -7172,37 +7971,60 @@ ThreadSafe Function isValidLatticeConstants(xtal)	// returns 1 if lattice consta
 	Variable alpha=xtal.alpha, bet=xtal.beta, gam=xtal.gam
 	Variable SG = str2num(xtal.SpaceGroupID)
 
-	switch(latticeSystem(xtal.SpaceGroupID))
-		case CUBIC:									// Cubic space groups [195,230]
-			return isCUBIC_LC(a,b,c,alpha,bet,gam)
+	if (dim==2)
+		switch(latticeSystem(xtal.SpaceGroupID,2))
+			case HEXAGONAL2D:							// Hexagonal space groups [13,17]
+				return isHEXAGONAL2D_LC(a,b,alpha)
 
-		case HEXAGONAL:							// Hexagonal space groups [168,194]
-			return isHEXAGONAL_LC(a,b,c,alpha,bet,gam)
+			case SQUARE:								//Square space groups [10,12]
+				return isSQUARE_LC(a,b,alpha)
 
-		case TRIGONAL:								// Trigonal space groups [143,167]
-			// generally use hexagonal cell, for rhomohedral use rhomohedral cell, unless obviously the hexagonal
-			if (isHEXAGONAL_LC(a,b,c,alpha,bet,gam))	// hexagonal is always permitted
-				return 1
-			elseif (isRhombohedralSG(SG))	// a rhomohedral space group, may have rhom axes
-				return (isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam))
-			endif
-			return 0
+			case RHOMBIC:								// Rhombic space groups {5,9}
+				return isRHOMBIC_LC(a,b,alpha)
+	
+			case RECTANGULAR	:						// Rectangular space groups {3,4,6,7,8}
+				return isRECTANGULAR_LC(a,b,alpha)
+	
+			case OBLIQUE:						// Oblique space groups [1,2]
+				return isOBLIQUE_LC(a,b,alpha)
+		
+			default:
+				return 0									// system is invalid, NOT valid
+		endswitch
 
-		case TETRAGONAL	:						// Tetragonal space groups [75,142]
-			return isTETRAGONAL_LC(a,b,c,alpha,bet,gam)
-
-		case ORTHORHOMBIC:						// Orthorhombic space groups [16,74]
-			return isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)
-
-		case MONOCLINIC:							// Monoclinic space groups [3,15]
-			return isMONOCLINIC_LC(a,b,c,alpha,bet,gam)
-
-		case TRICLINIC:							// Triclinic space groups 1,2]
-			return isTRICLINIC_LC(a,b,c,alpha,bet,gam)
-
-		default:
-			return 0									// system is invalid, NOT valid
-	endswitch
+	else
+		switch(latticeSystem(xtal.SpaceGroupID,3))
+			case CUBIC:									// Cubic space groups [195,230]
+				return isCUBIC_LC(a,b,c,alpha,bet,gam)
+	
+			case HEXAGONAL:							// Hexagonal space groups [168,194]
+				return isHEXAGONAL_LC(a,b,c,alpha,bet,gam)
+	
+			case TRIGONAL:								// Trigonal space groups [143,167]
+				// generally use hexagonal cell, for rhomohedral use rhomohedral cell, unless obviously the hexagonal
+				if (isHEXAGONAL_LC(a,b,c,alpha,bet,gam))	// hexagonal is always permitted
+					return 1
+				elseif (isRhombohedralSG(SG))	// a rhomohedral space group, may have rhom axes
+					return (isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam))
+				endif
+				return 0
+	
+			case TETRAGONAL	:						// Tetragonal space groups [75,142]
+				return isTETRAGONAL_LC(a,b,c,alpha,bet,gam)
+	
+			case ORTHORHOMBIC:						// Orthorhombic space groups [16,74]
+				return isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)
+	
+			case MONOCLINIC:							// Monoclinic space groups [3,15]
+				return isMONOCLINIC_LC(a,b,c,alpha,bet,gam)
+	
+			case TRICLINIC:							// Triclinic space groups 1,2]
+				return isTRICLINIC_LC(a,b,c,alpha,bet,gam)
+	
+			default:
+				return 0									// system is invalid, NOT valid
+		endswitch
+	endif
 End
 //
 ThreadSafe Static Function isCUBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Cubic
@@ -7218,11 +8040,11 @@ End
 ThreadSafe Static Function isHEXAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Hexagonal
 	// requires a=b, alpha=beta=90, gamma=120
 	Variable a,b,c,alpha,bet,gam
-	Variable lenTol = max(max(a,b),c) * 1e-4, angleTol=0.00573		// 1e-4 degree
-
-	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && c>0
-	Variable anglesOK = abs(alpha-90)<angletol && abs(bet-90)<angletol && abs(gam-120)<angleTol
-	return anglesOK &&  (abs(a-b)<lenTol)
+	Variable lenTol, basic, anglesOK, angleTol=0.00573
+	lenTol = max(max(a,b),c) * 1e-4											// 1e-4 degree
+	basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && c>0
+	anglesOK = abs(alpha-90)<angletol && abs(bet-90)<angletol && abs(gam-120)<angleTol
+	return basic && anglesOK &&  (abs(a-b)<lenTol)
 End
 //
 ThreadSafe Static Function isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Rhombohedral
@@ -7232,7 +8054,7 @@ ThreadSafe Static Function isRHOMBOHEDRAL_LC(a,b,c,alpha,bet,gam)	// returns 1 i
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && alpha>0
 	Variable anglesOK = abs(alpha-bet)<angleTol && (alpha-gam)<angleTol
-	return anglesOK && abs(a-b)<lenTol && abs(a-c)<lenTol
+	return basic && anglesOK && abs(a-b)<lenTol && abs(a-c)<lenTol
 End
 //
 ThreadSafe Static Function isTETRAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Tetragonal
@@ -7242,7 +8064,7 @@ ThreadSafe Static Function isTETRAGONAL_LC(a,b,c,alpha,bet,gam)	// returns 1 if 
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0
 	Variable anglesOK = (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
-	return anglesOK && ( abs(a-b) || abs(a-c) || abs(b-c) )
+	return basic && anglesOK && ( abs(a-b) || abs(a-c) || abs(b-c) )
 End
 //
 ThreadSafe Static Function isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Orthorhombic
@@ -7251,7 +8073,7 @@ ThreadSafe Static Function isORTHORHOMBIC_LC(a,b,c,alpha,bet,gam)	// returns 1 i
 	Variable angleTol=0.00573		// 1e-4 degree
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0
-	return (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
+	return basic && (abs(alpha-90)<angleTol) && (abs(bet-90)<angleTol) && (abs(gam-90)<angleTol)
 End
 //
 ThreadSafe Static Function isMONOCLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Monoclinic
@@ -7261,13 +8083,57 @@ ThreadSafe Static Function isMONOCLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if 
 
 	Variable basic = numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
 	Variable num90s = (abs(alpha-90)<angleTol) + (abs(bet-90)<angleTol) + (abs(gam-90)<angleTol)
-	return num90s >= 2
+	return basic && (num90s >= 2)
 End
 //
 ThreadSafe Static Function isTRICLINIC_LC(a,b,c,alpha,bet,gam)	// returns 1 if LC are Triclinic
 	// no conditions, always 1 if no numbers are NaN, Inf, or negative
 	Variable a,b,c,alpha,bet,gam
 	return numtype(a+b+c+alpha+bet+gam)==0 && a>0 && b>0 && c>0 && alpha>0 && bet>0 && gam>0
+End
+//
+//
+//
+ThreadSafe Static Function isHEXAGONAL2D_LC(a,b,alpha)			// returns 1 if LC are Hexagonal 2D
+	// requires a=b, alpha=120
+	Variable a,b,alpha
+	Variable lenTol, basic, anglesOK, angleTol=0.00573
+	lenTol = max(a,b) * 1e-4												// 1e-4 degree
+	basic = numtype(a+b+alpha)==0 && a>0
+	anglesOK = abs(alpha-120)<angleTol
+	return basic && anglesOK &&  (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isSQUARE_LC(a,b,alpha)				// returns 1 if LC are Square
+	// requires a=b, alpha=90
+	Variable a,b,alpha
+	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
+	Variable basic = numtype(a+b+alpha)==0 && a>0
+	Variable anglesOK = (abs(alpha-90)<angleTol)
+	return basic & anglesOK && (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isRHOMBIC_LC(a,b,alpha)				// returns 1 if LC are Rhombic
+	// requires a=b
+	Variable a,b,alpha
+	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
+	Variable basic = numtype(a+b+alpha)==0 && a>0
+	return basic & (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isRECTANGULAR_LC(a,b,alpha)			// returns 1 if LC are Rectangular
+	// requires a=b, alpha=90
+	Variable a,b,alpha
+	Variable lenTol = max(a,b) * 1e-4, angleTol=0.00573			// 1e-4 degree
+	Variable basic = numtype(a+b+alpha)==0 && a>0
+	Variable anglesOK = (abs(alpha-90)<angleTol)
+	return basic & anglesOK && (abs(a-b)<lenTol)
+End
+//
+ThreadSafe Static Function isOBLIQUE_LC(a,b,alpha)				// returns 1 if LC are Oblique
+	// no conditions, always 1 if no numbers are NaN, Inf, or negative
+	Variable a,b,alpha
+	return numtype(a+b+alpha)==0 && a>0 && b>0 && alpha>0
 End
 //Function TestisValidLatticeConstants()	// returns 1 if lattice constants have valid symmetry for the SpaceGroup
 //	STRUCT crystalStructure xtal
@@ -7340,6 +8206,8 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	STRUCT crystalStructure &xtal
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	Variable dim = xtal.dim
+	dim = dim==2 ? 2 : 3
 
 	Variable tick0=stopMSTimer(-2)
 	reMakeAtomXYZs(xtal)						// ensure that atom positions are current
@@ -7364,8 +8232,8 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	WaveStats/M=1/Q ElectroNeg
 	Variable useValence = (V_max-V_min) > 0.7	// if useValence, then take into account the ElectroNegativity
 
-	Make/N=(1,3)/D/FREE xyz					// Note: these xyz are in fractional coordinates, and then get changed to nm
-	Make/N=1/I/FREE itypes						// type index for each atom xyz[][3]
+	Make/N=(1,dim)/D/FREE xyz					// Note: these xyz are in fractional coordinates, and then get changed to nm
+	Make/N=1/I/FREE itypes						// type index for each atom xyz[][dim]
 	Make/N=(Ntype)/WAVE/FREE xyzRef			// holds atom locations for each atom type
 
 	for (i=0; i<Ntype; i+=1)					// generate free versions of xyz,Zs,Types for bond finding
@@ -7471,17 +8339,18 @@ End
 Static Function/WAVE FindCentralAtom(xyz)
 	// from the set of atom positions xyz[N][3], return the central most position
 	Wave xyz							// atomic positions (nm),  NOT fractional
-
+	Variable dim = DimSize(xyz,1)
+	dim = dim==2 ? 2 : 3
 	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
 	Variable N=DimSize(xyz,0)
 	MatrixOP/FREE xyzAvg = sumCols(xyz)/N	// average position, represents the center
 	if (N==1)
-		Make/N=3/D/FREE xyz0 = xyz[0][p]
+		Make/N=(dim)/D/FREE xyz0 = xyz[0][p]
 	else
 		MatrixOP/FREE dmag2 = SumRows(magSqr(xyz-RowRepeat(xyzAvg,N)))
 		dmag2 = dmag2<min2 ? Inf : dmag2	// ignore atoms that are too close
 		WaveStats/M=1/Q dmag2
-		Make/N=3/D/FREE xyz0 = xyz[max(V_minloc,0)][p]
+		Make/N=(dim)/D/FREE xyz0 = xyz[max(V_minloc,0)][p]
 	endif
 	return xyz0
 End
@@ -7491,9 +8360,10 @@ Static Function/WAVE FindClosestAtomDirection(xyz0, xyz)
 	Wave xyz0						// xyz0[3]  the reference location
 	Wave xyz							// xyz[N,3] set of atom positions (nm),  NOT fractional
 	Variable N=DimSize(xyz,0)
-
+	Variable dim=numpnts(xyz0)
+	dim = dim==2 ? 2 : 3
 	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
-	Make/N=3/D/FREE delta
+	Make/N=(dim)/D/FREE delta
 	if (N>1)
 		MatrixOP/FREE dxyz = xyz - RowRepeat(xyz0,N)
 		MatrixOP/FREE dmag2 = SumRows(magSqr(dxyz))
@@ -7508,19 +8378,29 @@ End
 //
 Static Function ExtendFractional(xyz,delta)
 	// extend xyz in all directions by delta
-	Wave xyz											// xyz[N][3], atom positions, FRACTIONAL coordinates
+	Wave xyz											// xyz[N][3 or 2], atom positions, FRACTIONAL coordinates
 	Variable delta									// distance to extend in all directions [0,1)
+	Variable dim=DimSize(xyz,1)				// should be 2 or 3
+	dim = dim==2 ? 2 : 3
 
 	Duplicate/FREE xyz, xyz0
-	Make/N=3/D/FREE offset
-	Make/N=(26,3)/D/FREE offsets				// offsets by ±1 in x, y, & z around the center cell
-	offsets[0][0]= {-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1}
-	offsets[0][1]= {-1,-1,-1, 0, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 0, 1, 1, 1}
-	offsets[0][2]= {-1,-1,-1,-1,-1,-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	Variable Noff, Natom=DimSize(xyz,0)
+	Make/N=(dim)/D/FREE offset
+	if (dim==2)
+		Noff = 8
+		Make/N=(Noff,2)/D/FREE offsets			// offsets by ±1 in x, & y around the center cell
+		offsets[0][0]= {	-1, 0, 1,-1, 1,-1, 0, 1}
+		offsets[0][1]= {	-1,-1,-1, 0, 0, 1, 1, 1}
+	else
+		Noff = 26
+		Make/N=(Noff,3)/D/FREE offsets			// offsets by ±1 in x, y, & z around the center cell
+		offsets[0][0]= {-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1}
+		offsets[0][1]= {-1,-1,-1, 0, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 0, 1, 1, 1}
+		offsets[0][2]= {-1,-1,-1,-1,-1,-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	endif
 
-	Variable Natom=DimSize(xyz0,0)
 	Variable i,j, Nadd, Nxyz=Natom
-	for (j=0;j<26;j+=1)							// for each of the offsets, add atoms to xyz, & Types
+	for (j=0;j<Noff;j+=1)							// for each of the offsets, add atoms to xyz, & Types
 		offset = offsets[j][p]
 		if (Natom<2)
 			Duplicate/FREE xyz0, xyzTest
@@ -7530,8 +8410,12 @@ Static Function ExtendFractional(xyz,delta)
 		endif
 		MatrixOP/FREE flagX = greater(col(xyzTest,0),-0.5) && greater(1.5,col(xyzTest,0))
 		MatrixOP/FREE flagY = greater(col(xyzTest,1),-0.5) && greater(1.5,col(xyzTest,1))
-		MatrixOP/FREE flagZ = greater(col(xyzTest,2),-0.5) && greater(1.5,col(xyzTest,2))
-		MatrixOP/FREE flags = flagX && flagY && flagZ	// flags is 1 if x, y, & z are all in range (-0.5, 1.5)
+		if (dim==2)
+			MatrixOP/FREE flags = flagX && flagY				// flags is 1 if x & y are all in range (-0.5, 1.5)
+		else
+			MatrixOP/FREE flagZ = greater(col(xyzTest,2),-0.5) && greater(1.5,col(xyzTest,2))
+			MatrixOP/FREE flags = flagX && flagY && flagZ	// flags is 1 if x, y, & z are all in range (-0.5, 1.5)
+		endif
 		Nadd = sum(flags)							// number of points in xyzTest that I will add to xyz
 		Redimension/N=(Nxyz+Nadd,-1) xyz
 		for (i=0;i<Natom;i+=1)					// for each atom in center cell (xyz0), add points that are within 1/2 of a cell
@@ -7608,24 +8492,42 @@ End
 //	Start of some utility routines
 
 // changes hkl[3] to the lowest order hkl, ignores whether a reflection is allowed, just removes common factors
-ThreadSafe Function lowestOrderHKL(h,k,l)
+ThreadSafe Function lowestOrderHKL(h,k,l, [dim])
 	Variable &h,&k,&l									// these hkl are returned with all common factors removed
+	Variable dim										// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
 	Variable f, i, maxDiv = gcdZero(h,k)		// max possible divisor
-	maxDiv = min(maxDiv, gcdZero(h,l))
-	maxDiv = min(maxDiv, gcdZero(k,l))
-	maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k,l all zero
-	for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
-		if (mod(h,i) || mod(k,i) || mod(l,i))	// i is not a factor of h, k, and l
-			continue
-		endif
-		h /= i
-		k /= i
-		l /= i
-		f *= i
-	endfor
-	h = h==0 ? 0 : h									// rmove "-0"
-	k = k==0 ? 0 : k
-	l = l==0 ? 0 : l
+	if (dim == 2)
+		maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k all zero
+		for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
+			if (mod(h,i) || mod(k,i))					// i is not a factor of h, k
+				continue
+			endif
+			h /= i
+			k /= i
+			f *= i
+		endfor
+		h = h==0 ? 0 : h									// remove "-0"
+		k = k==0 ? 0 : k
+
+	else
+		maxDiv = min(maxDiv, gcdZero(h,l))
+		maxDiv = min(maxDiv, gcdZero(k,l))
+		maxDiv = numtype(maxDiv) ? 1 : maxDiv		// this happens if h,k,l all zero
+		for (i=maxDiv,f=1; i>=2; i-=1)				// check all divisors in range [maxDiv, 2]
+			if (mod(h,i) || mod(k,i) || mod(l,i))	// i is not a factor of h, k, and l
+				continue
+			endif
+			h /= i
+			k /= i
+			l /= i
+			f *= i
+		endfor
+		h = h==0 ? 0 : h									// remove "-0"
+		k = k==0 ? 0 : k
+		l = l==0 ? 0 : l
+	endif
 	return f
 End
 //
@@ -7661,28 +8563,26 @@ End
 
 
 // changes hkl[3] to the lowest order allowed hkl (ie for FCC, 0,0,12 -> 002 not 001
-Function lowestAllowedHKL(h,k,l)
+Function lowestAllowedHKL(h,k,l, [dim])
 	Variable &h,&k,&l
+	Variable dim
+	dim = dim==2 ? 2 : 3
 
-	STRUCT crystalStructure xtal		// temporary crystal structure
-	FillCrystalStructDefault(xtal)	//fill the lattice structure with default values
-//	ForceLatticeToStructure(xtal)
+	STRUCT crystalStructure xtal			// temporary crystal structure
+	FillCrystalStructDefault(xtal)		//fill the lattice structure with default values
 
 	Variable i
 	Variable hh=h, kk=k, ll=l
-	lowestOrderHKL(hh,kk,ll)			// remove all common factors
+	lowestOrderHKL(hh,kk,ll, dim=dim)	// remove all common factors
 
-	for (i=1;i<16;i+=1)					// never need more than 16 to reach an allowed reflection
-		h = i*hh								// try each of the multiples to reach an allowed reflection
+	for (i=1;i<16;i+=1)						// never need more than 16 to reach an allowed reflection
+		h = i*hh									// try each of the multiples to reach an allowed reflection
 		k = i*kk
 		l = i*ll
 		if (allowedHKL(h,k,l,xtal))
 			return 0
 		endif
 	endfor
-	h = h==0 ? 0 : h						// avoid "-0"
-	k = k==0 ? 0 : k
-	l = l==0 ? 0 : l
 	return 0
 End
 
@@ -7693,23 +8593,41 @@ Function NearestAllowedHKL(xtal,hkl,[dhklMax])
 	Wave hkl				// wave with input hkl, returned as nearest allowed hkl
 	Variable dhklMax	// distance in hkl to search around hkl input
 	dhklMax = ParamIsDefault(dhklMax) || numtype(dhklMax) || dhklMax<1 ? 1 : dhklMax
+	Variable dim = xtal.dim
+	dim = (dim==2) ? 2 : 3
 
-	Variable N=(2*dhklMax+1)^3			// number of hkl's to check
-	Variable h0=round(hkl[0]), k0=round(hkl[1]), l0=round(hkl[2])
+	Variable N=(2*dhklMax+1)^dim			// number of hkl's to check
+	Variable h0=round(hkl[0]), k0=round(hkl[1]), l0
+	l0 = dim==2 ? 0 : round(hkl[2])
 	if (N<=1)
-		hkl={h0,k0,l0}
+		if (dim==2)
+			hkl={h0,k0}
+		else
+			hkl={h0,k0,l0}
+		endif
 	endif
-	Make/N=(N,3)/FREE/I hklTest
+	Make/N=(N,dim)/FREE/I hklTest
 	Variable i, m, dh,dk,dl
-	for (dl=0; dl<=dhklMax; dl=incrementIndex(dl))
+
+	if (dim==2)
 		for (dk=0; dk<=dhklMax; dk=incrementIndex(dk))
 			for (dh=0; dh<=dhklMax; dh=incrementIndex(dh), m+=1)
-				hklTest[m][0] = dh+h0		// list of possibel nearest allowed hkl's
+				hklTest[m][0] = dh+h0		// list of possibel nearest allowed hk's
 				hklTest[m][1] = dk+k0
-				hklTest[m][2] = dl+l0
 			endfor
 		endfor
-	endfor
+	else
+		for (dl=0; dl<=dhklMax; dl=incrementIndex(dl))
+			for (dk=0; dk<=dhklMax; dk=incrementIndex(dk))
+				for (dh=0; dh<=dhklMax; dh=incrementIndex(dh), m+=1)
+					hklTest[m][0] = dh+h0		// list of possibel nearest allowed hkl's
+					hklTest[m][1] = dk+k0
+					hklTest[m][2] = dl+l0
+				endfor
+			endfor
+		endfor
+	endif
+
 	Wave recip = recipFrom_xtal(xtal)	// reciprocal lattice vectors
 	MatrixOp/FREE qIn = recip x hkl		// q of input hkl
 	MatrixOp/FREE dqs = sumRows(magSqr((recip x (hklTest)^t)^t - RowRepeat(qIn,N)))
@@ -7745,17 +8663,30 @@ End
 
 Function/WAVE recipFrom_xtal(xtal)					// returns a FREE wave with reciprocal lattice
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE RL								// the reciprocal lattice
-	RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
-	if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
-		setDirectRecip(xtal)							// re-make the as0, as1, ...
+
+	String str
+	if (xtal.dim == 2)
+		Make/N=(2,2)/D/FREE RL								// the reciprocal lattice
+		RL = { {xtal.as0,xtal.as1}, {xtal.bs0,xtal.bs1} }
+		if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+			setDirectRecip(xtal)							// re-make the as0, as1, ...
+			RL = { {xtal.as0,xtal.as1}, {xtal.bs0,xtal.bs1} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.alpha
+
+	else
+		Make/N=(3,3)/D/FREE RL								// the reciprocal lattice
 		RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
+		if (numtype(sum(RL)) || WaveMax(RL)==0)		// bad numbers in RL
+			setDirectRecip(xtal)							// re-make the as0, as1, ...
+			RL = { {xtal.as0,xtal.as1,xtal.as2}, {xtal.bs0,xtal.bs1,xtal.bs2}, {xtal.cs0,xtal.cs1,xtal.cs2} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	endif
+
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
 	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
-	String str
-	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	Note/K RL, wnote
 	return RL
@@ -7764,27 +8695,54 @@ End
 
 Function/WAVE directFrom_xtal(xtal)				// returns a FREE wave with real lattice (a,b,c, are the columns)
 	STRUCT crystalStructure &xtal
-	Make/N=(3,3)/D/FREE DL								// the direct lattice
-	DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
-	if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
-		setDirectRecip(xtal)							// re-make the a0, a1, ...
+
+	String str
+	if (xtal.dim == 2)
+		Make/N=(2,2)/D/FREE DL								// the direct lattice
+		DL = { {xtal.a0,xtal.a1}, {xtal.b0,xtal.b1} }
+		if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
+			setDirectRecip(xtal)							// re-make the a0, a1, ...
+			DL = { {xtal.a0,xtal.a1}, {xtal.b0,xtal.b1} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.alpha
+
+	else
+		Make/N=(3,3)/D/FREE DL								// the direct lattice
 		DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
+		if (numtype(sum(DL)) || WaveMax(DL)==0)		// bad numbers in DL
+			setDirectRecip(xtal)							// re-make the a0, a1, ...
+			DL = { {xtal.a0,xtal.a1,xtal.a2}, {xtal.b0,xtal.b1,xtal.b2}, {xtal.c0,xtal.c1,xtal.c2} }
+		endif
+		sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	endif
+
 	String wnote="waveClass=directLattice;"
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
 	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
-	String str
-	sprintf str, "{%.7g,%.7g,%.7g,%.7g,%.7g,%.7g}", xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	Note/K DL, wnote
 	return DL
 End
 
 
-ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal lattice
+ThreadSafe Function/WAVE str2recip(str, [dim])	// returns a FREE wave with reciprocal lattice
 	String str
+	Variable dim
+	dim = dim==2 ? 2 : 3
 	Variable as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	str = ReplaceString("},{",str,"}{")		// sometimes string is like: "{{1,2,3},{4,5,6},{7,8,9}}"
+
+	if (dim == 2)
+		sscanf str, "{{%g,%g}{%g,%g}}",as0,as1,bs0,bs1
+		if (V_flag==4)
+			Make/N=(2,2)/D/FREE RL						// the reciprocal lattice
+			RL = { {as0,as1}, {bs0,bs1} }
+			return RL
+		else
+			return $""
+		endif
+	endif
+
 	sscanf str, "{{%g,%g,%g}{%g,%g,%g}{%g,%g,%g}}",as0,as1,as2,bs0,bs1,bs2,cs0,cs1,cs2
 	if (V_flag==9)
 		Make/N=(3,3)/D/FREE RL						// the reciprocal lattice
@@ -7796,29 +8754,51 @@ ThreadSafe Function/WAVE str2recip(str)		// returns a FREE wave with reciprocal 
 End
 
 
-ThreadSafe Function/S hkl2str(h,k,l, [bar])	// format h,k,l into a string of acceptable minimal length
+ThreadSafe Function/S hkl2str(h,k,l, [bar,dim])	// format h,k,l into a string of acceptable minimal length
 	Variable h,k,l
 	Variable bar											// OPTIONAL, return unicocde string with bars instead of negatives
+	Variable dim
+	dim = dim==2 ? 2 : 3
 	bar = ParamIsDefault(bar) || numtype(bar) ? 0 : bar	// default is negative signs
 	bar = IgorVersion()<7 ? 0 : bar					// bar not available for Igor 6 (requires unicode support)
 	h = abs(h)<1e-14 ? 0 : h
 	k = abs(k)<1e-14 ? 0 : k
 	l = abs(l)<1e-14 ? 0 : l
-	String hklStr
-	if (numtype(h+k+l))
-		hklStr = "nan,nan,nan"
-	elseif (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)
-		sprintf hklStr,"%g, %g, %g",h,k,l			// hkl are non-integers
-	elseif (bar)
-		String sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
-		hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
-	elseif (k<0 || l<0)
-		sprintf hklStr,"%.0f, %.0f, %.0f",h,k,l
-	elseif (abs(h)<10 && k<10 && l<10)
-		sprintf hklStr,"%.0f%.0f%.0f",h,k,l
+	String hklStr, sp
+
+	if (dim == 2)
+		if (numtype(h+k))
+			hklStr = "nan,nan"
+		elseif (abs(mod(h,1))+abs(mod(k,1)) > 1e-6)
+			sprintf hklStr,"%g, %g",h,k			// hk are non-integers
+		elseif (bar)
+			sp = SelectString(abs(h)<10 && abs(k)<10, " ", "")
+			hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k))
+		elseif (k<0)
+			sprintf hklStr,"%.0f, %.0f",h,k
+		elseif (abs(h)<10 && k<10)
+			sprintf hklStr,"%.0f%.0f",h,k
+		else
+			sprintf hklStr,"%.0f %.0f",h,k
+		endif
+
 	else
-		sprintf hklStr,"%.0f %.0f %.0f",h,k,l
+		if (numtype(h+k+l))
+			hklStr = "nan,nan,nan"
+		elseif (abs(mod(h,1))+abs(mod(k,1))+abs(mod(l,1)) > 1e-6)
+			sprintf hklStr,"%g, %g, %g",h,k,l			// hkl are non-integers
+		elseif (bar)
+			sp = SelectString(abs(h)<10 && abs(k)<10 && abs(l)<10, " ", "")
+			hklStr = minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
+		elseif (k<0 || l<0)
+			sprintf hklStr,"%.0f, %.0f, %.0f",h,k,l
+		elseif (abs(h)<10 && k<10 && l<10)
+			sprintf hklStr,"%.0f%.0f%.0f",h,k,l
+		else
+			sprintf hklStr,"%.0f %.0f %.0f",h,k,l
+		endif
 	endif
+
 #if (IgorVersion()>7)
 	if (bar)													// only Arial and Tahoma work properly with OVERLINE
 		hklStr = "\\[0\\F'"+BAR_FONT_ALWAYS+"'" + hklStr + "\\F]0"
@@ -7848,11 +8828,13 @@ End
 //End
 
 
-ThreadSafe Function str2hkl(hklStr,h,k,l)
+ThreadSafe Function str2hkl(hklStr,h,k,l, [dim])
 	// returns the hkl values from a string, pretty forgiving about format in string
 	// moved to here from Dynamical.ipf versions <=1.14
 	String hklStr
 	Variable &h,&k,&l
+	Variable dim
+	dim = dim==2 ? 2 : 3
 
 	h = NaN ;	k = NaN ;	l = NaN
 	hklStr = ReplaceString("+",hklStr," ")
@@ -7878,11 +8860,19 @@ ThreadSafe Function str2hkl(hklStr,h,k,l)
 		N=numpnts(w3)
 	endif
 
-	if (N>2 && numtype(sum(w3,0,2))==0)
-		h = w3[0]
-		k = w3[1]
-		l = w3[2]
-		return 0
+	if (dim == 2)
+		if (N>1 && numtype(sum(w3,0,1))==0)
+			h = w3[0]
+			k = w3[1]
+			return 0
+		endif
+	else
+		if (N>2 && numtype(sum(w3,0,2))==0)
+			h = w3[0]
+			k = w3[1]
+			l = w3[2]
+			return 0
+		endif
 	endif
 	return 1
 End
@@ -7895,13 +8885,24 @@ End
 
 
 #if (IgorVersion() > 7)
-ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar over the number, only for displaying, not printing
 	Variable h,k,l				// hkl value
+	Variable dim				// 2 or 3 (usually 3)
+
+	String sp
+	if (dim == 2)
+		if (numtype(h+k))
+			return num2str(h)+","+num2str(k)
+		endif
+		sp = SelectString(abs(h)>9 || abs(k)>9,""," ")
+		return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k))
+	endif
+
 	if (numtype(h+k+l))
 		return num2str(h)+","+num2str(k)+","+num2str(l)
 	endif
 	//	String sp=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
-	String sp=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+	sp = SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
 	//	print h,k,l,"     ",minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
 	return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
 End
@@ -7940,18 +8941,27 @@ ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string t
 	return out
 End
 #else
-ThreadSafe Function/T hkl2IgorBarStr(h,k,l)	// changes negatives to a bar over the number, only for displaying, not printing
+ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar over the number, only for displaying, not printing
 	Variable h,k,l				// hkl value
+	Variable dim				// 2 or 3 (usually 3)
 
-	if (numtype(h+k+l))
-		return num2str(h)+","+num2str(k)+","+num2str(l)
+	String extra, str=""
+	if (dim == 2)
+		if (numtype(h+k))
+			return num2str(h)+","+num2str(k)
+		endif
+		extra=SelectString(abs(h)>9 || abs(k)>9,""," ")
+		str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
+		str += minus2bar(num2istr(k),spaces=floor(log(abs(k))))
+	else
+		if (numtype(h+k+l))
+			return num2str(h)+","+num2str(k)+","+num2str(l)
+		endif
+		extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
+		str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
+		str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
+		str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
 	endif
-	//	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9 || h<0 || k<0 || l<0,""," ")
-	String extra=SelectString(abs(h)>9 || abs(k)>9 || abs(l)>9,""," ")
-	String str=""
-	str += minus2bar(num2istr(h),spaces=floor(log(abs(h)))) + extra
-	str += minus2bar(num2istr(k),spaces=floor(log(abs(k)))) + extra
-	str += minus2bar(num2istr(l),spaces=floor(log(abs(l))))
 	return str
 End
 //
@@ -7971,48 +8981,207 @@ End
 #endif
 
 
-Function StructGet_xtal(strStruct,xtal8)		// take value of strStruct, and fill xtal8, whether strStruct was v5, v6, or v7
-	// this accepts strStruct for either the old v5 or new v6 crystalStructure
-	String strStruct										// pre vers 6.0 len=25672, after 6.0 it is 25686
-	STRUCT crystalStructure &xtal8					// structure that will be filled
+Function StructGet_xtal(strStruct,xtal10)		// take value of strStruct, and fill xtal8, whether strStruct was v5, v6, v7, v8, v9, or v10
+	// this accepts strStruct for for v5 - v10 crystalStructure
+	String strStruct									// pre vers 6.0 len=25672, after 6.0 it is 25686, with 7.08 (v10) it is 29014
+	STRUCT crystalStructure &xtal10				// structure that will be filled
 
-	if (strlen(strStruct)>=25794)					// string is for a version 8 xtal
+	if (strlen(strStruct)>=xtalStructLen10)		// this string is long enough for a version 10 xtal
+		StructGet/S/B=2 xtal10, strStruct
+	elseif (strlen(strStruct)>=xtalStructLen9)	// a shorter string is for a version 9 xtal
+		STRUCT crystalStructure9 xtal9
+		StructGet/S/B=2 xtal9, strStruct
+		copy_xtal910(xtal10,xtal9)					// copy xtal9 --> xtal10
+	elseif (strlen(strStruct)>=xtalStructLen8)	// a bit shorter string is for a version 8 xtal
+		STRUCT crystalStructure8 xtal8
 		StructGet/S/B=2 xtal8, strStruct
-	elseif (strlen(strStruct)>=25786)				// a bit shorter string is for a version 7 xtal
+		copy_xtal810(xtal10,xtal8)					// copy xtal8 --> xtal10
+	elseif (strlen(strStruct)>=xtalStructLen7)	// a bit shorter string is for a version 7 xtal
 		STRUCT crystalStructure7 xtal7
 		StructGet/S/B=2 xtal7, strStruct
-		copy_xtal78(xtal8,xtal7)						// copy xtal7 --> xtal8
-	elseif (strlen(strStruct)>=25686)				// a still shorter string is for a version 6 xtal
+		copy_xtal710(xtal10,xtal7)					// copy xtal7 --> xtal10
+	elseif (strlen(strStruct)>=xtalStructLen6)	// a still shorter string is for a version 6 xtal
 		STRUCT crystalStructure6 xtal6
 		StructGet/S/B=2 xtal6, strStruct
-		copy_xtal68(xtal8,xtal6)						// copy xtal6 --> xtal8
-	else														// shorter strings assumed to be older version 5 xtal
+		copy_xtal610(xtal10,xtal6)					// copy xtal6 --> xtal10
+	elseif (strlen(strStruct)>=xtalStructLen5)	// length of string with a version 5 xtal
 		STRUCT crystalStructure5 xtal5
 		StructGet/S/B=2 xtal5, strStruct
-		copy_xtal58(xtal8,xtal5)						// copy xtal5 --> xtal8
+		copy_xtal510(xtal10,xtal5)					// copy xtal5 --> xtal10
+	else
+		init_crystalStructure(xtal10)				// string too short, set all values to empty or invalid values
 	endif
 End
 //
-Static Function copy_xtal58(xtal8,xtal5)		// copy a crystalStructure xtal5 --> xtal8
-	STRUCT crystalStructure &xtal8
+Static Function copy_xtal510(xtal10,xtal5)		// copy a crystalStructure xtal5 --> xtal10
+	STRUCT crystalStructure &xtal10
 	STRUCT crystalStructure5 &xtal5
+	STRUCT crystalStructure9 xtal9
+	STRUCT crystalStructure8 xtal8
 	STRUCT crystalStructure7 xtal7					// intermidiate
 	STRUCT crystalStructure6 xtal6					// intermidiate
 	copy_xtal56(xtal6,xtal5)							// 1st copy xtal5 --> xtal6
 	copy_xtal67(xtal7,xtal6)							// 2nd copy xtal6 --> xtal7
 	copy_xtal78(xtal8,xtal7)							// 3rd copy xtal7 --> xtal8
+	copy_xtal89(xtal9,xtal8)							// 4th copy xtal8 --> xtal9
+	copy_xtal910(xtal10,xtal9)						// 5th copy xtal9 --> xtal10
 End
 //
-Static Function copy_xtal68(xtal8,xtal6)		// copy a crystalStructure xtal5 --> xtal8
-	STRUCT crystalStructure &xtal8
+Static Function copy_xtal610(xtal10,xtal6)		// copy a crystalStructure xtal6 --> xtal10
+	STRUCT crystalStructure &xtal10
 	STRUCT crystalStructure6 &xtal6
+	STRUCT crystalStructure9 xtal9
+	STRUCT crystalStructure8 xtal8					// intermidiate
 	STRUCT crystalStructure7 xtal7					// intermidiate
 	copy_xtal67(xtal7,xtal6)							// 1st copy xtal6 --> xtal7
 	copy_xtal78(xtal8,xtal7)							// 2nd copy xtal7 --> xtal8
+	copy_xtal89(xtal9,xtal8)							// 3rd copy xtal8 --> xtal9
+	copy_xtal910(xtal10,xtal9)						// 4th copy xtal9 --> xtal10
 End
 //
-Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal7 --> xtal8
-	STRUCT crystalStructure &xtal8
+Static Function copy_xtal710(xtal10,xtal7)		// copy a crystalStructure xtal7 --> xtal10
+	STRUCT crystalStructure &xtal10
+	STRUCT crystalStructure7 &xtal7
+	STRUCT crystalStructure9 xtal9
+	STRUCT crystalStructure8 xtal8					// intermidiate
+	copy_xtal78(xtal8,xtal7)							// 1st copy xtal7 --> xtal8
+	copy_xtal89(xtal9,xtal8)							// 2nd copy xtal8 --> xtal9
+	copy_xtal910(xtal10,xtal9)						// 3rd copy xtal9 --> xtal10
+End
+//
+Static Function copy_xtal810(xtal10,xtal8)		// copy a crystalStructure xtal8 --> xtal10
+	STRUCT crystalStructure &xtal10
+	STRUCT crystalStructure8 &xtal8
+	STRUCT crystalStructure9 xtal9					// intermidiate
+	copy_xtal89(xtal9,xtal8)							// 1st copy xtal8 --> xtal9
+	copy_xtal910(xtal10,xtal9)						// 2nd copy xtal9 --> xtal10
+End
+//
+Static Function copy_xtal910(xtal10,xtal9)		// copy a crystalStructure xtal9 --> xtal10
+	STRUCT crystalStructure &xtal10							// destination
+	STRUCT crystalStructure9 &xtal9							// source
+
+	xtal10.desc = xtal9.desc
+	xtal10.dim = 3													// this is the change with version 9
+
+	xtal10.a = xtal9.a				;	xtal10.b = xtal9.b			;	xtal10.c = xtal9.c
+	xtal10.alpha = xtal9.alpha	;	xtal10.beta = xtal9.beta	;	xtal10.gam = xtal9.gam
+	xtal10.SpaceGroup = xtal9.SpaceGroup						// in range [1,230]
+	xtal10.SpaceGroupIDnum = xtal9.SpaceGroupIDnum		// in range [1,530]
+	xtal10.SpaceGroupID = xtal9.SpaceGroupID				// id, e.g. "15:-b2", not just a number anymore
+
+	xtal10.Vc = xtal9.Vc
+	xtal10.density = xtal9.density
+	xtal10.alphaT = xtal9.alphaT
+
+	xtal10.Pressure = NaN											// Only difference between 7 and 8
+	xtal10.Temperature = xtal9.Temperature
+	xtal10.Vibrate = xtal9.Vibrate
+	xtal10.haveDebyeT = xtal9.haveDebyeT
+	xtal10.hashID = xtal9.hashID
+
+	xtal10.N = xtal9.N
+	Variable i, N=xtal9.N
+	for (i=0;i<N;i+=1)
+		xtal10.atom[i] = xtal9.atom[i]							// was:  copy_atomType(xtal10.atom[i],xtal9.atom[i])
+	endfor
+
+	xtal10.Nbonds = xtal9.Nbonds
+	N = xtal10.Nbonds
+	for (i=0;i<N;i+=1)
+		xtal10.bond[i] = xtal9.bond[i]							// was:  copy_bondType(xtal10.bond[i],xtal9.bond[i])
+	endfor
+
+	xtal10.a0 = xtal9.a0	;	xtal10.b0 = xtal9.b0	;	xtal10.c0 = xtal9.c0
+	xtal10.a1 = xtal9.a1	;	xtal10.b1 = xtal9.b1	;	xtal10.c1 = xtal9.c1
+	xtal10.a2 = xtal9.a2	;	xtal10.b2 = xtal9.b2	;	xtal10.c2 = xtal9.c2
+
+	xtal10.as0 = xtal9.as0	;	xtal10.bs0 = xtal9.bs0	;	xtal10.cs0 = xtal9.cs0
+	xtal10.as1 = xtal9.as1	;	xtal10.bs1 = xtal9.bs1	;	xtal10.cs1 = xtal9.cs1
+	xtal10.as2 = xtal9.as2	;	xtal10.bs2 = xtal9.bs2	;	xtal10.cs2 = xtal9.cs2
+
+	xtal10.Unconventional00 = xtal9.Unconventional00
+	xtal10.Unconventional01 = xtal9.Unconventional01
+	xtal10.Unconventional02 = xtal9.Unconventional02
+	xtal10.Unconventional10 = xtal9.Unconventional10
+	xtal10.Unconventional11 = xtal9.Unconventional11
+	xtal10.Unconventional12 = xtal9.Unconventional12
+	xtal10.Unconventional20 = xtal9.Unconventional20
+	xtal10.Unconventional21 = xtal9.Unconventional21
+	xtal10.Unconventional22 = xtal9.Unconventional22
+
+	String fullFile = xtal9.sourceFile
+	fullFile = fullFile[0,MAX_FILE_LEN-1]
+	xtal10.sourceFile = fullFile
+
+	if (strlen(xtal9.formula)<1)
+		xtal10.formula = MinimalChemFormula(xtal10, maximal=1)	// this is the only difference between xtal6 & 7
+	else
+		xtal10.formula =xtal9.formula
+	endif
+End
+//
+Static Function copy_xtal89(xtal9,xtal8)		// copy a crystalStructure xtal8 --> xtal9
+	STRUCT crystalStructure9 &xtal9
+	STRUCT crystalStructure8 &xtal8
+
+	xtal9.desc = xtal8.desc
+	xtal9.dim = 3														// this is the change with version 9
+
+	xtal9.a = xtal8.a				;	xtal9.b = xtal8.b				;	xtal9.c = xtal8.c
+	xtal9.alpha = xtal8.alpha	;	xtal9.beta = xtal8.beta	;	xtal9.gam = xtal8.gam
+	xtal9.SpaceGroup = xtal8.SpaceGroup						// in range [1,230]
+	xtal9.SpaceGroupIDnum = xtal8.SpaceGroupIDnum			// in range [1,530]
+	xtal9.SpaceGroupID = xtal8.SpaceGroupID					// id, e.g. "15:-b2", not just a number anymore
+
+	xtal9.Vc = xtal8.Vc
+	xtal9.density = xtal8.density
+	xtal9.alphaT = xtal8.alphaT
+
+	xtal9.Pressure = NaN											// Only difference between 7 and 8
+	xtal9.Temperature = xtal8.Temperature
+	xtal9.Vibrate = xtal8.Vibrate
+	xtal9.haveDebyeT = xtal8.haveDebyeT
+	xtal9.hashID = xtal8.hashID
+
+	xtal9.N = xtal8.N
+	Variable i, N=xtal8.N
+	for (i=0;i<N;i+=1)
+		xtal9.atom[i] = xtal8.atom[i]							// was:  copy_atomType(xtal9.atom[i],xtal8.atom[i])
+	endfor
+
+	xtal9.Nbonds = xtal8.Nbonds
+	N = xtal9.Nbonds
+	for (i=0;i<N;i+=1)
+		xtal9.bond[i] = xtal8.bond[i]							// was:  copy_bondType(xtal9.bond[i],xtal8.bond[i])
+	endfor
+
+	xtal9.a0 = xtal8.a0	;	xtal9.b0 = xtal8.b0	;	xtal9.c0 = xtal8.c0
+	xtal9.a1 = xtal8.a1	;	xtal9.b1 = xtal8.b1	;	xtal9.c1 = xtal8.c1
+	xtal9.a2 = xtal8.a2	;	xtal9.b2 = xtal8.b2	;	xtal9.c2 = xtal8.c2
+
+	xtal9.as0 = xtal8.as0	;	xtal9.bs0 = xtal8.bs0	;	xtal9.cs0 = xtal8.cs0
+	xtal9.as1 = xtal8.as1	;	xtal9.bs1 = xtal8.bs1	;	xtal9.cs1 = xtal8.cs1
+	xtal9.as2 = xtal8.as2	;	xtal9.bs2 = xtal8.bs2	;	xtal9.cs2 = xtal8.cs2
+
+	xtal9.Unconventional00 = xtal8.Unconventional00
+	xtal9.Unconventional01 = xtal8.Unconventional01
+	xtal9.Unconventional02 = xtal8.Unconventional02
+	xtal9.Unconventional10 = xtal8.Unconventional10
+	xtal9.Unconventional11 = xtal8.Unconventional11
+	xtal9.Unconventional12 = xtal8.Unconventional12
+	xtal9.Unconventional20 = xtal8.Unconventional20
+	xtal9.Unconventional21 = xtal8.Unconventional21
+	xtal9.Unconventional22 = xtal8.Unconventional22
+
+	String fullFile = xtal8.sourceFile
+	fullFile = fullFile[0,MAX_FILE_LEN-1]
+	xtal9.sourceFile = fullFile
+	xtal9.formula = ""									// will call  MinimalChemFormul() in copy_xtal910
+End
+//
+Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal8 --> xtal8
+	STRUCT crystalStructure8 &xtal8
 	STRUCT crystalStructure7 &xtal7
 
 	xtal8.desc = xtal7.desc
@@ -8066,8 +9235,8 @@ Static Function copy_xtal78(xtal8,xtal7)		// copy a crystalStructure xtal7 --> x
 	String fullFile = xtal7.sourceFile
 	fullFile = fullFile[0,MAX_FILE_LEN-1]
 	xtal8.sourceFile = fullFile
-
-	xtal8.formula = MinimalChemFormula(xtal8, maximal=1)	// this is the only difference between xtal6 & 7
+	xtal8.formula = ""
+	//	xtal8.formula = MinimalChemFormula(xtal9, maximal=1)	// this is the only difference between xtal6 & 7
 End
 //
 Static Function copy_xtal67(xtal7,xtal6)		// copy a crystalStructure xtal6 --> xtal7
@@ -8138,7 +9307,7 @@ Static Function copy_xtal56(xtal6,xtal5)					// copy a crystalStructure xtal5 --
 
 	String id = FindDefaultIDforSG(xtal5.SpaceGroup)
 	xtal6.SpaceGroupID = id										// change SG number to id string
-	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id)			// change id to id number in [1,530]
+	xtal6.SpaceGroupIDnum = SpaceGroupID2num(id, dim=3)	// change id to id number in [1,530]
 
 	xtal6.Vc = xtal5.Vc
 	xtal6.density = xtal5.density
@@ -8206,9 +9375,6 @@ Function InitLatticeSymPackage([showPanel])			// used to initialize this package
 	if (!exists("root:Packages:Lattices:keV"))
 		Variable/G root:Packages:Lattices:keV = 10		// only used when calculating Cromer-Liberman values
 	endif
-	if (!exists("root:Packages:Lattices:dim"))
-		Variable/G root:Packages:Lattices:dim = 3		// default, set to dim=2 for 2D values
-	endif
 	if (showPanel)
 		MakeLatticeParametersPanel("")
 	endif
@@ -8225,12 +9391,12 @@ End
 Static Function/WAVE GetSettingTransForm(id)
 	String id					// SpaceGroup ID name, e.g. "146:H"
 
-	Variable i = SpaceGroupID2num(id)		// in range [1,530]
-	if (numtype(i))								// check for valid id
+	Variable i = SpaceGroupID2num(id, dim=3)	// in range [1,530]
+	if (numtype(i))										// check for valid id
 		return $""
 	endif
 
-	Make/N=(530)/T/FREE CBMs=""				// the transform from id to the "standard" setting
+	Make/N=(530)/T/FREE CBMs=""						// the transform from id to the "standard" setting
 	CBMs[0]   = {"x,y,z","x,y,z","x,y,z","y,z,x","z,x,y","x,y,z","y,z,x","z,x,y","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y"}
 	CBMs[15]  = {"y-z,x,-z","-y,x,-y+z","x,y,z","y,z,x","z,x,y","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z"}
 	CBMs[28]  = {"-y,x,-y+z","x,y,z","-x+z,y,-x","-z,y,x-z","y,z,x","x-y,z,-y","-x,z,-x+y","z,x,y","y-z,x,-z","-y,x,-y+z","x,y,z","-x+z,y,-x"}
@@ -8301,16 +9467,16 @@ End
 //	End
 //
 // makes one matrix either (3,3) or (4,4) from the symmetry op string
-Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x3 or 3x4 matrix
+Static Function/WAVE MatrixFromSymLine(symOp,cols,[zeroBad])	// returns either 3x3 or 3x4 matrix
 	String symOp													// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
-	Variable dim													// either 3 or 4
+	Variable cols													// either 3 or 4
 	Variable zeroBad												// if 1, do not allow |mat3| near zero
 	zeroBad = ParamIsDefault(zeroBad) || numtype(zeroBad) ? 0 : zeroBad
 
-	if (dim!=3 && dim!=4)
+	if (cols!=3 && cols!=4)
 		return $""
 	endif
-	Make/N=(3,dim)/D/FREE mat=0								// either (3,3) or (3,4)
+	Make/N=(3,cols)/D/FREE mat=0								// either (3,3) or (3,4)
 
 	String expression
 	Variable i, err
@@ -8322,7 +9488,7 @@ Static Function/WAVE MatrixFromSymLine(symOp,dim,[zeroBad])	// returns either 3x
 			err = 1
 			break
 		endif
-		mat[i][] = vec[q]											// vec is always [4], but this still works for dim=3
+		mat[i][] = vec[q]											// vec is always [4], but this still works for cols=3
 	endfor
 
 	if (!err && zeroBad)										// skip this if !zeroBad
@@ -8423,8 +9589,11 @@ End
 //			This section is for making the matricies for the symmetry operations for Space Groups
 //
 
-Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
+Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry operations mats and vecs (if needed), returns number of operations
 	String SpaceGroupID
+	Variable dim
+	dim = dim==2 ? 2 : 3
+
 	Variable SG=str2num(SpaceGroupID)
 	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
 	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
@@ -8435,7 +9604,7 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 			return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
 		endif
 	endif
-	if (!isValidSpaceGroup(SG))								// Space Group must be in range [1, 230]
+	if (!isValidSpaceGroup(SG,dim))								// Space Group must be in range [1, 230]
 		DoAlert 0, "Bad Space Group = "+SpaceGroupID+", in SetSymOpsForSpaceGroup"
 		return 1
 	endif
@@ -8445,14 +9614,14 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 		return 0
 	endif
 
-	String symOperations=setSymLineID(SpaceGroupID)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+	String symOperations=setSymLineID(SpaceGroupID,dim)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
 
 	Variable i,N=ItemsInList(symOperations)
 	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
-	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
+	Make/N=(N,dim,dim)/O/B $wName									// this only holds 0 or ±1
 	Wave equivM = $wName
 	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
-	Make/N=(N,3)/O/D $wName
+	Make/N=(N,dim)/O/D $wName
 	Wave equivB = $wName
 
 	Make/N=(3,3)/O/D mat_SymItem
@@ -8477,6 +9646,60 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operat
 	Note/K equivB, wnote
 	return N
 End
+//Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
+//	String SpaceGroupID
+//	Variable SG=str2num(SpaceGroupID)
+//	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
+//	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
+//	Variable numSymOps
+//	if (WaveExists(mats) && WaveExists(bvecs))				// check if they exist
+//		if (StringMatch(StringByKey("SpaceGroupID",note(mats),"="), SpaceGroupID))
+//			numSymOps = NumberByKey("numSymOps",note(mats),"=")
+//			return numtype(numSymOps) ? 0 : numSymOps		// do not re-make, just return number of operations
+//		endif
+//	endif
+//	if (!isValidSpaceGroup(SG,3))								// Space Group must be in range [1, 230]
+//		DoAlert 0, "Bad Space Group = "+SpaceGroupID+", in SetSymOpsForSpaceGroup"
+//		return 1
+//	endif
+//	if (!DataFolderExists("root:Packages:Lattices:SymOps:"))
+//		DoAlert 0, "Cannot make symmetry matricies, the target data folder does not exist"
+//		print "Cannot make symmetry matricies, the target data folder does not exist,  'root:Packages:Lattices:SymOps:'\r"
+//		return 0
+//	endif
+//
+//	String symOperations=setSymLineID(SpaceGroupID)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+//
+//	Variable i,N=ItemsInList(symOperations)
+//	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
+//	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
+//	Wave equivM = $wName
+//	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
+//	Make/N=(N,3)/O/D $wName
+//	Wave equivB = $wName
+//
+//	Make/N=(3,3)/O/D mat_SymItem
+//	Make/N=3/O/D vec_SymItem
+//	Wave mat=mat_SymItem, vec=vec_SymItem
+//	Variable err = 0
+//	for (i=0;i<N;i+=1)
+//		err = err || make1MatrixAndVecFromSymLine(StringFromList(i,symOperations))
+//		equivM[i][][] = mat[q][r]
+//		equivB[i][] = vec[q]
+//	endfor
+//	KillWaves/Z mat_SymItem,vec_SymItem
+//	if (err)
+//		Abort "error making symmetry matricies in SetSymOpsForSpaceGroup()"
+//	endif
+//
+//	String wnote="waveClass=SymmetryOperations;"
+//	wnote = ReplaceNumberByKey("numSymOps",wnote,N,"=")
+//	wnote = ReplaceNumberByKey("SpaceGroup",wnote,SG,"=")
+//	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+//	Note/K equivM, wnote
+//	Note/K equivB, wnote
+//	return N
+//End
 //
 // makes one matrix[3][3] and one vector[3] from the expression like "x+1/3,y+2/3,z+2/3"
 Static Function make1MatrixAndVecFromSymLine(symItem)		// returns result in mat_SymItem and vec_SymItem, return value is error flag
@@ -8615,12 +9838,13 @@ Static Function/WAVE SymOpMatricies34N(SpaceGroupID, [printIt])
 	String SpaceGroupID
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	Variable dim=3
 
 	String symOp, symOperations
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
 		SpaceGroupID = FindDefaultIDforSG(str2num(SpaceGroupID))	// not found, try the default Space Group
 	endif
-	symOperations = setSymLineID(SpaceGroupID)					// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+	symOperations = setSymLineID(SpaceGroupID,dim)					// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
 
 	Variable i,numSymOps=ItemsInList(symOperations)
 	if (numSymOps<1)
@@ -8657,25 +9881,74 @@ Static Function/WAVE SymOpMatricies34N(SpaceGroupID, [printIt])
 End
 
 
-Static Function/T setSymLineID(id)
-	String id									// a space group id, e.g. "15" or "15:-b2"
+Static Function/T setSymLineID(id,dim)
+	String id				// a space group id, e.g. "15" or "15:-b2"
+	Variable dim
+	dim = dim==2 ? 2 : 3
 
-	if (!isValidSpaceGroupID(id))		// perhaps only a number was passed
+		if (!isValidSpaceGroupID(id,dim))		// perhaps only a number was passed
 		Variable SG
 		SG = str2num(id)
 		SG = strsearch(id,":",0)>0 ? NaN : SG
-		id = FindDefaultIDforSG(SG)		// find first space group starting with "id:"
+		id = FindDefaultIDforSG(SG, dim=dim)	// find first space group starting with "id:"
 	endif
-	if (!isValidSpaceGroupID(id))
+	if (!isValidSpaceGroupID(id,dim))
+		return ""										// invalid
+	endif
+
+	return setSymLineIDnum(SpaceGroupID2num(id, dim=dim),dim)
+End
+//
+
+Static Function/T setSymLineIDnum(idNum,dim)
+	Variable idNum								// Space Group ID number [1,530]
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""								// invalid
 	endif
 
-	return setSymLineIDnum(SpaceGroupID2num(id))
+	if (dim==2)
+		return setSymLineIDnum2D(idNum) 
+	else
+		return setSymLineIDnum3D(idNum) 
+	endif
 End
 //
-Static Function/T setSymLineIDnum(idNum)
+Static Function/T setSymLineIDnum2D(idNum)
 	Variable idNum								// Space Group ID number [1,530]
-	if (!isValidSpaceGroupIDnum(idNum))
+	if (!isValidSpaceGroupIDnum(idNum, 2))	// only for 2D
+		return ""								// invalid
+	endif
+	// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
+	//	Oblique		{1,2}
+	//	Rectangular	{3,4,6,7,8}
+	//	Rhombic		{5,9}
+	//	Square		{10,11,12}
+	//	Hexagonal	{13,14,15,16,17}
+	Make/N=17/T/FREE symLines=""
+	symLines[0]  = "x,y"
+	symLines[1]  = "x,y;-x,-y"
+	symLines[2]  = "x,y;-x,y"
+	symLines[3]  = "x,y;-x,y+1/2"
+	symLines[4]  = "x,y;-x,y;x+1/2,y+1/2;-x+1/2,y+1/2"
+	symLines[5]  = "x,y;-x,-y;-x,y;x,-y"
+	symLines[6]  = "x,y;-x,-y;-x+1/2,y;x+1/2,-y"
+	symLines[7]  = "x,y;-x,-y;-x+1/2,y+1/2;x+1/2,-y+1/2"
+	symLines[8]  = "x,y;-x,-y;-x,y;x,-y;x+1/2,y+1/2;-x+1/2,-y+1/2;-x+1/2,y+1/2;x+1/2,-y+1/2"
+	symLines[9] = "x,y;-x,-y;-y,x;y,-x"
+	symLines[10] = "x,y;-x,-y;-y,x;y,-x;-x,y;x,-y;y,x;-y,x"
+	symLines[11] = "x,y;-x,-y;-y,x;y,-x;-x+1/2,y+1/2;x+1/2,-y+1/2;y+1/2,x+1/2;-y+1/2,-x+1/2"
+	symLines[12] = "x,y;-y,x-y;-x+y,-x"
+	symLines[13] = "x,y;-y,x-y;-x+y,-x;-y,-x;-x+y,y;x,x-y"
+	symLines[14] = "x,y;-y,x-y;-x+y,-x;y,x;x-y,-y;-x,-x+y"
+	symLines[15] = "x,y;-y,x-y;-x+y,-x;-x,-y;y,-x+y;x-y,x"
+	symLines[16] = "x,y;-y,x-y;-x+y,-x;-x,-y;y,-x+y;x-y,x;-y,-x;-y,-x;x,x-y;y,x;x-y,-y;-x,-x+y"
+	return symLines[idNum-1]
+End
+Static Function/T setSymLineIDnum3D(idNum)
+	Variable idNum								// Space Group ID number [1,530]
+	if (!isValidSpaceGroupIDnum(idNum, 3))	// only for 3D
 		return ""								// invalid
 	endif
 
@@ -9742,18 +11015,20 @@ End
 //			This section is for making the matricies for the symmetry operations for Wyckoff Symbols
 //			Wyckoff info can be found at:	http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list
 //
-// 		the Funcitons associated with Wyckoff symbols are:
+// 		the Functions associated with Wyckoff symbols are:
 //			used by regular routines (above this):
 //				WyckoffMultiplicity(), WyckoffMenuStr(), FindWyckoffSymbol(), ForceXYZtoWyckoff()
 //
 //			ONLY used by other Wyckoff routines (below this):
 //				GetWyckoffSymStrings()
 
-Static Function WyckoffMultiplicity(SpaceGroupID,letter)
+Static Function WyckoffMultiplicity(SpaceGroupID,dim,letter)
 	String SpaceGroupID
+	Variable dim
 	String letter
+	dim = dim==2 ? 2 : 3
 
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID,dim)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
 	Variable i, N=DimSize(Wlist,0), mult=NaN
 	for (i=0;i<N;i+=1)
 		if (cmpstr(Wlist[i][0],letter)==0)
@@ -9767,11 +11042,12 @@ Static Function WyckoffMultiplicity(SpaceGroupID,letter)
 	return mult
 End
 //
-Static Function/T siteSymmetry(SpaceGroupID,symbol)
+Static Function/T siteSymmetry(SpaceGroupID,symbol,dim)
 	// return the site symmetry for a particular Wyckoff position
 	String SpaceGroupID
 	String symbol			// Wyckoff symbol (a letter)
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
+	Variable dim				// dim 2 or 3
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID,dim)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
 	Variable i, N=DimSize(Wlist,0)
 	for (i=0;i<N;i+=1)
 		if (CmpStr(symbol, Wlist[i][0], 1)==0)
@@ -9781,9 +11057,11 @@ Static Function/T siteSymmetry(SpaceGroupID,symbol)
 	return ""
 End
 //
-Static Function/T WyckoffMenuStr(SpaceGroupID)
+Static Function/T WyckoffMenuStr(SpaceGroupID,dim)
 	String SpaceGroupID
-	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	Wave/T Wlist=GetWyckoffSymStrings(SpaceGroupID,dim)	// col0=letter, col1=symOp, col2=mult, col3=siteSymmetry
 	Variable i, N=DimSize(Wlist,0)
 	String mStr=""
 	for (i=0;i<N;i+=1)
@@ -9796,8 +11074,8 @@ End
 //	Variable SG
 //	String letter
 //
-//	String mStr = LatticeSym#WyckoffMenuStr(SG)
-//	Variable mult = LatticeSym#WyckoffMultiplicity(SG,letter)
+//	String mStr = LatticeSym#WyckoffMenuStr(SG,3)
+//	Variable mult = LatticeSym#WyckoffMultiplicity(SG,3,letter)
 //	printf "mStr = '%s'\r",mStr
 //	printf "for '%s',  mult = %g\r",letter,mult
 //	return 0
@@ -9812,13 +11090,15 @@ End
 
 
 
-Static Function/T FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
+Static Function/T FindWyckoffSymbol(SpaceGroupID,dim, x0,y0,z0, mult)
 	String SpaceGroupID
+	Variable dim
 	Variable x0,y0,z0
 	Variable &mult
+	dim = dim==2 ? 2 : 3
 
 	Make/D/FREE vec4={x0,y0,z0,1}, vec3={x0,y0,z0}
-	Wave/T WyckList = GetWyckoffSymStrings(SpaceGroupID)
+	Wave/T WyckList = GetWyckoffSymStrings(SpaceGroupID,dim)
 	String symbol=""
 	mult = 0
 	Variable m, N=DimSize(WyckList,0)
@@ -9881,16 +11161,14 @@ End
 //														(-z+1/2,-y+1/2,-x+1/2), (-y+1/2,-x+1/2,-z+1/2), (-x+1/2,-z+1/2,-y+1/2)
 //														(-x,-y,-z), (-z,-x,-y), (-y,-z,-x)
 //														(z+1/2,y+1/2,x+1/2), (y+1/2,x+1/2,z+1/2), (x+1/2,z+1/2,y+1/2)
-
-
-
-
-
-Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
+//
+Static Function ForceXYZtoWyckoff(SpaceGroupID,dim,symbol,x0,y0,z0)
 	String SpaceGroupID
+	Variable dim
 	String symbol
 	Variable &x0,&y0,&z0
-	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID)
+	dim = dim==2 ? 2 : 3
+	Wave/T WyckList=GetWyckoffSymStrings(SpaceGroupID,dim)
 
 	String item, symOp=""
 	Variable xop,yop,zop
@@ -9905,14 +11183,20 @@ Static Function ForceXYZtoWyckoff(SpaceGroupID,symbol,x0,y0,z0)
 	endif
 	symOp = ReplaceString("2x",symOp,"2*x")
 	symOp = ReplaceString("2y",symOp,"2*y")
-	symOp = ReplaceString("2z",symOp,"2*z")
+	if (!(dim==2))
+		symOp = ReplaceString("2z",symOp,"2*z")
+	endif
 	symOp = ReplaceString("x",symOp,num2str(x0))
 	symOp = ReplaceString("y",symOp,num2str(y0))
-	symOp = ReplaceString("z",symOp,num2str(z0))
+	if (!(dim==2))
+		symOp = ReplaceString("z",symOp,num2str(z0))
+	endif
 
 	x0 = arithmetic(StringFromList(0,symOp,","))
 	y0 = arithmetic(StringFromList(1,symOp,","))
-	z0 = arithmetic(StringFromList(2,symOp,","))
+	if (!(dim==2))
+		z0 = arithmetic(StringFromList(2,symOp,","))
+	endif
 
 	return 0
 End
@@ -9937,8 +11221,11 @@ Function ChangeSettingCurrentXtal(id, [printIt])	// change the setting of the CU
 	endif
 
 	STRUCT crystalStructure xtal
-	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with test values
+	if (FillCrystalStructDefault(xtal))						//fill the lattice structure with test values
 		DoAlert 0, "no crystal structure found"
+		return 1
+	elseif (!(xtal.dim == 3))
+		DoAlert 0, "Can only change setting of xtal with dim = 3"
 		return 1
 	endif
 
@@ -10005,10 +11292,14 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 	String id										// the requested target id, if not valid user is prompted
 	Variable printIt
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	if (xtal.dim == 2)
+		printf "ERROR -- ChangeXtalSetting(\"%s\"), Cannot process 2D xtals\r", xtal.desc
+		return 1
+	endif
 
 	Variable SG = xtal.SpaceGroup			// Space Group number from international tables, allowed range is [1, 230]
 	String idSource = xtal.SpaceGroupID
-	if (!isValidSpaceGroup(SG))
+	if (!isValidSpaceGroup(SG,3))
 		printf "ERROR -- ChangeXtalSetting(\"%s\") xtal is invalid, nothing done.\r",id
 		return 1
 	elseif (numtype(str2num(id))==0 && SG != str2num(id))
@@ -10018,7 +11309,7 @@ Static Function ChangeXtalSetting(xtal, id, [printIt])	// change the setting of 
 
 	if (!(SG==str2num(id)))					// no id given, ask the user
 		String defaultID = FindDefaultIDforSG(xtal.SpaceGroup)
-		String allIDs=MakeAllIDs()
+		String allIDs=MakeAllIDs(3)
 		String idList="", idNumList=symmtry2SG(num2str(SG)+"*",types=16)	// find the Space Group number from the symmetry string
 		if (ItemsInList(idNumList)<1)
 			if (printIt)
@@ -10080,14 +11371,17 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 	String target								// the new desired setting, if target="", then convert to default setting
 	if (!isValidLatticeConstants(xtal))
 		return 1											// given xtal is invalid	
+	elseif (xtal.dim == 2)
+		printf "ERROR -- ConvertSetting(\"%s\"), Cannot process 2D xtals\r", xtal.desc
+		return 1
 	endif
 
 	String source = xtal.SpaceGroupID			// current SpaceGroupID
 	String defalt = FindDefaultIDforSG(xtal.SpaceGroup)	// default SpaceGroupID
-	if (!isValidSpaceGroupID(source))			// if source is invalid, do nothing
+	if (!isValidSpaceGroupID(source,3))		// if source is invalid, do nothing
 		return 1
 	endif
-	if (!isValidSpaceGroupID(target))			// if target is invalid, set to the default setting for this space group
+	if (!isValidSpaceGroupID(target,3))		// if target is invalid, set to the default setting for this space group
 		target = defalt
 	endif
 	if (StringMatch(source,target))				// converting to itself, nothing to do
@@ -10095,7 +11389,7 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 	endif
 
 	xtal.SpaceGroupID = target
-	xtal.SpaceGroupIDnum = SpaceGroupID2num(target)
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(target, dim=3)
 	Wave CBM = GetSettingTransForm(target)	// converts Defalt --> Target
 	Wave CBM0 = GetSettingTransForm(source)	// converts Defalt --> Source
 	Redimension/N=(3,3) CBM, CBM0
@@ -10169,753 +11463,779 @@ End
 
 
 
-Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
+Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID,dim)
 	String SpaceGroupID
-	if (!isValidSpaceGroupID(SpaceGroupID))
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	if (!isValidSpaceGroupID(SpaceGroupID,dim))
 		return $""
 	endif
-	// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains 27 Wyckoff symbols "a"-"A".
-	// for site symmetry of each Wyckoff position, see:    http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list
+	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID, dim=dim)
 
-	Variable SG_idNum = SpaceGroupID2num(SpaceGroupID)
-	Make/N=(530)/T/FREE WyckoffSyms
-	// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
-	WyckoffSyms[0]   = "a:x,y,z:1:1;"
-	WyckoffSyms[1]   = "a:0,0,0:1:-1;b:0,0,1/2:1:-1;c:0,1/2,0:1:-1;d:1/2,0,0:1:-1;e:1/2,1/2,0:1:-1;f:1/2,0,1/2:1:-1;g:0,1/2,1/2:1:-1;h:1/2,1/2,1/2:1:-1;"
-	WyckoffSyms[1]  += "i:x,y,z:2:1;"
-	// Monoclinic SG[3,15]  SG_idNum [3,107]   (105 idNums)
-	WyckoffSyms[2]   = "a:0,y,0:1:2;b:0,y,1/2:1:2;c:1/2,y,0:1:2;d:1/2,y,1/2:1:2;e:x,y,z:2:1;"
-	WyckoffSyms[3]   = "a:0,0,y:1:2;b:1/2,0,y:1:2;c:0,1/2,y:1:2;d:1/2,1/2,y:1:2;e:z,x,y:2:1;"
-	WyckoffSyms[4]   = "a:y,0,0:1:2;b:y,1/2,0:1:2;c:y,0,1/2:1:2;d:y,1/2,1/2:1:2;e:y,z,x:2:1;"
-	WyckoffSyms[5]   = "a:x,y,z:2:1;"
-	WyckoffSyms[6]   = "a:z,x,y:2:1;"
-	WyckoffSyms[7]   = "a:y,z,x:2:1;"
-	WyckoffSyms[8]   = "a:0,y,0:2:2;b:0,y,1/2:2:2;c:x,y,z:4:1;"
-	WyckoffSyms[9]   = "a:0,y,0:2:2;b:1/2,y,1/2:2:2;c:-z,y,x-z:4:1;"
-	WyckoffSyms[10]  = "a:0,y,0:2:2;b:1/2,y,0:2:2;c:-x+z,y,-x:4:1;"
-	WyckoffSyms[11]  = "a:0,0,y:2:2;b:1/2,0,y:2:2;c:z,x,y:4:1;"
-	WyckoffSyms[12]  = "a:0,0,y:2:2;b:1/2,1/2,y:2:2;c:x-z,-z,y:4:1;"
-	WyckoffSyms[13]  = "a:0,0,y:2:2;b:0,1/2,y:2:2;c:-x,-x+z,y:4:1;"
-	WyckoffSyms[14]  = "a:y,0,0:2:2;b:y,1/2,0:2:2;c:y,z,x:4:1;"
-	WyckoffSyms[15]  = "a:y,0,0:2:2;b:y,1/2,1/2:2:2;c:y,x-z,-z:4:1;"
-	WyckoffSyms[16]  = "a:y,0,0:2:2;b:y,0,1/2:2:2;c:y,-x,-x+z:4:1;"
-	WyckoffSyms[17]  = "a:x,0,z:1:m;b:x,1/2,z:1:m;c:x,y,z:2:1;"
-	WyckoffSyms[18]  = "a:z,x,0:1:m;b:z,x,1/2:1:m;c:z,x,y:2:1;"
-	WyckoffSyms[19]  = "a:0,z,x:1:m;b:1/2,z,x:1:m;c:y,z,x:2:1;"
-	WyckoffSyms[20]  = "a:x,y,z:2:1;"
-	WyckoffSyms[21]  = "a:-z,y,x-z:2:1;"
-	WyckoffSyms[22]  = "a:-x+z,y,-x:2:1;"
-	WyckoffSyms[23]  = "a:z,x,y:2:1;"
-	WyckoffSyms[24]  = "a:x-z,-z,y:2:1;"
-	WyckoffSyms[25]  = "a:-x,-x+z,y:2:1;"
-	WyckoffSyms[26]  = "a:y,z,x:2:1;"
-	WyckoffSyms[27]  = "a:y,x-z,-z:2:1;"
-	WyckoffSyms[28]  = "a:y,-x,-x+z:2:1;"
-	WyckoffSyms[29]  = "a:x,0,z:2:m;b:x,y,z:4:1;"
-	WyckoffSyms[30]  = "a:-z,0,x-z:2:m;b:-z,y,x-z:4:1;"
-	WyckoffSyms[31]  = "a:-x+z,0,-x:2:m;b:-x+z,y,-x:4:1;"
-	WyckoffSyms[32]  = "a:z,x,0:2:m;b:z,x,y:4:1;"
-	WyckoffSyms[33]  = "a:x-z,-z,0:2:m;b:x-z,-z,y:4:1;"
-	WyckoffSyms[34]  = "a:-x,-x+z,0:2:m;b:-x,-x+z,y:4:1;"
-	WyckoffSyms[35]  = "a:0,z,x:2:m;b:y,z,x:4:1;"
-	WyckoffSyms[36]  = "a:0,x-z,-z:2:m;b:y,x-z,-z:4:1;"
-	WyckoffSyms[37]  = "a:0,-x,-x+z:2:m;b:y,-x,-x+z:4:1;"
-	WyckoffSyms[38]  = "a:x,y,z:4:1;"
-	WyckoffSyms[39]  = "a:-z,y,x-z:4:1;"
-	WyckoffSyms[40]  = "a:-x+z,y,-x:4:1;"
-	WyckoffSyms[41]  = "a:-z,y,x-z:4:1;"
-	WyckoffSyms[42]  = "a:x,y,z:4:1;"
-	WyckoffSyms[43]  = "a:-x+z,y,-x:4:1;"
-	WyckoffSyms[44]  = "a:z,x,y:4:1;"
-	WyckoffSyms[45]  = "a:x-z,-z,y:4:1;"
-	WyckoffSyms[46]  = "a:-x,-x+z,y:4:1;"
-	WyckoffSyms[47]  = "a:x-z,-z,y:4:1;"
-	WyckoffSyms[48]  = "a:z,x,y:4:1;"
-	WyckoffSyms[49]  = "a:-x,-x+z,y:4:1;"
-	WyckoffSyms[50]  = "a:y,z,x:4:1;"
-	WyckoffSyms[51]  = "a:y,x-z,-z:4:1;"
-	WyckoffSyms[52]  = "a:y,-x,-x+z:4:1;"
-	WyckoffSyms[53]  = "a:y,x-z,-z:4:1;"
-	WyckoffSyms[54]  = "a:y,z,x:4:1;"
-	WyckoffSyms[55]  = "a:y,-x,-x+z:4:1;"
-	WyckoffSyms[56]  = "a:0,0,0:1:2/m;b:0,1/2,0:1:2/m;c:0,0,1/2:1:2/m;d:1/2,0,0:1:2/m;e:1/2,1/2,0:1:2/m;f:0,1/2,1/2:1:2/m;g:1/2,0,1/2:1:2/m;"
-	WyckoffSyms[56] += "h:1/2,1/2,1/2:1:2/m;i:0,y,0:2:2;j:1/2,y,0:2:2;k:0,y,1/2:2:2;l:1/2,y,1/2:2:2;m:x,0,z:2:m;n:x,1/2,z:2:m;o:x,y,z:4:1;"
-	WyckoffSyms[57]  = "a:0,0,0:1:2/m;b:0,0,1/2:1:2/m;c:1/2,0,0:1:2/m;d:0,1/2,0:1:2/m;e:0,1/2,1/2:1:2/m;f:1/2,0,1/2:1:2/m;g:1/2,1/2,0:1:2/m;"
-	WyckoffSyms[57] += "h:1/2,1/2,1/2:1:2/m;i:0,0,y:2:2;j:0,1/2,y:2:2;k:1/2,0,y:2:2;l:1/2,1/2,y:2:2;m:z,x,0:2:m;n:z,x,1/2:2:m;o:z,x,y:4:1;"
-	WyckoffSyms[58]  = "a:0,0,0:1:2/m;b:1/2,0,0:1:2/m;c:0,1/2,0:1:2/m;d:0,0,1/2:1:2/m;e:1/2,0,1/2:1:2/m;f:1/2,1/2,0:1:2/m;g:0,1/2,1/2:1:2/m;"
-	WyckoffSyms[58] += "h:1/2,1/2,1/2:1:2/m;i:y,0,0:2:2;j:y,0,1/2:2:2;k:y,1/2,0:2:2;l:y,1/2,1/2:2:2;m:0,z,x:2:m;n:1/2,z,x:2:m;o:y,z,x:4:1;"
-	WyckoffSyms[59]  = "a:0,0,0:2:-1;b:1/2,0,0:2:-1;c:0,0,1/2:2:-1;d:1/2,0,1/2:2:-1;e:x,1/4,z:2:m;f:x,y,z:4:1;"
-	WyckoffSyms[60]  = "a:0,0,0:2:-1;b:0,1/2,0:2:-1;c:1/2,0,0:2:-1;d:1/2,1/2,0:2:-1;e:z,x,1/4:2:m;f:z,x,y:4:1;"
-	WyckoffSyms[61]  = "a:0,0,0:2:-1;b:0,0,1/2:2:-1;c:0,1/2,0:2:-1;d:0,1/2,1/2:2:-1;e:1/4,z,x:2:m;f:y,z,x:4:1;"
-	WyckoffSyms[62]  = "a:0,0,0:2:2/m;b:0,1/2,0:2:2/m;c:0,0,1/2:2:2/m;d:0,1/2,1/2:2:2/m;e:1/4,1/4,0:4:-1;f:1/4,1/4,1/2:4:-1;g:0,y,0:4:2;h:0,y,1/2:4:2;"
-	WyckoffSyms[62] += "i:x,0,z:4:m;j:x,y,z:8:1;"
-	WyckoffSyms[63]  = "a:0,0,0:2:2/m;b:0,1/2,0:2:2/m;c:1/2,0,1/2:2:2/m;d:1/2,1/2,1/2:2:2/m;e:0,1/4,1/4:4:-1;f:1/2,1/4,1/4:4:-1;g:0,y,0:4:2;h:1/2,y,1/2:4:2;"
-	WyckoffSyms[63] += "i:-z,0,x-z:4:m;j:-z,y,x-z:8:1;"
-	WyckoffSyms[64]  = "a:0,0,0:2:2/m;b:0,1/2,0:2:2/m;c:1/2,0,0:2:2/m;d:1/2,1/2,0:2:2/m;e:1/4,1/4,1/4:4:-1;f:1/4,1/4,1/4:4:-1;g:0,y,0:4:2;h:1/2,y,0:4:2;"
-	WyckoffSyms[64] += "i:-x+z,0,-x:4:m;j:-x+z,y,-x:8:1;"
-	WyckoffSyms[65]  = "a:0,0,0:2:2/m;b:0,0,1/2:2:2/m;c:1/2,0,0:2:2/m;d:1/2,0,1/2:2:2/m;e:0,1/4,1/4:4:-1;f:1/2,1/4,1/4:4:-1;g:0,0,y:4:2;h:1/2,0,y:4:2;"
-	WyckoffSyms[65] += "i:z,x,0:4:m;j:z,x,y:8:1;"
-	WyckoffSyms[66]  = "a:0,0,0:2:2/m;b:0,0,1/2:2:2/m;c:1/2,1/2,0:2:2/m;d:1/2,1/2,1/2:2:2/m;e:1/4,0,1/4:4:-1;f:1/4,1/2,1/4:4:-1;g:0,0,y:4:2;h:1/2,1/2,y:4:2;"
-	WyckoffSyms[66] += "i:x-z,-z,0:4:m;j:x-z,-z,y:8:1;"
-	WyckoffSyms[67]  = "a:0,0,0:2:2/m;b:0,0,1/2:2:2/m;c:0,1/2,0:2:2/m;d:0,1/2,1/2:2:2/m;e:1/4,1/4,1/4:4:-1;f:1/4,1/4,1/4:4:-1;g:0,0,y:4:2;h:0,1/2,y:4:2;"
-	WyckoffSyms[67] += "i:-x,-x+z,0:4:m;j:-x,-x+z,y:8:1;"
-	WyckoffSyms[68]  = "a:0,0,0:2:2/m;b:1/2,0,0:2:2/m;c:0,1/2,0:2:2/m;d:1/2,1/2,0:2:2/m;e:1/4,0,1/4:4:-1;f:1/4,1/2,1/4:4:-1;g:y,0,0:4:2;h:y,1/2,0:4:2;"
-	WyckoffSyms[68] += "i:0,z,x:4:m;j:y,z,x:8:1;"
-	WyckoffSyms[69]  = "a:0,0,0:2:2/m;b:1/2,0,0:2:2/m;c:0,1/2,1/2:2:2/m;d:1/2,1/2,1/2:2:2/m;e:1/4,1/4,0:4:-1;f:1/4,1/4,1/2:4:-1;g:y,0,0:4:2;h:y,1/2,1/2:4:2;"
-	WyckoffSyms[69] += "i:0,x-z,-z:4:m;j:y,x-z,-z:8:1;"
-	WyckoffSyms[70]  = "a:0,0,0:2:2/m;b:1/2,0,0:2:2/m;c:0,0,1/2:2:2/m;d:1/2,0,1/2:2:2/m;e:1/4,1/4,1/4:4:-1;f:1/4,1/4,1/4:4:-1;g:y,0,0:4:2;h:y,0,1/2:4:2;"
-	WyckoffSyms[70] += "i:0,-x,-x+z:4:m;j:y,-x,-x+z:8:1;"
-	WyckoffSyms[71]  = "a:0,0,0:2:-1;b:1/2,1/2,0:2:-1;c:0,1/2,0:2:-1;d:1/2,0,0:2:-1;e:0,y,1/4:2:2;f:1/2,y,1/4:2:2;g:x,y,z:4:1;"
-	WyckoffSyms[72]  = "a:0,0,0:2:-1;b:0,1/2,1/2:2:-1;c:0,1/2,0:2:-1;d:0,0,1/2:2:-1;e:1/4,y,1/4:2:2;f:1/4,y,1/4:2:2;g:-z,y,x-z:4:1;"
-	WyckoffSyms[73]  = "a:0,0,0:2:-1;b:1/2,1/2,1/2:2:-1;c:0,1/2,0:2:-1;d:1/2,0,1/2:2:-1;e:1/4,y,0:2:2;f:1/4,y,1/2:2:2;g:-x+z,y,-x:4:1;"
-	WyckoffSyms[74]  = "a:0,0,0:2:-1;b:0,1/2,1/2:2:-1;c:0,0,1/2:2:-1;d:0,1/2,0:2:-1;e:1/4,0,y:2:2;f:1/4,1/2,y:2:2;g:z,x,y:4:1;"
-	WyckoffSyms[75]  = "a:0,0,0:2:-1;b:1/2,0,1/2:2:-1;c:0,0,1/2:2:-1;d:1/2,0,0:2:-1;e:1/4,1/4,y:2:2;f:1/4,1/4,y:2:2;g:x-z,-z,y:4:1;"
-	WyckoffSyms[76]  = "a:0,0,0:2:-1;b:1/2,1/2,1/2:2:-1;c:0,0,1/2:2:-1;d:1/2,1/2,0:2:-1;e:0,1/4,y:2:2;f:1/2,1/4,y:2:2;g:-x,-x+z,y:4:1;"
-	WyckoffSyms[77]  = "a:0,0,0:2:-1;b:1/2,0,1/2:2:-1;c:1/2,0,0:2:-1;d:0,0,1/2:2:-1;e:y,1/4,0:2:2;f:y,1/4,1/2:2:2;g:y,z,x:4:1;"
-	WyckoffSyms[78]  = "a:0,0,0:2:-1;b:1/2,1/2,0:2:-1;c:1/2,0,0:2:-1;d:0,1/2,0:2:-1;e:y,1/4,1/4:2:2;f:y,1/4,1/4:2:2;g:y,x-z,-z:4:1;"
-	WyckoffSyms[79]  = "a:0,0,0:2:-1;b:1/2,1/2,1/2:2:-1;c:1/2,0,0:2:-1;d:0,1/2,1/2:2:-1;e:y,0,1/4:2:2;f:y,1/2,1/4:2:2;g:y,-x,-x+z:4:1;"
-	WyckoffSyms[80]  = "a:0,0,0:2:-1;b:1/2,0,0:2:-1;c:0,0,1/2:2:-1;d:1/2,0,1/2:2:-1;e:x,y,z:4:1;"
-	WyckoffSyms[81]  = "a:0,0,0:2:-1;b:0,0,1/2:2:-1;c:1/2,0,1/2:2:-1;d:1/2,0,0:2:-1;e:-z,y,x-z:4:1;"
-	WyckoffSyms[82]  = "a:0,0,0:2:-1;b:1/2,0,1/2:2:-1;c:1/2,0,0:2:-1;d:0,0,1/2:2:-1;e:-x+z,y,-x:4:1;"
-	WyckoffSyms[83]  = "a:0,0,0:2:-1;b:0,1/2,0:2:-1;c:1/2,0,0:2:-1;d:1/2,1/2,0:2:-1;e:z,x,y:4:1;"
-	WyckoffSyms[84]  = "a:0,0,0:2:-1;b:1/2,0,0:2:-1;c:1/2,1/2,0:2:-1;d:0,1/2,0:2:-1;e:x-z,-z,y:4:1;"
-	WyckoffSyms[85]  = "a:0,0,0:2:-1;b:1/2,1/2,0:2:-1;c:0,1/2,0:2:-1;d:1/2,0,0:2:-1;e:-x,-x+z,y:4:1;"
-	WyckoffSyms[86]  = "a:0,0,0:2:-1;b:0,0,1/2:2:-1;c:0,1/2,0:2:-1;d:0,1/2,1/2:2:-1;e:y,z,x:4:1;"
-	WyckoffSyms[87]  = "a:0,0,0:2:-1;b:0,1/2,0:2:-1;c:0,1/2,1/2:2:-1;d:0,0,1/2:2:-1;e:y,x-z,-z:4:1;"
-	WyckoffSyms[88]  = "a:0,0,0:2:-1;b:0,1/2,1/2:2:-1;c:0,0,1/2:2:-1;d:0,1/2,0:2:-1;e:y,-x,-x+z:4:1;"
-	WyckoffSyms[89]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:0,y,1/4:4:2;f:x,y,z:8:1;"
-	WyckoffSyms[90]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,y,1/4:4:2;f:-z,y,x-z:8:1;"
-	WyckoffSyms[91]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:1/4,y,0:4:2;f:-x+z,y,-x:8:1;"
-	WyckoffSyms[92]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,y,1/4:4:2;f:-z,y,x-z:8:1;"
-	WyckoffSyms[93]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:0,y,1/4:4:2;f:x,y,z:8:1;"
-	WyckoffSyms[94]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:1/4,y,0:4:2;f:-x+z,y,-x:8:1;"
-	WyckoffSyms[95]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,0,y:4:2;f:z,x,y:8:1;"
-	WyckoffSyms[96]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:1/4,1/4,y:4:2;f:x-z,-z,y:8:1;"
-	WyckoffSyms[97]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:0,1/4,y:4:2;f:-x,-x+z,y:8:1;"
-	WyckoffSyms[98]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:1/4,1/4,y:4:2;f:x-z,-z,y:8:1;"
-	WyckoffSyms[99]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,0,y:4:2;f:z,x,y:8:1;"
-	WyckoffSyms[100]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:0,1/4,y:4:2;f:-x,-x+z,y:8:1;"
-	WyckoffSyms[101]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:y,1/4,0:4:2;f:y,z,x:8:1;"
-	WyckoffSyms[102]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:y,1/4,1/4:4:2;f:y,x-z,-z:8:1;"
-	WyckoffSyms[103]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:y,0,1/4:4:2;f:y,-x,-x+z:8:1;"
-	WyckoffSyms[104]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:y,1/4,1/4:4:2;f:y,x-z,-z:8:1;"
-	WyckoffSyms[105]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:y,1/4,0:4:2;f:y,z,x:8:1;"
-	WyckoffSyms[106]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:y,0,1/4:4:2;f:y,-x,-x+z:8:1;"
-	// Orthorhombic SG[16,74]  SG_idNum [108,348]   (241 idNums)
-	WyckoffSyms[107]  = "a:0,0,0:1:222;b:1/2,0,0:1:222;c:0,1/2,0:1:222;d:0,0,1/2:1:222;e:1/2,1/2,0:1:222;f:1/2,0,1/2:1:222;g:0,1/2,1/2:1:222;"
-	WyckoffSyms[107] += "h:1/2,1/2,1/2:1:222;i:x,0,0:2:2..;j:x,0,1/2:2:2..;k:x,1/2,0:2:2..;l:x,1/2,1/2:2:2..;m:0,y,0:2:.2.;n:0,y,1/2:2:.2.;o:1/2,y,0:2:.2.;"
-	WyckoffSyms[107] += "p:1/2,y,1/2:2:.2.;q:0,0,z:2:..2;r:1/2,0,z:2:..2;s:0,1/2,z:2:..2;t:1/2,1/2,z:2:..2;u:x,y,z:4:1;"
-	WyckoffSyms[108]  = "a:x,0,0:2:2..;b:x,1/2,0:2:2..;c:0,y,1/4:2:.2.;d:1/2,y,1/4:2:.2.;e:x,y,z:4:1;"
-	WyckoffSyms[109]  = "a:0,x,0:2:2..;b:0,x,1/2:2:2..;c:1/4,0,y:2:.2.;d:1/4,1/2,y:2:.2.;e:z,x,y:4:1;"
-	WyckoffSyms[110]  = "a:0,0,x:2:2..;b:1/2,0,x:2:2..;c:y,1/4,0:2:.2.;d:y,1/4,1/2:2:.2.;e:y,z,x:4:1;"
-	WyckoffSyms[111]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:x,y,z:4:1;"
-	WyckoffSyms[112]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,x,y:4:1;"
-	WyckoffSyms[113]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,x:4:1;"
-	WyckoffSyms[114]  = "a:x,y,z:4:1;"
-	WyckoffSyms[115]  = "a:x,0,0:4:2..;b:0,y,1/4:4:.2.;c:x,y,z:8:1;"
-	WyckoffSyms[116]  = "a:0,x,0:4:2..;b:1/4,0,y:4:.2.;c:z,x,y:8:1;"
-	WyckoffSyms[117]  = "a:0,0,x:4:2..;b:y,1/4,0:4:.2.;c:y,z,x:8:1;"
-	WyckoffSyms[118]  = "a:0,0,0:2:222;b:0,1/2,0:2:222;c:1/2,0,1/2:2:222;d:0,0,1/2:2:222;e:x,0,0:4:2..;f:x,0,1/2:4:2..;g:0,y,0:4:.2.;h:0,y,1/2:4:.2.;"
-	WyckoffSyms[118] += "i:0,0,z:4:..2;j:0,1/2,z:4:..2;k:1/4,1/4,z:4:..2;l:x,y,z:8:1;"
-	WyckoffSyms[119]  = "a:0,0,0:2:222;b:0,0,1/2:2:222;c:1/2,1/2,0:2:222;d:1/2,0,0:2:222;e:0,x,0:4:2..;f:1/2,x,0:4:2..;g:0,0,y:4:.2.;h:1/2,0,y:4:.2.;"
-	WyckoffSyms[119] += "i:z,0,0:4:..2;j:z,0,1/2:4:..2;k:z,1/4,1/4:4:..2;l:z,x,y:8:1;"
-	WyckoffSyms[120]  = "a:0,0,0:2:222;b:1/2,0,0:2:222;c:0,1/2,1/2:2:222;d:0,1/2,0:2:222;e:0,0,x:4:2..;f:0,1/2,x:4:2..;g:y,0,0:4:.2.;h:y,1/2,0:4:.2.;"
-	WyckoffSyms[120] += "i:0,z,0:4:..2;j:1/2,z,0:4:..2;k:1/4,z,1/4:4:..2;l:y,z,x:8:1;"
-	WyckoffSyms[121]  = "a:0,0,0:4:222;b:0,0,1/2:4:222;c:1/4,1/4,1/4:4:222;d:1/4,1/4,3/4:4:222;e:x,0,0:8:2..;f:0,y,0:8:.2.;g:0,0,z:8:..2;h:1/4,1/4,z:8:..2;"
-	WyckoffSyms[121] += "i:1/4,y,1/4:8:.2.;j:x,1/4,1/4:8:2..;k:x,y,z:16:1;"
-	WyckoffSyms[122]  = "a:0,0,0:2:222;b:1/2,0,0:2:222;c:0,0,1/2:2:222;d:0,1/2,0:2:222;e:x,0,0:4:2..;f:x,0,1/2:4:2..;g:0,y,0:4:.2.;h:1/2,y,0:4:.2.;"
-	WyckoffSyms[122] += "i:0,0,z:4:..2;j:0,1/2,z:4:..2;k:x,y,z:8:1;"
-	WyckoffSyms[123]  = "a:x,0,1/4:4:2..;b:1/4,y,0:4:.2.;c:0,1/4,z:4:..2;d:x,y,z:8:1;"
-	WyckoffSyms[124]  = "a:0,0,z:1:mm2;b:0,1/2,z:1:mm2;c:1/2,0,z:1:mm2;d:1/2,1/2,z:1:mm2;e:x,0,z:2:.m.;f:x,1/2,z:2:.m.;g:0,y,z:2:m..;h:1/2,y,z:2:m..;"
-	WyckoffSyms[124] += "i:x,y,z:4:1;"
-	WyckoffSyms[125]  = "a:z,0,0:1:mm2;b:z,0,1/2:1:mm2;c:z,1/2,0:1:mm2;d:z,1/2,1/2:1:mm2;e:z,x,0:2:.m.;f:z,x,1/2:2:.m.;g:z,0,y:2:m..;h:z,1/2,y:2:m..;"
-	WyckoffSyms[125] += "i:z,x,y:4:1;"
-	WyckoffSyms[126]  = "a:0,z,0:1:mm2;b:1/2,z,0:1:mm2;c:0,z,1/2:1:mm2;d:1/2,z,1/2:1:mm2;e:0,z,x:2:.m.;f:1/2,z,x:2:.m.;g:y,z,0:2:m..;h:y,z,1/2:2:m..;"
-	WyckoffSyms[126] += "i:y,z,x:4:1;"
-	WyckoffSyms[127]  = "a:0,y,z:2:m..;b:1/2,y,z:2:m..;c:x,y,z:4:1;"
-	WyckoffSyms[128]  = "a:y,0,-z:2:m..;b:y,1/2,-z:2:m..;c:y,x,-z:4:1;"
-	WyckoffSyms[129]  = "a:z,0,y:2:m..;b:z,1/2,y:2:m..;c:z,x,y:4:1;"
-	WyckoffSyms[130]  = "a:-z,y,0:2:m..;b:-z,y,1/2:2:m..;c:-z,y,x:4:1;"
-	WyckoffSyms[131]  = "a:y,z,0:2:m..;b:y,z,1/2:2:m..;c:y,z,x:4:1;"
-	WyckoffSyms[132]  = "a:0,-z,y:2:m..;b:1/2,-z,y:2:m..;c:x,-z,y:4:1;"
-	WyckoffSyms[133]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:1/2,0,z:2:..2;d:1/2,1/2,z:2:..2;e:x,y,z:4:1;"
-	WyckoffSyms[134]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,1/2,0:2:..2;d:z,1/2,1/2:2:..2;e:z,x,y:4:1;"
-	WyckoffSyms[135]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:0,z,1/2:2:..2;d:1/2,z,1/2:2:..2;e:y,z,x:4:1;"
-	WyckoffSyms[136]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:1/4,y,z:2:m..;d:x,y,z:4:1;"
-	WyckoffSyms[137]  = "a:0,0,-z:2:..2;b:1/2,0,-z:2:..2;c:y,1/4,-z:2:m..;d:y,x,-z:4:1;"
-	WyckoffSyms[138]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,1/4,y:2:m..;d:z,x,y:4:1;"
-	WyckoffSyms[139]  = "a:-z,0,0:2:..2;b:-z,1/2,0:2:..2;c:-z,y,1/4:2:m..;d:-z,y,x:4:1;"
-	WyckoffSyms[140]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,1/4:2:m..;d:y,z,x:4:1;"
-	WyckoffSyms[141]  = "a:0,-z,0:2:..2;b:0,-z,1/2:2:..2;c:1/4,-z,y:2:m..;d:x,-z,y:4:1;"
-	WyckoffSyms[142]  = "a:x,y,z:4:1;"
-	WyckoffSyms[143]  = "a:y,x,-z:4:1;"
-	WyckoffSyms[144]  = "a:z,x,y:4:1;"
-	WyckoffSyms[145]  = "a:-z,y,x:4:1;"
-	WyckoffSyms[146]  = "a:y,z,x:4:1;"
-	WyckoffSyms[147]  = "a:x,-z,y:4:1;"
-	WyckoffSyms[148]  = "a:0,0,z:2:..2;b:1/2,0,z:2:..2;c:x,y,z:4:1;"
-	WyckoffSyms[149]  = "a:0,0,-z:2:..2;b:0,1/2,-z:2:..2;c:y,x,-z:4:1;"
-	WyckoffSyms[150]  = "a:z,0,0:2:..2;b:z,1/2,0:2:..2;c:z,x,y:4:1;"
-	WyckoffSyms[151]  = "a:-z,0,0:2:..2;b:-z,0,1/2:2:..2;c:-z,y,x:4:1;"
-	WyckoffSyms[152]  = "a:0,z,0:2:..2;b:0,z,1/2:2:..2;c:y,z,x:4:1;"
-	WyckoffSyms[153]  = "a:0,-z,0:2:..2;b:1/2,-z,0:2:..2;c:x,-z,y:4:1;"
-	WyckoffSyms[154]  = "a:0,y,z:2:m..;b:x,y,z:4:1;"
-	WyckoffSyms[155]  = "a:y,0,-z:2:m..;b:y,x,-z:4:1;"
-	WyckoffSyms[156]  = "a:z,0,y:2:m..;b:z,x,y:4:1;"
-	WyckoffSyms[157]  = "a:-z,y,0:2:m..;b:-z,y,x:4:1;"
-	WyckoffSyms[158]  = "a:y,z,0:2:m..;b:y,z,x:4:1;"
-	WyckoffSyms[159]  = "a:0,-z,y:2:m..;b:x,-z,y:4:1;"
-	WyckoffSyms[160]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:x,y,z:4:1;"
-	WyckoffSyms[161]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,x,y:4:1;"
-	WyckoffSyms[162]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,x:4:1;"
-	WyckoffSyms[163]  = "a:x,y,z:4:1;"
-	WyckoffSyms[164]  = "a:y,x,-z:4:1;"
-	WyckoffSyms[165]  = "a:z,x,y:4:1;"
-	WyckoffSyms[166]  = "a:-z,y,x:4:1;"
-	WyckoffSyms[167]  = "a:y,z,x:4:1;"
-	WyckoffSyms[168]  = "a:x,-z,y:4:1;"
-	WyckoffSyms[169]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:x,y,z:4:1;"
-	WyckoffSyms[170]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,x,y:4:1;"
-	WyckoffSyms[171]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,x:4:1;"
-	WyckoffSyms[172]  = "a:0,0,z:2:mm2;b:0,1/2,z:2:mm2;c:1/4,1/4,z:4:..2;d:x,0,z:4:.m.;e:0,y,z:4:m..;f:x,y,z:8:1;"
-	WyckoffSyms[173]  = "a:z,0,0:2:mm2;b:z,0,1/2:2:mm2;c:z,1/4,1/4:4:..2;d:z,x,0:4:.m.;e:z,0,y:4:m..;f:z,x,y:8:1;"
-	WyckoffSyms[174]  = "a:0,z,0:2:mm2;b:1/2,z,0:2:mm2;c:1/4,z,1/4:4:..2;d:0,z,x:4:.m.;e:y,z,0:4:m..;f:y,z,x:8:1;"
-	WyckoffSyms[175]  = "a:0,y,z:4:m..;b:x,y,z:8:1;"
-	WyckoffSyms[176]  = "a:y,0,-z:4:m..;b:y,x,-z:8:1;"
-	WyckoffSyms[177]  = "a:z,0,y:4:m..;b:z,x,y:8:1;"
-	WyckoffSyms[178]  = "a:-z,y,0:4:m..;b:-z,y,x:8:1;"
-	WyckoffSyms[179]  = "a:y,z,0:4:m..;b:y,z,x:8:1;"
-	WyckoffSyms[180]  = "a:0,-z,y:4:m..;b:x,-z,y:8:1;"
-	WyckoffSyms[181]  = "a:0,0,z:4:..2;b:0,1/2,z:4:..2;c:1/4,1/4,z:4:..2;d:x,y,z:8:1;"
-	WyckoffSyms[182]  = "a:z,0,0:4:..2;b:z,0,1/2:4:..2;c:z,1/4,1/4:4:..2;d:z,x,y:8:1;"
-	WyckoffSyms[183]  = "a:0,z,0:4:..2;b:1/2,z,0:4:..2;c:1/4,z,1/4:4:..2;d:y,z,x:8:1;"
-	WyckoffSyms[184]  = "a:0,0,z:2:mm2;b:1/2,0,z:2:mm2;c:x,0,z:4:.m.;d:0,y,z:4:m..;e:1/2,y,z:4:m..;f:x,y,z:8:1;"
-	WyckoffSyms[185]  = "a:0,0,-z:2:mm2;b:0,1/2,-z:2:mm2;c:0,x,-z:4:.m.;d:y,0,-z:4:m..;e:y,1/2,-z:4:m..;f:y,x,-z:8:1;"
-	WyckoffSyms[186]  = "a:z,0,0:2:mm2;b:z,1/2,0:2:mm2;c:z,x,0:4:.m.;d:z,0,y:4:m..;e:z,1/2,y:4:m..;f:z,x,y:8:1;"
-	WyckoffSyms[187]  = "a:-z,0,0:2:mm2;b:-z,0,1/2:2:mm2;c:-z,0,x:4:.m.;d:-z,y,0:4:m..;e:-z,y,1/2:4:m..;f:-z,y,x:8:1;"
-	WyckoffSyms[188]  = "a:0,z,0:2:mm2;b:0,z,1/2:2:mm2;c:0,z,x:4:.m.;d:y,z,0:4:m..;e:y,z,1/2:4:m..;f:y,z,x:8:1;"
-	WyckoffSyms[189]  = "a:0,-z,0:2:mm2;b:1/2,-z,0:2:mm2;c:x,-z,0:4:.m.;d:0,-z,y:4:m..;e:1/2,-z,y:4:m..;f:x,-z,y:8:1;"
-	WyckoffSyms[190]  = "a:0,0,z:4:..2;b:1/2,0,z:4:..2;c:x,1/4,z:4:.m.;d:x,y,z:8:1;"
-	WyckoffSyms[191]  = "a:0,0,-z:4:..2;b:0,1/2,-z:4:..2;c:1/4,x,-z:4:.m.;d:y,x,-z:8:1;"
-	WyckoffSyms[192]  = "a:z,0,0:4:..2;b:z,1/2,0:4:..2;c:z,x,1/4:4:.m.;d:z,x,y:8:1;"
-	WyckoffSyms[193]  = "a:-z,0,0:4:..2;b:-z,0,1/2:4:..2;c:-z,1/4,x:4:.m.;d:-z,y,x:8:1;"
-	WyckoffSyms[194]  = "a:0,z,0:4:..2;b:0,z,1/2:4:..2;c:1/4,z,x:4:.m.;d:y,z,x:8:1;"
-	WyckoffSyms[195]  = "a:0,-z,0:4:..2;b:1/2,-z,0:4:..2;c:x,-z,1/4:4:.m.;d:x,-z,y:8:1;"
-	WyckoffSyms[196]  = "a:0,0,z:4:..2;b:1/4,y,z:4:m..;c:x,y,z:8:1;"
-	WyckoffSyms[197]  = "a:0,0,-z:4:..2;b:y,1/4,-z:4:m..;c:y,x,-z:8:1;"
-	WyckoffSyms[198]  = "a:z,0,0:4:..2;b:z,1/4,y:4:m..;c:z,x,y:8:1;"
-	WyckoffSyms[199]  = "a:-z,0,0:4:..2;b:-z,y,1/4:4:m..;c:-z,y,x:8:1;"
-	WyckoffSyms[200]  = "a:0,z,0:4:..2;b:y,z,1/4:4:m..;c:y,z,x:8:1;"
-	WyckoffSyms[201]  = "a:0,-z,0:4:..2;b:1/4,-z,y:4:m..;c:x,-z,y:8:1;"
-	WyckoffSyms[202]  = "a:0,0,z:4:..2;b:x,y,z:8:1;"
-	WyckoffSyms[203]  = "a:0,0,-z:4:..2;b:y,x,-z:8:1;"
-	WyckoffSyms[204]  = "a:z,0,0:4:..2;b:z,x,y:8:1;"
-	WyckoffSyms[205]  = "a:-z,0,0:4:..2;b:-z,y,x:8:1;"
-	WyckoffSyms[206]  = "a:0,z,0:4:..2;b:y,z,x:8:1;"
-	WyckoffSyms[207]  = "a:0,-z,0:4:..2;b:x,-z,y:8:1;"
-	WyckoffSyms[208]  = "a:0,0,z:4:mm2;b:1/4,1/4,z:8:..2;c:0,y,z:8:m..;d:x,0,z:8:.m.;e:x,y,z:16:1;"
-	WyckoffSyms[209]  = "a:z,0,0:4:mm2;b:z,1/4,1/4:8:..2;c:z,0,y:8:m..;d:z,x,0:8:.m.;e:z,x,y:16:1;"
-	WyckoffSyms[210]  = "a:0,z,0:4:mm2;b:1/4,z,1/4:8:..2;c:y,z,0:8:m..;d:0,z,x:8:.m.;e:y,z,x:16:1;"
-	WyckoffSyms[211]  = "a:0,0,z:8:..2;b:x,y,z:16:1;"
-	WyckoffSyms[212]  = "a:z,0,0:8:..2;b:z,x,y:16:1;"
-	WyckoffSyms[213]  = "a:0,z,0:8:..2;b:y,z,x:16:1;"
-	WyckoffSyms[214]  = "a:0,0,z:2:mm2;b:0,1/2,z:2:mm2;c:x,0,z:4:.m.;d:0,y,z:4:m..;e:x,y,z:8:1;"
-	WyckoffSyms[215]  = "a:z,0,0:2:mm2;b:z,0,1/2:2:mm2;c:z,x,0:4:.m.;d:z,0,y:4:m..;e:z,x,y:8:1;"
-	WyckoffSyms[216]  = "a:0,z,0:2:mm2;b:1/2,z,0:2:mm2;c:0,z,x:4:.m.;d:y,z,0:4:m..;e:y,z,x:8:1;"
-	WyckoffSyms[217]  = "a:0,0,z:4:..2;b:0,1/2,z:4:..2;c:x,y,z:8:1;"
-	WyckoffSyms[218]  = "a:z,0,0:4:..2;b:z,0,1/2:4:..2;c:z,x,y:8:1;"
-	WyckoffSyms[219]  = "a:0,z,0:4:..2;b:1/2,z,0:4:..2;c:y,z,x:8:1;"
-	WyckoffSyms[220]  = "a:0,0,z:4:..2;b:1/4,y,z:4:m..;c:x,y,z:8:1;"
-	WyckoffSyms[221]  = "a:0,0,-z:4:..2;b:y,1/4,-z:4:m..;c:y,x,-z:8:1;"
-	WyckoffSyms[222]  = "a:z,0,0:4:..2;b:z,1/4,y:4:m..;c:z,x,y:8:1;"
-	WyckoffSyms[223]  = "a:-z,0,0:4:..2;b:-z,y,1/4:4:m..;c:-z,y,x:8:1;"
-	WyckoffSyms[224]  = "a:0,z,0:4:..2;b:y,z,1/4:4:m..;c:y,z,x:8:1;"
-	WyckoffSyms[225]  = "a:0,-z,0:4:..2;b:1/4,-z,y:4:m..;c:x,-z,y:8:1;"
-	WyckoffSyms[226]  = "a:0,0,0:1:mmm;b:1/2,0,0:1:mmm;c:0,0,1/2:1:mmm;d:1/2,0,1/2:1:mmm;e:0,1/2,0:1:mmm;f:1/2,1/2,0:1:mmm;g:0,1/2,1/2:1:mmm;"
-	WyckoffSyms[226] += "h:1/2,1/2,1/2:1:mmm;i:x,0,0:2:2mm;j:x,0,1/2:2:2mm;k:x,1/2,0:2:2mm;l:x,1/2,1/2:2:2mm;m:0,y,0:2:m2m;n:0,y,1/2:2:m2m;o:1/2,y,0:2:m2m;"
-	WyckoffSyms[226] += "p:1/2,y,1/2:2:m2m;q:0,0,z:2:mm2;r:0,1/2,z:2:mm2;s:1/2,0,z:2:mm2;t:1/2,1/2,z:2:mm2;u:0,y,z:4:m..;v:1/2,y,z:4:m..;w:x,0,z:4:.m.;"
-	WyckoffSyms[226] += "x:x,1/2,z:4:.m.;y:x,y,0:4:..m;z:x,y,1/2:4:..m;A:x,y,z:8:1;"
-	WyckoffSyms[227]  = "a:1/4,1/4,1/4:2:222;b:3/4,1/4,1/4:2:222;c:1/4,1/4,3/4:2:222;d:1/4,3/4,1/4:2:222;e:1/2,1/2,1/2:4:-1;f:0,0,0:4:-1;g:x,1/4,1/4:4:2..;"
-	WyckoffSyms[227] += "h:x,1/4,3/4:4:2..;i:1/4,y,1/4:4:.2.;j:3/4,y,1/4:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
-	WyckoffSyms[228]  = "a:1/4,1/4,1/4:2:222;b:3/4,1/4,1/4:2:222;c:1/4,1/4,3/4:2:222;d:1/4,3/4,1/4:2:222;e:1/2,1/2,1/2:4:-1;f:0,0,0:4:-1;g:x,1/4,1/4:4:2..;"
-	WyckoffSyms[228] += "h:x,1/4,3/4:4:2..;i:1/4,y,1/4:4:.2.;j:3/4,y,1/4:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
-	WyckoffSyms[229]  = "a:0,0,0:2:..2/m;b:1/2,1/2,0:2:..2/m;c:0,1/2,0:2:..2/m;d:1/2,0,0:2:..2/m;e:0,0,1/4:2:222;f:1/2,0,1/4:2:222;g:0,1/2,1/4:2:222;"
-	WyckoffSyms[229] += "h:1/2,1/2,1/4:2:222;i:x,0,1/4:4:2..;j:x,1/2,1/4:4:2..;k:0,y,1/4:4:.2.;l:1/2,y,1/4:4:.2.;m:0,0,z:4:..2;n:1/2,1/2,z:4:..2;"
-	WyckoffSyms[229] += "o:0,1/2,z:4:..2;p:1/2,0,z:4:..2;q:x,y,0:4:..m;r:x,y,z:8:1;"
-	WyckoffSyms[230]  = "a:0,0,0:2:..2/m;b:0,1/2,1/2:2:..2/m;c:0,0,1/2:2:..2/m;d:0,1/2,0:2:..2/m;e:1/4,0,0:2:222;f:1/4,1/2,0:2:222;g:1/4,0,1/2:2:222;"
-	WyckoffSyms[230] += "h:1/4,1/2,1/2:2:222;i:1/4,x,0:4:2..;j:1/4,x,1/2:4:2..;k:1/4,0,y:4:.2.;l:1/4,1/2,y:4:.2.;m:z,0,0:4:..2;n:z,1/2,1/2:4:..2;"
-	WyckoffSyms[230] += "o:z,0,1/2:4:..2;p:z,1/2,0:4:..2;q:0,x,y:4:..m;r:z,x,y:8:1;"
-	WyckoffSyms[231]  = "a:0,0,0:2:..2/m;b:1/2,0,1/2:2:..2/m;c:1/2,0,0:2:..2/m;d:0,0,1/2:2:..2/m;e:0,1/4,0:2:222;f:0,1/4,1/2:2:222;g:1/2,1/4,0:2:222;"
-	WyckoffSyms[231] += "h:1/2,1/4,1/2:2:222;i:0,1/4,x:4:2..;j:1/2,1/4,x:4:2..;k:y,1/4,0:4:.2.;l:y,1/4,1/2:4:.2.;m:0,z,0:4:..2;n:1/2,z,1/2:4:..2;"
-	WyckoffSyms[231] += "o:1/2,z,0:4:..2;p:0,z,1/2:4:..2;q:y,0,x:4:..m;r:y,z,x:8:1;"
-	WyckoffSyms[232]  = "a:1/4,1/4,0:2:222;b:3/4,1/4,0:2:222;c:3/4,1/4,1/2:2:222;d:1/4,1/4,1/2:2:222;e:0,0,0:4:-1;f:0,0,1/2:4:-1;g:x,1/4,0:4:2..;"
-	WyckoffSyms[232] += "h:x,1/4,1/2:4:2..;i:1/4,y,0:4:.2.;j:1/4,y,1/2:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
-	WyckoffSyms[233]  = "a:1/4,1/4,0:2:222;b:3/4,1/4,0:2:222;c:3/4,1/4,1/2:2:222;d:1/4,1/4,1/2:2:222;e:0,0,0:4:-1;f:0,0,1/2:4:-1;g:x,1/4,0:4:2..;"
-	WyckoffSyms[233] += "h:x,1/4,1/2:4:2..;i:1/4,y,0:4:.2.;j:1/4,y,1/2:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
-	WyckoffSyms[234]  = "a:0,1/4,1/4:2:222;b:0,3/4,1/4:2:222;c:1/2,3/4,1/4:2:222;d:1/2,1/4,1/4:2:222;e:0,0,0:4:-1;f:1/2,0,0:4:-1;g:0,x,1/4:4:2..;"
-	WyckoffSyms[234] += "h:1/2,x,1/4:4:2..;i:0,1/4,y:4:.2.;j:1/2,1/4,y:4:.2.;k:z,1/4,1/4:4:..2;l:z,1/4,3/4:4:..2;m:z,x,y:8:1;"
-	WyckoffSyms[235]  = "a:0,1/4,1/4:2:222;b:0,3/4,1/4:2:222;c:1/2,3/4,1/4:2:222;d:1/2,1/4,1/4:2:222;e:0,0,0:4:-1;f:1/2,0,0:4:-1;g:0,x,1/4:4:2..;"
-	WyckoffSyms[235] += "h:1/2,x,1/4:4:2..;i:0,1/4,y:4:.2.;j:1/2,1/4,y:4:.2.;k:z,1/4,1/4:4:..2;l:z,1/4,3/4:4:..2;m:z,x,y:8:1;"
-	WyckoffSyms[236]  = "a:1/4,0,1/4:2:222;b:1/4,0,3/4:2:222;c:1/4,1/2,3/4:2:222;d:1/4,1/2,1/4:2:222;e:0,0,0:4:-1;f:0,1/2,0:4:-1;g:1/4,0,x:4:2..;"
-	WyckoffSyms[236] += "h:1/4,1/2,x:4:2..;i:y,0,1/4:4:.2.;j:y,1/2,1/4:4:.2.;k:1/4,z,1/4:4:..2;l:3/4,z,1/4:4:..2;m:y,z,x:8:1;"
-	WyckoffSyms[237]  = "a:1/4,0,1/4:2:222;b:1/4,0,3/4:2:222;c:1/4,1/2,3/4:2:222;d:1/4,1/2,1/4:2:222;e:0,0,0:4:-1;f:0,1/2,0:4:-1;g:1/4,0,x:4:2..;"
-	WyckoffSyms[237] += "h:1/4,1/2,x:4:2..;i:y,0,1/4:4:.2.;j:y,1/2,1/4:4:.2.;k:1/4,z,1/4:4:..2;l:3/4,z,1/4:4:..2;m:y,z,x:8:1;"
-	WyckoffSyms[238]  = "a:0,0,0:2:.2/m.;b:0,1/2,0:2:.2/m.;c:0,0,1/2:2:.2/m.;d:0,1/2,1/2:2:.2/m.;e:1/4,0,z:2:mm2;f:1/4,1/2,z:2:mm2;g:0,y,0:4:.2.;"
-	WyckoffSyms[238] += "h:0,y,1/2:4:.2.;i:x,0,z:4:.m.;j:x,1/2,z:4:.m.;k:1/4,y,z:4:m..;l:x,y,z:8:1;"
-	WyckoffSyms[239]  = "a:0,0,0:2:.2/m.;b:1/2,0,0:2:.2/m.;c:0,0,1/2:2:.2/m.;d:1/2,0,1/2:2:.2/m.;e:0,1/4,-z:2:mm2;f:1/2,1/4,-z:2:mm2;g:y,0,0:4:.2.;"
-	WyckoffSyms[239] += "h:y,0,1/2:4:.2.;i:0,x,-z:4:.m.;j:1/2,x,-z:4:.m.;k:y,1/4,-z:4:m..;l:y,x,-z:8:1;"
-	WyckoffSyms[240]  = "a:0,0,0:2:.2/m.;b:0,0,1/2:2:.2/m.;c:1/2,0,0:2:.2/m.;d:1/2,0,1/2:2:.2/m.;e:z,1/4,0:2:mm2;f:z,1/4,1/2:2:mm2;g:0,0,y:4:.2.;"
-	WyckoffSyms[240] += "h:1/2,0,y:4:.2.;i:z,x,0:4:.m.;j:z,x,1/2:4:.m.;k:z,1/4,y:4:m..;l:z,x,y:8:1;"
-	WyckoffSyms[241]  = "a:0,0,0:2:.2/m.;b:0,1/2,0:2:.2/m.;c:1/2,0,0:2:.2/m.;d:1/2,1/2,0:2:.2/m.;e:-z,0,1/4:2:mm2;f:-z,1/2,1/4:2:mm2;g:0,y,0:4:.2.;"
-	WyckoffSyms[241] += "h:1/2,y,0:4:.2.;i:-z,0,x:4:.m.;j:-z,1/2,x:4:.m.;k:-z,y,1/4:4:m..;l:-z,y,x:8:1;"
-	WyckoffSyms[242]  = "a:0,0,0:2:.2/m.;b:1/2,0,0:2:.2/m.;c:0,1/2,0:2:.2/m.;d:1/2,1/2,0:2:.2/m.;e:0,z,1/4:2:mm2;f:1/2,z,1/4:2:mm2;g:y,0,0:4:.2.;"
-	WyckoffSyms[242] += "h:y,1/2,0:4:.2.;i:0,z,x:4:.m.;j:1/2,z,x:4:.m.;k:y,z,1/4:4:m..;l:y,z,x:8:1;"
-	WyckoffSyms[243]  = "a:0,0,0:2:.2/m.;b:0,0,1/2:2:.2/m.;c:0,1/2,0:2:.2/m.;d:0,1/2,1/2:2:.2/m.;e:1/4,-z,0:2:mm2;f:1/4,-z,1/2:2:mm2;g:0,0,y:4:.2.;"
-	WyckoffSyms[243] += "h:0,1/2,y:4:.2.;i:x,-z,0:4:.m.;j:x,-z,1/2:4:.m.;k:1/4,-z,y:4:m..;l:x,-z,y:8:1;"
-	WyckoffSyms[244]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,z:4:..2;d:x,1/4,1/4:4:2..;e:x,y,z:8:1;"
-	WyckoffSyms[245]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,-z:4:..2;d:1/4,x,1/4:4:2..;e:y,x,-z:8:1;"
-	WyckoffSyms[246]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:z,1/4,0:4:..2;d:1/4,x,1/4:4:2..;e:z,x,y:8:1;"
-	WyckoffSyms[247]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:-z,0,1/4:4:..2;d:1/4,1/4,x:4:2..;e:-z,y,x:8:1;"
-	WyckoffSyms[248]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,z,1/4:4:..2;d:1/4,1/4,x:4:2..;e:y,z,x:8:1;"
-	WyckoffSyms[249]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,-z,0:4:..2;d:x,1/4,1/4:4:2..;e:x,-z,y:8:1;"
-	WyckoffSyms[250]  = "a:0,0,0:2:2/m..;b:1/2,0,0:2:2/m..;c:1/2,1/2,0:2:2/m..;d:0,1/2,0:2:2/m..;e:x,0,0:4:2..;f:x,1/2,0:4:2..;g:1/4,y,1/4:4:.2.;"
-	WyckoffSyms[250] += "h:0,y,z:4:m..;i:x,y,z:8:1;"
-	WyckoffSyms[251]  = "a:0,0,0:2:2/m..;b:0,1/2,0:2:2/m..;c:1/2,1/2,0:2:2/m..;d:1/2,0,0:2:2/m..;e:0,x,0:4:2..;f:1/2,x,0:4:2..;g:y,1/4,1/4:4:.2.;"
-	WyckoffSyms[251] += "h:y,0,-z:4:m..;i:y,x,-z:8:1;"
-	WyckoffSyms[252]  = "a:0,0,0:2:2/m..;b:0,1/2,0:2:2/m..;c:0,1/2,1/2:2:2/m..;d:0,0,1/2:2:2/m..;e:0,x,0:4:2..;f:0,x,1/2:4:2..;g:1/4,1/4,y:4:.2.;"
-	WyckoffSyms[252] += "h:z,0,y:4:m..;i:z,x,y:8:1;"
-	WyckoffSyms[253]  = "a:0,0,0:2:2/m..;b:0,0,1/2:2:2/m..;c:0,1/2,1/2:2:2/m..;d:0,1/2,0:2:2/m..;e:0,0,x:4:2..;f:0,1/2,x:4:2..;g:1/4,y,1/4:4:.2.;"
-	WyckoffSyms[253] += "h:-z,y,0:4:m..;i:-z,y,x:8:1;"
-	WyckoffSyms[254]  = "a:0,0,0:2:2/m..;b:0,0,1/2:2:2/m..;c:1/2,0,1/2:2:2/m..;d:1/2,0,0:2:2/m..;e:0,0,x:4:2..;f:1/2,0,x:4:2..;g:y,1/4,1/4:4:.2.;"
-	WyckoffSyms[254] += "h:y,z,0:4:m..;i:y,z,x:8:1;"
-	WyckoffSyms[255]  = "a:0,0,0:2:2/m..;b:1/2,0,0:2:2/m..;c:1/2,0,1/2:2:2/m..;d:0,0,1/2:2:2/m..;e:x,0,0:4:2..;f:x,0,1/2:4:2..;g:1/4,1/4,y:4:.2.;"
-	WyckoffSyms[255] += "h:0,-z,y:4:m..;i:x,-z,y:8:1;"
-	WyckoffSyms[256]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,y,1/4:4:.2.;d:1/4,0,z:4:..2;e:1/4,1/2,z:4:..2;f:x,y,z:8:1;"
-	WyckoffSyms[257]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,0,1/4:4:.2.;d:0,1/4,-z:4:..2;e:1/2,1/4,-z:4:..2;f:y,x,-z:8:1;"
-	WyckoffSyms[258]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,y:4:.2.;d:z,1/4,0:4:..2;e:z,1/4,1/2:4:..2;f:z,x,y:8:1;"
-	WyckoffSyms[259]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,y,0:4:.2.;d:-z,0,1/4:4:..2;e:-z,1/2,1/4:4:..2;f:-z,y,x:8:1;"
-	WyckoffSyms[260]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,1/4,0:4:.2.;d:0,z,1/4:4:..2;e:1/2,z,1/4:4:..2;f:y,z,x:8:1;"
-	WyckoffSyms[261]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,y:4:.2.;d:1/4,-z,0:4:..2;e:1/4,-z,1/2:4:..2;f:x,-z,y:8:1;"
-	WyckoffSyms[262]  = "a:0,0,0:2:..2/m;b:0,0,1/2:2:..2/m;c:0,1/2,0:2:..2/m;d:0,1/2,1/2:2:..2/m;e:0,0,z:4:..2;f:0,1/2,z:4:..2;g:x,y,0:4:..m;"
-	WyckoffSyms[262] += "h:x,y,1/2:4:..m;i:x,y,z:8:1;"
-	WyckoffSyms[263]  = "a:0,0,0:2:..2/m;b:1/2,0,0:2:..2/m;c:0,0,1/2:2:..2/m;d:1/2,0,1/2:2:..2/m;e:z,0,0:4:..2;f:z,0,1/2:4:..2;g:0,x,y:4:..m;"
-	WyckoffSyms[263] += "h:1/2,x,y:4:..m;i:z,x,y:8:1;"
-	WyckoffSyms[264]  = "a:0,0,0:2:..2/m;b:0,1/2,0:2:..2/m;c:1/2,0,0:2:..2/m;d:1/2,1/2,0:2:..2/m;e:0,z,0:4:..2;f:1/2,z,0:4:..2;g:y,0,x:4:..m;"
-	WyckoffSyms[264] += "h:y,1/2,x:4:..m;i:y,z,x:8:1;"
-	WyckoffSyms[265]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,1/4,z:4:..2;d:1/4,3/4,z:4:..2;e:x,y,z:8:1;"
-	WyckoffSyms[266]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:z,1/4,1/4:4:..2;d:z,1/4,3/4:4:..2;e:z,x,y:8:1;"
-	WyckoffSyms[267]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,z,1/4:4:..2;d:3/4,z,1/4:4:..2;e:y,z,x:8:1;"
-	WyckoffSyms[268]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:x,1/4,0:4:2..;d:x,y,1/4:4:..m;e:x,y,z:8:1;"
-	WyckoffSyms[269]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,x,0:4:2..;d:y,x,1/4:4:..m;e:y,x,-z:8:1;"
-	WyckoffSyms[270]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,x,1/4:4:2..;d:1/4,x,y:4:..m;e:z,x,y:8:1;"
-	WyckoffSyms[271]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,x:4:2..;d:1/4,y,x:4:..m;e:-z,y,x:8:1;"
-	WyckoffSyms[272]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,x:4:2..;d:y,1/4,x:4:..m;e:y,z,x:8:1;"
-	WyckoffSyms[273]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:x,0,1/4:4:2..;d:x,1/4,y:4:..m;e:x,-z,y:8:1;"
-	WyckoffSyms[274]  = "a:0,0,0:2:..2/m;b:0,0,1/2:2:..2/m;c:0,1/2,0:2:..2/m;d:0,1/2,1/2:2:..2/m;e:0,0,z:4:..2;f:0,1/2,z:4:..2;g:x,y,0:4:..m;h:x,y,z:8:1;"
-	WyckoffSyms[275]  = "a:0,0,0:2:..2/m;b:1/2,0,0:2:..2/m;c:0,0,1/2:2:..2/m;d:1/2,0,1/2:2:..2/m;e:z,0,0:4:..2;f:z,0,1/2:4:..2;g:0,x,y:4:..m;h:z,x,y:8:1;"
-	WyckoffSyms[276]  = "a:0,0,0:2:..2/m;b:0,1/2,0:2:..2/m;c:1/2,0,0:2:..2/m;d:1/2,1/2,0:2:..2/m;e:0,z,0:4:..2;f:1/2,z,0:4:..2;g:y,0,x:4:..m;h:y,z,x:8:1;"
-	WyckoffSyms[277]  = "a:1/4,1/4,z:2:mm2;b:1/4,3/4,z:2:mm2;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:1/4,y,z:4:m..;f:x,1/4,z:4:.m.;g:x,y,z:8:1;"
-	WyckoffSyms[278]  = "a:1/4,1/4,z:2:mm2;b:1/4,3/4,z:2:mm2;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:1/4,y,z:4:m..;f:x,1/4,z:4:.m.;g:x,y,z:8:1;"
-	WyckoffSyms[279]  = "a:z,1/4,1/4:2:mm2;b:z,1/4,3/4:2:mm2;c:0,0,0:4:-1;d:1/2,0,0:4:-1;e:z,1/4,y:4:m..;f:z,x,1/4:4:.m.;g:z,x,y:8:1;"
-	WyckoffSyms[280]  = "a:z,1/4,1/4:2:mm2;b:z,1/4,3/4:2:mm2;c:0,0,0:4:-1;d:1/2,0,0:4:-1;e:z,1/4,y:4:m..;f:z,x,1/4:4:.m.;g:z,x,y:8:1;"
-	WyckoffSyms[281]  = "a:1/4,z,1/4:2:mm2;b:3/4,z,1/4:2:mm2;c:0,0,0:4:-1;d:0,1/2,0:4:-1;e:y,z,1/4:4:m..;f:1/4,z,x:4:.m.;g:y,z,x:8:1;"
-	WyckoffSyms[282]  = "a:1/4,z,1/4:2:mm2;b:3/4,z,1/4:2:mm2;c:0,0,0:4:-1;d:0,1/2,0:4:-1;e:y,z,1/4:4:m..;f:1/4,z,x:4:.m.;g:y,z,x:8:1;"
-	WyckoffSyms[283]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,y,1/4:4:.2.;d:x,y,z:8:1;"
-	WyckoffSyms[284]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,0,1/4:4:.2.;d:y,x,-z:8:1;"
-	WyckoffSyms[285]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,y:4:.2.;d:z,x,y:8:1;"
-	WyckoffSyms[286]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,y,0:4:.2.;d:-z,y,x:8:1;"
-	WyckoffSyms[287]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,1/4,0:4:.2.;d:y,z,x:8:1;"
-	WyckoffSyms[288]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,y:4:.2.;d:x,-z,y:8:1;"
-	WyckoffSyms[289]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:x,y,z:8:1;"
-	WyckoffSyms[290]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:y,x,-z:8:1;"
-	WyckoffSyms[291]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:x,1/4,z:4:.m.;d:x,y,z:8:1;"
-	WyckoffSyms[292]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,x,-z:4:.m.;d:y,x,-z:8:1;"
-	WyckoffSyms[293]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:z,x,1/4:4:.m.;d:z,x,y:8:1;"
-	WyckoffSyms[294]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:-z,1/4,x:4:.m.;d:-z,y,x:8:1;"
-	WyckoffSyms[295]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,z,x:4:.m.;d:y,z,x:8:1;"
-	WyckoffSyms[296]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:x,-z,1/4:4:.m.;d:x,-z,y:8:1;"
-	WyckoffSyms[297]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:0,y,1/4:4:m2m;d:1/4,1/4,0:8:-1;e:x,0,0:8:2..;f:0,y,z:8:m..;g:x,y,1/4:8:..m;h:x,y,z:16:1;"
-	WyckoffSyms[298]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:y,0,1/4:4:m2m;d:1/4,1/4,0:8:-1;e:0,x,0:8:2..;f:y,0,-z:8:m..;g:y,x,1/4:8:..m;h:y,x,-z:16:1;"
-	WyckoffSyms[299]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,0,y:4:m2m;d:0,1/4,1/4:8:-1;e:0,x,0:8:2..;f:z,0,y:8:m..;g:1/4,x,y:8:..m;h:z,x,y:16:1;"
-	WyckoffSyms[300]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,y,0:4:m2m;d:0,1/4,1/4:8:-1;e:0,0,x:8:2..;f:-z,y,0:8:m..;g:1/4,y,x:8:..m;h:-z,y,x:16:1;"
-	WyckoffSyms[301]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:y,1/4,0:4:m2m;d:1/4,0,1/4:8:-1;e:0,0,x:8:2..;f:y,z,0:8:m..;g:y,1/4,x:8:..m;h:y,z,x:16:1;"
-	WyckoffSyms[302]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:0,1/4,y:4:m2m;d:1/4,0,1/4:8:-1;e:x,0,0:8:2..;f:0,-z,y:8:m..;g:x,1/4,y:8:..m;h:x,-z,y:16:1;"
-	WyckoffSyms[303]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,1/4,0:8:-1;d:x,0,0:8:2..;e:1/4,y,1/4:8:.2.;f:0,y,z:8:m..;g:x,y,z:16:1;"
-	WyckoffSyms[304]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,1/4,0:8:-1;d:0,x,0:8:2..;e:y,1/4,1/4:8:.2.;f:y,0,-z:8:m..;g:y,x,-z:16:1;"
-	WyckoffSyms[305]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:0,1/4,1/4:8:-1;d:0,x,0:8:2..;e:1/4,1/4,y:8:.2.;f:z,0,y:8:m..;g:z,x,y:16:1;"
-	WyckoffSyms[306]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:0,1/4,1/4:8:-1;d:0,0,x:8:2..;e:1/4,y,1/4:8:.2.;f:-z,y,0:8:m..;g:-z,y,x:16:1;"
-	WyckoffSyms[307]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,0,1/4:8:-1;d:0,0,x:8:2..;e:y,1/4,1/4:8:.2.;f:y,z,0:8:m..;g:y,z,x:16:1;"
-	WyckoffSyms[308]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,0,1/4:8:-1;d:x,0,0:8:2..;e:1/4,1/4,y:8:.2.;f:0,-z,y:8:m..;g:x,-z,y:16:1;"
-	WyckoffSyms[309]  = "a:0,0,0:2:mmm;b:1/2,0,0:2:mmm;c:1/2,0,1/2:2:mmm;d:0,0,1/2:2:mmm;e:1/4,1/4,0:4:..2/m;f:1/4,1/4,1/2:4:..2/m;g:x,0,0:4:2mm;"
-	WyckoffSyms[309] += "h:x,0,1/2:4:2mm;i:0,y,0:4:m2m;j:0,y,1/2:4:m2m;k:0,0,z:4:mm2;l:0,1/2,z:4:mm2;m:1/4,1/4,z:8:..2;n:0,y,z:8:m..;o:x,0,z:8:.m.;"
-	WyckoffSyms[309] += "p:x,y,0:8:..m;q:x,y,1/2:8:..m;r:x,y,z:16:1;"
-	WyckoffSyms[310]  = "a:0,0,0:2:mmm;b:0,1/2,0:2:mmm;c:1/2,1/2,0:2:mmm;d:1/2,0,0:2:mmm;e:0,1/4,1/4:4:..2/m;f:1/2,1/4,1/4:4:..2/m;g:0,x,0:4:2mm;"
-	WyckoffSyms[310] += "h:1/2,x,0:4:2mm;i:0,0,y:4:m2m;j:1/2,0,y:4:m2m;k:z,0,0:4:mm2;l:z,0,1/2:4:mm2;m:z,1/4,1/4:8:..2;n:z,0,y:8:m..;o:z,x,0:8:.m.;"
-	WyckoffSyms[310] += "p:0,x,y:8:..m;q:1/2,x,y:8:..m;r:z,x,y:16:1;"
-	WyckoffSyms[311]  = "a:0,0,0:2:mmm;b:0,0,1/2:2:mmm;c:0,1/2,1/2:2:mmm;d:0,1/2,0:2:mmm;e:1/4,0,1/4:4:..2/m;f:1/4,1/2,1/4:4:..2/m;g:0,0,x:4:2mm;"
-	WyckoffSyms[311] += "h:0,1/2,x:4:2mm;i:y,0,0:4:m2m;j:y,1/2,0:4:m2m;k:0,z,0:4:mm2;l:1/2,z,0:4:mm2;m:1/4,z,1/4:8:..2;n:y,z,0:8:m..;o:0,z,x:8:.m.;"
-	WyckoffSyms[311] += "p:y,0,x:8:..m;q:y,1/2,x:8:..m;r:y,z,x:16:1;"
-	WyckoffSyms[312]  = "a:0,0,1/4:4:222;b:0,1/2,1/4:4:222;c:0,0,0:4:..2/m;d:0,1/2,0:4:..2/m;e:1/4,1/4,0:4:..2/m;f:1/4,3/4,0:4:..2/m;g:x,0,1/4:8:2..;"
-	WyckoffSyms[312] += "h:0,y,1/4:8:.2.;i:0,0,z:8:..2;j:0,1/2,z:8:..2;k:1/4,1/4,z:8:..2;l:x,y,0:8:..m;m:x,y,z:16:1;"
-	WyckoffSyms[313]  = "a:1/4,0,0:4:222;b:1/4,0,1/2:4:222;c:0,0,0:4:..2/m;d:0,0,1/2:4:..2/m;e:0,1/4,1/4:4:..2/m;f:0,1/4,3/4:4:..2/m;g:1/4,x,0:8:2..;"
-	WyckoffSyms[313] += "h:1/4,0,y:8:.2.;i:z,0,0:8:..2;j:z,0,1/2:8:..2;k:z,1/4,1/4:8:..2;l:0,x,y:8:..m;m:z,x,y:16:1;"
-	WyckoffSyms[314]  = "a:0,1/4,0:4:222;b:1/2,1/4,0:4:222;c:0,0,0:4:..2/m;d:1/2,0,0:4:..2/m;e:1/4,0,1/4:4:..2/m;f:3/4,0,1/4:4:..2/m;g:0,1/4,x:8:2..;"
-	WyckoffSyms[314] += "h:y,1/4,0:8:.2.;i:0,z,0:8:..2;j:1/2,z,0:8:..2;k:1/4,z,1/4:8:..2;l:y,0,x:8:..m;m:y,z,x:16:1;"
-	WyckoffSyms[315]  = "a:1/4,0,0:4:222;b:1/4,0,1/2:4:222;c:0,0,0:4:2/m..;d:0,0,1/2:4:2/m..;e:1/4,1/4,0:4:.2/m.;f:1/4,1/4,1/2:4:.2/m.;g:0,1/4,z:4:mm2;"
-	WyckoffSyms[315] += "h:x,0,0:8:2..;i:x,0,1/2:8:2..;j:1/4,y,0:8:.2.;k:1/4,y,1/2:8:.2.;l:1/4,0,z:8:..2;m:0,y,z:8:m..;n:x,1/4,z:8:.m.;o:x,y,z:16:1;"
-	WyckoffSyms[316]  = "a:1/4,0,0:4:222;b:1/4,0,1/2:4:222;c:0,0,0:4:2/m..;d:0,0,1/2:4:2/m..;e:1/4,1/4,0:4:.2/m.;f:1/4,1/4,1/2:4:.2/m.;g:0,1/4,z:4:mm2;"
-	WyckoffSyms[316] += "h:x,0,0:8:2..;i:x,0,1/2:8:2..;j:1/4,y,0:8:.2.;k:1/4,y,1/2:8:.2.;l:1/4,0,z:8:..2;m:0,y,z:8:m..;n:x,1/4,z:8:.m.;o:x,y,z:16:1;"
-	WyckoffSyms[317]  = "a:0,1/4,0:4:222;b:1/2,1/4,0:4:222;c:0,0,0:4:2/m..;d:1/2,0,0:4:2/m..;e:0,1/4,1/4:4:.2/m.;f:1/2,1/4,1/4:4:.2/m.;g:z,0,1/4:4:mm2;"
-	WyckoffSyms[317] += "h:0,x,0:8:2..;i:1/2,x,0:8:2..;j:0,1/4,y:8:.2.;k:1/2,1/4,y:8:.2.;l:z,1/4,0:8:..2;m:z,0,y:8:m..;n:z,x,1/4:8:.m.;o:z,x,y:16:1;"
-	WyckoffSyms[318]  = "a:0,1/4,0:4:222;b:1/2,1/4,0:4:222;c:0,0,0:4:2/m..;d:1/2,0,0:4:2/m..;e:0,1/4,1/4:4:.2/m.;f:1/2,1/4,1/4:4:.2/m.;g:z,0,1/4:4:mm2;"
-	WyckoffSyms[318] += "h:0,x,0:8:2..;i:1/2,x,0:8:2..;j:0,1/4,y:8:.2.;k:1/2,1/4,y:8:.2.;l:z,1/4,0:8:..2;m:z,0,y:8:m..;n:z,x,1/4:8:.m.;o:z,x,y:16:1;"
-	WyckoffSyms[319]  = "a:0,0,1/4:4:222;b:0,1/2,1/4:4:222;c:0,0,0:4:2/m..;d:0,1/2,0:4:2/m..;e:1/4,0,1/4:4:.2/m.;f:1/4,1/2,1/4:4:.2/m.;g:1/4,z,0:4:mm2;"
-	WyckoffSyms[319] += "h:0,0,x:8:2..;i:0,1/2,x:8:2..;j:y,0,1/4:8:.2.;k:y,1/2,1/4:8:.2.;l:0,z,1/4:8:..2;m:y,z,0:8:m..;n:1/4,z,x:8:.m.;o:y,z,x:16:1;"
-	WyckoffSyms[320]  = "a:0,0,1/4:4:222;b:0,1/2,1/4:4:222;c:0,0,0:4:2/m..;d:0,1/2,0:4:2/m..;e:1/4,0,1/4:4:.2/m.;f:1/4,1/2,1/4:4:.2/m.;g:1/4,z,0:4:mm2;"
-	WyckoffSyms[320] += "h:0,0,x:8:2..;i:0,1/2,x:8:2..;j:y,0,1/4:8:.2.;k:y,1/2,1/4:8:.2.;l:0,z,1/4:8:..2;m:y,z,0:8:m..;n:1/4,z,x:8:.m.;o:y,z,x:16:1;"
-	WyckoffSyms[321]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
-	WyckoffSyms[321] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
-	WyckoffSyms[322]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
-	WyckoffSyms[322] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
-	WyckoffSyms[323]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
-	WyckoffSyms[323] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
-	WyckoffSyms[324]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
-	WyckoffSyms[324] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
-	WyckoffSyms[325]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
-	WyckoffSyms[325] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
-	WyckoffSyms[326]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
-	WyckoffSyms[326] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
-	WyckoffSyms[327]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
-	WyckoffSyms[327] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
-	WyckoffSyms[328]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
-	WyckoffSyms[328] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
-	WyckoffSyms[329]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
-	WyckoffSyms[329] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
-	WyckoffSyms[330]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
-	WyckoffSyms[330] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
-	WyckoffSyms[331]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
-	WyckoffSyms[331] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
-	WyckoffSyms[332]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
-	WyckoffSyms[332] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
-	WyckoffSyms[333]  = "a:0,0,0:4:mmm;b:0,0,1/2:4:mmm;c:0,1/4,1/4:8:2/m..;d:1/4,0,1/4:8:.2/m.;e:1/4,1/4,0:8:..2/m;f:1/4,1/4,1/4:8:222;g:x,0,0:8:2mm;"
-	WyckoffSyms[333] += "h:0,y,0:8:m2m;i:0,0,z:8:mm2;j:1/4,1/4,z:16:..2;k:1/4,y,1/4:16:.2.;l:x,1/4,1/4:16:2..;m:0,y,z:16:m..;n:x,0,z:16:.m.;o:x,y,0:16:..m;"
-	WyckoffSyms[333] += "p:x,y,z:32:1;"
-	WyckoffSyms[334]  = "a:1/8,1/8,1/8:8:222;b:1/8,1/8,5/8:8:222;c:0,0,0:16:-1;d:1/2,1/2,1/2:16:-1;e:x,1/8,1/8:16:2..;f:1/8,y,1/8:16:.2.;g:1/8,1/8,z:16:..2;"
-	WyckoffSyms[334] += "h:x,y,z:32:1;"
-	WyckoffSyms[335]  = "a:1/8,1/8,1/8:8:222;b:1/8,1/8,5/8:8:222;c:0,0,0:16:-1;d:1/2,1/2,1/2:16:-1;e:x,1/8,1/8:16:2..;f:1/8,y,1/8:16:.2.;g:1/8,1/8,z:16:..2;"
-	WyckoffSyms[335] += "h:x,y,z:32:1;"
-	WyckoffSyms[336]  = "a:0,0,0:2:mmm;b:0,1/2,1/2:2:mmm;c:1/2,1/2,0:2:mmm;d:1/2,0,1/2:2:mmm;e:x,0,0:4:2mm;f:x,1/2,0:4:2mm;g:0,y,0:4:m2m;h:0,y,1/2:4:m2m;"
-	WyckoffSyms[336] += "i:0,0,z:4:mm2;j:1/2,0,z:4:mm2;k:1/4,1/4,1/4:8:-1;l:0,y,z:8:m..;m:x,0,z:8:.m.;n:x,y,0:8:..m;o:x,y,z:16:1;"
-	WyckoffSyms[337]  = "a:0,0,1/4:4:222;b:1/2,0,1/4:4:222;c:0,0,0:4:..2/m;d:1/2,0,0:4:..2/m;e:1/4,1/4,1/4:8:-1;f:x,0,1/4:8:2..;g:0,y,1/4:8:.2.;"
-	WyckoffSyms[337] += "h:0,0,z:8:..2;i:0,1/2,z:8:..2;j:x,y,0:8:..m;k:x,y,z:16:1;"
-	WyckoffSyms[338]  = "a:1/4,0,0:4:222;b:1/4,1/2,0:4:222;c:0,0,0:4:..2/m;d:0,1/2,0:4:..2/m;e:1/4,1/4,1/4:8:-1;f:1/4,x,0:8:2..;g:1/4,0,y:8:.2.;"
-	WyckoffSyms[338] += "h:z,0,0:8:..2;i:z,0,1/2:8:..2;j:0,x,y:8:..m;k:z,x,y:16:1;"
-	WyckoffSyms[339]  = "a:0,1/4,0:4:222;b:0,1/4,1/2:4:222;c:0,0,0:4:..2/m;d:0,0,1/2:4:..2/m;e:1/4,1/4,1/4:8:-1;f:0,1/4,x:8:2..;g:y,1/4,0:8:.2.;"
-	WyckoffSyms[339] += "h:0,z,0:8:..2;i:1/2,z,0:8:..2;j:y,0,x:8:..m;k:y,z,x:16:1;"
-	WyckoffSyms[340]  = "a:0,0,0:8:-1;b:1/4,1/4,1/4:8:-1;c:x,0,1/4:8:2..;d:1/4,y,0:8:.2.;e:0,1/4,z:8:..2;f:x,y,z:16:1;"
-	WyckoffSyms[341]  = "a:0,0,0:8:-1;b:1/4,1/4,1/4:8:-1;c:x,0,1/4:8:2..;d:1/4,y,0:8:.2.;e:0,1/4,z:8:..2;f:x,y,z:16:1;"
-	WyckoffSyms[342]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,1/4,3/4:4:.2/m.;e:0,1/4,z:4:mm2;f:x,0,0:8:2..;g:1/4,y,1/4:8:.2.;"
-	WyckoffSyms[342] += "h:0,y,z:8:m..;i:x,1/4,z:8:.m.;j:x,y,z:16:1;"
-	WyckoffSyms[343]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,1/4,3/4:4:.2/m.;e:0,1/4,z:4:mm2;f:x,0,0:8:2..;g:1/4,y,1/4:8:.2.;"
-	WyckoffSyms[343] += "h:0,y,z:8:m..;i:x,1/4,z:8:.m.;j:x,y,z:16:1;"
-	WyckoffSyms[344]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:3/4,1/4,1/4:4:.2/m.;e:z,0,1/4:4:mm2;f:0,x,0:8:2..;g:1/4,1/4,y:8:.2.;"
-	WyckoffSyms[344] += "h:z,0,y:8:m..;i:z,x,1/4:8:.m.;j:z,x,y:16:1;"
-	WyckoffSyms[345]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:3/4,1/4,1/4:4:.2/m.;e:z,0,1/4:4:mm2;f:0,x,0:8:2..;g:1/4,1/4,y:8:.2.;"
-	WyckoffSyms[345] += "h:z,0,y:8:m..;i:z,x,1/4:8:.m.;j:z,x,y:16:1;"
-	WyckoffSyms[346]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,3/4,1/4:4:.2/m.;e:1/4,z,0:4:mm2;f:0,0,x:8:2..;g:y,1/4,1/4:8:.2.;"
-	WyckoffSyms[346] += "h:y,z,0:8:m..;i:1/4,z,x:8:.m.;j:y,z,x:16:1;"
-	WyckoffSyms[347]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,3/4,1/4:4:.2/m.;e:1/4,z,0:4:mm2;f:0,0,x:8:2..;g:y,1/4,1/4:8:.2.;"
-	WyckoffSyms[347] += "h:y,z,0:8:m..;i:1/4,z,x:8:.m.;j:y,z,x:16:1;"
-	// Tetragonal SG[75,142]  SG_idNum [349,429]   (81 idNums)
-	WyckoffSyms[348]  = "a:0,0,z:1:4..;b:1/2,1/2,z:1:4..;c:0,1/2,z:2:2..;d:x,y,z:4:1;"
-	WyckoffSyms[349]  = "a:x,y,z:4:1;"
-	WyckoffSyms[350]  = "a:0,0,z:2:2..;b:1/2,1/2,z:2:2..;c:0,1/2,z:2:2..;d:x,y,z:4:1;"
-	WyckoffSyms[351]  = "a:x,y,z:4:1;"
-	WyckoffSyms[352]  = "a:0,0,z:2:4..;b:0,1/2,z:4:2..;c:x,y,z:8:1;"
-	WyckoffSyms[353]  = "a:0,0,z:4:2..;b:x,y,z:8:1;"
-	WyckoffSyms[354]  = "a:0,0,0:1:-4..;b:0,0,1/2:1:-4..;c:1/2,1/2,0:1:-4..;d:1/2,1/2,1/2:1:-4..;e:0,0,z:2:2..;f:1/2,1/2,z:2:2..;g:0,1/2,z:2:2..;"
-	WyckoffSyms[354] += "h:x,y,z:4:1;"
-	WyckoffSyms[355]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,1/4:2:-4..;d:0,1/2,3/4:2:-4..;e:0,0,z:4:2..;f:0,1/2,z:4:2..;g:x,y,z:8:1;"
-	WyckoffSyms[356]  = "a:0,0,0:1:4/m..;b:0,0,1/2:1:4/m..;c:1/2,1/2,0:1:4/m..;d:1/2,1/2,1/2:1:4/m..;e:0,1/2,0:2:2/m..;f:0,1/2,1/2:2:2/m..;g:0,0,z:2:4..;"
-	WyckoffSyms[356] += "h:1/2,1/2,z:2:4..;i:0,1/2,z:4:2..;j:x,y,0:4:m..;k:x,y,1/2:4:m..;l:x,y,z:8:1;"
-	WyckoffSyms[357]  = "a:0,0,0:2:2/m..;b:1/2,1/2,0:2:2/m..;c:0,1/2,0:2:2/m..;d:0,1/2,1/2:2:2/m..;e:0,0,1/4:2:-4..;f:1/2,1/2,1/4:2:-4..;g:0,0,z:4:2..;"
-	WyckoffSyms[357] += "h:1/2,1/2,z:4:2..;i:0,1/2,z:4:2..;j:x,y,0:4:m..;k:x,y,z:8:1;"
-	WyckoffSyms[358]  = "a:1/4,3/4,0:2:-4..;b:1/4,3/4,1/2:2:-4..;c:1/4,1/4,z:2:4..;d:0,0,0:4:-1;e:0,0,1/2:4:-1;f:1/4,3/4,z:4:2..;g:x,y,z:8:1;"
-	WyckoffSyms[359]  = "a:1/4,3/4,0:2:-4..;b:1/4,3/4,1/2:2:-4..;c:1/4,1/4,z:2:4..;d:0,0,0:4:-1;e:0,0,1/2:4:-1;f:1/4,3/4,z:4:2..;g:x,y,z:8:1;"
-	WyckoffSyms[360]  = "a:1/4,1/4,1/4:2:-4..;b:1/4,1/4,3/4:2:-4..;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:3/4,1/4,z:4:2..;f:1/4,1/4,z:4:2..;g:x,y,z:8:1;"
-	WyckoffSyms[361]  = "a:1/4,1/4,1/4:2:-4..;b:1/4,1/4,3/4:2:-4..;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:3/4,1/4,z:4:2..;f:1/4,1/4,z:4:2..;g:x,y,z:8:1;"
-	WyckoffSyms[362]  = "a:0,0,0:2:4/m..;b:0,0,1/2:2:4/m..;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:-4..;e:0,0,z:4:4..;f:1/4,1/4,1/4:8:-1;g:0,1/2,z:8:2..;"
-	WyckoffSyms[362] += "h:x,y,0:8:m..;i:x,y,z:16:1;"
-	WyckoffSyms[363]  = "a:0,1/4,1/8:4:-4..;b:0,1/4,5/8:4:-4..;c:0,0,0:8:-1;d:0,0,1/2:8:-1;e:0,1/4,z:8:2..;f:x,y,z:16:1;"
-	WyckoffSyms[364]  = "a:0,1/4,1/8:4:-4..;b:0,1/4,5/8:4:-4..;c:0,0,0:8:-1;d:0,0,1/2:8:-1;e:0,1/4,z:8:2..;f:x,y,z:16:1;"
-	WyckoffSyms[365]  = "a:0,0,0:1:422;b:0,0,1/2:1:422;c:1/2,1/2,0:1:422;d:1/2,1/2,1/2:1:422;e:1/2,0,0:2:222 .;f:1/2,0,1/2:2:222 .;g:0,0,z:2:4..;"
-	WyckoffSyms[365] += "h:1/2,1/2,z:2:4..;i:0,1/2,z:4:2..;j:x,x,0:4:..2;k:x,x,1/2:4:..2;l:x,0,0:4:.2.;m:x,1/2,1/2:4:.2.;n:x,0,1/2:4:.2.;o:x,1/2,0:4:.2.;"
-	WyckoffSyms[365] += "p:x,y,z:8:1;"
-	WyckoffSyms[366]  = "a:0,0,0:2:2.2 2;b:0,0,1/2:2:2.2 2;c:0,1/2,z:2:4..;d:0,0,z:4:2..;e:x,x,0:4:..2;f:x,x,1/2:4:..2;g:x,y,z:8:1;"
-	WyckoffSyms[367]  = "a:0,y,0:4:.2.;b:1/2,y,0:4:.2.;c:x,x,3/8:4:..2;d:x,y,z:8:1;"
-	WyckoffSyms[368]  = "a:x,x,0:4:..2;b:x,y,z:8:1;"
-	WyckoffSyms[369]  = "a:0,0,0:2:222 .;b:1/2,1/2,0:2:222 .;c:0,1/2,0:2:222 .;d:0,1/2,1/2:2:222 .;e:0,0,1/4:2:2.2 2;f:1/2,1/2,1/4:2:2.2 2;g:0,0,z:4:2..;"
-	WyckoffSyms[369] += "h:1/2,1/2,z:4:2..;i:0,1/2,z:4:2..;j:x,0,0:4:.2.;k:x,1/2,1/2:4:.2.;l:x,0,1/2:4:.2.;m:x,1/2,0:4:.2.;n:x,x,1/4:4:..2;o:x,x,3/4:4:..2;"
-	WyckoffSyms[369] += "p:x,y,z:8:1;"
-	WyckoffSyms[370]  = "a:0,0,0:2:2.2 2;b:0,0,1/2:2:2.2 2;c:0,0,z:4:2..;d:0,1/2,z:4:2..;e:x,x,0:4:..2;f:x,x,1/2:4:..2;g:x,y,z:8:1;"
-	WyckoffSyms[371]  = "a:0,y,0:4:.2.;b:1/2,y,0:4:.2.;c:x,x,5/8:4:..2;d:x,y,z:8:1;"
-	WyckoffSyms[372]  = "a:x,x,0:4:..2;b:x,y,z:8:1;"
-	WyckoffSyms[373]  = "a:0,0,0:2:422;b:0,0,1/2:2:422;c:0,1/2,0:4:222 .;d:0,1/2,1/4:4:2.2 2;e:0,0,z:4:4..;f:0,1/2,z:8:2..;g:x,x,0:8:..2;h:x,0,0:8:.2.;"
-	WyckoffSyms[373] += "i:x,0,1/2:8:.2.;j:x,x+1/2,1/4:8:..2;k:x,y,z:16:1;"
-	WyckoffSyms[374]  = "a:0,0,0:4:2.2 2;b:0,0,1/2:4:2.2 2;c:0,0,z:8:2..;d:x,x,0:8:..2;e:-x,x,0:8:..2;f:x,1/4,1/8:8:.2.;g:x,y,z:16:1;"
-	WyckoffSyms[375]  = "a:0,0,z:1:4mm;b:1/2,1/2,z:1:4mm;c:1/2,0,z:2:2mm .;d:x,x,z:4:..m;e:x,0,z:4:.m.;f:x,1/2,z:4:.m.;g:x,y,z:8:1;"
-	WyckoffSyms[376]  = "a:0,0,z:2:4..;b:1/2,0,z:2:2.m m;c:x,x+1/2,z:4:..m;d:x,y,z:8:1;"
-	WyckoffSyms[377]  = "a:0,0,z:2:2.m m;b:1/2,1/2,z:2:2.m m;c:0,1/2,z:4:2..;d:x,x,z:4:..m;e:x,y,z:8:1;"
-	WyckoffSyms[378]  = "a:0,0,z:2:2.m m;b:0,1/2,z:4:2..;c:x,x,z:4:..m;d:x,y,z:8:1;"
-	WyckoffSyms[379]  = "a:0,0,z:2:4..;b:1/2,1/2,z:2:4..;c:0,1/2,z:4:2..;d:x,y,z:8:1;"
-	WyckoffSyms[380]  = "a:0,0,z:2:4..;b:0,1/2,z:4:2..;c:x,y,z:8:1;"
-	WyckoffSyms[381]  = "a:0,0,z:2:2mm .;b:1/2,1/2,z:2:2mm .;c:0,1/2,z:2:2mm .;d:x,0,z:4:.m.;e:x,1/2,z:4:.m.;f:x,y,z:8:1;"
-	WyckoffSyms[382]  = "a:0,0,z:4:2..;b:0,1/2,z:4:2..;c:x,y,z:8:1;"
-	WyckoffSyms[383]  = "a:0,0,z:2:4mm;b:0,1/2,z:4:2mm .;c:x,x,z:8:..m;d:x,0,z:8:.m.;e:x,y,z:16:1;"
-	WyckoffSyms[384]  = "a:0,0,z:4:4..;b:1/2,0,z:4:2.m m;c:x,x+1/2,z:8:..m;d:x,y,z:16:1;"
-	WyckoffSyms[385]  = "a:0,0,z:4:2mm .;b:0,y,z:8:.m.;c:x,y,z:16:1;"
-	WyckoffSyms[386]  = "a:0,0,z:8:2..;b:x,y,z:16:1;"
-	WyckoffSyms[387]  = "a:0,0,0:1:-42m;b:1/2,1/2,1/2:1:-42m;c:0,0,1/2:1:-42m;d:1/2,1/2,0:1:-42m;e:1/2,0,0:2:222 .;f:1/2,0,1/2:2:222 .;g:0,0,z:2:2.m m;"
-	WyckoffSyms[387] += "h:1/2,1/2,z:2:2.m m;i:x,0,0:4:.2.;j:x,1/2,1/2:4:.2.;k:x,0,1/2:4:.2.;l:x,1/2,0:4:.2.;m:0,1/2,z:4:2..;n:x,x,z:4:..m;o:x,y,z:8:1;"
-	WyckoffSyms[388]  = "a:0,0,1/4:2:222 .;b:1/2,0,1/4:2:222 .;c:1/2,1/2,1/4:2:222 .;d:0,1/2,1/4:2:222 .;e:0,0,0:2:-4..;f:1/2,1/2,0:2:-4..;g:x,0,1/4:4:.2.;"
-	WyckoffSyms[388] += "h:1/2,y,1/4:4:.2.;i:x,1/2,1/4:4:.2.;j:0,y,1/4:4:.2.;k:0,0,z:4:2..;l:1/2,1/2,z:4:2..;m:0,1/2,z:4:2..;n:x,y,z:8:1;"
-	WyckoffSyms[389]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,z:2:2.m m;d:0,0,z:4:2..;e:x,x+1/2,z:4:..m;f:x,y,z:8:1;"
-	WyckoffSyms[390]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,0,z:4:2..;d:0,1/2,z:4:2..;e:x,y,z:8:1;"
-	WyckoffSyms[391]  = "a:0,0,0:1:-4m2;b:1/2,1/2,0:1:-4m2;c:1/2,1/2,1/2:1:-4m2;d:0,0,1/2:1:-4m2;e:0,0,z:2:2mm .;f:1/2,1/2,z:2:2mm .;g:0,1/2,z:2:2mm .;"
-	WyckoffSyms[391] += "h:x,x,0:4:..2;i:x,x,1/2:4:..2;j:x,0,z:4:.m.;k:x,1/2,z:4:.m.;l:x,y,z:8:1;"
-	WyckoffSyms[392]  = "a:0,0,1/4:2:2.2 2;b:1/2,1/2,1/4:2:2.2 2;c:0,0,0:2:-4..;d:1/2,1/2,0:2:-4..;e:x,x,1/4:4:..2;f:x,x,3/4:4:..2;g:0,0,z:4:2..;"
-	WyckoffSyms[392] += "h:1/2,1/2,z:4:2..;i:0,1/2,z:4:2..;j:x,y,z:8:1;"
-	WyckoffSyms[393]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,0:2:2.2 2;d:0,1/2,1/2:2:2.2 2;e:0,0,z:4:2..;f:0,1/2,z:4:2..;g:x,x+1/2,0:4:..2;"
-	WyckoffSyms[393] += "h:x,x+1/2,1/2:4:..2;i:x,y,z:8:1;"
-	WyckoffSyms[394]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,1/4:2:2.2 2;d:0,1/2,3/4:2:2.2 2;e:0,0,z:4:2..;f:x,-x+1/2,1/4:4:..2;g:x,x+1/2,1/4:4:..2;"
-	WyckoffSyms[394] += "h:0,1/2,z:4:2..;i:x,y,z:8:1;"
-	WyckoffSyms[395]  = "a:0,0,0:2:-4m2;b:0,0,1/2:2:-4m2;c:0,1/2,1/4:2:-4m2;d:0,1/2,3/4:2:-4m2;e:0,0,z:4:2mm .;f:0,1/2,z:4:2mm .;g:x,x,0:8:..2;"
-	WyckoffSyms[395] += "h:x,x+1/2,1/4:8:..2;i:x,0,z:8:.m.;j:x,y,z:16:1;"
-	WyckoffSyms[396]  = "a:0,0,1/4:4:2.2 2;b:0,0,0:4:-4..;c:0,1/2,1/4:4:-4..;d:0,1/2,0:4:2.2 2;e:x,x,1/4:8:..2;f:0,0,z:8:2..;g:0,1/2,z:8:2..;"
-	WyckoffSyms[396] += "h:x,x+1/2,0:8:..2;i:x,y,z:16:1;"
-	WyckoffSyms[397]  = "a:0,0,0:2:-42m;b:0,0,1/2:2:-42m;c:0,1/2,0:4:222 .;d:0,1/2,1/4:4:-4..;e:0,0,z:4:2.m m;f:x,0,0:8:.2.;g:x,0,1/2:8:.2.;h:0,1/2,z:8:2..;"
-	WyckoffSyms[397] += "i:x,x,z:8:..m;j:x,y,z:16:1;"
-	WyckoffSyms[398]  = "a:0,0,0:4:-4..;b:0,0,1/2:4:-4..;c:0,0,z:8:2..;d:x,1/4,1/8:8:.2.;e:x,y,z:16:1;"
-	WyckoffSyms[399]  = "a:0,0,0:1:4/mmm;b:0,0,1/2:1:4/mmm;c:1/2,1/2,0:1:4/mmm;d:1/2,1/2,1/2:1:4/mmm;e:0,1/2,1/2:2:mmm .;f:0,1/2,0:2:mmm .;g:0,0,z:2:4mm;"
-	WyckoffSyms[399] += "h:1/2,1/2,z:2:4mm;i:0,1/2,z:4:2mm .;j:x,x,0:4:m.2 m;k:x,x,1/2:4:m.2 m;l:x,0,0:4:m2m .;m:x,0,1/2:4:m2m .;n:x,1/2,0:4:m2m .;"
-	WyckoffSyms[399] += "o:x,1/2,1/2:4:m2m .;p:x,y,0:8:m..;q:x,y,1/2:8:m..;r:x,x,z:8:..m;s:x,0,z:8:.m.;t:x,1/2,z:8:.m.;u:x,y,z:16:1;"
-	WyckoffSyms[400]  = "a:0,0,1/4:2:422;b:0,0,0:2:4/m..;c:1/2,1/2,1/4:2:422;d:1/2,1/2,0:2:4/m..;e:0,1/2,0:4:2/m..;f:0,1/2,1/4:4:222 .;g:0,0,z:4:4..;"
-	WyckoffSyms[400] += "h:1/2,1/2,z:4:4..;i:0,1/2,z:8:2..;j:x,x,1/4:8:..2;k:x,0,1/4:8:.2.;l:x,1/2,1/4:8:.2.;m:x,y,0:8:m..;n:x,y,z:16:1;"
-	WyckoffSyms[401]  = "a:1/4,1/4,0:2:422;b:1/4,1/4,1/2:2:422;c:3/4,1/4,0:2:-42m;d:3/4,1/4,1/2:2:-42m;e:0,0,0:4:..2/m;f:0,0,1/2:4:..2/m;g:1/4,1/4,z:4:4..;"
-	WyckoffSyms[401] += "h:3/4,1/4,z:4:2.m m;i:x,x,0:8:..2;j:x,x,1/2:8:..2;k:x,1/4,0:8:.2.;l:x,1/4,1/2:8:.2.;m:x,-x,z:8:..m;n:x,y,z:16:1;"
-	WyckoffSyms[402]  = "a:1/4,1/4,0:2:422;b:1/4,1/4,1/2:2:422;c:3/4,1/4,0:2:-42m;d:3/4,1/4,1/2:2:-42m;e:0,0,0:4:..2/m;f:0,0,1/2:4:..2/m;g:1/4,1/4,z:4:4..;"
-	WyckoffSyms[402] += "h:3/4,1/4,z:4:2.m m;i:x,x,0:8:..2;j:x,x,1/2:8:..2;k:x,1/4,0:8:.2.;l:x,1/4,1/2:8:.2.;m:x,-x,z:8:..m;n:x,y,z:16:1;"
-	WyckoffSyms[403]  = "a:1/4,1/4,1/4:2:422;b:1/4,1/4,3/4:2:422;c:1/4,3/4,3/4:4:222 .;d:1/4,3/4,0:4:-4..;e:1/4,1/4,z:4:4..;f:0,0,0:8:-1;g:1/4,3/4,z:8:2..;"
-	WyckoffSyms[403] += "h:x,x,1/4:8:..2;i:x,1/4,1/4:8:.2.;j:x,3/4,1/4:8:.2.;k:x,y,z:16:1;"
-	WyckoffSyms[404]  = "a:1/4,1/4,1/4:2:422;b:1/4,1/4,3/4:2:422;c:1/4,3/4,3/4:4:222 .;d:1/4,3/4,0:4:-4..;e:1/4,1/4,z:4:4..;f:0,0,0:8:-1;g:1/4,3/4,z:8:2..;"
-	WyckoffSyms[404] += "h:x,x,1/4:8:..2;i:x,1/4,1/4:8:.2.;j:x,3/4,1/4:8:.2.;k:x,y,z:16:1;"
-	WyckoffSyms[405]  = "a:0,0,0:2:4/m..;b:0,0,1/2:2:4/m..;c:0,1/2,1/2:2:m.m m;d:0,1/2,0:2:m.m m;e:0,0,z:4:4..;f:0,1/2,z:4:2.m m;g:x,x+1/2,0:4:m.2 m;"
-	WyckoffSyms[405] += "h:x,x+1/2,1/2:4:m.2 m;i:x,y,0:8:m..;j:x,y,1/2:8:m..;k:x,x+1/2,z:8:..m;l:x,y,z:16:1;"
-	WyckoffSyms[406]  = "a:0,0,0:2:4/m..;b:0,0,1/2:2:4/m..;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:2.2 2;e:0,0,z:4:4..;f:0,1/2,z:8:2..;g:x,x+1/2,1/4:8:..2;"
-	WyckoffSyms[406] += "h:x,y,0:8:m..;i:x,y,z:16:1;"
-	WyckoffSyms[407]  = "a:3/4,1/4,0:2:-4m2;b:3/4,1/4,1/2:2:-4m2;c:1/4,1/4,z:2:4mm;d:0,0,0:4:..2/m;e:0,0,1/2:4:..2/m;f:3/4,1/4,z:4:2mm .;g:x,-x,0:8:..2;"
-	WyckoffSyms[407] += "h:x,-x,1/2:8:..2;i:1/4,y,z:8:.m.;j:x,x,z:8:..m;k:x,y,z:16:1;"
-	WyckoffSyms[408]  = "a:3/4,1/4,0:2:-4m2;b:3/4,1/4,1/2:2:-4m2;c:1/4,1/4,z:2:4mm;d:0,0,0:4:..2/m;e:0,0,1/2:4:..2/m;f:3/4,1/4,z:4:2mm .;g:x,-x,0:8:..2;"
-	WyckoffSyms[408] += "h:x,-x,1/2:8:..2;i:1/4,y,z:8:.m.;j:x,x,z:8:..m;k:x,y,z:16:1;"
-	WyckoffSyms[409]  = "a:3/4,1/4,1/4:4:2.2 2;b:3/4,1/4,0:4:-4..;c:1/4,1/4,z:4:4..;d:0,0,0:8:-1;e:3/4,1/4,z:8:2..;f:x,-x,1/4:8:..2;g:x,y,z:16:1;"
-	WyckoffSyms[410]  = "a:3/4,1/4,1/4:4:2.2 2;b:3/4,1/4,0:4:-4..;c:1/4,1/4,z:4:4..;d:0,0,0:8:-1;e:3/4,1/4,z:8:2..;f:x,-x,1/4:8:..2;g:x,y,z:16:1;"
-	WyckoffSyms[411]  = "a:0,0,0:2:mmm .;b:1/2,1/2,0:2:mmm .;c:0,1/2,0:2:mmm .;d:0,1/2,1/2:2:mmm .;e:0,0,1/4:2:-4m2;f:1/2,1/2,1/4:2:-4m2;g:0,0,z:4:2mm .;"
-	WyckoffSyms[411] += "h:1/2,1/2,z:4:2mm .;i:0,1/2,z:4:2mm .;j:x,0,0:4:m2m .;k:x,1/2,1/2:4:m2m .;l:x,0,1/2:4:m2m .;m:x,1/2,0:4:m2m .;n:x,x,1/4:8:..2;"
-	WyckoffSyms[411] += "o:0,y,z:8:.m.;p:1/2,y,z:8:.m.;q:x,y,0:8:m..;r:x,y,z:16:1;"
-	WyckoffSyms[412]  = "a:0,0,0:2:m.m m;b:0,0,1/4:2:-42m;c:1/2,1/2,0:2:m.m m;d:1/2,1/2,1/4:2:-42m;e:0,1/2,1/4:4:222 .;f:0,1/2,0:4:2/m..;g:0,0,z:4:2.m m;"
-	WyckoffSyms[412] += "h:1/2,1/2,z:4:2.m m;i:x,x,0:4:m.2 m;j:x,x,1/2:4:m.2 m;k:0,1/2,z:8:2..;l:x,0,1/4:8:.2.;m:x,1/2,1/4:8:.2.;n:x,y,0:8:m..;"
-	WyckoffSyms[412] += "o:x,x,z:8:..m;p:x,y,z:16:1;"
-	WyckoffSyms[413]  = "a:1/4,1/4,0:4:222 .;b:3/4,1/4,0:4:222 .;c:1/4,1/4,1/4:4:2.2 2;d:3/4,1/4,3/4:4:-4..;e:0,0,0:8:-1;f:1/4,1/4,z:8:2..;"
-	WyckoffSyms[413] += "g:3/4,1/4,z:8:2..;h:x,1/4,0:8:.2.;i:x,1/4,1/2:8:.2.;j:x,x,1/4:8:..2;k:x,y,z:16:1;"
-	WyckoffSyms[414]  = "a:1/4,1/4,0:4:222 .;b:3/4,1/4,0:4:222 .;c:1/4,1/4,1/4:4:2.2 2;d:3/4,1/4,3/4:4:-4..;e:0,0,0:8:-1;f:1/4,1/4,z:8:2..;"
-	WyckoffSyms[414] += "g:3/4,1/4,z:8:2..;h:x,1/4,0:8:.2.;i:x,1/4,1/2:8:.2.;j:x,x,1/4:8:..2;k:x,y,z:16:1;"
-	WyckoffSyms[415]  = "a:1/4,3/4,1/4:2:-42m;b:3/4,1/4,1/4:2:-42m;c:1/4,1/4,1/4:4:222 .;d:1/4,1/4,0:4:2.2 2;e:0,0,1/2:4:..2/m;f:0,0,0:4:..2/m;"
-	WyckoffSyms[415] += "g:3/4,1/4,z:4:2.m m;h:1/4,1/4,z:8:2..;i:x,1/4,3/4:8:.2.;j:x,1/4,1/4:8:.2.;k:x,x,0:8:..2;l:x,x,1/2:8:..2;m:x,-x,z:8:..m;"
-	WyckoffSyms[415] += "n:x,y,z:16:1;"
-	WyckoffSyms[416]  = "a:1/4,3/4,1/4:2:-42m;b:3/4,1/4,1/4:2:-42m;c:1/4,1/4,1/4:4:222 .;d:1/4,1/4,0:4:2.2 2;e:0,0,1/2:4:..2/m;f:0,0,0:4:..2/m;"
-	WyckoffSyms[416] += "g:3/4,1/4,z:4:2.m m;h:1/4,1/4,z:8:2..;i:x,1/4,3/4:8:.2.;j:x,1/4,1/4:8:.2.;k:x,x,0:8:..2;l:x,x,1/2:8:..2;m:x,-x,z:8:..m;"
-	WyckoffSyms[416] += "n:x,y,z:16:1;"
-	WyckoffSyms[417]  = "a:0,0,0:4:2/m..;b:0,0,1/4:4:-4..;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:2.2 2;e:0,0,z:8:2..;f:0,1/2,z:8:2..;g:x,x+1/2,1/4:8:..2;"
-	WyckoffSyms[417] += "h:x,y,0:8:m..;i:x,y,z:16:1;"
-	WyckoffSyms[418]  = "a:0,0,0:2:m.m m;b:0,0,1/2:2:m.m m;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:-4..;e:0,0,z:4:2.m m;f:x,x,0:4:m.2 m;g:x,-x,0:4:m.2 m;"
-	WyckoffSyms[418] += "h:0,1/2,z:8:2..;i:x,y,0:8:m..;j:x,x,z:8:..m;k:x,y,z:16:1;"
-	WyckoffSyms[419]  = "a:3/4,1/4,3/4:2:-4m2;b:3/4,1/4,1/4:2:-4m2;c:3/4,1/4,z:4:2mm .;d:1/4,1/4,z:4:2mm .;e:0,0,0:8:-1;f:x,-x,1/4:8:..2;g:1/4,y,z:8:.m.;"
-	WyckoffSyms[419] += "h:x,y,z:16:1;"
-	WyckoffSyms[420]  = "a:3/4,1/4,3/4:2:-4m2;b:3/4,1/4,1/4:2:-4m2;c:3/4,1/4,z:4:2mm .;d:1/4,1/4,z:4:2mm .;e:0,0,0:8:-1;f:x,-x,1/4:8:..2;g:1/4,y,z:8:.m.;"
-	WyckoffSyms[420] += "h:x,y,z:16:1;"
-	WyckoffSyms[421]  = "a:3/4,1/4,0:4:2.2 2;b:3/4,1/4,3/4:4:-4..;c:0,0,1/2:4:..2/m;d:0,0,0:4:..2/m;e:1/4,1/4,z:4:2.m m;f:3/4,1/4,z:8:2..;g:x,-x,1/2:8:..2;"
-	WyckoffSyms[421] += "h:x,-x,0:8:..2;i:x,x,z:8:..m;j:x,y,z:16:1;"
-	WyckoffSyms[422]  = "a:3/4,1/4,0:4:2.2 2;b:3/4,1/4,3/4:4:-4..;c:0,0,1/2:4:..2/m;d:0,0,0:4:..2/m;e:1/4,1/4,z:4:2.m m;f:3/4,1/4,z:8:2..;g:x,-x,1/2:8:..2;"
-	WyckoffSyms[422] += "h:x,-x,0:8:..2;i:x,x,z:8:..m;j:x,y,z:16:1;"
-	WyckoffSyms[423]  = "a:0,0,0:2:4/mmm;b:0,0,1/2:2:4/mmm;c:0,1/2,0:4:mmm .;d:0,1/2,1/4:4:-4m2;e:0,0,z:4:4mm;f:1/4,1/4,1/4:8:..2/m;g:0,1/2,z:8:2mm .;"
-	WyckoffSyms[423] += "h:x,x,0:8:m.2 m;i:x,0,0:8:m2m .;j:x,1/2,0:8:m2m .;k:x,x+1/2,1/4:16:..2;l:x,y,0:16:m..;m:x,x,z:16:..m;n:0,y,z:16:.m.;o:x,y,z:32:1;"
-	WyckoffSyms[424]  = "a:0,0,1/4:4:422;b:0,1/2,1/4:4:-42m;c:0,0,0:4:4/m..;d:0,1/2,0:4:m.m m;e:1/4,1/4,1/4:8:..2/m;f:0,0,z:8:4..;g:0,1/2,z:8:2.m m;"
-	WyckoffSyms[424] += "h:x,x+1/2,0:8:m.2 m;i:x,x,1/4:16:..2;j:x,0,1/4:16:.2.;k:x,y,0:16:m..;l:x,x+1/2,z:16:..m;m:x,y,z:32:1;"
-	WyckoffSyms[425]  = "a:0,3/4,1/8:4:-4m2;b:0,1/4,3/8:4:-4m2;c:0,0,0:8:.2/m.;d:0,0,1/2:8:.2/m.;e:0,1/4,z:8:2mm .;f:x,0,0:16:.2.;g:x,x+1/4,7/8:16:..2;"
-	WyckoffSyms[425] += "h:0,y,z:16:.m.;i:x,y,z:32:1;"
-	WyckoffSyms[426]  = "a:0,3/4,1/8:4:-4m2;b:0,1/4,3/8:4:-4m2;c:0,0,0:8:.2/m.;d:0,0,1/2:8:.2/m.;e:0,1/4,z:8:2mm .;f:x,0,0:16:.2.;g:x,x+1/4,7/8:16:..2;"
-	WyckoffSyms[426] += "h:0,y,z:16:.m.;i:x,y,z:32:1;"
-	WyckoffSyms[427]  = "a:0,1/4,3/8:8:-4..;b:0,1/4,1/8:8:2.2 2;c:0,0,0:16:-1;d:0,1/4,z:16:2..;e:x,0,1/4:16:.2.;f:x,x+1/4,1/8:16:..2;g:x,y,z:32:1;"
-	WyckoffSyms[428]  = "a:0,1/4,3/8:8:-4..;b:0,1/4,1/8:8:2.2 2;c:0,0,0:16:-1;d:0,1/4,z:16:2..;e:x,0,1/4:16:.2.;f:x,x+1/4,1/8:16:..2;g:x,y,z:32:1;"
-	// Trigonal SG[143,167]  SG_idNum [430,461]   (32 idNums)
-	WyckoffSyms[429]  = "a:0,0,z:1:3..;b:1/3,2/3,z:1:3..;c:2/3,1/3,z:1:3..;d:x,y,z:3:1;"
-	WyckoffSyms[430]  = "a:x,y,z:3:1;"
-	WyckoffSyms[431]  = "a:x,y,z:3:1;"
-	WyckoffSyms[432]  = "a:0,0,z:3:3.;b:x,y,z:9:1;"
-	WyckoffSyms[433]  = "a:z,z,z:1:3.;b:x+z,-x+y+z,-y+z:3:1;"
-	WyckoffSyms[434]  = "a:0,0,0:1:-3..;b:0,0,1/2:1:-3..;c:0,0,z:2:3..;d:1/3,2/3,z:2:3..;e:1/2,0,0:3:-1;f:1/2,0,1/2:3:-1;g:x,y,z:6:1;"
-	WyckoffSyms[435]  = "a:0,0,0:3:-3.;b:0,0,1/2:3:-3.;c:0,0,z:6:3.;d:1/2,0,1/2:9:-1;e:1/2,0,0:9:-1;f:x,y,z:18:1;"
-	WyckoffSyms[436]  = "a:0,0,0:1:-3.;b:1/2,1/2,1/2:1:-3.;c:z,z,z:2:3.;d:1,0,1/2:3:-1;e:1/2,1/2,0:3:-1;f:x+z,-x+y+z,-y+z:6:1;"
-	WyckoffSyms[437]  = "a:0,0,0:1:3.2;b:0,0,1/2:1:3.2;c:1/3,2/3,0:1:3.2;d:1/3,2/3,1/2:1:3.2;e:2/3,1/3,0:1:3.2;f:2/3,1/3,1/2:1:3.2;g:0,0,z:2:3..;"
-	WyckoffSyms[437] += "h:1/3,2/3,z:2:3..;i:2/3,1/3,z:2:3..;j:x,-x,0:3:..2;k:x,-x,1/2:3:..2;l:x,y,z:6:1;"
-	WyckoffSyms[438]  = "a:0,0,0:1:32.;b:0,0,1/2:1:32.;c:0,0,z:2:3..;d:1/3,2/3,z:2:3..;e:x,0,0:3:.2.;f:x,0,1/2:3:.2.;g:x,y,z:6:1;"
-	WyckoffSyms[439]  = "a:x,-x,1/3:3:..2;b:x,-x,5/6:3:..2;c:x,y,z:6:1;"
-	WyckoffSyms[440]  = "a:x,0,1/3:3:.2.;b:x,0,5/6:3:.2.;c:x,y,z:6:1;"
-	WyckoffSyms[441]  = "a:x,-x,2/3:3:..2;b:x,-x,1/6:3:..2;c:x,y,z:6:1;"
-	WyckoffSyms[442]  = "a:x,0,2/3:3:.2.;b:x,0,1/6:3:.2.;c:x,y,z:6:1;"
-	WyckoffSyms[443]  = "a:0,0,0:3:32;b:0,0,1/2:3:32;c:0,0,z:6:3.;d:x,0,0:9:.2;e:x,0,1/2:9:.2;f:x,y,z:18:1;"
-	WyckoffSyms[444]  = "a:0,0,0:1:32;b:1/2,1/2,1/2:1:32;c:z,z,z:2:3.;d:x,-x,0:3:.2;e:x+1/2,-x+1/2,1/2:3:.2;f:x+z,-x+y+z,-y+z:6:1;"
-	WyckoffSyms[445]  = "a:0,0,z:1:3m.;b:1/3,2/3,z:1:3m.;c:2/3,1/3,z:1:3m.;d:x,-x,z:3:.m.;e:x,y,z:6:1;"
-	WyckoffSyms[446]  = "a:0,0,z:1:3.m;b:1/3,2/3,z:2:3..;c:x,0,z:3:..m;d:x,y,z:6:1;"
-	WyckoffSyms[447]  = "a:0,0,z:2:3..;b:1/3,2/3,z:2:3..;c:2/3,1/3,z:2:3..;d:x,y,z:6:1;"
-	WyckoffSyms[448]  = "a:0,0,z:2:3..;b:1/3,2/3,z:2:3..;c:x,y,z:6:1;"
-	WyckoffSyms[449]  = "a:0,0,z:3:3m;b:x,-x,z:9:.m;c:x,y,z:18:1;"
-	WyckoffSyms[450]  = "a:z,z,z:1:3m;b:x+z,-x*2+z,x+z:3:.m;c:x+z,-x+y+z,-y+z:6:1;"
-	WyckoffSyms[451]  = "a:0,0,z:6:3.;b:x,y,z:18:1;"
-	WyckoffSyms[452]  = "a:z,z,z:2:3.;b:x+z,-x+y+z,-y+z:6:1;"
-	WyckoffSyms[453]  = "a:0,0,0:1:-3.m;b:0,0,1/2:1:-3.m;c:1/3,2/3,0:2:3.2;d:1/3,2/3,1/2:2:3.2;e:0,0,z:2:3.m;f:1/2,0,0:3:..2/m;g:1/2,0,1/2:3:..2/m;"
-	WyckoffSyms[453] += "h:1/3,2/3,z:4:3..;i:x,-x,0:6:..2;j:x,-x,1/2:6:..2;k:x,0,z:6:..m;l:x,y,z:12:1;"
-	WyckoffSyms[454]  = "a:0,0,1/4:2:3.2;b:0,0,0:2:-3..;c:1/3,2/3,1/4:2:3.2;d:2/3,1/3,1/4:2:3.2;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:1/2,0,0:6:-1;"
-	WyckoffSyms[454] += "h:x,-x,1/4:6:..2;i:x,y,z:12:1;"
-	WyckoffSyms[455]  = "a:0,0,0:1:-3m.;b:0,0,1/2:1:-3m.;c:0,0,z:2:3m.;d:1/3,2/3,z:2:3m.;e:1/2,0,0:3:.2/m.;f:1/2,0,1/2:3:.2/m.;g:x,0,0:6:.2.;"
-	WyckoffSyms[455] += "h:x,0,1/2:6:.2.;i:x,-x,z:6:.m.;j:x,y,z:12:1;"
-	WyckoffSyms[456]  = "a:0,0,1/4:2:32.;b:0,0,0:2:-3..;c:0,0,z:4:3..;d:1/3,2/3,z:4:3..;e:1/2,0,0:6:-1;f:x,0,1/4:6:.2.;g:x,y,z:12:1;"
-	WyckoffSyms[457]  = "a:0,0,0:3:-3m;b:0,0,1/2:3:-3m;c:0,0,z:6:3m;d:1/2,0,1/2:9:.2/m;e:1/2,0,0:9:.2/m;f:x,0,0:18:.2;g:x,0,1/2:18:.2;h:x,-x,z:18:.m;"
-	WyckoffSyms[457] += "i:x,y,z:36:1;"
-	WyckoffSyms[458]  = "a:0,0,0:1:-3m;b:1/2,1/2,1/2:1:-3m;c:z,z,z:2:3m;d:1,0,1/2:3:.2/m;e:1/2,1/2,0:3:.2/m;f:x,-x,0:6:.2;g:x+1/2,-x+1/2,1/2:6:.2;"
-	WyckoffSyms[458] += "h:x+z,-x*2+z,x+z:6:.m;i:x+z,-x+y+z,-y+z:12:1;"
-	WyckoffSyms[459]  = "a:0,0,1/4:6:32;b:0,0,0:6:-3.;c:0,0,z:12:3.;d:1/2,0,0:18:-1;e:x,0,1/4:18:.2;f:x,y,z:36:1;"
-	WyckoffSyms[460]  = "a:1/4,1/4,1/4:2:32;b:0,0,0:2:-3.;c:z,z,z:4:3.;d:1/2,1/2,0:6:-1;e:x+1/4,-x+1/4,1/4:6:.2;f:x+z,-x+y+z,-y+z:12:1;"
-	// Hexagonal SG[168,194]  SG_idNum [462,488]   (25 idNums)
-	WyckoffSyms[461]  = "a:0,0,z:1:6..;b:1/3,2/3,z:2:3..;c:1/2,0,z:3:2..;d:x,y,z:6:1;"
-	WyckoffSyms[462]  = "a:x,y,z:6:1;"
-	WyckoffSyms[463]  = "a:x,y,z:6:1;"
-	WyckoffSyms[464]  = "a:0,0,z:3:2..;b:1/2,1/2,z:3:2..;c:x,y,z:6:1;"
-	WyckoffSyms[465]  = "a:0,0,z:3:2..;b:1/2,1/2,z:3:2..;c:x,y,z:6:1;"
-	WyckoffSyms[466]  = "a:0,0,z:2:3..;b:1/3,2/3,z:2:3..;c:x,y,z:6:1;"
-	WyckoffSyms[467]  = "a:0,0,0:1:-6..;b:0,0,1/2:1:-6..;c:1/3,2/3,0:1:-6..;d:1/3,2/3,1/2:1:-6..;e:2/3,1/3,0:1:-6..;f:2/3,1/3,1/2:1:-6..;g:0,0,z:2:3..;"
-	WyckoffSyms[467] += "h:1/3,2/3,z:2:3..;i:2/3,1/3,z:2:3..;j:x,y,0:3:m..;k:x,y,1/2:3:m..;l:x,y,z:6:1;"
-	WyckoffSyms[468]  = "a:0,0,0:1:6/m..;b:0,0,1/2:1:6/m..;c:1/3,2/3,0:2:-6..;d:1/3,2/3,1/2:2:-6..;e:0,0,z:2:6..;f:1/2,0,0:3:2/m..;g:1/2,0,1/2:3:2/m..;"
-	WyckoffSyms[468] += "h:1/3,2/3,z:4:3..;i:1/2,0,z:6:2..;j:x,y,0:6:m..;k:x,y,1/2:6:m..;l:x,y,z:12:1;"
-	WyckoffSyms[469]  = "a:0,0,1/4:2:-6..;b:0,0,0:2:-3..;c:1/3,2/3,1/4:2:-6..;d:2/3,1/3,1/4:2:-6..;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:1/2,0,0:6:-1;"
-	WyckoffSyms[469] += "h:x,y,1/4:6:m..;i:x,y,z:12:1;"
-	WyckoffSyms[470]  = "a:0,0,0:1:622;b:0,0,1/2:1:622;c:1/3,2/3,0:2:3.2;d:1/3,2/3,1/2:2:3.2;e:0,0,z:2:6..;f:1/2,0,0:3:222;g:1/2,0,1/2:3:222;"
-	WyckoffSyms[470] += "h:1/3,2/3,z:4:3..;i:1/2,0,z:6:2..;j:x,0,0:6:.2.;k:x,0,1/2:6:.2.;l:x,-x,0:6:..2;m:x,-x,1/2:6:..2;n:x,y,z:12:1;"
-	WyckoffSyms[471]  = "a:x,0,0:6:.2.;b:x,x*2,1/4:6:..2;c:x,y,z:12:1;"
-	WyckoffSyms[472]  = "a:x,0,0:6:.2.;b:x,x*2,3/4:6:..2;c:x,y,z:12:1;"
-	WyckoffSyms[473]  = "a:0,0,0:3:222;b:0,0,1/2:3:222;c:1/2,0,0:3:222;d:1/2,0,1/2:3:222;e:0,0,z:6:2..;f:1/2,0,z:6:2..;g:x,0,0:6:.2.;h:x,0,1/2:6:.2.;"
-	WyckoffSyms[473] += "i:x,x*2,0:6:..2;j:x,x*2,1/2:6:..2;k:x,y,z:12:1;"
-	WyckoffSyms[474]  = "a:0,0,0:3:222;b:0,0,1/2:3:222;c:1/2,0,0:3:222;d:1/2,0,1/2:3:222;e:0,0,z:6:2..;f:1/2,0,z:6:2..;g:x,0,0:6:.2.;h:x,0,1/2:6:.2.;"
-	WyckoffSyms[474] += "i:x,x*2,0:6:..2;j:x,x*2,1/2:6:..2;k:x,y,z:12:1;"
-	WyckoffSyms[475]  = "a:0,0,0:2:32.;b:0,0,1/4:2:3.2;c:1/3,2/3,1/4:2:3.2;d:1/3,2/3,3/4:2:3.2;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:x,0,0:6:.2.;"
-	WyckoffSyms[475] += "h:x,x*2,1/4:6:..2;i:x,y,z:12:1;"
-	WyckoffSyms[476]  = "a:0,0,z:1:6mm;b:1/3,2/3,z:2:3m.;c:1/2,0,z:3:2mm;d:x,0,z:6:..m;e:x,-x,z:6:.m.;f:x,y,z:12:1;"
-	WyckoffSyms[477]  = "a:0,0,z:2:6..;b:1/3,2/3,z:4:3..;c:1/2,0,z:6:2..;d:x,y,z:12:1;"
-	WyckoffSyms[478]  = "a:0,0,z:2:3.m;b:1/3,2/3,z:4:3..;c:x,0,z:6:..m;d:x,y,z:12:1;"
-	WyckoffSyms[479]  = "a:0,0,z:2:3m.;b:1/3,2/3,z:2:3m.;c:x,-x,z:6:.m.;d:x,y,z:12:1;"
-	WyckoffSyms[480]  = "a:0,0,0:1:-6m2;b:0,0,1/2:1:-6m2;c:1/3,2/3,0:1:-6m2;d:1/3,2/3,1/2:1:-6m2;e:2/3,1/3,0:1:-6m2;f:2/3,1/3,1/2:1:-6m2;g:0,0,z:2:3m.;"
-	WyckoffSyms[480] += "h:1/3,2/3,z:2:3m.;i:2/3,1/3,z:2:3m.;j:x,-x,0:3:mm2;k:x,-x,1/2:3:mm2;l:x,y,0:6:m..;m:x,y,1/2:6:m..;n:x,-x,z:6:.m.;o:x,y,z:12:1;"
-	WyckoffSyms[481]  = "a:0,0,0:2:3.2;b:0,0,1/4:2:-6..;c:1/3,2/3,0:2:3.2;d:1/3,2/3,1/4:2:-6..;e:2/3,1/3,0:2:3.2;f:2/3,1/3,1/4:2:-6..;g:0,0,z:4:3..;"
-	WyckoffSyms[481] += "h:1/3,2/3,z:4:3..;i:2/3,1/3,z:4:3..;j:x,-x,0:6:..2;k:x,y,1/4:6:m..;l:x,y,z:12:1;"
-	WyckoffSyms[482]  = "a:0,0,0:1:-62m;b:0,0,1/2:1:-62m;c:1/3,2/3,0:2:-6..;d:1/3,2/3,1/2:2:-6..;e:0,0,z:2:3.m;f:x,0,0:3:m2m;g:x,0,1/2:3:m2m;"
-	WyckoffSyms[482] += "h:1/3,2/3,z:4:3..;i:x,0,z:6:..m;j:x,y,0:6:m..;k:x,y,1/2:6:m..;l:x,y,z:12:1;"
-	WyckoffSyms[483]  = "a:0,0,0:2:32.;b:0,0,1/4:2:-6..;c:1/3,2/3,1/4:2:-6..;d:2/3,1/3,1/4:2:-6..;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:x,0,0:6:.2.;"
-	WyckoffSyms[483] += "h:x,y,1/4:6:m..;i:x,y,z:12:1;"
-	WyckoffSyms[484]  = "a:0,0,0:1:6/mmm;b:0,0,1/2:1:6/mmm;c:1/3,2/3,0:2:-6m2;d:1/3,2/3,1/2:2:-6m2;e:0,0,z:2:6mm;f:1/2,0,0:3:mmm;g:1/2,0,1/2:3:mmm;"
-	WyckoffSyms[484] += "h:1/3,2/3,z:4:3m.;i:1/2,0,z:6:2mm;j:x,0,0:6:m2m;k:x,0,1/2:6:m2m;l:x,x*2,0:6:mm2;m:x,x*2,1/2:6:mm2;n:x,0,z:12:..m;o:x,x*2,z:12:.m.;"
-	WyckoffSyms[484] += "p:x,y,0:12:m..;q:x,y,1/2:12:m..;r:x,y,z:24:1;"
-	WyckoffSyms[485]  = "a:0,0,1/4:2:622;b:0,0,0:2:6/m..;c:1/3,2/3,1/4:4:3.2;d:1/3,2/3,0:4:-6..;e:0,0,z:4:6..;f:1/2,0,1/4:6:222;g:1/2,0,0:6:2/m..;"
-	WyckoffSyms[485] += "h:1/3,2/3,z:8:3..;i:1/2,0,z:12:2..;j:x,0,1/4:12:.2.;k:x,x*2,1/4:12:..2;l:x,y,0:12:m..;m:x,y,z:24:1;"
-	WyckoffSyms[486]  = "a:0,0,1/4:2:-62m;b:0,0,0:2:-3.m;c:1/3,2/3,1/4:4:-6..;d:1/3,2/3,0:4:3.2;e:0,0,z:4:3.m;f:1/2,0,0:6:..2/m;g:x,0,1/4:6:m2m;"
-	WyckoffSyms[486] += "h:1/3,2/3,z:8:3..;i:x,x*2,0:12:..2;j:x,y,1/4:12:m..;k:x,0,z:12:..m;l:x,y,z:24:1;"
-	WyckoffSyms[487]  = "a:0,0,0:2:-3m.;b:0,0,1/4:2:-6m2;c:1/3,2/3,1/4:2:-6m2;d:1/3,2/3,3/4:2:-6m2;e:0,0,z:4:3m.;f:1/3,2/3,z:4:3m.;g:1/2,0,0:6:.2/m.;"
-	WyckoffSyms[487] += "h:x,x*2,1/4:6:mm2;i:x,0,0:12:.2.;j:x,y,1/4:12:m..;k:x,x*2,z:12:.m.;l:x,y,z:24:1;"
-	// Cubic SG[195,230]  SG_idNum [489,530]   (42 idNums)
-	WyckoffSyms[488]  = "a:0,0,0:1:23.;b:1/2,1/2,1/2:1:23.;c:0,1/2,1/2:3:222 . .;d:1/2,0,0:3:222 . .;e:x,x,x:4:.3.;f:x,0,0:6:2..;g:x,0,1/2:6:2..;"
-	WyckoffSyms[488] += "h:x,1/2,0:6:2..;i:x,1/2,1/2:6:2..;j:x,y,z:12:1;"
-	WyckoffSyms[489]  = "a:0,0,0:4:23.;b:1/2,1/2,1/2:4:23.;c:1/4,1/4,1/4:4:23.;d:3/4,3/4,3/4:4:23.;e:x,x,x:16:.3.;f:x,0,0:24:2..;g:x,1/4,1/4:24:2..;"
-	WyckoffSyms[489] += "h:x,y,z:48:1;"
-	WyckoffSyms[490]  = "a:0,0,0:2:23.;b:0,1/2,1/2:6:222 . .;c:x,x,x:8:.3.;d:x,0,0:12:2..;e:x,1/2,0:12:2..;f:x,y,z:24:1;"
-	WyckoffSyms[491]  = "a:x,x,x:4:.3.;b:x,y,z:12:1;"
-	WyckoffSyms[492]  = "a:x,x,x:8:.3.;b:x,0,1/4:12:2..;c:x,y,z:24:1;"
-	WyckoffSyms[493]  = "a:0,0,0:1:m-3.;b:1/2,1/2,1/2:1:m-3.;c:0,1/2,1/2:3:mmm . .;d:1/2,0,0:3:mmm . .;e:x,0,0:6:mm2 . .;f:x,0,1/2:6:mm2 . .;"
-	WyckoffSyms[493] += "g:x,1/2,0:6:mm2 . .;h:x,1/2,1/2:6:mm2 . .;i:x,x,x:8:.3.;j:0,y,z:12:m..;k:1/2,y,z:12:m..;l:x,y,z:24:1;"
-	WyckoffSyms[494]  = "a:1/4,1/4,1/4:2:23.;b:0,0,0:4:.-3.;c:1/2,1/2,1/2:4:.-3.;d:1/4,3/4,3/4:6:222 . .;e:x,x,x:8:.3.;f:x,1/4,1/4:12:2..;"
-	WyckoffSyms[494] += "g:x,3/4,1/4:12:2..;h:x,y,z:24:1;"
-	WyckoffSyms[495]  = "a:1/4,1/4,1/4:2:23.;b:0,0,0:4:.-3.;c:1/2,1/2,1/2:4:.-3.;d:1/4,3/4,3/4:6:222 . .;e:x,x,x:8:.3.;f:x,1/4,1/4:12:2..;"
-	WyckoffSyms[495] += "g:x,3/4,1/4:12:2..;h:x,y,z:24:1;"
-	WyckoffSyms[496]  = "a:0,0,0:4:m-3.;b:1/2,1/2,1/2:4:m-3.;c:1/4,1/4,1/4:8:23.;d:0,1/4,1/4:24:2/m..;e:x,0,0:24:mm2 . .;f:x,x,x:32:.3.;g:x,1/4,1/4:48:2..;"
-	WyckoffSyms[496] += "h:0,y,z:48:m..;i:x,y,z:96:1;"
-	WyckoffSyms[497]  = "a:1/8,1/8,1/8:8:23.;b:5/8,5/8,5/8:8:23.;c:0,0,0:16:.-3.;d:1/2,1/2,1/2:16:.-3.;e:x,x,x:32:.3.;f:x,1/8,1/8:48:2..;g:x,y,z:96:1;"
-	WyckoffSyms[498]  = "a:1/8,1/8,1/8:8:23.;b:5/8,5/8,5/8:8:23.;c:0,0,0:16:.-3.;d:1/2,1/2,1/2:16:.-3.;e:x,x,x:32:.3.;f:x,1/8,1/8:48:2..;g:x,y,z:96:1;"
-	WyckoffSyms[499]  = "a:0,0,0:2:m-3.;b:0,1/2,1/2:6:mmm . .;c:1/4,1/4,1/4:8:.-3.;d:x,0,0:12:mm2 . .;e:x,0,1/2:12:mm2 . .;f:x,x,x:16:.3.;g:0,y,z:24:m..;"
-	WyckoffSyms[499] += "h:x,y,z:48:1;"
-	WyckoffSyms[500]  = "a:0,0,0:4:.-3.;b:1/2,1/2,1/2:4:.-3.;c:x,x,x:8:.3.;d:x,y,z:24:1;"
-	WyckoffSyms[501]  = "a:0,0,0:8:.-3.;b:1/4,1/4,1/4:8:.-3.;c:x,x,x:16:.3.;d:x,0,1/4:24:2..;e:x,y,z:48:1;"
-	WyckoffSyms[502]  = "a:0,0,0:1:432;b:1/2,1/2,1/2:1:432;c:0,1/2,1/2:3:42. 2;d:1/2,0,0:3:42. 2;e:x,0,0:6:4..;f:x,1/2,1/2:6:4..;g:x,x,x:8:.3.;"
-	WyckoffSyms[502] += "h:x,1/2,0:12:2..;i:0,y,y:12:..2;j:1/2,y,y:12:..2;k:x,y,z:24:1;"
-	WyckoffSyms[503]  = "a:0,0,0:2:23.;b:1/4,1/4,1/4:4:.32;c:3/4,3/4,3/4:4:.32;d:0,1/2,1/2:6:222 . .;e:1/4,0,1/2:6:2.2 2;f:1/4,1/2,0:6:2.2 2;g:x,x,x:8:.3.;"
-	WyckoffSyms[503] += "h:x,0,0:12:2..;i:x,0,1/2:12:2..;j:x,1/2,0:12:2..;k:1/4,y,-y+1/2:12:..2;l:1/4,y,y+1/2:12:..2;m:x,y,z:24:1;"
-	WyckoffSyms[504]  = "a:0,0,0:4:432;b:1/2,1/2,1/2:4:432;c:1/4,1/4,1/4:8:23.;d:0,1/4,1/4:24:2.2 2;e:x,0,0:24:4..;f:x,x,x:32:.3.;g:0,y,y:48:..2;"
-	WyckoffSyms[504] += "h:1/2,y,y:48:..2;i:x,1/4,1/4:48:2..;j:x,y,z:96:1;"
-	WyckoffSyms[505]  = "a:0,0,0:8:23.;b:1/2,1/2,1/2:8:23.;c:1/8,1/8,1/8:16:.32;d:5/8,5/8,5/8:16:.32;e:x,x,x:32:.3.;f:x,0,0:48:2..;g:1/8,y,-y+1/4:48:..2;"
-	WyckoffSyms[505] += "h:x,y,z:96:1;"
-	WyckoffSyms[506]  = "a:0,0,0:2:432;b:0,1/2,1/2:6:42. 2;c:1/4,1/4,1/4:8:.32;d:1/4,1/2,0:12:2.2 2;e:x,0,0:12:4..;f:x,x,x:16:.3.;g:x,1/2,0:24:2..;"
-	WyckoffSyms[506] += "h:0,y,y:24:..2;i:1/4,y,-y+1/2:24:..2;j:x,y,z:48:1;"
-	WyckoffSyms[507]  = "a:1/8,1/8,1/8:4:.32;b:5/8,5/8,5/8:4:.32;c:x,x,x:8:.3.;d:1/8,y,-y+1/4:12:..2;e:x,y,z:24:1;"
-	WyckoffSyms[508]  = "a:3/8,3/8,3/8:4:.32;b:7/8,7/8,7/8:4:.32;c:x,x,x:8:.3.;d:1/8,y,y+1/4:12:..2;e:x,y,z:24:1;"
-	WyckoffSyms[509]  = "a:1/8,1/8,1/8:8:.32;b:7/8,7/8,7/8:8:.32;c:1/8,0,1/4:12:2.2 2;d:5/8,0,1/4:12:2.2 2;e:x,x,x:16:.3.;f:x,0,1/4:24:2..;"
-	WyckoffSyms[509] += "g:1/8,y,y+1/4:24:..2;h:1/8,y,-y+1/4:24:..2;i:x,y,z:48:1;"
-	WyckoffSyms[510]  = "a:0,0,0:1:-43m;b:1/2,1/2,1/2:1:-43m;c:0,1/2,1/2:3:-42. m;d:1/2,0,0:3:-42. m;e:x,x,x:4:.3m;f:x,0,0:6:2.m m;g:x,1/2,1/2:6:2.m m;"
-	WyckoffSyms[510] += "h:x,1/2,0:12:2..;i:x,x,z:12:..m;j:x,y,z:24:1;"
-	WyckoffSyms[511]  = "a:0,0,0:4:-43m;b:1/2,1/2,1/2:4:-43m;c:1/4,1/4,1/4:4:-43m;d:3/4,3/4,3/4:4:-43m;e:x,x,x:16:.3m;f:x,0,0:24:2.m m;g:x,1/4,1/4:24:2.m m;"
-	WyckoffSyms[511] += "h:x,x,z:48:..m;i:x,y,z:96:1;"
-	WyckoffSyms[512]  = "a:0,0,0:2:-43m;b:0,1/2,1/2:6:-42. m;c:x,x,x:8:.3m;d:1/4,1/2,0:12:-4..;e:x,0,0:12:2.m m;f:x,1/2,0:24:2..;g:x,x,z:24:..m;"
-	WyckoffSyms[512] += "h:x,y,z:48:1;"
-	WyckoffSyms[513]  = "a:0,0,0:2:23.;b:0,1/2,1/2:6:222 . .;c:1/4,1/2,0:6:-4..;d:1/4,0,1/2:6:-4..;e:x,x,x:8:.3.;f:x,0,0:12:2..;g:x,1/2,0:12:2..;"
-	WyckoffSyms[513] += "h:x,0,1/2:12:2..;i:x,y,z:24:1;"
-	WyckoffSyms[514]  = "a:0,0,0:8:23.;b:1/4,1/4,1/4:8:23.;c:0,1/4,1/4:24:-4..;d:1/4,0,0:24:-4..;e:x,x,x:32:.3.;f:x,0,0:48:2..;g:x,1/4,1/4:48:2..;"
-	WyckoffSyms[514] += "h:x,y,z:96:1;"
-	WyckoffSyms[515]  = "a:3/8,0,1/4:12:-4..;b:7/8,0,1/4:12:-4..;c:x,x,x:16:.3.;d:x,0,1/4:24:2..;e:x,y,z:48:1;"
-	WyckoffSyms[516]  = "a:0,0,0:1:m-3m;b:1/2,1/2,1/2:1:m-3m;c:0,1/2,1/2:3:4/mm. m;d:1/2,0,0:3:4/mm. m;e:x,0,0:6:4m. m;f:x,1/2,1/2:6:4m. m;g:x,x,x:8:.3m;"
-	WyckoffSyms[516] += "h:x,1/2,0:12:mm2 . .;i:0,y,y:12:m.m 2;j:1/2,y,y:12:m.m 2;k:0,y,z:24:m..;l:1/2,y,z:24:m..;m:x,x,z:24:..m;n:x,y,z:48:1;"
-	WyckoffSyms[517]  = "a:1/4,1/4,1/4:2:432;b:3/4,1/4,1/4:6:42. 2;c:0,0,0:8:.-3.;d:0,3/4,1/4:12:-4..;e:x,1/4,1/4:12:4..;f:x,x,x:16:.3.;g:x,3/4,1/4:24:2..;"
-	WyckoffSyms[517] += "h:1/4,y,y:24:..2;i:x,y,z:48:1;"
-	WyckoffSyms[518]  = "a:1/4,1/4,1/4:2:432;b:3/4,1/4,1/4:6:42. 2;c:0,0,0:8:.-3.;d:0,3/4,1/4:12:-4..;e:x,1/4,1/4:12:4..;f:x,x,x:16:.3.;g:x,3/4,1/4:24:2..;"
-	WyckoffSyms[518] += "h:1/4,y,y:24:..2;i:x,y,z:48:1;"
-	WyckoffSyms[519]  = "a:0,0,0:2:m-3.;b:0,1/2,1/2:6:mmm . .;c:1/4,0,1/2:6:-4m. 2;d:1/4,1/2,0:6:-4m. 2;e:1/4,1/4,1/4:8:.32;f:x,0,0:12:mm2 . .;"
-	WyckoffSyms[519] += "g:x,0,1/2:12:mm2 . .;h:x,1/2,0:12:mm2 . .;i:x,x,x:16:.3.;j:1/4,y,y+1/2:24:..2;k:0,y,z:24:m..;l:x,y,z:48:1;"
-	WyckoffSyms[520]  = "a:1/4,1/4,1/4:2:-43m;b:0,0,0:4:.-3m;c:1/2,1/2,1/2:4:.-3m;d:1/4,3/4,3/4:6:-42. m;e:x,x,x:8:.3m;f:1/2,1/4,3/4:12:2.2 2;"
-	WyckoffSyms[520] += "g:x,1/4,1/4:12:2.m m;h:x,1/4,3/4:24:2..;i:1/2,y,y+1/2:24:..2;j:1/2,y,-y:24:..2;k:x,x,z:24:..m;l:x,y,z:48:1;"
-	WyckoffSyms[521]  = "a:1/4,1/4,1/4:2:-43m;b:0,0,0:4:.-3m;c:1/2,1/2,1/2:4:.-3m;d:1/4,3/4,3/4:6:-42. m;e:x,x,x:8:.3m;f:1/2,1/4,3/4:12:2.2 2;"
-	WyckoffSyms[521] += "g:x,1/4,1/4:12:2.m m;h:x,1/4,3/4:24:2..;i:1/2,y,y+1/2:24:..2;j:1/2,y,-y:24:..2;k:x,x,z:24:..m;l:x,y,z:48:1;"
-	WyckoffSyms[522]  = "a:0,0,0:4:m-3m;b:1/2,1/2,1/2:4:m-3m;c:1/4,1/4,1/4:8:-43m;d:0,1/4,1/4:24:m.m m;e:x,0,0:24:4m. m;f:x,x,x:32:.3m;g:x,1/4,1/4:48:2.m m;"
-	WyckoffSyms[522] += "h:0,y,y:48:m.m 2;i:1/2,y,y:48:m.m 2;j:0,y,z:96:m..;k:x,x,z:96:..m;l:x,y,z:192:1;"
-	WyckoffSyms[523]  = "a:1/4,1/4,1/4:8:432;b:0,0,0:8:m-3.;c:1/4,0,0:24:-4m. 2;d:0,1/4,1/4:24:4/m..;e:x,0,0:48:mm2 . .;f:x,1/4,1/4:48:4..;g:x,x,x:64:.3.;"
-	WyckoffSyms[523] += "h:1/4,y,y:96:..2;i:0,y,z:96:m..;j:x,y,z:192:1;"
-	WyckoffSyms[524]  = "a:1/8,1/8,1/8:8:-43m;b:3/8,3/8,3/8:8:-43m;c:0,0,0:16:.-3m;d:1/2,1/2,1/2:16:.-3m;e:x,x,x:32:.3m;f:x,1/8,1/8:48:2.m m;g:x,x,z:96:..m;"
-	WyckoffSyms[524] += "h:0,y,-y:96:..2;i:x,y,z:192:1;"
-	WyckoffSyms[525]  = "a:1/8,1/8,1/8:8:-43m;b:3/8,3/8,3/8:8:-43m;c:0,0,0:16:.-3m;d:1/2,1/2,1/2:16:.-3m;e:x,x,x:32:.3m;f:x,1/8,1/8:48:2.m m;g:x,x,z:96:..m;"
-	WyckoffSyms[525] += "h:0,y,-y:96:..2;i:x,y,z:192:1;"
-	WyckoffSyms[526]  = "a:1/8,1/8,1/8:16:23.;b:1/4,1/4,1/4:32:.32;c:0,0,0:32:.-3.;d:7/8,1/8,1/8:48:-4..;e:x,x,x:64:.3.;f:x,1/8,1/8:96:2..;"
-	WyckoffSyms[526] += "g:1/4,y,-y:96:..2;h:x,y,z:192:1;"
-	WyckoffSyms[527]  = "a:1/8,1/8,1/8:16:23.;b:1/4,1/4,1/4:32:.32;c:0,0,0:32:.-3.;d:7/8,1/8,1/8:48:-4..;e:x,x,x:64:.3.;f:x,1/8,1/8:96:2..;"
-	WyckoffSyms[527] += "g:1/4,y,-y:96:..2;h:x,y,z:192:1;"
-	WyckoffSyms[528]  = "a:0,0,0:2:m-3m;b:0,1/2,1/2:6:4/mm. m;c:1/4,1/4,1/4:8:.-3m;d:1/4,0,1/2:12:-4m. 2;e:x,0,0:12:4m. m;f:x,x,x:16:.3m;"
-	WyckoffSyms[528] += "g:x,0,1/2:24:mm2 . .;h:0,y,y:24:m.m 2;i:1/4,y,-y+1/2:48:..2;j:0,y,z:48:m..;k:x,x,z:48:..m;l:x,y,z:96:1;"
-	WyckoffSyms[529]  = "a:0,0,0:16:.-3.;b:1/8,1/8,1/8:16:.32;c:1/8,0,1/4:24:2.2 2;d:3/8,0,1/4:24:-4..;e:x,x,x:32:.3.;f:x,0,1/4:48:2..;"
-	WyckoffSyms[529] += "g:1/8,y,-y+1/4:48:..2;h:x,y,z:96:1;"
-	String list=WyckoffSyms[SG_idNum-1]
+	String list
+	if (dim==2)
+		Make/N=(17)/T/FREE WyckoffSyms
+		WyckoffSyms[0]  = "a:x,y:1:1;"
+		WyckoffSyms[1]  = "a:0,0:1:2;b:0,0.5:1:2;c:0.5,0:1:2;d:0.5,0.5:1:2;e:x,y:2:1;"
+		WyckoffSyms[2]  = "a:0,y:1:.m.;b:0.5,y:1:.m.;c:x,y:2:1;"
+		WyckoffSyms[3]  = "a:x,y:2:1;"
+		WyckoffSyms[4]  = "a:0,y:2:.m.;b:x,y:4:1;"
+		WyckoffSyms[5]  = "a:0,0:1:2mm;b:0,0.5:1:2mm;c:0.5,0:1:2mm;d:0.5,0.5:1:2mm;e:x,0:2:..m;f:x,0.5:2:..m;g:0,y:2:.m.;h:0.5,y:2:.m.;i:x,y:4:1;"
+		WyckoffSyms[6]  = "a:0,0:2:2..;b:0,0.5:2:2..;c:0.25,y:2:.m.;d:x,y:4:1;"
+		WyckoffSyms[7]  = "a:0,0:2:2..;b:0.5,0:2:2..;c:x,y:4:1;"
+		WyckoffSyms[8]  = "a:0,0:2:2mm;b:0,0.5:2:2mm;c:0.25,0.25:4:2..;d:x,0:4:..m;e:0,y:4:.m.;f:x,y:8:1;"
+		WyckoffSyms[9]  = "a:0,0:1:4..;b:0.5,0.5:1:4..;c:0.5,0:2:2..;d:x,y:4:1;"
+		WyckoffSyms[10]  = "a:0,0:1:4mm;b:0.5,0.5:1:4mm;c:0.5,0:2:2mm.;d:x,0:4:.m.;e:x,0.5:4:.m.;f:x,x:4:..m;g:x,y:8:1;"
+		WyckoffSyms[11]  = "a:0,0:2:4..;b:0.5,0:2:2.mm;c:x,x+0.5:4:..m;d:x,y:8:1;"
+		WyckoffSyms[12]  = "a:0,0:1:3..;b:1/3.,2/3.:1:3..;c:2/3.,1/3.:1:3..;d:x,y:3:1;"
+		WyckoffSyms[13]  = "a:0,0:1:3m.;b:1/3.,2/3.:1:3m.;c:2/3.,1/3.:1:3m.;d:x,-x:3:.m.;e:x,y:6:1;"
+		WyckoffSyms[14]  = "a:0,0:1:3.m;b:1/3.,2/3.:2:3..;c:x,0:3:..m;d:x,y:6:1;"
+		WyckoffSyms[15]  = "a:0,0:1:6..;b:1/3.,2/3.:2:3..;c:0.5,0:3:2..;d:x,y:6:1;"
+		WyckoffSyms[16]  = "a:0,0:1:6mm;b:1/3.,2/3.:2:3m.;c:0.5,0:3:2mm;d:x,0:6:..m;e:x,-x:6:.m.;f:x,y:12:1;"
+
+	else				// dim = 3
+		// The longest line is SpaceGroupID="47" (SG_idNum=227), it conatains 27 Wyckoff symbols "a"-"A".
+		// for site symmetry of each Wyckoff position, see:    http://www.cryst.ehu.es/cgi-bin/cryst/programs/nph-wp-list
+		Make/N=(530)/T/FREE WyckoffSyms
+		// Triclinic SG[1,2]  SG_idNum [1-2]   (2 idNums)
+		WyckoffSyms[0]   = "a:x,y,z:1:1;"
+		WyckoffSyms[1]   = "a:0,0,0:1:-1;b:0,0,1/2:1:-1;c:0,1/2,0:1:-1;d:1/2,0,0:1:-1;e:1/2,1/2,0:1:-1;f:1/2,0,1/2:1:-1;g:0,1/2,1/2:1:-1;h:1/2,1/2,1/2:1:-1;"
+		WyckoffSyms[1]  += "i:x,y,z:2:1;"
+		// Monoclinic SG[3,15]  SG_idNum [3,107]   (105 idNums)
+		WyckoffSyms[2]   = "a:0,y,0:1:2;b:0,y,1/2:1:2;c:1/2,y,0:1:2;d:1/2,y,1/2:1:2;e:x,y,z:2:1;"
+		WyckoffSyms[3]   = "a:0,0,y:1:2;b:1/2,0,y:1:2;c:0,1/2,y:1:2;d:1/2,1/2,y:1:2;e:z,x,y:2:1;"
+		WyckoffSyms[4]   = "a:y,0,0:1:2;b:y,1/2,0:1:2;c:y,0,1/2:1:2;d:y,1/2,1/2:1:2;e:y,z,x:2:1;"
+		WyckoffSyms[5]   = "a:x,y,z:2:1;"
+		WyckoffSyms[6]   = "a:z,x,y:2:1;"
+		WyckoffSyms[7]   = "a:y,z,x:2:1;"
+		WyckoffSyms[8]   = "a:0,y,0:2:2;b:0,y,1/2:2:2;c:x,y,z:4:1;"
+		WyckoffSyms[9]   = "a:0,y,0:2:2;b:1/2,y,1/2:2:2;c:-z,y,x-z:4:1;"
+		WyckoffSyms[10]  = "a:0,y,0:2:2;b:1/2,y,0:2:2;c:-x+z,y,-x:4:1;"
+		WyckoffSyms[11]  = "a:0,0,y:2:2;b:1/2,0,y:2:2;c:z,x,y:4:1;"
+		WyckoffSyms[12]  = "a:0,0,y:2:2;b:1/2,1/2,y:2:2;c:x-z,-z,y:4:1;"
+		WyckoffSyms[13]  = "a:0,0,y:2:2;b:0,1/2,y:2:2;c:-x,-x+z,y:4:1;"
+		WyckoffSyms[14]  = "a:y,0,0:2:2;b:y,1/2,0:2:2;c:y,z,x:4:1;"
+		WyckoffSyms[15]  = "a:y,0,0:2:2;b:y,1/2,1/2:2:2;c:y,x-z,-z:4:1;"
+		WyckoffSyms[16]  = "a:y,0,0:2:2;b:y,0,1/2:2:2;c:y,-x,-x+z:4:1;"
+		WyckoffSyms[17]  = "a:x,0,z:1:m;b:x,1/2,z:1:m;c:x,y,z:2:1;"
+		WyckoffSyms[18]  = "a:z,x,0:1:m;b:z,x,1/2:1:m;c:z,x,y:2:1;"
+		WyckoffSyms[19]  = "a:0,z,x:1:m;b:1/2,z,x:1:m;c:y,z,x:2:1;"
+		WyckoffSyms[20]  = "a:x,y,z:2:1;"
+		WyckoffSyms[21]  = "a:-z,y,x-z:2:1;"
+		WyckoffSyms[22]  = "a:-x+z,y,-x:2:1;"
+		WyckoffSyms[23]  = "a:z,x,y:2:1;"
+		WyckoffSyms[24]  = "a:x-z,-z,y:2:1;"
+		WyckoffSyms[25]  = "a:-x,-x+z,y:2:1;"
+		WyckoffSyms[26]  = "a:y,z,x:2:1;"
+		WyckoffSyms[27]  = "a:y,x-z,-z:2:1;"
+		WyckoffSyms[28]  = "a:y,-x,-x+z:2:1;"
+		WyckoffSyms[29]  = "a:x,0,z:2:m;b:x,y,z:4:1;"
+		WyckoffSyms[30]  = "a:-z,0,x-z:2:m;b:-z,y,x-z:4:1;"
+		WyckoffSyms[31]  = "a:-x+z,0,-x:2:m;b:-x+z,y,-x:4:1;"
+		WyckoffSyms[32]  = "a:z,x,0:2:m;b:z,x,y:4:1;"
+		WyckoffSyms[33]  = "a:x-z,-z,0:2:m;b:x-z,-z,y:4:1;"
+		WyckoffSyms[34]  = "a:-x,-x+z,0:2:m;b:-x,-x+z,y:4:1;"
+		WyckoffSyms[35]  = "a:0,z,x:2:m;b:y,z,x:4:1;"
+		WyckoffSyms[36]  = "a:0,x-z,-z:2:m;b:y,x-z,-z:4:1;"
+		WyckoffSyms[37]  = "a:0,-x,-x+z:2:m;b:y,-x,-x+z:4:1;"
+		WyckoffSyms[38]  = "a:x,y,z:4:1;"
+		WyckoffSyms[39]  = "a:-z,y,x-z:4:1;"
+		WyckoffSyms[40]  = "a:-x+z,y,-x:4:1;"
+		WyckoffSyms[41]  = "a:-z,y,x-z:4:1;"
+		WyckoffSyms[42]  = "a:x,y,z:4:1;"
+		WyckoffSyms[43]  = "a:-x+z,y,-x:4:1;"
+		WyckoffSyms[44]  = "a:z,x,y:4:1;"
+		WyckoffSyms[45]  = "a:x-z,-z,y:4:1;"
+		WyckoffSyms[46]  = "a:-x,-x+z,y:4:1;"
+		WyckoffSyms[47]  = "a:x-z,-z,y:4:1;"
+		WyckoffSyms[48]  = "a:z,x,y:4:1;"
+		WyckoffSyms[49]  = "a:-x,-x+z,y:4:1;"
+		WyckoffSyms[50]  = "a:y,z,x:4:1;"
+		WyckoffSyms[51]  = "a:y,x-z,-z:4:1;"
+		WyckoffSyms[52]  = "a:y,-x,-x+z:4:1;"
+		WyckoffSyms[53]  = "a:y,x-z,-z:4:1;"
+		WyckoffSyms[54]  = "a:y,z,x:4:1;"
+		WyckoffSyms[55]  = "a:y,-x,-x+z:4:1;"
+		WyckoffSyms[56]  = "a:0,0,0:1:2/m;b:0,1/2,0:1:2/m;c:0,0,1/2:1:2/m;d:1/2,0,0:1:2/m;e:1/2,1/2,0:1:2/m;f:0,1/2,1/2:1:2/m;g:1/2,0,1/2:1:2/m;"
+		WyckoffSyms[56] += "h:1/2,1/2,1/2:1:2/m;i:0,y,0:2:2;j:1/2,y,0:2:2;k:0,y,1/2:2:2;l:1/2,y,1/2:2:2;m:x,0,z:2:m;n:x,1/2,z:2:m;o:x,y,z:4:1;"
+		WyckoffSyms[57]  = "a:0,0,0:1:2/m;b:0,0,1/2:1:2/m;c:1/2,0,0:1:2/m;d:0,1/2,0:1:2/m;e:0,1/2,1/2:1:2/m;f:1/2,0,1/2:1:2/m;g:1/2,1/2,0:1:2/m;"
+		WyckoffSyms[57] += "h:1/2,1/2,1/2:1:2/m;i:0,0,y:2:2;j:0,1/2,y:2:2;k:1/2,0,y:2:2;l:1/2,1/2,y:2:2;m:z,x,0:2:m;n:z,x,1/2:2:m;o:z,x,y:4:1;"
+		WyckoffSyms[58]  = "a:0,0,0:1:2/m;b:1/2,0,0:1:2/m;c:0,1/2,0:1:2/m;d:0,0,1/2:1:2/m;e:1/2,0,1/2:1:2/m;f:1/2,1/2,0:1:2/m;g:0,1/2,1/2:1:2/m;"
+		WyckoffSyms[58] += "h:1/2,1/2,1/2:1:2/m;i:y,0,0:2:2;j:y,0,1/2:2:2;k:y,1/2,0:2:2;l:y,1/2,1/2:2:2;m:0,z,x:2:m;n:1/2,z,x:2:m;o:y,z,x:4:1;"
+		WyckoffSyms[59]  = "a:0,0,0:2:-1;b:1/2,0,0:2:-1;c:0,0,1/2:2:-1;d:1/2,0,1/2:2:-1;e:x,1/4,z:2:m;f:x,y,z:4:1;"
+		WyckoffSyms[60]  = "a:0,0,0:2:-1;b:0,1/2,0:2:-1;c:1/2,0,0:2:-1;d:1/2,1/2,0:2:-1;e:z,x,1/4:2:m;f:z,x,y:4:1;"
+		WyckoffSyms[61]  = "a:0,0,0:2:-1;b:0,0,1/2:2:-1;c:0,1/2,0:2:-1;d:0,1/2,1/2:2:-1;e:1/4,z,x:2:m;f:y,z,x:4:1;"
+		WyckoffSyms[62]  = "a:0,0,0:2:2/m;b:0,1/2,0:2:2/m;c:0,0,1/2:2:2/m;d:0,1/2,1/2:2:2/m;e:1/4,1/4,0:4:-1;f:1/4,1/4,1/2:4:-1;g:0,y,0:4:2;h:0,y,1/2:4:2;"
+		WyckoffSyms[62] += "i:x,0,z:4:m;j:x,y,z:8:1;"
+		WyckoffSyms[63]  = "a:0,0,0:2:2/m;b:0,1/2,0:2:2/m;c:1/2,0,1/2:2:2/m;d:1/2,1/2,1/2:2:2/m;e:0,1/4,1/4:4:-1;f:1/2,1/4,1/4:4:-1;g:0,y,0:4:2;h:1/2,y,1/2:4:2;"
+		WyckoffSyms[63] += "i:-z,0,x-z:4:m;j:-z,y,x-z:8:1;"
+		WyckoffSyms[64]  = "a:0,0,0:2:2/m;b:0,1/2,0:2:2/m;c:1/2,0,0:2:2/m;d:1/2,1/2,0:2:2/m;e:1/4,1/4,1/4:4:-1;f:1/4,1/4,1/4:4:-1;g:0,y,0:4:2;h:1/2,y,0:4:2;"
+		WyckoffSyms[64] += "i:-x+z,0,-x:4:m;j:-x+z,y,-x:8:1;"
+		WyckoffSyms[65]  = "a:0,0,0:2:2/m;b:0,0,1/2:2:2/m;c:1/2,0,0:2:2/m;d:1/2,0,1/2:2:2/m;e:0,1/4,1/4:4:-1;f:1/2,1/4,1/4:4:-1;g:0,0,y:4:2;h:1/2,0,y:4:2;"
+		WyckoffSyms[65] += "i:z,x,0:4:m;j:z,x,y:8:1;"
+		WyckoffSyms[66]  = "a:0,0,0:2:2/m;b:0,0,1/2:2:2/m;c:1/2,1/2,0:2:2/m;d:1/2,1/2,1/2:2:2/m;e:1/4,0,1/4:4:-1;f:1/4,1/2,1/4:4:-1;g:0,0,y:4:2;h:1/2,1/2,y:4:2;"
+		WyckoffSyms[66] += "i:x-z,-z,0:4:m;j:x-z,-z,y:8:1;"
+		WyckoffSyms[67]  = "a:0,0,0:2:2/m;b:0,0,1/2:2:2/m;c:0,1/2,0:2:2/m;d:0,1/2,1/2:2:2/m;e:1/4,1/4,1/4:4:-1;f:1/4,1/4,1/4:4:-1;g:0,0,y:4:2;h:0,1/2,y:4:2;"
+		WyckoffSyms[67] += "i:-x,-x+z,0:4:m;j:-x,-x+z,y:8:1;"
+		WyckoffSyms[68]  = "a:0,0,0:2:2/m;b:1/2,0,0:2:2/m;c:0,1/2,0:2:2/m;d:1/2,1/2,0:2:2/m;e:1/4,0,1/4:4:-1;f:1/4,1/2,1/4:4:-1;g:y,0,0:4:2;h:y,1/2,0:4:2;"
+		WyckoffSyms[68] += "i:0,z,x:4:m;j:y,z,x:8:1;"
+		WyckoffSyms[69]  = "a:0,0,0:2:2/m;b:1/2,0,0:2:2/m;c:0,1/2,1/2:2:2/m;d:1/2,1/2,1/2:2:2/m;e:1/4,1/4,0:4:-1;f:1/4,1/4,1/2:4:-1;g:y,0,0:4:2;h:y,1/2,1/2:4:2;"
+		WyckoffSyms[69] += "i:0,x-z,-z:4:m;j:y,x-z,-z:8:1;"
+		WyckoffSyms[70]  = "a:0,0,0:2:2/m;b:1/2,0,0:2:2/m;c:0,0,1/2:2:2/m;d:1/2,0,1/2:2:2/m;e:1/4,1/4,1/4:4:-1;f:1/4,1/4,1/4:4:-1;g:y,0,0:4:2;h:y,0,1/2:4:2;"
+		WyckoffSyms[70] += "i:0,-x,-x+z:4:m;j:y,-x,-x+z:8:1;"
+		WyckoffSyms[71]  = "a:0,0,0:2:-1;b:1/2,1/2,0:2:-1;c:0,1/2,0:2:-1;d:1/2,0,0:2:-1;e:0,y,1/4:2:2;f:1/2,y,1/4:2:2;g:x,y,z:4:1;"
+		WyckoffSyms[72]  = "a:0,0,0:2:-1;b:0,1/2,1/2:2:-1;c:0,1/2,0:2:-1;d:0,0,1/2:2:-1;e:1/4,y,1/4:2:2;f:1/4,y,1/4:2:2;g:-z,y,x-z:4:1;"
+		WyckoffSyms[73]  = "a:0,0,0:2:-1;b:1/2,1/2,1/2:2:-1;c:0,1/2,0:2:-1;d:1/2,0,1/2:2:-1;e:1/4,y,0:2:2;f:1/4,y,1/2:2:2;g:-x+z,y,-x:4:1;"
+		WyckoffSyms[74]  = "a:0,0,0:2:-1;b:0,1/2,1/2:2:-1;c:0,0,1/2:2:-1;d:0,1/2,0:2:-1;e:1/4,0,y:2:2;f:1/4,1/2,y:2:2;g:z,x,y:4:1;"
+		WyckoffSyms[75]  = "a:0,0,0:2:-1;b:1/2,0,1/2:2:-1;c:0,0,1/2:2:-1;d:1/2,0,0:2:-1;e:1/4,1/4,y:2:2;f:1/4,1/4,y:2:2;g:x-z,-z,y:4:1;"
+		WyckoffSyms[76]  = "a:0,0,0:2:-1;b:1/2,1/2,1/2:2:-1;c:0,0,1/2:2:-1;d:1/2,1/2,0:2:-1;e:0,1/4,y:2:2;f:1/2,1/4,y:2:2;g:-x,-x+z,y:4:1;"
+		WyckoffSyms[77]  = "a:0,0,0:2:-1;b:1/2,0,1/2:2:-1;c:1/2,0,0:2:-1;d:0,0,1/2:2:-1;e:y,1/4,0:2:2;f:y,1/4,1/2:2:2;g:y,z,x:4:1;"
+		WyckoffSyms[78]  = "a:0,0,0:2:-1;b:1/2,1/2,0:2:-1;c:1/2,0,0:2:-1;d:0,1/2,0:2:-1;e:y,1/4,1/4:2:2;f:y,1/4,1/4:2:2;g:y,x-z,-z:4:1;"
+		WyckoffSyms[79]  = "a:0,0,0:2:-1;b:1/2,1/2,1/2:2:-1;c:1/2,0,0:2:-1;d:0,1/2,1/2:2:-1;e:y,0,1/4:2:2;f:y,1/2,1/4:2:2;g:y,-x,-x+z:4:1;"
+		WyckoffSyms[80]  = "a:0,0,0:2:-1;b:1/2,0,0:2:-1;c:0,0,1/2:2:-1;d:1/2,0,1/2:2:-1;e:x,y,z:4:1;"
+		WyckoffSyms[81]  = "a:0,0,0:2:-1;b:0,0,1/2:2:-1;c:1/2,0,1/2:2:-1;d:1/2,0,0:2:-1;e:-z,y,x-z:4:1;"
+		WyckoffSyms[82]  = "a:0,0,0:2:-1;b:1/2,0,1/2:2:-1;c:1/2,0,0:2:-1;d:0,0,1/2:2:-1;e:-x+z,y,-x:4:1;"
+		WyckoffSyms[83]  = "a:0,0,0:2:-1;b:0,1/2,0:2:-1;c:1/2,0,0:2:-1;d:1/2,1/2,0:2:-1;e:z,x,y:4:1;"
+		WyckoffSyms[84]  = "a:0,0,0:2:-1;b:1/2,0,0:2:-1;c:1/2,1/2,0:2:-1;d:0,1/2,0:2:-1;e:x-z,-z,y:4:1;"
+		WyckoffSyms[85]  = "a:0,0,0:2:-1;b:1/2,1/2,0:2:-1;c:0,1/2,0:2:-1;d:1/2,0,0:2:-1;e:-x,-x+z,y:4:1;"
+		WyckoffSyms[86]  = "a:0,0,0:2:-1;b:0,0,1/2:2:-1;c:0,1/2,0:2:-1;d:0,1/2,1/2:2:-1;e:y,z,x:4:1;"
+		WyckoffSyms[87]  = "a:0,0,0:2:-1;b:0,1/2,0:2:-1;c:0,1/2,1/2:2:-1;d:0,0,1/2:2:-1;e:y,x-z,-z:4:1;"
+		WyckoffSyms[88]  = "a:0,0,0:2:-1;b:0,1/2,1/2:2:-1;c:0,0,1/2:2:-1;d:0,1/2,0:2:-1;e:y,-x,-x+z:4:1;"
+		WyckoffSyms[89]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:0,y,1/4:4:2;f:x,y,z:8:1;"
+		WyckoffSyms[90]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,y,1/4:4:2;f:-z,y,x-z:8:1;"
+		WyckoffSyms[91]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:1/4,y,0:4:2;f:-x+z,y,-x:8:1;"
+		WyckoffSyms[92]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,y,1/4:4:2;f:-z,y,x-z:8:1;"
+		WyckoffSyms[93]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:0,y,1/4:4:2;f:x,y,z:8:1;"
+		WyckoffSyms[94]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:1/4,y,0:4:2;f:-x+z,y,-x:8:1;"
+		WyckoffSyms[95]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,0,y:4:2;f:z,x,y:8:1;"
+		WyckoffSyms[96]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:1/4,1/4,y:4:2;f:x-z,-z,y:8:1;"
+		WyckoffSyms[97]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:0,1/4,y:4:2;f:-x,-x+z,y:8:1;"
+		WyckoffSyms[98]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:1/4,1/4,y:4:2;f:x-z,-z,y:8:1;"
+		WyckoffSyms[99]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,1/4:4:-1;d:1/2,1/4,1/4:4:-1;e:1/4,0,y:4:2;f:z,x,y:8:1;"
+		WyckoffSyms[100]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:0,1/4,y:4:2;f:-x,-x+z,y:8:1;"
+		WyckoffSyms[101]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:y,1/4,0:4:2;f:y,z,x:8:1;"
+		WyckoffSyms[102]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:y,1/4,1/4:4:2;f:y,x-z,-z:8:1;"
+		WyckoffSyms[103]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:y,0,1/4:4:2;f:y,-x,-x+z:8:1;"
+		WyckoffSyms[104]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,0:4:-1;d:1/4,1/4,1/2:4:-1;e:y,1/4,1/4:4:2;f:y,x-z,-z:8:1;"
+		WyckoffSyms[105]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,0,1/4:4:-1;d:1/4,1/2,1/4:4:-1;e:y,1/4,0:4:2;f:y,z,x:8:1;"
+		WyckoffSyms[106]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:1/4,1/4,1/4:4:-1;d:1/4,1/4,1/4:4:-1;e:y,0,1/4:4:2;f:y,-x,-x+z:8:1;"
+		// Orthorhombic SG[16,74]  SG_idNum [108,348]   (241 idNums)
+		WyckoffSyms[107]  = "a:0,0,0:1:222;b:1/2,0,0:1:222;c:0,1/2,0:1:222;d:0,0,1/2:1:222;e:1/2,1/2,0:1:222;f:1/2,0,1/2:1:222;g:0,1/2,1/2:1:222;"
+		WyckoffSyms[107] += "h:1/2,1/2,1/2:1:222;i:x,0,0:2:2..;j:x,0,1/2:2:2..;k:x,1/2,0:2:2..;l:x,1/2,1/2:2:2..;m:0,y,0:2:.2.;n:0,y,1/2:2:.2.;o:1/2,y,0:2:.2.;"
+		WyckoffSyms[107] += "p:1/2,y,1/2:2:.2.;q:0,0,z:2:..2;r:1/2,0,z:2:..2;s:0,1/2,z:2:..2;t:1/2,1/2,z:2:..2;u:x,y,z:4:1;"
+		WyckoffSyms[108]  = "a:x,0,0:2:2..;b:x,1/2,0:2:2..;c:0,y,1/4:2:.2.;d:1/2,y,1/4:2:.2.;e:x,y,z:4:1;"
+		WyckoffSyms[109]  = "a:0,x,0:2:2..;b:0,x,1/2:2:2..;c:1/4,0,y:2:.2.;d:1/4,1/2,y:2:.2.;e:z,x,y:4:1;"
+		WyckoffSyms[110]  = "a:0,0,x:2:2..;b:1/2,0,x:2:2..;c:y,1/4,0:2:.2.;d:y,1/4,1/2:2:.2.;e:y,z,x:4:1;"
+		WyckoffSyms[111]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:x,y,z:4:1;"
+		WyckoffSyms[112]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,x,y:4:1;"
+		WyckoffSyms[113]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,x:4:1;"
+		WyckoffSyms[114]  = "a:x,y,z:4:1;"
+		WyckoffSyms[115]  = "a:x,0,0:4:2..;b:0,y,1/4:4:.2.;c:x,y,z:8:1;"
+		WyckoffSyms[116]  = "a:0,x,0:4:2..;b:1/4,0,y:4:.2.;c:z,x,y:8:1;"
+		WyckoffSyms[117]  = "a:0,0,x:4:2..;b:y,1/4,0:4:.2.;c:y,z,x:8:1;"
+		WyckoffSyms[118]  = "a:0,0,0:2:222;b:0,1/2,0:2:222;c:1/2,0,1/2:2:222;d:0,0,1/2:2:222;e:x,0,0:4:2..;f:x,0,1/2:4:2..;g:0,y,0:4:.2.;h:0,y,1/2:4:.2.;"
+		WyckoffSyms[118] += "i:0,0,z:4:..2;j:0,1/2,z:4:..2;k:1/4,1/4,z:4:..2;l:x,y,z:8:1;"
+		WyckoffSyms[119]  = "a:0,0,0:2:222;b:0,0,1/2:2:222;c:1/2,1/2,0:2:222;d:1/2,0,0:2:222;e:0,x,0:4:2..;f:1/2,x,0:4:2..;g:0,0,y:4:.2.;h:1/2,0,y:4:.2.;"
+		WyckoffSyms[119] += "i:z,0,0:4:..2;j:z,0,1/2:4:..2;k:z,1/4,1/4:4:..2;l:z,x,y:8:1;"
+		WyckoffSyms[120]  = "a:0,0,0:2:222;b:1/2,0,0:2:222;c:0,1/2,1/2:2:222;d:0,1/2,0:2:222;e:0,0,x:4:2..;f:0,1/2,x:4:2..;g:y,0,0:4:.2.;h:y,1/2,0:4:.2.;"
+		WyckoffSyms[120] += "i:0,z,0:4:..2;j:1/2,z,0:4:..2;k:1/4,z,1/4:4:..2;l:y,z,x:8:1;"
+		WyckoffSyms[121]  = "a:0,0,0:4:222;b:0,0,1/2:4:222;c:1/4,1/4,1/4:4:222;d:1/4,1/4,3/4:4:222;e:x,0,0:8:2..;f:0,y,0:8:.2.;g:0,0,z:8:..2;h:1/4,1/4,z:8:..2;"
+		WyckoffSyms[121] += "i:1/4,y,1/4:8:.2.;j:x,1/4,1/4:8:2..;k:x,y,z:16:1;"
+		WyckoffSyms[122]  = "a:0,0,0:2:222;b:1/2,0,0:2:222;c:0,0,1/2:2:222;d:0,1/2,0:2:222;e:x,0,0:4:2..;f:x,0,1/2:4:2..;g:0,y,0:4:.2.;h:1/2,y,0:4:.2.;"
+		WyckoffSyms[122] += "i:0,0,z:4:..2;j:0,1/2,z:4:..2;k:x,y,z:8:1;"
+		WyckoffSyms[123]  = "a:x,0,1/4:4:2..;b:1/4,y,0:4:.2.;c:0,1/4,z:4:..2;d:x,y,z:8:1;"
+		WyckoffSyms[124]  = "a:0,0,z:1:mm2;b:0,1/2,z:1:mm2;c:1/2,0,z:1:mm2;d:1/2,1/2,z:1:mm2;e:x,0,z:2:.m.;f:x,1/2,z:2:.m.;g:0,y,z:2:m..;h:1/2,y,z:2:m..;"
+		WyckoffSyms[124] += "i:x,y,z:4:1;"
+		WyckoffSyms[125]  = "a:z,0,0:1:mm2;b:z,0,1/2:1:mm2;c:z,1/2,0:1:mm2;d:z,1/2,1/2:1:mm2;e:z,x,0:2:.m.;f:z,x,1/2:2:.m.;g:z,0,y:2:m..;h:z,1/2,y:2:m..;"
+		WyckoffSyms[125] += "i:z,x,y:4:1;"
+		WyckoffSyms[126]  = "a:0,z,0:1:mm2;b:1/2,z,0:1:mm2;c:0,z,1/2:1:mm2;d:1/2,z,1/2:1:mm2;e:0,z,x:2:.m.;f:1/2,z,x:2:.m.;g:y,z,0:2:m..;h:y,z,1/2:2:m..;"
+		WyckoffSyms[126] += "i:y,z,x:4:1;"
+		WyckoffSyms[127]  = "a:0,y,z:2:m..;b:1/2,y,z:2:m..;c:x,y,z:4:1;"
+		WyckoffSyms[128]  = "a:y,0,-z:2:m..;b:y,1/2,-z:2:m..;c:y,x,-z:4:1;"
+		WyckoffSyms[129]  = "a:z,0,y:2:m..;b:z,1/2,y:2:m..;c:z,x,y:4:1;"
+		WyckoffSyms[130]  = "a:-z,y,0:2:m..;b:-z,y,1/2:2:m..;c:-z,y,x:4:1;"
+		WyckoffSyms[131]  = "a:y,z,0:2:m..;b:y,z,1/2:2:m..;c:y,z,x:4:1;"
+		WyckoffSyms[132]  = "a:0,-z,y:2:m..;b:1/2,-z,y:2:m..;c:x,-z,y:4:1;"
+		WyckoffSyms[133]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:1/2,0,z:2:..2;d:1/2,1/2,z:2:..2;e:x,y,z:4:1;"
+		WyckoffSyms[134]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,1/2,0:2:..2;d:z,1/2,1/2:2:..2;e:z,x,y:4:1;"
+		WyckoffSyms[135]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:0,z,1/2:2:..2;d:1/2,z,1/2:2:..2;e:y,z,x:4:1;"
+		WyckoffSyms[136]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:1/4,y,z:2:m..;d:x,y,z:4:1;"
+		WyckoffSyms[137]  = "a:0,0,-z:2:..2;b:1/2,0,-z:2:..2;c:y,1/4,-z:2:m..;d:y,x,-z:4:1;"
+		WyckoffSyms[138]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,1/4,y:2:m..;d:z,x,y:4:1;"
+		WyckoffSyms[139]  = "a:-z,0,0:2:..2;b:-z,1/2,0:2:..2;c:-z,y,1/4:2:m..;d:-z,y,x:4:1;"
+		WyckoffSyms[140]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,1/4:2:m..;d:y,z,x:4:1;"
+		WyckoffSyms[141]  = "a:0,-z,0:2:..2;b:0,-z,1/2:2:..2;c:1/4,-z,y:2:m..;d:x,-z,y:4:1;"
+		WyckoffSyms[142]  = "a:x,y,z:4:1;"
+		WyckoffSyms[143]  = "a:y,x,-z:4:1;"
+		WyckoffSyms[144]  = "a:z,x,y:4:1;"
+		WyckoffSyms[145]  = "a:-z,y,x:4:1;"
+		WyckoffSyms[146]  = "a:y,z,x:4:1;"
+		WyckoffSyms[147]  = "a:x,-z,y:4:1;"
+		WyckoffSyms[148]  = "a:0,0,z:2:..2;b:1/2,0,z:2:..2;c:x,y,z:4:1;"
+		WyckoffSyms[149]  = "a:0,0,-z:2:..2;b:0,1/2,-z:2:..2;c:y,x,-z:4:1;"
+		WyckoffSyms[150]  = "a:z,0,0:2:..2;b:z,1/2,0:2:..2;c:z,x,y:4:1;"
+		WyckoffSyms[151]  = "a:-z,0,0:2:..2;b:-z,0,1/2:2:..2;c:-z,y,x:4:1;"
+		WyckoffSyms[152]  = "a:0,z,0:2:..2;b:0,z,1/2:2:..2;c:y,z,x:4:1;"
+		WyckoffSyms[153]  = "a:0,-z,0:2:..2;b:1/2,-z,0:2:..2;c:x,-z,y:4:1;"
+		WyckoffSyms[154]  = "a:0,y,z:2:m..;b:x,y,z:4:1;"
+		WyckoffSyms[155]  = "a:y,0,-z:2:m..;b:y,x,-z:4:1;"
+		WyckoffSyms[156]  = "a:z,0,y:2:m..;b:z,x,y:4:1;"
+		WyckoffSyms[157]  = "a:-z,y,0:2:m..;b:-z,y,x:4:1;"
+		WyckoffSyms[158]  = "a:y,z,0:2:m..;b:y,z,x:4:1;"
+		WyckoffSyms[159]  = "a:0,-z,y:2:m..;b:x,-z,y:4:1;"
+		WyckoffSyms[160]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:x,y,z:4:1;"
+		WyckoffSyms[161]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,x,y:4:1;"
+		WyckoffSyms[162]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,x:4:1;"
+		WyckoffSyms[163]  = "a:x,y,z:4:1;"
+		WyckoffSyms[164]  = "a:y,x,-z:4:1;"
+		WyckoffSyms[165]  = "a:z,x,y:4:1;"
+		WyckoffSyms[166]  = "a:-z,y,x:4:1;"
+		WyckoffSyms[167]  = "a:y,z,x:4:1;"
+		WyckoffSyms[168]  = "a:x,-z,y:4:1;"
+		WyckoffSyms[169]  = "a:0,0,z:2:..2;b:0,1/2,z:2:..2;c:x,y,z:4:1;"
+		WyckoffSyms[170]  = "a:z,0,0:2:..2;b:z,0,1/2:2:..2;c:z,x,y:4:1;"
+		WyckoffSyms[171]  = "a:0,z,0:2:..2;b:1/2,z,0:2:..2;c:y,z,x:4:1;"
+		WyckoffSyms[172]  = "a:0,0,z:2:mm2;b:0,1/2,z:2:mm2;c:1/4,1/4,z:4:..2;d:x,0,z:4:.m.;e:0,y,z:4:m..;f:x,y,z:8:1;"
+		WyckoffSyms[173]  = "a:z,0,0:2:mm2;b:z,0,1/2:2:mm2;c:z,1/4,1/4:4:..2;d:z,x,0:4:.m.;e:z,0,y:4:m..;f:z,x,y:8:1;"
+		WyckoffSyms[174]  = "a:0,z,0:2:mm2;b:1/2,z,0:2:mm2;c:1/4,z,1/4:4:..2;d:0,z,x:4:.m.;e:y,z,0:4:m..;f:y,z,x:8:1;"
+		WyckoffSyms[175]  = "a:0,y,z:4:m..;b:x,y,z:8:1;"
+		WyckoffSyms[176]  = "a:y,0,-z:4:m..;b:y,x,-z:8:1;"
+		WyckoffSyms[177]  = "a:z,0,y:4:m..;b:z,x,y:8:1;"
+		WyckoffSyms[178]  = "a:-z,y,0:4:m..;b:-z,y,x:8:1;"
+		WyckoffSyms[179]  = "a:y,z,0:4:m..;b:y,z,x:8:1;"
+		WyckoffSyms[180]  = "a:0,-z,y:4:m..;b:x,-z,y:8:1;"
+		WyckoffSyms[181]  = "a:0,0,z:4:..2;b:0,1/2,z:4:..2;c:1/4,1/4,z:4:..2;d:x,y,z:8:1;"
+		WyckoffSyms[182]  = "a:z,0,0:4:..2;b:z,0,1/2:4:..2;c:z,1/4,1/4:4:..2;d:z,x,y:8:1;"
+		WyckoffSyms[183]  = "a:0,z,0:4:..2;b:1/2,z,0:4:..2;c:1/4,z,1/4:4:..2;d:y,z,x:8:1;"
+		WyckoffSyms[184]  = "a:0,0,z:2:mm2;b:1/2,0,z:2:mm2;c:x,0,z:4:.m.;d:0,y,z:4:m..;e:1/2,y,z:4:m..;f:x,y,z:8:1;"
+		WyckoffSyms[185]  = "a:0,0,-z:2:mm2;b:0,1/2,-z:2:mm2;c:0,x,-z:4:.m.;d:y,0,-z:4:m..;e:y,1/2,-z:4:m..;f:y,x,-z:8:1;"
+		WyckoffSyms[186]  = "a:z,0,0:2:mm2;b:z,1/2,0:2:mm2;c:z,x,0:4:.m.;d:z,0,y:4:m..;e:z,1/2,y:4:m..;f:z,x,y:8:1;"
+		WyckoffSyms[187]  = "a:-z,0,0:2:mm2;b:-z,0,1/2:2:mm2;c:-z,0,x:4:.m.;d:-z,y,0:4:m..;e:-z,y,1/2:4:m..;f:-z,y,x:8:1;"
+		WyckoffSyms[188]  = "a:0,z,0:2:mm2;b:0,z,1/2:2:mm2;c:0,z,x:4:.m.;d:y,z,0:4:m..;e:y,z,1/2:4:m..;f:y,z,x:8:1;"
+		WyckoffSyms[189]  = "a:0,-z,0:2:mm2;b:1/2,-z,0:2:mm2;c:x,-z,0:4:.m.;d:0,-z,y:4:m..;e:1/2,-z,y:4:m..;f:x,-z,y:8:1;"
+		WyckoffSyms[190]  = "a:0,0,z:4:..2;b:1/2,0,z:4:..2;c:x,1/4,z:4:.m.;d:x,y,z:8:1;"
+		WyckoffSyms[191]  = "a:0,0,-z:4:..2;b:0,1/2,-z:4:..2;c:1/4,x,-z:4:.m.;d:y,x,-z:8:1;"
+		WyckoffSyms[192]  = "a:z,0,0:4:..2;b:z,1/2,0:4:..2;c:z,x,1/4:4:.m.;d:z,x,y:8:1;"
+		WyckoffSyms[193]  = "a:-z,0,0:4:..2;b:-z,0,1/2:4:..2;c:-z,1/4,x:4:.m.;d:-z,y,x:8:1;"
+		WyckoffSyms[194]  = "a:0,z,0:4:..2;b:0,z,1/2:4:..2;c:1/4,z,x:4:.m.;d:y,z,x:8:1;"
+		WyckoffSyms[195]  = "a:0,-z,0:4:..2;b:1/2,-z,0:4:..2;c:x,-z,1/4:4:.m.;d:x,-z,y:8:1;"
+		WyckoffSyms[196]  = "a:0,0,z:4:..2;b:1/4,y,z:4:m..;c:x,y,z:8:1;"
+		WyckoffSyms[197]  = "a:0,0,-z:4:..2;b:y,1/4,-z:4:m..;c:y,x,-z:8:1;"
+		WyckoffSyms[198]  = "a:z,0,0:4:..2;b:z,1/4,y:4:m..;c:z,x,y:8:1;"
+		WyckoffSyms[199]  = "a:-z,0,0:4:..2;b:-z,y,1/4:4:m..;c:-z,y,x:8:1;"
+		WyckoffSyms[200]  = "a:0,z,0:4:..2;b:y,z,1/4:4:m..;c:y,z,x:8:1;"
+		WyckoffSyms[201]  = "a:0,-z,0:4:..2;b:1/4,-z,y:4:m..;c:x,-z,y:8:1;"
+		WyckoffSyms[202]  = "a:0,0,z:4:..2;b:x,y,z:8:1;"
+		WyckoffSyms[203]  = "a:0,0,-z:4:..2;b:y,x,-z:8:1;"
+		WyckoffSyms[204]  = "a:z,0,0:4:..2;b:z,x,y:8:1;"
+		WyckoffSyms[205]  = "a:-z,0,0:4:..2;b:-z,y,x:8:1;"
+		WyckoffSyms[206]  = "a:0,z,0:4:..2;b:y,z,x:8:1;"
+		WyckoffSyms[207]  = "a:0,-z,0:4:..2;b:x,-z,y:8:1;"
+		WyckoffSyms[208]  = "a:0,0,z:4:mm2;b:1/4,1/4,z:8:..2;c:0,y,z:8:m..;d:x,0,z:8:.m.;e:x,y,z:16:1;"
+		WyckoffSyms[209]  = "a:z,0,0:4:mm2;b:z,1/4,1/4:8:..2;c:z,0,y:8:m..;d:z,x,0:8:.m.;e:z,x,y:16:1;"
+		WyckoffSyms[210]  = "a:0,z,0:4:mm2;b:1/4,z,1/4:8:..2;c:y,z,0:8:m..;d:0,z,x:8:.m.;e:y,z,x:16:1;"
+		WyckoffSyms[211]  = "a:0,0,z:8:..2;b:x,y,z:16:1;"
+		WyckoffSyms[212]  = "a:z,0,0:8:..2;b:z,x,y:16:1;"
+		WyckoffSyms[213]  = "a:0,z,0:8:..2;b:y,z,x:16:1;"
+		WyckoffSyms[214]  = "a:0,0,z:2:mm2;b:0,1/2,z:2:mm2;c:x,0,z:4:.m.;d:0,y,z:4:m..;e:x,y,z:8:1;"
+		WyckoffSyms[215]  = "a:z,0,0:2:mm2;b:z,0,1/2:2:mm2;c:z,x,0:4:.m.;d:z,0,y:4:m..;e:z,x,y:8:1;"
+		WyckoffSyms[216]  = "a:0,z,0:2:mm2;b:1/2,z,0:2:mm2;c:0,z,x:4:.m.;d:y,z,0:4:m..;e:y,z,x:8:1;"
+		WyckoffSyms[217]  = "a:0,0,z:4:..2;b:0,1/2,z:4:..2;c:x,y,z:8:1;"
+		WyckoffSyms[218]  = "a:z,0,0:4:..2;b:z,0,1/2:4:..2;c:z,x,y:8:1;"
+		WyckoffSyms[219]  = "a:0,z,0:4:..2;b:1/2,z,0:4:..2;c:y,z,x:8:1;"
+		WyckoffSyms[220]  = "a:0,0,z:4:..2;b:1/4,y,z:4:m..;c:x,y,z:8:1;"
+		WyckoffSyms[221]  = "a:0,0,-z:4:..2;b:y,1/4,-z:4:m..;c:y,x,-z:8:1;"
+		WyckoffSyms[222]  = "a:z,0,0:4:..2;b:z,1/4,y:4:m..;c:z,x,y:8:1;"
+		WyckoffSyms[223]  = "a:-z,0,0:4:..2;b:-z,y,1/4:4:m..;c:-z,y,x:8:1;"
+		WyckoffSyms[224]  = "a:0,z,0:4:..2;b:y,z,1/4:4:m..;c:y,z,x:8:1;"
+		WyckoffSyms[225]  = "a:0,-z,0:4:..2;b:1/4,-z,y:4:m..;c:x,-z,y:8:1;"
+		WyckoffSyms[226]  = "a:0,0,0:1:mmm;b:1/2,0,0:1:mmm;c:0,0,1/2:1:mmm;d:1/2,0,1/2:1:mmm;e:0,1/2,0:1:mmm;f:1/2,1/2,0:1:mmm;g:0,1/2,1/2:1:mmm;"
+		WyckoffSyms[226] += "h:1/2,1/2,1/2:1:mmm;i:x,0,0:2:2mm;j:x,0,1/2:2:2mm;k:x,1/2,0:2:2mm;l:x,1/2,1/2:2:2mm;m:0,y,0:2:m2m;n:0,y,1/2:2:m2m;o:1/2,y,0:2:m2m;"
+		WyckoffSyms[226] += "p:1/2,y,1/2:2:m2m;q:0,0,z:2:mm2;r:0,1/2,z:2:mm2;s:1/2,0,z:2:mm2;t:1/2,1/2,z:2:mm2;u:0,y,z:4:m..;v:1/2,y,z:4:m..;w:x,0,z:4:.m.;"
+		WyckoffSyms[226] += "x:x,1/2,z:4:.m.;y:x,y,0:4:..m;z:x,y,1/2:4:..m;A:x,y,z:8:1;"
+		WyckoffSyms[227]  = "a:1/4,1/4,1/4:2:222;b:3/4,1/4,1/4:2:222;c:1/4,1/4,3/4:2:222;d:1/4,3/4,1/4:2:222;e:1/2,1/2,1/2:4:-1;f:0,0,0:4:-1;g:x,1/4,1/4:4:2..;"
+		WyckoffSyms[227] += "h:x,1/4,3/4:4:2..;i:1/4,y,1/4:4:.2.;j:3/4,y,1/4:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
+		WyckoffSyms[228]  = "a:1/4,1/4,1/4:2:222;b:3/4,1/4,1/4:2:222;c:1/4,1/4,3/4:2:222;d:1/4,3/4,1/4:2:222;e:1/2,1/2,1/2:4:-1;f:0,0,0:4:-1;g:x,1/4,1/4:4:2..;"
+		WyckoffSyms[228] += "h:x,1/4,3/4:4:2..;i:1/4,y,1/4:4:.2.;j:3/4,y,1/4:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
+		WyckoffSyms[229]  = "a:0,0,0:2:..2/m;b:1/2,1/2,0:2:..2/m;c:0,1/2,0:2:..2/m;d:1/2,0,0:2:..2/m;e:0,0,1/4:2:222;f:1/2,0,1/4:2:222;g:0,1/2,1/4:2:222;"
+		WyckoffSyms[229] += "h:1/2,1/2,1/4:2:222;i:x,0,1/4:4:2..;j:x,1/2,1/4:4:2..;k:0,y,1/4:4:.2.;l:1/2,y,1/4:4:.2.;m:0,0,z:4:..2;n:1/2,1/2,z:4:..2;"
+		WyckoffSyms[229] += "o:0,1/2,z:4:..2;p:1/2,0,z:4:..2;q:x,y,0:4:..m;r:x,y,z:8:1;"
+		WyckoffSyms[230]  = "a:0,0,0:2:..2/m;b:0,1/2,1/2:2:..2/m;c:0,0,1/2:2:..2/m;d:0,1/2,0:2:..2/m;e:1/4,0,0:2:222;f:1/4,1/2,0:2:222;g:1/4,0,1/2:2:222;"
+		WyckoffSyms[230] += "h:1/4,1/2,1/2:2:222;i:1/4,x,0:4:2..;j:1/4,x,1/2:4:2..;k:1/4,0,y:4:.2.;l:1/4,1/2,y:4:.2.;m:z,0,0:4:..2;n:z,1/2,1/2:4:..2;"
+		WyckoffSyms[230] += "o:z,0,1/2:4:..2;p:z,1/2,0:4:..2;q:0,x,y:4:..m;r:z,x,y:8:1;"
+		WyckoffSyms[231]  = "a:0,0,0:2:..2/m;b:1/2,0,1/2:2:..2/m;c:1/2,0,0:2:..2/m;d:0,0,1/2:2:..2/m;e:0,1/4,0:2:222;f:0,1/4,1/2:2:222;g:1/2,1/4,0:2:222;"
+		WyckoffSyms[231] += "h:1/2,1/4,1/2:2:222;i:0,1/4,x:4:2..;j:1/2,1/4,x:4:2..;k:y,1/4,0:4:.2.;l:y,1/4,1/2:4:.2.;m:0,z,0:4:..2;n:1/2,z,1/2:4:..2;"
+		WyckoffSyms[231] += "o:1/2,z,0:4:..2;p:0,z,1/2:4:..2;q:y,0,x:4:..m;r:y,z,x:8:1;"
+		WyckoffSyms[232]  = "a:1/4,1/4,0:2:222;b:3/4,1/4,0:2:222;c:3/4,1/4,1/2:2:222;d:1/4,1/4,1/2:2:222;e:0,0,0:4:-1;f:0,0,1/2:4:-1;g:x,1/4,0:4:2..;"
+		WyckoffSyms[232] += "h:x,1/4,1/2:4:2..;i:1/4,y,0:4:.2.;j:1/4,y,1/2:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
+		WyckoffSyms[233]  = "a:1/4,1/4,0:2:222;b:3/4,1/4,0:2:222;c:3/4,1/4,1/2:2:222;d:1/4,1/4,1/2:2:222;e:0,0,0:4:-1;f:0,0,1/2:4:-1;g:x,1/4,0:4:2..;"
+		WyckoffSyms[233] += "h:x,1/4,1/2:4:2..;i:1/4,y,0:4:.2.;j:1/4,y,1/2:4:.2.;k:1/4,1/4,z:4:..2;l:1/4,3/4,z:4:..2;m:x,y,z:8:1;"
+		WyckoffSyms[234]  = "a:0,1/4,1/4:2:222;b:0,3/4,1/4:2:222;c:1/2,3/4,1/4:2:222;d:1/2,1/4,1/4:2:222;e:0,0,0:4:-1;f:1/2,0,0:4:-1;g:0,x,1/4:4:2..;"
+		WyckoffSyms[234] += "h:1/2,x,1/4:4:2..;i:0,1/4,y:4:.2.;j:1/2,1/4,y:4:.2.;k:z,1/4,1/4:4:..2;l:z,1/4,3/4:4:..2;m:z,x,y:8:1;"
+		WyckoffSyms[235]  = "a:0,1/4,1/4:2:222;b:0,3/4,1/4:2:222;c:1/2,3/4,1/4:2:222;d:1/2,1/4,1/4:2:222;e:0,0,0:4:-1;f:1/2,0,0:4:-1;g:0,x,1/4:4:2..;"
+		WyckoffSyms[235] += "h:1/2,x,1/4:4:2..;i:0,1/4,y:4:.2.;j:1/2,1/4,y:4:.2.;k:z,1/4,1/4:4:..2;l:z,1/4,3/4:4:..2;m:z,x,y:8:1;"
+		WyckoffSyms[236]  = "a:1/4,0,1/4:2:222;b:1/4,0,3/4:2:222;c:1/4,1/2,3/4:2:222;d:1/4,1/2,1/4:2:222;e:0,0,0:4:-1;f:0,1/2,0:4:-1;g:1/4,0,x:4:2..;"
+		WyckoffSyms[236] += "h:1/4,1/2,x:4:2..;i:y,0,1/4:4:.2.;j:y,1/2,1/4:4:.2.;k:1/4,z,1/4:4:..2;l:3/4,z,1/4:4:..2;m:y,z,x:8:1;"
+		WyckoffSyms[237]  = "a:1/4,0,1/4:2:222;b:1/4,0,3/4:2:222;c:1/4,1/2,3/4:2:222;d:1/4,1/2,1/4:2:222;e:0,0,0:4:-1;f:0,1/2,0:4:-1;g:1/4,0,x:4:2..;"
+		WyckoffSyms[237] += "h:1/4,1/2,x:4:2..;i:y,0,1/4:4:.2.;j:y,1/2,1/4:4:.2.;k:1/4,z,1/4:4:..2;l:3/4,z,1/4:4:..2;m:y,z,x:8:1;"
+		WyckoffSyms[238]  = "a:0,0,0:2:.2/m.;b:0,1/2,0:2:.2/m.;c:0,0,1/2:2:.2/m.;d:0,1/2,1/2:2:.2/m.;e:1/4,0,z:2:mm2;f:1/4,1/2,z:2:mm2;g:0,y,0:4:.2.;"
+		WyckoffSyms[238] += "h:0,y,1/2:4:.2.;i:x,0,z:4:.m.;j:x,1/2,z:4:.m.;k:1/4,y,z:4:m..;l:x,y,z:8:1;"
+		WyckoffSyms[239]  = "a:0,0,0:2:.2/m.;b:1/2,0,0:2:.2/m.;c:0,0,1/2:2:.2/m.;d:1/2,0,1/2:2:.2/m.;e:0,1/4,-z:2:mm2;f:1/2,1/4,-z:2:mm2;g:y,0,0:4:.2.;"
+		WyckoffSyms[239] += "h:y,0,1/2:4:.2.;i:0,x,-z:4:.m.;j:1/2,x,-z:4:.m.;k:y,1/4,-z:4:m..;l:y,x,-z:8:1;"
+		WyckoffSyms[240]  = "a:0,0,0:2:.2/m.;b:0,0,1/2:2:.2/m.;c:1/2,0,0:2:.2/m.;d:1/2,0,1/2:2:.2/m.;e:z,1/4,0:2:mm2;f:z,1/4,1/2:2:mm2;g:0,0,y:4:.2.;"
+		WyckoffSyms[240] += "h:1/2,0,y:4:.2.;i:z,x,0:4:.m.;j:z,x,1/2:4:.m.;k:z,1/4,y:4:m..;l:z,x,y:8:1;"
+		WyckoffSyms[241]  = "a:0,0,0:2:.2/m.;b:0,1/2,0:2:.2/m.;c:1/2,0,0:2:.2/m.;d:1/2,1/2,0:2:.2/m.;e:-z,0,1/4:2:mm2;f:-z,1/2,1/4:2:mm2;g:0,y,0:4:.2.;"
+		WyckoffSyms[241] += "h:1/2,y,0:4:.2.;i:-z,0,x:4:.m.;j:-z,1/2,x:4:.m.;k:-z,y,1/4:4:m..;l:-z,y,x:8:1;"
+		WyckoffSyms[242]  = "a:0,0,0:2:.2/m.;b:1/2,0,0:2:.2/m.;c:0,1/2,0:2:.2/m.;d:1/2,1/2,0:2:.2/m.;e:0,z,1/4:2:mm2;f:1/2,z,1/4:2:mm2;g:y,0,0:4:.2.;"
+		WyckoffSyms[242] += "h:y,1/2,0:4:.2.;i:0,z,x:4:.m.;j:1/2,z,x:4:.m.;k:y,z,1/4:4:m..;l:y,z,x:8:1;"
+		WyckoffSyms[243]  = "a:0,0,0:2:.2/m.;b:0,0,1/2:2:.2/m.;c:0,1/2,0:2:.2/m.;d:0,1/2,1/2:2:.2/m.;e:1/4,-z,0:2:mm2;f:1/4,-z,1/2:2:mm2;g:0,0,y:4:.2.;"
+		WyckoffSyms[243] += "h:0,1/2,y:4:.2.;i:x,-z,0:4:.m.;j:x,-z,1/2:4:.m.;k:1/4,-z,y:4:m..;l:x,-z,y:8:1;"
+		WyckoffSyms[244]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,z:4:..2;d:x,1/4,1/4:4:2..;e:x,y,z:8:1;"
+		WyckoffSyms[245]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,-z:4:..2;d:1/4,x,1/4:4:2..;e:y,x,-z:8:1;"
+		WyckoffSyms[246]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:z,1/4,0:4:..2;d:1/4,x,1/4:4:2..;e:z,x,y:8:1;"
+		WyckoffSyms[247]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:-z,0,1/4:4:..2;d:1/4,1/4,x:4:2..;e:-z,y,x:8:1;"
+		WyckoffSyms[248]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,z,1/4:4:..2;d:1/4,1/4,x:4:2..;e:y,z,x:8:1;"
+		WyckoffSyms[249]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,-z,0:4:..2;d:x,1/4,1/4:4:2..;e:x,-z,y:8:1;"
+		WyckoffSyms[250]  = "a:0,0,0:2:2/m..;b:1/2,0,0:2:2/m..;c:1/2,1/2,0:2:2/m..;d:0,1/2,0:2:2/m..;e:x,0,0:4:2..;f:x,1/2,0:4:2..;g:1/4,y,1/4:4:.2.;"
+		WyckoffSyms[250] += "h:0,y,z:4:m..;i:x,y,z:8:1;"
+		WyckoffSyms[251]  = "a:0,0,0:2:2/m..;b:0,1/2,0:2:2/m..;c:1/2,1/2,0:2:2/m..;d:1/2,0,0:2:2/m..;e:0,x,0:4:2..;f:1/2,x,0:4:2..;g:y,1/4,1/4:4:.2.;"
+		WyckoffSyms[251] += "h:y,0,-z:4:m..;i:y,x,-z:8:1;"
+		WyckoffSyms[252]  = "a:0,0,0:2:2/m..;b:0,1/2,0:2:2/m..;c:0,1/2,1/2:2:2/m..;d:0,0,1/2:2:2/m..;e:0,x,0:4:2..;f:0,x,1/2:4:2..;g:1/4,1/4,y:4:.2.;"
+		WyckoffSyms[252] += "h:z,0,y:4:m..;i:z,x,y:8:1;"
+		WyckoffSyms[253]  = "a:0,0,0:2:2/m..;b:0,0,1/2:2:2/m..;c:0,1/2,1/2:2:2/m..;d:0,1/2,0:2:2/m..;e:0,0,x:4:2..;f:0,1/2,x:4:2..;g:1/4,y,1/4:4:.2.;"
+		WyckoffSyms[253] += "h:-z,y,0:4:m..;i:-z,y,x:8:1;"
+		WyckoffSyms[254]  = "a:0,0,0:2:2/m..;b:0,0,1/2:2:2/m..;c:1/2,0,1/2:2:2/m..;d:1/2,0,0:2:2/m..;e:0,0,x:4:2..;f:1/2,0,x:4:2..;g:y,1/4,1/4:4:.2.;"
+		WyckoffSyms[254] += "h:y,z,0:4:m..;i:y,z,x:8:1;"
+		WyckoffSyms[255]  = "a:0,0,0:2:2/m..;b:1/2,0,0:2:2/m..;c:1/2,0,1/2:2:2/m..;d:0,0,1/2:2:2/m..;e:x,0,0:4:2..;f:x,0,1/2:4:2..;g:1/4,1/4,y:4:.2.;"
+		WyckoffSyms[255] += "h:0,-z,y:4:m..;i:x,-z,y:8:1;"
+		WyckoffSyms[256]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,y,1/4:4:.2.;d:1/4,0,z:4:..2;e:1/4,1/2,z:4:..2;f:x,y,z:8:1;"
+		WyckoffSyms[257]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,0,1/4:4:.2.;d:0,1/4,-z:4:..2;e:1/2,1/4,-z:4:..2;f:y,x,-z:8:1;"
+		WyckoffSyms[258]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,y:4:.2.;d:z,1/4,0:4:..2;e:z,1/4,1/2:4:..2;f:z,x,y:8:1;"
+		WyckoffSyms[259]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,y,0:4:.2.;d:-z,0,1/4:4:..2;e:-z,1/2,1/4:4:..2;f:-z,y,x:8:1;"
+		WyckoffSyms[260]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,1/4,0:4:.2.;d:0,z,1/4:4:..2;e:1/2,z,1/4:4:..2;f:y,z,x:8:1;"
+		WyckoffSyms[261]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,y:4:.2.;d:1/4,-z,0:4:..2;e:1/4,-z,1/2:4:..2;f:x,-z,y:8:1;"
+		WyckoffSyms[262]  = "a:0,0,0:2:..2/m;b:0,0,1/2:2:..2/m;c:0,1/2,0:2:..2/m;d:0,1/2,1/2:2:..2/m;e:0,0,z:4:..2;f:0,1/2,z:4:..2;g:x,y,0:4:..m;"
+		WyckoffSyms[262] += "h:x,y,1/2:4:..m;i:x,y,z:8:1;"
+		WyckoffSyms[263]  = "a:0,0,0:2:..2/m;b:1/2,0,0:2:..2/m;c:0,0,1/2:2:..2/m;d:1/2,0,1/2:2:..2/m;e:z,0,0:4:..2;f:z,0,1/2:4:..2;g:0,x,y:4:..m;"
+		WyckoffSyms[263] += "h:1/2,x,y:4:..m;i:z,x,y:8:1;"
+		WyckoffSyms[264]  = "a:0,0,0:2:..2/m;b:0,1/2,0:2:..2/m;c:1/2,0,0:2:..2/m;d:1/2,1/2,0:2:..2/m;e:0,z,0:4:..2;f:1/2,z,0:4:..2;g:y,0,x:4:..m;"
+		WyckoffSyms[264] += "h:y,1/2,x:4:..m;i:y,z,x:8:1;"
+		WyckoffSyms[265]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,1/4,z:4:..2;d:1/4,3/4,z:4:..2;e:x,y,z:8:1;"
+		WyckoffSyms[266]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:z,1/4,1/4:4:..2;d:z,1/4,3/4:4:..2;e:z,x,y:8:1;"
+		WyckoffSyms[267]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,z,1/4:4:..2;d:3/4,z,1/4:4:..2;e:y,z,x:8:1;"
+		WyckoffSyms[268]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:x,1/4,0:4:2..;d:x,y,1/4:4:..m;e:x,y,z:8:1;"
+		WyckoffSyms[269]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,x,0:4:2..;d:y,x,1/4:4:..m;e:y,x,-z:8:1;"
+		WyckoffSyms[270]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,x,1/4:4:2..;d:1/4,x,y:4:..m;e:z,x,y:8:1;"
+		WyckoffSyms[271]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,x:4:2..;d:1/4,y,x:4:..m;e:-z,y,x:8:1;"
+		WyckoffSyms[272]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,x:4:2..;d:y,1/4,x:4:..m;e:y,z,x:8:1;"
+		WyckoffSyms[273]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:x,0,1/4:4:2..;d:x,1/4,y:4:..m;e:x,-z,y:8:1;"
+		WyckoffSyms[274]  = "a:0,0,0:2:..2/m;b:0,0,1/2:2:..2/m;c:0,1/2,0:2:..2/m;d:0,1/2,1/2:2:..2/m;e:0,0,z:4:..2;f:0,1/2,z:4:..2;g:x,y,0:4:..m;h:x,y,z:8:1;"
+		WyckoffSyms[275]  = "a:0,0,0:2:..2/m;b:1/2,0,0:2:..2/m;c:0,0,1/2:2:..2/m;d:1/2,0,1/2:2:..2/m;e:z,0,0:4:..2;f:z,0,1/2:4:..2;g:0,x,y:4:..m;h:z,x,y:8:1;"
+		WyckoffSyms[276]  = "a:0,0,0:2:..2/m;b:0,1/2,0:2:..2/m;c:1/2,0,0:2:..2/m;d:1/2,1/2,0:2:..2/m;e:0,z,0:4:..2;f:1/2,z,0:4:..2;g:y,0,x:4:..m;h:y,z,x:8:1;"
+		WyckoffSyms[277]  = "a:1/4,1/4,z:2:mm2;b:1/4,3/4,z:2:mm2;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:1/4,y,z:4:m..;f:x,1/4,z:4:.m.;g:x,y,z:8:1;"
+		WyckoffSyms[278]  = "a:1/4,1/4,z:2:mm2;b:1/4,3/4,z:2:mm2;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:1/4,y,z:4:m..;f:x,1/4,z:4:.m.;g:x,y,z:8:1;"
+		WyckoffSyms[279]  = "a:z,1/4,1/4:2:mm2;b:z,1/4,3/4:2:mm2;c:0,0,0:4:-1;d:1/2,0,0:4:-1;e:z,1/4,y:4:m..;f:z,x,1/4:4:.m.;g:z,x,y:8:1;"
+		WyckoffSyms[280]  = "a:z,1/4,1/4:2:mm2;b:z,1/4,3/4:2:mm2;c:0,0,0:4:-1;d:1/2,0,0:4:-1;e:z,1/4,y:4:m..;f:z,x,1/4:4:.m.;g:z,x,y:8:1;"
+		WyckoffSyms[281]  = "a:1/4,z,1/4:2:mm2;b:3/4,z,1/4:2:mm2;c:0,0,0:4:-1;d:0,1/2,0:4:-1;e:y,z,1/4:4:m..;f:1/4,z,x:4:.m.;g:y,z,x:8:1;"
+		WyckoffSyms[282]  = "a:1/4,z,1/4:2:mm2;b:3/4,z,1/4:2:mm2;c:0,0,0:4:-1;d:0,1/2,0:4:-1;e:y,z,1/4:4:m..;f:1/4,z,x:4:.m.;g:y,z,x:8:1;"
+		WyckoffSyms[283]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:0,y,1/4:4:.2.;d:x,y,z:8:1;"
+		WyckoffSyms[284]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,0,1/4:4:.2.;d:y,x,-z:8:1;"
+		WyckoffSyms[285]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,0,y:4:.2.;d:z,x,y:8:1;"
+		WyckoffSyms[286]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,y,0:4:.2.;d:-z,y,x:8:1;"
+		WyckoffSyms[287]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:y,1/4,0:4:.2.;d:y,z,x:8:1;"
+		WyckoffSyms[288]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:0,1/4,y:4:.2.;d:x,-z,y:8:1;"
+		WyckoffSyms[289]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:x,y,z:8:1;"
+		WyckoffSyms[290]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:y,x,-z:8:1;"
+		WyckoffSyms[291]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:x,1/4,z:4:.m.;d:x,y,z:8:1;"
+		WyckoffSyms[292]  = "a:0,0,0:4:-1;b:0,0,1/2:4:-1;c:1/4,x,-z:4:.m.;d:y,x,-z:8:1;"
+		WyckoffSyms[293]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:z,x,1/4:4:.m.;d:z,x,y:8:1;"
+		WyckoffSyms[294]  = "a:0,0,0:4:-1;b:1/2,0,0:4:-1;c:-z,1/4,x:4:.m.;d:-z,y,x:8:1;"
+		WyckoffSyms[295]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:1/4,z,x:4:.m.;d:y,z,x:8:1;"
+		WyckoffSyms[296]  = "a:0,0,0:4:-1;b:0,1/2,0:4:-1;c:x,-z,1/4:4:.m.;d:x,-z,y:8:1;"
+		WyckoffSyms[297]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:0,y,1/4:4:m2m;d:1/4,1/4,0:8:-1;e:x,0,0:8:2..;f:0,y,z:8:m..;g:x,y,1/4:8:..m;h:x,y,z:16:1;"
+		WyckoffSyms[298]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:y,0,1/4:4:m2m;d:1/4,1/4,0:8:-1;e:0,x,0:8:2..;f:y,0,-z:8:m..;g:y,x,1/4:8:..m;h:y,x,-z:16:1;"
+		WyckoffSyms[299]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,0,y:4:m2m;d:0,1/4,1/4:8:-1;e:0,x,0:8:2..;f:z,0,y:8:m..;g:1/4,x,y:8:..m;h:z,x,y:16:1;"
+		WyckoffSyms[300]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,y,0:4:m2m;d:0,1/4,1/4:8:-1;e:0,0,x:8:2..;f:-z,y,0:8:m..;g:1/4,y,x:8:..m;h:-z,y,x:16:1;"
+		WyckoffSyms[301]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:y,1/4,0:4:m2m;d:1/4,0,1/4:8:-1;e:0,0,x:8:2..;f:y,z,0:8:m..;g:y,1/4,x:8:..m;h:y,z,x:16:1;"
+		WyckoffSyms[302]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:0,1/4,y:4:m2m;d:1/4,0,1/4:8:-1;e:x,0,0:8:2..;f:0,-z,y:8:m..;g:x,1/4,y:8:..m;h:x,-z,y:16:1;"
+		WyckoffSyms[303]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,1/4,0:8:-1;d:x,0,0:8:2..;e:1/4,y,1/4:8:.2.;f:0,y,z:8:m..;g:x,y,z:16:1;"
+		WyckoffSyms[304]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,1/4,0:8:-1;d:0,x,0:8:2..;e:y,1/4,1/4:8:.2.;f:y,0,-z:8:m..;g:y,x,-z:16:1;"
+		WyckoffSyms[305]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:0,1/4,1/4:8:-1;d:0,x,0:8:2..;e:1/4,1/4,y:8:.2.;f:z,0,y:8:m..;g:z,x,y:16:1;"
+		WyckoffSyms[306]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:0,1/4,1/4:8:-1;d:0,0,x:8:2..;e:1/4,y,1/4:8:.2.;f:-z,y,0:8:m..;g:-z,y,x:16:1;"
+		WyckoffSyms[307]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,0,1/4:8:-1;d:0,0,x:8:2..;e:y,1/4,1/4:8:.2.;f:y,z,0:8:m..;g:y,z,x:16:1;"
+		WyckoffSyms[308]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,0,1/4:8:-1;d:x,0,0:8:2..;e:1/4,1/4,y:8:.2.;f:0,-z,y:8:m..;g:x,-z,y:16:1;"
+		WyckoffSyms[309]  = "a:0,0,0:2:mmm;b:1/2,0,0:2:mmm;c:1/2,0,1/2:2:mmm;d:0,0,1/2:2:mmm;e:1/4,1/4,0:4:..2/m;f:1/4,1/4,1/2:4:..2/m;g:x,0,0:4:2mm;"
+		WyckoffSyms[309] += "h:x,0,1/2:4:2mm;i:0,y,0:4:m2m;j:0,y,1/2:4:m2m;k:0,0,z:4:mm2;l:0,1/2,z:4:mm2;m:1/4,1/4,z:8:..2;n:0,y,z:8:m..;o:x,0,z:8:.m.;"
+		WyckoffSyms[309] += "p:x,y,0:8:..m;q:x,y,1/2:8:..m;r:x,y,z:16:1;"
+		WyckoffSyms[310]  = "a:0,0,0:2:mmm;b:0,1/2,0:2:mmm;c:1/2,1/2,0:2:mmm;d:1/2,0,0:2:mmm;e:0,1/4,1/4:4:..2/m;f:1/2,1/4,1/4:4:..2/m;g:0,x,0:4:2mm;"
+		WyckoffSyms[310] += "h:1/2,x,0:4:2mm;i:0,0,y:4:m2m;j:1/2,0,y:4:m2m;k:z,0,0:4:mm2;l:z,0,1/2:4:mm2;m:z,1/4,1/4:8:..2;n:z,0,y:8:m..;o:z,x,0:8:.m.;"
+		WyckoffSyms[310] += "p:0,x,y:8:..m;q:1/2,x,y:8:..m;r:z,x,y:16:1;"
+		WyckoffSyms[311]  = "a:0,0,0:2:mmm;b:0,0,1/2:2:mmm;c:0,1/2,1/2:2:mmm;d:0,1/2,0:2:mmm;e:1/4,0,1/4:4:..2/m;f:1/4,1/2,1/4:4:..2/m;g:0,0,x:4:2mm;"
+		WyckoffSyms[311] += "h:0,1/2,x:4:2mm;i:y,0,0:4:m2m;j:y,1/2,0:4:m2m;k:0,z,0:4:mm2;l:1/2,z,0:4:mm2;m:1/4,z,1/4:8:..2;n:y,z,0:8:m..;o:0,z,x:8:.m.;"
+		WyckoffSyms[311] += "p:y,0,x:8:..m;q:y,1/2,x:8:..m;r:y,z,x:16:1;"
+		WyckoffSyms[312]  = "a:0,0,1/4:4:222;b:0,1/2,1/4:4:222;c:0,0,0:4:..2/m;d:0,1/2,0:4:..2/m;e:1/4,1/4,0:4:..2/m;f:1/4,3/4,0:4:..2/m;g:x,0,1/4:8:2..;"
+		WyckoffSyms[312] += "h:0,y,1/4:8:.2.;i:0,0,z:8:..2;j:0,1/2,z:8:..2;k:1/4,1/4,z:8:..2;l:x,y,0:8:..m;m:x,y,z:16:1;"
+		WyckoffSyms[313]  = "a:1/4,0,0:4:222;b:1/4,0,1/2:4:222;c:0,0,0:4:..2/m;d:0,0,1/2:4:..2/m;e:0,1/4,1/4:4:..2/m;f:0,1/4,3/4:4:..2/m;g:1/4,x,0:8:2..;"
+		WyckoffSyms[313] += "h:1/4,0,y:8:.2.;i:z,0,0:8:..2;j:z,0,1/2:8:..2;k:z,1/4,1/4:8:..2;l:0,x,y:8:..m;m:z,x,y:16:1;"
+		WyckoffSyms[314]  = "a:0,1/4,0:4:222;b:1/2,1/4,0:4:222;c:0,0,0:4:..2/m;d:1/2,0,0:4:..2/m;e:1/4,0,1/4:4:..2/m;f:3/4,0,1/4:4:..2/m;g:0,1/4,x:8:2..;"
+		WyckoffSyms[314] += "h:y,1/4,0:8:.2.;i:0,z,0:8:..2;j:1/2,z,0:8:..2;k:1/4,z,1/4:8:..2;l:y,0,x:8:..m;m:y,z,x:16:1;"
+		WyckoffSyms[315]  = "a:1/4,0,0:4:222;b:1/4,0,1/2:4:222;c:0,0,0:4:2/m..;d:0,0,1/2:4:2/m..;e:1/4,1/4,0:4:.2/m.;f:1/4,1/4,1/2:4:.2/m.;g:0,1/4,z:4:mm2;"
+		WyckoffSyms[315] += "h:x,0,0:8:2..;i:x,0,1/2:8:2..;j:1/4,y,0:8:.2.;k:1/4,y,1/2:8:.2.;l:1/4,0,z:8:..2;m:0,y,z:8:m..;n:x,1/4,z:8:.m.;o:x,y,z:16:1;"
+		WyckoffSyms[316]  = "a:1/4,0,0:4:222;b:1/4,0,1/2:4:222;c:0,0,0:4:2/m..;d:0,0,1/2:4:2/m..;e:1/4,1/4,0:4:.2/m.;f:1/4,1/4,1/2:4:.2/m.;g:0,1/4,z:4:mm2;"
+		WyckoffSyms[316] += "h:x,0,0:8:2..;i:x,0,1/2:8:2..;j:1/4,y,0:8:.2.;k:1/4,y,1/2:8:.2.;l:1/4,0,z:8:..2;m:0,y,z:8:m..;n:x,1/4,z:8:.m.;o:x,y,z:16:1;"
+		WyckoffSyms[317]  = "a:0,1/4,0:4:222;b:1/2,1/4,0:4:222;c:0,0,0:4:2/m..;d:1/2,0,0:4:2/m..;e:0,1/4,1/4:4:.2/m.;f:1/2,1/4,1/4:4:.2/m.;g:z,0,1/4:4:mm2;"
+		WyckoffSyms[317] += "h:0,x,0:8:2..;i:1/2,x,0:8:2..;j:0,1/4,y:8:.2.;k:1/2,1/4,y:8:.2.;l:z,1/4,0:8:..2;m:z,0,y:8:m..;n:z,x,1/4:8:.m.;o:z,x,y:16:1;"
+		WyckoffSyms[318]  = "a:0,1/4,0:4:222;b:1/2,1/4,0:4:222;c:0,0,0:4:2/m..;d:1/2,0,0:4:2/m..;e:0,1/4,1/4:4:.2/m.;f:1/2,1/4,1/4:4:.2/m.;g:z,0,1/4:4:mm2;"
+		WyckoffSyms[318] += "h:0,x,0:8:2..;i:1/2,x,0:8:2..;j:0,1/4,y:8:.2.;k:1/2,1/4,y:8:.2.;l:z,1/4,0:8:..2;m:z,0,y:8:m..;n:z,x,1/4:8:.m.;o:z,x,y:16:1;"
+		WyckoffSyms[319]  = "a:0,0,1/4:4:222;b:0,1/2,1/4:4:222;c:0,0,0:4:2/m..;d:0,1/2,0:4:2/m..;e:1/4,0,1/4:4:.2/m.;f:1/4,1/2,1/4:4:.2/m.;g:1/4,z,0:4:mm2;"
+		WyckoffSyms[319] += "h:0,0,x:8:2..;i:0,1/2,x:8:2..;j:y,0,1/4:8:.2.;k:y,1/2,1/4:8:.2.;l:0,z,1/4:8:..2;m:y,z,0:8:m..;n:1/4,z,x:8:.m.;o:y,z,x:16:1;"
+		WyckoffSyms[320]  = "a:0,0,1/4:4:222;b:0,1/2,1/4:4:222;c:0,0,0:4:2/m..;d:0,1/2,0:4:2/m..;e:1/4,0,1/4:4:.2/m.;f:1/4,1/2,1/4:4:.2/m.;g:1/4,z,0:4:mm2;"
+		WyckoffSyms[320] += "h:0,0,x:8:2..;i:0,1/2,x:8:2..;j:y,0,1/4:8:.2.;k:y,1/2,1/4:8:.2.;l:0,z,1/4:8:..2;m:y,z,0:8:m..;n:1/4,z,x:8:.m.;o:y,z,x:16:1;"
+		WyckoffSyms[321]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
+		WyckoffSyms[321] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
+		WyckoffSyms[322]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
+		WyckoffSyms[322] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
+		WyckoffSyms[323]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
+		WyckoffSyms[323] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
+		WyckoffSyms[324]  = "a:0,1/4,1/4:4:222;b:0,1/4,3/4:4:222;c:1/4,3/4,0:8:-1;d:0,0,0:8:-1;e:x,1/4,1/4:8:2..;f:0,y,1/4:8:.2.;g:0,1/4,z:8:..2;"
+		WyckoffSyms[324] += "h:1/4,0,z:8:..2;i:x,y,z:16:1;"
+		WyckoffSyms[325]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
+		WyckoffSyms[325] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
+		WyckoffSyms[326]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
+		WyckoffSyms[326] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
+		WyckoffSyms[327]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
+		WyckoffSyms[327] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
+		WyckoffSyms[328]  = "a:1/4,0,1/4:4:222;b:3/4,0,1/4:4:222;c:0,1/4,3/4:8:-1;d:0,0,0:8:-1;e:1/4,x,1/4:8:2..;f:1/4,0,y:8:.2.;g:z,0,1/4:8:..2;"
+		WyckoffSyms[328] += "h:z,1/4,0:8:..2;i:z,x,y:16:1;"
+		WyckoffSyms[329]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
+		WyckoffSyms[329] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
+		WyckoffSyms[330]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
+		WyckoffSyms[330] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
+		WyckoffSyms[331]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
+		WyckoffSyms[331] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
+		WyckoffSyms[332]  = "a:1/4,1/4,0:4:222;b:1/4,3/4,0:4:222;c:3/4,0,1/4:8:-1;d:0,0,0:8:-1;e:1/4,1/4,x:8:2..;f:y,1/4,0:8:.2.;g:1/4,z,0:8:..2;"
+		WyckoffSyms[332] += "h:0,z,1/4:8:..2;i:y,z,x:16:1;"
+		WyckoffSyms[333]  = "a:0,0,0:4:mmm;b:0,0,1/2:4:mmm;c:0,1/4,1/4:8:2/m..;d:1/4,0,1/4:8:.2/m.;e:1/4,1/4,0:8:..2/m;f:1/4,1/4,1/4:8:222;g:x,0,0:8:2mm;"
+		WyckoffSyms[333] += "h:0,y,0:8:m2m;i:0,0,z:8:mm2;j:1/4,1/4,z:16:..2;k:1/4,y,1/4:16:.2.;l:x,1/4,1/4:16:2..;m:0,y,z:16:m..;n:x,0,z:16:.m.;o:x,y,0:16:..m;"
+		WyckoffSyms[333] += "p:x,y,z:32:1;"
+		WyckoffSyms[334]  = "a:1/8,1/8,1/8:8:222;b:1/8,1/8,5/8:8:222;c:0,0,0:16:-1;d:1/2,1/2,1/2:16:-1;e:x,1/8,1/8:16:2..;f:1/8,y,1/8:16:.2.;g:1/8,1/8,z:16:..2;"
+		WyckoffSyms[334] += "h:x,y,z:32:1;"
+		WyckoffSyms[335]  = "a:1/8,1/8,1/8:8:222;b:1/8,1/8,5/8:8:222;c:0,0,0:16:-1;d:1/2,1/2,1/2:16:-1;e:x,1/8,1/8:16:2..;f:1/8,y,1/8:16:.2.;g:1/8,1/8,z:16:..2;"
+		WyckoffSyms[335] += "h:x,y,z:32:1;"
+		WyckoffSyms[336]  = "a:0,0,0:2:mmm;b:0,1/2,1/2:2:mmm;c:1/2,1/2,0:2:mmm;d:1/2,0,1/2:2:mmm;e:x,0,0:4:2mm;f:x,1/2,0:4:2mm;g:0,y,0:4:m2m;h:0,y,1/2:4:m2m;"
+		WyckoffSyms[336] += "i:0,0,z:4:mm2;j:1/2,0,z:4:mm2;k:1/4,1/4,1/4:8:-1;l:0,y,z:8:m..;m:x,0,z:8:.m.;n:x,y,0:8:..m;o:x,y,z:16:1;"
+		WyckoffSyms[337]  = "a:0,0,1/4:4:222;b:1/2,0,1/4:4:222;c:0,0,0:4:..2/m;d:1/2,0,0:4:..2/m;e:1/4,1/4,1/4:8:-1;f:x,0,1/4:8:2..;g:0,y,1/4:8:.2.;"
+		WyckoffSyms[337] += "h:0,0,z:8:..2;i:0,1/2,z:8:..2;j:x,y,0:8:..m;k:x,y,z:16:1;"
+		WyckoffSyms[338]  = "a:1/4,0,0:4:222;b:1/4,1/2,0:4:222;c:0,0,0:4:..2/m;d:0,1/2,0:4:..2/m;e:1/4,1/4,1/4:8:-1;f:1/4,x,0:8:2..;g:1/4,0,y:8:.2.;"
+		WyckoffSyms[338] += "h:z,0,0:8:..2;i:z,0,1/2:8:..2;j:0,x,y:8:..m;k:z,x,y:16:1;"
+		WyckoffSyms[339]  = "a:0,1/4,0:4:222;b:0,1/4,1/2:4:222;c:0,0,0:4:..2/m;d:0,0,1/2:4:..2/m;e:1/4,1/4,1/4:8:-1;f:0,1/4,x:8:2..;g:y,1/4,0:8:.2.;"
+		WyckoffSyms[339] += "h:0,z,0:8:..2;i:1/2,z,0:8:..2;j:y,0,x:8:..m;k:y,z,x:16:1;"
+		WyckoffSyms[340]  = "a:0,0,0:8:-1;b:1/4,1/4,1/4:8:-1;c:x,0,1/4:8:2..;d:1/4,y,0:8:.2.;e:0,1/4,z:8:..2;f:x,y,z:16:1;"
+		WyckoffSyms[341]  = "a:0,0,0:8:-1;b:1/4,1/4,1/4:8:-1;c:x,0,1/4:8:2..;d:1/4,y,0:8:.2.;e:0,1/4,z:8:..2;f:x,y,z:16:1;"
+		WyckoffSyms[342]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,1/4,3/4:4:.2/m.;e:0,1/4,z:4:mm2;f:x,0,0:8:2..;g:1/4,y,1/4:8:.2.;"
+		WyckoffSyms[342] += "h:0,y,z:8:m..;i:x,1/4,z:8:.m.;j:x,y,z:16:1;"
+		WyckoffSyms[343]  = "a:0,0,0:4:2/m..;b:0,0,1/2:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,1/4,3/4:4:.2/m.;e:0,1/4,z:4:mm2;f:x,0,0:8:2..;g:1/4,y,1/4:8:.2.;"
+		WyckoffSyms[343] += "h:0,y,z:8:m..;i:x,1/4,z:8:.m.;j:x,y,z:16:1;"
+		WyckoffSyms[344]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:3/4,1/4,1/4:4:.2/m.;e:z,0,1/4:4:mm2;f:0,x,0:8:2..;g:1/4,1/4,y:8:.2.;"
+		WyckoffSyms[344] += "h:z,0,y:8:m..;i:z,x,1/4:8:.m.;j:z,x,y:16:1;"
+		WyckoffSyms[345]  = "a:0,0,0:4:2/m..;b:1/2,0,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:3/4,1/4,1/4:4:.2/m.;e:z,0,1/4:4:mm2;f:0,x,0:8:2..;g:1/4,1/4,y:8:.2.;"
+		WyckoffSyms[345] += "h:z,0,y:8:m..;i:z,x,1/4:8:.m.;j:z,x,y:16:1;"
+		WyckoffSyms[346]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,3/4,1/4:4:.2/m.;e:1/4,z,0:4:mm2;f:0,0,x:8:2..;g:y,1/4,1/4:8:.2.;"
+		WyckoffSyms[346] += "h:y,z,0:8:m..;i:1/4,z,x:8:.m.;j:y,z,x:16:1;"
+		WyckoffSyms[347]  = "a:0,0,0:4:2/m..;b:0,1/2,0:4:2/m..;c:1/4,1/4,1/4:4:.2/m.;d:1/4,3/4,1/4:4:.2/m.;e:1/4,z,0:4:mm2;f:0,0,x:8:2..;g:y,1/4,1/4:8:.2.;"
+		WyckoffSyms[347] += "h:y,z,0:8:m..;i:1/4,z,x:8:.m.;j:y,z,x:16:1;"
+		// Tetragonal SG[75,142]  SG_idNum [349,429]   (81 idNums)
+		WyckoffSyms[348]  = "a:0,0,z:1:4..;b:1/2,1/2,z:1:4..;c:0,1/2,z:2:2..;d:x,y,z:4:1;"
+		WyckoffSyms[349]  = "a:x,y,z:4:1;"
+		WyckoffSyms[350]  = "a:0,0,z:2:2..;b:1/2,1/2,z:2:2..;c:0,1/2,z:2:2..;d:x,y,z:4:1;"
+		WyckoffSyms[351]  = "a:x,y,z:4:1;"
+		WyckoffSyms[352]  = "a:0,0,z:2:4..;b:0,1/2,z:4:2..;c:x,y,z:8:1;"
+		WyckoffSyms[353]  = "a:0,0,z:4:2..;b:x,y,z:8:1;"
+		WyckoffSyms[354]  = "a:0,0,0:1:-4..;b:0,0,1/2:1:-4..;c:1/2,1/2,0:1:-4..;d:1/2,1/2,1/2:1:-4..;e:0,0,z:2:2..;f:1/2,1/2,z:2:2..;g:0,1/2,z:2:2..;"
+		WyckoffSyms[354] += "h:x,y,z:4:1;"
+		WyckoffSyms[355]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,1/4:2:-4..;d:0,1/2,3/4:2:-4..;e:0,0,z:4:2..;f:0,1/2,z:4:2..;g:x,y,z:8:1;"
+		WyckoffSyms[356]  = "a:0,0,0:1:4/m..;b:0,0,1/2:1:4/m..;c:1/2,1/2,0:1:4/m..;d:1/2,1/2,1/2:1:4/m..;e:0,1/2,0:2:2/m..;f:0,1/2,1/2:2:2/m..;g:0,0,z:2:4..;"
+		WyckoffSyms[356] += "h:1/2,1/2,z:2:4..;i:0,1/2,z:4:2..;j:x,y,0:4:m..;k:x,y,1/2:4:m..;l:x,y,z:8:1;"
+		WyckoffSyms[357]  = "a:0,0,0:2:2/m..;b:1/2,1/2,0:2:2/m..;c:0,1/2,0:2:2/m..;d:0,1/2,1/2:2:2/m..;e:0,0,1/4:2:-4..;f:1/2,1/2,1/4:2:-4..;g:0,0,z:4:2..;"
+		WyckoffSyms[357] += "h:1/2,1/2,z:4:2..;i:0,1/2,z:4:2..;j:x,y,0:4:m..;k:x,y,z:8:1;"
+		WyckoffSyms[358]  = "a:1/4,3/4,0:2:-4..;b:1/4,3/4,1/2:2:-4..;c:1/4,1/4,z:2:4..;d:0,0,0:4:-1;e:0,0,1/2:4:-1;f:1/4,3/4,z:4:2..;g:x,y,z:8:1;"
+		WyckoffSyms[359]  = "a:1/4,3/4,0:2:-4..;b:1/4,3/4,1/2:2:-4..;c:1/4,1/4,z:2:4..;d:0,0,0:4:-1;e:0,0,1/2:4:-1;f:1/4,3/4,z:4:2..;g:x,y,z:8:1;"
+		WyckoffSyms[360]  = "a:1/4,1/4,1/4:2:-4..;b:1/4,1/4,3/4:2:-4..;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:3/4,1/4,z:4:2..;f:1/4,1/4,z:4:2..;g:x,y,z:8:1;"
+		WyckoffSyms[361]  = "a:1/4,1/4,1/4:2:-4..;b:1/4,1/4,3/4:2:-4..;c:0,0,0:4:-1;d:0,0,1/2:4:-1;e:3/4,1/4,z:4:2..;f:1/4,1/4,z:4:2..;g:x,y,z:8:1;"
+		WyckoffSyms[362]  = "a:0,0,0:2:4/m..;b:0,0,1/2:2:4/m..;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:-4..;e:0,0,z:4:4..;f:1/4,1/4,1/4:8:-1;g:0,1/2,z:8:2..;"
+		WyckoffSyms[362] += "h:x,y,0:8:m..;i:x,y,z:16:1;"
+		WyckoffSyms[363]  = "a:0,1/4,1/8:4:-4..;b:0,1/4,5/8:4:-4..;c:0,0,0:8:-1;d:0,0,1/2:8:-1;e:0,1/4,z:8:2..;f:x,y,z:16:1;"
+		WyckoffSyms[364]  = "a:0,1/4,1/8:4:-4..;b:0,1/4,5/8:4:-4..;c:0,0,0:8:-1;d:0,0,1/2:8:-1;e:0,1/4,z:8:2..;f:x,y,z:16:1;"
+		WyckoffSyms[365]  = "a:0,0,0:1:422;b:0,0,1/2:1:422;c:1/2,1/2,0:1:422;d:1/2,1/2,1/2:1:422;e:1/2,0,0:2:222 .;f:1/2,0,1/2:2:222 .;g:0,0,z:2:4..;"
+		WyckoffSyms[365] += "h:1/2,1/2,z:2:4..;i:0,1/2,z:4:2..;j:x,x,0:4:..2;k:x,x,1/2:4:..2;l:x,0,0:4:.2.;m:x,1/2,1/2:4:.2.;n:x,0,1/2:4:.2.;o:x,1/2,0:4:.2.;"
+		WyckoffSyms[365] += "p:x,y,z:8:1;"
+		WyckoffSyms[366]  = "a:0,0,0:2:2.2 2;b:0,0,1/2:2:2.2 2;c:0,1/2,z:2:4..;d:0,0,z:4:2..;e:x,x,0:4:..2;f:x,x,1/2:4:..2;g:x,y,z:8:1;"
+		WyckoffSyms[367]  = "a:0,y,0:4:.2.;b:1/2,y,0:4:.2.;c:x,x,3/8:4:..2;d:x,y,z:8:1;"
+		WyckoffSyms[368]  = "a:x,x,0:4:..2;b:x,y,z:8:1;"
+		WyckoffSyms[369]  = "a:0,0,0:2:222 .;b:1/2,1/2,0:2:222 .;c:0,1/2,0:2:222 .;d:0,1/2,1/2:2:222 .;e:0,0,1/4:2:2.2 2;f:1/2,1/2,1/4:2:2.2 2;g:0,0,z:4:2..;"
+		WyckoffSyms[369] += "h:1/2,1/2,z:4:2..;i:0,1/2,z:4:2..;j:x,0,0:4:.2.;k:x,1/2,1/2:4:.2.;l:x,0,1/2:4:.2.;m:x,1/2,0:4:.2.;n:x,x,1/4:4:..2;o:x,x,3/4:4:..2;"
+		WyckoffSyms[369] += "p:x,y,z:8:1;"
+		WyckoffSyms[370]  = "a:0,0,0:2:2.2 2;b:0,0,1/2:2:2.2 2;c:0,0,z:4:2..;d:0,1/2,z:4:2..;e:x,x,0:4:..2;f:x,x,1/2:4:..2;g:x,y,z:8:1;"
+		WyckoffSyms[371]  = "a:0,y,0:4:.2.;b:1/2,y,0:4:.2.;c:x,x,5/8:4:..2;d:x,y,z:8:1;"
+		WyckoffSyms[372]  = "a:x,x,0:4:..2;b:x,y,z:8:1;"
+		WyckoffSyms[373]  = "a:0,0,0:2:422;b:0,0,1/2:2:422;c:0,1/2,0:4:222 .;d:0,1/2,1/4:4:2.2 2;e:0,0,z:4:4..;f:0,1/2,z:8:2..;g:x,x,0:8:..2;h:x,0,0:8:.2.;"
+		WyckoffSyms[373] += "i:x,0,1/2:8:.2.;j:x,x+1/2,1/4:8:..2;k:x,y,z:16:1;"
+		WyckoffSyms[374]  = "a:0,0,0:4:2.2 2;b:0,0,1/2:4:2.2 2;c:0,0,z:8:2..;d:x,x,0:8:..2;e:-x,x,0:8:..2;f:x,1/4,1/8:8:.2.;g:x,y,z:16:1;"
+		WyckoffSyms[375]  = "a:0,0,z:1:4mm;b:1/2,1/2,z:1:4mm;c:1/2,0,z:2:2mm .;d:x,x,z:4:..m;e:x,0,z:4:.m.;f:x,1/2,z:4:.m.;g:x,y,z:8:1;"
+		WyckoffSyms[376]  = "a:0,0,z:2:4..;b:1/2,0,z:2:2.m m;c:x,x+1/2,z:4:..m;d:x,y,z:8:1;"
+		WyckoffSyms[377]  = "a:0,0,z:2:2.m m;b:1/2,1/2,z:2:2.m m;c:0,1/2,z:4:2..;d:x,x,z:4:..m;e:x,y,z:8:1;"
+		WyckoffSyms[378]  = "a:0,0,z:2:2.m m;b:0,1/2,z:4:2..;c:x,x,z:4:..m;d:x,y,z:8:1;"
+		WyckoffSyms[379]  = "a:0,0,z:2:4..;b:1/2,1/2,z:2:4..;c:0,1/2,z:4:2..;d:x,y,z:8:1;"
+		WyckoffSyms[380]  = "a:0,0,z:2:4..;b:0,1/2,z:4:2..;c:x,y,z:8:1;"
+		WyckoffSyms[381]  = "a:0,0,z:2:2mm .;b:1/2,1/2,z:2:2mm .;c:0,1/2,z:2:2mm .;d:x,0,z:4:.m.;e:x,1/2,z:4:.m.;f:x,y,z:8:1;"
+		WyckoffSyms[382]  = "a:0,0,z:4:2..;b:0,1/2,z:4:2..;c:x,y,z:8:1;"
+		WyckoffSyms[383]  = "a:0,0,z:2:4mm;b:0,1/2,z:4:2mm .;c:x,x,z:8:..m;d:x,0,z:8:.m.;e:x,y,z:16:1;"
+		WyckoffSyms[384]  = "a:0,0,z:4:4..;b:1/2,0,z:4:2.m m;c:x,x+1/2,z:8:..m;d:x,y,z:16:1;"
+		WyckoffSyms[385]  = "a:0,0,z:4:2mm .;b:0,y,z:8:.m.;c:x,y,z:16:1;"
+		WyckoffSyms[386]  = "a:0,0,z:8:2..;b:x,y,z:16:1;"
+		WyckoffSyms[387]  = "a:0,0,0:1:-42m;b:1/2,1/2,1/2:1:-42m;c:0,0,1/2:1:-42m;d:1/2,1/2,0:1:-42m;e:1/2,0,0:2:222 .;f:1/2,0,1/2:2:222 .;g:0,0,z:2:2.m m;"
+		WyckoffSyms[387] += "h:1/2,1/2,z:2:2.m m;i:x,0,0:4:.2.;j:x,1/2,1/2:4:.2.;k:x,0,1/2:4:.2.;l:x,1/2,0:4:.2.;m:0,1/2,z:4:2..;n:x,x,z:4:..m;o:x,y,z:8:1;"
+		WyckoffSyms[388]  = "a:0,0,1/4:2:222 .;b:1/2,0,1/4:2:222 .;c:1/2,1/2,1/4:2:222 .;d:0,1/2,1/4:2:222 .;e:0,0,0:2:-4..;f:1/2,1/2,0:2:-4..;g:x,0,1/4:4:.2.;"
+		WyckoffSyms[388] += "h:1/2,y,1/4:4:.2.;i:x,1/2,1/4:4:.2.;j:0,y,1/4:4:.2.;k:0,0,z:4:2..;l:1/2,1/2,z:4:2..;m:0,1/2,z:4:2..;n:x,y,z:8:1;"
+		WyckoffSyms[389]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,z:2:2.m m;d:0,0,z:4:2..;e:x,x+1/2,z:4:..m;f:x,y,z:8:1;"
+		WyckoffSyms[390]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,0,z:4:2..;d:0,1/2,z:4:2..;e:x,y,z:8:1;"
+		WyckoffSyms[391]  = "a:0,0,0:1:-4m2;b:1/2,1/2,0:1:-4m2;c:1/2,1/2,1/2:1:-4m2;d:0,0,1/2:1:-4m2;e:0,0,z:2:2mm .;f:1/2,1/2,z:2:2mm .;g:0,1/2,z:2:2mm .;"
+		WyckoffSyms[391] += "h:x,x,0:4:..2;i:x,x,1/2:4:..2;j:x,0,z:4:.m.;k:x,1/2,z:4:.m.;l:x,y,z:8:1;"
+		WyckoffSyms[392]  = "a:0,0,1/4:2:2.2 2;b:1/2,1/2,1/4:2:2.2 2;c:0,0,0:2:-4..;d:1/2,1/2,0:2:-4..;e:x,x,1/4:4:..2;f:x,x,3/4:4:..2;g:0,0,z:4:2..;"
+		WyckoffSyms[392] += "h:1/2,1/2,z:4:2..;i:0,1/2,z:4:2..;j:x,y,z:8:1;"
+		WyckoffSyms[393]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,0:2:2.2 2;d:0,1/2,1/2:2:2.2 2;e:0,0,z:4:2..;f:0,1/2,z:4:2..;g:x,x+1/2,0:4:..2;"
+		WyckoffSyms[393] += "h:x,x+1/2,1/2:4:..2;i:x,y,z:8:1;"
+		WyckoffSyms[394]  = "a:0,0,0:2:-4..;b:0,0,1/2:2:-4..;c:0,1/2,1/4:2:2.2 2;d:0,1/2,3/4:2:2.2 2;e:0,0,z:4:2..;f:x,-x+1/2,1/4:4:..2;g:x,x+1/2,1/4:4:..2;"
+		WyckoffSyms[394] += "h:0,1/2,z:4:2..;i:x,y,z:8:1;"
+		WyckoffSyms[395]  = "a:0,0,0:2:-4m2;b:0,0,1/2:2:-4m2;c:0,1/2,1/4:2:-4m2;d:0,1/2,3/4:2:-4m2;e:0,0,z:4:2mm .;f:0,1/2,z:4:2mm .;g:x,x,0:8:..2;"
+		WyckoffSyms[395] += "h:x,x+1/2,1/4:8:..2;i:x,0,z:8:.m.;j:x,y,z:16:1;"
+		WyckoffSyms[396]  = "a:0,0,1/4:4:2.2 2;b:0,0,0:4:-4..;c:0,1/2,1/4:4:-4..;d:0,1/2,0:4:2.2 2;e:x,x,1/4:8:..2;f:0,0,z:8:2..;g:0,1/2,z:8:2..;"
+		WyckoffSyms[396] += "h:x,x+1/2,0:8:..2;i:x,y,z:16:1;"
+		WyckoffSyms[397]  = "a:0,0,0:2:-42m;b:0,0,1/2:2:-42m;c:0,1/2,0:4:222 .;d:0,1/2,1/4:4:-4..;e:0,0,z:4:2.m m;f:x,0,0:8:.2.;g:x,0,1/2:8:.2.;h:0,1/2,z:8:2..;"
+		WyckoffSyms[397] += "i:x,x,z:8:..m;j:x,y,z:16:1;"
+		WyckoffSyms[398]  = "a:0,0,0:4:-4..;b:0,0,1/2:4:-4..;c:0,0,z:8:2..;d:x,1/4,1/8:8:.2.;e:x,y,z:16:1;"
+		WyckoffSyms[399]  = "a:0,0,0:1:4/mmm;b:0,0,1/2:1:4/mmm;c:1/2,1/2,0:1:4/mmm;d:1/2,1/2,1/2:1:4/mmm;e:0,1/2,1/2:2:mmm .;f:0,1/2,0:2:mmm .;g:0,0,z:2:4mm;"
+		WyckoffSyms[399] += "h:1/2,1/2,z:2:4mm;i:0,1/2,z:4:2mm .;j:x,x,0:4:m.2 m;k:x,x,1/2:4:m.2 m;l:x,0,0:4:m2m .;m:x,0,1/2:4:m2m .;n:x,1/2,0:4:m2m .;"
+		WyckoffSyms[399] += "o:x,1/2,1/2:4:m2m .;p:x,y,0:8:m..;q:x,y,1/2:8:m..;r:x,x,z:8:..m;s:x,0,z:8:.m.;t:x,1/2,z:8:.m.;u:x,y,z:16:1;"
+		WyckoffSyms[400]  = "a:0,0,1/4:2:422;b:0,0,0:2:4/m..;c:1/2,1/2,1/4:2:422;d:1/2,1/2,0:2:4/m..;e:0,1/2,0:4:2/m..;f:0,1/2,1/4:4:222 .;g:0,0,z:4:4..;"
+		WyckoffSyms[400] += "h:1/2,1/2,z:4:4..;i:0,1/2,z:8:2..;j:x,x,1/4:8:..2;k:x,0,1/4:8:.2.;l:x,1/2,1/4:8:.2.;m:x,y,0:8:m..;n:x,y,z:16:1;"
+		WyckoffSyms[401]  = "a:1/4,1/4,0:2:422;b:1/4,1/4,1/2:2:422;c:3/4,1/4,0:2:-42m;d:3/4,1/4,1/2:2:-42m;e:0,0,0:4:..2/m;f:0,0,1/2:4:..2/m;g:1/4,1/4,z:4:4..;"
+		WyckoffSyms[401] += "h:3/4,1/4,z:4:2.m m;i:x,x,0:8:..2;j:x,x,1/2:8:..2;k:x,1/4,0:8:.2.;l:x,1/4,1/2:8:.2.;m:x,-x,z:8:..m;n:x,y,z:16:1;"
+		WyckoffSyms[402]  = "a:1/4,1/4,0:2:422;b:1/4,1/4,1/2:2:422;c:3/4,1/4,0:2:-42m;d:3/4,1/4,1/2:2:-42m;e:0,0,0:4:..2/m;f:0,0,1/2:4:..2/m;g:1/4,1/4,z:4:4..;"
+		WyckoffSyms[402] += "h:3/4,1/4,z:4:2.m m;i:x,x,0:8:..2;j:x,x,1/2:8:..2;k:x,1/4,0:8:.2.;l:x,1/4,1/2:8:.2.;m:x,-x,z:8:..m;n:x,y,z:16:1;"
+		WyckoffSyms[403]  = "a:1/4,1/4,1/4:2:422;b:1/4,1/4,3/4:2:422;c:1/4,3/4,3/4:4:222 .;d:1/4,3/4,0:4:-4..;e:1/4,1/4,z:4:4..;f:0,0,0:8:-1;g:1/4,3/4,z:8:2..;"
+		WyckoffSyms[403] += "h:x,x,1/4:8:..2;i:x,1/4,1/4:8:.2.;j:x,3/4,1/4:8:.2.;k:x,y,z:16:1;"
+		WyckoffSyms[404]  = "a:1/4,1/4,1/4:2:422;b:1/4,1/4,3/4:2:422;c:1/4,3/4,3/4:4:222 .;d:1/4,3/4,0:4:-4..;e:1/4,1/4,z:4:4..;f:0,0,0:8:-1;g:1/4,3/4,z:8:2..;"
+		WyckoffSyms[404] += "h:x,x,1/4:8:..2;i:x,1/4,1/4:8:.2.;j:x,3/4,1/4:8:.2.;k:x,y,z:16:1;"
+		WyckoffSyms[405]  = "a:0,0,0:2:4/m..;b:0,0,1/2:2:4/m..;c:0,1/2,1/2:2:m.m m;d:0,1/2,0:2:m.m m;e:0,0,z:4:4..;f:0,1/2,z:4:2.m m;g:x,x+1/2,0:4:m.2 m;"
+		WyckoffSyms[405] += "h:x,x+1/2,1/2:4:m.2 m;i:x,y,0:8:m..;j:x,y,1/2:8:m..;k:x,x+1/2,z:8:..m;l:x,y,z:16:1;"
+		WyckoffSyms[406]  = "a:0,0,0:2:4/m..;b:0,0,1/2:2:4/m..;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:2.2 2;e:0,0,z:4:4..;f:0,1/2,z:8:2..;g:x,x+1/2,1/4:8:..2;"
+		WyckoffSyms[406] += "h:x,y,0:8:m..;i:x,y,z:16:1;"
+		WyckoffSyms[407]  = "a:3/4,1/4,0:2:-4m2;b:3/4,1/4,1/2:2:-4m2;c:1/4,1/4,z:2:4mm;d:0,0,0:4:..2/m;e:0,0,1/2:4:..2/m;f:3/4,1/4,z:4:2mm .;g:x,-x,0:8:..2;"
+		WyckoffSyms[407] += "h:x,-x,1/2:8:..2;i:1/4,y,z:8:.m.;j:x,x,z:8:..m;k:x,y,z:16:1;"
+		WyckoffSyms[408]  = "a:3/4,1/4,0:2:-4m2;b:3/4,1/4,1/2:2:-4m2;c:1/4,1/4,z:2:4mm;d:0,0,0:4:..2/m;e:0,0,1/2:4:..2/m;f:3/4,1/4,z:4:2mm .;g:x,-x,0:8:..2;"
+		WyckoffSyms[408] += "h:x,-x,1/2:8:..2;i:1/4,y,z:8:.m.;j:x,x,z:8:..m;k:x,y,z:16:1;"
+		WyckoffSyms[409]  = "a:3/4,1/4,1/4:4:2.2 2;b:3/4,1/4,0:4:-4..;c:1/4,1/4,z:4:4..;d:0,0,0:8:-1;e:3/4,1/4,z:8:2..;f:x,-x,1/4:8:..2;g:x,y,z:16:1;"
+		WyckoffSyms[410]  = "a:3/4,1/4,1/4:4:2.2 2;b:3/4,1/4,0:4:-4..;c:1/4,1/4,z:4:4..;d:0,0,0:8:-1;e:3/4,1/4,z:8:2..;f:x,-x,1/4:8:..2;g:x,y,z:16:1;"
+		WyckoffSyms[411]  = "a:0,0,0:2:mmm .;b:1/2,1/2,0:2:mmm .;c:0,1/2,0:2:mmm .;d:0,1/2,1/2:2:mmm .;e:0,0,1/4:2:-4m2;f:1/2,1/2,1/4:2:-4m2;g:0,0,z:4:2mm .;"
+		WyckoffSyms[411] += "h:1/2,1/2,z:4:2mm .;i:0,1/2,z:4:2mm .;j:x,0,0:4:m2m .;k:x,1/2,1/2:4:m2m .;l:x,0,1/2:4:m2m .;m:x,1/2,0:4:m2m .;n:x,x,1/4:8:..2;"
+		WyckoffSyms[411] += "o:0,y,z:8:.m.;p:1/2,y,z:8:.m.;q:x,y,0:8:m..;r:x,y,z:16:1;"
+		WyckoffSyms[412]  = "a:0,0,0:2:m.m m;b:0,0,1/4:2:-42m;c:1/2,1/2,0:2:m.m m;d:1/2,1/2,1/4:2:-42m;e:0,1/2,1/4:4:222 .;f:0,1/2,0:4:2/m..;g:0,0,z:4:2.m m;"
+		WyckoffSyms[412] += "h:1/2,1/2,z:4:2.m m;i:x,x,0:4:m.2 m;j:x,x,1/2:4:m.2 m;k:0,1/2,z:8:2..;l:x,0,1/4:8:.2.;m:x,1/2,1/4:8:.2.;n:x,y,0:8:m..;"
+		WyckoffSyms[412] += "o:x,x,z:8:..m;p:x,y,z:16:1;"
+		WyckoffSyms[413]  = "a:1/4,1/4,0:4:222 .;b:3/4,1/4,0:4:222 .;c:1/4,1/4,1/4:4:2.2 2;d:3/4,1/4,3/4:4:-4..;e:0,0,0:8:-1;f:1/4,1/4,z:8:2..;"
+		WyckoffSyms[413] += "g:3/4,1/4,z:8:2..;h:x,1/4,0:8:.2.;i:x,1/4,1/2:8:.2.;j:x,x,1/4:8:..2;k:x,y,z:16:1;"
+		WyckoffSyms[414]  = "a:1/4,1/4,0:4:222 .;b:3/4,1/4,0:4:222 .;c:1/4,1/4,1/4:4:2.2 2;d:3/4,1/4,3/4:4:-4..;e:0,0,0:8:-1;f:1/4,1/4,z:8:2..;"
+		WyckoffSyms[414] += "g:3/4,1/4,z:8:2..;h:x,1/4,0:8:.2.;i:x,1/4,1/2:8:.2.;j:x,x,1/4:8:..2;k:x,y,z:16:1;"
+		WyckoffSyms[415]  = "a:1/4,3/4,1/4:2:-42m;b:3/4,1/4,1/4:2:-42m;c:1/4,1/4,1/4:4:222 .;d:1/4,1/4,0:4:2.2 2;e:0,0,1/2:4:..2/m;f:0,0,0:4:..2/m;"
+		WyckoffSyms[415] += "g:3/4,1/4,z:4:2.m m;h:1/4,1/4,z:8:2..;i:x,1/4,3/4:8:.2.;j:x,1/4,1/4:8:.2.;k:x,x,0:8:..2;l:x,x,1/2:8:..2;m:x,-x,z:8:..m;"
+		WyckoffSyms[415] += "n:x,y,z:16:1;"
+		WyckoffSyms[416]  = "a:1/4,3/4,1/4:2:-42m;b:3/4,1/4,1/4:2:-42m;c:1/4,1/4,1/4:4:222 .;d:1/4,1/4,0:4:2.2 2;e:0,0,1/2:4:..2/m;f:0,0,0:4:..2/m;"
+		WyckoffSyms[416] += "g:3/4,1/4,z:4:2.m m;h:1/4,1/4,z:8:2..;i:x,1/4,3/4:8:.2.;j:x,1/4,1/4:8:.2.;k:x,x,0:8:..2;l:x,x,1/2:8:..2;m:x,-x,z:8:..m;"
+		WyckoffSyms[416] += "n:x,y,z:16:1;"
+		WyckoffSyms[417]  = "a:0,0,0:4:2/m..;b:0,0,1/4:4:-4..;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:2.2 2;e:0,0,z:8:2..;f:0,1/2,z:8:2..;g:x,x+1/2,1/4:8:..2;"
+		WyckoffSyms[417] += "h:x,y,0:8:m..;i:x,y,z:16:1;"
+		WyckoffSyms[418]  = "a:0,0,0:2:m.m m;b:0,0,1/2:2:m.m m;c:0,1/2,0:4:2/m..;d:0,1/2,1/4:4:-4..;e:0,0,z:4:2.m m;f:x,x,0:4:m.2 m;g:x,-x,0:4:m.2 m;"
+		WyckoffSyms[418] += "h:0,1/2,z:8:2..;i:x,y,0:8:m..;j:x,x,z:8:..m;k:x,y,z:16:1;"
+		WyckoffSyms[419]  = "a:3/4,1/4,3/4:2:-4m2;b:3/4,1/4,1/4:2:-4m2;c:3/4,1/4,z:4:2mm .;d:1/4,1/4,z:4:2mm .;e:0,0,0:8:-1;f:x,-x,1/4:8:..2;g:1/4,y,z:8:.m.;"
+		WyckoffSyms[419] += "h:x,y,z:16:1;"
+		WyckoffSyms[420]  = "a:3/4,1/4,3/4:2:-4m2;b:3/4,1/4,1/4:2:-4m2;c:3/4,1/4,z:4:2mm .;d:1/4,1/4,z:4:2mm .;e:0,0,0:8:-1;f:x,-x,1/4:8:..2;g:1/4,y,z:8:.m.;"
+		WyckoffSyms[420] += "h:x,y,z:16:1;"
+		WyckoffSyms[421]  = "a:3/4,1/4,0:4:2.2 2;b:3/4,1/4,3/4:4:-4..;c:0,0,1/2:4:..2/m;d:0,0,0:4:..2/m;e:1/4,1/4,z:4:2.m m;f:3/4,1/4,z:8:2..;g:x,-x,1/2:8:..2;"
+		WyckoffSyms[421] += "h:x,-x,0:8:..2;i:x,x,z:8:..m;j:x,y,z:16:1;"
+		WyckoffSyms[422]  = "a:3/4,1/4,0:4:2.2 2;b:3/4,1/4,3/4:4:-4..;c:0,0,1/2:4:..2/m;d:0,0,0:4:..2/m;e:1/4,1/4,z:4:2.m m;f:3/4,1/4,z:8:2..;g:x,-x,1/2:8:..2;"
+		WyckoffSyms[422] += "h:x,-x,0:8:..2;i:x,x,z:8:..m;j:x,y,z:16:1;"
+		WyckoffSyms[423]  = "a:0,0,0:2:4/mmm;b:0,0,1/2:2:4/mmm;c:0,1/2,0:4:mmm .;d:0,1/2,1/4:4:-4m2;e:0,0,z:4:4mm;f:1/4,1/4,1/4:8:..2/m;g:0,1/2,z:8:2mm .;"
+		WyckoffSyms[423] += "h:x,x,0:8:m.2 m;i:x,0,0:8:m2m .;j:x,1/2,0:8:m2m .;k:x,x+1/2,1/4:16:..2;l:x,y,0:16:m..;m:x,x,z:16:..m;n:0,y,z:16:.m.;o:x,y,z:32:1;"
+		WyckoffSyms[424]  = "a:0,0,1/4:4:422;b:0,1/2,1/4:4:-42m;c:0,0,0:4:4/m..;d:0,1/2,0:4:m.m m;e:1/4,1/4,1/4:8:..2/m;f:0,0,z:8:4..;g:0,1/2,z:8:2.m m;"
+		WyckoffSyms[424] += "h:x,x+1/2,0:8:m.2 m;i:x,x,1/4:16:..2;j:x,0,1/4:16:.2.;k:x,y,0:16:m..;l:x,x+1/2,z:16:..m;m:x,y,z:32:1;"
+		WyckoffSyms[425]  = "a:0,3/4,1/8:4:-4m2;b:0,1/4,3/8:4:-4m2;c:0,0,0:8:.2/m.;d:0,0,1/2:8:.2/m.;e:0,1/4,z:8:2mm .;f:x,0,0:16:.2.;g:x,x+1/4,7/8:16:..2;"
+		WyckoffSyms[425] += "h:0,y,z:16:.m.;i:x,y,z:32:1;"
+		WyckoffSyms[426]  = "a:0,3/4,1/8:4:-4m2;b:0,1/4,3/8:4:-4m2;c:0,0,0:8:.2/m.;d:0,0,1/2:8:.2/m.;e:0,1/4,z:8:2mm .;f:x,0,0:16:.2.;g:x,x+1/4,7/8:16:..2;"
+		WyckoffSyms[426] += "h:0,y,z:16:.m.;i:x,y,z:32:1;"
+		WyckoffSyms[427]  = "a:0,1/4,3/8:8:-4..;b:0,1/4,1/8:8:2.2 2;c:0,0,0:16:-1;d:0,1/4,z:16:2..;e:x,0,1/4:16:.2.;f:x,x+1/4,1/8:16:..2;g:x,y,z:32:1;"
+		WyckoffSyms[428]  = "a:0,1/4,3/8:8:-4..;b:0,1/4,1/8:8:2.2 2;c:0,0,0:16:-1;d:0,1/4,z:16:2..;e:x,0,1/4:16:.2.;f:x,x+1/4,1/8:16:..2;g:x,y,z:32:1;"
+		// Trigonal SG[143,167]  SG_idNum [430,461]   (32 idNums)
+		WyckoffSyms[429]  = "a:0,0,z:1:3..;b:1/3,2/3,z:1:3..;c:2/3,1/3,z:1:3..;d:x,y,z:3:1;"
+		WyckoffSyms[430]  = "a:x,y,z:3:1;"
+		WyckoffSyms[431]  = "a:x,y,z:3:1;"
+		WyckoffSyms[432]  = "a:0,0,z:3:3.;b:x,y,z:9:1;"
+		WyckoffSyms[433]  = "a:z,z,z:1:3.;b:x+z,-x+y+z,-y+z:3:1;"
+		WyckoffSyms[434]  = "a:0,0,0:1:-3..;b:0,0,1/2:1:-3..;c:0,0,z:2:3..;d:1/3,2/3,z:2:3..;e:1/2,0,0:3:-1;f:1/2,0,1/2:3:-1;g:x,y,z:6:1;"
+		WyckoffSyms[435]  = "a:0,0,0:3:-3.;b:0,0,1/2:3:-3.;c:0,0,z:6:3.;d:1/2,0,1/2:9:-1;e:1/2,0,0:9:-1;f:x,y,z:18:1;"
+		WyckoffSyms[436]  = "a:0,0,0:1:-3.;b:1/2,1/2,1/2:1:-3.;c:z,z,z:2:3.;d:1,0,1/2:3:-1;e:1/2,1/2,0:3:-1;f:x+z,-x+y+z,-y+z:6:1;"
+		WyckoffSyms[437]  = "a:0,0,0:1:3.2;b:0,0,1/2:1:3.2;c:1/3,2/3,0:1:3.2;d:1/3,2/3,1/2:1:3.2;e:2/3,1/3,0:1:3.2;f:2/3,1/3,1/2:1:3.2;g:0,0,z:2:3..;"
+		WyckoffSyms[437] += "h:1/3,2/3,z:2:3..;i:2/3,1/3,z:2:3..;j:x,-x,0:3:..2;k:x,-x,1/2:3:..2;l:x,y,z:6:1;"
+		WyckoffSyms[438]  = "a:0,0,0:1:32.;b:0,0,1/2:1:32.;c:0,0,z:2:3..;d:1/3,2/3,z:2:3..;e:x,0,0:3:.2.;f:x,0,1/2:3:.2.;g:x,y,z:6:1;"
+		WyckoffSyms[439]  = "a:x,-x,1/3:3:..2;b:x,-x,5/6:3:..2;c:x,y,z:6:1;"
+		WyckoffSyms[440]  = "a:x,0,1/3:3:.2.;b:x,0,5/6:3:.2.;c:x,y,z:6:1;"
+		WyckoffSyms[441]  = "a:x,-x,2/3:3:..2;b:x,-x,1/6:3:..2;c:x,y,z:6:1;"
+		WyckoffSyms[442]  = "a:x,0,2/3:3:.2.;b:x,0,1/6:3:.2.;c:x,y,z:6:1;"
+		WyckoffSyms[443]  = "a:0,0,0:3:32;b:0,0,1/2:3:32;c:0,0,z:6:3.;d:x,0,0:9:.2;e:x,0,1/2:9:.2;f:x,y,z:18:1;"
+		WyckoffSyms[444]  = "a:0,0,0:1:32;b:1/2,1/2,1/2:1:32;c:z,z,z:2:3.;d:x,-x,0:3:.2;e:x+1/2,-x+1/2,1/2:3:.2;f:x+z,-x+y+z,-y+z:6:1;"
+		WyckoffSyms[445]  = "a:0,0,z:1:3m.;b:1/3,2/3,z:1:3m.;c:2/3,1/3,z:1:3m.;d:x,-x,z:3:.m.;e:x,y,z:6:1;"
+		WyckoffSyms[446]  = "a:0,0,z:1:3.m;b:1/3,2/3,z:2:3..;c:x,0,z:3:..m;d:x,y,z:6:1;"
+		WyckoffSyms[447]  = "a:0,0,z:2:3..;b:1/3,2/3,z:2:3..;c:2/3,1/3,z:2:3..;d:x,y,z:6:1;"
+		WyckoffSyms[448]  = "a:0,0,z:2:3..;b:1/3,2/3,z:2:3..;c:x,y,z:6:1;"
+		WyckoffSyms[449]  = "a:0,0,z:3:3m;b:x,-x,z:9:.m;c:x,y,z:18:1;"
+		WyckoffSyms[450]  = "a:z,z,z:1:3m;b:x+z,-x*2+z,x+z:3:.m;c:x+z,-x+y+z,-y+z:6:1;"
+		WyckoffSyms[451]  = "a:0,0,z:6:3.;b:x,y,z:18:1;"
+		WyckoffSyms[452]  = "a:z,z,z:2:3.;b:x+z,-x+y+z,-y+z:6:1;"
+		WyckoffSyms[453]  = "a:0,0,0:1:-3.m;b:0,0,1/2:1:-3.m;c:1/3,2/3,0:2:3.2;d:1/3,2/3,1/2:2:3.2;e:0,0,z:2:3.m;f:1/2,0,0:3:..2/m;g:1/2,0,1/2:3:..2/m;"
+		WyckoffSyms[453] += "h:1/3,2/3,z:4:3..;i:x,-x,0:6:..2;j:x,-x,1/2:6:..2;k:x,0,z:6:..m;l:x,y,z:12:1;"
+		WyckoffSyms[454]  = "a:0,0,1/4:2:3.2;b:0,0,0:2:-3..;c:1/3,2/3,1/4:2:3.2;d:2/3,1/3,1/4:2:3.2;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:1/2,0,0:6:-1;"
+		WyckoffSyms[454] += "h:x,-x,1/4:6:..2;i:x,y,z:12:1;"
+		WyckoffSyms[455]  = "a:0,0,0:1:-3m.;b:0,0,1/2:1:-3m.;c:0,0,z:2:3m.;d:1/3,2/3,z:2:3m.;e:1/2,0,0:3:.2/m.;f:1/2,0,1/2:3:.2/m.;g:x,0,0:6:.2.;"
+		WyckoffSyms[455] += "h:x,0,1/2:6:.2.;i:x,-x,z:6:.m.;j:x,y,z:12:1;"
+		WyckoffSyms[456]  = "a:0,0,1/4:2:32.;b:0,0,0:2:-3..;c:0,0,z:4:3..;d:1/3,2/3,z:4:3..;e:1/2,0,0:6:-1;f:x,0,1/4:6:.2.;g:x,y,z:12:1;"
+		WyckoffSyms[457]  = "a:0,0,0:3:-3m;b:0,0,1/2:3:-3m;c:0,0,z:6:3m;d:1/2,0,1/2:9:.2/m;e:1/2,0,0:9:.2/m;f:x,0,0:18:.2;g:x,0,1/2:18:.2;h:x,-x,z:18:.m;"
+		WyckoffSyms[457] += "i:x,y,z:36:1;"
+		WyckoffSyms[458]  = "a:0,0,0:1:-3m;b:1/2,1/2,1/2:1:-3m;c:z,z,z:2:3m;d:1,0,1/2:3:.2/m;e:1/2,1/2,0:3:.2/m;f:x,-x,0:6:.2;g:x+1/2,-x+1/2,1/2:6:.2;"
+		WyckoffSyms[458] += "h:x+z,-x*2+z,x+z:6:.m;i:x+z,-x+y+z,-y+z:12:1;"
+		WyckoffSyms[459]  = "a:0,0,1/4:6:32;b:0,0,0:6:-3.;c:0,0,z:12:3.;d:1/2,0,0:18:-1;e:x,0,1/4:18:.2;f:x,y,z:36:1;"
+		WyckoffSyms[460]  = "a:1/4,1/4,1/4:2:32;b:0,0,0:2:-3.;c:z,z,z:4:3.;d:1/2,1/2,0:6:-1;e:x+1/4,-x+1/4,1/4:6:.2;f:x+z,-x+y+z,-y+z:12:1;"
+		// Hexagonal SG[168,194]  SG_idNum [462,488]   (25 idNums)
+		WyckoffSyms[461]  = "a:0,0,z:1:6..;b:1/3,2/3,z:2:3..;c:1/2,0,z:3:2..;d:x,y,z:6:1;"
+		WyckoffSyms[462]  = "a:x,y,z:6:1;"
+		WyckoffSyms[463]  = "a:x,y,z:6:1;"
+		WyckoffSyms[464]  = "a:0,0,z:3:2..;b:1/2,1/2,z:3:2..;c:x,y,z:6:1;"
+		WyckoffSyms[465]  = "a:0,0,z:3:2..;b:1/2,1/2,z:3:2..;c:x,y,z:6:1;"
+		WyckoffSyms[466]  = "a:0,0,z:2:3..;b:1/3,2/3,z:2:3..;c:x,y,z:6:1;"
+		WyckoffSyms[467]  = "a:0,0,0:1:-6..;b:0,0,1/2:1:-6..;c:1/3,2/3,0:1:-6..;d:1/3,2/3,1/2:1:-6..;e:2/3,1/3,0:1:-6..;f:2/3,1/3,1/2:1:-6..;g:0,0,z:2:3..;"
+		WyckoffSyms[467] += "h:1/3,2/3,z:2:3..;i:2/3,1/3,z:2:3..;j:x,y,0:3:m..;k:x,y,1/2:3:m..;l:x,y,z:6:1;"
+		WyckoffSyms[468]  = "a:0,0,0:1:6/m..;b:0,0,1/2:1:6/m..;c:1/3,2/3,0:2:-6..;d:1/3,2/3,1/2:2:-6..;e:0,0,z:2:6..;f:1/2,0,0:3:2/m..;g:1/2,0,1/2:3:2/m..;"
+		WyckoffSyms[468] += "h:1/3,2/3,z:4:3..;i:1/2,0,z:6:2..;j:x,y,0:6:m..;k:x,y,1/2:6:m..;l:x,y,z:12:1;"
+		WyckoffSyms[469]  = "a:0,0,1/4:2:-6..;b:0,0,0:2:-3..;c:1/3,2/3,1/4:2:-6..;d:2/3,1/3,1/4:2:-6..;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:1/2,0,0:6:-1;"
+		WyckoffSyms[469] += "h:x,y,1/4:6:m..;i:x,y,z:12:1;"
+		WyckoffSyms[470]  = "a:0,0,0:1:622;b:0,0,1/2:1:622;c:1/3,2/3,0:2:3.2;d:1/3,2/3,1/2:2:3.2;e:0,0,z:2:6..;f:1/2,0,0:3:222;g:1/2,0,1/2:3:222;"
+		WyckoffSyms[470] += "h:1/3,2/3,z:4:3..;i:1/2,0,z:6:2..;j:x,0,0:6:.2.;k:x,0,1/2:6:.2.;l:x,-x,0:6:..2;m:x,-x,1/2:6:..2;n:x,y,z:12:1;"
+		WyckoffSyms[471]  = "a:x,0,0:6:.2.;b:x,x*2,1/4:6:..2;c:x,y,z:12:1;"
+		WyckoffSyms[472]  = "a:x,0,0:6:.2.;b:x,x*2,3/4:6:..2;c:x,y,z:12:1;"
+		WyckoffSyms[473]  = "a:0,0,0:3:222;b:0,0,1/2:3:222;c:1/2,0,0:3:222;d:1/2,0,1/2:3:222;e:0,0,z:6:2..;f:1/2,0,z:6:2..;g:x,0,0:6:.2.;h:x,0,1/2:6:.2.;"
+		WyckoffSyms[473] += "i:x,x*2,0:6:..2;j:x,x*2,1/2:6:..2;k:x,y,z:12:1;"
+		WyckoffSyms[474]  = "a:0,0,0:3:222;b:0,0,1/2:3:222;c:1/2,0,0:3:222;d:1/2,0,1/2:3:222;e:0,0,z:6:2..;f:1/2,0,z:6:2..;g:x,0,0:6:.2.;h:x,0,1/2:6:.2.;"
+		WyckoffSyms[474] += "i:x,x*2,0:6:..2;j:x,x*2,1/2:6:..2;k:x,y,z:12:1;"
+		WyckoffSyms[475]  = "a:0,0,0:2:32.;b:0,0,1/4:2:3.2;c:1/3,2/3,1/4:2:3.2;d:1/3,2/3,3/4:2:3.2;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:x,0,0:6:.2.;"
+		WyckoffSyms[475] += "h:x,x*2,1/4:6:..2;i:x,y,z:12:1;"
+		WyckoffSyms[476]  = "a:0,0,z:1:6mm;b:1/3,2/3,z:2:3m.;c:1/2,0,z:3:2mm;d:x,0,z:6:..m;e:x,-x,z:6:.m.;f:x,y,z:12:1;"
+		WyckoffSyms[477]  = "a:0,0,z:2:6..;b:1/3,2/3,z:4:3..;c:1/2,0,z:6:2..;d:x,y,z:12:1;"
+		WyckoffSyms[478]  = "a:0,0,z:2:3.m;b:1/3,2/3,z:4:3..;c:x,0,z:6:..m;d:x,y,z:12:1;"
+		WyckoffSyms[479]  = "a:0,0,z:2:3m.;b:1/3,2/3,z:2:3m.;c:x,-x,z:6:.m.;d:x,y,z:12:1;"
+		WyckoffSyms[480]  = "a:0,0,0:1:-6m2;b:0,0,1/2:1:-6m2;c:1/3,2/3,0:1:-6m2;d:1/3,2/3,1/2:1:-6m2;e:2/3,1/3,0:1:-6m2;f:2/3,1/3,1/2:1:-6m2;g:0,0,z:2:3m.;"
+		WyckoffSyms[480] += "h:1/3,2/3,z:2:3m.;i:2/3,1/3,z:2:3m.;j:x,-x,0:3:mm2;k:x,-x,1/2:3:mm2;l:x,y,0:6:m..;m:x,y,1/2:6:m..;n:x,-x,z:6:.m.;o:x,y,z:12:1;"
+		WyckoffSyms[481]  = "a:0,0,0:2:3.2;b:0,0,1/4:2:-6..;c:1/3,2/3,0:2:3.2;d:1/3,2/3,1/4:2:-6..;e:2/3,1/3,0:2:3.2;f:2/3,1/3,1/4:2:-6..;g:0,0,z:4:3..;"
+		WyckoffSyms[481] += "h:1/3,2/3,z:4:3..;i:2/3,1/3,z:4:3..;j:x,-x,0:6:..2;k:x,y,1/4:6:m..;l:x,y,z:12:1;"
+		WyckoffSyms[482]  = "a:0,0,0:1:-62m;b:0,0,1/2:1:-62m;c:1/3,2/3,0:2:-6..;d:1/3,2/3,1/2:2:-6..;e:0,0,z:2:3.m;f:x,0,0:3:m2m;g:x,0,1/2:3:m2m;"
+		WyckoffSyms[482] += "h:1/3,2/3,z:4:3..;i:x,0,z:6:..m;j:x,y,0:6:m..;k:x,y,1/2:6:m..;l:x,y,z:12:1;"
+		WyckoffSyms[483]  = "a:0,0,0:2:32.;b:0,0,1/4:2:-6..;c:1/3,2/3,1/4:2:-6..;d:2/3,1/3,1/4:2:-6..;e:0,0,z:4:3..;f:1/3,2/3,z:4:3..;g:x,0,0:6:.2.;"
+		WyckoffSyms[483] += "h:x,y,1/4:6:m..;i:x,y,z:12:1;"
+		WyckoffSyms[484]  = "a:0,0,0:1:6/mmm;b:0,0,1/2:1:6/mmm;c:1/3,2/3,0:2:-6m2;d:1/3,2/3,1/2:2:-6m2;e:0,0,z:2:6mm;f:1/2,0,0:3:mmm;g:1/2,0,1/2:3:mmm;"
+		WyckoffSyms[484] += "h:1/3,2/3,z:4:3m.;i:1/2,0,z:6:2mm;j:x,0,0:6:m2m;k:x,0,1/2:6:m2m;l:x,x*2,0:6:mm2;m:x,x*2,1/2:6:mm2;n:x,0,z:12:..m;o:x,x*2,z:12:.m.;"
+		WyckoffSyms[484] += "p:x,y,0:12:m..;q:x,y,1/2:12:m..;r:x,y,z:24:1;"
+		WyckoffSyms[485]  = "a:0,0,1/4:2:622;b:0,0,0:2:6/m..;c:1/3,2/3,1/4:4:3.2;d:1/3,2/3,0:4:-6..;e:0,0,z:4:6..;f:1/2,0,1/4:6:222;g:1/2,0,0:6:2/m..;"
+		WyckoffSyms[485] += "h:1/3,2/3,z:8:3..;i:1/2,0,z:12:2..;j:x,0,1/4:12:.2.;k:x,x*2,1/4:12:..2;l:x,y,0:12:m..;m:x,y,z:24:1;"
+		WyckoffSyms[486]  = "a:0,0,1/4:2:-62m;b:0,0,0:2:-3.m;c:1/3,2/3,1/4:4:-6..;d:1/3,2/3,0:4:3.2;e:0,0,z:4:3.m;f:1/2,0,0:6:..2/m;g:x,0,1/4:6:m2m;"
+		WyckoffSyms[486] += "h:1/3,2/3,z:8:3..;i:x,x*2,0:12:..2;j:x,y,1/4:12:m..;k:x,0,z:12:..m;l:x,y,z:24:1;"
+		WyckoffSyms[487]  = "a:0,0,0:2:-3m.;b:0,0,1/4:2:-6m2;c:1/3,2/3,1/4:2:-6m2;d:1/3,2/3,3/4:2:-6m2;e:0,0,z:4:3m.;f:1/3,2/3,z:4:3m.;g:1/2,0,0:6:.2/m.;"
+		WyckoffSyms[487] += "h:x,x*2,1/4:6:mm2;i:x,0,0:12:.2.;j:x,y,1/4:12:m..;k:x,x*2,z:12:.m.;l:x,y,z:24:1;"
+		// Cubic SG[195,230]  SG_idNum [489,530]   (42 idNums)
+		WyckoffSyms[488]  = "a:0,0,0:1:23.;b:1/2,1/2,1/2:1:23.;c:0,1/2,1/2:3:222 . .;d:1/2,0,0:3:222 . .;e:x,x,x:4:.3.;f:x,0,0:6:2..;g:x,0,1/2:6:2..;"
+		WyckoffSyms[488] += "h:x,1/2,0:6:2..;i:x,1/2,1/2:6:2..;j:x,y,z:12:1;"
+		WyckoffSyms[489]  = "a:0,0,0:4:23.;b:1/2,1/2,1/2:4:23.;c:1/4,1/4,1/4:4:23.;d:3/4,3/4,3/4:4:23.;e:x,x,x:16:.3.;f:x,0,0:24:2..;g:x,1/4,1/4:24:2..;"
+		WyckoffSyms[489] += "h:x,y,z:48:1;"
+		WyckoffSyms[490]  = "a:0,0,0:2:23.;b:0,1/2,1/2:6:222 . .;c:x,x,x:8:.3.;d:x,0,0:12:2..;e:x,1/2,0:12:2..;f:x,y,z:24:1;"
+		WyckoffSyms[491]  = "a:x,x,x:4:.3.;b:x,y,z:12:1;"
+		WyckoffSyms[492]  = "a:x,x,x:8:.3.;b:x,0,1/4:12:2..;c:x,y,z:24:1;"
+		WyckoffSyms[493]  = "a:0,0,0:1:m-3.;b:1/2,1/2,1/2:1:m-3.;c:0,1/2,1/2:3:mmm . .;d:1/2,0,0:3:mmm . .;e:x,0,0:6:mm2 . .;f:x,0,1/2:6:mm2 . .;"
+		WyckoffSyms[493] += "g:x,1/2,0:6:mm2 . .;h:x,1/2,1/2:6:mm2 . .;i:x,x,x:8:.3.;j:0,y,z:12:m..;k:1/2,y,z:12:m..;l:x,y,z:24:1;"
+		WyckoffSyms[494]  = "a:1/4,1/4,1/4:2:23.;b:0,0,0:4:.-3.;c:1/2,1/2,1/2:4:.-3.;d:1/4,3/4,3/4:6:222 . .;e:x,x,x:8:.3.;f:x,1/4,1/4:12:2..;"
+		WyckoffSyms[494] += "g:x,3/4,1/4:12:2..;h:x,y,z:24:1;"
+		WyckoffSyms[495]  = "a:1/4,1/4,1/4:2:23.;b:0,0,0:4:.-3.;c:1/2,1/2,1/2:4:.-3.;d:1/4,3/4,3/4:6:222 . .;e:x,x,x:8:.3.;f:x,1/4,1/4:12:2..;"
+		WyckoffSyms[495] += "g:x,3/4,1/4:12:2..;h:x,y,z:24:1;"
+		WyckoffSyms[496]  = "a:0,0,0:4:m-3.;b:1/2,1/2,1/2:4:m-3.;c:1/4,1/4,1/4:8:23.;d:0,1/4,1/4:24:2/m..;e:x,0,0:24:mm2 . .;f:x,x,x:32:.3.;g:x,1/4,1/4:48:2..;"
+		WyckoffSyms[496] += "h:0,y,z:48:m..;i:x,y,z:96:1;"
+		WyckoffSyms[497]  = "a:1/8,1/8,1/8:8:23.;b:5/8,5/8,5/8:8:23.;c:0,0,0:16:.-3.;d:1/2,1/2,1/2:16:.-3.;e:x,x,x:32:.3.;f:x,1/8,1/8:48:2..;g:x,y,z:96:1;"
+		WyckoffSyms[498]  = "a:1/8,1/8,1/8:8:23.;b:5/8,5/8,5/8:8:23.;c:0,0,0:16:.-3.;d:1/2,1/2,1/2:16:.-3.;e:x,x,x:32:.3.;f:x,1/8,1/8:48:2..;g:x,y,z:96:1;"
+		WyckoffSyms[499]  = "a:0,0,0:2:m-3.;b:0,1/2,1/2:6:mmm . .;c:1/4,1/4,1/4:8:.-3.;d:x,0,0:12:mm2 . .;e:x,0,1/2:12:mm2 . .;f:x,x,x:16:.3.;g:0,y,z:24:m..;"
+		WyckoffSyms[499] += "h:x,y,z:48:1;"
+		WyckoffSyms[500]  = "a:0,0,0:4:.-3.;b:1/2,1/2,1/2:4:.-3.;c:x,x,x:8:.3.;d:x,y,z:24:1;"
+		WyckoffSyms[501]  = "a:0,0,0:8:.-3.;b:1/4,1/4,1/4:8:.-3.;c:x,x,x:16:.3.;d:x,0,1/4:24:2..;e:x,y,z:48:1;"
+		WyckoffSyms[502]  = "a:0,0,0:1:432;b:1/2,1/2,1/2:1:432;c:0,1/2,1/2:3:42. 2;d:1/2,0,0:3:42. 2;e:x,0,0:6:4..;f:x,1/2,1/2:6:4..;g:x,x,x:8:.3.;"
+		WyckoffSyms[502] += "h:x,1/2,0:12:2..;i:0,y,y:12:..2;j:1/2,y,y:12:..2;k:x,y,z:24:1;"
+		WyckoffSyms[503]  = "a:0,0,0:2:23.;b:1/4,1/4,1/4:4:.32;c:3/4,3/4,3/4:4:.32;d:0,1/2,1/2:6:222 . .;e:1/4,0,1/2:6:2.2 2;f:1/4,1/2,0:6:2.2 2;g:x,x,x:8:.3.;"
+		WyckoffSyms[503] += "h:x,0,0:12:2..;i:x,0,1/2:12:2..;j:x,1/2,0:12:2..;k:1/4,y,-y+1/2:12:..2;l:1/4,y,y+1/2:12:..2;m:x,y,z:24:1;"
+		WyckoffSyms[504]  = "a:0,0,0:4:432;b:1/2,1/2,1/2:4:432;c:1/4,1/4,1/4:8:23.;d:0,1/4,1/4:24:2.2 2;e:x,0,0:24:4..;f:x,x,x:32:.3.;g:0,y,y:48:..2;"
+		WyckoffSyms[504] += "h:1/2,y,y:48:..2;i:x,1/4,1/4:48:2..;j:x,y,z:96:1;"
+		WyckoffSyms[505]  = "a:0,0,0:8:23.;b:1/2,1/2,1/2:8:23.;c:1/8,1/8,1/8:16:.32;d:5/8,5/8,5/8:16:.32;e:x,x,x:32:.3.;f:x,0,0:48:2..;g:1/8,y,-y+1/4:48:..2;"
+		WyckoffSyms[505] += "h:x,y,z:96:1;"
+		WyckoffSyms[506]  = "a:0,0,0:2:432;b:0,1/2,1/2:6:42. 2;c:1/4,1/4,1/4:8:.32;d:1/4,1/2,0:12:2.2 2;e:x,0,0:12:4..;f:x,x,x:16:.3.;g:x,1/2,0:24:2..;"
+		WyckoffSyms[506] += "h:0,y,y:24:..2;i:1/4,y,-y+1/2:24:..2;j:x,y,z:48:1;"
+		WyckoffSyms[507]  = "a:1/8,1/8,1/8:4:.32;b:5/8,5/8,5/8:4:.32;c:x,x,x:8:.3.;d:1/8,y,-y+1/4:12:..2;e:x,y,z:24:1;"
+		WyckoffSyms[508]  = "a:3/8,3/8,3/8:4:.32;b:7/8,7/8,7/8:4:.32;c:x,x,x:8:.3.;d:1/8,y,y+1/4:12:..2;e:x,y,z:24:1;"
+		WyckoffSyms[509]  = "a:1/8,1/8,1/8:8:.32;b:7/8,7/8,7/8:8:.32;c:1/8,0,1/4:12:2.2 2;d:5/8,0,1/4:12:2.2 2;e:x,x,x:16:.3.;f:x,0,1/4:24:2..;"
+		WyckoffSyms[509] += "g:1/8,y,y+1/4:24:..2;h:1/8,y,-y+1/4:24:..2;i:x,y,z:48:1;"
+		WyckoffSyms[510]  = "a:0,0,0:1:-43m;b:1/2,1/2,1/2:1:-43m;c:0,1/2,1/2:3:-42. m;d:1/2,0,0:3:-42. m;e:x,x,x:4:.3m;f:x,0,0:6:2.m m;g:x,1/2,1/2:6:2.m m;"
+		WyckoffSyms[510] += "h:x,1/2,0:12:2..;i:x,x,z:12:..m;j:x,y,z:24:1;"
+		WyckoffSyms[511]  = "a:0,0,0:4:-43m;b:1/2,1/2,1/2:4:-43m;c:1/4,1/4,1/4:4:-43m;d:3/4,3/4,3/4:4:-43m;e:x,x,x:16:.3m;f:x,0,0:24:2.m m;g:x,1/4,1/4:24:2.m m;"
+		WyckoffSyms[511] += "h:x,x,z:48:..m;i:x,y,z:96:1;"
+		WyckoffSyms[512]  = "a:0,0,0:2:-43m;b:0,1/2,1/2:6:-42. m;c:x,x,x:8:.3m;d:1/4,1/2,0:12:-4..;e:x,0,0:12:2.m m;f:x,1/2,0:24:2..;g:x,x,z:24:..m;"
+		WyckoffSyms[512] += "h:x,y,z:48:1;"
+		WyckoffSyms[513]  = "a:0,0,0:2:23.;b:0,1/2,1/2:6:222 . .;c:1/4,1/2,0:6:-4..;d:1/4,0,1/2:6:-4..;e:x,x,x:8:.3.;f:x,0,0:12:2..;g:x,1/2,0:12:2..;"
+		WyckoffSyms[513] += "h:x,0,1/2:12:2..;i:x,y,z:24:1;"
+		WyckoffSyms[514]  = "a:0,0,0:8:23.;b:1/4,1/4,1/4:8:23.;c:0,1/4,1/4:24:-4..;d:1/4,0,0:24:-4..;e:x,x,x:32:.3.;f:x,0,0:48:2..;g:x,1/4,1/4:48:2..;"
+		WyckoffSyms[514] += "h:x,y,z:96:1;"
+		WyckoffSyms[515]  = "a:3/8,0,1/4:12:-4..;b:7/8,0,1/4:12:-4..;c:x,x,x:16:.3.;d:x,0,1/4:24:2..;e:x,y,z:48:1;"
+		WyckoffSyms[516]  = "a:0,0,0:1:m-3m;b:1/2,1/2,1/2:1:m-3m;c:0,1/2,1/2:3:4/mm. m;d:1/2,0,0:3:4/mm. m;e:x,0,0:6:4m. m;f:x,1/2,1/2:6:4m. m;g:x,x,x:8:.3m;"
+		WyckoffSyms[516] += "h:x,1/2,0:12:mm2 . .;i:0,y,y:12:m.m 2;j:1/2,y,y:12:m.m 2;k:0,y,z:24:m..;l:1/2,y,z:24:m..;m:x,x,z:24:..m;n:x,y,z:48:1;"
+		WyckoffSyms[517]  = "a:1/4,1/4,1/4:2:432;b:3/4,1/4,1/4:6:42. 2;c:0,0,0:8:.-3.;d:0,3/4,1/4:12:-4..;e:x,1/4,1/4:12:4..;f:x,x,x:16:.3.;g:x,3/4,1/4:24:2..;"
+		WyckoffSyms[517] += "h:1/4,y,y:24:..2;i:x,y,z:48:1;"
+		WyckoffSyms[518]  = "a:1/4,1/4,1/4:2:432;b:3/4,1/4,1/4:6:42. 2;c:0,0,0:8:.-3.;d:0,3/4,1/4:12:-4..;e:x,1/4,1/4:12:4..;f:x,x,x:16:.3.;g:x,3/4,1/4:24:2..;"
+		WyckoffSyms[518] += "h:1/4,y,y:24:..2;i:x,y,z:48:1;"
+		WyckoffSyms[519]  = "a:0,0,0:2:m-3.;b:0,1/2,1/2:6:mmm . .;c:1/4,0,1/2:6:-4m. 2;d:1/4,1/2,0:6:-4m. 2;e:1/4,1/4,1/4:8:.32;f:x,0,0:12:mm2 . .;"
+		WyckoffSyms[519] += "g:x,0,1/2:12:mm2 . .;h:x,1/2,0:12:mm2 . .;i:x,x,x:16:.3.;j:1/4,y,y+1/2:24:..2;k:0,y,z:24:m..;l:x,y,z:48:1;"
+		WyckoffSyms[520]  = "a:1/4,1/4,1/4:2:-43m;b:0,0,0:4:.-3m;c:1/2,1/2,1/2:4:.-3m;d:1/4,3/4,3/4:6:-42. m;e:x,x,x:8:.3m;f:1/2,1/4,3/4:12:2.2 2;"
+		WyckoffSyms[520] += "g:x,1/4,1/4:12:2.m m;h:x,1/4,3/4:24:2..;i:1/2,y,y+1/2:24:..2;j:1/2,y,-y:24:..2;k:x,x,z:24:..m;l:x,y,z:48:1;"
+		WyckoffSyms[521]  = "a:1/4,1/4,1/4:2:-43m;b:0,0,0:4:.-3m;c:1/2,1/2,1/2:4:.-3m;d:1/4,3/4,3/4:6:-42. m;e:x,x,x:8:.3m;f:1/2,1/4,3/4:12:2.2 2;"
+		WyckoffSyms[521] += "g:x,1/4,1/4:12:2.m m;h:x,1/4,3/4:24:2..;i:1/2,y,y+1/2:24:..2;j:1/2,y,-y:24:..2;k:x,x,z:24:..m;l:x,y,z:48:1;"
+		WyckoffSyms[522]  = "a:0,0,0:4:m-3m;b:1/2,1/2,1/2:4:m-3m;c:1/4,1/4,1/4:8:-43m;d:0,1/4,1/4:24:m.m m;e:x,0,0:24:4m. m;f:x,x,x:32:.3m;g:x,1/4,1/4:48:2.m m;"
+		WyckoffSyms[522] += "h:0,y,y:48:m.m 2;i:1/2,y,y:48:m.m 2;j:0,y,z:96:m..;k:x,x,z:96:..m;l:x,y,z:192:1;"
+		WyckoffSyms[523]  = "a:1/4,1/4,1/4:8:432;b:0,0,0:8:m-3.;c:1/4,0,0:24:-4m. 2;d:0,1/4,1/4:24:4/m..;e:x,0,0:48:mm2 . .;f:x,1/4,1/4:48:4..;g:x,x,x:64:.3.;"
+		WyckoffSyms[523] += "h:1/4,y,y:96:..2;i:0,y,z:96:m..;j:x,y,z:192:1;"
+		WyckoffSyms[524]  = "a:1/8,1/8,1/8:8:-43m;b:3/8,3/8,3/8:8:-43m;c:0,0,0:16:.-3m;d:1/2,1/2,1/2:16:.-3m;e:x,x,x:32:.3m;f:x,1/8,1/8:48:2.m m;g:x,x,z:96:..m;"
+		WyckoffSyms[524] += "h:0,y,-y:96:..2;i:x,y,z:192:1;"
+		WyckoffSyms[525]  = "a:1/8,1/8,1/8:8:-43m;b:3/8,3/8,3/8:8:-43m;c:0,0,0:16:.-3m;d:1/2,1/2,1/2:16:.-3m;e:x,x,x:32:.3m;f:x,1/8,1/8:48:2.m m;g:x,x,z:96:..m;"
+		WyckoffSyms[525] += "h:0,y,-y:96:..2;i:x,y,z:192:1;"
+		WyckoffSyms[526]  = "a:1/8,1/8,1/8:16:23.;b:1/4,1/4,1/4:32:.32;c:0,0,0:32:.-3.;d:7/8,1/8,1/8:48:-4..;e:x,x,x:64:.3.;f:x,1/8,1/8:96:2..;"
+		WyckoffSyms[526] += "g:1/4,y,-y:96:..2;h:x,y,z:192:1;"
+		WyckoffSyms[527]  = "a:1/8,1/8,1/8:16:23.;b:1/4,1/4,1/4:32:.32;c:0,0,0:32:.-3.;d:7/8,1/8,1/8:48:-4..;e:x,x,x:64:.3.;f:x,1/8,1/8:96:2..;"
+		WyckoffSyms[527] += "g:1/4,y,-y:96:..2;h:x,y,z:192:1;"
+		WyckoffSyms[528]  = "a:0,0,0:2:m-3m;b:0,1/2,1/2:6:4/mm. m;c:1/4,1/4,1/4:8:.-3m;d:1/4,0,1/2:12:-4m. 2;e:x,0,0:12:4m. m;f:x,x,x:16:.3m;"
+		WyckoffSyms[528] += "g:x,0,1/2:24:mm2 . .;h:0,y,y:24:m.m 2;i:1/4,y,-y+1/2:48:..2;j:0,y,z:48:m..;k:x,x,z:48:..m;l:x,y,z:96:1;"
+		WyckoffSyms[529]  = "a:0,0,0:16:.-3.;b:1/8,1/8,1/8:16:.32;c:1/8,0,1/4:24:2.2 2;d:3/8,0,1/4:24:-4..;e:x,x,x:32:.3.;f:x,0,1/4:48:2..;"
+		WyckoffSyms[529] += "g:1/8,y,-y+1/4:48:..2;h:x,y,z:96:1;"
+	endif
+
+	list = WyckoffSyms[SG_idNum-1]
 	Make/N=(ItemsInList(list),4)/FREE/T WyckList
 	WyckList[][0] = StringFromList(0,StringFromList(p,list),":")		// Wyckoff symbol (a letter)
 	WyckList[][1] = StringFromList(1,StringFromList(p,list),":")		// symOp
@@ -10930,7 +12250,7 @@ Static Function/WAVE GetWyckoffSymStrings(SpaceGroupID)
 End
 //	Function test_GetWyckoffSymStrings(SpaceGroupID)
 //		String SpaceGroupID
-//		Wave WyckList=LatticeSym#GetWyckoffSymStrings230(SpaceGroupID)
+//		Wave WyckList=LatticeSym#GetWyckoffSymStrings230(SpaceGroupID,3)
 //		// print WyckList
 //		Duplicate/O WyckList, WyckListView
 //		DisplayTableOfWave(WyckListView)
