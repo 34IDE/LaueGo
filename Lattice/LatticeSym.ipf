@@ -17,7 +17,8 @@ Static Constant ELEMENT_Zmax = 118
 //Static strConstant BAR_FONT_ALWAYS = "Arial"	//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
-Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible symmetry operations
+Static Constant MAXnumSymmetyrOps=192				// this the maximum number of possible symmetry operations
+Static Constant MAX_NUM_EXPANSION = 201				// maximum number of points in a thermal expansion table
 Static Constant xtalStructLen5 = 25672				// length of crystalStructure5 in a string
 Static Constant xtalStructLen6 = 25686				// length of crystalStructure6 in a string
 Static Constant xtalStructLen7 = 25786				// length of crystalStructure7 in a string
@@ -385,9 +386,9 @@ Structure crystalStructure	// structure definition for a crystal lattice, this o
 	double Temperature				// Temperature (C)
 	double Pressure					// Temperature (Pa = Pascal)
 	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
-	int16	NL_L						// number of point in dL_L vs dL_LT that are used (max of 201)
-	double dL_L[201]				// ÆL/L expansion table (dimensionless)
-	double dL_LT[201]				// T for ÆL/L expansion table (Kelvin)
+	int16	NL_L						// number of point in dL_L vs dL_LT that are used (max of MAX_NUM_EXPANSION)
+	double dL_L[MAX_NUM_EXPANSION]		// ÆL/L expansion table (dimensionless)
+	double dL_LT[MAX_NUM_EXPANSION]	// T for ÆL/L expansion table (Kelvin)
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -4338,7 +4339,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		unit = SelectString(strlen(unit),"K",unit)
 		Wave Ttemp = str2vec(XMLtagContents("T",expansion))
 		Wave dLtemp = str2vec(XMLtagContents("dL_L",expansion))
-		Variable NL_L = min(numpnts(dLtemp),201)
+		Variable NL_L = min(numpnts(dLtemp),MAX_NUM_EXPANSION)
 		Variable dL_OK = (NL_L > 1 && (numpnts(Ttemp) == NL_L))
 		WaveStats/Q/M=1 Ttemp
 		dL_OK = dL_OK && V_numNans==0 && V_numINFs==0
