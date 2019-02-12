@@ -28,8 +28,8 @@ for WINDOWS:
 "C:\Program Files (x86)\WaveMetrics\Igor Pro Folder\More Extensions\File Loaders\HDF5.xop"
 and
 "C:\Program Files (x86)\WaveMetrics\Igor Pro Folder\More Extensions\File Loaders\HDF5 Help.ihf"
-Create shortcuts to both these files and put the aliases inside "[MyDocuments]\WaveMetrics\Igor Pro 8 User Files\Igor Procedures".
-
+Create shortcuts to both these files and put the aliases inside "[MyDocuments]\WaveMetrics\Igor Pro 8 User Files\Igor Extensions (64-bit)".
+(for Igor 7, you can use the 32 bit, but 64 is best, for Igor6, use "Igor Extensions")
 7.	Done. You only need to repeat step 2 and 3 the next time you update your microdiffraction package.
 
 
