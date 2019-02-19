@@ -42,6 +42,7 @@ Static Constant secPerPixelDistort = 15.24e-3	// time is takes to process distor
 Static Constant DEFAULT_I0_GAIN = 1e9
 Static Constant DEFAULT_I0_SCALING = 1e5
 Static Constant DEFAULT_dQfactor = 1.1
+Constant FIND_VEC_GRID_THRESHOLD = 0.1		// you can over ride this with:   Override Constant FIND_VEC_GRID_THRESHOLD = 2
 
 
 //	**	To get the ful chip unbinned pixel position from ROI data use the following:
@@ -349,6 +350,8 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 	endif
 
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="Determining the range(s) to scan")	// display a progress bar
+//	Variable ask = strlen(GetRTStackInfo(2))==0														// always ask when run from top level
+//	ask = ask || (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))			// range is empty, need to ask
 	Variable ask = (ItemsInRange(range1)<1 || (Nranges>1 && ItemsInRange(range2)<1))	// range is empty, need to ask
 	ask = ask || numtype(I0normalize)
 	if (ask) 	// if range1 is empty, get the full range from the directory
@@ -535,9 +538,9 @@ Function Fill_Q_Positions(d0,pathName,nameFmt,range1,range2,mask,[depth,maskNorm
 
 	microSec = stopMSTimer(-2)												// for timeing bulk of processing
 	Variable dx,Nx, dy,Ny, ddep,Nz, off
-	FindScalingFromVec(X_FillQvsPositions,0.1,off,dx,Nx)			// get step size and number of points for the X scan
-	FindScalingFromVec(H_FillQvsPositions,0.1,off,dy,Ny)			//  "    "    "   "     "   "    "     "   "  H scan
-	FindScalingFromVec(depth_FillQvsPositions,0.1,off,ddep,Nz)	//  "    "    "   "     "   "    "     "   "  depths
+	FindScalingFromVec(X_FillQvsPositions,FIND_VEC_GRID_THRESHOLD,off,dx,Nx)			// get step size and number of points for the X scan
+	FindScalingFromVec(H_FillQvsPositions,FIND_VEC_GRID_THRESHOLD,off,dy,Ny)			//  "    "    "   "     "   "    "     "   "  H scan
+	FindScalingFromVec(depth_FillQvsPositions,FIND_VEC_GRID_THRESHOLD,off,ddep,Nz)	//  "    "    "   "     "   "    "     "   "  depths
 	Variable depth0 = WaveMin(depth_FillQvsPositions)
 
 	// let the user correct the scan ranges as necessary

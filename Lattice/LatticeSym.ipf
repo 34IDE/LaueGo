@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.08										// based on LatticeSym_6.55
+#pragma version = 7.09										// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -234,6 +234,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.07, changed GetWyckoffSymStrings() to include site symmetry for every Wyckoff position, added siteSymmetry(SpaceGroupID,symbol).
 //	with version 7.08, added expansion table supprot, now have new crystalStructure with NL_L,dL_L,dL_LT arrays, and can read them from xml file, updated dSpacing()
 //						also changed siteSymmetry(SpaceGroupID,symbol) --> siteSymmetry(SpaceGroupID,symbol,dim)
+//	with version 7.09, fixed error in writing xml files in crystalStructure2xml()
 
 
 //	Rhombohedral Transformation:
@@ -4662,7 +4663,7 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 
 	Variable dim = xtal.dim
 	Variable m, N=0
-	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
+	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\">"+NL
 	String str, unit=" unit=\"nm\""
 
 	if (strlen(xtal.desc))
