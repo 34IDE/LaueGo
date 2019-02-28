@@ -4015,6 +4015,7 @@ Function readCrystalStructure(xtal,fname,[printIt])
 
 	// find the file type, this first looks at the top of the file, if that does not work, it looks at the file name extension
 	String fileType = CrystalFileType(fname)	// "xml", "xtl", "cif", "", or the actual file extension (without the '.')
+	init_crystalStructure(xtal)						// set all values to empty or invalid values
 	Variable err=1
 	if (stringmatch(fileType,"xml"))
 		err = readCrystalStructureXML(xtal,fname)
@@ -4335,6 +4336,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
 
 	String expansion = XMLtagContents("thermalExpansion",cell)
+	xtal.NL_L = 0
 	if (strlen(expansion)>1)
 		unit = StringByKey("unit", XMLattibutes2KeyList("T",expansion),"=")
 		unit = SelectString(strlen(unit),"K",unit)
