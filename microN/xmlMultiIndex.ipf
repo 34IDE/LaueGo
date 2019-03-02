@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.09
+#pragma version=2.10
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -264,14 +264,15 @@ End
 // *****************************************************************************************
 // *****************************  Start of Pole Figure Colors ******************************
 
-Function NewPoleFigure(hklstr,[rad,useCursor,useDialog,gm,visible,iwave])
+Function NewPoleFigure(hklstr,[rad,useCursor,useDialog,gm,visible,iwave,surface])
 	String hklstr
-	Variable rad				// radius of color circle (degree)
+	Variable rad					// radius of color circle (degree)
 	Variable useCursor
 	Variable useDialog			// forces the use of a dialog
 	Wave gm
-	Wave visible				// flag for each point indicating which points to use (1=use, 0=ignore)
+	Wave visible					// flag for each point indicating which points to use (1=use, 0=ignore)
 	Wave iwave					// used to set intensity of pixels
+	String surface				// defines orientation of surface, "normal", "X", "H", "Y", "Z", "path to user supplied matrix"
 	if (ParamIsDefault(gm))
 		Wave gm=$""
 	endif
@@ -291,6 +292,7 @@ Function NewPoleFigure(hklstr,[rad,useCursor,useDialog,gm,visible,iwave])
 	if (WaveExists(iwave))
 		iwaveName = NameOfWave(iwave)
 	endif
+	surface = SelectString(ParamIsDefault(surface), surface, "normal")
 	rad = ParamIsDefault(rad) ? 22.5 : rad
 	useDialog = ParamIsDefault(useDialog) ? 0 : useDialog
 	useDialog = numtype(useDialog) ? 1 : useDialog
@@ -318,11 +320,13 @@ Function NewPoleFigure(hklstr,[rad,useCursor,useDialog,gm,visible,iwave])
 		if (WhichListItem(hklstr,hklLIst)<0)
 			hklLIst = hklstr + ";" + hklLIst
 		endif
+		String matrixList = WaveList("*",";", "DIMS:2,MAXROWS:3,MAXCOLS:3,MINCOLS:3,MINROWS:3")	// list of 3x3 matricies
 		Prompt rad,"radius of color circle (0<rad<90¡)"
 		Prompt useCursor,"Center of Color Circle",popup,"Origin at Cursor;Origin at Center"
 		Prompt hklstr,"hkl of pole",popup,hklLIst
 		Prompt gmName,"Reciprocal Lattice List",popup,gmList
 		Prompt iwaveName,"Wave for Intensities of Colors",popup,WaveListClass("Random3dArrays","*","DIMS:1,TEXT:0")
+		Prompt surface, "Surface direction", popup, "normal;X;H;Y;Z;"+matrixList
 		iwaveName = SelectString(strlen(iwaveName),"Nindexed",iwaveName)
 		rad = rad>0 ? rad : 22.5
 		useCursor = useCursor ? 1 : 2			// convert to {1,2} for prompt
@@ -407,20 +411,44 @@ Function NewPoleFigure(hklstr,[rad,useCursor,useDialog,gm,visible,iwave])
 
 	Make/N=3/O/D/FREE pole
 	pole={h,k,l}
-	Wave poleXY = $MakePolePoints(gm,pole,rad=rad,useCursor=useCursor, visible=visible,iwave=iwave)
+
+	Make/N=(3,3)/D/FREE surfaceMatrix = NaN
+	Variable ir2 = 1/sqrt(2)
+	Wave wSurf = $surface
+	if (CmpStr(surface,"normal") == 0 || strlen(surface)<1)
+		surfaceMatrix = {{1,0,0}, {0,-ir2,-ir2}, {0,ir2,-ir2}}	// {tilt=X, roll-H, normal-F}, the usual
+	elseif (CmpStr(surface,"X") == 0)
+		surfaceMatrix = {{0,-ir2,-ir2}, {0,ir2,-ir2}, {1,0,0}}	// {tilt=-H, roll=-F, normal=X}
+	elseif (CmpStr(surface,"H") == 0)
+		surfaceMatrix = {{1,0,0}, {0,ir2,-ir2}, {0,ir2,ir2}}	// {tilt=X, roll=F, normal=H}
+	elseif (CmpStr(surface,"Y") == 0)
+		surfaceMatrix = {{0,0,1}, {1,0,0}, {0,1,0}}				// {tilt=Z, roll=X, normal=Y}
+	elseif (CmpStr(surface,"Z") == 0)
+		surfaceMatrix = {{1,0,0}, {0,1,0}, {0,0,1}}				// {tilt=X, roll=Y, normal=Y}
+	elseif (WaveExists(wSurf) && WaveType(wSurf)>0 && WaveDims(wSurf)==2 && DimSize(wSurf,0)==3 && DimSize(wSurf,1)==3)
+		surfaceMatrix = wSurf[p][q]										// assuming that wSurf[3][3] is a matrix, with {tilt, roll, surface} directions
+	endif
+	if (!isRotationMat(surfaceMatrix)	)							// true if mat is a rotation matrix, left haned systems are allowed
+		printWave(surfaceMatrix, name="surface orientation matrix", brief=1)
+		DoAlert 0,"The given surface matrix is NOT a rotation matrix,\rIt fails the test:   A  x  A^t  !=  Identity"
+		return 1
+	endif
+
+	Wave poleXY = $MakePolePoints(gm,pole,rad=rad,useCursor=useCursor, visible=visible,iwave=iwave, surfaceMatrix=surfaceMatrix)
 	Make_GraphPoles(poleXY)
 	return 0
 End
 
 
 
-Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
-	Wave gm			// list of reciprocal lattices
-	Wave hkl			// 3-vector with hkl of pole
-	Variable rad		// radius of color circle (degree)
+Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave,surfaceMatrix])
+	Wave gm				// list of reciprocal lattices
+	Wave hkl				// 3-vector with hkl of pole
+	Variable rad			// radius of color circle (degree)
 	Variable useCursor
-	Wave visible		// flag for each point indicating which points to use (1=use, 0=ignore)
+	Wave visible			// flag for each point indicating which points to use (1=use, 0=ignore)
 	Wave iwave			// wave to use for setting intensity
+	Wave surfaceMatrix	// surface orientation, matrix of 3 column vectors {tilt, roll, normal}, all should be of length 1 and perpendicular
 
 	useCursor = ParamIsDefault(useCursor) ? 1 : useCursor
 	Variable x0=0,y0=0
@@ -440,11 +468,18 @@ Function/T MakePolePoints(gm,hkl,[rad,useCursor,visible,iwave])
 	Variable Nsym = DimSize(vecs,0)
 	Nsym = !(Nsym>0) ? 1 : Nsym					// always at least one, the identity
 
-	// define the surface
-	Variable ir2 = 1/sqrt(2)
-	Make/N=3/FREE/D normal={0,ir2,-ir2}		// the usual surface normal
-	Make/N=3/FREE/D roll={0,-ir2,-ir2}			//   associated roll direction
-	Make/N=3/FREE/D tilt={1,0,0}				//   associated tilt direction
+	// define the surface using 3 perpendicular unit vectors, {normal to surface, roll direction, titl direction}
+	Make/N=3/FREE/D normal, roll, tilt		// holds the usual surface normal, roll, and tilt directions
+	if (ParamIsDefault(surfaceMatrix))		// surfaceMatrix was not passed, or invalid
+		Variable ir2 = 1/sqrt(2)
+		normal={0,ir2,-ir2}						// the usual surface normal
+		roll={0,-ir2,-ir2}							//   associated roll direction
+		tilt={1,0,0}									//   associated tilt direction
+	else
+		normal = surfaceMatrix[p][2]			// surface normal, NOT the usual
+		roll = surfaceMatrix[p][1]				//   associated roll direction, NOT the usual
+		tilt = surfaceMatrix[p][0]				//   associated tilt direction, NOT the usual
+	endif
 
 	Variable Ng=DimSize(gm,2)
 	Make/N=(3,3)/FREE/D gmi
