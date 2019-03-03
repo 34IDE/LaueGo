@@ -41,6 +41,7 @@ Menu "Rotations"
 	MenuItemIfWaveClassExists("Simulated a Laue Pattern from gm...","Random3dArraysGm*",""),SimulatedLauePatternFromGM($"",NaN,NaN)
 	multiIndex#MenuItemIfValidRawDataExists("Add Hand Indexed Point to Loaded XML in raw",class="IndexedPeakList"), AppendIndexResult2LoadedRaw($"")
 	MenuItemIfWaveClassExists("Add Hand Indexed Point to an XML","IndexedPeakList",""),AppendIndexResult2XML($"","")
+	MenuItemIfWaveClassExists("Direction of (hkl) at a Point...","Random3dArrays",""),directionOfHKL(NaN, $"")
 	MenuItemIfWaveClassExists("Rotation Between Two Points","Random3dArrays",""),RotationBetweenTwoPoints(NaN,NaN)
 	"-"
 EndMacro
@@ -3832,6 +3833,101 @@ Static Function matString2mat(str,mat)
 	endif
 	mat = NaN
 	return 1
+End
+
+
+
+Function/WAVE directionOfHKL(i1, hkl, [printIt])
+	// returns direction of Q(hkl) in XYZ coordinates
+	Variable i1
+	Wave hkl					// a 3-vector with the (hkl)
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt	
+
+	if (!WaveExists(hkl) || DimSize(hkl,0)!=3 || WaveDims(hkl)!=1)
+		String hklStr = "123"
+		Prompt hklStr, "hkl is free form"
+		DoPrompt "hkl", hklStr
+		if (V_flag)
+			return $""
+		endif
+		Wave hkl = minStr2Vec(hklStr,3)	
+	endif
+
+	if (!(i1>=0))
+		i1 = strlen(CsrInfo(A)) ? pcsr(A) : NaN
+		Wave ww = TraceNameToWaveRef("",StringByKey("TNAME",CsrInfo(A)))
+		if (!WaveInClass(ww,"Random3dArrays"))
+			i1 = NaN					// forces a try with cursor B
+		endif
+	endif
+	if (!(i1>=0))					// try again with cursor B
+		i1 = strlen(CsrInfo(B)) ? pcsr(A) : NaN
+		Wave ww = TraceNameToWaveRef("",StringByKey("TNAME",CsrInfo(A)))
+		if (!WaveInClass(ww,"Random3dArrays"))
+			return $""				// give up
+		endif
+	endif
+	if (numtype(i1))
+		if (printIt)
+			DoAlert 0,"Cursors A or B not on Graph"
+		endif
+		return $""
+	endif
+	String fldr=""
+	if (WaveExists(ww))
+		fldr=GetWavesDataFolder(ww,1)
+	endif
+	Wave RX=$(fldr+"RX"), RH=$(fldr+"RH"), RF=$(fldr+"RF")
+	if (!WaveExists(RX) || !WaveExists(RH) || !WaveExists(RF))
+		return $""
+	endif
+
+	Make/N=3/D/FREE axis, R1={RX[i1], RH[i1], RF[i1]}	// Rodriquez for point i1
+	Make/N=(3,3)/FREE/D rot1
+	rotationMatAboutAxis(R1,NaN,rot1)				// fill rot1
+	Variable angle = axisOfMatrix(rot1,axis)	// total rotation angle between point1 and point2 (degrees)
+	//	if (printIt)
+	//		printf "rotation from point %d to i2 is about the axis {XHF} = %s  by  %g¡\r",i1,vec2str(axis),angle
+	//	endif
+
+	// to go from (XYZ) -> (XHF) is a +45¡ rotation about the X-axis
+	Make/N=(3,3)/D/FREE rotFrame
+	rotFrame[0][0] = 1
+	rotFrame[1][1] = cos(45*PI/180)			// this matrix rotates direction of vector by +45¡ (this is changed below)
+	rotFrame[2][2] = cos(45*PI/180)
+	rotFrame[1][2] = -sin(45*PI/180)
+	rotFrame[2][1] = sin(45*PI/180)
+	MatrixOP/FREE/O R1 = rotFrame x R1		// rotate from XHF to XYZ
+	rotationMatAboutAxis(R1,NaN,rot1)
+	axisOfMatrix(rot1,axis)						// rotation axis in XYZ coordinates
+	//	if (printIt)
+	//		printf "rotation for point %d is about the axis {XYZ} = %s  by  %g¡\r",i1,vec2str(axis),angle
+	//	endif
+
+	Wave ref = decodeMatFromStr(StringByKey("recipRef",note(RX),"="))	// reference reciprocal lattice in beam-line XYZ coordinates
+	if (!WaveExists(ref))
+		if (printIt)
+			DoAlert 0, "Could not get ref recip lattice from note(RX)"
+			print "Could not get ref recip lattice from note(RX)"
+		endif
+		return $""
+	endif
+	//	printWave(ref,name="ref",brief=1)
+	//	print " "
+
+	MatrixOP/FREE qXYZ = normalize(rot1 x ref x hkl)		// direction in XYZ coordinates, rot1 x ref is the symmetry-reduced recip lattice, recip for point i1
+	MatrixOP/FREE/O qXHF = Inv(rotFrame) x qXYZ			// rotate from XYZ --> XHF
+	Duplicate/FREE qXHF, qOutNormal							// qOutNormal, qhat in outward surface normal coords
+	qOutNormal[1] = -qOutNormal[1] ; qOutNormal[2] = -qOutNormal[2]
+
+	if (printIt)
+		printf "Q(%s) points in the:\r",hkl2str(hkl[0], hkl[1], hkl[2])
+		printf "\t\t{XYZ} = %s direction\r",vec2str(qXYZ)
+		printf "\t\t{XHF} = %s\r",vec2str(qXHF)
+		printf "\t\t{out} = %s\t\t(like XHF, but rotated to outward pointing surface normal)\r",vec2str(qOutNormal)
+	endif
+	return qXYZ														// direction Q(hkl) for this grain in {XYZ} coordinates
 End
 
 // ******************************  End of Plot Random Points *******************************
