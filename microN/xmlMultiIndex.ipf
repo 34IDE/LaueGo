@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.10
+#pragma version=2.11
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -5471,7 +5471,12 @@ step.Ndetectors = 1			// Code is so far limited to only 1 detector
 Variable id = 0				// detector number
 ////////////////////
 ////////////////////
-	step.d[id].inputImage = StringByKey("file_name",wnote,"=")
+	str = StringByKey("imageFilePath",wnote,"=") + StringByKey("imageFileName",wnote,"=")
+	if (strlen(str))
+		step.d[id].inputImage = str
+	else
+		step.d[id].inputImage = StringByKey("file_name",wnote,"=")
+	endif
 	step.d[id].detectorID = StringByKey("detectorID",wnote,"=")
 	step.d[id].exposure = NumberByKey("exposure",wnote,"=")
 	step.d[id].Nx = NumberByKey("xDimDet",wnote,"=")
