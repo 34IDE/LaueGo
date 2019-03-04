@@ -5167,9 +5167,16 @@ Function/T AppendIndexResult2LoadedRaw(wIndex)
 	rmsIndexed[N] = NumberByKey("rms_error0",wnote,"=")
 	goodness[N] = NumberByKey("goodness0",wnote,"=")
 	HutchTempC[N] = NumberByKey("HutchTemperature",wnote,"=")
-	imageNames[N] = StringByKey("file_name",wnote,"=")
 	gm[][][N] = recip[p][q]
 
+	// need peak list wave for the full file name
+	String fullName=""
+	Wave peakList = $StringByKey("peakListWave",wnote,"=")
+	if (WaveExists(peakList))
+		String peakNote = note(peakList)
+		fullName = StringByKey("imageFilePath",peakNote,"=") + StringByKey("imageFileName",peakNote,"=")
+	endif
+	imageNames[N] = SelectString(strlen(fullName), StringByKey("file_name",wnote,"="), fullName)
 	return GetWavesDataFolder(wIndex,2)
 End
 
