@@ -5,7 +5,7 @@
 #endif
 
 
-#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
+#if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING) || defined(DOTS_TESTING)
 Menu "Zones"
 	MenuItemIfWaveClassExists("Make Gizmo Waves","Zones*","MINCOLS:4"),GizmoMakeWavesForZones($"",$"",$"")
 	MenuItemIfWaveExists("Gizmo of Zones",":GizmoWaves:GizmoGhats"), GizmoOfZones()
