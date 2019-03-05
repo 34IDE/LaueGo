@@ -1,11 +1,12 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 0.27
+#pragma version = 1.01
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_PowderPatternLattice()"
-#include "LatticeSym" version>=5.10
+#include "LatticeSym" version>=7.00
+#define LATTICE_SYM_2D_3D
 
 
 Menu "Analysis"
@@ -270,13 +271,25 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 		DoAlert 0, "ERROR  -- CalcPowderLines()\rNo lattice structure found"
 		return $""
 	endif
+#ifdef LATTICE_SYM_2D_3D
+	Variable dim = xtal.dim
+#else
+	Variable dim=3
+#endif
+	dim = dim==2 ? 2 : 3
 	String desc = xtal.desc
 	desc = ReplaceString(";",desc," ")
-	Variable astar, bstar, cstar
-	astar = sqrt((xtal.as0)^2 + (xtal.as1)^2 + (xtal.as2)^2)
-	bstar = sqrt((xtal.bs0)^2 + (xtal.bs1)^2 + (xtal.bs2)^2)
-	cstar = sqrt((xtal.cs0)^2 + (xtal.cs1)^2 + (xtal.cs2)^2)
+	Variable astar, bstar, cstar=NaN
+	if (dim==2)
+		astar = sqrt((xtal.as0)^2 + (xtal.as1)^2)
+		bstar = sqrt((xtal.bs0)^2 + (xtal.bs1)^2)
+	else
+		astar = sqrt((xtal.as0)^2 + (xtal.as1)^2 + (xtal.as2)^2)
+		bstar = sqrt((xtal.bs0)^2 + (xtal.bs1)^2 + (xtal.bs2)^2)
+		cstar = sqrt((xtal.cs0)^2 + (xtal.cs1)^2 + (xtal.cs2)^2)
+	endif
 	Variable hmax=floor(Qmax/astar), kmax=floor(Qmax/bstar), lmax=floor(Qmax/cstar)
+	lmax = dim==2 ? 0 : lmax
 
 	String wNote = "waveClass=PowderLines;"
 	wNote = ReplaceNumberByKey("Qmax",wNote,Qmax,"=")
@@ -320,7 +333,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 				lines[m][0] = qhkl
 				lines[m][1] = h
 				lines[m][2] = k
-				lines[m][3] = l
+				lines[m][3] = dim==2 ? NaN : l
 				lines[m][4] = theta*180/PI			// save angle in degrees
 				lines[m][5] = F2
 				lines[m][6] = F2 * Lorentz * Pol	// was F2*LP, have yet to include mult
@@ -337,9 +350,10 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 	Variable i
 	for (i=0;i<DimSize(lines,1);i+=1)
 		temp = lines[p][i]								// for each column in lines
-		IndexSort QsIndex, temp							// sort this column
+		IndexSort QsIndex, temp						// sort this column
 		lines[][i] = temp[p]							// replace column in lines with sorted column
 	endfor
+	WaveClear temp
 	Redimension/N=(NlinesMax+1,-1) lines			// add point at end to stop next loop
 	lines[NlinesMax][0] = NaN							// ensures that following do-while loop will end
 
@@ -354,7 +368,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 	//	0	Q (1/nm)
 	//	1	h
 	//	2	k
-	//	3	l
+	//	3	l							not used for 2D
 	//	4	theta (degree)
 	//	5	| F| ^2
 	//	6	Intensity
@@ -371,8 +385,9 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 	Make/N=(NlinesMax)/T/O $str/WAVE=hklStrAll = ""
 	Note/K hklStrAll, "waveClass=HKLlabelsPowderLinesAll;LinesWave="+GetWavesDataFolder(lineShort,2)+";"
 	wNote = ReplaceStringByKey("hklStrAllWave",wNote,str,"=")
+	wNote = ReplaceNumberByKey("dim",wNote,dim,"=")
 
-	Make/N=(NlinesMax,3)/FREE hkls						// temp list of hkls for line, used to pick the "nicest" hkl
+	Make/N=(NlinesMax,dim)/FREE hkls					// temp list of hkls for line, used to pick the "nicest" hkl
 	Variable mult, Nlines=0
 	for (Nlines=0,i=0; i<NlinesMax;)
 		qhkl = lines[i][0]									// Q of this line
@@ -381,7 +396,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 		do
 			lineShort[Nlines][0,N_POWDER_LINES_COLUMNS-2] = lines[i][q]
 			hkls[mult][] = lines[i][q+1]					// accumulate list of all hkls in this line
-			hklStrAll[Nlines] += "("+hkl2str(lines[i][1],lines[i][2],lines[i][3])+")+"
+			hklStrAll[Nlines] += "("+hkl2str(lines[i][1],lines[i][2],lines[i][3],dim=dim)+")+"
 			mult += 1
 			i += 1
 		while(abs(lines[i][0]-qhkl)<1e-10)
@@ -389,7 +404,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 		hklStrAll[Nlines] = TrimBoth(hklStrAll[Nlines],chars="+")
 		lineShort[Nlines][7] = mult
 		Wave niceHKL = nicestHKL(hkls)
-		lineShort[Nlines][1,3] = niceHKL[q-1]			// re-set hkl to the "nicest" one
+		lineShort[Nlines][1,dim] = niceHKL[q-1]		// re-set hkl to the "nicest" one
 		hklStr[Nlines] = nicestHKLstr(hkls)			// better for labeling, it includes multipliticites
 		Nlines += 1
 	endfor
@@ -415,25 +430,28 @@ End
 Static Function/WAVE nicestHKL(hklsIn)		// returns a free wave that is the nicest one from the list of hkl's
 	// The nicest hkl has L>K>H, as much as possible
 	Wave hklsIn
-	if (DimSize(hklsIn,0)<1 || DimSize(hklsIn,1)!=3)
+	Variable dim=DimSize(hklsIn,1)
+	if (DimSize(hklsIn,0)<1 || (dim!=2 && dim!=3))
 		return $""
 	endif
 	WaveStats/Q/M=1 hklsIn
-	Variable N=V_npnts/3
+	Variable N=V_npnts/dim
 	if (N<1)
 		return $""
 	endif
-	Make/N=(N,3)/FREE hkls=hklsIn[p][q]
 
-	ImageStats/M=1/G={0,N-1,2,2} hkls
-	hkls = hkls[p][2]==V_max ? hkls[p][q] : NaN	// remove all hkl with L<V_max
+	Make/N=(N,dim)/FREE hkls=hklsIn[p][q]
+	if (dim!=2)
+		ImageStats/M=1/G={0,N-1,2,2} hkls
+		hkls = hkls[p][2]==V_max ? hkls[p][q] : NaN// remove all hkl with L<V_max
+	endif
 	ImageStats/M=1/G={0,N-1,1,1} hkls
 	hkls = hkls[p][1]==V_max ? hkls[p][q] : NaN	// remove all hkl with K<V_max
 	ImageStats/M=1/G={0,N-1,0,0} hkls
 	hkls = hkls[p][0]==V_max ? hkls[p][q] : NaN	// remove all hkl with H<V_max
 
-	ImageStats/M=1/G={0,N-1,0,2} hkls		// find the best (probably only) one left
-	Make/N=3/FREE hkl=hkls[V_maxRowLoc][p]
+	ImageStats/M=1/G={0,N-1,0,dim-1} hkls				// find the best (probably only) one left
+	Make/N=(dim)/FREE hkl=hkls[V_maxRowLoc][p]
 	return hkl
 End
 //Function test_nicestHKL()
@@ -449,33 +467,38 @@ End
 Static Function/T nicestHKLstr(hklsIn)		// returns a free wave that is the nicest one from the list of hkl's
 	// The nicest hkl has L>K>H, as much as possible
 	Wave hklsIn
-	if (DimSize(hklsIn,0)<1 || DimSize(hklsIn,1)!=3)
+	Variable dim=DimSize(hklsIn,1)
+	if (DimSize(hklsIn,0)<1 || (dim!=2 && dim!=3))
 		return ""
 	endif
 	WaveStats/Q/M=1 hklsIn
-	Variable N=V_npnts/3
+	Variable N=V_npnts/dim
 	if (N<1)
 		return ""
 	endif
-	Make/N=(N,3)/FREE hkls=hklsIn[p][q]
+	Make/N=(N,dim)/FREE hkls=hklsIn[p][q]
 
-	ImageStats/M=1/G={0,N-1,2,2} hkls
-	hkls = hkls[p][2]==V_max ? hkls[p][q] : NaN	// remove all hkl with L<V_max
+	if (dim>2)
+		ImageStats/M=1/G={0,N-1,2,2} hkls
+		hkls = hkls[p][2]==V_max ? hkls[p][q] : NaN	// remove all hkl with L<V_max
+	endif
 	ImageStats/M=1/G={0,N-1,1,1} hkls
-	hkls = hkls[p][1]==V_max ? hkls[p][q] : NaN	// remove all hkl with K<V_max
+	hkls = hkls[p][1]==V_max ? hkls[p][q] : NaN		// remove all hkl with K<V_max
 	ImageStats/M=1/G={0,N-1,0,0} hkls
-	hkls = hkls[p][0]==V_max ? hkls[p][q] : NaN	// remove all hkl with H<V_max
+	hkls = hkls[p][0]==V_max ? hkls[p][q] : NaN		// remove all hkl with H<V_max
 
-	ImageStats/M=1/G={0,N-1,0,2} hkls		// find the best (probably only) one left
-	Make/N=3/FREE hkl=hkls[V_maxRowLoc][p]
-	String hklStr = "("+hkl2str(hkl[0],hkl[1],hkl[2])+")"
+	ImageStats/M=1/G={0,N-1,0,dim-1} hkls					// find the best (probably only) one left
+	Make/N=(dim)/FREE hkl=hkls[V_maxRowLoc][p]
+	Variable h=hkl[0], k=hkl[1],   l = (dim==2) ? NaN : hkl[2]
+	String hklStr = "("+hkl2str(h,k,l,dim=dim)+")"
 
 	// remove this hkl from hkls and do again
 	hkls = hklsIn[p][q]
 
 	MatrixOP/FREE checks = sumRows(abs(hkls))
 	Redimension/N=(N) checks					// I am assuming that if the summs differ than the hkl is of different type
-	Variable i,m, check0 = abs(hkl[0])+abs(hkl[1])+abs(hkl[2])
+	hkl = abs(hkl)
+	Variable i,m, check0=sum(hkl)
 	checks = checks[p]!=check0				// keep all items with checks[]==1
 	for (i=0,m=0; i<N; i+=1)
 		if (checks[i])
@@ -665,6 +688,7 @@ Function GraphPowderLines(ww,[theta])
 	return 0
 End
 
+
 Static Function ShowPowderLinesWindowHook(s)
 	STRUCT WMWinHookStruct &s
 
@@ -688,6 +712,8 @@ Static Function ShowPowderLinesWindowHook(s)
 		Wave/T hklStr = $(GetWavesDataFolder(lines,1)+StringByKey("hklStrWave",wNote,"="))
 		Wave/T hklStrAll = $(GetWavesDataFolder(lines,1)+StringByKey("hklStrWave",wNote,"=")+"All")
 
+		Variable dim=NumberByKey("dim",wNote,"=")
+		dim = dim==2 ? 2 : 3
 		Variable Xval = AxisValFromPixel(win,"bottom",s.mouseLoc.h)
 		String xrange=StringByKey("XRANGE",TraceInfo(win,NameOfWave(lines),0))
 		Variable isTheta=StringMatch(xrange,"*[4]")		// [0] is Q, [4] is theta
@@ -707,7 +733,7 @@ Static Function ShowPowderLinesWindowHook(s)
 		if (WaveExists(hklStr))
 			tagStr = hklStr[iLine]
 		else
-			tagStr = "("+hkl2str(lines[iLine][1],lines[iLine][2],lines[iLine][3])+")"
+			tagStr = "("+hkl2str(lines[iLine][1],lines[iLine][2],lines[iLine][3], dim=dim)+")"
 		endif
 //		tagStr += "\\Zr075\r"
 		tagStr += "\\Zr085\r"

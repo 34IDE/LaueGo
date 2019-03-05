@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.08										// based on LatticeSym_6.55
+#pragma version = 7.09										// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -17,7 +17,8 @@ Static Constant ELEMENT_Zmax = 118
 //Static strConstant BAR_FONT_ALWAYS = "Arial"	//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
-Static Constant MAXnumSymmetyrOps=192					// this the maximum number of possible symmetry operations
+Static Constant MAXnumSymmetyrOps=192				// this the maximum number of possible symmetry operations
+Static Constant MAX_NUM_EXPANSION = 201				// maximum number of points in a thermal expansion table
 Static Constant xtalStructLen5 = 25672				// length of crystalStructure5 in a string
 Static Constant xtalStructLen6 = 25686				// length of crystalStructure6 in a string
 Static Constant xtalStructLen7 = 25786				// length of crystalStructure7 in a string
@@ -233,6 +234,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.07, changed GetWyckoffSymStrings() to include site symmetry for every Wyckoff position, added siteSymmetry(SpaceGroupID,symbol).
 //	with version 7.08, added expansion table supprot, now have new crystalStructure with NL_L,dL_L,dL_LT arrays, and can read them from xml file, updated dSpacing()
 //						also changed siteSymmetry(SpaceGroupID,symbol) --> siteSymmetry(SpaceGroupID,symbol,dim)
+//	with version 7.09, fixed error in writing xml files in crystalStructure2xml()
 
 
 //	Rhombohedral Transformation:
@@ -385,9 +387,9 @@ Structure crystalStructure	// structure definition for a crystal lattice, this o
 	double Temperature				// Temperature (C)
 	double Pressure					// Temperature (Pa = Pascal)
 	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
-	int16	NL_L						// number of point in dL_L vs dL_LT that are used (max of 201)
-	double dL_L[201]				// ÆL/L expansion table (dimensionless)
-	double dL_LT[201]				// T for ÆL/L expansion table (Kelvin)
+	int16	NL_L						// number of point in dL_L vs dL_LT that are used (max of MAX_NUM_EXPANSION)
+	double dL_L[MAX_NUM_EXPANSION]		// ÆL/L expansion table (dimensionless)
+	double dL_LT[MAX_NUM_EXPANSION]	// T for ÆL/L expansion table (Kelvin)
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -4013,6 +4015,7 @@ Function readCrystalStructure(xtal,fname,[printIt])
 
 	// find the file type, this first looks at the top of the file, if that does not work, it looks at the file name extension
 	String fileType = CrystalFileType(fname)	// "xml", "xtl", "cif", "", or the actual file extension (without the '.')
+	init_crystalStructure(xtal)						// set all values to empty or invalid values
 	Variable err=1
 	if (stringmatch(fileType,"xml"))
 		err = readCrystalStructureXML(xtal,fname)
@@ -4333,12 +4336,13 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
 
 	String expansion = XMLtagContents("thermalExpansion",cell)
+	xtal.NL_L = 0
 	if (strlen(expansion)>1)
 		unit = StringByKey("unit", XMLattibutes2KeyList("T",expansion),"=")
 		unit = SelectString(strlen(unit),"K",unit)
 		Wave Ttemp = str2vec(XMLtagContents("T",expansion))
 		Wave dLtemp = str2vec(XMLtagContents("dL_L",expansion))
-		Variable NL_L = min(numpnts(dLtemp),201)
+		Variable NL_L = min(numpnts(dLtemp),MAX_NUM_EXPANSION)
 		Variable dL_OK = (NL_L > 1 && (numpnts(Ttemp) == NL_L))
 		WaveStats/Q/M=1 Ttemp
 		dL_OK = dL_OK && V_numNans==0 && V_numINFs==0
@@ -4661,7 +4665,7 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 
 	Variable dim = xtal.dim
 	Variable m, N=0
-	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\"dim>"+NL
+	String cif="<cif version=\"2\" dim=\""+num2istr(dim)+"\">"+NL
 	String str, unit=" unit=\"nm\""
 
 	if (strlen(xtal.desc))
