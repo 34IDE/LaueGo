@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Monday, March 04, 2019" time="03:28:37 PM CST" isoTime="2019-03-04T15:28:37"></written>
+	<written date="Tuesday, March 05, 2019" time="04:22:14 PM CST" isoTime="2019-03-05T16:22:14"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>cc8ce7d5cabd14eceb771bf8bfea651227d10edd</gitHash>
+	<gitHash>96f581f2e47c33603308cb71fa467db024477554</gitHash>
 	<fileCount>309</fileCount>
 	<file version="nan" time="2019-01-24T11:41:24" md5="8e2e0904fd26f496a98eae6d3dac8710" sha256="3c140bff52cccaafbb1e02b995470613f68848abb51561c6752e33c110341cf6" ext=".xml">materials/standard xtals/test/V2O3 Monoclinic.xml</file>
 	<file version="nan" time="2019-01-27T18:26:40" md5="69e705fe2cbfb54dd8ce990d77e5d229" sha256="f44567f99332c05b77d27a7c77ca40a5684a550fcaf13d08d7fb203dd626715a" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -17,7 +17,7 @@
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/Images/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="927455be35d34bf51c034d7b650dc6ce" sha256="a9f099ef1689f9637c94db6ab29a4071999b2d57d56ea0d8f0faeea05eab34d8" ext=".exe">microN/binary/peaksearch_win32.exe</file>
-	<file version="7.09" time="2019-02-28T18:03:49" md5="d3482773845da2335386609ca127e53d" sha256="76ac816b69fd3ceced93034baf102ceba2a1cf61d0eb24c4266a6878774e8b6d" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="7.1" time="2019-03-05T16:19:03" md5="f7eabcfc219286509fffebd3b40de235" sha256="f3a71241b2b08a11864cef51d7eac92c410c47794d2fa393bc90cee40ed13538" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2019-01-27T18:25:51" md5="1997f8eb52a61b2648209eb3cbc74d7a" sha256="f9da9a8d65034a6988dc907ba1629b5f60b022701ac00d50dcb71650513c3c3b" ext=".xml">materials/standard xtals/RuO2.xml</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="3dda90a250836b5ea6408c1dfc55da10" sha256="9c6c829aea6709cf1cb96a902abb8b0d08e1de353feb88e175fed365e4bd7706" ext="">microN/binary/peaksearch_i386</file>
 	<file version="nan" time="2016-03-14T09:37:51" md5="d5b2a33015a7b019ff5384a1771e75a3" sha256="1915fa02fdce0aa052a38cb3da002aeb11f71310f1bdb3951d4a1b9cf6d837a4" ext=".exe">microN/binary/Euler4.exe</file>
@@ -43,7 +43,7 @@
 	<file version="2.04" time="2018-01-09T13:46:06" md5="81904df45d7f37eda4ee32d41a5b9e51" sha256="a0263f260d4ac387d4630f8584a252c31b9e51870ed40e41785f444c17be097c" ext=".ipf">General/Gizmo/GizmoZoomTranslate.ipf</file>
 	<file version="nan" time="2019-01-27T18:17:21" md5="b9ccadbf3eded3ac7240b158003fe1ef" sha256="1ecd19d26b4d27bab391274afe741dc45f50a592daba0fb757c9841226a809da" ext=".xml">materials/standard xtals/Ge.xml</file>
 	<file version="nan" time="2018-12-05T13:00:47" md5="b4ab67b22178bca768b587e525cd3414" sha256="b73ee054e355c480d4a553c70ffed9944c380b910bdb690311ea5354b5cbf223" ext="">materials/standard xtals/checkAll</file>
-	<file version="0.27" time="2019-02-07T14:19:22" md5="ff8e996bb1ef0abc92f87e0332442c5c" sha256="250c0bda39840e7bc6bdd834edc0ac904d73f984340c39a262fa0c8252c7d020" ext=".ipf">Lattice/PowderPatterns.ipf</file>
+	<file version="1.01" time="2019-02-07T14:24:29" md5="cdb8286af5fb0293d1096d11fcb32bea" sha256="8c36fee757d861a99cc9964c304b05acf095b1fc9a3f693c7a944add53898868" ext=".ipf">Lattice/PowderPatterns.ipf</file>
 	<file version="nan" time="2013-10-29T11:45:34" md5="06b265dba793e384bed73d55cb20807b" sha256="038fd1b8ca5f63ffa6a8f546243e8bdd53efa824e51d2eb90f4be7e90fb27dd6" ext=".ipf">General/new/GeneralFirstNew.ipf</file>
 	<file version="nan" time="2018-05-11T15:12:22" md5="eef3fbce01aec78465f6d9b9c7fcd5c7" sha256="2ff592a6fef9e4f8b8487956dd787df53b3a25ce73fef961bce9c871b3c66110" ext=".xml">materials/standard xtals/BaTiO3.xml</file>
 	<file version="nan" time="2019-01-11T11:17:00" md5="69eee386e35a0bb198b7910746a256f9" sha256="8cec77a24cc58d32e9b616132bb6c54f71020d815bec54b859f37b6c6cc9237d" ext=".xml">materials/standard xtals/Kaolinite.xml</file>
@@ -116,7 +116,7 @@
 	<file version="nan" time="2019-01-27T18:29:10" md5="08853b698f388c6ed65dc6991eb70ac8" sha256="8b7e11453a8f62c05730b222c10f7e4f4f375e4c5502e3983ea1eb156a8ed290" ext=".xml">materials/standard xtals/CdTe.xml</file>
 	<file version="nan" time="2019-01-11T11:16:42" md5="34eb492fe365f07f52e58fcf618bee34" sha256="079ce7c6e16ec0a397a0edb843d8b4c2f2d80dc6d2ba80b8881a8b59ee9affa7" ext=".xml">materials/standard xtals/test/bad6.xml</file>
 	<file version="nan" time="2019-01-11T11:17:00" md5="33afe9b9cd02b28862654a4aa3125ee0" sha256="8a2a078696044587c51f746257fcac1a7c65f134ee45f7723f63a031c56edf8f" ext=".xml">materials/standard xtals/Autunite.xml</file>
-	<file version="7.08" time="2019-02-07T14:35:58" md5="741dbd90dd7e9fcb848933d6e9f41d39" sha256="d0be9e8489fe421f3ee15492a4d7a93ffb7103a046496afdd0535021596a261a" ext=".ipf">Lattice/LatticeSym2D3D.ipf</file>
+	<file version="7.09" time="2019-02-28T18:03:49" md5="d3482773845da2335386609ca127e53d" sha256="76ac816b69fd3ceced93034baf102ceba2a1cf61d0eb24c4266a6878774e8b6d" ext=".ipf">Lattice/LatticeSym2D3D.ipf</file>
 	<file version="nan" time="2019-02-07T10:44:18" md5="fcc545627f0c738bb045fbe853304c19" sha256="f3be96f924c55454eeb3b536b5ff593730af4643ea4eaec24b05e51595748f26" ext=".xml">materials/standard xtals/test/Si_angles.xml</file>
 	<file version="nan" time="2018-05-11T14:16:19" md5="a76be42809ac370076c569e50c709a59" sha256="95561f416fe5197252fe4147e11c1f6df40464563e3aaec1418b6bb7368396b3" ext=".xml">materials/standard xtals/YBCO/YBCO2.xml</file>
 	<file version="nan" time="2019-01-11T11:16:42" md5="23385cf23daf0f03865665b1243f8c92" sha256="e23501758d5a7c7055f0af9138573a277b40798098cefb57f1932a81ac59d256" ext=".xml">materials/standard xtals/test/bad4.xml</file>
