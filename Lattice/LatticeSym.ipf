@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.09										// based on LatticeSym_6.55
+#pragma version = 7.10									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -3002,10 +3002,12 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_c_nm,disable=1,win=$subWin				// always for dim==2
 		SetVariable set_beta,disable=1,win=$subWin
 		SetVariable set_gamma,disable=1,win=$subWin
+		TitleBox LatticeDimTitle,disable=0,win=$subWin
 	else
 		SetVariable set_c_nm,disable=0,win=$subWin				// always for dim==3
 		SetVariable set_beta,disable=0,win=$subWin
 		SetVariable set_gamma,disable=0,win=$subWin
+		TitleBox LatticeDimTitle,disable=1,win=$subWin
 	endif
 #endif
 
