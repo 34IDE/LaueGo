@@ -10,8 +10,8 @@ Menu "Zones"
 	MenuItemIfWaveClassExists("Make Gizmo Waves","Zones*","MINCOLS:4"),GizmoMakeWavesForZones($"",$"",$"")
 	MenuItemIfWaveExists("Gizmo of Zones",":GizmoWaves:GizmoGhats"), GizmoOfZones()
 	MenuItemIfWaveExists("Gizmo of all Pair Rotations",":GizmoWaves:PairRotationsView"), GizmoOfMakePairRotations()
-	"  View Gizmo from Detector", ModifyGizmo SETQUATERNION={-0.653030,-0.653030,-0.271204,0.271204}
-	"  View Gizmo from Side", ModifyGizmo SETQUATERNION={0,-1/sqrt(2),0,1/sqrt(2)}
+	"  View Gizmo from Detector", ModifyGizmo stopRotation, SETQUATERNION={-0.653030,-0.653030,-0.271204,0.271204}
+	"  View Gizmo from Side", ModifyGizmo stopRotation, SETQUATERNION={0,-1/sqrt(2),0,1/sqrt(2)}
 	"-"
 End
 #endif
