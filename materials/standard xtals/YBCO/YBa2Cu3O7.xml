@@ -4,6 +4,7 @@
 	<chemical_name_common>YBa2Cu3O7</chemical_name_common>
 	<space_group>
 		<IT_number>47</IT_number>
+		<H-M>Pmmm</H-M>
 	</space_group>
 	<cell>
 		<a unit="nm">0.3827</a>
