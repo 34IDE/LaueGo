@@ -2,7 +2,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 5.00
+#pragma version = 5.01
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -2231,9 +2231,25 @@ Function MakeIndexingReportSheet()	// make a report of the indexation using the 
 	str = StringByKey("structureDesc",note(FullPeakIndexed),"=")
 	if (strlen(str))
 		TextBox/C/N=textDesc/B=1/F=0/A=RT/X=5/Y=0 "\\Zr150"+str
+	endif
+	if (countChars(par2,"\r\n") <= 12)			// add reciprocal lattice if there is room
+		str = "recip_lattice" + num2istr(ip)
+		Wave recip = decodeMatFromStr(StringByKey(str, note(FullPeakIndexed),"="))	
+		if (WaveExists(recip))
+			Variable i
+			String recipStr = "reciprocal lattice vectors:\r     a*           b*           c*\r"
+			for (i=0;i<3;i+=1)
+				sprintf str,"%+10.6f   %+10.6f   %+10.6f\r",recip[i][0],recip[i][1],recip[i][2]
+				recipStr += str
+			endfor
+			recipStr = TrimBoth(recipStr)
+		endif
+		TextBox/N=textRecip/F=0/A=RB/X=4/Y=4 recipStr
+	endif
+	if (strlen(par2))
 		SetDrawLayer UserFront
 		SetDrawEnv linethick= 0.1
-		DrawLine 313,531,313,743
+		DrawLine 313,540,313,743
 	endif
 	Textbox/C/N=stamp0/F=0/A=RB/X=0.1/Y=0.1 "\\Z06\\{\"%s %s\",date(), time()}"
 	Textbox/C/N=stamp1/F=0/A=LB/X=0.1/Y=0.1 "\\Z06\\{\"%s\",CornerStamp1_()}"+":"+WinName(0, 1)

@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.73
+#pragma version = 4.74
 // #pragma hide = 1
 
 Menu "Graph"
@@ -155,6 +155,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		RemoveTrailingString(str,tail,ignoreCase), removes tail from end of str
 //		TrimBoth(str,[chars,ignoreCase]), TrimFront(), & TrimEnd(),  trim white space or given set of characters
 //		use functions in line above:  TrimFrontBackWhiteSpace(str), TrimLeadingWhiteSpace(str), TrimTrailingWhiteSpace(str), trims whitespace
+//		countChars(buf, chars), count number of times one of the characters in chars occur in buf
 //		PrintLongStrings(buf,[sep]), prints really long strings, returns number of lines printed
 //		IgorFileTypeString() gives descriptive string from the NUMTYPE from WaveInfo()
 //		GenericWaveNoteInfo(), returns wave note info
@@ -4495,6 +4496,24 @@ ThreadSafe Function/S TrimEnd(str,[chars,ignoreCase])		// remove specified trail
 	return str[0,i]
 End
 //	DEPRECATED, the old functions: TrimFrontBackWhiteSpace(), TrimLeadingWhiteSpace(), and TrimTrailingWhiteSpace() are DEPRECATED
+
+
+Function countChars(buf, chars)
+	// count number of times one of the characters in chars occur in buf
+	String buf				// a string buffer
+	String chars			// string with characters to search for
+	Variable i, m, N
+	String char
+	for (m=0, N=0; m<strlen(chars); m+=1)	// loop over all the characters in chars
+		char = chars[m]								// a single char in chars
+		i = -1
+		do 
+			i = strsearch(buf, char, i+1)		// count each occurance in buf
+			N += i<0 ? 0 : 1
+		while(i>=0)
+	endfor 
+	return N
+End
 
 
 Function PrintLongStrings(buf,[sep])	// prints really long strings, returns number of lines printed
