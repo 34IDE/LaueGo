@@ -18,7 +18,7 @@
 		 -->
 		<alpha unit="mrad">1570.7963267949</alpha>
 		<beta unit="k'">5.4</beta>
-		<gamma unit="M&quot">0.324</gamma>
+		<gamma unit="M&quot;">0.324</gamma>
 		<temperature unit="C">22.5</temperature>
 		<alphaT>2.56e-06</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>

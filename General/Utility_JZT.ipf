@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.74
+#pragma version = 4.75
 // #pragma hide = 1
 
 Menu "Graph"
@@ -176,7 +176,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		vec2MINstr(vecIN), similar to hkl2str(), convert vecIN to a string of acceptable minimal length
 //		minStr2Vec(inStr,Nreq), similar to str2hkl(), convert a string of numbers to a wave of Nreq values, pretty forgiving about format
 //		ReplaceCharacters(chars,inStr,replacement)  replace all occurance of a character in chars[] with replacement
-//		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex()}
+//		nice printing of vecs & mats: printWave() and associated functions: {printvec(),printmat(),printmatOneListReal(),printmatOneListComplex(),printmatOneListText()}
 //		SetAspectToSquarePixels(), Used to square up a graph window
 //		GetGraphAspectRatio(gName), returns aspect ratio of graph in units
 //		SquareUpGizmo(gName), Used to square up a graph gizmo
@@ -5402,7 +5402,9 @@ ThreadSafe Static Function printmat(m1,[name,brief,fmt,rowMax,zeroThresh])
 	Variable Nrow=DimSize(m1,0), row
 	Nrow = min(Nrow,rowMax)
 	for (row=0;row<Nrow;row+=1)
-		if (WaveType(m1) %& 0x01)			// true for complex numbers
+		if (WaveType(m1,1) == 2)				// true for text waves
+			print printmatOneListText(m1,row, name=name, brief=brief, fmt=fmt)
+		elseif (WaveType(m1) %& 0x01)		// true for complex numbers
 			print printmatOneListComplex(m1,row, name=name, brief=brief, fmt=fmt, zeroThresh=zeroThresh)
 		else
 			print printmatOneListReal(m1,row, name=name, brief=brief, fmt=fmt, zeroThresh=zeroThresh)
@@ -5501,6 +5503,40 @@ ThreadSafe Static Function/T printmatOneListComplex(m1,row,[name,brief,fmt,zeroT
 			sprintf str, fmt,rInternal[row][j],iInternal[row][j]
 		else
 			sprintf str, fmt,name,row,j,rInternal[row][j],iInternal[row][j]
+		endif
+		line += str
+	endfor
+	line = line[0,strlen(line)-4-1]		// strip off trailing 4 spaces
+	return line
+End
+//
+ThreadSafe Static Function/T printmatOneListText(m1,row,[name,brief,fmt])// print one line for real (not complex) matricies
+	Wave/T m1
+	Variable row									// row number (starts with 0)
+	String name									// optional user supplied name to use
+	Variable brief								// print in briefer form
+	String fmt									// optional format for on number
+	if (ParamIsDefault(name))
+		name = NameOfWave(m1)
+	endif
+	brief = ParamIsDefault(brief) || numtype(brief) ? 0 : !(!brief)
+	fmt = SelectString(ParamIsDefault(fmt)|| strlen(fmt)<1,fmt,"%s")
+	if (brief)
+		fmt = fmt + "    "
+	else
+		fmt = "%s[%d][%d] = "+fmt+";    "
+	endif
+
+	String line="", str
+	Variable j, Ncol=DimSize(m1,1)
+	for (j=0;j<Ncol;j+=1)
+		if (strlen(line)>100)
+			line += "  ..."
+			break
+		elseif (brief)
+			sprintf str, fmt,m1[row][j]
+		else
+			sprintf str, fmt,name,row,j,m1[row][j]
 		endif
 		line += str
 	endfor
