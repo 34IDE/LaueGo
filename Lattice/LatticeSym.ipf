@@ -9610,8 +9610,8 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry o
 	dim = dim==2 ? 2 : 3
 
 	Variable SG=str2num(SpaceGroupID)
-	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
-	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
+	Wave/Z mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
+	Wave/Z bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0))
 	Variable numSymOps
 	if (WaveExists(mats) && WaveExists(bvecs))				// check if they exist
 		if (StringMatch(StringByKey("SpaceGroupID",note(mats),"="), SpaceGroupID))
