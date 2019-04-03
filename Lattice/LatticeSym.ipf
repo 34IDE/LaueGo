@@ -1119,7 +1119,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
 		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,dim,xx,yy,zz,mult)
-		if (char2num(symbol)==65)
+		if (char2num(symbol)==65)			// special for upper-case A
 			mm = 27+1
 		else
 			mm=char2num(LowerStr(symbol))-96 + 1
@@ -9902,20 +9902,19 @@ Static Function/T setSymLineID(id,dim)
 	Variable dim
 	dim = dim==2 ? 2 : 3
 
-		if (!isValidSpaceGroupID(id,dim))		// perhaps only a number was passed
+	if (!isValidSpaceGroupID(id,dim))			// perhaps only a number was passed
 		Variable SG
 		SG = str2num(id)
 		SG = strsearch(id,":",0)>0 ? NaN : SG
 		id = FindDefaultIDforSG(SG, dim=dim)	// find first space group starting with "id:"
 	endif
 	if (!isValidSpaceGroupID(id,dim))
-		return ""										// invalid
+		return ""									// invalid
 	endif
 
 	return setSymLineIDnum(SpaceGroupID2num(id, dim=dim),dim)
 End
 //
-
 Static Function/T setSymLineIDnum(idNum,dim)
 	Variable idNum								// Space Group ID number [1,530]
 	Variable dim
