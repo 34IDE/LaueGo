@@ -237,6 +237,9 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.09, fixed error in writing xml files in crystalStructure2xml()
 //	with version 7.11, Wyckoff symbol data was wrong, fixed GetSettingTransForm() and ...
 //	with version 7.12, change GetWyckoffSymStrings to only being a funciton of the default space group num [1-230] and ...
+//							remove positionsOfOneAtomType(), replaced with allXYZofOneAtomType() (left in the Unconventional, but it should go)
+//							replaced reMakeAtomXYZs3D() & reMakeAtomXYZs2D() with reMakeAtomXYZs()
+//							added LC2direct(), and use it in setDirectRecip()
 
 
 //	Rhombohedral Transformation:
@@ -1100,7 +1103,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 		print "Too Many Atoms"
 		return 0
 	endif
-	ControlInfo/W=$win setAtomLabel		;		xtal.atom[m].name = S_Value[0,59]	// gather all the values
+	ControlInfo/W=$win setAtomLabel	;		xtal.atom[m].name = S_Value[0,59]	// gather all the values
 	ControlInfo/W=$win setAtomZ			;		xtal.atom[m].Zatom = V_Value
 	ControlInfo/W=$win setAtomWyckoff	;		symbol = SelectString(StringMatch(S_Value," "),S_Value,"")
 	ControlInfo/W=$win setAtomRelX		;		xx = V_Value
@@ -1118,7 +1121,8 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 		endif
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
-		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,dim,xx,yy,zz,mult)
+		Wave direct = directFrom_xtal(xtal)										// get direct lattice from xtal
+		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,dim,direct,xx,yy,zz,mult)
 		if (char2num(symbol)==65)			// special for upper-case A
 			mm = 27+1
 		else
@@ -1782,7 +1786,7 @@ End
 #ifndef OLD_LATTICE_ORIENTATION		// added at version<5.00, with a_Parallel_X, a||x and c*||z
 Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors from a,b,c,..., also calculates Vc & density
 	STRUCT crystalStructure &xtal
-	// Although not used here, note that the following also works:
+	// Nnote that the following works:
 	//		MatrixOP recipLatice = 2*PI * (Inv(directLattice))^t
 	//		MatrixOP directLattice = 2*PI * Inv(recipLatice^t)
 	//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
@@ -1793,61 +1797,34 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	if (strsearch(GetRTStackInfo(0),"reMakeAtomXYZs",2) >= 0)
 		return 0
 	endif
+
 	Variable dim = xtal.dim
-	Variable a0,a1,a2,  b0,b1,b2,  c0,c1,c2		//components of the direct lattice vectors
-	Variable a, b, c, Vc
-	Variable ca=cos((xtal.alpha)*PI/180)
-	if (dim==2)
-		Variable sa=sin((xtal.alpha)*PI/180)
-		a = xtal.a	;	b = xtal.b	;	c = NaN
-		a0 = a		;	a1 = 0		;	a2 = NaN
-		b0 = b*ca	;	b1 = b*sa	;	b2 = NaN
-		c0 = NaN		;	c1 = NaN		;	c2 = NaN
-		Vc = a*b * sa										// actually the area, not volume
-		//		Vc = MatrixDet(directLattice),    VcRecip = MatrixDet(recipLatice)
+	if (dim == 2)
+		Wave direct = LC2direct({xtal.a, xtal.b, xtal.alpha})		// make direct lattice
 	else
-		a=xtal.a		;	b=xtal.b		;	c=xtal.c
-		Variable cb = cos((xtal.beta)*PI/180)
-		Variable cg = cos((xtal.gam)*PI/180), sg = sin((xtal.gam)*PI/180)
-		Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
-		Vc = a*b*c * phi							// volume of unit cell
-		Variable pv = (2*PI) / Vc							// used to scale reciprocal lattice
+		Wave direct = LC2direct({xtal.a, xtal.b, xtal.c, xtal.alpha, xtal.beta, xtal.gam}, isRhomb=isRhombohedralXtal(xtal))
+	endif
+	xtal.Vc = MatrixDet(direct)											// either vol of 3D cell or area of 2D
+	MatrixOP/FREE recip = 2*PI * (Inv(direct))^t					// reciprocal lattice
 
-		if (!isRhombohedralXtal(xtal))
-			// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
-			a0=a				; a1=0						; a2=0
-			b0=b*cg			; b1=b*sg					; b2=0
-			c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
-		else
-			// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
-			// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
-			Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
-			Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
-			a0=p2q			; a1=pmq					; a2=pmq
-			b0=pmq			; b1=p2q					; b2=pmq
-			c0=pmq			; c1=pmq					; c2=p2q
-		endif
+	if (dim == 2)
+		xtal.a0 = direct[0][0]	;	xtal.b0 = direct[0][1]		// assign direct lattice to xtal values
+		xtal.a1 = direct[1][0]	;	xtal.b1 = direct[1][1]	
+
+		xtal.as0 = recip[0][0]	;	xtal.bs0 = recip[0][1]		// assign recip lattice to xtal values
+		xtal.as1 = recip[1][0]	;	xtal.bs1 = recip[1][1]	
+	else
+		xtal.a0 = direct[0][0]	;	xtal.b0 = direct[0][1]	;	xtal.c0 = direct[0][2]	// assign direct lattice to xtal values
+		xtal.a1 = direct[1][0]	;	xtal.b1 = direct[1][1]	;	xtal.c1 = direct[1][2]
+		xtal.a2 = direct[2][0]	;	xtal.b2 = direct[2][1]	;	xtal.c2 = direct[2][2]
+
+		xtal.as0 = recip[0][0]	;	xtal.bs0 = recip[0][1]	;	xtal.cs0 = recip[0][2]	// assign recip lattice to xtal values
+		xtal.as1 = recip[1][0]	;	xtal.bs1 = recip[1][1]	;	xtal.cs1 = recip[1][2]
+		xtal.as2 = recip[2][0]	;	xtal.bs2 = recip[2][1]	;	xtal.cs2 = recip[2][2]
 	endif
 
-	xtal.Vc = Vc
-	xtal.a0=a0		; xtal.a1=a1	; xtal.a2=a2			// assign direct lattice to xtal values
-	xtal.b0=b0		; xtal.b1=b1	; xtal.b2=b2
-	xtal.c0=c0		; xtal.c1=c1	; xtal.c2=c2
-
-	// next the reciprocal lattice
-	if (dim==2)
-		Make/N=(2,2)/D/FREE direct = { {a0,a1}, {b0,b1} }
-		MatrixOP/FREE recip = 2*PI * (Inv(direct))^t
-		xtal.as0 = recip[0][0]		;	xtal.as1 = recip[1][0]		;	xtal.as2 = NaN
-		xtal.bs0 = recip[0][1]		;	xtal.bs1 = recip[1][1]		;	xtal.bs2 = NaN
-		xtal.cs0 = NaN					;	xtal.cs1 = NaN					;	xtal.cs2 = NaN
-	else
-		xtal.as0=(b1*c2-b2*c1)*pv	; xtal.as1=(b2*c0-b0*c2)*pv	; xtal.as2=(b0*c1-b1*c0)*pv	// (b x c)*2PI/Vc
-		xtal.bs0=(c1*a2-c2*a1)*pv	; xtal.bs1=(c2*a0-c0*a2)*pv	; xtal.bs2=(c0*a1-c1*a0)*pv	// (c x a)*2PI/Vc
-		xtal.cs0=(a1*b2-a2*b1)*pv	; xtal.cs1=(a2*b0-a0*b2)*pv	; xtal.cs2=(a0*b1-a1*b0)*pv	// (a x b)*2PI/Vc
-	endif
-
-	if (dim==2)
+	// really need to get rid of this Unconventional stuff
+	if (dim == 2)
 		xtal.Unconventional00 = NaN					// cannot use Unconventional with dim==2
 		KillWaves/Z root:Packages:Lattices:Unconventional
 	else
@@ -1937,6 +1914,58 @@ Static Function setDirectRecip(xtal)					// set direct and recip lattice vectors
 	return 0
 End
 #endif
+
+
+Static Function/WAVE LC2direct(LC, [isRhomb])
+	Wave LC
+	Variable isRhomb
+	isRhomb = ParamIsDefault(isRhomb) || numtype(isRhomb) ? 0 : isRhomb
+
+	Variable a,b,c,alpha,bet,gam, dim
+	if (numpnts(LC)==3)
+		dim = 2
+		a = LC[0]			;	b = LC[1]			;	alpha = LC[2]
+	elseif (numpnts(LC)==6)
+		dim = 3
+		a = LC[0]			;	b = LC[1]			;	c = LC[2]	
+		alpha = LC[3]	;	bet = LC[4]		;	gam = LC[5]
+	else
+		return $""
+	endif
+
+	Variable a0,a1,a2, b0,b1,b2, c0,c1,c2
+	Variable sa=sin(alpha*PI/180), ca=cos(alpha*PI/180)
+	if (dim==2)
+		a0 = a		;	a1 = 0
+		b0 = b*ca	;	b1 = b*sa	;
+		// Vc = a0 * b1												// actually the area, not volume
+		Make/D/FREE direct = {{a0,a1}, {b0,b1}}
+	else
+		Variable cb = cos((bet)*PI/180)
+		Variable cg = cos((gam)*PI/180), sg = sin((gam)*PI/180)
+		Variable phi = sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2*ca*cb*cg)	// = Vc/(a*b*c)
+		//	Vc = a*b*c * phi									// volume of unit cell
+		Variable pv = (2*PI) / (a*b*c * phi)				// used to scale reciprocal lattice
+		if (!isRhomb)
+			// conventional choice International Tables (2006) Vol. B, chapter 3.3 page 360
+			a0=a				; a1=0					; a2=0
+			b0=b*cg			; b1=b*sg					; b2=0
+			c0=c*cb			; c1=c*(ca-cb*cg)/sg	; c2=c*phi/sg	// z || c* (or axb)
+		else
+			// Rhombohedral cell choice International Tables (2006) Vol. B, chapter 3.3 page 360 (top of second column)
+			// a,b,c are symmetric about the 111 direction, or (a+b+c) == {x,x,x}
+			Variable pp=sqrt(1+2*ca), qq=sqrt(1-ca)
+			Variable pmq=(a/3)*(pp-qq), p2q=(a/3)*(pp+2*qq)
+			a0=p2q			; a1=pmq					; a2=pmq
+			b0=pmq			; b1=p2q					; b2=pmq
+			c0=pmq			; c1=pmq					; c2=p2q
+		endif
+		Make/D/FREE direct = {{a0,a1,a2}, {b0,b1,b2}, {c0,c1,c2}}
+	endif
+
+	direct = abs(direct)<1e-16 ? 0 : direct
+	return direct
+End
 
 Function/WAVE direct2LatticeConstants(direct)	// calculate lattice constants angles in degree
 	// take three direct lattice vectors and return lattice constants as a free wave[6]
@@ -4443,7 +4472,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 		mult = 0
 		if (strlen(WyckoffSymbol)==0 && dim>2)							// try to set Wyckoff symbol from coordinates
-			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,dim,fracX,fracY,fracZ,mult)
+			Wave direct = LC2direct({xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam})
+			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,dim,direct, fracX,fracY,fracZ,mult)
 		endif
 
 		valence = str2num(XMLtagContents("valence",atomSite))
@@ -6035,16 +6065,9 @@ ThreadSafe Static Function Element_amu(Z)
 End
 
 
-Function reMakeAtomXYZs(xtal)
+Static Function reMakeAtomXYZs(xtal)
 	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
-	if (xtal.dim == 2)
-		return reMakeAtomXYZs2D(xtal)
-	endif
-	return reMakeAtomXYZs3D(xtal)
-End
-//
-Static Function reMakeAtomXYZs3D(xtal)
-	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
+	Variable dim = (xtal.dim == 2) ? 2 : 3
 	if (Exists("root:Packages:Lattices:atom0")==1)
 		Wave ww = root:Packages:Lattices:atom0
 		if (WaveExists(ww) && strlen(xtal.hashID))	// if first atom has correct hash, assume the rest are OK too
@@ -6057,41 +6080,15 @@ Static Function reMakeAtomXYZs3D(xtal)
 		xtal.hashID = xtalHashID(xtal)			// re-set hash function to identify associated waves
 	endif
 	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
+
+	Wave direct = directFrom_xtal(xtal)							// get direct lattice from xtal
+	String id=xtal.SpaceGroupID
 	Variable m
 	for (m=0;m<xtal.N;m+=1)						// loop over each atom type
 		name = "root:Packages:Lattices:atom"+num2istr(m)
-		Make/N=3/O/D $name
+		Wave oneAtom = allXYZofOneAtomType(id, dim, direct, xtal.atom[m].x, xtal.atom[m].y, xtal.atom[m].z)		// works for dim= 2 or 3
+		Duplicate/O oneAtom, $name
 		Wave ww = $name
-		positionsOfOneAtomType(xtal,xtal.atom[m].x,xtal.atom[m].y,xtal.atom[m].z,ww)
-		wnote = ReplaceStringByKey("atomType",wnote,xtal.atom[m].name,"=")
-		wnote = ReplaceNumberByKey("Zatom",wnote,xtal.atom[m].Zatom,"=")
-		wnote = ReplaceNumberByKey("occupy",wnote,xtal.atom[m].occ,"=")
-		wnote = ReplaceNumberByKey("valence",wnote,xtal.atom[m].valence,"=")
-		Note/K ww, wnote
-	endfor
-	return 0
-End
-//
-Static Function reMakeAtomXYZs2D(xtal)
-	STRUCT crystalStructure &xtal				// this sruct is filled  by this routine
-	if (Exists("root:Packages:Lattices:atom0")==1)
-		Wave ww = root:Packages:Lattices:atom0
-		if (WaveExists(ww) && strlen(xtal.hashID))	// if first atom has correct hash, assume the rest are OK too
-			if (stringmatch(StringByKey("ID",note(ww),"="),xtal.hashID))
-				return 0									// waves have correct hash, so return
-			endif
-		endif
-	endif
-	if (strlen(xtal.hashID)<1)
-		xtal.hashID = xtalHashID(xtal)			// re-set hash function to identify associated waves
-	endif
-	String wnote=ReplaceStringByKey("ID","",xtal.hashID,"="), name
-	Variable m
-	for (m=0;m<xtal.N;m+=1)						// loop over each atom type
-		name = "root:Packages:Lattices:atom"+num2istr(m)
-		Make/N=2/O/D $name
-		Wave ww = $name
-		positionsOfOneAtomType(xtal,xtal.atom[m].x,xtal.atom[m].y,NaN,ww)
 		wnote = ReplaceStringByKey("atomType",wnote,xtal.atom[m].name,"=")
 		wnote = ReplaceNumberByKey("Zatom",wnote,xtal.atom[m].Zatom,"=")
 		wnote = ReplaceNumberByKey("occupy",wnote,xtal.atom[m].occ,"=")
@@ -6116,77 +6113,181 @@ End
 //	printf "F(%d %d %d) = %g %s i%g,      |F| = %g\r",h,k,l,real(Fc),SelectString(imag(Fc)<0,"+","-"),abs(imag(Fc)),sqrt(magsqr(Fc))
 //End
 //
-Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
-	STRUCT crystalStructure &xtal	// provides SpaceGroup, a,b,c
-	Variable xx,yy,zz		// fractional coords of this kind of atom
-	Wave xyzIN				// result, list of all equiv positions for this atom in fractional coords
-
-	String SpaceGroupID=xtal.SpaceGroupID
-	Variable dim = xtal.dim
-	dim = dim==2 ? 2 : 3
-	SetSymOpsForSpaceGroup(SpaceGroupID,dim)	// ensure existance of symmetry op mats and vecs
-	Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+xtal.SpaceGroupID,0))
-	Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+xtal.SpaceGroupID,0))
-	if (!WaveExists(mats) || !WaveExists(bvecs))
-		Abort"Unable to get symmetry operations in positionsOfOneAtomType()"
+//	Static Function positionsOfOneAtomType(xtal,xx,yy,zz,xyzIN)
+//		STRUCT crystalStructure &xtal	// provides SpaceGroup, a,b,c
+//		Variable xx,yy,zz		// fractional coords of this kind of atom
+//		Wave xyzIN				// result, list of all equiv positions for this atom in fractional coords
+//	
+//		String SpaceGroupID=xtal.SpaceGroupID
+//		Variable dim = xtal.dim
+//		dim = dim==2 ? 2 : 3
+//		SetSymOpsForSpaceGroup(SpaceGroupID,dim)	// ensure existance of symmetry op mats and vecs
+//		Wave mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+xtal.SpaceGroupID,0))
+//		Wave bvecs = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+xtal.SpaceGroupID,0))
+//		if (!WaveExists(mats) || !WaveExists(bvecs))
+//			Abort"Unable to get symmetry operations in positionsOfOneAtomType()"
+//		endif
+//		Wave direct = directFrom_xtal(xtal)		// get direct lattice from xtal
+//		Variable minDist2 = LatticeSym_minBondLen^2
+//	
+//		Make/N=(dim,dim)/D/FREE mat
+//		if (dim==2)
+//			Make/N=(dim)/D/FREE bv, in={xx,yy}, vec
+//		else
+//			Make/N=(dim)/D/FREE bv, in={xx,yy,zz}, vec
+//		endif
+//		Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
+//	
+//		Make/N=(Neq,dim)/D/FREE xyz=NaN				// internal copy of fractional coords
+//		Make/N=(Neq,dim)/D/FREE xyznm=NaN			// real positions (in nm), NOT fractional coords (in sync with xyz[][])
+//		Variable N, i, isDup, Ncorners
+//		if (dim==2)
+//			Ncorners = 4
+//			Make/N=(Ncorners,dim)/D/FREE rr8, add8={ {0,1,0,1}, {0,0,1,1} }
+//		else
+//			Ncorners = 8
+//			Make/N=(Ncorners,dim)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
+//		endif
+//	
+//		// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
+//		for (m=0,N=0;m<Neq;m+=1)						// for each of the symmetry operations
+//			mat = mats[m][p][q]
+//			bv = bvecs[m][p]
+//			MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
+//			MatrixOp/FREE rr = rr - floor(rr)		// reduce to [0,1), the first unit cell
+//			rr = rr<1e-7 ? 0 : rr						// a fractional coord < 1e-7 is 0
+//			rr8 = rr[q] + add8							// deals with issue when comparing {x,y,0.99} to {x,y,0.01}
+//			MatrixOP/FREE vec8 = ( direct x rr8^t )^t	// real space vectors from rr
+//			if (Neq<2)
+//				isDup = 0									// 1 symmetry op, there cannot be any duplicates (only for SG=1, triclinic)
+//			else
+//				for (i=0,isDup=0; i<Ncorners && !isDup; i+=1)	// check all Ncorners of the add8's for duplicates
+//					vec = vec8[i][p]
+//					MatrixOP/FREE isDup0 = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
+//					isDup = isDup || isDup0[0]
+//				endfor
+//			endif
+//			if (!isDup)										// not a duplicate, so add to the list of positions
+//				xyz[N][] = rr[q]							// rr is not an equivalent atom, save it to xyz[N]
+//				xyznm[N][] = vec[q]						//   also save the position in nm
+//				N += 1
+//			endif
+//		endfor
+//	
+//		Wave Unconventional=root:Packages:Lattices:Unconventional
+//		if (WaveExists(Unconventional))					// Unconventional exists, transform all the fractional coords
+//			MatrixOP/FREE xyz = ( Unconventional x (xyz^t) )^t
+//		endif
+//	
+//		Redimension/N=(N,dim) xyzIN					// remove extra space (it is all filled with NaN's)
+//		xyzIN = xyz[p][q]									// and, update xyzIN with correct values
+//		return N
+//	End
+//
+Static Function/WAVE allXYZofOneAtomType(SpaceGroupID, dim, direct, xx,yy,zz)
+	// returns a free wave with all the equivalent xyz of {xx,yy,zz}
+	// this is computed by applying all of the symmetry operations for SpaceGroupID to {xx,yy,zz}
+	String SpaceGroupID				// one of the 530 SpaceGroupID's
+	Variable dim							// either 3 or 2
+	Wave direct							// direct lattice
+	Variable xx,yy,zz		// fractional coords of this particular atom
+//	STRUCT crystalStructure &xtal	// provides SpaceGroup, a,b,c
+//	String SpaceGroupID=xtal.SpaceGroupID
+//	Variable dim = (xtal.dim)==2 ? 2 : 3
+//	Wave direct = directFrom_xtal(xtal)							// get direct lattice from xtal
+	Wave symOpMats = SymOpsForSpaceGroup(SpaceGroupID,dim)	// get all symmetry operation mats for this SpaceGroupID
+	if (!WaveExists(symOpMats))
+		Abort"Unable to get symmetry operation matricies in allXYZofOneAtomType() for spacegroup id '"+SpaceGroupID+"'"
 	endif
-	Wave direct = directFrom_xtal(xtal)		// get direct lattice from xtal
+	Variable Neq = DimSize(symOpMats,2)							// each layer is a symmetry op
+
 	Variable minDist2 = LatticeSym_minBondLen^2
 
-	Make/N=(dim,dim)/D/FREE mat
+	Make/N=(dim)/D/FREE xyz1, inxyz, vec
 	if (dim==2)
-		Make/N=(dim)/D/FREE bv, in={xx,yy}, vec
+		xyz1 = {xx,yy,1}												// input xy+1
 	else
-		Make/N=(dim)/D/FREE bv, in={xx,yy,zz}, vec
+		xyz1 = {xx,yy,zz,1}											// input xyz+1
 	endif
-	Variable m,Neq=NumberByKey("numSymOps", note(mats),"=")
 
-	Make/N=(Neq,dim)/D/FREE xyz=NaN				// internal copy of fractional coords
 	Make/N=(Neq,dim)/D/FREE xyznm=NaN			// real positions (in nm), NOT fractional coords (in sync with xyz[][])
-	Variable N, i, isDup, Ncorners
+	Variable m, N, i, isDup, Ncorners
 	if (dim==2)
 		Ncorners = 4
-		Make/N=(Ncorners,dim)/D/FREE rr8, add8={ {0,1,0,1}, {0,0,1,1} }
+		Make/N=(Ncorners,dim)/D/FREE rr8, corners={ {0,1,0,1}, {0,0,1,1} }
 	else
 		Ncorners = 8
-		Make/N=(Ncorners,dim)/D/FREE rr8, add8={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
+		Make/N=(Ncorners,dim)/D/FREE rr8, corners={{0,1,0,0,1,1,0,1}, {0,0,1,0,1,0,1,1}, {0,0,0,1,0,1,1,1}}
 	endif
 
-	// printf "atom at  %.5f, %.5f, %.5f\r",in[0],in[1],in[2]
-	for (m=0,N=0;m<Neq;m+=1)						// for each of the symmetry operations
-		mat = mats[m][p][q]
-		bv = bvecs[m][p]
-		MatrixOp/FREE rr = mat x in + bv		// rr is relative coord of (xx,yy,zz) after operation
-		MatrixOp/FREE rr = rr - floor(rr)		// reduce to [0,1), the first unit cell
-		rr = rr<1e-7 ? 0 : rr						// a fractional coord < 1e-7 is 0
-		rr8 = rr[q] + add8							// deals with issue when comparing {x,y,0.99} to {x,y,0.01}
-		MatrixOP/FREE vec8 = ( direct x rr8^t )^t	// real space vectors from rr
-		if (Neq<2)
-			isDup = 0									// 1 symmetry op, there cannot be any duplicates (only for SG=1, triclinic)
-		else
-			for (i=0,isDup=0; i<Ncorners && !isDup; i+=1)	// check all Ncorners of the add8's for duplicates
-				vec = vec8[i][p]
-				MatrixOP/FREE isDup0 = maxVal( greater(minDist2, sumRows(magSqr(xyznm - rowRepeat(vec,Neq)))) )
-				isDup = isDup || isDup0[0]
-			endfor
+	MatrixOP/FREE xyzTemp1 = symOpMats x xyz1			// apply all sym ops to the xyz1
+	Make/N=(Neq,dim)/D/FREE xyzSym							// strip off the trailing 1
+	xyzSym = xyzTemp1[q][0][p]								// xyzSym is now a (Neq,3), of all symmetry equivalent xyz
+	MatrixOp/FREE xyzSym = xyzSym - floor(xyzSym)		// reduce to [0,1), the first unit cell
+	xyzSym = xyzSym<1e-7 ? 0 : xyzSym						// a fractional coord < 1e-7 is 0
+
+	MatrixOP/FREE xyzSym_real = (direct x xyzSym^t)^t
+	Make/N=(Neq)/U/B/FREE unique = 1
+	Make/N=3/D/FREE vec
+	for (m=0;m<Neq;m+=1)										// for each of the new xyzSym[Neq][3], find the unique ones
+		if (!unique[m])											// this one was already removed, skip it
+			continue
 		endif
-		if (!isDup)										// not a duplicate, so add to the list of positions
-			xyz[N][] = rr[q]							// rr is not an equivalent atom, save it to xyz[N]
-			xyznm[N][] = vec[q]						//   also save the position in nm
-			N += 1
+		vec = xyzSym_real[m][p]
+		MatrixOP/FREE delta2 = sumRows(magSqr(xyzSym_real - rowRepeat(vec,Neq)))
+		MatrixOP/FREE isDup0 = greater(minDist2,delta2)
+		for (i=m+1;i<Neq;i+=1)
+			if (isDup0[i])
+				unique[i] = 0									// flag as a duplicate, not unique
+			endif
+		endfor
+	endfor
+	for (m=0,i=0;m<Neq;m+=1)									// remove the duplicates that were just found
+		if (unique[m])
+			xyzSym[i][] = xyzSym[m][q]						// remake xyzSym[][3] keeping only the unique ones (no duplicates)
+			i += 1
 		endif
 	endfor
+	Neq = i	
+	Redimension/N=(Neq,-1) xyzSym							// set of non-duplicate fractional coordinates
+
+	// now recheck using corners to remove issue when comparing {x,y,0.99} to {x,y,0.01}
+	Make/N=(dim)/D/FREE corner
+	Make/N=(Neq)/U/B/FREE unique = 1
+	MatrixOP/FREE xyzSym_real = (direct x xyzSym^t)^t
+	for (i=1;i<Ncorners;i+=1)								// for all corners (except the first which is 000)
+		corner = corners[i][p]
+		for (m=0;m<Neq;m+=1)
+			MatrixOP/FREE vec = (direct x (row(xyzSym,m) + corner^t)^t)^t
+			MatrixOP/FREE delta2 = sumRows(magSqr(xyzSym_real - rowRepeat(vec,Neq)))
+			delta2[m] = Inf
+			MatrixOP/FREE unique = unique && greater(delta2,minDist2)
+		endfor
+	endfor
+
+	for (m=0,i=0;m<Neq;m+=1)									// remove the duplicates that were just found
+		if (unique[m])
+			xyzSym[i][] = xyzSym[m][q]						// remake xyzSym[][3] keeping only the unique ones (no duplicates)
+			i += 1
+		endif
+	endfor
+	Neq = i	
+	Redimension/N=(Neq,-1) xyzSym							// set of non-duplicate fractional coordinates
 
 	Wave Unconventional=root:Packages:Lattices:Unconventional
-	if (WaveExists(Unconventional))					// Unconventional exists, transform all the fractional coords
+	if (WaveExists(Unconventional))						// Unconventional exists, transform all the fractional coords
 		MatrixOP/FREE xyz = ( Unconventional x (xyz^t) )^t
 	endif
 
-//	Redimension/N=(N,3) xyzIN						// remove extra space (it is all filled with NaN's)
-	Redimension/N=(N,dim) xyzIN					// remove extra space (it is all filled with NaN's)
-	xyzIN = xyz[p][q]									// and, update xyzIN with correct values
-	return N
+	return xyzSym
 End
+//	Function test_allXYZofOneAtomType(xx,yy,zz)
+//		Variable xx,yy,zz
+//		STRUCT crystalStructure xtal	// provides SpaceGroup, a,b,c
+//		FillCrystalStructDefault(xtal)
+//		Wave ww = allXYZofOneAtomType(xtal,xx,yy,zz)
+//		printWave(ww,name="xyzSym["+num2istr(DimSize(ww,0))+"][3]",brief=1)
+//	End
 
 
 //Function allowedHKL(h,k,l,xtal)					// NOT threadsafe, but this could use Cromer
@@ -7914,7 +8015,7 @@ End
 
 ThreadSafe Function isRhombohedralXtal(xtal)	// returns True if a Rhombohedral space group with Rhombohedral axes
 	STRUCT crystalStructure &xtal
-	return (isRhombohedralSG(xtal.SpaceGroup) && (xtal.dim == 3) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
+	return ((xtal.dim == 3) && isRhombohedralSG(xtal.SpaceGroup) && ( abs(xtal.alpha-xtal.beta) + abs(xtal.alpha-xtal.gam) ) < 1e-5)
 End
 
 ThreadSafe Static Function isRhombohedralSG(SpaceGroup)
@@ -9509,7 +9610,7 @@ Static Function/WAVE MatrixFromSymLine(symOp,cols,[zeroBad])	// returns either 3
 
 	if (!err && zeroBad)										// skip this if !zeroBad
 		Make/N=(3,3)/D/FREE mat3 = mat[p][q]				// mat3 is ALWAYS (3,3)
-		err = err || (MatrixDet(mat3)<0.001)
+		err = err || (abs(MatrixDet(mat3))<0.001)		// determinant cannot be 0 (but may be negative, e.g. inversion)
 	endif
 	if (err)
 		WaveClear mat
@@ -9662,6 +9763,35 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry o
 	Note/K equivB, wnote
 	return N
 End
+//
+Static Function/WAVE SymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry operations mats and vecs (if needed), returns number of operations
+	// this returns a FREE wave, each layer is a symmetry op of (dim+1 x dim+1)
+	String SpaceGroupID
+	Variable dim
+	dim = dim==2 ? 2 : 3
+	if (!LatticeSym#isValidSpaceGroupID(SpaceGroupID, dim))
+		return $""
+	endif
+
+	String symOperationsStr=LatticeSym#setSymLineID(SpaceGroupID,dim)	// a string like "x,y,z;-x,-y,z;-x,y,-z;x,-y,-z;x+1/2,y+1/2,z;-x+1/2,-y+1/2,z;-x+1/2,y+1/2,-z;x+1/2,-y+1/2,-z"
+	Variable i,N=ItemsInList(symOperationsStr)
+	Make/N=(dim+1,dim+1,N)/D/FREE symOpMats=0
+	for (i=0;i<N;i+=1)
+		Wave mat4 = LatticeSym#MatrixFromSymLine(StringFromList(i,symOperationsStr),dim+1,zeroBad=1)	// returns either 3x3 or 3x4 matrix
+		Redimension/N=(dim+1,dim+1) mat4				// add an extra row to bottom
+		mat4[dim][] = 0										// set bottom row to {0,0,0,1}
+		mat4[dim][dim] = 1
+		symOpMats[][][i] = mat4[p][q]					// save each of the mat4 in symOpMats[][][]
+	endfor
+
+	String wnote="waveClass=SymmetryOperations;"
+	wnote = ReplaceNumberByKey("numSymOps",wnote,N,"=")
+	wnote = ReplaceNumberByKey("SpaceGroup",wnote,str2num(SpaceGroupID),"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,SpaceGroupID,"=")
+	Note/K symOpMats, wnote
+	return symOpMats
+End
+//
 //Static Function SetSymOpsForSpaceGroup(SpaceGroupID)	// make the symmetry operations mats and vecs (if needed), returns number of operations
 //	String SpaceGroupID
 //	Variable SG=str2num(SpaceGroupID)
@@ -11105,9 +11235,10 @@ End
 
 
 
-Static Function/T FindWyckoffSymbol(SpaceGroupID,dim, x0,y0,z0, mult)
+Static Function/T FindWyckoffSymbol(SpaceGroupID,dim,direct, x0,y0,z0, mult)
 	String SpaceGroupID
 	Variable dim
+	Wave direct
 	Variable x0,y0,z0
 	Variable &mult
 	dim = dim==2 ? 2 : 3
@@ -11119,6 +11250,16 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID,dim, x0,y0,z0, mult)
 	endif
 	Wave CBM = GetSettingTransForm(SpaceGroupID)	// the (4x4) CBM matrix, (for dim=2 a 3x3)
 	MatrixOP/FREE xyz1 = CBM x xyz1					// convert SpaceGroupID --> Standard
+	xyz1 = xyz1 - floor(xyz1)							// and reduce to first cell
+	xyz1[dim] = 1											// last is always 1
+
+//xxxxxxxx
+//		Wave direct = directFrom_xtal(xtal)										// get direct lattice from xtal
+
+	Wave allXYZ = allXYZofOneAtomType(SpaceGroupID, dim, direct, x0, y0, z0)		// works for dim= 2 or 3
+
+
+
 
 	Wave/T WyckList = GetWyckoffSymStrings(str2num(SpaceGroupID),dim)	// for Standard setting
 	String symbol=""
