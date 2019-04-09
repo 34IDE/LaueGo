@@ -240,6 +240,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //							remove positionsOfOneAtomType(), replaced with allXYZofOneAtomType() (left in the Unconventional, but it should go)
 //							replaced reMakeAtomXYZs3D() & reMakeAtomXYZs2D() with reMakeAtomXYZs()
 //							added LC2direct(), and use it in setDirectRecip()
+//							changed FindWyckoffSymbol()
 
 
 //	Rhombohedral Transformation:
@@ -1121,8 +1122,7 @@ Static Function AtomPanel2PanelStruct(win,ctrlName)	// gather panel values and p
 		endif
 	elseif (StringMatch(ctrlName,"setAtomRel*") && strlen(symbol)==0)	// changed xyz, find Wyckoff symbol
 		Variable mm
-		Wave direct = directFrom_xtal(xtal)										// get direct lattice from xtal
-		symbol = FindWyckoffSymbol(xtal.SpaceGroupID,dim,direct,xx,yy,zz,mult)
+		symbol = FindWyckoffSymbol(xtal,xx,yy,zz,mult)
 		if (char2num(symbol)==65)			// special for upper-case A
 			mm = 27+1
 		else
@@ -4473,7 +4473,18 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		mult = 0
 		if (strlen(WyckoffSymbol)==0 && dim>2)							// try to set Wyckoff symbol from coordinates
 			Wave direct = LC2direct({xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam})
-			WyckoffSymbol = FindWyckoffSymbol(SpaceGroupID,dim,direct, fracX,fracY,fracZ,mult)
+			STRUCT crystalStructure xtalTemp
+			xtalTemp.SpaceGroupID = SpaceGroupID
+			xtalTemp.dim = dim
+			if (dim==2)
+				xtalTemp.a0 = direct[0][0]	;	xtalTemp.b0 = direct[0][1]
+				xtalTemp.a1 = direct[1][0]	;	xtalTemp.b1 = direct[1][1]
+			else
+				xtalTemp.a0 = direct[0][0]	;	xtalTemp.b0 = direct[0][1]	;	xtalTemp.c0 = direct[0][2]
+				xtalTemp.a1 = direct[1][0]	;	xtalTemp.b1 = direct[1][1]	;	xtalTemp.c1 = direct[1][2]
+				xtalTemp.a2 = direct[2][0]	;	xtalTemp.b2 = direct[2][1]	;	xtalTemp.c2 = direct[2][2]
+			endif
+			WyckoffSymbol = FindWyckoffSymbol(xtalTemp, fracX,fracY,fracZ,mult)
 		endif
 
 		valence = str2num(XMLtagContents("valence",atomSite))
@@ -11231,27 +11242,19 @@ End
 //End
 
 
-
-
-
-
-
-
-
-
-Static Function/T FindWyckoffSymbol(SpaceGroupID,dim,direct, x0,y0,z0, mult)
-	String SpaceGroupID
-	Variable dim
-	Wave direct
+Static Function/T FindWyckoffSymbol(xtal, x0,y0,z0, mult)
+	STRUCT crystalStructure &xtal
 	Variable x0,y0,z0
 	Variable &mult
-	dim = dim==2 ? 2 : 3
 
-	Wave CBM = GetSettingTransForm(SpaceGroupID)	// the (4x4) CBM matrix, (for dim=2 a 3x3)
+	Variable dim = (xtal.dim) == 2 ? 2 : 3
+	Wave direct = directFrom_xtal(xtal)				// get direct lattice from xtal
+	String id = xtal.SpaceGroupID
+	Wave CBM = GetSettingTransForm(id)				// the (4x4) CBM matrix, (for dim=2 a 3x3)
 	Variable CBMvol = NumberByKey("vol",note(CBM),"=")
 	CBMvol = numtype(CBMvol) || CBMvol<=0 ? 1 : CBMvol	// only needed for "*:R" id's
 
-	Wave allXYZ = allXYZofOneAtomType(SpaceGroupID, dim, direct, x0, y0, z0)		// works for dim= 2 or 3
+	Wave allXYZ = allXYZofOneAtomType(id, dim, direct, x0, y0, z0)		// works for dim= 2 or 3
 	Variable Natoms = DimSize(allXYZ,0)
 	Redimension/N=(-1,4) allXYZ
 	allXYZ[][dim] = 1										// allXYZ are now extended vectors (1 in last position)
@@ -11260,11 +11263,11 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID,dim,direct, x0,y0,z0, mult)
 	allXYZ = abs(allXYZ) < 1e-8 ? 0 : allXYZ		// these are fractional coords, 1e-8 is zero
 	allXYZ[][dim] = 1
 
-	Wave/T WyckList = GetWyckoffSymStrings(str2num(SpaceGroupID),dim)	// ONLY for Standard setting
-	Make/N=(dim+1)/D/FREE xyz1
+	Wave/T WyckList = GetWyckoffSymStrings(str2num(id),dim)	// ONLY for Standard setting
+	Variable cols = dim+1
+	Make/N=(cols)/D/FREE xyz1
 	String symbol=""
 	Variable i, m, N=DimSize(WyckList,0)
-	Variable cols = dim+1
 	for (m=0,mult=0; m<N && mult==0; m+=1)			// loop over the Wyckoff sites
 		Wave wyckOp = MatrixFromSymLine(WyckList[m][1], cols, zeroBad=0)
 		Redimension/N=(cols,cols) wyckOp				// add an extra row to bottom
