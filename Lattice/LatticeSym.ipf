@@ -6277,6 +6277,8 @@ Static Function/WAVE allXYZofOneAtomType(SpaceGroupID, dim, direct, xx,yy,zz)
 	Wave Unconventional=root:Packages:Lattices:Unconventional
 	if (WaveExists(Unconventional))						// Unconventional exists, transform all the fractional coords
 		MatrixOP/FREE xyz = ( Unconventional x (xyz^t) )^t
+		MatrixOp/FREE xyzSym = xyzSym - floor(xyzSym)	// reduce to [0,1), the first unit cell
+		xyzSym = xyzSym<1e-7 ? 0 : xyzSym					// a fractional coord < 1e-7 is 0
 	endif
 
 	return xyzSym
@@ -9500,7 +9502,7 @@ End
 Static Function/WAVE GetSettingTransForm(id, [size])
 	String id					// SpaceGroup ID name, e.g. "146:H"
 	Variable size				// 3 returns (3x3),  anything else returns (4x4)
-	size = ParamIsDefault(size) ? 4 : 3			// default is 4
+	size = ParamIsDefault(size) ? 4 : size		// default is 4
 
 	Variable i = SpaceGroupID2num(id, dim=3)	// in range [1,530]
 	if (numtype(i))										// check for valid id
@@ -9563,6 +9565,8 @@ Static Function/WAVE GetSettingTransForm(id, [size])
 	String wnote="waveClass=ChangeBasisMat"					// fill the wave note
 	wnote = ReplaceStringByKey("SGid",wnote,id,"=")
 	wnote = ReplaceStringByKey("CBMx",wnote,CBMx,"=")
+	Make/N=(3,3)/D/FREE mat33 = mat[p][q]					// this is 1 except for ":R" space group id's, then it is 3
+	wnote = ReplaceNumberByKey("vol",wnote,round(1/MatrixDet(mat33)),"=")
 	Note/K mat, wnote
 	return mat
 End
@@ -11243,74 +11247,72 @@ Static Function/T FindWyckoffSymbol(SpaceGroupID,dim,direct, x0,y0,z0, mult)
 	Variable &mult
 	dim = dim==2 ? 2 : 3
 
-	if (dim==2)
-		Make/D/FREE xyz1 = {x0,y0,1}
-	else
-		Make/D/FREE xyz1 = {x0,y0,z0,1}
-	endif
 	Wave CBM = GetSettingTransForm(SpaceGroupID)	// the (4x4) CBM matrix, (for dim=2 a 3x3)
-	MatrixOP/FREE xyz1 = CBM x xyz1					// convert SpaceGroupID --> Standard
-	xyz1 = xyz1 - floor(xyz1)							// and reduce to first cell
-	xyz1[dim] = 1											// last is always 1
-
-//xxxxxxxx
-//		Wave direct = directFrom_xtal(xtal)										// get direct lattice from xtal
+	Variable CBMvol = NumberByKey("vol",note(CBM),"=")
+	CBMvol = numtype(CBMvol) || CBMvol<=0 ? 1 : CBMvol	// only needed for "*:R" id's
 
 	Wave allXYZ = allXYZofOneAtomType(SpaceGroupID, dim, direct, x0, y0, z0)		// works for dim= 2 or 3
+	Variable Natoms = DimSize(allXYZ,0)
+	Redimension/N=(-1,4) allXYZ
+	allXYZ[][dim] = 1										// allXYZ are now extended vectors (1 in last position)
+	MatrixOP/FREE allXYZ = (CBM x allXYZ^t)^t		// convert allXYZ: SpaceGroupID --> Standard setting
+	MatrixOP/FREE allXYZ = allXYZ - floor(allXYZ)
+	allXYZ = abs(allXYZ) < 1e-8 ? 0 : allXYZ		// these are fractional coords, 1e-8 is zero
+	allXYZ[][dim] = 1
 
-
-
-
-	Wave/T WyckList = GetWyckoffSymStrings(str2num(SpaceGroupID),dim)	// for Standard setting
+	Wave/T WyckList = GetWyckoffSymStrings(str2num(SpaceGroupID),dim)	// ONLY for Standard setting
+	Make/N=(dim+1)/D/FREE xyz1
 	String symbol=""
-	Variable m, N=DimSize(WyckList,0), diff=Inf
-	Variable cols = dim==2 ? 3 : 4
-	mult = 0
-//	xxxxxxxxxxxxxxxxxxxxxxxxxxx
-	for (m=0;m<N;m+=1)										// loop over the Wyckoff sites
+	Variable i, m, N=DimSize(WyckList,0)
+	Variable cols = dim+1
+	for (m=0,mult=0; m<N && mult==0; m+=1)			// loop over the Wyckoff sites
 		Wave wyckOp = MatrixFromSymLine(WyckList[m][1], cols, zeroBad=0)
 		Redimension/N=(cols,cols) wyckOp				// add an extra row to bottom
 		wyckOp[cols-1][] = 0								// set bottom row to {0,0,0,1}
 		wyckOp[cols-1][cols-1] = 1
-
-//		for (loop over the symmetry ops && diff>1e-4)	// actually form a 4x4xN array of symmetry ops and apply them all
-			Duplicate/FREE xyz1, xyzi					// this should actually be an application of a sym op
-			MatrixOP/FREE xyzi = xyzi = floor(xyzi)	// reduce to 1st cell
-
-			MatrixOP/FREE diff0 = Sum(Abs( (wyckOp x xyzi) - xyzi))
-			diff = diff0[0]
-			if (diff<1e-4)
+		for (i=0;i<Natoms;i+=1)							// loop over each of the atoms in standard setting
+			xyz1 = allXYZ[i][p]
+			MatrixOP/FREE diff0 = Sum(Abs( (wyckOp x xyz1) - xyz1))
+			if (diff0[0]<1e-4)								// xyz1 matches a Wyckoff position
 				symbol = WyckList[m][0]
-				mult = round(str2num(WyckList[m][2]))
+				mult = round(str2num(WyckList[m][2])/CBMvol)
 				break
 			endif
-
-//		endfor
-
-
+		endfor
 	endfor
 	return symbol
 End
 //
+//			for Si 227:2
+//		test_FindWyckoffSymbol("227:2", 0.125,0.125,0.125)		// "a", 8		1/8,1/8,1/8
+//		test_FindWyckoffSymbol("227:2", -0.125,-0.125,-0.125)	// "a", 8		-1/8,-1/8,-1/8
+//		test_FindWyckoffSymbol("227:2", 0.875,0.875,0.875)		// "a", 8		-1/8,-1/8,-1/8
+//			for Si 227:1
+//		test_FindWyckoffSymbol("227:1", 0,0,0)						// "a", 8		0,0,0
+//		test_FindWyckoffSymbol("227:1", 0.25,0.25,0.25)			// "a", 8		1/4,1/4,1/4
+//
 //			for 47
-//		test_FindWyckoffSymbol("47",  0, 0.5, 0.3765)
+//		test_FindWyckoffSymbol("47",  0, 0.5, 0.3765)				// "r", 2		0,1/2,z
 //
 //			for 167:H
 //		test_FindWyckoffSymbol("167:H", 0, 0, 0.25)		// "a", 6		0,0,1/4
 //		test_FindWyckoffSymbol("167:H", 0,0,1/4)			// "a", 6		0,0,1/4
 //		test_FindWyckoffSymbol("167:H", 0,0,0)				// "b", 6		0,0,0
-//		test_FindWyckoffSymbol("167:H", 0,0,0.12)			// "c", 12		0,0,z
-//		test_FindWyckoffSymbol("167:H", 1/2,0,0)			// "d", 18		1/2,0,0
-//		test_FindWyckoffSymbol("167:H", 0.1,0,1/4)			// "e", 18		x,0,1/4
-//		test_FindWyckoffSymbol("167:H", 0.3064, 0, 0.25)	// "e", 18		x,0,1/4
-//		test_FindWyckoffSymbol("167:H", 0.1,0.1,1/4)		// "f", 36		x,y,z
+//		test_FindWyckoffSymbol("167:H", 0,0,0.12)			// "c", 12	0,0,z
+//		test_FindWyckoffSymbol("167:H", 1/2,0,0)			// "d", 18	1/2,0,0
+//		test_FindWyckoffSymbol("167:H", 0.1,0,1/4)			// "e", 18	x,0,1/4
+//		test_FindWyckoffSymbol("167:H", 0.3064, 0, 0.25)	// "e", 18	x,0,1/4
+//		test_FindWyckoffSymbol("167:H", 0.1,0.1,1/4)		// "e", 18	x,x,3/4
+//		test_FindWyckoffSymbol("167:H", 0.2,0.1,1/4)		// "f", 36	x,y,z
 //
 //			for 167:R
 //		test_FindWyckoffSymbol("167:R", 1/4,1/4,1/4)		// "a", 2		1/4,1/4,1/4
 //		test_FindWyckoffSymbol("167:R", 0,0,0)				// "b", 2		0,0,0
 //		test_FindWyckoffSymbol("167:R", 0.1,0.1,0.1)		// "c", 4		x,x,x
+//		xxxxxxxxxxxxxxxxxxxx  FIX HERE  xxxxxxxxxxxxxxxxxxxx
 //		test_FindWyckoffSymbol("167:R", 1/2,0,1/2)			// "d", 6		1/2, 0, 1/2	
 //		test_FindWyckoffSymbol("167:R", 1/2,0,0)			// "d", 6		1/2, 0, 0
+//		xxxxxxxxxxxxxxxxxxxx  END FIX HERE  xxxxxxxxxxxxxxxxxxxx
 //			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 //			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 //			xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -11319,7 +11321,8 @@ End
 //		String SpaceGroupID
 //		Variable x0,y0,z0
 //		Variable mult
-//		String letter = LatticeSym#FindWyckoffSymbol(SpaceGroupID, x0,y0,z0, mult)
+//		Make/N=(3,3)/D/FREE direct = 0.543*(p==q)
+//		String letter = LatticeSym#FindWyckoffSymbol(SpaceGroupID,3,direct, x0,y0,z0, mult)
 //		printf "{%g, %g, %g} --> %s (%g),   for %s\r",x0,y0,z0, letter, mult, SpaceGroupID
 //	End
 //
@@ -11335,10 +11338,10 @@ End
 //		d		1/2,0,1/2					 6		OK (would prefer (1/2,0,0)
 //		e		x+1/2,-x*2+1/4,x		 6		should be (x,-x+1/2,1/4), (1/4,x,-x+1/2), (-x+1/2,1/4,x), (-x,x+1/2,3/4), (3/4,-x,x+1/2), or (x+1/2,3/4,-x)
 //		f		x-y+z*2,-x*2+z,x-y*2	12		should be one of:
-//														(x,y,z), (z,x,y), (y,z,x)
-//														(-z+1/2,-y+1/2,-x+1/2), (-y+1/2,-x+1/2,-z+1/2), (-x+1/2,-z+1/2,-y+1/2)
-//														(-x,-y,-z), (-z,-x,-y), (-y,-z,-x)
-//														(z+1/2,y+1/2,x+1/2), (y+1/2,x+1/2,z+1/2), (x+1/2,z+1/2,y+1/2)
+//													(x,y,z), (z,x,y), (y,z,x)
+//													(-z+1/2,-y+1/2,-x+1/2), (-y+1/2,-x+1/2,-z+1/2), (-x+1/2,-z+1/2,-y+1/2)
+//													(-x,-y,-z), (-z,-x,-y), (-y,-z,-x)
+//													(z+1/2,y+1/2,x+1/2), (y+1/2,x+1/2,z+1/2), (x+1/2,z+1/2,y+1/2)
 //
 Static Function ForceXYZtoWyckoff(SpaceGroupID,dim,symbol,x0,y0,z0)
 	// constrain {x0,y0,z0} to values for this SpaceGroupID
