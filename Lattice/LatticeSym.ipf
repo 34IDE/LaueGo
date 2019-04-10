@@ -6211,7 +6211,6 @@ Static Function/WAVE allXYZofOneAtomType(SpaceGroupID, dim, direct, xx,yy,zz)
 		Abort"Unable to get symmetry operation matricies in allXYZofOneAtomType() for spacegroup id '"+SpaceGroupID+"'"
 	endif
 	Variable Neq = DimSize(symOpMats,2)							// each layer is a symmetry op
-
 	Variable minDist2 = LatticeSym_minBondLen^2
 
 	Make/N=(dim)/D/FREE xyz1, inxyz, vec
