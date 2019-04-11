@@ -6,6 +6,7 @@
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING)
 #include "Indexing_InternalQZ_Gizmo"
 #endif
+#define LATTICE_SYM_2D_3D
 
 Static Constant hc = 1.239841857			// keV-nm
 Constant threshDivide = 3

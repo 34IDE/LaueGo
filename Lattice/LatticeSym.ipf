@@ -241,6 +241,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //							replaced reMakeAtomXYZs3D() & reMakeAtomXYZs2D() with reMakeAtomXYZs()
 //							added LC2direct(), and use it in setDirectRecip()
 //							changed FindWyckoffSymbol()
+//	with version 7.13, fixed bug in allXYZofOneAtomType(), when number of atoms is 1, MatrixOP behaves differently.
 
 
 //	Rhombohedral Transformation:
@@ -6244,7 +6245,13 @@ Static Function/WAVE allXYZofOneAtomType(SpaceGroupID, dim, direct, xx,yy,zz)
 			continue
 		endif
 		vec = xyzSym_real[m][p]
-		MatrixOP/FREE delta2 = sumRows(magSqr(xyzSym_real - rowRepeat(vec,Neq)))
+		if (Neq==1)
+			Make/N=(dim)/D/FREE diff = xyzSym_real[0][p] - vec[p]
+			MatrixOP/FREE delta2 = sum(magSqr(diff))
+		else
+			MatrixOP/FREE delta2 = sumRows(magSqr(xyzSym_real - rowRepeat(vec,Neq)))
+		endif
+
 		MatrixOP/FREE isDup0 = greater(minDist2,delta2)
 		for (i=m+1;i<Neq;i+=1)
 			if (isDup0[i])
