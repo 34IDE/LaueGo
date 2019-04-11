@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.54
+#pragma version = 0.55
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -282,7 +282,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	if (!stringmatch(GetDataFolder(0),prefix+"_AtomView"))		// not already in fldr
 		NewDataFolder/O/S $fldr
 	endif
-	reMakeAtomXYZs(xtal)									// ensure that atom positions are current
+	LatticeSym#reMakeAtomXYZs(xtal)						// ensure that atom positions are current
 
 	Variable Nmax=200
 	Make/N=(Nmax,dim)/O $(prefix+"_XYZ")/WAVE=xyz = NaN
