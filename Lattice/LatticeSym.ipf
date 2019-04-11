@@ -1,7 +1,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.12									// based on LatticeSym_6.55
+#pragma version = 7.14									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -242,6 +242,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //							added LC2direct(), and use it in setDirectRecip()
 //							changed FindWyckoffSymbol()
 //	with version 7.13, fixed bug in allXYZofOneAtomType(), when number of atoms is 1, MatrixOP behaves differently.
+//	with version 7.14, fixed bug in FindWyckoffSymbol(), problem arose with rhomhohedral settings
 
 
 //	Rhombohedral Transformation:
@@ -11265,6 +11266,14 @@ Static Function/T FindWyckoffSymbol(xtal, x0,y0,z0, mult)
 	Redimension/N=(-1,4) allXYZ
 	allXYZ[][dim] = 1										// allXYZ are now extended vectors (1 in last position)
 	MatrixOP/FREE allXYZ = (CBM x allXYZ^t)^t		// convert allXYZ: SpaceGroupID --> Standard setting
+	if (strsearch(id,":R",2)>0)
+		Redimension/N=(Natoms*3,4) allXYZ				// for rhombohedral, add offsets of: (0,0,0), (2/3, 1/3, 1/3), (1/3, 2/3, 2/3)
+		Make/D/FREE offset = {2/3, 1/3, 1/3, 1}
+		allXYZ[Natoms,2*Natoms-1][] = allXYZ[p-Natoms][q] + offset[q]
+		offset = {1/3, 2/3, 2/3, 1}
+		allXYZ[2*Natoms,3*Natoms-1][] = allXYZ[p-2*Natoms][q] + offset[q]
+		Natoms *= 3
+	endif
 	MatrixOP/FREE allXYZ = allXYZ - floor(allXYZ)
 	allXYZ = abs(allXYZ) < 1e-8 ? 0 : allXYZ		// these are fractional coords, 1e-8 is zero
 	allXYZ[][dim] = 1
