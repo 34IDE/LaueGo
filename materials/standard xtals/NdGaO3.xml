@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>NGO (NdGaO3)</chemical_name_common>
+	<chemical_name_common>Neodymium gallate (NGO)</chemical_name_common>
 	<space_group>
 		<IT_number>62</IT_number>
-		<H-M>Pnma</H-M>
+		<H-M>Pbnm</H-M>
 	</space_group>
+	<database_code db="icsd">79633</database_code>
 	<cell>
 		<a unit="nm">0.54276</a>
 		<b unit="nm">0.54979</b>
@@ -17,32 +18,42 @@
 	<atom_site>
 		<label>Nd</label>
 		<symbol>Nd</symbol>
-		<fract_x>0.49092</fract_x>
-		<fract_y>0.04142</fract_y>
-		<fract_z>0.25</fract_z>
+		<valence>3</valence>
+		<fract>-0.0105 0.0414 0.25</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Biso>0.42</Biso>
 	</atom_site>
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0.5</fract_z>
+		<valence>3</valence>
+		<fract>0.5 0 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<Biso>0.49</Biso>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_x>0.08</fract_x>
-		<fract_y>0.0174</fract_y>
-		<fract_z>0.75</fract_z>
+		<valence>-2</valence>
+		<fract>0.087 0.486 0.25</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Biso>0.7</Biso>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_x>0.7107</fract_x>
-		<fract_y>0.2097</fract_y>
-		<fract_z>0.5422</fract_z>
+		<valence>-2</valence>
+		<fract>0.714 0.283 0.046</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<Biso>1.4</Biso>
 	</atom_site>
-	<citation>Journal of Allyos and compounds V382 (2004) 84-91, Senyshyn: Journal of Allyos and compounds V297 (2000) 46-52, Vasylechko</citation>
+	<citation>
+		S.B Ubizskii, L.O. Vasylechko, D.I. Savytskii, A.O. Matkovskii, I.M. Syvorotka
+		Superconductor Science and Technology, (1994) 7, 766-772
+		"The crystal structure and twinning of neodymium gallium perovskite single crystals"
+	</citation>
+
+
 	<!--  coefficients for a polynomial fit -->
 </cif>
 

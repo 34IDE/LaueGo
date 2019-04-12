@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Celestine</chemical_name_common>
+	<chemical_formula_structural>Sr(SO4)</chemical_formula_structural>
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<H-M>Pbnm</H-M>
+	</space_group>
+	<database_code db="amcsd">0005557</database_code>
+	<cell>
+		<a unit="nm">0.68671</a>
+		<b unit="nm">0.83545</b>
+		<c unit="nm">0.53458</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<volume>0.30669489119731</volume>
+	</cell>
+	<atom_site>
+		<label>Sr</label>
+		<symbol>Sr</symbol>
+		<fract>0.15818 0.18395 0.25</fract>
+		<valence>2</valence>
+		<aniso_U_11>0.01005</aniso_U_11>
+		<aniso_U_22>0.00757</aniso_U_22>
+		<aniso_U_33>0.01681</aniso_U_33>
+		<aniso_U_12>0.00026</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract>0.18505 0.43797 0.75</fract>
+		<valence>6</valence>
+		<aniso_U_11>0.00797</aniso_U_11>
+		<aniso_U_22>0.00762</aniso_U_22>
+		<aniso_U_33>0.00896</aniso_U_33>
+		<aniso_U_12>-0.00014</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.0923 0.5952 0.75</fract>
+		<valence>-2</valence>
+		<aniso_U_11>0.0195</aniso_U_11>
+		<aniso_U_22>0.0119</aniso_U_22>
+		<aniso_U_33>0.0299</aniso_U_33>
+		<aniso_U_12>0.0084</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.0418 0.3071 0.75</fract>
+		<valence>-2</valence>
+		<aniso_U_11>0.0126</aniso_U_11>
+		<aniso_U_22>0.0161</aniso_U_22>
+		<aniso_U_33>0.021</aniso_U_33>
+		<aniso_U_12>-0.0066</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.3107 0.4222 0.9744</fract>
+		<valence>-2</valence>
+		<aniso_U_11>0.0138</aniso_U_11>
+		<aniso_U_22>0.0156</aniso_U_22>
+		<aniso_U_33>0.0116</aniso_U_33>
+		<aniso_U_12>-0.0011</aniso_U_12>
+		<aniso_U_13>-0.004</aniso_U_13>
+		<aniso_U_23>0.0006</aniso_U_23>
+	</atom_site>
+	<citation>
+		S.D. Jacobsen, J.R. Smyth, R.J. Swope, R.T. Downs, The Canadian Mineralogist, 36 (1998), 1053-1060
+		"Rigid-body character of the SO4 groups in celestine, anglesite and barite"
+	</citation>
+</cif>
