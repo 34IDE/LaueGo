@@ -4,8 +4,10 @@
 	<chemical_name_common>Forsterite Pnma</chemical_name_common>
 	<chemical_formula_structural>Mg2SiO4</chemical_formula_structural>
 	<space_group>
-		<IT_number>62</IT_number>
+		<id>62:cab</id>
+		<H-M>Pbnm</H-M>
 	</space_group>
+	<database_code db="amcsd">0000546</database_code>
 	<cell>
 		<a unit="nm">0.4752</a>
 		<b unit="nm">1.0193</b>
@@ -13,11 +15,12 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="C">23</temperature>
 	</cell>
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract>0.0940 0.25 0.4262</fract>
+		<fract>0.4262 0.0940 0.25</fract>
 		<aniso_B_11>0.0008</aniso_B_11>
 		<aniso_B_22>0.00043</aniso_B_22>
 		<aniso_B_33>0.0008</aniso_B_33>
@@ -39,7 +42,7 @@
 	<atom_site>
 		<label>Mg2</label>
 		<symbol>Mg</symbol>
-		<fract>0.2774 0.25 0.9915</fract>
+		<fract>0.9915 0.2774 0.25</fract>
 		<aniso_B_11>0.0022</aniso_B_11>
 		<aniso_B_22>0.00060</aniso_B_22>
 		<aniso_B_33>0.0016</aniso_B_33>
@@ -50,7 +53,7 @@
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract>0.0913 0.25 0.7657</fract>
+		<fract>0.7657 0.0913 0.25</fract>
 		<aniso_B_11>0.0009</aniso_B_11>
 		<aniso_B_22>0.0009</aniso_B_22>
 		<aniso_B_33>0.0023  </aniso_B_33>
@@ -61,7 +64,7 @@
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract>0.4474 0.25 0.2215</fract>
+		<fract>0.2215 0.4474 0.25</fract>
 		<aniso_B_11>0.0024</aniso_B_11>
 		<aniso_B_22>0.0007</aniso_B_22>
 		<aniso_B_33>0.0022</aniso_B_33>
@@ -72,7 +75,7 @@
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract>0.1628 0.0331 0.2777</fract>
+		<fract>0.2777 0.1628 0.0331</fract>
 		<aniso_B_11>0.0022</aniso_B_11>
 		<aniso_B_22>0.00093</aniso_B_22>
 		<aniso_B_33>0.0016 </aniso_B_33>

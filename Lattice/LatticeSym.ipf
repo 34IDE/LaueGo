@@ -4474,7 +4474,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 		mult = 0
 		if (strlen(WyckoffSymbol)==0 && dim>2)							// try to set Wyckoff symbol from coordinates
-			Wave direct = LC2direct({xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam})
+			Variable isRhomb = strsearch(SpaceGroupID,":R",0,2)>1
+			Wave direct = LC2direct({xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam}, isRhomb=isRhomb)
 			STRUCT crystalStructure xtalTemp
 			xtalTemp.SpaceGroupID = SpaceGroupID
 			xtalTemp.dim = dim
