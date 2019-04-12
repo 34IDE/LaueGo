@@ -9,6 +9,7 @@
 		<a unit="nm">0.56577974</a>
 		<b unit="nm">0.56577974</b>
 		<alpha>90</alpha>
+		<temperature unit="C">20</temperature>
 	</cell>
 	<atom_site>
 		<label>Ge</label>
