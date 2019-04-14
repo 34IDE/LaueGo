@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Potassium Tantalate</chemical_name_common>
+	<chemical_name_common>Potassium Tantalate (KTO)</chemical_name_common>
 	<space_group>
-		<IT_number>221</IT_number>
-		<H-M>Pm-3m</H-M>
+		<id>221</id>
+		<H-M>P m -3 m</H-M>
+		<Hall>-P 4 2 3</Hall>
 	</space_group>
+	<database_code db="COD">5910018</database_code>
 	<cell>
 		<a unit="nm">0.39883</a>
 		<b unit="nm">0.39883</b>
@@ -13,26 +15,37 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="K">298</temperature>
 	</cell>
 	<atom_site>
 		<label>K</label>
 		<symbol>K</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0.5</fract_y>
-		<fract_z>0.5</fract_z>
-	</atom_site>
-	<atom_site>
-		<label>O</label>
-		<symbol>O</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0.5 0.5 0.5</fract>
+		<U_iso>0.0082</U_iso>
+		<valence>1</valence>
 	</atom_site>
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
+		<valence>5</valence>
+		<U_iso>0.00332</U_iso>
 	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.5 0 0</fract>
+		<valence>-2</valence>
+		<U_iso>0.0073</U_iso>
+	</atom_site>
+	<citation id="primary" dot="10.1107/S0108768100003906">
+		E. A. Zhurova, Y. Ivanov, V. Zavodnik and V. Tsirelson
+		Acta Cryst. (2000). B56, 594-600
+		"Electron density and atomic displacements in KTaO3"
+	</citation>
+	<citation id="2" >
+		R W G Wyckoff
+		"The second edition supplement of The Structure of Crystals" (1935) page 55
+		http://jcrystal.com/steffenweber/gallery/StructureTypes/st4.html
+	</citation>
 </cif>
