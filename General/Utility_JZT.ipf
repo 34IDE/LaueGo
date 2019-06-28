@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.75
+#pragma version = 4.76
 // #pragma hide = 1
 
 Menu "Graph"
@@ -399,6 +399,20 @@ Function/S MenuItemIfFunctionExists(item,funcName,[optStr])
 	endif
 
 	return item						// either no optStr, or all key:values in optStr match
+End
+
+// only show menu item when the scrap (clipboard) contains valid text as decided by validTextFuncName()
+Function/S MenuItemIfScrapValid(item, validTextFuncName)
+	String item						// string that you want to appear in menu
+	String validTextFuncName		// name of function used to test the scrap
+	FUNCREF EmptyIsInvalidTextProto func = $validTextFuncName
+	Variable show = func(GetScrapText())	// test the scrap
+	return SelectString(show,"(","")+item
+End
+//
+Function EmptyIsInvalidTextProto(text)		// returns true if text is NOT empty
+	String text
+	return strlen(text)>0
 End
 
 //  ============================ End of Option Menu Functions ============================  //
