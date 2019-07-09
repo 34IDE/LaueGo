@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.11
+#pragma version=2.12
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -333,15 +333,15 @@ Function NewPoleFigure(hklstr,[rad,useCursor,useDialog,gm,visible,iwave,surface]
 		useCursor = useCursor ? 1 : 2			// convert to {1,2} for prompt
 		if (WaveExists(gm))
 			if (cursorAvailable)
-				DoPrompt "hkl",hklstr,rad,useCursor,iwaveName
+				DoPrompt "hkl",hklstr,rad,useCursor,iwaveName, surface
 			else
-				DoPrompt "hkl",hklstr,rad,iwaveName
+				DoPrompt "hkl",hklstr,rad,iwaveName, surface
 			endif
 		else
 			if (cursorAvailable)
-				DoPrompt "hkl",hklstr,rad,useCursor,gmName,iwaveName
+				DoPrompt "hkl",hklstr,rad,useCursor,gmName,iwaveName, surface
 			else
-				DoPrompt "hkl",hklstr,rad,gmName,iwaveName
+				DoPrompt "hkl",hklstr,rad,gmName,iwaveName, surface
 			endif
 			Wave gm=$gmName
 		endif
