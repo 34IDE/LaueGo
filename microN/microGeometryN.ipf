@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 2.03
+#pragma version = 2.04
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -715,6 +715,15 @@ Function printDetector(d,[brief])			// print the details for passed detector geo
 	tthMin = min(tthMin,real(tthZ))
 	tthMax = max(tthMax,imag(tthZ))
 	printf "\tangle ranges:  chi = [%g, %g¡],  2th = [%g, %g¡]\r", real(chiZ),imag(chiZ),real(tthZ),imag(tthZ)
+	String list=AxesHitDetector(d)			// returns pixel if X, Y, Z, H, or F axes hit detector
+	if (strlen(list))
+		Variable i
+		String str
+		for (i=0;i<ItemsInList(list);i+=1)
+			str = StringFromList(i,list)
+			printf "\t%s-axis hits detector at pixel [%.2f, %.2f]\r", StringByKey("axis",str,"=",","), NumberByKey("px",str,"=",","),NumberByKey("py",str,"=",",")
+		endfor
+	endif
 	return 0
 End
 //
@@ -726,8 +735,8 @@ ThreadSafe Static Function/C chiRange(d)	// chi is rotation about the z-axis
 	pxw *= d.Nx-1								// {pxw,pyw} are 8 points around edge of detector
 	pyw *= d.Ny-1
 	Variable i, chi,chiMin=+inf, chiMax=-inf
-	for (i=0;i<8;i+=1)						// check 8 points around edge of detector
-		pixel2XYZ(d,pxw[i],pyw[i],xyz)	// convert pixel position to the beam line coordinate system
+	for (i=0;i<8;i+=1)							// check 8 points around edge of detector
+		pixel2XYZ(d,pxw[i],pyw[i],xyz)		// convert pixel position to the beam line coordinate system
 		perp = xyz - ki*MatrixDot(xyz,ki)	// remove forward part of xyz
 		chi = atan2(perp[0],perp[1]) * 180/PI
 		chiMin = min(chiMin,chi)
@@ -743,20 +752,42 @@ ThreadSafe Static Function/C tthRange(d)	// tth is the usual 2-theta
 	pxw *= d.Nx-1								// {pxw,pyw} are 8 points around edge of detector
 	pyw *= d.Ny-1
 	Variable i, tth,tthMin=+inf, tthMax=-inf
-	for (i=0;i<8;i+=1)						// check 8 points around edge of detector
-		pixel2XYZ(d,pxw[i],pyw[i],xyz)	// convert pixel position to the beam line coordinate system
+	for (i=0;i<8;i+=1)							// check 8 points around edge of detector
+		pixel2XYZ(d,pxw[i],pyw[i],xyz)		// convert pixel position to the beam line coordinate system
 		tth = angleVec2Vec(xyz,ki)
 		tthMin = min(tthMin,tth)
 		tthMax = max(tthMax,tth)
 	endfor
 
 	Variable px0,py0
-	XYZ2pixel(d,ki,px0,py0)				// check to see if detector includes direct beam
+	XYZ2pixel(d,ki,px0,py0)					// check to see if detector includes direct beam
 	if (px0==limit(px0,0,d.Nx-1) && py0==limit(py0,0,d.Ny-1))
 		tthMin = 0
 	endif
 
 	return cmplx(tthMin,tthMax)
+End
+//
+Static Function/T AxesHitDetector(d)		// report where the ±Z, ±Y, ±X, ±H, or ±F axes hit the detector (if any do)
+	STRUCT detectorGeometry &d
+	Variable px,py, i, N=10
+	String list=""								// returned string, either "" or something like:  "axis=Y;px=869.5632;py=1007.0654;"
+	Make/N=3/D/FREE xyz
+	Make/D/FREE xyzhf={ {0,0,1}, {0,1,0}, {1,0,0}, {0,1,1}, {0,-1,1} }	// directions of Z,Y,X,H, & F axes
+	Redimension/N=(3,N) xyzhf
+	xyzhf[][5,9] = -xyzhf[p][q-5]			// also check the -Z,-Y,-X,-H, & -F
+
+	for (i=0;i<N;i+=1)							// test each of the 10 axes, return after first intersection
+		xyz = xyzhf[p][i]
+		XYZ2pixel(d,xyz,px,py)				// calculate the px,py
+		if (px>=0 && px<d.Nx && py>=0 && py<d.Ny)	// if px & py valid, save this in list
+			String str = "axis=" + StringFromList(i,"Z;Y;X;H;F;-Z;-Y;-X;-H;-F") + ","
+			str = ReplaceNumberByKey("px",str,px,"=",",")
+			str = ReplaceNumberByKey("py",str,py,"=",",")
+			list += str + ";"
+		endif
+	endfor
+	return list
 End
 
 //	ThreadSafe Function CopymicroGeometry(f,i)	// copy a microGeometry structure
