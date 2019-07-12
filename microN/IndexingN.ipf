@@ -2,7 +2,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 5.01
+#pragma version = 5.02
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -8515,6 +8515,7 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 	// the following puts a cross where the detector is direction above the sample or on the direct beam
 	String wnote=note(image)					// get start & group in case image is binned
 	Variable startx=NumberByKey("startx",wnote,"="), starty=NumberByKey("starty",wnote,"=")
+	Variable endx=NumberByKey("endx",wnote,"="), endy=NumberByKey("endy",wnote,"=")
 	Variable groupx=NumberByKey("groupx",wnote,"="), groupy=NumberByKey("groupy",wnote,"=")
 
 	STRUCT microGeometry g
@@ -8524,26 +8525,26 @@ Static Function/S NewImageGraphLocal(image,[withButtons])
 		return result
 	endif
 
-	Variable px,py, Nx=g.d[dnum].Nx, Ny=g.d[dnum].Ny
-	Make/N=3/D/FREE xyz, xyzAbs				// xyz points to detector center
-	pixel2XYZ(g.d[dNum],0.5*(Nx-1),0.5*(Ny-1),xyz)
-	xyzAbs = abs(xyz)
-	WaveStats/M=1/Q xyzAbs						// need to find which value in xyz has the largest magnitude
-	xyz = p==V_maxloc ? sign(xyz[p]) : 0	// xyz is now the closest orthogonal direction that points to the detector
-	XYZ2pixel(g.d[dNum],xyz,px,py)			// set pixel where xyz hits detector
-	if (px>=0 && px <= g.d[dNum].Nx && py>=0 && py <= g.d[dNum].Ny)	// (px,py) IS on detector, draw cross
-		Variable NxFW=Nx/10, NyFW=Ny/10							// size of cross
-		if (numtype(startx+starty+groupx+groupy)==0 && (groupx>1 || groupy>1))	// binned image
-			px = round(( px-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
-			py = round(( py-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
-			NxFW /= groupx
-			NyFW /= groupy
+	String axes=microGeo#AxesHitDetector(g.d[dnum])		// returns pixel where X, Y, Z, H, or F axes hit detector
+	String list, winData=""
+	Variable i, px,py
+	for (i=0;i<ItemsInList(axes);i+=1)						// for each axis that hits the detector, draw a cross there
+		list = StringFromList(i,axes)							// probably only contain 1 item
+		px = NumberByKey("px",list,"=",",")
+		py = NumberByKey("py",list,"=",",")
+		if (startx<=px && px<=endx && starty<=py && py<=endy)	// (px,py) IS on this ROI image of detector, draw cross
+			Variable NxFW=(g.d[dnum].Nx)/10, NyFW=(g.d[dnum].Ny)/10						// size of cross
+			if (numtype(startx+starty+groupx+groupy)==0 && (groupx>1 || groupy>1))	// a binned image, rescale to binned pixels
+				px = round(( px-startx-(groupx-1)/2 )/groupx)	// pixel is zero based here & startx is zero based
+				py = round(( py-starty-(groupy-1)/2 )/groupy)	// groupx=1 is un-binned
+				NxFW /= groupx
+				NyFW /= groupy
+			endif
+			DrawMarker(px,py,round(NxFW),round(NyFW),"cross gap",dash=2,layer="UserAxes")
+			winData += list + ";"
 		endif
-		DrawMarker(px,py,round(NxFW),round(NyFW),"cross gap",dash=2,layer="UserAxes")
-		String str
-		sprintf str,"%g,%g",px,py
-		SetWindow kwTopWin, userdata(pixelCenter)=str
-	endif
+	endfor
+	SetWindow kwTopWin, userdata(pixelCenter)=winData
 	return result
 End
 
