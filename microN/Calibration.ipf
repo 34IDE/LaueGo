@@ -1,10 +1,10 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.95
+#pragma version = 0.96
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
-Static Constant hc = 1.239841857					// keV-nm
+Static Constant hc = 1.239841984					// keV-nm
 
 //#define OptimizeWireAxis				// if defined, optimize wire.axis[], otherwise  wire.R[]
 //		for Optimization of Wire Geometry from a wire scan, see section  "=== Start of Wire Calibration Fit ==="
@@ -743,7 +743,7 @@ Static Function FillOutCalibTable(clist)	// fill in columns that can be calculat
 	Variable keVmeas, keVcalc, theta, eV, m, N=DimSize(clist,0)
 	for (m=0;m<N;m+=1)
 		hkl = clist[m][p]
-		keVmeas = cList[m][5]								// measured energy
+		keVmeas = cList[m][5]									// measured energy
 		MatrixOp/FREE qvec = recip0 x hkl
 		qvec = abs(qvec)<1e-14 ? 0 : qvec
 		theta = asin(hc/keVmeas*norm(qvec)/4/PI)*180/PI // CalibrationList[][9] = theta (deg), obtained from calculated d(hkl) and measured energy using: Q = 4¹ sin(theta)/lambda
@@ -778,7 +778,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	d.R[0] = (d.R[0] == 0) ? 0.02 : d.R[0]			// avoid starting exactly on a zero
 	d.R[1] = (d.R[1] == 0) ? 0.02 : d.R[1]			// offset 0 angles by ~1¡
 	d.R[2] = (d.R[2] == 0) ? 0.02 : d.R[2]
-	d.P[0] = (d.P[0] == 0) ? 500 : d.P[0]				// offset 0 positions by 0.5mm
+	d.P[0] = (d.P[0] == 0) ? 500 : d.P[0]			// offset 0 positions by 0.5mm
 	d.P[1] = (d.P[1] == 0) ? 500 : d.P[1]
 	d.P[2] = (d.P[2] == 0) ? 500 : d.P[2]
 
@@ -814,7 +814,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	noteStr = ReplaceNumberByKey("V_OptNumIters",noteStr,V_OptNumIters,"=")
 	noteStr = ReplaceNumberByKey("V_OptNumFunctionCalls",noteStr,V_OptNumFunctionCalls,"=")
 	noteStr = ReplaceNumberByKey("V_min",noteStr,V_min,"=")
-	if (zero)												// only update rho if I fit it
+	if (zero)												// only update rho if itis being fitted
 		noteStr = ReplaceNumberByKey("rhox",noteStr,W_Extremum[6],"=")
 		noteStr = ReplaceNumberByKey("rhoy",noteStr,W_Extremum[7],"=")
 		noteStr = ReplaceNumberByKey("rhoz",noteStr,W_Extremum[8],"=")
@@ -823,7 +823,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	Note/K CalibrationList, noteStr
 
 	Variable dR = 1e-8									// this gives a limit of (~0.5e-6)¡
-	d.R[0]= round(W_Extremum[0]/dR)*dR				// round to 8 places
+	d.R[0]= round(W_Extremum[0]/dR)*dR			// round to 8 places
 	d.R[1]= round(W_Extremum[1]/dR)*dR
 	d.R[2]= round(W_Extremum[2]/dR)*dR
 	d.R[0] = (d.R[0]==0) ? 0 : d.R[0]				// change -0 to +0
@@ -831,7 +831,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	d.R[2] = (d.R[2]==0) ? 0 : d.R[2]
 
 	Variable dP = min(d.sizeX/d.Nx,d.sizeY/d.Ny)/100	// resolution limit in Px,Py,Pz (1% of a pixel)
-	dP = 10^round(log(dP))								// make rounding to a fixed number of places (not arbitrary number)
+	dP = 10^round(log(dP))							// make rounding to a fixed number of places (not arbitrary number)
 	d.P[0]= round(W_Extremum[3]/dP)*dP
 	d.P[1]= round(W_Extremum[4]/dP)*dP
 	d.P[2]= round(W_Extremum[5]/dP)*dP
@@ -853,7 +853,7 @@ End
 // This routine is for optimizing the detector position & rotation and sample orientation simultaneously (only useful for detector 1,2,...   not 0)
 Function CalibrationErrorRP(CalibrationList,Rx,Ry,Rz,Px,Py,Pz)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
 	Wave CalibrationList
-	Variable Rx,Ry,Rz						// rotation vector for detector, these two vectors a changed to minimize returned value
+	Variable Rx,Ry,Rz						// rotation vector for detector, the vectors [R] & [P] are changed to minimize returned rms value
 	Variable Px,Py,Pz						// translation vector for detector
 	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice,
 	// it also compares the measured theta (from px,py) to the theta calculated from the measured energy.
@@ -877,17 +877,17 @@ End
 // This routine is for optimizing the detector position & rotation and sample orientation simultaneously (only useful for detector0)
 Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
 	Wave CalibrationList
-	Variable Rx,Ry,Rz						// rotation vector for detector, these two vectors a changed to minimize returned value
-	Variable Px,Py,Pz						// translation vector for detector
+	Variable Rx,Ry,Rz					// rotation vector for detector, these two vectors a changed to minimize returned value
+	Variable Px,Py,Pz					// translation vector for detector
 	Variable rhox,rhoy,rhoz			// rotation vector to apply to qhat's to make them line up with (px,py) pairs
 	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice,
-	// it alsocompares the measured theta (from px,py) to the theta calculated from the measured energy.
+	// it also compares the measured theta (from px,py) to the theta calculated from the measured energy.
 	//
 	//	The user supplies ONLY columns [0-2]=hkl, [3,4]=(px,py), [5]=measured_keV, the rest are calculated.
 
 	//	printf "CalibrationErrorRPrho(%s,%g,%g,%g,   %g,%g,%g,   %g,%g,%g)\r",NameOfWave(CalibrationList),Rx,Ry,Rz,Px,Py,Pz,,rhox,rhoy,rhoz
 	String noteStr = note(CalibrationList)
-	Make/N=(3,3)/D/FREE rhoSample						// rotation matrix computed from {rhox,rhoy,rhoz}
+	Make/N=(3,3)/D/FREE rhoSample							// rotation matrix computed from {rhox,rhoy,rhoz}
 	RotationVec2Matrix(rhox,rhoy,rhoz,NaN,rhoSample)	// Compute rhoSample, the sample rotation mat. Apply to qhat's to make them line up with (px,py) pairs
 
 	Variable rms = CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhoSample)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
@@ -895,7 +895,7 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	// find error term that sets orientation about the incident beam.
 	Variable angleOffset=NumberByKey("angleOffset",noteStr,"=")	// rotation about incident beam (usually zero)
 	angleOffset = numtype(angleOffset) ? 0 : angleOffset
-	STRUCT detectorGeometry d									// a local version of detector structure
+	STRUCT detectorGeometry d								// a local version of detector structure
 	Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)			// fill d to match this orientation
 	Variable errOrient = errVertAngle(d,angleOffset)	// error to use for orienting system along Y-axs (controls rotation about incident beam)
 	errOrient *= 10												// weight this error heavier
@@ -908,14 +908,14 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 	Variable Rx,Ry,Rz						// rotation vector for detector, these two vectors a changed to minimize returned value
 	Variable Px,Py,Pz						// translation vector for detector
 	Wave rhoSample							// rotation matrix to apply to qhat's to make them line up with (px,py) pairs
-	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice, it also
-	// compares the measured theta (from px,py) to the theta calculated from the measured energy
+	// This routine uses the (px,py) from CalibrationList, and compares it to the angles calculated from (hkl) and lattice, 
+	// it also compares the measured theta (from px,py) to the theta calculated from the measured energy
 	// The routine does not use the {qx,qy,qz}, or the theta columns in CalibrationList
 	//
 	//	The user supplies ONLY columns [0-2]=hkl, [3,4]=(px,py), [5]=measured_keV, the rest are calculated.
 	//
-	//	CalibrationList[][0,2]	= [REQUIRED] hkl for each measured spot
-	//	CalibrationList[][3,4]	= [OPTIONAL] (px,py) are measured on image
+	//	CalibrationList[][0,2]= [REQUIRED] hkl for each measured spot
+	//	CalibrationList[][3,4]= [OPTIONAL] (px,py) are measured on image
 	//	CalibrationList[][5]	= [OPTIONAL] keV, MEASURED energy of spot (otherwise leave as NaN)
 	//
 	//	CalibrationList[][6]	= [CALCULATED] keV calculated from sample orientation and known lattice (does NOT use measured spot position)
@@ -927,23 +927,23 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 
 	String noteStr = note(CalibrationList)
 
-	STRUCT detectorGeometry d								// a local version of detector structure
+	STRUCT detectorGeometry d							// a local version of detector structure
 	Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)		// fill d to match this orientation
 
 	Wave recip0 = decodeMatFromStr(StringByKey("recipSTD",noteStr, "="))
 
 	Make/N=3/D/FREE ki={0,0,1}, kf, hkl, qmeas
-	Make/N=3/D/FREE radialHat								// unit vector in qmeas direction
+	Make/N=3/D/FREE radialHat							// unit vector in qmeas direction
 	Make/N=3/D/FREE dq
-	Variable N=DimSize(CalibrationList,0)				// number of measured spots to use in computing error values
+	Variable N=DimSize(CalibrationList,0)			// number of measured spots to use in computing error values
 	Variable keV, Qlen, i, haveE, haveQhat
-	Variable Nmeas, dqRad, dqPerp, err2, pixelX, pixelY, dq2
+	Variable weightSum, dqRad, dqPerp, err2, pixelX, pixelY, dq2
 
 	MatrixOP/FREE Nenergy0 = sum(greater(col(CalibrationList,5),0))	// number of measured energies
 	Variable weightE = N/max(Nenergy0[0],1)			// weighting for points with measured energy
-	weightE = min(weightE*weightE,40)					//   this is weight for err^2
+	weightE = min(weightE*weightE,40)					//   this is weight for err^2, when no energy use weight=1
 
-	for (i=0,Nmeas=0,err2=0; i<N; i+=1)
+	for (i=0,weightSum=0,err2=0; i<N; i+=1)
 		pixelX = CalibrationList[i][3]	;	pixelX = pixelX==limit(pixelX,0,d.Nx - 1) ? pixelX : NaN
 		pixelY = CalibrationList[i][4]	;	pixelY = pixelY==limit(pixelY,0,d.Ny - 1) ? pixelY : NaN
 		keV = CalibrationList[i][5]
@@ -953,44 +953,44 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 
 		hkl = CalibrationList[i][p]
 		if (numtype(sum(hkl)))
-			continue												// Invalid hkl, skip, you must have the hkl
+			continue											// Invalid hkl, skip, you must have the hkl
 		elseif (!haveQhat && !haveE)
-			continue												// neither energy nor direction, nothing was measured
+			continue											// neither energy nor direction, nothing was measured
 		endif
 
 		// compute CALCULATED Q-vector from just rhoSample and the reciprocal lattice
 		MatrixOp/FREE qcalc = rhoSample x recip0 x hkl	// rotate Q-vector by rhoSample, this is the Calculated qvec
 
 		// compute MEASURED Q-vectors from (pixelX,pixelY) & keV
-		if (haveQhat)											// pixel is valid
+		if (haveQhat)										// pixel is valid
 			pixel2XYZ(d,pixelX,pixelY,kf)				// find kf, convert pixel position to the beam line coordinate system
 			normalize(kf)
 			qmeas = kf - ki									// direction of qMeasured, wrong length, but parallel to correct q
 		else
-			qmeas = qcalc										// user gave an hkl & keV, but no (pixelX,pixelY), so just use calculated direction
+			qmeas = qcalc									// user gave an hkl & keV, but no (pixelX,pixelY), so just use calculated direction
 		endif
 		normalize(qmeas)
-		radialHat = qmeas										// will need this later to calc the error
+		radialHat = qmeas									// will need this later to calc the error
 
 		// compute |Qmeas| using:  sin(theta) = -MatrixDot(ki,qmeas),  Q=4¹ sin(theta)/lambda,  if no energy, then use |Q| of calculated instead
 		Qlen = haveE ? -4*PI*MatrixDot(ki,qmeas)*keV/hc : norm(qcalc)	// measured |Q|
 		if (numtype(Qlen) || Qlen <= 0)
-			continue												// inalid |Q|, give up on this spot
+			continue											// inalid |Q|, give up on this spot
 		endif
-		qmeas *= Qlen											// set length of qmeas using Qlen from either measured keV or calculated
+		qmeas *= Qlen										// set length of qmeas using Qlen from either measured keV or calculated energy
 
 		// now have qcalc[][3] & qmeas[][3], calculate the difference appropriately
 		dq = qcalc - qmeas
-		dqRad = MatrixDot(radialHat,dq)					// length of dq in radial direction, the radial error in dq
+		dqRad = MatrixDot(radialHat,dq)				// length of dq in radial direction, the radial error in dq
 		dq -= dqRad*radialHat								// remove radial part of dq, dq --> perpendicular part
-		dqPerp = norm(dq)										// length of dq in perpendicular direction, the perpendicular error in dq
+		dqPerp = norm(dq)									// length of dq in perpendicular direction, the perpendicular error in dq
 
-		dq2  = haveQhat ? (dqPerp*dqPerp) : 0			// ignore perpendicular error if no measured Q^, only measured E
-		dq2 += haveE ? weightE*(dqRad*dqRad) : 0	// ignore radial error if no measured energy, only measured Q
-		err2 += dq2 / (Qlen*Qlen)							// weight by Qlen, so units of err2 are ~radian^2
-		Nmeas += 1
+		dq2  = haveQhat ? (dqPerp*dqPerp) : 0		// ignore perpendicular error if no measured Q^, only have a measured E
+		dq2 += haveE ? weightE*(dqRad*dqRad) : 0	// ignore radial error if no measured energy, only have a measured Q^
+		err2 += dq2 / (Qlen*Qlen)						// weight by Qlen, so units of err2 are ~radian^2
+		weightSum += haveE ? weightE : 1				// accumulate Sum(weight), weight points with energy more heavily
 	endfor
-	Variable rms = sqrt(err2 / Nmeas)
+	Variable rms = sqrt(err2 / weightSum)
 	return rms
 End
 //
@@ -1001,48 +1001,48 @@ Static Function errVertAngle(d,angleOffset)// calculate the error to use for ori
 
 	Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
 	Make/N=3/D/FREE xyz
-	pixel2XYZ(d,(d.Nx-1)/2,(d.Ny-1)/2,xyz)				// vector to detector center
+	pixel2XYZ(d,(d.Nx-1)/2,(d.Ny-1)/2,xyz)			// vector to detector center
 	Variable tanCenter = sqrt(xyz[0]^2+xyz[1]^2)/abs(xyz[2])	// tan(angle to detector center)
 
-	Variable angle													// angle between disired vertical and y^ (radian)
-	if (tanSize>tanCenter)										// close to forward (or back) scattering
+	Variable angle											// angle between disired vertical and y^ (radian)
+	if (tanSize>tanCenter)								// close to forward (or back) scattering
 		// find direction along detector pixels (x or y) that is closest to y-axis, and make that the vertical
 		Make/N=(3,3)/D/FREE rho
-		rho[0][0] = {d.rho00, d.rho10, d.rho20}			// rotation matrix
+		rho[0][0] = {d.rho00, d.rho10, d.rho20}		// rotation matrix
 		rho[0][1] = {d.rho01, d.rho11, d.rho21}
 		rho[0][2] = {d.rho02, d.rho12, d.rho22}
 
-		Make/N=(3,4)/D/FREE alongxy							// four vectors along the four directions ±x & ±y
+		Make/N=(3,4)/D/FREE alongxy						// four vectors along the four directions ±x & ±y
 		alongxy[0][0] = {1,0,0}
 		alongxy[0][1] = {-1,0,0}
 		alongxy[0][2] = {0,1,0}
 		alongxy[0][3] = {0,-1,0}
 
-		MatrixOP/FREE alongxy = rho x alongxy				// unit vector pointing along 4 directions of detector in beam line coords
-		MatrixOP/FREE dotYs = row(alongxy,1)				// dot of each alongxy with y^
+		MatrixOP/FREE alongxy = rho x alongxy		// unit vector pointing along 4 directions of detector in beam line coords
+		MatrixOP/FREE dotYs = row(alongxy,1)			// dot of each alongxy with y^
 		WaveStats/Q/M=1 dotYs
 		angle = atan2(alongxy[0][V_maxloc],alongxy[1][V_maxloc])	// angle between "most vertical direction" and yhat
 
-	else																// far from forward scattering (the usual)
-		angle = atan2(d.rho02,d.rho12)						// angle from y-axis to detector normal
+	else														// far from forward scattering (the usual)
+		angle = atan2(d.rho02,d.rho12)					// angle from y-axis to detector normal
 	endif
 
 	Variable errOrient = angle - (angleOffset*PI/180)
 	// printf "errOrient = %g (only angle in radians)\r",errOrient
-	return errOrient												// error to force correct orientation (radian)
+	return errOrient										// error to force correct orientation (radian)
 End
 //
 Static Function Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)	// fill d to match this orientation
 	STRUCT detectorGeometry &d							// a local version of detector structure, this is filled
-	String noteStr												// noteStr = note(CalibrationList)
+	String noteStr											// noteStr = note(CalibrationList)
 	Variable  Rx,Ry,Rz, Px,Py,Pz
 	d.used = 1
 	d.Nx = NumberByKey("Nx",noteStr,"=")				// number of un-binned pixels in whole detector
 	d.Ny = NumberByKey("Ny",noteStr,"=")
 	d.sizeX = NumberByKey("sizeX",noteStr,"=")		// outside size of detector (micron)
 	d.sizeY = NumberByKey("sizeY",noteStr,"=")		// outside size of detector (micron)
-	d.R[0] = Rx;	d.R[1] = Ry;	d.R[2] = Rz			// Rotation vector for detector (degree)
-	d.P[0] = Px;	d.P[1] = Py;	d.P[2] = Pz			// offset to detector (micron)
+	d.R[0] = Rx;	d.R[1] = Ry;	d.R[2] = Rz				// Rotation vector for detector (degree)
+	d.P[0] = Px;	d.P[1] = Py;	d.P[2] = Pz				// offset to detector (micron)
 	DetectorUpdateCalc(d)									// update all fields in this detector structure (basically rho)
 End
 
@@ -1065,7 +1065,7 @@ Static Function CalculatedQvecEnergy(CalibrationList,m)	// fills the calculated 
 	Variable Qlen = norm(qcalc)
 
 	Variable sintheta = -MatrixDot(ki,qcalc)/Qlen		// sin(theta) = -ki dot q^ 
-	return hc * Qlen / (4*PI*sintheta)						// energy (keV)
+	return hc * Qlen / (4*PI*sintheta)					// energy (keV)
 End
 
 
