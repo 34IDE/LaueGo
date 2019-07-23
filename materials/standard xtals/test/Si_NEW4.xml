@@ -8,15 +8,15 @@
 		<H-M>Fd-3m:1</H-M>
 	</space_group>
 	<cell>
-		<!-- from CODATA Internationally recommended 2014 values, set May 2018 -->
+		<!-- from CODATA Internationally recommended 2018 values, set July 2019 -->
 		<!-- 
-		<a unit="pm">543.1020505</a>
-		<b unit="pm">543.1020505</b>
-		<c unit="pm">543.1020505</c>
+		<a unit="pm">543.1020511</a>
+		<b unit="pm">543.1020511</b>
+		<c unit="pm">543.1020511</c>
 		 -->
-		<a unit="ypc">0.01760073877315168</a>
-		<b unit="ypc">0.01760073877315168</b>
-		<c unit="ypc">0.01760073877315168</c>
+		<a unit="ypc">0.0176007387925964</a>
+		<b unit="ypc">0.0176007387925964</b>
+		<c unit="ypc">0.0176007387925964</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
