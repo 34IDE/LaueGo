@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, August 09, 2019" time="12:25:34 PM CDT" isoTime="2019-08-09T12:25:34"></written>
+	<written date="Friday, August 09, 2019" time="12:35:59 PM CDT" isoTime="2019-08-09T12:35:59"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 6 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>371b61233195d4900a344eb99d269e173dbbff50</gitHash>
+	<gitHash>a4e036a84c613acb358ae1f19d3450a653d9f166</gitHash>
 	<fileCount>316</fileCount>
 	<file version="nan" time="2019-01-24T11:41:24" md5="8e2e0904fd26f496a98eae6d3dac8710" sha256="3c140bff52cccaafbb1e02b995470613f68848abb51561c6752e33c110341cf6" ext=".xml">materials/standard xtals/test/V2O3 Monoclinic.xml</file>
 	<file version="nan" time="2019-01-27T18:26:40" md5="69e705fe2cbfb54dd8ce990d77e5d229" sha256="f44567f99332c05b77d27a7c77ca40a5684a550fcaf13d08d7fb203dd626715a" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -244,7 +244,7 @@
 	<file version="nan" time="2019-01-11T11:17:00" md5="e906a8fb3aaff3702c081faec236a574" sha256="c7d4e9db237101217a80caf1d1f0cec88222fccded0b12a113b0d229f1f0f98c" ext=".xml">materials/standard xtals/1T-TaS2.xml</file>
 	<file version="2.17" time="2013-10-28T11:28:49" md5="943bd23067647c83f99d989b53f102c8" sha256="33a2b022cddfee9384fe43e1e40f06c649026e9c853cce7b0d1aa1fa545a796f" ext=".ipf">micro/indexLots.ipf</file>
 	<file version="nan" time="2019-01-11T11:17:00" md5="788ea272cb44270e565c6d537983cef9" sha256="059d4dadcd793fa22d4c474b2f3cf5bc2de6693f75426132c3001adb56e8eb72" ext=".xml">materials/standard xtals/Iron Nickel/Iron-delta.xml</file>
-	<file version="nan" time="2013-10-28T11:28:48" md5="" sha256="" ext=".app">Check Version Consistency.app</file>
+	<file version="nan" time="2019-08-09T12:29:52" md5="" sha256="" ext=".app">Check Version Consistency.app</file>
 	<file version="nan" time="2018-05-11T15:45:43" md5="a7b0d478c0bdfff40c17cdc26ab4d9ee" sha256="3411cdfe13bc7dcb8a7b19c259f3c952ecb6cfaba5e7166a561b8b57588a19e0" ext=".xml">materials/standard xtals/WC.xml</file>
 	<file version="1.43" time="2015-04-29T17:41:07" md5="7b7c6270d165c91628448ef4db2fd4e1" sha256="a45319793b70c65af9c72950f102cc6f6454b2da9c5970fad5183633241a2eda" ext=".ipf">micro/Grains/GrainMath.ipf</file>
 	<file version="nan" time="2018-05-11T15:36:59" md5="58220d57af7c432a23915b8dcc332217" sha256="56face1f5268d1cec5d2bf80d0995ee4eb84aa44b4523fa0f3191be58ff99c6c" ext=".xml">materials/standard xtals/PZT-Rhomb.xml</file>
