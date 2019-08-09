@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>triclinic</chemical_name_common>
+	<space_group>
+		<id>1</id>
+		<H-M>P1</H-M>
+	</space_group>
+	<cell>
+		<!-- from CODATA Internationally recommended 2018 values, set July 2019 -->
+		<a unit="nm">0.3</a>
+		<b unit="nm">0.4</b>
+		<c unit="nm">0.5</c>
+		<alpha>80</alpha>
+		<beta>100</beta>
+		<gamma>95</gamma>
+	</cell>
+
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 0</fract>
+	</atom_site>
+</cif>
