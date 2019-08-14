@@ -1,7 +1,7 @@
-#pragma TextEncoding = "MacRoman"
+#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.14									// based on LatticeSym_6.55
+#pragma version = 7.15									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -243,6 +243,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //							changed FindWyckoffSymbol()
 //	with version 7.13, fixed bug in allXYZofOneAtomType(), when number of atoms is 1, MatrixOP behaves differently.
 //	with version 7.14, fixed bug in FindWyckoffSymbol(), problem arose with rhomhohedral settings
+//	with version 7.15, added IntegratedReflectivity()
 
 
 //	Rhombohedral Transformation:
@@ -396,8 +397,8 @@ Structure crystalStructure	// structure definition for a crystal lattice, this o
 	double Pressure					// Temperature (Pa = Pascal)
 	double alphaT					// coef of thermal expansion, a = ao*(1+alphaT*(TempC-20))
 	int16	NL_L						// number of point in dL_L vs dL_LT that are used (max of MAX_NUM_EXPANSION)
-	double dL_L[MAX_NUM_EXPANSION]		// ∆L/L expansion table (dimensionless)
-	double dL_LT[MAX_NUM_EXPANSION]	// T for ∆L/L expansion table (Kelvin)
+	double dL_L[MAX_NUM_EXPANSION]		// ‚àÜL/L expansion table (dimensionless)
+	double dL_LT[MAX_NUM_EXPANSION]	// T for ‚àÜL/L expansion table (Kelvin)
 	int16 N							// number of atoms described here
 	Struct atomTypeStructure atom[STRUCTURE_ATOMS_MAX]
 	int16 Vibrate					// True if DebyeT, Biso, Uiso, or Uij available for some atom
@@ -5587,6 +5588,46 @@ Strconstant LatticeSystemNames2D="Oblique;Rectangular;Rhombic;Square;Hexagonal"
 
 
 
+Static Function IntegratedReflectivity(type,xtal,hkl,keV, [Pol])	// Integrated Intensity for a Laue reflection
+	// Integrated Intensity for a Laue reflection see: "Laue Diffraction Moffat Bilderback" and Zachariasen eqn. 3.72, pg. 106
+	//  actually it returns the ingtegrated power/(length of sample),  units = (photons sec‚Åª¬π ¬µm‚Åª¬π)
+	Variable type										// =0 for Bragg extended face, =1 for Laue, =2 for Dynamical NO absorption
+	STRUCT crystalStructure &xtal					// needed for Vc and to calculate F and ¬µ
+	Wave hkl
+	Variable keV											// energy of reflection (keV)
+	Variable Pol											// polarization factor, default is 1 (1=œÉ, 0=œÄ)
+	Pol = ParamIsDefault(Pol) || numtype(Pol) || Pol<0 || Pol>1 ? 1 : Pol
+	if (!(type==0 || type==1 || type==2))
+		printf "ERROR -- type must be 0, 1, or 2, not %g\r",type
+		return NaN
+	endif
+
+	Variable re = re_nm * 0.001						// radius of electron (¬µm)
+	Variable lambda = 0.001*hc_keVnm/keV			// wavelength (¬µm)
+	Variable Vc = xtal.Vc * 1e-9					// volume of real space and reciprocal space unit cells (¬µm¬≥)
+	Variable F2 = magSqr( Fstruct(xtal,hkl[0],hkl[1],hkl[2], keV=keV) )
+	Variable d = dSpacing(xtal,hkl[0],hkl[1],hkl[2]) * 0.001	// d-spacing (¬µm)
+
+	Variable EwPo=NaN, Lorentz=NaN, mu
+	if (type==0)											// Bragg, extended face,  Warren pg. 46, eqn 4.7
+		mu = LatticeSym#muOfXtal(xtal, keV)		// ¬µ of xtal (¬µm‚Åª¬π)
+		Lorentz = 1/sin(2*asin(lambda/(2*d)))	// Lorentz factor is 1/[2*sin(2Œ∏)],  2Œ∏ = 2*asin(lambda/(2*d))
+		EwPo = re^2 * lambda^3 * F2 / (2 * mu * Vc^2) * Lorentz
+	elseif (type==1)									// Laue, Zachariasen eqn. 3.72, pg. 106
+		Lorentz = 0.5 / (lambda/d)^2				// Lorentz factor is 1/[2*sin(Œ∏)¬≤]
+		EwPo = re^2 / Vc^2 * F2 * lambda^4 * Lorentz	// integrated intensity per ¬µm of crystal
+		EwPo *= 1e4										// I'm not sure why this is here???
+
+	elseif (type==2)									// Bragg, Dynamical NO absorption, Warren eqn. 14.37
+		Lorentz = 1/sin(2*asin(lambda/(2*d)))	// Lorentz factor is 1/[2*sin(2Œ∏)],  2Œ∏ = 2*asin(lambda/(2*d))
+		EwPo = 8/(3*PI) * re * lambda^2 * sqrt(F2)/Vc * Lorentz
+	endif
+
+	return EwPo * Pol
+End
+
+
+
 Function/C getFstruct(h,k,l,[keV,T,printIt])	// user interface to getting F for current crystal structure
 	Variable h,k,l
 	Variable keV
@@ -5839,8 +5880,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 			Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 			//  for hexagonal:
 			//	h+2k=3n,		l=even;		F = 4*f			1
-			//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-			//	h+2k=3n±1,	l=even;		F = f			1/4
+			//	h+2k=3n¬±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+			//	h+2k=3n¬±1,	l=even;		F = f			1/4
 			//	h+2k=3n,		l=odd; 		F = 0			0
 		endif
 	endif
@@ -5946,7 +5987,7 @@ End
 
 
 Function/C FstructMax(xtal,Qmag,[keV])
-	STRUCT crystalStructure &xtal				// sruct defining the crystal, not changed here
+	STRUCT crystalStructure &xtal					// sruct defining the crystal, not changed here
 	Variable Qmag										// Q (1/nm)
 	Variable keV
 	keV = ParamIsDefault(keV) || keV<=0 ? NumVarOrDefault("root:Packages:Lattices:keV",NaN) : keV
@@ -6009,7 +6050,7 @@ Function get_muOfXtal(keV, [printIt])					// returns mu of xtal (1/micron)
 
 	Variable mu = muOfXtal(xtal, keV)		// returns mu of xtal (1/micron)
 	if (printIt)
-		printf  "   mu['%s', %g keV] = %g (1/µm)  -->  absorption length %g (µm)\r",xtal.desc,keV,mu,1/mu
+		printf  "   mu['%s', %g keV] = %g (1/¬µm)  -->  absorption length %g (¬µm)\r",xtal.desc,keV,mu,1/mu
 	endif
 	return mu
 End
@@ -6047,7 +6088,7 @@ Static Function muOfXtal(xtal, keV)	// returns mu of xtal (1/micron)
 		return NaN
 	endif
 	Variable mu = 2*re_nm*(hc_keVnm/keV)*Fpp / (xtal.Vc)
-	return (mu * 1000)						// convert mu from 1/nm --> 1/µm
+	return (mu * 1000)						// convert mu from 1/nm --> 1/¬µm
 End
 
 
@@ -6416,8 +6457,8 @@ ThreadSafe Function allowedHKL(h,k,l,xtal,[atomWaves])		// does NOT use Cromer, 
 		Fc = cmplx(rr*Fr - ii*Fi, rr*Fi + ii*Fr)
 		//  for hexagonal:
 		//	h+2k=3n,		l=even;		F = 4*f			1
-		//	h+2k=3n±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
-		//	h+2k=3n±1,	l=even;		F = f			1/4
+		//	h+2k=3n¬±1,	l=odd;		F = sqrt(3)*f   sqrt(3)/4
+		//	h+2k=3n¬±1,	l=even;		F = f			1/4
 		//	h+2k=3n,		l=odd; 		F = 0			0
 	endif
 	endif
@@ -7336,7 +7377,7 @@ ThreadSafe Function/S getHMboth(SpaceGroupIDnum, [dim])	// returns short and (fu
 End
 
 
-//	see:		https://en.wikipedia.org/wiki/Hermann–Mauguin_notation
+//	see:		https://en.wikipedia.org/wiki/Hermann‚ÄìMauguin_notation
 //		or:	https://bruceravel.github.io/demeter/artug/atoms/space.html#decodingthehermann-maguinnotation
 ThreadSafe Function/T getHMsym(idNum, [dim])	// returns short Hermann-Mauguin symbol
 	Variable idNum											// index into the SpaceGroup IDs [1,530]
@@ -7920,7 +7961,7 @@ Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral
 
 	Variable/C a_alpha = Hex2Rhom(xtal.a, xtal.c)
 	print "   Starting from Hexagonal"
-	printf "aRhom = %g nm,   alphaRhom = %g°\r",real(a_alpha), imag(a_alpha)
+	printf "aRhom = %g nm,   alphaRhom = %g¬∞\r",real(a_alpha), imag(a_alpha)
 
 	Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
 	Wave directR = RhomLatticeFromHex(directH)	// Obverse Rhombohedral direct lattice from Hexagonal
@@ -8369,7 +8410,7 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	for (i=0; i<Ntype; i+=1)					// generate free versions of xyz,Zs,Types for bond finding
 		Wave wa = $("root:Packages:Lattices:atom"+num2istr(i))
 		Duplicate/FREE wa, xyzTemp
-		ExtendFractional(xyzTemp,0.5)		// extend by ±0.5 to (-0.5,1.5) in x, y, & z
+		ExtendFractional(xyzTemp,0.5)		// extend by ¬±0.5 to (-0.5,1.5) in x, y, & z
 		MatrixOP/FREE xyzTemp = ( direct x xyzTemp^t )^t	// convert fractional coordinates to real units (nm)
 		xyzRef[i] = xyzTemp						// xyzRef holds a free reference to the xyz waves (1 for each atom type)
 	endfor
@@ -8398,7 +8439,7 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	Sort blen, blen, type1, type2
 
 	Make/N=(Ntype)/FREE valence=0
-	if (useValence)								// not metalic, set the valences to ±1 using the bonds just found
+	if (useValence)								// not metalic, set the valences to ¬±1 using the bonds just found
 		Variable v1,v2, iv, m
 		for (m=0;m<Nbond;m+=1)					// for each bond, remember {blen,type1,type2} are sorted by blen
 			v1 = valence[type1[m]]
@@ -8518,12 +8559,12 @@ Static Function ExtendFractional(xyz,delta)
 	Make/N=(dim)/D/FREE offset
 	if (dim==2)
 		Noff = 8
-		Make/N=(Noff,2)/D/FREE offsets			// offsets by ±1 in x, & y around the center cell
+		Make/N=(Noff,2)/D/FREE offsets			// offsets by ¬±1 in x, & y around the center cell
 		offsets[0][0]= {	-1, 0, 1,-1, 1,-1, 0, 1}
 		offsets[0][1]= {	-1,-1,-1, 0, 0, 1, 1, 1}
 	else
 		Noff = 26
-		Make/N=(Noff,3)/D/FREE offsets			// offsets by ±1 in x, y, & z around the center cell
+		Make/N=(Noff,3)/D/FREE offsets			// offsets by ¬±1 in x, y, & z around the center cell
 		offsets[0][0]= {-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1,-1, 0, 1}
 		offsets[0][1]= {-1,-1,-1, 0, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 1, 1, 1,-1,-1,-1, 0, 0, 0, 1, 1, 1}
 		offsets[0][2]= {-1,-1,-1,-1,-1,-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1}
@@ -9758,7 +9799,7 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry o
 
 	Variable i,N=ItemsInList(symOperations)
 	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
-	Make/N=(N,dim,dim)/O/B $wName									// this only holds 0 or ±1
+	Make/N=(N,dim,dim)/O/B $wName									// this only holds 0 or ¬±1
 	Wave equivM = $wName
 	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
 	Make/N=(N,dim)/O/D $wName
@@ -9841,7 +9882,7 @@ End
 //
 //	Variable i,N=ItemsInList(symOperations)
 //	String wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
-//	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ±1
+//	Make/N=(N,3,3)/O/B $wName									// this only holds 0 or ¬±1
 //	Wave equivM = $wName
 //	wName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
 //	Make/N=(N,3)/O/D $wName
@@ -11614,9 +11655,9 @@ Static Function ConvertSetting(xtal, target)	// change the setting of given xtal
 	//	The formula for the transformation of the metrical matrix G(A) of Setting A to the metrical matrix G(B) of Setting B is (see e.g. Boisen & Gibbs [2]):
 	//			G(B) = transpose(InvCBMx) * G(A) * InvCBMx
 	//
-	//								a•a		a•b		a•c
-	//	metrical matrix = 		a•b		b•b		b•c
-	//								a•c		b•c		c•c
+	//								a‚Ä¢a		a‚Ä¢b		a‚Ä¢c
+	//	metrical matrix = 		a‚Ä¢b		b‚Ä¢b		b‚Ä¢c
+	//								a‚Ä¢c		b‚Ä¢c		c‚Ä¢c
 	//
 	//									a^2			a*b*cos(gamma)		a*c*cos(beta)
 	//	metrical matrix = 	a*b*cos(gamma)				b^2			b*c*cos(alpha)
