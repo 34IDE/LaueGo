@@ -7,7 +7,7 @@
 		<id>4:b</id>
 		<H-M>P21:b</H-M>
 	</space_group>
-	<database_code_PDF>01-074-0794</database_code_PDF>
+	<database_code db="PDF">01-074-0794</database_code>
 	<R_factor_all>01-074-0794</R_factor_all>
 	<cell>
 		<a unit="nm">0.8447</a>

@@ -21,6 +21,7 @@
 		<symbol>Al</symbol>
 		<fract>0.3523 0.3523 0.3523</fract>
 		<valence>3</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 	<atom_site>
@@ -28,6 +29,7 @@
 		<symbol>O</symbol>
 		<fract>0.5564 0.9436 0.25</fract>
 		<valence>-2</valence>
+		<WyckoffSymbol>e</WyckoffSymbol>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 </cif>
