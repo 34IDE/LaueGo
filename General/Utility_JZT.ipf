@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.77
+#pragma version = 4.78
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5084,22 +5084,31 @@ End
 
 
 // The routines encodeMatAsStr() and decodeMatFromStr() are NOT intended for viewing by user, but for a wave note
-ThreadSafe Function/T encodeMatAsStr(mat,[places,vsep])	// write a string interpretable by decodeMatFromStr
+ThreadSafe Function/T encodeMatAsStr(mat,[places,vsep,t])	// write a string interpretable by decodeMatFromStr
 	Wave mat
 	Variable places		// defaults to 15 places of precisiont
-	String vsep				// optional separator between vectors, use "," for Igor readable strings (the default)
+	String vsep			// optional separator between vectors, use "," for Igor readable strings (the default)
+	Variable t			// t=1 write the transpose of mat, only valid if 2D mat, default is t=0
 	places = ParamIsDefault(places) || !(places>0) ? 15 : places
 	vsep = SelectString(ParamIsDefault(vsep),vsep,",")
+	t = ParamIsDefault(t) || numtype(t) ? 0 : t
 
 	Variable i, Nr=DimSize(mat,0), Nc=DimSize(mat,1)
 	if (Nc<1)
 		return vec2str(mat,places=places,sep=",")
+	elseif (t && Nc>1)								// transpose was requested for a 2D mat
+		MatrixOP/FREE mfree = mat^t
+		Variable swap = Nc							// swap the dimensions
+		Nc = Nr
+		Nr = swap
+	else
+		Duplicate/FREE mat, mfree
 	endif
 
 	Make/N=(Nr)/D/FREE vec
 	String str="{"
 	for (i=0;i<Nc;i+=1)
-		vec = mat[p][i]
+		vec = mfree[p][i]
 		str += SelectString(i,"",vsep)			// no separator before first vector
 		str += vec2str(vec,places=places,sep=",")
 	endfor
@@ -5109,21 +5118,23 @@ End
 
 
 // This is also may be used as a replacement for str2recip() in LatticeSym.ipf
-ThreadSafe Function/WAVE decodeMatFromStr(strIn)	// returns a FREE wave defined by str
+ThreadSafe Function/WAVE decodeMatFromStr(strIn, [t])	// returns a FREE wave defined by str
 	// strIn looks something like "{{1.3,0,0},{0,1.3,0},{0,0,1.3},{3.14,2,19.666}}"
 	//    or "{1.3,0,0}{0,1.3,0}{0,0,1.3}" is also OK
 	String strIn
+	Variable t			// t=1 return the transpose of mat, only valid if 2D mat, default is t=0
+	t = ParamIsDefault(t) || numtype(t) ? 0 : t
 	strIn = ReplaceString(" ",strIn,"")		// remove all spaces
 	strIn = ReplaceString("\t",strIn,"")		//   and tabs
 	strIn = ReplaceString("},{",strIn,";")	// use ';' to separate the column vectors
-	strIn = ReplaceString("}{",strIn,";")		//   accept either "},{" or "}{"
+	strIn = ReplaceString("}{",strIn,";")	//   accept either "},{" or "}{"
 	strIn = ReplaceString("{",strIn,"")		// remove leading "{"
 	strIn = ReplaceString("}",strIn,"")		//   and remove and trailing "}"
 
 	String str=StringFromList(0,strIn)
 	Variable ic, Nr=ItemsInList(str,","), Nc=ItemsInList(strIn)	// number of rows, columns
 	if (!(Nr*Nc>0))
-			return $""									// Nr & Nc must both be non-zero
+			return $""								// Nr & Nc must both be non-zero
 	endif
 	Make/N=(Nr,Nc)/D/FREE mat=NaN				// mat is the result, fill it
 	for (ic=0;ic<Nc;ic+=1)
@@ -5133,8 +5144,10 @@ ThreadSafe Function/WAVE decodeMatFromStr(strIn)	// returns a FREE wave defined 
 		endif
 		mat[][ic] = vec[p]
 	endfor
-	if (Nc==1)
+	if (Nc==1)										// a 1D wave
 		Redimension/N=(Nr) mat
+	elseif (Nc>1 && t)								// transpose requested for a 2D mat
+		MatrixTranspose mat
 	endif
 	return mat
 End
