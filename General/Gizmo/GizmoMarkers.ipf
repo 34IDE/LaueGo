@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.23
+#pragma version = 2.24
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -148,7 +148,7 @@ Function MakeGizmoScatterMarkerPanel() : Panel	// Create the Cut Plane Panel.  D
 //	CheckBox OnPointCheckBox,fSize=12,value=0, proc=GMarkers#OnPointCheckProc
 	CheckBox OnPointCheckBox,fSize=12,value=0
 	Button MarkerInfoButton,pos={76,143},size={25,30},proc=GMarkers#GizmoMarkerInfoButtonProc
-	Button MarkerInfoButton,fSize=24,fStyle=1,font="Bookman Old Style",title="i" // font "Hoefler Text" doesn't exist on Windows
+	Button MarkerInfoButton,fSize=24,fStyle=1,font="Georgia",title="i" // font "Hoefler Text" doesn't exist on Windows, Bookman Old Style also has problems
 //	Button MarkerInfoButton,pos={80,143},size={20,30},proc=GMarkers#GizmoMarkerInfoButtonProc
 //	Button MarkerInfoButton,fSize=24,title="?"
 	Button FitPeakButton,pos={110,138},size={35,40},proc=GMarkers#GizmoScatterMarkerButtonProc,title="Fit\rpeak"
