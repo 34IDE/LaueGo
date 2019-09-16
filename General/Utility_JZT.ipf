@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.78
+#pragma version = 4.79
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5372,14 +5372,56 @@ ThreadSafe Function printWave(w1,[name,brief,fmt,zeroThresh])	// print a wave (v
 		return 1
 	endif
 
-	if (DimSize(w1, 1)<=1)					// for vectors
+	Variable N=numpnts(w1), N0=DimSize(w1,0), N1=DimSize(w1,1), N2=DimSize(w1,2), N3=DimSize(w1,3)
+	Variable dim=4
+	dim -= N0<=1 ? 1 : 0
+	dim -= N1<=1 ? 1 : 0
+	dim -= N2<=1 ? 1 : 0
+	dim -= N3<=1 ? 1 : 0
+
+	Variable Nx=N0, Ny=N1
+	if (N0<=1 && N1<=1)
+		Nx = N2	;	Ny = N3
+	elseif (N0<=1 && N2<=1)
+		Nx = N1	;	Ny = N3
+	elseif (N0<=1 && N3<=1)
+		Nx = N1	;	Ny = N2
+	elseif (N1<=1 && N2<=1)
+		Nx = N0	;	Ny = N3
+	elseif (N1<=1 && N3<=1)
+		Nx = N0	;	Ny = N2
+	elseif (N2<=1 && N2<=1)
+		Nx = N0	;	Ny = N2
+	endif
+
+	String dimStr=""
+	if (dim==1)						// a vector either row, column, layer, or beam
 		printvec(w1,name=name,fmt=fmt,zeroThresh=zeroThresh)
-	elseif (DimSize(w1, 2)==0)			// for 2-d matrix
-		if (DimSize(w1,0)<=1 || DimSize(w1,1)<=1)
-			printvec(w1,name=name,zeroThresh=zeroThresh)
-		else
-			return printmat(w1,name=name,brief=brief,fmt=fmt,zeroThresh=zeroThresh)
+	elseif (dim==2)					// a 2D matrix
+		Duplicate/O w1, w2D
+		if (N2<=1 && N3<=0)		// for simple 2-d matrix, do nothing
+		elseif (N0==1 && N3<=1)	// a 1xN1xN2 matrix
+			Redimension/N=(Nx,Ny) w2D
+			w2D = w1[0][p][q]
+			sprintf dimStr, "[][%d][%d]",Nx,Ny
+		elseif (N1==1 && N3<=1)	// a N0x1xN2 matrix
+			Redimension/N=(Nx,Ny) w2D
+			w2D = w1[p][0][q]
+			sprintf dimStr, "[%d][][%d]",Nx,Ny
+		elseif (N0==1 && N1==1)	// a 1x1xN2xN3 matrix
+			Redimension/N=(Nx,Ny) w2D
+			w2D = w1[0][0][p][q]
+			sprintf dimStr, "[][][%d][%d]",Nx,Ny
+		elseif (N0==1 && N2==1)	// a 1xN1x1xN3 matrix
+			Redimension/N=(Nx,Ny) w2D
+			w2D = w1[0][p][0][q]
+			sprintf dimStr, "[][%d][][%d]",Nx,Ny
+		elseif (N1==1 && N2==1)	// a N0x1x1xN3 matrix
+			Redimension/N=(Nx,Ny) w2D
+			w2D = w1[p][0][0][q]
+			sprintf dimStr, "[%d][][][%d]",Nx,Ny
 		endif
+		return printmat(w2D,name=name+dimStr,brief=brief,fmt=fmt,zeroThresh=zeroThresh)
 	else
 		print "cannot yet handle dimensions 3 or 4"
 	endif
