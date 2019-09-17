@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.25
+#pragma version = 2.24
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -1197,9 +1197,6 @@ Function FitPeakAt3Dmarker(space3D,GP,Qc,QxHW,[QyHW,QzHW,zeroBad,printIt])
 		QxHW = QxHW>0 ? QxHW : NumVarOrDefault("root:Packages:GizmoMarkers:DefaultFitHWx",1)
 		QyHW = ParamIsDefault(QyHW) || numtype(QyHW) ? NumVarOrDefault("root:Packages:GizmoMarkers:DefaultFitHWy",NaN) : QyHW
 		QzHW = ParamIsDefault(QzHW) || numtype(QzHW) ? NumVarOrDefault("root:Packages:GizmoMarkers:DefaultFitHWz",NaN) : QzHW
-		if (strsearch(spaceList, spaceName+";", 0, 2)<0)	// space3D was passed, but is not in spaceList
-			spaceList += spaceName+";"
-		endif
 		Prompt spaceName,"3D space",popup,spaceList
 		Prompt QxHW,"X-HW in Volume to Use"
 		Prompt QyHW,"Y-HW in Volume to Use (NaN defaults to X-HW)"
