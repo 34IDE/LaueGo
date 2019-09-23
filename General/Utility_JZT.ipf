@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.79
+#pragma version = 4.80
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3317,7 +3317,14 @@ ThreadSafe Function smallestNonZeroValue(vec,[tol])
 	if (numtype(tol))
 		tol = WaveType(vec) & 0x04 ? 1e-13 : 1e-6
 	endif
-	MatrixOP/FREE temp = abs(vec)
+
+	if (WaveType(vec) & 0x80)		// special, MatrixOP does not handle 64 bit ints
+		Duplicate/FREE, vec, temp
+		Redimension/D temp				// MatrixOP does handle double precision
+		MatrixOP/FREE temp = abs(temp)
+	else
+		MatrixOP/FREE temp = abs(vec)
+	endif
 	temp = temp < tol ? NaN : temp
 	return WaveMin(temp)
 End
