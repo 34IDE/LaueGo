@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>PZT-Monoclinic</chemical_name_common>
+	<database_code db="COD">1526149</database_code>
+	<space_group>
+		<id>8:b1</id>
+		<H-M>C1m1</H-M>
+		<H-M>Cm:b1</H-M>
+		<Hall>C-2y</Hall>
+	</space_group>
+	<cell>
+		<a unit="nm">0.572204</a>
+		<b unit="nm">0.570957</b>
+		<c unit="nm">0.413651</c>
+		<alpha>90</alpha>
+		<beta>90.498</beta>
+		<gamma>90</gamma>
+		<temperature unit="K">20</temperature>
+	</cell>
+	<atom_site>
+		<label>Pb</label>
+		<symbol>Pb</symbol>
+		<fract>0 0 0</fract>
+		<valence>2</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<occupancy>1</occupancy>
+		<U_iso>0.0139</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Zr</label>
+		<symbol>Zr</symbol>
+		<fract>0.523 0 0.4492</fract>
+		<occupancy>0.52</occupancy>
+		<valence>4</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso>0.0011</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Ti</label>
+		<symbol>Ti</symbol>
+		<fract>0.523 0 0.4492</fract>
+		<occupancy>0.48</occupancy>
+		<valence>4</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso>0.0011</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.5515 0 -0.0994</fract>
+		<valence>-2</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso>0.0035</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.288 0.2434 0.3729</fract>
+		<valence>-2</valence>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso>0.0123</U_iso>
+	</atom_site>
+	<citation di="10.1103/PhysRevB.61.8687">
+		B. Noheda, J.A. Gonzalo, L.E. Cross, R. Guo, D.E. Cox, S.-E. Park, G. Shirane
+		"Tetragonal-to-monoclinic phase transition in a ferroelectric perovskite: the structure of Pb Zr0.52 Ti0.48 O3"
+		Physical Review, Serie 3. B - Condensed Matter (18,1978-) vol 61, (2000), pg. 8687-8695
+	</citation>
+</cif>
+
+
+
+
