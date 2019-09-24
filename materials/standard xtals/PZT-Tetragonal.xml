@@ -34,7 +34,7 @@
 		<fract>0.5 0.5 0.4517</fract>
 		<occupancy>0.52</occupancy>
 		<valence>4</valence>
-		<WyckoffSymbol>a</WyckoffSymbol>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<U_iso>0.0052</U_iso>
 	</atom_site>
 
@@ -44,7 +44,7 @@
 		<fract>0.5 0.5 0.4517</fract>
 		<occupancy>0.48</occupancy>
 		<valence>4</valence>
-		<WyckoffSymbol>a</WyckoffSymbol>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<U_iso>0.0052</U_iso>
 	</atom_site>
 
@@ -53,7 +53,7 @@
 		<symbol>O</symbol>
 		<fract>0.5 0.5 -0.1027</fract>
 		<valence>-2</valence>
-		<WyckoffSymbol>c</WyckoffSymbol>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<U_iso>0.0061</U_iso>
 	</atom_site>
 
