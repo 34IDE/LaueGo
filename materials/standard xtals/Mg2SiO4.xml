@@ -17,43 +17,31 @@
 	<atom_site>
 		<label>Mg1</label>
 		<symbol>Mg</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 	</atom_site>
 	<atom_site>
 		<label>Mg2</label>
 		<symbol>Mg</symbol>
-		<fract_x>0.9919</fract_x>
-		<fract_y>0.2785</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract>0.9919 0.2785 0.25</fract>
 	</atom_site>
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract_x>0.4257</fract_x>
-		<fract_y>0.0945</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract>0.4257 0.0945 0.25</fract>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_x>0.7637</fract_x>
-		<fract_y>0.0906</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract>0.7637 0.0906 0.25</fract>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_x>0.2178</fract_x>
-		<fract_y>0.4497</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract>0.2178 0.4497 0.25</fract>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract_x>0.2822</fract_x>
-		<fract_y>0.1619</fract_y>
-		<fract_z>0.0352</fract_z>
+		<fract>0.2822 0.1619 0.0352</fract>
 	</atom_site>
 </cif>

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>V2O3, Divanadium(III) oxide - LT</chemical_name_common>
-	<space_group_id>15:b3</space_group_id>
-	<space_group_IT_number>15</space_group_IT_number>
-	<H-M>I 1 2/a 1</H-M>		<!-- 'I 1 2/a 1'  15:b3   'with origin at -1 on a-glide plane.' http://img.chem.ucl.ac.uk/sgp/large/015gy1.htm -->
-	<icsd>95762</icsd>
+	<space_group>
+		<id>15:b3</id>
+		<IT_number>15</IT_number>
+		<H-M>I 1 2/a 1</H-M>		<!-- 'I 1 2/a 1'  15:b3   'with origin at -1 on a-glide plane.' http://img.chem.ucl.ac.uk/sgp/large/015gy1.htm -->
+	</space_group>
+	<database_code db="icsd">95762</database_code>
 	<cell>
 		<a unit="Angstrom">7.2727</a>
 		<b unit="Angstrom">5.0027</b>
@@ -19,21 +21,21 @@
 	<atom_site>
 		<label>V</label>
 		<symbol>V</symbol>
-		<fract_xyz>0.3449 0.009 0.2983</fract_xyz>
+		<fract>0.3449 0.009 0.2983</fract>
 		<valence>3</valence>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.407 0.845 0.645</fract_xyz>
+		<fract>0.407 0.845 0.645</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.25 0.183 0</fract_xyz>
+		<fract>0.25 0.183 0</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>

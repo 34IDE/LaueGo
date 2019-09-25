@@ -18,7 +18,6 @@
 		<label>Si</label>
 		<symbol>Si</symbol>
 		<fract>0 0 0</fract>
-		<!-- <fract_xyz>0 0 0</fract_xyz> -->
 		<DebyeTemperature unit="K">645</DebyeTemperature>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>

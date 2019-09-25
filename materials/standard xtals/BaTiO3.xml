@@ -17,29 +17,21 @@
 	<atom_site>
 		<label>Ba</label>
 		<symbol>Ba</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 	</atom_site>
 	<atom_site>
 		<label>Ti</label>
 		<symbol>Ti</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0.5</fract_y>
-		<fract_z>0.512</fract_z>
+		<fract>0.5 0.5 0.512</fract>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0.5</fract_y>
-		<fract_z>0.023</fract_z>
+		<fract>0.5 0.5 0.023</fract>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0.486</fract_z>
+		<fract>0.5 0 0.486</fract>
 	</atom_site>
 </cif>

@@ -18,9 +18,7 @@
 	<atom_site>
 		<label>Er</label>
 		<symbol>Er</symbol>
-		<fract_x>0.33333</fract_x>
-		<fract_y>0.66667</fract_y>
-		<fract_z>0.25</fract_z>
+		<fract>0.33333 0.66667 0.25</fract>
 	</atom_site>
 	<citation>
 		F. H. Spedding, A. H. Daane, and K. W. Herrmann, Acta Crystallogr., 1956, 9, 559.

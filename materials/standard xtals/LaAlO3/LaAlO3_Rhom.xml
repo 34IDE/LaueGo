@@ -18,23 +18,17 @@
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
-		<fract_x>0.163396</fract_x>
-		<fract_y>0.163396</fract_y>
-		<fract_z>0.327782</fract_z>
+		<fract>0.163396 0.163396 0.327782</fract>
 	</atom_site>
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_x>0.306767</fract_x>
-		<fract_y>0.0531739</fract_y>
-		<fract_z>0.327782</fract_z>
+		<fract>0.306767 0.0531739 0.327782</fract>
 	</atom_site>
 	<citation>Yu, Xie, Boysen, Golden Book of Phase Transitions, Wroclaw (2002) 1993 1, 1-123, ICSD</citation>
 </cif>

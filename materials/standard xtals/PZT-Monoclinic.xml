@@ -6,7 +6,7 @@
 	<space_group>
 		<id>8:b1</id>
 		<H-M>C1m1</H-M>
-		<H-M>Cm:b1</H-M>
+		<!--   why not  <H-M>Cm:b1</H-M>   -->
 		<Hall>C-2y</Hall>
 	</space_group>
 	<cell>

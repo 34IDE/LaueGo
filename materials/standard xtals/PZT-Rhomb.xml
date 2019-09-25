@@ -17,22 +17,16 @@
 	<atom_site>
 		<label>Pb</label>
 		<symbol>Pb</symbol>
-		<fract_x>0.0313</fract_x>
-		<fract_y>0.0313</fract_y>
-		<fract_z>0.0313</fract_z>
+		<fract>0.0313 0.0313 0.0313</fract>
 	</atom_site>
 	<atom_site>
 		<label>Zr</label>
 		<symbol>Zr</symbol>
-		<fract_x>0.26</fract_x>
-		<fract_y>0.26</fract_y>
-		<fract_z>0.26</fract_z>
+		<fract>0.26 0.26 0.26</fract>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_x>0.4871</fract_x>
-		<fract_y>0.0221</fract_y>
-		<fract_z>-0.0091</fract_z>
+		<fract>0.4871 0.0221 -0.0091</fract>
 	</atom_site>
 </cif>

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>V2O3, Karelianite</chemical_name_common>
-	<amcsd>0010595</amcsd>
-	<space_group_IT_number>167</space_group_IT_number>
+	<database_code db="amcsd">0010595</database_code>
+	<space_group>
+		<IT_number>167</IT_number>
+	</space_group>
 	<cell>
 		<a unit="nm">0.4952</a>
 		<b unit="nm">0.4952</b>
@@ -16,12 +18,12 @@
 	<atom_site>
 		<label>V</label>
 		<symbol>V</symbol>
-		<fract_xyz>0 0 0.34630</fract_xyz>
+		<fract>0 0 0.34630</fract>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_xyz>0.315 0 0.25</fract_xyz>
+		<fract>0.315 0 0.25</fract>
 	</atom_site>
 	<citation>
 		R.E. Newnham, Y.M. de Haan

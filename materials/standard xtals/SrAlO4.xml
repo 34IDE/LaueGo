@@ -21,113 +21,85 @@
 	<atom_site>
 		<label>Sr1</label>
 		<symbol>Sr</symbol>
-		<fract_x>0.4905</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0.2507</fract_z>
+		<fract>0.4905 0 0.2507</fract>
 		<B_iso>0.46</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>Sr2</label>
 		<symbol>Sr</symbol>
-		<fract_x>0.0292</fract_x>
-		<fract_y>0.9929</fract_y>
-		<fract_z>0.202</fract_z>
+		<fract>0.0292 0.9929 0.202</fract>
 		<B_iso>0.4</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>Al1</label>
 		<symbol>Al</symbol>
-		<fract_x>0.1895</fract_x>
-		<fract_y>0.8314</fract_y>
-		<fract_z>0.7158</fract_z>
+		<fract>0.1895 0.8314 0.7158</fract>
 		<B_iso>0.8</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>Al2</label>
 		<symbol>Al</symbol>
-		<fract_x>0.7997</fract_x>
-		<fract_y>0.8394</fract_y>
-		<fract_z>0.7287</fract_z>
+		<fract>0.7997 0.8394 0.7287</fract>
 		<B_iso>0.68</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>Al3</label>
 		<symbol>Al</symbol>
-		<fract_x>0.7087</fract_x>
-		<fract_y>0.6685</fract_y>
-		<fract_z>0.2236</fract_z>
+		<fract>0.7087 0.6685 0.2236</fract>
 		<B_iso>0.7</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>Al4</label>
 		<symbol>Al</symbol>
-		<fract_x>0.6809</fract_x>
-		<fract_y>0.1707</fract_y>
-		<fract_z>0.7975</fract_z>
+		<fract>0.6809 0.1707 0.7975</fract>
 		<B_iso>0.74</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract_x>0.265</fract_x>
-		<fract_y>0.174</fract_y>
-		<fract_z>0.436</fract_z>
+		<fract>0.265 0.174 0.436</fract>
 		<B_iso>0.71</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract_x>0.736</fract_x>
-		<fract_y>0.316</fract_y>
-		<fract_z>0.589</fract_z>
+		<fract>0.736 0.316 0.589</fract>
 		<B_iso>1.31</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract_x>0.327</fract_x>
-		<fract_y>0.493</fract_y>
-		<fract_z>0.345</fract_z>
+		<fract>0.327 0.493 0.345</fract>
 		<B_iso>1.24</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O4</label>
 		<symbol>O</symbol>
-		<fract_x>0.265</fract_x>
-		<fract_y>0.984</fract_y>
-		<fract_z>0.898</fract_z>
+		<fract>0.265 0.984 0.898</fract>
 		<B_iso>0.82</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O5</label>
 		<symbol>O</symbol>
-		<fract_x>0.174</fract_x>
-		<fract_y>0.297</fract_y>
-		<fract_z>0.936</fract_z>
+		<fract>0.174 0.297 0.936</fract>
 		<B_iso>1.14</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O6</label>
 		<symbol>O</symbol>
-		<fract_x>0.206</fract_x>
-		<fract_y>0.669</fract_y>
-		<fract_z>0.906</fract_z>
+		<fract>0.206 0.669 0.906</fract>
 		<B_iso>0.89</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O7</label>
 		<symbol>O</symbol>
-		<fract_x>0.487</fract_x>
-		<fract_y>0.219</fract_y>
-		<fract_z>0.876</fract_z>
+		<fract>0.487 0.219 0.876</fract>
 		<B_iso>0.95</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O8</label>
 		<symbol>O</symbol>
-		<fract_x>0.99</fract_x>
-		<fract_y>0.888</fract_y>
-		<fract_z>0.651</fract_z>
+		<fract>0.99 0.888 0.651</fract>
 		<B_iso>1.08</B_iso>
 	</atom_site>
 	<citation>A.R. Schulze, H. Mueller Buschbaur, Zeitschrift fuer Anorganische uni Allgemeine Chemie (19181) 475, P205-210</citation>

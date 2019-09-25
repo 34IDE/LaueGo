@@ -17,9 +17,7 @@
 	<atom_site>
 		<label>Pd</label>
 		<symbol>Pd</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">275</DebyeTemperature>
 	</atom_site>
 </cif>

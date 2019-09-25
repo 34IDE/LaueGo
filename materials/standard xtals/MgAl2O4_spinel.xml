@@ -67,41 +67,31 @@ Original
 	<atom_site>
 		<label>Al001</label>
 		<symbol>Al</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<occupancy>0.206</occupancy>
 	</atom_site>
 	<atom_site>
 		<label>Al002</label>
 		<symbol>Al</symbol>
-		<fract_x>0.625</fract_x>
-		<fract_y>0.625</fract_y>
-		<fract_z>0.625</fract_z>
+		<fract>0.625 0.625 0.625</fract>
 		<occupancy>0.897</occupancy>
 	</atom_site>
 	<atom_site>
 		<label>Mg001</label>
 		<symbol>Mg</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<occupancy>0.794</occupancy>
 	</atom_site>
 	<atom_site>
 		<label>Mg002</label>
 		<symbol>Mg</symbol>
-		<fract_x>0.625</fract_x>
-		<fract_y>0.625</fract_y>
-		<fract_z>0.625</fract_z>
+		<fract>0.625 0.625 0.625</fract>
 		<occupancy>0.103</occupancy>
 	</atom_site>
 	<atom_site>
 		<label>O0001</label>
 		<symbol>O</symbol>
-		<fract_x>0.3872</fract_x>
-		<fract_y>0.3872</fract_y>
-		<fract_z>0.3872</fract_z>
+		<fract>0.3872 0.3872 0.3872</fract>
 	</atom_site>
 
 -->

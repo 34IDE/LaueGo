@@ -18,17 +18,13 @@
 	<atom_site>
 		<label>V</label>
 		<symbol>V</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract_x>0.3001</fract_x>
-		<fract_y>0.3001</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0.3001 0.3001 0</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 	<citation id="primary">Physical Review, Series 3. B, (1974) V10, 490-495</citation>

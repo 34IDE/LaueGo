@@ -17,17 +17,13 @@
 	<atom_site>
 		<label>Na</label>
 		<symbol>Na</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 		<valence>1</valence>
 	</atom_site>
 	<atom_site>
 		<label>Cl</label>
 		<symbol>Cl</symbol>
-		<fract_x>0.5</fract_x>
-		<fract_y>0.5</fract_y>
-		<fract_z>0.5</fract_z>
+		<fract>0.5 0.5 0.5</fract>
 		<valence>-1</valence>
 	</atom_site>
 </cif>

@@ -17,8 +17,6 @@
 	<atom_site>
 		<label>Sc</label>
 		<symbol>Sc</symbol>
-		<fract_x>0</fract_x>
-		<fract_y>0</fract_y>
-		<fract_z>0</fract_z>
+		<fract>0 0 0</fract>
 	</atom_site>
 </cif>
