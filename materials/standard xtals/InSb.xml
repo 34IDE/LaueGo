@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Indium antimonide</chemical_name_common>
+	<database_code db="COD">1538815</database_code>
+	<database_code db="COD">9008853</database_code>
+	<space_group>
+		<id>216</id>
+		<H-M>F -4 3 m</H-M>
+		<Hall>F -4 2 3</Hall>
+	</space_group>
+	<cell>
+		<a unit="nm">0.64782</a>
+		<b unit="nm">0.64782</b>
+		<c unit="nm">0.64782</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>In</label>
+		<symbol>In</symbol>
+		<fract>0 0 0</fract>
+		<DebyeTemperature unit="K">160</DebyeTemperature>
+	</atom_site>
+	<atom_site>
+		<label>Sb</label>
+		<symbol>Sb</symbol>
+		<fract>0.25 0.25 0.25</fract>
+		<DebyeTemperature unit="K">160</DebyeTemperature>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Ga" n1="As">0.2448</bond_chemical>
+	<citation id="primary">
+		R. W. G. Wyckoff Crystal Structures 1, (1963) pg. 85-237
+		Second edition. Interscience Publishers, New York, New York
+		Note: ZnS structure, sphalerite structure
+		COD code = 9008853,  a = 6.4782
+	</citation>
+	<citation id="2" doi="10.1103/PhysRev.108.965">
+		C. Kolm, S.A. Kulin, B.L. Averbach
+		"Studies on group III-V intermetallic compounds"
+		Physical Review 108 (1957), pg. 965-971
+		COD code = 1538815,  a = 6.4867
+	</citation>
+</cif>

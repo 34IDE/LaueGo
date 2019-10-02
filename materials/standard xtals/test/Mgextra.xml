@@ -6,10 +6,10 @@
 		<id>194</id>
 		<H-M>P63/mmc</H-M>
 	</space_group>
-	<database_code db="amcsd">0011183</database_code>
-	<database_code db="ICSD">771832</database_code>
-	<database_code db="amcsd">0011183</database_code>
-	<database_code db="ICSD">771832</database_code>
+	<database_code db="amcsd">0011183AA</database_code>
+	<database_code db="ICSD">771832AA</database_code>
+	<database_code db="amcsd">0011183 BB</database_code>
+	<database_code db="ICSD">771832 BB</database_code>
 	<cell>
 		<a unit="nm">0.320927</a>
 		<b unit="nm">0.320927</b>
@@ -25,5 +25,6 @@
 		<fract>0.333333333 0.666666667 0.25</fract>
 	</atom_site>
 	<database_code db="JZTdb">dummy code</database_code>
+	<database_code db="JZT dbZZ">dummy-code</database_code>
 	<citation>Wyckoff R W G, Crystal Structures, 1, 1963 pg 7-83</citation>
 </cif>

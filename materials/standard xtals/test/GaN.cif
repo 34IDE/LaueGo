@@ -2,6 +2,7 @@
 #(C) 2017 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
 data_34476-ICSD
 _database_code_ICSD 34476
+_database_code_xyzDB 1234567890
 _audit_creation_date 1980-01-01
 _audit_update_record 1984-11-02
 _chemical_name_systematic 'Gallium nitride'
