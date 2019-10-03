@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.15									// based on LatticeSym_6.55
+#pragma version = 7.17									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -10146,7 +10146,7 @@ Static Function/T setSymLineIDnum2D(idNum)
 	symLines[7]  = "x,y;-x,-y;-x+1/2,y+1/2;x+1/2,-y+1/2"
 	symLines[8]  = "x,y;-x,-y;-x,y;x,-y;x+1/2,y+1/2;-x+1/2,-y+1/2;-x+1/2,y+1/2;x+1/2,-y+1/2"
 	symLines[9] = "x,y;-x,-y;-y,x;y,-x"
-	symLines[10] = "x,y;-x,-y;-y,x;y,-x;-x,y;x,-y;y,x;-y,x"
+	symLines[10] = "x,y;-x,-y;-y,x;y,-x;-x,y;x,-y;y,x;-y,-x"
 	symLines[11] = "x,y;-x,-y;-y,x;y,-x;-x+1/2,y+1/2;x+1/2,-y+1/2;y+1/2,x+1/2;-y+1/2,-x+1/2"
 	symLines[12] = "x,y;-y,x-y;-x+y,-x"
 	symLines[13] = "x,y;-y,x-y;-x+y,-x;-y,-x;-x+y,y;x,x-y"
