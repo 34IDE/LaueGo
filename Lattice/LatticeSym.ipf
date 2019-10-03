@@ -1375,7 +1375,7 @@ Static Function print_crystalStructure2D(xtal, brief)			// prints out the value 
 	endif
 	Variable SG = xtal.SpaceGroup, idNum=xtal.SpaceGroupIDnum
 	String id = xtal.SpaceGroupID
-	printf "Space Group=%s   %s   %s       Ac = %g (nm^2)",id,StringFromList(latticeSystem(id,2),LatticeSystemNames2D), getHMboth(idNum),xtal.Vc
+	printf "Space Group=%s   %s   %s       Ac = %g (nm^2)",id,StringFromList(latticeSystem(id,2),LatticeSystemNames2D), getHMboth(idNum,dim=2),xtal.Vc
 	if (xtal.density>0)
 		printf "       area density = %g (g/cm^2)",xtal.density
 	endif
@@ -1696,10 +1696,10 @@ Static Function ForceLatticeToStructure(xtal)
 	Variable alpha=xtal.alpha, bet=xtal.beta, gam=xtal.gam
 	String str
 	if (dim==2)
-		if (system == HEXAGONAL)				// Hexagonal space groups [13-17]
+		if (system == HEXAGONAL2D)			// Hexagonal space groups [13-17]
 				xtal.b = xtal.a
 				xtal.alpha=120
-		elseif (system == SQUARE)				// Square space groups [10-12]
+		elseif (system == SQUARE)			// Square space groups [10-12]
 				xtal.b = xtal.a
 				xtal.alpha=90
 		elseif (system == RHOMBIC)			// Rhombic space groups {5, 9}
@@ -6282,7 +6282,8 @@ Static Function/WAVE allXYZofOneAtomType(SpaceGroupID, dim, direct, xx,yy,zz)
 
 	MatrixOP/FREE xyzSym_real = (direct x xyzSym^t)^t
 	Make/N=(Neq)/U/B/FREE unique = 1
-	Make/N=3/D/FREE vec
+//	Make/N=3/D/FREE vec
+	Make/N=(dim)/D/FREE vec
 	for (m=0;m<Neq;m+=1)										// for each of the new xyzSym[Neq][3], find the unique ones
 		if (!unique[m])											// this one was already removed, skip it
 			continue
@@ -9648,13 +9649,16 @@ End
 //	End
 //
 // makes one matrix either (3,3) or (4,4) from the symmetry op string
-Static Function/WAVE MatrixFromSymLine(symOp,cols,[zeroBad])	// returns either 3x3 or 3x4 matrix
+Static Function/WAVE MatrixFromSymLine(symOp,cols,[zeroBad,dim])	// returns either 3x3 or 3x4 matrix
 	String symOp												// something like "-x+1/2,-y+1/2,z" or "2/3*x-1/3*y-1/3*z,1/3*x+1/3*y-2/3*z,1/3*x+1/3*y+1/3*z"
 	Variable cols												// either 3 or 4
 	Variable zeroBad											// if 1, do not allow |mat3| near zero, this can occur for Wyckoff ops, e.g. "0,0,0" had det=0
+	Variable dim													// either 2 or 3 (3 is default)
 	zeroBad = ParamIsDefault(zeroBad) || numtype(zeroBad) ? 0 : zeroBad
+	dim = ParamIsDefault(dim) || numtype(dim) ? 3 : dim
+	dim = dim==2 ? 2 : 3
 
-	if (cols!=3 && cols!=4)
+	if (cols!=3 && cols!=4 || dim!=3 && dim!=2)
 		return $""
 	endif
 	Make/N=(3,cols)/D/FREE mat=0							// either (3,3) or (3,4)
@@ -9673,7 +9677,8 @@ Static Function/WAVE MatrixFromSymLine(symOp,cols,[zeroBad])	// returns either 3
 	endfor
 
 	if (!err && zeroBad)										// skip this if !zeroBad
-		Make/N=(3,3)/D/FREE mat3 = mat[p][q]				// mat3 is ALWAYS (3,3)
+//		Make/N=(3,3)/D/FREE mat3 = mat[p][q]				// mat3 is ALWAYS (3,3)
+		Make/N=(dim,dim)/D/FREE mat3 = mat[p][q]		// mat3 is ALWAYS (3,3) (actually it is dim,dim,  so it ignores absence of constant term)
 		err = err || (abs(MatrixDet(mat3))<0.001)		// determinant cannot be 0 (but may be negative, e.g. inversion)
 	endif
 	if (err)
@@ -9841,7 +9846,7 @@ Static Function/WAVE SymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry
 	Variable i,N=ItemsInList(symOperationsStr)
 	Make/N=(dim+1,dim+1,N)/D/FREE symOpMats=0
 	for (i=0;i<N;i+=1)
-		Wave mat4 = LatticeSym#MatrixFromSymLine(StringFromList(i,symOperationsStr),dim+1,zeroBad=1)	// returns either 3x3 or 3x4 matrix
+		Wave mat4 = MatrixFromSymLine(StringFromList(i,symOperationsStr),dim+1,zeroBad=1,dim=dim)	// returns either 3x3 or 3x4 matrix
 		Redimension/N=(dim+1,dim+1) mat4				// add an extra row to bottom
 		mat4[dim][] = 0										// set bottom row to {0,0,0,1}
 		mat4[dim][dim] = 1
@@ -10152,7 +10157,7 @@ Static Function/T setSymLineIDnum2D(idNum)
 	symLines[13] = "x,y;-y,x-y;-x+y,-x;-y,-x;-x+y,y;x,x-y"
 	symLines[14] = "x,y;-y,x-y;-x+y,-x;y,x;x-y,-y;-x,-x+y"
 	symLines[15] = "x,y;-y,x-y;-x+y,-x;-x,-y;y,-x+y;x-y,x"
-	symLines[16] = "x,y;-y,x-y;-x+y,-x;-x,-y;y,-x+y;x-y,x;-y,-x;-y,-x;x,x-y;y,x;x-y,-y;-x,-x+y"
+	symLines[16] = "x,y;-y,x-y;-x+y,-x;-x,-y;y,-x+y;x-y,x;-y,-x;-x+y,y;x,x-y;y,x;x-y,-y;-x,-x+y"
 	return symLines[idNum-1]
 End
 Static Function/T setSymLineIDnum3D(idNum)

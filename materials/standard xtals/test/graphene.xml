@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="2">
+	<chemical_name_common>Graphene</chemical_name_common>
+	<space_group>
+		<id>17</id>
+		<H-M>p6mm</H-M>
+	</space_group>
+	<cell>
+		<a unit="nm">0.246</a>
+		<b unit="nm">0.246</b>
+		<alpha>120</alpha>
+	</cell>
+	<atom_site>
+		<label>C</label>
+		<symbol>C</symbol>
+		<fract>0.333333333333333 0.666666666666667</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+	<bond_chemical unit="nm" n0="C" n1="C">0.142</bond_chemical>
+	<!--   bond length is a*sqrt(3) -->
+</cif>
