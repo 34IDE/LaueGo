@@ -9,9 +9,9 @@
 	</space_group>
 	<database_code db="ICSD">25778</database_code>
 	<cell>
-		<a unit="nm">0.47589</a>
-		<b unit="nm">0.47589</b>
-		<c unit="nm">1.2991</c>
+		<a unit="nm">0.4759092</a>
+		<b unit="nm">0.4759092</b>
+		<c unit="nm">1.299337</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
@@ -47,12 +47,18 @@
 		Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie 117 (1977), pg. 235 237
 		"Refinement of the Al2 O3-alpha, Ti2 O3, V2 O3 and Cr2 O3 structures"
 		icsd = 25778
+		old lattice constants: a=0.47589,  c=1.2991
 	</citation>
 	<citation id="2">
 		A.S. Brown, M.A. Spackman, R.J. Hill, 
 		Acta Crystallographica. Section A: Foundations of Crystallography 49 (1993), pg. 513-527
 		"The electron distribution in corundum. A study of the utility of merging single-crystal and powder diffraction data"
 		icsd = 73076
+	</citation>
+	<citation id="3">
+		SRM 1976c for the lattice constants
+		a = 0.4759092
+		c = 1.299337
 	</citation>
 </cif>
 
