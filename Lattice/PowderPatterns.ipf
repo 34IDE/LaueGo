@@ -1,6 +1,6 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 1.01
+#pragma version = 1.02
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
@@ -170,8 +170,9 @@ Function/WAVE PowderPatternFromLines(lines,fwhmQ,[theta])
 	if (theta)
 		Duplicate/FREE intens, intensQ
 		SetScale/I x 0,Qwidth,"", intensQ			// set to Q scaling
-		Variable width = asin(Qwidth * (hc_keVnm/keV) / (4*PI)) * 180/PI	// width in degrees
-		N /= 2												// we used an N that was too big before, so reduce it here
+		Variable sine = limit(Qwidth * (hc_keVnm/keV) / (4*PI),0,1)
+		Variable width = asin(sine) * 180/PI		// width in degrees
+		N /= 2											// we used an N that was too big before, so reduce it here
 		Redimension/N=(N) intens
 		Make/N=(N)/FREE  Qs
 		SetScale/I x 0,width,xUnits, intens, Qs	// set to Theta scaling
