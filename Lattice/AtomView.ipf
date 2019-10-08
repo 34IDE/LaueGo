@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.55
+#pragma version = 0.56
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -328,7 +328,8 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		endif
 		xyz[Natom,Natom+Ni-1][] = xyzi[p-Natom][q]
 		types[Natom,Natom+Ni-1] = atomType
-		size[Natom,Natom+Ni-1] = 2*rad/maxSize * (GizmoScaleSize*GizmoScaleSize_BASE)
+		Variable sizeTemp = dim==2 ? rad : 2*rad/maxSize * (GizmoScaleSize*GizmoScaleSize_BASE)
+		size[Natom,Natom+Ni-1] = sizeTemp
 		zw[Natom,Natom+Ni-1] = Zatom
 		occw[Natom,Natom+Ni-1] = occupy
 		rgba[Natom,Natom+Ni-1][] = rgbai[q]
@@ -433,7 +434,8 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	Note/K zw, ReplaceStringByKey("waveClass",wNote,"atomViewZ","=")
 	Note/K occw, ReplaceStringByKey("waveClass",wNote,"atomViewOccupy","=")
 	Note/K rgba, ReplaceStringByKey("waveClass",wNote,"atomViewRGBA","=")
-	wnote = ReplaceNumberByKey("scale",wNote,2/maxSize*(GizmoScaleSize*GizmoScaleSize_BASE),"=")
+	Variable scaleTemp = dim==2 ? 1.09 : 2/maxSize*(GizmoScaleSize*GizmoScaleSize_BASE)
+	wnote = ReplaceNumberByKey("scale",wNote,scaleTemp,"=")
 	Note/K size, ReplaceStringByKey("waveClass",wNote,"atomViewSize","=")
 	return xyz
 End
@@ -1141,7 +1143,7 @@ Function/T MakeAtomViewDisplay(xyz,[showNames,scaleFactor,useBlend])	// returns 
 	Variable dim = DimSize(xyz,1)
 	dim = dim==2 ? 2 : 3
 	if (dim==2)
-		return MakeAtomView2DGraph(xyz,showNames=showNames,scaleFactor=scaleFactor,useBlend=useBlend)	// returns name of Graph Window
+		return MakeAtomView2DGraph(xyz,showNames=showNames,useBlend=useBlend)	// returns name of Graph Window
 	else
 		return MakeAtomViewGizmo(xyz,showNames=showNames,scaleFactor=scaleFactor,useBlend=useBlend)	// returns name of Gizmo
 	endif
@@ -1904,12 +1906,10 @@ End
 
 //  ========================== Start 2D Atoms Display ==========================  //
 
-Function/T MakeAtomView2DGraph(xyz,[showNames,scaleFactor,useBlend])	// returns name of Graph Window
+Function/T MakeAtomView2DGraph(xyz,[showNames,useBlend])	// returns name of Graph Window
 	Wave xyz
 	Variable showNames					// if true, show a,b labels on lattice vectors
-	Variable scaleFactor				// scale up model in Gizmo Window
 	Variable useBlend						// 0=no blend, 1=blend, -1=auto
-	scaleFactor = ParamIsDefault(scaleFactor) || numtype(scaleFactor) || scaleFactor<=0 ? 1.25 : scaleFactor
 	useBlend = ParamIsDefault(useBlend) || numtype(useBlend) ? AtomView_UseBlend : useBlend
 	showNames = ParamIsDefault(showNames) || numtype(showNames) ? 1 : showNames
 
