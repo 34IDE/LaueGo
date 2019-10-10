@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.80
+#pragma version = 4.81
 // #pragma hide = 1
 
 Menu "Graph"
@@ -2076,8 +2076,7 @@ Function/T AddEndingToWaveName(wName,waveNameEnd)
 		wName = wName[i+1,Inf]				// wName, now only the name part (no path)
 	endif
 	wName = wName[0,maxIgorWaveNameLen-strlen(waveNameEnd)-1]
-	wName = path + wName + waveNameEnd	// reassemble the full name
-	wName = CleanupName(wName,0)
+	wName = path + CleanupName(wName + waveNameEnd,0)	// reassemble the full name
 	return wName
 End
 

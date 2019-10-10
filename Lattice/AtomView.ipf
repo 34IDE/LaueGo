@@ -52,9 +52,9 @@ Menu "Analysis"
 	SubMenu "Lattice"
 		"-"
 		"Make Cells of Atoms...",MakeCellsOfLattice(NaN,NaN,NaN)
-		MenuItemFolderWithClassExists("Print Bond Info","atomViewBonds","DIMS:2,MINCOLS:3,MAXCOLS:3"),AllUniqueBonds("")
-		MenuItemFolderWithClassExists("Gizmo of Atoms","atomViewXYZ","DIMS:2,MINCOLS:3,MAXCOLS:3"),MakeAtomViewDisplay($"")
-		MenuItemFolderWithClassExists("Atom Type at Cursor","atomViewBonds","DIMS:2,MINCOLS:3,MAXCOLS:3"),print AtomView#ShowAtomViewInfo(1)
+		MenuItemFolderWithClassExists("Print Bond Info","atomViewBonds","DIMS:2,MINCOLS:2,MAXCOLS:3"),AllUniqueBonds("")
+		MenuItemFolderWithClassExists("Gizmo of Atoms","atomViewXYZ","DIMS:2,MINCOLS:2,MAXCOLS:3"),MakeAtomViewDisplay($"")
+		MenuItemFolderWithClassExists("Atom Type at Cursor","atomViewBonds","DIMS:2,MINCOLS:2,MAXCOLS:3"),print AtomView#ShowAtomViewInfo(1)
 	End
 End
 
@@ -85,7 +85,7 @@ Static Function AtomViewPopMenuProc(pa) : PopupMenuControl		// used in the Latti
 		//	printf "%sMakeCellsOfLattice(NaN,NaN,NaN)\r", BULLET
 		MakeCellsOfLattice(NaN,NaN,NaN)
 	elseif (strsearch(pa.popStr,"Bond Info",0,2)>=0)
-		printf "%AllUniqueBonds($\"\")\r", BULLET
+		printf "%sAllUniqueBonds(\"\")\r", BULLET
 		AllUniqueBonds("", printIt=1)
 	elseif (strsearch(pa.popStr,"Display Atoms in Cell",0,2)>=0)
 		printf "%sMakeAtomViewDisplay($\"\")\r", BULLET
@@ -883,7 +883,7 @@ Function PrintComputedBondListXML(fldr)		// print the computed bond list from Ma
 	String fldr
 	fldr = SelectString(strlen(fldr),"",":")+fldr
 
-	String bList = WaveListClass("atomViewBonds_Unique","*","MINCOLS:3,MAXCOLS:3,TEXT:1",fldr=fldr)
+	String bList = WaveListClass("atomViewBonds_Unique","*","MINCOLS:2,MAXCOLS:3,TEXT:1",fldr=fldr)
 	if (ItemsInList(bList)==1)
 		Wave/T bunique = $StringFromList(0,bList)
 	endif
@@ -983,7 +983,7 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 	printIt = ParamIsDefault(printIt) ? NaN : printIt
 	printIt = numtype(printIt) ? (strlen(GetRTStackInfo(2))==0) : !(!printIt)
 
-	String dflist=FoldersWithWaveClass(fldrName,"atomViewBonds","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+	String dflist=FoldersWithWaveClass(fldrName,"atomViewBonds","*","DIMS:2,MINCOLS:2,MAXCOLS:3")
 	if (ItemsInList(dflist))
 		if (ItemsInList(dflist)<1)
 			return ""
@@ -1022,7 +1022,7 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 		return ""
 	endif
 
-	Make/N=3/D/FREE diff
+	Make/N=2/D/FREE diff
 	Variable N=DimSize(bonds,0), m, blen
 	Variable Nbonds=floor(N/3) + 1
 	if (Nbonds<0 || Nbonds>1e9 || numtype(Nbonds))
@@ -1071,7 +1071,9 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 		for (m=0;m<Nbonds;m+=1)
 			printf "  bond [%s, %s] = %.4f nm\r",bondTypes0[m],bondTypes1[m],bondLens[m]
 		endfor
-		printf "range of bond lengths = [%g, %g]nm\r",bmin,bmax
+		if (Nbonds>1)
+			printf "range of bond lengths = [%g, %g]nm\r",bmin,bmax
+		endif
 	endif
 
 	String str, out=""
@@ -1116,7 +1118,7 @@ Function/T MakeAtomViewDisplay(xyz,[showNames,scaleFactor,useBlend])	// returns 
 			endif
 		else									// maybe check a folder?
 			String fldrName
-			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:2,MAXCOLS:3")
 			if (ItemsInList(list)<1)
 				return ""
 			elseif (ItemsInList(list)==1)
@@ -1167,7 +1169,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 	Variable ilist,i
 	String name=""
 	if (!WaveExists(xyz))
-		String list = WaveListClass("atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+		String list = WaveListClass("atomViewXYZ","*","DIMS:2,MINCOLS:2,MAXCOLS:3")
 		ilist = ItemsInList(list)
 		if (ilist==1)
 			name = StringFromList(0,list)
@@ -1179,7 +1181,7 @@ Function/T MakeAtomViewGizmo(xyz,[showNames,scaleFactor,useBlend])	// returns na
 			endif
 		else									// maybe check a folder?
 			String fldrName
-			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:2,MAXCOLS:3")
 			if (ItemsInList(list)<1)
 				return ""
 			elseif (ItemsInList(list)==1)
@@ -1928,7 +1930,7 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,useBlend])	// returns name of Grap
 			endif
 		else									// maybe check a folder?
 			String fldrName
-			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:3,MAXCOLS:3")
+			list=FoldersWithWaveClass("","atomViewXYZ","*","DIMS:2,MINCOLS:2,MAXCOLS:3")
 			if (ItemsInList(list)<1)
 				return ""
 			elseif (ItemsInList(list)==1)
@@ -2049,8 +2051,14 @@ Function/T MakeAtomView2DGraph(xyz,[showNames,useBlend])	// returns name of Grap
 		DrawOval xyz[i][0]-rad,xyz[i][1]-rad, xyz[i][0]+rad, xyz[i][1]+rad
 		if (showNames)
 			Trgb = sum(rgb) > 3*35000 ? 0 : 65535
-			SetDrawEnv xcoord=bottom, ycoord=left, textrgb=(Trgb,Trgb,Trgb), textxjust=1, textyjust=1, fsize=14
-			DrawText xyz[i][0],xyz[i][1],AtomTypewave[i]
+			if (IgorVersion()>7)
+				SetDrawLayer UserFront					// letters go on the top layer
+			endif
+			SetDrawEnv xcoord=bottom, ycoord=left, textrgb=(Trgb,Trgb,Trgb), textxjust=1, textyjust=1, fsize=16
+			DrawText xyz[i][0]+rad/8,xyz[i][1]+rad/8,AtomTypewave[i]
+			if (IgorVersion()>7)
+				SetDrawLayer UserBack
+			endif
 		endif
 	endfor
 
