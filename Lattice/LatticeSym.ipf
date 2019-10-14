@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.16									// based on LatticeSym_6.55
+#pragma version = 7.17									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -244,6 +244,8 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.13, fixed bug in allXYZofOneAtomType(), when number of atoms is 1, MatrixOP behaves differently.
 //	with version 7.14, fixed bug in FindWyckoffSymbol(), problem arose with rhomhohedral settings
 //	with version 7.15, added IntegratedReflectivity()
+//	with version 7.16, fixed 2D stuff, including: ForceLatticeToStructure(), allXYZofOneAtomType(), MatrixFromSymLine(), setSymLineIDnum2D(), print_crystalStructure2D()
+//	with version 7.17, added getPointGroup(), getLaueGroup(), getSchoenflies()
 
 
 //	Rhombohedral Transformation:
@@ -7508,11 +7510,11 @@ End
 ThreadSafe Function/S getHallSymbol(idNum, [dim])
 	Variable idNum									// index into the SpaceGroup IDs [1,530]
 	Variable dim									// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
 	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""									// invalid SpaceGroup ID number
-	endif
-
-	if (dim==2)
+	elseif (dim==2)
 		return ""									// no Hall Symbols in 2D
 	endif
 
@@ -7557,54 +7559,115 @@ ThreadSafe Function/S getHallSymbol(idNum, [dim])
 End
 
 
-//ThreadSafe Function/S getHallSymbol(SpaceGroup)
-//	Variable SpaceGroup					//Space Group number, from International Tables
-//	if (!isValidSpaceGroup(SpaceGroup))
-//		return ""							// invalid SpaceGroup number
-//	endif
-//
-//	// there are 230 items in this list
-//	String Hall="P 1;-P 1;P 2y:b;P 2yb:b;C 2y:b1;P -2y:b;P -2yc:b1;"
-//	Hall += "C -2y:b1;C -2yc:b1;-P 2y:b;-P 2yb:b;-C 2y:b1;-P 2yc:b1;"
-//	Hall += "-P 2ybc:b1;-C 2yc:b1;P 2 2;P 2c 2;P 2 2ab;P 2ac 2ab;"
-//	Hall += "C 2c 2;C 2 2;F 2 2;I 2 2;I 2b 2c;P 2 -2;P 2c -2;"
-//	Hall += "P 2 -2c;P 2 -2a;P 2c -2ac;P 2 -2bc;P 2ac -2;P 2 -2ab;"
-//	Hall += "P 2c -2n;P 2 -2n;C 2 -2;C 2c -2;C 2 -2c;A 2 -2;A 2 -2c;"
-//	Hall += "A 2 -2a;A 2 -2ac;F 2 -2;F 2 -2d;I 2 -2;I 2 -2c;I 2 -2a;"
-//	Hall += "-P 2 2;P 2 2 -1n:1;-P 2 2c;P 2 2 -1ab:1;-P 2a 2a;"
-//	Hall += "-P 2a 2bc;-P 2ac 2;-P 2a 2ac;-P 2 2ab;-P 2ab 2ac;"
-//	Hall += "-P 2c 2b;-P 2 2n;P 2 2ab -1ab:1;-P 2n 2ab;-P 2ac 2ab;"
-//	Hall += "-P 2ac 2n;-C 2c 2;-C 2bc 2;-C 2 2;-C 2 2c;-C 2b 2;"
-//	Hall += "C 2 2 -1bc:1;-F 2 2;F 2 2 -1d:1;-I 2 2;-I 2 2c;-I 2b 2c;"
-//	Hall += "-I 2b 2;P 4;P 4w;P 4c;P 4cw;I 4;I 4bw;P -4;I -4;-P 4;"
-//	Hall += "-P 4c;P 4ab -1ab:1;P 4n -1n:1;-I 4;I 4bw -1bw:1;P 4 2;"
-//	Hall += "P 4ab 2ab;P 4w 2c;P 4abw 2nw;P 4c 2;P 4n 2n;P 4cw 2c;"
-//	Hall += "P 4nw 2abw;I 4 2;I 4bw 2bw;P 4 -2;P 4 -2ab;P 4c -2c;"
-//	Hall += "P 4n -2n;P 4 -2c;P 4 -2n;P 4c -2;P 4c -2ab;I 4 -2;"
-//	Hall += "I 4 -2c;I 4bw -2;I 4bw -2c;P -4 2;P -4 2c;P -4 2ab;"
-//	Hall += "P -4 2n;P -4 -2;P -4 -2c;P -4 -2ab;P -4 -2n;I -4 -2;"
-//	Hall += "I -4 -2c;I -4 2;I -4 2bw;-P 4 2;-P 4 2c;P 4 2 -1ab:1;"
-//	Hall += "P 4 2 -1n:1;-P 4 2ab;-P 4 2n;P 4ab 2ab -1ab:1;"
-//	Hall += "P 4ab 2n -1ab:1;-P 4c 2;-P 4c 2c;P 4n 2c -1n:1;"
-//	Hall += "P 4n 2 -1n:1;-P 4c 2ab;-P 4n 2n;P 4n 2n -1n:1;"
-//	Hall += "P 4n 2ab -1n:1;-I 4 2;-I 4 2c;I 4bw 2bw -1bw:1;"
-//	Hall += "I 4bw 2aw -1bw:1;P 3;P 31;P 32;R 3:H;-P 3;-R 3:H;"
-//	Hall += "P 3 2;P 3 2'';P 31 2c (0 0 1);P 31 2'';P 32 2c (0 0 -1);"
-//	Hall += "P 32 2'';R 3 2'':H;P 3 -2'';P 3 -2;P 3 -2''c;P 3 -2c;R 3 -2'':H;"
-//	Hall += "R 3 -2''c:H;-P 3 2;-P 3 2c;-P 3 2'';-P 3 2''c;-R 3 2'':H;"
-//	Hall += "-R 3 2''c:H;P 6;P 61;P 65;P 62;P 64;P 6c;P -6;-P 6;-P 6c;"
-//	Hall += "P 6 2;P 61 2 (0 0 -1);P 65 2 (0 0 1);P 62 2c (0 0 1);"
-//	Hall += "P 64 2c (0 0 -1);P 6c 2c;P 6 -2;P 6 -2c;P 6c -2;P 6c -2c;"
-//	Hall += "P -6 2;P -6c 2;P -6 -2;P -6c -2c;-P 6 2;-P 6 2c;-P 6c 2;"
-//	Hall += "-P 6c 2c;P 2 2 3;F 2 2 3;I 2 2 3;P 2ac 2ab 3;I 2b 2c 3;"
-//	Hall += "-P 2 2 3;P 2 2 3 -1n:1;-F 2 2 3;F 2 2 3 -1d:1;-I 2 2 3;"
-//	Hall += "-P 2ac 2ab 3;-I 2b 2c 3;P 4 2 3;P 4n 2 3;F 4 2 3;F 4d 2 3;"
-//	Hall += "I 4 2 3;P 4acd 2ab 3;P 4bd 2ab 3;I 4bd 2c 3;P -4 2 3;"
-//	Hall += "F -4 2 3;I -4 2 3;P -4n 2 3;F -4c 2 3;I -4bd 2c 3;-P 4 2 3;"
-//	Hall += "P 4 2 3 -1n:1;-P 4n 2 3;P 4n 2 3 -1n:1;-F 4 2 3;-F 4c 2 3;"
-//	Hall += "F 4d 2 3 -1d:1;F 4d 2 3 -1cd:1;-I 4 2 3;-I 4bd 2c 3;"
-//	return StringFromList(SpaceGroup-1,Hall)	// set the Hall symbol
-//End
+ThreadSafe Function/T getPointGroup(idNum, [dim])	// returns Point Group symbol
+	Variable idNum												// index into the SpaceGroup IDs [1,530]
+	Variable dim													// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
+	if (!isValidSpaceGroupIDnum(idNum, dim))
+		return ""												// invalid SpaceGroup ID number
+	elseif (dim==2)
+		return ""												// no sginfo for 2D
+	endif
+
+	String PointGroup=""										// there are 530 or 17 items in this list
+	PointGroup  = "1;-1;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;2/m;2/m;2/m;"
+	PointGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+	PointGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;222;222;222;222;222;222;222;222;222;222;222;222;222;222;"
+	PointGroup += "222;222;222;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;"
+	PointGroup += "mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;"
+	PointGroup += "mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;"
+	PointGroup += "mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mm2;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	PointGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	PointGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	PointGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	PointGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;4;4;4;4;4;4;-4;-4;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;422;422;422;422;422;422;422;422;"
+	PointGroup += "422;422;4mm;4mm;4mm;4mm;4mm;4mm;4mm;4mm;4mm;4mm;4mm;4mm;-42m;-42m;-42m;-42m;-4m2;-4m2;-4m2;-4m2;-4m2;-4m2;-42m;-42m;4/mmm;"
+	PointGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+	PointGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;3;3;3;3;3;-3;-3;-3;312;321;312;321;312;321;321;32;3m1;31m;3m1;31m;3m1;3m;3m1;"
+	PointGroup += "3m;-31m;-31m;-3m1;-3m1;-3m1;-3m;-3m1;-3m;6;6;6;6;6;6;-6;6/m;6/m;622;622;622;622;622;622;6mm;6mm;6mm;6mm;-6m2;-6m2;-62m;-62m;"
+	PointGroup += "6/mmm;6/mmm;6/mmm;6/mmm;23;23;23;23;23;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;432;432;432;432;432;432;432;432;-43m;-43m;-43m;"
+	PointGroup += "-43m;-43m;-43m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
+	return StringFromList(idNum-1,PointGroup)
+End
+
+
+ThreadSafe Function/T getLaueGroup(idNum, [dim])		// returns Laue Group symbol
+	Variable idNum												// index into the SpaceGroup IDs [1,530]
+	Variable dim													// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
+	if (!isValidSpaceGroupIDnum(idNum, dim))
+		return ""												// invalid SpaceGroup ID number
+	elseif (dim==2)
+		return ""												// no sginfo for 2D
+	endif
+
+	String LaueGroup=""										// there are 530 or 17 items in this list
+	LaueGroup  = "-1;-1;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+	LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+	LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+	LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+	LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+	LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+	LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;-3;-3;-3;-3;-3;-3;-3;-3;"
+	LaueGroup += "-31m;-3m1;-31m;-3m1;-31m;-3m1;-3m1;-3m;-3m1;-31m;-3m1;-31m;-3m1;-3m;-3m1;-3m;-31m;-31m;-3m1;-3m1;-3m1;-3m;-3m1;-3m;6/m;6/m;6/m;"
+	LaueGroup += "6/m;6/m;6/m;6/m;6/m;6/m;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;"
+	LaueGroup += "6/mmm;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
+	LaueGroup += "m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
+	return StringFromList(idNum-1,LaueGroup)
+End
+
+
+ThreadSafe Function/T getSchoenflies(idNum, [dim])	// returns Schoenflies symbol
+	Variable idNum												// index into the SpaceGroup IDs [1,530]
+	Variable dim													// only 2 or 3
+	dim = dim==2 ? 2 : 3
+
+	if (!isValidSpaceGroupIDnum(idNum, dim))
+		return ""												// invalid SpaceGroup ID number
+	elseif (dim==2)
+		return ""												// no sginfo for 2D
+	endif
+
+	String Schoenflies=""										// there are 530 or 17 items in this list
+	Schoenflies  = "C1^1;Ci^1;C2^1;C2^1;C2^1;C2^2;C2^2;C2^2;C2^3;C2^3;C2^3;C2^3;C2^3;C2^3;C2^3;C2^3;C2^3;Cs^1;Cs^1;Cs^1;Cs^2;Cs^2;Cs^2;Cs^2;Cs^2;"
+	Schoenflies += "Cs^2;Cs^2;Cs^2;Cs^2;Cs^3;Cs^3;Cs^3;Cs^3;Cs^3;Cs^3;Cs^3;Cs^3;Cs^3;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;"
+	Schoenflies += "Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;Cs^4;C2h^1;C2h^1;C2h^1;C2h^2;C2h^2;C2h^2;C2h^3;C2h^3;C2h^3;C2h^3;C2h^3;C2h^3;C2h^3;C2h^3;C2h^3;"
+	Schoenflies += "C2h^4;C2h^4;C2h^4;C2h^4;C2h^4;C2h^4;C2h^4;C2h^4;C2h^4;C2h^5;C2h^5;C2h^5;C2h^5;C2h^5;C2h^5;C2h^5;C2h^5;C2h^5;C2h^6;C2h^6;"
+	Schoenflies += "C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;C2h^6;D2^1;D2^2;D2^2;D2^2;D2^3;"
+	Schoenflies += "D2^3;D2^3;D2^4;D2^5;D2^5;D2^5;D2^6;D2^6;D2^6;D2^7;D2^8;D2^9;C2v^1;C2v^1;C2v^1;C2v^2;C2v^2;C2v^2;C2v^2;C2v^2;C2v^2;C2v^3;"
+	Schoenflies += "C2v^3;C2v^3;C2v^4;C2v^4;C2v^4;C2v^4;C2v^4;C2v^4;C2v^5;C2v^5;C2v^5;C2v^5;C2v^5;C2v^5;C2v^6;C2v^6;C2v^6;C2v^6;C2v^6;C2v^6;"
+	Schoenflies += "C2v^7;C2v^7;C2v^7;C2v^7;C2v^7;C2v^7;C2v^8;C2v^8;C2v^8;C2v^9;C2v^9;C2v^9;C2v^9;C2v^9;C2v^9;C2v^10;C2v^10;C2v^10;C2v^11;C2v^11;"
+	Schoenflies += "C2v^11;C2v^12;C2v^12;C2v^12;C2v^12;C2v^12;C2v^12;C2v^13;C2v^13;C2v^13;C2v^14;C2v^14;C2v^14;C2v^14;C2v^14;C2v^14;C2v^15;"
+	Schoenflies += "C2v^15;C2v^15;C2v^15;C2v^15;C2v^15;C2v^16;C2v^16;C2v^16;C2v^16;C2v^16;C2v^16;C2v^17;C2v^17;C2v^17;C2v^17;C2v^17;C2v^17;"
+	Schoenflies += "C2v^18;C2v^18;C2v^18;C2v^19;C2v^19;C2v^19;C2v^20;C2v^20;C2v^20;C2v^21;C2v^21;C2v^21;C2v^22;C2v^22;C2v^22;C2v^22;C2v^22;"
+	Schoenflies += "C2v^22;D2h^1;D2h^2;D2h^2;D2h^3;D2h^3;D2h^3;D2h^4;D2h^4;D2h^4;D2h^4;D2h^4;D2h^4;D2h^5;D2h^5;D2h^5;D2h^5;D2h^5;D2h^5;D2h^6;"
+	Schoenflies += "D2h^6;D2h^6;D2h^6;D2h^6;D2h^6;D2h^7;D2h^7;D2h^7;D2h^7;D2h^7;D2h^7;D2h^8;D2h^8;D2h^8;D2h^8;D2h^8;D2h^8;D2h^9;D2h^9;D2h^9;"
+	Schoenflies += "D2h^10;D2h^10;D2h^10;D2h^11;D2h^11;D2h^11;D2h^11;D2h^11;D2h^11;D2h^12;D2h^12;D2h^12;D2h^13;D2h^13;D2h^13;D2h^13;D2h^13;"
+	Schoenflies += "D2h^13;D2h^14;D2h^14;D2h^14;D2h^14;D2h^14;D2h^14;D2h^15;D2h^15;D2h^16;D2h^16;D2h^16;D2h^16;D2h^16;D2h^16;D2h^17;D2h^17;"
+	Schoenflies += "D2h^17;D2h^17;D2h^17;D2h^17;D2h^18;D2h^18;D2h^18;D2h^18;D2h^18;D2h^18;D2h^19;D2h^19;D2h^19;D2h^20;D2h^20;D2h^20;D2h^21;"
+	Schoenflies += "D2h^21;D2h^21;D2h^21;D2h^21;D2h^21;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;D2h^22;"
+	Schoenflies += "D2h^23;D2h^24;D2h^24;D2h^25;D2h^26;D2h^26;D2h^26;D2h^27;D2h^27;D2h^28;D2h^28;D2h^28;D2h^28;D2h^28;D2h^28;C4^1;C4^2;C4^3;C4^4;"
+	Schoenflies += "C4^5;C4^6;S4^1;S4^2;C4h^1;C4h^2;C4h^3;C4h^3;C4h^4;C4h^4;C4h^5;C4h^6;C4h^6;D4^1;D4^2;D4^3;D4^4;D4^5;D4^6;D4^7;D4^8;D4^9;D4^10;"
+	Schoenflies += "C4v^1;C4v^2;C4v^3;C4v^4;C4v^5;C4v^6;C4v^7;C4v^8;C4v^9;C4v^10;C4v^11;C4v^12;D2d^1;D2d^2;D2d^3;D2d^4;D2d^5;D2d^6;D2d^7;D2d^8;"
+	Schoenflies += "D2d^9;D2d^10;D2d^11;D2d^12;D4h^1;D4h^2;D4h^3;D4h^3;D4h^4;D4h^4;D4h^5;D4h^6;D4h^7;D4h^7;D4h^8;D4h^8;D4h^9;D4h^10;D4h^11;"
+	Schoenflies += "D4h^11;D4h^12;D4h^12;D4h^13;D4h^14;D4h^15;D4h^15;D4h^16;D4h^16;D4h^17;D4h^18;D4h^19;D4h^19;D4h^20;D4h^20;C3^1;C3^2;C3^3;C3^4;"
+	Schoenflies += "C3^4;C3i^1;C3i^2;C3i^2;D3^1;D3^2;D3^3;D3^4;D3^5;D3^6;D3^7;D3^7;C3v^1;C3v^2;C3v^3;C3v^4;C3v^5;C3v^5;C3v^6;C3v^6;D3d^1;D3d^2;"
+	Schoenflies += "D3d^3;D3d^4;D3d^5;D3d^5;D3d^6;D3d^6;C6^1;C6^2;C6^3;C6^4;C6^5;C6^6;C3h^1;C6h^1;C6h^2;D6^1;D6^2;D6^3;D6^4;D6^5;D6^6;C6v^1;"
+	Schoenflies += "C6v^2;C6v^3;C6v^4;D3h^1;D3h^2;D3h^3;D3h^4;D6h^1;D6h^2;D6h^3;D6h^4;T^1;T^2;T^3;T^4;T^5;Th^1;Th^2;Th^2;Th^3;Th^4;Th^4;Th^5;"
+	Schoenflies += "Th^6;Th^7;O^1;O^2;O^3;O^4;O^5;O^6;O^7;O^8;Td^1;Td^2;Td^3;Td^4;Td^5;Td^6;Oh^1;Oh^2;Oh^2;Oh^3;Oh^4;Oh^4;Oh^5;Oh^6;Oh^7;Oh^7;"
+	Schoenflies += "Oh^8;Oh^8;Oh^9;Oh^10;"
+	return StringFromList(idNum-1,Schoenflies)
+End
 
 
 ThreadSafe Static Function latticeSystem(SpaceGroupID, dim)
