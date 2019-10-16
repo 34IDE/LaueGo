@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, October 16, 2019" time="10:15:10 AM CDT" isoTime="2019-10-16T10:15:10"></written>
+	<written date="Wednesday, October 16, 2019" time="01:44:09 PM CDT" isoTime="2019-10-16T13:44:09"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 8 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>2c4f9e158c5daf8ffe8b9c5682887029fc9b5254</gitHash>
+	<gitHash>bccc1d640981a42ae3eb95b377cfb4147eb3eb09</gitHash>
 	<fileCount>321</fileCount>
 	<file version="nan" time="2019-09-25T13:35:29" md5="f16bd0e78c0950e30f0835d71d452944" sha256="12a03cdde7b8f81238300031940bf9f6ed0347d11460f800c3b546188a72ebe2" ext=".xml">materials/standard xtals/test/V2O3 Monoclinic.xml</file>
 	<file version="nan" time="2019-01-27T18:26:40" md5="69e705fe2cbfb54dd8ce990d77e5d229" sha256="f44567f99332c05b77d27a7c77ca40a5684a550fcaf13d08d7fb203dd626715a" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -17,7 +17,7 @@
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/Images/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="927455be35d34bf51c034d7b650dc6ce" sha256="a9f099ef1689f9637c94db6ab29a4071999b2d57d56ea0d8f0faeea05eab34d8" ext=".exe">microN/binary/peaksearch_win32.exe</file>
-	<file version="7.18" time="2019-10-16T09:38:06" md5="b41d8952f99d401518ffed7035cc11ee" sha256="f754fac1bfd7c159cb14d68136170d5dc6d8ed7532d393ce5e6d74cd9b4e2b79" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="7.18" time="2019-10-16T13:42:38" md5="e68d3b71574aae9ec8b5f7618368dc87" sha256="1dbab2f02b7b1cbafb49f2a1356be0ab727f1ecc2481c5e14a67f5fe79990f25" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="nan" time="2019-01-27T18:25:51" md5="1997f8eb52a61b2648209eb3cbc74d7a" sha256="f9da9a8d65034a6988dc907ba1629b5f60b022701ac00d50dcb71650513c3c3b" ext=".xml">materials/standard xtals/RuO2.xml</file>
 	<file version="nan" time="2016-03-14T09:37:51" md5="d5b2a33015a7b019ff5384a1771e75a3" sha256="1915fa02fdce0aa052a38cb3da002aeb11f71310f1bdb3951d4a1b9cf6d837a4" ext=".exe">microN/binary/Euler4.exe</file>
 	<file version="nan" time="2018-08-29T14:17:41" md5="a4a747ee203b2f96a3e17f06a3b53b7d" sha256="005b00c03ca12c30ad49ddb9d1011c800e69d57f2caf43b2d33e8efa704912df" ext=".mtl">materials/mtl files/SRM1834.mtl</file>
