@@ -7603,7 +7603,7 @@ ThreadSafe Function/T getLaueGroup(idNum, [dim])		// returns Laue Group symbol
 	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""												// invalid SpaceGroup ID number
 	elseif (dim==2)
-		LaueGroup = "-1;-1;2mm;2mm;2mm;2mm;2mm;2mm;2mm;4mm;4mm;4mm;6mm;6mm;6mm;6mm;6mm"
+		LaueGroup = "2;2;2mm;2mm;2mm;2mm;2mm;2mm;2mm;4;4mm;4mm;6;6mm;6mm;6;6mm"
 	else
 		LaueGroup  = "-1;-1;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
 		LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
