@@ -7568,7 +7568,9 @@ ThreadSafe Function/T getPointGroup(idNum, [dim])	// returns Point Group symbol
 	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""												// invalid SpaceGroup ID number
 	elseif (dim==2)
-		PointGroup = "1;2;1m;1m;1m;2m;2m;2m;2m;4;4m;4m;3;3m;3m;6;6m"
+		//	see		https://en.wikipedia.org/wiki/Point_group
+//		PointGroup = "1;2;1m;1m;1m;2m;2m;2m;2m;4;4m;4m;3;3m;3m;6;6m"
+		PointGroup = "1;2;m;m;m;2mm;2mm;2mm;2mm;4;4mm;4mm;3;3mm;3mm;6;6mm"		// International Tables Table 1.5.4.3
 	else
 		PointGroup  = "1;-1;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;m;2/m;2/m;2/m;"
 		PointGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
@@ -7597,32 +7599,32 @@ ThreadSafe Function/T getLaueGroup(idNum, [dim])		// returns Laue Group symbol
 	Variable dim													// only 2 or 3
 	dim = dim==2 ? 2 : 3
 
+	String LaueGroup=""										// there are 530 or 17 items in this list
 	if (!isValidSpaceGroupIDnum(idNum, dim))
 		return ""												// invalid SpaceGroup ID number
 	elseif (dim==2)
-		return ""												// no sginfo for 2D
+		LaueGroup = "-1;-1;2mm;2mm;2mm;2mm;2mm;2mm;2mm;4mm;4mm;4mm;6mm;6mm;6mm;6mm;6mm"
+	else
+		LaueGroup  = "-1;-1;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+		LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+		LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
+		LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
+		LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+		LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+		LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
+		LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;-3;-3;-3;-3;-3;-3;-3;-3;"
+		LaueGroup += "-31m;-3m1;-31m;-3m1;-31m;-3m1;-3m1;-3m;-3m1;-31m;-3m1;-31m;-3m1;-3m;-3m1;-3m;-31m;-31m;-3m1;-3m1;-3m1;-3m;-3m1;-3m;6/m;6/m;6/m;"
+		LaueGroup += "6/m;6/m;6/m;6/m;6/m;6/m;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;"
+		LaueGroup += "6/mmm;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
+		LaueGroup += "m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
 	endif
-
-	String LaueGroup=""										// there are 530 or 17 items in this list
-	LaueGroup  = "-1;-1;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
-	LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
-	LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;"
-	LaueGroup += "2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;2/m;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;mmm;"
-	LaueGroup += "mmm;mmm;mmm;mmm;mmm;mmm;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/m;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
-	LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
-	LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;"
-	LaueGroup += "4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;4/mmm;-3;-3;-3;-3;-3;-3;-3;-3;"
-	LaueGroup += "-31m;-3m1;-31m;-3m1;-31m;-3m1;-3m1;-3m;-3m1;-31m;-3m1;-31m;-3m1;-3m;-3m1;-3m;-31m;-31m;-3m1;-3m1;-3m1;-3m;-3m1;-3m;6/m;6/m;6/m;"
-	LaueGroup += "6/m;6/m;6/m;6/m;6/m;6/m;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;6/mmm;"
-	LaueGroup += "6/mmm;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
-	LaueGroup += "m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;m-3m;"
 	return StringFromList(idNum-1,LaueGroup)
 End
 
