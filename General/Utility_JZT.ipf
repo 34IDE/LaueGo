@@ -6086,6 +6086,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	nauticalmile			1852 m
 	//	Angstrom, Ang,ARING	1e-10 m
 	//	micron, micrometer	1e-6 m
+	//	RackUnit, Rack, U		1.75 inch
 	//	parsec, pc				1 parsec = AU * (180*3600)/pi = 3.085677581e16 (m), IAU definition
 	//	lightYear, ly			9460730472580800 m  =  c * julianYear (this is the IAU definition)
 	//	astronomicalunit, au	149597870700 m
@@ -6098,6 +6099,7 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	//	Planck, PlanckLength sqrt(hbar*GN/c^3)  =  1.616199e-35 m
 	//	fathom					6 feet
 	//	chain						66 feet
+	//	link						661/100 feet (0.01 of chain)
 	//	rod						16.5 feet
 	//	league					3 miles
 	//	furlong					660 feet
@@ -6131,6 +6133,8 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	unit = ChangeStrEnding("micrometer",unit,Gmu+"m")
 	unit = ChangeStrEnding("micron",unit,Gmu+"m")
 	unit = ChangeStrEnding("micro",unit,Gmu)
+	unit = ChangeStrEnding("RackUnit",unit,"U")
+	unit = ChangeStrEnding("Rack",unit,"U")
 	unit = RemoveEnding(unit,"s")				// remove any trailing "s"
 
 	String prefix
@@ -6198,9 +6202,12 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	elseif(StringMatch(unit,"*fathom"))		// 6 feet
 		value = 6 * 12*inch
 		prefix = unit[0,strlen(unit)-7]
-	elseif(StringMatch(unit,"*chain"))			// 66 feet
+	elseif(StringMatch(unit,"*chain"))		// 66 feet
 		value = 66 * 12*inch
 		prefix = unit[0,strlen(unit)-6]
+	elseif(StringMatch(unit,"*link"))			// 66/100 feet
+		value = 66 * 12*inch /100
+		prefix = unit[0,strlen(unit)-5]
 	elseif(StringMatch(unit,"*rod"))			// 16.5 feet
 		value = 16.5 * 12*inch
 		prefix = unit[0,strlen(unit)-4]
@@ -6210,18 +6217,21 @@ ThreadSafe Function ConvertUnits2meters(unit,[defaultLen])
 	elseif(StringMatch(unit,"*furlong"))		// 660 feet
 		value = 660 * 12*inch
 		prefix = unit[0,strlen(unit)-8]
-	elseif(StringMatch(unit,"*cubit"))			// a rough number
+	elseif(StringMatch(unit,"*cubit"))		// a rough number
 		value = 0.525
 		prefix = unit[0,strlen(unit)-6]
-	elseif(StringMatch(unit,"*point"))			// 1/72 inch
+	elseif(StringMatch(unit,"*point"))		// 1/72 inch
 		value = inch / 72
 		prefix = unit[0,strlen(unit)-6]
 	elseif(StringMatch(unit,"*pica"))			// 1/72 foot
 		value = 12*inch / 72
 		prefix = unit[0,strlen(unit)-5]
-	elseif(StringMatch(unit,"*Li"))				// Chinese mile is 500m
+	elseif(StringMatch(unit,"*Li"))			// Chinese mile is 500m
 		value = 500
 		prefix = unit[0,strlen(unit)-3]
+	elseif(StringMatch(unit,"*U"))				// 1.75 unch
+		value = 1.75 * inch
+		prefix = unit[0,strlen(unit)-2]
 	else
 		return defaultLen								// cannot find base value
 	endif
