@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<cif>
+<cif version="2" dim="3">
 	<chemical_name_common>Nitrogen-alpha</chemical_name_common>
 	<space_group>
 		<id>205</id>
