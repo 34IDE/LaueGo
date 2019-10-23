@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.18									// based on LatticeSym_6.55
+#pragma version = 7.19									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -246,6 +246,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.15, added IntegratedReflectivity()
 //	with version 7.16, fixed 2D stuff, including: ForceLatticeToStructure(), allXYZofOneAtomType(), MatrixFromSymLine(), setSymLineIDnum2D(), print_crystalStructure2D()
 //	with version 7.17, added getPointGroup(), getLaueGroup(), getSchoenflies()
+//	with version 7.19, when reading xml cif files, interpret html escacape codes
 
 
 //	Rhombohedral Transformation:
@@ -4275,7 +4276,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.sourceFile = fullFile
 	xtal.hashID = ""
 
-	String cif = XMLtagContents("cif",buf)
+	String cif = XMLtagContents("cif",buf, utf8=1)
 	if (strlen(cif)<10)
 		return 1
 	endif

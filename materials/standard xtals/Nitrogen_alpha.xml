@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Nitrogen-alpha</chemical_name_common>
+	<chemical_name_common>Nitrogen-&#x03B1;</chemical_name_common>
 	<database_code db="amcsd">0011249</database_code>
 	<space_group>
 		<id>205</id>

@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.81
+#pragma version = 4.83
 // #pragma hide = 1
 
 Menu "Graph"
@@ -1432,15 +1432,17 @@ ThreadSafe Function/T XMLNodeList(buf)				// returns a list of node names at top
 End
 
 
-ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
+ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start,utf8])
 	String xmltag
 	String buf
-	Variable occurance									// use 0 for first occurance, 1 for second, ...
-	Variable &start										// offset in buf, start searching at buf[start], new start is returned
-																// both occurance and start may be used together, but usually you only want to use one of them
+	Variable occurance				// use 0 for first occurance, 1 for second, ...
+	Variable &start					// offset in buf, start searching at buf[start], new start is returned
+	Variable utf8					// flag, if true convert html codes to utf8, e.g. "&#x03B2;" --> beta, only for Igor>=7
+										// both occurance and start may be used together, but usually you only want to use one of them
 	occurance = ParamIsDefault(occurance) ? 0 : occurance
 	Variable startLocal = ParamIsDefault(start) ? 0 : start
 	startLocal = numtype(startLocal) || startLocal<1 ? 0 : round(startLocal)
+	utf8 = ParamIsDefault(utf8) || numtype(utf8) ? 0 : utf8
 	if (!XMLvalidElementName(xmltag))
 		return ""
 	endif
@@ -1471,9 +1473,14 @@ ThreadSafe Function/T XMLtagContents(xmltag,buf,[occurance,start])
 
 	i1 -= strlen(xmltag)+4
 	if (i1<i0)
-		return ""											// no content
+		return ""										// no content
 	endif
-	return buf[i0,i1]
+
+	buf = buf[i0,i1]
+	if (utf8 && IgorVersion()>=7)
+		buf = ConvertHTML2UTF8(buf)					// convrert html codes to UTF8 if requested
+	endif
+	return buf
 End
 
 
@@ -1769,6 +1776,48 @@ ThreadSafe Static Function XMLvalidElementName(tagName)
 		return 0
 	endif
 	return 1	
+End
+
+
+ThreadSafe Function/S ConvertHTML2UTF8(buf)
+	// replace all occurances of somethng like "&#x03B2;" or "&#946;" with the UTF8 character
+	String buf			// buffer containing html codes
+	String html, utf8
+	Variable i0=strsearch(buf,"&#",0,2), i1=strsearch(buf,";",i1,2)
+	for(; i0>=0 && i1>i0; )
+		html = buf[i0,i1]							// the html string, something like "&#x03B2;" or "&#946;"
+		utf8 = HTMLcode2UTF8(html)				// a single UTF8 character
+		buf = ReplaceString(html, buf, utf8)	// replace all occurances of html --> utf8
+		i0 = strsearch(buf,"&#",i0+1,2)		// find the next html code to replace, start searching after the one replaced
+		i1 = strsearch(buf,";",i0,2)
+	endfor
+	return buf
+End
+//
+ThreadSafe Static Function/S HTMLcode2UTF8(code)
+	// Converts a string like "&#x03B2;" or "&#946;" to UTF8 character
+	String code
+
+	Variable lead = strsearch(code,"&#",0)
+	Variable last = strsearch(code,";",0)
+	String num = code[2,last-1]
+
+	Variable ichar
+	if (strlen(code)>10)						// code cannot be longer than 10
+		return code
+	elseif (lead != 0 || last-2 != strlen(num))
+		return code
+	elseif (strsearch(num,"x",0,2)==0)
+		sscanf num, "x%x;", ichar			// Hex code
+	else
+		sscanf num, "%d;", ichar				// Decimal code
+	endif
+	ichar = V_flag==1 ? ichar : 0
+
+	if (numtype(ichar)==0 && ichar>0 && ichar<=1114112)	// max value for ichar is 17*(2^16) = 1114112
+		return num2char(ichar)
+	endif
+	return code
 End
 
 //  ================================= End of Generic XML =================================  //
