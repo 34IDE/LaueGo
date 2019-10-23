@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Nitrogen-alpha</chemical_name_common>
+	<space_group>
+		<id>205</id>
+		<IT_number>205</IT_number>
+		<H-M>P a 3</H-M>
+	</space_group>
+	<database_code db="amcsd">0011249</database_code>
+	<cell>
+		<!-- from CODATA Internationally recommended 2018 values, set July 2019 -->
+		<a unit="nm">0.5644</a>
+		<b unit="nm">0.5644</b>
+		<c unit="nm">0.5644</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<temperature unit="K">4.2</temperature>
+	</cell>
+	<atom_site>
+		<label>N</label>
+		<symbol>N</symbol>
+		<fract>0.054 0.054 0.054</fract>
+	</atom_site>
+	<bond_chemical unit="nm" n0="N" n1="N" type="3">0.0862</bond_chemical>
+	<citation>
+		R.W.G. Wyckoff
+		Crystal Structures 1 (1963), 7-83
+	</citation>
+</cif>

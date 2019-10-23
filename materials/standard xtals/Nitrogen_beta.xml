@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif>
+	<chemical_name_common>Nitrogen-beta</chemical_name_common>
+	<space_group>
+		<id>194</id>
+		<IT_number>194</IT_number>
+		<H-M>P 63/m m c</H-M>
+	</space_group>
+	<database_code db="amcsd">0012997</database_code>
+	<cell>
+		<!-- from CODATA Internationally recommended 2018 values, set July 2019 -->
+		<a unit="nm">0.4050</a>
+		<b unit="nm">0.4050</b>
+		<c unit="nm">0.6604</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="K">46</temperature>
+	</cell>
+	<atom_site>
+		<label>N</label>
+		<symbol>N</symbol>
+		<fract>0.33333 0.66667 0.33800</fract>
+		<U_iso>0.01773</U_iso>
+	</atom_site>
+	<bond_chemical unit="nm" n0="N" n1="N" type="3">0.0862</bond_chemical>
+	<citation>
+		A.F. Schuch, R.L. Mills
+		"Crystal structures of the three modifications of nitrogen 14 and nitrogen 15 at high pressure
+		Journal of Chemical Physics 52 (1970), 6000-6008
+	</citation>
+</cif>
