@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.83
+#pragma version = 4.84
 // #pragma hide = 1
 
 Menu "Graph"
@@ -6461,12 +6461,12 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	//	hour, hr, h			3600 s
 	//	day, d				24 hour
 	//	week, wk				7 days
-	//	fortnight			14 days
+	//	fortnight				14 days
 	//	lunar month, moon, lune	29.530588 days
 	//	year, yr, y			tropical year = 365.24219 days
 	//	olympiad				4 years
 	//	lustrum				5 years
-	//	indiction			15 years
+	//	indiction				15 years
 	//	decade				10 years
 	//	century				100 years
 	//	millennium			1000 years
@@ -6474,9 +6474,9 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 	//	shake					1e-8 s
 	//	beat					0.001 day = 3.6 s
 	//	Planck time			1.616199e-35 / c  =  sqrt(hbar*GN / c^5)
-	//	Svedberg, Sv		1e-13 s
+	//	Svedberg				1e-13 s, Abbreviation is "S" which is too close to seconds
 	//	galactic year		230e6 tropical years
-	//	sidereal day		23.9344699 hour
+	//	sidereal day			23.9344699 hour
 	//	sidereal year		365.256363004 days
 	//	helek					3 + 1/3 seconds
 	//	pahar					3 hours
@@ -6538,7 +6538,7 @@ ThreadSafe Function ConvertUnits2seconds(unit,[defaultSeconds])
 		value = sqrt(hbar*GN / c^5)
 		i = StringMatch(unit,"*Plancktime") ? 10 : 6
 		prefix = unit[0,strlen(unit)-i]
-	elseif(StringMatch(unit,"*Svedberg") || StringMatch(unit,"*Sv"))
+	elseif(StringMatch(unit,"*Svedberg"))
 		value = 1e-13
 		i = StringMatch(unit,"*Svedberg") ? 9 : 3
 		prefix = unit[0,strlen(unit)-i]
@@ -6598,7 +6598,7 @@ End
 //	
 //		String list = "second;sec;s;minute;min;m;hour;hr;h;day;d;week;wk;fortnight;lunar month;lune;moon;year;yr;y;"
 //		list += "olympiad;lustrum;indiction;decade;century;millennium;jiffy;shake;beat;Planck time;"
-//		list += "Svedberg;Sv;galactic year;sidereal day;sidereal year;helek;pahar;abc"
+//		list += "Svedberg;galactic year;sidereal day;sidereal year;helek;pahar;abc"
 //		String unit
 //		Variable value, i, N=ItemsInList(list)
 //		for (i=0;i<N;i+=1)
