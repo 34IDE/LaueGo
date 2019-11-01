@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Wednesday, October 23, 2019" time="05:59:45 PM CDT" isoTime="2019-10-23T17:59:45"></written>
+	<written date="Friday, November 01, 2019" time="05:04:36 PM CDT" isoTime="2019-11-01T17:04:36"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 8 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>061862468371418603dd53bbfc7456035b916c7a</gitHash>
+	<gitHash>1eac67e7fccd9e226aa9ca8ccee6801a2f368824</gitHash>
 	<fileCount>323</fileCount>
 	<file version="nan" time="2019-09-25T13:35:29" md5="f16bd0e78c0950e30f0835d71d452944" sha256="12a03cdde7b8f81238300031940bf9f6ed0347d11460f800c3b546188a72ebe2" ext=".xml">materials/standard xtals/test/V2O3 Monoclinic.xml</file>
 	<file version="nan" time="2019-01-27T18:26:40" md5="69e705fe2cbfb54dd8ce990d77e5d229" sha256="f44567f99332c05b77d27a7c77ca40a5684a550fcaf13d08d7fb203dd626715a" ext=".xml">materials/standard xtals/Pb.xml</file>
@@ -13,7 +13,7 @@
 	<file version="nan" time="2018-03-20T09:55:53" md5="0ee4447c1c3fd2ba81ab7bd41e7d3bec" sha256="07aa0005b437f166964abf991ae377418c17fb07d96240b0ecc8bff4690abcaf" ext=".xml">General/data/elementData.xml</file>
 	<file version="1.66" time="2018-01-15T15:59:04" md5="adc15ea1a5263914cd0ffc30f66a05e8" sha256="eb043b5ec0e856462a2cadf5f7f06be21802ad45580b80c4f4add3a264a44b7d" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
 	<file version="1.25" time="2018-01-12T10:08:02" md5="4ff594bed373aaac37d0bc8e26b03ca0" sha256="d277b905715db8f0137c5892bbe4fb6a303cb5408156ecefa7c0ea4095c76628" ext=".ipf">Lattice/QspaceVolumesView.ipf</file>
-	<file version="2.12" time="2019-07-09T11:25:25" md5="39a06b6bce28674f9e6e27bf892d1c14" sha256="54b94b28b869118d739d4a78a7328785212f47533e8bcffaadf0ba147efdb6eb" ext=".ipf">microN/xmlMultiIndex.ipf</file>
+	<file version="2.13" time="2019-11-01T17:02:59" md5="cd32bb43533937f12d7f75712f92c46f" sha256="49fdb038a7a7abe0ca1b5c058521670cd97c40f5dcf690a339506957e0767166" ext=".ipf">microN/xmlMultiIndex.ipf</file>
 	<file version="nan" time="2017-02-13T12:30:55" md5="1f7637e43ba537c9eebf582bab26671f" sha256="c457c973bb4a521acfae3fe3268545e574974b9b526bfc00f9c85532172113ee" ext=".py">APS/mdaAscii2Igor.py</file>
 	<file version="2.11" time="2014-06-20T11:08:45" md5="28fb8e6e724661746520082d7a5b9f35" sha256="e9506b817af6de34eb27ea95ca8827e34771c5ae550c4448208b61ca568119c5" ext=".ipf">General/Images/PilatusTiffs.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="927455be35d34bf51c034d7b650dc6ce" sha256="a9f099ef1689f9637c94db6ab29a4071999b2d57d56ea0d8f0faeea05eab34d8" ext=".exe">microN/binary/peaksearch_win32.exe</file>
@@ -259,7 +259,7 @@
 	<file version="nan" time="2019-01-11T11:16:42" md5="711be7505ec9f98c9689aed792ac72c0" sha256="f3418a3caf42c069016cfbd7e7203783670319baf130bb0799f4b798666a9070" ext=".xml">materials/standard xtals/test/bad3.xml</file>
 	<file version="nan" time="2019-09-27T16:29:37" md5="ab59092b340dbba5b7d28596227153d2" sha256="23971130af92031b58046d2ac24e5de3158043da5a462ed970ca4cf40719ba64" ext=".xml">materials/standard xtals/Forsterite.xml</file>
 	<file version="3.3" time="2013-10-28T11:28:49" md5="808c2afa92a3f4df971c6f7fa25e0e2f" sha256="c0f667dd5cc2f4459fa839e5200d0460de81ee4f3e53bcb8822b318eb5d2c1a5" ext=".ipf">microN/microBeamStart34ID.ipf</file>
-	<file version="4.83" time="2019-10-23T15:04:00" md5="92f4b0e5204f929c7ff096e9c8eace86" sha256="3c58857f4965e54863502a10ab9d105e8450ff577086349ca1fcea68effeff38" ext=".ipf">General/Utility_JZT.ipf</file>
+	<file version="4.84" time="2019-10-31T12:33:22" md5="3b2311e297ddcc264b9bd67efcc92e02" sha256="78daec7a656983f19b48bd5e0c447429b696cdf3aa54aa9a37e87cd4666d312d" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2019-01-11T11:17:00" md5="f9896cfbc5706890493c0e3f5735eea5" sha256="2481c0a23caab90c0e05be80773f72aae17c4ed7ae2eb7a52be4f39a199eec41" ext=".xml">materials/standard xtals/quartz_beta.xml</file>
 	<file version="nan" time="2019-01-11T11:17:00" md5="2f1a396260393f3acbf0ce47adcae1d6" sha256="1b7ea03d08d24cd67c6c0d5437852a90d50d4adf69490250bbc320207e5d09f4" ext=".xml">materials/standard xtals/Cu3AuRT.xml</file>
 	<file version="nan" time="2019-09-25T13:54:07" md5="ec1af818401c984788e44920428b5e2e" sha256="8e61cbe05aac7514a34a622a2f96e3a2d552f84a07cbf098de261413b6a7f2bf" ext=".xml">materials/standard xtals/LaAlO3/LaAlO3_Rhom.xml</file>
