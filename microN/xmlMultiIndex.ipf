@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.12
+#pragma version=2.13
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1678,9 +1678,9 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 				break																//   and break out of loop
 			endif
 		endif
-		Wave eWave = $DeviatoricStrainRefineXML(m,pattern,constrain,coords=coords,xmlFileFull=xmlFileFull,printit=0)
 		strainClass = StringBykey("waveClass",note(eWave),"=")
 		if (WaveExists(eWave))
+			Wave eWave = $DeviatoricStrainRefineXML(m,pattern,constrain,coords=coords,xmlFileFull=xmlFileFull,printit=0)
 			ok += 1
 			epsilonN[][][j]  = eWave[p][q]
 			vonMisesN[j] = NumberByKey("vonMisesStrain", note(eWave),"=")
