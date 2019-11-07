@@ -51,13 +51,13 @@
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
-		<fract>.1252 .5440  .0733 </fract>
+		<fract>.1252 .5440  .0733</fract>
 		<U_iso unit="Å^2">.029</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O4</label>
 		<symbol>O</symbol>
-		<fract>.0373 .4560  .2451 </fract>
+		<fract>.0373 .4560  .2451</fract>
 		<U_iso unit="Å^2">.028</U_iso>
 	</atom_site>
 	<atom_site>
