@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Lanthanum Iron Oxide Arsenide</chemical_name_common>
-	<chemical_formula_structural>LaFeAsO</chemical_formula_structural>
+	<chemical_formula>LaFeAsO</chemical_formula>
 	<space_group>
 		<id>129:1</id>
 		<H-M>P4/nmm</H-M>

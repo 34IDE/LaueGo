@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Gallium Nitride (Wurtzite 2H)</chemical_name_common>
-	<chemical_formula_structural>GaN</chemical_formula_structural>
+	<chemical_formula>GaN</chemical_formula>
 	<space_group>
 		<id>186</id>
 		<H-M>P 63 m c</H-M>

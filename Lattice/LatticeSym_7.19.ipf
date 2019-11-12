@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.20								// based on LatticeSym_6.55
+#pragma version = 7.19									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -247,7 +247,6 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.16, fixed 2D stuff, including: ForceLatticeToStructure(), allXYZofOneAtomType(), MatrixFromSymLine(), setSymLineIDnum2D(), print_crystalStructure2D()
 //	with version 7.17, added getPointGroup(), getLaueGroup(), getSchoenflies()
 //	with version 7.19, when reading xml cif files, interpret html escacape codes
-//	with version 7.20, for xml files, use chemical_formula rather than chemical_formula_structural or chemical_formula_sum 
 
 
 //	Rhombohedral Transformation:
@@ -4433,14 +4432,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// process the various information: desc, formula
 	str = XMLtagContents("chemical_name_common",cif)
 	xtal.desc = str[0,99]
-
-	str = XMLtagContents("chemical_formula",cif)
-	if (strlen(str)<1)
-		str = XMLtagContents("chemical_formula_structural",cif)
-	endif
-	if (strlen(str)<1)
-		str = XMLtagContents("chemical_formula_sum",cif)
-	endif
+	str = XMLtagContents("chemical_formula_structural",cif)
 	xtal.formula = str[0,99]
 
 	// collect the atom sites values
@@ -4732,7 +4724,7 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		cif += "\t<chemical_name_common>"+xtal.desc+"</chemical_name_common>"+NL
 	endif
 	if (strlen(xtal.formula))
-		cif += "\t<chemical_formula>"+xtal.formula+"</chemical_formula>"+NL
+		cif += "\t<chemical_formula_structural>"+xtal.formula+"</chemical_formula_structural>"+NL
 	endif
 
 	// <space_group> section

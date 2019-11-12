@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Baddeleyite</chemical_name_common>
-	<chemical_formula_structural>ZrO2</chemical_formula_structural>
+	<chemical_formula>ZrO2</chemical_formula>
 	<space_group>
 		<id>14:b1</id>
 		<IT_number>14</IT_number>

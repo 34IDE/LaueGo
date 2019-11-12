@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Bridgmanite</chemical_name_common>
-	<chemical_formula_structural>MgSiO3</chemical_formula_structural>
+	<chemical_formula>MgSiO3</chemical_formula>
 	<space_group>
 		<id>62:cab</id>
 		<IT_number>62</IT_number>

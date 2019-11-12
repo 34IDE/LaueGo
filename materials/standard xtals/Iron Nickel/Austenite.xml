@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Austenite (gamma-iron)</chemical_name_common>
-	<chemical_formula_structural>Fe</chemical_formula_structural>
+	<chemical_formula>Fe</chemical_formula>
 	<space_group>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>

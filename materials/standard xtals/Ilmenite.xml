@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Ilmenite</chemical_name_common>
-	<chemical_formula_structural>FeTiO3</chemical_formula_structural>
+	<chemical_formula>FeTiO3</chemical_formula>
 	<database_code db="amcsd">0010536</database_code>
 	<space_group>
 		<id>148:R</id>

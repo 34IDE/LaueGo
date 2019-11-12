@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Spinel</chemical_name_common>
-	<chemical_formula_structural>MgAl2O4</chemical_formula_structural>
+	<chemical_formula>MgAl2O4</chemical_formula>
 	<space_group>
 		<IT_number>227</IT_number>
 		<id>227:1</id>

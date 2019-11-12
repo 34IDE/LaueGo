@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Lanthnum Aluminate</chemical_name_common>
-	<chemical_formula_structural>LaAlO3</chemical_formula_structural>
+	<chemical_formula>LaAlO3</chemical_formula>
 	<space_group>
 		<id>167:H</id>
 		<H-M>R-3c:H</H-M>

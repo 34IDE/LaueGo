@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Hematite (rhom)</chemical_name_common>
-	<chemical_formula_structural>Fe2O3</chemical_formula_structural>
+	<chemical_formula>Fe2O3</chemical_formula>
 	<space_group>
 		<id>167:R</id>
 		<H-M>R-3c:R</H-M>

@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Strontium Titanate</chemical_name_common>
-	<chemical_formula_structural>SrTiO3</chemical_formula_structural>
+	<chemical_formula>SrTiO3</chemical_formula>
 	<space_group>
 		<id>221</id>
 		<H-M>P m -3 m</H-M>

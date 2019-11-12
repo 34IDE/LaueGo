@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Sapphire,Corundum (hexagonal)</chemical_name_common>
-	<chemical_formula_structural>Al2O3</chemical_formula_structural>
+	<chemical_formula>Al2O3</chemical_formula>
 	<space_group>
 		<id>167:H</id>
 		<H-M>R -3 c:H</H-M>
@@ -66,7 +66,7 @@
 <!--   
 <cif version="2" dim="3">
 	<chemical_name_common>Sapphire,Corundum (hexagonal)</chemical_name_common>
-	<chemical_formula_structural>Al2O3</chemical_formula_structural>
+	<chemical_formula>Al2O3</chemical_formula>
 	<space_group>
 		<id>167:H</id>
 		<H-M>R -3 c</H-M>
