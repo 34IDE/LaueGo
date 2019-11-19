@@ -13,6 +13,8 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="C">22.5</temperature>
+		<alphaT>24e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>
 	<atom_site>
 		<label>Al</label>

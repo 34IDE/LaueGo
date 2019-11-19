@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.20								// based on LatticeSym_6.55
+#pragma version = 7.21								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -248,6 +248,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.17, added getPointGroup(), getLaueGroup(), getSchoenflies()
 //	with version 7.19, when reading xml cif files, interpret html escacape codes
 //	with version 7.20, for xml files, use chemical_formula rather than chemical_formula_structural or chemical_formula_sum 
+//	with version 7.21, now prefer to use *.xtal extension rather than *.xml for xml based files
 
 
 //	Rhombohedral Transformation:
@@ -280,12 +281,12 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //
 //							SG				  idNum			#IDs		#SpaceGroups
 //	Cubic				[195,230]		[489,530]		 42			36
-//	Hexagonal		[168,194]		[462,488]		 27			27
+//	Hexagonal			[168,194]		[462,488]		 27			27
 //	Trigonal			[143,167]		[430,461]		 32			25
-//	Tetragonal		[75,142]			[349,429]		 81			68
-//	Orthorhombic	[16,74]			[108,348]		241			59
-//	Monoclinic		[3,15]			[3,107]			105			13
-//	Triclinic		[1,2]				[1,2]				  2			 2
+//	Tetragonal		[75,142]		[349,429]		 81			68
+//	Orthorhombic		[16,74]		[108,348]		241			59
+//	Monoclinic		[3,15]		[3,107]		105			13
+//	Triclinic			[1,2]			[1,2]			  2			 2
 //
 //											SG										idNum
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
@@ -294,7 +295,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //		**************************************************
 //	for 2D xtals
 //							SG				  idNum			#IDs		#SpaceGroups
-//	Hexagonal		[13,17]			[13-17]			5			5
+//	Hexagonal			[13,17]			[13-17]			5			5
 //	Square			[10,12]			[10,12]			3			3
 //	Rhombic			{5,9}				{5,9}				2			2
 //	Rectangular		{3,4,6,7,8}		{3,4,6,7,8}		5			5
@@ -313,8 +314,8 @@ Menu "Analysis"
 		help={"Manually set/change the atom positions"}
 		"Load a new Crystal Structure...",LoadCrystal("")
 		help={"load a rystal structure from a fie"}
-		"Write Current Crystal to XML File...",writeCrystalStructure2xmlFile("","")
-		help={"takes the current crystal structure and writes it to an xml file"}
+		"Write Current Crystal to XML/XTAL File...",writeCrystalStructure2xmlFile("","")
+		help={"takes the current crystal structure and writes it to an xml style *.xtal file"}
 		"d[hkl]",/Q,get_dhkl(NaN,NaN,NaN,T=NaN)
 		help={"show d-spacing for the hkl reflection"}
 		"Fstructure [hkl]", /Q ,getFstruct(NaN,NaN,NaN)
@@ -2546,7 +2547,7 @@ Function UpdateCrystalStructureDefaults(xtal)		// save xtal as a string in local
 
 	// save as defaults for future use
 	String strStruct
-	StructPut/S/B=2 xtal, strStruct						// string to write to globals
+	StructPut/S/B=2 xtal, strStruct					// string to write to globals
 	String/G root:Packages:Lattices:crystalStructStr=strStruct	// always save in the Packages
 	if (!stringmatch(GetDataFolder(1),"root:"))	// don't save in root dataFolder
 		String/G :crystalStructStr=strStruct			// usually save in local data folder too
@@ -3464,7 +3465,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		print_crystalStructure(xtal, brief=(V_flag==1))
 	elseif (stringmatch(ctrlName,"buttonWriteLattice"))	// write current lattice parameters to an xml file
 		writeCrystalStructure2xmlFile("","",symOpAsk=1)
-	elseif (stringmatch(ctrlName,"buttonAtomView"))	// add support for AtomView
+	elseif (stringmatch(ctrlName,"buttonAtomView"))		// add support for AtomView
 		String cmd
 		sprintf cmd,"LatticeSym#UpdatePanelLatticeConstControls(\"%s\",\"%s\")",ba.win,SpaceGroupID
 		Execute/P "INSERTINCLUDE \"AtomView\", version>=0.43"
@@ -3893,8 +3894,8 @@ End
 //	return 0
 //End
 Static Function/S keyStrFromFile(fname,ftype,path)	// read in all of the tagged values from a file into a keyword list
-	String fname									// full path name to file with tagged geometry values
-	String ftype									// the required file identifier, included as a tag (ftype is optional)
+	String fname								// full path name to file with tagged geometry values
+	String ftype								// the required file identifier, included as a tag (ftype is optional)
 	String path									// name of Igor path
 
 	Variable refNum
@@ -4019,10 +4020,11 @@ Function writeCrystalStructure2xmlFile(path,fname, [symOp,symOpAsk])	// writes t
 	STRUCT crystalStructure xtal			// this sructure is written in this routine
 	FillCrystalStructDefault(xtal)
 	ForceLatticeToStructure(xtal)
-	String cif = crystalStructure2xml(xtal,NEW_LINE,symOp=symOp)	// convert xtal to cif
+	String cif = crystalStructure2xml(xtal,NEW_LINE,symOp=symOp)	// convert xtal to xml
 
 	Variable f
-	Open/C="R*ch"/F="XML Files (*.xml):.xml;"/M="file to write"/P=$path/Z=2 f as fname
+	// prefered extension is now .xtal
+	Open/C="R*ch"/F="xml/xtal Files (*.xtal,*.xml):.xtal,.xml;"/M="file to write"/P=$path/Z=2 f as fname
 	if (V_flag==0)
 		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NEW_LINE+NEW_LINE
 		FBinWrite f, cif
@@ -4057,12 +4059,12 @@ Function readCrystalStructure(xtal,fname,[printIt])
 	String fileType = CrystalFileType(fname)	// "xml", "xtl", "cif", "", or the actual file extension (without the '.')
 	init_crystalStructure(xtal)						// set all values to empty or invalid values
 	Variable err=1
-	if (stringmatch(fileType,"xml"))
-		err = readCrystalStructureXML(xtal,fname)
-	elseif (stringmatch(fileType,"xtl"))
-		err = readCrystalStructure_xtl(xtal,fname)
-	elseif (stringmatch(fileType,"cif"))
-		err = readCrystalStructureCIF(xtal,fname)
+	if (CmpStr(fileType,"xml")==0 || CmpStr(fileType,"xtal")==0)
+		err = readCrystalStructureXML(xtal,fname)	// read new type xml based files
+	elseif (CmpStr(fileType,"xtl")==0)
+		err = readCrystalStructure_xtl(xtal,fname)	// read old files with $tags
+	elseif (CmpStr(fileType,"cif")==0)
+		err = readCrystalStructureCIF(xtal,fname)	// read official CIF files
 	else
 		return 1												// nothing read, an error
 	endif
@@ -4106,7 +4108,7 @@ End
 //
 Static Function/S FindMaterialsFile(fname)		// returns full path to a materials file
 	String fname
-	String fileFilters = "XML Files (*.xml):.xml;XTL Files (*.xtl):.xtl;CIF Files (*.cif):.cif;old cri Files (*.cri):.cri;All Files:.*;"
+	String fileFilters = "XML Files (*.xtal,*.xml):.xtal,.xml;old XTL Files (*.xtl):.xtl;CIF Files (*.cif):.cif;old cri Files (*.cri):.cri;All Files:.*;"
 
 	GetFileFolderInfo/Q/Z fname						// full path name passed, that was east
 	if (V_isfile)
@@ -4257,8 +4259,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	endif
 
 	Variable f
-	String fileFilters = "XML Files (*.xml):.xml;TEXT Files (*.txt):.txt;All Files:.*;"
-	Open/R/F=fileFilters/M="Select xml file with Crystal Description"/P=$path/R/Z=2 f as fileName
+	String fileFilters = "XML Files (*.xtal,*.xml):.xtal,.xml;TEXT Files (*.txt):.txt;All Files:.*;"
+	Open/R/F=fileFilters/M="Select xml/xtal file with Crystal Description"/P=$path/R/Z=2 f as fileName
 	if (strlen(S_fileName)<1 || V_flag)
 		return 1
 	endif
@@ -4717,10 +4719,10 @@ Static Function/T AddNum2Base(base,num)
 End
 
 
-Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of xtal structure to xml sting (suitable for a file) Version 2
+Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of xtal structure to xml string (suitable for a file) Version 2
 	STRUCT crystalStructure &xtal				// this sruct is printed in this routine
-	String NL											// new line string (probably "\r" or "\n")
-	Variable symOp										// if True, write the symmetry ops into the <space_group> section
+	String NL										// new line string (probably "\r" or "\n")
+	Variable symOp									// if True, write the symmetry ops into the <space_group> section
 	symOp = ParamIsDefault(symOp) || numtype(symOp) ? 0 : symOp
 
 	Variable dim = xtal.dim
@@ -4870,7 +4872,7 @@ End
 
 // =========================================================================
 // =========================================================================
-//	Start of xtl --> xml conversion
+//	Start of xtl --> xml conversion, these are the real old *.xtl files
 
 // convert one xtl file to a newer xml file, also moves *.xtl file to folder "materials/old_xtl_files"
 Function ConverXTLfile2XMLfile(xtlName)
@@ -4912,7 +4914,7 @@ Function ConverXTLfile2XMLfile(xtlName)
 	endif
 
 	// wite the xml file
-	String xmlName = ParseFilePath(1,xtlName,":",1,0)+ParseFilePath(3,xtlName,":",0,0)+".xml"
+	String xmlName = ParseFilePath(1,xtlName,":",1,0)+ParseFilePath(3,xtlName,":",0,0)+".xtal"
 	Open/C="R*ch"/T="TEXT"/Z f as xmlName
 	if (V_flag==0)
 		fprintf f,  "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"+NEW_LINE+NEW_LINE
