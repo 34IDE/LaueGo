@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.57
+#pragma version = 0.56
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -664,7 +664,7 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	String prefix
 	Wave xyz				// list of atom xyz positions
 	Variable bLen		// maximum distance that gets a bond
-	bLen = ParamIsDefault(bLen) || blen<=0 || numtype(blen) ? LatticeSym_maxBondLen : bLen
+	bLen = ParamIsDefault(bLen) || blen<=0 ? NaN : bLen
 
 	if (!WaveExists(xyz))
 		return $""
@@ -675,16 +675,20 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	String name = GetWavesDataFolder(xyz,2)
 	name = ReplaceString("_XYZ",name,"_Type")
 	Wave/T types = $name
-	Wave Zs = $ReplaceString("_Type",name,"_Z")
-	Make/N=(N)/FREE eNeg=Element_electroneg(LatticeSym#ZfromLabel(types[p]))
 
-	String NonMetalsRange = "1,2,5-10,14-18,32-36,52-54,85,86"	// Z of all non-metals
-	Make/N=(N)/B/U/FREE metals = !isInRange(NonMetalsRange,Zs[p])
-	if (sum(metals)==N)					// all atoms are metals, there are no bonds in metals
-		return $""
+	Make/N=(N)/FREE eNeg=Element_electroneg(LatticeSym#ZfromLabel(types[p]))
+	WaveStats/M=1/Q eNeg
+	Variable isMetalic = (V_max-V_min) < 0.4
+
+	if (!(blen>0))				// find max length to use for bonds
+		if (isMetalic)
+			blen = AtomView#FindMinSeparation(xyz)*1.05
+		else
+			blen = LatticeSym_maxBondLen
+		else
+		endif
 	endif
-	MatrixOP/FREE dZs0 = maxVal(abs(Zs - Zs[0]))
-	Variable compound = dZs0[0] > 0	// a compound, not a single element
+	//	print "blen =",blen
 
 	name = GetWavesDataFolder(xyz,1)+prefix+"_Bonds"
 	Variable Nmax=300, Nbonds=0
@@ -699,20 +703,15 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	wNote = ReplaceNumberByKey("bondLenMax",wNote,blen,"=")
 
 	Make/N=3/D/FREE xyz0, dxyz
-	Variable i,j, Nb, len, eNegj, deltaEneg, ionic, covalent // eNegi
+	Variable i,j, Nb, len, eNegj, eNegi
 	for (Nb=0,j=0; j<(N-1); j+=1)
 		xyz0 = xyz[j][p]
 		eNegj = eNeg[j]
 		for (i=j+1;i<N;i+=1)
-			deltaEneg = abs(eNeg[i] - eNegj)
-			ionic = deltaEneg > 1.5 && !(metals[i] && metals[j])
-			covalent = deltaEneg < 1.5 && !(metals[i] && metals[j])
-			if (!ionic && !covalent)					// not ionic and not covalent
-				continue
-			elseif (compound && Zs[i]==Zs[j])		// no bond between identical elements in a compound
+			eNegi = eNeg[i]
+			if (!isMetalic && abs(eNegi-eNegj)<0.5)	// a covalent or ionic bond needs deltaElector > 0.5
 				continue
 			endif
-
 			dxyz = xyz0[p] - xyz[i][p]
 			len = norm(dxyz)
 			if (LatticeSym_minBondLen<len && len<=blen)	// found a bond
