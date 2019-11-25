@@ -24,7 +24,7 @@
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
-		<fract>0.385 0.385 0.385</fract>
+		<fract>0.38504 0.38504 0.38504</fract>
 		<valence>-1</valence>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Fe" n1="S">0.22647</bond_chemical>
