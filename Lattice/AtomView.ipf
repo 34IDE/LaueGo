@@ -306,7 +306,8 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 		covRad = Element_covRadius(Zatom)/10			// covalent radius in nm (not Angstrom)
 		atomRad = Element_atomRadius(Zatom)/10
 		rad = AtomView_UseCovalent && numtype(covRad)==0 ? covRad : atomRad
-		rad = rad>0 ? rad : 2.0							// default radius, probably for trans-uranics
+//		rad = rad>0 ? rad : 2.0							// default radius, probably for trans-uranics
+		rad = rad>0 ? rad : 0.2							// default radius, probably for trans-uranics (2Å)
 		occupy = NumberByKey("occupy",wNote,"=")
 		occupy = occupy>=0 ? limit(occupy,0,1) : 1
 		atomType = StringByKey("atomType",wNote,"=")
