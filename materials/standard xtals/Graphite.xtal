@@ -3,9 +3,12 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Graphite</chemical_name_common>
 	<space_group>
+		<id>186</id>
 		<IT_number>186</IT_number>
-		<H-M>P6</H-M>
+		<H-M>P 63 m c</H-M>
+		<Hall>P 6c -2c</Hall>
 	</space_group>
+	<database_code db="COD">9008569</database_code>
 	<cell>
 		<a unit="nm">0.2456</a>
 		<b unit="nm">0.2456</b>
@@ -22,11 +25,12 @@
 	<atom_site>
 		<label>C2</label>
 		<symbol>C</symbol>
-		<fract>0.3333333 0.6666667 0.5</fract>
+		<fract>0.3333333 0.6666667 0.0</fract>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="C1" n1="C2">0.141797</bond_chemical>
+
 	<citation>
-		P6_3mc
-		_database_code_amcsd 0011247
 		Wyckoff R W G
 		Crystal Structures 1 (1963) 7-83
 		Second edition. Interscience Publishers, New York, New York
