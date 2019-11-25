@@ -679,7 +679,8 @@ Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess whe
 	Wave Zs = $ReplaceString("_Type",name,"_Z")
 	Make/N=(N)/FREE eNeg=Element_electroneg(LatticeSym#ZfromLabel(types[p]))
 
-	String NonMetalsRange = "1,2,5-10,14-18,32-36,52-54,85,86"	// Z of all non-metals
+//	String NonMetalsRange = "1,2,5-10,14-18,32-36,52-54,85,86"	// Z of all non-metals
+	String NonMetalsRange = "1,2,5-10,14-18,32-36,51-54,85,86"	// Z of all non-metals
 	Make/N=(N)/B/U/FREE metals = !isInRange(NonMetalsRange,Zs[p])
 	if (sum(metals)==N)					// all atoms are metals, there are no bonds in metals
 		return $""
