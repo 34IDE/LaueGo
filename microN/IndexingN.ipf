@@ -8025,7 +8025,7 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 	endif
 
 	Variable offset = 0
-	if (exists("Load3dRecipLatticesFileXML")==6)
+	if (exists("Load3dRecipLatticesFileXML")==6)			// do this if function exists (it is in xmlMultiIndex.ipf)
 		offset += 305
 		SetDrawLayer UserBack
 		SetDrawEnv linethick= 2
@@ -8046,8 +8046,9 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 		DrawLine 0,65+offset,221,65+offset
 
 		PopupMenu popupIndexLoadXML,pos={1,70+offset},size={140,20},fSize=14,proc=Indexing#IndexXMLPopUpMenuProc,title="Load 3d XML"
-		PopupMenu popupIndexLoadXML,help={"Load & Prepare for Display an XML output file"}
-		PopupMenu popupIndexLoadXML,mode=0,value= #"\"Load 3D XML file;Process Loaded XML;\""
+		PopupMenu popupIndexLoadXML,mode=0,help={"Load & Prepare for Display an XML output file"}
+		String mstr="\"Load New 3D XML file;"+SelectString(multiIndex#ValidRawXMLdataAvailable(""),"","Load/Append 3D XML file;Process Loaded XML;")+"\""
+		PopupMenu popupIndexLoadXML,value=#mstr
 		Button buttonIndexLoadOneXML,pos={150,70+offset},size={70,20},proc=IndexButtonProc,title="One Step"
 		Button buttonIndexLoadOneXML,help={"Load One <step> from an XML file"}
 
@@ -8237,8 +8238,8 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 
 	if (exists("Load3dRecipLatticesFileXML")==6)
 		FUNCREF ValidRawXMLdataAvailableProto fvalid = $"multiIndex#ValidRawXMLdataAvailable"
-		String mstr="\"Load 3D XML file;"+SelectString(fvalid(),"","Process Loaded XML;")+"\""
-		String title=SelectString(fvalid(),"Load 3d XML","Process Loaded XML")
+		String mstr="\"Load New 3D XML file;"+SelectString(fvalid(""),"","Load/Append 3D XML file;Process Loaded XML;")+"\""
+		String title=SelectString(fvalid(""),"Load 3d XML","Process Loaded XML")
 		PopupMenu popupIndexLoadXML,win=$win,disable=0,value=#mstr, title=title
 		Button buttonIndexColorHexagon,win=$win,disable= 0
 
@@ -8284,7 +8285,8 @@ Static Function EnableDisableIndexControls(win)				// here to enable/disable
 		Button buttonIndexingListTable,win=$win,disable= d
 	endif
 End
-Function ValidRawXMLdataAvailableProto()
+Function ValidRawXMLdataAvailableProto(fldr)
+	String fldr
 	return 0
 End
 
@@ -8482,8 +8484,11 @@ Static Function IndexXMLPopUpMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 	Variable popNum
 	String popStr
 #if (Exists("Load3dRecipLatticesFileXML")==6)
-	if (stringmatch(popStr,"Load 3D XML file"))
+	if (stringmatch(popStr,"Load New 3D XML file"))
 		Load3dRecipLatticesFileXML("")
+		ProcessLoadedXMLfile(Inf,NaN)
+	elseif (stringmatch(popStr,"Load/Append 3D XML file"))
+		Load3dRecipLatticesFileXML("", appendXML=1)
 		ProcessLoadedXMLfile(Inf,NaN)
 	elseif (stringmatch(popStr,"Process Loaded XML"))
 		ProcessLoadedXMLfile(Inf,NaN)

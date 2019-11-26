@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.13
+#pragma version=2.14
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -55,7 +55,7 @@ End
 Static Function/T MenuItemIfValidRawDataExists(item,[class])
 	String item
 	String class
-	Variable valid=ValidRawXMLdataAvailable()
+	Variable valid=ValidRawXMLdataAvailable("")
 	if (!ParamIsDefault(class))					// class was passed, so test it
 		valid = valid && ItemsInList(WaveListClass(class,"*",""))
 	endif
@@ -3962,7 +3962,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
 
 	String rawFldr = GetDataFolder(1)+"raw:"
-	if (!ValidRawXMLdataAvailable())
+	if (!ValidRawXMLdataAvailable(""))
 		DoAlert 0, "raw folder \""+rawFldr+"\" not found, first read in the xml file, or it does not have data in it"
 		return ""
 	endif
@@ -4657,34 +4657,79 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 End
 
 
-Static Function ValidRawXMLdataAvailable()
-	Variable valid = DataFolderExists(":raw")
-	if (!valid)
-		return 0
+//	Static Function ValidRawXMLdataAvailable()
+//		Variable valid = DataFolderExists(":raw")
+//		if (!valid)
+//			return 0
+//		endif
+//		valid = valid && Exists(":raw:stdLattice")==1
+//		valid = valid && Exists(":raw:Xsample")==1
+//		valid = valid && Exists(":raw:Ysample")==1
+//		valid = valid && Exists(":raw:Zsample")==1
+//		valid = valid && Exists(":raw:totalSum")==1
+//		valid = valid && Exists(":raw:sumAboveThreshold")==1
+//		valid = valid && Exists(":raw:numAboveThreshold")==1
+//		valid = valid && Exists(":raw:Nindexed")==1
+//		valid = valid && Exists(":raw:rmsIndexed")==1
+//		valid = valid && Exists(":raw:goodness")==1
+//		valid = valid && Exists(":raw:HutchTempC")==1
+//		valid = valid && Exists(":raw:gm")==1
+//		valid = valid && Exists(":raw:imageNames")==1
+//		valid = valid && Exists(":raw:useSymmetry")==2
+//		if (!valid)
+//			return 0
+//		endif
+//	
+//		Wave Xsample = $":raw:Xsample"
+//		valid = valid && DimSize(Xsample,0)>1
+//		return valid
+//	End
+//
+Static Function ValidRawXMLdataAvailable(fldr)	// returns true if fldr is the folder with 3D xml data
+	String fldr						// if empty, use the current folder
+	if (!DataFolderExists(fldr) || strlen(fldr)<1)
+		fldr = GetDataFolder(1)	// default to current folder
 	endif
-	valid = valid && Exists(":raw:stdLattice")==1
-	valid = valid && Exists(":raw:Xsample")==1
-	valid = valid && Exists(":raw:Ysample")==1
-	valid = valid && Exists(":raw:Zsample")==1
-	valid = valid && Exists(":raw:totalSum")==1
-	valid = valid && Exists(":raw:sumAboveThreshold")==1
-	valid = valid && Exists(":raw:numAboveThreshold")==1
-	valid = valid && Exists(":raw:Nindexed")==1
-	valid = valid && Exists(":raw:rmsIndexed")==1
-	valid = valid && Exists(":raw:goodness")==1
-	valid = valid && Exists(":raw:HutchTempC")==1
-	valid = valid && Exists(":raw:gm")==1
-	valid = valid && Exists(":raw:imageNames")==1
-	valid = valid && Exists(":raw:useSymmetry")==2
-	if (!valid)
-		return 0
+	if (strlen(fldr)<1 && CmpStr(fldr[strlen(fldr)-1],":"))
+		fldr += ":"							// always want a final ':' on the fldr name
 	endif
 
-	Wave Xsample = $":raw:Xsample"
-	valid = valid && DimSize(Xsample,0)>1
-	return valid
+	//	String wlist=""
+	//	Variable i
+	//	wlist = "XX;HH;FF;YY;ZZ;depth;Nindexed;totalSum;sumAboveThreshold;numAboveThreshold;rmsIndexed;"
+	//	wlist += "goodness;gm;imageNames;RX;RH;RF;RY;RZ;totalAngles"
+	//	for (i=0;i<ItemsInList(wlist);i+=1)
+	//		if (!WaveInClass($(fldr+StringFromList(i,wlist)),"Random3dArrays*"))		// right type of wave
+	//			return 0
+	//		endif
+	//	endfor
+
+	// now check in raw:
+	if (!DataFolderExists(fldr+"raw"))
+		return 0
+	endif
+	fldr += "raw:"
+
+	// special for gm
+	String gm = fldr + "gm", name
+	if (!WaveInClass($gm,"Random3dArraysGM") || WaveDims($gm)!=3)
+		return 0
+	endif
+	Variable i, N=DimSize($gm,2)
+
+	String wlist="depth;goodness;Nindexed;Xsample;Ysample;Zsample;imageNames;numAboveThreshold;rmsIndexed;sumAboveThreshold;totalSum"
+	for (i=0;i<ItemsInList(wlist);i+=1)
+		name = fldr + StringFromList(i,wlist)
+		if (!WaveInClass($name,"Random3dArrays*"))		// right type of wave
+			return 0
+		endif
+		if (DimSize($name,0) != N)							// right length of wave
+			return 0
+		endif
+	endfor
+
+	return 1
 End
-
 
 
 
@@ -5092,7 +5137,7 @@ Function/T AppendIndexResult2LoadedRaw(wIndex)
 	Wave wIndex
 
 	String rawFldr = GetDataFolder(1)+"raw:"
-	if (!ValidRawXMLdataAvailable())
+	if (!ValidRawXMLdataAvailable(""))
 		DoAlert 0, "raw folder \""+rawFldr+"\" not found, first read in the xml file, or it does not have data in it"
 		return ""
 	endif
