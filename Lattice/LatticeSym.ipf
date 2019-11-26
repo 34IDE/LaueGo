@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.21								// based on LatticeSym_6.55
+#pragma version = 7.22								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -249,6 +249,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.19, when reading xml cif files, interpret html escacape codes
 //	with version 7.20, for xml files, use chemical_formula rather than chemical_formula_structural or chemical_formula_sum 
 //	with version 7.21, now prefer to use *.xtal extension rather than *.xml for xml based files
+//	with version 7.22, changed formtting of how an atom is printed
 
 
 //	Rhombohedral Transformation:
@@ -1260,30 +1261,23 @@ Static Function print_crystalStructure3D(xtal, brief)			// prints out the value 
 		else
 			printf "atom type locations:\r"
 		endif
-		String wyck, siteSym
+		String wyck, siteSym, multStr
 		Variable mult, itemp
 		for (i=0;i<xtal.N;i+=1)					// loop over the defined atoms
 			String vstr=""
 			if (xtal.atom[i].valence)
 				sprintf vstr, ", %+d",xtal.atom[i].valence
 			endif
-			wyck = xtal.atom[i].WyckoffSymbol
-			siteSym = siteSymmetry(id,wyck,3)
-			if (strlen(siteSym))
-				printf "     %s (Z=%g%s)\t%s \"%s\"\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
-			elseif (strlen(wyck))
-				printf "     %s (Z=%g%s)\t%s\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
-			else
-				printf "     %s (Z=%g%s)\t\t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
-			endif
-			if (xtal.atom[i].occ != 1)
-				printf "    occ = %g",xtal.atom[i].occ
-			endif
-
 			mult = DimSize($("root:Packages:Lattices:atom"+num2istr(i)),0)
 			mult = !(mult>0) ? xtal.atom[i].mult : mult
-			if (mult>1)
-				printf "\tmultiplicity = %d",mult
+			multStr = SelectString(mult>1,""," "+num2istr(mult)) 
+			wyck = xtal.atom[i].WyckoffSymbol
+			wyck = SelectString(strlen(wyck),""," "+wyck)
+			siteSym = siteSymmetry(id,wyck,3)
+			siteSym = SelectString(strlen(siteSym),""," \""+siteSym+"\"")
+			printf "     %s (Z=%g%s)\t%s%s%s \t{%g,  %g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,multStr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z
+			if (xtal.atom[i].occ != 1)
+				printf "    occ = %g",xtal.atom[i].occ
 			endif
 
 			itemp = atomThermalInfo(xtal.atom[i])
@@ -1418,30 +1412,23 @@ Static Function print_crystalStructure2D(xtal, brief)			// prints out the value 
 		else
 			printf "atom type locations:\r"
 		endif
-		String wyck, siteSym					// no siteSym for 2D yet
+		String wyck, multStr, siteSym=""		// no siteSym for 2D yet
 		Variable mult, itemp
 		for (i=0;i<xtal.N;i+=1)					// loop over the defined atoms
 			String vstr=""
 			if (xtal.atom[i].valence)
 				sprintf vstr, ", %+d",xtal.atom[i].valence
 			endif
-			wyck = xtal.atom[i].WyckoffSymbol
-			siteSym = siteSymmetry(id,wyck,2)
-			if (strlen(siteSym))
-				printf "     %s (Z=%g%s)\t%s \"%s\"\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y
-			elseif (strlen(wyck))
-				printf "     %s (Z=%g%s)\t%s\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,wyck,xtal.atom[i].x,xtal.atom[i].y
-			else
-				printf "     %s (Z=%g%s)\t\t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,xtal.atom[i].x,xtal.atom[i].y
-			endif
-			if (xtal.atom[i].occ != 1)
-				printf "    occ = %g",xtal.atom[i].occ
-			endif
-
 			mult = DimSize($("root:Packages:Lattices:atom"+num2istr(i)),0)
 			mult = !(mult>0) ? xtal.atom[i].mult : mult
-			if (mult>1)
-				printf "\tmultiplicity = %d",mult
+			multStr = SelectString(mult>1,""," "+num2istr(mult)) 
+			wyck = xtal.atom[i].WyckoffSymbol
+			wyck = SelectString(strlen(wyck),""," "+wyck)
+			siteSym = siteSymmetry(id,wyck,2)
+			siteSym = SelectString(strlen(siteSym),""," \""+siteSym+"\"")
+			printf "     %s (Z=%g%s)\t%s%s%s \t{%g,  %g}",xtal.atom[i].name,xtal.atom[i].Zatom,vstr,multStr,wyck,siteSym,xtal.atom[i].x,xtal.atom[i].y
+			if (xtal.atom[i].occ != 1)
+				printf "    occ = %g",xtal.atom[i].occ
 			endif
 
 			itemp = atomThermalInfo(xtal.atom[i])
