@@ -8047,7 +8047,8 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 
 		PopupMenu popupIndexLoadXML,pos={1,70+offset},size={140,20},fSize=14,proc=Indexing#IndexXMLPopUpMenuProc,title="Load 3d XML"
 		PopupMenu popupIndexLoadXML,mode=0,help={"Load & Prepare for Display an XML output file"}
-		String mstr="\"Load New 3D XML file;"+SelectString(multiIndex#ValidRawXMLdataAvailable(""),"","Load/Append 3D XML file;Process Loaded XML;")+"\""
+		FUNCREF ValidRawXMLdataAvailableProto fvalid = $"multiIndex#ValidRawXMLdataAvailable"
+		String mstr="\"Load New 3D XML file;"+SelectString(fvalid(""),"","Load/Append 3D XML file;Process Loaded XML;")+"\""
 		PopupMenu popupIndexLoadXML,value=#mstr
 		Button buttonIndexLoadOneXML,pos={150,70+offset},size={70,20},proc=IndexButtonProc,title="One Step"
 		Button buttonIndexLoadOneXML,help={"Load One <step> from an XML file"}
@@ -8483,14 +8484,16 @@ Static Function IndexXMLPopUpMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 	String ctrlName
 	Variable popNum
 	String popStr
+	Variable err=1		// when no error, also re-process the loaded data
 #if (Exists("Load3dRecipLatticesFileXML")==6)
 	if (stringmatch(popStr,"Load New 3D XML file"))
-		Load3dRecipLatticesFileXML("")
-		ProcessLoadedXMLfile(Inf,NaN)
+		err = Load3dRecipLatticesFileXML("")
 	elseif (stringmatch(popStr,"Load/Append 3D XML file"))
-		Load3dRecipLatticesFileXML("", appendXML=1)
-		ProcessLoadedXMLfile(Inf,NaN)
+		err = Load3dRecipLatticesFileXML("", appendXML=1)
 	elseif (stringmatch(popStr,"Process Loaded XML"))
+		err = 0
+	endif
+	if (!err)
 		ProcessLoadedXMLfile(Inf,NaN)
 	endif
 #endif

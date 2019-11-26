@@ -32,6 +32,7 @@ Menu "Rotations"
 	"(  --------"
 //	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
 	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("") ; print " " ; ProcessLoadedXMLfile(Inf,NaN)
+	"Load-Append XML [micro-diffraction file]",Load3dRecipLatticesFileXML("",appendXML=1) ; print " " ; ProcessLoadedXMLfile(Inf,NaN)
 	multiIndex#MenuItemIfValidRawDataExists("Re-Process Loaded XML"), ProcessLoadedXMLfile(Inf,NaN)
 	MenuItemIfWaveClassExists("  Load Pixels from one step in XML file","Random3dArrays",""),/Q,LoadPixelsFromXML(-1)
 	MenuItemIfWaveClassExists("2D plot of loaded XML data","Random3dArrays",""), Make2Dplot_xmlData("")
@@ -47,9 +48,11 @@ Menu "Rotations"
 EndMacro
 Menu "Data"
 	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
+	"Load-Append XML [micro-diffraction file]",Load3dRecipLatticesFileXML("",appendXML=1)
 End
 Menu "Load Waves"
 	"Load XML [micro-diffraction file]",Load3dRecipLatticesFileXML("")
+	"Load-Append XML [micro-diffraction file]",Load3dRecipLatticesFileXML("",appendXML=1)
 End
 
 Static Function/T MenuItemIfValidRawDataExists(item,[class])
@@ -2318,7 +2321,7 @@ Function MakeGizmo_xmlData(scatt)
 	Execute "ModifyGizmo ModifyObject=scatter0 property={ markerType,0}"
 	Execute "ModifyGizmo ModifyObject=scatter0 property={ sizeType,0}"
 	Execute "ModifyGizmo ModifyObject=scatter0 property={ rotationType,0}"
-	Execute "ModifyGizmo ModifyObject=scatter0 property={ Shape,5}"
+	Execute "ModifyGizmo ModifyObject=scatter0 property={ Shape,"+SelectString(N>3e4,"5","1")+"}"		// boxes if <30K, >30K use points
 	Execute "ModifyGizmo ModifyObject=scatter0 property={ size,0.01}"
 	if (WaveExists(rgba))
 		Execute "ModifyGizmo ModifyObject=scatter0 property={ colorWave,"+GetWavesDataFolder(rgba,2)+"}"
@@ -2378,7 +2381,8 @@ Function MakeGizmo_xmlData(scatt)
 	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ markerType,0}
 	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ sizeType,0}
 	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ rotationType,0}
-	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ Shape,5}
+	Variable shape = N > 3e4 ? 1 : 5			// normally boxes, for more than 30K positions use points
+	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ Shape,shape}
 	ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ size,0.01}
 	if (WaveExists(rgba))
 		ModifyGizmo ModifyObject=scatter0 objectType=scatter property={ colorWave,$GetWavesDataFolder(rgba,2)}
@@ -4365,12 +4369,18 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 End
 
 
-
-Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
+Function Load3dRecipLatticesFileXML(FullFileName,[appendXML,printIt])
+	// load the big xml file, returns 0=OK, 1=Error
 	String FullFileName
+	Variable appendXML		// flag, when true (not 0) read the file and append to existing raw folder, otherwise new folder
 	Variable printIt
-	printIt = ParamIsDefault(printIt) ? NaN : printIt
-	printIt = numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	appendXML = ParamIsDefault(appendXML) || numtype(appendXML) ? 0 : appendXML
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : !(!printIt)
+	if (appendXML && !ValidRawXMLdataAvailable(""))
+		print "ERROR -- Cannot append XML data to this folder.  It is not the top of a 3D xml data folder"
+		DoAlert 0, "ERROR -- Cannot append XML data to this folder.\rIt is not the top of a 3D xml data folder"	
+		return 1
+	endif
 
 	Variable f
 	Open/R/Z=2/P=$PathList("home","","")/M="pick the XML file"/F=XMLfilters f as FullFileName
@@ -4380,10 +4390,14 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	printIt = StringMatch(FullFileName,S_fileName) ? printIt : 1
 	FullFileName = S_fileName
 	if (V_flag)
-		return ""
+		return 1
 	endif
 	if (printIt)
-		printf "Load3dRecipLatticesFileXML(\"%s\")\r",FullFileName
+		printf "%sLoad3dRecipLatticesFileXML(\"%s\"",BULLET,FullFileName
+		if (appendXML)
+			printf ", appendXML=1"
+		endif
+		printf ")\r"
 	endif
 
 	String pathSep
@@ -4397,47 +4411,54 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 
 	GetFileFolderInfo/Q/Z=1 FullFileName
 	if (!V_isFile)
-		return ""
+		return 1
 	endif
 	String noteStr = ReplaceStringByKey("waveClass","","Random3dArrays","=")
 	noteStr = ReplaceStringByKey("xmlFileFull",noteStr,FullFileName,"=")	// add full file name to note string
 	noteStr = ReplaceStringByKey("localFile",noteStr,ParseFilePath(0,FullFileName,":",1,0),"=")	// add file name to note string
-	String fldrSav= GetDataFolder(1)
-	String fldrName = ParseFilePath(3,FullFileName, pathSep, 0, 0)
-	fldrName = CleanupName(fldrName, 0)
-	if (stringmatch(fldrName,"raw"))
-		fldrName = UniqueName(fldrName,11,0)
-	endif
-	if (CheckName(fldrName,11))
-		DoAlert 2, "This data folder already exists, delete the folder and re-load the data?"
-		if (V_flag==1)
-			KillDataFolder $fldrName
-		elseif (V_flag==2)
+	String fldrSav = GetDataFolder(1)
+
+	if (!appendXML)					// do not need to make a fldrName for an appendXML
+		String fldrName = ParseFilePath(3,FullFileName, pathSep, 0, 0)
+		fldrName = CleanupName(fldrName, 0)
+		if (stringmatch(fldrName,"raw"))
 			fldrName = UniqueName(fldrName,11,0)
+		endif
+		if (CheckName(fldrName,11))
+			DoAlert 2, "This data folder already exists, delete the folder and re-load the data?"
+			if (V_flag==1)
+				KillDataFolder $fldrName
+			elseif (V_flag==2)
+				fldrName = UniqueName(fldrName,11,0)
+			else
+				SetDataFolder fldrSav
+				return 1
+			endif
+		endif
+
+		if (StringMatch(GetDataFolder(0),fldrName))
+			DoAlert 2,"In folder:\r  \""+fldrName+"\",\rreload and overwrite data from xml file?"
+			if (V_flag!=1)
+				return 1
+			endif
 		else
-			SetDataFolder fldrSav
-			return ""
+			NewDataFolder/O/S $fldrName
 		endif
 	endif
 
-	if (StringMatch(GetDataFolder(0),fldrName))
-		DoAlert 2,"In folder:\r  \""+fldrName+"\",\rreload and overwrite data from xml file?"
-		if (V_flag!=1)
-			return ""
-		endif
+	fldrName = GetDataFolder(1)			// the main folder for this xml processing (it is above "raw:")
+	if (appendXML)
+		NewDataFolder/O/S rawTemp		// go into rawTemp, and load in xml data here
 	else
-		NewDataFolder/O/S $fldrName
+		NewDataFolder/O/S raw				// go into raw, and load in xml data here
 	endif
-
-	fldrName = GetDataFolder(1)
-	NewDataFolder/O/S raw
 	noteStr = ReplaceStringByKey("fldrName",noteStr,fldrName,"=")
 
 	STRUCT crystalStructure xtal
 	if (LatticeParametersFromXML(FullFileName,xtal))				// fill the lattice from first occurance in xml file
 		if (FillCrystalStructDefault(xtal))		// if no lattice in xml file, use current values
 			DoAlert 0, "no crystal structure found"
-			return ""
+			return 1
 		endif
 	endif
 	LatticeSym#ForceLatticeToStructure(xtal)	// mostly calling this to call reMakeAtomXYZs(xtal)
@@ -4450,11 +4471,11 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 
 	Variable Nalloc=1000
 	Make/N=(Nalloc)/O depth, Zsample,Ysample,Xsample
-	Make/N=(Nalloc)/O sumAboveThreshold, totalSum		// total sum of pixels, and sum of pixels over threshold
-	Make/N=(Nalloc)/O numAboveThreshold			// number of pixels that exceed threshold (by any amount)
-	Make/N=(Nalloc)/O Nindexed						// number of spots indexed in first pattern
+	Make/N=(Nalloc)/O sumAboveThreshold, totalSum	// total sum of pixels, and sum of pixels over threshold
+	Make/N=(Nalloc)/O numAboveThreshold				// number of pixels that exceed threshold (by any amount)
+	Make/N=(Nalloc)/O Nindexed							// number of spots indexed in first pattern
 	Make/N=(Nalloc)/O rmsIndexed						// rms error indexing each pattern (degree)
-	Make/N=(Nalloc)/O goodness						// "goodness" of pattern
+	Make/N=(Nalloc)/O goodness							// "goodness" of pattern
 	Make/N=(Nalloc)/O HutchTempC						// Hutch Temperature (C)
 	Make/N=(3,3,Nalloc)/D/O gm
 	SetScale d 0,0,"µm", Xsample,Ysample,Zsample,depth
@@ -4469,13 +4490,13 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	Variable as0,as1,as2, bs0,bs1,bs2, cs0,cs1,cs2
 	Variable first = 1									// flags first time through
 	Variable value, i
-	String step												// contents of xml step
-	Variable i0,i1											// mark start and end of current   <step ></step>
+	String step											// contents of xml step
+	Variable i0,i1										// mark start and end of current   <step ></step>
 	Variable i0start=0									// where to start searching for "<step "
 	Variable N=0											// counts number of points read in
 	Variable bytesRead									// keeps track of how many bytes read in (should not exceed fileLen)
-	Variable size=200*1024								// size of a typical read
-	Variable N0												// number of spots indexed in first pattern
+	Variable size=200*1024							// size of a typical read
+	Variable N0											// number of spots indexed in first pattern
 	Variable rms											// rms error indexing a pattern
 	Variable goodness0									// goodness of indexed pattern 0
 
@@ -4486,47 +4507,47 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	Variable fileLen = V_logEOF						// length of file in bytes
 	size = min(size,fileLen)
 	String buf = PadString("",size,0x20)			// a buffer for working space (of length size bytes)
-	String bufRead, str									// a buffer for reading more from the file (read up to this much each time)
+	String bufRead, str								// a buffer for reading more from the file (read up to this much each time)
 	FBinRead f, buf										// initial read
 	bytesRead = strlen(buf)
 	do
 		// read in data from xml file
 		if (mod(N,1000) == 0)
 			if (ProgressPanelUpdate(progressWin,bytesRead/fileLen*100,status="reading number "+num2istr(N)))	// update progress bar
-				break											//   and break out of loop
+				break										//   and break out of loop
 			endif
 		endif
 		i0 = strsearch(buf,"<step ",i0start,2)
 		if (i0<0)
-			size = min(size,fileLen-bytesRead)		// number of bytes to read
+			size = min(size,fileLen-bytesRead)	// number of bytes to read
 			bufRead = PadString("",size,0x20)
-			FBinRead f, bufRead							// could not find start of step, read more
+			FBinRead f, bufRead						// could not find start of step, read more
 			bytesRead += strlen(bufRead)
 			buf = buf[i0,Inf] + bufRead
 			i0 = strsearch(buf,"<step ",i0start,2)		// search again for start of step tag
 			if (i0<0)
-				break											// give up, all done
+				break										// give up, all done
 			endif
 		endif
 		i1 = strsearch(buf,"</step>",i0,2)
 		if (i1<0)
-			size = min(size,fileLen-bytesRead)		// number of bytes to read
+			size = min(size,fileLen-bytesRead)	// number of bytes to read
 			bufRead = PadString("",size,0x20)
-			FBinRead f, bufRead							// could not find end of step, read more
+			FBinRead f, bufRead						// could not find end of step, read more
 			bytesRead += strlen(bufRead)
 			buf = buf[i0,Inf] + bufRead
 			i0 = 0
-			i1 = strsearch(buf,"</step>",i0,2)		// search again for end of step tag
+			i1 = strsearch(buf,"</step>",i0,2)	// search again for end of step tag
 			if (i1<0)
-				break											// give up, all done
+				break										// give up, all done
 			endif
 		endif
 		i0 = strsearch(buf,">",i0+1)+1				// position after the introductory ">", start of contents
 		if (i0<1)
-			break												// give up, all done
+			break											// give up, all done
 		endif
 		// Contents of this step is bracketed by [i0,i1-1], process it:
-		i0start = i1 + 7									// where to start searching for next start tag										
+		i0start = i1 + 7								// where to start searching for next start tag										
 		step = XMLremoveComments(buf[i0,i1-1])	// string BETWEEN <step...>This is the Contents</step>
 
 		if (first)
@@ -4566,7 +4587,7 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 			//	print xmlTagContents("inputImage",step)
 			//	print patternKeyVals
 			//endif
-			continue											// skip this image, it was not adequately indexed
+			continue										// skip this image, it was not adequately indexed
 		endif
 		pattern = xmlTagContents("pattern",indexing)
 		recip_lattice = xmlTagContents("recip_lattice",pattern)
@@ -4577,7 +4598,7 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 		svec = xmlTagContents("cstar",recip_lattice)
 		sscanf svec,"%g %g %g",cs0,cs1,cs2
 
-		if (N>=Nalloc)										// need longer arrays
+		if (N>=Nalloc)									// need longer arrays
 			Nalloc += 1000
 			Redimension/N=(Nalloc) Xsample,Ysample,Zsample,depth
 			Redimension/N=(Nalloc) totalSum, sumAboveThreshold, numAboveThreshold
@@ -4611,16 +4632,14 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 	DoWindow/K $progressWin
 
 	Redimension/N=(-1,-1,N) gm						// trim to actual length
-	Redimension/N=(N) depth,Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
-	Redimension/N=(N) goodness, HutchTempC
-	Redimension/N=(N) imageNames
+	Redimension/N=(N) Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed,goodness,HutchTempC,depth,imageNames
 	SetDataFolder $fldrName
 	printf "remaining in Igor data folder  '%s'\r",fldrName
 	// done reading
 
 	Duplicate/FREE Ysample, Hsample, Fsample
-	Hsample = YZ2H(Ysample[p],Zsample[p])			// H =  Y*sin(angle) + Z*cos(angle))	Yn and Zn are sample system from the file
-	Fsample = YZ2F(Ysample[p],Zsample[p])			// F = -Y*cos(angle) + Z*sin(angle)
+	Hsample = YZ2H(Ysample[p],Zsample[p])		// H =  Y*sin(angle) + Z*cos(angle))	Yn and Zn are sample system from the file
+	Fsample = YZ2F(Ysample[p],Zsample[p])		// F = -Y*cos(angle) + Z*sin(angle)
 	Variable Xlo=WaveMin(Xsample), Xhi=WaveMax(Xsample)
 	Variable Ylo=WaveMin(Ysample), Yhi=WaveMax(Ysample)
 	Variable Zlo=WaveMin(Zsample), Zhi=WaveMax(Zsample)
@@ -4636,54 +4655,81 @@ Function/T Load3dRecipLatticesFileXML(FullFileName,[printIt])
 		printf "Fsample = [%g, %g] µm\r",Flo,Fhi
 	endif
 
-	Note/K Xsample,noteStr
-	Note/K Ysample,noteStr
-	Note/K Zsample,noteStr
-	Note/K depth,noteStr
-	Note/K totalSum,noteStr
-	Note/K sumAboveThreshold,noteStr
-	Note/K numAboveThreshold,noteStr
-	Note/K Nindexed,noteStr
-	Note/K rmsIndexed,noteStr
-	Note/K goodness, noteStr
-	Note/K HutchTempC, noteStr
-	Note/K imageNames,noteStr
-	Note/K gm,ReplaceStringByKey("waveClass", noteStr, "Random3dArraysGm","=")
-	WaveStats/M=1/Q depth
-	if (V_npnts==0)										// no depths present (probably not a wire scan)
-		KillWaves/Z depth
+	Make/WAVE/FREE rawWaves={Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed,goodness,HutchTempC,depth,imageNames}
+	if (appendXML)						// append this new data to current raw: folder
+		SetDataFolder raw				// go into raw to extend the waves
+		for (i=0;i<DimSize(rawWaves,0);i+=1)
+			rawExtend(rawWaves[i])
+		endfor
+		rawExtend(gm)
+		SetDataFolder $fldrName
+		KillDataFolder/Z rawTemp		// done with rawTemp and all of the waves in it, delete
+	else									// a fresh load, not appending
+		for (i=0;i<DimSize(rawWaves,0);i+=1)
+			Note/K rawWaves[i], noteStr
+		endfor
+		Note/K gm,ReplaceStringByKey("waveClass", noteStr, "Random3dArraysGm","=")	// gm is special
+		WaveStats/M=1/Q depth
+		if (V_npnts==0)					// no depths present (probably not a wire scan)
+			KillWaves/Z depth
+		endif
 	endif
-	return noteStr
+
+	return 0
 End
-
-
-//	Static Function ValidRawXMLdataAvailable()
-//		Variable valid = DataFolderExists(":raw")
-//		if (!valid)
-//			return 0
-//		endif
-//		valid = valid && Exists(":raw:stdLattice")==1
-//		valid = valid && Exists(":raw:Xsample")==1
-//		valid = valid && Exists(":raw:Ysample")==1
-//		valid = valid && Exists(":raw:Zsample")==1
-//		valid = valid && Exists(":raw:totalSum")==1
-//		valid = valid && Exists(":raw:sumAboveThreshold")==1
-//		valid = valid && Exists(":raw:numAboveThreshold")==1
-//		valid = valid && Exists(":raw:Nindexed")==1
-//		valid = valid && Exists(":raw:rmsIndexed")==1
-//		valid = valid && Exists(":raw:goodness")==1
-//		valid = valid && Exists(":raw:HutchTempC")==1
-//		valid = valid && Exists(":raw:gm")==1
-//		valid = valid && Exists(":raw:imageNames")==1
-//		valid = valid && Exists(":raw:useSymmetry")==2
-//		if (!valid)
-//			return 0
-//		endif
-//	
-//		Wave Xsample = $":raw:Xsample"
-//		valid = valid && DimSize(Xsample,0)>1
-//		return valid
-//	End
+//
+Static Function rawExtend(newWave)
+	Wave newWave
+	if (WaveType(newWave,1)==2)
+		rawExtendText(newWave)
+	else
+		rawExtendFloat(newWave)
+	endif
+End
+Static Function rawExtendFloat(newWave)
+	// given newWave (not in current folder), append it to a wave of same name that is in the current folder
+	// also make sure that the new wave has the same wave note as the original wave in this folder
+	Wave newWave
+	String rawName = NameOfWave(newWave)
+	if (exists(rawName)!=1 || !WaveExists(newWave))
+		return 1
+	endif
+	if (numpnts(newWave)>0)
+		Wave raw = $rawName
+		if (WaveRefsEqual(raw,newWave))
+			return 1
+		endif
+		String noteStr = note(raw)
+		Concatenate/O/FREE {raw,newWave},comb
+		Duplicate/O comb, $rawName 
+		Wave raw = $rawName
+		Note/K raw, noteStr
+	endif
+	return 0		// no error
+End
+//
+Static Function rawExtendText(newWave)
+	// this is like the above function, but for text waves
+	// given newWave (not in current folder), append it to a wave of same name that is in the current folder
+	// also make sure that the new wave has the same wave note as the original wave in this folder
+	Wave/T newWave
+	String rawName = NameOfWave(newWave)
+	if (exists(rawName)!=1 || !WaveExists(newWave))
+		return 1
+	endif
+	if (numpnts(newWave)>0)
+		Wave/T raw = $rawName
+		if (WaveRefsEqual(raw,newWave))
+			return 1
+		endif
+		String noteStr = note(raw)
+		Concatenate/O/T/FREE {raw,newWave},comb
+		Duplicate/O comb, $rawName 
+		Wave/T raw = $rawName
+		Note/K raw, noteStr
+	endif
+	return 0
+End
 //
 Static Function ValidRawXMLdataAvailable(fldr)	// returns true if fldr is the folder with 3D xml data
 	String fldr						// if empty, use the current folder
@@ -4730,11 +4776,6 @@ Static Function ValidRawXMLdataAvailable(fldr)	// returns true if fldr is the fo
 
 	return 1
 End
-
-
-
-
-
 
 
 Function/T makeRGBJZT(RX,RH,RF,maxAngle)
