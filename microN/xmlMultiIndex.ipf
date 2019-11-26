@@ -3945,8 +3945,8 @@ End
 // after running Load3dRecipLatticesFileXML(), process the loaded waves for viewing
 Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolume,printIt])
 	Variable maxAngle
-	Variable refType						// method used for reference orientation, 0=std, 1=average, 2=iref
-	Variable iref							// if >= 0, then use this point number as the reference orientation
+	Variable refType					// method used for reference orientation, 0=std, 1=average, 2=iref
+	Variable iref						// if >= 0, then use this point number as the reference orientation
 	Variable Xoff,Yoff,Zoff			// optional offsets
 	Variable centerVolume				// if true, center the volume on x,y,z
 	Variable printIt
@@ -4067,11 +4067,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	if (haveDepth)
 		Make/N=(Nraw)/O depth
 	endif
-	Make/N=(Nraw)/O rmsIndexed, numAboveThreshold, sumAboveThreshold, totalSum, Nindexed
-	Make/N=(Nraw)/O goodness, HutchTempC
+	Make/N=(Nraw)/O rmsIndexed, numAboveThreshold, sumAboveThreshold, totalSum, Nindexed, goodness, HutchTempC, totalAngles, RZ, RY, RF, RH, RX
 	Make/N=(3,3,Nraw)/O gm
 	Make/N=(Nraw)/T/O imageNames
-	Make/N=(Nraw)/O totalAngles, RZ, RY, RF, RH, RX
 	Make/N=(Nraw)/O IndexBackTrack = -1
 	SetScale d 0,0,"µm", XX, HH, FF, YY, ZZ
 	SetScale d 0,0,"C", HutchTempC
@@ -4092,7 +4090,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	HH = YZ2H(YY,ZZ)
 	FF = YZ2F(YY,ZZ)
 
-	if (centerVolume)											// shift so that average center of volume is zero
+	if (centerVolume)										// shift so that average center of volume is zero
 		Variable X0, Y0, Z0, H0, F0						// average center values
 		WaveStats/M=1/Q XX;		X0 = V_avg;		XX -= X0
 		WaveStats/M=1/Q YY;		Y0 = V_avg;		HH -= Y0
@@ -4141,9 +4139,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 			if (useSymmetry)									// symmetry reduce this structure
 				angle = symReducedRecipLattice(std,id33,gmi,mat3)
 			else
-				MatrixOp/O/FREE mat3 = gmi x stdInv	// gmi = mat3 x std
+				MatrixOp/O/FREE mat3 = gmi x stdInv		// gmi = mat3 x std
 			endif
-			angle = axisOfMatrix(mat3,vec3,squareUp=1)		// returned angle (degrees)
+			angle = axisOfMatrix(mat3,vec3,squareUp=1)	// returned angle (degrees)
 			vec3 *= angle
 			vecCenter += vec3
 		endfor
@@ -4152,8 +4150,8 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		endif
 		vecCenter /= Nraw										// the central rotation vector
 		angle = norm(vecCenter)
-		rotationMatAboutAxis(vecCenter,angle,mat3)	// mat3 rotates std to the central orientation (the new reference)
-		MatrixOp/O/FREE rl0 = mat3 x std				// reference reciprocal lattice
+		rotationMatAboutAxis(vecCenter,angle,mat3)		// mat3 rotates std to the central orientation (the new reference)
+		MatrixOp/O/FREE rl0 = mat3 x std					// reference reciprocal lattice
 
 	elseif (refType==0)										// use standard orientation for reference orientation
 		rl0 = std
@@ -4190,7 +4188,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	// use current reference orientation (rl0) to compute all Rodriques vectors
 	Make/N=(3,3)/D/FREE rot33
 	Variable N=0, mref=NaN									// use this for rejecting rotations greater than maxAngle
-	for (i=0;i<Nraw;i+=1)									// using rl0, find the Rodriques vectors
+	for (i=0;i<Nraw;i+=1)										// using rl0, find the Rodriques vectors
 		if (mod(i,1000) == 0)
 			if (ProgressPanelUpdate(progressWin,i/Nraw*100,status="setting rotation, number "+num2istr(i)))	// update progress bar
 				break												//   and break out of loop
@@ -4200,9 +4198,9 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 		if (useSymmetry)										// symmetry reduce this structure
 			angle = symReducedRecipLattice(std,mat3,gmi,rot33)	// angle between go and gm,  gmi = rot33 x rl0 = rot33 x (mat3 x std)
 		else
-			MatrixOp/O/FREE rot33 = gmi x Inv(rl0)	// gmi = rot33 x rl0
+			MatrixOp/O/FREE rot33 = gmi x Inv(rl0)		// gmi = rot33 x rl0
 		endif
-		angle = axisOfMatrix(rot33,vec3,squareUp=1)		// returned angle (degrees)
+		angle = axisOfMatrix(rot33,vec3,squareUp=1)	// returned angle (degrees)
 		if (numtype(angle) && i==0)
 			str = "Cannot find axis of rotation matrix, Probably the lattice parameters in Igor do not match those in the xml file.\r  Check the 'Xtal' tab"
 			DoAlert 0, str
@@ -4210,8 +4208,8 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 			DoWindow/K $progressWin
 			return ""
 		endif
-		vec3 *= tan(angle*PI/180/2)						// this is now the Rodriques vector
-		if (angle<=maxAngle)								// keep this one
+		vec3 *= tan(angle*PI/180/2)							// this is now the Rodriques vector
+		if (angle<=maxAngle)									// keep this one
 			if (haveDepth)
 				depth[N] = depth[i]
 			endif
@@ -4264,7 +4262,7 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Make/N=(3,3)/D/FREE rotFrame=(p==q)				// rotates about X-axis (rotates vector not frame) to get from beam-line coordinates to (XHF)
 	Variable cosTheta = NumVarOrDefault("root:Packages:geometry:cosThetaWire",cos(PI/4))
 	Variable sinTheta = NumVarOrDefault("root:Packages:geometry:sinThetaWire",sin(PI/4))
-	rotFrame[1][1] = cosTheta								// this matrix rotates direction of vector by +45¡ (this is changed below)
+	rotFrame[1][1] = cosTheta							// this matrix rotates direction of vector by +45¡ (this is changed below)
 	rotFrame[2][2] = cosTheta
 	rotFrame[1][2] = -sinTheta
 	rotFrame[2][1] = sinTheta
@@ -4309,19 +4307,13 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	noteStr = ReplaceNumberByKey("Flo",noteStr,Flo,"=")
 	noteStr = ReplaceNumberByKey("Fhi",noteStr,Fhi,"=")
 
-	Note/K XX,noteStr
-	Note/K YY,noteStr
-	Note/K ZZ,noteStr
-	Note/K HH,noteStr
-	Note/K FF,noteStr
+	Note/K XX,noteStr	;		Note/K YY,noteStr	;	Note/K ZZ,noteStr
+	Note/K HH,noteStr	;		Note/K FF,noteStr
 	if (haveDepth)
 		Note/K depth,noteStr
 	endif
-	Note/K RX,noteStr
-	Note/K RY,noteStr
-	Note/K RZ,noteStr
-	Note/K RH,noteStr
-	Note/K RF,noteStr
+	Note/K RX,noteStr	;		Note/K RY,noteStr	;		Note/K RZ,noteStr
+	Note/K RH,noteStr	;		Note/K RF,noteStr
 	Note/K totalSum,noteStr
 	Note/K sumAboveThreshold,noteStr
 	Note/K numAboveThreshold,noteStr
@@ -4600,12 +4592,7 @@ Function Load3dRecipLatticesFileXML(FullFileName,[appendXML,printIt])
 
 		if (N>=Nalloc)									// need longer arrays
 			Nalloc += 1000
-			Redimension/N=(Nalloc) Xsample,Ysample,Zsample,depth
-			Redimension/N=(Nalloc) totalSum, sumAboveThreshold, numAboveThreshold
-			Redimension/N=(Nalloc) Nindexed
-			Redimension/N=(Nalloc) rmsIndexed
-			Redimension/N=(Nalloc) goodness, HutchTempC
-			Redimension/N=(Nalloc) imageNames
+			Redimension/N=(Nalloc) Xsample,Ysample,Zsample,depth, totalSum, sumAboveThreshold, numAboveThreshold, Nindexed, rmsIndexed, goodness, HutchTempC, imageNames
 			Redimension/N=(3,3,Nalloc) gm
 		endif
 		depth[N] = str2num(xmlTagContents("depth",step))
@@ -5233,9 +5220,7 @@ Function/T AppendIndexResult2LoadedRaw(wIndex)
 	Variable N=DimSize(Xsample,0)					// number of points read in (raw points)
 
 	Redimension/N=(-1,-1,N+1) gm						// extend lengths by 1
-	Redimension/N=(N+1) imageNames
-	Redimension/N=(N+1) Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed
-	Redimension/N=(N+1) goodness, HutchTempC
+	Redimension/N=(N+1) Xsample,Ysample,Zsample,totalSum,sumAboveThreshold,numAboveThreshold,Nindexed,rmsIndexed, goodness, HutchTempC, imageNames
 	if (WaveExists(depth))
 		Redimension/N=(N+1) depth
 	endif
