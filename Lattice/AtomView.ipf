@@ -10,7 +10,7 @@
 #include "GizmoClip", version>=2.00
 #include "GizmoMarkers", version>=2.00
 #include "LatticeSym", version>=7.00
-#include "Bonds", version>=0.01
+#include "BondsLattice", version>=0.01
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"
 #define LATTICE_SYM_2D_3D
