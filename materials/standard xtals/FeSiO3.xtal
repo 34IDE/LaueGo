@@ -1,31 +1,88 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>FeSiO3 structure</chemical_name_common>
+	<chemical_name_common>Ferrosilite</chemical_name_common>
+	<chemical_formula>FeSiO3</chemical_formula>
 	<space_group>
 		<IT_number>62</IT_number>
+		<H-M>P b c a</H-M>
+		<Hall>-P 2ac 2ab</Hall>
 	</space_group>
+	<database_code db="COD">9006422</database_code>
 	<cell>
-		<a unit="nm">0.247</a>
-		<b unit="nm">0.813</b>
-		<c unit="nm">0.6117</c>
+		<a unit="nm">1.8417</a>
+		<b unit="nm">0.9073</b>
+		<c unit="nm">0.5239</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
 	<atom_site>
-		<label>Fe</label>
+		<label>FeM1</label>
 		<symbol>Fe</symbol>
-		<fract>0 0 0</fract>
+		<fract>0.3758 0.6539 0.8741</fract>
+		<U_iso unit="Å^2">0.00456</U_iso>
 	</atom_site>
 	<atom_site>
-		<label>Si</label>
+		<label>FeM2</label>
+		<symbol>Fe</symbol>
+		<fract>0.3777 0.4855 0.3662</fract>
+		<U_iso unit="Å^2">0.00684</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>SiTA</label>
 		<symbol>Si</symbol>
-		<fract>0.25 0.25 0.25</fract>
+		<fract>0.2724 0.339 0.0486</fract>
+		<U_iso unit="Å^2">0.00367</U_iso>
 	</atom_site>
 	<atom_site>
-		<label>O</label>
-		<symbol>O</symbol>
-		<fract>0.5 0.5 0.5</fract>
+		<label>SiTB</label>
+		<symbol>Si</symbol>
+		<fract>0.4732 0.3346 0.789</fract>
+		<U_iso unit="Å^2">0.00279</U_iso>
 	</atom_site>
+
+	<atom_site>
+		<label>O1a</label>
+		<symbol>O</symbol>
+		<fract>0.18470 0.33400 0.039</fract>
+		<U_iso unit="Å^2">0.00595</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O2a</label>
+		<symbol>O</symbol>
+		<fract>0.3119 0.4961 0.06</fract>
+		<U_iso unit="Å^2">0.00659</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O3a</label>
+		<symbol>O</symbol>
+		<fract>0.3023 0.236 0.818</fract>
+		<U_iso unit="Å^2">0.00735</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O1b</label>
+		<symbol>O</symbol>
+		<fract>0.5611 0.3374 0.785</fract>
+		<U_iso unit="Å^2">0.00443</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O2b</label>
+		<symbol>O</symbol>
+		<fract> 0.433 0.4804 0.693</fract>
+		<U_iso unit="Å^2">0.O2b</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O3b</label>
+		<symbol>O</symbol>
+		<fract> 0.4477 0.2027 0.584</fract>
+		<U_iso unit="Å^2">0.00608</U_iso>
+	</atom_site>
+
+	<citation doi="10.1007/s002690050042">
+		D.A. Hugh-Jones, A. Chopelas, R.J. Angel, 
+		Physics and Chemistry of Minerals 24 (1997), pg. 301-310
+		"Tetrahedral compression in (Mg,Fe)SiO3 orthopyroxenes Sample: P = 0 GPa"
+	</citation>
 </cif>

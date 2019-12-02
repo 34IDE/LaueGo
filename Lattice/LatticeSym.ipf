@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.22								// based on LatticeSym_6.55
+#pragma version = 7.23								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -250,6 +250,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.20, for xml files, use chemical_formula rather than chemical_formula_structural or chemical_formula_sum 
 //	with version 7.21, now prefer to use *.xtal extension rather than *.xml for xml based files
 //	with version 7.22, changed formtting of how an atom is printed
+//	with version 7.23, fixed menu item that was capturing command-X, write to XML\XTAL file
 
 
 //	Rhombohedral Transformation:
@@ -315,7 +316,7 @@ Menu "Analysis"
 		help={"Manually set/change the atom positions"}
 		"Load a new Crystal Structure...",LoadCrystal("")
 		help={"load a rystal structure from a fie"}
-		"Write Current Crystal to XML/XTAL File...",writeCrystalStructure2xmlFile("","")
+		"Write Current Crystal to XML\XTAL File...",writeCrystalStructure2xmlFile("","")
 		help={"takes the current crystal structure and writes it to an xml style *.xtal file"}
 		"d[hkl]",/Q,get_dhkl(NaN,NaN,NaN,T=NaN)
 		help={"show d-spacing for the hkl reflection"}
@@ -5793,7 +5794,8 @@ Function/C Fstruct(xtal,h,k,l,[keV,T_K])
 		Make/N=3/D/FREE hkl={h,k,l}
 	endif
 	Variable Qmag = 2*PI/dSpacing(xtal,h,k,l)	// |Q| vector (nm)
-	if (numtype(xtal.atom[0].U11)==0)				// need Q-vector
+	Make/N=(xtal.N)/U/FREE testForQs = numtype(xtal.atom[p].U11)
+	if (xtal.N>0 && WaveMin(testForQs)==0)		// need Q-vector, one of the U11's is finite
 		Wave recip = recipFrom_xtal(xtal)			// get reicprocal lattice from xtal
 		MatrixOP/FREE qvec = recip x hkl
 	endif

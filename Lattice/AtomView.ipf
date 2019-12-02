@@ -349,7 +349,10 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 //			blen = FindMinSeparation(xyz)*1.05
 //		endif
 		// blen is set in MakeBondList_blen()
-		Wave bonds = MakeBondList_blen(prefix,xyz,blen=blen)
+
+		FUNCREF MakeBondList_blenProto func = $"MakeBondList_blen"
+//		Wave bonds = MakeBondList_blen(prefix,xyz,blen=blen)
+		Wave bonds = func(prefix,xyz,blen=blen)
 	endif
 
 	Wave cell = MakeCellOutline(prefix,direct,Na=Na,Nb=Nb,Nc=Nc)
@@ -661,7 +664,7 @@ Static Function/WAVE MakeBondList_Given(prefix,xtal,xyz)	// This makes the bond 
 End
 
 
-Static Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bonds are given
+Function/WAVE MakeBondList_blenProto(prefix,xyz,[bLen])	// This is a guess when no bonds are given
 	String prefix
 	Wave xyz				// list of atom xyz positions
 	Variable bLen		// maximum distance that gets a bond
