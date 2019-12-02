@@ -2,6 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>LaAlO3 (Rhom)</chemical_name_common>
+	<chemical_formula>LaAlO3</chemical_formula>
 	<space_group>
 		<id>167:R</id>
 		<IT_number>167</IT_number>
@@ -18,17 +19,32 @@
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
+		<valence>3</valence>
 		<fract>0.25 0.25 0.25</fract>
+		<B_iso unit="Å^2">0.23</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
+		<valence>3</valence>
 		<fract>0 0 0</fract>
+		<B_iso unit="Å^2">0.21</B_iso>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
+		<valence>-2</valence>
 		<fract>0.7249 0.7751 0.25</fract>
+		<aniso_U_11 unit="Å^2">0.080</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.023</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.039</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.012</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.008</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.017</aniso_U_23>
 	</atom_site>
-	<citation>Yu, Xie, Boysen, Golden Book of Phase Transitions, Wroclaw (2002) 1993 1, 1-123, ICSD</citation>
+	<citation>
+		H. Lehnert, H. Boysen, J. Schneider, F. Frey, D. Hohlwein, P. Radaelli, H. Ehrenberg
+		Zeitschrift für Kristallographie (1979-2010) (2000) 215, 536-541
+		"A powder diffraction study of the phase transition in La Al O3"
+	</citation>
 </cif>
