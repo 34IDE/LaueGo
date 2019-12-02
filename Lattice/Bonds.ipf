@@ -1,39 +1,39 @@
 ﻿#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#include "LatticeSym", version>=3.77
-//#include "AtomView", version>=0.43
+#pragma version = 0.01
+#include "LatticeSym", version>=7.20
+
+Menu "Analysis"
+	SubMenu "Lattice"
+		"-"
+		"Show Bonds Calculated from Xtal", ShowCalculatedBonds_xtal()
+		help={"Show Calculatee Bonds for current xtal. Only Prints, does NOT change anything."}
+	End
+End
 
 
 
+Function ShowCalculatedBonds_xtal()
+	// Show Calculatee Bonds for current xtal. Only Prints, does NOT change anything.
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
+		DoAlert 0, "ERROR AnalyzeBonds()\rno lattice structure found"
+		return 1
+	endif
 
-// pick one of the atoms
-//		find closest neighbor for each of the other atoms
-//		if it is within limits, then a bond
-
-
-//	Structure bondTypeStructure	// defines the type of bond between two atom types
-//		char label0[60]			// label for first atom, usually starts with atomic symbol
-//		char label1[60]			// label for second atom, usually starts with atomic symbol
-//		int16 N					// number of bonds in len (often just 1)
-//		double len[5]			// length of bond (possibly multiple values) (nm)
-//	EndStructure
-
-
-//Structure bondStructure
-//EndStructure
-
-
-
-// use with MakeBondList_blen()
+	Struct ExcessiveBondList FinalBonds
+	Variable err = AnalyzeBonds(xtal, FinalBonds)
+	if (err)
+		print "ERROR -- AnalyzeBonds(xtal, FinalBonds)  failed"
+	else
+		print "Bonds Calculated from Current xtal (Nothing Changed):"
+		PrintExcessiveBondList(FinalBonds)
+	endif
+End
 
 
-
-
-
-
-
-
-OverRide Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bonds are given
+Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bonds are given
+	// use with MakeBondList_blen()
 	String prefix
 	Wave xyz				// list of atom xyz positions
 	Variable bLen		// maximum distance that gets a bond
@@ -55,7 +55,7 @@ OverRide Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess w
 	Variable err = AnalyzeBonds(xtal, FinalBonds)
 	if (err)
 		print "ERROR -- AnalyzeBonds(FinalBonds)  failed"
-		return AtomView#MakeBondList_blen(prefix,xyz, bLen=bLen)		// fall back in case of error
+		return AtomView#MakeBondList_blenProto(prefix,xyz, bLen=bLen)		// fall back in case of error
 	else
 		print "FinalBonds are:"
 		PrintExcessiveBondList(FinalBonds)
@@ -73,25 +73,6 @@ OverRide Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess w
 		xtal.Nbonds = m					// number of valid bonds
 	endif
 	return AtomView#MakeBondList_Given(prefix,xtal,xyz)	// This makes the bond list from given bond lengths
-End
-
-
-
-Function test_AnalyzeBonds()
-	STRUCT crystalStructure xtal
-	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
-		DoAlert 0, "ERROR AnalyzeBonds()\rno lattice structure found"
-		return 1
-	endif
-
-	Struct ExcessiveBondList FinalBonds
-	Variable err = AnalyzeBonds(xtal, FinalBonds)
-	if (err)
-		print "ERROR -- AnalyzeBonds(FinalBonds)  failed"
-	else
-		print "FinalBonds are:"
-		PrintExcessiveBondList(FinalBonds)
-	endif
 End
 
 
@@ -205,7 +186,6 @@ Function AnalyzeBonds(xtal, FinalBonds)
 		endif
 	endfor
 
-//	Struct ExcessiveBondList FinalBonds
 	initExcessiveBondList(FinalBonds)
 	Variable Nfinal=0
 	Struct ExcessiveBondList OneLabelBonds
@@ -221,7 +201,25 @@ Function AnalyzeBonds(xtal, FinalBonds)
 			endif
 		endfor
 	endfor
+
+	FinalBonds.unused = ""
+	String usedAtoms="", unUsedAtoms=""
+	for (i=0;i<FinalBonds.N;i+=1)
+		usedAtoms += FinalBonds.all[i].label0 + ";"				// this list may have duplicates
+		usedAtoms += FinalBonds.all[i].label1 + ";"
+	endfor
+
+	String lab=""
+	for (i=0;i<xtal.N;i+=1)
+		lab = xtal.atom[i].name
+		if (WhichListItem(lab,usedAtoms) < 0)
+			unUsedAtoms += lab + ";"
+		endif
+	endfor
+	FinalBonds.unused = unUsedAtoms									// list of un-used atom types
+
 	return 0
+
 End
 //
 Static Function DetermineOneAtomBonds(l0, AllBonds, OneLabelBonds)
@@ -322,6 +320,7 @@ End
 Static Structure ExcessiveBondList
 	int16 N						// number of bonds in len (often just 1)
 	Struct tempBondStructure all[100]
+	char unused[400]			// list of unused labels
 EndStructure
 //
 Static Structure tempBondStructure	// defines the type of bond between two atom types
@@ -344,10 +343,15 @@ Static Function PrintExcessiveBondList(AllBonds)
 			Ntrue += 1
 		endif
 	endfor
-	printf "a total of N = %d bond types (out of %d)\r",Ntrue, AllBonds.N
 	for (i=0; i<AllBonds.N; i+=1)
 		PrintTempBondStructure(AllBonds.all[i])
 	endfor
+
+	if (ItemsInList(AllBonds.unused)>0)
+		printf "The atoms: {%s} are NOT associated with any bonds.\r",TrimEnd(ReplaceString(";",AllBonds.unused,", "),chars=", ")
+	else				// print list of those atoms not associated with a bond
+		print "    All atom types are associated with at least 1 bond"
+	endif
 	return 0
 End
 //
@@ -355,7 +359,7 @@ Static Function PrintTempBondStructure(bs)
 	Struct tempBondStructure &bs
 	if (bs.valid)
 		Variable dd = abs(bs.len - bs.calc)
-		printf "   [%3s %2d] <--> [%3s %2d] = %.4f nm,  mult=%2d,  %s  (Calc=%.3f  ∆=%.4f nm)\r",bs.label0,bs.Z0,bs.label1,bs.Z1,bs.len,bs.mult, bs.type, bs.calc, dd
+		printf "   [%3s %2d] <--> [%3s %2d] = %.4f nm,  mult=%2d,  '%s'  (Calc=%.3f nm --> ∆=%.4f nm)\r",bs.label0,bs.Z0,bs.label1,bs.Z1,bs.len,bs.mult, bs.type, bs.calc, dd
 	else
 		printf " empty"
 	endif
@@ -370,6 +374,7 @@ Static Function initExcessiveBondList(AllBonds)
 	for (i=0;i<100;i+=1)
 		AllBonds.all[i].valid = 0
 	endfor
+	AllBonds.unused = ""
 End
 //
 Static Function WhichBondItem(bs,AllBonds)

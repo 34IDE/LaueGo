@@ -27,7 +27,7 @@
 	</atom_site>
 	<atom_site>
 		<label>Al</label>
-		<symbol>Ti</symbol>
+		<symbol>Al</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<B_iso unit="Å^2">0.21</B_iso>
