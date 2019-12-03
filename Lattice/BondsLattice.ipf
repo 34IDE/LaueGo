@@ -1,5 +1,6 @@
 ﻿#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
+#pragma ModuleName=BondLattice
 #pragma version = 0.01
 #include "LatticeSym", version>=7.20
 
@@ -78,7 +79,7 @@ End
 
 Function AnalyzeBonds(xtal, FinalBonds)
 	STRUCT crystalStructure &xtal
-	Struct ExcessiveBondList &FinalBonds
+	Struct ExcessiveBondList &FinalBonds			// result gets returned in FinalBonds
 
 	Variable Natoms=xtal.N							// number of distinct atom types, both element and wyckoff location
 	if (Natoms<1)
@@ -317,13 +318,15 @@ End
 
 
 
-Static Structure ExcessiveBondList
+//Static 
+Structure ExcessiveBondList
 	int16 N						// number of bonds in len (often just 1)
 	Struct tempBondStructure all[100]
 	char unused[400]			// list of unused labels
 EndStructure
 //
-Static Structure tempBondStructure	// defines the type of bond between two atom types
+//Static 
+Structure tempBondStructure	// defines the type of bond between two atom types
 	int16 valid
 	char label0[60]			// label for first atom, usually starts with atomic symbol
 	char label1[60]			// label for second atom, usually starts with atomic symbol
