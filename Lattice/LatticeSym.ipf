@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.23								// based on LatticeSym_6.55
+#pragma version = 7.24								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -251,6 +251,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.21, now prefer to use *.xtal extension rather than *.xml for xml based files
 //	with version 7.22, changed formtting of how an atom is printed
 //	with version 7.23, fixed menu item that was capturing command-X, write to XML\XTAL file
+//	with version 7.24, fixed up FindCentralAtom(xyz) and UnBondedAtomsList(xtal)
 
 
 //	Rhombohedral Transformation:
@@ -8478,7 +8479,7 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 		Duplicate/FREE wa, xyzTemp
 		ExtendFractional(xyzTemp,0.5)		// extend by ±0.5 to (-0.5,1.5) in x, y, & z
 		MatrixOP/FREE xyzTemp = ( direct x xyzTemp^t )^t	// convert fractional coordinates to real units (nm)
-		xyzRef[i] = xyzTemp						// xyzRef holds a free reference to the xyz waves (1 for each atom type)
+		xyzRef[i] = xyzTemp					// xyzRef holds a free reference to the xyz waves (1 for each atom type)
 	endfor
 
 	Variable Nbond, NbondMax=(Ntype+1)*Ntype/2
@@ -8492,7 +8493,7 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 			Wave dxyz = FindClosestAtomDirection(xyz0, xyzRef[i])	// (nm)
 			if (norm(dxyz)<LatticeSym_maxBondLen)
 				if (useValence && Ztypes[i]==Ztypes[j])
-					continue							// skip if using valence and atoms have same Z
+					continue						// skip if using valence and atoms have same Z
 				endif
 				blen[Nbond] = norm(dxyz)		// save blen for the j<-->i bond
 				type1[Nbond] = j
@@ -8507,16 +8508,16 @@ Static Function ComputeBonds(xtal, [printIt])	// return 1 on error, 0 is OK
 	Make/N=(Ntype)/FREE valence=0
 	if (useValence)								// not metalic, set the valences to ±1 using the bonds just found
 		Variable v1,v2, iv, m
-		for (m=0;m<Nbond;m+=1)					// for each bond, remember {blen,type1,type2} are sorted by blen
+		for (m=0;m<Nbond;m+=1)				// for each bond, remember {blen,type1,type2} are sorted by blen
 			v1 = valence[type1[m]]
 			v2 = valence[type2[m]]
-			if (v1 && v2)							// both have been set, nothing to do
+			if (v1 && v2)						// both have been set, nothing to do
 				continue
-			elseif (v1)								// v1 was set, v2=-v1
+			elseif (v1)							// v1 was set, v2=-v1
 				valence[type2[m]] = -v1
-			elseif (v2)								// v2 was set, v1=-v2
+			elseif (v2)							// v2 was set, v1=-v2
 				valence[type1[m]] = -v2
-			else										// neither valence has been set, set both using electronegativity
+			else									// neither valence has been set, set both using electronegativity
 				iv = ElectroNeg[type1[m]] > ElectroNeg[type2[m]] ? -1 : 1
 				valence[type1[m]] = iv
 				valence[type2[m]] = -iv
@@ -8574,22 +8575,28 @@ End
 //	End
 //
 Static Function/WAVE FindCentralAtom(xyz)
-	// from the set of atom positions xyz[N][3], return the central most position
-	Wave xyz							// atomic positions (nm),  NOT fractional
-	Variable dim = DimSize(xyz,1)
-	dim = dim==2 ? 2 : 3
-	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
+	// from the set of atom positions xyz[N][3], return the central most position, not an average, an actual atom position
+	Wave xyz							// atomic positions (nm),  generally NOT fractional
+	Variable dim = DimSize(xyz,1)==2 ? 2: 3
 	Variable N=DimSize(xyz,0)
-	MatrixOP/FREE xyzAvg = sumCols(xyz)/N	// average position, represents the center
-	if (N==1)
-		Make/N=(dim)/D/FREE xyz0 = xyz[0][p]
-	else
-		MatrixOP/FREE dmag2 = SumRows(magSqr(xyz-RowRepeat(xyzAvg,N)))
-		dmag2 = dmag2<min2 ? Inf : dmag2	// ignore atoms that are too close
-		WaveStats/M=1/Q dmag2
-		Make/N=(dim)/D/FREE xyz0 = xyz[max(V_minloc,0)][p]
+
+	Make/N=(dim)/D/FREE xyzCenter=NaN
+	if (N < 1)
+		return xyzCenter
+	elseif (N == 1)
+		xyzCenter = xyz[p]
+		return xyzCenter
 	endif
-	return xyz0
+
+	Variable min2 = LatticeSym_minBondLen*LatticeSym_minBondLen
+	MatrixOP/FREE xyzAvg = sumCols(xyz)/N	// average value, probably not right on an atom in xyzj
+	Redimension/N=(dim) xyzAvg
+	MatrixOP/FREE dist2 = SumRows( magSqr(xyz - RowRepeat(xyzAvg,N)) )
+	dist2 = dist2<min2 ? Inf : dist2			// ignore atoms that are too close
+	WaveStats/M=1/Q dist2
+	V_minloc = max(V_minloc,0)
+	xyzCenter = xyz[V_minloc][p]
+	return xyzCenter
 End
 //
 Static Function/WAVE FindClosestAtomDirection(xyz0, xyz)
@@ -8664,40 +8671,55 @@ Static Function ExtendFractional(xyz,delta)
 	endfor
 End
 //
-Static Function/T UnBondedAtomsList(xtal)
-	// return a list atom types without any bonds
+Function/T UnBondedAtomsList(xtal)
+	//	return a list atom types without any associated bonds
 	STRUCT crystalStructure &xtal
-
-	Variable Nbond = xtal.Nbonds, Ntype = xtal.N
-	Variable i, m
-
-	String atomTypes=""
-	for (m=0; m < Ntype; m+=1)
-		atomTypes += xtal.atom[m].name + ";"
+	Variable i, N=xtal.Nbonds
+	String usedAtoms="", unUsedAtoms="", lab=""
+	for (i=0;i<N;i+=1)										// loop over all bonds
+		usedAtoms += xtal.bond[i].label0 + ";"		// this list may have duplicates
+		usedAtoms += xtal.bond[i].label1 + ";"
 	endfor
-
-	Make/N=(Ntype)/FREE iatom=p
-	String name
-	for (i=0;i<Nbond;i+=1)
-		m = WhichListItem(xtal.bond[i].label0, atomTypes)
-		iatom[m] = m<0 ? iatom[m] : NaN
-		m = WhichListItem(xtal.bond[i].label1, atomTypes)
-		iatom[m] = m<0 ? iatom[m] : NaN
+	for (i=0;i<xtal.N;i+=1)								// loop over all atoms
+		lab = xtal.atom[i].name
+		unUsedAtoms += SelectString(WhichListItem(lab,usedAtoms)<0, "", lab + ";")
 	endfor
-	Sort iatom, iatom
-
-	WaveStats/M=1/Q iatom
-	Variable Nfree = V_npnts
-	if (Nfree<1)
-		return ""
-	endif
-
-	String list=""
-	for (i=0;i<Nfree;i+=1)
-		list += StringFromList(iatom[i],atomTypes)+";"
-	endfor
-	return list
+	return unUsedAtoms										// list of un-used atom types
 End
+//Static Function/T UnBondedAtomsList(xtal)
+//	// return a list atom types without any bonds
+//	STRUCT crystalStructure &xtal
+//
+//	Variable Nbond = xtal.Nbonds, Ntype = xtal.N
+//	Variable i, m
+//
+//	String atomTypes=""
+//	for (m=0; m < Ntype; m+=1)
+//		atomTypes += xtal.atom[m].name + ";"
+//	endfor
+//
+//	Make/N=(Ntype)/FREE iatom=p
+//	String name
+//	for (i=0;i<Nbond;i+=1)
+//		m = WhichListItem(xtal.bond[i].label0, atomTypes)
+//		iatom[m] = m<0 ? iatom[m] : NaN
+//		m = WhichListItem(xtal.bond[i].label1, atomTypes)
+//		iatom[m] = m<0 ? iatom[m] : NaN
+//	endfor
+//	Sort iatom, iatom
+//
+//	WaveStats/M=1/Q iatom
+//	Variable Nfree = V_npnts
+//	if (Nfree<1)
+//		return ""
+//	endif
+//
+//	String list=""
+//	for (i=0;i<Nfree;i+=1)
+//		list += StringFromList(iatom[i],atomTypes)+";"
+//	endfor
+//	return list
+//End
 
 
 Function LatticeSym_electroNegProto(Z)	// put here so I do not have to #include "Elements"

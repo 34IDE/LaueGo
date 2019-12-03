@@ -1,8 +1,11 @@
 ﻿#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=BondLattice
-#pragma version = 0.01
+#pragma version = 0.02
 #include "LatticeSym", version>=7.20
+
+#define USE_BONDS_VERSION_2			// should be 1 or 2, for anything else defaults to the one in AtomView.ipf
+// #define USE_BONDS_VERSION_1			// should be 1 or 2, for anything else defaults to the one in AtomView.ipf
 
 Menu "Analysis"
 	SubMenu "Lattice"
@@ -13,6 +16,283 @@ Menu "Analysis"
 End
 
 
+
+#ifdef USE_BONDS_VERSION_2
+
+Static Constant STRUCTURE_ATOMS_MAX=50	// max number of atom types in a material structure (for Si only need 1)
+
+Function ShowCalculatedBonds_xtal()
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
+		DoAlert 0, "ERROR AnalyzeBonds()\rno lattice structure found"
+		return 1
+	endif
+	AddBondsToXtal(xtal,NaN)
+
+	String type, typeName="match;covalent;ionic"
+	Variable i, mult, distCalc
+	printf "for '%s'  defined %d bonds (nm):\r",xtal.desc,xtal.Nbonds
+	for (i=0;i<xtal.Nbonds;i+=1)
+		Make/N=(xtal.bond[i].N)/FREE/D lens
+		lens = xtal.bond[i].len[p]
+		mult = xtal.bond[i].len[4]		// multiplicity
+		distCalc = xtal.bond[i].len[2]	// distCalc
+		type = StringFromList(xtal.bond[i].len[3]	,typeName)	// type 0=same atom,  1=covalent,  ±2=ionic
+		printf "     %s  <-->  %s:  %s  [mult=%d] '%s'  ∆=%.4f\r",xtal.bond[i].label0,xtal.bond[i].label1,vec2str(lens,bare=1),mult,type,abs(distCalc-lens[0])
+	endfor
+
+	if (xtal.Nbonds > 0)
+		String list=LatticeSym#UnBondedAtomsList(xtal)
+		if (ItemsInList(list)<1)
+			print "      All atom types are associated with at least 1 bond"
+		else				// print list of those atoms not associated with a bond
+			printf "These atom types have NO bonds: {%s}\r",TrimEnd(ReplaceString(";",list,", "),chars=", ")
+		endif
+	endif
+
+
+
+
+
+End
+
+
+Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bonds are given
+	// use with MakeBondList_blen()
+	String prefix
+	Wave xyz				// list of atom xyz positions
+	Variable bLen		// maximum distance that gets a bond
+	bLen = ParamIsDefault(bLen) || blen<=0 || numtype(blen) ? LatticeSym_maxBondLen : bLen
+
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
+		DoAlert 0, "ERROR AnalyzeBonds()\rno lattice structure found"
+		return $""
+	endif
+
+	if (!WaveExists(xyz))
+		return $""
+	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1) < xtal.dim)
+		return $""
+	endif
+
+	AddBondsToXtal(xtal,blen)
+	return AtomView#MakeBondList_Given(prefix,xtal,xyz)	// This makes the bond list from given bond lengths
+End
+
+
+Static Function AddBondsToXtal(xtal,blen)
+	// this removes any existing bonds in xtal, and re-computes a new set of bonds
+	STRUCT crystalStructure &xtal
+	Variable bLen										// maximum distance that gets a bond
+	blen = numtype(blen) || blen<=0 ? LatticeSym_maxBondLen : blen
+	xtal.Nbonds = 0										// ignore/remove any pre-existing bonds, we are here to find bonds
+
+	Wave enegWave = root:Packages:Elements:electroneg	// use enegWave[Z]
+	Wave atomRad = root:Packages:Elements:atomRadius		// use atomRad[Z] (Å)
+	Wave covRad = root:Packages:Elements:covRadius		// use covRad[Z] (Å)
+
+	Variable tick0=stopMSTimer(-2)
+	Variable i, 	Natoms=xtal.N
+	String labelList=""
+	for (i=0;i<Natoms;i+=1)
+		labelList += xtal.atom[i].name + ";"
+	endfor
+
+	Variable MaxBonds = min(Natoms*Natoms,2*STRUCTURE_ATOMS_MAX)
+	Make/N=(MaxBonds)/I/FREE atomTypes = -20	// init to unknown
+	Variable Nbonds=0
+	Make/N=(MaxBonds,8)/D/FREE bondsWave=NaN	// columns are: m0,Z0,m1,Z1,len,mult,type,distCalc
+	SetDimLabel 1,0,m0,bondsWave	;	SetDimLabel 1,1,Z0,bondsWave
+	SetDimLabel 1,2,m1,bondsWave	;	SetDimLabel 1,3,Z1,bondsWave
+	SetDimLabel 1,4,len,bondsWave	;	SetDimLabel 1,5,mult,bondsWave
+	SetDimLabel 1,6,itype,bondsWave	;	SetDimLabel 1,7,distCalc,bondsWave
+
+	String label0, label1, type, typeName="match;covalent;ionic"
+	Variable Z0,Z1, deltaEneg, distCalc, itype0,itype1, m0,m1, bad, dd
+	Variable distCurrent = 1e-4			// 0.001 Å
+	for (i=0;i<MaxBonds;i+=1)
+		if (NextClosestPair(xtal,distCurrent,blen))	// true if could not find a valid looking bond
+			break
+		endif
+		label0 = xtal.bond[i].label0
+		label1 = xtal.bond[i].label1
+		Z0 = WhichListItem(label0[0,1], ELEMENT_Symbols)
+		Z0 = Z0<0 ? WhichListItem(label0[0], ELEMENT_Symbols)+1 : Z0+1
+		Z1 = WhichListItem(label1[0,1], ELEMENT_Symbols)
+		Z1 = Z1<0 ? WhichListItem(label1[0], ELEMENT_Symbols)+1 : Z1+1
+
+		deltaEneg = enegWave[Z1] - enegWave[Z0]
+		if (deltaEneg==0)
+			itype0 = 0						// elements match
+			itype1 = 0
+		elseif (abs(deltaEneg) < 1.5)	
+			itype0 = 1						// covalent
+			itype1 = 1
+		elseif (deltaEneg > 0)	
+			itype0 = 2						// ionic, Z0+
+			itype1 = -2						// ionic, Z1-
+		else
+			itype0 = -2						// ionic, Z0-
+			itype1 = 2						// ionic, Z1+
+		endif
+
+		m0 = WhichListItem(label0,labelList)	// use pre-existing atomTypes if it was set
+		itype0 = atomTypes[m0]<-10 ? itype0 : atomTypes[m0]
+		atomTypes[m0] = itype0
+		m1 = WhichListItem(label1,labelList)	// use pre-existing atomTypes if it was set
+		itype1 = atomTypes[m1]<-10 ? itype1 : atomTypes[m1]
+		atomTypes[m1] = itype1
+		bad = (abs(atomTypes[m0]) > 1 && abs(atomTypes[m1]) > 1 && atomTypes[m0]*atomTypes[m1] > 0)	// ion type mismatch
+
+		xtal.bond[i].len[3] = abs(itype0)
+		distCalc = abs(itype0)<2 ? covRad[Z0] + covRad[Z1] : atomRad[Z0] + atomRad[Z1]
+		distCalc /= 10						// convert Å --> nm
+
+		dd = abs(distCalc - xtal.bond[i].len[0])
+		bad = dd>0.06 ? 1 : bad			// distances should match withing 0.6Å of calculated
+		type = StringFromList(xtal.bond[i].len[3],typeName)
+		if (!bad)
+			//printf "'%s'[%d] <--> '%s'[%d]  =  %g nm   mult=%d   '%s'   calc=%.3f  ∆=%.4f   %d\r",label0,Z0, label1,Z1, xtal.bond[i].len[0], xtal.bond[i].len[4], type, distCalc, dd,bad
+			bondsWave[Nbonds][0] = m0	;	bondsWave[Nbonds][1] = Z0
+			bondsWave[Nbonds][2] = m1	;	bondsWave[Nbonds][3] = Z1
+			bondsWave[Nbonds][4] = xtal.bond[i].len[0]
+			bondsWave[Nbonds][5] = xtal.bond[i].len[4]		// multiplicity
+			bondsWave[Nbonds][6] = xtal.bond[i].len[3]		// type 0=same atom,  1=covalent,  ±2=ionic
+			bondsWave[Nbonds][7] = distCalc
+			Nbonds += 1
+		endif
+	endfor
+	Redimension/N=(Nbonds,-1) bondsWave
+
+	// now check if too many bonds going to one atom
+	Variable mult, m
+	for (m=0;m<Natoms;m+=1)
+		MatrixOP/FREE eq_m = equal(m, col(bondsWave,0))
+		MatrixOP/FREE eq_m = eq_m && equal(m, col(bondsWave,2))
+		Make/N=(Nbonds)/I/FREE mults = eq_m[p] ? bondsWave[p][5] : 0
+		mult = sum(mults)
+		if (mult>10)			// too many bonds to this atom, take the <= 10 shortest bonds to atom m
+			Variable ilast = BinarySearch(mults, 10)		// last entry to get 10
+			if (ilast >= 0)
+				mults[0,ilast] = 0		// keeps 0-ilast
+			elseif (ilast == -2)		//should never happen
+				mults = 0					// keep all
+			endif							// if ilast=-2, then delete all
+
+			for (i=0;i<Nbonds;i+=1)
+				if (mults[i])			// delete rows with non-zero mult[i]
+					DeletePoints/M=0 i, 1, bondsWave
+				endif
+			endfor
+		endif
+	endfor
+	Nbonds = DimSize(bondsWave,0)
+
+	xtal.Nbonds = Nbonds
+	for (i=0;i<Nbonds;i+=1)			// transfer info from bondsWave[i][] --> xtal.bond[i].xxx
+		xtal.bond[i].label0 = StringFromList(bondsWave[i][0],labelList)
+		xtal.bond[i].label1 = StringFromList(bondsWave[i][2],labelList)
+		xtal.bond[i].N = 1
+		xtal.bond[i].len[0] = bondsWave[i][4]	// bond length
+		xtal.bond[i].len[4] = bondsWave[i][5]	// multiplicity
+		xtal.bond[i].len[3] = bondsWave[i][6]	// type
+		xtal.bond[i].len[2] = bondsWave[i][7]	// distCalc
+	endfor
+	// Duplicate/O bondsWave, bondsWaveView		// use:   DisplayTableOfWave(bondsWaveView)
+	printf "Computed %d bonds  (in %.3g sec):\r", Nbonds, (stopMSTimer(-2)-tick0)*1e-6
+End
+//
+Static Function NextClosestPair(xtal,distCurrent,blen)
+	// find next bond, and add it to xtal.bond[]
+	// returns 0 if a bond was added to xtal, 1 if no bond found
+	STRUCT crystalStructure &xtal
+	Variable distCurrent
+	Variable bLen										// maximum distance that gets a bond
+	blen = numtype(blen) || blen<=0 ? LatticeSym_maxBondLen : blen
+
+	Wave direct = directFrom_xtal(xtal)
+	Variable dim = xtal.dim
+	String lj, li, 	ljMin="", liMin=""
+	Variable i,j, Natoms=xtal.N
+	Make/N=(Natoms)/WAVE/FREE atomRefs
+	Make/N=(Natoms)/I/FREE Zs
+	Make/N=(Natoms)/D/FREE occupys
+	Make/N=(Natoms)/T/FREE labels
+	for (i=0;i<Natoms;i+=1)
+		Wave atomi = $("root:Packages:Lattices:atom"+num2istr(i))
+		Make/N=(DimSize(atomi,0),dim)/D/FREE localWave = atomi
+		atomRefs[i] = localWave
+		Zs[i] = xtal.atom[i].Zatom
+		labels[i] = xtal.atom[i].name
+		occupys[i] = xtal.atom[i].occ
+	endfor
+
+	Variable multMin, distMin, Ni
+	for (j=0,distMin=Inf; j<Natoms; j+=1)
+		lj = labels[j]
+		Wave xyzj = Extend_XYZ_by1(atomRefs[j])
+		MatrixOP/FREE xyzj = (direct x xyzj^t )^t	// xyz of atoms of type atomj in real units
+		Wave xyzMid = LatticeSym#FindCentralAtom(xyzj)	// find the centermost atom in xyzj, not average, an actual atom position
+
+		for (i=j;i<Natoms;i+=1)
+			li = labels[i]
+			if (BondExists(xtal,lj,li))							// skip existing bonds
+				continue
+			endif
+
+			Wave xyzi = Extend_XYZ_by1(atomRefs[i])
+			MatrixOP/FREE xyzi = (direct x xyzi^t )^t		// xyz of atoms of type atomi in real units
+		 	Ni = DimSize(xyzi,0)
+		
+			// find the atom in xyzi that is closest to xyzMid
+			MatrixOP/FREE distij = sqrt(sumRows( magSqr(xyzi - rowRepeat(xyzMid,Ni)) ))
+			distij = distij > distCurrent ? distij : Inf	// avoid two atoms at less than current distance
+			WaveStats/M=1/Q distij
+			if (distij[V_minloc] < distMin)					// new smallest distance
+				distMin = distij[V_minloc]						// closest distance from an atomj to an atomi
+				MatrixOP/FREE sumNeighbors = sum( greater( 1e-2, Abs(distij - rowRepeat(distMin,Ni)) ) )
+				multMin = sumNeighbors[0]						// number of neighbors of atomj at distance of distMin
+				ljMin = lj
+				liMin = li
+			endif
+		endfor
+	endfor
+
+	if (numtype(distMin)==0 && distMin < blen)				// found a valid looking bond, add it
+		Variable Nbonds = 	xtal.Nbonds
+		xtal.bond[Nbonds].label0 = ljMin
+		xtal.bond[Nbonds].label1 = liMin
+		xtal.bond[Nbonds].N = 1
+		xtal.bond[Nbonds].len[0] = distMin
+		xtal.bond[Nbonds].len[4] = multMin					// NOTE, this is a mis-use of N, it must be fixed later
+		Nbonds += 1
+		xtal.Nbonds = Nbonds
+		return 0
+	endif
+	return 1															// nothing found
+End
+//
+Static Function BondExists(xtal,l0,l1)
+	STRUCT crystalStructure &xtal
+	String l0, l1
+
+	Variable i
+	for (i=0;i<xtal.Nbonds;i+=1)
+		if (CmpStr(l0,xtal.bond[i].label0)==0 && CmpStr(l1,xtal.bond[i].label1)==0)
+			return 1
+		elseif (CmpStr(l0,xtal.bond[i].label1)==0 && CmpStr(l1,xtal.bond[i].label0)==0)
+			return 1
+		endif
+	endfor
+	return 0
+End
+
+
+
+#else
+
+#ifdef USE_BONDS_VERSION_1
 
 Function ShowCalculatedBonds_xtal()
 	// Show Calculatee Bonds for current xtal. Only Prints, does NOT change anything.
@@ -40,15 +320,15 @@ Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bo
 	Variable bLen		// maximum distance that gets a bond
 	bLen = ParamIsDefault(bLen) || blen<=0 || numtype(blen) ? LatticeSym_maxBondLen : bLen
 
-	if (!WaveExists(xyz))
-		return $""
-	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1)<3)
-		return $""
-	endif
-
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
 		DoAlert 0, "ERROR AnalyzeBonds()\rno lattice structure found"
+		return $""
+	endif
+
+	if (!WaveExists(xyz))
+		return $""
+	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1) < xtal.dim)
 		return $""
 	endif
 
@@ -77,7 +357,7 @@ Function/WAVE MakeBondList_blen(prefix,xyz,[bLen])	// This is a guess when no bo
 End
 
 
-Function AnalyzeBonds(xtal, FinalBonds)
+Static Function AnalyzeBonds(xtal, FinalBonds)
 	STRUCT crystalStructure &xtal
 	Struct ExcessiveBondList &FinalBonds			// result gets returned in FinalBonds
 
@@ -104,7 +384,7 @@ Function AnalyzeBonds(xtal, FinalBonds)
 		Zj = NumberByKey("Zatom",note(atomj),"=")
 		labelj = StringByKey("atomType",note(atomj),"=")
 		labelList += labelj + ";"
-		Wave xyz0 = extendedMoreCells(atomj)
+		Wave xyz0 = Extend_XYZ_by1(atomj)
 
 		MatrixOP/FREE xyz0 = (direct x xyz0^t )^t	// xyz of atoms of type atomj in real units
 		Nj = DimSize(xyz0,0)
@@ -122,7 +402,7 @@ Function AnalyzeBonds(xtal, FinalBonds)
  			Zi = NumberByKey("Zatom",note(atomi),"=")
 			labeli = StringByKey("atomType",note(atomi),"=")
 
-			Wave xyz1 = extendedMoreCells(atomi)
+			Wave xyz1 = Extend_XYZ_by1(atomi)
 			MatrixOP/FREE xyz1 = (direct x xyz1^t )^t	// xyz of atoms of type atomi in real units
  			Ni = DimSize(xyz1,0)
 
@@ -218,9 +498,7 @@ Function AnalyzeBonds(xtal, FinalBonds)
 		endif
 	endfor
 	FinalBonds.unused = unUsedAtoms									// list of un-used atom types
-
 	return 0
-
 End
 //
 Static Function DetermineOneAtomBonds(l0, AllBonds, OneLabelBonds)
@@ -289,44 +567,13 @@ Static Function DetermineOneAtomBonds(l0, AllBonds, OneLabelBonds)
 End
 
 
-Static Function/WAVE extendedMoreCells(xyz0)
-	Wave xyz0
-	Variable i
-
-	Variable dim, Noff						// dimension (2 or 3), number of offsets
-	if (DimSize(xyz0,1) == 3)			// 3D
-		dim = 3
-		Noff = 27
-		Make/N=(Noff,dim)/D/FREE offsets = {{0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2},{0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2},{0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2}}
-	elseif (DimSize(xyz0,1) == 2)		// 2D
-		dim = 2
-		Noff = 9
-		Make/n=(Noff,dim)/D/FREE offsets = {{0,1,2,0,1,2,0,1,2}, {0,0,0,1,1,1,2,2,2}}
-	else
-		return $""
-	endif
-
-	Variable N0=DimSize(xyz0,0), i1, j
-	Make/N=(Noff*N0,dim)/D/FREE xyz
-	for (i=0;i<(Noff*N0);i+=N0)
-		i1 = i + (N0-1)
-		j = floor(i/N0)
-		xyz[i,i1][] = xyz0[p-i][q] + offsets[j][q]
-	endfor
-	return xyz
-End
-
-
-
-//Static 
-Structure ExcessiveBondList
+Static Structure ExcessiveBondList
 	int16 N						// number of bonds in len (often just 1)
 	Struct tempBondStructure all[100]
 	char unused[400]			// list of unused labels
 EndStructure
 //
-//Static 
-Structure tempBondStructure	// defines the type of bond between two atom types
+Static Structure tempBondStructure	// defines the type of bond between two atom types
 	int16 valid
 	char label0[60]			// label for first atom, usually starts with atomic symbol
 	char label1[60]			// label for second atom, usually starts with atomic symbol
@@ -427,3 +674,35 @@ Static Function BSequal(b0,b1)
 	endif
 	return 1							// everything matches
 End
+
+#else
+	// neither USE_BONDS_VERSION_1 nor USE_BONDS_VERSION_2 are defined,  defaults to the one in AtomView.ipf
+#endif
+#endif
+
+
+
+Static Function/WAVE Extend_XYZ_by1(xyz0)
+	// extend xyz in all directions by ±1
+	Wave xyz0					// wave with RELATIVE coordinates in base cell, NOT altered
+
+	Variable dim = (DimSize(xyz0,1) == 2) ? 2 : 3	// dimension (2 or 3)
+	if (dim == 3)								// 3D
+		Make/D/FREE offsets = { {-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1},{-1,-1,-1,0,0,0,1,1,1,-1,-1,-1,0,0,0,1,1,1,-1,-1,-1,0,0,0,1,1,1},{-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1} }
+	elseif (dim == 2)							// 2D
+		Make/D/FREE offsets = { {-1,0,1,-1,0,1,-1,0,1}, {-1,-1,-1,0,0,0,1,1,1} }
+	else
+		return $""
+	endif
+	Variable Noff = DimSize(offsets,0)	// number of offsets
+
+	Variable N0=DimSize(xyz0,0), Nmax=Noff*N0, i, j, i1
+	Make/N=(Nmax,dim)/D/FREE xyz
+	for (i=0;i<Nmax;i+=N0)
+		i1 = i + (N0-1)
+		j = floor(i/N0)
+		xyz[i,i1][] = xyz0[p-i][q] + offsets[j][q]
+	endfor
+	return xyz
+End
+
