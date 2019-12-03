@@ -163,6 +163,11 @@ Static Function AddBondsToXtal(xtal,blen)
 			Nbonds += 1
 		endif
 	endfor
+	if (Nbonds<1)
+		xtal.Nbonds = 0
+		printf "NO bonds found  (in %.3g sec):\r", Nbonds, (stopMSTimer(-2)-tick0)*1e-6
+		return 1
+	endif
 	Redimension/N=(Nbonds,-1) bondsWave
 
 	// now check if too many bonds going to one atom
