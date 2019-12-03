@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.24								// based on LatticeSym_6.55
+#pragma version = 7.25								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -252,6 +252,8 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.22, changed formtting of how an atom is printed
 //	with version 7.23, fixed menu item that was capturing command-X, write to XML\XTAL file
 //	with version 7.24, fixed up FindCentralAtom(xyz) and UnBondedAtomsList(xtal)
+//	with version 7.25, added: MenuIfXtalIsRhomb(), ShowOtherSetting_HexRhomb(), ConvertHexagonal2Rhombohedral(), ConvertRhombohedral2Hexagonal()
+//							 removed: Rhom2HexFractonal(), Hex2RhomFractonal()
 
 
 //	Rhombohedral Transformation:
@@ -329,6 +331,8 @@ Menu "Analysis"
 		help={"Calculate mu (absorption factor) using current lattice structure"}
 		"Find Closest hkl from d-spacing or Q",findClosestHKL(NaN)
 		help={"Knowing either the d-spacing or the Q, find closest hkl's"}
+		LatticeSym#MenuIfXtalIsRhomb("\\M0Show Hex <--> Rhomb"), ShowOtherSetting_HexRhomb()
+		help={"If current xtal is rhombohedral is shows Hexagonl, and vice versa if permitted"}
 		"\\M0Space Group number <--> symmetry",symmtry2SG("")
 		help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 		"Describe the Symmetry Operations", DescribeSymOps("")
@@ -377,6 +381,15 @@ Static Function/S MenuItemIfCromerPresent(item)		// Shows menu item if CromerLib
 	String item			// the string that appears in the menu
 	Variable present = strlen(WinList("CromerLiberman.ipf","","WIN:129"))>0
 	return SelectString(present,"(","")+item
+End
+
+Static Function/S MenuIfXtalIsRhomb(item)
+	String item			// the string that appears in the menu
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with current xtal
+		return "(" + item
+	endif
+	return SelectString(LatticeSym#isRhombohedralSG(xtal.SpaceGroup),"(","") + item
 End
 
 
@@ -7999,50 +8012,158 @@ ThreadSafe Function/C Rhom2Hex(aR,alpha)		// convert lattice constants
 End
 
 
-// This is just a demonstration, change it to make it useful
-Static Function Rhom2HexFractonal(xtal)					// converts hexagonal --> rhombohedral, fractional coordinates
-	STRUCT crystalStructure &xtal
-
-	Variable/C a_c = Rhom2Hex(xtal.a,xtal.alpha)
-	print "   Starting from Rhombohedral"
-	printf "aHex = %g nm,   cHex = %g nm\r",real(a_c), imag(a_c)
-
-	Wave directR = directFrom_xtal(xtal)			// Obverse Rhombohedral direct lattice
-	Wave directH = HexLatticeFromRhom(directR)	// returns a Hexagonal direct lattice
-
-	Make/N=3/D/FREE xyzR								// one atom's fractional rhombohedral coordinates
-	Variable i
-	for (i=0; i < xtal.N; i+=1)
-		xyzR = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
-		MatrixOP/FREE xyzH = Inv(directH) x directR x xyzR
-		MatrixOp/FREE xyzH = xyzH - floor(xyzH)	// atom's fractional hexagonal coordinates
-		xyzH = mod(xyzH,1)
-		xyzH = xyzH<1e-12 ? 0 : mod(xyzH,1)		// a fractional coord < 1e-12 is 0
-		printf "fractional: Rhom=%s  -->  Hex=%s\r",vec2str(xyzR,zeroThresh=1e-12),vec2str(xyzH,zeroThresh=1e-12)
-	endfor
+Function ShowOtherSetting_HexRhomb()
+	// this ONLY does something for SG in {146,148,155,160,161,166,167}
+	// for the current xtal, if it is Rhombohedral, this dispalys corresponding Hexagonal values
+	// if the current xtal is Hexagonal, this dispalys corresponding Rhombohedral values
+	STRUCT crystalStructure xtal
+	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
+		DoAlert 0, "ERROR ShowOtherSetting_HexRhomb()\rno lattice structure found"
+		return 1
+	elseif (isRhombohedralXtal(xtal))
+		print "Converting from: Rhombohedral --> Hexagonal"
+		ConvertRhombohedral2Hexagonal(xtal)
+	else
+		print "Converting from: Hexagonal --> Rhombohedral"
+		ConvertHexagonal2Rhombohedral(xtal)
+	endif
+	print_crystalStructure(xtal, brief=1)
+	return 0
 End
 //
-// This is just a demonstration, change it to make it useful
-Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral, fractional coordinates
+Static Function ConvertHexagonal2Rhombohedral(xtal)
+	// this accepts a Hexagonal input with SG in {146,148,155,160,161,166,167}
+	// this CHANGES xtal to the corresponding Rhombohedral values
 	STRUCT crystalStructure &xtal
 
+	if (!LatticeSym#isRhombohedralSG(xtal.SpaceGroup))
+		return 1							// only works for SG in {146,148,155,160,161,166,167}
+	elseif (strsearch(xtal.SpaceGroupID, ":H",0)<0)
+		return 1							// only works for Hex --> Rhomb
+	endif
+
 	Variable/C a_alpha = Hex2Rhom(xtal.a, xtal.c)
-	print "   Starting from Hexagonal"
-	printf "aRhom = %g nm,   alphaRhom = %g°\r",real(a_alpha), imag(a_alpha)
+	Variable aR=real(a_alpha), alpha=imag(a_alpha)
+	xtal.a = aR		;	xtal.alpha = alpha
+	xtal.b = aR		;	xtal.beta = alpha
+	xtal.c = aR		;	xtal.gam = alpha
+
+	String id = xtal.SpaceGroupID
+	id = ReplaceString(":H",id,":R")
+	xtal.SpaceGroupID = id
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)
+
+	String desc = xtal.desc
+	desc = ReplaceString("Hexagonal", desc, "Rhombohedral")
+	desc = ReplaceString("Hex", desc, "Rhomb")
+	xtal.desc = desc
 
 	Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
 	Wave directR = RhomLatticeFromHex(directH)	// Obverse Rhombohedral direct lattice from Hexagonal
-
-	Make/N=3/D/FREE xyzH								// one atom's fractional hexagonal coordinates
+	Make/N=3/D/FREE xyzH								// fractional hexagonal coordinates of one atom
 	Variable i
 	for (i=0; i < xtal.N; i+=1)
 		xyzH = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
 		MatrixOP/FREE xyzR = Inv(directR) x directH x xyzH
 		MatrixOp/FREE xyzR = xyzR - floor(xyzR)	// atom's fractional rhombohedral coordinates
 		xyzR = xyzR<1e-12 ? 0 : mod(xyzR,1)		// a fractional coord < 1e-12 is 0
-		printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
+		xtal.atom[i].x = xyzR[0]
+		xtal.atom[i].y = xyzR[1]
+		xtal.atom[i].z = xyzR[2]
 	endfor
+
+	LatticeSym#setDirectRecip(xtal)				// do this to get correct direct & recip
+	return 0
 End
+//
+Static Function ConvertRhombohedral2Hexagonal(xtal)
+	// this accepts a Rhombohedral input with SG in {146,148,155,160,161,166,167}
+	// this CHANGES xtal to the corresponding Hexagonal values
+	STRUCT crystalStructure &xtal
+
+	if (!LatticeSym#isRhombohedralSG(xtal.SpaceGroup))
+		return 1							// only works for SG in {146,148,155,160,161,166,167}
+	elseif (strsearch(xtal.SpaceGroupID, ":R",0)<0)
+		return 1							// only works for Rhomb --> Hex
+	endif
+	Variable/C a_c = Rhom2Hex(xtal.a, xtal.alpha)
+	xtal.a = real(a_c)		;	xtal.alpha = 90
+	xtal.b = real(a_c)		;	xtal.beta = 90
+	xtal.c = imag(a_c)		;	xtal.gam = 120
+
+	String id = xtal.SpaceGroupID
+	id = ReplaceString(":R",id,":H")
+	xtal.SpaceGroupID = id
+	xtal.SpaceGroupIDnum = SpaceGroupID2num(id)
+
+	String desc = xtal.desc
+	desc = ReplaceString("Rhombohedral", desc, "Hexagonal")
+	desc = ReplaceString("Rhomb", desc, "Hex")
+	xtal.desc = desc
+
+	Wave directR = directFrom_xtal(xtal)			// Obverse Rhombohedral direct lattice
+	Wave directH = HexLatticeFromRhom(directR)	// returns a Hexagonal direct lattice
+	Make/N=3/D/FREE xyzR								// fractional hexagonal coordinates of one atom
+	Variable i
+	for (i=0; i < xtal.N; i+=1)
+		xyzR = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
+		MatrixOP/FREE xyzHex = Inv(directH) x directR x xyzR
+		MatrixOp/FREE xyzHex = xyzHex - floor(xyzHex)	// atom's fractional rhombohedral coordinates
+		xyzHex = xyzHex<1e-12 ? 0 : mod(xyzHex,1)		// a fractional coord < 1e-12 is 0
+		xtal.atom[i].x = xyzHex[0]
+		xtal.atom[i].y = xyzHex[1]
+		xtal.atom[i].z = xyzHex[2]
+	endfor
+
+	LatticeSym#setDirectRecip(xtal)				// do this to get correct direct & recip
+	return 0
+End
+
+
+//	// This is just a demonstration, change it to make it useful
+//	Static Function Rhom2HexFractonal(xtal)					// converts hexagonal --> rhombohedral, fractional coordinates
+//		STRUCT crystalStructure &xtal
+//	
+//		Variable/C a_c = Rhom2Hex(xtal.a,xtal.alpha)
+//		print "   Starting from Rhombohedral"
+//		printf "aHex = %g nm,   cHex = %g nm\r",real(a_c), imag(a_c)
+//	
+//		Wave directR = directFrom_xtal(xtal)			// Obverse Rhombohedral direct lattice
+//		Wave directH = HexLatticeFromRhom(directR)	// returns a Hexagonal direct lattice
+//	
+//		Make/N=3/D/FREE xyzR								// one atom's fractional rhombohedral coordinates
+//		Variable i
+//		for (i=0; i < xtal.N; i+=1)
+//			xyzR = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
+//			MatrixOP/FREE xyzH = Inv(directH) x directR x xyzR
+//			MatrixOp/FREE xyzH = xyzH - floor(xyzH)	// atom's fractional hexagonal coordinates
+//			xyzH = mod(xyzH,1)
+//			xyzH = xyzH<1e-12 ? 0 : mod(xyzH,1)		// a fractional coord < 1e-12 is 0
+//			printf "fractional: Rhom=%s  -->  Hex=%s\r",vec2str(xyzR,zeroThresh=1e-12),vec2str(xyzH,zeroThresh=1e-12)
+//		endfor
+//	End
+//	//
+//	// This is just a demonstration, change it to make it useful
+//	Static Function Hex2RhomFractonal(xtal)			// converts hexagonal --> rhombohedral, fractional coordinates
+//		STRUCT crystalStructure &xtal
+//	
+//		Variable/C a_alpha = Hex2Rhom(xtal.a, xtal.c)
+//		print "   Starting from Hexagonal"
+//		printf "aRhom = %g nm,   alphaRhom = %g°\r",real(a_alpha), imag(a_alpha)
+//	
+//		Wave directH = directFrom_xtal(xtal)			// Hexagonal direct lattice
+//		Wave directR = RhomLatticeFromHex(directH)	// Obverse Rhombohedral direct lattice from Hexagonal
+//	
+//		Make/N=3/D/FREE xyzH								// one atom's fractional hexagonal coordinates
+//		Variable i
+//		for (i=0; i < xtal.N; i+=1)
+//			xyzH = {xtal.atom[i].x, xtal.atom[i].y, xtal.atom[i].z}
+//			MatrixOP/FREE xyzR = Inv(directR) x directH x xyzH
+//			MatrixOp/FREE xyzR = xyzR - floor(xyzR)	// atom's fractional rhombohedral coordinates
+//			xyzR = xyzR<1e-12 ? 0 : mod(xyzR,1)		// a fractional coord < 1e-12 is 0
+//			printf "fractional: Hex=%s  -->  Rhom=%s\r",vec2str(xyzH,zeroThresh=1e-12),vec2str(xyzR,zeroThresh=1e-12)
+//		endfor
+//	End
 //
 //	Static Function test_Hex_Rhom()
 //		STRUCT crystalStructure xtal
