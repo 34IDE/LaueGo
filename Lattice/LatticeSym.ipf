@@ -389,7 +389,12 @@ Static Function/S MenuIfXtalIsRhomb(item)
 	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with current xtal
 		return "(" + item
 	endif
-	return SelectString(LatticeSym#isRhombohedralSG(xtal.SpaceGroup),"(","") + item
+	if (!LatticeSym#isRhombohedralSG(xtal.SpaceGroup))
+		item = "(" + item
+		item = ReplaceString("(\\M0", item,"(")
+	endif
+	return item
+//	return SelectString(LatticeSym#isRhombohedralSG(xtal.SpaceGroup),"(","") + item
 End
 
 
@@ -2969,7 +2974,7 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	PopupMenu popupLatticeEdit,pos={35,358},size={150,20},proc=LatticeSym#LatticeEditPopMenuProc,title="Utility & Atom Edit"
 	PopupMenu popupLatticeEdit,help={"Provides supprort for editing atoms and other crystalographic changes"}
 	String mstr
-	sprintf mstr, "\"Find Closest hkl%s;Space Group number <--> symmetry%s;Describe the Symmetry Operations%s;angle between two hkl's%s;   Edit Atom Positions%s;   Re-Calc Bonds%s;   Change Current Setting%s\"", HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS
+	sprintf mstr, "\"Find Closest hkl%s;Space Group number <--> symmetry%s;Describe the Symmetry Operations%s;Show Hex <--> Rhomb;angle between two hkl's%s;   Edit Atom Positions%s;   Re-Calc Bonds%s;   Change Current Setting%s\"", HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS,HORIZ_ELLIPSIS
 	PopupMenu popupLatticeEdit,fSize=14,mode=0,value= #mstr
 
 	Button buttonAtomView,pos={35,383},size={150,20},proc=LatticePanelButtonProc,title="Add Atom View..."
@@ -3500,6 +3505,8 @@ Static Function LatticeEditPopMenuProc(pa) : PopupMenuControl		// used in the La
 		symmtry2SG("")											// help={"find the Space Group number from symmetry string,  e.g. Pmma, or sym from number"}
 	elseif (strsearch(popStr,"Describe the Symmetry Operations",0,2)>=0)
 		DescribeSymOps("", printIt=1)
+	elseif (strsearch(popStr,"Show Hex <--> Rhomb",0,2)>=0)
+		ShowOtherSetting_HexRhomb()
 	elseif (strsearch(popStr,"angle between two hkl's",0,2)>=0)
 		angleBetweenHKLs(NaN,NaN,NaN,  NaN,NaN,NaN, printIt=1)
 	elseif (strsearch(popStr,"Edit Atom Positions",0,2)>=0)
@@ -8017,18 +8024,26 @@ Function ShowOtherSetting_HexRhomb()
 	// for the current xtal, if it is Rhombohedral, this dispalys corresponding Hexagonal values
 	// if the current xtal is Hexagonal, this dispalys corresponding Rhombohedral values
 	STRUCT crystalStructure xtal
+	String header=""
+	Variable err=0
+	print " "
 	if (FillCrystalStructDefault(xtal))				//fill the lattice structure with test values
-		DoAlert 0, "ERROR ShowOtherSetting_HexRhomb()\rno lattice structure found"
-		return 1
+		print "ERROR ShowOtherSetting_HexRhomb()\rno lattice structure found"
+		err = 1
 	elseif (isRhombohedralXtal(xtal))
-		print "Converting from: Rhombohedral --> Hexagonal"
-		ConvertRhombohedral2Hexagonal(xtal)
+		header = "Converting from: Rhombohedral --> Hexagonal"
+		err = ConvertRhombohedral2Hexagonal(xtal)
 	else
-		print "Converting from: Hexagonal --> Rhombohedral"
-		ConvertHexagonal2Rhombohedral(xtal)
+		header = "Converting from: Hexagonal --> Rhombohedral"
+		err = ConvertHexagonal2Rhombohedral(xtal)
 	endif
-	print_crystalStructure(xtal, brief=1)
-	return 0
+	if (!err)
+		print header
+		print_crystalStructure(xtal, brief=1)
+	else
+		printf "Warning -- Un-able to Convert for SG=%d, probably SG not in {146,148,155,160,161,166,167}\r",xtal.SpaceGroup
+	endif
+	return err
 End
 //
 Static Function ConvertHexagonal2Rhombohedral(xtal)
@@ -8099,6 +8114,7 @@ Static Function ConvertRhombohedral2Hexagonal(xtal)
 	String desc = xtal.desc
 	desc = ReplaceString("Rhombohedral", desc, "Hexagonal")
 	desc = ReplaceString("Rhomb", desc, "Hex")
+	desc = ReplaceString("Rhom", desc, "Hex")
 	xtal.desc = desc
 
 	Wave directR = directFrom_xtal(xtal)			// Obverse Rhombohedral direct lattice
