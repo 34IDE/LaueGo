@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.96
+#pragma version = 0.97
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 
@@ -15,6 +15,7 @@ Menu LaueGoMainMenuName
 		MenuItemIfWaveClassExists("Enter Measured Energies for Calibration","IndexedPeakList*",""),EnterMeasuredEnergies()
 		MenuItemIfWaveClassExists("Set Calibration Input Data for Optimize","IndexedPeakList*",""),MakeCalibData(NaN)
 		MenuItemIfWaveClassExists("Optimize All 3 Detector Geometrys","DetectorCalibrationList*",""),OptimizeAll($"",$"",$"")
+		"Change default angleOffset for detector 0", SetCalibration_angleOffset(NaN)
 		"-"
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on 1 Detector","DetectorCalibrationList*",""),GraphCalibrationDetector($"")
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on All Detectors","DetectorCalibrationList*",""),GraphAllCalibrationDetector()
@@ -175,6 +176,35 @@ End
 
 // ==============================================================================================
 // ==================================== Start of Optimization ===================================
+
+Function SetCalibration_angleOffset(angle)
+	// Used to change the value used for angleOffset in errVertAngle(), called by CalibrationErrorRPrho()
+	// This was added to make life easier for 34-ID-C, for 34-ID-E, the default of 0 is correct for 34-ID-E
+	Variable angle
+	if (numtype(angle) || abs(angle)>180)
+		print "The µ Laue Diffraction at 34-ID-E, usually uses 0¡"
+		print "The Bragg CDI at 34-ID-C, usually uses 90¡"
+		angle = NumVarOrDefault("root:Packages:geometry:CalibrationAngleOffset", 0)
+		Prompt angle, "Requested rotaton¡ about beam for detector0, 0=up, 90=-X"
+		DoPrompt "New angleOffst¡", angle
+		if (V_flag)
+			return NaN
+		endif
+	endif
+	if (numtype(angle) || abs(angle)>180)
+		printf "angleOffset is INvalid, nothing done"
+		return NaN
+	endif
+	Variable angleOld = NumVarOrDefault("root:Packages:geometry:CalibrationAngleOffset", 0)
+	if (angleOld==angle)
+		printf "Leaving Calibration default angleOffset at %g¡\r",angle
+	else
+		printf "Changing Calibration default angleOffset from %g¡ --> %g¡\r",angleOld,angle
+	endif
+	Variable/G root:Packages:geometry:CalibrationAngleOffset = angle
+	return angle
+End
+
 
 //	The user supplies ONLY columns [0,2], [4-4], [7], the rest are calculated.
 //
@@ -894,7 +924,7 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 
 	// find error term that sets orientation about the incident beam.
 	Variable angleOffset=NumberByKey("angleOffset",noteStr,"=")	// rotation about incident beam (usually zero)
-	angleOffset = numtype(angleOffset) ? 0 : angleOffset
+	angleOffset = numtype(angleOffset) || abs(angleOffset)>=360 ? NumVarOrDefault("root:Packages:geometry:CalibrationAngleOffset", 0) : angleOffset
 	STRUCT detectorGeometry d								// a local version of detector structure
 	Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)			// fill d to match this orientation
 	Variable errOrient = errVertAngle(d,angleOffset)	// error to use for orienting system along Y-axs (controls rotation about incident beam)
