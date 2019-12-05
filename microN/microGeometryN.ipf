@@ -1028,9 +1028,10 @@ ThreadSafe Function/WAVE XYZ2pixelVEC(d,xyz,[depth])	// find pixel position (px,
 	endif
 
 	Make/N=3/D/FREE d_P = d.P[p]
-	Make/N=(3,3)/D/FREE rho = { {d.rho00, d.rho01, d.rho02}, {d.rho10, d.rho11, d.rho12}, {d.rho20, d.rho21, d.rho22} }
+	Make/N=(3,3)/D/FREE rhoT = { {d.rho00, d.rho01, d.rho02}, {d.rho10, d.rho11, d.rho12}, {d.rho20, d.rho21, d.rho22} }
+	// rhotT is transpose of rho, which is also the inverse of rho
 
-	MatrixOP/FREE xyzp = (rho x (xyz^t))^t - rowRepeat(d_P,N)	// xyz' = (rho x xyz) - P
+	MatrixOP/FREE xyzp = (rhoT x (xyz^t))^t - rowRepeat(d_P,N)	// xyz' = (rhoT x xyz) - P
 	// remember (xyz) = rho x [ (x' y' z') + P ]
 	// xyzp[][3] is now the coordinates of the pixels transformed into detector (i.e. prime) space
 	//
@@ -1042,7 +1043,7 @@ ThreadSafe Function/WAVE XYZ2pixelVEC(d,xyz,[depth])	// find pixel position (px,
 	MatrixOP/FREE dxyzp = -rowRepeat(d_P,N) - xyzp		// Ær', subtract origin from (xp,yp,zp), this is direction of -kf
 
 	if (depth!=0)														// a non-zero depth, so modify (xp,yp,zp) to shift the origin by depth (shifts r')
-		Make/N=3/D/FREE depthVec = rho[p][2] * depth
+		Make/N=3/D/FREE depthVec = rhoT[p][2] * depth
 		MatrixOP/FREE xyzp = xyzp + rowRepeat(depthVec,N)
 		// remember:   xyz' = ( rho x xyz ) - P
 		// shifted (xp,yp,zp) by depth*ki, all in prime space
