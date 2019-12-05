@@ -1,8 +1,10 @@
+#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.97
+#pragma version = 0.99
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
+#include "ColorNames", version >=2.05
 
 Static Constant hc = 1.239841984					// keV-nm
 
@@ -15,7 +17,8 @@ Menu LaueGoMainMenuName
 		MenuItemIfWaveClassExists("Enter Measured Energies for Calibration","IndexedPeakList*",""),EnterMeasuredEnergies()
 		MenuItemIfWaveClassExists("Set Calibration Input Data for Optimize","IndexedPeakList*",""),MakeCalibData(NaN)
 		MenuItemIfWaveClassExists("Optimize All 3 Detector Geometrys","DetectorCalibrationList*",""),OptimizeAll($"",$"",$"")
-		"Change default angleOffset for detector 0", SetCalibration_angleOffset(NaN)
+		"Show Beam Line Preference, the azimuth", ShowPreferredBeamLine()
+		"Set Beam Line Preference, the azimuth...",SetPreferredBeamLine("")
 		"-"
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on 1 Detector","DetectorCalibrationList*",""),GraphCalibrationDetector($"")
 		MenuItemIfWaveClassExists("  Graph Calibration Spots on All Detectors","DetectorCalibrationList*",""),GraphAllCalibrationDetector()
@@ -61,7 +64,7 @@ Function PrintCalibrationListHelp()
 	print " "
 	print "		Columns 6 & 7 are ALWAYS filled in by the optimization routine."
 	print " Set Afterward:		CalibrationList[][6]	= keV calculated from sample orientation and known lattice (does not use measured spot position)"
-	print " Set Afterward:		CalibrationList[][7]	= ÆE (eV),  ( CalibrationList[][5] - CalibrationList[][6] ) *1e3"
+	print " Set Afterward:		CalibrationList[][7]	= âˆ†E (eV),  ( CalibrationList[][5] - CalibrationList[][6] ) *1e3"
 End
 
 // ==============================================================================================
@@ -127,8 +130,8 @@ Function/T calcWireOrigin(H0,Hyc,F0,px,py)
 		g.wire.origin[1] += origin[1]
 		g.wire.origin[2] += origin[2]
 
-		depth = PixelxyzWire2depth(g,xyzPixel,xyz_yc,1)// returns depth (µm) for leading edge
-		depth += PixelxyzWire2depth(g,xyzPixel,xyz_yc,0)// returns depth (µm) for trailing edge
+		depth = PixelxyzWire2depth(g,xyzPixel,xyz_yc,1)// returns depth (Âµm) for leading edge
+		depth += PixelxyzWire2depth(g,xyzPixel,xyz_yc,0)// returns depth (Âµm) for trailing edge
 		depth /= 2											// This is Z of the beam from origin
 
 		xyz0 = {X0,Y0,Z0}
@@ -158,8 +161,8 @@ Function/T calcWireOrigin(H0,Hyc,F0,px,py)
 	g.wire.origin[1] = origin[1]
 	g.wire.origin[2] = origin[2]
 
-	depth = PixelxyzWire2depth(g,xyzPixel,xyz_yc,1)		// returns depth (µm) for leading edge
-	depth += PixelxyzWire2depth(g,xyzPixel,xyz_yc,0)	// returns depth (µm) for trailing edge
+	depth = PixelxyzWire2depth(g,xyzPixel,xyz_yc,1)		// returns depth (Âµm) for leading edge
+	depth += PixelxyzWire2depth(g,xyzPixel,xyz_yc,0)	// returns depth (Âµm) for trailing edge
 	depth /= 2												// This is Z of the beam from origin
 	printf "average depth = %g\r",depth
 	if (abs(depth)>1e-6)
@@ -177,35 +180,6 @@ End
 // ==============================================================================================
 // ==================================== Start of Optimization ===================================
 
-Function SetCalibration_angleOffset(angle)
-	// Used to change the value used for angleOffset in errVertAngle(), called by CalibrationErrorRPrho()
-	// This was added to make life easier for 34-ID-C, for 34-ID-E, the default of 0 is correct for 34-ID-E
-	Variable angle
-	if (numtype(angle) || abs(angle)>180)
-		print "The µ Laue Diffraction at 34-ID-E, usually uses 0¡"
-		print "The Bragg CDI at 34-ID-C, usually uses 90¡"
-		angle = NumVarOrDefault("root:Packages:geometry:CalibrationAngleOffset", 0)
-		Prompt angle, "Requested rotaton¡ about beam for detector0, 0=up, 90=-X"
-		DoPrompt "New angleOffst¡", angle
-		if (V_flag)
-			return NaN
-		endif
-	endif
-	if (numtype(angle) || abs(angle)>180)
-		printf "angleOffset is INvalid, nothing done"
-		return NaN
-	endif
-	Variable angleOld = NumVarOrDefault("root:Packages:geometry:CalibrationAngleOffset", 0)
-	if (angleOld==angle)
-		printf "Leaving Calibration default angleOffset at %g¡\r",angle
-	else
-		printf "Changing Calibration default angleOffset from %g¡ --> %g¡\r",angleOld,angle
-	endif
-	Variable/G root:Packages:geometry:CalibrationAngleOffset = angle
-	return angle
-End
-
-
 //	The user supplies ONLY columns [0,2], [4-4], [7], the rest are calculated.
 //
 //	CalibrationList[][0,2]	= [REQUIRED] hkl for each measured spot
@@ -213,7 +187,7 @@ End
 //	CalibrationList[][5]	= [OPTIONAL] keV, MEASURED energy of spot (otherwise leave as NaN)
 //
 //	CalibrationList[][6]	= [CALCULATED] keV calculated from sample orientation and known lattice (does NOT use measured spot position)
-//	CalibrationList[][7]	= [CALCULATED] ÆE (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
+//	CalibrationList[][7]	= [CALCULATED] âˆ†E (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
 
 Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by OptimizeAll()
 	Variable dNum
@@ -316,6 +290,15 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 	endif
 	printf "	starting with a sample rotation of  {%g, %g, %g}\r",rhox,rhoy,rhoz
 
+	Variable azimuth	// rotation about incident beam (usually 90Â° for 34-ID-E, 180Â° for 34-ID-C)
+	STRUCT BeamLinePreference BLp										// 1st look in BL preferences
+	LoadPackagePreferences "microGeo" , "microBLprefs", 0, BLp
+	if (V_bytesRead>1)				// read the BLp
+		azimuth = numtype(BLp.azimuth) || abs(BLp.azimuth)>180 ? NaN : BLp.azimuth
+	endif
+	azimuth = numtype(azimuth) || abs(azimuth)>180 ? ProbableAzimuthalAngleDetector(g.d[0]) : azimuth	// 2nd try to guess from detector0
+	azimuth = numtype(azimuth) || abs(azimuth)>180 ? 90 : azimuth	// 3rd give up and just use 90Â°
+
 	String name = CleanupName("CalibrationList"+ReplaceString("FullPeakList",NameOfWave(FullPeakList),""),0)
 	name = name[0,29]+num2istr(dNum)
 	Make/N=(Npeaks,8)/O/D $name/Wave=cList = NaN					// list of measured reflections used to calibrate the detector, {px,py,qx,qy,yz,keV,theta}
@@ -334,6 +317,7 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 	noteStr = ReplaceNumberByKey("rhox",noteStr,rhox,"=")					// rotation vector for sample
 	noteStr = ReplaceNumberByKey("rhoy",noteStr,rhoy,"=")
 	noteStr = ReplaceNumberByKey("rhoz",noteStr,rhoz,"=")
+	noteStr = ReplaceNumberByKey("azimuth",noteStr,azimuth,"=")
 	Note/K cList, noteStr
 
 	Variable tolerance, i									// dpixel tolerance to find indexed spots that match fitted peaks
@@ -666,9 +650,9 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		if (printIt)
 			printf "Detector %d\r",dNum
 			Rangle = sqrt((g.d[dNum].R[0])^2 + (g.d[dNum].R[1])^2 + (g.d[dNum].R[2])^2)*180/PI
-			printf "started at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %g¡\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rstart
+			printf "started at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %gÂ°\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rstart
 			Variable angle = sqrt(rhox^2 + rhoy^2 + rhoz^2)*180/PI
-			printf "sample started at axis = {%g, %g, %g},   |sample angle| = %g¡\r",rhox,rhoy,rhoz,angle
+			printf "sample started at axis = {%g, %g, %g},   |sample angle| = %gÂ°\r",rhox,rhoy,rhoz,angle
 		endif
 
 		failed = OptimizeDetectorCalibration(d,cList)
@@ -696,17 +680,17 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 			if (seconds>4)
 				printf "\tOptimization toook %s\r",Secs2Time(seconds,5,1)
 			endif
-			printf "ended at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %g¡\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rend
+			printf "ended at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %gÂ°\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rend
 			if (dNum==0)
-				printf "  final sample rotation is  {%g,%g,%g},   |sample angle| = %g¡",rhox,rhoy,rhoz,sqrt(rhox^2 + rhoy^2 + rhoz^2)*180/PI
+				printf "  final sample rotation is  {%g,%g,%g},   |sample angle| = %gÂ°",rhox,rhoy,rhoz,sqrt(rhox^2 + rhoy^2 + rhoz^2)*180/PI
 				Make/N=3/D/FREE drho = {rhox-rhox0, rhoy-rhoy0, rhoz-rhoz0}
 				if (numtype(sum(drho))==0)
-					printf ",    %srho = %s, |%srho|=%.2g¡\r",GDELTA,vec2str(drho,fmt="%.2g",sep=", "),GDELTA,norm(drho)*180/PI
+					printf ",    %srho = %s, |%srho|=%.2gÂ°\r",GDELTA,vec2str(drho,fmt="%.2g",sep=", "),GDELTA,norm(drho)*180/PI
 				endif
 				printf "\r"
 			endif
 			printf "error started at %g,   reduced to  %g,   after %d iterations\r",NumberByKey("errStart",noteStr,"="),err, NumberByKey("V_OptNumIters",noteStr,"=")
-			printf "(final - initial) --> ÆR={%.2g,%.2g,%.2g},   ÆP={%.3f,%.3f,%.3f}\r",(d.R[0]-g.d[dNum].R[0]), (d.R[1]-g.d[dNum].R[1]), (d.R[2]-g.d[dNum].R[2]), (d.P[0]-g.d[dNum].P[0])/1000, (d.P[1]-g.d[dNum].P[1])/1000, (d.P[2]-g.d[dNum].P[2])/1000
+			printf "(final - initial) --> âˆ†R={%.2g,%.2g,%.2g},   âˆ†P={%.3f,%.3f,%.3f}\r",(d.R[0]-g.d[dNum].R[0]), (d.R[1]-g.d[dNum].R[1]), (d.R[2]-g.d[dNum].R[2]), (d.P[0]-g.d[dNum].P[0])/1000, (d.P[1]-g.d[dNum].P[1])/1000, (d.P[2]-g.d[dNum].P[2])/1000
 		endif
 		g.d[dNum] = d											// updagte structure with fitted values for this detector, was:  CopyDetectorGeometry(g.d[dNum],d)
 	endfor
@@ -776,7 +760,7 @@ Static Function FillOutCalibTable(clist)	// fill in columns that can be calculat
 		keVmeas = cList[m][5]									// measured energy
 		MatrixOp/FREE qvec = recip0 x hkl
 		qvec = abs(qvec)<1e-14 ? 0 : qvec
-		theta = asin(hc/keVmeas*norm(qvec)/4/PI)*180/PI // CalibrationList[][9] = theta (deg), obtained from calculated d(hkl) and measured energy using: Q = 4¹ sin(theta)/lambda
+		theta = asin(hc/keVmeas*norm(qvec)/4/PI)*180/PI // CalibrationList[][9] = theta (deg), obtained from calculated d(hkl) and measured energy using: Q = 4Ï€ sin(theta)/lambda
 
 		keVcalc = NaN
 		eV = NaN
@@ -806,7 +790,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	Variable rhox=NumberByKey("rhox",noteStr,"="), rhoy=NumberByKey("rhoy",noteStr,"="), rhoz=NumberByKey("rhoz",noteStr,"=")
 
 	d.R[0] = (d.R[0] == 0) ? 0.02 : d.R[0]			// avoid starting exactly on a zero
-	d.R[1] = (d.R[1] == 0) ? 0.02 : d.R[1]			// offset 0 angles by ~1¡
+	d.R[1] = (d.R[1] == 0) ? 0.02 : d.R[1]			// offset 0 angles by ~1Â°
 	d.R[2] = (d.R[2] == 0) ? 0.02 : d.R[2]
 	d.P[0] = (d.P[0] == 0) ? 500 : d.P[0]			// offset 0 positions by 0.5mm
 	d.P[1] = (d.P[1] == 0) ? 500 : d.P[1]
@@ -852,7 +836,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	noteStr = ReplaceNumberByKey("exectutionSec",noteStr,stopMSTimer(timer)*1e-6,"=")
 	Note/K CalibrationList, noteStr
 
-	Variable dR = 1e-8									// this gives a limit of (~0.5e-6)¡
+	Variable dR = 1e-8									// this gives a limit of (~0.5e-6)Â°
 	d.R[0]= round(W_Extremum[0]/dR)*dR			// round to 8 places
 	d.R[1]= round(W_Extremum[1]/dR)*dR
 	d.R[2]= round(W_Extremum[2]/dR)*dR
@@ -874,7 +858,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	d.timeMeasured = str
 
 	CalibrationList[][6] = CalculatedQvecEnergy(CalibrationList,p)	// fill calculated energy from sample orientation and known lattice constants
-	CalibrationList[][7] = ( CalibrationList[p][5] - CalibrationList[p][6] ) *1e3	// ÆE (eV)
+	CalibrationList[][7] = ( CalibrationList[p][5] - CalibrationList[p][6] ) *1e3	// âˆ†E (eV)
 
 	KillWaves/Z W_Extremum, W_OptGradient
 	return V_flag
@@ -923,11 +907,13 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	Variable rms = CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhoSample)	// returns error between measured and calculated spots, only called by OptimizeDetectorCalibration()
 
 	// find error term that sets orientation about the incident beam.
-	Variable angleOffset=NumberByKey("angleOffset",noteStr,"=")	// rotation about incident beam (usually zero)
-	angleOffset = numtype(angleOffset) || abs(angleOffset)>=360 ? NumVarOrDefault("root:Packages:geometry:CalibrationAngleOffset", 0) : angleOffset
+	Variable azimuth=NumberByKey("azimuth",noteStr,"=")	// rotation about incident beam (usually 90Â° for 34-ID-E, 180Â° for 34-ID-C)
+	azimuth = (numtype(azimuth) || abs(azimuth)>180) ? 90 : azimuth	// should never need this
+
+	// find error term that sets orientation about the incident beam.
 	STRUCT detectorGeometry d								// a local version of detector structure
 	Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)			// fill d to match this orientation
-	Variable errOrient = errVertAngle(d,angleOffset)	// error to use for orienting system along Y-axs (controls rotation about incident beam)
+	Variable errOrient = errAzimuthAngle(d,azimuth)	// error to use for orienting system around Z-axs (controls rotation about incident beam)
 	errOrient *= 10												// weight this error heavier
 
 	return sqrt(rms^2 + errOrient^2)
@@ -949,7 +935,7 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 	//	CalibrationList[][5]	= [OPTIONAL] keV, MEASURED energy of spot (otherwise leave as NaN)
 	//
 	//	CalibrationList[][6]	= [CALCULATED] keV calculated from sample orientation and known lattice (does NOT use measured spot position)
-	//	CalibrationList[][7]	= [CALCULATED] ÆE (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
+	//	CalibrationList[][7]	= [CALCULATED] âˆ†E (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
 	//
 	// if CalibrationList[][5] is valid, then have energy
 	// if CalibrationList[][3,4] are valid, then have pixel position
@@ -1002,7 +988,7 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 		normalize(qmeas)
 		radialHat = qmeas									// will need this later to calc the error
 
-		// compute |Qmeas| using:  sin(theta) = -MatrixDot(ki,qmeas),  Q=4¹ sin(theta)/lambda,  if no energy, then use |Q| of calculated instead
+		// compute |Qmeas| using:  sin(theta) = -MatrixDot(ki,qmeas),  Q=4Ï€ sin(theta)/lambda,  if no energy, then use |Q| of calculated instead
 		Qlen = haveE ? -4*PI*MatrixDot(ki,qmeas)*keV/hc : norm(qcalc)	// measured |Q|
 		if (numtype(Qlen) || Qlen <= 0)
 			continue											// inalid |Q|, give up on this spot
@@ -1024,17 +1010,17 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 	return rms
 End
 //
-Static Function errVertAngle(d,angleOffset)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
+Static Function errAzimuthAngle(d,azimuth)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
 	// this error fixes the rotation of the whole system about the incident beam.
 	STRUCT detectorGeometry, &d
-	Variable angleOffset		// user supplied angle offset¡, when 0 detector face perp to y-axis, rotates about z-axis
+	Variable azimuth			// user supplied desired rotaion angleÂ°, sets the rotation about the z-azis, 0=X-axis, 90=Y-axis, ...
 
 	Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
 	Make/N=3/D/FREE xyz
 	pixel2XYZ(d,(d.Nx-1)/2,(d.Ny-1)/2,xyz)			// vector to detector center
 	Variable tanCenter = sqrt(xyz[0]^2+xyz[1]^2)/abs(xyz[2])	// tan(angle to detector center)
 
-	Variable angle											// angle between disired vertical and y^ (radian)
+	Variable angle											// desired rotation angle about z-axis, rotation angle from x-axis to center of detector (radian)
 	if (tanSize>tanCenter)								// close to forward (or back) scattering
 		// find direction along detector pixels (x or y) that is closest to y-axis, and make that the vertical
 		Make/N=(3,3)/D/FREE rho
@@ -1042,7 +1028,7 @@ Static Function errVertAngle(d,angleOffset)// calculate the error to use for ori
 		rho[0][1] = {d.rho01, d.rho11, d.rho21}
 		rho[0][2] = {d.rho02, d.rho12, d.rho22}
 
-		Make/N=(3,4)/D/FREE alongxy						// four vectors along the four directions ±x & ±y
+		Make/N=(3,4)/D/FREE alongxy						// four vectors along the four directions Â±x & Â±y
 		alongxy[0][0] = {1,0,0}
 		alongxy[0][1] = {-1,0,0}
 		alongxy[0][2] = {0,1,0}
@@ -1051,16 +1037,56 @@ Static Function errVertAngle(d,angleOffset)// calculate the error to use for ori
 		MatrixOP/FREE alongxy = rho x alongxy		// unit vector pointing along 4 directions of detector in beam line coords
 		MatrixOP/FREE dotYs = row(alongxy,1)			// dot of each alongxy with y^
 		WaveStats/Q/M=1 dotYs
-		angle = atan2(alongxy[0][V_maxloc],alongxy[1][V_maxloc])	// angle between "most vertical direction" and yhat
+//		angle = atan2(alongxy[0][V_maxloc],alongxy[1][V_maxloc])	// angle between "most vertical direction" and yhat
+		angle = atan2(alongxy[1][V_maxloc],alongxy[0][V_maxloc])	// angle between xhat and "most vertical direction" and yhat
 
 	else														// far from forward scattering (the usual)
-		angle = atan2(d.rho02,d.rho12)					// angle from y-axis to detector normal
+		Variable minus = sign(d.P[2])
+		angle = atan2(minus * d.rho12, minus * d.rho02)
 	endif
 
-	Variable errOrient = angle - (angleOffset*PI/180)
+	Variable errOrient = angle - (azimuth*PI/180)
 	// printf "errOrient = %g (only angle in radians)\r",errOrient
 	return errOrient										// error to force correct orientation (radian)
 End
+//	//
+//	Static Function errVertAngle(d,angleOffset)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
+//		// this error fixes the rotation of the whole system about the incident beam.
+//		STRUCT detectorGeometry, &d
+//		Variable angleOffset		// user supplied angle offsetÂ°, when 0 detector face perp to y-axis, rotates about z-axis
+//	
+//		Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
+//		Make/N=3/D/FREE xyz
+//		pixel2XYZ(d,(d.Nx-1)/2,(d.Ny-1)/2,xyz)			// vector to detector center
+//		Variable tanCenter = sqrt(xyz[0]^2+xyz[1]^2)/abs(xyz[2])	// tan(angle to detector center)
+//	
+//		Variable angle											// angle between disired vertical and y^ (radian)
+//		if (tanSize>tanCenter)								// close to forward (or back) scattering
+//			// find direction along detector pixels (x or y) that is closest to y-axis, and make that the vertical
+//			Make/N=(3,3)/D/FREE rho
+//			rho[0][0] = {d.rho00, d.rho10, d.rho20}		// rotation matrix
+//			rho[0][1] = {d.rho01, d.rho11, d.rho21}
+//			rho[0][2] = {d.rho02, d.rho12, d.rho22}
+//	
+//			Make/N=(3,4)/D/FREE alongxy						// four vectors along the four directions Â±x & Â±y
+//			alongxy[0][0] = {1,0,0}
+//			alongxy[0][1] = {-1,0,0}
+//			alongxy[0][2] = {0,1,0}
+//			alongxy[0][3] = {0,-1,0}
+//	
+//			MatrixOP/FREE alongxy = rho x alongxy		// unit vector pointing along 4 directions of detector in beam line coords
+//			MatrixOP/FREE dotYs = row(alongxy,1)			// dot of each alongxy with y^
+//			WaveStats/Q/M=1 dotYs
+//			angle = atan2(alongxy[0][V_maxloc],alongxy[1][V_maxloc])	// angle between "most vertical direction" and yhat
+//	
+//		else														// far from forward scattering (the usual)
+//			angle = atan2(d.rho02,d.rho12)					// angle from y-axis to detector normal
+//		endif
+//	
+//		Variable errOrient = angle - (angleOffset*PI/180)
+//		// printf "errOrient = %g (only angle in radians)\r",errOrient
+//		return errOrient										// error to force correct orientation (radian)
+//	End
 //
 Static Function Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)	// fill d to match this orientation
 	STRUCT detectorGeometry &d							// a local version of detector structure, this is filled
@@ -1159,7 +1185,7 @@ Function GraphCalibrationDetector(calib)
 	if (NdE>2 && NdE>NkeV/2)
 		Variable zrange = max(abs(V_max),abs(V_min))
 		ModifyGraph zColor($cname1)={calib[*][7],-zrange,zrange,RedWhiteBlue256}
-		ColorScale/C/N=textColorScale "ÆE  (eV)"
+		ColorScale/C/N=textColorScale "âˆ†E  (eV)"
 	else
 		ModifyGraph zColor($cname1)={calib[*][5],*,*,Rainbow256}
 		ColorScale/C/N=textColorScale "E  (keV)"
@@ -1349,7 +1375,7 @@ Function findPxPyFromPixel(detNum,px,py)	// For Detector in the beam, find P fro
 			return 1
 		endif
 		detNum -= 1
-		printf "¥findPxPyFromPixel(%g, %.6g, %.6g)\r",detNum,px,py
+		printf "â€¢findPxPyFromPixel(%g, %.6g, %.6g)\r",detNum,px,py
 	endif
 
 	String alertStr=""
@@ -1557,7 +1583,7 @@ dR=0.1
 
 		for (i=0;i<MAX_Ndetectors;i+=1)
 			if (g.d[i].used)
-				g.d[i].R[0] += dR/2;		g.d[i].R[1] += dR;		g.d[i].R[2] += 1.5*dR	// and add imprecision so we do not start at the answer, approximately 10¡ & 10mm
+				g.d[i].R[0] += dR/2;		g.d[i].R[1] += dR;		g.d[i].R[2] += 1.5*dR	// and add imprecision so we do not start at the answer, approximately 10Â° & 10mm
 				g.d[i].P[0] += dP;		g.d[i].P[1] -= dP;		g.d[i].P[2] -= 10*dP
 			endif
 		endfor
@@ -1585,7 +1611,7 @@ End
 //
 //	Variable i, dP=1e3, dR=0.2
 //	for (i=0;i<g.Ndetectors;i+=1)
-//		g.d[i].R[0] += dR/2;	g.d[i].R[1] += dR;		g.d[i].R[2] += 1.5*dR		// and add imprecision so we do not start at the answer, approximately 10¡ & 10mm
+//		g.d[i].R[0] += dR/2;	g.d[i].R[1] += dR;		g.d[i].R[2] += 1.5*dR		// and add imprecision so we do not start at the answer, approximately 10Â° & 10mm
 //		g.d[i].P[0] += dP;		g.d[i].P[1] -= dP;		g.d[i].P[2] -= 10*dP
 //	endfor
 //	UpdateDefaultGeometryStruct(g)						// save the changes
@@ -1609,7 +1635,7 @@ Function/T MakeFakeCalibration3Detectors(noise)
 		return ""
 	endif
 	if (noise && printing)
-		printf "Æpixel has sigma=%g, and ÆeV=±%geV:\r",noise,noise/2
+		printf "âˆ†pixel has sigma=%g, and âˆ†eV=Â±%geV:\r",noise,noise/2
 	elseif (printing)
 		printf "No noise:\r"
 	endif
@@ -1657,7 +1683,7 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 	if (printing)
 		print "for detector",dNum
 		printDetector(g.d[dNum])
-		printf "sample rotation axis = {%g,%g,%g},  a rotation angle of  %g¡\r",axisSampleFake[0],axisSampleFake[1],axisSampleFake[2],angle
+		printf "sample rotation axis = {%g,%g,%g},  a rotation angle of  %gÂ°\r",axisSampleFake[0],axisSampleFake[1],axisSampleFake[2],angle
 	endif
 
 	// desired pixels for spots on detector (a sort of uniformly spaced array of spots that covers most of the detector)
@@ -1680,7 +1706,7 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 	//	CalibrationList[][5]	= [OPTIONAL] keV, MEASURED energy of spot (otherwise leave as NaN)
 	//
 	//	CalibrationList[][6]	= [CALCULATED] keV calculated from sample orientation and known lattice (does NOT use measured spot position)
-	//	CalibrationList[][7]	= [CALCULATED] ÆE (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
+	//	CalibrationList[][7]	= [CALCULATED] âˆ†E (eV),  ( CalibrationList[][6] - CalibrationList[][5] ) *1e3
 
 	String name="CalibrationListTest"+num2istr(dNum)
 	Make/N=(N,8)/O/D $name/Wave=cList =NaN	// a list of measured reflections used to calibrate the detector, {px,py,qx,qy,yz,keV,theta}
@@ -1742,7 +1768,7 @@ Static Function/T MakeFakeCalibrationData(noise,dNum,N)
 
 		cList[m][0] = h;		cList[m][1] = k;		cList[m][2] = l	// (hkl)
 		cList[m][3] = px;		cList[m][4] = py								// measured pixel position
-		cList[m][5] = keV															// keV,  from Q = 4¹ sin(theta)/lambda == Q = 4¹ sin(theta) * (E/hc)
+		cList[m][5] = keV															// keV,  from Q = 4Ï€ sin(theta)/lambda == Q = 4Ï€ sin(theta) * (E/hc)
 		cLIst[m][6] = NaN
 		cList[m][7] = NaN
 		m += 1
@@ -2090,7 +2116,7 @@ Function/WAVE OptimizeWireGeometry(PixelTurnOffs,Nfit,[printIt])
 	Wave depths = CalcDepthsFromPixelTurnOffs(PixelTurnOffs,xWave)
 	WaveStats/Q depths
 	Variable errStart=V_sdev
-	printf "Before Optimize:  <depth> = %g,   range = [%g, %g],  Æ=%g\t\txWave = %s\r",V_avg,V_min,V_max,errStart,vec2str(xWave)
+	printf "Before Optimize:  <depth> = %g,   range = [%g, %g],  âˆ†=%g\t\txWave = %s\r",V_avg,V_min,V_max,errStart,vec2str(xWave)
 	String wnote=note(PixelTurnOffs)
 	wnote = ReplaceStringByKey("OptimizeXvalues0",wnote,vec2str(xWave),"=")
 	wnote = ReplaceNumberByKey("OptimizeXvaluesErr0",wnote,errStart,"=")
@@ -2105,7 +2131,7 @@ Function/WAVE OptimizeWireGeometry(PixelTurnOffs,Nfit,[printIt])
 	Wave depths = CalcDepthsFromPixelTurnOffs(PixelTurnOffs,xWave)
 	PixelTurnOffs[][7] = depths[p]			// save final depths
 	WaveStats/Q depths
-	printf "After Optimize:  <depth> = %g,   range = [%g, %g],  Æ=%g\t\txWave = %s\r",V_avg,V_min,V_max,errEnd,vec2str(xWave)
+	printf "After Optimize:  <depth> = %g,   range = [%g, %g],  âˆ†=%g\t\txWave = %s\r",V_avg,V_min,V_max,errEnd,vec2str(xWave)
 	//	Wave W_OptGradient=W_OptGradient
 	//	print "\tGradient =",vec2str(W_OptGradient)
 	KillWaves/Z W_OptGradient
@@ -2239,3 +2265,140 @@ End
 
 // ================================ End of Wire Calibration Fit =================================
 // ==============================================================================================
+
+
+
+// ==============================================================================================
+// ================================ Start of Preferred Beam Line ================================
+
+Function/T ShowPreferredBeamLine()
+	// Show current values of Preferred Beam Line struct
+	STRUCT BeamLinePreference BLp
+	LoadPackagePreferences "microGeo" , "microBLprefs", 0, BLp
+	String str=""
+	if (V_bytesRead>1)				// read the BLp
+		print "Current values of struct:"
+		str = desc_BeamLinePreference(BLp)
+	else
+		str = "NO values were found for 'microBLprefs', use  SetPreferredBeamLine(\"\")  to set some"
+	endif
+	print str
+	DoAlert 0, str
+	return str
+End
+//
+Function/T SetPreferredBeamLine(BL0)
+	String BL0
+
+	String knownBLs="APS/34-ID-E;APS/34-ID-C", BL=BL0
+	if (WhichListItem(BL, knownBLs)<0)
+		// try to guess correct Beam Line, based on curret geometry
+		STRUCT microGeometry g
+		if (!FillGeometryStructDefault(g,alert=0))	//fill geometry structure with current values
+			BL = SelectString( CmpStr(g.d[0].detectorID, "PE1621 723-3335")==0, BL, "APS/34-ID-E")
+			BL = SelectString( g.d[0].Nx == 514, BL, "APS/34-ID-C")
+		endif
+		Prompt BL,"Preferred Beam Line", popup, knownBLs
+		DoPrompt "Choose Preferred Beam Line", BL
+		if (V_flag)
+			return ""
+		endif
+	endif
+	if (CmpStr(BL0,BL))
+		printf "%sSetPreferredBeamLine(\"%s\")\r",BULLET,BL
+	endif
+
+	Variable azimuth=ProbableAzimuthalAngleDetector(g.d[0])	// start at current detector0
+	String BLname=BL, id="none", color="black"
+	Make/N=3/U/W/FREE rgb=0
+	if (CmpStr(BL, "APS/34-ID-E")==0)
+		azimuth = 90
+		id = "PE1621 723-3335"
+		color = SelectString(strlen(g.d[0].color), "Orange", g.d[0].color)
+		rgb = {65535,43688,32768}
+	elseif (CmpStr(BL, "APS/34-ID-C")==0)
+		azimuth = numtype(azimuth) ? 180 : azimuth
+	else
+		azimuth = numtype(azimuth) ? 90 : azimuth	// know nothing, just set to a top detector
+	endif
+
+	Prompt BLname, "Name of Beam Line", popup, knownBLs+";none"
+	Prompt azimuth, "Azimuthal angleÂ° around beam for detector 0, 90Â°â†’top,  180Â°â†’-X"
+	Prompt id, "ID of Detector 0"
+	Prompt color, "Color for Detector 0"
+	DoPrompt "Prefered Beam Line", BLname,id,color,azimuth
+	if (V_flag)
+		return ""
+	endif
+	if (CmpStr(color,"Orange"))
+		Wave rgb = color2RGB(color,65535)
+	endif
+
+	STRUCT BeamLinePreference BLp
+	LoadPackagePreferences "microGeo" , "microBLprefs", 0, BLp
+	if (V_bytesRead>1)				// read the BLp
+		print "OLD values of struct:"
+		print desc_BeamLinePreference(BLp)
+		print " "
+	endif
+
+	// reset BLp to new values and save
+	BLp.detectorID = id
+	BLp.color = color
+	BLp.rgb[0] = rgb[0]
+	BLp.rgb[1] = rgb[1]
+	BLp.rgb[2] = rgb[2]
+	BLp.BL = BLname
+	BLp.azimuth = azimuth
+	SavePackagePreferences/FLSH=1 "microGeo","microBLprefs",0,BLp
+	print desc_BeamLinePreference(BLp)
+	return ""
+End
+//
+Static Structure BeamLinePreference		// structure definition for a prefered Beam Line (mainly for azimuth of detector0)
+	uchar BL[50]						// beam line name, something like "APS/34-ID-E", or "34-ID-C", etc.
+	uchar detectorID[100]			// default detector ID, for this beam line
+	uchar color[30]					// name of color, e.g. "orange" "yellow", ...
+	uint16 rgb[3]					// default for beamline, rgb of color, based on 65535 = full, color is optional, it will be assigned if it is not specified.
+	double azimuth					// detector azimuth angleÂ° (-180,+180], 34-ID-E is +90, 34-ID-C is +180
+EndStructure
+//
+Static Function/T desc_BeamLinePreference(BLp)
+	// returns a string describing a BeamLinePreference structure
+	STRUCT BeamLinePreference &BLp
+	String out="", line
+	sprintf line, "Current Beam Line \"%s\"\r    Default Prefered Detector:",BLp.BL
+	out = line + "\r"
+	sprintf line, "      ID = \"%s\"  ",BLp.detectorID
+	out += line + "\r"
+	sprintf line, "      %s,  rgb={%d, %d, %d}", BLp.color, BLp.rgb[0],BLp.rgb[1],BLp.rgb[2]
+	out += line + "\r"
+	sprintf line, "      with a detector azimuth angle of %gÂ°", BLp.azimuth
+	out += line
+	return out
+End
+
+
+Static Function ProbableAzimuthalAngleDetector(d)
+	STRUCT detectorGeometry &d
+	// returns the azimuthal angle of the detector (orientation about z-axis)
+	// if existing azimuthal angle is within 5Â° of a multiple of 45Â°, then it rounds to nearest multiple of 45Â°.
+	// for 34-ID-E, this should give 90Â°, for 34-ID-C 180Â°
+	Variable angleTol = 5				// if azimuth is within 5Â° of multiple of 45, lockin to nearest multiple of 45
+	Variable minus = sign(d.P[2])
+	Variable azimuth=atan2(minus * d.rho12, minus * d.rho02) * 180/PI
+	Variable absAngle45=mod(abs(azimuth),45)
+	Variable deltaAzimuth = min(absAngle45,45-absAngle45)	// distance from nearst multiple of 45Â°
+	if (deltaAzimuth <= angleTol)
+		azimuth = round(azimuth/45) * 45							// round to nearest multiple of 45Â°
+		azimuth = abs(azimuth+180)<0.1 ? 180 : azimuth		// close to -180, prefer +180
+	endif
+	azimuth = numtype(azimuth) || abs(azimuth)>180 ? NaN : azimuth	// a bad value
+	return azimuth
+End
+
+// ================================= End of Preferred Beam Line =================================
+// ==============================================================================================
+
+
+
