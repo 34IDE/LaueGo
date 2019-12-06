@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 0.99
+#pragma version = 1.00
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 #include "ColorNames", version >=2.05
@@ -1013,7 +1013,7 @@ End
 Static Function errAzimuthAngle(d,azimuth)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
 	// this error fixes the rotation of the whole system about the incident beam.
 	STRUCT detectorGeometry, &d
-	Variable azimuth			// user supplied desired rotaion angle°, sets the rotation about the z-azis, 0=X-axis, 90=Y-axis, ...
+	Variable azimuth			// user supplied desired azimuthal angle°, sets the rotation about the z-azis, 0=X-axis, 90=Y-axis, ...
 
 	Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
 	Make/N=3/D/FREE xyz
@@ -1021,72 +1021,18 @@ Static Function errAzimuthAngle(d,azimuth)// calculate the error to use for orie
 	Variable tanCenter = sqrt(xyz[0]^2+xyz[1]^2)/abs(xyz[2])	// tan(angle to detector center)
 
 	Variable angle											// desired rotation angle about z-axis, rotation angle from x-axis to center of detector (radian)
-	if (tanSize>tanCenter)								// close to forward (or back) scattering
-		// find direction along detector pixels (x or y) that is closest to y-axis, and make that the vertical
-		Make/N=(3,3)/D/FREE rho
-		rho[0][0] = {d.rho00, d.rho10, d.rho20}		// rotation matrix
-		rho[0][1] = {d.rho01, d.rho11, d.rho21}
-		rho[0][2] = {d.rho02, d.rho12, d.rho22}
-
-		Make/N=(3,4)/D/FREE alongxy						// four vectors along the four directions ±x & ±y
-		alongxy[0][0] = {1,0,0}
-		alongxy[0][1] = {-1,0,0}
-		alongxy[0][2] = {0,1,0}
-		alongxy[0][3] = {0,-1,0}
-
-		MatrixOP/FREE alongxy = rho x alongxy		// unit vector pointing along 4 directions of detector in beam line coords
-		MatrixOP/FREE dotYs = row(alongxy,1)			// dot of each alongxy with y^
-		WaveStats/Q/M=1 dotYs
-//		angle = atan2(alongxy[0][V_maxloc],alongxy[1][V_maxloc])	// angle between "most vertical direction" and yhat
-		angle = atan2(alongxy[1][V_maxloc],alongxy[0][V_maxloc])	// angle between xhat and "most vertical direction" and yhat
-
+	if (tanSize>tanCenter)								// detector is close to forward (or back) scattering
+		// here, azimuth describes direction of the +x pixels, azimuth=0 means +x-pixels go in +X, 90 means +x-pixels go in +Y, ...
+		angle = atan2(d.rho10,d.rho00)					// azimuthal angle of rho x {1,0,0}, angle of +x-pixels direction after rotation
+		// printf "azimuthal angle of +x-pixels = %g°\r",angle*180/PI
 	else														// far from forward scattering (the usual)
 		Variable minus = sign(d.P[2])
 		angle = atan2(minus * d.rho12, minus * d.rho02)
 	endif
-
-	Variable errOrient = angle - (azimuth*PI/180)
-	// printf "errOrient = %g (only angle in radians)\r",errOrient
+	Variable errOrient = angle - (azimuth*PI/180)	// error in azimuthanl orientation angle (radian)
+	// printf "errOrient = %g (error angle in radians)\r",errOrient
 	return errOrient										// error to force correct orientation (radian)
 End
-//	//
-//	Static Function errVertAngle(d,angleOffset)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
-//		// this error fixes the rotation of the whole system about the incident beam.
-//		STRUCT detectorGeometry, &d
-//		Variable angleOffset		// user supplied angle offset°, when 0 detector face perp to y-axis, rotates about z-axis
-//	
-//		Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
-//		Make/N=3/D/FREE xyz
-//		pixel2XYZ(d,(d.Nx-1)/2,(d.Ny-1)/2,xyz)			// vector to detector center
-//		Variable tanCenter = sqrt(xyz[0]^2+xyz[1]^2)/abs(xyz[2])	// tan(angle to detector center)
-//	
-//		Variable angle											// angle between disired vertical and y^ (radian)
-//		if (tanSize>tanCenter)								// close to forward (or back) scattering
-//			// find direction along detector pixels (x or y) that is closest to y-axis, and make that the vertical
-//			Make/N=(3,3)/D/FREE rho
-//			rho[0][0] = {d.rho00, d.rho10, d.rho20}		// rotation matrix
-//			rho[0][1] = {d.rho01, d.rho11, d.rho21}
-//			rho[0][2] = {d.rho02, d.rho12, d.rho22}
-//	
-//			Make/N=(3,4)/D/FREE alongxy						// four vectors along the four directions ±x & ±y
-//			alongxy[0][0] = {1,0,0}
-//			alongxy[0][1] = {-1,0,0}
-//			alongxy[0][2] = {0,1,0}
-//			alongxy[0][3] = {0,-1,0}
-//	
-//			MatrixOP/FREE alongxy = rho x alongxy		// unit vector pointing along 4 directions of detector in beam line coords
-//			MatrixOP/FREE dotYs = row(alongxy,1)			// dot of each alongxy with y^
-//			WaveStats/Q/M=1 dotYs
-//			angle = atan2(alongxy[0][V_maxloc],alongxy[1][V_maxloc])	// angle between "most vertical direction" and yhat
-//	
-//		else														// far from forward scattering (the usual)
-//			angle = atan2(d.rho02,d.rho12)					// angle from y-axis to detector normal
-//		endif
-//	
-//		Variable errOrient = angle - (angleOffset*PI/180)
-//		// printf "errOrient = %g (only angle in radians)\r",errOrient
-//		return errOrient										// error to force correct orientation (radian)
-//	End
 //
 Static Function Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)	// fill d to match this orientation
 	STRUCT detectorGeometry &d							// a local version of detector structure, this is filled
@@ -1855,6 +1801,10 @@ Function/T FillCalibrationParametersPanel(strStruct,hostWin,left,top)
 	Button buttonCalibPrintHelp,pos={29,240+35},size={160,20},proc=detectorCalibration#CalibrationButtonProc,title="Print Help to History"
 	Button buttonCalibPrintHelp,help={"Print some Help text to the History"}
 
+	PopupMenu BLpreferencesPopup,pos={29,275+35},size={160,20},proc=detectorCalibration#BLpreferencesPopupMenuProc
+	PopupMenu BLpreferencesPopup,mode=0,title="Beam Line Preferences",value="Show Beam Line Preferences;Set Beam Line Preferences..."
+	PopupMenu BLpreferencesPopup,help={"Show or Set Beam Line Preferences, used to set detector0 azimuth"}
+
 	EnableDisableCalibControls(hostWin+"#CalibrationPanel")
 	return "#CalibrationPanel"
 End
@@ -1913,6 +1863,19 @@ Static Function CalibrationButtonProc(B_Struct) : ButtonControl
 		calcWireOrigin(NaN,NaN,NaN,NaN,NaN)
 	endif
 	EnableDisableCalibControls(GetUserData("microPanel","","CalibrationPanelName"))
+End
+//
+Static Function BLpreferencesPopupMenuProc(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+	if (pa.eventCode != 2)
+		return 0
+	endif
+	if (strsearch(pa.popStr,"Set Beam Line Pref",0,2)==0)
+		SetPreferredBeamLine("")
+	else
+		ShowPreferredBeamLine()
+	endif	
+	return 0
 End
 
 // ================================ End of Calibration set panel ================================
@@ -2384,16 +2347,35 @@ Static Function ProbableAzimuthalAngleDetector(d)
 	// returns the azimuthal angle of the detector (orientation about z-axis)
 	// if existing azimuthal angle is within 5° of a multiple of 45°, then it rounds to nearest multiple of 45°.
 	// for 34-ID-E, this should give 90°, for 34-ID-C 180°
+	// this works for both detectors in forward scattering and near 2theta of 90°
 	Variable angleTol = 5				// if azimuth is within 5° of multiple of 45, lockin to nearest multiple of 45
-	Variable minus = sign(d.P[2])
-	Variable azimuth=atan2(minus * d.rho12, minus * d.rho02) * 180/PI
-	Variable absAngle45=mod(abs(azimuth),45)
+
+	Make/N=3/D/FREE xyz
+	pixel2XYZ(d,(d.Nx-1)/2,(d.Ny-1)/2,xyz)			// vector to detector center
+	Variable tanCenter = sqrt(xyz[0]^2+xyz[1]^2)/abs(xyz[2])	// tan(angle to detector center)
+	Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
+	Variable azimuth
+
+	if (tanSize>tanCenter)								// detector is close to forward (or back) scattering
+		azimuth = atan2(d.rho10,d.rho00) * 180/PI	// azimuthal angle of rho x {1,0,0}, angle of +x-pixels direction after rotation
+		// here, azimuth describes direction of the +x pixels, azimuth=0 means +x-pixels go in +X, 90 means +x-pixels go in +Y, ...
+		// printf "azimuthal angle of +x-pixels = %g°\r",angle*180/PI
+
+	else														// far from forward scattering (the usual)
+		Variable minus = sign(d.P[2])
+		azimuth = atan2(minus * d.rho12, minus * d.rho02) * 180/PI
+		// here azimuth is the angle of the detector around the incident beam (z-axis)
+		// printf "azimuthal angle of detector about beam axis = %g°\r",angle*180/PI
+	endif
+
+	Variable absAngle45=mod(abs(azimuth),45)					// now find azimuth that is cloest to a multiple of 45°
 	Variable deltaAzimuth = min(absAngle45,45-absAngle45)	// distance from nearst multiple of 45°
 	if (deltaAzimuth <= angleTol)
 		azimuth = round(azimuth/45) * 45							// round to nearest multiple of 45°
 		azimuth = abs(azimuth+180)<0.1 ? 180 : azimuth		// close to -180, prefer +180
 	endif
 	azimuth = numtype(azimuth) || abs(azimuth)>180 ? NaN : azimuth	// a bad value
+	azimuth = azimuth==0 ? 0 : azimuth							// remove "-0",  -0 --> +0
 	return azimuth
 End
 
