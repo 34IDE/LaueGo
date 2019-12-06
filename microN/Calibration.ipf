@@ -1873,7 +1873,7 @@ Static Function BLpreferencesPopupMenuProc(pa) : PopupMenuControl
 	if (strsearch(pa.popStr,"Set Beam Line Pref",0,2)==0)
 		SetPreferredBeamLine("")
 	else
-		ShowPreferredBeamLine()
+		ShowPreferredBeamLine(printIt=1)
 	endif	
 	return 0
 End
@@ -2234,8 +2234,14 @@ End
 // ==============================================================================================
 // ================================ Start of Preferred Beam Line ================================
 
-Function/T ShowPreferredBeamLine()
+Function/T ShowPreferredBeamLine([printIt])
 	// Show current values of Preferred Beam Line struct
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? 0 : printIt
+	if (printIt)
+		printf "%sShowPreferredBeamLine()\r",BULLET
+	endif
+
 	STRUCT BeamLinePreference BLp
 	LoadPackagePreferences "microGeo" , "microBLprefs", 0, BLp
 	String str=""
@@ -2329,6 +2335,14 @@ EndStructure
 Static Function/T desc_BeamLinePreference(BLp)
 	// returns a string describing a BeamLinePreference structure
 	STRUCT BeamLinePreference &BLp
+
+	String descList = "toward +X axis;between +X & +Y axes;toward +Y axis;between +Y & -X axes;toward -X axis;between -X & -Y axes;toward -Y axis;between -Y & +X axes"
+	Variable index = mod(BLp.azimuth/45, 360)
+	index += index < 0 ? 8 : 0
+	String desc=""
+	if (abs(round(index)-index)<0.001 && index<8)
+		desc = "\r      (detector is " + StringFromList(index,descList) + ")"
+	endif
 	String out="", line
 	sprintf line, "Current Beam Line \"%s\"\r    Default Prefered Detector:",BLp.BL
 	out = line + "\r"
@@ -2336,7 +2350,7 @@ Static Function/T desc_BeamLinePreference(BLp)
 	out += line + "\r"
 	sprintf line, "      %s,  rgb={%d, %d, %d}", BLp.color, BLp.rgb[0],BLp.rgb[1],BLp.rgb[2]
 	out += line + "\r"
-	sprintf line, "      with a detector azimuth angle of %g°", BLp.azimuth
+	sprintf line, "      with a detector azimuth angle of %g°%s", BLp.azimuth,desc
 	out += line
 	return out
 End
