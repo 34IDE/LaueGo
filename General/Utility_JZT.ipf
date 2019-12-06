@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.84
+#pragma version = 4.85
 // #pragma hide = 1
 
 Menu "Graph"
@@ -4739,10 +4739,13 @@ End
 
 
 ThreadSafe Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// convert input date string and converts to ISO8601 format
-	String dateStr								// something like "4/2/2010" or "2010-4-2"
+	String dateStr							// something like "4/2/2010" or "2010-4-2", if dateStr=="now", use now
 	String timeStr
 	Variable zoneHr, zoneMin				// the time zone in hours or minutes, OPTIONAL, (you can also use hour=6.5)
 	timeStr = SelectString(ParamIsDefault(timeStr),timeStr,"")
+	if (CmpStr(dateStr,"now")==0)			// special for dateStr = "now"
+		return epoch2ISOtime(datetime)		// a shortcut for "now"
+	endif
 
 	Variable d1,d2,d3, dateSec
 	dateStr = ReplaceString("-",dateStr,"/")
@@ -4751,13 +4754,13 @@ ThreadSafe Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// co
 		return ""								// failed to find date like string
 	endif
 	String outStr="", zoneStr=""
-	if (d1>1903)								// assume year/month/day
+	if (d1>1903)									// assume year/month/day
 		sprintf outStr,"%04d-%02d-%02d",d1,d2,d3
 	else											// assume month/day/year
 		sprintf outStr,"%04d-%02d-%02d",d3,d1,d2
 	endif
 
-	if (strlen(timeStr))					// time was also passed
+	if (strlen(timeStr))						// time was also passed
 		Variable hour,minute,second
 		sscanf timeStr,"%d:%d:%d",hour,minute,second
 		if (V_flag<2)							// invalid time of day
@@ -4773,11 +4776,11 @@ ThreadSafe Function/T dateStr2ISO8601Str(dateStr,[timeStr,zoneHr,zoneMin])	// co
 	hour = ParamIsDefault(zoneHr) ? 0 : zonehr	// decode the the time zone
 	minute = round(ParamIsDefault(zoneMin) ? 0 : zoneMin)
 	second = hour*3600 + 60*minute
-	if (abs(second)>24*3600)				// time zone > 24h????
+	if (abs(second)>24*3600)					// time zone > 24h????
 		return ""
 	endif
 	if ((!ParamIsDefault(zoneHr) || !ParamIsDefault(zoneMin)) && numtype(second)==0)	// have a time zone
-		if (mod(second/3600,1))			// have minutes
+		if (mod(second/3600,1))				// have minutes
 			zoneStr = Secs2Time(abs(second),2)
 			zoneStr = SelectString(second<0,"+","-")+zoneStr
 		else
@@ -4847,25 +4850,34 @@ ThreadSafe Function ISOtime2IgorEpoch(iso,[NOTZ])	// convert ISO8601 string to a
 End
 
 
-ThreadSafe Function/T ISOtime2niceStr(iso)	// convert ISO8601 string to a nice format for graph annotations
-	String iso									// format     2013-10-02T01:22:35  (the seconds are optional)
+ThreadSafe Function/T ISOtime2niceStr(iso, [TZ])	// convert ISO8601 string to a nice format for graph annotations
+	String iso					// format     2013-10-02T01:22:35  (the seconds are optional), if iso=="now", then use now
+	Variable TZ					// flag, if true, include Time Zone
+	TZ = ParamIsDefault(TZ) || numtype(TZ) ? 0 : TZ
 
-	Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
-	sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
-	Variable N = V_flag
-
-	if (N<3 || numtype(year+month+day))
-		return ""
+	Variable N, seconds=NaN
+	if (CmpStr(iso,"now")==0)					// special for iso == "now"
+		seconds = DateTime
+		N = 6
+	else
+		Variable year=NaN,month=NaN,day=NaN, hr=NaN,mn=NaN,se=NaN
+		sscanf iso,"%4d-%2d-%2dT%2d:%2d:%2d", year,month,day,hr,mn,se
+		N = V_flag
+		if (N<3 || numtype(year+month+day))
+			return ""
+		endif
+		seconds = date2secs(year, month, day)
+		seconds += N>=5 ? hr*3600 + mn*60 : 0
+		seconds += N>=6 ? se : 0
 	endif
-	Variable epoch = date2secs(year, month, day )
-	String out = Secs2Date(epoch,2)
+
+	String out = Secs2Date(seconds,2)
 	if (N>=5)
-		epoch += hr*3600
-		epoch += mn*60
-		se = (N>=6) ? se : 0
-		epoch += se
 		Variable fmt = (N>=6) ? 1 : 0
-		out += SelectString(numtype(epoch),"  "+Secs2Time(epoch,fmt),"")
+		out += SelectString(numtype(seconds),"  "+Secs2Time(seconds,fmt),"")
+	endif
+	if (TZ)
+		out += " ("+num2str(date2secs(-1,-1,-1)/3600)+")"
 	endif
 	return out
 End
