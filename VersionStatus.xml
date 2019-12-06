@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, December 06, 2019" time="02:05:08 PM CST" isoTime="2019-12-06T14:05:08"></written>
+	<written date="Friday, December 06, 2019" time="04:18:31 PM CST" isoTime="2019-12-06T16:18:31"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 8 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>b8be0ab412339b012bf12ce7e8917d29a809a305</gitHash>
+	<gitHash>598293e54fed5f195a726e2028205f62ff58db97</gitHash>
 	<fileCount>168</fileCount>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
 	<file version="1.66" time="2018-01-15T15:59:04" md5="adc15ea1a5263914cd0ffc30f66a05e8" sha256="eb043b5ec0e856462a2cadf5f7f06be21802ad45580b80c4f4add3a264a44b7d" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
@@ -51,7 +51,7 @@
 	<file version="nan" time="2018-08-28T14:08:36" md5="ad309e866e9e7f9d16668f9388a1a66c" sha256="264f4acfaf055bebd31987fa6444d492d43fed5057faa451b3feb06ea1cb5ed3" ext=".mtl">materials/mtl files/MnO.mtl</file>
 	<file version="nan" time="2017-05-19T10:59:08" md5="294ead7a65b44c3d1b59cb02ea246318" sha256="907518cb07a9c16cc48194b15fbb242b3b2459c2ac9dec2988f201d4906c490f" ext=".html">doc/geometry.html</file>
 	<file version="1.61" time="2014-04-30T10:34:57" md5="2448f04e052d11c2748218024e3a0149" sha256="59a4b79a1667e89196e69ee368ca60bcd2f8160f79a2319e883678d124f78f60" ext=".ipf">micro/monoCalibrate.ipf</file>
-	<file version="1" time="2019-12-06T13:59:32" md5="7a72db09c354906f2c439101f7e387a6" sha256="ffaacbebbf2ff1c1d390c6673657b973ceda08f0bb387bd257e5f6a505026ce0" ext=".ipf">microN/Calibration.ipf</file>
+	<file version="1" time="2019-12-06T16:17:18" md5="9f055dd1426eefb1aa88252db69cffcd" sha256="65f69fc16835f31c00ee2c6d40cc7b5aceb6fa910814ad338323194e6177e14a" ext=".ipf">microN/Calibration.ipf</file>
 	<file version="nan" time="2018-08-28T14:08:24" md5="d6ffc56c34b2ca6f15bf1b8656717487" sha256="2bf256c614fd30ee2570f48031a3dab37b26961ac64740a82ebaa4802a7f53a1" ext=".mtl">materials/mtl files/LaMnO3.mtl</file>
 	<file version="nan" time="2018-08-28T14:09:11" md5="a867664497c7ea516ec0123e3a660f91" sha256="2b2bfcb1e3a7c6cbae1dd4c5c7acecd311c0d8fb1573a295bfa3dbca86d4d892" ext=".mtl">materials/mtl files/CuO.mtl</file>
 	<file version="nan" time="2017-05-19T11:04:49" md5="409f7c01e47f58b79d4f34514a6007d0" sha256="8811c6cfcf1c2039a2271820d8ef301674023419833722d635e577f951212a84" ext=".xml">geometrys/geoN_2011-10-20_21-35-02.xml</file>
