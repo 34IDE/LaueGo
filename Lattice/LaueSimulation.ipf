@@ -38,9 +38,9 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	detector = ParamIsDefault(detector) ? 0 : detector
 	detector = detector==round(limit(detector,0,MAX_Ndetectors-1)) ? detector : NaN
 	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-	Variable h0=h, k0=k, l0=l								// rename central hkl
+	Variable h0=h, k0=k, l0=l							// rename central hkl
 
-	STRUCT crystalStructure xtal							// crystal structure
+	STRUCT crystalStructure xtal						// crystal structure
 	if (FillCrystalStructDefault(xtal))				//fill the geometry structure with current default values
 		DoAlert 0,"Unable to load Crystal Structure"
 		return $""
@@ -60,9 +60,9 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 			dList += num2istr(i)+SelectString(strlen(color),";"," ("+color+");")
 		endif
 	endfor
-	if (Ndetectors<1)											// nothing there
+	if (Ndetectors<1)												// nothing there
 		return $""
-	elseif (Ndetectors>1 && ParamIsDefault(detector))		// force a choice of which detector to use
+	elseif (Ndetectors>1 && ParamIsDefault(detector))	// force a choice of which detector to use
 		detector = NaN
 	endif
 	if (WaveExists(recipSource))
@@ -77,7 +77,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	err = err || ( !WaveExists(recipSource) && ( numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0) ) )
 	if (err)
 		if (numtype(h0+k0+l0) || (h0==0 && k0==0 && l0==0))
-			h0=0;	k0=0;	l0=1									// default to the (001) reflection
+			h0=0;	k0=0;	l0=1										// default to the (001) reflection
 		endif
 		Elo = (numtype(Elo) || Elo<0) ? Elo_DEFAULT : Elo
 		Ehi = (numtype(Ehi) || Ehi<=Elo) ? max(Ehi_DEFAULT,15+Elo) : Ehi
@@ -114,7 +114,16 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		if (WaveExists(recipSource))
 			if (DimSize(recipSource,0)==3 && DimSize(recipSource,1)==3)
 				Wave recip = recipSource					// recipSource is a 3x3 mat, all done
-			else													// try to get recip from wave note
+				Wave RL0 = recipFrom_xtal(xtal)		// returns a FREE wave with reciprocal lattice
+				MatrixOP/FREE rho = recip x Inv(RL0)	// should be a rotaion matrix if recip is same as current xtal
+				MatrixOP/FREE err0 = sum(abs(rho x rho^t - identity(3)))
+				if (err0[0]>1e-3)
+					sprintf str, "ERROR -- The given reicprocal lattice from 3x3 wave:\r    '%s'\rdoes not match the current Xtal", recipName
+					print str
+					DoAlert 0, str
+					return $"" 
+				endif
+			else												// try to get recip from wave note
 				Wave recip = decodeMatFromStr(StringByKey("recip_lattice0", note(recipSource),"="))	
 			endif
 		else
@@ -122,7 +131,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	endif
 	recipName = SelectString(WaveExists(recipSource),"",NameOfWave(recipSource))
 	if (printIt)
-		printf "MakeSimulatedLauePattern(%g, %g",Elo,Ehi
+		printf "%sMakeSimulatedLauePattern(%g, %g",BULLET,Elo,Ehi
 		if (WaveExists(recipSource))
 			printf ", recipSource=%s",recipName
 		else
@@ -144,7 +153,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 
 	Make/N=3/D/FREE hkl={h0,k0,l0}, qcenter
 	pixel2q(geo.d[detector],(geo.d[detector].Nx -1)/2,(geo.d[detector].Ny -1)/2, qcenter)
-	if (WaveExists(recip))									// calculate hkl at detector center
+	if (WaveExists(recip))								// calculate hkl at detector center
 		MatrixOP/FREE hkl = Inv(recip) x qcenter
 		MatrixOP/FREE fff = maxVal(abs(hkl))
 		hkl = round(hkl[p] * 24 / fff[0])
@@ -162,7 +171,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		// compute rotation that puts (h0,k0,l0) along qcenter (i.e. puts reference reflection on detector)
 		MatrixOp/O/FREE qhat = recip x hkl
 		normalize(qhat)
-		Cross qhat, qcenter									// W_Cross is the new rotation axis
+		Cross qhat, qcenter								// W_Cross is the new rotation axis
 		Wave W_Cross=W_Cross
 		Variable theta = atan2(norm(W_Cross),MatrixDot(qcenter,qhat))*180/PI
 		Wave rho = rotationMatFromAxis(W_Cross,theta)
@@ -256,17 +265,17 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 				PeakIndexed[Nspots][5][0] = l
 				PeakIndexed[Nspots][6][0] = intensityOfPeak(qhat,hkl,Elo,Ehi)
 				PeakIndexed[Nspots][7][0] = keV
-				PeakIndexed[Nspots][9][0] = (px-(startx-FIRST_PIXEL)-(groupx-1)/2)/groupx		// change to binned pixels
+				PeakIndexed[Nspots][9][0] = (px-(startx-FIRST_PIXEL)-(groupx-1)/2)/groupx	// change to binned pixels
 				PeakIndexed[Nspots][10][0] = (py-(starty-FIRST_PIXEL)-(groupy-1)/2)/groupy	// pixels are still zero based
-				PeakIndexed[Nspots][11][0] = detector	// detector number
+				PeakIndexed[Nspots][11][0] = detector		// detector number
 				Nspots += 1
 				if (Nspots+1 >= Nmax)
-					h=Inf;	k=Inf;	l=inf					// force loops to end
+					h=Inf;	k=Inf;	l=inf						// force loops to end
 				endif
 			endfor
 		endfor
 		if (ProgressPanelUpdate(progressWin,il/Nl*100	))	// update progress bar
-			break													//   and break out of loop
+			break														//   and break out of loop
 		endif
 	endfor
 	Variable executionTime = SecondsInProgressPanel(progressWin)
@@ -323,7 +332,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	XYZ2pixel(geo.d[detector],ki,px,py)				// check for incident beam hitting detector after sample
 	if (numtype(px+py))
 		qhat = -ki
-		XYZ2pixel(geo.d[detector],qhat,px,py)			// check for incident beam hitting detector before sample
+		XYZ2pixel(geo.d[detector],qhat,px,py)		// check for incident beam hitting detector before sample
 	endif
 	if ((px>=startx && px<=endx && py>=starty && py<=endy))	// incident beam hits detector, draw a cross at that point
 		sprintf str,"{%g,%g}",px,py
@@ -331,12 +340,12 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	endif
 	Note/K PeakIndexed, wnote
 
-	SetDimLabel 1,0,Qx,PeakIndexed		;	SetDimLabel 1,1,Qy,PeakIndexed
-	SetDimLabel 1,2,Qz,PeakIndexed		;	SetDimLabel 1,3,h,PeakIndexed
-	SetDimLabel 1,4,k,PeakIndexed			;	SetDimLabel 1,5,l,PeakIndexed
+	SetDimLabel 1,0,Qx,PeakIndexed				;	SetDimLabel 1,1,Qy,PeakIndexed
+	SetDimLabel 1,2,Qz,PeakIndexed				;	SetDimLabel 1,3,h,PeakIndexed
+	SetDimLabel 1,4,k,PeakIndexed				;	SetDimLabel 1,5,l,PeakIndexed
 	SetDimLabel 1,6,Intensity,PeakIndexed	;	SetDimLabel 1,7,keV,PeakIndexed
-	SetDimLabel 1,8,angleErr,PeakIndexed	;	SetDimLabel 1,9,pixelX,PeakIndexed
-	SetDimLabel 1,10,pixelY,PeakIndexed	;	SetDimLabel 1,11,detNum,PeakIndexed	
+	SetDimLabel 1,8,angleErr,PeakIndexed		;	SetDimLabel 1,9,pixelX,PeakIndexed
+	SetDimLabel 1,10,pixelY,PeakIndexed		;	SetDimLabel 1,11,detNum,PeakIndexed	
 
 	if (printIt && Nspots>0)
 		String gName = StringFromLIst(0,WindowsWithWave(PeakIndexed,1))
