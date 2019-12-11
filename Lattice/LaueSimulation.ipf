@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.19
+#pragma version = 1.20
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -117,8 +117,8 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 				Wave RL0 = recipFrom_xtal(xtal)		// returns a FREE wave with reciprocal lattice
 				MatrixOP/FREE rho = recip x Inv(RL0)	// should be a rotaion matrix if recip is same as current xtal
 				MatrixOP/FREE err0 = sum(abs(rho x rho^t - identity(3)))
-				if (err0[0]>1e-3)
-					sprintf str, "ERROR -- The given reicprocal lattice from 3x3 wave:\r    '%s'\rdoes not match the current Xtal", recipName
+				if (err0[0]>1e-3 || MatrixDet(rho)<0.95)
+					sprintf str, "ERROR -- The given reicprocal lattice from 3x3 wave:\r    '%s'\ris not a proper rotation of the current Xtal", recipName
 					print str
 					DoAlert 0, str
 					return $"" 
