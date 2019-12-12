@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.85
+#pragma version = 4.86
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5343,37 +5343,39 @@ End
 
 
 ThreadSafe Function/WAVE minStr2Vec(inStr,Nreq)		// a replacement for str2hkl()
-	// returns the integer values from a string, pretty forgiving about format in string
+	// returns the numeric values from a string, pretty forgiving about format in string
 	// moved to here from Dynamical.ipf versions <=1.14
 	// moved to here from LatticeSym.ipf, 5.16
 	String inStr
 	Variable Nreq				// rquired number of numbers to find
 
 	inStr = ReplaceString("+",inStr," ")		// change all '+' to space
-	inStr = ReplaceString("-",inStr," -")		// change all '-' to space+'-'
+	inStr = ReplaceString("-",inStr," -")	// change all '-' to space+'-'
 	inStr = ReplaceString(" ",inStr,";")		// change all ' ' to semi-colon
 	inStr = ReplaceString(",",inStr,";")		// change all ',' to semi-colon
 	inStr = ReplaceString(":",inStr,";")		// change all ':' to semi-colon
 	String digits = "0123456789"
 	Variable semicolon = 0x3B, period = 0x2E
 	String skips = "-.;"
-
-	inStr = TrimFrontBackWhiteSpace(inStr)	// trim off leading & trailing white
+	for (; strsearch(inStr,";;",0)>=0; )		// change all ";;" to a single ";"
+		inStr = ReplaceString(";;",inStr,";")
+	endfor
+	inStr = TrimBoth(inStr,chars=" ;")		// trim off leading white and isolated semi-colons
 	Wave wN = str2vec(inStr)						// try to interpret
 	Variable NwN=numpnts(wN)
 
-	if (NwN<Nreq)										// too few values, add separators
+	if (NwN<Nreq)											// too few values, add separators
 		Variable i
 		i = strlen(inStr)-1
 		inStr = SelectString(char2num(inStr[i])==semicolon, inStr, inStr[0,i-1])	// remove trailing ';'
 		i = strlen(inStr)-1
 		inStr = SelectString(char2num(inStr[i])==period, inStr, inStr[0,i-1])		// remove trailing '.'
-		String ch										// one character
+		String ch											// one character
 		for (i=0;i<(strlen(inStr)-1);i+=1)
 			ch = inStr[i]
-			if (strsearch(skips,ch,0)>=0)		// a "." or "-"
+			if (strsearch(skips,ch,0)>=0)				// a "." or "-"
 				continue
-			elseif (strsearch(digits,ch,0)>=0)	// a digit type of character
+			elseif (strsearch(digits,ch,0)>=0)		// a digit type of character
 				i += 1
 				inStr[i] = ";"
 			else
@@ -5383,7 +5385,7 @@ ThreadSafe Function/WAVE minStr2Vec(inStr,Nreq)		// a replacement for str2hkl()
 		do
 			inStr = ReplaceString(";;",inStr,";")	// remove all double ';;' --> ';'
 		while(strsearch(inStr,";;",0)>=0)
-		Wave wN = str2vec(inStr)					// try to interpret again
+		Wave wN = str2vec(inStr)							// try to interpret again
 	endif
 
 	if (numpnts(wN)==Nreq && numtype(sum(wN))==0)
