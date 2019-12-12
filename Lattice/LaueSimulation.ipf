@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.21
+#pragma version = 1.22
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -197,8 +197,9 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 
 	String FullPeakIndexedName
 	sprintf FullPeakIndexedName "SimulatedPeaks%d%d%d%s",abs(h0),abs(k0),abs(l0),detectorID2color(geo.d[detector].detectorID)
-	Make/N=(Nmax,12,1)/O $FullPeakIndexedName
+	Make/N=(Nmax,13,1)/O $FullPeakIndexedName
 	Wave PeakIndexed = $FullPeakIndexedName
+	SetScale d 0,0,"pixel", PeakIndexed
 
 	//	find highest 2theta --> thetaMax
 	Variable thetaMax
@@ -295,6 +296,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	DoWindow/K $progressWin
 	Redimension/N=(Nspots,-1,-1) PeakIndexed		// trim to exact size
 	PeakIndexed[][8][0] = 0								// error is always zero for a calculated spot
+	PeakIndexed[][12][0] = (PeakIndexed[p][6][0])^0.3	// last column is just intensity^0,3, used for plotting
 	if (printIt)
 		printf "hkl ranges:  h=[%g,%g],  k=[%g,%g],  l=[%g,%g]\r", hklRange[0],hklRange[1], hklRange[2],hklRange[3], hklRange[4],hklRange[5]
 		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,ElapsedTime2Str(executionTime)
@@ -359,6 +361,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	SetDimLabel 1,6,Intensity,PeakIndexed	;	SetDimLabel 1,7,keV,PeakIndexed
 	SetDimLabel 1,8,angleErr,PeakIndexed		;	SetDimLabel 1,9,pixelX,PeakIndexed
 	SetDimLabel 1,10,pixelY,PeakIndexed		;	SetDimLabel 1,11,detNum,PeakIndexed	
+	SetDimLabel 1,12,Intensity_03,PeakIndexed
 
 	if (printIt && Nspots>0)
 		String gName = StringFromLIst(0,WindowsWithWave(PeakIndexed,1))
@@ -558,7 +561,8 @@ Function GraphSimulateLaueStyle()
 	ModifyGraph/Z grid=1, tick=2, mirror=1, minor=1, gridStyle=1
 	ModifyGraph/Z lowTrip=0.001, standoff=0, axOffset(bottom)=-1
 	ModifyGraph mode=3,marker=19,rgb=(1,4,52428),msize=2
-	ModifyGraph zmrkSize[0]={$wname[*][6][0],*,*,1,10}
+	Variable iColumnMarker = DimSize($wname,1)>12 ? 12 : 6
+	ModifyGraph zmrkSize[0]={$wname[*][iColumnMarker][0],*,*,2,12}
 	ModifyGraph zColor[0]={$wname[*][7][0],*,*,Rainbow256}
 	ModifyGraph grid=1,gridRGB=(45000,45000,65535)
 	ModifyGraph axOffset(left) = (stringmatch(IgorInfo(2),"Macintosh" )) ? -1.1 : -2.1 		// mac, or pc
@@ -599,8 +603,8 @@ Function GraphSimulateLaueStyle()
 
 	SetAxis bottom xlo-0.5,xhi+0.5
 	SetAxis left yhi+0.5, ylo-0.5
-	Label/Z left "y  \\U"
-	Label/Z bottom "x  \\U"
+	Label/Z left "y (\\U)"
+	Label/Z bottom "x (\\U)"
 	ShowInfo
 
 	str = StringByKey("pixel000",wnote,"=")			// draw a cross at direct beam (if it intercepts the detector)
