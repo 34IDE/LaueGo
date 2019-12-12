@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.20
+#pragma version = 1.21
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -16,16 +16,22 @@ Menu LaueGoMainMenuName
 	SubMenu "Laue Simulation"
 		"Make Simulated Laue Pattern", MakeSimulatedLauePattern(NaN,NaN)
 		"  re-Plot a Laue Pattern",DisplaySimulatedLauePattern($"")
+		"Make wave with kf's...", Make_kf_Sim($"", printIt=1)
+		"Make new Recip Lattice rotated about an existing...", MakeRotatedRecipLattice($"","",NaN, printIt=1)
 	End
 End
 Menu "Analysis"
 	SubMenu "Laue Simulation"
 		"Make Simulated Laue Pattern", MakeSimulatedLauePattern(NaN,NaN)
 		"  re-Plot a Laue Pattern",DisplaySimulatedLauePattern($"")
+		"Make wave with kf's...", Make_kf_Sim($"", printIt=1)
+		"Make new Recip Lattice rotated about an existing...", MakeRotatedRecipLattice($"","",NaN, printIt=1)
 	End
 End
 
 
+// ==================================================================================================
+// =============================== Start of Laue Simulation Make Sim  ===============================
 
 Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,printIt])
 	Variable Elo,Ehi					// energy range (keV)
@@ -117,7 +123,13 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 				Wave RL0 = recipFrom_xtal(xtal)		// returns a FREE wave with reciprocal lattice
 				MatrixOP/FREE rho = recip x Inv(RL0)	// should be a rotaion matrix if recip is same as current xtal
 				MatrixOP/FREE err0 = sum(abs(rho x rho^t - identity(3)))
-				if (err0[0]>1e-3 || MatrixDet(rho)<0.95)
+				Variable ok=(err0[0]<1e-3 && MatrixDet(rho)>0.95)
+				if (!ok)
+					sprintf str, "Sum( (R x R^t) - Ident) = %g,  and |R| = %g\rContinue?\r",err0[0], MatrixDet(rho)
+					DoAlert 1, str
+					ok = V_flag==1
+				endif
+				if (!ok)
 					sprintf str, "ERROR -- The given reicprocal lattice from 3x3 wave:\r    '%s'\ris not a proper rotation of the current Xtal", recipName
 					print str
 					DoAlert 0, str
@@ -483,60 +495,13 @@ Function spectrumProto(keV)
 	return 1
 End
 
+// ================================ End of Laue Simulation Make Sim  ================================
+// ==================================================================================================
 
 
-Function/WAVE Make_kf_Sim(FullPeakIndexed, [printIt])
-	// make wave with kf vectors from Qhats in FullPeakIndexed
-	Wave FullPeakIndexed
-	Variable printIt
-	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
-	if (!WaveExists(FullPeakIndexed))
-		String wName="", list=reverseList(WaveListClass("IndexedPeakList*","*",""))
-		if (ItemsInlist(list)==1)
-			wName = StringFromList(0,list)
-		elseif (ItemsInlist(list)>1)
-			Prompt wName,"List of Indexed Peaks", popup, list
-			DoPrompt "indexed peaks",wName
-			if (V_flag)
-				return $""
-			endif
-		endif
-		Wave FullPeakIndexed=$wName
-		printIt = 1
-	endif
-	if (!WaveExists(FullPeakIndexed))
-		return $""
-	endif
-	Variable N=DimSize(FullPeakIndexed,0)
-	if (N<1)
-		return $""
-	endif
-	if (printIt)
-		printf "¥Make_kf_Sim(%s)\r",NameOfWave(FullPeakIndexed)
-	endif
 
-	Make/N=3/D/FREE ki={0,0,1}
-	Make/N=(N,3)/D/FREE qhat=FullPeakIndexed[p][q]
-	MatrixOp/FREE qhat = NormalizeRows(qhat)
-
-	// kf^ = ki^ - 2*(ki^ . q^)*q^		note: (ki^ . q^) must be NEGATIVE (both Bragg & Laue)
-	String name = NameOfWave(FullPeakIndexed)+"_kf"
-	name = ReplaceString("__",CleanupName(name,0),"_")
-	Make/N=(N,3)/D/O $name/WAVE=kf
-	MatrixOP/FREE dots = sumRows(RowRepeat(ki,N)*qhat)
-	kf = ki[q] - 2*dots[p]*qhat[p][q]
-
-	String wNote=note(FullPeakIndexed)
-	wNote = ReplaceStringByKey("waveClass",wNote,"kfSimulate","=")
-	wNote = ReplaceStringByKey("source",wNote,NameOfWave(FullPeakIndexed),"=")
-	Note/K kf, wNote
-	if (printIt)
-		printf "\t\tSaving kf wave in: \"%s\"\r",name
-	endif
-	return kf
-End
-
-
+// ==================================================================================================
+// ============================= Start of Laue Simulation Display Sim  ==============================
 
 Function DisplaySimulatedLauePattern(FullPeakIndexed)
 	Wave FullPeakIndexed
@@ -745,10 +710,176 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	return 1												// 1 means do not send back to Igor for more processing
 End
 
+// ============================== End of Laue Simulation Display Sim  ===============================
+// ==================================================================================================
 
 
-//=======================================================================================
-// ================================= Start of Laue Simulation set panel =================================
+
+// ==================================================================================================
+// ================================ Start of Laue Simulation Utility ================================
+
+Function/WAVE Make_kf_Sim(FullPeakIndexed, [printIt])
+	// make wave with kf vectors from Qhats in FullPeakIndexed
+	Wave FullPeakIndexed
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	if (!WaveExists(FullPeakIndexed))
+		String wName="", list=reverseList(WaveListClass("IndexedPeakList*","*",""))
+		if (ItemsInlist(list)==1)
+			wName = StringFromList(0,list)
+		elseif (ItemsInlist(list)>1)
+			Prompt wName,"List of Indexed Peaks", popup, list
+			DoPrompt "indexed peaks",wName
+			if (V_flag)
+				return $""
+			endif
+		endif
+		Wave FullPeakIndexed=$wName
+		printIt = 1
+	endif
+	if (!WaveExists(FullPeakIndexed))
+		return $""
+	endif
+	Variable N=DimSize(FullPeakIndexed,0)
+	if (N<1)
+		return $""
+	endif
+	if (printIt)
+		printf "¥Make_kf_Sim(%s)\r",NameOfWave(FullPeakIndexed)
+	endif
+
+	Make/N=3/D/FREE ki={0,0,1}
+	Make/N=(N,3)/D/FREE qhat=FullPeakIndexed[p][q]
+	MatrixOp/FREE qhat = NormalizeRows(qhat)
+
+	// kf^ = ki^ - 2*(ki^ . q^)*q^		note: (ki^ . q^) must be NEGATIVE (both Bragg & Laue)
+	String name = NameOfWave(FullPeakIndexed)+"_kf"
+	name = ReplaceString("__",CleanupName(name,0),"_")
+	Make/N=(N,3)/D/O $name/WAVE=kf
+	MatrixOP/FREE dots = sumRows(RowRepeat(ki,N)*qhat)
+	kf = ki[q] - 2*dots[p]*qhat[p][q]
+
+	String wNote=note(FullPeakIndexed)
+	wNote = ReplaceStringByKey("waveClass",wNote,"kfSimulate","=")
+	wNote = ReplaceStringByKey("source",wNote,NameOfWave(FullPeakIndexed),"=")
+	Note/K kf, wNote
+	if (printIt)
+		printf "\t\tSaving kf wave in: \"%s\"\r",name
+	endif
+	return kf
+End
+
+
+Function/WAVE MakeRotatedRecipLattice(recipSource,hklStr,angle,[printIt])
+	Wave recipSource		// either a class="IndexedPeakList" or a 3x3 matrix
+	String hklStr
+	Variable angle
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetrtStackInfo(2))==0 : printIt
+
+	String recipName=NameOfWave(recipSource)
+	Wave hkl = minStr2Vec(hklStr,3)
+	Variable dim=3
+
+	if (!WaveExists(recipSource) || numpnts(hkl)<3 || numtype(angle) || abs(angle)>360)
+		angle = numtype(angle) ? 60 : angle
+		hklStr = SelectString(strlen(hklStr), "111", hklStr)
+		String recipList = WaveListClass("IndexedPeakList*,StrainPeakList","*","")
+		recipList += WaveList("*",";","DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
+		recipList += WaveListClass("recipLattice*","*","DIMS:2,MINROWS:2,MAXROWS:3,MINCOLS:2,MAXCOLS:3")
+		// recipList += WaveListClass("recipLattice*","*","DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
+		recipList += ";-standard orientation-"
+		recipList = RemoveFromList("epsilon;epsilonBL;epsilonSample;epsilonXHF", recipList)
+		Prompt recipName,"Orientation Source",popup,recipList
+		Prompt hklStr "hkl of axis"
+		Prompt angle, "rotation angle about hkl (degree)"
+		DoPrompt "hkl & energy",recipName, hklStr, angle
+		if (V_flag)
+			return $""
+		endif
+		if (CmpStr(recipName, "-standard orientation-")==0)
+			STRUCT crystalStructure xtal			// temporary crystal structure
+			FillCrystalStructDefault(xtal)			//fill the lattice structure with default values
+			dim = xtal.dim
+			Wave recip0 = recipFrom_xtal(xtal)	// returns a FREE wave with reciprocal lattice
+			Wave recipSource = recip0
+		else
+			Wave recipSource = $recipName
+		endif
+		Wave hkl = minStr2Vec(hklStr,3)
+	endif
+	if (printIt)
+		if (CmpStr(recipName, "-standard orientation-")==0)
+			printf "%sMakeRotatedRecipLattice($\"standard orientation\", \"%s\", %g)\r", BULLET,hklStr,angle
+		else
+			printf "%sMakeRotatedRecipLattice(%s, \"%s\", %g)\r", BULLET,recipName,hklStr,angle
+		endif
+	endif
+
+	if (!WaveExists(recipSource) || numpnts(hkl)<3 || numtype(angle) || abs(angle)>360)
+		return $""
+	endif
+
+
+	String wnote=note(recipSource), recipStr="", key
+	recipStr = StringByKey("recip_lattice_refined",wnote,"=")
+	key = "recip_lattice_refined"
+	if (strlen(recipStr)==0)
+		recipStr = StringByKey("recip_lattice",wnote,"=")
+		key = "recip_lattice"
+	endif
+	if (strlen(recipStr)==0)
+		recipStr = StringByKey("recip_lattice0",wnote,"=")
+		key = "recip_lattice0"
+	endif
+
+	Make/N=(3,3)/D/FREE rl=NaN
+	if (strlen(recipStr))						// set rl from a recipStr
+		Wave rl = str2recip(recipStr)
+	endif
+	if (strlen(recipStr)==0 && WaveDims(recipSource)==2 && DimSize(recipSource,0)==3 && DimSize(recipSource,1)==3)
+		rl = recipSource[p][q]				// set rl from a 3x3 matrix
+	endif
+
+	// now rotate rl.  Need to rotate about the q(hkl), not hkl itself
+	MatrixOP/FREE axis = normalize(rl x hkl)
+	Wave rho = rotationMatFromAxis(axis,angle)
+	MatrixOP/FREE rl = rho x rl
+
+	String wname = SelectString(CmpStr(recipName, "-standard orientation-"),"standard", recipName)
+	wname = ReplaceString("orientation",wname,"")
+	wname = ReplaceString(" ",wname,"")
+	String ending
+	sprintf ending, "_%s_%d", hklStr,angle
+	ending = ReplaceString(" ",ending,"")
+	ending = ReplaceString("__",ending,"_")
+	wname = AddEndingToWaveName(wname,ending)
+	Make/N=(3,3)/D/O $wname/WAVE=recip = rl
+	wnote = "waveClass=recipLattice"
+	wnote = ReplaceStringByKey("hkl",wnote,hklStr,"=")
+	wnote = ReplaceNumberByKey("angle",wnote,angle,"=")
+	Note/K recip, wnote
+
+	if (printIt)
+		if (strlen(recipStr))
+			printf "Rotated key='%s' from waveNote of '%s' around the (%s) by %g¡\r",key,recipName,hklStr,angle
+		else
+			printf "Rotated reciprocal lattice in '%s' around the (%s) by %g¡\r",recipName,hklStr,angle
+		endif
+		String str
+		sprintf str, "New rotated reciprocal lattice:  \"%s\"",wname
+		printWave(rl,name=str,brief=1,zeroThresh=1e-8)
+	endif
+	return recip
+End
+
+// ==================================================================================================
+// ================================= End of Laue Simulation Utility =================================
+
+
+
+// ==================================================================================================
+// ================================= Start of Laue Simulation Panel =================================
 
 Function/T FillLaueSimParametersPanel(strStruct,hostWin,left,top)
 	String strStruct									// optional passed value of xtal structure, this is used if passed
@@ -771,6 +902,9 @@ Function/T FillLaueSimParametersPanel(strStruct,hostWin,left,top)
 
 	Button buttonLaueSim_kf,pos={29,110},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make kf Wave"
 	Button buttonLaueSim_kf,help={"Make wave with kf vectors from Qhats in FullPeakIndexed"}
+
+	Button buttonLaueSim_Rotate pos={29,145},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make New Rotated R.L."
+	Button buttonLaueSim_Rotate,help={"Make a new Reciprocal Lattice rotated about an hkl of an existing recip lattice"}
 
 	EnableDisableLaueSimControls(hostWin+"#LaueSimPanel")
 	return "#LaueSimPanel"
@@ -802,10 +936,11 @@ Static Function LaueSimButtonProc(B_Struct) : ButtonControl
 		DisplayTableOfWave($"",classes="IndexedPeakListSimulate")
 	elseif (stringmatch(ctrlName,"buttonLaueSim_kf"))
 		Make_kf_Sim($"", printIt=1)
+	elseif (stringmatch(ctrlName,"buttonLaueSim_Rotate"))
+		MakeRotatedRecipLattice($"","",NaN, printIt=1)
 	endif
 	EnableDisableLaueSimControls(GetUserData("microPanel","","LaueSimPanelName"))
 End
 
-// ================================= End of Laue Simulation set panel ==================================
-//=======================================================================================
-
+// ================================== End of Laue Simulation Panel ==================================
+// ==================================================================================================
