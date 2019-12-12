@@ -582,6 +582,14 @@ Function GraphSimulateLaueStyle()
 		title += "\r\\Zr077recip source = \""+StringByKey("recipSource",wnote,"=")+"\""
 		sprintf str, "\r\\Zr120E = [%g, %g] keV", Elo,Ehi
 		title += str
+
+		Wave recipWave = $StringByKey("recipSource",wnote,"=")
+		String hklStr = StringBykey("hkl",note(recipWave),"=")
+		Variable angle = NumberBykey("angle",note(recipWave),"=")
+		if (strlen(hklStr) && numtype(angle)==0 && DimSize(recipWave,0)==3 && DimSize(recipWave,1)==3)
+			sprintf str, "\ra %g¡ rotation about the (%s)",angle,hklStr
+			title += str
+		endif
 		if (IgorVersion()>=7)
 			TextBox/C/N=title/F=0/G=(0,0,0,39321)/B=(65535,65535,65535,32768)/A=LT/X=4/Y=3 title
 		else
