@@ -95,6 +95,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		Prompt Nmax,"maximum number of reflections to accept"
 		String recipList = "{h0,k0,l0} at center;"+WaveListClass("IndexedPeakList*","*",""), str
 		recipList += WaveList("*",";","DIMS:2,MINROWS:3,MAXROWS:3,MINCOLS:3,MAXCOLS:3")
+		recipList = RemoveDuplicatesFromList(recipList,matchCase=0)	// remove any duplicate names
 		Prompt recipName,"Orientation Source",popup,recipList
 		DoPrompt "hkl & energy",h0,Elo,k0,Ehi,l0,recipName,Nmax
 		if (V_flag)
@@ -304,7 +305,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		sprintf str,"%g,%g,%g",h0,k0,l0
 		wnote = ReplaceStringByKey("hkl",wnote,str,"=")
 	else
-		wnote = ReplaceStringByKey("recipSource",wnote,recipName,"=")
+		wnote = ReplaceStringByKey("recipSource",wnote,GetWavesDataFolder(recipSource,2),"=")
 	endif
 	wnote = ReplaceNumberByKey("Elo",wnote,Elo,"=")
 	wnote = ReplaceNumberByKey("Ehi",wnote,Ehi,"=")
@@ -328,7 +329,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	wnote = ReplaceStringByKey("latticeParameters",wnote,str,"=")
 	wnote = ReplaceStringByKey("lengthUnit",wnote,"nm","=")
 	wnote = ReplaceNumberByKey("SpaceGroup",wnote,xtal.SpaceGroup,"=")
-	wnote = ReplaceNumberByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
+	wnote = ReplaceStringByKey("SpaceGroupID",wnote,xtal.SpaceGroupID,"=")
 	for (i=0;i<xtal.N;i+=1)
 		sprintf str, "{%s %g %g %g %g}",xtal.atom[i].name,xtal.atom[i].x,xtal.atom[i].y,xtal.atom[i].z,xtal.atom[i].occ
 		wnote = ReplaceStringByKey("AtomDesctiption"+num2istr(i+1),wnote,str,"=")
@@ -563,17 +564,29 @@ Function GraphSimulateLaueStyle()
 	ModifyGraph axOffset(left) = (stringmatch(IgorInfo(2),"Macintosh" )) ? -1.1 : -2.1 		// mac, or pc
 
 	Variable h,k,l,Elo,Ehi
-	String str = StringByKey("hkl",wnote,"=")
+	String title, str = StringByKey("hkl",wnote,"=")
 	h = str2num(StringFromList(0,str,","))
 	k = str2num(StringFromList(1,str,","))
 	l = str2num(StringFromList(2,str,","))
 	Elo=NumberByKey("Elo",wnote,"=")
 	Ehi=NumberByKey("Ehi",wnote,"=")
 	if (numtype(h+k+l)==0)
-		str = StringByKey("structureDesc",wnote,"=")
-		str += " ("+hkl2str(h,k,l)+")"
-		str += "\rE=["+num2str(Elo)+","+num2str(Ehi)+"]keV"
-		TextBox/C/N=textTitle/F=0/B=1/X=3/Y=2 str
+		title = StringByKey("structureDesc",wnote,"=")
+		title += " ("+hkl2str(h,k,l)+")"
+		title += "\rE=["+num2str(Elo)+","+num2str(Ehi)+"]keV"
+		TextBox/C/N=textTitle/F=0/B=1/X=3/Y=2 title
+	else
+		title = StringByKey("structureDesc",wnote,"=")
+		str = getHMsym2(SpaceGroupID2num(StringByKey("SpaceGroup",wnote,"=")))
+		title += SelectString(strlen(str),"", "  "+str)
+		title += "\r\\Zr077recip source = \""+StringByKey("recipSource",wnote,"=")+"\""
+		sprintf str, "\r\\Zr120E = [%g, %g] keV", Elo,Ehi
+		title += str
+		if (IgorVersion()>=7)
+			TextBox/C/N=title/F=0/G=(0,0,0,39321)/B=(65535,65535,65535,32768)/A=LT/X=4/Y=3 title
+		else
+			TextBox/C/N=title/F=0/A=LT/X=4/Y=3 title
+		endif
 	endif
 
 	SetAxis bottom xlo-0.5,xhi+0.5
@@ -662,7 +675,7 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 		SpaceGroupID = StringByKey("SpaceGroup",wnote,"=")
 	endif
 	sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d",h,k,l,keV,px,py,m
-	tagStr = "\\Zr090Indexed peak position\r" + str
+	tagStr = "\\Zr090Calculated peak position\r" + str
 #ifdef LATTICE_SYM_2D_3D
 	if (latticeSym#isValidSpaceGroupID(SpaceGroupID,3))
 #else
