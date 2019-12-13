@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.23
+#pragma version = 1.25
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -348,6 +348,10 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	if (numtype(px+py))
 		qhat = -ki
 		XYZ2pixel(geo.d[detector],qhat,px,py)		// check for incident beam hitting detector before sample
+	else
+		pz = perpPixelOnDetector(geo.d[detector])	// pixel at perpendicualr direction to incident beam
+		px = real(pz)
+		py = imag(pz)
 	endif
 	if ((px>=startx && px<=endx && py>=starty && py<=endy))	// incident beam hits detector, draw a cross at that point
 		sprintf str,"{%g,%g}",px,py
@@ -688,11 +692,11 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	endif
 	sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d",h,k,l,keV,px,py,m
 	tagStr = "\\Zr090Calculated peak position\r" + str
-#ifdef LATTICE_SYM_2D_3D
+//#ifdef LATTICE_SYM_2D_3D
 	if (latticeSym#isValidSpaceGroupID(SpaceGroupID,3))
-#else
-	if (latticeSym#isValidSpaceGroupID(SpaceGroupID))
-#endif
+//#else
+//	if (latticeSym#isValidSpaceGroupID(SpaceGroupID))
+//#endif
 		sprintf str, "\r%s    Space Group %s", getHMsym2(SpaceGroupID2num(SpaceGroupID)),SpaceGroupID
 		tagStr += str
 	endif
@@ -733,6 +737,26 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	Tag/C/N=indexedPeakInfo/W=$win/A=$anchor/F=2/L=2/X=(x0)/Y=(y0)/P=1 $NameOfWave(wTrace),m,tagStr
 	DoUpdate
 	return 1												// 1 means do not send back to Igor for more processing
+End
+//
+Static Function/C perpPixelOnDetector(d)
+	// returns pixel on detector where a ray perpendicular to z-axis and with azimuth of n*45¡ hits detector
+	// if no perpendicular ray hits the detector, return cmplx(NaN,NaN)
+	STRUCT detectorGeometry &d				// geometry parameters for the detector
+
+	Make/N=(8,3)/D/FREE xyz=0
+	xyz[][0] = cos(p*PI/4)
+	xyz[][1] = sin(p*PI/4)
+	Wave pxpy = XYZ2pixelVEC(d,xyz)		// returns pixel position (px,py) where each xyz vector will intercept detector
+	Make/D/FREE pzC = {d.Nx/2, d.Ny/2}	// center of detector
+
+	MatrixOP/FREE dist2 = sumRows(magSqr(pxpy - rowRepeat(pzC,8)))
+	WaveStats/M=1/Q dist2
+	Variable px=pxpy[V_minloc][0], py=pxpy[V_minloc][1]
+	if (px>=0 && px<d.Nx && py>=0 && py<d.Nx)	// pixel is on the detector
+		return cmplx(px,py)
+	endif
+	return cmplx(NaN,NaN)					// failed
 End
 
 // ============================== End of Laue Simulation Display Sim  ===============================
