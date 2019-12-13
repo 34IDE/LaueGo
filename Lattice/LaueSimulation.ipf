@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.22
+#pragma version = 1.23
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -880,6 +880,9 @@ Function/WAVE MakeRotatedRecipLattice(recipSource,hklStr,angle,[printIt])
 	ending = ReplaceString("__",ending,"_")
 	wname = AddEndingToWaveName(wname,ending)
 	Make/N=(3,3)/D/O $wname/WAVE=recip = rl
+	SetDimLabel 1,0,$"a*",recip
+	SetDimLabel 1,1,$"b*",recip
+	SetDimLabel 1,2,$"c*",recip
 	wnote = "waveClass=recipLattice"
 	wnote = ReplaceStringByKey("hkl",wnote,hklStr,"=")
 	wnote = ReplaceNumberByKey("angle",wnote,angle,"=")
@@ -892,7 +895,7 @@ Function/WAVE MakeRotatedRecipLattice(recipSource,hklStr,angle,[printIt])
 			printf "Rotated reciprocal lattice in '%s' around the (%s) by %g¡\r",recipName,hklStr,angle
 		endif
 		String str
-		sprintf str, "New rotated reciprocal lattice:  \"%s\"",wname
+		sprintf str, "New rotated reciprocal lattice:  \"%s\"\r    a*          b*          c*   ",wname
 		printWave(rl,name=str,brief=1,zeroThresh=1e-8)
 	endif
 	return recip
@@ -922,14 +925,15 @@ Function/T FillLaueSimParametersPanel(strStruct,hostWin,left,top)
 	Button buttonLaueSimRePlot,pos={29,40},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Re-Plot a Simulation"
 	Button buttonLaueSimRePlot,help={"Re-Plot a Laue Simulation"}
 
-	Button buttonLaueSimTable,pos={29,75},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Table of Simulation"
-	Button buttonLaueSimTable,help={"Show a Table of a Laue Simulation"}
-
-	Button buttonLaueSim_kf,pos={29,110},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make kf Wave"
+	Button buttonLaueSim_kf,pos={29,75},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make kf Wave"
 	Button buttonLaueSim_kf,help={"Make wave with kf vectors from Qhats in FullPeakIndexed"}
 
-	Button buttonLaueSim_Rotate pos={29,145},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make New Rotated R.L."
+	Button buttonLaueSim_Rotate pos={29,110},size={160,20},proc=LaueSimulation#LaueSimButtonProc,title="Make New Rotated R.L."
 	Button buttonLaueSim_Rotate,help={"Make a new Reciprocal Lattice rotated about an hkl of an existing recip lattice"}
+
+	PopupMenu popupLaueSimTables,pos={29,145},size={66,20},proc=LaueSimulation#TablesLaueSimPopMenuProc,title="Display Tables..."
+	PopupMenu popupLaueSimTables,help={"Show table of indexed peak positions and any reicprocal lattices"}
+	PopupMenu popupLaueSimTables,fSize=14,mode=0,value= #"\"Simulated Peaks;Indexed Peaks;Strain Peaks;Reciprocal Lattices\""
 
 	EnableDisableLaueSimControls(hostWin+"#LaueSimPanel")
 	return "#LaueSimPanel"
@@ -942,8 +946,9 @@ Static Function EnableDisableLaueSimControls(win)				// here to enable/disable
 	Button buttonMakeLaueSim,win=$win,disable=0
 	d = strlen(WaveListClass("IndexedPeakListSimulate*","*",""))<1 ? 2 : 0
 	Button buttonLaueSimRePlot,win=$win,disable=d
-	Button buttonLaueSimTable,win=$win,disable=d
 	Button buttonLaueSim_kf,win=$win,disable=d
+	d = strlen(WaveListClass("FittedPeakList*;IndexedPeakListSimulate;IndexedPeakList,StrainPeakList*,recipLattice*","*","")) ? 0 : 2
+	PopupMenu popupLaueSimTables,win=$win,disable=0
 End
 //
 Static Function LaueSimButtonProc(B_Struct) : ButtonControl
@@ -957,14 +962,27 @@ Static Function LaueSimButtonProc(B_Struct) : ButtonControl
 		MakeSimulatedLauePattern(NaN,NaN,printIt=1)
 	elseif (stringmatch(ctrlName,"buttonLaueSimRePlot"))
 		DisplaySimulatedLauePattern($"")
-	elseif (stringmatch(ctrlName,"buttonLaueSimTable"))
-		DisplayTableOfWave($"",classes="IndexedPeakListSimulate")
 	elseif (stringmatch(ctrlName,"buttonLaueSim_kf"))
 		Make_kf_Sim($"", printIt=1)
 	elseif (stringmatch(ctrlName,"buttonLaueSim_Rotate"))
 		MakeRotatedRecipLattice($"","",NaN, printIt=1)
 	endif
 	EnableDisableLaueSimControls(GetUserData("microPanel","","LaueSimPanelName"))
+End
+
+Static Function TablesLaueSimPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
+	String ctrlName
+	Variable popNum
+	String popStr
+	if (stringmatch(popStr,"Simulated Peaks"))
+		DisplayTableOfWave($"",classes="IndexedPeakListSimulate",promptStr="Wave with list of Simulated peaks")
+	elseif (stringmatch(popStr,"Indexed Peaks"))
+		DisplayTableOfWave($"",classes="IndexedPeakList",promptStr="Wave with list of indexed peaks")
+	elseif (stringmatch(popStr,"Strain Peaks"))
+		DisplayTableOfWave($"",classes="StrainPeakList*",promptStr="Wave with result of Strain Refinement")
+	elseif (stringmatch(popStr,"Reciprocal Lattices"))
+		DisplayTableOfWave($"",classes="recipLattice*",promptStr="Wave with a reciprocal lattice",options="DIMS:2,MINCOLS:2,MAXCOLS:3,MINROWS:2,MAXROWS:3")
+	endif
 End
 
 // ================================== End of Laue Simulation Panel ==================================

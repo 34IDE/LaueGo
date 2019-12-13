@@ -2,7 +2,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 5.02
+#pragma version = 5.04
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -93,11 +93,11 @@ Menu LaueGoMainMenuName
 	//	SubMenu("Tables")
 	MenuItemsWaveClassOnGraph("Angle Between Cursors","speImage*;rawImage*",""),/Q,AngleBetweenTwoPointsGeneral($"",$"",nan, nan,nan,nan)
 	SubMenu(MenuItemIfWaveClassExists("Tables","FittedPeakList*;IndexedPeakList*",""))
-		MenuItemIfWaveClassExists("Fitted Peaks","FittedPeakList*",""),TableFullPeakList($"")
+		MenuItemIfWaveClassExists("Fitted Peaks","FittedPeakList*",""),DisplayTableOfWave($"",classes="FittedPeakList*",promptStr="Wave with list of fitted peaks")
 		help={"Show table of identified peak positions"}
-		MenuItemIfWaveClassExists("Indexed Peaks","IndexedPeakList*",""),TableFullPeakIndexed($"")
+		MenuItemIfWaveClassExists("Indexed Peaks","IndexedPeakList*",""),DisplayTableOfWave($"",classes="IndexedPeakList*",promptStr="Wave with list of indexed peaks")
 		help={"Show table of indexed peaks"}
-		MenuItemIfWaveClassExists("Strain Peaks","IndexedPeakList*;StrainPeakList",""),TableFullPeakStrain($"")
+		MenuItemIfWaveClassExists("Strain Peaks","IndexedPeakList*;StrainPeakList",""),DisplayTableOfWave($"",classes="StrainPeakList*",promptStr="Wave with list of Strain Refined peaks")
 		help={"Show table of peaks from the strain refinement"}
 		"New Wave for measured Energies...",MakeMeasured_hkl_EnergiesWave(NaN,"")
 	End
@@ -5167,143 +5167,6 @@ Static Function FullPeakList2Qfile(FullPeakList,fname,pathName,[FullPeakList1,Fu
 End
 
 
-Function TableFullPeakList(ww)
-	Wave ww
-	if (!WaveExists(ww))
-		String list = reverseList(WaveListClass("FittedPeakList*","*",""))
-		Variable i = ItemsInLIst(list)
-		if (i<1)
-			DoAlert 0, "No waves of this type in current folder"
-			return 1
-		elseif (i==1)
-			Wave ww = $StringFromList(0,list)
-		else
-			String wName = StringFromList(i-1,list)
-			Prompt wName, "Wave with list of fitted peaks",popup,list
-			DoPrompt "FullPeakList",wName
-			if (V_flag)
-				return 1
-			endif			
-			Wave ww = $wName
-		endif
-		if (!WaveExists(ww))
-			DoAlert 0, "No waves of name "+wName
-			return 1
-		endif
-	endif
-	DisplayTableOfWave(ww)
-End
-
-Function TableFullPeakIndexed(ww)
-	Wave ww
-	if (!WaveExists(ww))
-		String list = reverseList(WaveListClass("IndexedPeakList*","*",""))
-		Variable i = ItemsInLIst(list)
-		if (i<1)
-			DoAlert 0, "No waves of this type in current folder"
-			return 1
-		elseif (i==1)
-			Wave ww = $StringFromList(0,list)
-		else
-			String wName = StringFromList(i-1,list)
-			Prompt wName, "Wave with list of indexed peaks",popup,list
-			DoPrompt "FullPeakIndexed",wName
-			if (V_flag)
-				return 1
-			endif			
-			Wave ww = $wName
-		endif
-		if (!WaveExists(ww))
-			DoAlert 0, "No waves of name "+wName
-			return 1
-		endif
-	endif
-	DisplayTableOfWave(ww)
-End
-
-Function TableFullPeakStrain(ww)
-	Wave ww
-	if (!WaveExists(ww))
-		String list = reverseList(WaveListClass("StrainPeakList*","*",""))
-		Variable i = ItemsInLIst(list)
-		if (i<1)
-			DoAlert 0, "No waves of this type in current folder"
-			return 1
-		elseif (i==1)
-			Wave ww = $StringFromList(0,list)
-		else
-			String wName = StringFromList(i-1,list)
-			Prompt wName, "Wave with list of indexed peaks",popup,list
-			DoPrompt "FullPeakIndexed",wName
-			if (V_flag)
-				return 1
-			endif			
-			Wave ww = $wName
-		endif
-		if (!WaveExists(ww))
-			DoAlert 0, "No waves of name "+wName
-			return 1
-		endif
-	endif
-	DisplayTableOfWave(ww,maxCols=17)
-End
-
-Function TableMissingPeakList(ww)
-	Wave ww
-	if (!WaveExists(ww))
-		String list = reverseList(WaveListClass("MissingPeakList*","*",""))
-		Variable i = ItemsInLIst(list)
-		if (i<1)
-			DoAlert 0, "No waves of this type in current folder"
-			return 1
-		elseif (i==1)
-			Wave ww = $StringFromList(0,list)
-		else
-			String wName = StringFromList(i-1,list)
-			Prompt wName, "Wave with list of missing peaks",popup,list
-			DoPrompt "Missing Peaks",wName
-			if (V_flag)
-				return 1
-			endif			
-			Wave ww = $wName
-		endif
-		if (!WaveExists(ww))
-			DoAlert 0, "No waves of name "+wName
-			return 1
-		endif
-	endif
-	DisplayTableOfWave(ww)
-End
-
-Function TableUserRecipPeaks(ww)
-	Wave ww
-	if (!WaveExists(ww))
-		String list = reverseList(WaveListClass("UserRecipPeakList*","*",""))
-		Variable i = ItemsInLIst(list)
-		if (i<1)
-			DoAlert 0, "No waves of this type in current folder"
-			return 1
-		elseif (i==1)
-			Wave ww = $StringFromList(0,list)
-		else
-			String wName = StringFromList(i-1,list)
-			Prompt wName, "Wave with list of User hkl peaks",popup,list
-			DoPrompt "User hkl list",wName
-			if (V_flag)
-				return 1
-			endif			
-			Wave ww = $wName
-		endif
-		if (!WaveExists(ww))
-			DoAlert 0, "No waves of name "+wName
-			return 1
-		endif
-	endif
-	DisplayTableOfWave(ww)
-End
-
-
-
 Function/T MakeMeasured_hkl_EnergiesWave(N,type)
 	Variable N
 	String type		// type of info measured, one of "keV", "Qnm", "dnm"
@@ -8466,17 +8329,17 @@ Function TablesPopMenuProc(ctrlName,popNum,popStr) : PopupMenuControl
 		return 1
 	endif
 	if (stringmatch(popStr,"Fitted Peaks"))
-		TableFullPeakList($"")
+		DisplayTableOfWave($"",classes="FittedPeakList*",promptStr="Wave with list of fitted peaks")
 	elseif (stringmatch(popStr,"Indexed Peaks"))
-		TableFullPeakIndexed($"")
+		DisplayTableOfWave($"",classes="IndexedPeakList*",promptStr="Wave with list of indexed peaks")
 	elseif (stringmatch(popStr,"Strain Peaks"))
-		TableFullPeakStrain($"")
+		DisplayTableOfWave($"",classes="StrainPeakList*",promptStr="Wave with list of Strain Refined peaks")
 	elseif (stringmatch(popStr,"Missing Peaks"))
-		TableMissingPeakList($"")
+		DisplayTableOfWave($"",classes="MissingPeakList*",promptStr="Wave with list of missing peaks")
 	elseif (stringmatch(popStr,"Measured Energies*"))
 		MakeMeasured_hkl_EnergiesWave(NaN,"")
 	elseif (stringmatch(popStr,"Peaks from User recip"))
-		TableUserRecipPeaks($"")
+		DisplayTableOfWave($"",classes="UserRecipPeakList*",promptStr="Wave with list of User hkl peaks")
 	endif
 End
 //
