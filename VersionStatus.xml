@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Thursday, December 12, 2019" time="05:28:37 PM CST" isoTime="2019-12-12T17:28:37"></written>
+	<written date="Friday, December 13, 2019" time="04:23:50 PM CST" isoTime="2019-12-13T16:23:50"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 8 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>7a3fda33beb3f8bc9a586f4cee783a9c03c8da13</gitHash>
+	<gitHash>24b208a8396d6a10e54490f1ae23eb91d2bc4c96</gitHash>
 	<fileCount>167</fileCount>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
 	<file version="1.66" time="2018-01-15T15:59:04" md5="adc15ea1a5263914cd0ffc30f66a05e8" sha256="eb043b5ec0e856462a2cadf5f7f06be21802ad45580b80c4f4add3a264a44b7d" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
@@ -107,7 +107,7 @@
 	<file version="nan" time="2018-03-19T15:42:01" md5="8e7fe2489a945a87ff7f49c72e5d528e" sha256="2315c9b77e1b1520cebc977e4942cb33b116525ef7fead653ca01293b46b24ab" ext=".txt">General/data/tmp/all Valences.txt</file>
 	<file version="nan" time="2010-08-10T14:43:23" md5="6fdcf5251dacaf7cba15897530f70e28" sha256="4ae818070b4b05a8f9cf37cae54a47f3054214608d02da0298a2ac8a3f048ab4" ext=".html">doc/geo_tag OLD.html</file>
 	<file version="nan" time="2018-08-28T14:09:20" md5="b4f6bd4a411ecb174fc66d265487a1e5" sha256="3edf6c84dbece83d18f204a687fd7d7f7c84171e11b3f47f280af2943989857c" ext=".mtl">materials/mtl files/CdWO4.mtl</file>
-	<file version="5.02" time="2019-11-26T11:54:27" md5="e7bee4817a85e3430de8cce6f9d75b29" sha256="4ecbd048c12232d7a8f4d10efa2036a44347cdf480d3676fa96bc9dab7b2ebc7" ext=".ipf">microN/IndexingN.ipf</file>
+	<file version="5.04" time="2019-12-13T11:54:30" md5="92bcb55551fe6227b7173d11cdcff204" sha256="aea6f1c71b0e5b7edfa9152b14c6c50afc7eea60a96f0c1050942d15e6e8e32b" ext=".ipf">microN/IndexingN.ipf</file>
 	<file version="4.86" time="2019-12-12T11:19:02" md5="927b3c5fdce496f48467ff6f279403e7" sha256="489e138a22d59ca236ab85bf0153be721fc830c3375bd84cad79028885e3531c" ext=".ipf">General/Utility_JZT.ipf</file>
 	<file version="nan" time="2015-03-16T13:55:50" md5="cd77de6db2098b618af02ccb19324887" sha256="77dfac712a4d10a7588117f23b7dd8f5bcb575cad795d26aed3f9e68e8a713a2" ext=".html">doc/microDiffraction.html</file>
 	<file version="nan" time="2018-08-28T14:04:03" md5="01d327c3088ed04255839f8f478458eb" sha256="6d606abb320eb56fa6a000cc96ae43a2654c1ba24390298c51301905db412acb" ext=".mtl">materials/mtl files/water.mtl</file>
@@ -140,7 +140,7 @@
 	<file version="nan" time="2018-08-29T14:16:55" md5="2958eb70297c66bdfffd85301e0035c1" sha256="256993132bc03a332359443c58e99dde00a4bc5f19b2c7856601aad10eee97a4" ext=".mtl">materials/mtl files/BePF-60.mtl</file>
 	<file version="2.18" time="2017-11-28T13:34:34" md5="75267411ac898458a40e4f96a95bcbde" sha256="a294c817a9913d187d5e17ca19c32fdd7c8435fe0e656205f32eab173e97f482" ext=".ipf">General/Images/ImageDisplayScaling.ipf</file>
 	<file version="2.14" time="2018-08-30T08:59:03" md5="77860542041b447d6f881a7c39c675bf" sha256="6c2983b2383cf4ccebe48402270135d10314f137e98339f4c0e5e10476f06cee" ext=".ipf">General/Elements.ipf</file>
-	<file version="1.22" time="2019-12-12T17:26:45" md5="9924c5c449e548119cd9cbf8a8572c6e" sha256="c3b9d98ce2e66528f074411bc812f8930ffbd1975eee4f453109af28a8782446" ext=".ipf">Lattice/LaueSimulation.ipf</file>
+	<file version="1.25" time="2019-12-13T16:21:36" md5="37e2d7fb68018edf82ed51650644c9d9" sha256="18378a1cbc61ee8d4965e34b9d4d6aa216515faf7cec5edd70c8bc07fc0bd901" ext=".ipf">Lattice/LaueSimulation.ipf</file>
 	<file version="nan" time="2018-08-08T15:00:32" md5="d7234009cfdf9fa7e255d3d4a23b974c" sha256="6141a88dce99623b290118f76c54697063b2c2b2c6a784cb053f9d886c13bea9" ext=".txt">to do.txt</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" sha256="173d6b6a080773c06344cbe6cef8bcc7da855d4c240a706a4c4333bd9e260a30" ext=".png">doc/microDiffractionMedia/Picture0.png</file>
 	<file version="nan" time="2018-08-29T14:16:50" md5="9c8c9ecf3360dde6a3616d53b4224f9b" sha256="057d836a90e40de98d716d8bb7e6d8ee7cf21cbfeeb53a2d69fce87b4b6932de" ext=".mtl">materials/mtl files/BePS-200.mtl</file>
