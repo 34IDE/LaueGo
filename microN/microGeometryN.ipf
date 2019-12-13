@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 2.04
+#pragma version = 2.05
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -1009,11 +1009,13 @@ End
 
 // Vectorized version of XYZ2pixel
 // convert a kf vector to pixel position
-ThreadSafe Function/WAVE XYZ2pixelVEC(d,xyz,[depth])	// find pixel position (px,py) where vector xyz will intercept detector
+ThreadSafe Function/WAVE XYZ2pixelVEC(d,xyz,[depth,onDetector])	// find pixel position (px,py) where vector xyz will intercept detector
 	STRUCT detectorGeometry, &d
 	Wave xyz							// xyz[N][3], a set of 3-vectors, points in beam line coords giving the directions of ray (micron)
 	Variable depth					// sample depth measured along the beam
+	Variable onDetector			// flag, 0 means ignore size of detector, 1 returns NaN if pixel not on detector, default is 0
 	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth	// default is 0, the origin
+	onDetector = ParamIsDefault(onDetector) || numtype(onDetector) ? 0 : onDetector
 
 	Variable N=DimSize(xyz,0)
 	if (N==0)
@@ -1070,6 +1072,14 @@ ThreadSafe Function/WAVE XYZ2pixelVEC(d,xyz,[depth])	// find pixel position (px,
 		//	peakUncorrect(d,px,py)	// go from true peak position to the real peak position (put distortion back in), just invert peakCorrect()
 		print "Cannot call XYZ2pixelVEC() when applying a Distortion Correction"
 		return $""
+	endif
+
+	if (onDetector)
+		Variable xmax=d.Nx-0.5, 	ymax=d.Ny-0.5
+		MatrixOP/FREE ok = greater(col(pxpy,0),0) && greater(xmax,col(pxpy,0)) && greater(col(pxpy,1),0) && greater(ymax,col(pxpy,1))
+		if (sum(ok)<N)					// need to change some to NaN
+			pxpy = ok[p] ? pxpy : NaN
+		endif
 	endif
 
 	return pxpy
@@ -1361,12 +1371,14 @@ ThreadSafe Function pixel2XYZ(d,px,py,xyz)	// convert pixel position to the beam
 End
 
 
-ThreadSafe Function/C XYZ2pixel(d,xyz,px,py,[depth])	// find pixel position (px,py) where vector xyz will intercept detector
+ThreadSafe Function/C XYZ2pixel(d,xyz,px,py,[depth,onDetector])	// find pixel position (px,py) where vector xyz will intercept detector
 	STRUCT detectorGeometry, &d
 	Wave xyz							// 3-vector, a point in beam line coords giving the direction of ray (micron)
 	Variable &px,&py				// pixel position on detector where ray xyz intercepts detector (full chip & zero based)
 	Variable depth					// sample depth measured along the beam
+	Variable onDetector			// flag, 0 means ignore size of detector, 1 returns NaN if pixel not on detector, default is 0
 	depth = ParamIsDefault(depth) || numtype(depth) ? 0 : depth	// default is 0, the origin
+	onDetector = ParamIsDefault(onDetector) || numtype(onDetector) ? 0 : onDetector
 
 	Variable xp,yp,zp
 	Variable x=xyz[0], y=xyz[1], z=xyz[2]					// remember (xyz) = rho x [ (x' y' z') + P ]
@@ -1409,6 +1421,11 @@ ThreadSafe Function/C XYZ2pixel(d,xyz,px,py,[depth])	// find pixel position (px,
 	endif
 
 	peakUncorrect(d,px,py)	// go from true peak position to the real peak position (put distortion back in), just invert peakCorrect()
+
+	if (onDetector)
+		px = px>=0 && px<=(d.Nx-0.5) ? px : NaN
+		py = py>=0 && py<=(d.Ny-0.5) ? py : NaN
+	endif
 	return cmplx(px,py)
 End
 

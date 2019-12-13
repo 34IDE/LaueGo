@@ -75,8 +75,9 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		Wave recip = recipSource
 	endif
 
-	Variable startx=0, endx=(geo.d[0].Nx)-1, groupx=1	// used to define the ROI
-	Variable starty=0, endy=(geo.d[0].Ny)-1, groupy=1
+	Variable itemp = (detector>=0 && detector<MAX_Ndetectors) ? detector : 0
+	Variable startx=0, endx=(geo.d[itemp].Nx)-1, groupx=1	// used to define the ROI
+	Variable starty=0, endy=(geo.d[itemp].Ny)-1, groupy=1
 
 	String recipName=NameOfWave(recipSource)
 	Variable err = (numtype(Elo+Ehi) || Elo<0 || Ehi<=Elo || numtype(detector))
@@ -101,13 +102,13 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		if (V_flag)
 			return $""
 		endif
-		Prompt startx,"X start of ROI [0, "+num2istr(geo.d[0].Nx -1)+"]"
-		Prompt starty,"X start of ROI [0, "+num2istr(geo.d[0].Ny -1)+"]"
-		Prompt endx,"X end of ROI [0, "+num2istr(geo.d[0].Nx -1)+"]"
-		Prompt endy,"Y end of ROI [0, "+num2istr(geo.d[0].Ny -1)+"]"
+		Prompt startx,"X start of ROI [0, "+num2istr(geo.d[itemp].Nx -1)+"]"
+		Prompt starty,"X start of ROI [0, "+num2istr(geo.d[itemp].Ny -1)+"]"
+		Prompt endx,"X end of ROI [0, "+num2istr(geo.d[itemp].Nx -1)+"]"
+		Prompt endy,"Y end of ROI [0, "+num2istr(geo.d[itemp].Ny -1)+"]"
 		Prompt groupx,"binning in X direction"
 		Prompt groupy,"binning in Y direction"
-		String detectorName=StringFromList(detector,dList)
+		String detectorName=StringFromList(itemp,dList)
 		Prompt detectorName,"Detector",popup,dList
 		DoPrompt "ROI (full chip un-binned pixels)",startx,starty,endx,endy,groupx,groupy,detectorName
 		if (V_flag)
@@ -153,7 +154,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		if (Nmax != Nmax_DEFAULT)
 			printf ", Nmax=%g", Nmax
 		endif
-		if (!ParamIsDefault(detector) && detector!=0)
+		if (!ParamIsDefault(detector) || detector!=0)
 			printf ", detector=%g", detector
 		endif		
 		printf ")\r"
@@ -344,16 +345,17 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		wnote = ReplaceStringByKey("rotation_matrix0",wnote,str,"=")
 	endif
 
-	XYZ2pixel(geo.d[detector],ki,px,py)				// check for incident beam hitting detector after sample
+	XYZ2pixel(geo.d[detector],ki,px,py,onDetector=1)			// check for incident beam hitting detector after sample
 	if (numtype(px+py))
 		qhat = -ki
-		XYZ2pixel(geo.d[detector],qhat,px,py)		// check for incident beam hitting detector before sample
-	else
-		pz = perpPixelOnDetector(geo.d[detector])	// pixel at perpendicualr direction to incident beam
+		XYZ2pixel(geo.d[detector],qhat,px,py, onDetector=1)	// check for incident beam hitting detector before sample
+	endif
+	if (numtype(px+py))
+		pz = perpPixelOnDetector(geo.d[detector])				// pixel at perpendicualr direction to incident beam, and azimuth is multiple of 45¡
 		px = real(pz)
 		py = imag(pz)
 	endif
-	if ((px>=startx && px<=endx && py>=starty && py<=endy))	// incident beam hits detector, draw a cross at that point
+	if (numtype(px+py)==0)											// incident beam hits detector, draw a cross at that point
 		sprintf str,"{%g,%g}",px,py
 		wnote = ReplaceStringByKey("pixel000",wnote,str,"=")
 	endif
@@ -744,19 +746,17 @@ Static Function/C perpPixelOnDetector(d)
 	// if no perpendicular ray hits the detector, return cmplx(NaN,NaN)
 	STRUCT detectorGeometry &d				// geometry parameters for the detector
 
-	Make/N=(8,3)/D/FREE xyz=0
+	Make/N=(8,3)/D/FREE xyz=0				// all 8 kf directions (every 45¡ and perp to z-axis)
 	xyz[][0] = cos(p*PI/4)
 	xyz[][1] = sin(p*PI/4)
-	Wave pxpy = XYZ2pixelVEC(d,xyz)		// returns pixel position (px,py) where each xyz vector will intercept detector
-	Make/D/FREE pzC = {d.Nx/2, d.Ny/2}	// center of detector
+	Wave pxpy = XYZ2pixelVEC(d,xyz, onDetector=1)	// returns pixel position (px,py) where each xyz vector will intercept detector
+	Make/D/FREE pzC = {d.Nx/2, d.Ny/2}				// center of detector
 
 	MatrixOP/FREE dist2 = sumRows(magSqr(pxpy - rowRepeat(pzC,8)))
-	WaveStats/M=1/Q dist2
+	WaveStats/M=1/Q dist2									// find [px,py] that lies cloest to detector center
 	Variable px=pxpy[V_minloc][0], py=pxpy[V_minloc][1]
-	if (px>=0 && px<d.Nx && py>=0 && py<d.Nx)	// pixel is on the detector
-		return cmplx(px,py)
-	endif
-	return cmplx(NaN,NaN)					// failed
+	// print "closest azimuth is %g¡\r",V_minloc*45,"   ",px,"  ",py
+	return cmplx(px,py)						// failed, closest pixel does not lie on detector
 End
 
 // ============================== End of Laue Simulation Display Sim  ===============================
