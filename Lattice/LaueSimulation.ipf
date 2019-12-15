@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.25
+#pragma version = 1.26
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -538,7 +538,12 @@ Function DisplaySimulatedLauePattern(FullPeakIndexed)
 		return 0
 	endif
 
-	Display /W=(132,156,785,742) FullPeakIndexed[*][10][0] vs FullPeakIndexed[*][9][0]
+	Variable dY=NumberByKey("endy",note(FullPeakIndexed),"=")*0.4
+	Variable dX=NumberByKey("endx",note(FullPeakIndexed),"=")*0.4
+	dY = numtype(dY) ? 586 : min(dY,586)				// set graph size depending on detector
+	dX = numtype(dX) ? 586 : min(dX,586)
+	Variable left=132, top=156, right=left+dX, bottom=top+dY	// was /W=(132,156,785,742)
+	Display /W=(left,top,right,bottom) FullPeakIndexed[*][10][0] vs FullPeakIndexed[*][9][0]
 	GraphSimulateLaueStyle()
 	if (exists("getSimulatedPeakInfoHook")==6)
 		SetWindow kwTopWin,hook(peakInfo)=getSimulatedPeakInfoHook
