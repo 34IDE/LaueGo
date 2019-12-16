@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.25								// based on LatticeSym_6.55
+#pragma version = 7.26								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -254,6 +254,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.24, fixed up FindCentralAtom(xyz) and UnBondedAtomsList(xtal)
 //	with version 7.25, added: MenuIfXtalIsRhomb(), ShowOtherSetting_HexRhomb(), ConvertHexagonal2Rhombohedral(), ConvertRhombohedral2Hexagonal()
 //							 removed: Rhom2HexFractonal(), Hex2RhomFractonal()
+//	with version 7.26, modified MenuIfXtalIsRhomb(): added a possible call to InitLatticeSymPackage()
 
 
 //	Rhombohedral Transformation:
@@ -386,6 +387,9 @@ End
 Static Function/S MenuIfXtalIsRhomb(item)
 	String item			// the string that appears in the menu
 	STRUCT crystalStructure xtal
+	if (!DataFolderExists("root:Packages:Lattices"))
+		InitLatticeSymPackage()
+	endif
 	if (FillCrystalStructDefault(xtal))	//fill the lattice structure with current xtal
 		return "(" + item
 	endif
