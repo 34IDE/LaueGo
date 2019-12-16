@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <VersionStatus xmlns="http://sector34.xray.aps.anl.gov/34ide:VersionStatus">
-	<written date="Friday, December 13, 2019" time="04:23:50 PM CST" isoTime="2019-12-13T16:23:50"></written>
+	<written date="Monday, December 16, 2019" time="05:33:22 PM CST" isoTime="2019-12-16T17:33:22"></written>
 	<sourceFolder>/Users/tischler/Documents/WaveMetrics/Igor Pro 8 User Files/User Procedures/LaueGo</sourceFolder>
-	<gitHash>24b208a8396d6a10e54490f1ae23eb91d2bc4c96</gitHash>
+	<gitHash>8e86a9b1e12d11f5e7204f487636a8255a3b0aa6</gitHash>
 	<fileCount>167</fileCount>
 	<file version="nan" time="2015-08-25T14:46:02" md5="dc83a72c4f635399a4fbb139e1bc490f" sha256="a9f48b5d7ae593865042748a093a71b8dbed478ae80516d9b2bc95150d8a4ec4" ext="">microN/binary/Euler4_dynamic</file>
 	<file version="1.66" time="2018-01-15T15:59:04" md5="adc15ea1a5263914cd0ffc30f66a05e8" sha256="eb043b5ec0e856462a2cadf5f7f06be21802ad45580b80c4f4add3a264a44b7d" ext=".ipf">microN/DepthResolvedQueryN.ipf</file>
@@ -59,7 +59,7 @@
 	<file version="3" time="2019-03-11T11:47:16" md5="bb95fb2c2b3ce7058afed09ad1d140d1" sha256="721de262cdab94be4a44a08d4f7cebc8b1ef85a574b60dd2148736ae90114c64" ext=".ipf">microN/Indexing_InternalQZ_Gizmo.ipf</file>
 	<file version="2.72" time="2017-07-24T12:38:46" md5="bfc326a040c5c45243b84bd242bd2d8d" sha256="4411e382bdfe5b91561656e0bfd40e990405fdec57cbce78468cefc46981604d" ext=".ipf">microN/ArrayOf3dOrientsN.ipf</file>
 	<file version="7.09" time="2019-02-28T18:03:49" md5="d3482773845da2335386609ca127e53d" sha256="76ac816b69fd3ceced93034baf102ceba2a1cf61d0eb24c4266a6878774e8b6d" ext=".ipf">Lattice/LatticeSym2D3D.ipf</file>
-	<file version="7.25" time="2019-12-03T16:22:56" md5="b435d806e86d971ed99268817a734446" sha256="5a5e072f9211f1d6a940d7ffe1d4833009789a7fee830fb067e02e8b1810d426" ext=".ipf">Lattice/LatticeSym.ipf</file>
+	<file version="7.26" time="2019-12-16T16:54:38" md5="202d826829df4c63afac10d7825e5fc6" sha256="5ce9e150832370229c951e21717b7d25ad56e618b0e942dd0b22581c33d36492" ext=".ipf">Lattice/LatticeSym.ipf</file>
 	<file version="2.25" time="2019-09-20T13:12:15" md5="841c95e6f786c7991d1be4696417c485" sha256="b421a83ea37b8f08b9288ee80944acbd3edc513cfcb2e4d434e6ceac1ce64c19" ext=".ipf">General/Gizmo/GizmoMarkers.ipf</file>
 	<file version="2.24" time="2019-09-20T13:12:15" md5="b1b21f6bb2a8227f90642c4aa6a616f2" sha256="fc92e34784bb8df47d5c3bb9994686760000f12fc02e1fab3a7dba2d25042429" ext=".ipf">General/Gizmo/GizmoMarkers_2.24.ipf</file>
 	<file version="nan" time="2013-10-28T11:28:48" md5="d958f4bce87adef766ca2584e1040a41" sha256="98f1c8c454a199ff6ee8d24fced76dea00d6d8a33bad14957640e1e8da441f5e" ext="">micro/Euler_ppc</file>
@@ -89,7 +89,7 @@
 	<file version="nan" time="2018-08-28T14:09:06" md5="a9fea15f8879526713acd3cbc24696bd" sha256="087b047ec54f230b75922074a14ccfdfe63a384d5039191c4a64ca03811a6045" ext=".mtl">materials/mtl files/CoO.mtl</file>
 	<file version="nan" time="2017-05-19T11:01:06" md5="8a125782a1333f8176155f354604c663" sha256="609d8f2100d577a60e9b2559fc77e7a646c5af65ba579dd16009627ed8846f99" ext=".txt">geometrys/geometry description.txt</file>
 	<file version="2.38" time="2017-02-13T17:18:13" md5="824bdb41ba7bdb3e1a104fc588df5654" sha256="f534f2d0b0b8d4160cd7128d60ea38192d604a8cf2da83f5caf42c105fb2c29d" ext=".ipf">microN/indexLotsN.ipf</file>
-	<file version="2.04" time="2019-12-05T10:01:23" md5="2393e60ae6c3c2f5ab94984e6be56cfb" sha256="af0fb75660c61dd2b0d33dd9943468677ba083c1a679e2682a1e1f69d019c99d" ext=".ipf">microN/microGeometryN.ipf</file>
+	<file version="2.05" time="2019-12-13T17:05:15" md5="7998f4ed09a2e3c0c941e849e2653b1e" sha256="eae4fbe119900c38d0cdbce191f656f72ebaa5915274a73f69bfa650d364ce62" ext=".ipf">microN/microGeometryN.ipf</file>
 	<file version="0.33" time="2019-04-11T11:33:20" md5="f9251b8858c799a61bae48c7745b604c" sha256="1239c09cdf3ba5fac7d5b8dd2e9fc2876f101e35b70637290c6f31ba4e3670c2" ext=".ipf">microN/Indexing_Internal.ipf</file>
 	<file version="1.21" time="2015-06-24T17:43:18" md5="644294cf6ed7b3ae70159b8e14df9511" sha256="13fb11094ccb051fdeecde7d3ee966b4a514d61b29e2e2ccefc8c936ce350370" ext=".ipf">micro/DepthResolvedQuery.ipf</file>
 	<file version="2.47" time="2015-04-29T17:44:41" md5="1739501ffbb5e2f1a57ae3365c197964" sha256="8f88720391744fdc9636c0e76e8701f04306c47d184729232cc73afcf2a957c3" ext=".ipf">micro/ArrayOf3dOrients.ipf</file>
@@ -140,7 +140,7 @@
 	<file version="nan" time="2018-08-29T14:16:55" md5="2958eb70297c66bdfffd85301e0035c1" sha256="256993132bc03a332359443c58e99dde00a4bc5f19b2c7856601aad10eee97a4" ext=".mtl">materials/mtl files/BePF-60.mtl</file>
 	<file version="2.18" time="2017-11-28T13:34:34" md5="75267411ac898458a40e4f96a95bcbde" sha256="a294c817a9913d187d5e17ca19c32fdd7c8435fe0e656205f32eab173e97f482" ext=".ipf">General/Images/ImageDisplayScaling.ipf</file>
 	<file version="2.14" time="2018-08-30T08:59:03" md5="77860542041b447d6f881a7c39c675bf" sha256="6c2983b2383cf4ccebe48402270135d10314f137e98339f4c0e5e10476f06cee" ext=".ipf">General/Elements.ipf</file>
-	<file version="1.25" time="2019-12-13T16:21:36" md5="37e2d7fb68018edf82ed51650644c9d9" sha256="18378a1cbc61ee8d4965e34b9d4d6aa216515faf7cec5edd70c8bc07fc0bd901" ext=".ipf">Lattice/LaueSimulation.ipf</file>
+	<file version="1.26" time="2019-12-16T10:45:05" md5="bdfdaf564548f8f37989ad069e97c04c" sha256="c8a453d2b563f3b245ab72c5ad92c2d65a56777097198fbf1c0a62e11e168b86" ext=".ipf">Lattice/LaueSimulation.ipf</file>
 	<file version="nan" time="2018-08-08T15:00:32" md5="d7234009cfdf9fa7e255d3d4a23b974c" sha256="6141a88dce99623b290118f76c54697063b2c2b2c6a784cb053f9d886c13bea9" ext=".txt">to do.txt</file>
 	<file version="nan" time="2013-10-28T11:28:49" md5="0972aba0531ab2ea628f804aa0bd5c3c" sha256="173d6b6a080773c06344cbe6cef8bcc7da855d4c240a706a4c4333bd9e260a30" ext=".png">doc/microDiffractionMedia/Picture0.png</file>
 	<file version="nan" time="2018-08-29T14:16:50" md5="9c8c9ecf3360dde6a3616d53b4224f9b" sha256="057d836a90e40de98d716d8bb7e6d8ee7cf21cbfeeb53a2d69fce87b4b6932de" ext=".mtl">materials/mtl files/BePS-200.mtl</file>
