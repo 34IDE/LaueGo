@@ -216,9 +216,9 @@ End
 
 
 Function moveGizmoMarkerToPoint(point,scatter,MarkerNum)	// used by external routines to move the marker
-	Variable point
-	Wave scatter
-	Variable MarkerNum
+	Variable point				// point number of scatter[][3] to place the marker
+	Wave scatter					// scatter[][3] data in Gizmo
+	Variable MarkerNum			// an integer [0,7]
 
 	if (!GizmoScatterMarkerDisplayed())
 		return 1
@@ -248,9 +248,9 @@ End
 
 
 Function moveGizmoMarkerToXYZ(mx,my,mz,scatter,MarkerNum)	// used by external routines to move the marker
-	Variable mx,my,mz
+	Variable mx,my,mz					// marker positions (X,Y,Z) not index
 	Wave scatter							// This can be defaulted
-	Variable MarkerNum					// This defaults to the current marker
+	Variable MarkerNum					// This defaults to the current marker, an integer in [0,7]
 
 	if (!GizmoScatterMarkerDisplayed())
 		return 1

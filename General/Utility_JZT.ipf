@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.86
+#pragma version = 4.87
 // #pragma hide = 1
 
 Menu "Graph"
@@ -5467,7 +5467,7 @@ ThreadSafe Function printWave(w1,[name,brief,fmt,zeroThresh])	// print a wave (v
 	if (dim==1)						// a vector either row, column, layer, or beam
 		printvec(w1,name=name,fmt=fmt,zeroThresh=zeroThresh)
 	elseif (dim==2)					// a 2D matrix
-		Duplicate/O w1, w2D
+		Duplicate/FREE w1, w2D
 		if (N2<=1 && N3<=0)		// for simple 2-d matrix, do nothing
 		elseif (N0==1 && N3<=1)	// a 1xN1xN2 matrix
 			Redimension/N=(Nx,Ny) w2D
