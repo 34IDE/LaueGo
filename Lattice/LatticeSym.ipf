@@ -1,14 +1,13 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.26								// based on LatticeSym_6.55
+#pragma version = 7.27								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
 // #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
 //	#define DO_HEXAGONAL_EXTRA							// If this is used, then Hex & Trigonal F's are too big
 // #define SHOW_XML_BONDS_ON_READIN					// Put this in your "Procedure" window if you want to see the <bond_chemical ...</bond_chemical>
-#define LATTICE_SYM_2D_3D
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Constant LatticeSym_minBondLen = 0.050				// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
@@ -255,6 +254,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.25, added: MenuIfXtalIsRhomb(), ShowOtherSetting_HexRhomb(), ConvertHexagonal2Rhombohedral(), ConvertRhombohedral2Hexagonal()
 //							 removed: Rhom2HexFractonal(), Hex2RhomFractonal()
 //	with version 7.26, modified MenuIfXtalIsRhomb(): added a possible call to InitLatticeSymPackage()
+//	with version 7.27, got rid of all the LATTICE_SYM_2D_3D stuff everywhere
 
 
 //	Rhombohedral Transformation:
@@ -2956,12 +2956,8 @@ Function/T FillLatticeParametersPanel(strStruct,hostWin,left,top)
 	SetVariable set_gamma, fSize=12, title="\xC9\xA3"+DEGREESIGN	// there are two gamma's, this (latin small letter gamma) looks better than "\xCE\xB3"
 #endif
 
-#ifdef LATTICE_SYM_2D_3D
-//	TitleBox LatticeDimTitle,pos={190,92},size={19,19},fSize=14,frame=0,anchor= LC
-//	TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
 	TitleBox LatticeDimTitle,pos={77,138},size={19,19},fSize=14,frame=0,anchor= LC
 	TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
-#endif
 
 	Button buttonLatticeSave,pos={35,233},size={150,20},proc=LatticePanelButtonProc,title="Save"
 	Button buttonLatticeSave,help={"Save these values as the current values"}
@@ -3047,7 +3043,6 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 	Variable SG = str2num(SpaceGroupID)		// first part of id is space group number
 	String titleStr="\\JC"+SpaceGroupID+" "
 
-#ifdef LATTICE_SYM_2D_3D
 	if (dim==2)
 		SetVariable set_c_nm,disable=1,win=$subWin				// always for dim==2
 		SetVariable set_beta,disable=1,win=$subWin
@@ -3059,7 +3054,6 @@ Static Function UpdatePanelLatticeConstControls(subWin,SpaceGroupID)
 		SetVariable set_gamma,disable=0,win=$subWin
 		TitleBox LatticeDimTitle,disable=1,win=$subWin
 	endif
-#endif
 
 	if (dim==2 && SG>=13)												// Hexagonal, a [13 17]
 		SetVariable set_a_nm,noedit=0,frame=1,win=$subWin	// enable
@@ -3261,26 +3255,17 @@ Static Function/T SelectNewSG(find, dim)
 			find = StrVarOrDefault("root:Packages:Lattices:PanelValues:SpaceGroupSearch","")
 		endif
 		dim = (dim==2 || dim==3) ? dim : NumVarOrDefault("root:Packages:Lattices:PanelValues:dimSearch",3)
-#ifdef LATTICE_SYM_2D_3D
 		dim = 3
-#endif
 		Prompt find, "Space Group Search, use * for wild card"
 		Prompt dim, "Lattice Dimension", popup, "2;3"
 		dim = dim==2 ? 1 : 2
-#ifdef LATTICE_SYM_2D_3D
 		DoPrompt "Search String", find, dim
-#else
-		DoPrompt "Search String", find
-#endif
 		if (V_flag)
 			return ""
 		endif
 		dim = dim==1 ? 2 : 3
 	endif
 	dim = dim==2 ? 2 : 3
-#ifdef LATTICE_SYM_2D_3D
-		dim = 3
-#endif
 	String/G root:Packages:Lattices:PanelValues:SpaceGroupSearch=find
 	Variable/G root:Packages:Lattices:PanelValues:dimSearch=dim
 
@@ -3389,10 +3374,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		SpaceGroupID = xtal.SpaceGroupID
 		alphaT = xtal.alphaT
 		desc = xtal.desc
-#ifdef LATTICE_SYM_2D_3D
-//		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
 		TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
-#endif
 		T_C = xtal.Temperature
 		dirty = 0
 		UpdatePanelLatticeConstControls(ba.win,SpaceGroupID)
@@ -3402,11 +3384,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		xtal.a = a  ;  xtal.b = b  ;  xtal.c = c
 		xtal.alpha = alpha  ;  xtal.beta = bet  ;  xtal.gam = gam
 		xtal.SpaceGroupID = SpaceGroupID
-#ifdef LATTICE_SYM_2D_3D
 		xtal.dim = dim
-#else
-		xtal.dim = 3
-#endif
 		xtal.alphaT = alphaT
 		xtal.Temperature = T_C
 		xtal.desc = desc[0,99]								// desc is limited to 100 chars
@@ -3449,10 +3427,7 @@ Function LatticePanelButtonProc(ba) : ButtonControl
 		alpha = xtal.alpha  ;  bet = xtal.beta  ;  gam = xtal.gam
 		dim = xtal.dim
 		SpaceGroupID = xtal.SpaceGroupID
-#ifdef LATTICE_SYM_2D_3D
-//		TitleBox LatticeDimTitle,title=SelectString(dim==2,"3D","2D")
 		TitleBox LatticeDimTitle,title=SelectString(dim==2,"","2D")
-#endif
 		desc = xtal.desc
 		alphaT = xtal.alphaT
 		T_C = xtal.Temperature
@@ -4303,13 +4278,11 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
 	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
-#ifdef LATTICE_SYM_2D_3D
 	if (!(dim==3))
 		sprintf str, "Caution -- reading a file with dim = \"%s\"", StringByKey("dim",keyVals,"=")
 		DoAlert 0, str
 	endif
 	xtal.dim = dim
-#endif
 
 	// process the space group info
 	// Start version 2.0 changes here

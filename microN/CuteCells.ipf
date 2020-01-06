@@ -1,7 +1,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #requiredPackages "xmlMultiIndex;imageDisplayScaling;"
 #pragma ModuleName=CuteCells
-#pragma version=0.22
+#pragma version=0.23
 #include "imageDisplayScaling"
 
 Menu "Rotations"
@@ -397,11 +397,7 @@ Static Function/T DrawUnitCellOnGraph(grpName,direct,xOff,yOff,[SpaceGroupID,win
 	endif
 
 	//	print "SpaceGroupID =",SpaceGroupID
-#ifdef LATTICE_SYM_2D_3D
 	Variable system = LatticeSym#latticeSystem(SpaceGroupID,3)
-#else
-	Variable system = LatticeSym#latticeSystem(SpaceGroupID)
-#endif
 	//	TRICLINIC=0,MONOCLINIC=1,ORTHORHOMBIC=2,TETRAGONAL=3,TRIGONAL=4,HEXAGONAL=5,CUBIC=6
 	if (system==4 || system==5)		// trigonal or hexagonal, special, use a hexagonal cell
 		Wave lines=MakeAllLinesAroundHexagonalCell(direct,xhat=xhat,yhat=yhat)

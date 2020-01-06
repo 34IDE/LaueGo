@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.57
+#pragma version = 0.59
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -13,7 +13,6 @@
 #include "BondsLattice", version>=0.01
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_AtomViewLattice()"
-#define LATTICE_SYM_2D_3D
 
 
 // These Constant values can be OverRidden by adding the line in your Main Procedure window.  Don't change this file.
@@ -170,11 +169,7 @@ Function/WAVE MakeCellsOfLattice(Na,Nb,Nc,[blen,GizmoScaleSize])
 		DoAlert 0, "no crystal structure found"
 		return $""
 	endif
-#ifdef LATTICE_SYM_2D_3D
 	Variable dim = xtal.dim
-#else
-	Variable dim = 3
-#endif
 	dim = dim==2 ? 2 : 3
 	Nc = dim==2 ? 0.1 : Nc
 
@@ -251,11 +246,7 @@ Function/WAVE MakeOneCellsAtoms(xtal,Na,Nb,Nc,[blen,GizmoScaleSize])
 	if (xtalN<1)
 		return $""
 	endif
-#ifdef LATTICE_SYM_2D_3D
 	Variable dim = xtal.dim
-#else
-	Variable dim = 3
-#endif
 
 	Wave direct = directFrom_xtal(xtal)
 	if (dim==2)
@@ -569,11 +560,7 @@ Static Function/WAVE MakeBondList_Given(prefix,xtal,xyz)	// This makes the bond 
 	String prefix
 	STRUCT crystalStructure &xtal
 	Wave xyz				// list of atom xyz positions
-#ifdef LATTICE_SYM_2D_3D
 	Variable dim = xtal.dim
-#else
-	Variable dim = 3
-#endif
 	if (!WaveExists(xyz))
 		return $""
 	elseif (DimSize(xyz,0)<2 || DimSize(xyz,1)<dim)

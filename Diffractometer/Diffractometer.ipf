@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.64
+#pragma version = 0.65
 #pragma ModuleName=diffractometer
 #include "LatticeSym", version>=3.76
 #initFunctionName "Init_Diffractometer()"
@@ -739,12 +739,10 @@ Static Function SetSampleReferenceReflections(name,hklStr0,Astr0,hklStr1,Astr1,p
 		DoAlert 0, "No Lattice, please set one"
 		return 1
 	endif
-#ifdef LATTICE_SYM_2D_3D
 	if (!(xtal.dim == 3))
 		DoAlert 0, "A diffractometer only understands 3D structures"
 		return 1
 	endif
-#endif
 
 	Variable Naxes=NumVarOrDefault("root:Packages:Diffractometer:Naxes",DEFAULT_Naxes)
 	String str, fmt="%.13g", fmtSpace="%.13g"

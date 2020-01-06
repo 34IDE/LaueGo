@@ -1,12 +1,11 @@
 #pragma TextEncoding = "UTF-8"		// For details execute DisplayHelpTopic "The TextEncoding Pragma"
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 1.02
+#pragma version = 1.03
 #pragma IgorVersion = 6.3
 #pragma ModuleName=powder
 #requiredPackages "LatticeSym;"
 #initFunctionName "Init_PowderPatternLattice()"
 #include "LatticeSym" version>=7.00
-#define LATTICE_SYM_2D_3D
 
 
 Menu "Analysis"
@@ -272,11 +271,7 @@ Function/WAVE CalcPowderLines(Qmax,[keV,Polarization,scaling])
 		DoAlert 0, "ERROR  -- CalcPowderLines()\rNo lattice structure found"
 		return $""
 	endif
-#ifdef LATTICE_SYM_2D_3D
 	Variable dim = xtal.dim
-#else
-	Variable dim=3
-#endif
 	dim = dim==2 ? 2 : 3
 	String desc = xtal.desc
 	desc = ReplaceString(";",desc," ")
