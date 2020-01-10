@@ -21,9 +21,9 @@
 	<atom_site>
 		<label>Ge2</label>
 		<symbol>Ge</symbol>
-		<fract>0.5 0.5</fract>
+		<fract>0 0.5</fract>
 		<DebyeTemperature unit="K">360</DebyeTemperature>
-		<WyckoffSymbol>a</WyckoffSymbol>
+		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ge1" n1="Ge2">0.400067</bond_chemical>
 </cif>
