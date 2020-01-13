@@ -5,6 +5,7 @@
 	<space_group>
 		<id>225</id>
 		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
 	<database_code db="ICSD">72155</database_code>
 	<cell>
@@ -31,6 +32,8 @@
 		<B_iso>1.82</B_iso>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
+	<bond_chemical unit="nm" n0="Ce" n1="O">0.234364</bond_chemical>
+
 	<citation doi="10.1016/0022-4596(92)90330-X">
 		M. Wolcyrz, L. Kepinski, Journal of Solid State Chemistry, 99 (1992)  pg. 409-413
 		"Rietveld refinement of the structure of CeOCl formed in Pd/CeO2 catalyst:

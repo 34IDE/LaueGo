@@ -23,8 +23,7 @@ _citation_journal_volume
 _citation_page_first
 _citation_page_last
 _citation_journal_id_ASTM
-primary 'Zeitschrift fuer Anorganische und Allgemeine Chemie (1950) (DE)' 2002
-628 1236 1242 ZAACAB
+primary 'Zeitschrift fuer Anorganische und Allgemeine Chemie (1950) (DE)' 2002 628 1236 1242 ZAACAB
 loop_
 _publ_author_name
 'Rozier, P.'
