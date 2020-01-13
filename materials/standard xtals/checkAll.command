@@ -14,4 +14,4 @@ echo "****"
 find . -name "*.xtal" -type f -exec xmllint -noout {} \;
 find . -name "*.xml" -type f -exec xmllint -noout {} \;
 echo " "
-diff -x *.ipf -x *.pxp -x checkAll -x ".DS_Store" --brief -r . /Users/tischler/Documents/materials/standard\ xtals
+diff -x *.ipf -x *.pxp -x "checkAll.command" -x ".DS_Store" --brief -r . /Users/tischler/Documents/materials/standard\ xtals
