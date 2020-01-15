@@ -5,6 +5,7 @@
 	<space_group>
 		<IT_number>136</IT_number>
 		<H-M>P42/mnm</H-M>
+		<Hall>-P 4n 2n</Hall>
 	</space_group>
 	<cell>
 		<a unit="nm">0.45546</a>
