@@ -41,8 +41,14 @@
 		<B_iso>1.9</B_iso>
 	</atom_site>
 	<citation>
-	Acta Crystallographica, Section B: Structural Science (1984) 40 pg.367 372
-	H. Horiuchi, A.J. Schultz, P.C. Leung, J.M. Williams
-	"Time-of-Flight Neutron Diffraction Study of a Single Crystal of Yttria-Stabilized Zirconia Zr (Y) O1.862, at High Temperature and in an Applied Electrical Field"
+		<journal>Acta Crystallographica, Section B: Structural Science</journal>
+		<year>1984</year>
+		<volume>40</volume>
+		<pages>367 372</pages>
+		<author>H. Horiuchi</author>
+		<author>A.J. Schultz</author>
+		<author>P.C. Leung</author>
+		<author>J.M. Williams</author>
+		<title>Time-of-Flight Neutron Diffraction Study of a Single Crystal of Yttria-Stabilized Zirconia Zr (Y) O1.862, at High Temperature and in an Applied Electrical Field</title>
 	</citation>
 </cif>

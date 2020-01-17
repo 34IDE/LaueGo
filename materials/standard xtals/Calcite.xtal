@@ -54,7 +54,12 @@
 		<valence>-2</valence>
 	</atom_site>
 	<citation>
-		E.N. Maslen, V.A. Streltsov, N.R. Streltsova
-		Acta Crystallographica, Section B, 49 (1993), 636-641
+		<author>E.N. Maslen</author>
+		<author>V.A. Streltsov</author>
+		<author>N.R. Streltsova</author>
+		<journal>Acta Crystallographica, Section B</journal>
+		<volume>49</volume>
+		<year>1993</year>
+		<pages>636 641</pages>
 	</citation>
 </cif>

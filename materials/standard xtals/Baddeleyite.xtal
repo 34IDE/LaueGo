@@ -36,8 +36,12 @@
 		<U_iso>0.01773</U_iso>
 	</atom_site>
 	<citation>
-	J.D. McCullough, K.N. Trueblood
-	Acta Crystallographica v12 (1959) pg.507-511,
-	"The crystal structure of baddeleyite (monoclinic ZrO2)"
+		<author>J.D. McCullough</author>
+		<author>K.N. Trueblood</author>
+		<journal>Acta Crystallographica</journal>
+		<volume>12</volume>
+		<year>1959</year>
+		<pages>507 511</pages>
+		<title>The crystal structure of baddeleyite (monoclinic ZrO2)</title>
 	</citation>
 </cif>

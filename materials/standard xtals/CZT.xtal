@@ -41,8 +41,14 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Zn" n1="Te">0.23423</bond_chemical>
 	<citation>
-		Fuju Yu, Sanbao Xu, Shuming Zhang,
-		Bandaoti Xuebao 8 (1987) 548-550
-		"Measurements of lattice parameter in systems Cd1-x Znx Te and Cd1-y Hgy Te"
+		<author>Fuju Yu</author>
+		<author>Sanbao Xu</author>
+		<author>Shuming Zhang</author>
+		<author>Bandaoti</author>
+		<author>Xuebao</author>
+		<volume>8</volume>
+		<year>1987</year>
+		<pages>548 550</pages>
+		<title>Measurements of lattice parameter in systems Cd1-x Znx Te and Cd1-y Hgy Te</title>
 	</citation>
 </cif>

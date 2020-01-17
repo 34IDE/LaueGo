@@ -22,5 +22,12 @@
 		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">343.5</DebyeTemperature>
 	</atom_site>
-	<citation>Wyckoff R W G , Crystal Structures , 1 (1963) p.7-83, Second edition. Interscience Publishers, New York, New York</citation>
+	<citation>
+		<author>Wyckoff, R W G</author>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		Second edition. Interscience Publishers, New York, New York
+	</citation>
 </cif>

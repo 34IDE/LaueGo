@@ -25,8 +25,12 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="N" n1="N" type="3">0.11623</bond_chemical>
 	<citation>
-		A.F. Schuch, R.L. Mills
-		"Crystal structures of the three modifications of nitrogen 14 and nitrogen 15 at high pressure"
-		Journal of Chemical Physics 52 (1970), 6000-6008
+		<author>A.F. Schuch</author>
+		<author>R.L. Mills</author>
+		<title>Crystal structures of the three modifications of nitrogen 14 and nitrogen 15 at high pressure</title>
+		<journal>Journal of Chemical Physics</journal>
+		<volume>52</volume>
+		<year>1970</year>
+		<pages>6000 6008</pages>
 	</citation>
 </cif>

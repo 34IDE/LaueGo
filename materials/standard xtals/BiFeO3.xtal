@@ -30,5 +30,14 @@
 		<symbol>O</symbol>
 		<fract>0.4469 0.0181 0.95183</fract>
 	</atom_site>
-	<citation>Palewicz, Przenioslo, Sosnowska, Hewat; Acta Cryst B (2007) 63, 537-544</citation>
+	<citation>
+		<author>Palewicz</author>
+		<author>Przenioslo</author>
+		<author>Sosnowska</author>
+		<author>Hewat</author>
+		<journal>Acta Cryst B</journal>
+		<year>2007</year>
+		<volume>63</volume>
+		<pages>537 544</pages>
+	</citation>
 </cif>

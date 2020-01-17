@@ -67,9 +67,13 @@
 		<aniso_U_23 unit="Å^2">0.0006</aniso_U_23>
 	</atom_site>
 	<citation>
-		Dobson D P, Jacobsen S D
-		American Mineralogist 89 (2004) 807-811
-		The flux growth of magnesium silicate perovskite single crystals.
+		<author>Dobson, D P</author>
+		<author>Jacobsen, S D</author>
+		<journal>American Mineralogist</journal>
+		<volume>89</volume>
+		<year>2004</year>
+		<pages>807 811</pages>
+		<title>The flux growth of magnesium silicate perovskite single crystals.</title>
 		http://rruff.geo.arizona.edu/doclib/am/vol89/AM89_807.pdf
 	</citation>
 </cif>

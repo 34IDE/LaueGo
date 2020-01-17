@@ -30,7 +30,11 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<citation>
-		P. Niggli, Zeitschrift fur Kristallographie, 57 (1922), pg. 253-299
-		"Die Kristallstruktur einiger Oxyde I"
+		<author>P. Niggli</author>
+		<journal>Zeitschrift fur Kristallographie</journal>
+		<volume>57</volume>
+		<year>1922</year>
+		<pages>253 299</pages>
+		<title>Die Kristallstruktur einiger Oxyde I</title>
 	</citation>
 </cif>

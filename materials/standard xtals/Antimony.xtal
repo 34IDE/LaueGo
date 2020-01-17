@@ -24,7 +24,15 @@
 		<fract>0 0 0.23349</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-	<citation>Schiferl D, Barrett CS, Journal of Applied Crystallography 2 (1969) 30-36, "The crystal structure of arsenic at 4.2, 78 and 299 K"</citation>
+	<citation>
+		<author>Schiferl D</author>
+		<author>Barrett CS</author>
+		<journal>Journal of Applied Crystallography</journal>
+		<volume>2</volume>
+		<year>1969</year>
+		<pages>30 36</pages>
+		<title>The crystal structure of arsenic at 4.2, 78 and 299 K</title>
+	</citation>
 	<bond_chemical unit="nm" n0="Sb" n1="Sb">0.290821 0.335494</bond_chemical>
 </cif>
 

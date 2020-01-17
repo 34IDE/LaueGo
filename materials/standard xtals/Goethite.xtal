@@ -62,8 +62,14 @@
 	</atom_site>
 
 	<citation>
-		H. Yangm, R.T. Downs, G. Costin, Acta Crystallographica, Section E 62 (2006) i250-i252
-		"Goethite, alpha-FeO(OH), from single-crystal data"
+		<author>H. Yangm</author>
+		<author>R.T. Downs</author>
+		<author>G. Costin</author>
+		<journal>Acta Crystallographica, Section E</journal>
+		<volume>62</volume>
+		<year>2006</year>
+		<pages>250 252</pages>
+		<title>Goethite, alpha-FeO(OH), from single-crystal data</title>
 		source: Park County, Colorado, USA
 	</citation>
 </cif>

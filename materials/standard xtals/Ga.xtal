@@ -26,9 +26,12 @@
 	<bond_chemical unit="nm" n0="Ga" n1="Ga">0.275</bond_chemical>
 
 	<citation>
-		Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie (-144,1977)
-		vol 117 (1962) pg. 293-300
-		B.D. Sharma, J. Donohue
+		<journal>Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie (-144,1977)</journal>
+		<volume>117</volume>
+		<year>1962</year>
+		<pages>293 300</pages>
+		<author>B.D. Sharma</author>
+		<author>J. Donohue</author>
 	</citation>
 </cif>
 

@@ -21,5 +21,11 @@
 		<symbol>Mg</symbol>
 		<fract>0.333333333 0.666666667 0.25</fract>
 	</atom_site>
-	<citation>Wyckoff R W G, Crystal Structures, 1, 1963 pg 7-83</citation>
+	<citation>
+		<author>Wyckoff, R W G</author>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+	</citation>
 </cif>

@@ -29,8 +29,11 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Zn" n1="S">0.23423</bond_chemical>
 	<citation>
-		American Mineralogist 46 (1961) 1399-1411
-		B.J. Skinner
-		"Unit-cell edges of natural and synthetic sphalerites"
+		<journal>American Mineralogist</journal>
+		<volume>46</volume>
+		<year>1961</year>
+		<pages>1399 1411</pages>
+		<author>B.J. Skinner</author>
+		<title>Unit-cell edges of natural and synthetic sphalerites</title>
 	</citation>
 </cif>

@@ -28,8 +28,11 @@
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<citation>
-	R.W.G. Wyckoff
-	Crystal Structures, V1, (1963) pg. 239-444,
-	"Fluorite structure"
+		<author>R.W.G. Wyckoff</author>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>239 444</pages>
+		<title>Fluorite structure</title>
 	</citation>
 </cif>

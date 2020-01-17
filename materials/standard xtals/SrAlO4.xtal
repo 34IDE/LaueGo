@@ -102,6 +102,14 @@
 		<fract>0.99 0.888 0.651</fract>
 		<B_iso>1.08</B_iso>
 	</atom_site>
-	<citation>A.R. Schulze, H. Mueller Buschbaur, Zeitschrift fuer Anorganische uni Allgemeine Chemie (19181) 475, P205-210</citation>
+	<citation doi="10.1002/zaac.19814750423">
+		<author>A.R. Schulze</author>
+		<author>Hk. Mueller Buschbaur</author>
+		<journal>Zeitschrift fuer Anorganische uni Allgemeine Chemie</journal>
+		<year>1981</year>
+		<volume>475</volume>
+		<pages>205 210</pages>
+		<title>Zur Verbindungsbildung von MeO: M2O3. IV. Zur Struktur von monoklinem SrAl2O4</title>
+	</citation>
 	<!-- from ICSD -->
 </cif>

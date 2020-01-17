@@ -41,10 +41,18 @@
 		<symbol>O</symbol>
 		<fract>0.0 0.5 0.0</fract>
 	</atom_site>
-	<citation>
-		James F. Britten, et.al. Acta Cryst. (1995). C51, 1975-1977
-		Czochralski-Grown SrLaGaO4
-		http://journals.iucr.org/10.1107/S0108270194011820/pdf
+	<citation doi="10.1107/S0108270194011820">
+		<author>J. F. Britten</author>
+		<author>H. A. Dabkowska</author>
+		<author>A. B. Dabkowski</author>
+		<author>J. E. Greedan</author>
+		<author>J. L. Campbell</author>
+		<author>W. J. Teesdale</author>
+		<journal>Acta Cryst.</journal>
+		<year>1995</year>
+		<volume>C51</volume>
+		<pages>1975 1977</pages>
+		<title>Czochralski-Grown SrLaGaO4</title>
 		lattice constant refined by JZT
 	</citation>
 </cif>

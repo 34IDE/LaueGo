@@ -5,6 +5,7 @@
 	<space_group>
 		<IT_number>14</IT_number>
 	</space_group>
+	<database_code db="amcsd">0000209</database_code>
 	<cell>
 		<a unit="nm">0.9706</a>
 		<b unit="nm">0.895</b>
@@ -175,9 +176,16 @@
 		<aniso_U_13 unit="nm^2">7e-06</aniso_U_13>
 		<aniso_U_23 unit="nm^2">5.41e-05</aniso_U_23>
 	</atom_site>
+
+
 	<citation>
-		Morimoto N, Guven N, American Mineralogist, 55 (1970), 1195-1209
-		"Refinement of the crystal structure of pigeonite", code_amcsd 0000209
+		<author>Morimoto, N</author>
+		<author>Guven, N</author>
+		<journal>American Mineralogist</journal>
+		<volume>55</volume>
+		<year>1970</year>
+		<pages>1195 1209</pages>
+		<title>Refinement of the crystal structure of pigeonite</title>
 		_chemical_compound_source 'Isle of Mull, Scotland'
 		_chemical_formula_sum 'Mg.78 Fe1.04 Ca.18 Si2 O6'
 	</citation>

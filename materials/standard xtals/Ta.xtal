@@ -24,8 +24,12 @@
 		<DebyeTemperature unit="K">225</DebyeTemperature>
 	</atom_site>
 	<citation>
-		H.E. Swanson, E. Tatge,
-		National Bureau of Standards (U.S.), Circular, 539 (1953), pg. 1-95,
-		"Standard X-ray diffraction powder patterns I"
+		<author>H.E. Swanson</author>
+		<author>E. Tatge</author>
+		<journal>National Bureau of Standards (U.S.), Circular</journal>
+		<volume>539</volume>
+		<year>1953</year>
+		<pages>1 95</pages>
+		<title>Standard X-ray diffraction powder patterns I</title>
 	</citation>
 </cif>

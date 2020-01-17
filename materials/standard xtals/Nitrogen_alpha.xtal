@@ -24,7 +24,10 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="N" n1="N" type="3">0.105578</bond_chemical>
 	<citation>
-		R.W.G. Wyckoff
-		Crystal Structures 1 (1963), 7-83
+		<author>R.W.G. Wyckoff</author>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
 	</citation>
 </cif>

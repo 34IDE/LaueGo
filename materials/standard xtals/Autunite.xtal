@@ -182,7 +182,14 @@
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 
-	<citation>Locock A J, Burns P C, American Mineralogist 88 (2003) 240-244</citation>
+	<citation>
+		<author>Locock, A J</author>
+		<author>Burns, P C</author>
+		<journal>American Mineralogist</journal>
+		<volume>88</volume>
+		<year>2003</year>
+		<pages>240 244</pages>
+	</citation>
 </cif>
 
 

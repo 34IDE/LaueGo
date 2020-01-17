@@ -20,9 +20,15 @@
 		<fract>0.071 0.172 0.214</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
-	<citation>
-		Acta Crystallographica (1,1948-23,1967) 1951 4 15 20 ACCRA9
-		'Abrahams, S.C.', 'Collin, R.L.', 'Lipscomb, W.N.'
+	<citation doi="10.1107/S0365110X51000039">
+		<journal>Acta Crystallographica</journal>
+		<year>1951</year>
+		<volume>4</volume>
+		<pages>15 20</pages>
+		<ASTM>ACCRA9</ASTM>
+		<author>Abrahams, S.C.</author>
+		<author>Collin, R.L.</author>
+		<author>Lipscomb, W.N.</author>
 		30602-ICSD
 	</citation>
 </cif>

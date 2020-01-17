@@ -90,8 +90,12 @@
 	</atom_site>
 
 	<citation>
-		W. Gruner, Zeitschrift fur Kristallographie 83 (1932) 75-88
-		"The Crystal Structure of Kaolinite"
+		<author>W. Gruner</author>
+		<journal>Zeitschrift fur Kristallographie</journal>
+		<volume>83</volume>
+		<year>1932</year>
+		<pages>75 88</pages>
+		<title>The Crystal Structure of Kaolinite</title>
 	</citation>
 </cif>
 

@@ -21,7 +21,13 @@
 		<fract>0.33333 0.66667 0.25</fract>
 	</atom_site>
 	<citation>
-		F. H. Spedding, A. H. Daane, and K. W. Herrmann, Acta Crystallogr., 1956, 9, 559.
+		<author>F. H. Spedding</author>
+		<author>A. H. Daane</author>
+		<author>K. W. Herrmann</author>
+		<journal>Acta Crystallogr.</journal>
+		<year>1956</year>
+		<volume>9</volume>
+		<pages>559</pages>
 		http://www.webelements.com/erbium/crystal_structure.html
 	</citation>
 </cif>

@@ -18,6 +18,12 @@
 		<symbol>Pu</symbol>
 		<fract>0.345 0.25 0.152</fract>
 	</atom_site>
-	<citation>Zachariasen, Acta Cryst. (1963) Vol 16, 777-783</citation>
+	<citation>
+		<author>Zachariasen</author>
+		<journal>Acta Cryst.</journal>
+		<year>1963</year>
+		<volume>16</volume>
+		<pages>777 783</pages>
+	</citation>
 	<!-- M.P. 914K, Cell 377K, 6.214, 4.852, 10.989, 90,101.75, 90 -->
 </cif>

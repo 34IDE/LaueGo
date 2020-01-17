@@ -46,8 +46,12 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
 	<citation doi="10.1107/S0567740876007966">
-		Y. le Page, G. Donnay,
-		Acta Crystallographica, B32 (1976) pg. 2456-2459
-		"Refinement of the crystal structure of low-quartz"
+		<author>Y. le Page</author>
+		<author>G. Donnay</author>
+		<journal>Acta Crystallographica</journal>
+		<volume>B32</volume>
+		<year>1976</year>
+		<pages>2456 2459</pages>
+		<title>Refinement of the crystal structure of low-quartz</title>
 	</citation>
 </cif>

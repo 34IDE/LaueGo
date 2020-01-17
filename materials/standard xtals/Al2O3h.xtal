@@ -43,16 +43,25 @@
 		<aniso_U_23>0.0006</aniso_U_23>
 	</atom_site>
 	<citation id="primary">
-		R.E. Newnham, Y.M. de Haan,
-		Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie 117 (1977), pg. 235 237
-		"Refinement of the Al2 O3-alpha, Ti2 O3, V2 O3 and Cr2 O3 structures"
+		<author>R.E. Newnham</author>
+		<author>Y.M. de Haan</author>
+		<journal>Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie</journal>
+		<volume>117</volume>
+		<year>1977</year>
+		<pages>235 237</pages>
+		<title>Refinement of the Al2 O3-alpha, Ti2 O3, V2 O3 and Cr2 O3 structures</title>
 		icsd = 25778
 		old lattice constants: a=0.47589,  c=1.2991
 	</citation>
 	<citation id="2">
-		A.S. Brown, M.A. Spackman, R.J. Hill, 
-		Acta Crystallographica. Section A: Foundations of Crystallography 49 (1993), pg. 513-527
-		"The electron distribution in corundum. A study of the utility of merging single-crystal and powder diffraction data"
+		<author>A.S. Brown</author>
+		<author>M.A. Spackman</author>
+		<author>R.J. Hill</author>
+		<journal>Acta Crystallographica. Section A: Foundations of Crystallography</journal>
+		<volume>49</volume>
+		<year>1993</year>
+		<pages>513 527</pages>
+		<title>The electron distribution in corundum. A study of the utility of merging single-crystal and powder diffraction data</title>
 		icsd = 73076
 	</citation>
 	<citation id="3">

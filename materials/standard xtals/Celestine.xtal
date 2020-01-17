@@ -84,7 +84,14 @@
 		<aniso_U_23>0.0006</aniso_U_23>
 	</atom_site>
 	<citation>
-		S.D. Jacobsen, J.R. Smyth, R.J. Swope, R.T. Downs, The Canadian Mineralogist, 36 (1998), 1053-1060
-		"Rigid-body character of the SO4 groups in celestine, anglesite and barite"
+		<author>S.D. Jacobsen</author>
+		<author>J.R. Smyth</author>
+		<author>R.J. Swope</author>
+		<author>R.T. Downs</author>
+		<journal>The Canadian Mineralogist</journal>
+		<volume>36</volume>
+		<year>1998</year>
+		<pages>1053 1060</pages>
+		<title>Rigid-body character of the SO4 groups in celestine, anglesite and barite</title>
 	</citation>
 </cif>

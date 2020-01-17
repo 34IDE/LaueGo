@@ -48,9 +48,16 @@
 		<Biso>1.4</Biso>
 	</atom_site>
 	<citation>
-		S.B Ubizskii, L.O. Vasylechko, D.I. Savytskii, A.O. Matkovskii, I.M. Syvorotka
-		Superconductor Science and Technology, (1994) 7, 766-772
-		"The crystal structure and twinning of neodymium gallium perovskite single crystals"
+		<author>S.B Ubizskii</author>
+		<author>L.O. Vasylechko</author>
+		<author>D.I. Savytskii</author>
+		<author>A.O. Matkovskii</author>
+		<author>I.M. Syvorotka</author>
+		<journal>Superconductor Science and Technology</journal>
+		<year>1994</year>
+		<volume>7</volume>
+		<pages>766 772</pages>
+		<title>The crystal structure and twinning of neodymium gallium perovskite single crystals</title>
 	</citation>
 
 

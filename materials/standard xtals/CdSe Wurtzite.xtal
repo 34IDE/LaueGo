@@ -34,7 +34,13 @@
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<citation>
-		D.K. Freeman, S.L. Mair, Z. Barnea, Acta Crystallographica, A33 (1977), pg. 355-359
-		"The structure and Bijvoet ratios of cadmium selenide"
+		<author>D.K. Freeman</author>
+		<author>S.L. Mair</author>
+		<author>Z. Barnea</author>
+		<journal>Acta Crystallographica</journal>
+		<volume>A33</volume>
+		<year>1977</year>
+		<pages>355 359</pages>
+		<title>The structure and Bijvoet ratios of cadmium selenide</title>
 	</citation>
 </cif>

@@ -29,5 +29,11 @@
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
-	<citation>H.D. Megaw, Crystal Structures 1973 (1973) 89-90, Copper-gold alloy, Cu3Au</citation>
+	<citation>
+		<author>H.D. Megaw</author>
+		<journal>Crystal Structures</journal>
+		<year>1973</year>
+		<pages>89 90</pages>
+		<title>Copper-gold alloy, Cu3Au</title>
+	</citation>
 </cif>
