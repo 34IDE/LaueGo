@@ -5,8 +5,10 @@
 	<space_group>
 		<IT_number>194</IT_number>
 		<id>194</id>
-		<H-M>P63/mmc</H-M>
+		<H-M>P 63/m m c</H-M>
+		<Hall>-P 6c 2c</Hall>
 	</space_group>
+	<database_code db="COD">9010995</database_code>
 	<cell>
 		<a unit="nm">0.35588</a>
 		<b unit="nm">0.35588</b>
@@ -20,14 +22,17 @@
 		<symbol>Er</symbol>
 		<fract>0.33333 0.66667 0.25</fract>
 	</atom_site>
-	<citation>
+	<citation doi="10.1107/S0365110X5600156X">
 		<author>F. H. Spedding</author>
 		<author>A. H. Daane</author>
 		<author>K. W. Herrmann</author>
 		<journal>Acta Crystallogr.</journal>
 		<year>1956</year>
 		<volume>9</volume>
-		<pages>559</pages>
+		<pages>559 563</pages>
+		<title> The crystal structures and lattice parameters of high-purity scandium, yttrium and the rare earth metals</title>
+		Locality: synthetic
+		Note: sample 99.8% pure
 		http://www.webelements.com/erbium/crystal_structure.html
 	</citation>
 </cif>
