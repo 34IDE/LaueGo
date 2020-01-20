@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.27								// based on LatticeSym_6.55
+#pragma version = 7.28								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -11,7 +11,7 @@
 
 Static strConstant NEW_LINE="\n"						//	was NL="\r"
 Constant LatticeSym_minBondLen = 0.050				// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
-Constant LatticeSym_maxBondLen = 0.310				// 0.310 nm = 310 pm, maximum possible bond distance between atoms
+Constant LatticeSym_maxBondLen = 0.56				// 0.56 nm = 560 pm, maximum possible bond distance between atoms, (Cs-Cs) distance, (had been using 0.310 nm)
 Static Constant ELEMENT_Zmax = 118
 //Static strConstant BAR_FONT_ALWAYS = "Arial"	//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
@@ -255,6 +255,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //							 removed: Rhom2HexFractonal(), Hex2RhomFractonal()
 //	with version 7.26, modified MenuIfXtalIsRhomb(): added a possible call to InitLatticeSymPackage()
 //	with version 7.27, got rid of all the LATTICE_SYM_2D_3D stuff everywhere
+//	with version 7.28, changed LatticeSym_maxBondLen from 0.31 nm --> 0.56 nm
 
 
 //	Rhombohedral Transformation:
@@ -618,8 +619,8 @@ Structure atomTypeStructure	// defines one type of atom in a crystal structure
 EndStructure
 //
 Structure bondTypeStructure	// defines the type of bond between two atom types
-	char label0[60]			// label for first atom, usually starts with atomic symbol
-	char label1[60]			// label for second atom, usually starts with atomic symbol
+	char label0[60]				// label for first atom, usually starts with atomic symbol
+	char label1[60]				// label for second atom, usually starts with atomic symbol
 	int16 N						// number of bonds in len (often just 1)
 	double len[5]				// length of bond (possibly multiple values) (nm)
 EndStructure
@@ -631,13 +632,13 @@ Function init_crystalStructure(xtal)		// set all values to empty or invalid valu
 	xtal.dim = 3
 	xtal.desc = ""
 	xtal.formula = ""
-	xtal.a = NaN		;		xtal.b = NaN		;	xtal.c = NaN
-	xtal.alpha = NaN	;		xtal.beta = NaN	;	xtal.gam = NaN
+	xtal.a = NaN					;		xtal.b = NaN		;	xtal.c = NaN
+	xtal.alpha = NaN			;		xtal.beta = NaN	;	xtal.gam = NaN
 	xtal.SpaceGroup = 0
 	xtal.SpaceGroupID = ""	;	xtal.SpaceGroupIDnum = 0
-	xtal.a0 = NaN		;	xtal.a1 = NaN	;		xtal.a2 = NaN
-	xtal.b0 = NaN		;	xtal.b1 = NaN	;		xtal.b2 = NaN
-	xtal.c0 = NaN		;	xtal.c1 = NaN	;		xtal.c2 = NaN
+	xtal.a0 = NaN				;	xtal.a1 = NaN	;		xtal.a2 = NaN
+	xtal.b0 = NaN				;	xtal.b1 = NaN	;		xtal.b2 = NaN
+	xtal.c0 = NaN				;	xtal.c1 = NaN	;		xtal.c2 = NaN
 
 	xtal.Vc = NaN
 	xtal.density = NaN

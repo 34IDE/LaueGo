@@ -1,8 +1,8 @@
 ﻿#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=BondLattice
-#pragma version = 0.02
-#include "LatticeSym", version>=7.20
+#pragma version = 0.03
+#include "LatticeSym", version>=7.28
 
 #define USE_BONDS_VERSION_2			// should be 1 or 2, for anything else defaults to the one in AtomView.ipf
 // #define USE_BONDS_VERSION_1			// should be 1 or 2, for anything else defaults to the one in AtomView.ipf
@@ -103,9 +103,9 @@ Static Function AddBondsToXtal(xtal,blen)
 	Make/N=(MaxBonds)/I/FREE atomTypes = -20	// init to unknown
 	Variable Nbonds=0
 	Make/N=(MaxBonds,8)/D/FREE bondsWave=NaN	// columns are: m0,Z0,m1,Z1,len,mult,type,distCalc
-	SetDimLabel 1,0,m0,bondsWave	;	SetDimLabel 1,1,Z0,bondsWave
-	SetDimLabel 1,2,m1,bondsWave	;	SetDimLabel 1,3,Z1,bondsWave
-	SetDimLabel 1,4,len,bondsWave	;	SetDimLabel 1,5,mult,bondsWave
+	SetDimLabel 1,0,m0,bondsWave		;	SetDimLabel 1,1,Z0,bondsWave
+	SetDimLabel 1,2,m1,bondsWave		;	SetDimLabel 1,3,Z1,bondsWave
+	SetDimLabel 1,4,len,bondsWave		;	SetDimLabel 1,5,mult,bondsWave
 	SetDimLabel 1,6,itype,bondsWave	;	SetDimLabel 1,7,distCalc,bondsWave
 
 	String label0, label1, type, typeName="match;covalent;ionic"
@@ -150,7 +150,7 @@ Static Function AddBondsToXtal(xtal,blen)
 		distCalc /= 10						// convert Å --> nm
 
 		dd = abs(distCalc - xtal.bond[i].len[0])
-		bad = dd>0.06 ? 1 : bad			// distances should match withing 0.6Å of calculated
+		bad = dd>0.08 ? 1 : bad			// distances should match withing 0.8Å of calculated (was 0.6Å)
 		type = StringFromList(xtal.bond[i].len[3],typeName)
 		if (!bad)
 			//printf "'%s'[%d] <--> '%s'[%d]  =  %g nm   mult=%d   '%s'   calc=%.3f  ∆=%.4f   %d\r",label0,Z0, label1,Z1, xtal.bond[i].len[0], xtal.bond[i].len[4], type, distCalc, dd,bad
