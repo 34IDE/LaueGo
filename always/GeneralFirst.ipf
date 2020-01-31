@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.51
+#pragma version = 3.52
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.64
@@ -645,7 +645,7 @@ End
 
 Static Function/T GetUserPackagesMenuStr()
 	SVAR/Z str = root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
-	if (!SVAR_Exists(str))					// does not exist
+	if (!SVAR_Exists(str))				// does not exist
 		UserPackagesMenuStr("")			// re-make LocalUserPackagesMenu_JZT
 	endif
 	SVAR str = root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT
@@ -658,13 +658,13 @@ End
 Static Function/T UserPackagesMenuStr(dirPath)
 	String dirPath				// OPTIONAL, full path to a directory, usually "" when called
 	String str = "=refresh menu=;-;" + CheckForUserPackages(dirPath)
+	str = reorder(str)			// put "misc", "ORNL", "only JZT", "inProgress", "oddExtras" at the end of menu
 	NewDataFolder/O root:Packages
 	NewDataFolder/O root:Packages:PackagesJZT
 	String/G root:Packages:PackagesJZT:LocalUserPackagesMenu_JZT = str
 	return str
 End
-
-
+//
 Static Function/T CheckForUserPackages(dirPath)
 	String dirPath				// full path to a directory
 	String PackagesFolder = StrVarOrDefault("root:Packages:PackagesFolder_JZT","LocalPackages")
@@ -722,8 +722,7 @@ Static Function/T CheckForUserPackages(dirPath)
 	KillPath/Z $pathName
 	return menuList
 End
-
-
+//
 Static Function/T getListOfRequiredProcs(path,ipf)
 	String path, ipf
 	String line, list=""
@@ -752,6 +751,46 @@ Static Function/T getListOfRequiredProcs(path,ipf)
 	Close f
 	list = ReplaceString(",",list,";")			// change commas to semi-colons
 	return list
+End
+//
+Static Function/S reorder(in)
+	String in					// input list
+
+	for (;strsearch(in, ";-;-;",0)>=0;)			// remove all double lines
+		in = ReplaceString(";-;-;", in, ";-;")
+	endfor
+	Make/N=5/T/FREE bottoms={"misc", "ORNL", "only JZT", "inProgress", "oddExtras"}, contents=""
+	Variable N=numpnts(bottoms), i, i0,i1
+	for (i=0;i<N;i+=1)
+		GroupRange(bottoms[i],in, i0,i1)	// sets i0 and i1
+		if (i0>0 && i1>i0)
+			contents[i] = in[i0,i1]
+			in[i0,i1] = ""
+		endif
+	endfor
+	for (i=0;i<N;i+=1)
+	endfor
+
+	String out=in
+	for (i=0;i<N;i+=1)
+		out += contents[i]
+	endfor
+	return out
+End
+//
+Static Function/C GroupRange(key, list, i0,i1)
+	String key			// something like "misc" or "inProgress"
+	String list
+	Variable &i0, &i1
+	key = ":" + key + ":"
+	i0 = strsearch(list, key, 0,2)
+	i0 -= CmpStr(list[i0-2,i0-1],"-;") ? 0 : 2
+	i1 = strsearch(list, key, Inf,3)
+	i1 = strsearch(list, ";",i1,2)
+	if (i0<0 || i1 <= i0 || numtype(i0+i1))
+		i0 = -1
+		i1 = -1
+	endif
 End
 //
 Static Function StartUpLocalPackage()
