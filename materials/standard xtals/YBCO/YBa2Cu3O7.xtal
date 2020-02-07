@@ -105,8 +105,15 @@
 	<bond_chemical unit="nm" n0="Cu2" n1="O2">0.2341</bond_chemical>
 	<bond_chemical unit="nm" n0="Cu2" n1="O3">0.1929</bond_chemical>
 	<bond_chemical unit="nm" n0="Cu2" n1="O4">0.1961</bond_chemical>
+
 	<citation doi="10.1038/328606a0">
-		Calestani and Rizzoli, Nature 328, 606-607 (13 August 1987)
+		<author>C. Calestani</author>
+		<author>C. Rizzoli</author>
+		<journal>Nature</journal>
+		<volume>328</volume>
+		<year>1987</year>
+		<pages>606 607</pages>
+		<title>Crystal structure of the YBa2Cu3O7 superconductor by single-crystal X-ray diffraction</title>
 	</citation>
 </cif>
 <!--   

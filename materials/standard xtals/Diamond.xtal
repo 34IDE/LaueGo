@@ -2,22 +2,40 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Diamond</chemical_name_common>
+	<database_code db="cod">9011997</database_code>
 	<space_group>
-		<IT_number>227</IT_number>
 		<id>227:1</id>
-		<H-M>Fd-3m:1</H-M>
+		<IT_number>227</IT_number>
+		<H-M>F d -3 m :1</H-M>
+		<Hall>F 4d 2 3 -1d</Hall>
 	</space_group>
 	<cell>
-		<a unit="nm">0.3567</a>
-		<b unit="nm">0.3567</b>
-		<c unit="nm">0.3567</c>
+		<a unit="nm">0.3566986</a>
+		<b unit="nm">0.3566986</b>
+		<c unit="nm">0.3566986</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="C">25</temperature>
+		<alphaT>2.6e-06</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>
+
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
 		<fract>0 0 0</fract>
+		<DebyeTemperature unit="K">2240</DebyeTemperature>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<citation doi="10.1107/S0021889875010965">
+		<author>T. Hom</author>
+		<author>W. Kiszenick</author>
+		<author>B. Post</author>
+		<journal>Journal of Applied Crystallography</journal>
+		<volume>8</volume>
+		<year>1975</year>
+		<pages>457 458</pages>
+		<title>Accurate Lattice Constants from Multiple Reflection Mesurements II. Lattice Constants of Germanium, Silicon and Diamond.</title>
+	</citation>
 </cif>
