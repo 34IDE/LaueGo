@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=GizmoMovies
-#pragma version = 2.07
+#pragma version = 2.08
 #include "GizmoUtility", version>=0.16
 
 Static Constant MAX_MOVIE_STEPS = 50		// maximum number of steps in a movie process (not max number of frames)
@@ -194,7 +194,7 @@ print "starting gm.quaternion =",gm.quaternion[0],gm.quaternion[1],gm.quaternion
 	ModifyGizmo/N=$(gm.gizmoName) update = 2
 	GetGizmo/N=$(gm.gizmoName) winPixels						// get gizmo window position & size
 	Variable left=V_left, right=V_right, top=V_top, bottom=V_bottom
-	ExportGizmo wave=gm.gizmoName								// get a picture of the gizmo
+	ExportGizmo/N=$(gm.gizmoName) wave=gm.imageName		// get a picture of the gizmo
 #endif
 	Wave GizmoImage=$(gm.imageName)
 
