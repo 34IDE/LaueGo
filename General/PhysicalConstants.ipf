@@ -1,6 +1,6 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.18
+#pragma version = 2.19
 #pragma IgorVersion = 6.3
 #include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
 Static StrConstant NISTserverASCII_URL="https://physics.nist.gov/cuu/Constants/Table/allascii.txt"
@@ -21,35 +21,36 @@ Static StrConstant NISTserverASCII_URL="https://physics.nist.gov/cuu/Constants/T
 
 
 //	This list of constants is not really needed, it is just a convienence for copying and pasting into other experiments.
-//	Set to 2010 CODATA values, Jan 7, 2015,   from  http://physics.nist.gov/cuu/Constants
+//	Set to 2018 CODATA values, Feb 9, 2020,   from  http://physics.nist.gov/cuu/Constants
 //
 //	Constant c_ms		= 299792458				// speed of light (m/s) (exact)
-//	Constant eo_Fm		= 8.85418781762039e-12		// permitivity of vacuum (F/m),  = 1/(4*PI*1e-7)/(299792458)^2 (exact)
-//	Constant G_MKS		= 6.67384e-11			// Gravitational constant (m^3 1/kg 1/s)
-//	Constant h_Js		= 6.62606957e-34		// Planck constant (J s)
-//	Constant h_eVs		= 4.135667516e-15		// Plank constant (eV s)
-//	Constant e_C		= 1.602176565e-19		// Charge on electron (C)
-//	Constant alpha_fine = 7.2973525698e-3	// fine structure constant
-//	Constant aB_m		= 0.52917721092e-10	// Bohr radius (m)
-//	Constant Rydberg	= 13.60569253			// Rydberg (eV) ( = alpha^2*me*c/2/h * hc)
-//	Constant me_kg		= 9.10938291e-31		// mass of electron (kg)
-//	Constant me_keV	= 510.998928			// mass of electron (keV)
-//	Constant me_mp		= 5.4461702178e-4		// mass ratio m(electron)/m(proton)
-//	Constant mp_kg		= 1.672621777e-27		// mass of proton (kg)
-//	Constant mn_kg		= 1.674927351e-27		// mass of neutron (kg)
-//	Constant mn_eV		= 9.39565379e8			// mass of neutron (eV)
-//	Constant NA			= 6.02214129e+23		// Avagadro's number
-//	Constant kB_JK		= 1.3806488e-23		// Boltzman constant (J/K)
-//	Constant kB_eVK	= 8.6173324e-5			// Boltzman constant (eV/K)
-//	Constant J_eV		= 1.602176565e-19		// Joules/eV
-//	Constant atm_Pa	= 101325					// Number of Pa in one atm (exact)
-//	Constant hc_keVA	= 12.3984193			// h*c (keV-Å)
-//	Constant hc_keVnm = 1.23984193			// h*c (keV-nm)
-//	Constant re_m		= 2.8179403267e-15	// Thompson radius (m)
-//	Constant re_A		= 2.8179403267e-5		// Thompson radius (Å)
+//	Constant eo_Fm		= 8.8541878128e-12		// permitivity of vacuum (F/m),  = 1/(4*PI*1e-7)/(299792458)^2 (exact)
+//	Constant G_MKS		= 6.67430e-11			// Gravitational constant (m^3 1/kg 1/s)
+//	Constant h_Js		= 6.62607015e-34		// Planck constant (J s)
+//	Constant h_eVs		= 4.13566769692386e-15	// Plank constant (eV s)
+//	Constant e_C			= 1.602176634e-19		// elementary Charge (C)
+//	Constant alpha_fine = 7.2973525693e-3	// fine structure constant
+//	Constant aB_m		= 0.529177210903e-10	// Bohr radius (m)
+//	Constant Rydberg	= 13.605693122994		// hc*Rydberg (eV) ( = alpha^2*me*c/2/h * hc)
+//	Constant me_kg		= 9.1093837015e-31		// mass of electron (kg)
+//	Constant me_keV		= 510.99895				// mass of electron (keV)
+//	Constant me_mp		= 5.44617021487e-4		// mass ratio m(electron)/m(proton)
+//	Constant mp_kg		= 1.67262192369e-27	// mass of proton (kg)
+//	Constant mp_eV		= 9.3827208816e8		// mass of proton (eV)
+//	Constant mn_kg		= 1.67492749804e-27	// mass of neutron (kg)
+//	Constant mn_eV		= 939.56542052e8		// mass of neutron (eV)
+//	Constant NA			= 6.02214076e+23		// Avagadro's number
+//	Constant kB_JK		= 1.380649e-23			// Boltzman constant (J/K)
+//	Constant kB_eVK		= 8.61733326214518e-5	// Boltzman constant (eV/K)
+//	Constant J_eV		= 1.602176634e-19		// Joules/eV (just = e (exact)
+//	Constant atm_Pa		= 101325					// Number of Pa in one atm (exact)
+//	Constant hc_keVA	= 12.39841984332		// h*c (keV-Å)
+//	Constant hc_keVnm	= 1.239841984332		// h*c (keV-nm)
+//	Constant re_m		= 2.8179403262e-15		// Thompson radius (m)
+//	Constant re_A		= 2.8179403262e-5		// Thompson radius (Å)
 //	Constant CuKa1		= 1.540593226			// wavelength of Cu Kalpha(1) (Å)
 //	Constant MoKa1		= 0.709317155			// wavelength of Mo Kalpha(1) (Å)
-//	Constant aSi_A		= 5.4310205052			// lattice constant of Si at 22.5° (Å), 2010 CODATA,  alpha=2.56E-6 (deg/K)
+//	Constant aSi_A		= 5.431020511			// lattice constant of Si at 22.5° (Å), 2018 CODATA,  alpha=2.56E-6 (deg/K)
 
 
 Menu "Analysis"
