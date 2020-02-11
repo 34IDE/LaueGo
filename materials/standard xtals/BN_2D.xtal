@@ -14,13 +14,13 @@
 	<atom_site>
 		<label>B</label>
 		<symbol>B</symbol>
-		<fract>0.333333333333333 0.666666666666667</fract>
+		<fract>1/3 2/3</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>N</label>
 		<symbol>N</symbol>
-		<fract>0.666666666666667 0.333333333333333</fract>
+		<fract>2/3 1/3</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="B" n1="N">0.145</bond_chemical>

@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.28								// based on LatticeSym_6.55
+#pragma version = 7.29									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -256,6 +256,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.26, modified MenuIfXtalIsRhomb(): added a possible call to InitLatticeSymPackage()
 //	with version 7.27, got rid of all the LATTICE_SYM_2D_3D stuff everywhere
 //	with version 7.28, changed LatticeSym_maxBondLen from 0.31 nm --> 0.56 nm
+//	with version 7.29, added interpDouble(), allows fractional coordinates to also be written "1/2", also used for occupancy.
 
 
 //	Rhombohedral Transformation:
@@ -4278,7 +4279,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	Variable cifVers=NumberByKey("version",keyVals,"=")
 	cifVers = numtype(cifVers) || cifVers<1 ? 1 : cifVers			// default to version 1
 	Variable dim=NumberByKey("dim",keyVals,"=")						// try to get dim from an attribute
-	dim = numtype(dim) || dim<1 ? 3 : dim									// default to dim=3, if invalid
+	dim = numtype(dim) || dim<1 ? 3 : dim								// default to dim=3, if invalid
 	if (!(dim==3))
 		sprintf str, "Caution -- reading a file with dim = \"%s\"", StringByKey("dim",keyVals,"=")
 		DoAlert 0, str
@@ -4289,7 +4290,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	// Start version 2.0 changes here
 	String space_group = XMLtagContents("space_group",cif)			// space_group group
 	String id_Name="id", IT_name="IT_number"							// version 2 names
-	if (strlen(space_group) < 2)												// version 1 names
+	if (strlen(space_group) < 2)											// version 1 names
 		id_Name = "space_group_"+id_Name
 		IT_name = "space_group_"+IT_name
 	endif
@@ -4397,7 +4398,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.Unconventional10=NaN;  xtal.Unconventional11=NaN;  xtal.Unconventional12=NaN	// default to a conventional cell
 	xtal.Unconventional20=NaN;  xtal.Unconventional21=NaN;  xtal.Unconventional22=NaN
 	String uncoStr = XMLtagContents("Unconventional",cell)
-	if (strlen(uncoStr))														// found an $Unconventional tag
+	if (strlen(uncoStr))																	// found an $Unconventional tag
 		Variable u00,u10,u20, u01,u11,u21, u02,u12,u22
 		sscanf uncoStr,"{ {%g,%g,%g}, {%g,%g,%g}, {%g,%g,%g} }",u00,u10,u20, u01,u11,u21, u02,u12,u22
 		if (V_flag==9 && numtype(u00+u10+u20+u01+u11+u21+u02+u12+u22)==0)
@@ -4433,38 +4434,39 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.formula = str[0,99]
 
 	// collect the atom sites values
-	String atomSite, atomLabel, symbol, WyckoffSymbol
+	String atomSite, atomLabel, symbol, WyckoffSymbol, list
 	Variable Zatom, fracX,fracY,fracZ,occupy,valence,DebyeT
 	Variable Biso, Uiso, aU11,aU22,aU33, aU12,aU13,aU23, mult
 	Variable start=0, N=0
 	do
-		atomSite = XMLtagContents("atom_site",cif, start=start)	// next atom site
-		if (strlen(atomSite)<10)												// could not find another atom_site
+		atomSite = XMLtagContents("atom_site",cif, start=start)		// next atom site
+		if (strlen(atomSite)<10)													// could not find another atom_site
 			break
 		endif
-		atomLabel = XMLtagContents("label",atomSite)					// label for this atom type
-		symbol = XMLtagContents("symbol",atomSite)						// atomic symbol for this atom type
-		atomLabel = SelectString(strlen(atomLabel), symbol, atomLabel)	// if no label given, use the symbol (may not be unique)
+		atomLabel = XMLtagContents("label",atomSite)						// label for this atom type
+		symbol = XMLtagContents("symbol",atomSite)							// atomic symbol for this atom type
+		atomLabel = SelectString(strlen(atomLabel), symbol, atomLabel)		// if no label given, use the symbol (may not be unique)
 		Zatom = ZfromLabel(SelectString(strlen(symbol),atomLabel,symbol))	// get Z, atomic number
 		WyckoffSymbol = XMLtagContents("WyckoffSymbol",atomSite)
 
-		Wave xyz = str2vec(XMLtagContents2List("fract",atomSite))				// 1st try v2 name for fractional coords
-		if (!WaveExists(xyz))
-			Wave xyz = str2vec(XMLtagContents2List("fract_xyz",atomSite))	// 2nd try v1 name for fractional coords
+		list = XMLtagContents2List("fract",atomSite)						// 1st try v2 name for fractional coords
+		if (ItemsInList(list)<2)
+			list = XMLtagContents2List("fract_xyz",atomSite)				// 2nd try v1 name for fractional coords
 		endif
-		if (WaveExists(xyz) && dim==3 && numpnts(xyz)>=3)
-			fracX = xyz[0]
-			fracY = xyz[1]
-			fracZ = xyz[2]
-		elseif (WaveExists(xyz) && dim==2 && numpnts(xyz)>=2)
-			fracX = xyz[0]
-			fracY = xyz[1]
+		if (ItemsInList(list)>=3 && dim==3)
+			fracX = interpDouble(StringFromList(0,list))
+			fracY = interpDouble(StringFromList(1,list))
+			fracZ = interpDouble(StringFromList(2,list))
+		elseif (ItemsInList(list)>=2 && dim==2)
+			fracX = interpDouble(StringFromList(0,list))
+			fracY = interpDouble(StringFromList(1,list))
 		else
-			fracX = str2num(XMLtagContents("fract_x",atomSite))					// 3rd try separate names for fractional coords
-			fracY = str2num(XMLtagContents("fract_y",atomSite))
-			fracZ = str2num(XMLtagContents("fract_z",atomSite))
+			fracX = interpDouble(XMLtagContents("fract_x",atomSite))	// 3rd try separate names for fractional coords
+			fracY = interpDouble(XMLtagContents("fract_y",atomSite))
+			fracZ = interpDouble(XMLtagContents("fract_z",atomSite))
 		endif
-		fracZ = dim==2 ? 0 : fracZ											// valid dummy value for dim=2
+
+		fracZ = dim==2 ? 0 : fracZ												// valid dummy value for dim=2
 		if (numtype(fracX+fracY+fracZ) && strlen(WyckoffSymbol) && dim>2)	// try to get x,y,z from Wyckoff symbol
 			if (ForceXYZtoWyckoff(SpaceGroupID,dim,WyckoffSymbol,fracX,fracY,fracZ))
 				fracX = NaN															// will cause a break in next if()
@@ -4474,7 +4476,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			break
 		endif
 		mult = 0
-		if (strlen(WyckoffSymbol)==0 && dim>2)							// try to set Wyckoff symbol from coordinates
+		if (strlen(WyckoffSymbol)==0 && dim>2)								// try to set Wyckoff symbol from coordinates
 			Variable isRhomb = strsearch(SpaceGroupID,":R",0,2)>1
 			Wave direct = LC2direct({xtal.a,xtal.b,xtal.c,xtal.alpha,xtal.beta,xtal.gam}, isRhomb=isRhomb)
 			STRUCT crystalStructure xtalTemp
@@ -4493,8 +4495,8 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 
 		valence = str2num(XMLtagContents("valence",atomSite))
 		valence = (numtype(valence)==0 && abs(valence)<10) ? round(valence) : 0
-		occupy = str2num(XMLtagContents("occupancy",atomSite))
-		occupy = (occupy>=0 && occupy<=1) ? occupy : 1
+		occupy = interpDouble(XMLtagContents("occupancy",atomSite))
+		occupy = (occupy>=0 && occupy<=1) ? occupy : 1				// default is 1
 		DebyeT = str2num(XMLtagContents("DebyeTemperature",atomSite))
 		DebyeT = DebyeT>0 ? DebyeT : NaN
 		unit = StringByKey("unit", XMLattibutes2KeyList("DebyeTemperature",atomSite),"=")
@@ -4562,7 +4564,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	ForceXtalAtomNamesUnique(xtal)					// forces all of the xtal atom names to be unique
 
 	Variable i, unitsConvert, Nlen, start0, Nbond=0
-	String bondKeys, label0,label1,list, BondBody
+	String bondKeys, label0,label1, BondBody
 	start = 0
 	do
 		start0 = start
@@ -4591,6 +4593,21 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	ForceLatticeToStructure(xtal)
 	UpdateCrystalStructureDefaults(xtal)
 	return 0
+End
+//
+Static Function interpDouble(str)
+	// returns the double value of str, "1" --> 1.0,  "1/2" --> 0.5, "abc" --> NaN
+	// this allow use of simple fractions in xml files to specify fractional coordinates and occupancy
+	String str
+	Variable value = NaN
+	if (strsearch(str,"/",0)>0)			// was passed a fraction, evaluate
+		Variable numerator = str2num(StringFromlist(0,str,"/"))
+		Variable denominator = str2num(StringFromlist(1,str,"/"))
+		value = numerator/denominator
+	else
+		value = str2num(str)
+	endif
+	return value
 End
 //
 Static Function/T GetSymLinesFromXMLbuffer(buf)		// get the sym ops from an xml buffer (works for both v1 & v2)
