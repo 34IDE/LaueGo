@@ -1,5 +1,5 @@
 #pragma rtGlobals= 2
-#pragma version = 3.52
+#pragma version = 3.53
 #pragma ModuleName = JZTgeneral
 #pragma hide = 1
 #include "Utility_JZT", version>=4.64
@@ -201,9 +201,14 @@ Menu "Help"
 		"Open LaueGo Web Page", /Q, BrowseHelpFile("https://sector33.xray.aps.anl.gov/~tischler")
 		"Utility_JZT", /Q, DisplayHelpTopic/K=1/Z "JZT Utility functions in \"Utility_JZT.ipf\""
 		SubMenu "Characters"
-			"*CHARACTER*(,36)", /Q, GetLastUserMenuInfo; printf "\r  Character('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
+			"*CHARACTER*(,36)", /Q, JZTgeneral#ProcessCharacterMenu()
 		End
 	End
+End
+
+Static Function ProcessCharacterMenu()
+	GetLastUserMenuInfo
+	printf "\r  Character('%s')  -->  d/%d = o/%o = x/%x\r", S_value,V_value,V_value,V_value
 End
 #endif
 
