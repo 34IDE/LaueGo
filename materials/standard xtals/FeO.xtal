@@ -2,26 +2,48 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Wüstite (FeO)</chemical_name_common>
+	<chemical_formula>FeO</chemical_formula>
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
+	<database_code db="COD">1011198</database_code>
+
 	<cell>
-		<a unit="nm">0.4296</a>
-		<b unit="nm">0.4296</b>
-		<c unit="nm">0.4296</c>
+		<a unit="nm">0.4303</a>
+		<b unit="nm">0.4303</b>
+		<c unit="nm">0.4303</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
 		<fract>0 0 0</fract>
+		<valence>2</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.5 0.5 0.5</fract>
+		<valence>-2</valence>
+		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
+
+	<citation>
+		<author>R.W.G. Wyckoff</author>
+		<author>E.D. Crittenden</author>
+		<title>Herstellung und Kristallstruktur von Ferrooxyd (Fe O).</title>
+		<ASTM>ZEKGAX</ASTM>
+		<journal>Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie (-144,1977)</journal>
+		<volume>63</volume>
+		<year>1926</year>
+		<pages>144 147</pages>
+	</citation>
 </cif>
