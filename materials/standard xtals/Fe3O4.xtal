@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>Magnetite (Fe3O4)</chemical_name_common>
+	<chemical_formula>Fe3O4</chemical_formula>
+	<space_group>
+		<id>227:2</id>
+		<IT_number>227</IT_number>
+		<H-M>F d -3 m :2</H-M>
+		<Hall>-F 4vw 2vw 3</Hall>
+	</space_group>
+	<database_code db="COD">9007644</database_code>
+
+	<cell>
+		<a unit="nm">0.83941</a>
+		<b unit="nm">0.83941</b>
+		<c unit="nm">0.83941</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+
+	<atom_site>
+		<label>FeT</label>
+		<symbol>Fe</symbol>
+		<fract>0.125 0.125 0.125</fract>
+		<aniso_U_11>0.00443</aniso_U_11>
+		<aniso_U_22>0.00443</aniso_U_22>
+		<aniso_U_33>0.00443</aniso_U_33>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>FeM</label>
+		<symbol>Fe</symbol>
+		<fract>0.5 0.5 0.5</fract>
+		<aniso_U_11>0.00585</aniso_U_11>
+		<aniso_U_22>0.00585</aniso_U_22>
+		<aniso_U_33>0.00585</aniso_U_33>
+		<aniso_U_12>0.00057</aniso_U_12>
+		<aniso_U_13>0.00057</aniso_U_13>
+		<aniso_U_23>0.00057</aniso_U_23>
+		<WyckoffSymbol>d</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.2549 0.2549 0.2549</fract>
+		<aniso_U_11>0.00685</aniso_U_11>
+		<aniso_U_22>0.00685</aniso_U_22>
+		<aniso_U_33>0.00685</aniso_U_33>
+		<aniso_U_12>-0.00004</aniso_U_12>
+		<aniso_U_13>-0.00004</aniso_U_13>
+		<aniso_U_23>-0.00004</aniso_U_23>
+		<valence>-2</valence>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+
+	<citation doi="10.1107/S0567740881004597">
+		<author>M.E. Fleet</author>
+		<title>The structure of magnetite.</title>
+		<journal>'Acta Crystallographica, Section B</journal>
+		<volume>37</volume>
+		<year>1981</year>
+		<pages>917 920</pages>
+	</citation>
+</cif>
