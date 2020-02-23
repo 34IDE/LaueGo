@@ -47,8 +47,17 @@
 		<valence>-2</valence>
 	</atom_site>
 	<citation>
-		H. Lehnert, H. Boysen, J. Schneider, F. Frey, D. Hohlwein, P. Radaelli, H. Ehrenberg
-		Zeitschrift für Kristallographie (1979-2010) (2000) 215, 536-541
-		"A powder diffraction study of the phase transition in La Al O3"
+		<author>H. Lehnert</author>
+		<author>H. Boysen</author>
+		<author>J. Schneider</author>
+		<author>F. Frey</author>
+		<author>D. Hohlwein</author>
+		<author>P. Radaelli</author>
+		<author>H. Ehrenberg</author>
+		<journal>Zeitschrift für Kristallographie(1979-2010)</journal>
+		<year>2000</year>
+		<volume>215</volume>
+		<pages>536-541</pages>
+		<title>A powder diffraction study of the phase transition in La Al O3</title>
 	</citation>
 </cif>

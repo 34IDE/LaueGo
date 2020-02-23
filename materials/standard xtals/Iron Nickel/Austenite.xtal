@@ -22,8 +22,14 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<citation doi="10.1016/0956-716X(90)90192-J">
-		Liu Ch, A Böttger, et.al. - Scripta Metall et Mater, V24, pg 509-514 (1990)
-		"Lattice Parameters of Iron-Carbon and Iron-Nitrogen Matensites and Austenites"
+		<author>Liu Ch</author>
+		<author>A Böttger</author>
+		<author>et.al.</author>
+		<journal>Scripta Metall et Mater</journal>
+		<volume>24</volume>
+		<pages>509 514</pages>
+		<year>1990</year>
+		<title>Lattice Parameters of Iron-Carbon and Iron-Nitrogen Matensites and Austenites</title>
 	</citation>
 </cif>
 

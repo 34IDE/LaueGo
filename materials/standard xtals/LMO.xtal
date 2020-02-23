@@ -5,12 +5,14 @@
 	<chemical_formula>LaMnO3</chemical_formula>
 	<database_code db="amcsd">0015289</database_code>
 	<database_code db="cod">1006141</database_code>
+
 	<space_group>
 		<id>62:cab</id>
 		<H-M>P b n m</H-M>
 		<Hall>-P 2c 2ab</Hall>
 		<system>orthorhombic</system>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.55367</a>
 		<b unit="nm">0.57473</b>
@@ -20,6 +22,7 @@
 		<gamma>90</gamma>
 		<temperature unit="C">22</temperature>
 	</cell>
+
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
@@ -52,9 +55,18 @@
 		<valence>-2</valence>
 		<B_iso unit="Å^2">0.43</B_iso>
 	</atom_site>
+
 	<citation id="primary" doi="10.1103/PhysRevB.57.R3189">
-		J. Rodriguez-Carvajal, M. Hennion, F. Moussa, A. Moudden, L. Pinsard, A. Revcolevschi
-		Physical Review B 57 - Condensed Matter (1998), 3189-3192
-		"Neutron-diffraction of the Jahn-Teller transition in stoichiometric LaMnO3"
+		<author>J. Rodriguez-Carvajal</author>
+		<author>M. Hennion</author>
+		<author>F. Moussa</author>
+		<author>A. Moudden</author>
+		<author>L. Pinsard</author>
+		<author>A. Revcolevschi</author>
+		<journal>Physical Review B - Condensed Matter</journal>
+		<volume>B57</volume>
+		<year>1998</year>
+		<pages>3189 3192</pages>
+		<title>Neutron-diffraction of the Jahn-Teller transition in stoichiometric LaMnO3</title>
 	</citation>
 </cif>

@@ -3,13 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Wüstite (FeO)</chemical_name_common>
 	<chemical_formula>FeO</chemical_formula>
+	<database_code db="COD">1011198</database_code>
+
 	<space_group>
 		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>F m -3 m</H-M>
 		<Hall>-F 4 2 3</Hall>
 	</space_group>
-	<database_code db="COD">1011198</database_code>
 
 	<cell>
 		<a unit="nm">0.4303</a>

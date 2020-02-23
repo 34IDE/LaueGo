@@ -24,8 +24,13 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<citation>
-		R. Kohlhaas, P. Duenner, N. Schmitz-Pranghe
-		Zeitschrift fuer Angewandte Physik 23 (1967) pg. 245-249
-		"Ueber die Temperaturabhaengigkeit der Gitterparameter von Eisen, Kobalt und Nickel im Bereich hoher Temperaturen"
+		<author>R. Kohlhaas</author>
+		<author>P. Duenner</author>
+		<author>N. Schmitz-Pranghe</author>
+		<journal>Zeitschrift fuer Angewandte Physik</journal>
+		<volume>23</volume>
+		<year>1967</year>
+		<pages>245 249</pages>
+		<title>Ueber die Temperaturabhaengigkeit der Gitterparameter von Eisen, Kobalt und Nickel im Bereich hoher Temperaturen</title>
 	</citation>
 </cif>

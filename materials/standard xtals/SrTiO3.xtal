@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Strontium Titanate</chemical_name_common>
 	<chemical_formula>SrTiO3</chemical_formula>
+	<database_code db="ICSD">262269</database_code>
+
 	<space_group>
 		<id>221</id>
 		<H-M>P m -3 m</H-M>
 	</space_group>
-	<database_code db="ICSD">262269</database_code>
+
 	<cell>
 		<a unit="nm">0.3905268</a>
 		<b unit="nm">0.3905268</b>
@@ -21,6 +23,7 @@
 			<dL_L>0 0.00106 0.00212 0.0032 0.0043 0.00545 0.0066 0.0078 0.009 0.01025</dL_L>
 		</thermalExpansion>
 	</cell>
+
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
@@ -31,6 +34,7 @@
 		<aniso_U_33 unit="Å^2">0.00785</aniso_U_33>
 		<valence>2</valence>
 	</atom_site>
+
 	<atom_site>
 		<label>Ti</label>
 		<symbol>Ti</symbol>
@@ -41,6 +45,7 @@
 		<aniso_U_33 unit="Å^2">0.00556</aniso_U_33>
 		<valence>4</valence>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
@@ -51,15 +56,29 @@
 		<aniso_U_33 unit="Å^2">0.01205</aniso_U_33>
 		<valence>-2</valence>
 	</atom_site>
+
 	<citation id="primary" doi="10.1107/S0108768111046738">
-		M. Schmidbauer, A. Kwasniewski, J. Schwarzkopf
-		Acta Crystallographica, Section B: Structural Science B68 (2012) pg. 8-14
-		"High-precision absolute lattice parameter determination of Sr Ti O3, Dy Sc O3 and Nd Ga O3 single crystals"
+		<author>M. Schmidbauer</author>
+		<author>A. Kwasniewski</author>
+		<author>J. Schwarzkopf</author>
+		<journal>Acta Crystallographica, Section B: Structural Science</journal>
+		<volume>B68</volume>
+		<year>2012</year>
+		<pages>8 14</pages>
+		<title>High-precision absolute lattice parameter determination of Sr Ti O3, Dy Sc O3 and Nd Ga O3 single crystals</title>
 	</citation>
+
 	<citation id="2" doi="10.1107/S0108768195003752">
 		ONLY for the U_ij:
-		Yu.A. Abramov, V.G. Tsirel'son, V.E. Zavodnik, S.A. Ivanov, I.D. Brown,
-		Acta Crystallographica, Section B: Structural Science B51 (1995), pg.942-951
-		"The chemical bond and atomic displacements in Sr Ti O3 from x-ray diffraction analysis"
+		<author>Yu.A. Abramov</author>
+		<author>V.G. Tsirel'son</author>
+		<author>V.E. Zavodnik</author>
+		<author>S.A. Ivanov</author>
+		<author>I.D. Brown</author>
+		<journal>Acta Crystallographica, Section B: Structural Science</journal>
+		<volume>B51</volume>
+		<year>1995</year>
+		<pages>942 951</pages>
+		<title>The chemical bond and atomic displacements in Sr Ti O3 from x-ray diffraction analysis</title>
 	</citation>
 </cif>

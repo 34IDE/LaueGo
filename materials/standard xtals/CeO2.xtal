@@ -35,8 +35,13 @@
 	<bond_chemical unit="nm" n0="Ce" n1="O">0.234364</bond_chemical>
 
 	<citation doi="10.1016/0022-4596(92)90330-X">
-		M. Wolcyrz, L. Kepinski, Journal of Solid State Chemistry, 99 (1992)  pg. 409-413
-		"Rietveld refinement of the structure of CeOCl formed in Pd/CeO2 catalyst:
-		notes on the existence of a stabilized tetragonal phase of La2O3 in La-Pd-O system"
+		<author>M. Wolcyrz</author>
+		<author>L. Kepinski</author>
+		<journal>Journal of Solid State Chemistry</journal>
+		<volume>99</volume>
+		<year>1992</year>
+		<pages>409 413</pages>
+		<title>Rietveld refinement of the structure of CeOCl formed in Pd/CeO2 catalyst:
+		notes on the existence of a stabilized tetragonal phase of La2O3 in La-Pd-O system</title>
 	</citation>
 </cif>

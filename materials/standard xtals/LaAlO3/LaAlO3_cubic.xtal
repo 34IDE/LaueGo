@@ -3,12 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Lanthanum Aluminate (cubic)</chemical_name_common>
 	<chemical_formula>LaAlO3</chemical_formula>
+	<database_code db="COD">2206576</database_code>
+
 	<space_group>
 		<id>221</id>
 		<H-M>P m -3 m</H-M>
 		<Hall>-P 4 2 3</Hall>
 	</space_group>
-	<database_code db="COD">2206576</database_code>
+
 	<cell>
 		<a unit="nm">0.37913</a>
 		<b unit="nm">0.37913</b>
@@ -18,6 +20,7 @@
 		<gamma>90</gamma>
 		<temperature unit="K">296</temperature>
 	</cell>
+
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
@@ -25,6 +28,7 @@
 		<valence>3</valence>
 		<U_iso>0.004299</U_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
@@ -32,6 +36,7 @@
 		<valence>3</valence>
 		<U_iso>0.00377</U_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
@@ -39,10 +44,19 @@
 		<valence>-2</valence>
 		<U_iso>0.014</U_iso>
 	</atom_site>
+
 	<citation doi="10.1107/S1600536805020441">
-		Akihiko Nakatsuka, Osamu Ohtaka, Hiroshi Arima, Noriaki Nakayama, Tadato Mizota
-		Acta Crystallographica, Section E 61, (2005) i148-i150
-		"Cubic phase of single-crystal LaAlO~3~ perovskite synthesized at 4.5 GPa and 1273 K"
+		<author>Akihiko Nakatsuka</author>
+		<author>Osamu Ohtaka</author>
+		<author>Hiroshi Arima</author>
+		<author>Noriaki Nakayama</author>
+		<author>Tadato Mizota</author>
+		<journal>Acta Crystallographica, Section E</journal>
+		<volume>61</volume>
+		<year>2005</year>
+		<pages>148 150</pages>
+		page numbers start with an "i", "i148-i150"
+		<title>Cubic phase of single-crystal LaAlO~3~ perovskite synthesized at 4.5 GPa and 1273 K</title>
 	</citation>
 </cif>
 

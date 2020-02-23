@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Hematite (hex)</chemical_name_common>
 	<chemical_formula>Fe2O3</chemical_formula>
+	<database_code db="amcsd">0017806</database_code>
+
 	<space_group>
 		<id>167:H</id>
 		<H-M>R -3 c</H-M>
 	</space_group>
-	<database_code db="amcsd">0017806</database_code>
+
 	<cell>
 		<a unit="nm">0.50355</a>
 		<b unit="nm">0.50355</b>
@@ -16,6 +18,7 @@
 		<beta>90</beta>
 		<gamma>120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
@@ -25,6 +28,7 @@
 		<aniso_U_22>0</aniso_U_22>
 		<aniso_U_33>0.00366</aniso_U_33>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
@@ -37,9 +41,16 @@
 		<aniso_U_13>0.00052</aniso_U_13>
 		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
+
 	<citation doi="10.1107/S0108768194002284">
-		E.N. Maslen, V.A. Streltsov, N.R. Streltsova, N. Ishizawa,
-		Acta Crystallographica B50 (1994) 435-441
-		"Synchrotron X-ray study of the electron density in α-Fe2O3"
+		<author>E.N. Maslen</author>
+		<author>V.A. Streltsov</author>
+		<author>N.R. Streltsova</author>
+		<author>N. Ishizawa</author>
+		<journal>Acta Crystallographica B</journal>
+		<volume>B50</volume>
+		<year>1994</year>
+		<pages>435 441</pages>
+		<title>Synchrotron X-ray study of the electron density in α-Fe2O3</title>
 	</citation>
 </cif>

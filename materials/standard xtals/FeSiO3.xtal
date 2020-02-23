@@ -3,12 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Ferrosilite</chemical_name_common>
 	<chemical_formula>FeSiO3</chemical_formula>
+	<database_code db="COD">9006422</database_code>
+
 	<space_group>
 		<IT_number>62</IT_number>
 		<H-M>P b c a</H-M>
 		<Hall>-P 2ac 2ab</Hall>
 	</space_group>
-	<database_code db="COD">9006422</database_code>
+
 	<cell>
 		<a unit="nm">1.8417</a>
 		<b unit="nm">0.9073</b>
@@ -17,6 +19,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>FeM1</label>
 		<symbol>Fe</symbol>
@@ -81,8 +84,13 @@
 	</atom_site>
 
 	<citation doi="10.1007/s002690050042">
-		D.A. Hugh-Jones, A. Chopelas, R.J. Angel, 
-		Physics and Chemistry of Minerals 24 (1997), pg. 301-310
-		"Tetrahedral compression in (Mg,Fe)SiO3 orthopyroxenes Sample: P = 0 GPa"
+		<author>D.A. Hugh-Jones</author>
+		<author>A. Chopelas</author>
+		<author>R.J. Angel</author>
+		<journal>Physics and Chemistry of Minerals</journal>
+		<volume>24</volume>
+		<year>1997</year>
+		<pages>301 310</pages>
+		<title>Tetrahedral compression in (Mg,Fe)SiO3 orthopyroxenes Sample: P = 0 GPa</title>
 	</citation>
 </cif>

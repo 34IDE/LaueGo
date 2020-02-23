@@ -3,6 +3,7 @@
 <cif version="2" dim="3">
 	<chemical_name_common>BaTiO3 ferroelectric compound</chemical_name_common>
 	<space_group>
+		<id>99</id>
 		<IT_number>99</IT_number>
 		<H-M>P4mm</H-M>
 	</space_group>

@@ -42,7 +42,14 @@
 		<B_iso unit="Å^2">0.5</B_iso>	<!-- B = 8 * pi^2 <u^2> -->
 	</atom_site>
 	<citation doi="10.1088/0022-3719/9/9/002">
-		1976 J. Phys. C: Solid State Phys. 9 L231, K D Rouse, M W Thomas and B T M Willis
+		<author>K D Rouse</author>
+		<author>M W Thomas</author>
+		<author>B T M Willis</author>
+		<year>1976</year>
+		<journal>J. Phys. C: Solid State Phys.</journal>
+		<volume>9</volume>
+		page numbers start with "L"
+		<volume>231 233</volume>
 		also http://phycomp.technion.ac.il/~ira/types.html#MgAl2O4
 	</citation>
 </cif>

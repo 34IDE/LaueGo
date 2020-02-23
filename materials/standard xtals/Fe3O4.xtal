@@ -3,13 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Magnetite (Fe3O4)</chemical_name_common>
 	<chemical_formula>Fe3O4</chemical_formula>
+	<database_code db="COD">9007644</database_code>
+
 	<space_group>
 		<id>227:2</id>
 		<IT_number>227</IT_number>
 		<H-M>F d -3 m :2</H-M>
 		<Hall>-F 4vw 2vw 3</Hall>
 	</space_group>
-	<database_code db="COD">9007644</database_code>
 
 	<cell>
 		<a unit="nm">0.83941</a>

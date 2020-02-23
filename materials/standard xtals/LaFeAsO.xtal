@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Lanthanum Iron Oxide Arsenide</chemical_name_common>
 	<chemical_formula>LaFeAsO</chemical_formula>
+	<database_code db="COD">4107570</database_code>
+
 	<space_group>
 		<id>129:2</id>
 		<H-M>P 4/n m m:2</H-M>
 	</space_group>
-	<database_code db="COD">4107570</database_code>
+
 	<cell>
 		<a unit="nm">0.403533</a>
 		<b unit="nm">0.403533</b>
@@ -16,6 +18,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
@@ -24,6 +27,7 @@
 		<valence>3</valence>
 		<B_iso>0.38</B_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
@@ -32,6 +36,7 @@
 		<valence>2</valence>
 		<B_iso>0.27</B_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>As</label>
 		<symbol>As</symbol>
@@ -40,6 +45,7 @@
 		<valence>-3</valence>
 		<B_iso>0.54</B_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
@@ -48,9 +54,16 @@
 		<valence>-2</valence>
 		<B_iso>2.3</B_iso>
 	</atom_site>
+
 	<citation doi="10.1021/ja800073m">
-		Y. Kamihara, T. Watanabe, M. Hirano, H. Hosono,
-		Journal of the American Chemical Society' 130 (2008) pg. 3296-3297
-		"Iron-based layered superconductor La [O(1-x) F(x)] Fe As (x = 0.05-0.12) with T(c) = 26 K"
+		<author>Y. Kamihara</author>
+		<author>T. Watanabe</author>
+		<author>M. Hirano</author>
+		<author>H. Hosono</author>
+		<journal>Journal of the American Chemical Society</journal>
+		<volume>130</volume>
+		<year>2008</year>
+		<pages>3296 3297</pages>
+		<title>Iron-based layered superconductor La [O(1-x) F(x)] Fe As (x = 0.05-0.12) with T(c) = 26 K</title>
 	</citation>
 </cif>

@@ -3,12 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Aragonite</chemical_name_common>
 	<chemical_formula>CaCO3</chemical_formula>
+	<database_code db="amcsd">0000233</database_code>
+
 	<space_group>
 		<IT_number>62</IT_number>
 		<id>62:bca</id>
 		<H-M>Pmcn</H-M>
 	</space_group>
-	<database_code db="amcsd">0000233</database_code>
+
 	<cell>
 		<a unit="nm">0.49614</a>
 		<b unit="nm">0.79671</b>
@@ -18,6 +20,7 @@
 		<gamma>90</gamma>
 		<volume>0.226906358643576</volume>
 	</cell>
+
 	<atom_site>
 		<label>Ca</label>
 		<symbol>Ca</symbol>
@@ -29,6 +32,7 @@
 		<aniso_U_13>0</aniso_U_13>
 		<aniso_U_23>0.00023</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
@@ -40,6 +44,7 @@
 		<aniso_U_13>0</aniso_U_13>
 		<aniso_U_23>-0.00139</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
@@ -51,6 +56,7 @@
 		<aniso_U_13>0</aniso_U_13>
 		<aniso_U_23>-0.00255</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
@@ -62,8 +68,13 @@
 		<aniso_U_13>-0.00014</aniso_U_13>
 		<aniso_U_23>-0.00695</aniso_U_23>
 	</atom_site>
+
 	<citation id="primary">
-		J.P.R. de Villiers, American Mineralogist, v56 (1971) 758-767
-		"Crystal structures of aragonite, strontianite, and witherite"
+		<author>J.P.R. de Villiers</author>
+		<journal>American Mineralogist</journal>
+		<volume>56</volume>
+		<year>1971</year>
+		<pages>758 767</pages>
+		<title>Crystal structures of aragonite, strontianite, and witherite</title>
 	</citation>
 </cif>

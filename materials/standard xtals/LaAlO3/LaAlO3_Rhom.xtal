@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>LaAlO3 (Rhom)</chemical_name_common>
 	<chemical_formula>LaAlO3</chemical_formula>
+
 	<space_group>
 		<id>167:R</id>
 		<IT_number>167</IT_number>
 		<H-M>R-3c:R</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.535578812321772</a>
 		<b unit="nm">0.535578812321772</b>
@@ -16,6 +18,7 @@
 		<beta>60.0992417227002</beta>
 		<gamma>60.0992417227002</gamma>
 	</cell>
+
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
@@ -23,6 +26,7 @@
 		<fract>0.25 0.25 0.25</fract>
 		<B_iso unit="Å^2">0.23</B_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
@@ -30,6 +34,7 @@
 		<fract>0 0 0</fract>
 		<B_iso unit="Å^2">0.21</B_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
@@ -42,9 +47,19 @@
 		<aniso_U_13 unit="Å^2">-0.008</aniso_U_13>
 		<aniso_U_23 unit="Å^2">-0.017</aniso_U_23>
 	</atom_site>
+
 	<citation>
-		H. Lehnert, H. Boysen, J. Schneider, F. Frey, D. Hohlwein, P. Radaelli, H. Ehrenberg
-		Zeitschrift für Kristallographie (1979-2010) (2000) 215, 536-541
-		"A powder diffraction study of the phase transition in La Al O3"
+		<author>H. Lehnert</author>
+		<author>H. Boysen</author>
+		<author>J. Schneider</author>
+		<author>F. Frey</author>
+		<author>D. Hohlwein</author>
+		<author>P. Radaelli</author>
+		<author>H. Ehrenberg</author>
+		<journal>Zeitschrift für Kristallographie (1979-2010)</journal>
+		<year>2000</year>
+		<volume>215</volume>
+		<pages>536 541</pages>
+		<title>A powder diffraction study of the phase transition in La Al O3</title>
 	</citation>
 </cif>

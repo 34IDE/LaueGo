@@ -2,12 +2,14 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Polonium-&#x03B1;</chemical_name_common>
+	<database_code db="cod">1509138</database_code>
+
 	<space_group>
 		<IT_number>221</IT_number>
 		<H-M>P m -3 m</H-M>
 		<Hall>-P 4 2 3</Hall>
 	</space_group>
-	<database_code db="cod">1509138</database_code>
+
 	<cell>
 		<a unit="nm">0.3345</a>
 		<b unit="nm">0.3345</b>
@@ -17,6 +19,7 @@
 		<gamma>90</gamma>
 		<temperature unit="K">283</temperature>
 	</cell>
+
 	<atom_site>
 		<label>Po</label>
 		<symbol>Po</symbol>
@@ -25,8 +28,12 @@
 	</atom_site>
 
 	<citation doi="10.1063/1.1747155">
-		William H. Beamer, Charles R. Maxwell
-		"Physical Properties of Polonium. II. X-Ray Studies and Crystal Structure"
-		Journal of Chemical Physics, 17 (1949) pg. 1293-1298
+		<author>William H. Beamer</author>
+		<author>Charles R. Maxwell</author>
+		<title>Physical Properties of Polonium. II. X-Ray Studies and Crystal Structure</title>
+		<journal>Journal of Chemical Physics</journal>
+		<volume>17</volume>
+		<year>1949</year>
+		<pages>1293 1298</pages>
 	</citation>
 </cif>

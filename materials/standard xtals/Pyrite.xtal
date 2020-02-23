@@ -3,10 +3,12 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Pyrite</chemical_name_common>
 	<chemical_formula>FeS2</chemical_formula>
+
 	<space_group>
 		<IT_number>205</IT_number>
 		<H-M>Pa-3</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.54187</a>
 		<b unit="nm">0.54187</b>
@@ -15,22 +17,33 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
 		<fract>0 0 0</fract>
 		<valence>2</valence>
 	</atom_site>
+
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
 		<fract>0.38504 0.38504 0.38504</fract>
 		<valence>-1</valence>
 	</atom_site>
+
 	<bond_chemical unit="nm" n0="Fe" n1="S">0.22647</bond_chemical>
 	<bond_chemical unit="nm" n0="S" n1="S">0.21587</bond_chemical>
+
 	<citation doi="10.1103/PhysRevB.43.11926">
-		M. Birkholz, S. Fiechter, A. Hartmann, and H. Tributsch
-		Phys. Rev. B 43, 11926 (1991)
+		<author>M. Birkholz</author>
+		<author>S. Fiechter</author>
+		<author>A. Hartmann</author>
+		<author>H. Tributsch</author>
+		<journal>Phys. Rev. B</journal>
+		<volume>B 43</volume>
+		<pages>11926</pages>
+		<year>1991</year>
+		<title>Sulfur deficiency in iron pyrite (FeS2-x) and its consequences for band-structure models</title>
 	</citation>
 </cif>

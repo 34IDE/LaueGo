@@ -3,6 +3,8 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Gallium Nitride (Wurtzite 2H)</chemical_name_common>
 	<chemical_formula>GaN</chemical_formula>
+	<database_code db="ICSD">34476</database_code>
+
 	<space_group>
 		<id>186</id>
 		<H-M>P 63 m c</H-M>
@@ -21,7 +23,7 @@
 			<op>"x" "y" "z"</op>
 		</symops>
 	</space_group>
-	<database_code db="ICSD">34476</database_code>
+
 	<cell>
 		<a unit="nm">0.31894</a>
 		<b unit="nm">0.31894</b>
@@ -30,6 +32,7 @@
 		<beta unit="deg">90</beta>
 		<gamma unit="deg">120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
@@ -43,6 +46,7 @@
 		<aniso_U_23>0</aniso_U_23>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>N</label>
 		<symbol>N</symbol>
@@ -56,18 +60,24 @@
 		<aniso_U_23>0</aniso_U_23>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
+
 	<citation id="2" doi="10.1016/0038-1098(77)90959-0">
-		H. Schulz, K.H. Thiemann,
-		Solid State Communications 23 (1977) pg. 815-819
-		"Crystal structure refinement of AlN and GaN"
-		<!--
+		<author>H. Schulz</author>
+		<author>K.H. Thiemann</author>
+		<journal>Solid State Communications</journal>
+		<volume>23</volume>
+		<year>1977</year>
+		<pages>815 819</pages>
+		<title>Crystal structure refinement of AlN and GaN</title>
 		lattice constants modified by JZT
-		from the paper, they were:
+		<!--
+		from the paper, lattice constants were:
 		<a unit="nm">0.3190</a>
 		<b unit="nm">0.3190</b>
 		<c unit="nm">0.5189</c>
 		-->
 	</citation>
+
 	<citation id="primary" doi="10.1016/0038-1098(77)90959-0">
 		<title>Crystal structure refinement of Al N and Ga N</title>
 		<author>H. Schulz</author>

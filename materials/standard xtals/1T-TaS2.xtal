@@ -2,11 +2,13 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>1T-TaS2</chemical_name_common>
+	<database_code db="ICSD">85323</database_code>
+
 	<space_group>
 		<id>164</id>
 		<H-M>P -3 m 1</H-M>
 	</space_group>
-	<database_code db="ICSD">85323</database_code>
+
 	<cell>
 		<a unit="nm">0.33649</a>
 		<b unit="nm">0.33649</b>
@@ -15,6 +17,7 @@
 		<beta>90</beta>
 		<gamma>120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
@@ -28,6 +31,7 @@
 		<aniso_U_23>0</aniso_U_23>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
@@ -41,9 +45,17 @@
 		<aniso_U_23>0</aniso_U_23>
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
+
 	<citation doi="10.1103/PhysRevB.56.13757">
-		A. Spijkerman, J.L. de Boer, A. Meetsma, G.A. Wiegers, S. van Smaalen
-		Physical Review B56 (1997), pg. 13757-13767
-		"X-ray crystal structure refinement of the nearly commensurate phase of 1T-(TaS2) in (3+2)-dimensional superspace"
+		<author>A. Spijkerman</author>
+		<author>J.L. de Boer</author>
+		<author>A. Meetsma</author>
+		<author>G.A. Wiegers</author>
+		<author>S. van Smaalen</author>
+		<journal>Physical Review B</journal>
+		<volume>B56</volume>
+		<year>1997</year>
+		<pages>13757 13767</pages>
+		<title>X-ray crystal structure refinement of the nearly commensurate phase of 1T-(TaS2) in (3+2)-dimensional superspace</title>
 	</citation>
 </cif>

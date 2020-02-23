@@ -37,7 +37,7 @@
 	<bond_chemical unit="nm" n0="U" n1="O">0.1914</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="F">0.2505</bond_chemical>
 	<citation>
-		<author>Wyckoff, R W G</author>
+		<author>R.W.G. Wyckoff</author>
 		<journal>Crystal Structures,  Second edition.</journal>
 		<volume>1</volume>
 		<year>1963</year>

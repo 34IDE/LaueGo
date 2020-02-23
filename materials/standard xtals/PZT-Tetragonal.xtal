@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>PZT-Tetragonal</chemical_name_common>
 	<database_code db="COD">1526147</database_code>
+
 	<space_group>
 		<id>99</id>
 		<H-M>P4mm</H-M>
 		<Hall>P4-2</Hall>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.4046</a>
 		<b unit="nm">0.4046</b>
@@ -65,10 +67,20 @@
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso>0.0061</U_iso>
 	</atom_site>
+
 	<citation di="10.1103/PhysRevB.61.8687">
-		B. Noheda, J.A. Gonzalo, L.E. Cross, R. Guo, D.E. Cox, S.-E. Park, G. Shirane
-		"Tetragonal-to-monoclinic phase transition in a ferroelectric perovskite: the structure of Pb Zr0.52 Ti0.48 O3"
-		Physical Review, Serie 3. B - Condensed Matter (18,1978-) vol 61, (2000), pg. 8687-8695
+		<author>B. Noheda</author>
+		<author>J.A. Gonzalo</author>
+		<author>L.E. Cross</author>
+		<author>R. Guo</author>
+		<author>D.E. Cox</author>
+		<author>S.-E. Park</author>
+		<author>G. Shirane</author>
+		<title>Tetragonal-to-monoclinic phase transition in a ferroelectric perovskite: the structure of Pb Zr0.52 Ti0.48 O3</title>
+		<journal>Physical Review, Serie 3. B - Condensed Matter</journal>
+		<year>2000</year>
+		<volume>B 61</volume>
+		<pages>8687 8695</pages>
 	</citation>
 </cif>
 

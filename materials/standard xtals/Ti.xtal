@@ -2,10 +2,12 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Titanium hcp (hexagonal axis)</chemical_name_common>
+
 	<space_group>
 		<IT_number>194</IT_number>
 		<H-M>P63/mmc</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.29508</a>
 		<b unit="nm">0.29508</b>
@@ -14,6 +16,7 @@
 		<beta>90</beta>
 		<gamma>120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ti</label>
 		<symbol>Ti</symbol>
@@ -21,11 +24,22 @@
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<DebyeTemperature unit="K">420</DebyeTemperature>
 	</atom_site>
+
 	<citation id="primary">
-		Wyckoff R W G Second edition. Interscience Publishers, New York, New York, Crystal Structures (1963) 83
+		<author>R W G Wyckoff</author>
+		<journal>Crystal Structures</journal>
+		<year>1963</year>
+		<pages>83</pages>
+		Second edition. Interscience Publishers, New York, New York
 	</citation>
+
 	<citation id="2">
-		R. R. Pawar, and V. T. Deshpande, Acta Crystallogr., 1968, 24A, 316.
+		<author>R.R. Pawar</author>
+		<author>V.T. Deshpande</author>
+		<journal>Acta Crystallogr.</journal>
+		<year>1968</year>
+		<volume>24A</volume>
+		<pages>316</pages>
 		http://www.webelements.com/titanium/crystal_structure.html
 	</citation>
 </cif>

@@ -2,11 +2,13 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>VO2, Rutile</chemical_name_common>
+
 	<space_group>
 		<IT_number>136</IT_number>
 		<H-M>P42/mnm</H-M>
 		<Hall>-P 4n 2n</Hall>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.45546</a>
 		<b unit="nm">0.45546</b>
@@ -16,18 +18,31 @@
 		<gamma>90</gamma>
 		<temperature unit="C">86.85</temperature>
 	</cell>
+
 	<atom_site>
 		<label>V</label>
 		<symbol>V</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.3001 0.3001 0</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
-	<citation id="primary">Physical Review, Series 3. B, (1974) V10, 490-495</citation>
+
+	<citation id="primary" doi="10.1103/PhysRevB.10.490">
+		<author>D.B. McWhan</author>
+		<author>M. Marezio</author>
+		<author>J.P. Remeika</author>
+		<author>P.D. Dernier</author>
+		<journal>Physical Review B, Series 3.</journal>
+		<title>X-ray diffraction study of metallic VO2</title>
+		<year>1974</year>
+		<volume>B10</volume>
+		<pages>490 495</pages>
+	</citation>
 	<citation id="2">Phase Transition (1992) V38, 127-220</citation>
 </cif>
