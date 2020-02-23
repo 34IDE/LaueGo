@@ -4,40 +4,37 @@
 	<chemical_name_common>Ferrite (alpha-Iron)</chemical_name_common>
 	<space_group>
 		<id>229</id>
-		<H-M>Im-3m</H-M>
+		<H-M>I m -3 m</H-M>
+		<Hall>-I 4 2 3</Hall>
 	</space_group>
+	<database_code db="icsd">76747</database_code>
+
 	<cell>
-		<a unit="nm">0.287</a>
-		<b unit="nm">0.287</b>
-		<c unit="nm">0.287</c>
+		<a unit="nm">0.28664</a>
+		<b unit="nm">0.28664</b>
+		<c unit="nm">0.28664</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="K">293</temperature>
+		<alphaT>1.174e-5</alphaT>			<!-- a = ao*(1+alphaT*(TempC-19.85)) -->
 	</cell>
+
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 		<DebyeTemperature unit="K">470</DebyeTemperature>
 	</atom_site>
+
+	<citation>
+		<title>Investigation of thermal dilatation of cubic metals</title>
+		<author>A. Kochanovska</author>	
+		<journal>Physica (The Hague)</journal>
+		<volume>15</volume>
+		<year>1949</year>
+		<pages>191 196</pages>
+		<ASTM>PYSIA7</ASTM>
+	</citation>
 </cif>
-
-<!--   
-	from Nature vol66, Nov 1950, pg. 828
-	Jozef Mazur
-	doi:10.1038/166828a0
-
-	Austenite is FCC
-	Martensite is Body Centered Tetragonal
-	Lattice Parameters of Martensite and Austenite
-
-				Martensite					Austenite
-	Carbon(%)		c(Å)	a(Å)	c/a		a(Å)
-		1.25		3.008	2.842	1.058	3.6043
-		1.20		3.005	2.843	1.057	3.6020
-		0.90		2.963	2.847	1.041	3.5884
-		0.89		2.962	2.849	1.040	3.5879
-		0.75		2.939	2.850	1.031	3.5816
-		0.45		  -		  -		  -		3.5680
-
- -->
