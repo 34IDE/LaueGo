@@ -15,6 +15,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
+		<temperature unit="K">293</temperature>
 	</cell>
 
 	<atom_site>
@@ -33,10 +34,11 @@
 
 	<citation>
 		<title>High-temperature synchrotron X-ray diffraction study of phases in a gamma Ti Al alloy</title>
-		<journal>Materials Science and Engineering, A</journal>
+		<journal>Materials Science &amp; Engineering, A: Structural Materials: Properties, Microstructure and Processing</journal>
 		<volume>371</volume>
 		<year>2004</year>
 		<pages>103 112</pages>
+		<ASTM>MSAPE3</ASTM>
 		<author>T. Novoselova</author>
 		<author>S. Malinov</author>
 		<author>W. Sha</author>
