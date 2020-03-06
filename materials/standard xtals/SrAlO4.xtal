@@ -2,16 +2,18 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>SrAl2O4</chemical_name_common>
+	<database_code db="PDF">01-074-0794</database_code>
+
 	<space_group>
 		<IT_number>4</IT_number>
 		<id>4:b</id>
-		<H-M>P21:b</H-M>
+		<H-M>P 1 21 1:b</H-M>
 	</space_group>
-	<database_code db="PDF">01-074-0794</database_code>
-	<R_factor_all>01-074-0794</R_factor_all>
+	<R_factor_all>0.096</R_factor_all>
+
 	<cell>
 		<a unit="nm">0.8447</a>
-		<b unit="nm">0.88165</b>
+		<b unit="nm">0.8816</b>
 		<c unit="nm">0.5163</c>
 		<alpha>90</alpha>
 		<beta>93.42</beta>
@@ -23,12 +25,14 @@
 		<symbol>Sr</symbol>
 		<fract>0.4905 0 0.2507</fract>
 		<B_iso>0.46</B_iso>
+		<valence>2</valence>
 	</atom_site>
 	<atom_site>
 		<label>Sr2</label>
 		<symbol>Sr</symbol>
 		<fract>0.0292 0.9929 0.202</fract>
 		<B_iso>0.4</B_iso>
+		<valence>2</valence>
 	</atom_site>
 	<atom_site>
 		<label>Al1</label>
@@ -41,67 +45,79 @@
 		<symbol>Al</symbol>
 		<fract>0.7997 0.8394 0.7287</fract>
 		<B_iso>0.68</B_iso>
+		<valence>3</valence>
 	</atom_site>
 	<atom_site>
 		<label>Al3</label>
 		<symbol>Al</symbol>
 		<fract>0.7087 0.6685 0.2236</fract>
 		<B_iso>0.7</B_iso>
+		<valence>3</valence>
 	</atom_site>
 	<atom_site>
 		<label>Al4</label>
 		<symbol>Al</symbol>
 		<fract>0.6809 0.1707 0.7975</fract>
 		<B_iso>0.74</B_iso>
+		<valence>3</valence>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.265 0.174 0.436</fract>
 		<B_iso>0.71</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.736 0.316 0.589</fract>
 		<B_iso>1.31</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.327 0.493 0.345</fract>
 		<B_iso>1.24</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O4</label>
 		<symbol>O</symbol>
 		<fract>0.265 0.984 0.898</fract>
 		<B_iso>0.82</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O5</label>
 		<symbol>O</symbol>
 		<fract>0.174 0.297 0.936</fract>
 		<B_iso>1.14</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O6</label>
 		<symbol>O</symbol>
 		<fract>0.206 0.669 0.906</fract>
 		<B_iso>0.89</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O7</label>
 		<symbol>O</symbol>
 		<fract>0.487 0.219 0.876</fract>
 		<B_iso>0.95</B_iso>
+		<valence>-2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O8</label>
 		<symbol>O</symbol>
 		<fract>0.99 0.888 0.651</fract>
 		<B_iso>1.08</B_iso>
+		<valence>-2</valence>
 	</atom_site>
+
 	<citation doi="10.1002/zaac.19814750423">
 		<author>A.R. Schulze</author>
 		<author>Hk. Mueller Buschbaur</author>
