@@ -2,10 +2,13 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Calcite</chemical_name_common>
+	<database_code db="COD">2100992</database_code>
+
 	<space_group>
 		<id>167:H</id>
 		<H-M>R-3c:H</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.4991</a>
 		<b unit="nm">0.4991</b>
@@ -14,6 +17,7 @@
 		<beta>90</beta>
 		<gamma>120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ca</label>
 		<symbol>Ca</symbol>
@@ -53,6 +57,7 @@
 		<aniso_U_23>-0.00800</aniso_U_23>
 		<valence>-2</valence>
 	</atom_site>
+
 	<citation>
 		<author>E.N. Maslen</author>
 		<author>V.A. Streltsov</author>
