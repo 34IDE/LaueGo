@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#pragma version = 0.59
+#pragma version = 0.60
 #pragma IgorVersion = 6.3
 #pragma ModuleName=AtomView
 #include "Elements", version>=1.77
@@ -1016,7 +1016,7 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 		return ""
 	endif
 
-	Make/N=2/D/FREE diff
+	Make/N=(DimSize(bonds,1))/D/FREE diff
 	Variable N=DimSize(bonds,0), m, blen
 	Variable Nbonds=floor(N/3) + 1
 	if (Nbonds<0 || Nbonds>1e9 || numtype(Nbonds))
@@ -1063,7 +1063,7 @@ Function/T AllUniqueBonds(fldrName,[printIt])
 	if (printIt)
 		printf "in \"%s\"\r",fldrName
 		for (m=0;m<Nbonds;m+=1)
-			printf "  bond [%s, %s] = %.4f nm\r",bondTypes0[m],bondTypes1[m],bondLens[m]
+			printf "  bond [%s, %s] = %.5f nm\r",bondTypes0[m],bondTypes1[m],bondLens[m]
 		endfor
 		if (Nbonds>1)
 			printf "range of bond lengths = [%g, %g]nm\r",bmin,bmax
