@@ -743,7 +743,7 @@ def readScan(file, v, new=0):
 	if v: print "scan.nd = ", `scan.nd`
 	scan.nt = u.unpack_int()
 	if v: print "scan.nt = ", `scan.nt`
-	for j in range(scan.np):
+	for j in range(scan.np):	# loop over the positioners
 		scan.p.append(scanPositioner())
 		scan.p[j].number = u.unpack_int()
 		scan.p[j].fieldName = posName(scan.p[j].number)
@@ -770,7 +770,7 @@ def readScan(file, v, new=0):
 		if length: scan.p[j].readback_unit = u.unpack_string()
 		if v: print "scan.p[%d].readback_unit = %s" % (j, `scan.p[j].readback_unit`)
 
-	for j in range(scan.nd):
+	for j in range(scan.nd):	# loop over the detectors
 		scan.d.append(scanDetector())
 		scan.d[j].number = u.unpack_int()
 		scan.d[j].fieldName = detName(scan.d[j].number,new=new)
@@ -785,7 +785,7 @@ def readScan(file, v, new=0):
 		if length: scan.d[j].unit = u.unpack_string()
 		if v: print "scan.d[%d].unit = %s" % (j, `scan.d[j].unit`)
 
-	for j in range(scan.nt):
+	for j in range(scan.nt):	# loop over the triggers
 		scan.t.append(scanTrigger())
 		scan.t[j].number = u.unpack_int()
 		if v: print "trigger ", j
