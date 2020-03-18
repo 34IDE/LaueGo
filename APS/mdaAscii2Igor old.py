@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 #version 1.06
 
@@ -48,26 +47,16 @@ def mdaAscii3d_IGOR(d,outFile=None):
 		if i>0: xPVs += ','
 		xPVs += str(d[3].p[i].name)
 
-	try:									# this try-except is needed in case there are no positioners in d[1]
-		if d[1].p[0].step_mode=='LINEAR':	# layers are linearly scaled
-			z0 = float(d[1].p[0].data[0])
-			dz = float(d[1].p[0].data[1]) - z0
-			NzDone = d[1].curr_pt
-			if NzDone > 1:
-				dz = float(d[1].p[0].data[NzDone-1]) - z0
-				dz /= (NzDone-1)
+	if d[1].p[0].step_mode=='LINEAR':		# layers are linearly scaled
+		z0 = float(d[1].p[0].data[0])
+		dz = float(d[1].p[0].data[1]) - z0
+		NzDone = d[1].curr_pt
+		if NzDone > 1:
+			dz = float(d[1].p[0].data[NzDone-1]) - z0
+			dz /= (NzDone-1)
 
-		zUnit = d[1].p[0].unit
-		zName = d[1].p[0].desc
-	except:
-		NzDone = d[1].curr_pt				# if no positioner, then just 0,1,2,...
-		z0 = float(0.0)
-		dz = float(1.0)
-		zUnit = ''
-		zName = 'dummy'
-		isSaturn = False
-		isMCA = False
-
+	zUnit = d[1].p[0].unit
+	zName = d[1].p[0].desc
 	try:
 		if len(zName)<1: zName = d[1].p[0].name
 	except:
@@ -129,10 +118,6 @@ def mdaAscii3d_IGOR(d,outFile=None):
 			x0 *= 1000.0
 	else:
 		return ''
-
-	if xUnit == 'micron': xUnit = 'µm'
-	if yUnit == 'micron': yUnit = 'µm'
-	if zUnit == 'micron': zUnit = 'µm'
 
 	if 0:
 		print ' '
@@ -413,11 +398,6 @@ def mdaAscii2d_IGOR(d,outFile=None):
 	xdesc = d[2].p[0].desc
 	xPV = d[2].p[0].name
 
-
-	if xunit == 'micron': xunit = 'µm'
-	if yunit == 'micron': yunit = 'µm'
-
-
 	fo = open(outFile,"w")
 	fo.write('IGOR'+'\n')
 	for i in range(nd):
@@ -493,8 +473,6 @@ def mdaAscii1d_IGOR(d,outFile=None):
 	xunit = d[1].p[0].unit
 	xdesc = d[1].p[0].desc
 	xPV = d[1].p[0].name
-
-	if xunit == 'micron': xunit = 'µm'
 
 	fo = open(outFile,"w")
 	fo.write('IGOR'+'\n')
@@ -600,16 +578,16 @@ class scanDim:
 		self.curr_pt = 0
 		self.scan_name = ""
 		self.time = ""
-		self.np = 0				# number of positioners in p[]
-		self.p = []				#   list of scanPositioner instances
-		self.nd = 0				# number of detectors in d[]
-		self.d = []				#   list of scanDetector instances
-		self.nt = 0				# number of triggers in t[]
-		self.t = []				#   list of scanTrigger instances
+		self.np = 0
+		self.p = []				# list of scanPositioner instances
+		self.nd = 0
+		self.d = []				# list of scanDetector instances
+		self.nt = 0
+		self.t = []				# list of scanTrigger instances
 
 	def __str__(self):
 		if self.scan_name <> '':
-			s = "%dD data from scan_name = \"%s\": %d/%d pts; %d positioners, %d detectors, %d triggers" % (
+			s = "%dD data from \"%s\": %d/%d pts; %d pos\'s, %d dets, %d trigs" % (
 				self.dim, self.scan_name, self.curr_pt, self.npts, self.np, self.nd,
 				self.nt)
 		else:
