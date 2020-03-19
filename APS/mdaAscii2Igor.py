@@ -61,10 +61,10 @@ def mdaAscii3d_IGOR(d,outFile=None):
 		zName = d[1].p[0].desc
 	except:
 		NzDone = d[1].curr_pt				# if no positioner, then just 0,1,2,...
-		z0 = float(0.0)
+		z0 = float(0.0)						# no actual positioner for Z-axis, just a dummy scan
 		dz = float(1.0)
 		zUnit = ''
-		zName = 'dummy'
+		zName = 'dummy Z'
 		isSaturn = False
 		isMCA = False
 
@@ -73,14 +73,21 @@ def mdaAscii3d_IGOR(d,outFile=None):
 	except:
 		zName = 'Z-axis'
 
-	if d[2].p[0].step_mode=='LINEAR':		# layers are linearly scaled
-		y0 = float(d[2].p[0].data[0][0])
-		dy = float(d[2].p[0].data[0][1]) - y0
-		if NzDone>1:						# the first set of y positions is complete
-			dy = float(d[2].p[0].data[0][Ny-1]) - y0
-			dy /= (Ny-1)
-	yUnit = d[2].p[0].unit
-	yName = d[2].p[0].desc
+	try:
+		if d[2].p[0].step_mode=='LINEAR':		# layers are linearly scaled
+			y0 = float(d[2].p[0].data[0][0])
+			dy = float(d[2].p[0].data[0][1]) - y0
+			if NzDone>1:						# the first set of y positions is complete
+				dy = float(d[2].p[0].data[0][Ny-1]) - y0
+				dy /= (Ny-1)
+		yUnit = d[2].p[0].unit
+		yName = d[2].p[0].desc
+	except:
+		y0 = float(0.0)							# no actual positioner for Y-axis, just a dummy scan
+		dy = float(1.0)							# positions are just 0,1,2,...
+		yUnit = ''
+		yName = 'dummy Y'
+
 	try:
 		if len(yName)<1: yName = d[2].p[0].name
 	except:
@@ -128,7 +135,10 @@ def mdaAscii3d_IGOR(d,outFile=None):
 			dx *= 1000.0
 			x0 *= 1000.0
 	else:
-		return ''
+		x0 = float(0.0)			# no actual positioner for X-axis, just a dummy scan
+		dx = float(1.0)			# positions are just 0,1,2,...
+		xUnit = ''
+		xName = 'dummy X'
 
 	if xUnit == 'micron': xUnit = 'µm'
 	if yUnit == 'micron': yUnit = 'µm'
@@ -407,12 +417,17 @@ def mdaAscii2d_IGOR(d,outFile=None):
 	try:	yPV = d[1].p[0].name
 	except:	yPV = ''
 
-	px = d[2].p[0].data
-	px = px[0]
-	xunit = d[2].p[0].unit
-	xdesc = d[2].p[0].desc
-	xPV = d[2].p[0].name
-
+	try:
+		px = d[2].p[0].data
+		px = px[0]
+		xunit = d[2].p[0].unit
+		xdesc = d[2].p[0].desc
+		xPV = d[2].p[0].name
+	except:
+		px = 0
+		xunit = ''
+		xdesc = 'dummy X'
+		xPV = ''
 
 	if xunit == 'micron': xunit = 'µm'
 	if yunit == 'micron': yunit = 'µm'
@@ -619,18 +634,18 @@ class scanDim:
 
 class scanClass:
 	def __init__(self):
-		self.rank = 0
-		self.npts = 0
-		self.curr_pt = 0
+		self.rank = 0	# a 1D, 2D, or 3D scan
+		self.npts = 0	# planned number of points in this scan
+		self.curr_pt = 0	# current or last point in scan
 		self.plower_scans = 0
 		self.name = ""
-		self.time = ""
-		self.np = 0
-		self.nd = 0
-		self.nt = 0
-		self.p = []
-		self.d = []
-		self.t = []
+		self.time = ""	# time of scan
+		self.np = 0		# number of positioners
+		self.nd = 0		# number of detectors
+		self.nt = 0		# number of triggers
+		self.p = []		# array of positioners
+		self.d = []		# array of detectors
+		self.t = []		# array of triggers
 
 class scanPositioner:
 	def __init__(self):
@@ -717,8 +732,8 @@ def readScan(file, v, new=0):
 	  v - input verbose specified
 	  new  - default 0, if 1 specified then version 5 Di name used
 	"""
-	scan = scanClass()
-	buf = file.read(10000) # enough to read scan header
+	scan = scanClass()		# one scan record, a 2D scan has 2 of these
+	buf = file.read(10000)	# enough to read scan header
 	u = Unpacker(buf)
 	scan.rank = u.unpack_int()
 	if v: print "scan.rank = ", `scan.rank`
@@ -805,7 +820,7 @@ def readScan(file, v, new=0):
 			j, u.get_position())
 		scan.p[j].data = u.unpack_farray(scan.npts, u.unpack_double)    
 		if v: print "scan.p[%d].data = %s" % (j, `scan.p[j].data`)
-        
+
 	# detectors
 	file.seek(file.tell() - (len(buf) - u.get_position()))
 	buf = file.read(scan.nd * scan.npts * 4)
