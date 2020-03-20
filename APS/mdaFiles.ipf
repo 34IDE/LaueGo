@@ -408,7 +408,7 @@ Static Function/T DisplayMDAresult3D(planes)
 	String xLabel=StringByKey("xAxisName",wNote,"=")
 	String yLabel=StringByKey("yAxisName",wNote,"=")
 	String zLabel = StringByKey("zAxisName",wNote,"=")
-	zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel) + zPositionStr(planes,layer)
+	zLabel = SelectString(CmpStr(zLabel, "dummy Z"),"","  "+zLabel) + zPositionStr(planes,layer)
 	xLabel += SelectString(strlen(xLabel)>0,"","  (\U)")
 	yLabel += SelectString(strlen(yLabel)>0,"","  (\U)")
 
@@ -444,7 +444,7 @@ Static Function SetVarProcLayer(sva) : SetVariableControl
 		String wnote=note(planes)
 		String pv=StringByKey("pv",wnote,"=")
 		String zLabel = StringByKey("zAxisName",wNote,"=")
-		zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel)
+		zLabel = SelectString(CmpStr(zLabel, "dummy Z"),"","  "+zLabel)
 
 		String fileTime = ISOtime2niceStr(StringByKey("file_time",wnote,"="))
 		String title = "\Zr120layer "+num2istr(layer) + zLabel + zPositionStr(planes,layer)
