@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.13
+#pragma version = 1.14
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -242,8 +242,10 @@ Function/T DisplayMDAresult(mda)
 		DisplayMDAresult1D(mda)
 	elseif (WaveDims(mda)==2)
 		DisplayMDAresult2D(mda)
+	elseif (WaveDims(mda)==3)
+		DisplayMDAresult3D(mda)
 	else
-		DoAlert 0,"Only know how to display 1D and 2D mda waves"
+		DoAlert 0,"Only know how to display 1D, 2D, and 3D mda waves"
 	endif
 	return GetWavesDataFolder(mda,2)
 End
@@ -378,6 +380,82 @@ Static Function/T DisplayMDAresult1D(line)
 	Label left yLabel
 	TextBox/C/N=text0/F=0/B=1/A=LT/X=3/Y=3 title
 	return GetWavesDataFolder(line,2)
+End
+
+
+Static Function/T DisplayMDAresult3D(planes)
+	Wave planes
+	if (!WaveExists(planes))
+		return ""
+	endif
+	Variable maxLayer = DimSize(planes,2) - 1
+	String wName = NameOfWave(planes)
+	if (maxLayer<1)
+		printf "'%s' is only a 2D (or less) wave, don't use this routine\r", wName
+	endif
+
+	String win=StringFromList(0,WindowsWithWave(planes,1))
+	if (strlen(win))
+		String str
+		sprintf str, "Graph of '%s' already exists.\rPut up another?", wName
+		DoAlert 1, str
+		if (V_flag == 2)			// NO clicked
+			DoWindow/F $win
+			return GetWavesDataFolder(planes,2)
+		endif
+	endif
+
+	String wnote=note(planes)
+	String pv=StringByKey("pv",wNote,"=")
+	String fileTime = ISOtime2niceStr(StringByKey("file_time",wNote,"="))
+	String xLabel=StringByKey("xLabel",wNote,"=")
+	String yLabel=StringByKey("yLabel",wNote,"=")
+	String unit
+	unit = WaveUnits(planes,0)
+	xLabel += SelectString(strlen(xLabel)>0,"","  (\U)")
+	unit = WaveUnits(planes,1)
+	yLabel += SelectString(strlen(yLabel)>0,"","  (\U)")
+
+	Variable layer=0
+
+	String title = "\Zr120layer "+num2istr(layer)
+	title += "\r\\Zr075file:\\M "+wName
+	title += SelectString(strlen(pv),"","\r\\Zr075PV:\\M "+pv)
+	title += SelectString(strlen(fileTime),"","\r\\Zr075"+fileTime+"\\M")
+
+	Display/W=(133,45,704,587)/K=1
+	AppendImage planes
+	ModifyImage $wName ctab= {*,*,Rainbow256,0}
+	ModifyImage $wName plane=layer			// always start with layer=0
+	ModifyGraph margin(top)=30,width={Aspect,1}, tick=2, mirror=1, minor=1, lowTrip=0.001
+	Label left yLabel
+	Label bottom xLabel
+
+	TextBox/C/N=title/F=0/B=(65535,65535,65535,39321)/X=3/Y=3/A=LT title
+
+	SetVariable setvar_Layer,pos={25,5},size={68,19},bodyWidth=45,proc=mdaAPS#SetVarProcLayer,title="Layer"
+	SetVariable setvar_Layer,fSize=13,format="%d",limits={0,maxLayer,1},value= _NUM:layer
+	return GetWavesDataFolder(planes,2)
+End
+//
+Static Function SetVarProcLayer(sva) : SetVariableControl
+	STRUCT WMSetVariableAction &sva
+	if (sva.eventCode == 1 || sva.eventCode == 2)		// mouse up or Enter key
+		String win=sva.win
+		Variable layer = round(sva.dval)
+		String wName = StringFromList(0,ImageNameList(win,";"))
+		Wave image = ImageNameToWaveRef(win,wName)
+		ModifyImage/W=$win $wName plane=layer
+
+		String pv=StringByKey("pv",note(image),"=")
+		String fileTime = ISOtime2niceStr(StringByKey("file_time",note(image),"="))
+		String title = "\Zr120layer "+num2istr(layer)
+		title += "\r\\Zr075file:\\M "+wName
+		title += SelectString(strlen(pv),"","\r\\Zr075PV:\\M "+pv)
+		title += SelectString(strlen(fileTime),"","\r\\Zr075"+fileTime+"\\M")
+		TextBox/C/N=title title
+	endif
+	return 0
 End
 
 
