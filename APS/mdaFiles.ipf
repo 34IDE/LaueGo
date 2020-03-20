@@ -434,7 +434,7 @@ Static Function/T DisplayMDAresult3D(planes)
 	Label left yLabel
 	Label bottom xLabel
 
-	TextBox/C/N=title/F=0/B=(65535,65535,65535,39321)/X=3/Y=3/A=LT title
+	TextBox/C/N=title/F=0/B=(65535,65535,65535,25000)/X=3/Y=3/A=LT title
 
 	SetVariable setvar_Layer,pos={25,5},size={68,19},bodyWidth=45,proc=mdaAPS#SetVarProcLayer,title="Layer"
 	SetVariable setvar_Layer,fSize=13,format="%d",limits={0,maxLayer,1},value= _NUM:layer
