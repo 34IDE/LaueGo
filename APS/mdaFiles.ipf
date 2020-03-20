@@ -408,8 +408,11 @@ Static Function/T DisplayMDAresult3D(planes)
 	String wnote=note(planes)
 	String pv=StringByKey("pv",wNote,"=")
 	String fileTime = ISOtime2niceStr(StringByKey("file_time",wNote,"="))
-	String xLabel=StringByKey("xLabel",wNote,"=")
-	String yLabel=StringByKey("yLabel",wNote,"=")
+	String xLabel=StringByKey("xAxisName",wNote,"=")
+	String yLabel=StringByKey("yAxisName",wNote,"=")
+	String zLabel = StringByKey("zAxisName",wNote,"=")
+	zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel)
+
 	String unit
 	unit = WaveUnits(planes,0)
 	xLabel += SelectString(strlen(xLabel)>0,"","  (\U)")
@@ -418,7 +421,7 @@ Static Function/T DisplayMDAresult3D(planes)
 
 	Variable layer=0
 
-	String title = "\Zr120layer "+num2istr(layer)
+	String title = "\Zr120layer "+num2istr(layer) + zLabel
 	title += "\r\\Zr075file:\\M "+wName
 	title += SelectString(strlen(pv),"","\r\\Zr075PV:\\M "+pv)
 	title += SelectString(strlen(fileTime),"","\r\\Zr075"+fileTime+"\\M")
@@ -447,9 +450,12 @@ Static Function SetVarProcLayer(sva) : SetVariableControl
 		Wave image = ImageNameToWaveRef(win,wName)
 		ModifyImage/W=$win $wName plane=layer
 
-		String pv=StringByKey("pv",note(image),"=")
-		String fileTime = ISOtime2niceStr(StringByKey("file_time",note(image),"="))
-		String title = "\Zr120layer "+num2istr(layer)
+		String wnote=note(image)
+		String pv=StringByKey("pv",wnote,"=")
+		String zLabel = StringByKey("zAxisName",wNote,"=")
+		zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel)
+		String fileTime = ISOtime2niceStr(StringByKey("file_time",wnote,"="))
+		String title = "\Zr120layer "+num2istr(layer) + zLabel
 		title += "\r\\Zr075file:\\M "+wName
 		title += SelectString(strlen(pv),"","\r\\Zr075PV:\\M "+pv)
 		title += SelectString(strlen(fileTime),"","\r\\Zr075"+fileTime+"\\M")
