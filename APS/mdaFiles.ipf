@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.14
+#pragma version = 1.15
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -294,11 +294,8 @@ Static Function/T DisplayMDAresult2D(image)
 	String xLabel=StringByKey("xLabel",wNote,"=")
 	String yLabel=StringByKey("yLabel",wNote,"=")
 	String fileTime = ISOtime2niceStr(StringByKey("file_time",wNote,"="))
-	String unit
-	unit = WaveUnits(image,0)
-	xLabel += SelectString(strlen(xLabel)>0,"","  (\U)")
-	unit = WaveUnits(image,1)
-	yLabel += SelectString(strlen(yLabel)>0,"","  (\U)")
+	xLabel += SelectString(strlen(WaveUnits(image,0))>0,"","  (\U)")
+	yLabel += SelectString(strlen(WaveUnits(image,1))>0,"","  (\U)")
 
 	Variable i = strsearch(wName,"_",0)
 	String title=""
@@ -361,8 +358,7 @@ Static Function/T DisplayMDAresult1D(line)
 	String pv=StringByKey("pv",wNote,"=")
 	String xLabel=StringByKey("xLabel",wNote,"="), yLabel=""
 	String fileTime = ISOtime2niceStr(StringByKey("file_time",wNote,"="))
-	String unit=WaveUnits(line,0)
-	xLabel += SelectString(strlen(xLabel)>0,"","  (\U)")
+	xLabel += SelectString(strlen(WaveUnits(line,0))>0,"","  (\U)")
 	if (strlen(pv))
 		yLabel = pv + SelectString(strlen(WaveUnits(line,1)),"","  (\U)")
 	endif
@@ -405,21 +401,16 @@ Static Function/T DisplayMDAresult3D(planes)
 		endif
 	endif
 
+	Variable layer=0
 	String wnote=note(planes)
 	String pv=StringByKey("pv",wNote,"=")
 	String fileTime = ISOtime2niceStr(StringByKey("file_time",wNote,"="))
 	String xLabel=StringByKey("xAxisName",wNote,"=")
 	String yLabel=StringByKey("yAxisName",wNote,"=")
 	String zLabel = StringByKey("zAxisName",wNote,"=")
-	zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel)
-
-	String unit
-	unit = WaveUnits(planes,0)
+	zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel) + zPositionStr(planes,layer)
 	xLabel += SelectString(strlen(xLabel)>0,"","  (\U)")
-	unit = WaveUnits(planes,1)
 	yLabel += SelectString(strlen(yLabel)>0,"","  (\U)")
-
-	Variable layer=0
 
 	String title = "\Zr120layer "+num2istr(layer) + zLabel
 	title += "\r\\Zr075file:\\M "+wName
@@ -447,15 +438,16 @@ Static Function SetVarProcLayer(sva) : SetVariableControl
 		String win=sva.win
 		Variable layer = round(sva.dval)
 		String wName = StringFromList(0,ImageNameList(win,";"))
-		Wave image = ImageNameToWaveRef(win,wName)
+		Wave planes = ImageNameToWaveRef(win,wName)
 		ModifyImage/W=$win $wName plane=layer
 
-		String wnote=note(image)
+		String wnote=note(planes)
 		String pv=StringByKey("pv",wnote,"=")
 		String zLabel = StringByKey("zAxisName",wNote,"=")
 		zLabel = SelectString(CmpStr(zLabel, "dummy"),"","  "+zLabel)
+
 		String fileTime = ISOtime2niceStr(StringByKey("file_time",wnote,"="))
-		String title = "\Zr120layer "+num2istr(layer) + zLabel
+		String title = "\Zr120layer "+num2istr(layer) + zLabel + zPositionStr(planes,layer)
 		title += "\r\\Zr075file:\\M "+wName
 		title += SelectString(strlen(pv),"","\r\\Zr075PV:\\M "+pv)
 		title += SelectString(strlen(fileTime),"","\r\\Zr075"+fileTime+"\\M")
@@ -463,7 +455,23 @@ Static Function SetVarProcLayer(sva) : SetVariableControl
 	endif
 	return 0
 End
+//
+Static Function/T zPositionStr(wav,layer)
+	Wave wav
+	Variable layer
 
+	if (WaveDims(wav)<3)
+		return ""
+	endif
+	Variable dz=DimDelta(wav,2), z0=DimOffset(wav,2)
+	String unit = WaveUnits(wav,2), str
+	unit = SelectString(strlen(unit), "", " ") + unit
+	if (dz==1 && z0==0 && strlen(unit)<1)	// don't show position if un-scaled
+		return ""
+	endif
+	sprintf str, " (= %g%s)", (dz*Layer+z0), unit
+	return str
+End
 
 // moved to Utility_JZT.ipf
 //
