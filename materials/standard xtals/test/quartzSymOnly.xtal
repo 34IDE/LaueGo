@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-03-19T17:51:23.001Z</date>   <!-- Thursday, March 19, 2020 at 12:51:23 PM Central Daylight Time -->
+	<chemical_name_common>Quartz-alpha</chemical_name_common>
+	<chemical_formula>SiO2</chemical_formula>
+	<database_code db="COD">9013321</database_code>
+
+	<space_group>
+		<symops N="6">
+			<op>"x" "y" "z"</op>
+			<op>"-y" "x-y" "z-1/3"</op>
+			<op>"-x+y" "-x" "z+1/3"</op>
+			<op>"x-y" "-y" "-z+1/3"</op>
+			<op>"-x" "-x+y" "-z-1/3"</op>
+			<op>"y" "x" "-z"</op>
+		</symops>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.4913437</a>
+		<b unit="nm">0.4913437</b>
+		<c unit="nm">0.4913437</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<temperature unit="K">298</temperature>
+	</cell>
+
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0.47 0 0.66665667</fract>
+		<valence>4</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0062</U_iso>
+		<aniso_U_11 unit="Å^2">0.00733</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00590</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00535</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.00294</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00294</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00055</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.4146 0.2678 0.78543</fract>
+		<valence>-2</valence>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0109</U_iso>
+		<aniso_U_11 unit="Å^2">0.012</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0105</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0118</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0065</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.0029</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.004</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Si" n1="O">0.15369252</bond_chemical>
+
+	<citation doi="10.3749/canmin.46.5.1501">
+		<author>S.M. Antao</author>
+		<author>I. Hassan</author>
+		<author>J. Wang</author>
+		<author>P.L. Lee</author>
+		<author>B.H. Toby</author>
+		<journal>The Canadian Mineralogist</journal>
+		<volume>46</volume>
+		<year>2008</year>
+		<pages>1501 1509</pages>
+
+		<title>State-of-the-art high-resolution powder x-ray diffraction (HRPXRD) 
+		illustrated with Rietveld structure refinement of quartz, sodalite, tremolite, and meionite</title>
+	</citation>
+</cif>

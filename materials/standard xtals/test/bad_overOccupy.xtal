@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<chemical_name_common>HEA1 (High Entropy Alloy)</chemical_name_common>
+	<!-- High Entropy Alloy -->
+	<space_group>
+		<IT_number>225</IT_number>
+	</space_group>
+	<cell>
+		<a unit="nm">0.3557</a>
+		<b unit="nm">0.3557</b>
+		<c unit="nm">0.3557</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+	</cell>
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 0</fract>
+		<occupancy>1.25</occupancy>
+	</atom_site>
+</cif>

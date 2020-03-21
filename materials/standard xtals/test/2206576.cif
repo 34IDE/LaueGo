@@ -1,0 +1,312 @@
+#------------------------------------------------------------------------------
+#$Date: 2016-02-20 05:06:23 +0200 (Sat, 20 Feb 2016) $
+#$Revision: 176774 $
+#$URL: svn://www.crystallography.net/cod/cif/2/20/65/2206576.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/. The original data for this entry
+# were provided by IUCr Journals, http://journals.iucr.org/.
+#
+# The file may be used within the scientific community so long as
+# proper attribution is given to the journal article from which the
+# data were obtained.
+#
+data_2206576
+loop_
+_publ_author_name
+'Nakatsuka, Akihiko'
+'Ohtaka, Osamu'
+'Arima, Hiroshi'
+'Nakayama, Noriaki'
+'Mizota, Tadato'
+_publ_section_title
+;
+Cubic phase of single-crystal LaAlO~3~ perovskite synthesized at 4.5 GPa and
+1273 K
+;
+_journal_coeditor_code           WM6077
+_journal_issue                   8
+_journal_name_full               'Acta Crystallographica, Section E'
+_journal_page_first              i148
+_journal_page_last               i150
+_journal_paper_doi               10.1107/S1600536805020441
+_journal_volume                  61
+_journal_year                    2005
+_chemical_formula_iupac          'La Al O3'
+_chemical_formula_structural     'La Al O3'
+_chemical_formula_sum            'Al La O3'
+_chemical_formula_weight         213.89
+_chemical_name_systematic
+;
+lanthanum aluminium trioxide
+;
+_symmetry_cell_setting           cubic
+_symmetry_space_group_name_Hall  '-P 4 2 3'
+_symmetry_space_group_name_H-M   'P m -3 m'
+_cell_angle_alpha                90
+_cell_angle_beta                 90
+_cell_angle_gamma                90
+_cell_formula_units_Z            1
+_cell_length_a                   3.7913(2)
+_cell_length_b                   3.7913(2)
+_cell_length_c                   3.7913(2)
+_cell_measurement_reflns_used    25
+_cell_measurement_temperature    296
+_cell_measurement_theta_max      22.0
+_cell_measurement_theta_min      20.5
+_cell_volume                     54.496(5)
+_computing_cell_refinement       WinAFC
+_computing_data_collection       'WinAFC (Rigaku Corporation, 1999)'
+_computing_data_reduction
+'TEXSAN (Molecular Structure Corporation, 1999)'
+_computing_molecular_graphics    'ATOMS for Windows (Dowty, 2000)'
+_computing_publication_material  TEXSAN
+_computing_structure_refinement  TEXSAN
+_computing_structure_solution    TEXSAN
+_diffrn_measured_fraction_theta_full 1.0000
+_diffrn_measured_fraction_theta_max 1.0000
+_diffrn_measurement_device_type  'Rigaku AFC-7R'
+_diffrn_measurement_method       \w/2\q
+_diffrn_radiation_type           'Mo K\a'
+_diffrn_radiation_wavelength     0.71069
+_diffrn_reflns_av_R_equivalents  0.015
+_diffrn_reflns_limit_h_max       9
+_diffrn_reflns_limit_h_min       0
+_diffrn_reflns_limit_k_max       9
+_diffrn_reflns_limit_k_min       0
+_diffrn_reflns_limit_l_max       9
+_diffrn_reflns_limit_l_min       0
+_diffrn_reflns_number            521
+_diffrn_reflns_theta_full        60.00
+_diffrn_reflns_theta_max         60.00
+_diffrn_standards_decay_%        0.42
+_diffrn_standards_interval_count 150
+_diffrn_standards_number         3
+_exptl_absorpt_coefficient_mu    19.601
+_exptl_absorpt_correction_T_max  0.414
+_exptl_absorpt_correction_T_min  0.395
+_exptl_absorpt_correction_type   psi-scan
+_exptl_absorpt_process_details   '(North <i>et al.</i>, 1968)'
+_exptl_crystal_colour            colorless
+_exptl_crystal_density_diffrn    6.517
+_exptl_crystal_density_method    'not measured'
+_exptl_crystal_description       irregular
+_exptl_crystal_F_000             94
+_exptl_crystal_pressure_history  'synthesized at 4.5 GPa'
+_exptl_crystal_size_max          0.050
+_exptl_crystal_size_mid          0.050
+_exptl_crystal_size_min          0.045
+_exptl_crystal_thermal_history   'synthesized at 4.5 GPa and 1273 K'
+_refine_diff_density_max         0.84
+_refine_diff_density_min         -0.64
+_refine_ls_extinction_coef       0.34(2)
+_refine_ls_extinction_method
+'Zachariasen (1967), type 2 Gaussian isotropic'
+_refine_ls_goodness_of_fit_ref   1.070
+_refine_ls_number_parameters     6
+_refine_ls_number_reflns         116
+_refine_ls_R_factor_gt           0.0081
+_refine_ls_shift/su_max          0.0000
+_refine_ls_structure_factor_coef F
+_refine_ls_weighting_details     'w = 1/[\s^2^(Fo) + 0.00008|Fo|^2^]'
+_refine_ls_weighting_scheme      calc
+_refine_ls_wR_factor_ref         0.0101
+_reflns_number_gt                116
+_reflns_number_total             116
+_reflns_threshold_expression     F^2^>3\s(F^2^)
+_cod_data_source_file            wm6077.cif
+_cod_database_code               2206576
+loop_
+_symmetry_equiv_pos_as_xyz
+x,y,z
+z,x,y
+y,z,x
+x,z,y
+y,x,z
+z,y,x
+x,-y,-z
+z,-x,-y
+y,-z,-x
+x,-z,-y
+y,-x,-z
+z,-y,-x
+-x,y,-z
+-z,x,-y
+-y,z,-x
+-x,z,-y
+-y,x,-z
+-z,y,-x
+-x,-y,z
+-z,-x,y
+-y,-z,x
+-x,-z,y
+-y,-x,z
+-z,-y,x
+-x,-y,-z
+-z,-x,-y
+-y,-z,-x
+-x,-z,-y
+-y,-x,-z
+-z,-y,-x
+-x,y,z
+-z,x,y
+-y,z,x
+-x,z,y
+-y,x,z
+-z,y,x
+x,-y,z
+z,-x,y
+y,-z,x
+x,-z,y
+y,-x,z
+z,-y,x
+x,y,-z
+z,x,-y
+y,z,-x
+x,z,-y
+y,x,-z
+z,y,-x
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_adp_type
+_atom_site_calc_flag
+_atom_site_refinement_flags
+_atom_site_occupancy
+_atom_site_type_symbol
+La 0.0000 0.0000 0.0000 0.004299(6) Uani d SP 1.00 La
+Al 0.5000 0.5000 0.5000 0.00377(2) Uani d SP 1.00 Al
+O 0.0000 0.5000 0.5000 0.01400(10) Uani d S 1.00 O
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+La 0.00430(4) 0.0043 0.0043 0.0000 0.0000 0.0000
+Al 0.00380(10) 0.0038 0.0038 0.0000 0.0000 0.0000
+O 0.0027(3) 0.0197(4) 0.0197 0.0000 0.0000 0.0000
+loop_
+_atom_type_symbol
+_atom_type_description
+_atom_type_scat_dispersion_real
+_atom_type_scat_dispersion_imag
+_atom_type_scat_source
+La La -0.287 2.452
+;International Tables for Crystallography
+(1992, Vol. C, Tables 4.2.6.8 and 6.1.1.1)
+;
+Al Al 0.064 0.051
+;International Tables for Crystallography
+(1992, Vol. C, Tables 4.2.6.8 and 6.1.1.1)
+;
+O O 0.011 0.006
+;International Tables for Crystallography
+(1992, Vol. C, Tables 4.2.6.8 and 6.1.1.1)
+;
+loop_
+_geom_angle_atom_site_label_1
+_geom_angle_atom_site_label_2
+_geom_angle_atom_site_label_3
+_geom_angle_site_symmetry_2
+_geom_angle_site_symmetry_3
+_geom_angle
+_geom_angle_publ_flag
+O La O 1_555 2_555 60.00 no
+O La O 1_555 3_555 60.00 no
+O La O 1_555 3_445 120.00 no
+O La O 1_555 2_454 120.00 no
+O La O 1_555 2_455 60.00 no
+O La O 1_555 3_455 60.00 no
+O La O 1_555 1_544 180.00 no
+O La O 1_555 1_545 90.00 no
+O La O 1_555 3_545 120.00 no
+O La O 1_555 1_554 90.00 no
+O La O 1_555 2_554 120.00 no
+O La O 2_555 3_555 60.00 no
+O La O 2_555 3_445 120.00 no
+O La O 3_555 2_454 120.00 no
+O Al O 1_555 2_555 90.00 no
+O Al O 1_555 3_555 90.00 no
+O Al O 1_555 3_556 90.00 no
+O Al O 1_555 2_565 90.00 no
+O Al O 1_555 1_655 180.00 no
+O Al O 2_555 3_555 90.00 no
+O Al O 2_555 3_556 90.00 no
+O Al O 3_555 2_565 90.00 no
+La O La 1_555 1_556 90.00 no
+La O La 1_555 1_565 90.00 no
+La O La 1_555 1_566 180.00 no
+La O Al 1_555 1_555 90.00 no
+La O Al 1_555 1_455 90.00 no
+La O O 1_555 2_555 60.00 no
+La O O 1_555 3_555 60.00 no
+La O O 1_555 2_455 60.00 no
+La O O 1_555 3_455 60.00 no
+La O O 1_555 3_456 120.00 no
+La O O 1_555 2_465 120.00 no
+La O O 1_555 3_556 120.00 no
+La O O 1_555 2_565 120.00 no
+Al O Al 1_555 1_455 180.00 no
+Al O O 1_555 2_555 45.00 no
+Al O O 1_555 3_555 45.00 no
+Al O O 1_555 2_455 135.00 no
+Al O O 1_555 3_455 135.00 no
+Al O O 1_555 3_456 135.00 no
+Al O O 1_555 2_465 135.00 no
+Al O O 1_555 3_556 45.00 no
+Al O O 1_555 2_565 45.00 no
+Al O O 1_455 2_455 45.00 no
+Al O O 1_455 3_455 45.00 no
+Al O O 1_455 3_456 45.00 no
+Al O O 1_455 2_465 45.00 no
+O O O 2_555 3_555 60.00 no
+O O O 2_555 2_465 180.00 no
+O O O 2_555 3_556 60.00 no
+O O O 3_555 3_456 180.00 no
+O O O 3_555 2_565 60.00 no
+O O O 2_455 3_455 60.00 no
+O O O 2_455 3_456 60.00 no
+O O O 2_455 2_565 180.00 no
+O O O 3_455 2_465 60.00 no
+O O O 3_455 3_556 180.00 no
+O O O 3_456 2_465 60.00 no
+O O O 3_556 2_565 60.00 no
+loop_
+_geom_bond_atom_site_label_1
+_geom_bond_atom_site_label_2
+_geom_bond_site_symmetry_2
+_geom_bond_distance
+_geom_bond_publ_flag
+La O . 2.68090(10) yes
+La O 2_555 2.68090(10) no
+La O 3_555 2.68090(10) no
+La O 3_445 2.68090(10) no
+La O 2_454 2.68090(10) no
+La O 2_455 2.68090(10) no
+La O 3_455 2.68090(10) no
+La O 1_544 2.68090(10) no
+La O 1_545 2.68090(10) no
+La O 3_545 2.68090(10) no
+La O 1_554 2.68090(10) no
+La O 2_554 2.68090(10) no
+Al O . 1.89570(10) yes
+Al O 2_555 1.89570(10) no
+Al O 3_555 1.89570(10) no
+Al O 3_556 1.89570(10) no
+Al O 2_565 1.89570(10) no
+Al O 1_655 1.89570(10) no
+O O 2_555 2.68090(10) yes
+O O 3_555 2.68090(10) no
+O O 2_455 2.68090(10) no
+O O 3_455 2.68090(10) no
+O O 3_456 2.68090(10) no
+O O 2_465 2.68090(10) no
+O O 3_556 2.68090(10) no
+O O 2_565 2.68090(10) no

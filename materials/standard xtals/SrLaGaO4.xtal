@@ -2,53 +2,95 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>SrLaGaO4 (SLG)</chemical_name_common>
+
 	<space_group>
 		<IT_number>139</IT_number>
-		<H-M>I4/mmm</H-M>
+		<H-M>I 4/m m m</H-M>
+		<Hall>-I 4 2</Hall>
+		<system>tetragonal</system>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.38413</a>
-		<b unit="nm">0.38413</b>
-		<c unit="nm">1.26817</c>
+		<a unit="nm">0.38437</a>
+		<b unit="nm">0.38437</b>
+		<c unit="nm">1.26880</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="K">296</temperature>
 	</cell>
+
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
-		<fract>0.0 0.0 0.358673</fract>
+		<fract>0 0 0.358673</fract>
 		<occupancy>0.5</occupancy>
+		<U_iso>0.00557</U_iso>
+		<aniso_U_11>0.00612</aniso_U_11>
+		<aniso_U_22>0.00612</aniso_U_22>
+		<aniso_U_33>0.00446</aniso_U_33>
+		<aniso_U_12>0</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
-		<fract>0.0 0.0 0.358673</fract>
+		<fract>0 0 0.358673</fract>
 		<occupancy>0.5</occupancy>
+		<U_iso>0.00557</U_iso>
+		<aniso_U_11>0.00612</aniso_U_11>
+		<aniso_U_22>0.00612</aniso_U_22>
+		<aniso_U_33>0.00446</aniso_U_33>
+		<aniso_U_12>0</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
-		<fract>0.0 0.0 0.0</fract>
+		<fract>0 0 0</fract>
+		<U_iso>0.00710</U_iso>
+		<aniso_U_11>0.00329</aniso_U_11>
+		<aniso_U_22>0.00329</aniso_U_22>
+		<aniso_U_33>0.0147</aniso_U_33>
+		<aniso_U_12>0</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
-		<fract>0.0 0.0 0.1673</fract>
+		<fract>0 0 0.1673</fract>
+		<U_iso>0.0144</U_iso>
+		<aniso_U_11>0.018</aniso_U_11>
+		<aniso_U_22>0.018</aniso_U_22>
+		<aniso_U_33>0.0073</aniso_U_33>
+		<aniso_U_12>0</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract>0.0 0.5 0.0</fract>
+		<fract>0 0.5 0</fract>
+		<U_iso>0.0072</U_iso>
+		<aniso_U_11>0.0075</aniso_U_11>
+		<aniso_U_22>0.0038</aniso_U_22>
+		<aniso_U_33>0.0104</aniso_U_33>
+		<aniso_U_12>0</aniso_U_12>
+		<aniso_U_13>0</aniso_U_13>
+		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
+
 	<citation doi="10.1107/S0108270194011820">
-		<author>J. F. Britten</author>
-		<author>H. A. Dabkowska</author>
-		<author>A. B. Dabkowski</author>
-		<author>J. E. Greedan</author>
-		<author>J. L. Campbell</author>
-		<author>W. J. Teesdale</author>
-		<journal>Acta Cryst.</journal>
+		<author>James F. Britten</author>
+		<author>Hanna A. Dabkowska</author>
+		<author>Antoni B. Dabkowski</author>
+		<author>John E. Greedan</author>
+		<author>John L. Campbell</author>
+		<author>William J. Teesdale</author>
+		<journal>Acta Crystallographica, Section C</journal>
 		<year>1995</year>
 		<volume>C51</volume>
 		<pages>1975 1977</pages>
