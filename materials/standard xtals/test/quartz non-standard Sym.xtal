@@ -31,7 +31,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract>0.47 0 0.66665667</fract>
+		<fract>0.47 0 0.66666667</fract>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<U_iso unit="Å^2">0.0062</U_iso>
@@ -57,7 +57,7 @@
 		<aniso_U_23 unit="Å^2">-0.004</aniso_U_23>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O">0.15369252</bond_chemical>
 
 	<citation doi="10.3749/canmin.46.5.1501">
 		<author>S.M. Antao</author>
