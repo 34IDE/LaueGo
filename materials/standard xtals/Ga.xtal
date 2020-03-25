@@ -33,31 +33,34 @@
 		<author>B.D. Sharma</author>
 		<author>J. Donohue</author>
 	</citation>
+
+	<comment>
+		THE a and b lattice constants of gallium (orthorhombic, D 18 2h-Abma) are almost identical and have often been a 
+		source of confusion, as has recently been emphasized by Yaqub and Cochran1. Diffractometer data at 4.2 K (ref. 2) 
+		(gallium of 99.9999 per cent grade) indicated a = 4.5156 A, b = 4.4904 A, c = 7.6328 A, 
+		but at 297 K it appeared that a is smaller than b (in disagreement with Bradley3), and therefore that at an 
+		intermediate temperature (near 255 K) a should become equal to b.
+
+		a = 4.5258
+		b = 4.5186
+		c = 7.657
+
+		A18/2h = Abma
+
+		Orthorhombic
+
+		#64
+		a: 451.97 pm
+		b: 766.33 pm
+		c: 452.6 pm
+		alpha: 90
+		beta: 90
+		gamma: 90
+	</comment>
+
+
 </cif>
 
-<!--   
-THE a and b lattice constants of gallium (orthorhombic, D 18 2h—Abma) are almost identical and have often been a 
-source of confusion, as has recently been emphasized by Yaqub and Cochran1. Diffractometer data at 4.2° K (ref. 2) 
-(gallium of 99.9999 per cent grade) indicated a = 4.5156 Å, b = 4.4904 Å, c = 7.6328 Å, but at 297° K it appeared 
-that a is smaller than b (in disagreement with Bradley3), and therefore that at an intermediate temperature 
-(near 255° K) a should become equal to b.
-
-a = 4.5258
-b = 4.5186
-c = 7.657
-
-A18/2h = Abma
-
-Orthorhombic
-
-#64
-a: 451.97 pm
-b: 766.33 pm
-c: 452.6 pm
-α: 90.000°
-β: 90.000°
-γ: 90.000°
- -->
 
 <!--   
 #(C) 2013 by Fachinformationszentrum Karlsruhe.  All rights reserved.

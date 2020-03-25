@@ -14,4 +14,5 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+	<comment>This is how a fresh version of the spec program starts up</comment>
 </cif>

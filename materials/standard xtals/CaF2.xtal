@@ -2,12 +2,14 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Fluorite</chemical_name_common>
+	<database_code db="amcsd">0011683</database_code>
+
 	<space_group>
 		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>F m -3 m</H-M>
 	</space_group>
-	<database_code db="amcsd">0011683</database_code>
+
 	<cell>
 		<a unit="nm">0.546295</a>
 		<b unit="nm">0.546295</b>
@@ -16,6 +18,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ca</label>
 		<symbol>Ca</symbol>
@@ -32,13 +35,19 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ca" n1="F">0.236538</bond_chemical>
 
-	<citation id="primary" doi="10.1038/328606a0">
+	<citation id="primary">
 		"Fluorite structure"
 		R.W.G. Wyckoff
 		Crystal Structures 1 (1963) 239-444
 	</citation>
-	<citation id="2" doi="10.1038/328606a0">
-		S. Speziale, T.S. Duffy
-		Physics and Chemistry of Minerals 29 (2002) 465-472,  a=0.54626
+	<citation id="2" doi="10.1007/s00269-002-0250-x">
+		<author>S. Speziale</author>
+		<author>T.S. Duffy</author>
+		<title>Single-crystal elastic constants of fluorite (CaF2) to 9.3 GPa</title>
+		<journal>Physics and Chemistry of Minerals</journal>
+		<volume>29</volume>
+		<year>2002</year>
+		<pages>465 472</pages>
+		a=0.54626
 	</citation>
 </cif>

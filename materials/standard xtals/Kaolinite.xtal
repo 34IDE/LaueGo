@@ -5,7 +5,7 @@
 	<chemical_formula>Al2Si2O9</chemical_formula>
 	<database_code db="amcsd">0017947</database_code>
 	<database_code db="cod">1011045</database_code>
-	<!--   <cod>1011045</cod> -->
+
 	<space_group>
 		<id>9:b1</id>
 		<IT_number>9</IT_number>
