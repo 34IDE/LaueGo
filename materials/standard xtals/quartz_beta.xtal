@@ -34,7 +34,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0.41520 0.20760 0.16667</fract>
+		<fract>0.41520 0.20760 1/6</fract>
 		<valence>-2</valence>
 		<aniso_U_11>0.04942</aniso_U_11>
 		<aniso_U_22>0.05464</aniso_U_22>

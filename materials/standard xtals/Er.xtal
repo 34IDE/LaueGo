@@ -20,7 +20,7 @@
 	<atom_site>
 		<label>Er</label>
 		<symbol>Er</symbol>
-		<fract>0.33333 0.66667 0.25</fract>
+		<fract>1/3 2/3 0.25</fract>
 	</atom_site>
 	<citation doi="10.1107/S0365110X5600156X">
 		<author>F. H. Spedding</author>

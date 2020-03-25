@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Beryllium hcp (hexagonal axis)</chemical_name_common>
+	<chemical_name_common>Beryllium hcp (hexagonal axes)</chemical_name_common>
+	<database_code db="COD">9012008</database_code>
+
 	<space_group>
 		<IT_number>194</IT_number>
-		<H-M>P63/mmc</H-M>
+		<system>hexagonal</system>
+		<H-M>P 63/m m c</H-M>
+		<Hall>-P 6c 2c</Hall>
+		<temperature unit="C">25</temperature>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.22858</a>
 		<b unit="nm">0.22858</b>
@@ -14,11 +20,21 @@
 		<beta>90</beta>
 		<gamma>120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Be</label>
 		<symbol>Be</symbol>
-		<fract>0.33333 0.66667 0.25</fract>
+		<fract>1/3 2/3 0.25</fract>
 		<DebyeTemperature unit="K">1440</DebyeTemperature>
+		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-	<citation>http://www.webelements.com/beryllium/crystal_structure.html</citation>
+
+	<citation doi="10.1063/1.1698252">
+		<author>P. Gordon</author>
+		<title>A high temperature precision X-ray camera: some measurements of the thermal coefficients of expansion of beryllium</title>
+ 		<journal>Journal of Applied Physics</journal>
+		<volume>20</volume>
+		<year>1949</year>
+		<pages>908 917</pages>
+	</citation>
 </cif>

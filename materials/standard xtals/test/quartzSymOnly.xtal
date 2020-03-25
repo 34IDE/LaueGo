@@ -31,7 +31,7 @@
 	<atom_site>
 		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract>0.47 0 0.66665667</fract>
+		<fract>0.47 0 2/3</fract>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<U_iso unit="Å^2">0.0062</U_iso>

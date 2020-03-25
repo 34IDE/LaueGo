@@ -5,11 +5,20 @@
 	<chemical_formula>SiO2</chemical_formula>
 	<database_code db="COD">9013321</database_code>
 
+	<!--   These symmetry operaions ARE the standard ones for SG 154 -->
 	<space_group>
 		<id>154</id>
 		<IT_number>154</IT_number>
 		<H-M>P 32 2 1</H-M>
 		<Hall>P 32 2"</Hall>
+		<symops N="6">
+			<op>"x" "y" "z"</op>
+			<op>"-y" "x-y" "z-1/3"</op>
+			<op>"-x+y" "-x" "z+1/3"</op>
+			<op>"x-y" "-y" "-z+1/3"</op>
+			<op>"-x" "-x+y" "-z-1/3"</op>
+			<op>"y" "x" "-z"</op>
+		</symops>
 	</space_group>
 
 	<cell>

@@ -17,7 +17,7 @@
 	<atom_site>
 		<label>Zn</label>
 		<symbol>Zn</symbol>
-		<fract>0.33333 0.66667 0.25</fract>
+		<fract>1/3 2/3 0.25</fract>
 		<DebyeTemperature unit="K">327</DebyeTemperature>
 	</atom_site>
 </cif>

@@ -20,7 +20,7 @@
 	<atom_site>
 		<label>Ti</label>
 		<symbol>Ti</symbol>
-		<fract>0.33333 0.66667 0.25</fract>
+		<fract>1/3 2/3 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<DebyeTemperature unit="K">420</DebyeTemperature>
 	</atom_site>

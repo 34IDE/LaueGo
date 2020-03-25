@@ -19,7 +19,7 @@
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
-		<fract>0.666667 0.25 0</fract>
+		<fract>2/3 0.25 0</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>g</WyckoffSymbol>
 	</atom_site>

@@ -19,7 +19,7 @@
 	<atom_site>
 		<label>Mg</label>
 		<symbol>Mg</symbol>
-		<fract>0.333333333 0.666666667 0.25</fract>
+		<fract>1/3 2/3 0.25</fract>
 	</atom_site>
 	<citation>
 		<author>R.W.G. Wyckoff</author>

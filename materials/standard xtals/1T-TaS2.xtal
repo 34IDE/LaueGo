@@ -35,7 +35,7 @@
 	<atom_site>
 		<label>S</label>
 		<symbol>S</symbol>
-		<fract>0.333333 0.666667 0.2586</fract>
+		<fract>1/3 2/3 0.2586</fract>
 		<valence>-2</valence>
 		<aniso_U_11>0.0071</aniso_U_11>
 		<aniso_U_22>0.0071</aniso_U_22>

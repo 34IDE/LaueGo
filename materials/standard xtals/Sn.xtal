@@ -2,22 +2,254 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Tin, this best fits the indexation. Tin does have a lot reflections!! -Wenjun</chemical_name_common>
+	<database_code db="COD">9012005</database_code>
+
 	<space_group>
 		<IT_number>141</IT_number>
 		<id>141:1</id>
-		<H-M>I41/amd:1</H-M>
+		<H-M>I 41/a m d:1</H-M>
+		<Hall>I 4bw 2bw -1bw</Hall>
+		<symops N="192">
+			<op>"x" "y" "z"</op>
+			<op>"x" "1/2+y" "1/2+z"</op>
+			<op>"1/2+x" "y" "1/2+z"</op>
+			<op>"1/2+x" "1/2+y" "z"</op>
+			<op>"z" "-x" "y"</op>
+			<op>"z" "1/2-x" "1/2+y"</op>
+			<op>"1/2+z" "-x" "1/2+y"</op>
+			<op>"1/2+z" "1/2-x" "y"</op>
+			<op>"-y" "z" "-x"</op>
+			<op>"-y" "1/2+z" "1/2-x"</op>
+			<op>"1/2-y" "z" "1/2-x"</op>
+			<op>"1/2-y" "1/2+z" "-x"</op>
+			<op>"x" "-y" "z"</op>
+			<op>"x" "1/2-y" "1/2+z"</op>
+			<op>"1/2+x" "-y" "1/2+z"</op>
+			<op>"1/2+x" "1/2-y" "z"</op>
+			<op>"-z" "x" "-y"</op>
+			<op>"-z" "1/2+x" "1/2-y"</op>
+			<op>"1/2-z" "x" "1/2-y"</op>
+			<op>"1/2-z" "1/2+x" "-y"</op>
+			<op>"y" "-z" "x"</op>
+			<op>"y" "1/2-z" "1/2+x"</op>
+			<op>"1/2+y" "-z" "1/2+x"</op>
+			<op>"1/2+y" "1/2-z" "x"</op>
+			<op>"-x" "y" "-z"</op>
+			<op>"-x" "1/2+y" "1/2-z"</op>
+			<op>"1/2-x" "y" "1/2-z"</op>
+			<op>"1/2-x" "1/2+y" "-z"</op>
+			<op>"x" "-z" "-y"</op>
+			<op>"x" "1/2-z" "1/2-y"</op>
+			<op>"1/2+x" "-z" "1/2-y"</op>
+			<op>"1/2+x" "1/2-z" "-y"</op>
+			<op>"-z" "y" "x"</op>
+			<op>"-z" "1/2+y" "1/2+x"</op>
+			<op>"1/2-z" "y" "1/2+x"</op>
+			<op>"1/2-z" "1/2+y" "x"</op>
+			<op>"y" "-x" "-z"</op>
+			<op>"y" "1/2-x" "1/2-z"</op>
+			<op>"1/2+y" "-x" "1/2-z"</op>
+			<op>"1/2+y" "1/2-x" "-z"</op>
+			<op>"-x" "z" "y"</op>
+			<op>"-x" "1/2+z" "1/2+y"</op>
+			<op>"1/2-x" "z" "1/2+y"</op>
+			<op>"1/2-x" "1/2+z" "y"</op>
+			<op>"z" "-y" "-x"</op>
+			<op>"z" "1/2-y" "1/2-x"</op>
+			<op>"1/2+z" "-y" "1/2-x"</op>
+			<op>"1/2+z" "1/2-y" "-x"</op>
+			<op>"-y" "x" "z"</op>
+			<op>"-y" "1/2+x" "1/2+z"</op>
+			<op>"1/2-y" "x" "1/2+z"</op>
+			<op>"1/2-y" "1/2+x" "z"</op>
+			<op>"x" "z" "y"</op>
+			<op>"x" "1/2+z" "1/2+y"</op>
+			<op>"1/2+x" "z" "1/2+y"</op>
+			<op>"1/2+x" "1/2+z" "y"</op>
+			<op>"-z" "-y" "-x"</op>
+			<op>"-z" "1/2-y" "1/2-x"</op>
+			<op>"1/2-z" "-y" "1/2-x"</op>
+			<op>"1/2-z" "1/2-y" "-x"</op>
+			<op>"y" "x" "z"</op>
+			<op>"y" "1/2+x" "1/2+z"</op>
+			<op>"1/2+y" "x" "1/2+z"</op>
+			<op>"1/2+y" "1/2+x" "z"</op>
+			<op>"-x" "-z" "-y"</op>
+			<op>"-x" "1/2-z" "1/2-y"</op>
+			<op>"1/2-x" "-z" "1/2-y"</op>
+			<op>"1/2-x" "1/2-z" "-y"</op>
+			<op>"z" "y" "x"</op>
+			<op>"z" "1/2+y" "1/2+x"</op>
+			<op>"1/2+z" "y" "1/2+x"</op>
+			<op>"1/2+z" "1/2+y" "x"</op>
+			<op>"-y" "-x" "-z"</op>
+			<op>"-y" "1/2-x" "1/2-z"</op>
+			<op>"1/2-y" "-x" "1/2-z"</op>
+			<op>"1/2-y" "1/2-x" "-z"</op>
+			<op>"z" "x" "-y"</op>
+			<op>"z" "1/2+x" "1/2-y"</op>
+			<op>"1/2+z" "x" "1/2-y"</op>
+			<op>"1/2+z" "1/2+x" "-y"</op>
+			<op>"-y" "-z" "x"</op>
+			<op>"-y" "1/2-z" "1/2+x"</op>
+			<op>"1/2-y" "-z" "1/2+x"</op>
+			<op>"1/2-y" "1/2-z" "x"</op>
+			<op>"x" "y" "-z"</op>
+			<op>"x" "1/2+y" "1/2-z"</op>
+			<op>"1/2+x" "y" "1/2-z"</op>
+			<op>"1/2+x" "1/2+y" "-z"</op>
+			<op>"-z" "-x" "y"</op>
+			<op>"-z" "1/2-x" "1/2+y"</op>
+			<op>"1/2-z" "-x" "1/2+y"</op>
+			<op>"1/2-z" "1/2-x" "y"</op>
+			<op>"y" "z" "-x"</op>
+			<op>"y" "1/2+z" "1/2-x"</op>
+			<op>"1/2+y" "z" "1/2-x"</op>
+			<op>"1/2+y" "1/2+z" "-x"</op>
+			<op>"-x" "-y" "z"</op>
+			<op>"-x" "1/2-y" "1/2+z"</op>
+			<op>"1/2-x" "-y" "1/2+z"</op>
+			<op>"1/2-x" "1/2-y" "z"</op>
+			<op>"-z" "x" "y"</op>
+			<op>"-z" "1/2+x" "1/2+y"</op>
+			<op>"1/2-z" "x" "1/2+y"</op>
+			<op>"1/2-z" "1/2+x" "y"</op>
+			<op>"y" "-z" "-x"</op>
+			<op>"y" "1/2-z" "1/2-x"</op>
+			<op>"1/2+y" "-z" "1/2-x"</op>
+			<op>"1/2+y" "1/2-z" "-x"</op>
+			<op>"-x" "y" "z"</op>
+			<op>"-x" "1/2+y" "1/2+z"</op>
+			<op>"1/2-x" "y" "1/2+z"</op>
+			<op>"1/2-x" "1/2+y" "z"</op>
+			<op>"z" "-x" "-y"</op>
+			<op>"z" "1/2-x" "1/2-y"</op>
+			<op>"1/2+z" "-x" "1/2-y"</op>
+			<op>"1/2+z" "1/2-x" "-y"</op>
+			<op>"-y" "z" "x"</op>
+			<op>"-y" "1/2+z" "1/2+x"</op>
+			<op>"1/2-y" "z" "1/2+x"</op>
+			<op>"1/2-y" "1/2+z" "x"</op>
+			<op>"x" "-y" "-z"</op>
+			<op>"x" "1/2-y" "1/2-z"</op>
+			<op>"1/2+x" "-y" "1/2-z"</op>
+			<op>"1/2+x" "1/2-y" "-z"</op>
+			<op>"-x" "z" "-y"</op>
+			<op>"-x" "1/2+z" "1/2-y"</op>
+			<op>"1/2-x" "z" "1/2-y"</op>
+			<op>"1/2-x" "1/2+z" "-y"</op>
+			<op>"z" "-y" "x"</op>
+			<op>"z" "1/2-y" "1/2+x"</op>
+			<op>"1/2+z" "-y" "1/2+x"</op>
+			<op>"1/2+z" "1/2-y" "x"</op>
+			<op>"-y" "x" "-z"</op>
+			<op>"-y" "1/2+x" "1/2-z"</op>
+			<op>"1/2-y" "x" "1/2-z"</op>
+			<op>"1/2-y" "1/2+x" "-z"</op>
+			<op>"x" "-z" "y"</op>
+			<op>"x" "1/2-z" "1/2+y"</op>
+			<op>"1/2+x" "-z" "1/2+y"</op>
+			<op>"1/2+x" "1/2-z" "y"</op>
+			<op>"-z" "y" "-x"</op>
+			<op>"-z" "1/2+y" "1/2-x"</op>
+			<op>"1/2-z" "y" "1/2-x"</op>
+			<op>"1/2-z" "1/2+y" "-x"</op>
+			<op>"y" "-x" "z"</op>
+			<op>"y" "1/2-x" "1/2+z"</op>
+			<op>"1/2+y" "-x" "1/2+z"</op>
+			<op>"1/2+y" "1/2-x" "z"</op>
+			<op>"-x" "-z" "y"</op>
+			<op>"-x" "1/2-z" "1/2+y"</op>
+			<op>"1/2-x" "-z" "1/2+y"</op>
+			<op>"1/2-x" "1/2-z" "y"</op>
+			<op>"z" "y" "-x"</op>
+			<op>"z" "1/2+y" "1/2-x"</op>
+			<op>"1/2+z" "y" "1/2-x"</op>
+			<op>"1/2+z" "1/2+y" "-x"</op>
+			<op>"-y" "-x" "z"</op>
+			<op>"-y" "1/2-x" "1/2+z"</op>
+			<op>"1/2-y" "-x" "1/2+z"</op>
+			<op>"1/2-y" "1/2-x" "z"</op>
+			<op>"x" "z" "-y"</op>
+			<op>"x" "1/2+z" "1/2-y"</op>
+			<op>"1/2+x" "z" "1/2-y"</op>
+			<op>"1/2+x" "1/2+z" "-y"</op>
+			<op>"-z" "-y" "x"</op>
+			<op>"-z" "1/2-y" "1/2+x"</op>
+			<op>"1/2-z" "-y" "1/2+x"</op>
+			<op>"1/2-z" "1/2-y" "x"</op>
+			<op>"y" "x" "-z"</op>
+			<op>"y" "1/2+x" "1/2-z"</op>
+			<op>"1/2+y" "x" "1/2-z"</op>
+			<op>"1/2+y" "1/2+x" "-z"</op>
+			<op>"-z" "-x" "-y"</op>
+			<op>"-z" "1/2-x" "1/2-y"</op>
+			<op>"1/2-z" "-x" "1/2-y"</op>
+			<op>"1/2-z" "1/2-x" "-y"</op>
+			<op>"y" "z" "x"</op>
+			<op>"y" "1/2+z" "1/2+x"</op>
+			<op>"1/2+y" "z" "1/2+x"</op>
+			<op>"1/2+y" "1/2+z" "x"</op>
+			<op>"-x" "-y" "-z"</op>
+			<op>"-x" "1/2-y" "1/2-z"</op>
+			<op>"1/2-x" "-y" "1/2-z"</op>
+			<op>"1/2-x" "1/2-y" "-z"</op>
+			<op>"z" "x" "y"</op>
+			<op>"z" "1/2+x" "1/2+y"</op>
+			<op>"1/2+z" "x" "1/2+y"</op>
+			<op>"1/2+z" "1/2+x" "y"</op>
+			<op>"-y" "-z" "-x"</op>
+			<op>"-y" "1/2-z" "1/2-x"</op>
+			<op>"1/2-y" "-z" "1/2-x"</op>
+			<op>"1/2-y" "1/2-z" "-x"</op>
+		</symops>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.58318</a>
-		<b unit="nm">0.58318</b>
-		<c unit="nm">0.31819</c>
+		<a unit="nm">0.583146</a>
+		<b unit="nm">0.583146</b>
+		<c unit="nm">0.318129</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="C">25</temperature>
 	</cell>
+
 	<atom_site>
 		<label>Sn</label>
 		<symbol>Sn</symbol>
-		<fract>0.5 0.5 0</fract>
+		<fract>0 0 0</fract>
 	</atom_site>
+
+	<citation doi="10.1063/1.1698520">
+		<author>M.E. Straumanis</author>
+		<title>The precision determination of lattice constants by the powder and rotation crystal methods and applications</title>
+		<journal>Journal of Applied Physics</journal>
+		<volume>20</volume>
+		<year>1949</year>
+		<pages>726 734</pages>
+	</citation>
+
+	<comment>
+		As pointed out by Prof. Dr. Klaus-Dieter Liss from Technion - Israel
+		Institute of Technology in his 2018-12-07 07:39 report, the cell
+		constants in this entry were actually recorded in kX units, not in \%A
+		units as the CIF standard mandates. To make data uniform and to match
+		the definition of the CIF _cell_length_* data items, all cell
+		constants were multiplied by the 1.00202 coefficient (taken from Wood,
+		E. A.  The Conversion Factor for kX Units to Angstr\"om Units Journal
+		of Applied Physics, AIP Publishing, 1947, 18, 929 DOI:
+		10.1063/1.1697570, https://doi.org/10.1063/1.1697570).
+
+		In addition, in the original entry the _cell_length_c was apparently
+		taken from the wrong column, under (incorrect) assumption of the cubic
+		crystal form. Both _cell_length_c and the spacegroup were corrected as
+		well. The space group was updated after consulting other COD entries
+		with close cell constants, in particular COD 7222460
+		(http://www.crystallography.net/cod/7222460.html).
+	
+		Saulius Grazulis
+		2018-12-10
+	</comment>
 </cif>
+
