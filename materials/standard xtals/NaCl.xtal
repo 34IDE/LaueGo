@@ -2,10 +2,12 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Halite</chemical_name_common>
+
 	<space_group>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="pm">564.02</a>
 		<b unit="pm">564.02</b>
@@ -14,6 +16,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Na</label>
 		<symbol>Na</symbol>
@@ -26,4 +29,7 @@
 		<fract>0.5 0.5 0.5</fract>
 		<valence>-1</valence>
 	</atom_site>
+
+	<bond_chemical unit="pm" n0="Na" n1="Cl">282.01</bond_chemical>
+	<!-- bond length = ao/2 -->
 </cif>

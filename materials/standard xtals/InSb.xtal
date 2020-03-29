@@ -34,7 +34,8 @@
 		<DebyeTemperature unit="K">160</DebyeTemperature>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Ga" n1="As">0.2448</bond_chemical>
+	<bond_chemical unit="nm" n0="In" n1="Sb">0.28051</bond_chemical>
+	<!-- bond length = ao*sqrt(3)/4 -->
 
 	<citation id="primary">
 		<author>R. W. G. Wyckoff</author>

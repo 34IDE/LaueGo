@@ -1,19 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Magnesium Oxide</chemical_name_common>
+	<chemical_name_common>Magnesium Oxide, Periclase</chemical_name_common>
+	<database_code db="cod">9000490</database_code>
+	<database_code db="amcsd">0000501</database_code>
+	<database_code db="cod">9008671</database_code>
+
 	<space_group>
 		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.4203</a>
-		<b unit="nm">0.4203</b>
-		<c unit="nm">0.4203</c>
+		<a unit="nm">0.42112</a>
+		<b unit="nm">0.42112</b>
+		<c unit="nm">0.42112</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<temperature unit="C">24</temperature>
+		<pressure unit="atm">1</pressure>
 	</cell>
+
 	<atom_site>
 		<label>Mg</label>
 		<symbol>Mg</symbol>
@@ -22,6 +31,25 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0.5 0 0</fract>
+		<fract>0.5 0.5 0.5</fract>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Mg" n1="O">0.21056</bond_chemical>
+	<!-- bond length = ao/2 -->
+
+	<citation id="primary">
+		<author>R.M. Hazen</author>
+		<journal>American Mineralogist</journal>
+		<pages>266 271</pages>
+		<volume>61</volume>
+		<year>1976</year>
+		<title>Effects of temperature and pressure on the cell dimension and X-ray temperature factors of periclase</title>
+	</citation>
+	<citation id="2">
+		<author>R.W.G. Wyckoff</author>
+		<journal>Crystal Structures. Second edition. Interscience Publishers, New York, New York</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>85 237</pages>
+	</citation>
 </cif>

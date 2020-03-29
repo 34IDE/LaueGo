@@ -2,12 +2,14 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>CeO2 (Cerianite)</chemical_name_common>
+	<database_code db="ICSD">72155</database_code>
+
 	<space_group>
 		<id>225</id>
 		<H-M>F m -3 m</H-M>
 		<Hall>-F 4 2 3</Hall>
 	</space_group>
-	<database_code db="ICSD">72155</database_code>
+
 	<cell>
 		<a unit="nm">0.54124</a>
 		<b unit="nm">0.54124</b>
@@ -16,6 +18,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ce</label>
 		<symbol>Ce</symbol>
@@ -32,7 +35,9 @@
 		<B_iso>1.82</B_iso>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
+
 	<bond_chemical unit="nm" n0="Ce" n1="O">0.234364</bond_chemical>
+	<!-- bond length = ao*sqrt(3)/4 -->
 
 	<citation doi="10.1016/0022-4596(92)90330-X">
 		<author>M. Wolcyrz</author>

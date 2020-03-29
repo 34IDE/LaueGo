@@ -38,6 +38,7 @@
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Si" n1="Si">0.2351700863</bond_chemical>
+	<!-- bond length = ao*sqrt(3)/4 -->
 
 	<citation>physics.nist.gov/cuu/Constants/index.html</citation>
 	<!--   old value $latticeParameters	{ 0.543102088, 0.543102088, 0.543102088, 90, 90, 90 } -->

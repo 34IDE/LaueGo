@@ -33,7 +33,9 @@
 		<valence>-1</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-	<bond_chemical unit="nm" n0="Ca" n1="F">0.236538</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Ca" n1="F">0.236553</bond_chemical>
+	<!-- bond length = ao*sqrt(3)/4 -->
 
 	<citation id="primary">
 		"Fluorite structure"

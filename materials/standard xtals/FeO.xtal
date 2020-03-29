@@ -37,6 +37,9 @@
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Li" n1="F">0.21515</bond_chemical>
+	<!-- bond length = ao/2 -->
+
 	<citation>
 		<author>R.W.G. Wyckoff</author>
 		<author>E.D. Crittenden</author>

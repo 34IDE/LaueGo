@@ -33,6 +33,9 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Ge" n1="Ge">0.24498981</bond_chemical>
+	<!-- bond length = ao*sqrt(3)/4 -->
+
 	<citation doi="10.1107/S0567739475000769">
 		<journal>Acta Crystallographica Section A</journal>
 		<volume>A31</volume>

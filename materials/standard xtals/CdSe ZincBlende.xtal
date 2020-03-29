@@ -2,10 +2,12 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Cadmium Selenide (Zinc Blende)</chemical_name_common>
+
 	<space_group>
 		<id>216</id>
 		<H-M>F -4 3 m</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.608</a>
 		<b unit="nm">0.608</b>
@@ -14,6 +16,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Cd</label>
 		<symbol>Cd</symbol>
@@ -26,5 +29,6 @@
 		<fract>0.25 0.25 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-	<bond_chemical unit="nm" n0="Cd" n1="Se">0.263272</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Cd" n1="Se">0.2633</bond_chemical>
 </cif>

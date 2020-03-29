@@ -36,6 +36,9 @@
 		<B_iso>0.670</B_iso>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Li" n1="F">0.201315</bond_chemical>
+	<!-- bond length = ao/2 -->
+
 	<citation doi="10.1107/S0365110X55000091">
 		<author>J. Thewlis</author>
 		<journal>Acta Crystallographica</journal>

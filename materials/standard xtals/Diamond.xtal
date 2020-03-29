@@ -28,6 +28,9 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="C" n1="C">0.154455</bond_chemical>
+	<!-- bond length = ao*sqrt(3)/4 -->
+
 	<citation doi="10.1107/S0021889875010965">
 		<author>T. Hom</author>
 		<author>W. Kiszenick</author>
