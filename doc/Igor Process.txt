@@ -1,0 +1,103 @@
+To convert from:    pixel (x,y) <--> (x,y,z) direction
+It is probably easiest to start from Igor files.
+
+remember:
+ki is the wavevector of the incident ray, always = {0,0,1}
+kf is the wavevector of the final diffracted ray, usually aimed at the detector
+q  is the difference, q = kf - ki
+
+The beam line coordinate system has:
+Z  along the incident beam direction
+Y  is up
+X  chosen to form a right hand system (at the APS, X points out the door of the hutch)
+	then Z = X x Y,  right handed system
+
+
+
+The Igor files "IndexingN.ipf" and  "microGeometryN.ipf" contains most of what you want.
+Also look at one of the geometry files, the names should all start with geoN, e.g. "geoN_2013-06-28_19-49-18.xml"
+In the follwing routines, the parameter "STRUCT detectorGeometry &d" contains the information in
+the Igor structure:  "Structure detectorGeometry", you can find this in "microGeometryN.ipf"
+I am attaching a description of the geoN*.xml files.
+
+The function "DetectorUpdateCalc(d)" in "microGeometryN.ipf" shows how to calculate the
+rotation matrix from the rtoation vector {Rx,Ry,Rz}, |R| = angle(rad).
+
+
+
+
+In "IndexingN.ipf"
+
+Specifically the function "IndexAndDisplay(...)"
+This routine runs the C indexing program.
+
+The wave FullPeakList0 contains the fitted peak positions used to index.
+
+and the Igor function runIndexingFunc(args)   (or think of it as runIndexingEulerCommand(args)), actually runs the C program.
+The function FullPeakList2Qfile(...) takes the fitted peaks, and saves them to a file.
+
+Note, the FullPeakList2Qfile(...) function takes diffracted peak positions as (x,y) pixel positions
+and converts them to direction vectors in beam line coordinates using the geometry file.
+
+The geometry file contains the description of location and orientation of the detector(s).
+With the geo files, the conversion from pixel --> direction is simple, but needs to be done as shown 
+in the Igor function FullPeakList2Qfile().  In this function, it is the call to pixel2q() that changes pixels to direction.
+
+In the function "FullPeakList2Qfile(...)", the lines starting with:
+		if (WaveExists(FullPeakList1))
+			wnote = note(FullPeakList1)
+takes the fitted peak positions in pixels, converts to un-binned pixels, converts to Q with the call to pixel2q()
+Then at the line starting with:
+		Open/C="R*ch"/P=$pathName/T="TEXT" refNum as fname
+It assembles the file (input to Euler) and writes it.
+
+Back in the function runIndexingEulerCommand(args), The C program is run at the line:
+		ExecuteScriptText/Z cmd
+
+
+
+
+
+The following are located in "microGeometryN.ipf"
+NOTE: the pixel (x,y) in these routines correspond to the full un-binned chip (no binning, no region of interest)
+
+pixel2XYZ(...)	converts a pixel (x,y) on a detector --> (x,y,z) vector in beam line coords.
+				This (x,y,z) is actual position in beam line coords of the pixel (x,y). Units of (x,y,z) are micron.
+				This also gives the direction of a ray from the sample to that pixel.
+
+pixel2kf(...)	converts a pixel (x,y) on a detector --> a normalized vector pointing from the origin to the pixel (x,y)
+				This is the direction of kf, the diffracted wave vector
+
+pixel2q(...)	converts a pixel (x,y) on a detector --> a normalized vector parallel to the Q vector that would
+				diffract an incident ray to the pixel (x,y).  This is NOT kf (the k-vector of the diffracted ray)
+				This returns the q-vector that would diffract the incident beam ki to the pixel.
+
+XYZ2pixel(...)	converts position (x,y,z) in beam line coords --> a pixel (x,y) on the detector (x,y,z) is just taken 
+				as a direction. This basically will take a kf vector and tell you which pixel it will hit.
+
+q2pixel(...)	takes a q-vector of arbitrary length, and returns the pixel (x,y) where the kf would strike the detector.
+
+
+There are some associated functions:
+These work just like their namesakes above, but are "vectorized" versions.
+They make calls to MatrixOP, which is Igor's version of the vector operations available 
+in the main processor. MatrixOP uses Intel's vectorized version matrix and vecgtor operations. It is really fast.
+They take an vector of input vectors (an array), and return another array of outputs
+	pixel2kfVEC(...)
+	pixel2XYZVEC(...)
+	pixel2qVEC(...)
+	XYZ2pixelVEC(...)
+	q2pixelVEC(...)
+
+
+
+Copied from the top of "microGeometryN.ipf"
+// All my calculations assume that an image has zero based pixels, both in the image, and in specifying the ROI
+//
+// to convert from a ROI pixel (zero based) to full unbinned chip use:
+//
+//	px = startx + px*groupx + (groupx-1)/2	// pixel is zero based here & startx is zero based
+//	py = starty + py*groupy + (groupy-1)/2	// groupx=1 is un-binned
+//
+// This is a useful formula
+//  kf^ = ki^ - 2*(ki^ . q^)*q^

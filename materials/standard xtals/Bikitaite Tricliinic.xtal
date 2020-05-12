@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-04-22T04:35:06.426Z</date>   <!-- Tuesday, April 21, 2020 at 11:35:06 PM Central Daylight Time -->
+	<chemical_name_common>Bikitaite</chemical_name_common>
+	<chemical_formula>LiSi2AlO7H2</chemical_formula>
+	<database_code db="amcsd">0002910</database_code>
+
+	<space_group>
+		<id>1</id>
+		<IT_number>1</IT_number>
+		<system>triclinic</system>
+		<H-M>P 1</H-M>
+		<Hall>P 1</Hall>
+		<Schoenflies>C1^1</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.86061</a>
+		<b unit="nm">0.49573</b>
+		<c unit="nm">0.7597</c>
+		<alpha>89.94</alpha>
+		<beta>114.407</beta>
+		<gamma>89.98</gamma>
+		<Pressure>0</Pressure>
+	</cell>
+
+	<atom_site>
+		<label>Li1</label>
+		<symbol>Li</symbol>
+		<fract>0.2965 0.3307 0.1531</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Li2</label>
+		<symbol>Li</symbol>
+		<fract>0.6648 0.8312 0.8256</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Si11</label>
+		<symbol>Si</symbol>
+		<fract>0.0888 0.8186 0.068</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Si12</label>
+		<symbol>Si</symbol>
+		<fract>0.0854 0.8013 0.4793</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Si22</label>
+		<symbol>Si</symbol>
+		<fract>0.8563 0.2972 0.4525</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Si23</label>
+		<symbol>Si</symbol>
+		<fract>0.6 0.3492 0.0473</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Al13</label>
+		<symbol>Al</symbol>
+		<fract>0.35 0.8515 0.9033</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Al21</label>
+		<symbol>Al</symbol>
+		<fract>0.873 0.3181 0.8854</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O11</label>
+		<symbol>O</symbol>
+		<fract>0.2427 0.6978 0.0316</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O12</label>
+		<symbol>O</symbol>
+		<fract>0.0577 0.1463 0.0327</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O13</label>
+		<symbol>O</symbol>
+		<fract>0.1365 0.752 0.3005</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O14</label>
+		<symbol>O</symbol>
+		<fract>0.0231 0.5134 0.5318</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O15</label>
+		<symbol>O</symbol>
+		<fract>0.2414 0.9245 0.656</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O16</label>
+		<symbol>O</symbol>
+		<fract>0.4411 0.1616 0.0355</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O21</label>
+		<symbol>O</symbol>
+		<fract>0.702 0.2022 0.9372</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O22</label>
+		<symbol>O</symbol>
+		<fract>0.9016 0.6699 0.9377</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O23</label>
+		<symbol>O</symbol>
+		<fract>0.8065 0.2515 0.637</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O24</label>
+		<symbol>O</symbol>
+		<fract>0.9173 0.0122 0.4016</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O25</label>
+		<symbol>O</symbol>
+		<fract>0.7047 0.4224 0.2675</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O26</label>
+		<symbol>O</symbol>
+		<fract>0.5217 0.6345 0.9289</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O17</label>
+		<symbol>O</symbol>
+		<fract>0.3951 0.2779 0.4472</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O27</label>
+		<symbol>O</symbol>
+		<fract>0.5634 0.7773 0.5357</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>H11</label>
+		<symbol>H</symbol>
+		<fract>0.3186 0.2389 0.5052</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>H12</label>
+		<symbol>H</symbol>
+		<fract>0.4695 0.123 0.4807</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>H21</label>
+		<symbol>H</symbol>
+		<fract>0.6439 0.7638 0.4792</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>H22</label>
+		<symbol>H</symbol>
+		<fract>0.4995 0.6111 0.5012</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<citation doi="10.2138/am-2002-1018">
+		<title>High-pressure behaviour of bikitaite: An integrated theoretical and experimental approach</title>
+		<journal>American Mineralogist</journal>
+		<volume>87</volume>
+		<year>2002</year>
+		<pages>1415 1425</pages>
+		<author>O. Ferro</author>
+		<author>S. Quartieri</author>
+		<author>G. Vezzalini</author>
+		<author>E. Fois</author>
+		<author>A. Gamba</author>
+		<author>G. Tabacchi</author>
+	</citation>
+</cif>

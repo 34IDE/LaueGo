@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.29									// based on LatticeSym_6.55
+#pragma version = 7.30									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -257,6 +257,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.27, got rid of all the LATTICE_SYM_2D_3D stuff everywhere
 //	with version 7.28, changed LatticeSym_maxBondLen from 0.31 nm --> 0.56 nm
 //	with version 7.29, added interpDouble(), allows fractional coordinates to also be written "1/2", also used for occupancy.
+//	with version 7.30, in ForceXtalAtomNamesUnique() change all[] --> allNames[]
 
 
 //	Rhombohedral Transformation:
@@ -4644,38 +4645,38 @@ Static Function ForceXtalAtomNamesUnique(xtal)		// forces all of the xtal atom n
 	STRUCT crystalStructure &xtal
 
 	Variable N=xtal.N
-	Make/T/N=(N)/FREE all=xtal.atom[p].name				// holds all the names
+	Make/T/N=(N)/FREE allNames=xtal.atom[p].name		// holds all the names
 
 	String namej, base, nameTest
 	Variable i,j,num
 	for (j=0;j<(N-1);j+=1)
-		namej = all[j]												// check this name against others
+		namej = allNames[j]									// check this name against others
 		if (strlen(namej)<1)									// skip empty names
 			continue
-		elseif (countDuplicateNames(all,namej)>1)		// will found duplicates (always find 1)
+		elseif (countDuplicateNames(allNames,namej)>1)	// will found duplicates (always find 1)
 			splitLabel(namej,base,num)
-			if (numtype(num))										// try to change "Cu" -> "Cu1"
+			if (numtype(num))									// try to change "Cu" -> "Cu1"
 				num = 1
 				nameTest = AddNum2Base(base,num)
-				if (countDuplicateNames(all,nameTest)<1)// base+"1" does not exist
-					all[j] = nameTest
+				if (countDuplicateNames(allNames,nameTest)<1)	// base+"1" does not exist
+					allNames[j] = nameTest
 				endif
 			endif
 
 			for (i=j+1;i<N;i+=1)								// look for matches to namej
-				if (StringMatch(all[i],namej))				// need to change all[i]
+				if (StringMatch(allNames[i],namej))		// need to change allNames[i]
 					do
 						num += 1
 						nameTest = AddNum2Base(base,num)
-					while (countDuplicateNames(all,nameTest))
-					all[i] = nameTest
+					while (countDuplicateNames(allNames,nameTest))
+					allNames[i] = nameTest
 				endif
 			endfor
 		endif
 	endfor
 
 	for (j=0;j<N;j+=1)
-		xtal.atom[j].name = all[j]
+		xtal.atom[j].name = allNames[j]
 	endfor
 End
 //
