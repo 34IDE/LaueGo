@@ -4,6 +4,7 @@
 	<chemical_name_common>CZT (Sphalerite)</chemical_name_common>
 	<chemical_formula>Cd0.9 Zn0.1 Te</chemical_formula>
 	<database_code db="ICSD">620556</database_code>
+	<!-- _chemical_name_structure_type Sphalerite#ZnS(cF8) -->
 
 	<space_group>
 		<id>216</id>
@@ -24,7 +25,7 @@
 		<symbol>Cd</symbol>
 		<fract>0 0 0</fract>
 		<valence>2</valence>
-		<occupancy>0.95</occupancy>
+		<occupancy>0.9</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -32,7 +33,7 @@
 		<symbol>Zn</symbol>
 		<fract>0 0 0</fract>
 		<valence>2</valence>
-		<occupancy>0.05</occupancy>
+		<occupancy>0.1</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -50,8 +51,8 @@
 		<author>Fuju Yu</author>
 		<author>Sanbao Xu</author>
 		<author>Shuming Zhang</author>
-		<author>Bandaoti</author>
-		<author>Xuebao</author>
+		<journal>Bandaoti Xuebao</journal>
+		<ASTM>PTTPDZ</ASTM>
 		<volume>8</volume>
 		<year>1987</year>
 		<pages>548 550</pages>
