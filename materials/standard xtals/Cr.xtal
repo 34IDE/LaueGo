@@ -1,23 +1,44 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-07-16T20:22:59.260Z</date>   <!-- Thursday, July 16, 2020 at 3:22:59 PM Central Daylight Time -->
 	<chemical_name_common>Chromium</chemical_name_common>
+	<chemical_formula>Cr</chemical_formula>
+	<database_code db="COD">9008531</database_code>
+
 	<space_group>
+		<id>229</id>
 		<IT_number>229</IT_number>
-		<H-M>Im-3m</H-M>
+		<system>cubic</system>
+		<H-M>I m -3 m</H-M>
+		<Hall>-I 4 2 3</Hall>
+		<Schoenflies>Oh^9</Schoenflies>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.28848</a>
-		<b unit="nm">0.28848</b>
-		<c unit="nm">0.28848</c>
+		<a unit="Å">2.8839</a>
+		<b unit="Å">2.8839</b>
+		<c unit="Å">2.8839</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Cr</label>
 		<symbol>Cr</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 		<DebyeTemperature unit="K">630</DebyeTemperature>
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Body centered cubic, bcc, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>Wyckoff, R. W. G.</author>
+	</citation>
 </cif>

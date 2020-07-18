@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-07-15T17:48:27.844Z</date>   <!-- Wednesday, July 15, 2020 at 12:48:27 PM Central Daylight Time -->
+	<chemical_name_common>Zr</chemical_name_common>
+	<chemical_formula>Zr</chemical_formula>
+	<database_code db="COD">9008523</database_code>
+
+	<space_group>
+		<id>194</id>
+		<IT_number>194</IT_number>
+		<system>hexagonal</system>
+		<H-M>P 63/m m c</H-M>
+		<Hall>-P 6c 2c</Hall>
+		<Schoenflies>D6h^4</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="Å">3.232</a>
+		<b unit="Å">3.232</b>
+		<c unit="Å">5.147</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+
+	<atom_site>
+		<label>Zr</label>
+		<symbol>Zr</symbol>
+		<fract>1/3 2/3 0.25</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Hexagonal closest packed, hcp, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>Wyckoff, R. W. G.</author>
+	</citation>
+</cif>
