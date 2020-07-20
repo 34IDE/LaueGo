@@ -12,7 +12,7 @@ _journal_page_first 920
 _journal_page_last 930
 _publ_section_title
 ;
- Structure and elastic properties of quartz at pressure
+ Structure and elastic properties of quartz at pressure 
  P = 1 atm
 ;
 _database_code_amcsd 0000789
