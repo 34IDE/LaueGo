@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-07-25T16:34:04.372Z</date>   <!-- Saturday, July 25, 2020 at 11:34:04 AM Central Daylight Time -->
+	<chemical_name_common>Sodium Potassium Niobate</chemical_name_common>
+	<chemical_formula>(Na0.95 K0.05) Nb O3</chemical_formula>
+
+	<space_group>
+		<id>161:H</id>
+		<IT_number>161</IT_number>
+		<system>trigonal</system>
+		<H-M>R 3 c:H</H-M>
+		<Hall>R 3 -2"c</Hall>
+		<Schoenflies>C3v^6</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="Å">5.5298</a>
+		<b unit="Å">5.5298</b>
+		<c unit="Å">13.7692</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+	</cell>
+
+	<atom_site>
+		<label>Na1</label>
+		<symbol>Na</symbol>
+		<fract>0 0 0.3209</fract>
+		<occupancy>0.95</occupancy>
+		<valence>1</valence>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>K1</label>
+		<symbol>K</symbol>
+		<fract>0 0 0.3209</fract>
+		<occupancy>0.05</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>1</valence>
+	</atom_site>
+	<atom_site>
+		<label>Nb1</label>
+		<symbol>Nb</symbol>
+		<fract>0 0 0.0578</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>5</valence>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.007 0.4425 0.08333</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>-2</valence>
+	</atom_site>
+
+	<citation doi="doi:10.1107/S0108768109011057">
+		<journal>Acta Crystallographica, Section B</journal>
+		<volume>65</volume>
+		<year>2009</year>
+		<pages>291 299</pages>
+	</citation>
+</cif>

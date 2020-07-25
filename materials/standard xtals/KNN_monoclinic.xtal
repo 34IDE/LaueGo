@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-07-25T16:33:49.995Z</date>   <!-- Saturday, July 25, 2020 at 11:33:49 AM Central Daylight Time -->
+	<chemical_name_common>Sodium Potassium Niobate</chemical_name_common>
+	<chemical_formula>(Na0.95 K0.05) Nb O3</chemical_formula>
+
+	<space_group>
+		<id>6:b</id>
+		<IT_number>6</IT_number>
+		<system>monoclinic</system>
+		<H-M>P 1 m 1</H-M>
+		<Hall>P -2y</Hall>
+		<Schoenflies>Cs^1</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="Å">5.60123</a>
+		<b unit="Å">7.79834</b>
+		<c unit="Å">5.548</c>
+		<alpha>90</alpha>
+		<beta>90.051</beta>
+		<gamma>90</gamma>
+	</cell>
+
+	<atom_site>
+		<label>Na1</label>
+		<symbol>Na</symbol>
+		<fract>0.538 0 0.0048</fract>
+		<occupancy>0.95</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>K1</label>
+		<symbol>K</symbol>
+		<fract>0.538 0 0.0048</fract>
+		<occupancy>0.05</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Na2</label>
+		<symbol>Na</symbol>
+		<fract>0.038 0 0.4952</fract>
+		<occupancy>0.95</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>K2</label>
+		<symbol>K</symbol>
+		<fract>0.038 0 0.4952</fract>
+		<occupancy>0.05</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Na3</label>
+		<symbol>Na</symbol>
+		<fract>0.538 0.5 0.0048</fract>
+		<occupancy>0.95</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>K3</label>
+		<symbol>K</symbol>
+		<fract>0.538 0.5 0.0048</fract>
+		<occupancy>0.05</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Na4</label>
+		<symbol>Na</symbol>
+		<fract>0.038 0.5 0.4952</fract>
+		<occupancy>0.95</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>K4</label>
+		<symbol>K</symbol>
+		<fract>0.038 0.5 0.4952</fract>
+		<occupancy>0.05</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>1</valence>
+		<aniso_U_11 unit="Å^2">0.017</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0173</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.028</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.02</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Nb1</label>
+		<symbol>Nb</symbol>
+		<fract>0.0322 0.25 0.004</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>5</valence>
+		<aniso_U_11 unit="Å^2">0.0026</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0067</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0048</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0002</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.002</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.011</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Nb2</label>
+		<symbol>Nb</symbol>
+		<fract>0.5322 0.25 0.504</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>5</valence>
+		<aniso_U_11 unit="Å^2">0.0026</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0067</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0048</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0002</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.002</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.011</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.9967 0 0.0561</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.021</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0027</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.019</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.023</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.5033 0 0.4439</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.021</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0027</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.019</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.023</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O7</label>
+		<symbol>O</symbol>
+		<fract>0.0033 0.5 0.9439</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.021</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0027</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.019</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.023</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O8</label>
+		<symbol>O</symbol>
+		<fract>0.4967 0.5 0.5561</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.021</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0027</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.019</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.023</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.2839 0.2835 0.2174</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.0074</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0148</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0076</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.0036</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.01</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.007</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O4</label>
+		<symbol>O</symbol>
+		<fract>0.2174 0.2311 0.7161</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.0074</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0148</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0076</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.0036</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.01</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.007</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O5</label>
+		<symbol>O</symbol>
+		<fract>0.7826 0.269 0.2839</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.0074</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0148</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0076</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.0036</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.01</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.007</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O6</label>
+		<symbol>O</symbol>
+		<fract>0.7161 0.2165 0.7826</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>-2</valence>
+		<aniso_U_11 unit="Å^2">0.0074</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0148</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0076</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.0036</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.01</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.007</aniso_U_23>
+	</atom_site>
+
+	<citation doi="doi:10.1107/S0108768109011057">
+		<journal>Acta Crystallographica, Section B</journal>
+		<volume>65</volume>
+		<year>2009</year>
+		<pages>291 299</pages>
+	</citation>
+</cif>
