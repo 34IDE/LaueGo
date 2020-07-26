@@ -10,7 +10,7 @@
 		<id>154</id>
 		<IT_number>154</IT_number>
 		<H-M>P 32 2 1</H-M>
-		<Hall>P 32 2"</Hall>
+		<Hall>P 32 2&quot;</Hall>
 		<symops N="6">
 			<op>"x" "y" "z"</op>
 			<op>"y" "x" "2/3-z"</op>

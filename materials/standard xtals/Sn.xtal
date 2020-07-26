@@ -237,7 +237,7 @@
 		units as the CIF standard mandates. To make data uniform and to match
 		the definition of the CIF _cell_length_* data items, all cell
 		constants were multiplied by the 1.00202 coefficient (taken from Wood,
-		E. A.  The Conversion Factor for kX Units to Angstr\"om Units Journal
+		E. A.  The Conversion Factor for kX Units to Angstrom Units Journal
 		of Applied Physics, AIP Publishing, 1947, 18, 929 DOI:
 		10.1063/1.1697570, https://doi.org/10.1063/1.1697570).
 

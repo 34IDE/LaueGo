@@ -38,11 +38,15 @@
 	<!-- bond length = ao*sqrt(3)/4 -->
 
 	<citation id="primary">
-		"Fluorite structure"
-		R.W.G. Wyckoff
-		Crystal Structures 1 (1963) 239-444
+		<title>"Fluorite structure</title>
+		<author>R.W.G. Wyckoff</author>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>239 444</pages>
 	</citation>
 	<citation id="2" doi="10.1007/s00269-002-0250-x">
+		a=0.54626
 		<author>S. Speziale</author>
 		<author>T.S. Duffy</author>
 		<title>Single-crystal elastic constants of fluorite (CaF2) to 9.3 GPa</title>
@@ -50,6 +54,5 @@
 		<volume>29</volume>
 		<year>2002</year>
 		<pages>465 472</pages>
-		a=0.54626
 	</citation>
 </cif>

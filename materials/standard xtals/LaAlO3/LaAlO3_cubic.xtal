@@ -46,6 +46,7 @@
 	</atom_site>
 
 	<citation doi="10.1107/S1600536805020441">
+		page numbers start with an &quot;i&quot;, &quot;i148-i150&quot;
 		<author>Akihiko Nakatsuka</author>
 		<author>Osamu Ohtaka</author>
 		<author>Hiroshi Arima</author>
@@ -55,7 +56,6 @@
 		<volume>61</volume>
 		<year>2005</year>
 		<pages>148 150</pages>
-		page numbers start with an "i", "i148-i150"
 		<title>Cubic phase of single-crystal LaAlO~3~ perovskite synthesized at 4.5 GPa and 1273 K</title>
 	</citation>
 </cif>
