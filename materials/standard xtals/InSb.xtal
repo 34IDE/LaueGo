@@ -38,17 +38,18 @@
 	<!-- bond length = ao*sqrt(3)/4 -->
 
 	<citation id="primary">
+		Second edition. Interscience Publishers, New York, New York
+		Note: ZnS structure, sphalerite structure
+		COD code = 9008853,  a = 6.4782
 		<author>R. W. G. Wyckoff</author>
 		<journal>Crystal Structures</journal>
 		<volume>1</volume>
 		<year>1963</year>
 		<pages>85 237</pages>
-		Second edition. Interscience Publishers, New York, New York
-		Note: ZnS structure, sphalerite structure
-		COD code = 9008853,  a = 6.4782
 	</citation>
 
 	<citation id="2" doi="10.1103/PhysRev.108.965">
+		COD code = 1538815,  a = 6.4867
 		<author>C. Kolm</author>
 		<author>S.A. Kulin</author>
 		<author>B.L. Averbach</author>
@@ -57,6 +58,5 @@
 		<volume>108</volume>
 		<year>1957</year>
 		<pages>965 971</pages>
-		COD code = 1538815,  a = 6.4867
 	</citation>
 </cif>

@@ -62,6 +62,7 @@
 	</atom_site>
 
 	<citation id="2" doi="10.1016/0038-1098(77)90959-0">
+		lattice constants modified by JZT
 		<author>H. Schulz</author>
 		<author>K.H. Thiemann</author>
 		<journal>Solid State Communications</journal>
@@ -69,7 +70,6 @@
 		<year>1977</year>
 		<pages>815 819</pages>
 		<title>Crystal structure refinement of AlN and GaN</title>
-		lattice constants modified by JZT
 		<!--
 		from the paper, lattice constants were:
 		<a unit="nm">0.3190</a>

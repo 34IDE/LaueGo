@@ -21,6 +21,7 @@
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<citation doi="10.1107/S0365110X51000039">
+		30602-ICSD
 		<journal>Acta Crystallographica</journal>
 		<year>1951</year>
 		<volume>4</volume>
@@ -29,7 +30,6 @@
 		<author>S.C. Abrahams</author>
 		<author>R.L. Collin</author>
 		<author>W.N. Lipscomb</author>
-		30602-ICSD
 	</citation>
 </cif>
 

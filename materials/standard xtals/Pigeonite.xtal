@@ -179,6 +179,8 @@
 
 
 	<citation>
+		_chemical_compound_source 'Isle of Mull, Scotland'
+		_chemical_formula_sum 'Mg.78 Fe1.04 Ca.18 Si2 O6'
 		<author>N. Morimoto</author>
 		<author>N. Guven</author>
 		<journal>American Mineralogist</journal>
@@ -186,7 +188,5 @@
 		<year>1970</year>
 		<pages>1195 1209</pages>
 		<title>Refinement of the crystal structure of pigeonite</title>
-		_chemical_compound_source 'Isle of Mull, Scotland'
-		_chemical_formula_sum 'Mg.78 Fe1.04 Ca.18 Si2 O6'
 	</citation>
 </cif>

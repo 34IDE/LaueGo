@@ -84,6 +84,7 @@
 	</atom_site>
 
 	<citation doi="10.1107/S0108270194011820">
+		lattice constant refined by JZT
 		<author>James F. Britten</author>
 		<author>Hanna A. Dabkowska</author>
 		<author>Antoni B. Dabkowski</author>
@@ -95,6 +96,5 @@
 		<volume>C51</volume>
 		<pages>1975 1977</pages>
 		<title>Czochralski-Grown SrLaGaO4</title>
-		lattice constant refined by JZT
 	</citation>
 </cif>

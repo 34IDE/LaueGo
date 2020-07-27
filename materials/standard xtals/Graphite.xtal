@@ -31,11 +31,11 @@
 	<bond_chemical unit="nm" n0="C1" n1="C2">0.141797</bond_chemical>
 
 	<citation>
+		Second edition. Interscience Publishers, New York, New York
 		<author>R.W.G. Wyckoff</author>
 		<journal>Crystal Structures</journal>
 		<volume>1</volume>
 		<year>1963</year>
 		<pages>7 83</pages>
-		Second edition. Interscience Publishers, New York, New York
 	</citation>
 </cif>

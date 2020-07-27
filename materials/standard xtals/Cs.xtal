@@ -22,6 +22,8 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="Cs" n1="Cs">0.532</bond_chemical>
 	<citation doi="10.1063/1.1675251">
+		rad = 0.26 nm -> dist = 0.2
+		http://periodictable.com/Elements/055/data.html
 		<author>C. E. Weir</author>
 		<author>G. J. Piermarini</author>
 		<author>S. Block</author>
@@ -30,7 +32,5 @@
 		<volume>54</volume>
 		<pages>2768 2770</pages>
 		<title>On the Crystal Structures of Cs II and Ga II</title>
-		rad = 0.26 nm -> dist = 0.2
-		http://periodictable.com/Elements/055/data.html
 	</citation>
 </cif>
