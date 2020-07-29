@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- Bad because atom site has occupancy > 1 -->
 
 <cif version="2" dim="3">
 	<chemical_name_common>HEA1 (High Entropy Alloy)</chemical_name_common>

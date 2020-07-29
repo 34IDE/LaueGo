@@ -22,6 +22,7 @@
 		<alpha>90</alpha>
 		<beta>90.051</beta>
 		<gamma>90</gamma>
+		<temperature unit="K">300</temperature>
 	</cell>
 
 	<atom_site>
@@ -268,9 +269,14 @@
 	</atom_site>
 
 	<citation doi="doi:10.1107/S0108768109011057">
+		<title>Structures of K0.05Na0.95NbO3 (50-300 K) and K0.30Na0.70NbO3 (100-200 K)</title>
 		<journal>Acta Crystallographica, Section B</journal>
 		<volume>65</volume>
 		<year>2009</year>
 		<pages>291 299</pages>
+		<author>N. Zhang</author>
+		<author>A.M. Glazer</author>
+		<author>D. Baker</author>
+		<author>P.A. Thomas</author>
 	</citation>
 </cif>

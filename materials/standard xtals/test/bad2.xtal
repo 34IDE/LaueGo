@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- Bad because two of the atoms are too close together only 0.15Å apart  -->
 
 <cif>
 	<chemical_name_common>bad Test, PZT-hex</chemical_name_common>

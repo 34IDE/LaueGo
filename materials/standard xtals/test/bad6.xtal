@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- Bad because in <citaton> the use of <doi> is invalid  -->
 
 <cif version="2" dim="3">
 	<chemical_name_common>Quartz-alpha</chemical_name_common>
