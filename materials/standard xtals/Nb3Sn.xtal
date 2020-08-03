@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-08-03T22:29:42.406Z</date>   <!-- Monday, August 3, 2020 at 5:29:42 PM Central Daylight Time -->
+	<chemical_name_common>Nb3 Sn</chemical_name_common>
+	<chemical_formula>Nb3Sn</chemical_formula>
+	<database_code db="COD">1538263</database_code>
+
+	<space_group>
+		<id>223</id>
+		<IT_number>223</IT_number>
+		<system>cubic</system>
+		<H-M>P m -3 n</H-M>
+		<Hall>-P 4n 2 3</Hall>
+		<Schoenflies>Oh^3</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.5273</a>
+		<b unit="nm">0.5273</b>
+		<c unit="nm">0.5273</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>2</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Nb</label>
+		<symbol>Nb</symbol>
+		<fract>1/4 0 1/2</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Sn</label>
+		<symbol>Sn</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<citation doi="10.1016/0022-5088(82)90047-9">
+		<title>The properties of zirconium-doped Nb3Sn - Nb3Ge solid solutions</title>
+		<journal>Journal of the Less-Common Metals</journal>
+		<volume>87</volume>
+		<year>1982</year>
+		<pages>109 115</pages>
+		<author>I.A. Guseva</author>
+		<author>Yu.D. Seropegin</author>
+		<author>E.M. Sokolovskaya</author>
+	</citation>
+</cif>
