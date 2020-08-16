@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-08-16T22:07:37.327Z</date>   <!-- Sunday, August 16, 2020 at 5:07:37 PM Central Daylight Time -->
+	<chemical_name_common>Lanthanum Gallate (LGO)</chemical_name_common>
+	<chemical_formula>LaGaO3</chemical_formula>
+	<database_code db="COD">1526869</database_code>
+
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.552266</a>
+		<b unit="nm">0.549047</b>
+		<c unit="nm">0.77713</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>0.9964 0.0175 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>3</valence>
+	</atom_site>
+	<atom_site>
+		<label>Ga</label>
+		<symbol>Ga</symbol>
+		<fract>1/2 0 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>3</valence>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.0665 0.505 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<valence>-2</valence>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.72 0.281 0.0371</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<valence>-2</valence>
+	</atom_site>
+
+	<citation>
+		<title>Crystal structure of La1-x Ndx Ga O3 single crystals (0 &lt; x &lt; 0.2)</title>
+		<journal>Materials Research Bulletin</journal>
+		<volume>35</volume>
+		<year>2000</year>
+		<pages>333 340</pages>
+		<ASTM>MRBUAC</ASTM>
+		<author>L. Vasylechko</author>
+		<author>D. Savytskii</author>
+		<author>A. Matkovskii</author>
+		<author>M. Berkowski</author>
+		<author>J. Fink-Finowicki</author>
+	</citation>
+</cif>
