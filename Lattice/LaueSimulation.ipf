@@ -240,12 +240,12 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	Variable/C pz
 	Variable px,py, keV, Qlen, sintheta, Nspots
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1)	// display a progress bar
-	Variable ih,ik,il
-	for (il=0,Nspots=0; il<Nl; il+=1)
+	Variable ih,ik,il, breakAll=0
+	for (il=0,Nspots=0; il<Nl && !breakAll; il+=1)
 		l = lRange[il]
-		for (ik=0; ik<Nk; ik+=1)
+		for (ik=0; ik<Nk && !breakAll; ik+=1)
 			k = kRange[ik]
-			for (ih=0; ih<Nh; ih+=1)
+			for (ih=0; ih<Nh && !breakAll; ih+=1)
 				h = hRange[ih]
 				hkl = {h,k,l}
 				if (parallel_hkl_exists(hkl,Nspots,PeakIndexed))			// already got this reflection
@@ -285,7 +285,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 				PeakIndexed[Nspots][11][0] = detector		// detector number
 				Nspots += 1
 				if (Nspots+1 >= Nmax)
-					h=Inf;	k=Inf;	l=inf						// force loops to end
+					breakAll = 1			//h=Inf;	k=Inf;	l=inf						// force loops to end
 				endif
 			endfor
 		endfor
