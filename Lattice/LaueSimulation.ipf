@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.27
+#pragma version = 1.28
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -517,7 +517,7 @@ Function DisplaySimulatedLauePattern(FullPeakIndexed)
 	Wave FullPeakIndexed
 
 	if (!WaveExists(FullPeakIndexed))
-		String wName="", list=reverseList(WaveListClass("IndexedPeakList*","*",""))
+		String wName="", list=reverseList(WaveListClass("IndexedPeakList*","*","MINCOLS:11"))
 		if (ItemsInlist(list)==1)
 			wName = StringFromList(0,list)
 		elseif (ItemsInlist(list)>1)
@@ -543,7 +543,8 @@ Function DisplaySimulatedLauePattern(FullPeakIndexed)
 	dY = numtype(dY) ? 586 : min(dY,586)				// set graph size depending on detector
 	dX = numtype(dX) ? 586 : min(dX,586)
 	Variable left=132, top=156, right=left+dX, bottom=top+dY	// was /W=(132,156,785,742)
-	Display /W=(left,top,right,bottom) FullPeakIndexed[*][10][0] vs FullPeakIndexed[*][9][0]
+	Display/K=1/W=(left,top,right,bottom) FullPeakIndexed[*][10][0] vs FullPeakIndexed[*][9][0]
+	AppendToGraph FullPeakIndexed[*][10][0] vs FullPeakIndexed[*][9][0]
 	GraphSimulateLaueStyle()
 	if (exists("getSimulatedPeakInfoHook")==6)
 		SetWindow kwTopWin,hook(peakInfo)=getSimulatedPeakInfoHook
@@ -571,9 +572,9 @@ Function GraphSimulateLaueStyle()
 	ModifyGraph/Z width={Aspect,(xhi-xlo)/(yhi-ylo)}
 	ModifyGraph/Z grid=1, tick=2, mirror=1, minor=1, gridStyle=1
 	ModifyGraph/Z lowTrip=0.001, standoff=0, axOffset(bottom)=-1
-	ModifyGraph mode=3,marker=19,rgb=(1,4,52428),msize=2
+	ModifyGraph mode=3, marker[0]=19, marker[1]=8, rgb=(0,0,0), msize=2
 	Variable iColumnMarker = DimSize($wname,1)>12 ? 12 : 6
-	ModifyGraph zmrkSize[0]={$wname[*][iColumnMarker][0],*,*,2,12}
+	ModifyGraph zmrkSize={$wname[*][iColumnMarker][0],*,*,2,12}
 	ModifyGraph zColor[0]={$wname[*][7][0],*,*,Rainbow256}
 	ModifyGraph grid=1,gridRGB=(45000,45000,65535)
 	ModifyGraph axOffset(left) = (stringmatch(IgorInfo(2),"Macintosh" )) ? -1.1 : -2.1 		// mac, or pc
