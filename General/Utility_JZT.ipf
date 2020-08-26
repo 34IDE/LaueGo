@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.87
+#pragma version = 4.88
 // #pragma hide = 1
 
 Menu "Graph"
@@ -54,6 +54,8 @@ End
 StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;Nh;Fl;Mc;Lv;Ts;Og"
 StrConstant MonthNamesFull = "January;February;March;April;May;June;July;August;September;October;November;December"
 StrConstant MonthNamesShort = "Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec"
+StrConstant DayNamesFull = "Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday"
+StrConstant DayNamesShort = "Sun;Mon;Tue;Wed;Thu;Fri;Sat"
 Static Constant Smallest32bitFloat = 1.40129846432482e-45			// see DefaultZeroThresh(ww) below for use and finding
 Static Constant Smallest64bitFloat = 4.94065645841247e-324
 Static Constant maxIgorWaveNameLen = 31
@@ -166,6 +168,7 @@ StrConstant XMLfiltersStrict = "XML Files (*.xml):.xml,;All Files:.*;"
 //		epoch2ISOtime(seconds), convert an Igor epoch (in seconds) to an ISO8601 format string
 //		AskForUserForDateTime(epoch), puts up a dialog to select a date & time, returns the epoch
 //		ElapsedTime2Str(seconds,[showSec,fracDigits]), convert seconds to a nice time interval string
+//		WeekDayNumber(month, idate, year), returns week day number [1,7]
 //		vec2str(), convert a vector to a string
 //		str2vec(), convert a string to a free vector
 //		encodeMatAsStr(mat,[places]), convert mat to a string interpretable by decodeMatFromStr(), used for wave notes
@@ -5013,6 +5016,27 @@ Function/T ElapsedTime2Str(seconds,[showSec,fracDigits])	// convert seconds to a
 	endif
 	str = RemoveEnding(str,",  ")
 	return str
+End
+
+
+Function WeekDayNumber(month, idate, year, [printIt])	// from: https://cs.uwaterloo.ca/~alopez-o/math-faq/node73.html
+	Variable month			// month in range [1, 12]
+	Variable idate			// date in range [1,31], depending upon month
+	Variable year			// year, use 2020, not just 20
+	Variable printIt
+	printIt = ParamIsDefault(printIt) || numtype(printIt) ? strlen(GetRTStackInfo(2))==0 : printIt
+	Variable k=idate
+	Variable m = month + (month<3 ? 10 : -2)
+	Variable C = floor(year/100)
+	Variable Y = mod(year,100)
+	Y += (month < 3) ? 1 : 0				// move Jan & Feb into next year
+	Variable W = (k + floor(2.6*m - 0.2) - 2*C +Y + floor(Y/4) + floor(C/4))
+	W = mod(W,7) + 1
+
+	if (printIt)
+		printf "%s %d, %d  falls on a %s\r",StringFromList(month-1,MonthNamesFull), idate, year, StringFromList(W-1,DayNamesFull)
+	endif
+	return W										// weekday in [1,7]
 End
 
 
