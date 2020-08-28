@@ -1,6 +1,7 @@
+#pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.28
+#pragma version = 1.29
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -297,7 +298,8 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	DoWindow/K $progressWin
 	Redimension/N=(Nspots,-1,-1) PeakIndexed		// trim to exact size
 	PeakIndexed[][8][0] = 0								// error is always zero for a calculated spot
-	PeakIndexed[][12][0] = (PeakIndexed[p][6][0])^0.3	// last column is just intensity^0,3, used for plotting
+//	PeakIndexed[][12][0] = (PeakIndexed[p][6][0])^0.3	// last column is just intensity^0.3, used for plotting
+	PeakIndexed[][12][0] = (PeakIndexed[p][6][0])^0.2	// last column is just intensity^0.2, used for plotting
 	if (printIt)
 		printf "hkl ranges:  h=[%g,%g],  k=[%g,%g],  l=[%g,%g]\r", hklRange[0],hklRange[1], hklRange[2],hklRange[3], hklRange[4],hklRange[5]
 		printf "calculated %d simulated spots into the wave '%s',   took %s\r",Nspots,FullPeakIndexedName,ElapsedTime2Str(executionTime)
@@ -351,7 +353,7 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 		XYZ2pixel(geo.d[detector],qhat,px,py, onDetector=1)	// check for incident beam hitting detector before sample
 	endif
 	if (numtype(px+py))
-		pz = perpPixelOnDetector(geo.d[detector])				// pixel at perpendicualr direction to incident beam, and azimuth is multiple of 45¡
+		pz = perpPixelOnDetector(geo.d[detector])				// pixel at perpendicualr direction to incident beam, and azimuth is multiple of 45Â°
 		px = real(pz)
 		py = imag(pz)
 	endif
@@ -363,11 +365,11 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 
 	SetDimLabel 1,0,Qx,PeakIndexed				;	SetDimLabel 1,1,Qy,PeakIndexed
 	SetDimLabel 1,2,Qz,PeakIndexed				;	SetDimLabel 1,3,h,PeakIndexed
-	SetDimLabel 1,4,k,PeakIndexed				;	SetDimLabel 1,5,l,PeakIndexed
-	SetDimLabel 1,6,Intensity,PeakIndexed	;	SetDimLabel 1,7,keV,PeakIndexed
+	SetDimLabel 1,4,k,PeakIndexed					;	SetDimLabel 1,5,l,PeakIndexed
+	SetDimLabel 1,6,Intensity,PeakIndexed		;	SetDimLabel 1,7,keV,PeakIndexed
 	SetDimLabel 1,8,angleErr,PeakIndexed		;	SetDimLabel 1,9,pixelX,PeakIndexed
-	SetDimLabel 1,10,pixelY,PeakIndexed		;	SetDimLabel 1,11,detNum,PeakIndexed	
-	SetDimLabel 1,12,Intensity_03,PeakIndexed
+	SetDimLabel 1,10,pixelY,PeakIndexed			;	SetDimLabel 1,11,detNum,PeakIndexed	
+	SetDimLabel 1,12,Intensity_02,PeakIndexed
 
 	if (printIt && Nspots>0)
 		String gName = StringFromLIst(0,WindowsWithWave(PeakIndexed,1))
@@ -481,15 +483,19 @@ Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
 	Variable keV, keV0
 	keV0 = hc_keVnm / ( 2 * dSpacing(xtal,hkl0[0],hkl0[1],hkl0[2]) * sin(acos(MatrixDot(ki,kf))/2) )
 
-	Variable Fhkl, mu, intens=0
+	//	EwPo = 0.5 * (re/Vc)^2 * F2 * lambda^4 * Lorentz / (2Âµ)		// integrated intensity for flat crystal
+	Variable sinTheta = -MatrixDot(ki,qhat)
+	Variable Lorentz = 1 / sinTheta^2			// Lorentz factor is 1/[sin(Î¸)Â²]
+	Variable Fhkl2, mu, intens=0
 	Variable istart = max(floor(Elo/keV0),1), i
 	for (i=istart,keV=i*keV0; keV<Ehi; i+=1,keV+=keV0)	// for each harmonic
 		if (keV>Elo)
 			mu = LatticeSym#muOfXtal(xtal, keV)
 			mu = numtype(mu) ? 1 : mu								// in case Cromer not loaded
-			Fhkl = magSqr(Fstruct(xtal,i*hkl0[0],i*hkl0[1],i*hkl0[2], keV=keV))
-			if (Fhkl > 1e-5)
-				intens += Fhkl * spectrumFunc(keV) / mu
+			Fhkl2 = magSqr(Fstruct(xtal,i*hkl0[0],i*hkl0[1],i*hkl0[2], keV=keV))
+			if (Fhkl2 > 1e-5)
+//				intens += Fhkl2 * spectrumFunc(keV) / mu
+				intens += Fhkl2 * (hc_keVnm/keV)^4 * Lorentz / (2*mu)		// integrated intensity for flat crystal
 			endif
 		endif
 	endfor
@@ -603,7 +609,7 @@ Function GraphSimulateLaueStyle()
 		String hklStr = StringBykey("hkl",note(recipWave),"=")
 		Variable angle = NumberBykey("angle",note(recipWave),"=")
 		if (strlen(hklStr) && numtype(angle)==0 && DimSize(recipWave,0)==3 && DimSize(recipWave,1)==3)
-			sprintf str, "\ra %g¡ rotation about the (%s)",angle,hklStr
+			sprintf str, "\ra %gÂ° rotation about the (%s)",angle,hklStr
 			title += str
 		endif
 		if (IgorVersion()>=7)
@@ -728,7 +734,7 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 		KillWaves/Z PeakInfoHook_qhatBL
 	endif
 	if (numtype(theta)==0)
-		sprintf str "\r\F'Symbol'q\F]0 = %.3f¡",theta
+		sprintf str "\r\F'Symbol'q\F]0 = %.3fÂ°",theta
 		tagStr += str
 	endif
 
@@ -744,11 +750,11 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 End
 //
 Static Function/C perpPixelOnDetector(d)
-	// returns pixel on detector where a ray perpendicular to z-axis and with azimuth of n*45¡ hits detector
+	// returns pixel on detector where a ray perpendicular to z-axis and with azimuth of n*45Â° hits detector
 	// if no perpendicular ray hits the detector, return cmplx(NaN,NaN)
 	STRUCT detectorGeometry &d				// geometry parameters for the detector
 
-	Make/N=(8,3)/D/FREE xyz=0				// all 8 kf directions (every 45¡ and perp to z-axis)
+	Make/N=(8,3)/D/FREE xyz=0				// all 8 kf directions (every 45Â° and perp to z-axis)
 	xyz[][0] = cos(p*PI/4)
 	xyz[][1] = sin(p*PI/4)
 	Wave pxpy = XYZ2pixelVEC(d,xyz, onDetector=1)	// returns pixel position (px,py) where each xyz vector will intercept detector
@@ -757,7 +763,7 @@ Static Function/C perpPixelOnDetector(d)
 	MatrixOP/FREE dist2 = sumRows(magSqr(pxpy - rowRepeat(pzC,8)))
 	WaveStats/M=1/Q dist2									// find [px,py] that lies cloest to detector center
 	Variable px=pxpy[V_minloc][0], py=pxpy[V_minloc][1]
-	// print "closest azimuth is %g¡\r",V_minloc*45,"   ",px,"  ",py
+	// print "closest azimuth is %gÂ°\r",V_minloc*45,"   ",px,"  ",py
 	return cmplx(px,py)						// failed, closest pixel does not lie on detector
 End
 
@@ -796,7 +802,7 @@ Function/WAVE Make_kf_Sim(FullPeakIndexed, [printIt])
 		return $""
 	endif
 	if (printIt)
-		printf "¥Make_kf_Sim(%s)\r",NameOfWave(FullPeakIndexed)
+		printf "â€¢Make_kf_Sim(%s)\r",NameOfWave(FullPeakIndexed)
 	endif
 
 	Make/N=3/D/FREE ki={0,0,1}
@@ -916,9 +922,9 @@ Function/WAVE MakeRotatedRecipLattice(recipSource,hklStr,angle,[printIt])
 
 	if (printIt)
 		if (strlen(recipStr))
-			printf "Rotated key='%s' from waveNote of '%s' around the (%s) by %g¡\r",key,recipName,hklStr,angle
+			printf "Rotated key='%s' from waveNote of '%s' around the (%s) by %gÂ°\r",key,recipName,hklStr,angle
 		else
-			printf "Rotated reciprocal lattice in '%s' around the (%s) by %g¡\r",recipName,hklStr,angle
+			printf "Rotated reciprocal lattice in '%s' around the (%s) by %gÂ°\r",recipName,hklStr,angle
 		endif
 		String str
 		sprintf str, "New rotated reciprocal lattice:  \"%s\"\r    a*          b*          c*   ",wname
