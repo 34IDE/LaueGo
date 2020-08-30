@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.88
+#pragma version = 4.89
 // #pragma hide = 1
 
 Menu "Graph"
@@ -27,6 +27,7 @@ End
 	strConstant Gmu = "\xCE\xBC"				// UTF8, Greek mu
 	strConstant PLUSMINUS = "\xC2\xB1"		// UTF8, plus-minus sign
 	strConstant INTEGRAL_SIGN = "\xE2\x88\xAB"		// UTF8, integral sign
+	strConstant ANGLE_SIGN = "\xE2\x88\xA0"		// angle sign
 #elif StringMatch(IgorInfo(2),"Windows")
 	// Igor 6 Windows
 	strConstant BULLET = "\7"				// Bullet, MS Alt-7
@@ -38,6 +39,7 @@ End
 	strConstant PLUSMINUS = "\261"			// MS plus-minus sign, was: "\361"  MS Alt-241, 241d=361
 	strConstant Gmu = "\265"					// Greek mu, was: "\346"  MS Alt-230d=346o
 	strConstant INTEGRAL_SIGN = "\222B"	// Integral sign, MS Alt-222B
+	strConstant ANGLE_SIGN = "angle"		// angle sign
 #else
 	// Igor 6 Mac
 	strConstant BULLET = "\245"				// Mac option-8
@@ -49,6 +51,7 @@ End
 	strConstant GDELTA = "\306"				// Mac option-j, xC6, o306, d198
 	strConstant Gmu = "\265"					// Mac option-m, Greek mu
 	strConstant INTEGRAL_SIGN = "\272"	// option-b
+	strConstant ANGLE_SIGN = "angle"		// angle sign
 #endif
 
 StrConstant ELEMENT_Symbols = "H;He;Li;Be;B;C;N;O;F;Ne;Na;Mg;Al;Si;P;S;Cl;Ar;K;Ca;Sc;Ti;V;Cr;Mn;Fe;Co;Ni;Cu;Zn;Ga;Ge;As;Se;Br;Kr;Rb;Sr;Y;Zr;Nb;Mo;Tc;Ru;Rh;Pd;Ag;Cd;In;Sn;Sb;Te;I;Xe;Cs;Ba;La;Ce;Pr;Nd;Pm;Sm;Eu;Gd;Tb;Dy;Ho;Er;Tm;Yb;Lu;Hf;Ta;W;Re;Os;Ir;Pt;Au;Hg;Tl;Pb;Bi;Po;At;Rn;Fr;Ra;Ac;Th;Pa;U;Np;Pu;Am;Cm;Bk;Cf;Es;Fm;Md;No;Lr;Rf;Db;Sg;Bh;Hs;Mt;Ds;Rg;Cn;Nh;Fl;Mc;Lv;Ts;Og"

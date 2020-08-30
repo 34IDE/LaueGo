@@ -8,6 +8,7 @@
 #include  "LatticeSym", version>=5.14
 
 Static Constant hc_keVnm = 1.2398419739			// h*c (keV-nm)
+Static Constant re_nm = 2.8179403227e-06			// Thompson radius (nm)
 Static Constant Nmax_DEFAULT = 150
 Static Constant Elo_DEFAULT = 5
 Static Constant Ehi_DEFAULT = 30
@@ -366,10 +367,10 @@ Function/WAVE MakeSimulatedLauePattern(Elo,Ehi,[h,k,l,recipSource,Nmax,detector,
 	SetDimLabel 1,0,Qx,PeakIndexed				;	SetDimLabel 1,1,Qy,PeakIndexed
 	SetDimLabel 1,2,Qz,PeakIndexed				;	SetDimLabel 1,3,h,PeakIndexed
 	SetDimLabel 1,4,k,PeakIndexed					;	SetDimLabel 1,5,l,PeakIndexed
-	SetDimLabel 1,6,Intensity,PeakIndexed		;	SetDimLabel 1,7,keV,PeakIndexed
+	SetDimLabel 1,6,EwPo,PeakIndexed				;	SetDimLabel 1,7,keV,PeakIndexed
 	SetDimLabel 1,8,angleErr,PeakIndexed		;	SetDimLabel 1,9,pixelX,PeakIndexed
 	SetDimLabel 1,10,pixelY,PeakIndexed			;	SetDimLabel 1,11,detNum,PeakIndexed	
-	SetDimLabel 1,12,Intensity_02,PeakIndexed
+	SetDimLabel 1,12,EwPo_02,PeakIndexed
 
 	if (printIt && Nspots>0)
 		String gName = StringFromLIst(0,WindowsWithWave(PeakIndexed,1))
@@ -456,9 +457,10 @@ Static Function/WAVE Find_hkl_range(xtal,d,recip, Elo,Ehi, startx,endx,starty,en
 End
 //
 Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
-	Wave qhat
-	Wave hklIN
-	Variable Elo, Ehi
+	// returns Sum{ EwPo(hkl) }  for all reflections along qhat with energy in [Elo,Ehi]
+	Wave qhat						// direction of hklIN (q = recip x hklIN)
+	Wave hklIN						// input hkl of reflection (may not be lowest)
+	Variable Elo, Ehi				// energy range keV
 
 	STRUCT crystalStructure xtal
 	if (FillCrystalStructDefault(xtal))			//fill the lattice structure with test values
@@ -483,19 +485,20 @@ Static Function intensityOfPeak(qhat,hklIN,Elo,Ehi)
 	Variable keV, keV0
 	keV0 = hc_keVnm / ( 2 * dSpacing(xtal,hkl0[0],hkl0[1],hkl0[2]) * sin(acos(MatrixDot(ki,kf))/2) )
 
-	//	EwPo = 0.5 * (re/Vc)^2 * F2 * lambda^4 * Lorentz / (2µ)		// integrated intensity for flat crystal
+	//	EwPo = 0.5 * (re/Vc)^2 * F^2 * lambda^4 * Lorentz / (2µ)		// integrated intensity for flat crystal (ignores Polarization)
 	Variable sinTheta = -MatrixDot(ki,qhat)
-	Variable Lorentz = 1 / sinTheta^2			// Lorentz factor is 1/[sin(θ)²]
+	Variable Lorentz = 1 / sinTheta^2						// Lorentz factor is 1 / sin²(θ)
+	Variable EL = 0.5 * (re_nm/(xtal.Vc))^2 * Lorentz	// terms that don't depend on energy
 	Variable Fhkl2, mu, intens=0
 	Variable istart = max(floor(Elo/keV0),1), i
 	for (i=istart,keV=i*keV0; keV<Ehi; i+=1,keV+=keV0)	// for each harmonic
 		if (keV>Elo)
 			mu = LatticeSym#muOfXtal(xtal, keV)
-			mu = numtype(mu) ? 1 : mu								// in case Cromer not loaded
+			mu = numtype(mu) ? 1 : mu							// in case Cromer not loaded
 			Fhkl2 = magSqr(Fstruct(xtal,i*hkl0[0],i*hkl0[1],i*hkl0[2], keV=keV))
 			if (Fhkl2 > 1e-5)
 //				intens += Fhkl2 * spectrumFunc(keV) / mu
-				intens += Fhkl2 * (hc_keVnm/keV)^4 * Lorentz / (2*mu)		// integrated intensity for flat crystal
+				intens += EL * Fhkl2 * (hc_keVnm/keV)^4 / (2*mu) * spectrumFunc(keV)	// integrated intensity for flat crystal
 			endif
 		endif
 	endfor

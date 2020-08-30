@@ -7380,6 +7380,13 @@ End
 //
 //											SG										idNum
 //	Rhombohedral	[146,148,155,160,161,166,167]	[434,437,445,451,453,459,461]
+//
+//	for FCC, the primitive cell is rhombohedral with aPrimitive = a0/sqrt(2),  α=60°, cos(α)=0.5
+// 	volume of primitive cell is 1/4 of cubic
+//
+//	for BCC, the primitive cell is rhombohedral with aPrimitive = a0*sqrt(3)/2,  α=109.471°, cos(α)=(-1/3)
+// 	volume of primitive cell is 1/2 of cubic
+//
 
 
 ThreadSafe Function/S getHMboth(SpaceGroupIDnum, [dim])	// returns short and (full) Hermann-Mauguin symbol

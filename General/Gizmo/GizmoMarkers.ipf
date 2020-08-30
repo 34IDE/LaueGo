@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.25
+#pragma version = 2.26
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -578,10 +578,11 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 	String xUnit=info.M[MarkerNum].xUnit, yUnit=info.M[MarkerNum].yUnit, zUnit=info.M[MarkerNum].zUnit
 	Variable intensity=info.M[MarkerNum].intensity
 	if (numtype(x0+y0+z0)==0)
+		Variable len = sqrt(x0*x0 + y0*y0 + z0*z0)
 		if (stringmatch(xUnit,yUnit) && stringmatch(xUnit,zUnit))
-			printf "   at {%g, %g, %g}%s",x0,y0,z0,xUnit
+			printf "   at |{%g, %g, %g}| = %g %s",x0,y0,z0,len,xUnit
 		else
-			printf "   at {%g (%s), %g (%s), %g (%s)}",x0,xUnit,y0,yUnit,z0,zUnit
+			printf "   at |{%g (%s), %g (%s), %g (%s)}| = %g",x0,xUnit,y0,yUnit,z0,zUnit, len
 		endif
 		if (numtype(ix+iy+iz)==0)
 			printf "   nearest actual point is [%g, %g, %g],   point#=%d",ix,iy,iz,point
@@ -620,11 +621,14 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 		distance[0] = info.M[MarkerNum].x0 - info.M[num2].x0
 		distance[1] = info.M[MarkerNum].y0 - info.M[num2].y0
 		distance[2] = info.M[MarkerNum].z0 - info.M[num2].z0
+		Make/D/FREE avec={info.M[MarkerNum].x0, info.M[MarkerNum].y0, info.M[MarkerNum].z0}
+		Make/D/FREE bvec={info.M[num2].x0, info.M[num2].y0, info.M[num2].z0}
+		Variable angle=angleVec2Vec(avec,bvec)
 		printf "from '%s'  -->  '%s':\r",info.M[num2].MarkerName,info.M[MarkerNum].MarkerName
 		if (stringmatch(xUnit,yUnit) && stringmatch(xUnit,zUnit))
-			printf "   distance = {%g, %g, %g}%s,  |distance|=%g\t\t",distance[0],distance[1],distance[2],xUnit,norm(distance)
+			printf "   distance = {%g, %g, %g}%s,  |distance|=%g, %s=%g¡\t\t",distance[0],distance[1],distance[2],xUnit,norm(distance),ANGLE_SIGN,angle
 		else
-			printf "   distance = {%g (%s), %g (%s), %g (%s)}%s,  |distance|=%g\t\t",distance[0],xUnit,distance[1],yUnit,distance[2],zUnit,norm(distance)
+			printf "   distance = {%g (%s), %g (%s), %g (%s)}%s,  |distance|=%g, %s=%g\t\t",distance[0],xUnit,distance[1],yUnit,distance[2],zUnit,norm(distance),ANGLE_SIGN,angle
 		endif
 		if (numtype(ix+iy+iz + info.M[num2].ix + info.M[num2].iy + info.M[num2].iz)==0)
 			printf "   Æ(ijk) = [%g, %g, %g],   Æpoint = %g\r",(ix - info.M[num2].ix), (ix - info.M[num2].iy), (iz - info.M[num2].iz), (point - info.M[num2].point)
@@ -642,7 +646,7 @@ Static Function GizmoMarkerInfoButtonProc(ba) : ButtonControl
 			rl0 = info.M[num2].recip[p]
 			Redimension/N=(3,3) rl0, rl1
 			list =  Compare2ReciprocalLatticesList(rl0,rl1)
-			Variable angle=NumberByKey("axisRotationAngle",list,"=")
+			angle = NumberByKey("axisRotationAngle",list,"=")
 			Wave scatter=$(info.M[MarkerNum].wName)
 			if (angle>0)
 				printf "   rotation is about the axis {XYZ} = %s  by  %.3g¡\r",StringByKey("axisDirectionXYZ",list,"="),angle
