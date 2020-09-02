@@ -5,6 +5,7 @@
 	<date>2020-07-17T00:38:37.075Z</date>   <!-- Thursday, July 16, 2020 at 7:38:37 PM Central Daylight Time -->
 	<chemical_name_common>Ti3Al (Similar to Ti-7Al)</chemical_name_common>
 	<database_code db="ICSD">99779</database_code>
+	<database_code db="COD">1532767</database_code>
 
 	<space_group>
 		<id>194</id>

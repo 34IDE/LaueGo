@@ -8,6 +8,7 @@
 		<H-M>R -3 c:H</H-M>
 	</space_group>
 	<database_code db="ICSD">25778</database_code>
+	<database_code db="COD">9008081</database_code>
 	<cell>
 		<a unit="nm">0.4759092</a>
 		<b unit="nm">0.4759092</b>
@@ -42,14 +43,14 @@
 		<aniso_U_13>0.0003</aniso_U_13>
 		<aniso_U_23>0.0006</aniso_U_23>
 	</atom_site>
-	<citation id="primary">
+	<citation id="primary" doi="10.1524/zkri.1962.117.2-3.235">
 		icsd = 25778
 		old lattice constants: a=0.47589,  c=1.2991
 		<author>R.E. Newnham</author>
 		<author>Y.M. de Haan</author>
 		<journal>Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie</journal>
 		<volume>117</volume>
-		<year>1977</year>
+		<year>1962</year>
 		<pages>235 237</pages>
 		<title>Refinement of the Al2 O3-alpha, Ti2 O3, V2 O3 and Cr2 O3 structures</title>
 	</citation>

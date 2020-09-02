@@ -7,6 +7,8 @@
 		<H-M>Cmca</H-M>
 	</space_group>
 	<database_code db="ICSD">43388</database_code>
+	<database_code db="COD">9008085</database_code>
+
 	<cell>
 		<a unit="nm">0.4523</a>
 		<b unit="nm">0.7661</b>
@@ -17,21 +19,23 @@
 		<volume>0.156759780372</volume>
 		<temperature unit="C">20</temperature>
 	</cell>
+
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
 		<fract>0 0.1549 0.081</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso>0.00608</U_iso>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ga" n1="Ga">0.275</bond_chemical>
 
-	<citation>
+	<citation doi="10.1524/zkri.1962.117.4.293">
 		<journal>Zeitschrift fuer Kristallographie, Kristallgeometrie, Kristallphysik, Kristallchemie (-144,1977)</journal>
 		<volume>117</volume>
 		<year>1962</year>
 		<pages>293 300</pages>
-		<author>B.D. Sharma</author>
-		<author>J. Donohue</author>
+		<author>Brahama D. Sharma</author>
+		<author>Jerry Donohue</author>
 	</citation>
 
 	<comment>
