@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-09-12T17:29:53.488Z</date>   <!-- Saturday, September 12, 2020 at 12:29:53 PM Central Daylight Time -->
+	<chemical_name_common>Gallium(III) oxide β</chemical_name_common>
+	<chemical_formula>Ga2O3</chemical_formula>
+	<database_code db="COD">2004987</database_code>
+
+	<space_group>
+		<id>12:b1</id>
+		<IT_number>12</IT_number>
+		<system>monoclinic</system>
+		<H-M>C 1 2/m 1</H-M>
+		<Hall>-C 2y</Hall>
+		<Schoenflies>C2h^3</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">1.2214</a>
+		<b unit="nm">0.30371</b>
+		<c unit="nm">0.57981</c>
+		<alpha>90</alpha>
+		<beta>103.83</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="C">0.05</temperature>
+	</cell>
+
+	<atom_site>
+		<label>Ga1</label>
+		<symbol>Ga</symbol>
+		<fract>0.0905 0 0.7946</fract>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0038</U_iso>
+		<aniso_U_11 unit="Å^2">0.0044</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.004</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0033</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.0011</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Ga2</label>
+		<symbol>Ga</symbol>
+		<fract>0.15866 1/2 0.31402</fract>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<U_iso unit="Å^2">0.004</U_iso>
+		<aniso_U_11 unit="Å^2">0.0038</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0038</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0041</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.0004</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.1645 0 0.1098</fract>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<U_iso unit="Å^2">0.006</U_iso>
+		<aniso_U_11 unit="Å^2">0.0093</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0051</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0031</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.001</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.1733 0 0.5632</fract>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0056</U_iso>
+		<aniso_U_11 unit="Å^2">0.002</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0053</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0087</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.0001</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.9959 1/2 0.2566</fract>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0042</U_iso>
+		<aniso_U_11 unit="Å^2">0.0051</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0041</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0035</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.0015</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="Å" n0="Ga1" n1="O1">1.835</bond_chemical>
+	<bond_chemical unit="Å" n0="Ga1" n1="O2">1.863</bond_chemical>
+	<bond_chemical unit="Å" n0="Ga1" n1="O3">1.8330</bond_chemical>
+	<bond_chemical unit="Å" n0="Ga2" n1="O1">1.9370</bond_chemical>
+	<bond_chemical unit="Å" n0="Ga2" n1="O2">2.0740</bond_chemical>
+	<bond_chemical unit="Å" n0="Ga2" n1="O2">2.005</bond_chemical>
+	<bond_chemical unit="Å" n0="Ga2" n1="O3">1.935</bond_chemical>
+
+	<citation doi="10.1107/S0108270195016404">
+		<title>A Reinvestigation of β-Gallium Oxide</title>
+		<journal>Acta Crystallographica Section C</journal>
+		<volume>52</volume>
+		<year>1996</year>
+		<pages>1336 1338</pages>
+		<author>J. Åhman</author>
+		<author>G. Svensson</author>
+		<author>J. Albertsson</author>
+	</citation>
+</cif>
