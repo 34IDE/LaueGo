@@ -29,6 +29,8 @@
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 
+	<!-- <bond_chemical unit="nm" n0="Be" n1="Be">0.222563</bond_chemical> -->
+
 	<citation doi="10.1063/1.1698252">
 		<author>P. Gordon</author>
 		<title>A high temperature precision X-ray camera: some measurements of the thermal coefficients of expansion of beryllium</title>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-09-21T05:22:58.435Z</date>   <!-- Monday, September 21, 2020 at 12:22:58 AM Central Daylight Time -->
+	<chemical_name_common>MoTe2</chemical_name_common>
+	<chemical_formula>MoTe2</chemical_formula>
+	<database_code db="COD">9009147</database_code>
+
+	<space_group>
+		<id>194</id>
+		<IT_number>194</IT_number>
+		<system>hexagonal</system>
+		<H-M>P 63/m m c</H-M>
+		<Hall>-P 6c 2c</Hall>
+		<Schoenflies>D6h^4</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.35182</a>
+		<b unit="nm">0.35182</b>
+		<c unit="nm">1.39736</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>2</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Mo</label>
+		<symbol>Mo</symbol>
+		<fract>1/3 2/3 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Te</label>
+		<symbol>Te</symbol>
+		<fract>1/3 2/3 0.621</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Mo" n1="Te">0.2716</bond_chemical>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>280 281</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
+</cif>
+
+
