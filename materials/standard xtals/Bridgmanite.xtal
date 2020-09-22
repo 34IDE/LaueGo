@@ -3,12 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Bridgmanite</chemical_name_common>
 	<chemical_formula>MgSiO3</chemical_formula>
+	<database_code db="amcsd">3546</database_code>
+
 	<space_group>
 		<id>62:cab</id>
 		<IT_number>62</IT_number>
 		<H-M>Pbnm</H-M>
 	</space_group>
-	<database_code db="amcsd">3546</database_code>
+
 	<cell>
 		<a unit="nm">0.47780</a>
 		<b unit="nm">0.49298</b>
@@ -18,6 +20,7 @@
 		<gamma>90</gamma>
 		<temperature unit="C">20</temperature>
 	</cell>
+
 	<atom_site>
         <label>Mg</label>
         <symbol>Mg</symbol>
@@ -66,6 +69,12 @@
 		<aniso_U_13 unit="Å^2">0.0009</aniso_U_13>
 		<aniso_U_23 unit="Å^2">0.0006</aniso_U_23>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Mg" n1="O1">0.2017 0.2098</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg" n1="O2">0.2055 0.2282</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O1">0.1800</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O2">0.1783 0.1795</bond_chemical>
+
 	<citation>
 		http://rruff.geo.arizona.edu/doclib/am/vol89/AM89_807.pdf
 		<author>D.P. Dobson</author>
