@@ -3,10 +3,12 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Wurtzite (B4)</chemical_name_common>
 	<chemical_formula>ZnS</chemical_formula>
+
 	<space_group>
 		<IT_number>186</IT_number>
 		<H-M>P63mc</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.382</a>
 		<b unit="nm">0.382</b>
@@ -28,5 +30,8 @@
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Zn" n1="S">0.2340</bond_chemical>
+
 	<citation>http://www.chem.ox.ac.uk/icl/heyes/structure_of_solids/Lecture2/Lec2.html#anchor9</citation>
 </cif>

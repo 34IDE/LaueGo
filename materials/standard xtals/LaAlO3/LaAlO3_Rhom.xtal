@@ -48,6 +48,8 @@
 		<aniso_U_23 unit="Å^2">-0.017</aniso_U_23>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Al" n1="O">0.1900</bond_chemical>
+
 	<citation>
 		<author>H. Lehnert</author>
 		<author>H. Boysen</author>

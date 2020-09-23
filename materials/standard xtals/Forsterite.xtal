@@ -60,6 +60,9 @@
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Si" n1="O3">0.1613</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O2">0.1608</bond_chemical>
+
 	<citation id="primary">
 		https://materials.springer.com/isp/crystallographic/docs/sd_1001664
 		<author>Moller</author>

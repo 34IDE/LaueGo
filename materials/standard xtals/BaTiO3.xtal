@@ -35,4 +35,8 @@
 		<symbol>O</symbol>
 		<fract>0.5 0 0.486</fract>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Ti" n1="O1">0.1972</bond_chemical>
+	<bond_chemical unit="nm" n0="Ti" n1="O2">0.2000</bond_chemical>
+
 </cif>

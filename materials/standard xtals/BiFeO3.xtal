@@ -2,11 +2,13 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>BiFeO3</chemical_name_common>
+
 	<space_group>
 		<id>161:H</id>
 		<IT_number>161</IT_number>
 		<H-M>R3c:H</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.557881</a>
 		<b unit="nm">0.557881</b>
@@ -15,6 +17,7 @@
 		<beta>90</beta>
 		<gamma>120</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Bi</label>
 		<symbol>Bi</symbol>
@@ -30,6 +33,9 @@
 		<symbol>O</symbol>
 		<fract>0.4469 0.0181 0.95183</fract>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Fe" n1="O">0.2105 0.1953</bond_chemical>
+
 	<citation>
 		<author>Palewicz</author>
 		<author>Przenioslo</author>

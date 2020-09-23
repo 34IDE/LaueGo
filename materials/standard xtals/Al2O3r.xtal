@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Sapphire (rhombohedral)</chemical_name_common>
 	<chemical_formula>Al2O3</chemical_formula>
+
 	<space_group>
 		<id>167:R</id>
 		<IT_number>167</IT_number>
 		<H-M>R-3c:R</H-M>
 	</space_group>
+
 	<cell>
 		<!--   lattice constants from SRM 1976c for the lattice constants -->
 		<a unit="nm">0.51291599</a>
@@ -17,6 +19,7 @@
 		<beta>55.281356</beta>
 		<gamma>55.281356</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
@@ -33,4 +36,6 @@
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Al" n1="O">0.1854</bond_chemical>
 </cif>

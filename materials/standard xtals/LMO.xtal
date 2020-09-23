@@ -56,6 +56,9 @@
 		<B_iso unit="Å^2">0.43</B_iso>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Mn" n1="O1">0.1968</bond_chemical>
+	<bond_chemical unit="nm" n0="Mn" n1="O2">0.1906</bond_chemical>
+
 	<citation id="primary" doi="10.1103/PhysRevB.57.R3189">
 		<author>J. Rodriguez-Carvajal</author>
 		<author>M. Hennion</author>

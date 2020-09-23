@@ -83,6 +83,9 @@
 		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Ga" n1="O1">0.2123</bond_chemical>
+	<bond_chemical unit="nm" n0="Ga" n1="O2">0.1922</bond_chemical>
+
 	<citation doi="10.1107/S0108270194011820">
 		lattice constant refined by JZT
 		<author>James F. Britten</author>

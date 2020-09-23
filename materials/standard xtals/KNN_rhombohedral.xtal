@@ -56,6 +56,8 @@
 		<valence>-2</valence>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Na1" n1="O1">0.1930 0.2072</bond_chemical>
+
 	<citation doi="doi:10.1107/S0108768109011057">
 		<title>Structures of K0.05Na0.95NbO3 (50-300 K) and K0.30Na0.70NbO3 (100-200 K)</title>
 		<journal>Acta Crystallographica, Section B</journal>

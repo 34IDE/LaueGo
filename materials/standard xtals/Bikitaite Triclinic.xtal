@@ -183,6 +183,34 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Si11" n1="O11">0.1579</bond_chemical>
+	<bond_chemical unit="nm" n0="Si11" n1="O13">0.1672</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Si12" n1="O13">0.1621</bond_chemical>
+	<bond_chemical unit="nm" n0="Si12" n1="O14">0.1631</bond_chemical>
+	<bond_chemical unit="nm" n0="Si12" n1="O15">0.1578</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Si23" n1="O16">0.1626</bond_chemical>
+	<bond_chemical unit="nm" n0="Si23" n1="O25">0.1580</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Si22" n1="O25">0.1595</bond_chemical>
+	<bond_chemical unit="nm" n0="Si22" n1="O23">0.1642</bond_chemical>
+	<bond_chemical unit="nm" n0="Si22" n1="O24">0.1609</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Al21" n1="O21">0.1769</bond_chemical>
+	<bond_chemical unit="nm" n0="Al21" n1="O22">0.1783</bond_chemical>
+	<bond_chemical unit="nm" n0="Al21" n1="O23">0.1763</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Al13" n1="O15">0.1755</bond_chemical>
+	<bond_chemical unit="nm" n0="Al13" n1="O26">0.1772</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Li1" n1="O16">0.1992</bond_chemical>
+	<bond_chemical unit="nm" n0="Li1" n1="O12">0.2085</bond_chemical>
+	<bond_chemical unit="nm" n0="Li1" n1="O17">0.2052</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Li2" n1="O22">0.2020</bond_chemical>
+	<bond_chemical unit="nm" n0="Li2" n1="O26">0.1970</bond_chemical>
+
 	<citation doi="10.2138/am-2002-1018">
 		<title>High-pressure behaviour of bikitaite: An integrated theoretical and experimental approach</title>
 		<journal>American Mineralogist</journal>

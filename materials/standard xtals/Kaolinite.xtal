@@ -12,6 +12,7 @@
 		<H-M>C1c1</H-M>
 		<!--   9:b1, Monoclinic, H-M='Cc:b1',  H-M='C1c1',  Hall='C -2yc' -->
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.5148</a>
 		<b unit="nm">0.892</b>
@@ -88,6 +89,30 @@
 		<symbol>O</symbol>
 		<fract>0.046 0.333 0.424</fract>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Al1" n1="O1">0.2033</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O2">0.2026</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O3">0.2034</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O7">0.2033</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O8">0.2034</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O9">0.2026</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Al2" n1="O1">0.2033</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O2">0.2034</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O3">0.2026</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O7">0.2033</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O8">0.2026</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O9">0.2034</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Si1" n1="O1">0.1602</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O4">0.1601</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O5">0.1615</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O6">0.1578</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Si2" n1="O2">0.1602</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O4">0.1593</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O5">0.1582</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O6">0.1619</bond_chemical>
 
 	<citation>
 		<author>W. Gruner</author>

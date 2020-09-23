@@ -58,6 +58,9 @@
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="FeM" n1="O">0.2058</bond_chemical>
+	<bond_chemical unit="nm" n0="FeT" n1="O">0.1889</bond_chemical>
+
 	<citation doi="10.1107/S0567740881004597">
 		<author>M.E. Fleet</author>
 		<title>The structure of magnetite.</title>

@@ -42,6 +42,8 @@
 		<aniso_U_23>0</aniso_U_23>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Fe" n1="O">0.1944 0.2114</bond_chemical>
+
 	<citation doi="10.1107/S0108768194002284">
 		<author>E.N. Maslen</author>
 		<author>V.A. Streltsov</author>

@@ -69,6 +69,9 @@
 		<aniso_U_23>-0.00695</aniso_U_23>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="C" n1="O1">0.1278</bond_chemical>
+	<bond_chemical unit="nm" n0="C" n1="O2">0.1284</bond_chemical>
+
 	<citation id="primary">
 		<author>J.P.R. de Villiers</author>
 		<journal>American Mineralogist</journal>

@@ -119,6 +119,25 @@
 		<valence>-2</valence>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Al1" n1="O4">0.1741</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O2">0.1735</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O6">0.1736</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Al2" n1="O1">0.1759</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O3">0.1754</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O1">0.1734</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O3">0.1734</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O8">0.1734</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Al3" n1="O1">0.1759</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O4">0.1762</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O5">0.1744</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O7">0.1759</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Al4" n1="O2">0.1754</bond_chemical>
+	<bond_chemical unit="nm" n0="Al4" n1="O3">0.1730</bond_chemical>
+	<bond_chemical unit="nm" n0="Al4" n1="O7">0.1763</bond_chemical>
+
 	<citation doi="10.1002/zaac.19814750423">
 		<author>A.R. Schulze</author>
 		<author>Hk. Mueller Buschbaur</author>

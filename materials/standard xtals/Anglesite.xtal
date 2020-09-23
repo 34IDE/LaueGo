@@ -94,9 +94,9 @@
 	<bond_chemical unit="nm" n0="S" n1="O1">0.1461</bond_chemical>
 	<bond_chemical unit="nm" n0="S" n1="O2">0.1473</bond_chemical>
 	<bond_chemical unit="nm" n0="S" n1="O3">0.1486</bond_chemical>
-	<bond_chemical unit="nm" n0="Pb" n1="O1">0.26086</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Pb" n1="O1">0.26086</bond_chemical>
 	<bond_chemical unit="nm" n0="Pb" n1="O2">0.2610</bond_chemical>
-	<bond_chemical unit="nm" n0="Pb" n1="O3">0.26537</bond_chemical>
+	<bond_chemical unit="nm" n0="Pb" n1="O3">0.26537</bond_chemical> --> 
 
 	<citation>
 		<author>S.D. Jacobsen</author>

@@ -43,7 +43,7 @@
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Mg" n1="O">0.19208</bond_chemical>
-	<bond_chemical unit="nm" n0="A;" n1="O">0.19272</bond_chemical>
+	<bond_chemical unit="nm" n0="Al" n1="O">0.19272</bond_chemical>
 
 	<citation doi="10.1088/0022-3719/9/9/002">
 		page numbers start with &quot;L&quot;

@@ -55,6 +55,11 @@
 		<valence>-2</valence>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="La" n1="O1">0.2415</bond_chemical>
+	<bond_chemical unit="nm" n0="La" n1="O2">0.2419</bond_chemical>
+	<bond_chemical unit="nm" n0="Ga" n1="O1">0.1977</bond_chemical>
+	<bond_chemical unit="nm" n0="Ga" n1="O2">0.1980</bond_chemical>
+
 	<citation>
 		<title>Crystal structure of La1-x Ndx Ga O3 single crystals (0 &lt; x &lt; 0.2)</title>
 		<journal>Materials Research Bulletin</journal>

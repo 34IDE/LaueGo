@@ -3,11 +3,13 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Lanthnum Aluminate</chemical_name_common>
 	<chemical_formula>LaAlO3</chemical_formula>
+	<database_code db="ICSD">92555</database_code>
+
 	<space_group>
 		<id>167:H</id>
 		<H-M>R-3c:H</H-M>
 	</space_group>
-	<database_code db="ICSD">92555</database_code>
+
 	<cell>
 		<a unit="nm">0.536382</a>
 		<b unit="nm">0.536382</b>
@@ -17,6 +19,7 @@
 		<gamma>120</gamma>
 		<temperature unit="C">20</temperature>
 	</cell>
+
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
@@ -46,6 +49,9 @@
 		<aniso_U_23 unit="Å^2">-0.017</aniso_U_23>
 		<valence>-2</valence>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Al" n1="O">0.1900</bond_chemical>
+
 	<citation>
 		<author>H. Lehnert</author>
 		<author>H. Boysen</author>

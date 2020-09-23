@@ -70,8 +70,8 @@
 		<aniso_U_23 unit="Å^2">0.0006</aniso_U_23>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Mg" n1="O1">0.2017 0.2098</bond_chemical>
-	<bond_chemical unit="nm" n0="Mg" n1="O2">0.2055 0.2282</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Mg" n1="O1">0.2017 0.2098</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg" n1="O2">0.2055 0.2282</bond_chemical> -->
 	<bond_chemical unit="nm" n0="Si" n1="O1">0.1800</bond_chemical>
 	<bond_chemical unit="nm" n0="Si" n1="O2">0.1783 0.1795</bond_chemical>
 

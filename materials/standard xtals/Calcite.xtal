@@ -58,6 +58,8 @@
 		<valence>-2</valence>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="C" n1="O">0.1284</bond_chemical>
+
 	<citation>
 		<author>E.N. Maslen</author>
 		<author>V.A. Streltsov</author>

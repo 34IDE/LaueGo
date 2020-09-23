@@ -2,10 +2,12 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Ruthenium Oxide (Rutile)</chemical_name_common>
+
 	<space_group>
 		<IT_number>136</IT_number>
 		<H-M>P42/mnm</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.4492</a>
 		<b unit="nm">0.4492</b>
@@ -28,4 +30,7 @@
 		<fract>0.3001 0.3001 0</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Ru" n1="O">0.1906 0.2006</bond_chemical>
+
 </cif>

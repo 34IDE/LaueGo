@@ -46,6 +46,8 @@
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Ta" n1="S">0.2470</bond_chemical>
+
 	<citation doi="10.1103/PhysRevB.56.13757">
 		<author>A. Spijkerman</author>
 		<author>J.L. de Boer</author>

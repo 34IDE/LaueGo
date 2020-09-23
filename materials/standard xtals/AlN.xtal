@@ -44,6 +44,8 @@
 		<U_iso unit="Å^2">0.0236838</U_iso>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Al" n1="N"> 0.1927</bond_chemical>
+
 	<citation id="primary">
 		<title>Rietveld-refinement study of aluminium and gallium nitrides</title>
 		<journal>Journal of Alloys and Compounds</journal>

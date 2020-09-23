@@ -68,6 +68,12 @@
 		<U_iso>0.0061</U_iso>
 	</atom_site>
 
+
+	<bond_chemical unit="nm" n0="Zr" n1="O1">0.1845</bond_chemical>
+	<bond_chemical unit="nm" n0="Zr" n1="O2">0.2046</bond_chemical>
+	<bond_chemical unit="nm" n0="Pb" n1="O2">0.2559</bond_chemical>
+	<bond_chemical unit="nm" n0="Pb" n1="O1">0.2892</bond_chemical>
+
 	<citation doi="10.1103/PhysRevB.61.8687">
 		<author>B. Noheda</author>
 		<author>J.A. Gonzalo</author>

@@ -3,12 +3,14 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Baddeleyite</chemical_name_common>
 	<chemical_formula>ZrO2</chemical_formula>
+	<database_code db="amcsd">0009231</database_code>
+
 	<space_group>
 		<id>14:b1</id>
 		<IT_number>14</IT_number>
 		<H-M>P 1 21/c 1</H-M>
 	</space_group>
-	<database_code db="amcsd">0009231</database_code>
+
 	<cell>
 		<a unit="nm">0.5169</a>
 		<b unit="nm">0.5232</b>
@@ -17,6 +19,7 @@
 		<beta>99.25</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Zr</label>
 		<valence>4</valence>
@@ -35,6 +38,10 @@
 		<fract>0.451 0.758 0.479</fract>
 		<U_iso>0.01773</U_iso>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Zr" n1="O1">0.2100 0.2152</bond_chemical>
+	<bond_chemical unit="nm" n0="Zr" n1="O2">0.2180 0.2265</bond_chemical>
+
 	<citation>
 		<author>J.D. McCullough</author>
 		<author>K.N. Trueblood</author>

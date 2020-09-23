@@ -29,5 +29,6 @@
 		<symbol>O</symbol>
 		<fract>0.5 0.5 0.0</fract>
 	</atom_site>
+	<bond_chemical unit="nm" n0="Al" n1="O">0.1895</bond_chemical>
 	<citation>Yu, Xie, Boysen, Golden Book of Phase Transitions, Wroclaw (2002) 1993 1, 1-123, ICSD</citation>
 </cif>

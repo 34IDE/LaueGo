@@ -33,6 +33,8 @@
 		<WyckoffSymbol>f</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="V" n1="O">0.1921 0.1933</bond_chemical>
+
 	<citation id="primary" doi="10.1103/PhysRevB.10.490">
 		<author>D.B. McWhan</author>
 		<author>M. Marezio</author>
