@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-09-23T21:26:10.676Z</date>   <!-- Wednesday, September 23, 2020 at 4:26:10 PM Central Daylight Time -->
+	<chemical_name_common>Tin-α (gray), this best fits the indexation. Tin does have a lot reflections!! -Wenjun</chemical_name_common>
+	<!-- <chemical_name_common>Tin</chemical_name_common> -->
+	<chemical_formula>Sn</chemical_formula>
+	<database_code db="COD">9012005</database_code>
+
+	<space_group>
+		<id>225</id>
+		<IT_number>225</IT_number>
+		<system>cubic</system>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
+		<Schoenflies>Oh^5</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.583146</a>
+		<b unit="nm">0.583146</b>
+		<c unit="nm">0.583146</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="C">25</temperature>
+	</cell>
+
+	<atom_site>
+		<label>Sn</label>
+		<symbol>Sn</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<citation doi="10.1063/1.1698520">
+		<title>The precision determination of lattice constants by the powder and rotation crystal methods and applications Locality: synthetic Sample: at T = 25 C</title>
+		<journal>Journal of Applied Physics</journal>
+		<volume>20</volume>
+		<year>1949</year>
+		<pages>726 734</pages>
+		<author>M.E. Straumanis</author>
+	</citation>
+
+	<comment>
+		As pointed out by Prof. Dr. Klaus-Dieter Liss from Technion - Israel
+		Institute of Technology in his 2018-12-07 07:39 report, the cell
+		constants in this entry were actually recorded in kX units, not in \%A
+		units as the CIF standard mandates. To make data uniform and to match
+		the definition of the CIF _cell_length_* data items, all cell
+		constants were multiplied by the 1.00202 coefficient (taken from Wood,
+		E. A.  The Conversion Factor for kX Units to Angstrom Units Journal
+		of Applied Physics, AIP Publishing, 1947, 18, 929 DOI:
+		10.1063/1.1697570, https://doi.org/10.1063/1.1697570).
+
+		In addition, in the original entry the _cell_length_c was apparently
+		taken from the wrong column, under (incorrect) assumption of the cubic
+		crystal form. Both _cell_length_c and the spacegroup were corrected as
+		well. The space group was updated after consulting other COD entries
+		with close cell constants, in particular COD 7222460
+		(http://www.crystallography.net/cod/7222460.html).
+	
+		Saulius Grazulis
+		2018-12-10
+	</comment>
+</cif>
