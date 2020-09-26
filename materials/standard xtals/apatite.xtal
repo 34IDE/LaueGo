@@ -67,7 +67,7 @@
 		<symbol>O</symbol>
 		<fract>0 0 0.1999</fract>
 		<occupancy>0.5</occupancy>
-		<valence>-2</valence>
+		<valence>-1</valence>
 	</atom_site>
 	<atom_site>
 		<label>H</label>
