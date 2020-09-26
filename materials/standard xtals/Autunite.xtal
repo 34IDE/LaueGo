@@ -182,6 +182,19 @@
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="P" n1="O3">0.1520</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O4">0.1528</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O5">0.1534</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O6">0.1537</bond_chemical>
+
+	<bond_chemical unit="nm" n0="U" n1="O1">0.1783</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O2">0.1794</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O2">0.2264</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O3">0.2264</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O4">0.2275</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O5">0.2288</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O6">0.2291</bond_chemical>
+
 	<citation>
 		<author>A J Locock</author>
 		<author>P C Burns</author>
