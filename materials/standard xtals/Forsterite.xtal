@@ -60,8 +60,15 @@
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Si" n1="O1">0.15906</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O2">0.16081</bond_chemical>
 	<bond_chemical unit="nm" n0="Si" n1="O3">0.1613</bond_chemical>
-	<bond_chemical unit="nm" n0="Si" n1="O2">0.1608</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg1" n1="O2">0.2071 0.2140</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg1" n1="O1">0.2106</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg1" n1="O3">0.2140</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg2" n1="O2">0.2069</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg2" n1="O3">0.2071</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg2" n1="O1">0.2179</bond_chemical>
 
 	<citation id="primary">
 		https://materials.springer.com/isp/crystallographic/docs/sd_1001664

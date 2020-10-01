@@ -268,6 +268,14 @@
 		<aniso_U_23 unit="Å^2">0.007</aniso_U_23>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Nb1" n1="O3">0.1859</bond_chemical>
+	<bond_chemical unit="nm" n0="Nb2" n1="O5">0.1866</bond_chemical>
+	<bond_chemical unit="nm" n0="Nb2" n1="O6">0.1875</bond_chemical>
+	<bond_chemical unit="nm" n0="Nb2" n1="O8">0.1981</bond_chemical>
+	<bond_chemical unit="nm" n0="Nb2" n1="O2">0.1984</bond_chemical>
+	<bond_chemical unit="nm" n0="Nb2" n1="O4">0.2126</bond_chemical>
+	<bond_chemical unit="nm" n0="Nb2" n1="O3">0.2128</bond_chemical>
+
 	<citation doi="doi:10.1107/S0108768109011057">
 		<title>Structures of K0.05Na0.95NbO3 (50-300 K) and K0.30Na0.70NbO3 (100-200 K)</title>
 		<journal>Acta Crystallographica, Section B</journal>

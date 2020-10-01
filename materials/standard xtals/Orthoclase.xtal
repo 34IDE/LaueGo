@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-09-29T20:35:54.871Z</date>   <!-- Tuesday, September 29, 2020 at 3:35:54 PM Central Daylight Time -->
+	<chemical_name_common>Orthoclase</chemical_name_common>
+	<chemical_formula>Si3 Al K0.86 Na0.1 O8</chemical_formula>
+	<database_code db="amcsd">0000320</database_code>
+
+	<space_group>
+		<id>12:b1</id>
+		<IT_number>12</IT_number>
+		<system>monoclinic</system>
+		<H-M>C 1 2/m 1</H-M>
+		<Hall>-C 2y</Hall>
+		<Schoenflies>C2h^3</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.85632</a>
+		<b unit="nm">1.2963</b>
+		<c unit="nm">0.72099</c>
+		<alpha>90</alpha>
+		<beta>116.073</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Si1</label>
+		<symbol>Si</symbol>
+		<fract>0.0095 0.1842 0.2247</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>j</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.01748</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01254</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0119</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.00291</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00747</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.0019</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Al</label>
+		<symbol>Al</symbol>
+		<fract>0.0095 0.1842 0.2247</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>j</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.01748</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01254</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0119</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.00291</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00747</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.0019</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>K</label>
+		<symbol>K</symbol>
+		<fract>0.284 0 0.1388</fract>
+		<occupancy>0.86</occupancy>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.019</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0304</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.02533</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00659</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>Na</label>
+		<symbol>Na</symbol>
+		<fract>0.284 0 0.1388</fract>
+		<occupancy>0.1</occupancy>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.019</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0304</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.02533</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00659</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>Si2</label>
+		<symbol>Si</symbol>
+		<fract>0.7085 0.1176 0.3446</fract>
+		<WyckoffSymbol>j</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.01748</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01203</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.01393</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.00025</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00697</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00038</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O_A(1)</label>
+		<symbol>O</symbol>
+		<fract>0 0.1451 0</fract>
+		<WyckoffSymbol>g</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.02698</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0195</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.02381</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.01203</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O_A(2)</label>
+		<symbol>O</symbol>
+		<fract>0.6365 0 0.2853</fract>
+		<WyckoffSymbol>i</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.02457</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01228</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.01938</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00418</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O_B</label>
+		<symbol>O</symbol>
+		<fract>0.8256 0.1459 0.2279</fract>
+		<WyckoffSymbol>j</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.02761</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.03103</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.02824</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.00304</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.01862</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00203</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O_C</label>
+		<symbol>O</symbol>
+		<fract>0.0353 0.3118 0.2599</fract>
+		<WyckoffSymbol>j</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.02102</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01773</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.02216</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.0038</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00811</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.00456</aniso_U_23>
+	</atom_site>
+	<atom_site>
+		<label>O_D</label>
+		<symbol>O</symbol>
+		<fract>0.1818 0.1252 0.408</fract>
+		<WyckoffSymbol>j</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.02419</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.02026</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.01266</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.00177</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00291</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00165</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Si2" n1="O_B">0.160925</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O_D">0.161274</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O_C">0.16168</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O_A(2)">0.162947</bond_chemical>
+	<bond_chemical unit="nm" n0="Al" n1="O_B">0.166099</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O_B">0.166099</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O_A(1)">0.166502</bond_chemical>
+	<bond_chemical unit="nm" n0="Al" n1="O_A(1)">0.166502</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O_D">0.167165</bond_chemical>
+	<bond_chemical unit="nm" n0="Al" n1="O_D">0.167165</bond_chemical>
+	<bond_chemical unit="nm" n0="Al" n1="O_C">0.167329</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O_C">0.167329</bond_chemical>
+
+	<citation>
+		<title>Neutron diffraction refinement of an ordered orthoclase structure</title>
+		<journal>American Mineralogist</journal>
+		<volume>58</volume>
+		<year>1973</year>
+		<pages>500 507</pages>
+		<author>E. Prince E</author>
+		<author>G. Donnay G</author>
+		<author>R.F. Martin</author>
+		from Himalaya mine, California, USA
+	</citation>
+</cif>

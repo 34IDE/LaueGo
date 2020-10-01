@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-10-01T00:25:14.891Z</date>   <!-- Wednesday, September 30, 2020 at 7:25:14 PM Central Daylight Time -->
 	<chemical_name_common>Ferrosilite</chemical_name_common>
 	<chemical_formula>FeSiO3</chemical_formula>
 	<database_code db="COD">9006422</database_code>
 
 	<space_group>
-		<IT_number>62</IT_number>
+		<id>61</id>
+		<IT_number>61</IT_number>
+		<system>orthorhombic</system>
 		<H-M>P b c a</H-M>
 		<Hall>-P 2ac 2ab</Hall>
+		<Schoenflies>D2h^15</Schoenflies>
 	</space_group>
 
 	<cell>
@@ -18,79 +23,105 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>16</formula_units>
+		<Pressure unit="Gpa">0</Pressure>
 	</cell>
 
 	<atom_site>
 		<label>FeM1</label>
 		<symbol>Fe</symbol>
 		<fract>0.3758 0.6539 0.8741</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00456</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>FeM2</label>
 		<symbol>Fe</symbol>
 		<fract>0.3777 0.4855 0.3662</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00684</U_iso>
 	</atom_site>
-
 	<atom_site>
 		<label>SiTA</label>
 		<symbol>Si</symbol>
 		<fract>0.2724 0.339 0.0486</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00367</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>SiTB</label>
 		<symbol>Si</symbol>
 		<fract>0.4732 0.3346 0.789</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00279</U_iso>
 	</atom_site>
-
 	<atom_site>
 		<label>O1a</label>
 		<symbol>O</symbol>
-		<fract>0.18470 0.33400 0.039</fract>
+		<fract>0.1847 0.334 0.039</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00595</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O2a</label>
 		<symbol>O</symbol>
 		<fract>0.3119 0.4961 0.06</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00659</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O3a</label>
 		<symbol>O</symbol>
 		<fract>0.3023 0.236 0.818</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00735</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O1b</label>
 		<symbol>O</symbol>
 		<fract>0.5611 0.3374 0.785</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00443</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>O2b</label>
 		<symbol>O</symbol>
-		<fract> 0.433 0.4804 0.693</fract>
-		<U_iso unit="Å^2">0.O2b</U_iso>
+		<fract>0.433 0.4804 0.693</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O3b</label>
 		<symbol>O</symbol>
-		<fract> 0.4477 0.2027 0.584</fract>
+		<fract>0.4477 0.2027 0.584</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<U_iso unit="Å^2">0.00608</U_iso>
 	</atom_site>
 
+
+	<bond_chemical unit="nm" n0="SiTB" n1="O2b">0.159719</bond_chemical>
+	<bond_chemical unit="nm" n0="SiTA" n1="O2a">0.160139</bond_chemical>
+	<bond_chemical unit="nm" n0="SiTA" n1="O1a">0.161659</bond_chemical>
+	<bond_chemical unit="nm" n0="SiTB" n1="O1b">0.161919</bond_chemical>
+	<bond_chemical unit="nm" n0="SiTA" n1="O3a">0.162361 0.166081</bond_chemical>
+	<bond_chemical unit="nm" n0="SiTB" n1="O3b">0.165035 0.167517</bond_chemical>
+
+	<bond_chemical unit="nm" n0="FeM1" n1="O2b">0.2118</bond_chemical>
+	<bond_chemical unit="nm" n0="FeM1" n1="O1a">0.2082</bond_chemical>
+	<bond_chemical unit="nm" n0="FeM1" n1="O1b">0.2132 0.2195</bond_chemical>
+
+	<bond_chemical unit="nm" n0="FeM2" n1="O2a">0.2013</bond_chemical>
+	<bond_chemical unit="nm" n0="FeM2" n1="O2b">0.2013</bond_chemical>
+	<bond_chemical unit="nm" n0="FeM2" n1="O1b">0.2117</bond_chemical>
+
+
 	<citation doi="10.1007/s002690050042">
-		<author>D.A. Hugh-Jones</author>
-		<author>A. Chopelas</author>
-		<author>R.J. Angel</author>
+		<title>Tetrahedral compression in (Mg,Fe)SiO3 orthopyroxenes Sample: P = 0 GPa</title>
 		<journal>Physics and Chemistry of Minerals</journal>
 		<volume>24</volume>
 		<year>1997</year>
 		<pages>301 310</pages>
-		<title>Tetrahedral compression in (Mg,Fe)SiO3 orthopyroxenes Sample: P = 0 GPa</title>
+		<author>D.A. Hugh-Jones</author>
+		<author>A. Chopelas</author>
+		<author>R.J. Angel</author>
 	</citation>
 </cif>

@@ -28,6 +28,7 @@
 		<aniso_U_11>0.00443</aniso_U_11>
 		<aniso_U_22>0.00443</aniso_U_22>
 		<aniso_U_33>0.00443</aniso_U_33>
+		<valence>2</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
@@ -41,6 +42,7 @@
 		<aniso_U_12>0.00057</aniso_U_12>
 		<aniso_U_13>0.00057</aniso_U_13>
 		<aniso_U_23>0.00057</aniso_U_23>
+		<valence>3</valence>
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 
