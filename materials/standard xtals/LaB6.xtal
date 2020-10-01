@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-09-29T16:16:39.760Z</date>   <!-- Tuesday, September 29, 2020 at 11:16:39 AM Central Daylight Time -->
+	<chemical_name_common>Lanthanum hexaboride</chemical_name_common>
+	<chemical_formula>LaB6</chemical_formula>
+	<database_code db="COD">1000055</database_code>
+
+	<space_group>
+		<id>221</id>
+		<IT_number>221</IT_number>
+		<system>cubic</system>
+		<H-M>P m -3 m</H-M>
+		<Hall>-P 4 2 3</Hall>
+		<Schoenflies>Oh^1</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.4156826</a>
+		<b unit="nm">0.4156826</b>
+		<c unit="nm">0.4156826</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>1</formula_units>
+		<temperature unit="C">22.5</temperature>
+	</cell>
+
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00858</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>B</label>
+		<symbol>B</symbol>
+		<fract>1/2 1/2 0.2021</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.009</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="B" n1="B">0.1751</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="La" n1="B">0.3057</bond_chemical> -->
+
+	<citation id="primary">
+		NIST lattice parameter 660c (2015)
+		a = 0.4156826 nm ± 0.000008 nm  at 22.5°C
+		https://www-s.nist.gov/srmors/certificates/660c.pdf
+		<!--   value from P. Zavalij is a = 0.4157597 nm -->
+	</citation>
+	
+	<citation id="2" doi="10.1103/PhysRevA.69.042101">
+		<author>C.T. Chantler</author>
+		<author>C.Q. Tran</author>
+		<author>D.J. Cookson</author>
+		<journal>Phys. Rev. A</journal>
+		<pages>042101</pages>
+		<volume>69</volume>
+		<year>2004</year>
+		<title>
+		Precise measurement of the lattice spacing of LaB6 standard powder by 
+		the x-ray extended range technique using synchrotron radiation
+		</title>
+	</citation>
+</cif>
