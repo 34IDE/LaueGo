@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <isotopes xmlns="http://sector34.xray.aps.anl.gov/34ide:isotopes">
+<!-- https://www.nist.gov/pml/atomic-weights-and-isotopic-compositions-relative-atomic-masses -->
 <!-- contents of <is>:  MassNumber AtomicMass NaturalFraction -->
 
 <Z1>
