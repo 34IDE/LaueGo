@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-10-07T19:18:55.549Z</date>   <!-- Wednesday, October 7, 2020 at 2:18:55 PM Central Daylight Time -->
+	<chemical_name_common>Perovskite prototype</chemical_name_common>
+	<chemical_formula>CaTiO3</chemical_formula>
+	<database_code db="COD">9006172</database_code>
+
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.53785</a>
+		<b unit="nm">0.54419</b>
+		<c unit="nm">0.764</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="K">298</temperature>
+	</cell>
+
+	<atom_site>
+		<label>Ca</label>
+		<symbol>Ca</symbol>
+		<fract>0.9928 0.033 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.01646</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>Ti</label>
+		<symbol>Ti</symbol>
+		<fract>0 1/2 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0076</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.0722 0.4893 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0076</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.7174 0.2842 0.0346</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00887</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Ti" n1="O2">0.193889 0.195679</bond_chemical>
+	<bond_chemical unit="nm" n0="Ti" n1="O1">0.194995</bond_chemical>
+
+	<citation doi="10.1007/BF00200119">
+		<title>X-ray powder diffraction study of CaTiO3 perovskite at high temperatures</title>
+		<journal>Physics and Chemistry of Minerals</journal>
+		<volume>20</volume>
+		<year>1993</year>
+		<pages>171 175</pages>
+		<author>X. Liu</author>
+		<author>R.C. Liebermann</author>
+	</citation>
+</cif>
