@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 4.0
-#pragma version = 1.2
+#pragma version = 1.3
 #include  "Elements", version>=1.0
 #include "PhysicalConstants", version>=2.02
 
@@ -19,6 +19,11 @@ Menu "Analysis"
 	End
 End
 
+Static Constant NA			= 6.02214076e+23		// Avagadro's number
+Static Constant mn_kg		= 1.67492749804e-27	// mass of neutron (kg)
+Static Constant e_C		= 1.602176634e-19		// elementary Charge (C)
+Static Constant c_ms		= 299792458				// speed of light (m/s) (exact)
+Static Constant h_Js		= 6.62607015e-34		// Planck constant (J s)
 
 
 
