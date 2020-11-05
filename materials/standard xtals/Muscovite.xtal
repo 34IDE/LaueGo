@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-11-04T23:06:03.529Z</date>   <!-- Wednesday, November 4, 2020 at 5:06:03 PM Central Standard Time -->
+	<chemical_name_common>Muscovite 2M1</chemical_name_common>
+	<chemical_formula>(Al2.88 Fe0.12) O12 Si3 K H</chemical_formula>
+	<database_code db="COD">1100010</database_code>
+	<database_code db="amcsd">0018219</database_code>
+
+	<space_group>
+		<id>15:b1</id>
+		<IT_number>15</IT_number>
+		<system>monoclinic</system>
+		<H-M>C 1 2/c 1</H-M>
+		<Hall>-C 2yc</Hall>
+		<Schoenflies>C2h^6</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.5194</a>
+		<b unit="nm">0.8996</b>
+		<c unit="nm">2.009599</c>
+		<alpha>90</alpha>
+		<beta>95.18</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Al1</label>
+		<symbol>Al</symbol>
+		<fract>0.2514 0.0848 0.0004</fract>
+		<occupancy>0.94</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Fe1</label>
+		<symbol>Fe</symbol>
+		<fract>0.2514 0.0848 0.0004</fract>
+		<occupancy>0.06</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.4607 0.944 0.0528</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.3794 0.253 0.0534</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.4585 0.5608 0.0509</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Si1</label>
+		<symbol>Si</symbol>
+		<fract>0.4659 0.9286 0.1352</fract>
+		<occupancy>0.75</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Al2</label>
+		<symbol>Al</symbol>
+		<fract>0.4659 0.9286 0.1352</fract>
+		<occupancy>0.25</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Si2</label>
+		<symbol>Si</symbol>
+		<fract>0.4515 0.2576 0.1351</fract>
+		<occupancy>0.75</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Al3</label>
+		<symbol>Al</symbol>
+		<fract>0.4515 0.2576 0.1351</fract>
+		<occupancy>0.25</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O4</label>
+		<symbol>O</symbol>
+		<fract>0.4138 0.0951 0.168</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O5</label>
+		<symbol>O</symbol>
+		<fract>0.2508 0.8082 0.1567</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O6</label>
+		<symbol>O</symbol>
+		<fract>0.2552 0.371 0.1685</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>K</label>
+		<symbol>K</symbol>
+		<fract>0 0.0991 1/4</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H</label>
+		<symbol>H</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="O3" n1="H">0.119655</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="H">0.151168</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="H">0.151168</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O4">0.162353</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O4">0.162353</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O6">0.162921</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O6">0.162921</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O5">0.164026</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O5">0.164026</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O5">0.16417</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O5">0.16417</bond_chemical>
+	<bond_chemical unit="nm" n0="Al3" n1="O2">0.165123</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="O2">0.165123</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O1">0.165948</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O1">0.165948</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O4">0.166836</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O4">0.166836</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="O6">0.167112</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O6">0.167112</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O2">0.190446 0.193342</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O2">0.190446 0.193342</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O3">0.191566 0.194012</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O3">0.191566 0.194012</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O1">0.19205 0.193258</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O1">0.19205 0.193258</bond_chemical>
+
+	<citation doi="10.1180/minmag.1968.036.282.24">
+		<title>Refined Muscovite structure</title>
+		<journal>Mineralogical Magazine and Journal of the Mineralogical Society (1876-1968)</journal>
+		<volume>36</volume>
+		<year>1968</year>
+		<pages>883 886</pages>
+		<author>J.D. Birle</author>
+		<author>R. Tettenhorst</author>
+	</citation>
+</cif>

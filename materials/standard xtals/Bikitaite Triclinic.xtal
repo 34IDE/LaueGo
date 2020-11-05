@@ -211,6 +211,12 @@
 	<bond_chemical unit="nm" n0="Li2" n1="O22">0.2020</bond_chemical>
 	<bond_chemical unit="nm" n0="Li2" n1="O26">0.1970</bond_chemical>
 
+	<bond_chemical unit="nm" n0="O27" n1="H21">0.0956</bond_chemical>	<!-- H2O -->
+	<bond_chemical unit="nm" n0="O27" n1="H22">0.0965</bond_chemical>
+
+	<bond_chemical unit="nm" n0="O17" n1="H11">0.0951</bond_chemical>	<!-- H2O -->
+	<bond_chemical unit="nm" n0="O17" n1="H12">0.0964</bond_chemical>
+
 	<citation doi="10.2138/am-2002-1018">
 		<title>High-pressure behaviour of bikitaite: An integrated theoretical and experimental approach</title>
 		<journal>American Mineralogist</journal>

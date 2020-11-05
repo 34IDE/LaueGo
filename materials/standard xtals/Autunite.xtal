@@ -182,18 +182,34 @@
 		<U_iso unit="Å^2">.050</U_iso>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="P" n1="O3">0.1520</bond_chemical>
-	<bond_chemical unit="nm" n0="P" n1="O4">0.1528</bond_chemical>
-	<bond_chemical unit="nm" n0="P" n1="O5">0.1534</bond_chemical>
-	<bond_chemical unit="nm" n0="P" n1="O6">0.1537</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O3">0.15198</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O4">0.15282</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O5">0.15339</bond_chemical>
+	<bond_chemical unit="nm" n0="P" n1="O6">0.15373</bond_chemical>
 
-	<bond_chemical unit="nm" n0="U" n1="O1">0.1783</bond_chemical>
-	<bond_chemical unit="nm" n0="U" n1="O2">0.1794</bond_chemical>
-	<bond_chemical unit="nm" n0="U" n1="O2">0.2264</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O1">0.17835</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O2">0.17938 0.2264</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O3">0.2264</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O4">0.2275</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O5">0.2288</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O6">0.2291</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Ca" n1="O8">0.2460</bond_chemical>
+	<bond_chemical unit="nm" n0="Ca" n1="O9">0.2485</bond_chemical>
+	<bond_chemical unit="nm" n0="Ca" n1="O11">0.2619</bond_chemical>
+
+	<!-- the O-H bonds   -->
+	<bond_chemical unit="nm" n0="O7" n1="H1">0.093659</bond_chemical>
+	<bond_chemical unit="nm" n0="O11" n1="H7">0.09474</bond_chemical>
+	<bond_chemical unit="nm" n0="O10" n1="H6">0.095828</bond_chemical>
+	<bond_chemical unit="nm" n0="O8" n1="H2">0.096139</bond_chemical>
+	<bond_chemical unit="nm" n0="O13" n1="H10">0.098417</bond_chemical>
+	<bond_chemical unit="nm" n0="O9" n1="H4">0.098475</bond_chemical>
+	<bond_chemical unit="nm" n0="O12" n1="H8">0.098775</bond_chemical>
+	<bond_chemical unit="nm" n0="O9" n1="H5">0.10011</bond_chemical>
+	<bond_chemical unit="nm" n0="O8" n1="H3">0.10017</bond_chemical>
+	<bond_chemical unit="nm" n0="O12" n1="H9">0.10108</bond_chemical>
+	<bond_chemical unit="nm" n0="O13" n1="H11">0.10155</bond_chemical>
 
 	<citation>
 		<author>A J Locock</author>

@@ -61,8 +61,10 @@
 		<U_iso>0.01942</U_iso>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Fe" n1="O1">0.1956</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe" n1="O-h2">0.2106</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe" n1="O1">0.19326 0.1956</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe" n1="O-h2">0.20996 0.21062</bond_chemical>
+	<bond_chemical unit="nm" n0="O1" n1="H">0.19063</bond_chemical>
+	<bond_chemical unit="nm" n0="O-h2" n1="H">0.087306</bond_chemical>
 
 	<citation>
 		source: Park County, Colorado, USA
