@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-11-06T18:46:00.059Z</date>   <!-- Friday, November 6, 2020 at 12:46:00 PM Central Standard Time -->
+	<chemical_name_common>Davemaoite</chemical_name_common>
+	<chemical_formula>(Ca0.42 K0.2 Na0.1 Fe0.08 Mg0.06 Al0.06 Cr0.05 La0.02 Ce0.01) (Si0.99 Al0.01) O3</chemical_formula>
+	<crystal_description>xenomorph inclusion in diamond</crystal_description>
+	<chemical_source>Orapa Mine Botswana</chemical_source>
+
+	<space_group>
+		<id>221</id>
+		<IT_number>221</IT_number>
+		<system>cubic</system>
+		<H-M>P m -3 m</H-M>
+		<Hall>-P 4 2 3</Hall>
+		<Schoenflies>Oh^1</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.3591</a>
+		<b unit="nm">0.3591</b>
+		<c unit="nm">0.3591</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>1</formula_units>
+		<temperature unit="C">20</temperature>
+	</cell>
+
+	<atom_site>
+		<label>Ca</label>
+		<symbol>Ca</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.42</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>K</label>
+		<symbol>K</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.2</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Na</label>
+		<symbol>Na</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.1</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.08</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Mg</label>
+		<symbol>Mg</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.06</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Al1</label>
+		<symbol>Al</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.06</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Cr</label>
+		<symbol>Cr</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.05</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.02</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Ce</label>
+		<symbol>Ce</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.01</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0025</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0 0 0</fract>
+		<occupancy>0.99</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00507</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Al2</label>
+		<symbol>Al</symbol>
+		<fract>0 0 0</fract>
+		<occupancy>0.01</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00507</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>1/2 0 1/2</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0038</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="K" n1="O">0.17955</bond_chemical>
+
+	<comment>
+		measured at 34IDE, APS, in transmission powder 24 keV,
+		xenomorph inclusion in diamond from Orapa Mine Botswana
+	</comment>
+</cif>
