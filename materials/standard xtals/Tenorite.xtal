@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-11-28T23:35:57.946Z</date>   <!-- Saturday, November 28, 2020 at 5:35:57 PM Central Standard Time -->
+	<chemical_name_common>Tenorite</chemical_name_common>
+	<chemical_formula>CuO</chemical_formula>
+	<database_code db="amcsd">0018812</database_code>
+	<database_code db="COD">9014580</database_code>
+
+	<space_group>
+		<id>15:b1</id>
+		<IT_number>15</IT_number>
+		<system>monoclinic</system>
+		<H-M>C 1 2/c 1</H-M>
+		<Hall>-C 2yc</Hall>
+		<Schoenflies>C2h^6</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.46837</a>
+		<b unit="nm">0.34226</b>
+		<c unit="nm">0.51288</c>
+		<alpha>90</alpha>
+		<beta>99.54</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Cu</label>
+		<symbol>Cu+2</symbol>
+		<fract>1/4 1/4 0</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.00573</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00786</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00454</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.00209</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00134</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00084</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O-2</symbol>
+		<fract>0 0.4184 1/4</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.0068</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0111</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0056</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.003</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Cu" n1="O">0.195077 0.196086</bond_chemical>
+
+	<citation doi="10.1107/S0567740870001838">
+		<title>A refinement of the crystal structure of copper(II) oxide, with a discussion of some exceptional E.s.d.'s</title>
+		<journal>Acta Crystallographica, Section B</journal>
+		<volume>26</volume>
+		<year>1970</year>
+		<pages>8 15</pages>
+		<author>S. Asbrink</author>
+		<author>L.J. Norrby</author>
+	</citation>
+</cif>
