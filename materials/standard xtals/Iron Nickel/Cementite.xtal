@@ -7,7 +7,10 @@
 
 	<space_group>
 		<id>62</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
 		<H-M>P n m a</H-M>
+		<Hall>-P 2ac 2n</Hall>
 	</space_group>
 
 	<cell>
@@ -17,6 +20,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
 	</cell>
 
 	<atom_site>
@@ -24,32 +28,36 @@
 		<symbol>Fe</symbol>
 		<fract>0.1834 0.0689 0.3344</fract>
 		<U_iso>0.00545</U_iso>
+		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
-
 	<atom_site>
 		<label>Fe2</label>
 		<symbol>Fe</symbol>
-		<fract>0.0388 0.25 0.8422</fract>
+		<fract>0.0388 1/4 0.8422</fract>
 		<U_iso>0.01267</U_iso>
+		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
-
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
-		<fract>0.8764 0.25 0.4426</fract>
+		<fract>0.8764 1/4 0.4426</fract>
 		<U_iso>0.0114</U_iso>
+		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 
+	<bond_chemical unit="nm" n0="Fe2" n1="C">0.197592 0.198904</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="C">0.200714 0.204304 0.239439</bond_chemical>
+
 	<citation doi="10.1016/0022-4596(84)90340-2">
-		<author>D. Fruchart</author>
-		<author>P. Chaudouet</author>
-		<author>R. Fruchart</author>
-		<author>A. Rouault</author>
-		<author>J.P. Senateur</author>
 		<title>Etudes structurales de composes de type cementite: effet de l'hydrogene sur Fe3C suivi par diffraction neutronique. Spectrometrie Mossbauer sur FeCo2B et  Co3B dopes au 57Fe</title>
 		<journal>Journal of Solid State Chemistry</journal>
 		<volume>51</volume>
 		<year>1984</year>
 		<pages>246 252</pages>
+		<author>D. Fruchart</author>
+		<author>P. Chaudouet</author>
+		<author>R. Fruchart</author>
+		<author>A. Rouault</author>
+		<author>J.P. Senateur</author>
 	</citation>
 </cif>

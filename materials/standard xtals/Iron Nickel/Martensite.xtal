@@ -3,23 +3,30 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Martensite (Fe2C)</chemical_name_common>
 	<chemical_formula>Fe2C</chemical_formula>
+	<database_code db="ICSD">76826</database_code>
+
 	<space_group>
 		<id>58</id>
+		<IT_number>58</IT_number>
+		<system>orthorhombic</system>
 		<H-M>P n n m</H-M>
+		<Hall>-P 2 2n</Hall>
 	</space_group>
-	<database_code db="ICSD">76826</database_code>
+
 	<cell>
 		<a unit="nm">0.4704</a>
 		<b unit="nm">0.4318</b>
-		<c unit="nm">0.2830</c>
+		<c unit="nm">0.283</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>2</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Fe</label>
 		<symbol>Fe</symbol>
-		<fract>2/3 0.25 0</fract>
+		<fract>2/3 1/4 0</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>g</WyckoffSymbol>
 	</atom_site>
@@ -30,13 +37,16 @@
 		<valence>-4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<bond_chemical unit="nm" n0="Fe" n1="C">0.190367 0.194479</bond_chemical>
+
 	<citation doi="10.1016/0001-6160(72)90020-X">
-		<author>Y. Hirotsu</author>
-		<author>S. Nagakura</author>
+		<title>Crystal structure and morphology of the carbide precipitated from martensitic high carbon steel during the first stage of tempering</title>
 		<journal>Acta Metallurgica</journal>
 		<volume>20</volume>
 		<year>1972</year>
 		<pages>645 655</pages>
-		<title>Crystal structure and morphology of the carbide precipitated from martensitic high carbon steel during the first stage of tempering</title>
+		<author>Y. Hirotsu</author>
+		<author>S. Nagakura</author>
 	</citation>
 </cif>
