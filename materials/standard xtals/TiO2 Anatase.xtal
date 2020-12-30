@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-12-27T22:02:08.245Z</date>   <!-- Sunday, December 27, 2020 at 4:02:08 PM Central Standard Time -->
 	<chemical_name_common>Anatase</chemical_name_common>
 	<chemical_formula>TiO2</chemical_formula>
+	<database_code db="amcsd">0019093</database_code>
+	<database_code db="COD">9015929</database_code>
+
 	<space_group>
-		<IT_number>141</IT_number>
 		<id>141:1</id>
-		<H-M>I41/amd:1</H-M>
+		<IT_number>141</IT_number>
+		<system>tetragonal</system>
+		<H-M>I 41/a m d:1</H-M>
+		<Hall>I 4bw 2bw -1bw</Hall>
+		<Schoenflies>D4h^19</Schoenflies>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.37845</a>
 		<b unit="nm">0.37845</b>
@@ -15,21 +24,46 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<volume>0.136268</volume>
+		<formula_units>4</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Ti</label>
 		<symbol>Ti</symbol>
 		<fract>0 0 0</fract>
-		<WyckoffSymbol>c</WyckoffSymbol>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.0052</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0052</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.007</aniso_U_23>
+		<valence>4</valence>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0 0 0.20806</fract>
-		<WyckoffSymbol>f</WyckoffSymbol>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.0117</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0027</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.0072</aniso_U_23>
+		<valence>-2</valence>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Ti" n1="O">0.19339 0.19795</bond_chemical>
+	<bond_chemical unit="nm" n0="Ti" n1="O">0.193387 0.197955</bond_chemical>
 
+	<citation doi="10.1107/S010876819100335X">
+		<title>Structural and thermal parameters for rutile and anatase</title>
+		<journal>Acta Crystallographica, Section B</journal>
+		<volume>47</volume>
+		<year>1991</year>
+		<pages>462 468</pages>
+		<author>C.J. Howard</author>
+		<author>T.M. Sabine</author>
+		<author>F. Dickson</author>
+	</citation>
 </cif>

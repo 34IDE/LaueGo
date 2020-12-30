@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-11-25T00:31:20.179Z</date>   <!-- Tuesday, November 24, 2020 at 6:31:20 PM Central Standard Time -->
+	<chemical_name_common>Pyrochlore</chemical_name_common>
+	<chemical_formula>Nb2 Ca2 O6 F</chemical_formula>
+	<database_code db="amcsd">0005087</database_code>
+
+	<space_group>
+		<id>227:1</id>
+		<IT_number>227</IT_number>
+		<system>cubic</system>
+		<H-M>F d -3 m:1</H-M>
+		<Hall>F 4d 2 3 -1d</Hall>
+		<Schoenflies>Oh^7</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">1.03947</a>
+		<b unit="nm">1.03947</b>
+		<c unit="nm">1.03947</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>8</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Nb</label>
+		<symbol>Nb</symbol>
+		<fract>5/8 5/8 5/8</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02533</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Ca</label>
+		<symbol>Ca</symbol>
+		<fract>1/8 1/8 1/8</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02533</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>F</label>
+		<symbol>F</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02533</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.315 0 0</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02533</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Nb" n1="O">0.19405</bond_chemical>
+	<bond_chemical unit="nm" n0="Ca" n1="F">0.225052</bond_chemical>
+	<bond_chemical unit="nm" n0="Ca" n1="O">0.269762</bond_chemical>
+
+	<citation>
+		<title>La composition chimique et la structure cristalline du pyrochlore</title>
+		<journal>The Canadian Mineralogist</journal>
+		<volume>9</volume>
+		<year>1968</year>
+		<pages>383 402</pages>
+		<author>G. Perrault</author>
+ 		d'Oka, P.Q. Sample: No. 4
+	</citation>
+</cif>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Gallium Nitride (Wurtzite 2H)</chemical_name_common>
+	<chemical_name_common>Gallium Nitride (Würtzite 2H)</chemical_name_common>
 	<chemical_formula>GaN</chemical_formula>
 	<database_code db="ICSD">34476</database_code>
 

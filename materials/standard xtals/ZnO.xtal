@@ -1,32 +1,68 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Zinc Oxide (hexagonal axis)</chemical_name_common>
+	<program>BraggPanel</program>
+	<date>2020-12-26T22:10:30.176Z</date>   <!-- Saturday, December 26, 2020 at 4:10:30 PM Central Standard Time -->
+	<chemical_name_common>Zinc Oxide</chemical_name_common>
+	<chemical_formula>ZnO</chemical_formula>
+	<database_code db="COD">2107059</database_code>
 
 	<space_group>
+		<id>186</id>
 		<IT_number>186</IT_number>
-		<H-M>P63mc</H-M>
+		<system>hexagonal</system>
+		<H-M>P 63 m c</H-M>
+		<Hall>P 6c -2c</Hall>
+		<Schoenflies>C6v^4</Schoenflies>
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.32494</a>
-		<b unit="nm">0.32494</b>
-		<c unit="nm">0.52038</c>
+		<a unit="nm">0.32417</a>
+		<b unit="nm">0.32417</b>
+		<c unit="nm">0.51876</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
+		<formula_units>2</formula_units>
 	</cell>
 
 	<atom_site>
 		<label>Zn</label>
 		<symbol>Zn</symbol>
 		<fract>1/3 2/3 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>2</valence>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>1/3 2/3 0.3821</fract>
+		<fract>1/3 2/3 0.3817</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<valence>-2</valence>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Zn" n1="O">0.1974</bond_chemical>
+	<bond_chemical unit="nm" n0="Zn" n1="O">0.196964 0.198011</bond_chemical>
+
+	<citation id="primary" doi="10.1107/s0108270189004269">
+		<comment>only used to get u=0.3817 for O z coordinate</comment>
+		<title>u parameters for the wurtzite structure of ZnS and ZnO using powder neutron diffraction</title>
+		<journal>Acta Crystallographica, Section C: Crystal Structure Communications</journal>
+		<volume>45</volume>
+		<year>1989</year>
+		<pages>1867 1870</pages>
+		<ASTM>ACSCEE</ASTM>
+		<author>E.H. Kisi</author>
+		<author>M.M. Elcombe</author>
+	</citation>
+	<citation id="2">
+		<title>Atomic displacement, anharmonic thermal vibration, expansivity and pyroelectric coefficient thermal dependences in Zn O.</title>
+		<journal>Acta Crystallographica B (39,1983-)</journal>
+		<volume>45</volume>
+		<year>1989</year>
+		<pages>34 40</pages>
+		<ASTM>ASBSDK</ASTM>
+		<author>J. Albertsson, J.</author>
+		<author>S.C. Abrahams</author>
+		<author>A. Kvick</author>
+	</citation>
 </cif>

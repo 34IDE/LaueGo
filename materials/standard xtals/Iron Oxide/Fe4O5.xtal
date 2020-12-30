@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-12-18T17:37:02.598Z</date>   <!-- Friday, December 18, 2020 at 11:37:02 AM Central Standard Time -->
+	<chemical_name_common>Feiite</chemical_name_common>
+	<chemical_formula>Fe4 O5</chemical_formula>
+	<database_code db="amcsd">0018509</database_code>
+	<database_code db="COD">9014235</database_code>
+
+	<space_group>
+		<id>63</id>
+		<IT_number>63</IT_number>
+		<system>orthorhombic</system>
+		<H-M>C m c m</H-M>
+		<Hall>-C 2c 2</Hall>
+		<Schoenflies>D2h^17</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.2843</a>
+		<b unit="nm">0.97</b>
+		<c unit="nm">1.229</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<pressure unit="GPa">10</pressure>
+	</cell>
+
+	<atom_site>
+		<label>Fe1</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Fe2</label>
+		<symbol>Fe</symbol>
+		<fract>0 0.2616 0.1131</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>Fe3</label>
+		<symbol>Fe</symbol>
+		<fract>0 0.5048 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0 0.158 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0 0.365 0.55</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02</U_iso>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0 0.085 0.643</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Fe1" n1="O3">0.194126</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe2" n1="O1">0.195976</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O2">0.202807</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Fe2" n1="O2">0.203226 0.224142</bond_chemical> -->
+	<bond_chemical unit="nm" n0="Fe2" n1="O2">0.203226</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe3" n1="O1">0.205645</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe2" n1="O3">0.20904</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe3" n1="O3">0.212337</bond_chemical>
+
+	<citation doi="10.1073/pnas.1107573108">
+		<title>Discovery of the recoverable high-pressure iron oxide Fe4O5</title>
+		<journal>Proceedings of the National Academy of Sciences</journal>
+		<volume>108</volume>
+		<year>2011</year>
+		<pages>17281 17284</pages>
+		<author>B. Lavina</author>
+		<author>P. Dera</author>
+		<author>E. Kim</author>
+		<author>Y. Meng</author>
+		<author>R.T. Downs</author>
+		<author>P. F. Weck</author>
+		<author>S. R.Sutton</author>
+		<author>Y. Zhao</author>
+	</citation>
+</cif>

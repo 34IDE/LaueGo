@@ -58,7 +58,7 @@
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Ti" n1="O">0.1953</bond_chemical>
-	<bond_chemical unit="nm" n0="Sr" n1="O">0.2761</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Sr" n1="O">0.2761</bond_chemical> -->
 
 	<citation id="primary" doi="10.1107/S0108768111046738">
 		<author>M. Schmidbauer</author>
