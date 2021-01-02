@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2020-12-31T02:22:04.903Z</date>   <!-- Wednesday, December 30, 2020 at 8:22:04 PM Central Standard Time -->
+	<chemical_name_common>Brookite</chemical_name_common>
+	<chemical_formula>TiO2</chemical_formula>
+	<database_code db="COD">9004137</database_code>
+	<database_code db="amcsd">0005160</database_code>
+
+	<space_group>
+		<id>61</id>
+		<IT_number>61</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b c a</H-M>
+		<Hall>-P 2ac 2ab</Hall>
+		<Schoenflies>D2h^15</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.9174</a>
+		<b unit="nm">0.5449</b>
+		<c unit="nm">0.5138</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>8</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Ti</label>
+		<symbol>Ti</symbol>
+		<fract>0.1289 0.0972 0.8628</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.00554</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00572</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00294</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00024</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.00028</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.0095 0.1491 0.1835</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.00725</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00677</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00348</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.00101</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00167</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.00113</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.2314 0.111 0.5366</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.00298</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01143</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00588</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.00152</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00119</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00184</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Ti" n1="O1">0.186276 0.198987 0.199873</bond_chemical>
+	<bond_chemical unit="nm" n0="Ti" n1="O2">0.192326 0.193054 0.205178</bond_chemical>
+
+	<citation>
+		<title>Polyhedral thermal expansion in the TiO2 polymorphs: Refinement of the crystal structures of rutile and brookite at high temperature Sample at 25 degrees C</title>
+		<journal>The Canadian Mineralogist</journal>
+		<volume>17</volume>
+		<year>1979</year>
+		<pages>77 85</pages>
+		<author>E.P. Meagher</author>
+		<author>G.A. Lager</author>
+	</citation>
+</cif>
