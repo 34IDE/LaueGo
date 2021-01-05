@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=detectorCalibration
-#pragma version = 1.01
+#pragma version = 1.00
 #include "microGeometryN", version>=1.83
 #include "ImageDisplayScaling", version>=2.04
 #include "ColorNames", version >=2.05
@@ -690,7 +690,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 				printf "\r"
 			endif
 			printf "error started at %g,   reduced to  %g,   after %d iterations\r",NumberByKey("errStart",noteStr,"="),err, NumberByKey("V_OptNumIters",noteStr,"=")
-			printf "(final - initial) --> ∆R={%.2g,%.2g,%.2g} rad,   ∆P={%.3f,%.3f,%.3f} mm\r",(d.R[0]-g.d[dNum].R[0]), (d.R[1]-g.d[dNum].R[1]), (d.R[2]-g.d[dNum].R[2]), (d.P[0]-g.d[dNum].P[0])/1000, (d.P[1]-g.d[dNum].P[1])/1000, (d.P[2]-g.d[dNum].P[2])/1000
+			printf "(final - initial) --> ∆R={%.2g,%.2g,%.2g},   ∆P={%.3f,%.3f,%.3f}\r",(d.R[0]-g.d[dNum].R[0]), (d.R[1]-g.d[dNum].R[1]), (d.R[2]-g.d[dNum].R[2]), (d.P[0]-g.d[dNum].P[0])/1000, (d.P[1]-g.d[dNum].P[1])/1000, (d.P[2]-g.d[dNum].P[2])/1000
 		endif
 		g.d[dNum] = d											// updagte structure with fitted values for this detector, was:  CopyDetectorGeometry(g.d[dNum],d)
 	endfor
