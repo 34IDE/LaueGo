@@ -47,8 +47,8 @@
 		<valence>-2</valence>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Zr1" n1="O1">0.205192 0.215674</bond_chemical>
-	<bond_chemical unit="nm" n0="Zr1" n1="O2">0.215278 0.217643 0.224182 0.226675</bond_chemical>
+	<bond_chemical unit="nm" n0="Zr" n1="O1">0.205192 0.215674</bond_chemical>
+	<bond_chemical unit="nm" n0="Zr" n1="O2">0.215278 0.217643 0.224182 0.226675</bond_chemical>
 
 	<citation doi="10.1107/S0108768187010279">
 		<title>Structures of the ZrO2 polymorphs at room temperature by high-resolution neutron powder diffraction</title>
