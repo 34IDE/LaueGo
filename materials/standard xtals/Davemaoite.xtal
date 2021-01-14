@@ -4,7 +4,7 @@
 	<program>BraggPanel</program>
 	<date>2020-11-06T18:46:00.059Z</date>   <!-- Friday, November 6, 2020 at 12:46:00 PM Central Standard Time -->
 	<chemical_name_common>Davemaoite</chemical_name_common>
-	<chemical_formula>(Ca0.42 K0.2 Na0.1 Fe0.08 Mg0.06 Al0.06 Cr0.05 La0.02 Ce0.01) (Si0.99 Al0.01) O3</chemical_formula>
+	<chemical_formula>(Ca.42 K.2 Na.1 Fe.08 Mg.06 Al.06 Cr.05 La.02 Ce.01) (Si.99 Al.01) O3</chemical_formula>
 	<crystal_description>xenomorph inclusion in diamond</crystal_description>
 	<chemical_source>Orapa Mine Botswana</chemical_source>
 
@@ -128,8 +128,19 @@
 
 	<bond_chemical unit="nm" n0="K" n1="O">0.17955</bond_chemical>
 
-	<comment>
-		measured at 34IDE, APS, in transmission powder 24 keV,
-		xenomorph inclusion in diamond from Orapa Mine Botswana
-	</comment>
+	<citation id="primary" doi="10.5194/ejm-32-645-2020">
+		<title>IMA 2020-012a, in: CNMNC Newsletter 58 Davemaoite</title>
+		<journal>Eur. J. Mineral.</journal>
+		<volume>32</volume>
+		<year>2020</year>
+		<pages>3189 3192</pages>
+		<author>O. Tschauner</author>
+		<author>S. Huang</author>
+		<author>S. Yang</author>
+		<author>M. Humayun</author>
+		<comment>
+			measured at 34IDE, APS, in transmission powder 24 keV,
+			xenomorph inclusion in diamond from Orapa Mine Botswana
+		</comment>
+	</citation>
 </cif>

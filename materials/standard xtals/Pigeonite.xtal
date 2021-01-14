@@ -2,6 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Pigeonite</chemical_name_common>
+	<chemical_formula>(Mg.72Fe.28) (Fe.76Ca.18Mg.06) Si2 O6</chemical_formula>
 	<database_code db="amcsd">0000209</database_code>
 
 	<space_group>
@@ -47,6 +48,7 @@
 		<aniso_U_13 unit="nm^2">3.01e-05</aniso_U_13>
 		<aniso_U_23 unit="nm^2">2.3e-06</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>Fe2</label>
 		<symbol>Fe</symbol>
@@ -86,6 +88,7 @@
 		<aniso_U_13 unit="nm^2">1.62e-05</aniso_U_13>
 		<aniso_U_23 unit="nm^2">1.13e-05</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>SiA</label>
 		<symbol>Si</symbol>
@@ -190,14 +193,13 @@
 	<bond_chemical unit="nm" n0="SiB" n1="O3B">0.1660</bond_chemical>
 
 	<citation>
-		_chemical_compound_source 'Isle of Mull, Scotland'
-		_chemical_formula_sum 'Mg.78 Fe1.04 Ca.18 Si2 O6'
-		<author>N. Morimoto</author>
-		<author>N. Guven</author>
+		<title>Refinement of the crystal structure of pigeonite</title>
 		<journal>American Mineralogist</journal>
 		<volume>55</volume>
 		<year>1970</year>
 		<pages>1195 1209</pages>
-		<title>Refinement of the crystal structure of pigeonite</title>
+		<author>N. Morimoto</author>
+		<author>N. Guven</author>
+		<comment>source: Isle of Mull, Scotland</comment>
 	</citation>
 </cif>
