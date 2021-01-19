@@ -25,49 +25,49 @@
         <label>Mg</label>
         <symbol>Mg</symbol>
 		<fract>0.51378 0.55588 0.25</fract>
-		<U_iso unit="Å^2">0.0083</U_iso>
-		<aniso_U_11 unit="Å^2">0.0077</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0064</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0106</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0.0005</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.0083</Uiso>
+		<U11 unit="Å^2">0.0077</U11>
+		<U22 unit="Å^2">0.0064</U22>
+		<U33 unit="Å^2">0.0106</U33>
+		<U12 unit="Å^2">0.0005</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
         <label>Si</label>
 		<symbol>Si</symbol>
 		<fract>0.5 0 0.5</fract>
-		<U_iso unit="Å^2">0.0058</U_iso>
-		<aniso_U_11 unit="Å^2">0.0055</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0050</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0069</aniso_U_33>
-		<aniso_U_12 unit="Å^2">-0.0003</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.0002</aniso_U_13>
-		<aniso_U_23 unit="Å^2">-0.0001</aniso_U_23>
+		<Uiso unit="Å^2">0.0058</Uiso>
+		<U11 unit="Å^2">0.0055</U11>
+		<U22 unit="Å^2">0.0050</U22>
+		<U33 unit="Å^2">0.0069</U33>
+		<U12 unit="Å^2">-0.0003</U12>
+		<U13 unit="Å^2">0.0002</U13>
+		<U23 unit="Å^2">-0.0001</U23>
 	</atom_site>
 	<atom_site>
         <label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.10189 0.46645 0.25</fract>
-		<U_iso unit="Å^2">0.0073</U_iso>
-		<aniso_U_11 unit="Å^2">0.0073</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0071</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0075</aniso_U_33>
-		<aniso_U_12 unit="Å^2">-0.0001</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.0073</Uiso>
+		<U11 unit="Å^2">0.0073</U11>
+		<U22 unit="Å^2">0.0071</U22>
+		<U33 unit="Å^2">0.0075</U33>
+		<U12 unit="Å^2">-0.0001</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
         <label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.19626 0.20133 0.55258</fract>
-		<U_iso unit="Å^2">0.0075</U_iso>
-		<aniso_U_11 unit="Å^2">0.0069</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0062</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0095</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0.0009</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.0009</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0.0006</aniso_U_23>
+		<Uiso unit="Å^2">0.0075</Uiso>
+		<U11 unit="Å^2">0.0069</U11>
+		<U22 unit="Å^2">0.0062</U22>
+		<U33 unit="Å^2">0.0095</U33>
+		<U12 unit="Å^2">0.0009</U12>
+		<U13 unit="Å^2">0.0009</U13>
+		<U23 unit="Å^2">0.0006</U23>
 	</atom_site>
 
 	<!-- <bond_chemical unit="nm" n0="Mg" n1="O1">0.2017 0.2098</bond_chemical>

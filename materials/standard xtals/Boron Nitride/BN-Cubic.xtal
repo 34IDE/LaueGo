@@ -31,14 +31,14 @@
 		<symbol>B</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00243171</U_iso>
+		<Uiso unit="Å^2">0.00243171</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>N</label>
 		<symbol>N</symbol>
 		<fract>1/4 1/4 1/4</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00206442</U_iso>
+		<Uiso unit="Å^2">0.00206442</Uiso>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="B" n1="N">0.156573</bond_chemical>

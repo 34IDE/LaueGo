@@ -27,12 +27,12 @@
 		<fract>0.16716 0.18798 0.25</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.02194</aniso_U_11>
-		<aniso_U_22>0.01293</aniso_U_22>
-		<aniso_U_33>0.02321</aniso_U_33>
-		<aniso_U_12>0.0011</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.02194</U11>
+		<U22>0.01293</U22>
+		<U33>0.02321</U33>
+		<U12>0.0011</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 
 	<atom_site>
@@ -41,12 +41,12 @@
 		<fract>0.1849 0.4358 0.75</fract>
 		<valence>6</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.0124</aniso_U_11>
-		<aniso_U_22>0.0096</aniso_U_22>
-		<aniso_U_33>0.0088</aniso_U_33>
-		<aniso_U_12>-0.0003</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0124</U11>
+		<U22>0.0096</U22>
+		<U33>0.0088</U33>
+		<U12>-0.0003</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 
 	<atom_site>
@@ -55,12 +55,12 @@
 		<fract>0.0946 0.5915 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.025</aniso_U_11>
-		<aniso_U_22>0.014</aniso_U_22>
-		<aniso_U_33>0.035</aniso_U_33>
-		<aniso_U_12>0.008</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.025</U11>
+		<U22>0.014</U22>
+		<U33>0.035</U33>
+		<U12>0.008</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 
 	<atom_site>
@@ -69,12 +69,12 @@
 		<fract>0.0424 0.3072 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.015</aniso_U_11>
-		<aniso_U_22>0.022</aniso_U_22>
-		<aniso_U_33>0.025</aniso_U_33>
-		<aniso_U_12>-0.008</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.015</U11>
+		<U22>0.022</U22>
+		<U33>0.025</U33>
+		<U12>-0.008</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 
 	<atom_site>
@@ -83,12 +83,12 @@
 		<fract>0.309 0.4189 0.9726</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>d</WyckoffSymbol>
-		<aniso_U_11>0.0195</aniso_U_11>
-		<aniso_U_22>0.0192</aniso_U_22>
-		<aniso_U_33>0.0129</aniso_U_33>
-		<aniso_U_12>-0.0024</aniso_U_12>
-		<aniso_U_13>-0.0057</aniso_U_13>
-		<aniso_U_23>0.0016</aniso_U_23>
+		<U11>0.0195</U11>
+		<U22>0.0192</U22>
+		<U33>0.0129</U33>
+		<U12>-0.0024</U12>
+		<U13>-0.0057</U13>
+		<U23>0.0016</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="S" n1="O1">0.1461</bond_chemical>

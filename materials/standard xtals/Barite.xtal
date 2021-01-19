@@ -27,12 +27,12 @@
 		<fract>0.15842 0.18453 0.25</fract>
 		<valence>2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.01025</aniso_U_11>
-		<aniso_U_22>0.00843</aniso_U_22>
-		<aniso_U_33>0.01298</aniso_U_33>
-		<aniso_U_12>-0.00048</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.01025</U11>
+		<U22>0.00843</U22>
+		<U33>0.01298</U33>
+		<U12>-0.00048</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>S</label>
@@ -40,12 +40,12 @@
 		<fract>0.19082 0.43749 0.75</fract>
 		<valence>6</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.00910</aniso_U_11>
-		<aniso_U_22>0.00840</aniso_U_22>
-		<aniso_U_33>0.00930</aniso_U_33>
-		<aniso_U_12>0.00033</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.00910</U11>
+		<U22>0.00840</U22>
+		<U33>0.00930</U33>
+		<U12>0.00033</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
@@ -53,12 +53,12 @@
 		<fract>0.10720 0.58700 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.0266</aniso_U_11>
-		<aniso_U_22>0.0131</aniso_U_22>
-		<aniso_U_33>0.028</aniso_U_33>
-		<aniso_U_12>0.0105</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0266</U11>
+		<U22>0.0131</U22>
+		<U33>0.028</U33>
+		<U12>0.0105</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
@@ -66,12 +66,12 @@
 		<fract>0.0498 0.3176 0.75</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.0117</aniso_U_11>
-		<aniso_U_22>0.0209</aniso_U_22>
-		<aniso_U_33>0.0202</aniso_U_33>
-		<aniso_U_12>-0.0067</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0117</U11>
+		<U22>0.0209</U22>
+		<U33>0.0202</U33>
+		<U12>-0.0067</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
@@ -79,12 +79,12 @@
 		<fract>0.3118 0.4194 0.9704</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>d</WyckoffSymbol>
-		<aniso_U_11>0.0149</aniso_U_11>
-		<aniso_U_22>0.0149</aniso_U_22>
-		<aniso_U_33>0.0103</aniso_U_33>
-		<aniso_U_12>-0.002</aniso_U_12>
-		<aniso_U_13>-0.0028</aniso_U_13>
-		<aniso_U_23>0.0008</aniso_U_23>
+		<U11>0.0149</U11>
+		<U22>0.0149</U22>
+		<U33>0.0103</U33>
+		<U12>-0.002</U12>
+		<U13>-0.0028</U13>
+		<U23>0.0008</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="S" n1="O1">0.1456</bond_chemical>

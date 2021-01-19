@@ -23,23 +23,23 @@
 	<atom_site>
 		<label>K</label>
 		<symbol>K</symbol>
-		<fract>0.5 0.5 0.5</fract>
-		<U_iso>0.0082</U_iso>
+		<fract>0 0 0</fract>
+		<Uiso>0.0082</Uiso>
 		<valence>1</valence>
 	</atom_site>
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
-		<fract>0 0 0</fract>
+		<fract>0.5 0.5 0.5</fract>
 		<valence>5</valence>
-		<U_iso>0.00332</U_iso>
+		<Uiso>0.00332</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0.5 0 0</fract>
+		<fract>0 0.5 0.5</fract>
 		<valence>-2</valence>
-		<U_iso>0.0073</U_iso>
+		<Uiso>0.0073</Uiso>
 	</atom_site>
 
 	<citation id="primary" dot="10.1107/S0108768100003906">

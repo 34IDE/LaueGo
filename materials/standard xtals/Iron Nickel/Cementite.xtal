@@ -27,21 +27,21 @@
 		<label>Fe1</label>
 		<symbol>Fe</symbol>
 		<fract>0.1834 0.0689 0.3344</fract>
-		<U_iso>0.00545</U_iso>
+		<Uiso>0.00545</Uiso>
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Fe2</label>
 		<symbol>Fe</symbol>
 		<fract>0.0388 1/4 0.8422</fract>
-		<U_iso>0.01267</U_iso>
+		<Uiso>0.01267</Uiso>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
 		<fract>0.8764 1/4 0.4426</fract>
-		<U_iso>0.0114</U_iso>
+		<Uiso>0.0114</Uiso>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 

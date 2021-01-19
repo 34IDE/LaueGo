@@ -27,7 +27,7 @@
 		<valence>2</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<occupancy>1</occupancy>
-		<U_iso>0.0319</U_iso>
+		<Uiso>0.0319</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -37,7 +37,7 @@
 		<occupancy>0.52</occupancy>
 		<valence>4</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso>0.0052</U_iso>
+		<Uiso>0.0052</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -47,7 +47,7 @@
 		<occupancy>0.48</occupancy>
 		<valence>4</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso>0.0052</U_iso>
+		<Uiso>0.0052</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -56,7 +56,7 @@
 		<fract>0.5 0.5 -0.1027</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso>0.0061</U_iso>
+		<Uiso>0.0061</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -65,7 +65,7 @@
 		<fract>0.5 0 0.3785</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso>0.0061</U_iso>
+		<Uiso>0.0061</Uiso>
 	</atom_site>
 
 

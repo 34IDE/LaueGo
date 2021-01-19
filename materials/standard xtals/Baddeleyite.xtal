@@ -26,7 +26,7 @@
 		<label>Zr</label>
 		<symbol>Zr</symbol>
  		<fract>0.2754 0.0395 0.2083</fract>
-		<U_iso unit="Å^2">0.00418</U_iso>
+		<Uiso unit="Å^2">0.00418</Uiso>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<valence>4</valence>
 	</atom_site>
@@ -34,7 +34,7 @@
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.0700 0.3317 0.3447</fract>
-		<U_iso unit="Å^2">0.00697</U_iso>
+		<Uiso unit="Å^2">0.00697</Uiso>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<valence>-2</valence>
 	</atom_site>
@@ -42,7 +42,7 @@
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.4496 0.7569 0.4792</fract>
-		<U_iso unit="Å^2">0.00583</U_iso>
+		<Uiso unit="Å^2">0.00583</Uiso>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<valence>-2</valence>
 	</atom_site>

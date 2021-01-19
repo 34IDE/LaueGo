@@ -25,7 +25,7 @@
 		<symbol>Ga</symbol>
 		<fract>0 0.1549 0.081</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
-		<U_iso>0.00608</U_iso>
+		<Uiso>0.00608</Uiso>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Ga" n1="Ga">0.275</bond_chemical>
 

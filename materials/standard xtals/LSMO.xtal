@@ -25,7 +25,7 @@
 		<symbol>La</symbol>
 		<fract>0 0 0.25</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<B_iso unit="Å^2">0.51</B_iso>
+		<Biso unit="Å^2">0.51</Biso>
 		<occupancy>0.7</occupancy>
 		<valence>3</valence>
 	</atom_site>
@@ -34,7 +34,7 @@
 		<symbol>Sr</symbol>
 		<fract>0 0 0.25</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<B_iso unit="Å^2">0.51</B_iso>
+		<Biso unit="Å^2">0.51</Biso>
 		<occupancy>0.3</occupancy>
 		<valence>2</valence>
 	</atom_site>
@@ -43,7 +43,7 @@
 		<symbol>Mn</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<B_iso unit="Å^2">0.11</B_iso>
+		<Biso unit="Å^2">0.11</Biso>
 		<valence>3.3</valence>
 	</atom_site>
 	<atom_site>
@@ -51,7 +51,7 @@
 		<symbol>O</symbol>
 		<fract>0.4582 0 0.25</fract>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<B_iso unit="Å^2">0.79</B_iso>
+		<Biso unit="Å^2">0.79</Biso>
 		<occupancy>0.7</occupancy>
 		<valence>-2</valence>
 	</atom_site>

@@ -18,9 +18,9 @@
 		<label>Y</label>
 		<symbol>Y</symbol>
 		<fract>0.5 0.5 0.5</fract>
-		<aniso_U_11 unit="pm^2">123</aniso_U_11>
-		<aniso_U_22 unit="pm^2">162</aniso_U_22>
-		<aniso_U_33 unit="pm^2">1</aniso_U_33>
+		<U11 unit="pm^2">123</U11>
+		<U22 unit="pm^2">162</U22>
+		<U33 unit="pm^2">1</U33>
 		<valence>2</valence>
 		<WyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>
@@ -28,9 +28,9 @@
 		<label>Ba</label>
 		<symbol>Ba</symbol>
 		<fract>0.5 0.5 0.185</fract>
-		<aniso_U_11 unit="pm^2">68</aniso_U_11>
-		<aniso_U_22 unit="pm^2">45</aniso_U_22>
-		<aniso_U_33 unit="pm^2">87</aniso_U_33>
+		<U11 unit="pm^2">68</U11>
+		<U22 unit="pm^2">45</U22>
+		<U33 unit="pm^2">87</U33>
 		<valence>2</valence>
 		<WyckoffSymbol>t</WyckoffSymbol>
 	</atom_site>
@@ -38,9 +38,9 @@
 		<label>Cu1</label>
 		<symbol>Cu</symbol>
 		<fract>0 0 0</fract>
-		<aniso_U_11 unit="pm^2">144</aniso_U_11>
-		<aniso_U_22 unit="pm^2">237</aniso_U_22>
-		<aniso_U_33 unit="pm^2">32</aniso_U_33>
+		<U11 unit="pm^2">144</U11>
+		<U22 unit="pm^2">237</U22>
+		<U33 unit="pm^2">32</U33>
 		<valence>2</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
@@ -48,9 +48,9 @@
 		<label>Cu2</label>
 		<symbol>Cu</symbol>
 		<fract>0 0 0.3565</fract>
-		<aniso_U_11 unit="pm^2">55</aniso_U_11>
-		<aniso_U_22 unit="pm^2">57</aniso_U_22>
-		<aniso_U_33 unit="pm^2">90</aniso_U_33>
+		<U11 unit="pm^2">55</U11>
+		<U22 unit="pm^2">57</U22>
+		<U33 unit="pm^2">90</U33>
 		<valence>3</valence>
 		<WyckoffSymbol>q</WyckoffSymbol>
 	</atom_site>
@@ -58,9 +58,9 @@
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0</fract>
-		<aniso_U_11 unit="pm^2">587</aniso_U_11>
-		<aniso_U_22 unit="pm^2">68</aniso_U_22>
-		<aniso_U_33 unit="pm^2">35</aniso_U_33>
+		<U11 unit="pm^2">587</U11>
+		<U22 unit="pm^2">68</U22>
+		<U33 unit="pm^2">35</U33>
 		<valence>-2</valence>
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
@@ -68,9 +68,9 @@
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0 0 0.1566</fract>
-		<aniso_U_11 unit="pm^2">1</aniso_U_11>
-		<aniso_U_22 unit="pm^2">226</aniso_U_22>
-		<aniso_U_33 unit="pm^2">59</aniso_U_33>
+		<U11 unit="pm^2">1</U11>
+		<U22 unit="pm^2">226</U22>
+		<U33 unit="pm^2">59</U33>
 		<valence>-2</valence>
 		<WyckoffSymbol>q</WyckoffSymbol>
 	</atom_site>
@@ -78,9 +78,9 @@
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.5 0 0.3776</fract>
-		<aniso_U_11 unit="pm^2">23</aniso_U_11>
-		<aniso_U_22 unit="pm^2">112</aniso_U_22>
-		<aniso_U_33 unit="pm^2">168</aniso_U_33>
+		<U11 unit="pm^2">23</U11>
+		<U22 unit="pm^2">112</U22>
+		<U33 unit="pm^2">168</U33>
 		<valence>-2</valence>
 		<WyckoffSymbol>s</WyckoffSymbol>
 	</atom_site>
@@ -88,9 +88,9 @@
 		<label>O4</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0.3765</fract>
-		<aniso_U_11 unit="pm^2">22</aniso_U_11>
-		<aniso_U_22 unit="pm^2">256</aniso_U_22>
-		<aniso_U_33 unit="pm^2">131</aniso_U_33>
+		<U11 unit="pm^2">22</U11>
+		<U22 unit="pm^2">256</U22>
+		<U33 unit="pm^2">131</U33>
 		<valence>-2</valence>
 		<WyckoffSymbol>r</WyckoffSymbol>
 	</atom_site>

@@ -24,7 +24,7 @@
 		<symbol>Ce</symbol>
 		<fract>0 0 0</fract>
 		<valence>4</valence>
-		<B_iso>0.29</B_iso>
+		<Biso>0.29</Biso>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -32,7 +32,7 @@
 		<symbol>O</symbol>
 		<fract>0.25 0.25 0.25</fract>
 		<valence>-2</valence>
-		<B_iso>1.82</B_iso>
+		<Biso>1.82</Biso>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 

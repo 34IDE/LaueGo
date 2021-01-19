@@ -28,13 +28,13 @@
 		<fract>0.47 0 2/3</fract>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso>0.0062</U_iso>
-		<aniso_U_11>0.00733</aniso_U_11>
-		<aniso_U_22>0.00590</aniso_U_22>
-		<aniso_U_33>0.00535</aniso_U_33>
-		<aniso_U_12>0.00294</aniso_U_12>
-		<aniso_U_13>0.00294</aniso_U_13>
-		<aniso_U_23>0.00055</aniso_U_23>
+		<Uiso>0.0062</Uiso>
+		<U11>0.00733</U11>
+		<U22>0.00590</U22>
+		<U33>0.00535</U33>
+		<U12>0.00294</U12>
+		<U13>0.00294</U13>
+		<U23>0.00055</U23>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
@@ -42,13 +42,13 @@
 		<fract>0.4146 0.2678 0.78543</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso>0.0109</U_iso>
-		<aniso_U_11>0.012</aniso_U_11>
-		<aniso_U_22>0.0105</aniso_U_22>
-		<aniso_U_33>0.0118</aniso_U_33>
-		<aniso_U_12>0.0065</aniso_U_12>
-		<aniso_U_13>-0.0029</aniso_U_13>
-		<aniso_U_23>-0.004</aniso_U_23>
+		<Uiso>0.0109</Uiso>
+		<U11>0.012</U11>
+		<U22>0.0105</U22>
+		<U33>0.0118</U33>
+		<U12>0.0065</U12>
+		<U13>-0.0029</U13>
+		<U23>-0.004</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
@@ -95,12 +95,12 @@
 		<fract>0.46987 0 0.6667</fract>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<aniso_U_11>0.0066</aniso_U_11>
-		<aniso_U_22>0.0051</aniso_U_22>
-		<aniso_U_33>0.0060</aniso_U_33>
-		<aniso_U_12>0.00255</aniso_U_12>
-		<aniso_U_13>-0.00015</aniso_U_13>
-		<aniso_U_23>-0.0003</aniso_U_23>
+		<U11>0.0066</U11>
+		<U22>0.0051</U22>
+		<U33>0.0060</U33>
+		<U12>0.00255</U12>
+		<U13>-0.00015</U13>
+		<U23>-0.0003</U23>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
@@ -108,12 +108,12 @@
 		<fract>0.4141 0.2681 0.7855</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.0156</aniso_U_11>
-		<aniso_U_22>0.0115</aniso_U_22>
-		<aniso_U_33>0.0119</aniso_U_33>
-		<aniso_U_12>0.0092</aniso_U_12>
-		<aniso_U_13>-0.0029</aniso_U_13>
-		<aniso_U_23>-0.0046</aniso_U_23>
+		<U11>0.0156</U11>
+		<U22>0.0115</U22>
+		<U33>0.0119</U33>
+		<U12>0.0092</U12>
+		<U13>-0.0029</U13>
+		<U23>-0.0046</U23>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
 	<citation doi="10.1107/S0567740876007966">

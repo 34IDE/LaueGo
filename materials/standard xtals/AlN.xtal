@@ -33,7 +33,7 @@
 		<fract>1/3 2/3 0</fract>
 		<valence>3</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0269768</U_iso>
+		<Uiso unit="Å^2">0.0269768</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>N</label>
@@ -41,7 +41,7 @@
 		<fract>1/3 2/3 0.3869</fract>
 		<valence>-3</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0236838</U_iso>
+		<Uiso unit="Å^2">0.0236838</Uiso>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Al" n1="N">0.1883 0.1927</bond_chemical>

@@ -32,12 +32,12 @@
 		<symbol>Ti</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<aniso_U_11 unit="Å^2">0.0068</aniso_U_11>
-		<aniso_U_22 unit="Å^2">-0.0004</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0.0068</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0.0046</aniso_U_23>
+		<U11 unit="Å^2">0.0068</U11>
+		<U22 unit="Å^2">-0.0004</U22>
+		<U33 unit="Å^2">0</U33>
+		<U12 unit="Å^2">0.0068</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0.0046</U23>
 		<valence>4</valence>
 	</atom_site>
 
@@ -46,12 +46,12 @@
 		<symbol>O</symbol>
 		<fract>0.30478 0.30478 0</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
-		<aniso_U_11 unit="Å^2">0.0052</aniso_U_11>
-		<aniso_U_22 unit="Å^2">-0.002</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0.0052</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0.0035</aniso_U_23>
+		<U11 unit="Å^2">0.0052</U11>
+		<U22 unit="Å^2">-0.002</U22>
+		<U33 unit="Å^2">0</U33>
+		<U12 unit="Å^2">0.0052</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0.0035</U23>
 		<valence>-2</valence>
 	</atom_site>
 

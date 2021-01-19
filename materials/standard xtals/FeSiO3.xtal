@@ -32,56 +32,56 @@
 		<symbol>Fe</symbol>
 		<fract>0.3758 0.6539 0.8741</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00456</U_iso>
+		<Uiso unit="Å^2">0.00456</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>FeM2</label>
 		<symbol>Fe</symbol>
 		<fract>0.3777 0.4855 0.3662</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00684</U_iso>
+		<Uiso unit="Å^2">0.00684</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>SiTA</label>
 		<symbol>Si</symbol>
 		<fract>0.2724 0.339 0.0486</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00367</U_iso>
+		<Uiso unit="Å^2">0.00367</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>SiTB</label>
 		<symbol>Si</symbol>
 		<fract>0.4732 0.3346 0.789</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00279</U_iso>
+		<Uiso unit="Å^2">0.00279</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O1a</label>
 		<symbol>O</symbol>
 		<fract>0.1847 0.334 0.039</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00595</U_iso>
+		<Uiso unit="Å^2">0.00595</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O2a</label>
 		<symbol>O</symbol>
 		<fract>0.3119 0.4961 0.06</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00659</U_iso>
+		<Uiso unit="Å^2">0.00659</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O3a</label>
 		<symbol>O</symbol>
 		<fract>0.3023 0.236 0.818</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00735</U_iso>
+		<Uiso unit="Å^2">0.00735</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O1b</label>
 		<symbol>O</symbol>
 		<fract>0.5611 0.3374 0.785</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00443</U_iso>
+		<Uiso unit="Å^2">0.00443</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O2b</label>
@@ -94,7 +94,7 @@
 		<symbol>O</symbol>
 		<fract>0.4477 0.2027 0.584</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00608</U_iso>
+		<Uiso unit="Å^2">0.00608</Uiso>
 	</atom_site>
 
 

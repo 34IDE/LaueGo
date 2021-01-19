@@ -24,24 +24,24 @@
 		<symbol>Si</symbol>
 		<fract>0.5 0 0</fract>
 		<valence>4</valence>
-		<aniso_U_11>0.02646</aniso_U_11>
-		<aniso_U_22>0.02011</aniso_U_22>
-		<aniso_U_33>0.01991</aniso_U_33>
-		<aniso_U_12>0.01005</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.02646</U11>
+		<U22>0.02011</U22>
+		<U33>0.01991</U33>
+		<U12>0.01005</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.41520 0.20760 1/6</fract>
 		<valence>-2</valence>
-		<aniso_U_11>0.04942</aniso_U_11>
-		<aniso_U_22>0.05464</aniso_U_22>
-		<aniso_U_33>0.05853</aniso_U_33>
-		<aniso_U_12>0.02471</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>-0.03218</aniso_U_23>
+		<U11>0.04942</U11>
+		<U22>0.05464</U22>
+		<U33>0.05853</U33>
+		<U12>0.02471</U12>
+		<U13>0</U13>
+		<U23>-0.03218</U23>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Si" n1="O">0.16052</bond_chemical>
 	<citation>

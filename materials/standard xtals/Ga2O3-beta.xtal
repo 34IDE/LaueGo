@@ -32,65 +32,65 @@
 		<symbol>Ga</symbol>
 		<fract>0.0905 0 0.7946</fract>
 		<WyckoffSymbol>i</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0038</U_iso>
-		<aniso_U_11 unit="Å^2">0.0044</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.004</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0033</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.0011</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.0038</Uiso>
+		<U11 unit="Å^2">0.0044</U11>
+		<U22 unit="Å^2">0.004</U22>
+		<U33 unit="Å^2">0.0033</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0.0011</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
 		<label>Ga2</label>
 		<symbol>Ga</symbol>
 		<fract>0.15866 1/2 0.31402</fract>
 		<WyckoffSymbol>i</WyckoffSymbol>
-		<U_iso unit="Å^2">0.004</U_iso>
-		<aniso_U_11 unit="Å^2">0.0038</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0038</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0041</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.0004</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.004</Uiso>
+		<U11 unit="Å^2">0.0038</U11>
+		<U22 unit="Å^2">0.0038</U22>
+		<U33 unit="Å^2">0.0041</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0.0004</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.1645 0 0.1098</fract>
 		<WyckoffSymbol>i</WyckoffSymbol>
-		<U_iso unit="Å^2">0.006</U_iso>
-		<aniso_U_11 unit="Å^2">0.0093</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0051</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0031</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.001</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.006</Uiso>
+		<U11 unit="Å^2">0.0093</U11>
+		<U22 unit="Å^2">0.0051</U22>
+		<U33 unit="Å^2">0.0031</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0.001</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.1733 0 0.5632</fract>
 		<WyckoffSymbol>i</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0056</U_iso>
-		<aniso_U_11 unit="Å^2">0.002</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0053</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0087</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0</aniso_U_12>
-		<aniso_U_13 unit="Å^2">-0.0001</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.0056</Uiso>
+		<U11 unit="Å^2">0.002</U11>
+		<U22 unit="Å^2">0.0053</U22>
+		<U33 unit="Å^2">0.0087</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">-0.0001</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.9959 1/2 0.2566</fract>
 		<WyckoffSymbol>i</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0042</U_iso>
-		<aniso_U_11 unit="Å^2">0.0051</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.0041</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.0035</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.0015</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<Uiso unit="Å^2">0.0042</Uiso>
+		<U11 unit="Å^2">0.0051</U11>
+		<U22 unit="Å^2">0.0041</U22>
+		<U33 unit="Å^2">0.0035</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0.0015</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
 
 	<bond_chemical unit="Å" n0="Ga1" n1="O1">1.835</bond_chemical>

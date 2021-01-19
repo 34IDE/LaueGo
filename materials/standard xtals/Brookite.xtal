@@ -32,12 +32,12 @@
 		<symbol>Ti</symbol>
 		<fract>0.1289 0.0972 0.8628</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11 unit="Å^2">0.00554</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.00572</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.00294</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.00024</aniso_U_13>
-		<aniso_U_23 unit="Å^2">-0.00028</aniso_U_23>
+		<U11 unit="Å^2">0.00554</U11>
+		<U22 unit="Å^2">0.00572</U22>
+		<U33 unit="Å^2">0.00294</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0.00024</U13>
+		<U23 unit="Å^2">-0.00028</U23>
 	</atom_site>
 
 	<atom_site>
@@ -45,12 +45,12 @@
 		<symbol>O</symbol>
 		<fract>0.0095 0.1491 0.1835</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11 unit="Å^2">0.00725</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.00677</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.00348</aniso_U_33>
-		<aniso_U_12 unit="Å^2">-0.00101</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.00167</aniso_U_13>
-		<aniso_U_23 unit="Å^2">-0.00113</aniso_U_23>
+		<U11 unit="Å^2">0.00725</U11>
+		<U22 unit="Å^2">0.00677</U22>
+		<U33 unit="Å^2">0.00348</U33>
+		<U12 unit="Å^2">-0.00101</U12>
+		<U13 unit="Å^2">0.00167</U13>
+		<U23 unit="Å^2">-0.00113</U23>
 	</atom_site>
 
 	<atom_site>
@@ -58,12 +58,12 @@
 		<symbol>O</symbol>
 		<fract>0.2314 0.111 0.5366</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11 unit="Å^2">0.00298</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.01143</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.00588</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0.00152</aniso_U_12>
-		<aniso_U_13 unit="Å^2">0.00119</aniso_U_13>
-		<aniso_U_23 unit="Å^2">0.00184</aniso_U_23>
+		<U11 unit="Å^2">0.00298</U11>
+		<U22 unit="Å^2">0.01143</U22>
+		<U33 unit="Å^2">0.00588</U33>
+		<U12 unit="Å^2">0.00152</U12>
+		<U13 unit="Å^2">0.00119</U13>
+		<U23 unit="Å^2">0.00184</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Ti" n1="O1">0.186276 0.198987 0.199873</bond_chemical>

@@ -23,12 +23,12 @@
 		<symbol>Ta</symbol>
 		<fract>0 0 0</fract>
 		<valence>4</valence>
-		<aniso_U_11>0.0061</aniso_U_11>
-		<aniso_U_22>0.0061</aniso_U_22>
-		<aniso_U_33>0.0069</aniso_U_33>
-		<aniso_U_12>0.0030</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0061</U11>
+		<U22>0.0061</U22>
+		<U33>0.0069</U33>
+		<U12>0.0030</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
@@ -37,12 +37,12 @@
 		<symbol>S</symbol>
 		<fract>1/3 2/3 0.2586</fract>
 		<valence>-2</valence>
-		<aniso_U_11>0.0071</aniso_U_11>
-		<aniso_U_22>0.0071</aniso_U_22>
-		<aniso_U_33>0.0086</aniso_U_33>
-		<aniso_U_12>0.0035</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0071</U11>
+		<U22>0.0071</U22>
+		<U33>0.0086</U33>
+		<U12>0.0035</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 

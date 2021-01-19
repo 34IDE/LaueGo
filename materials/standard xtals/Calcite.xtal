@@ -23,12 +23,12 @@
 		<symbol>Ca</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<aniso_U_11>0.01024</aniso_U_11>
-		<aniso_U_22>0.01024</aniso_U_22>
-		<aniso_U_33>0.00980</aniso_U_33>
-		<aniso_U_12>0.00512</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.01024</U11>
+		<U22>0.01024</U22>
+		<U33>0.00980</U33>
+		<U12>0.00512</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 		<valence>2</valence>
 	</atom_site>
 	<atom_site>
@@ -36,12 +36,12 @@
 		<symbol>C</symbol>
 		<fract>0 0 0.25</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<aniso_U_11>0.00910</aniso_U_11>
-		<aniso_U_22>0.00910</aniso_U_22>
-		<aniso_U_33>0.01060</aniso_U_33>
-		<aniso_U_12>0.00455</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.00910</U11>
+		<U22>0.00910</U22>
+		<U33>0.01060</U33>
+		<U12>0.00455</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 		<valence>4</valence>
 	</atom_site>
 	<atom_site>
@@ -49,12 +49,12 @@
 		<symbol>O</symbol>
 		<fract>0.2573 0 0.25</fract>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<aniso_U_11>0.01150</aniso_U_11>
-		<aniso_U_22>0.02220</aniso_U_22>
-		<aniso_U_33>0.01950</aniso_U_33>
-		<aniso_U_12>0.01110</aniso_U_12>
-		<aniso_U_13>-0.00400</aniso_U_13>
-		<aniso_U_23>-0.00800</aniso_U_23>
+		<U11>0.01150</U11>
+		<U22>0.02220</U22>
+		<U33>0.01950</U33>
+		<U12>0.01110</U12>
+		<U13>-0.00400</U13>
+		<U23>-0.00800</U23>
 		<valence>-2</valence>
 	</atom_site>
 

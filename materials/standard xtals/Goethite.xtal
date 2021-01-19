@@ -22,43 +22,43 @@
 		<label>Fe</label>
 		<symbol>Fe</symbol>
 		<fract>0.04892 0.85366 0.25</fract>
-		<U_iso>0.00588</U_iso>
-		<aniso_U_11>0.00664</aniso_U_11>
-		<aniso_U_22>0.00537</aniso_U_22>
-		<aniso_U_33>0.00565</aniso_U_33>
-		<aniso_U_12>0.00004</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.00588</Uiso>
+		<U11>0.00664</U11>
+		<U22>0.00537</U22>
+		<U33>0.00565</U33>
+		<U12>0.00004</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.70569 0.19914 0.25</fract>
-		<U_iso>0.00716</U_iso>
-		<aniso_U_11>0.00710</aniso_U_11>
-		<aniso_U_22>0.00727</aniso_U_22>
-		<aniso_U_33>0.00712</aniso_U_33>
-		<aniso_U_12>0.00201</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.00716</Uiso>
+		<U11>0.00710</U11>
+		<U22>0.00727</U22>
+		<U33>0.00712</U33>
+		<U12>0.00201</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O-h2</label>
 		<symbol>O</symbol>
 		<fract>0.19871 0.05298 0.25</fract>
-		<U_iso>0.00738</U_iso>
-		<aniso_U_11>0.00687</aniso_U_11>
-		<aniso_U_22>0.00643</aniso_U_22>
-		<aniso_U_33>0.00886</aniso_U_33>
-		<aniso_U_12>-0.00042</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.00738</Uiso>
+		<U11>0.00687</U11>
+		<U22>0.00643</U22>
+		<U33>0.00886</U33>
+		<U12>-0.00042</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>H</label>
 		<symbol>H</symbol>
 		<fract>0.37813 0.08170 0.25</fract>
-		<U_iso>0.01942</U_iso>
+		<Uiso>0.01942</Uiso>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Fe" n1="O1">0.19326 0.1956</bond_chemical>

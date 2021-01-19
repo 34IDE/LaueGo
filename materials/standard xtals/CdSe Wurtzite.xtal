@@ -22,18 +22,18 @@
 		<label>Cd</label>
 		<symbol>Cd</symbol>
 		<fract>1/3 2/3 0</fract>
-		<aniso_U_11>0.01849</aniso_U_11>
-		<aniso_U_22>0.01849</aniso_U_22>
-		<aniso_U_33>0.02243</aniso_U_33>
+		<U11>0.01849</U11>
+		<U22>0.01849</U22>
+		<U33>0.02243</U33>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Se</label>
 		<symbol>Se</symbol>
 		<fract>1/3 2/3 0.37679</fract>
-		<aniso_U_11>0.01532</aniso_U_11>
-		<aniso_U_22>0.01532</aniso_U_22>
-		<aniso_U_33>0.01215</aniso_U_33>
+		<U11>0.01532</U11>
+		<U22>0.01532</U22>
+		<U33>0.01215</U33>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 

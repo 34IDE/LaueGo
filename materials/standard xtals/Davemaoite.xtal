@@ -34,7 +34,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.42</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>K</label>
@@ -42,7 +42,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.2</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Na</label>
@@ -50,7 +50,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.1</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Fe</label>
@@ -58,7 +58,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.08</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Mg</label>
@@ -66,7 +66,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.06</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Al1</label>
@@ -74,7 +74,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.06</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Cr</label>
@@ -82,7 +82,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.05</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>La</label>
@@ -90,7 +90,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.02</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Ce</label>
@@ -98,7 +98,7 @@
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.01</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0025</U_iso>
+		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -107,7 +107,7 @@
 		<fract>0 0 0</fract>
 		<occupancy>0.99</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00507</U_iso>
+		<Uiso unit="Å^2">0.00507</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Al2</label>
@@ -115,7 +115,7 @@
 		<fract>0 0 0</fract>
 		<occupancy>0.01</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso unit="Å^2">0.00507</U_iso>
+		<Uiso unit="Å^2">0.00507</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -123,7 +123,7 @@
 		<symbol>O</symbol>
 		<fract>1/2 0 1/2</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<U_iso unit="Å^2">0.0038</U_iso>
+		<Uiso unit="Å^2">0.0038</Uiso>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="K" n1="O">0.17955</bond_chemical>

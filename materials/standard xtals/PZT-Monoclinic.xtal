@@ -27,7 +27,7 @@
 		<valence>2</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<occupancy>1</occupancy>
-		<U_iso>0.0139</U_iso>
+		<Uiso>0.0139</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Zr</label>
@@ -36,7 +36,7 @@
 		<occupancy>0.52</occupancy>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso>0.0011</U_iso>
+		<Uiso>0.0011</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Ti</label>
@@ -45,7 +45,7 @@
 		<occupancy>0.48</occupancy>
 		<valence>4</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso>0.0011</U_iso>
+		<Uiso>0.0011</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
@@ -53,7 +53,7 @@
 		<fract>0.5515 0 -0.0994</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<U_iso>0.0035</U_iso>
+		<Uiso>0.0035</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
@@ -61,7 +61,7 @@
 		<fract>0.288 0.2434 0.3729</fract>
 		<valence>-2</valence>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<U_iso>0.0123</U_iso>
+		<Uiso>0.0123</Uiso>
 	</atom_site>
 	
 	<bond_chemical unit="nm" n0="Zr" n1="O1">0.1873</bond_chemical>

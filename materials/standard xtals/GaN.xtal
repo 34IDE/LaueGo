@@ -38,12 +38,12 @@
 		<symbol>Ga</symbol>
 		<fract>-1/3 -2/3 0</fract>
 		<valence>3</valence>
-		<aniso_U_11>0.0052</aniso_U_11>
-		<aniso_U_22>0.0052</aniso_U_22>
-		<aniso_U_33>0.0027</aniso_U_33>
-		<aniso_U_12>0.0026</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0052</U11>
+		<U22>0.0052</U22>
+		<U33>0.0027</U33>
+		<U12>0.0026</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 
@@ -52,12 +52,12 @@
 		<symbol>N</symbol>
 		<fract>-1/3 -2/3 0.377</fract>
 		<valence>-3</valence>
-		<aniso_U_11>0.0070</aniso_U_11>
-		<aniso_U_22>0.0070</aniso_U_22>
-		<aniso_U_33>0.0024</aniso_U_33>
-		<aniso_U_12>0.0035</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.0070</U11>
+		<U22>0.0070</U22>
+		<U33>0.0024</U33>
+		<U12>0.0035</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 

@@ -25,62 +25,62 @@
 		<symbol>La</symbol>
 		<fract>0 0 0.358673</fract>
 		<occupancy>0.5</occupancy>
-		<U_iso>0.00557</U_iso>
-		<aniso_U_11>0.00612</aniso_U_11>
-		<aniso_U_22>0.00612</aniso_U_22>
-		<aniso_U_33>0.00446</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.00557</Uiso>
+		<U11>0.00612</U11>
+		<U22>0.00612</U22>
+		<U33>0.00446</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
 		<fract>0 0 0.358673</fract>
 		<occupancy>0.5</occupancy>
-		<U_iso>0.00557</U_iso>
-		<aniso_U_11>0.00612</aniso_U_11>
-		<aniso_U_22>0.00612</aniso_U_22>
-		<aniso_U_33>0.00446</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.00557</Uiso>
+		<U11>0.00612</U11>
+		<U22>0.00612</U22>
+		<U33>0.00446</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
 		<fract>0 0 0</fract>
-		<U_iso>0.00710</U_iso>
-		<aniso_U_11>0.00329</aniso_U_11>
-		<aniso_U_22>0.00329</aniso_U_22>
-		<aniso_U_33>0.0147</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.00710</Uiso>
+		<U11>0.00329</U11>
+		<U22>0.00329</U22>
+		<U33>0.0147</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0 0 0.1673</fract>
-		<U_iso>0.0144</U_iso>
-		<aniso_U_11>0.018</aniso_U_11>
-		<aniso_U_22>0.018</aniso_U_22>
-		<aniso_U_33>0.0073</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.0144</Uiso>
+		<U11>0.018</U11>
+		<U22>0.018</U22>
+		<U33>0.0073</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0</fract>
-		<U_iso>0.0072</U_iso>
-		<aniso_U_11>0.0075</aniso_U_11>
-		<aniso_U_22>0.0038</aniso_U_22>
-		<aniso_U_33>0.0104</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<Uiso>0.0072</Uiso>
+		<U11>0.0075</U11>
+		<U22>0.0038</U22>
+		<U33>0.0104</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>0</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Ga" n1="O1">0.2123</bond_chemical>

@@ -24,9 +24,9 @@
 		<symbol>Fe</symbol>
 		<fract>0 0 0.35522</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<aniso_U_11>0.00368</aniso_U_11>
-		<aniso_U_22>0</aniso_U_22>
-		<aniso_U_33>0.00366</aniso_U_33>
+		<U11>0.00368</U11>
+		<U22>0</U22>
+		<U33>0.00366</U33>
 	</atom_site>
 
 	<atom_site>
@@ -34,12 +34,12 @@
 		<symbol>O</symbol>
 		<fract>0.69395 0 0.25</fract>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<aniso_U_11>0.00411</aniso_U_11>
-		<aniso_U_22>0.00465</aniso_U_22>
-		<aniso_U_33>0.00434</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0.00052</aniso_U_13>
-		<aniso_U_23>0</aniso_U_23>
+		<U11>0.00411</U11>
+		<U22>0.00465</U22>
+		<U33>0.00434</U33>
+		<U12>0</U12>
+		<U13>0.00052</U13>
+		<U23>0</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Fe" n1="O">0.1944 0.2114</bond_chemical>

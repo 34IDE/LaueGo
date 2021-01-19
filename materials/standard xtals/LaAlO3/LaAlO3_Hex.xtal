@@ -25,7 +25,7 @@
 		<symbol>La</symbol>
 		<fract>0 0 .25</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<B_iso unit="Å^2">0.23</B_iso>
+		<Biso unit="Å^2">0.23</Biso>
 		<valence>3</valence>
 	</atom_site>
 	<atom_site>
@@ -33,7 +33,7 @@
 		<symbol>Al</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<B_iso unit="Å^2">0.21</B_iso>
+		<Biso unit="Å^2">0.21</Biso>
 		<valence>3</valence>
 	</atom_site>
 	<atom_site>
@@ -41,12 +41,12 @@
 		<symbol>O</symbol>
 		<fract>0.4749 0 0.25</fract>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<aniso_U_11 unit="Å^2">0.080</aniso_U_11>
-		<aniso_U_22 unit="Å^2">0.023</aniso_U_22>
-		<aniso_U_33 unit="Å^2">0.039</aniso_U_33>
-		<aniso_U_12 unit="Å^2">0.012</aniso_U_12>
-		<aniso_U_13 unit="Å^2">-0.008</aniso_U_13>
-		<aniso_U_23 unit="Å^2">-0.017</aniso_U_23>
+		<U11 unit="Å^2">0.080</U11>
+		<U22 unit="Å^2">0.023</U22>
+		<U33 unit="Å^2">0.039</U33>
+		<U12 unit="Å^2">0.012</U12>
+		<U13 unit="Å^2">-0.008</U13>
+		<U23 unit="Å^2">-0.017</U23>
 		<valence>-2</valence>
 	</atom_site>
 

@@ -25,48 +25,48 @@
 		<label>Ca</label>
 		<symbol>Ca</symbol>
 		<fract>0.25 0.415 0.7597</fract>
-		<aniso_U_11>0.00773</aniso_U_11>
-		<aniso_U_22>0.00675</aniso_U_22>
-		<aniso_U_33>0.01052</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>0.00023</aniso_U_23>
+		<U11>0.00773</U11>
+		<U22>0.00675</U22>
+		<U33>0.01052</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>0.00023</U23>
 	</atom_site>
 
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
 		<fract>0.25 0.7622 -0.0862</fract>
-		<aniso_U_11>0.00811</aniso_U_11>
-		<aniso_U_22>0.00868</aniso_U_22>
-		<aniso_U_33>0.00417</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>-0.00139</aniso_U_23>
+		<U11>0.00811</U11>
+		<U22>0.00868</U22>
+		<U33>0.00417</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>-0.00139</U23>
 	</atom_site>
 
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.25 0.9225 -0.0962</fract>
-		<aniso_U_11>0.01521</aniso_U_11>
-		<aniso_U_22>0.00900</aniso_U_22>
-		<aniso_U_33>0.01436</aniso_U_33>
-		<aniso_U_12>0</aniso_U_12>
-		<aniso_U_13>0</aniso_U_13>
-		<aniso_U_23>-0.00255</aniso_U_23>
+		<U11>0.01521</U11>
+		<U22>0.00900</U22>
+		<U33>0.01436</U33>
+		<U12>0</U12>
+		<U13>0</U13>
+		<U23>-0.00255</U23>
 	</atom_site>
 
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.4736 0.681 -0.0862</fract>
-		<aniso_U_11>0.00661</aniso_U_11>
-		<aniso_U_22>0.01351</aniso_U_22>
-		<aniso_U_33>0.01152</aniso_U_33>
-		<aniso_U_12>0.00160</aniso_U_12>
-		<aniso_U_13>-0.00014</aniso_U_13>
-		<aniso_U_23>-0.00695</aniso_U_23>
+		<U11>0.00661</U11>
+		<U22>0.01351</U22>
+		<U33>0.01152</U33>
+		<U12>0.00160</U12>
+		<U13>-0.00014</U13>
+		<U23>-0.00695</U23>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="C" n1="O1">0.1278</bond_chemical>

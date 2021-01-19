@@ -26,7 +26,7 @@
 		<symbol>La</symbol>
 		<fract>0 0 0</fract>
 		<valence>3</valence>
-		<U_iso>0.004299</U_iso>
+		<Uiso>0.004299</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -34,7 +34,7 @@
 		<symbol>Al</symbol>
 		<fract>0.5 0.5 0.5</fract>
 		<valence>3</valence>
-		<U_iso>0.00377</U_iso>
+		<Uiso>0.00377</Uiso>
 	</atom_site>
 
 	<atom_site>
@@ -42,7 +42,7 @@
 		<symbol>O</symbol>
 		<fract>0 0.5 0.5</fract>
 		<valence>-2</valence>
-		<U_iso>0.014</U_iso>
+		<Uiso>0.014</Uiso>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Al" n1="O">0.1896</bond_chemical>
