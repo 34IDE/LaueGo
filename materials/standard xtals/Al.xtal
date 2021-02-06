@@ -34,6 +34,6 @@
 		<year>1962</year>
 		<pages>578 582</pages>
 		<author>Ann S. Cooper</author>
-		<comment>reported ao = 4.041432 kX(Cu) units, using CuXunit = 0.000100207699 nm, gives: 0.40498826nm</comment>
+		<comment>reported ao = 4.041432 kX(Cu) units, using CuXunit = 1.00207699e-13 m, gives: 0.40498826nm</comment>
 	</citation>
 </cif>

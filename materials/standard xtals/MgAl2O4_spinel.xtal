@@ -22,7 +22,7 @@
 		<label>Mg</label>
 		<symbol>Mg</symbol>
 		<fract>0 0 0</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<Biso unit="Å^2">0.57</Biso>	<!-- B = 8 * pi^2 <u^2> -->
 	</atom_site>
 
@@ -30,7 +30,7 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0.625 0.625 0.625</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<Biso unit="Å^2">0.1</Biso>		<!-- B = 8 * pi^2 <u^2> -->
 	</atom_site>
 
@@ -38,7 +38,7 @@
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.3872 0.3872 0.3872</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<Biso unit="Å^2">0.5</Biso>		<!-- B = 8 * pi^2 <u^2> -->
 	</atom_site>
 
@@ -46,8 +46,8 @@
 	<bond_chemical unit="nm" n0="Al" n1="O">0.19272</bond_chemical>
 
 	<citation doi="10.1088/0022-3719/9/9/002">
-		page numbers start with &quot;L&quot;
-		also http://phycomp.technion.ac.il/~ira/types.html#MgAl2O4
+		<comment>page numbers start with &quot;L&quot;</comment>
+		<http>http://phycomp.technion.ac.il/~ira/types.html#MgAl2O4</http>
 		<author>K D Rouse</author>
 		<author>M W Thomas</author>
 		<author>B T M Willis</author>

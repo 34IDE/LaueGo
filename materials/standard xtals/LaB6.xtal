@@ -46,9 +46,9 @@
 	<!-- <bond_chemical unit="nm" n0="La" n1="B">0.3057</bond_chemical> -->
 
 	<citation id="primary">
+		<http>https://www-s.nist.gov/srmors/certificates/660c.pdf</http>
 		NIST lattice parameter 660c (2015)
 		a = 0.4156826 nm ± 0.000008 nm  at 22.5°C
-		https://www-s.nist.gov/srmors/certificates/660c.pdf
 		<!--   value from P. Zavalij is a = 0.4157597 nm -->
 	</citation>
 	

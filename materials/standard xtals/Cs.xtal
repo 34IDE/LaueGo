@@ -23,7 +23,7 @@
 	<bond_chemical unit="nm" n0="Cs" n1="Cs">0.532</bond_chemical>
 	<citation doi="10.1063/1.1675251">
 		rad = 0.26 nm -> dist = 0.2
-		http://periodictable.com/Elements/055/data.html
+		<http>http://periodictable.com/Elements/055/data.html</http>
 		<author>C. E. Weir</author>
 		<author>G. J. Piermarini</author>
 		<author>S. Block</author>

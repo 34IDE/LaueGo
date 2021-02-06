@@ -25,20 +25,20 @@
 		<symbol>K</symbol>
 		<fract>0 0 0</fract>
 		<Uiso>0.0082</Uiso>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
 		<fract>0.5 0.5 0.5</fract>
-		<valence>5</valence>
+		<oxidation>5</oxidation>
 		<Uiso>0.00332</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0.5</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<Uiso>0.0073</Uiso>
 	</atom_site>
 
@@ -59,6 +59,6 @@
 	<citation id="2" >
 		R.W.G. Wyckoff
 		&quot;The second edition supplement of The Structure of Crystals&quot; (1935) page 55
-		http://jcrystal.com/steffenweber/gallery/StructureTypes/st4.html
+		<http>http://jcrystal.com/steffenweber/gallery/StructureTypes/st4.html</http>
 	</citation>
 </cif>
