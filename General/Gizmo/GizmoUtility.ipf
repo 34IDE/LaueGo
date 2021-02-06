@@ -1,7 +1,7 @@
 #pragma rtGlobals=2		// Use modern global access method.
 #pragma ModuleName=GizmoUtil
 #pragma IgorVersion = 6.21
-#pragma version = 2.23
+#pragma version = 2.24
 #include "ColorNames"
 
 Static Constant GIZMO_MARKER_END_SIZE = 0.07		// puts boxes on ends of 3D marker (you can OverRide this in the Main procedure)
@@ -623,7 +623,7 @@ Function/T AddGizmoMarkerGroup(groupName,[rgba,alpha,scale])
 	endif
 	AppendToGizmo attribute lineWidth=2, name=lineWidthCross
 	if (strlen(rgba))
-		Wave wrgba = str2vec(str)
+		Wave wrgba = str2vec(rgba)
 		AppendToGizmo attribute color={wrgba[0],wrgba[1],wrgba[2],wrgba[3]},name=colorLine
 	endif
 	ModifyGizmo setDisplayList=0, opName=pushAttribute0, operation=pushAttribute, data=5
@@ -1628,6 +1628,21 @@ Function/WAVE GizmoObjectWave(objectName,objType,[gizmo])
 	KillWaves/Z TW_gizmoObjectList
 	return ww
 End
+
+
+#if (IgorVersion()>7)
+Function GizmoObjExists(objName, [name])
+	String objName
+	String name
+	name = SelectString(ParamIsDefault(name),name,"")
+	if (strlen(name))
+		GetGizmo/N=$name objectItemExists=$objName
+	else
+		GetGizmo objectItemExists=$objName
+	endif
+	return V_flag
+End
+#endif
 
 //  ==================== End of Examining things Displayed in a Gizmo ====================  //
 //  ======================================================================================  //

@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.30									// based on LatticeSym_6.55
+#pragma version = 7.32									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -258,6 +258,8 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.28, changed LatticeSym_maxBondLen from 0.31 nm --> 0.56 nm
 //	with version 7.29, added interpDouble(), allows fractional coordinates to also be written "1/2", also used for occupancy.
 //	with version 7.30, in ForceXtalAtomNamesUnique() change all[] --> allNames[]
+//	with version 7.31, allow use of Uiso, Biso, U11, U22, U33, U12, U13, U23 in xtal files
+//	with version 7.32, read xtal files that use <oxidation> rather than <valence>
 
 
 //	Rhombohedral Transformation:
@@ -836,9 +838,9 @@ Function EditAtomPositions(xtal_IN)		// Create and Handle the Edit Atoms Panel
 	SetVariable setAtomLabel,fSize=12,value= _STR:""
 	SetVariable setAtomZ,pos={203,47},size={60,19},title="Z",fSize=12,proc=LatticeSym#AtomEditSetVarProc
 	SetVariable setAtomZ,limits={1,92,1},value= _NUM:0
-	PopupMenu setValencePopup,pos={216,70},size={90,19},bodyWidth=40,title="Valence"
+	PopupMenu setValencePopup,pos={216,70},size={90,19},bodyWidth=40,title="oxidation"
 	PopupMenu setValencePopup,value= #"\"-2;-1;0;1;2;3;4;5;6;\""
-	PopupMenu setValencePopup,fSize=12,mode=3,proc=LatticeSym#AtomEdit_PopMenuProc	// mode=3 sets valence=0
+	PopupMenu setValencePopup,fSize=12,mode=3,proc=LatticeSym#AtomEdit_PopMenuProc	// mode=3 sets oxidation=0
 	PopupMenu setAtomWyckoff,mode=1,popvalue=" ",value= #wyckMenuStr
 	PopupMenu setAtomWyckoff,pos={213,93},size={87,20},title="Wyckoff",fSize=12,proc=LatticeSym#AtomEdit_PopMenuProc
 	PopupMenu useThermalPopUp,pos={211,141},size={113,20},fSize=12, proc=LatticeSym#SetAtomThermalPopMenuProc
@@ -1600,7 +1602,7 @@ Static Function atomBAD(atom,dim)
 	bad += strlen(atom.name)<1
 	bad += numtype(atom.occ) || atom.occ<0 || atom.occ>1
 	bad += atom.Zatom != limit(round(atom.Zatom),1,92)
-	bad += !(abs(atom.valence)<10)					// a valence of 10 is too big
+	bad += !(abs(atom.valence)<10)						// a valence of 10 is too big
 	bad += atom.DebyeT < 0								// Debye, and isotropic U or B must be positive
 	bad += atom.Biso < 0 || numtype(atom.Biso)==1
 	bad += atom.Uiso < 0 || numtype(atom.Uiso)==1
@@ -2116,13 +2118,13 @@ End
 Static Function NetChargeCell(xtal)				// find the net charge in a cell (from valences), should be zero
 	STRUCT crystalStructure &xtal
 
-	Variable i, mult, occ, valence, netCharge=0
+	Variable i, mult, occ, oxidation, netCharge=0
 	for (i=0;i<xtal.N;i+=1)							// loop over the defined atoms
 		mult = DimSize($("root:Packages:Lattices:atom"+num2istr(i)),0)
 		mult = mult>0 ? mult : xtal.atom[i].mult
-		valence = xtal.atom[i].valence
+		oxidation = xtal.atom[i].valence
 		occ = xtal.atom[i].occ > 0 ? xtal.atom[i].occ : 1
-		netCharge += (mult>=1 && abs(valence)>0) ? mult*occ*valence : 0
+		netCharge += (mult>=1 && abs(oxidation)>0) ? mult*occ*oxidation : 0
 	endfor
 	return netCharge
 End
@@ -4436,7 +4438,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 
 	// collect the atom sites values
 	String atomSite, atomLabel, symbol, WyckoffSymbol, list
-	Variable Zatom, fracX,fracY,fracZ,occupy,valence,DebyeT
+	Variable Zatom, fracX,fracY,fracZ,occupy,oxidation,DebyeT
 	Variable Biso, Uiso, aU11,aU22,aU33, aU12,aU13,aU23, mult
 	Variable start=0, N=0
 	do
@@ -4494,45 +4496,28 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			WyckoffSymbol = FindWyckoffSymbol(xtalTemp, fracX,fracY,fracZ,mult)
 		endif
 
-		valence = str2num(XMLtagContents("valence",atomSite))
-		valence = (numtype(valence)==0 && abs(valence)<10) ? round(valence) : 0
+		oxidation = str2num(XMLtagContents("oxidation",atomSite))	// new tag name
+		if (numtype(oxidation))
+			oxidation = str2num(XMLtagContents("valence",atomSite))	// net try deprecated tag name
+		endif
+		oxidation = (numtype(oxidation)==0 && abs(oxidation)<12) ? round(oxidation) : 0
+
 		occupy = interpDouble(XMLtagContents("occupancy",atomSite))
 		occupy = (occupy>=0 && occupy<=1) ? occupy : 1				// default is 1
 		DebyeT = str2num(XMLtagContents("DebyeTemperature",atomSite))
 		DebyeT = DebyeT>0 ? DebyeT : NaN
 		unit = StringByKey("unit", XMLattibutes2KeyList("DebyeTemperature",atomSite),"=")
-		unit = SelectString(strlen(unit),"K",unit)						// default Debye Temperature units are K
+		unit = SelectString(strlen(unit),"K",unit)					// default Debye Temperature units are K
 		DebyeT = ConvertTemperatureUnits(DebyeT,unit,"K")			// DebyeT is always stored as 
-
-		Biso = str2num(XMLtagContents("B_iso",atomSite))
-		Biso = Biso <=0 || numtype(Biso) ?  NaN : Biso
-		unit = StringByKey("unit", XMLattibutes2KeyList("B_iso",atomSite),"=")
-		Biso *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
-
-		Uiso = str2num(XMLtagContents("U_iso",atomSite))
-		Uiso = Uiso <=0 || numtype(Uiso) ?  NaN : Uiso
-		unit = StringByKey("unit", XMLattibutes2KeyList("U_iso",atomSite),"=")
-		Uiso *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
-
-		aU11 = str2num(XMLtagContents("aniso_U_11",atomSite))
-		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_11",atomSite),"=")
-		aU11 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
-		aU22 = str2num(XMLtagContents("aniso_U_22",atomSite))
-		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_22",atomSite),"=")
-		aU22 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-		aU12 = str2num(XMLtagContents("aniso_U_12",atomSite))
-		unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_12",atomSite),"=")
-		aU12 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+		Biso = getUvalue("Biso", atomSite, 1)							// Biso and Uiso must be positive
+		Uiso = getUvalue("Uiso", atomSite, 1)
+		aU11 = getUvalue("U11", atomSite, 0)							// U11 can be negative
+		aU22 = getUvalue("U22", atomSite, 0)
+		aU12 = getUvalue("U12", atomSite, 0)
 		if (dim > 2)
-			aU33 = str2num(XMLtagContents("aniso_U_33",atomSite))
-			unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_33",atomSite),"=")
-			aU33 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-			aU13 = str2num(XMLtagContents("aniso_U_13",atomSite))
-			unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_13",atomSite),"=")
-			aU13 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
-			aU23 = str2num(XMLtagContents("aniso_U_23",atomSite))
-			unit = StringByKey("unit", XMLattibutes2KeyList("aniso_U_23",atomSite),"=")
-			aU23 *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18
+			aU33 = getUvalue("U33", atomSite, 0)
+			aU13 = getUvalue("U13", atomSite, 0)
+			aU23 = getUvalue("U23", atomSite, 0)
 		endif
 
 		xtal.atom[N].name = atomLabel[0,59]
@@ -4540,7 +4525,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		xtal.atom[N].x = fracX
 		xtal.atom[N].y = fracY
 		xtal.atom[N].z = (dim==2) ? NaN : fracZ		// invalid value for dim=2
-		xtal.atom[N].valence = valence
+		xtal.atom[N].valence = oxidation
 		xtal.atom[N].occ = occupy
 		xtal.atom[N].WyckoffSymbol = WyckoffSymbol[0]
 		xtal.atom[N].mult = mult
@@ -4594,6 +4579,25 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	ForceLatticeToStructure(xtal)
 	UpdateCrystalStructureDefaults(xtal)
 	return 0
+End
+//
+Static Function getUvalue(key, atomSite, pos)
+	// returns the double value of str, Uiso, U11, ...
+	// this also checks for the old aliases (e.g. U_iso)
+	String key				// one of Uiso, U_iso, Biso, B_iso, aniso_U_11, U11, ...
+	String atomSite
+	Variable pos				// is true, then enforce that value ≥ 0
+
+	Variable Uval = str2num(XMLtagContents(key,atomSite))		// output value
+	Uval = (Uval <=0 && pos) || numtype(Uval) ?  NaN : Uval
+	String unit = StringByKey("unit", XMLattibutes2KeyList(key,atomSite),"=")
+	Uval *= ConvertUnits2meters(unit,defaultLen=1e-20)*1e18	// want length in nm^2
+	if (numtype(Uval) && strsearch(key,"_",0) < 0)	// not found and does NOT contain "_"
+		String subs="Uiso:U_iso;Biso:B_iso;U11:aniso_U_11;U22:aniso_U_22;U33:aniso_U_33;U12:aniso_U_12;U13:aniso_U_13;U23:aniso_U_23"
+		String keyOld = StringByKey(key, subs)
+		Uval = getUvalue(keyOld, atomSite, pos)					// try again using keyOld, the old key
+	endif
+	return Uval
 End
 //
 Static Function interpDouble(str)
@@ -4822,8 +4826,8 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		else
 			cif += "\t\t<fract>"+num2StrFull(xtal.atom[i].x)+" "+num2StrFull(xtal.atom[i].y)+" "+num2StrFull(xtal.atom[i].z)+"</fract>"+NL
 		endif
-		if (numtype(xtal.atom[i].valence)==0 && abs(xtal.atom[i].valence)<10 && abs(xtal.atom[i].valence)>0)
-			cif += "\t\t<valence>"+num2StrFull(xtal.atom[i].valence)+"</valence>"+NL
+		if (numtype(xtal.atom[i].valence)==0 && abs(xtal.atom[i].valence)<12 && abs(xtal.atom[i].valence)>0)
+			cif += "\t\t<oxidation>"+num2StrFull(xtal.atom[i].valence)+"</oxidation>"+NL
 		endif
 		if (xtal.atom[i].occ<1 && numtype(xtal.atom[i].occ)==0)
 			cif += "\t\t<occupancy>"+num2StrFull(xtal.atom[i].occ)+"</occupancy>"+NL
@@ -4836,20 +4840,20 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		if (itemp==1)								// write ONE kind of thermal vibartion info
 			cif += "\t\t<DebyeTemperature unit=\"K\">"+num2StrFull(xtal.atom[i].DebyeT)+"</DebyeTemperature>"+NL
 		elseif (itemp==2)
-			cif += "\t\t<B_iso unit=\""+ARING+"^2\">"+num2StrFull(xtal.atom[i].Biso * 100)+"</B_iso>"+NL
+			cif += "\t\t<Biso unit=\""+ARING+"^2\">"+num2StrFull(xtal.atom[i].Biso * 100)+"</Biso>"+NL
 		elseif (itemp==3)
-			cif += "\t\t<U_iso unit=\""+ARING+"^2\">"+num2StrFull(xtal.atom[i].Uiso * 100)+"</U_iso>"+NL
+			cif += "\t\t<Uiso unit=\""+ARING+"^2\">"+num2StrFull(xtal.atom[i].Uiso * 100)+"</Uiso>"+NL
 		elseif (itemp>=4)
-			cif += "\t\t<aniso_U_11 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U11)+"</aniso_U_11>"+NL
-			cif += "\t\t<aniso_U_22 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U22)+"</aniso_U_22>"+NL
+			cif += "\t\t<U11 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U11)+"</U11>"+NL
+			cif += "\t\t<U22 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U22)+"</U22>"+NL
 			if (!(dim==2))
-				cif += "\t\t<aniso_U_33 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U33)+"</aniso_U_33>"+NL
+				cif += "\t\t<U33 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U33)+"</U33>"+NL
 			endif
 			if (itemp==5)
-				cif += "\t\t<aniso_U_12 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U12)+"</aniso_U_12>"+NL
+				cif += "\t\t<U12 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U12)+"</U12>"+NL
 				if (!(dim==2))
-					cif += "\t\t<aniso_U_13 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U13)+"</aniso_U_13>"+NL
-					cif += "\t\t<aniso_U_23 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U23)+"</aniso_U_23>"+NL
+					cif += "\t\t<U13 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U13)+"</U13>"+NL
+					cif += "\t\t<U23 unit=\"nm^2\">"+num2StrFull(xtal.atom[i].U23)+"</U23>"+NL
 				endif
 			endif
 		endif

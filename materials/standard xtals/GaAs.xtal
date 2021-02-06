@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Gallium Arsenide</chemical_name_common>
+	<chemical_name_common>Gallium arsenide</chemical_name_common>
 	<chemical_formula>GaAs</chemical_formula>
 	<database_code db="COD">9008845</database_code>
 
@@ -13,9 +13,9 @@
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.56537</a>
-		<b unit="nm">0.56537</b>
-		<c unit="nm">0.56537</c>
+		<a unit="nm">0.5653586</a>
+		<b unit="nm">0.5653586</b>
+		<c unit="nm">0.5653586</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
@@ -28,7 +28,7 @@
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<DebyeTemperature unit="K">370</DebyeTemperature>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>As</label>
@@ -36,12 +36,38 @@
 		<fract>1/4 1/4 1/4</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<DebyeTemperature unit="K">370</DebyeTemperature>
-		<valence>-3</valence>
+		<oxidation>-3</oxidation>
 	</atom_site>
-	<bond_chemical unit="nm" n0="Ga" n1="As">0.2448</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Ga" n1="As">0.244807</bond_chemical>
 	<!-- bond length = ao*sqrt(3)/4 -->
 
-	<citation>
+	<citation doi="10.1016/0038-1101(76)90031-9" id="primary">
+		<!-- reported a = 5.653524 Å* -->
+		<!-- a = 0.5653586 = (5.653524 Å*/5.657735 Å*) * 0.56577973, where aGe = 0.56577973 nm -->
+		<title>Precise lattice parameter determination of dislocation-free gallium arsenide—I: X-ray measurements</title>
+		<journal>Solid-State Electronics</journal>
+		<volume>19</volume>
+		<year>1976</year>
+		<pages>331 334</pages>
+		<author>J.F.C. Baker</author>
+		<author>M. Hart</author>
+		<author>M.A.G. Halliwell</author>
+		<author>R. Heckingbottom</author>
+	</citation>
+
+	<citation doi="10.1107/S0365110X62001474" id="2">
+		<!-- a = 5.641907 ± 0.000014 (kX) -->
+		<title>Precise Lattice Constants of Germanium, Aluminum, Gallium Arsenide, Uranium, Sulphur, Quartz and Sapphire</title>
+		<journal>ActaCryst</journal>
+		<volume>15</volume>
+		<year>1962</year>
+		<pages>578 582</pages>
+		<author>Ann S. Cooper</author>
+	</citation>
+
+	<citation id="3">
+		<!-- a = 5.6537 Å -->
 		<title>Second edition. Interscience Publishers, New York, New York</title>
 		<!-- Note: ZnS structure, sphalerite structure -->
 		<journal>Crystal Structures</journal>

@@ -1,8 +1,9 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
+#pragma IgorVersion = 8.0
 #include "GizmoMarkers", version>=2.04
-#if (IgorVersion()<7)
-#include "GizmoZoomTranslate", version>=2.00
-#endif
+//#if (IgorVersion()<7)
+//#include "GizmoZoomTranslate", version>=2.00
+//#endif
 
 
 #if defined(ZONE_TESTING) || defined(QS_TESTING) || defined(ZONE_QS_TESTING) || defined(DOTS_TESTING)
@@ -12,6 +13,7 @@ Menu "Zones"
 	MenuItemIfWaveExists("Gizmo of all Pair Rotations",":GizmoWaves:PairRotationsView"), GizmoOfMakePairRotations()
 	"  View Gizmo from Detector", ModifyGizmo stopRotation, SETQUATERNION={-0.653030,-0.653030,-0.271204,0.271204}
 	"  View Gizmo from Side", ModifyGizmo stopRotation, SETQUATERNION={0,-1/sqrt(2),0,1/sqrt(2)}
+	"  View Gizmo at Beamline", ModifyGizmo stopRotation, SETQUATERNION={-0,1/sqrt(2),0,1/sqrt(2)}
 	"-"
 End
 #endif
@@ -139,122 +141,139 @@ Function GizmoOfZones()
 		DoWindow/F GizmoZones
 		return 1
 	endif
-	if(exists("NewGizmo")!=4)	// Do nothing if the Gizmo XOP is not available.
-		DoAlert 0, "Gizmo XOP must be installed"
+
+	String fldr = GetDataFolder(1)
+	Wave GhatScatter = $(fldr + "GizmoWaves:GizmoGhats")
+	Wave GizmoZoneLines = $(fldr + "GizmoWaves:GizmoZoneLines")
+	Wave GizmoZoneLinesRGBA = $(fldr + "GizmoWaves:GizmoZoneLinesRGBA")
+	Wave GizmoZoneCircles = $(fldr + "GizmoWaves:GizmoZoneCircles")
+	Wave GizmoZoneCirclesRGBA = $(fldr + "GizmoWaves:GizmoZoneCirclesRGBA")
+
+	Wave GizmoZoneZonePoints = $(fldr + "GizmoWaves:GizmoZoneZonePoints")
+	Wave testZoneHatsGizmo = $(fldr + "GizmoWaves:testZoneHatsGizmo")
+
+	if (!WaveExists(GhatScatter) || !WaveExists(GizmoZoneLines) || !WaveExists(GizmoZoneCircles))
 		return 1
 	endif
 
-	String fldr = GetDataFolder(1)
 
-	Execute "NewGizmo/N=GizmoZones/T=\"GizmoZones\" /W=(1140,49,1593,502)"
-	Execute "ModifyGizmo startRecMacro"
-	Execute "AppendToGizmo Scatter="+fldr+"GizmoWaves:GizmoGhats"+",name=GhatScatter"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ scatterColorType,0}"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ markerType,0}"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ sizeType,0}"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ rotationType,0}"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ Shape,1}"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ size,5}"
-	Execute "ModifyGizmo ModifyObject=GhatScatter property={ color,0,6.10361e-05,0.8,1}"
-	Execute "AppendToGizmo Axes=boxAxes,name=axes0"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisRange,-1,-1,-1,1,-1,-1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisRange,-1,-1,-1,-1,1,-1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisRange,-1,-1,-1,-1,-1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={3,axisRange,-1,1,-1,-1,1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={4,axisRange,1,1,-1,1,1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={5,axisRange,1,-1,-1,1,-1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={6,axisRange,-1,-1,1,-1,1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={7,axisRange,1,-1,1,1,1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={8,axisRange,1,-1,-1,1,1,-1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={9,axisRange,-1,1,-1,1,1,-1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={10,axisRange,-1,1,1,1,1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={11,axisRange,-1,-1,1,1,-1,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={-1,axisScalingMode,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={-1,axisColor,0.5,0.5,0.5,0.4}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,ticks,3}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,ticks,3}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,ticks,3}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,labelColor,0.5,0.5,0.5,0.4}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,labelColor,0.5,0.5,0.5,0.4}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,labelColor,0.5,0.5,0.5,0.4}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabel,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisLabel,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabel,1}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabelText,\"X\"}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisLabelText,\"Y\"}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelText,\"Z\"}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabelCenter,0}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisLabelCenter,0}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelCenter,0}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabelDistance,0}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisLabelDistance,0}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelDistance,0}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabelScale,0.5}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisLabelScale,0.5}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelScale,0.5}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={0,axisLabelRGBA,0.5,0.5,0.5,0.5}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={1,axisLabelRGBA,0.5,0.5,0.5,0.5}"
-	Execute "ModifyGizmo ModifyObject=axes0,property={2,axisLabelRGBA,0.5,0.5,0.5,0.5}"
-	Execute "ModifyGizmo modifyObject=axes0 property={Clipped,0}"
+	NewGizmo/N=GizmoZones/T="GizmoZones"/W=(1140,49,1593,502)
+	ModifyGizmo startRecMacro=700
+	ModifyGizmo scalingOption=63
+	ModifyGizmo keepPlotSquare=1
+	AppendToGizmo Scatter=GhatScatter,name=GhatScatter
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ scatterColorType,0}
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ markerType,0}
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ sizeType,0}
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ rotationType,0}
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ Shape,2}
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ size,0.15}
+	ModifyGizmo ModifyObject=GhatScatter,objectType=scatter,property={ color,0,0,0.8,1}
 
-	Execute "AppendToGizmo Path="+fldr+"GizmoWaves:GizmoZoneLines"+",name=ZoneLines"
-	Execute "ModifyGizmo ModifyObject=ZoneLines property={ pathColorType,2}"
-	Execute "ModifyGizmo ModifyObject=ZoneLines property={ lineWidthType,1}"
-	Execute "ModifyGizmo ModifyObject=ZoneLines property={ lineWidth,2}"
-	Execute "ModifyGizmo ModifyObject=ZoneLines property={ pathColorWave,"+fldr+"GizmoWaves:GizmoZoneLinesRGBA"+"}"
-	Execute "AppendToGizmo Path="+fldr+"GizmoWaves:GizmoZoneCircles"+",name=ZoneCirclesPath"
-	Execute "ModifyGizmo ModifyObject=ZoneCirclesPath property={ pathColorType,2}"
-	Execute "ModifyGizmo ModifyObject=ZoneCirclesPath property={ lineWidthType,1}"
-	Execute "ModifyGizmo ModifyObject=ZoneCirclesPath property={ lineWidth,1}"
-	Execute "ModifyGizmo ModifyObject=ZoneCirclesPath property={ pathColorWave,"+fldr+"GizmoWaves:GizmoZoneCirclesRGBA"+"}"
+	AppendToGizmo Axes=boxAxes,name=axes0
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={-1,axisScalingMode,1}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={3,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={4,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={5,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={6,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={7,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={8,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={9,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={10,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={11,axisColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,ticks,3}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,ticks,3}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,ticks,3}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,labelColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,labelColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,labelColor,0.5,0.5,0.5,0.4}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,axisLabel,1}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,axisLabelText,"X"}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,axisLabelText,"Y"}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,axisLabelText,"Z"}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,axisLabelDistance,0}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,axisLabelDistance,0}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,axisLabelDistance,0}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,axisLabelScale,1.5}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,axisLabelScale,1.5}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,axisLabelScale,1.5}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,axisLabelRGBA,0.5,0.5,0.5,0.5}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,axisLabelRGBA,0.5,0.5,0.5,0.5}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,axisLabelRGBA,0.5,0.5,0.5,0.5}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={0,labelBillboarding,1}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={1,labelBillboarding,1}
+	ModifyGizmo ModifyObject=axes0,objectType=Axes,property={2,labelBillboarding,1}
+	ModifyGizmo modifyObject=axes0,objectType=Axes,property={-1,Clipped,0}
 
-	if (exists(GetDataFolder(1)+"GizmoWaves:GizmoZoneZonePoints"))
-		Execute "AppendToGizmo Scatter="+fldr+"GizmoWaves:GizmoZoneZonePoints"+",name=ZoneZoneSscatter"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ scatterColorType,0}"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ markerType,0}"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ rotationType,0}"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ Shape,2}"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ size,0.5}"
-		Execute "ModifyGizmo ModifyObject=ZoneZoneSscatter property={ color,0.250019,0.748074,1,0.3}"
+	AppendToGizmo Path=GizmoZoneLines,name=ZoneLines
+	ModifyGizmo ModifyObject=ZoneLines,objectType=path,property={pathColorType,2}
+	ModifyGizmo ModifyObject=ZoneLines,objectType=path,property={lineWidthType,1}
+	ModifyGizmo ModifyObject=ZoneLines,objectType=path,property={lineWidth,2}
+	if (WaveExists(GizmoZoneLinesRGBA))
+		ModifyGizmo ModifyObject=ZoneLines,objectType=path,property={ pathColorWave,GizmoZoneLinesRGBA}
 	endif
 
+	AppendToGizmo Path=GizmoZoneCircles,name=ZoneCirclesPath
+	ModifyGizmo ModifyObject=ZoneCirclesPath,objectType=path,property={pathColorType,2}
+	ModifyGizmo ModifyObject=ZoneCirclesPath,objectType=path,property={lineWidthType,1}
+	ModifyGizmo ModifyObject=ZoneCirclesPath,objectType=path,property={pathColorWave,GizmoZoneCirclesRGBA}
 
-	Wave testZoneHatsGizmo=$(fldr+"GizmoWaves:testZoneHatsGizmo")
-	Variable showTestZoneHats = WaveExists(testZoneHatsGizmo)
-	if (showTestZoneHats)
-		Execute "AppendToGizmo Scatter="+fldr+"GizmoWaves:testZoneHatsGizmo"+",name=TestZoneHats"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ scatterColorType,0}"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ markerType,0}"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ rotationType,0}"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ Shape,1}"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ size,6}"
-		Execute "ModifyGizmo ModifyObject=TestZoneHats property={ color,0,0,0,1}"
+	if (WaveExists(GizmoZoneZonePoints))
+		AppendToGizmo Scatter=GizmoZoneZonePoints,name=ZoneZoneSscatter
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={scatterColorType,0}
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={markerType,0}
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={sizeType,0}
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={rotationType,0}
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={Shape,2}
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={size,0.5}
+		ModifyGizmo ModifyObject=ZoneZoneSscatter,objectType=scatter,property={color,0.25,0.75,1,0.3}
 	endif
 
-	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendFunc0"
-	Execute "ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data=3042"
-	Execute "ModifyGizmo setDisplayList=1, opName=scale0, operation=scale, data={1.5,1.5,1.5}"
-	Execute "ModifyGizmo setDisplayList=2, opName=ortho0, operation=ortho, data={-2.5,2.5,-2.5,2.5,-3,3}"
-	Execute "ModifyGizmo setDisplayList=3, attribute=blendFunc0"
-	Execute "ModifyGizmo setDisplayList=4, object=GhatScatter"
-	Execute "ModifyGizmo setDisplayList=5, object=axes0"
-	Execute "ModifyGizmo setDisplayList=6, object=ZoneLines"
-	Execute "ModifyGizmo setDisplayList=7, object=ZoneCirclesPath"
-	if (showTestZoneHats)
-		Execute "ModifyGizmo setDisplayList=-1, object=TestZoneHats"
-	endif
-	if (exists(GetDataFolder(1)+"GizmoWaves:GizmoZoneZonePoints"))
-		Execute "ModifyGizmo setDisplayList=-1, object=ZoneZoneSscatter"
+	if (WaveExists(testZoneHatsGizmo))
+		AppendToGizmo Scatter=testZoneHatsGizmo,name=TestZoneHatsScatter
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={scatterColorType,0}
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={markerType,0}
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={sizeType,0}
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={rotationType,0}
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={Shape,2}
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={size,0.07}
+		ModifyGizmo ModifyObject=TestZoneHatsScatter,objectType=scatter,property={color,0,0,0,1}
 	endif
 
-	Execute "ModifyGizmo SETQUATERNION={0.350994,-0.719064,0.202320,-0.564657}"
-	Execute "ModifyGizmo autoscaling=1"
-	Execute "ModifyGizmo currentGroupObject=\"\""
-	Execute "ModifyGizmo compile"
+	// line with arrow showing incident beam
+	AppendToGizmo line={0,0,-0.9,0,0,0}, name=IncidentBeamLine
+	ModifyGizmo ModifyObject=IncidentBeamLine,objectType=line,property={ arrowMode,2}
+	ModifyGizmo ModifyObject=IncidentBeamLine,objectType=line,property={ endArrowHeight,0.06}
+	ModifyGizmo ModifyObject=IncidentBeamLine,objectType=line,property={ endArrowBase,0.02}
+	ModifyGizmo ModifyObject=IncidentBeamLine,objectType=line,property={ cylinderStartRadius,0.005}
+	ModifyGizmo ModifyObject=IncidentBeamLine,objectType=line,property={ cylinderEndRadius,0.005}
 
-	Execute "ModifyGizmo endRecMacro"
+	AppendToGizmo attribute blendFunc={770,771},name=blendFunc0
+	ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data=3042
+	ModifyGizmo setDisplayList=1, opName=scale0, operation=scale, data={2,2,2}
+	ModifyGizmo setDisplayList=2, opName=ortho0, operation=ortho, data={-2.5,2.5,-2.5,2.5,-3,3}
+	ModifyGizmo setDisplayList=3, attribute=blendFunc0
+	ModifyGizmo setDisplayList=4, object=IncidentBeamLine
+	ModifyGizmo setDisplayList=5, object=GhatScatter
+	ModifyGizmo setDisplayList=6, object=axes0
+	ModifyGizmo setDisplayList=7, object=ZoneLines
+	ModifyGizmo setDisplayList=8, object=ZoneCirclesPath
+
+	if (GizmoObjExists("ZoneZoneSscatter", name="GizmoZones"))
+		ModifyGizmo setDisplayList=-1, object=ZoneZoneSscatter
+	endif
+	if (GizmoObjExists("TestZoneHatsScatter", name="GizmoZones"))
+		ModifyGizmo setDisplayList=-1, object=TestZoneHatsScatter
+	endif
+	ModifyGizmo autoscaling=1
+	ModifyGizmo currentGroupObject=""
+	ModifyGizmo endRecMacro
+	ModifyGizmo SETQUATERNION={0,1/sqrt(2),0,1/sqrt(2)}
 End
 
 
@@ -262,10 +281,6 @@ Function GizmoOfMakePairRotations()
 	if (ItemsInList(WinList("GizmoPairRotations",";","WIN:"+num2istr(GIZMO_WIN_BIT))))
 		DoWindow/F GizmoPairRotations
 		return 0
-	endif
-	if(exists("NewGizmo")!=4)	// Do nothing if the Gizmo XOP is not available.
-		DoAlert 0, "Gizmo XOP must be installed"
-		return 1
 	endif
 
 	Wave PairRotationsView=:GizmoWaves:PairRotationsView
@@ -277,60 +292,64 @@ Function GizmoOfMakePairRotations()
 	Wave corners = MakeGizmocubeCorners(PairRotationsView)
 	corners = { {-PI,PI},{-PI,PI},{-PI,PI} }				// want to see total rotation space
 
-	Execute "NewGizmo/N=GizmoPairRotations/T=\"GizmoPairRotations\" /W=(1140,528,1593,981)"
-	Execute "ModifyGizmo startRecMacro"
+	NewGizmo/N=GizmoPairRotations/T="GizmoPairRotations"/W=(1140,528,1593,981)
+	ModifyGizmo startRecMacro=700
+	ModifyGizmo scalingOption=63
+	ModifyGizmo keepPlotSquare=1
 
-	Execute "AppendToGizmo Scatter="+GetWavesDataFolder(PairRotationsView,2)+",name=PairRotationScatter"
-	Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ markerType,0}"
-	Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ rotationType,0}"
-	Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ Shape,1}"
+	AppendToGizmo Scatter=PairRotationsView,name=PairRotationScatter
+	ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ markerType,0}
+	ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ rotationType,0}
+	ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ Shape,2}
 	if (WaveExists(PairRotationsViewSize))
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ sizeType,1}"
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ sizeWave,"+GetWavesDataFolder(PairRotationsViewSize,2)+"}"
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={sizeType,1}
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={sizeWave,PairRotationsViewSize}
 	else
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ sizeType,0}"
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ size,2}"
-	endif
-	if (WaveExists(PairRotationsViewRGBA))
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ scatterColorType,1}"
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ colorWave,"+GetWavesDataFolder(PairRotationsViewRGBA,2)+"}"
-	else
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ scatterColorType,1}"
-		Execute "ModifyGizmo ModifyObject=PairRotationScatter property={ color,0,0,0,1}"
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={sizeType,0}
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={size,0.05}
 	endif
 
-	Execute "AppendToGizmo Axes=boxAxes,name=axes0"
+	if (WaveExists(PairRotationsViewRGBA))
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ scatterColorType,1}
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ colorWave,PairRotationsViewRGBA}
+	else
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ scatterColorType,0}
+		ModifyGizmo ModifyObject=PairRotationScatter,objectType=scatter,property={ color, 1,0,0,1}
+	endif
+
+	AppendToGizmo Axes=boxAxes,name=axes0
 	setGizmoAxisLabels("X","Y","Z")
-	String titleGroupName = AddGizmoTitleGroup("","green: rotAxis from FindPeakInRots()",title2="red: symmetry reduced rotAxis",title3="black: MakeSimulatedTestSpots()")
+
+	String title1="green: rotAxis from FindPeakInRots()", title2="red: symmetry reduced rotAxis", title3="black: MakeSimulatedTestSpots()"
 	String Pink3dCross = AddGizmoMarkerGroup("",rgba="1,0.6,1,1",scale=0.15)
 
-	Execute "AppendToGizmo Scatter="+GetWavesDataFolder(corners,2)+",name=CubeCornersScatter"
-	Execute "ModifyGizmo ModifyObject=CubeCornersScatter property={ markerType,0}"
-	Execute "ModifyGizmo ModifyObject=CubeCornersScatter property={ sizeType,0}"
-	Execute "ModifyGizmo ModifyObject=CubeCornersScatter property={ Shape,1}"
-	Execute "ModifyGizmo ModifyObject=CubeCornersScatter property={ size,1}"
+	AppendToGizmo Scatter=corners,name=CubeCornersScatter
+	ModifyGizmo ModifyObject=CubeCornersScatter, objectType=scatter, property={markerType,0}
+	ModifyGizmo ModifyObject=CubeCornersScatter, objectType=scatter, property={sizeType,0}
+	ModifyGizmo ModifyObject=CubeCornersScatter, objectType=scatter, property={Shape,1}
+	ModifyGizmo ModifyObject=CubeCornersScatter, objectType=scatter, property={size,1}
 
-	Execute "AppendToGizmo attribute blendFunc={770,771},name=blendFunc0"
-	Execute "ModifyGizmo setDisplayList=0, object="+titleGroupName
-	Execute "ModifyGizmo setDisplayList=1, opName=MainTransform, operation=mainTransform"
-	Execute "ModifyGizmo setDisplayList=2, opName=enable0, operation=enable, data=3042"
-	Execute "ModifyGizmo setDisplayList=3, opName=scale0, operation=scale, data={1.25,1.25,1.25}"
-	Execute "ModifyGizmo setDisplayList=4, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}"
-	Execute "ModifyGizmo setDisplayList=5, attribute=blendFunc0"
-	Execute "ModifyGizmo setDisplayList=6, object="+Pink3dCross
-	Execute "ModifyGizmo setDisplayList=7, object=axes0"
-	Execute "ModifyGizmo setDisplayList=8, object=PairRotationScatter"
-	Execute "ModifyGizmo setDisplayList=9, object=CubeCornersScatter"
-	Execute "ModifyGizmo SETQUATERNION={-0.917130,-0.171883,-0.272546,-0.234738}"
-	Execute "ModifyGizmo autoscaling=1"
-	Execute "ModifyGizmo currentGroupObject=\"\""
-	Execute "ModifyGizmo compile"
+	AppendToGizmo attribute blendFunc={770,771},name=blendFunc0
+	ModifyGizmo setDisplayList=0, opName=enable0, operation=enable, data=3042
+	ModifyGizmo setDisplayList=1, opName=scale0, operation=scale, data={1,1,1}
+	ModifyGizmo setDisplayList=2, opName=ortho0, operation=ortho, data={-2,2,-2,2,-3,3}
+	ModifyGizmo setDisplayList=3, attribute=blendFunc0
+	ModifyGizmo setDisplayList=4, object=$Pink3dCross
+	ModifyGizmo setDisplayList=5, object=axes0
+	ModifyGizmo setDisplayList=6, object=PairRotationScatter
+	ModifyGizmo setDisplayList=7, object=CubeCornersScatter
 
-	Execute "ModifyGizmo userString={cubecorners,\"CubeCornersScatter\"}"
-	Execute "ModifyGizmo endRecMacro"
+	ModifyGizmo autoscaling=1
+	ModifyGizmo currentGroupObject=""
+	ModifyGizmo userString={cubecorners,"CubeCornersScatter"}
+	ModifyGizmo endRecMacro
+	ModifyGizmo SETQUATERNION={-0.347238,0.475219,-0.653693,0.475728}
+
+	TextBox/C/N=textTitle/F=0/B=1/A=LT/X=2.05/Y=1.90 "\\Z18" + title1
+	AppendText "\\Zr080red: symmetry reduced rotAxis" + title2
+	AppendText "\\Zr080" + title3
 	return 0
 End
-
 
 
 Function GizmoOfAllRotations()
