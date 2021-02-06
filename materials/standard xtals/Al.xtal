@@ -2,24 +2,38 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Aluminum</chemical_name_common>
+
 	<space_group>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.40495</a>
-		<b unit="nm">0.40495</b>
-		<c unit="nm">0.40495</c>
+		<a unit="nm">0.40498826</a>		<!-- was using 0.40495 nm -->
+		<b unit="nm">0.40498826</b>
+		<c unit="nm">0.40498826</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<temperature unit="C">22.5</temperature>
 		<alphaT>24e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>
+
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">393</DebyeTemperature>
 	</atom_site>
+
+	<citation doi="10.1107/S0365110X62001474">
+		<!-- a = 5.641907 ± 0.000014 (kX) -->
+		<title>Precise Lattice Constants of Germanium, Aluminum, Gallium Arsenide, Uranium, Sulphur, Quartz and Sapphire</title>
+		<journal>Acta Cryst.</journal>
+		<volume>15</volume>
+		<year>1962</year>
+		<pages>578 582</pages>
+		<author>Ann S. Cooper</author>
+		<comment>reported ao = 4.041432 kX(Cu) units, using CuXunit = 0.000100207699 nm, gives: 0.40498826nm</comment>
+	</citation>
 </cif>
