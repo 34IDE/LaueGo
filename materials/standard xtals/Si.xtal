@@ -53,7 +53,7 @@
 	<bond_chemical unit="nm" n0="Si" n1="Si">0.2351700863</bond_chemical>
 	<!-- bond length = ao*sqrt(3)/4 -->
 
-	<citation id="primary">physics.nist.gov/cuu/Constants/index.html</citation>
+	<citation id="primary"><url>physics.nist.gov/cuu/Constants</url></citation>
 
 	<citation id="2" doi="10.1103/PhysRevB.92.174113">
 		only used for dL/L(T) and alphaT
@@ -66,7 +66,6 @@
 		<pages>174113</pages>
 		<year>2015</year>
 		<title>Thermal expansion coefficient of single-crystal silicon from 7 K to 293 K</title>
-		<http>https://arxiv.org/abs/1507.06822v1</http>
+		<url>https://arxiv.org/abs/1507.06822v1</url>
 	</citation>
-
 </cif>

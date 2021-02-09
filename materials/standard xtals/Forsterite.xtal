@@ -71,7 +71,7 @@
 	<bond_chemical unit="nm" n0="Mg2" n1="O1">0.2179</bond_chemical>
 
 	<citation id="primary">
-		<http>https://materials.springer.com/isp/crystallographic/docs/sd_1001664</http>
+		<url>https://materials.springer.com/isp/crystallographic/docs/sd_1001664</url>
 		<author>Moller</author>
 		<author>M. Sommer</author>
 		<author>R. Hock</author>

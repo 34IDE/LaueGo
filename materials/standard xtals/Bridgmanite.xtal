@@ -76,7 +76,7 @@
 	<bond_chemical unit="nm" n0="Si" n1="O2">0.1783 0.1795</bond_chemical>
 
 	<citation>
-		<http>http://rruff.geo.arizona.edu/doclib/am/vol89/AM89_807.pdf</http>
+		<url>http://rruff.geo.arizona.edu/doclib/am/vol89/AM89_807.pdf</url>
 		<author>D.P. Dobson</author>
 		<author>S.D. Jacobsen</author>
 		<journal>American Mineralogist</journal>
