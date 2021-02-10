@@ -56,7 +56,6 @@
 	<citation id="primary"><url>physics.nist.gov/cuu/Constants</url></citation>
 
 	<citation id="2" doi="10.1103/PhysRevB.92.174113">
-		only used for dL/L(T) and alphaT
 		<author>Thomas Middelmann</author>
 		<author>Alexander Walkov</author>
 		<author>Guido Bartl</author>
@@ -67,5 +66,6 @@
 		<year>2015</year>
 		<title>Thermal expansion coefficient of single-crystal silicon from 7 K to 293 K</title>
 		<url>https://arxiv.org/abs/1507.06822v1</url>
+		only used for dL/L(T) and alphaT
 	</citation>
 </cif>

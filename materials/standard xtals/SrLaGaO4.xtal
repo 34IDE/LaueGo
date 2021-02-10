@@ -4,7 +4,7 @@
 	<chemical_name_common>SrLaGaO4 (SLG)</chemical_name_common>
 
 	<space_group>
-		<IT_number>139</IT_number>
+		<id>139</id>
 		<H-M>I 4/m m m</H-M>
 		<Hall>-I 4 2</Hall>
 		<system>tetragonal</system>
@@ -21,10 +21,9 @@
 	</cell>
 
 	<atom_site>
-		<label>La</label>
-		<symbol>La</symbol>
+		<label>Sr</label>
 		<fract>0 0 0.358673</fract>
-		<occupancy>0.5</occupancy>
+		<occupancy>1/2</occupancy>
 		<Uiso>0.00557</Uiso>
 		<U11>0.00612</U11>
 		<U22>0.00612</U22>
@@ -34,10 +33,9 @@
 		<U23>0</U23>
 	</atom_site>
 	<atom_site>
-		<label>Sr</label>
-		<symbol>Sr</symbol>
+		<label>La</label>
 		<fract>0 0 0.358673</fract>
-		<occupancy>0.5</occupancy>
+		<occupancy>1/2</occupancy>
 		<Uiso>0.00557</Uiso>
 		<U11>0.00612</U11>
 		<U22>0.00612</U22>
@@ -48,7 +46,6 @@
 	</atom_site>
 	<atom_site>
 		<label>Ga</label>
-		<symbol>Ga</symbol>
 		<fract>0 0 0</fract>
 		<Uiso>0.00710</Uiso>
 		<U11>0.00329</U11>
@@ -60,7 +57,6 @@
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
-		<symbol>O</symbol>
 		<fract>0 0 0.1673</fract>
 		<Uiso>0.0144</Uiso>
 		<U11>0.018</U11>
@@ -72,8 +68,7 @@
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
-		<symbol>O</symbol>
-		<fract>0 0.5 0</fract>
+		<fract>0 1/2 0</fract>
 		<Uiso>0.0072</Uiso>
 		<U11>0.0075</U11>
 		<U22>0.0038</U22>
