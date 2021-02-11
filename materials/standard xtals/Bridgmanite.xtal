@@ -3,28 +3,32 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Bridgmanite</chemical_name_common>
 	<chemical_formula>MgSiO3</chemical_formula>
-	<database_code db="amcsd">3546</database_code>
+	<database_code db="amcsd">0003546</database_code>
+	<database_code db="COD">9003456</database_code>
 
 	<space_group>
 		<id>62:cab</id>
 		<IT_number>62</IT_number>
 		<H-M>Pbnm</H-M>
+		<Hall>-P 2c 2ab</Hall>
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.47780</a>
+		<a unit="nm">0.4778</a>
 		<b unit="nm">0.49298</b>
-		<c unit="nm">0.68990</c>
+		<c unit="nm">0.6899</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<temperature unit="C">20</temperature>
+		<formula_units>4</formula_units>
 	</cell>
 
 	<atom_site>
-        <label>Mg</label>
-        <symbol>Mg</symbol>
-		<fract>0.51378 0.55588 0.25</fract>
+		<label>Mg</label>
+		<symbol>Mg</symbol>
+		<fract>0.51378 0.55588 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0083</Uiso>
 		<U11 unit="Å^2">0.0077</U11>
 		<U22 unit="Å^2">0.0064</U22>
@@ -34,21 +38,23 @@
 		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
-        <label>Si</label>
+		<label>Si</label>
 		<symbol>Si</symbol>
-		<fract>0.5 0 0.5</fract>
+		<fract>1/2 0 1/2</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0058</Uiso>
 		<U11 unit="Å^2">0.0055</U11>
-		<U22 unit="Å^2">0.0050</U22>
+		<U22 unit="Å^2">0.005</U22>
 		<U33 unit="Å^2">0.0069</U33>
 		<U12 unit="Å^2">-0.0003</U12>
 		<U13 unit="Å^2">0.0002</U13>
 		<U23 unit="Å^2">-0.0001</U23>
 	</atom_site>
 	<atom_site>
-        <label>O1</label>
+		<label>O1</label>
 		<symbol>O</symbol>
-		<fract>0.10189 0.46645 0.25</fract>
+		<fract>0.10189 0.46645 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0073</Uiso>
 		<U11 unit="Å^2">0.0073</U11>
 		<U22 unit="Å^2">0.0071</U22>
@@ -58,9 +64,10 @@
 		<U23 unit="Å^2">0</U23>
 	</atom_site>
 	<atom_site>
-        <label>O2</label>
+		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.19626 0.20133 0.55258</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0075</Uiso>
 		<U11 unit="Å^2">0.0069</U11>
 		<U22 unit="Å^2">0.0062</U22>
@@ -70,19 +77,19 @@
 		<U23 unit="Å^2">0.0006</U23>
 	</atom_site>
 
-	<!-- <bond_chemical unit="nm" n0="Mg" n1="O1">0.2017 0.2098</bond_chemical>
-	<bond_chemical unit="nm" n0="Mg" n1="O2">0.2055 0.2282</bond_chemical> -->
-	<bond_chemical unit="nm" n0="Si" n1="O1">0.1800</bond_chemical>
 	<bond_chemical unit="nm" n0="Si" n1="O2">0.1783 0.1795</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O1">0.1800</bond_chemical>
+	<bond_chemical unit="nm" n0="Mg" n1="O2">0.2055 0.2282</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Mg" n1="O1">0.2017 0.2098</bond_chemical> -->
 
 	<citation>
+		<title>The flux growth of magnesium silicate perovskite single crystals.</title>
 		<url>http://rruff.geo.arizona.edu/doclib/am/vol89/AM89_807.pdf</url>
-		<author>D.P. Dobson</author>
-		<author>S.D. Jacobsen</author>
 		<journal>American Mineralogist</journal>
 		<volume>89</volume>
 		<year>2004</year>
 		<pages>807 811</pages>
-		<title>The flux growth of magnesium silicate perovskite single crystals.</title>
+		<author>D.P. Dobson</author>
+		<author>S.D. Jacobsen</author>
 	</citation>
 </cif>
