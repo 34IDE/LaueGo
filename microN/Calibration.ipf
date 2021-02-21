@@ -44,7 +44,7 @@ End
 ///	noteStr=ReplaceStringByKey("waveClass",noteStr,"DetectorCalibrationList"+SelectString(dNum,"0",""),"=")
 
 // To calibrate, find the two vectors R and P that best fit the data in CalibrationList[][]
-// I do not think tOptimizeDetectorCalibrationhat you can also optimize the sizeX & sizeY, they must be constant since I really only measure angles
+// I do not think that in OptimizeDetectorCalibration you can also optimize the sizeX & sizeY, they must be constant since I really only measure angles
 
 Function PrintCalibrationListHelp()
 	print "With waves FullPeakList and FullPeakIndexed. Call MakeCalibData(NaN) to make the CalibrationList wave."
@@ -195,7 +195,7 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 	dNum = dNum!=limit(dNum,0,2) ? NaN : dNum
 
 	String wlist = reverseList(WaveListClass("FittedPeakList","*","DIMS:2"))
-	String peakListName = StringFromList(0,wlist)
+	String peakListName = StringFromList(0,wlist), str=""
 	Wave FullPeakList = $peakListName
 	Variable getPeakList = (!WaveInClass(FullPeakList,"FittedPeakList") || ItemsInList(wlist)!=1)
 
@@ -219,11 +219,35 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 		endif
 		Wave FullPeakList = $peakListName
 	endif
-	printf "MakeCalibData(%d)\t\t// using FullPeakList='%s'\r",dNum,peakListName
 	Variable Npeaks=DimSize(FullPeakList,0), k
+	printf "MakeCalibData(%d)\t\t// using FullPeakList='%s'\r",dNum,peakListName
+
+	Variable azimuth = NaN			// Preferred rotation about incident beam (usually 90° for 34-ID-E, 180° for 34-ID-C)
+	// orientation of detector center about Z-axis, Y-axis is up (90°)
+	if (dNum==0)							// check that preferred azimuth for detector 0 is kind of close to the starting point
+		STRUCT BeamLinePreference BLp																							// 1st look in BL preferences
+		LoadPackagePreferences "microGeo" , "microBLprefs", 0, BLp
+		if (V_bytesRead>1)				// read the BLp struture
+			azimuth = numtype(BLp.azimuth) || abs(BLp.azimuth)>180 ? NaN : BLp.azimuth
+		endif
+		azimuth = numtype(azimuth) || abs(azimuth)>180 ? ProbableAzimuthalAngleDetector(g.d[0]) : azimuth	// 2nd try to guess from detector0
+		azimuth = numtype(azimuth) || abs(azimuth)>180 ? 90 : azimuth													// 3rd give up and just use 90°
+
+		Variable azimuthDetector = AzimuthAngle(g.d[0])				// detector azimuth calculated from g.d[0]
+		if (abs(azimuthDetector-azimuth) > 20)							// double check with user if more than 20° away
+			sprintf str, "Azimuth of detector= %.3g° differs a lot from\rrequested azimuth of %.3g°\rStop so you can call SetPreferredBeamLine(\"\")?", azimuthDetector, azimuth
+			DoAlert/T="Azimuth" 1, str
+			if (V_flag==1)
+				print "•SetPreferredBeamLine(\"\")"
+				SetPreferredBeamLine("")										// call this for the user
+				DoAlert 0, "You need to do the \"Set Calibration Data\" again"
+				return $""
+			endif
+		endif
+	endif
 
 	// Find the correct FullPeakIndexed wave, may be a FullPeakIndexedAux for dNum = 1 or 2
-	String str, indexList=""
+	String indexList=""
 	wlist = reverseList(WaveListClass("IndexedPeakList*","*",""))
 	for (k=0;k<ItemsInList(wlist);k+=1)								// find the best choice
 		str = StringByKey("peakListWave",note($StringFromList(k,wlist)),"=")
@@ -289,15 +313,7 @@ Function/WAVE MakeCalibData(dNum)					// Make the calibration list needed by Opt
 		endif
 	endif
 	printf "	starting with a sample rotation of  {%g, %g, %g}\r",rhox,rhoy,rhoz
-
-	Variable azimuth	// rotation about incident beam (usually 90° for 34-ID-E, 180° for 34-ID-C)
-	STRUCT BeamLinePreference BLp										// 1st look in BL preferences
-	LoadPackagePreferences "microGeo" , "microBLprefs", 0, BLp
-	if (V_bytesRead>1)				// read the BLp
-		azimuth = numtype(BLp.azimuth) || abs(BLp.azimuth)>180 ? NaN : BLp.azimuth
-	endif
-	azimuth = numtype(azimuth) || abs(azimuth)>180 ? ProbableAzimuthalAngleDetector(g.d[0]) : azimuth	// 2nd try to guess from detector0
-	azimuth = numtype(azimuth) || abs(azimuth)>180 ? 90 : azimuth	// 3rd give up and just use 90°
+	printf "    and a preferred detector azimuth of %g°\r", azimuth
 
 	String name = CleanupName("CalibrationList"+ReplaceString("FullPeakList",NameOfWave(FullPeakList),""),0)
 	name = name[0,29]+num2istr(dNum)
@@ -566,7 +582,7 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		cName0 = SelectString(strlen(cName0),"$\"\"",cName0)
 		cName1 = SelectString(strlen(cName1),"$\"\"",cName1)
 		cName2 = SelectString(strlen(cName2),"$\"\"",cName2)
- 		printf "OptimizeAll(%s,%s,%s)\r",cName0,cName1,cName2
+ 		printf "\r•OptimizeAll(%s,%s,%s)\r",cName0,cName1,cName2
 	endif
 
 	String calib0FullName="", calib1FullName="", calib2FullName=""
@@ -650,9 +666,9 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 		if (printIt)
 			printf "Detector %d\r",dNum
 			Rangle = sqrt((g.d[dNum].R[0])^2 + (g.d[dNum].R[1])^2 + (g.d[dNum].R[2])^2)*180/PI
-			printf "started at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %g°\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rstart
+			printf "started at  R={%g,%g,%g}rad,   P={%g,%g,%g}mm,   |R| = %g°\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rstart
 			Variable angle = sqrt(rhox^2 + rhoy^2 + rhoz^2)*180/PI
-			printf "sample started at axis = {%g, %g, %g},   |sample angle| = %g°\r",rhox,rhoy,rhoz,angle
+			printf "sample started at axis = {%g, %g, %g}rad,   |sample angle| = %g°\r",rhox,rhoy,rhoz,angle
 		endif
 
 		failed = OptimizeDetectorCalibration(d,cList)
@@ -680,9 +696,9 @@ Function OptimizeAll(calib0,calib1,calib2,[printIt])
 			if (seconds>4)
 				printf "\tOptimization toook %s\r",Secs2Time(seconds,5,1)
 			endif
-			printf "ended at  R={%g,%g,%g},   P={%g,%g,%g}mm,   |R| = %g°\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rend
+			printf "ended at  R={%g,%g,%g}rad,   P={%g,%g,%g}mm,   |R| = %g°\r",d.R[0],d.R[1],d.R[2],(d.P[0])/1000,(d.P[1])/1000,(d.P[2])/1000,Rend
 			if (dNum==0)
-				printf "  final sample rotation is  {%g,%g,%g},   |sample angle| = %g°",rhox,rhoy,rhoz,sqrt(rhox^2 + rhoy^2 + rhoz^2)*180/PI
+				printf "  final sample rotation is  {%g, %g, %g}rad,   |sample angle| = %g°",rhox,rhoy,rhoz,sqrt(rhox^2 + rhoy^2 + rhoz^2)*180/PI
 				Make/N=3/D/FREE drho = {rhox-rhox0, rhoy-rhoy0, rhoz-rhoz0}
 				if (numtype(sum(drho))==0)
 					printf ",    %srho = %s, |%srho|=%.2g°\r",GDELTA,vec2str(drho,fmt="%.2g",sep=", "),GDELTA,norm(drho)*180/PI
@@ -789,8 +805,8 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	Variable zero = WaveInClass(CalibrationList,"DetectorCalibrationList0")	// a zero detector, fit rho too
 	Variable rhox=NumberByKey("rhox",noteStr,"="), rhoy=NumberByKey("rhoy",noteStr,"="), rhoz=NumberByKey("rhoz",noteStr,"=")
 
-	d.R[0] = (d.R[0] == 0) ? 0.02 : d.R[0]			// avoid starting exactly on a zero
-	d.R[1] = (d.R[1] == 0) ? 0.02 : d.R[1]			// offset 0 angles by ~1°
+	d.R[0] = (d.R[0] == 0) ? 0.02 : d.R[0]		// avoid starting exactly on a zero
+	d.R[1] = (d.R[1] == 0) ? 0.02 : d.R[1]		// offset 0 angles by ~1°
 	d.R[2] = (d.R[2] == 0) ? 0.02 : d.R[2]
 	d.P[0] = (d.P[0] == 0) ? 500 : d.P[0]			// offset 0 positions by 0.5mm
 	d.P[1] = (d.P[1] == 0) ? 500 : d.P[1]
@@ -810,6 +826,10 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 		optimizeStepWave = abs(optimizeStepWave)
 		optimizeStepWave = max(optimizeStepWave[p],0.1)
 		Optimize/M={0,0}/X={d.R[0],d.R[1],d.R[2],d.P[0],d.P[1],d.P[2],rhox,rhoy,rhoz}/Y=(errStart)/Q/I=(maxIters)/R=optimizeStepWave CalibrationErrorRPrho, CalibrationList
+//		Optimize/M={0,1}/X={d.R[0],d.R[1],d.R[2],d.P[0],d.P[1],d.P[2],rhox,rhoy,rhoz}/Y=(errStart)/Q/I=(maxIters)/R=optimizeStepWave CalibrationErrorRPrho, CalibrationList
+//		Optimize/M={2,1}/X={d.R[0],d.R[1],d.R[2],d.P[0],d.P[1],d.P[2],rhox,rhoy,rhoz}/Y=(errStart)/Q/I=(maxIters)/R=optimizeStepWave CalibrationErrorRPrho, CalibrationList
+//		//  /X is the starting point
+//		//	 /R is the typical size of X values
 	else
 		Make/N=6/D/FREE optimizeStepWave={d.R[0],d.R[1],d.R[2],d.P[0],d.P[1],d.P[2]}
 		optimizeStepWave = abs(optimizeStepWave)
@@ -837,7 +857,7 @@ Static Function OptimizeDetectorCalibration(d,CalibrationList)	// optimizes valu
 	Note/K CalibrationList, noteStr
 
 	Variable dR = 1e-8									// this gives a limit of (~0.5e-6)°
-	d.R[0]= round(W_Extremum[0]/dR)*dR			// round to 8 places
+	d.R[0]= round(W_Extremum[0]/dR)*dR				// round to 8 places
 	d.R[1]= round(W_Extremum[1]/dR)*dR
 	d.R[2]= round(W_Extremum[2]/dR)*dR
 	d.R[0] = (d.R[0]==0) ? 0 : d.R[0]				// change -0 to +0
@@ -899,7 +919,7 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	//
 	//	The user supplies ONLY columns [0-2]=hkl, [3,4]=(px,py), [5]=measured_keV, the rest are calculated.
 
-	//	printf "CalibrationErrorRPrho(%s,%g,%g,%g,   %g,%g,%g,   %g,%g,%g)\r",NameOfWave(CalibrationList),Rx,Ry,Rz,Px,Py,Pz,,rhox,rhoy,rhoz
+	// printf "CalibrationErrorRPrho(%s, %g,%g,%g rad,   %g,%g,%g mm,   %g,%g,%g rad)\r",NameOfWave(CalibrationList),Rx,Ry,Rz, Px*1e-3,Py*1e-3,Pz*1e-3, rhox,rhoy,rhoz
 	String noteStr = note(CalibrationList)
 	Make/N=(3,3)/D/FREE rhoSample							// rotation matrix computed from {rhox,rhoy,rhoz}
 	RotationVec2Matrix(rhox,rhoy,rhoz,NaN,rhoSample)	// Compute rhoSample, the sample rotation mat. Apply to qhat's to make them line up with (px,py) pairs
@@ -913,7 +933,7 @@ Function CalibrationErrorRPrho(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rhox,rhoy,rhoz)
 	// find error term that sets orientation about the incident beam.
 	STRUCT detectorGeometry d								// a local version of detector structure
 	Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)			// fill d to match this orientation
-	Variable errOrient = errAzimuthAngle(d,azimuth)	// error to use for orienting system around Z-axs (controls rotation about incident beam)
+	Variable errOrient = (AzimuthAngle(d)-azimuth)*PI/180	// error (rad) to use for orienting system around Z-axs (controls rotation about incident beam)
 	errOrient *= 10												// weight this error heavier
 
 	return sqrt(rms^2 + errOrient^2)
@@ -1010,10 +1030,10 @@ Static Function CalibrationErrorRPinternal(CalibrationList,Rx,Ry,Rz,Px,Py,Pz,rho
 	return rms
 End
 //
-Static Function errAzimuthAngle(d,azimuth)// calculate the error to use for orienting system around the Z-axs, Y-axis is up
-	// this error fixes the rotation of the whole system about the incident beam.
+Static Function AzimuthAngle(d)		// calculate the error to use for orienting system around the Z-axs, Y-axis is up
+	// this can be used to fixe the rotation of the whole system about the incident beam.
+	// returns azimuth angle (degree)
 	STRUCT detectorGeometry, &d
-	Variable azimuth			// user supplied desired azimuthal angle°, sets the rotation about the z-azis, 0=X-axis, 90=Y-axis, ...
 
 	Variable tanSize=min(d.sizeX,d.sizeY)/abs(d.P[2])// tan(angular size of detector)
 	Make/N=3/D/FREE xyz
@@ -1029,9 +1049,8 @@ Static Function errAzimuthAngle(d,azimuth)// calculate the error to use for orie
 		Variable minus = sign(d.P[2])
 		angle = atan2(minus * d.rho12, minus * d.rho02)
 	endif
-	Variable errOrient = angle - (azimuth*PI/180)	// error in azimuthanl orientation angle (radian)
-	// printf "errOrient = %g (error angle in radians)\r",errOrient
-	return errOrient										// error to force correct orientation (radian)
+
+	return angle * 180/PI									// return (degree)
 End
 //
 Static Function Assemble_d(d, noteStr, Rx,Ry,Rz, Px,Py,Pz)	// fill d to match this orientation
