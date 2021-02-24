@@ -2,7 +2,7 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>CZT</chemical_name_common>
-	<chemical_formula>Cd0.9 Zn0.1 Te</chemical_formula>
+	<chemical_formula>Cd.9 Zn.1 Te</chemical_formula>
 	<database_code db="ICSD">620556</database_code>
 	<!-- _chemical_name_structure_type Sphalerite#ZnS(cF8) -->
 
@@ -24,7 +24,7 @@
 		<label>Cd</label>
 		<symbol>Cd</symbol>
 		<fract>0 0 0</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.9</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
@@ -32,7 +32,7 @@
 		<label>Zn</label>
 		<symbol>Zn</symbol>
 		<fract>0 0 0</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.1</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
@@ -40,7 +40,7 @@
 		<label>Te</label>
 		<symbol>Te</symbol>
 		<fract>0.25 0.25 0.25</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 
