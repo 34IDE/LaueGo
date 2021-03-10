@@ -28,7 +28,7 @@
  		<fract>0.2754 0.0395 0.2083</fract>
 		<Uiso unit="Å^2">0.00418</Uiso>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
@@ -36,7 +36,7 @@
 		<fract>0.0700 0.3317 0.3447</fract>
 		<Uiso unit="Å^2">0.00697</Uiso>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
@@ -44,7 +44,7 @@
 		<fract>0.4496 0.7569 0.4792</fract>
 		<Uiso unit="Å^2">0.00583</Uiso>
 		<WyckoffSymbol>e</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Zr" n1="O1">0.205192 0.215674</bond_chemical>

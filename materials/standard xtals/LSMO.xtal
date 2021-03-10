@@ -27,7 +27,7 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<Biso unit="Å^2">0.51</Biso>
 		<occupancy>0.7</occupancy>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Sr</label>
@@ -36,7 +36,7 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<Biso unit="Å^2">0.51</Biso>
 		<occupancy>0.3</occupancy>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Mn</label>
@@ -44,7 +44,7 @@
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Biso unit="Å^2">0.11</Biso>
-		<valence>3.3</valence>
+		<oxidation>3.3</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
@@ -53,7 +53,7 @@
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<Biso unit="Å^2">0.79</Biso>
 		<occupancy>0.7</occupancy>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Mn" n1="O">0.1951</bond_chemical>

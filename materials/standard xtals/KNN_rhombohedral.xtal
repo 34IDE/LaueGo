@@ -30,7 +30,7 @@
 		<symbol>Na</symbol>
 		<fract>0 0 0.3209</fract>
 		<occupancy>0.95</occupancy>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -39,21 +39,21 @@
 		<fract>0 0 0.3209</fract>
 		<occupancy>0.05</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Nb1</label>
 		<symbol>Nb</symbol>
 		<fract>0 0 0.0578</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>5</valence>
+		<oxidation>5</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.007 0.4425 0.08333</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Na1" n1="O1">0.1930 0.2072</bond_chemical>

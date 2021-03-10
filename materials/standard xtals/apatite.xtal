@@ -30,51 +30,51 @@
 		<label>Ca1</label>
 		<symbol>Ca</symbol>
 		<fract>2/3 1/3 0.0017</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Ca2</label>
 		<symbol>Ca</symbol>
 		<fract>0.2467 0.9933 1/4</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>P</label>
 		<symbol>P</symbol>
 		<fract>0.3979 0.3678 1/4</fract>
-		<valence>5</valence>
+		<oxidation>5</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.3275 0.4844 1/4</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.586 0.4649 1/4</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.3424 0.2577 0.0685</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O-H</label>
 		<symbol>O</symbol>
 		<fract>0 0 0.1999</fract>
 		<occupancy>0.5</occupancy>
-		<valence>-1</valence>
+		<oxidation>-1</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>H</label>
 		<symbol>H</symbol>
 		<fract>0 0 0.0608</fract>
 		<occupancy>0.5</occupancy>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="P" n1="O1">0.1541</bond_chemical>

@@ -24,7 +24,7 @@
 		<label>Pb</label>
 		<symbol>Pb</symbol>
 		<fract>0 0 0</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<occupancy>1</occupancy>
 		<Uiso>0.0319</Uiso>
@@ -35,7 +35,7 @@
 		<symbol>Zr</symbol>
 		<fract>0.5 0.5 0.4517</fract>
 		<occupancy>0.52</occupancy>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso>0.0052</Uiso>
 	</atom_site>
@@ -45,7 +45,7 @@
 		<symbol>Ti</symbol>
 		<fract>0.5 0.5 0.4517</fract>
 		<occupancy>0.48</occupancy>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso>0.0052</Uiso>
 	</atom_site>
@@ -54,7 +54,7 @@
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.5 0.5 -0.1027</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso>0.0061</Uiso>
 	</atom_site>
@@ -63,7 +63,7 @@
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.5 0 0.3785</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso>0.0061</Uiso>
 	</atom_site>

@@ -23,14 +23,14 @@
 		<label>Ca</label>
 		<symbol>Ca</symbol>
 		<fract>0.0 0.0 0.0</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>F</label>
 		<symbol>F</symbol>
 		<fract>0.25 0.25 0.25</fract>
-		<valence>-1</valence>
+		<oxidation>-1</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 

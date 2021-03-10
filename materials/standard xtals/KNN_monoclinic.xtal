@@ -31,7 +31,7 @@
 		<fract>0.538 0 0.0048</fract>
 		<occupancy>0.95</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -45,7 +45,7 @@
 		<fract>0.538 0 0.0048</fract>
 		<occupancy>0.05</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -59,7 +59,7 @@
 		<fract>0.038 0 0.4952</fract>
 		<occupancy>0.95</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -73,7 +73,7 @@
 		<fract>0.038 0 0.4952</fract>
 		<occupancy>0.05</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -87,7 +87,7 @@
 		<fract>0.538 0.5 0.0048</fract>
 		<occupancy>0.95</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -101,7 +101,7 @@
 		<fract>0.538 0.5 0.0048</fract>
 		<occupancy>0.05</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -115,7 +115,7 @@
 		<fract>0.038 0.5 0.4952</fract>
 		<occupancy>0.95</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -129,7 +129,7 @@
 		<fract>0.038 0.5 0.4952</fract>
 		<occupancy>0.05</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<U11 unit="Å^2">0.017</U11>
 		<U22 unit="Å^2">0.0173</U22>
 		<U33 unit="Å^2">0.028</U33>
@@ -142,7 +142,7 @@
 		<symbol>Nb</symbol>
 		<fract>0.0322 0.25 0.004</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>5</valence>
+		<oxidation>5</oxidation>
 		<U11 unit="Å^2">0.0026</U11>
 		<U22 unit="Å^2">0.0067</U22>
 		<U33 unit="Å^2">0.0048</U33>
@@ -155,7 +155,7 @@
 		<symbol>Nb</symbol>
 		<fract>0.5322 0.25 0.504</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>5</valence>
+		<oxidation>5</oxidation>
 		<U11 unit="Å^2">0.0026</U11>
 		<U22 unit="Å^2">0.0067</U22>
 		<U33 unit="Å^2">0.0048</U33>
@@ -168,7 +168,7 @@
 		<symbol>O</symbol>
 		<fract>0.9967 0 0.0561</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.021</U11>
 		<U22 unit="Å^2">0.0027</U22>
 		<U33 unit="Å^2">0.019</U33>
@@ -181,7 +181,7 @@
 		<symbol>O</symbol>
 		<fract>0.5033 0 0.4439</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.021</U11>
 		<U22 unit="Å^2">0.0027</U22>
 		<U33 unit="Å^2">0.019</U33>
@@ -194,7 +194,7 @@
 		<symbol>O</symbol>
 		<fract>0.0033 0.5 0.9439</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.021</U11>
 		<U22 unit="Å^2">0.0027</U22>
 		<U33 unit="Å^2">0.019</U33>
@@ -207,7 +207,7 @@
 		<symbol>O</symbol>
 		<fract>0.4967 0.5 0.5561</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.021</U11>
 		<U22 unit="Å^2">0.0027</U22>
 		<U33 unit="Å^2">0.019</U33>
@@ -220,7 +220,7 @@
 		<symbol>O</symbol>
 		<fract>0.2839 0.2835 0.2174</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.0074</U11>
 		<U22 unit="Å^2">0.0148</U22>
 		<U33 unit="Å^2">0.0076</U33>
@@ -233,7 +233,7 @@
 		<symbol>O</symbol>
 		<fract>0.2174 0.2311 0.7161</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.0074</U11>
 		<U22 unit="Å^2">0.0148</U22>
 		<U33 unit="Å^2">0.0076</U33>
@@ -246,7 +246,7 @@
 		<symbol>O</symbol>
 		<fract>0.7826 0.269 0.2839</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.0074</U11>
 		<U22 unit="Å^2">0.0148</U22>
 		<U33 unit="Å^2">0.0076</U33>
@@ -259,7 +259,7 @@
 		<symbol>O</symbol>
 		<fract>0.7161 0.2165 0.7826</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="Å^2">0.0074</U11>
 		<U22 unit="Å^2">0.0148</U22>
 		<U33 unit="Å^2">0.0076</U33>

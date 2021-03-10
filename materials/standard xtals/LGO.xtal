@@ -31,28 +31,28 @@
 		<symbol>La</symbol>
 		<fract>0.9964 0.0175 1/4</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
 		<fract>1/2 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.0665 0.505 1/4</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.72 0.281 0.0371</fract>
 		<WyckoffSymbol>d</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="La" n1="O1">0.2415</bond_chemical>

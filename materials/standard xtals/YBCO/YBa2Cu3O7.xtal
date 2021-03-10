@@ -21,7 +21,7 @@
 		<U11 unit="pm^2">123</U11>
 		<U22 unit="pm^2">162</U22>
 		<U33 unit="pm^2">1</U33>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -31,7 +31,7 @@
 		<U11 unit="pm^2">68</U11>
 		<U22 unit="pm^2">45</U22>
 		<U33 unit="pm^2">87</U33>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>t</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -41,7 +41,7 @@
 		<U11 unit="pm^2">144</U11>
 		<U22 unit="pm^2">237</U22>
 		<U33 unit="pm^2">32</U33>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -51,7 +51,7 @@
 		<U11 unit="pm^2">55</U11>
 		<U22 unit="pm^2">57</U22>
 		<U33 unit="pm^2">90</U33>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<WyckoffSymbol>q</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -61,7 +61,7 @@
 		<U11 unit="pm^2">587</U11>
 		<U22 unit="pm^2">68</U22>
 		<U33 unit="pm^2">35</U33>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -71,7 +71,7 @@
 		<U11 unit="pm^2">1</U11>
 		<U22 unit="pm^2">226</U22>
 		<U33 unit="pm^2">59</U33>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>q</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -81,7 +81,7 @@
 		<U11 unit="pm^2">23</U11>
 		<U22 unit="pm^2">112</U22>
 		<U33 unit="pm^2">168</U33>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>s</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -91,7 +91,7 @@
 		<U11 unit="pm^2">22</U11>
 		<U22 unit="pm^2">256</U22>
 		<U33 unit="pm^2">131</U33>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>r</WyckoffSymbol>
 	</atom_site>
 	<bond_chemical unit="nm" n0="Y" n1="O3">0.2418</bond_chemical>

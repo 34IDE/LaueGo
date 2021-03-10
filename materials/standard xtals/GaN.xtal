@@ -37,7 +37,7 @@
 		<label>Ga</label>
 		<symbol>Ga</symbol>
 		<fract>-1/3 -2/3 0</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<U11>0.0052</U11>
 		<U22>0.0052</U22>
 		<U33>0.0027</U33>
@@ -51,7 +51,7 @@
 		<label>N</label>
 		<symbol>N</symbol>
 		<fract>-1/3 -2/3 0.377</fract>
-		<valence>-3</valence>
+		<oxidation>-3</oxidation>
 		<U11>0.0070</U11>
 		<U22>0.0070</U22>
 		<U33>0.0024</U33>

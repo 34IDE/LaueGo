@@ -38,7 +38,7 @@
 		<U12 unit="Å^2">0.0068</U12>
 		<U13 unit="Å^2">0</U13>
 		<U23 unit="Å^2">0.0046</U23>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 	</atom_site>
 
 	<atom_site>
@@ -52,7 +52,7 @@
 		<U12 unit="Å^2">0.0052</U12>
 		<U13 unit="Å^2">0</U13>
 		<U23 unit="Å^2">0.0035</U23>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Ti" n1="O">0.194857 0.197999</bond_chemical>

@@ -20,19 +20,19 @@
 		<label>U</label>
 		<symbol>U</symbol>
 		<fract>0.0 0.0 0.0</fract>
-		<valence>6</valence>
+		<oxidation>6</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.0 0.0 0.122</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>F</label>
 		<symbol>F</symbol>
 		<fract>0.0 0.0 0.294</fract>
-		<valence>-1</valence>
+		<oxidation>-1</oxidation>
 	</atom_site>
 	<bond_chemical unit="nm" n0="U" n1="O">0.1914</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="F">0.2505</bond_chemical>

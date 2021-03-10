@@ -25,7 +25,7 @@
 		<label>La</label>
 		<symbol>La</symbol>
 		<fract>0 0 0</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<Uiso>0.004299</Uiso>
 	</atom_site>
 
@@ -33,7 +33,7 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0.5 0.5 0.5</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<Uiso>0.00377</Uiso>
 	</atom_site>
 
@@ -41,7 +41,7 @@
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0.5</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<Uiso>0.014</Uiso>
 	</atom_site>
 

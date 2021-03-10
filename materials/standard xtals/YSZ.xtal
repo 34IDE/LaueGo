@@ -21,7 +21,7 @@
 
 	<atom_site>
 		<label>Zr</label>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<fract>0 0 0</fract>
 		<occupancy>0.72</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
@@ -29,7 +29,7 @@
 	</atom_site>
 	<atom_site>
 		<label>Y</label>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<fract>0 0 0</fract>
 		<occupancy>0.28</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
@@ -37,7 +37,7 @@
 	</atom_site>
 		<atom_site>
 		<label>O</label>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<fract>0.25 0.25 0.25</fract>
 		<occupancy>0.931</occupancy>
 		<WyckoffSymbol>c</WyckoffSymbol>

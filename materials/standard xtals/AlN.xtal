@@ -31,7 +31,7 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>1/3 2/3 0</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0269768</Uiso>
 	</atom_site>
@@ -39,7 +39,7 @@
 		<label>N</label>
 		<symbol>N</symbol>
 		<fract>1/3 2/3 0.3869</fract>
-		<valence>-3</valence>
+		<oxidation>-3</oxidation>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0236838</Uiso>
 	</atom_site>

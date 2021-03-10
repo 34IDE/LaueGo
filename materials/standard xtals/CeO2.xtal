@@ -23,7 +23,7 @@
 		<label>Ce</label>
 		<symbol>Ce</symbol>
 		<fract>0 0 0</fract>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<Biso>0.29</Biso>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
@@ -31,7 +31,7 @@
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.25 0.25 0.25</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<Biso>1.82</Biso>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>

@@ -25,7 +25,7 @@
 		<label>Ba</label>
 		<symbol>Ba</symbol>
 		<fract>0.15842 0.18453 0.25</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.01025</U11>
 		<U22>0.00843</U22>
@@ -38,7 +38,7 @@
 		<label>S</label>
 		<symbol>S</symbol>
 		<fract>0.19082 0.43749 0.75</fract>
-		<valence>6</valence>
+		<oxidation>6</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.00910</U11>
 		<U22>0.00840</U22>
@@ -51,7 +51,7 @@
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.10720 0.58700 0.75</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.0266</U11>
 		<U22>0.0131</U22>
@@ -64,7 +64,7 @@
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.0498 0.3176 0.75</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.0117</U11>
 		<U22>0.0209</U22>
@@ -77,7 +77,7 @@
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.3118 0.4194 0.9704</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>d</WyckoffSymbol>
 		<U11>0.0149</U11>
 		<U22>0.0149</U22>

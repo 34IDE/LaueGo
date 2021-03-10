@@ -22,14 +22,14 @@
 		<label>Sr</label>
 		<symbol>Sr</symbol>
 		<fract>0.4843 0.2500 0.0027</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Ru</label>
 		<symbol>Ru</symbol>
 		<fract>0.0 0.0 0.0</fract>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -37,14 +37,14 @@
 		<symbol>O</symbol>
 		<fract>0.2236 0.0278 0.2752</fract>
 		<WyckoffSymbol>d</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.5034 0.2500 0.5532</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Ru" n1="O1">0.1987 0.1981</bond_chemical>

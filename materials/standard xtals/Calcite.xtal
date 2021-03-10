@@ -29,7 +29,7 @@
 		<U12>0.00512</U12>
 		<U13>0</U13>
 		<U23>0</U23>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>C</label>
@@ -42,7 +42,7 @@
 		<U12>0.00455</U12>
 		<U13>0</U13>
 		<U23>0</U23>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
@@ -55,7 +55,7 @@
 		<U12>0.01110</U12>
 		<U13>-0.00400</U13>
 		<U23>-0.00800</U23>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="C" n1="O">0.1284</bond_chemical>

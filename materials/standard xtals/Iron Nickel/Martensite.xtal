@@ -27,14 +27,14 @@
 		<label>Fe</label>
 		<symbol>Fe</symbol>
 		<fract>2/3 1/4 0</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>g</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>C</label>
 		<symbol>C</symbol>
 		<fract>0 0 0</fract>
-		<valence>-4</valence>
+		<oxidation>-4</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 

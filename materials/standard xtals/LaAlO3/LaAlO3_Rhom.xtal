@@ -22,7 +22,7 @@
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<fract>0.25 0.25 0.25</fract>
 		<Biso unit="Å^2">0.23</Biso>
 	</atom_site>
@@ -30,7 +30,7 @@
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<fract>0 0 0</fract>
 		<Biso unit="Å^2">0.21</Biso>
 	</atom_site>
@@ -38,7 +38,7 @@
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<fract>0.7249 0.7751 0.25</fract>
 		<U11 unit="Å^2">0.080</U11>
 		<U22 unit="Å^2">0.023</U22>

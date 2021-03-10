@@ -24,7 +24,7 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0 0 0.352</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.00277</U11>
 		<U22>0.00277</U22>
@@ -37,7 +37,7 @@
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.306 0 0.25</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<U11>0.00327</U11>
 		<U22>0.00345</U22>
@@ -99,7 +99,7 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0 0 0.34</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<B_iso>0.025</B_iso>
 	</atom_site>
@@ -107,7 +107,7 @@
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.33 0 0.25</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>e</WyckoffSymbol>
 		<B_iso>0.025</B_iso>
 	</atom_site>
@@ -132,14 +132,14 @@
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0 0 0.3523</fract>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>0.3064 0 0.25</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<DebyeTemperature unit="K">1047</DebyeTemperature>
 	</atom_site>
 </cif>

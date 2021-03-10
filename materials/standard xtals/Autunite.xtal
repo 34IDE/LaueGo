@@ -231,14 +231,14 @@ http://en.wikipedia.org/wiki/Autunite
 		<label>F1</label>
 		<symbol>F</symbol>
 		<fract>0.66666667 0.33333333 0.0133</fract>
-		<valence>-1</valence>
+		<oxidation>-1</oxidation>
 		<xxxWyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>F2</label>
 		<symbol>F</symbol>
 		<fract>0.66666667 0.33333333 -0.0133</fract>
-		<valence>-1</valence>
+		<oxidation>-1</oxidation>
 		<xxxWyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>
   -->

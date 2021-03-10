@@ -23,7 +23,7 @@
 		<symbol>Li</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<valence>1</valence>
+		<oxidation>1</oxidation>
 		<Biso>1.045</Biso>
 	</atom_site>
 
@@ -32,7 +32,7 @@
 		<symbol>F</symbol>
 		<fract>0.5 0.5 0.5</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>-1</valence>
+		<oxidation>-1</oxidation>
 		<Biso>0.670</Biso>
 	</atom_site>
 

@@ -22,13 +22,13 @@
 	<atom_site>
 		<label>Zr</label>
 		<fract>0 0 0</fract>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>O</label>
 		<fract>0.25 0.25 0.25</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 

@@ -28,7 +28,7 @@
 		<symbol>La</symbol>
 		<fract>-0.0078 0.049 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<Biso unit="Å^2">0.342</Biso>
 	</atom_site>
 	<atom_site>
@@ -36,7 +36,7 @@
 		<symbol>Mn</symbol>
 		<fract>0.5 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<valence>3</valence>
+		<oxidation>3</oxidation>
 		<Biso unit="Å^2">0.21</Biso>
 	</atom_site>
 	<atom_site>
@@ -44,7 +44,7 @@
 		<symbol>O</symbol>
 		<fract>0.0745 0.4874 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<Biso unit="Å^2">0.5</Biso>
 	</atom_site>
 	<atom_site>
@@ -52,7 +52,7 @@
 		<symbol>O</symbol>
 		<fract>0.7256 0.3066 0.0384</fract>
 		<WyckoffSymbol>d</WyckoffSymbol>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<Biso unit="Å^2">0.43</Biso>
 	</atom_site>
 

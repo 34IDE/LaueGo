@@ -25,7 +25,7 @@
 		<label>Pb</label>
 		<symbol>Pb</symbol>
 		<fract>0.16716 0.18798 0.25</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.02194</U11>
 		<U22>0.01293</U22>
@@ -39,7 +39,7 @@
 		<label>S</label>
 		<symbol>S</symbol>
 		<fract>0.1849 0.4358 0.75</fract>
-		<valence>6</valence>
+		<oxidation>6</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.0124</U11>
 		<U22>0.0096</U22>
@@ -53,7 +53,7 @@
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0.0946 0.5915 0.75</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.025</U11>
 		<U22>0.014</U22>
@@ -67,7 +67,7 @@
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0.0424 0.3072 0.75</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<U11>0.015</U11>
 		<U22>0.022</U22>
@@ -81,7 +81,7 @@
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.309 0.4189 0.9726</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<WyckoffSymbol>d</WyckoffSymbol>
 		<U11>0.0195</U11>
 		<U22>0.0192</U22>

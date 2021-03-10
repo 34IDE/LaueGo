@@ -26,7 +26,7 @@
 		<label>Mg1</label>
 		<symbol>Mg</symbol>
 		<fract>0.2508 0.6548 0.2328</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.72</occupancy>
 		<U11 unit="nm^2">7.29e-05</U11>
 		<U22 unit="nm^2">6.49e-05</U22>
@@ -39,7 +39,7 @@
 		<label>Fe1</label>
 		<symbol>Fe</symbol>
 		<fract>0.2508 0.6548 0.2328</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.28</occupancy>
 		<U11 unit="nm^2">7.29e-05</U11>
 		<U22 unit="nm^2">6.49e-05</U22>
@@ -53,7 +53,7 @@
 		<label>Fe2</label>
 		<symbol>Fe</symbol>
 		<fract>0.2564 0.0183 0.2308</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.76</occupancy>
 		<U11 unit="nm^2">0.0001201</U11>
 		<U22 unit="nm^2">0.0001826</U22>
@@ -66,7 +66,7 @@
 		<label>Ca2</label>
 		<symbol>Ca</symbol>
 		<fract>0.2564 0.0183 0.2308</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.18</occupancy>
 		<U11 unit="nm^2">0.0001201</U11>
 		<U22 unit="nm^2">0.0001826</U22>
@@ -79,7 +79,7 @@
 		<label>Mg2</label>
 		<symbol>Mg</symbol>
 		<fract>0.2564 0.0183 0.2308</fract>
-		<valence>2</valence>
+		<oxidation>2</oxidation>
 		<occupancy>0.06</occupancy>
 		<U11 unit="nm^2">0.0001201</U11>
 		<U22 unit="nm^2">0.0001826</U22>
@@ -93,7 +93,7 @@
 		<label>SiA</label>
 		<symbol>Si</symbol>
 		<fract>0.0427 0.3398 0.2797</fract>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<U11 unit="nm^2">7.29e-05</U11>
 		<U22 unit="nm^2">6.09e-05</U22>
 		<U33 unit="nm^2">8.64e-05</U33>
@@ -105,7 +105,7 @@
 		<label>SiB</label>
 		<symbol>Si</symbol>
 		<fract>0.5504 0.8367 0.2372</fract>
-		<valence>4</valence>
+		<oxidation>4</oxidation>
 		<U11 unit="nm^2">6e-05</U11>
 		<U22 unit="nm^2">6.49e-05</U22>
 		<U33 unit="nm^2">6.51e-05</U33>
@@ -117,7 +117,7 @@
 		<label>O1A</label>
 		<symbol>O</symbol>
 		<fract>0.8659 0.3404 0.1715</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="nm^2">4.72e-05</U11>
 		<U22 unit="nm^2">9.33e-05</U22>
 		<U33 unit="nm^2">8.39e-05</U33>
@@ -129,7 +129,7 @@
 		<label>O2A</label>
 		<symbol>O</symbol>
 		<fract>0.122 0.497 0.3306</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="nm^2">0.0001758</U11>
 		<U22 unit="nm^2">5.28e-05</U22>
 		<U33 unit="nm^2">9.52e-05</U33>
@@ -141,7 +141,7 @@
 		<label>O3A</label>
 		<symbol>O</symbol>
 		<fract>0.1037 0.2633 0.5779</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="nm^2">6e-05</U11>
 		<U22 unit="nm^2">0.0001217</U22>
 		<U33 unit="nm^2">0.0001516</U33>
@@ -153,7 +153,7 @@
 		<label>O1B</label>
 		<symbol>O</symbol>
 		<fract>0.3743 0.8342 0.1344</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="nm^2">9.86e-05</U11>
 		<U22 unit="nm^2">6.49e-05</U22>
 		<U33 unit="nm^2">7.01e-05</U33>
@@ -165,7 +165,7 @@
 		<label>O2B</label>
 		<symbol>O</symbol>
 		<fract>0.629 0.9877 0.3765</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="nm^2">9.43e-05</U11>
 		<U22 unit="nm^2">0.0001826</U22>
 		<U33 unit="nm^2">0.0001741</U33>
@@ -177,7 +177,7 @@
 		<label>O3B</label>
 		<symbol>O</symbol>
 		<fract>0.6053 0.7087 0.4773</fract>
-		<valence>-2</valence>
+		<oxidation>-2</oxidation>
 		<U11 unit="nm^2">4.29e-05</U11>
 		<U22 unit="nm^2">0.0001542</U22>
 		<U33 unit="nm^2">0.0001328</U33>
