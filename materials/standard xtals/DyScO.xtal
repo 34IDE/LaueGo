@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-03-07T05:37:16.456Z</date>   <!-- Saturday, March 6, 2021 at 11:37:16 PM Central Standard Time -->
+	<chemical_name_common>DyScO3</chemical_name_common>
+	<database_code db="COD">1534046</database_code>
+
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.54494</a>
+		<b unit="nm">0.57263</b>
+		<c unit="nm">0.79132</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Dy</label>
+		<symbol>Dy</symbol>
+		<fract>0.0172 0.9393 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<oxidation>3</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>Sc</label>
+		<symbol>Sc</symbol>
+		<fract>0 1/2 0</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<oxidation>3</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.8804 0.555 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<oxidation>-2</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.6926 0.304 0.9392</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<oxidation>-2</oxidation>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Sc" n1="O2">0.207299 0.208888</bond_chemical>
+	<bond_chemical unit="nm" n0="Sc" n1="O1">0.210657</bond_chemical>
+	<bond_chemical unit="nm" n0="Dy" n1="O1">0.226571 0.232346</bond_chemical>
+	<bond_chemical unit="nm" n0="Dy" n1="O2">0.230562 0.258524 0.282066</bond_chemical>
+
+	<citation>
+		<title>A structural study of ternary lanthanide orthoscandate perovskites</title>
+		<journal>Journal of Solid State Chemistry</journal>
+		<ASTM>JSSCBI</ASTM> 
+		<volume>177</volume>
+		<year>2004</year>
+		<pages>2188 2197</pages>
+		<author>R.P. Liferovich</author>
+		<author>R.H. Mitchell</author>
+	</citation>
+</cif>
