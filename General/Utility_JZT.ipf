@@ -4396,7 +4396,8 @@ End
 
 #if (IgorVersion()>7 && stringmatch(IgorInfo(2),"Windows"))
 Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
-	return GetEnvironmentVariable("COMPUTERNAME")
+	String fqdn = GetEnvironmentVariable("COMPUTERNAME") + "." + GetEnvironmentVariable("USERDNSDOMAIN")
+	return fqdn
 End
 #elif (stringmatch(IgorInfo(2),"Macintosh"))
 Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
