@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.89
+#pragma version = 4.90
 // #pragma hide = 1
 
 Menu "Graph"
@@ -4395,25 +4395,26 @@ Function/T systemUserName()				// return unix username
 End
 
 #if (IgorVersion()>7 && stringmatch(IgorInfo(2),"Windows"))
-Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
+Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
 	return GetEnvironmentVariable("COMPUTERNAME")
 End
 #elif (stringmatch(IgorInfo(2),"Macintosh"))
-Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
+Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
 	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
 		DoAlert 0, "Only know how to get hostname from a Mac"
 		return ""								// cannot get answer
 	endif
 #if (IgorVersion()<7)
-	ExecuteScriptText "do shell script \"hostname\""			//returns something like:	"bob.xray.aps.anl.gov"
+	ExecuteScriptText "do shell script \"host $(hostname)\""		//returns something like:  "bob.xray.aps.anl.gov"
 	S_value = ReplaceString("\"",S_value,"")
 #else
-	ExecuteScriptText/UNQ "do shell script \"hostname\""	//returns something like:	"bob.xray.aps.anl.gov"
+	ExecuteScriptText/UNQ "do shell script \"host $(hostname)\""	//returns something like:  "bob.xray.aps.anl.gov"
 #endif
-	return S_value
+	S_value = TrimBoth(S_value)
+	return StringFromList(0,S_value," ")
 End
 #else
-Function/T sytemHostname()				// returns the hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
+Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
 	DoAlert 0, "Do not know how to get hostname from Windows in Igor 6 or earlier."
 	return ""									// cannot get answer
 End

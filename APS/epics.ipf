@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.0
-#pragma version=1.83
+#pragma version=1.84
 
 Menu "Data"
 	Submenu "EPICS"
@@ -204,13 +204,7 @@ End
 
 
 Function atAPS()											// returns true if you are currently at the APS
-	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
-		DoAlert 0, "Only know how to get hostname from a Mac"
-		return 0								// cannot get answer
-	endif
-	ExecuteScriptText "do shell script \"hostname\""						//returns something like: 	"tischler.uni.aps.anl.gov"
-	String ipAddress = ReplaceString("\"",S_value,"")
-	Variable aps = (strsearch(ipAddress, ".aps.anl.gov",0)>0)
+	Variable aps = (strsearch(sytemHostname(), ".aps.anl.gov",0)>0)
 	return aps
 End
 
