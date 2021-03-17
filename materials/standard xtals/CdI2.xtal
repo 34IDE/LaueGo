@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-03-17T00:39:20.855Z</date>   <!-- Tuesday, March 16, 2021 at 7:39:20 PM Central Daylight Time -->
+	<chemical_name_common>CdI2</chemical_name_common>
+	<chemical_formula>CdI2</chemical_formula>
+	<database_code db="COD">1539851</database_code>
+
+	<space_group>
+		<id>164</id>
+		<IT_number>164</IT_number>
+		<system>trigonal</system>
+		<H-M>P -3 m 1</H-M>
+		<Hall>-P 3 2"</Hall>
+		<Schoenflies>D3d^3</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.4244</a>
+		<b unit="nm">0.4244</b>
+		<c unit="nm">0.6859</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>1</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Cd1</label>
+		<symbol>Cd</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<oxidation>2</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>I1</label>
+		<symbol>I</symbol>
+		<fract>1/3 2/3 0.2492</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<oxidation>-1</oxidation>
+	</atom_site>
+
+
+	<bond_chemical unit="nm" n0="Cd1" n1="I1">0.298734 0.298765</bond_chemical>
+
+	<citation>
+		<title>Structure refinements, thermal motion and Madelung constants of cadmium iodide- and cadmium hydroxide-type layer structures</title>
+		<journal>National Bureau of Standards (U.S.), Special Publication</journal>
+		<ASTM>XNBSAV</ASTM>
+		<volume>1969</volume>
+		<year>1969</year>
+		<pages>233 236</pages>
+		<author>Y.M. de Haan</author>
+	</citation>
+</cif>
