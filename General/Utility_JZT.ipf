@@ -4409,7 +4409,10 @@ Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.
 	ExecuteScriptText "do shell script \"host $(hostname)\""		//returns something like:  "bob.xray.aps.anl.gov"
 	S_value = ReplaceString("\"",S_value,"")
 #else
-	ExecuteScriptText/UNQ "do shell script \"host $(hostname)\""	//returns something like:  "bob.xray.aps.anl.gov"
+	ExecuteScriptText/UNQ/Z "do shell script \"host $(hostname)\""	//returns something like:  "bob.xray.aps.anl.gov"
+	if (V_flag)
+		return "ERROR -- "+S_value
+	endif
 #endif
 	S_value = TrimBoth(S_value)
 	return StringFromList(0,S_value," ")
