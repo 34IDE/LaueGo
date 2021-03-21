@@ -27,7 +27,7 @@
 	</cell>
 
 	<atom_site>
-		<label>Cd1</label>
+		<label>Cd</label>
 		<symbol>Cd</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
@@ -35,7 +35,7 @@
 	</atom_site>
 
 	<atom_site>
-		<label>I1</label>
+		<label>I</label>
 		<symbol>I</symbol>
 		<fract>1/3 2/3 0.2492</fract>
 		<WyckoffSymbol>d</WyckoffSymbol>
@@ -43,7 +43,7 @@
 	</atom_site>
 
 
-	<bond_chemical unit="nm" n0="Cd1" n1="I1">0.298734 0.298765</bond_chemical>
+	<bond_chemical unit="nm" n0="Cd" n1="I">0.298734 0.298765</bond_chemical>
 
 	<citation>
 		<title>Structure refinements, thermal motion and Madelung constants of cadmium iodide- and cadmium hydroxide-type layer structures</title>
