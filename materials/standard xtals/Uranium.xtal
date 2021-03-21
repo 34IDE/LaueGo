@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-03-21T19:30:09.216Z</date>   <!-- Sunday, March 21, 2021 at 2:30:09 PM Central Daylight Time -->
+	<chemical_name_common>Uranium - α</chemical_name_common>
+	<chemical_formula>U</chemical_formula>
+	<database_code db="COD">4124713</database_code>
+
+	<space_group>
+		<id>63</id>
+		<IT_number>63</IT_number>
+		<system>orthorhombic</system>
+		<H-M>C m c m</H-M>
+		<Hall>-C 2c 2</Hall>
+		<Schoenflies>D2h^17</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.285376</a>
+		<b unit="nm">0.587018</b>
+		<c unit="nm">0.49558</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>U</label>
+		<symbol>U</symbol>
+		<fract>0 0.105 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<citation doi="10.1021/ja01291a035" id="primary">
+		<title>The crystalline structure of uranium</title>
+		<journal>Journal of the American Chemical Society</journal>
+		<volume>59</volume>
+		<year>1937</year>
+		<pages>2588 2591</pages>
+		<author>Jacob, C.W.</author>
+		<author>Warren, B.E.</author>
+		<!-- a=2.852 Å,  b=5.865Å,  c=4.945Å -->
+	</citation>
+	
+	<citation doi="10.1107/S0365110X62001474" id="2">
+		<!-- a = 5.641907 ± 0.000014 (kX) -->
+		<title>Precise Lattice Constants of Germanium, Aluminum, Gallium Arsenide, Uranium, Sulphur, Quartz and Sapphire</title>
+		<journal>Acta Cryst.</journal>
+		<volume>15</volume>
+		<year>1962</year>
+		<pages>578 582</pages>
+		<author>Ann S. Cooper</author>
+		<comment>used to get lattice constants, reported a=2.84785., b=5.85801, c=4.94553 kX(Cu) units
+		using CuXunit = 1.00207699e-13 m gives: a=0.285376, b=5.87018, c=4.9558 nm</comment>
+	</citation>
+</cif>
