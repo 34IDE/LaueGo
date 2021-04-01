@@ -59,8 +59,10 @@
 
 	<bond_chemical unit="nm" n0="Sc" n1="O2">0.207299 0.208888</bond_chemical>
 	<bond_chemical unit="nm" n0="Sc" n1="O1">0.210657</bond_chemical>
+<!--
 	<bond_chemical unit="nm" n0="Dy" n1="O1">0.226571 0.232346</bond_chemical>
 	<bond_chemical unit="nm" n0="Dy" n1="O2">0.230562 0.258524 0.282066</bond_chemical>
+-->
 
 	<citation>
 		<title>A structural study of ternary lanthanide orthoscandate perovskites</title>
