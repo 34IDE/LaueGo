@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-03-22T18:02:53.948Z</date>   <!-- Monday, March 22, 2021 at 1:02:53 PM Central Daylight Time -->
+	<chemical_name_common>Eskolaite</chemical_name_common>
+	<chemical_formula>Cr2O3</chemical_formula>
+	<database_code db="amcsd">0017803</database_code>
+	<database_code db="COD">9014036</database_code>
+
+	<space_group>
+		<id>167:H</id>
+		<IT_number>167</IT_number>
+		<system>trigonal</system>
+		<H-M>R -3 c:H</H-M>
+		<Hall>-R 3 2"c</Hall>
+		<Schoenflies>D3d^6</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.4957</a>
+		<b unit="nm">0.4957</b>
+		<c unit="nm">1.35923</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>6</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Cr</label>
+		<symbol>Cr</symbol>
+		<fract>0 0 0.34749</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00275</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.3057 0 1/4</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00393</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="O" n1="Cr">0.196454 0.201301</bond_chemical>
+
+	<citation doi="10.1016/0025-5408(94)90019-1">
+		<title>Residual electron density study of chromium sesquioxide by crystal structure and scattering factor refinement</title>
+		<journal>Materials Research Bulletin</journal>
+		<volume>29</volume>
+		<year>1994</year>
+		<pages>239 245</pages>
+		<author>H. Sawada</author>
+		<comment>Note: harmonic scattering factor refinement</comment>
+	</citation>
+</cif>
