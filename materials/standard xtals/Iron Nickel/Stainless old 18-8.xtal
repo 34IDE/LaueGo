@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>18-8 Stainless Steel (AISI 304)</chemical_name_common>
-	<comment>18%Cr  8%Ni  74%Fe  by weight, lattice constant is approximate.</comment>
+	<chemical_name_common>18-8 Stainless Steel (304)</chemical_name_common>
+	<comment>18%Cr  8%Ni  74%Fe  by weight, lattice constant is a guess</comment>
 
 	<space_group>
 		<IT_number>225</IT_number>
@@ -21,19 +21,19 @@
 	<atom_site>
 		<label>Fe</label>
 		<fract>0 0 0</fract>
-		<occupancy unit="wt%">74</occupancy>
+		<occupancy>0.73</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Cr</label>
 		<fract>0 0 0</fract>
-		<occupancy unit="wt%">18</occupancy>
+		<occupancy>0.19</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Ni</label>
 		<fract>0 0 0</fract>
-		<occupancy unit="wt%">8</occupancy>
+		<occupancy>0.08</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 </cif>
