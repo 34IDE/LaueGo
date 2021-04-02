@@ -2,10 +2,12 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Ni based Permalloy</chemical_name_common>
+
 	<space_group>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.35512</a>
 		<b unit="nm">0.35512</b>
@@ -19,7 +21,7 @@
 		<label>Ni</label>
 		<symbol>Ni</symbol>
 		<fract>0 0 0</fract>
-		<occupancy>0.8</occupancy>
+		<occupancy unit="wt%">80</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
@@ -27,7 +29,12 @@
 		<label>Fe</label>
 		<symbol>Fe</symbol>
 		<fract>0 0 0</fract>
-		<occupancy>0.2</occupancy>
+		<occupancy unit="wt%">20</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+	
+	<citation>
+		<url>https://en.wikipedia.org/wiki/Permalloy</url>
+		don't remember where lattice constant came from
+	</citation>
 </cif>
