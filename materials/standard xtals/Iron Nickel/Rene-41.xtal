@@ -15,8 +15,6 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<volume>0.045805856552</volume>
-		<temperature unit="C">0</temperature>
 	</cell>
 
 	<atom_site>
@@ -64,7 +62,6 @@
 
 	<citation>
 		<url>https://en.wikipedia.org/wiki/Rene_41</url>
-		Wikipedia   http://en.wikipedia.org/wiki/René_41
-		The lattice constant here is from the one Given to me by Jennifer Carter for René-104
+		The lattice constant here is from the one given to me by Jennifer Carter for René-104
 	</citation>
 </cif>

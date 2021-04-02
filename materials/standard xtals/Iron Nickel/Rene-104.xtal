@@ -16,7 +16,6 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<volume>0.045805856552</volume>
-		<temperature unit="C">0</temperature>
 	</cell>
 
 	<atom_site>
@@ -81,11 +80,11 @@
 	</atom_site>
 
 	<citation>
+		<url>http://www.google.com/patents/EP1813690B1?cl=en</url>
 		The composition is from &quot;Local heat treatment for improved fatigue resistance in turbine components&quot;, 
-		Patent Publication &quot;EP 1813690 B1&quot;, http://www.google.com/patents/EP1813690B1?cl=en
-		US20070169860, US20100043924
+		Patent Publication &quot;EP 1813690 B1&quot;, US20070169860, US20100043924
 		composition of René 104, in weight %, is nominally:
 		20.5Co, 11.0 Cr, 3.7 Mo, 2.0 W, 3.4 Al, 3.6 Ti, 0.9 Nb, 2.4 Ta, 0.05 Zr, 0.04 C, 0.03 B, balance Ni.
-		The lattice constant used here is was given to me by Jennifer Carter
+		The lattice constant used here was given to me by Jennifer Carter
 	</citation>
 </cif>
