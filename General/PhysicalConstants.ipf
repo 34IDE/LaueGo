@@ -2,7 +2,7 @@
 #pragma ModuleName=PhysicalConstants
 #pragma version = 2.20
 #pragma IgorVersion = 6.3
-#include "Utility_JZT", version>=4.13		// supplies:  TrimBoth(str), placesOfPrecision(a)
+#include "Utility_JZT", version>=4.13		// supplies:  placesOfPrecision(a), and TrimBoth(str) (only needed for Igor 6)
 Static StrConstant NISTserverASCII_URL="https://physics.nist.gov/cuu/Constants/Table/allascii.txt"
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
@@ -426,7 +426,12 @@ Static Function/T getFullASCIIfromWeb()
 	if (i<0)
 		return "ERROR -- 'allascii.txt' file is INVALID"
 	endif
+
+#if (IgorVersion() < 7)
 	ascii = TrimBoth(ascii[i+1,Inf])
+#else
+	ascii = TrimString(ascii[i+1,Inf])
+#endif
 	ascii += "\n"				// ensure terminating <NL>
 	
 	if (strsearch(ascii,"\nmolar mass constant ",0)<0)
