@@ -1,8 +1,8 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=PhysicalConstants
-#pragma version = 2.19
+#pragma version = 2.20
 #pragma IgorVersion = 6.3
-#include "Utility_JZT", version>=4.13		// supplies:  TrimFrontBackWhiteSpace(str), placesOfPrecision(a)
+#include "Utility_JZT", version>=4.13		// supplies:  TrimBoth(str), placesOfPrecision(a)
 Static StrConstant NISTserverASCII_URL="https://physics.nist.gov/cuu/Constants/Table/allascii.txt"
 
 //	By Jon Tischler (ORNL)  Aug 12, 2010
@@ -426,7 +426,7 @@ Static Function/T getFullASCIIfromWeb()
 	if (i<0)
 		return "ERROR -- 'allascii.txt' file is INVALID"
 	endif
-	ascii = TrimFrontBackWhiteSpace(ascii[i+1,Inf])
+	ascii = TrimBoth(ascii[i+1,Inf])
 	ascii += "\n"				// ensure terminating <NL>
 	
 	if (strsearch(ascii,"\nmolar mass constant ",0)<0)
@@ -549,14 +549,14 @@ End
 
 // PhysicalConstant structures
 Static Constant PhysicalConstantMaxStrLen=60
-Static Structure PhysicalConstantStructure
-	int16	valid
-	char name[PhysicalConstantMaxStrLen+1]
-	double value
-	double err
-	int16 exact
-	char unit[PhysicalConstantMaxStrLen+1]
-	char symbol[PhysicalConstantMaxStrLen+1]
+Static Structure PhysicalConstantStructure	// structure that describes one constant
+	int16	valid										// flag either true or false
+	char name[PhysicalConstantMaxStrLen+1]	// full name, e.g. "Planck constant" or "speed of light in vacuum"
+	double value										// numerical value
+	double err										// value ± err
+	int16 exact										// flag either true or false (if true, then err should be NaN)
+	char unit[PhysicalConstantMaxStrLen+1]	// units, e.g. "m s^-1"
+	char symbol[PhysicalConstantMaxStrLen+1]	// symbol, e.g. "c" or "h"
 EndStructure
 //
 Static Structure PhysicalConstantStructureAll
@@ -593,7 +593,7 @@ ThreadSafe Static Function initPhysicalConstantStructure(c)
 	c.exact	= 0
 End
 //
-// Copy constant structure i from cAll into ci
+// Copy constant structure i from cAll --> ci
 ThreadSafe Static Function getStruct_i(cAll,i,ci)
 	STRUCT PhysicalConstantStructureAll &cAll
 	Variable i
