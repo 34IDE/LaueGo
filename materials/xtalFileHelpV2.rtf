@@ -1,0 +1,427 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2513
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 TimesNewRomanPSMT;\f1\fmodern\fcharset0 Courier;\f2\froman\fcharset0 TimesNewRomanPS-ItalicMT;
+\f3\ftech\fcharset77 Symbol;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+{\info
+{\author Jon Tischler}
+{\*\company ANL/APS}}\margl1440\margr1440\vieww32200\viewh21280\viewkind0
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+
+\f0\fs48 \cf0 xtal file description
+\fs36  (Vers. 2)
+\fs24 \
+Shows this help text.\
+\
+This is a description of a  *.xtal  file that describes a crystal lattice and the included atoms.\
+These files are standard xml files, and follow all of the rules for xml.\
+ALL of the information is contained between the 
+\f1 <cif version="2" dim="3"> ... </cif>
+\f0  tags.\
+Note, the dim="3" is for 3D structures. For 2D structures, use dim=\'932\'94.\
+\
+The first thing is to determine the Space Group AND its setting. To determine the symmetry, the best thing is to use the 
+\f1 <id>
+\f0  tag (there are 530 of them). If you just use 
+\f1 <IT_number>
+\f0 , then you leave an ambiguity (e.g. space group 15 has 18 different settings). The 
+\f1 <H-M>
+\f0  or 
+\f1 <Hall>
+\f0  are also good, since they uniquely identify the space group setting, but are sometimes ambiguous. Or, you could just list all of the symmetry operations in the optional 
+\f1 <symops>
+\f0  block. But, somehow you need to provide this information.\
+\
+The 
+\f1 <cif version="2" dim="3"> ... </cif>
+\f0  section contains the following tags:.\
+\
+	\'95 
+\f1 <space_group> ... </space_group>
+\f0 \
+\pard\tx447\tx900\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li885\fi-886\ri-2902\pardirnatural\partightenfactor0
+\cf0 		This block contains all of the symmetry information needed to identify the structure. At least ONE of \'93id\'94 \'93H-M\'94, \'93Hall\'94, or \'93symops\'94 must be included. If you just give \'93IT_number\'94 you may be surprised by the results.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1451\fi-1452\ri-2902\pardirnatural\partightenfactor0
+\cf0 		\uc0\u9702 	
+\f1 <id>
+\f0  the Space Group id, something like "167:H", this is a good choice.\
+		\uc0\u9702 	
+\f1 <IT_number>
+\f0  the Space Group number, something like "167" in range [1-230]\uc0\u8195 (for 2D [1-17])\
+		\uc0\u9702 	
+\f1 <H-M>
+\f0  the H-M symbol, e.g.\uc0\u8195 R -3 c:H\
+		\uc0\u9702 	
+\f1 <Hall>
+\f0  the Hall symbol e.g.\uc0\u8195 -R 3 2''c\
+		\uc0\u9702 	
+\f1 <system>
+\f0  one of the 7 crystal system: "cubic", "tetragonal", ... (or one of the 2D systems: "oblique", "rectangular",...) 
+\f2\i Optional, just for user info.
+\f0\i0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1422\fi-1423\ri-2902\pardirnatural\partightenfactor0
+\cf0 		\uc0\u9702 	
+\f1 <symops> ... <symops>
+\f0  block contains a list of all symmetry operations.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1425\fi-1426\ri-2902\pardirnatural\partightenfactor0
+\cf0 			The symmetry operations are a list tags such as: 
+\f1 <op>"-x+1/4" "-y+1/4" "-z+1/4"<op>
+\f0 , one line for each symmetry operation.\
+		\
+		for space group (H-M = P 32 2 1) 
+\f1\fs20 <symops>
+\f0\fs24  would be:\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li903\fi-904\ri-2902\pardirnatural\partightenfactor0
+
+\f1\fs20 \cf0 			<symops N="6">\
+				<op>"x" "y" "z"</op>\
+				<op>"-y" "x-y" "z-1/3"</op>\
+				<op>"-x+y" "-x" "z+1/3"</op>\
+				<op>"x-y" "-y" "-z+1/3"</op>\
+				<op>"-x" "-x+y" "-z-1/3"</op>\
+				<op>"y" "x" "-z"</op>\
+			</symops>\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+
+\f1 	\'95 <cell> ... </cell>
+\f0 \
+\pard\tx447\tx880\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li885\fi-886\ri-2902\pardirnatural\partightenfactor0
+\cf0 		This block contains the information needed to define the unit cell, and optionally the measurement conditions.\
+\pard\tx447\tx871\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li873\fi-874\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Required tags are the lattice parameters of the unit cell:\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li2142\fi-2143\ri-2902\pardirnatural\partightenfactor0
+\cf0 			\uc0\u9702 	
+\f1 <a>
+\f0 , 
+\f1 <b>
+\f0 , 
+\f1 <c>
+\f0 \
+				These are all of the form: 
+\f1 <a unit="nm">0.4759092</a>
+\f0 \
+				where the unit is any length unit: nm, pm, \'c5, m, inch, parsec, and with SI prefixes, e.g. cm, or ypc, ...\
+				If the unit is not specified, it defaults to \'c5.\
+			\uc0\u9702 	
+\f1 <alpha>
+\f0 , 
+\f1 <beta>
+\f0 , 
+\f1 <gamma>
+\f0 \
+				These are all of the form: 
+\f1 <alpha unit="\'b0">90</alpha>
+\f0 \
+				where the unit is one of [deg, \'b0, rad, circle, arcmin, arcsec, grad, cos], again SI prefixes are allowed.\
+				If the unit is not specified, it defaults to degree.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1124\fi-1125\ri-2902\pardirnatural\partightenfactor0
+\cf0 		\uc0\u8195 For 2D structures, only 
+\f1 <a>
+\f0 , 
+\f1 <b>
+\f0 , and 
+\f1 <alpha>
+\f0  are required.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+		Optional tags are:\
+\pard\tx447\tx901\tx1440\tx1745\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1733\fi-1734\ri-2902\pardirnatural\partightenfactor0
+\cf0 			\uc0\u9702 	
+\f1 <temperature>
+\f0  Temperature where lattice constants were measured.\
+				Again the temperature can have units, known units are: [C, K, F, R, Planck], default is K, and SI prefixes are allowed.\
+			\uc0\u9702 	
+\f1 <alphaT>
+\f0  Coefficient of expansion, used to get lattice constant at different temperatures. Units are 1/C.\
+			\uc0\u9702 	
+\f1 <pressure>
+\f0  Pressure where measurement was made.\
+				The known units for pressure are: [Pascal, Pa, bar, atm, Torr, inchesH2O, psi], default is Pa, and SI prefixes are allowed.  An example is: 
+\f1 <pressure unit="GPa">100</pressure>
+\f0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+	\'95 
+\f1 <atom_site> ... </atom_site>
+\f0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li886\fi-887\ri-2902\pardirnatural\partightenfactor0
+\cf0 		There should be one atom_site block for each type of atom.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Required tags are:\
+\pard\tx447\tx901\tx1185\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1166\fi-1167\ri-2902\pardirnatural\partightenfactor0
+\cf0 		\uc0\u9702 	
+\f1 <label>
+\f0 \
+			These are all of the form:\uc0\u8195 
+\f1 <label>Al01</label>
+\f0 \uc0\u8195 or\u8195 
+\f1 <label>Zr</label>.  
+\f0 The value is a string that is unique for each 
+\f1\fs20 atom_site
+\f0\fs24 , numbers are commonly appended when the same element has multiple sites.  But a label of \'93atom_1\'94 is acceptable too.\
+\
+		\uc0\u9702 	
+\f1 <fract>0 0 0.352</fract>
+\f0 \
+			Three numbers separated by a single space that give the fractional coordinates of the atom.  For 2D structures, there will only be 2 fractional coordinates, e.g. 
+\f1 <fract>1/3 2/3</fract>.  
+\f0 Note, fractions may be used for fractional coordinates, most useful for numbers like 1/3.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+		Optional tags are:\
+\pard\tx447\tx901\tx1440\tx1741\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1723\fi-1724\ri-2902\pardirnatural\partightenfactor0
+\cf0 		 	\uc0\u9702 	
+\f1 <symbol>Al</symbol>
+\f0 \
+				Not needed if the element can be determined from the label.\
+				e.g. "Al01" \uc0\u8594  Al, \u8195 and\u8195 "Ge" \u8594  Ge,\u8195 but\u8195 "atom_1" \u8594  ???\
+			\uc0\u9702 	
+\f1 <oxidation>3</oxidation>
+\f0 \
+				An integer describing the oxidation state. If not given, assume 0.\
+			\uc0\u9702 	
+\f1 <occupancy>0.3</occupancy>
+\f0 \
+				The occupancy of the site, a number. If not given, assume 1. Should be in the range (0,1].\
+				You may use 
+\f1 <occupancy unit=\'93wt%\'94>
+\f0  to give amount in weight percent, useful for alloys.\
+			\uc0\u9702 	
+\f1 <WyckoffSymbol>c</WyckoffSymbol>
+\f0 \
+				A letter that is the Wyckoff symbol. If not given, it will be determined from symmetry info.  In this example it is "c"\
+			\uc0\u9702 	
+\f1 <Uiso unit="\'c5^2">0.0049</Uiso>
+\f0 .\
+				The isotropic U, in this example the units are \'c5\'b2, any length\'b2 unit is allowed, default is \'c5\'b2.\
+			\uc0\u9702 	
+\f1 <Biso unit="\'c5^2">1.1</Biso>
+\f0 .\
+				The isotropic B, in this example the units are \'c5\'b2, any length\'b2 unit is allowed, default is \'c5\'b2.\
+				The 
+\f1 Biso
+\f0  is 
+\f2\i DEPRECATED
+\f0\i0 , use only the 
+\f1 Uiso
+\f0 , the conversion is , B = 8\uc0\u960 \'b2 U\
+			\uc0\u9702 	
+\f1 <U11 unit="\'c5^2">0.01807</U11>
+\f0 \
+				The anisotropic U values, in this example the units are \'c5\'b2, any length\'b2 unit is allowed, default is \'c5\'b2.  You will probably also want to use: 
+\f1 <U22>
+\f0 , 
+\f1 <U33>
+\f0 , 
+\f1 <U12>
+\f0 , 
+\f1 <U13>
+\f0 , 
+\f1 <U23>
+\f3 .\
+				
+\f0 Any unspecified values will be set to 0, and so have no effect.\
+			\uc0\u9702 	
+\f1 <DebyeTemperature unit="K">670</DebyeTemperature>
+\f0 \
+				The Debye Temperature. This will allow a temperature dependent strength of reflections.  The default Temperature unit is K, and the usual temperature units are allowed.\
+			\uc0\u9702 	
+\f1 <A>238</A>
+\f0 \
+				Mass Number, only useful for neutron scattering where the scattering length depends on the isotope.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li587\fi-587\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95 
+\f1 <citation> ... </citation>
+\f0 \uc0\u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li904\fi-905\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Holds the citation of the article or other place where these values came from.\
+		Allowed attributes are "id" or a "doi" as in: 
+\f1 <citation id="2" doi="10.1107/S0365110X63002012">
+\f0 \
+		The id is used when multiple 
+\f1 <citation>
+\f0  blocks are present, 
+\f1 id="primary"
+\f0  is the main one, 
+\f1 id="2"
+\f0  is secondary, ...\
+		The doi attribute provides the doi, you can find it by going to "https://dx.doi.org"\
+		The contents of the 
+\f1 <citation>
+\f0  block can be just plain text, or you can structure it using the following optional tags:\
+\pard\tx447\tx901\tx1440\tx1683\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1637\fi-1638\ri-2902\pardirnatural\partightenfactor0
+\cf0 			\uc0\u9702 	
+\f1 <title>The crystal structure of something</title>
+\f0 , the title of the article.\
+			\uc0\u9702 	
+\f1 <author>W.H. Zachariasen</author>
+\f0 ,\uc0\u8195 there can be multiple author tags in a citation.\
+			\uc0\u9702 	
+\f1 <journal>Acta Cryst.</journal>
+\f0 ,\uc0\u8195 name of the journal.\
+			\uc0\u9702 	
+\f1 <year>1963</year>
+\f0 ,\uc0\u8195 year the journal was published.\
+			\uc0\u9702 	
+\f1 <volume>27</volume>
+\f0 ,\uc0\u8195 the volume of the journal\
+			\uc0\u9702 	
+\f1 <pages>777 783</pages>
+\f0 ,\uc0\u8195 the page range of the article, a single number is also allowed.\
+			\uc0\u9702 	
+\f1 <ASTM>ASBSDK</ASTM>
+\f0 , ASTM library code of journal\
+			\uc0\u9702 	
+\f1 <url>physics.nist.gov/cuu/Constants/index.html</url>
+\f0 , arbitrary url with info about citation. leading \'93http://\'93 is optional.\
+			\uc0\u9702 	
+\f1 <comment>
+\f0 useful info about this citation
+\f1 </comment>
+\f0 , just useful text.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li910\fi-911\ri-2902\pardirnatural\partightenfactor0
+\cf0 		A combination of plain text and the above tags is acceptable. Plain un-tagged text works just like a 
+\f1 <comment>
+\f0  tag, but note that the un-tagged text must occur only at the end of the 
+\f1 <citation>
+\f0  block.\
+\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li637\fi-638\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95  
+\f1 <database_code db="COD">9008678</database_code>
+\f0 \uc0\u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li890\fi-891\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Holds the code for a particular data base, again where these values came from, you can have multiple database codes.\
+		COD refers to the "Crystallography Open Database" Other common examples are:\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1347\fi-1348\ri-2902\pardirnatural\partightenfactor0
+\cf0 		\uc0\u8195 \u8195 
+\f1 <database_code db="ICSD">18189</database_code>
+\f0 ,\uc0\u8195 "Inorganic Crystal Structure Database"."\
+		\uc0\u8195 \u8195 
+\f1 <database_code db="AMCSD">0012345</database_code>
+\f0 ,\uc0\u8195 "American Mineralogist Crystal Structure Database"."\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li658\fi-659\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95  
+\f1 <chemical_name_common>Gallium Arsenide</chemical_name_common>
+\f0 \uc0\u8195 \u8195 \u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li897\fi-898\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Common name of the material. Something that looks nice in a title.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li653\fi-654\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95  
+\f1 <chemical_formula>GaAs</chemical_formula>
+\f0 \uc0\u8195 \u8195 \u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li894\fi-895\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Chemical Formula, again something that looks nice in a title.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li632\fi-633\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95  
+\f1 <chemical_formula_structural>GaAs</chemical_formula_structural>
+\f0 \uc0\u8195 \u8195 \u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx922\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li891\fi-892\ri-2902\pardirnatural\partightenfactor0
+\cf0 		A longer more interesting looking formula, likely useful for complicated organic materials.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li660\fi-661\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95  
+\f1 <bond_chemical unit="nm" n0="Na1" n1="Cl001">0.2418</bond_chemical>
+\f0 \uc0\u8195 \u8195 \u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx906\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li903\fi-904\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Defines a bond. n0 and n1 identify the 
+\f1\fs20 <label>
+\f0\fs24 's of two atom types (n0 and n1 may be the same), and the value in the tag is the bond length using the given units.  When there are multiple bonds, use one 
+\f1\fs20 <bond_chemical>
+\f0\fs24  each bond.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li670\fi-670\ri-2902\pardirnatural\partightenfactor0
+\cf0 	\'95  
+\f1 <comment>Some interesting text</comment>
+\f0 \uc0\u8195 \u8195 \u8195 
+\f2\i Optional
+\f0\i0 \
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li909\fi-910\ri-2902\pardirnatural\partightenfactor0
+\cf0 		Just a block of interesting text that you want to include, but it has no structure.  Note that this block can cover multiple lines. Note, any plain un-tagged text just before the closing 
+\f1 </cif>
+\f0 , is also considered part of the comment.\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+\
+
+\fs36 \'95Example File, Copper\
+
+\fs24 \
+
+\f1 <?xml version="1.0" encoding="UTF-8" ?>\
+\
+<cif version="2" dim="3">\
+\uc0\u8195 \u8195 <chemical_name_common>Copper</chemical_name_common>\
+\uc0\u8195 \u8195 <space_group>\
+\uc0\u8195 \u8195 \u8195 \u8195 <H-M>Fm-3m</H-M>
+\f0 \uc0\u8195 			<!-- any one of these two is sufficient -->
+\f1 \
+\uc0\u8195 \u8195 \u8195 \u8195 <IT_number>225</IT_number>	
+\f0 <!-- 225 only has 1 setting -->
+\f1 \
+\uc0\u8195 \u8195 \u8195 \u8195 <system>cubic</system>		
+\f0 <!-- I put this in because I felt like it. -->
+\f1 \
+\uc0\u8195 \u8195 </space_group>\
+\
+\uc0\u8195 \u8195 <cell>\
+\uc0\u8195 \u8195 \u8195 \u8195 <a unit="nm">0.361496</a>\
+\uc0\u8195 \u8195 \u8195 \u8195 <b unit="mm">0.000000361496</b>\
+\uc0\u8195 \u8195 \u8195 \u8195 <c>0.361496</c>\
+\uc0\u8195 \u8195 \u8195 \u8195 <alpha>90</alpha>\
+\uc0\u8195 \u8195 \u8195 \u8195 <beta>90</beta>\
+\uc0\u8195 \u8195 \u8195 \u8195 <gamma unit="grad">100</gamma>\
+\uc0\u8195 \u8195 \u8195 \u8195 <temperature unit="C">22.5</temperature>\
+\uc0\u8195 \u8195 \u8195 \u8195 <alphaT>17e-6</alphaT>
+\f0 \uc0\u8195 \u8195 \u8195 \u8195 <!-- a = ao*(1+alphaT*(TempC-22.5)) -->
+\f1 \
+\uc0\u8195 \u8195 </cell>\
+\
+\uc0\u8195 \u8195 <atom_site>\
+\uc0\u8195 \u8195 \u8195 \u8195 <label>Cu</label>\
+\uc0\u8195 \u8195 \u8195 \u8195 <symbol>Cu</symbol>
+\f0 \uc0\u8195 \u8195 \u8195 \u8195 \u8195 \u8195 <!-- this is redundant, but I like it -->
+\f1 \
+\uc0\u8195 \u8195 \u8195 \u8195 <fract>0 0 0</fract>\
+\uc0\u8195 \u8195 \u8195 \u8195 <DebyeTemperature unit="K">343.5</DebyeTemperature>\
+\uc0\u8195 \u8195 </atom_site>\
+\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li302\fi-303\ri-2902\pardirnatural\partightenfactor0
+\cf0 \uc0\u8195 \u8195 <bond_chemical unit="nm" n0="Cu" n1="Cu">0.255616</bond_chemical>\
+\pard\tx447\tx901\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ri-2902\pardirnatural\partightenfactor0
+\cf0 \
+\uc0\u8195 \u8195 <citation>\
+\uc0\u8195 \u8195 \u8195 \u8195 <author>R.W.G. Wyckoff</author>\
+\uc0\u8195 \u8195 \u8195 \u8195 <journal>Crystal Structures</journal>\
+\uc0\u8195 \u8195 \u8195 \u8195 <volume>1</volume>\
+\uc0\u8195 \u8195 \u8195 \u8195 <year>1963</year>\
+\uc0\u8195 \u8195 \u8195 \u8195 <pages>7 83</pages>\
+\uc0\u8195 \u8195 \u8195 \u8195 Second edition. Interscience Publishers, New York, New York\
+\uc0\u8195 \u8195 </citation>\
+\
+\uc0\u8195 \u8195 <comment>\
+\uc0\u8195 \u8195 \u8195 \u8195 Copper is an interesting element.\
+\uc0\u8195 \u8195 \u8195 \u8195 It is located between Ni and Zn.\
+\uc0\u8195 \u8195 </comment>\
+</cif>\
+}
