@@ -28,8 +28,8 @@
 	</cell>
 
 	<atom_site>
-		<label>O</label>
-		<symbol>OH</symbol>
+		<label>H2O</label>
+		<symbol>O</symbol>
 		<fract>0 0 0</fract>
 		<oxidation>-2</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>

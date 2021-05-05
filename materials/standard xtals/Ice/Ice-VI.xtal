@@ -28,7 +28,7 @@
 	</cell>
 
 	<atom_site>
-		<label>O-H2</label>
+		<label>Wat2</label>
 		<symbol>O</symbol>
 		<fract>0 0 0</fract>
 		<oxidation>-2</oxidation>
@@ -37,7 +37,7 @@
 	</atom_site>
 
 	<atom_site>
-		<label>O-H1</label>
+		<label>Wat1</label>
 		<symbol>O</symbol>
 		<fract>0 0.276 0.382</fract>
 		<oxidation>-2</oxidation>
