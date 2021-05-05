@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-04T19:57:27.082Z</date>   <!-- Tuesday, May 4, 2021 at 2:57:27 PM Central Daylight Time -->
+	<chemical_name_common>Bi2212</chemical_name_common>
+	<chemical_formula>Bi2 Sr2 Pr Cu2 O8.5</chemical_formula>
+	<database_code db="COD">1526841</database_code>
+
+	<space_group>
+		<id>66:cab</id>
+		<IT_number>66</IT_number>
+		<system>orthorhombic</system>
+		<H-M>A m a a</H-M>
+		<Hall>-A 2a 2</Hall>
+		<Schoenflies>D2h^20</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.5487</a>
+		<b unit="nm">0.5507</b>
+		<c unit="nm">3.033</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Bi</label>
+		<symbol>Bi</symbol>
+		<fract>0 0.7736 0.0501</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O4</label>
+		<symbol>O</symbol>
+		<fract>0 0.18 0.0642</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O5</label>
+		<symbol>O</symbol>
+		<fract>1/4 0 0.0454</fract>
+		<occupancy>0.125</occupancy>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O6</label>
+		<symbol>O</symbol>
+		<fract>1/4 1/2 0.0454</fract>
+		<occupancy>0.125</occupancy>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Sr</label>
+		<symbol>Sr</symbol>
+		<fract>0 0.2648 0.1343</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0 0.8424 0.1298</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Pr</label>
+		<symbol>Pr</symbol>
+		<fract>0 1/4 1/4</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Cu</label>
+		<symbol>Cu</symbol>
+		<fract>0 0.7562 0.1909</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>1/4 0 0.2068</fract>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>1/4 1/2 0.2068</fract>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Bi" n1="O5">0.185916</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu" n1="O3">0.1913</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu" n1="O1">0.19791</bond_chemical>
+	<bond_chemical unit="nm" n0="Cu" n1="O2">0.202605</bond_chemical>
+	<bond_chemical unit="nm" n0="Bi" n1="O6">0.20426</bond_chemical>
+	<bond_chemical unit="nm" n0="Sr" n1="O4">0.217682</bond_chemical>
+	<bond_chemical unit="nm" n0="Bi" n1="O4">0.227854</bond_chemical>
+	<bond_chemical unit="nm" n0="Sr" n1="O3">0.233016</bond_chemical>
+	<bond_chemical unit="nm" n0="Pr" n1="O2">0.234391</bond_chemical>
+	<bond_chemical unit="nm" n0="Pr" n1="O1">0.234391</bond_chemical>
+	<bond_chemical unit="nm" n0="Bi" n1="O3">0.244681</bond_chemical>
+
+	<citation>
+		<title>X-ray structure analysis of Bi2212 using synchrotron source and high dynamic range imaging plate detector</title>
+		<journal>Chinese Journal of Physics (Taipei)</journal>
+		<volume>38</volume>
+		<year>2000</year>
+		<pages>243 261</pages>
+		<author>T.-J. Lee</author>
+		<author>C.F. Huang</author>
+		<author>K.W. Yeh</author>
+		<author>C.C. Teo</author>
+		<author>T.S. Khor</author>
+		<author>H.C. Ku</author>
+		<author>K. Sakabe</author>
+		<author>Y. Huang</author>
+		<author>H.H. Hung</author>
+		<author>N. Sakabe</author>
+	</citation>
+</cif>

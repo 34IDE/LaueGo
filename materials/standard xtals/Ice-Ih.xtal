@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T00:23:41.517Z</date>   <!-- Tuesday, May 4, 2021 at 7:23:41 PM Central Daylight Time -->
+	<chemical_name_common>Ice Ih</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="amcsd">0018366</database_code>
+	<database_code db="COD">9015208</database_code>
+	<database_code db="ICSD">247095</database_code>
+
+	<space_group>
+		<id>194</id>
+		<IT_number>194</IT_number>
+		<system>hexagonal</system>
+		<H-M>P 63/m m c</H-M>
+		<Hall>-P 6c 2c</Hall>
+		<Schoenflies>D6h^4</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.4497479</a>
+		<b unit="nm">0.4497479</b>
+		<c unit="nm">0.7322382</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="K">100</temperature>
+	</cell>
+
+	<atom_site>
+		<label>H2</label>
+		<symbol>H</symbol>
+		<fract>0.451 0.9019 0.0179</fract>
+		<occupancy>0.5</occupancy>
+		<oxidation>1</oxidation>
+		<WyckoffSymbol>k</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.0169</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0124</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0174</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0062</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.0037</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.0075</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>1/3 2/3 0.0614</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.0079</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0079</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.006</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.004</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>H1</label>
+		<symbol>H</symbol>
+		<fract>1/3 2/3 0.1964</fract>
+		<occupancy>0.5</occupancy>
+		<oxidation>1</oxidation>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.0211</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.0211</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0082</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.0106</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="O" n1="H1">0.0975</bond_chemical>
+	<bond_chemical unit="nm" n0="O" n1="H2">0.0994</bond_chemical>
+
+	<citation doi="10.1063/1.1765099">
+		<title>No evidence for large-scale proton ordering in Antarctic ice from powder neutron diffraction</title>
+		<journal>Journal of Chemical Physics</journal>
+		<volume>120</volume>
+		<year>2004</year>
+		<pages>11376 11379</pages>
+		<ASTM>JCPSA6</ASTM>
+		<author>A. Dominic Fortes</author>
+		<author>I.G. Wood</author>
+		<author>D. Grigoriev</author>
+		<author>M. Alfredsson</author>
+		<author>S. Kipfstuhl</author>
+		<author>K.S. Knight</author>
+		<author>R.I. Smith</author>
+	</citation>
+</cif>
