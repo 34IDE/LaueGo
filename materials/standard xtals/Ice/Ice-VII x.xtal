@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T01:25:49.633Z</date>   <!-- Tuesday, May 4, 2021 at 8:25:49 PM Central Daylight Time -->
+	<chemical_name_common>Ice VII</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="amcsd">0018369</database_code>
+	<database_code db="COD">9016611</database_code>
+
+	<space_group>
+		<id>224:1</id>
+		<IT_number>224</IT_number>
+		<system>cubic</system>
+		<H-M>P n -3 m:1</H-M>
+		<Hall>P 4n 2 3 -1n</Hall>
+		<Schoenflies>Oh^4</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.33</a>
+		<b unit="nm">0.33</b>
+		<c unit="nm">0.33</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>2</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H</label>
+		<symbol>H</symbol>
+		<fract>0.17 0.17 0.17</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="O" n1="H">0.0971681</bond_chemical>
+
+	<citation doi="10.1073/pnas.52.6.1433">
+		<title>Ice VII, the densest form of ice Note: T = 223 K, P = 2.5 GPa</title>
+		<volume>52</volume>
+		<year>1964</year>
+		<pages>1433 1439</pages>
+		<author>Kamb, B.</author>
+		<author>Davis, B. L.</author>
+	</citation>
+</cif>

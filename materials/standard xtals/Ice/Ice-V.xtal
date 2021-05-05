@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T01:25:02.724Z</date>   <!-- Tuesday, May 4, 2021 at 8:25:02 PM Central Daylight Time -->
+	<chemical_name_common>Ice V</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="COD">2310425</database_code>
+
+	<space_group>
+		<id>15:-b1</id>
+		<IT_number>15</IT_number>
+		<system>monoclinic</system>
+		<H-M>A 1 2/a 1</H-M>
+		<Hall>-A 2ya</Hall>
+		<Schoenflies>C2h^6</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.922</a>
+		<b unit="nm">0.754</b>
+		<c unit="nm">1.035</c>
+		<alpha>90</alpha>
+		<beta>109.2</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>H10</label>
+		<symbol>H</symbol>
+		<fract>0.19 0.62 0.28</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H6</label>
+		<symbol>H</symbol>
+		<fract>0.56 0.98 0.19</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.2751 0.6525 0.2477</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H7</label>
+		<symbol>H</symbol>
+		<fract>0.27 0.71 0.16</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H8</label>
+		<symbol>H</symbol>
+		<fract>0.37 0.58 0.28</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H4</label>
+		<symbol>H</symbol>
+		<fract>0.38 0.09 0.19</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H11</label>
+		<symbol>H</symbol>
+		<fract>0.42 1/4 0.05</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.4629 0.0565 0.1544</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H9</label>
+		<symbol>H</symbol>
+		<fract>0.32 0.73 0.33</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H13</label>
+		<symbol>H</symbol>
+		<fract>0.36 0.29 0.9</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H2</label>
+		<symbol>H</symbol>
+		<fract>0.26 0.76 0.09</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>1/4 0.8153 0</fract>
+		<WyckoffSymbol>e</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O4</label>
+		<symbol>O</symbol>
+		<fract>0.3993 0.3596 0.9854</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H5</label>
+		<symbol>H</symbol>
+		<fract>0.44 0.17 0.09</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H12</label>
+		<symbol>H</symbol>
+		<fract>0.29 0.36 0</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H3</label>
+		<symbol>H</symbol>
+		<fract>0.39 0.97 0.1</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H1</label>
+		<symbol>H</symbol>
+		<fract>0.33 0.9 0.06</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H14</label>
+		<symbol>H</symbol>
+		<fract>0.47 0.46 0</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="O2" n1="H3">0.0972239</bond_chemical>
+	<bond_chemical unit="nm" n0="O4" n1="H14">0.097777</bond_chemical>
+	<bond_chemical unit="nm" n0="H10" n1="O3">0.0979779</bond_chemical>
+	<bond_chemical unit="nm" n0="H4" n1="O2">0.0984385</bond_chemical>
+	<bond_chemical unit="nm" n0="H13" n1="O4">0.0988585</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="H8">0.0991856</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="H7">0.0992982</bond_chemical>
+	<bond_chemical unit="nm" n0="H2" n1="O1">0.0996776</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="H9">0.100323</bond_chemical>
+	<bond_chemical unit="nm" n0="O1" n1="H1">0.101798</bond_chemical>
+	<bond_chemical unit="nm" n0="H6" n1="O2">0.102616</bond_chemical>
+	<bond_chemical unit="nm" n0="H11" n1="O4">0.104041</bond_chemical>
+	<bond_chemical unit="nm" n0="O2" n1="H5">0.106239</bond_chemical>
+	<bond_chemical unit="nm" n0="O4" n1="H12">0.106703</bond_chemical>
+	<bond_chemical unit="nm" n0="O2" n1="H1">0.174958</bond_chemical>
+	<bond_chemical unit="nm" n0="H6" n1="O3">0.175517</bond_chemical>
+	<bond_chemical unit="nm" n0="O4" n1="H5">0.175766</bond_chemical>
+	<bond_chemical unit="nm" n0="H11" n1="O2">0.178089</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="H2">0.178633</bond_chemical>
+	<bond_chemical unit="nm" n0="H7" n1="O1">0.179049</bond_chemical>
+	<bond_chemical unit="nm" n0="H8" n1="O2">0.17905</bond_chemical>
+	<bond_chemical unit="nm" n0="O1" n1="H3">0.179423</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="H4">0.181364</bond_chemical>
+	<bond_chemical unit="nm" n0="H9" n1="O4">0.181739</bond_chemical>
+	<bond_chemical unit="nm" n0="H10" n1="O2">0.181855</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="H13">0.183324</bond_chemical>
+
+	<citation>
+		<title>Structure of Ice V</title>
+		<journal>Acta Crystallographica (1,1948-23,1967)</journal>
+		<volume>22</volume>
+		<year>1967</year>
+		<pages>706 715</pages>
+		<author>Kamb, B.</author>
+		<author>Prakash, A.</author>
+		<author>Knobler, C.</author>
+	</citation>
+</cif>

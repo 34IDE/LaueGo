@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T01:29:41.420Z</date>   <!-- Tuesday, May 4, 2021 at 8:29:41 PM Central Daylight Time -->
+	<chemical_name_common>Ice II</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="amcsd">0018367</database_code>
+	<database_code db="COD">9015045</database_code>
+
+	<space_group>
+		<id>148:R</id>
+		<IT_number>148</IT_number>
+		<system>trigonal</system>
+		<H-M>R -3:R</H-M>
+		<Hall>-P 3*</Hall>
+		<Schoenflies>C3i^2</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.778</a>
+		<b unit="nm">0.778</b>
+		<c unit="nm">0.778</c>
+		<alpha>113.1</alpha>
+		<beta>113.1</beta>
+		<gamma>113.1</gamma>
+		<formula_units>12</formula_units>
+		<temperature unit="C">-75</temperature>
+		<pressure unit="GPa">0.3</pressure>
+	</cell>
+
+	<atom_site>
+		<label>H1</label>
+		<symbol>H</symbol>
+		<fract>0.165 0.069 0.81</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0266</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H2</label>
+		<symbol>H</symbol>
+		<fract>0.413 0.205 0.997</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0266</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H4</label>
+		<symbol>H</symbol>
+		<fract>0.741 0.203 0.36</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0266</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H3</label>
+		<symbol>H</symbol>
+		<fract>0.719 0.401 0.395</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.0266</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.273 0.024 0.854</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02444</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.478 3/4 0.332</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02254</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="H3" n1="O2">0.100733</bond_chemical>
+	<bond_chemical unit="nm" n0="H2" n1="O1">0.101162</bond_chemical>
+	<bond_chemical unit="nm" n0="H4" n1="O2">0.101311</bond_chemical>
+	<bond_chemical unit="nm" n0="H1" n1="O1">0.102222</bond_chemical>
+	<bond_chemical unit="nm" n0="H2" n1="O2">0.178328</bond_chemical>
+	<bond_chemical unit="nm" n0="H4" n1="O1">0.181723</bond_chemical>
+
+	<citation doi="10.1107/S0365110X64003553">
+		<title>Ice II: A proton-ordered form of ice Note: T = -75 C, P = 0.3 GPa</title>
+		<journal>Acta Crystallographica</journal>
+		<volume>17</volume>
+		<year>1964</year>
+		<pages>1437 1449</pages>
+		<author>Kamb, B.</author>
+	</citation>
+</cif>

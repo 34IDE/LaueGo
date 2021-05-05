@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T01:24:26.038Z</date>   <!-- Tuesday, May 4, 2021 at 8:24:26 PM Central Daylight Time -->
+	<chemical_name_common>Icd III</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="COD">2107164</database_code>
+
+	<space_group>
+		<id>92</id>
+		<IT_number>92</IT_number>
+		<system>tetragonal</system>
+		<H-M>P 41 21 2</H-M>
+		<Hall>P 4abw 2nw</Hall>
+		<Schoenflies>D4^4</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.673</a>
+		<b unit="nm">0.673</b>
+		<c unit="nm">0.683</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>H2</label>
+		<symbol>H</symbol>
+		<fract>0.107 0.162 0.288</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H1</label>
+		<symbol>H</symbol>
+		<fract>0.997 0.322 0.215</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.1096 0.3016 0.2873</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>H3</label>
+		<symbol>H</symbol>
+		<fract>0.296 0.354 0.095</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.3932 0.3932 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="H1" n1="O1">0.0914852</bond_chemical>
+	<bond_chemical unit="nm" n0="H2" n1="O1">0.0939683</bond_chemical>
+	<bond_chemical unit="nm" n0="H3" n1="O2">0.0958397</bond_chemical>
+	<bond_chemical unit="nm" n0="H2" n1="O2">0.182755</bond_chemical>
+	<bond_chemical unit="nm" n0="O1" n1="H3">0.185016</bond_chemical>
+
+	<citation>
+		<title>Structure of ice III</title>
+		<journal>Acta Crystallographica B (24,1968-38,1982)</journal>
+		<volume>24</volume>
+		<year>1968</year>
+		<pages>1317 1327</pages>
+		<author>Kamb, B.</author>
+		<author>Prakash, A.</author>
+	</citation>
+</cif>

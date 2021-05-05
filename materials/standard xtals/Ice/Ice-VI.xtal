@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T02:03:58.723Z</date>   <!-- Tuesday, May 4, 2021 at 9:03:58 PM Central Daylight Time -->
+	<chemical_name_common>Ice VI</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="ICSD">16950</database_code>
+
+	<space_group>
+		<id>137:1</id>
+		<IT_number>137</IT_number>
+		<system>tetragonal</system>
+		<H-M>P 42/n m c:1</H-M>
+		<Hall>P 4n 2n -1n</Hall>
+		<Schoenflies>D4h^15</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.627</a>
+		<b unit="nm">0.627</b>
+		<c unit="nm">0.579</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>2</formula_units>
+		<temperature unit="K">98</temperature>
+	</cell>
+
+	<atom_site>
+		<label>O-H2</label>
+		<symbol>O</symbol>
+		<fract>0 0 0</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.019</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O-H1</label>
+		<symbol>O</symbol>
+		<fract>0 0.276 0.382</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>g</WyckoffSymbol>
+		<U_iso unit="Å^2">0.019</U_iso>
+	</atom_site>
+
+
+	<citation doi="10.1126/science.150.3693.205">
+		<title>Structure of Ice VI</title>
+		<journal>Science</journal>
+		<volume>150</volume>
+		<year>1965</year>
+		<pages>205 209</pages>
+		<ASTM>SCIEAS</ASTM>
+		<author>B. Kamb</author>
+	</citation>
+</cif>

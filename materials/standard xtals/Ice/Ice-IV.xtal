@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T01:24:41.934Z</date>   <!-- Tuesday, May 4, 2021 at 8:24:41 PM Central Daylight Time -->
+	<chemical_name_common>Ice IV</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="amcsd">0018368</database_code>
+	<database_code db="COD">9014986</database_code>
+
+	<space_group>
+		<id>167:R</id>
+		<IT_number>167</IT_number>
+		<system>trigonal</system>
+		<H-M>R -3 c:R</H-M>
+		<Hall>-P 3* 2n</Hall>
+		<Schoenflies>D3d^6</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.76</a>
+		<b unit="nm">0.76</b>
+		<c unit="nm">0.76</c>
+		<alpha>70.1</alpha>
+		<beta>70.1</beta>
+		<gamma>70.1</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>H4</label>
+		<symbol>H</symbol>
+		<fract>0.3 0.99 0.72</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02406</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H3</label>
+		<symbol>H</symbol>
+		<fract>0.21 0.33 0.9</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02406</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H5</label>
+		<symbol>H</symbol>
+		<fract>0.22 0.11 0.66</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02406</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H1</label>
+		<symbol>H</symbol>
+		<fract>0.03 0.03 0.03</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02406</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H6</label>
+		<symbol>H</symbol>
+		<fract>0.28 0.41 0.98</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02406</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>H2</label>
+		<symbol>H</symbol>
+		<fract>0.14 0.18 0.01</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<U_iso unit="Å^2">0.02406</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.3804 0.8891 0.7604</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.02493</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01767</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.02275</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.00508</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.00944</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.02227</aniso_U_23>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.0855 0.0855 0.0855</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<aniso_U_11 unit="Å^2">0.01815</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.01815</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.01815</aniso_U_33>
+		<aniso_U_12 unit="Å^2">-0.01017</aniso_U_12>
+		<aniso_U_13 unit="Å^2">-0.01017</aniso_U_13>
+		<aniso_U_23 unit="Å^2">-0.01017</aniso_U_23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="H3" n1="O1">0.0635126</bond_chemical>
+	<bond_chemical unit="nm" n0="H4" n1="O1">0.083913</bond_chemical>
+	<bond_chemical unit="nm" n0="H2" n1="O2">0.0881359</bond_chemical>
+	<bond_chemical unit="nm" n0="H6" n1="O1">0.0891699</bond_chemical>
+	<bond_chemical unit="nm" n0="H1" n1="O2">0.0947153</bond_chemical>
+	<bond_chemical unit="nm" n0="H5" n1="O1">0.107861</bond_chemical>
+
+	<citation doi="10.1063/1.442040">
+		<title>Structure of ice IV, a metastable high-pressure phase Note: T = 110 K, synthesized at 4-5.5 kb</title>
+		<journal>Journal of Chemical Physics</journal>
+		<volume>75</volume>
+		<year>1981</year>
+		<pages>5887 5899</pages>
+		<author>Engelhardt, H.</author>
+		<author>Kamb, B.</author>
+	</citation>
+</cif>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-05T02:35:57.945Z</date>   <!-- Tuesday, May 4, 2021 at 9:35:57 PM Central Daylight Time -->
+	<chemical_name_common>Ice Ic</chemical_name_common>
+	<chemical_formula>H2O</chemical_formula>
+	<database_code db="ICSD">29066</database_code>
+
+	<space_group>
+		<id>227:1</id>
+		<IT_number>227</IT_number>
+		<system>cubic</system>
+		<H-M>F d -3 m:1</H-M>
+		<Hall>F 4d 2 3 -1d</Hall>
+		<Schoenflies>Oh^7</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.6358</a>
+		<b unit="nm">0.6358</b>
+		<c unit="nm">0.6358</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>8</formula_units>
+		<temperature unit="K">88</temperature>
+	</cell>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>OH</symbol>
+		<fract>0 0 0</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+
+	<citation>
+		<title>Low-temperature forms of ice as studied by X-ray diffraction</title>
+		<journal>Nature</journal>
+		<volume>188</volume>
+		<year>1960</year>
+		<pages>1144 1148</pages>
+		<ASTM>NATUAS</ASTM>
+		<author>L.G. Dowell</author>
+		<author>A.P. Rinfret</author>
+	</citation>
+</cif>
