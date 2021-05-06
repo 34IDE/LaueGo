@@ -64,8 +64,6 @@
 	<bond_chemical unit="nm" n0="H1" n1="O1">0.0914852</bond_chemical>
 	<bond_chemical unit="nm" n0="H2" n1="O1">0.0939683</bond_chemical>
 	<bond_chemical unit="nm" n0="H3" n1="O2">0.0958397</bond_chemical>
-	<bond_chemical unit="nm" n0="H2" n1="O2">0.182755</bond_chemical>
-	<bond_chemical unit="nm" n0="O1" n1="H3">0.185016</bond_chemical>
 
 	<citation>
 		<title>Structure of ice III</title>

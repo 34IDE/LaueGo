@@ -81,8 +81,6 @@
 	<bond_chemical unit="nm" n0="H2" n1="O1">0.101162</bond_chemical>
 	<bond_chemical unit="nm" n0="H4" n1="O2">0.101311</bond_chemical>
 	<bond_chemical unit="nm" n0="H1" n1="O1">0.102222</bond_chemical>
-	<bond_chemical unit="nm" n0="H2" n1="O2">0.178328</bond_chemical>
-	<bond_chemical unit="nm" n0="H4" n1="O1">0.181723</bond_chemical>
 
 	<citation doi="10.1107/S0365110X64003553">
 		<title>Ice II: A proton-ordered form of ice Note: T = -75 C, P = 0.3 GPa</title>

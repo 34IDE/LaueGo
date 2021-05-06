@@ -180,17 +180,6 @@
 	<bond_chemical unit="nm" n0="H11" n1="O4">0.104041</bond_chemical>
 	<bond_chemical unit="nm" n0="O2" n1="H5">0.106239</bond_chemical>
 	<bond_chemical unit="nm" n0="O4" n1="H12">0.106703</bond_chemical>
-	<bond_chemical unit="nm" n0="O2" n1="H1">0.174958</bond_chemical>
-	<bond_chemical unit="nm" n0="H6" n1="O3">0.175517</bond_chemical>
-	<bond_chemical unit="nm" n0="O4" n1="H5">0.175766</bond_chemical>
-	<bond_chemical unit="nm" n0="H11" n1="O2">0.178089</bond_chemical>
-	<bond_chemical unit="nm" n0="O3" n1="H2">0.178633</bond_chemical>
-	<bond_chemical unit="nm" n0="H7" n1="O1">0.179049</bond_chemical>
-	<bond_chemical unit="nm" n0="H8" n1="O2">0.17905</bond_chemical>
-	<bond_chemical unit="nm" n0="O1" n1="H3">0.179423</bond_chemical>
-	<bond_chemical unit="nm" n0="O3" n1="H4">0.181364</bond_chemical>
-	<bond_chemical unit="nm" n0="H9" n1="O4">0.181739</bond_chemical>
-	<bond_chemical unit="nm" n0="H10" n1="O2">0.181855</bond_chemical>
 	<bond_chemical unit="nm" n0="O3" n1="H13">0.183324</bond_chemical>
 
 	<citation>
