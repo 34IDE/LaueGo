@@ -180,7 +180,6 @@
 	<bond_chemical unit="nm" n0="H11" n1="O4">0.104041</bond_chemical>
 	<bond_chemical unit="nm" n0="O2" n1="H5">0.106239</bond_chemical>
 	<bond_chemical unit="nm" n0="O4" n1="H12">0.106703</bond_chemical>
-	<bond_chemical unit="nm" n0="O3" n1="H13">0.183324</bond_chemical>
 
 	<citation>
 		<title>Structure of Ice V</title>
