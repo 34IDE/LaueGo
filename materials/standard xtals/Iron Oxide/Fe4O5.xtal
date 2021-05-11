@@ -3,7 +3,7 @@
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
 	<date>2020-12-18T17:37:02.598Z</date>   <!-- Friday, December 18, 2020 at 11:37:02 AM Central Standard Time -->
-	<chemical_name_common>Feiite</chemical_name_common>
+	<chemical_name_common>Fe4 O5 high pressure</chemical_name_common>
 	<chemical_formula>Fe4 O5</chemical_formula>
 	<database_code db="amcsd">0018509</database_code>
 	<database_code db="COD">9014235</database_code>
@@ -34,6 +34,7 @@
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Fe2</label>
@@ -41,6 +42,7 @@
 		<fract>0 0.2616 0.1131</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>Fe3</label>
@@ -48,6 +50,7 @@
 		<fract>0 0.5048 1/4</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O1</label>
@@ -55,6 +58,7 @@
 		<fract>0 0.158 1/4</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O2</label>
@@ -62,6 +66,7 @@
 		<fract>0 0.365 0.55</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>-2</oxidation>
 	</atom_site>
 	<atom_site>
 		<label>O3</label>
@@ -69,6 +74,7 @@
 		<fract>0 0.085 0.643</fract>
 		<WyckoffSymbol>f</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Fe1" n1="O3">0.194126</bond_chemical>
