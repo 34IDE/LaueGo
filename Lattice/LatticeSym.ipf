@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.32									// based on LatticeSym_6.55
+#pragma version = 7.33									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -260,6 +260,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.30, in ForceXtalAtomNamesUnique() change all[] --> allNames[]
 //	with version 7.31, allow use of Uiso, Biso, U11, U22, U33, U12, U13, U23 in xtal files
 //	with version 7.32, read xtal files that use <oxidation> rather than <valence>
+//	with version 7.33, swap overlne and digit in minus2bar
 
 
 //	Rhombohedral Transformation:
@@ -9310,6 +9311,7 @@ ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar
 	return minus2bar(num2istr(h)) + sp + minus2bar(num2istr(k)) + sp + minus2bar(num2istr(l))
 End
 //
+#if (IgorVersion() > 8)
 ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string that has minuses to one using a bar over the following character
 	String str
 	Variable single								// minus sign only applies to next character, otherwise assume integers
@@ -9319,7 +9321,41 @@ ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string t
 	Variable i
 	if (single)
 		for (i=0;i<strlen(str);i+=1)
-			if (CmpStr(str[i],"-")==0)		// for each "-" put OVERLINE after the following character
+			if (CmpStr(str[i],"-")==0)		// for each "-" put OVERLINE BEFORE the following character
+				i += 1
+				out += OVERLINE + str[i]
+			else
+				out += str[i]
+			endif
+		endfor
+	else
+		Variable ic, neg=0
+		for (i=0,neg=0; i<strlen(str); i+=1)
+			c = str[i]
+			ic = char2num(str[i])
+			if (ic==45)							// a negative sign
+				neg = 1
+			elseif (48<=ic && ic<=57)		// c is a digit {0,1,2,3,4,5,6,7,8,9}
+				out += SelectString(neg, "", OVERLINE) + c
+			else
+				out += SelectString(neg && ic>32, "", OVERLINE) + c
+				neg = 0							// not a digit, reset neg and copy char
+			endif
+		endfor
+	endif
+	return out
+End
+#else
+ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string that has minuses to one using a bar over the following character
+	String str
+	Variable single								// minus sign only applies to next character, otherwise assume integers
+	single = ParamIsDefault(single) || numtype(single) ? 0 : single
+
+	String c, out=""
+	Variable i
+	if (single)
+		for (i=0;i<strlen(str);i+=1)
+			if (CmpStr(str[i],"-")==0)		// for each "-" put OVERLINE AFTER the following character
 				i += 1
 				out += str[i]+OVERLINE
 			else
@@ -9343,6 +9379,7 @@ ThreadSafe Static Function/T minus2bar(str,[single])		// change an Igor string t
 	endif
 	return out
 End
+#endif
 #else
 ThreadSafe Function/T hkl2IgorBarStr(h,k,l, [dim])	// changes negatives to a bar over the number, only for displaying, not printing
 	Variable h,k,l				// hkl value
