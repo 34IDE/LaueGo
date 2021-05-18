@@ -29,6 +29,8 @@
 
 	The fraction is the atom fraction (number of atoms), NOT mass fraction
 	For mass fraction, change all of the "atomic" -> "mass", you cannot mix them.
+	
+	actually, the atomic fraction of oxygen is 0.2546082 (this gives a sum of 1)
 -->
 
 

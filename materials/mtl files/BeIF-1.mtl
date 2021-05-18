@@ -21,4 +21,7 @@
 	<part symbol="Zn" atomic="0.0001"/>
 	<part symbol="Ag" atomic="0.000005"/>
 	<part symbol="Ti" atomic="0.00001"/>
+	<citation doi="10.1063/1.1698252">
+		<url>https://materion.com/-/media/files/electrofusion/eqf3006_if1.pdf</url>
+	</citation>
 </chemical_mixture>
