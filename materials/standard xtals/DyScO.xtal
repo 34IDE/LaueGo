@@ -16,9 +16,9 @@
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.54494</a>
-		<b unit="nm">0.57263</b>
-		<c unit="nm">0.79132</c>
+		<a unit="nm">0.54428</a>
+		<b unit="nm">0.572072</b>
+		<c unit="nm">0.790636</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
@@ -64,7 +64,7 @@
 	<bond_chemical unit="nm" n0="Dy" n1="O2">0.230562 0.258524 0.282066</bond_chemical>
 -->
 
-	<citation>
+	<citation id="primary">
 		<title>A structural study of ternary lanthanide orthoscandate perovskites</title>
 		<journal>Journal of Solid State Chemistry</journal>
 		<ASTM>JSSCBI</ASTM> 
@@ -73,5 +73,17 @@
 		<pages>2188 2197</pages>
 		<author>R.P. Liferovich</author>
 		<author>R.H. Mitchell</author>
+	</citation>
+
+	<citation doi="10.1107/S0108768111046738" id="2">
+		<title>High-precision absolute lattice parameter determination of SrTiO3, DyScO3 and NdGaO3 single crystals</title>
+		<journal>Acta Crystallographica Section B</journal>
+		<volume>B68</volume>
+		<year>2011</year>
+		<pages>8 14</pages>
+		<author>Martin Schmidbauer</author>
+		<author>Albert Kwasniewski</author>
+		<author>Jutta Schwarzkopf</author>
+		<comment>Provides the lattice constants</comment>
 	</citation>
 </cif>

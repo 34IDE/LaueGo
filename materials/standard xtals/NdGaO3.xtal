@@ -2,75 +2,117 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Neodymium gallate (NGO)</chemical_name_common>
-	<database_code db="icsd">79633</database_code>
+	<chemical_formula>Nd (Ga O3)</chemical_formula>
+	<database_code db="cod">1522094</database_code>
 
 	<space_group>
+		<id>62:cab</id>
 		<IT_number>62</IT_number>
-		<H-M>Pbnm</H-M>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.54276</a>
-		<b unit="nm">0.54979</b>
-		<c unit="nm">0.77078</c>
+		<a unit="nm">0.542969</a>
+		<b unit="nm">0.549972</b>
+		<c unit="nm">0.771055</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="K">293</temperature>
 	</cell>
 
 	<atom_site>
 		<label>Nd</label>
 		<symbol>Nd</symbol>
+		<fract>0.49092 0.04142 1/4</fract>
 		<oxidation>3</oxidation>
-		<fract>-0.0105 0.0414 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<Biso>0.42</Biso>
+		<U_iso unit="Å^2">0.00532</U_iso>
+		<aniso_U_11 unit="Å^2">0.00367</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00849</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00355</aniso_U_33>
+		<aniso_U_12 unit="Å^2">nan</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>Ga</label>
 		<symbol>Ga</symbol>
+		<fract>0 0 1/2</fract>
 		<oxidation>3</oxidation>
-		<fract>0.5 0 0</fract>
 		<WyckoffSymbol>b</WyckoffSymbol>
-		<Biso>0.49</Biso>
+		<U_iso unit="Å^2">0.00621</U_iso>
+		<aniso_U_11 unit="Å^2">0.00241</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00671</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.0025</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00025</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
+		<fract>0.08 0.0174 3/4</fract>
 		<oxidation>-2</oxidation>
-		<fract>0.087 0.486 0.25</fract>
 		<WyckoffSymbol>c</WyckoffSymbol>
-		<Biso>0.7</Biso>
+		<U_iso unit="Å^2">0.0089</U_iso>
+		<aniso_U_11 unit="Å^2">0.00671</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00798</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00279</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00025</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
 	</atom_site>
+
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
+		<fract>0.7107 0.2097 0.5422</fract>
 		<oxidation>-2</oxidation>
-		<fract>0.714 0.283 0.046</fract>
 		<WyckoffSymbol>d</WyckoffSymbol>
-		<Biso>1.4</Biso>
+		<U_iso unit="Å^2">0.0177</U_iso>
+		<aniso_U_11 unit="Å^2">0.0057</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.00608</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.00608</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.00203</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0.00089</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0.00038</aniso_U_23>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Ga" n1="O1">0.1985</bond_chemical>
-	<bond_chemical unit="nm" n0="Ga" n1="O2">0.1974 0.1990</bond_chemical>
-<!-- <bond_chemical unit="nm" n0="Nd" n1="O1">0.2319 0.2501</bond_chemical>
-	<bond_chemical unit="nm" n0="Nd" n1="O2">0.2390 0.2544</bond_chemical> -->
+	<bond_chemical unit="nm" n0="Ga" n1="O2">0.19757 0.199091</bond_chemical>
+	<bond_chemical unit="nm" n0="Ga" n1="O1">0.197829</bond_chemical>
+<!-- <bond_chemical unit="nm" n0="Nd" n1="O1">0.235212 0.247411</bond_chemical>
+	<bond_chemical unit="nm" n0="Nd" n1="O2">0.238182 0.259918 0.271232</bond_chemical> -->
 
-	<citation>
-		<author>S.B Ubizskii</author>
+	<citation id="primary" doi="10.1016/S0925-8388(99)00603-9">
+		<title>The crystal structure of Nd Ga O3 at 100 K and 293 K based on synchrotron data</title>
+		<journal>Journal of Alloys Compounds</journal>
+		<volume>297</volume>
+		<year>2000</year>
+		<pages>46 52</pages>
+		<ASTM>JALCEU</ASTM>
 		<author>L.O. Vasylechko</author>
-		<author>D.I. Savytskii</author>
-		<author>A.O. Matkovskii</author>
-		<author>I.M. Syvorotka</author>
-		<journal>Superconductor Science and Technology</journal>
-		<year>1994</year>
-		<volume>7</volume>
-		<pages>766 772</pages>
-		<title>The crystal structure and twinning of neodymium gallium perovskite single crystals</title>
+		<author>L.G. Akselrud</author>
+		<author>W. Morgenroth</author>
+		<author>U. Bismayer</author>
+		<author>A. Matkovskii</author>
+		<author>D. Savytskii</author>
 	</citation>
-
-
-	<!--  coefficients for a polynomial fit -->
+	<citation id="2" doi="10.1107/S0108768111046738">
+		<title>High-precision absolute lattice parameter determination of SrTiO3, DyScO3 and NdGaO3 single crystals</title>
+		<journal>Acta Crystallographica Section B</journal>
+		<volume>B68</volume>
+		<year>2011</year>
+		<pages>8 14</pages>
+		<author>Martin Schmidbauer</author>
+		<author>Albert Kwasniewski</author>
+		<author>Jutta Schwarzkopf</author>
+		<comment>Provides the lattice constants</comment>
+	</citation>
 </cif>
 
 <!-- 
