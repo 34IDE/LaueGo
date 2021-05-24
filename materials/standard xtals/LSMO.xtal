@@ -7,7 +7,9 @@
 
 	<space_group>
 		<id>167:H</id>
-		<H-M>R-3c:H</H-M>
+		<system>trigonal</system>
+		<H-M>R -3 c:H</H-M>
+		<Hall>-R 3 2"c</Hall>
 	</space_group>
 
 	<cell>
@@ -17,56 +19,59 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
+		<formula_units>6</formula_units>
 		<temperature unit="K">300</temperature>
 	</cell>
 
 	<atom_site>
 		<label>La</label>
 		<symbol>La</symbol>
-		<fract>0 0 0.25</fract>
-		<WyckoffSymbol>a</WyckoffSymbol>
-		<Biso unit="Å^2">0.51</Biso>
+		<fract>0 0 1/4</fract>
 		<occupancy>0.7</occupancy>
 		<oxidation>3</oxidation>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00646</U_iso>
 	</atom_site>
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
-		<fract>0 0 0.25</fract>
-		<WyckoffSymbol>a</WyckoffSymbol>
-		<Biso unit="Å^2">0.51</Biso>
+		<fract>0 0 1/4</fract>
 		<occupancy>0.3</occupancy>
 		<oxidation>2</oxidation>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00646</U_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>Mn</label>
 		<symbol>Mn</symbol>
 		<fract>0 0 0</fract>
-		<WyckoffSymbol>b</WyckoffSymbol>
-		<Biso unit="Å^2">0.11</Biso>
 		<oxidation>3.3</oxidation>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00139</U_iso>
 	</atom_site>
+
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0.4582 0 0.25</fract>
-		<WyckoffSymbol>e</WyckoffSymbol>
-		<Biso unit="Å^2">0.79</Biso>
+		<fract>0.4582 0 1/4</fract>
 		<occupancy>0.7</occupancy>
 		<oxidation>-2</oxidation>
+		<WyckoffSymbol>e</WyckoffSymbol>
+		<U_iso unit="Å^2">0.01</U_iso>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Mn" n1="O">0.1951</bond_chemical>
+	<bond_chemical unit="nm" n0="Mn" n1="O">0.195063</bond_chemical>
 
 	<citation>
+		<title>Crystal structure of the mixed oxides La0.7 Sr0.3 Co(1-z) Mn(z) O(3±y) (0 ≤ z ≤ 1)</title>
+		<journal>Journal of Solid State Chemistry</journal>
+		<volume>143</volume>
+		<year>1999</year>
+		<pages>52 57</pages>
 		<author>A.N. Petrov</author>
 		<author>V.I. Voronin</author>
 		<author>T. Norby</author>
 		<author>P. Kofstad</author>
-		<journal>Journal of Solid State Chemistry</journal>
-		<year>1999</year>
-		<volume>143</volume>
-		<pages>52 57</pages>
-		<title>Crystal structure of the mixed oxides La0.7 Sr0.3 Co(1-z) Mn(z) O(3±y) (0 ≤ z ≤ 1)</title>
 	</citation>
 </cif>
