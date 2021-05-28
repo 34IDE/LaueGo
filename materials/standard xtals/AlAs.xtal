@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-05-28T17:31:24.667Z</date>   <!-- Friday, May 28, 2021 at 12:31:24 PM Central Daylight Time -->
+	<chemical_name_common>Aluminium arsenide</chemical_name_common>
+	<chemical_formula>AlAs</chemical_formula>
+	<database_code db="COD">1540257</database_code>
+
+	<space_group>
+		<id>216</id>
+		<IT_number>216</IT_number>
+		<system>cubic</system>
+		<H-M>F -4 3 m</H-M>
+		<Hall>F -4 2 3</Hall>
+		<Schoenflies>Td^2</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.56608</a>
+		<b unit="nm">0.56608</b>
+		<c unit="nm">0.56608</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Al</label>
+		<symbol>Al</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<oxidation>3</oxidation>
+	</atom_site>
+	<atom_site>
+		<label>As</label>
+		<symbol>As</symbol>
+		<fract>1/4 1/4 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<oxidation>-3</oxidation>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="As" n1="Al">0.24512</bond_chemical>
+
+	<citation>
+		<title>Lattice constant of Al As</title>
+		<journal>Crystal Research and Technology</journal>
+		<volume>27</volume>
+		<year>1992</year>
+		<pages>97 100</pages>
+		<ASTM>CRTEDF</ASTM> 
+		<author>M. Leszczynski</author>
+		<author>A. Ciepielewska</author>
+		<author>M. Micovic</author>
+		<author>C.A.C. Mendonca</author>
+		<author>P. Ciepielewski, P.</author>
+	</citation>
+</cif>
