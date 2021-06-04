@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-06-04T18:01:29.725Z</date>   <!-- Friday, June 4, 2021 at 1:01:29 PM Central Daylight Time -->
+	<chemical_name_common>Moissanite</chemical_name_common>
+	<chemical_formula>SiC-6H</chemical_formula>
+	<database_code db="COD">9010158</database_code>
+	<database_code db="ICSD">156190</database_code>
+
+	<space_group>
+		<id>186</id>
+		<IT_number>186</IT_number>
+		<system>hexagonal</system>
+		<H-M>P 63 m c</H-M>
+		<Hall>P 6c -2c</Hall>
+		<Schoenflies>C6v^4</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.3081</a>
+		<b unit="nm">0.3081</b>
+		<c unit="nm">1.51248</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>6</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Si1</label>
+		<symbol>Si</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.005</U_iso>
+		<aniso_U_11 unit="Å^2">0.005</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.005</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.005</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.002</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<oxidation>4</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>Si2</label>
+		<symbol>Si</symbol>
+		<fract>1/3 2/3 0.1664</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.005</U_iso>
+		<aniso_U_11 unit="Å^2">0.005</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.005</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.005</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.002</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<oxidation>4</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>Si3</label>
+		<symbol>Si</symbol>
+		<fract>2/3 1/3 0.3329</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.005</U_iso>
+		<aniso_U_11 unit="Å^2">0.005</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.005</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.006</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.002</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<oxidation>4</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>C1</label>
+		<symbol>C</symbol>
+		<fract>1/3 2/3 0.0412</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.005</U_iso>
+		<aniso_U_11 unit="Å^2">0.006</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.006</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.004</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.003</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<oxidation>-4</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>C2</label>
+		<symbol>C</symbol>
+		<fract>2/3 1/3 0.208</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.005</U_iso>
+		<aniso_U_11 unit="Å^2">0.005</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.005</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.005</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.002</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<oxidation>-4</oxidation>
+	</atom_site>
+
+	<atom_site>
+		<label>C3</label>
+		<symbol>C</symbol>
+		<fract>0 0 0.3746</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.005</U_iso>
+		<aniso_U_11 unit="Å^2">0.005</aniso_U_11>
+		<aniso_U_22 unit="Å^2">0.005</aniso_U_22>
+		<aniso_U_33 unit="Å^2">0.005</aniso_U_33>
+		<aniso_U_12 unit="Å^2">0.003</aniso_U_12>
+		<aniso_U_13 unit="Å^2">0</aniso_U_13>
+		<aniso_U_23 unit="Å^2">0</aniso_U_23>
+		<oxidation>-4</oxidation>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Si1" n1="C1">0.188481</bond_chemical>
+	<bond_chemical unit="nm" n0="Si2" n1="C2">0.188681</bond_chemical>
+	<bond_chemical unit="nm" n0="Si3" n1="C3">0.188732</bond_chemical>
+	<bond_chemical unit="nm" n0="Si3" n1="C2">0.188909</bond_chemical>
+	<bond_chemical unit="nm" n0="C1" n1="Si2">0.189362</bond_chemical>
+	<bond_chemical unit="nm" n0="Si1" n1="C3">0.189665</bond_chemical>
+
+	<citation doi="10.2138/am.2007.2346">
+		<title>The 6H-(Si C) structure model: Further refinement from SCXRD data from a terrestrial moissanite</title>
+		<journal>American Mineralogist</journal>
+		<volume>92</volume>
+		<year>2007</year>
+		<pages>403 407</pages>
+		<ASTM>AMMIAY</ASTM>
+		<author>G.C. Capitani</author>
+		<author>S. Di Pierro</author>
+		<author>G. Tempesta</author>
+		<comment>Locality: 150 km NW from Izmir, Turkey</comment>
+	</citation>
+</cif>

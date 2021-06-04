@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-06-04T18:35:17.621Z</date>   <!-- Friday, June 4, 2021 at 1:35:17 PM Central Daylight Time -->
+	<chemical_name_common>Silicon carbide</chemical_name_common>
+	<chemical_formula>SiC-3C</chemical_formula>
+	<database_code db="ICSD">603798</database_code>
+
+	<space_group>
+		<id>216</id>
+		<IT_number>216</IT_number>
+		<system>cubic</system>
+		<H-M>F -4 3 m</H-M>
+		<Hall>F -4 2 3</Hall>
+		<Schoenflies>Td^2</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.43581</a>
+		<b unit="nm">0.43581</b>
+		<c unit="nm">0.43581</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="C">19.85</temperature>
+	</cell>
+
+	<atom_site>
+		<label>C1</label>
+		<symbol>C</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Si1</label>
+		<symbol>Si</symbol>
+		<fract>1/4 1/4 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="C1" n1="Si1">0.188711</bond_chemical>
+
+	<citation>
+		<title>Thermal expansion of the cubic (3C) polytype of Si C</title>
+		<journal>Journal of Materials Science</journal>
+		<volume>21</volume>
+		<year>1986</year>
+		<pages>4366 4368</pages>
+		<ASTM>JMTSAS</ASTM>
+		<author>Z. Li</author>
+		<author>R.C. Bradt</author>
+	</citation>
+</cif>

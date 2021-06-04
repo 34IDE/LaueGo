@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=LaueSimulation
-#pragma version = 1.29
+#pragma version = 1.30
 #pragma IgorVersion = 6.11
 
 #include  "microGeometryN", version>=1.85
@@ -707,7 +707,7 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 	if (strlen(SpaceGroupID)<1)
 		SpaceGroupID = StringByKey("SpaceGroup",wnote,"=")
 	endif
-	sprintf str,"hkl=(%d %d %d),   %.4f keV\rpixel(%.2f, %.2f),   #%d",h,k,l,keV,px,py,m
+	sprintf str,"hkl=(%s),   %.4f keV\rpixel(%.2f, %.2f),   #%d",hkl2IgorBarStr(h,k,l),keV,px,py,m
 	tagStr = "\\Zr090Calculated peak position\r" + str
 	if (latticeSym#isValidSpaceGroupID(SpaceGroupID,3))
 		sprintf str, "\r%s    Space Group %s", getHMsym2(SpaceGroupID2num(SpaceGroupID)),SpaceGroupID
@@ -737,7 +737,11 @@ Function getSimulatedPeakInfoHook(s)	// Command=fitted peak,  Shift=Indexed peak
 		KillWaves/Z PeakInfoHook_qhatBL
 	endif
 	if (numtype(theta)==0)
-		sprintf str "\r\F'Symbol'q\F]0 = %.3f°",theta
+		if (IgorVersion()>=7)
+			sprintf str "\rθ = %.3f°",theta
+		else
+			sprintf str "\r\F'Symbol'q\F]0 = %.3f°",theta
+		endif
 		tagStr += str
 	endif
 
