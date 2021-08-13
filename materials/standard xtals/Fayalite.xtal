@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-08-13T17:56:46.210Z</date>   <!-- Friday, August 13, 2021 at 12:56:46 PM Central Daylight Time -->
+	<chemical_name_common>Fayalite (oivine)</chemical_name_common>
+	<chemical_formula>Fe2 Si O4</chemical_formula>
+	<database_code db="COD">1000064</database_code>
+
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.48195</a>
+		<b unit="nm">1.04788</b>
+		<c unit="nm">0.60873</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Fe2</label>
+		<symbol>Fe</symbol>
+		<fract>0.98598 0.28026 1/4</fract>
+		<oxidation>2</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.006003</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>Fe1</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 0</fract>
+		<oxidation>2</oxidation>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00659</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0.43122 0.09765 1/4</fract>
+		<oxidation>4</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.004711</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.76814 0.09217 1/4</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.00646</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.20895 0.45365 1/4</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<U_iso unit="Å^2">0.006662</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.28897 0.16563 0.03643</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<U_iso unit="Å^2">0.007384</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Si" n1="O1">0.16248</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O3">0.163329</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O2">0.165327</bond_chemical>
+
+	<bond_chemical unit="nm" n0="Fe2" n1="O3">0.206473 0.229464</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe2" n1="O2">0.211092</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O1">0.212072</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O2">0.21259</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe2" n1="O1">0.223314</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O3">0.223631</bond_chemical>
+
+	<citation doi="10.1107/S0567740881003506">
+		<title>X-ray Determination of Electron Distributions in Forsterite, Fayalite and Tephroite</title>
+		<journal>Acta Crystallographica B (24,1968-38,1982)</journal>
+		<volume>37</volume>
+		<year>1981</year>
+		<pages>513 518</pages>
+		<ASTM>ACBCAR</ASTM>
+		<author>K. Fujino</author>
+		<author>S. Sasaki</author>
+		<author>Y. Takeuchi</author>
+		<author>R. Sadanaga</author>
+	</citation>
+</cif>

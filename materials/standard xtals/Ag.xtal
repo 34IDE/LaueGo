@@ -2,10 +2,16 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Silver</chemical_name_common>
+	<database_code db="COD">9008459</database_code>
+
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<system>cubic</system>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.40862</a>
 		<b unit="nm">0.40862</b>
@@ -13,11 +19,23 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Ag</label>
 		<symbol>Ag</symbol>
 		<fract>0 0 0</fract>
 		<DebyeTemperature unit="K">215</DebyeTemperature>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Cubic closest packed, ccp, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>Wyckoff, R. W. G.</author>
+	</citation>
 </cif>

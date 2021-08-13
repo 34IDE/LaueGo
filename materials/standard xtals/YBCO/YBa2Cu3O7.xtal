@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>YBa2Cu3O7, "The HiTc"</chemical_name_common>
+	<chemical_name_common>YBa2Cu3O7, &quot;The HiTc&quot;</chemical_name_common>
+	<chemical_formula>YBa2Cu3O7</chemical_formula>
+
 	<space_group>
+		<id>47</id>
 		<IT_number>47</IT_number>
-		<H-M>Pmmm</H-M>
+		<H-M>P m m m</H-M>
+		<Hall>-P 2 2</Hall>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.3827</a>
 		<b unit="nm">0.3893</b>
@@ -14,86 +19,95 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Y</label>
 		<symbol>Y</symbol>
 		<fract>0.5 0.5 0.5</fract>
+		<oxidation>2</oxidation>
+		<WyckoffSymbol>h</WyckoffSymbol>
 		<U11 unit="pm^2">123</U11>
 		<U22 unit="pm^2">162</U22>
 		<U33 unit="pm^2">1</U33>
-		<oxidation>2</oxidation>
-		<WyckoffSymbol>h</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>Ba</label>
 		<symbol>Ba</symbol>
 		<fract>0.5 0.5 0.185</fract>
+		<oxidation>2</oxidation>
+		<WyckoffSymbol>t</WyckoffSymbol>
 		<U11 unit="pm^2">68</U11>
 		<U22 unit="pm^2">45</U22>
 		<U33 unit="pm^2">87</U33>
-		<oxidation>2</oxidation>
-		<WyckoffSymbol>t</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>Cu1</label>
 		<symbol>Cu</symbol>
 		<fract>0 0 0</fract>
+		<oxidation>2</oxidation>
+		<WyckoffSymbol>a</WyckoffSymbol>
 		<U11 unit="pm^2">144</U11>
 		<U22 unit="pm^2">237</U22>
 		<U33 unit="pm^2">32</U33>
-		<oxidation>2</oxidation>
-		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>Cu2</label>
 		<symbol>Cu</symbol>
 		<fract>0 0 0.3565</fract>
+		<oxidation>3</oxidation>
+		<WyckoffSymbol>q</WyckoffSymbol>
 		<U11 unit="pm^2">55</U11>
 		<U22 unit="pm^2">57</U22>
 		<U33 unit="pm^2">90</U33>
-		<oxidation>3</oxidation>
-		<WyckoffSymbol>q</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>e</WyckoffSymbol>
 		<U11 unit="pm^2">587</U11>
 		<U22 unit="pm^2">68</U22>
 		<U33 unit="pm^2">35</U33>
-		<oxidation>-2</oxidation>
-		<WyckoffSymbol>e</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0 0 0.1566</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>q</WyckoffSymbol>
 		<U11 unit="pm^2">1</U11>
 		<U22 unit="pm^2">226</U22>
 		<U33 unit="pm^2">59</U33>
-		<oxidation>-2</oxidation>
-		<WyckoffSymbol>q</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0.5 0 0.3776</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>s</WyckoffSymbol>
 		<U11 unit="pm^2">23</U11>
 		<U22 unit="pm^2">112</U22>
 		<U33 unit="pm^2">168</U33>
-		<oxidation>-2</oxidation>
-		<WyckoffSymbol>s</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O4</label>
 		<symbol>O</symbol>
 		<fract>0 0.5 0.3765</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>r</WyckoffSymbol>
 		<U11 unit="pm^2">22</U11>
 		<U22 unit="pm^2">256</U22>
 		<U33 unit="pm^2">131</U33>
-		<oxidation>-2</oxidation>
-		<WyckoffSymbol>r</WyckoffSymbol>
 	</atom_site>
+
 	<bond_chemical unit="nm" n0="Y" n1="O3">0.2418</bond_chemical>
 	<bond_chemical unit="nm" n0="Y" n1="O4">0.2399</bond_chemical>
 	<bond_chemical unit="nm" n0="Ba" n1="O1">0.2891</bond_chemical>
@@ -107,13 +121,13 @@
 	<bond_chemical unit="nm" n0="Cu2" n1="O4">0.1961</bond_chemical>
 
 	<citation doi="10.1038/328606a0">
-		<author>C. Calestani</author>
-		<author>C. Rizzoli</author>
+		<title>Crystal structure of the YBa2Cu3O7 superconductor by single-crystal X-ray diffraction</title>
 		<journal>Nature</journal>
 		<volume>328</volume>
 		<year>1987</year>
 		<pages>606 607</pages>
-		<title>Crystal structure of the YBa2Cu3O7 superconductor by single-crystal X-ray diffraction</title>
+		<author>C. Calestani</author>
+		<author>C. Rizzoli</author>
 	</citation>
 </cif>
 <!--   
