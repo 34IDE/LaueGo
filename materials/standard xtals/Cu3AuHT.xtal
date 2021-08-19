@@ -2,11 +2,14 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Cu3Au HighT</chemical_name_common>
+	<comment>Tc = 663 K</comment>
+
 	<space_group>
 		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.3749</a>
 		<b unit="nm">0.3749</b>
@@ -16,6 +19,7 @@
 		<gamma>90</gamma>
 		<temperature unit="C">600</temperature>
 	</cell>
+
 	<atom_site>
 		<label>Cu</label>
 		<symbol>Cu</symbol>
