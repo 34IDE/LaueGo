@@ -5,7 +5,7 @@
 	<chemical_formula>SiO2</chemical_formula>
 	<space_group>
 		<id>180</id>
-		<IT_number>154</IT_number>
+		<IT_number>180</IT_number>
 		<H-M>P 62 2 2</H-M>
 	</space_group>
 	<database_code db="amcsd">0006370</database_code>
