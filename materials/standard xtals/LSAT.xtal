@@ -31,16 +31,16 @@
 		<symbol>La</symbol>
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.29</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<oxidation>3</oxidation>
-		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Sr</label>
 		<symbol>Sr</symbol>
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.71</occupancy>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<oxidation>2</oxidation>
-		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
 	<atom_site>
@@ -49,24 +49,23 @@
 		<fract>0 0 0</fract>
 		<occupancy>0.65</occupancy>
 		<oxidation>3</oxidation>
-		<WyckoffSymbol>c</WyckoffSymbol>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
 		<label>Ta</label>
 		<symbol>Ta</symbol>
 		<fract>0 0 0</fract>
 		<occupancy>0.35</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
 		<oxidation>5</oxidation>
-		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
 		<fract>1/2 0 0</fract>
-		<occupancy>0.5</occupancy>
 		<oxidation>-2</oxidation>
-		<WyckoffSymbol>k</WyckoffSymbol>
+		<WyckoffSymbol>d</WyckoffSymbol>
 	</atom_site>
 
 	<bond_chemical unit="nm" n0="Al" n1="O">0.193418</bond_chemical>
@@ -83,37 +82,3 @@
 		<author>J. Luine</author>
 	</citation>
 </cif>
-
-
-
-
-
-
-<!--
-
-
-for LSAT
-
-
-
-
-a = 3.8603 + 2.246e-5 * T + 1.783e-8 * T^2 - 5.076e-12 * T^3 (Å).
-
-
-
-
-B. C. ChakoumakosD. G. Schlom, M. Urbanik, J. Luine
-
-
-
-
-
-Citation: 83, (1998); doi: 10.1063/1.366925
-
-
-
-
-		<ASTM>JMREEE</ASTM>
-
-
--->
