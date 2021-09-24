@@ -2,143 +2,118 @@
 
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
-	<date>2021-05-22T20:48:40.006Z</date>   <!-- Saturday, May 22, 2021 at 3:48:40 PM Central Daylight Time -->
+	<date>2021-09-24T19:24:38.060Z</date>   <!-- Friday, September 24, 2021 at 2:24:38 PM Central Daylight Time -->
 	<chemical_name_common>LSAT</chemical_name_common>
-	<chemical_formula>(La0.289 Sr0.712) ((Al0.633 Ta0.356) O3)</chemical_formula>
-	<chemical_formula_sum>Sr2.848 O12 Ta1.424 Al2.532 La1.156</chemical_formula_sum>
-	<database_code db="ICSD">153895</database_code>
+	<chemical_formula>(La0.29 Sr0.71) (Al0.65 Ta0.35) O3</chemical_formula>
 
 	<space_group>
-		<id>224:1</id>
-		<IT_number>224</IT_number>
+		<id>221</id>
+		<IT_number>221</IT_number>
 		<system>cubic</system>
-		<H-M>P n -3 m:1</H-M>
-		<Hall>P 4n 2 3 -1n</Hall>
-		<Schoenflies>Oh^4</Schoenflies>
+		<H-M>P m -3 m</H-M>
+		<Hall>-P 4 2 3</Hall>
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.772</a>
-		<b unit="nm">0.772</b>
-		<c unit="nm">0.772</c>
+		<a unit="nm">0.386837</a>
+		<b unit="nm">0.386837</b>
+		<c unit="nm">0.386837</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<formula_units>4</formula_units>
+		<formula_units>1</formula_units>
+		<temperature unit="C">22.5</temperature>
+		<!-- a = 3.8603 + 2.246e-5 * T + 1.783e-8 * T^2 - 5.076e-12 * T^3 (Å),  at T=22.5C = 3.86837 Å -->
 	</cell>
 
 	<atom_site>
-		<label>La2</label>
+		<label>La</label>
 		<symbol>La</symbol>
-		<fract>3/4 1/4 1/4</fract>
-		<occupancy>0.288</occupancy>
-		<oxidation>3</oxidation>
-		<WyckoffSymbol>d</WyckoffSymbol>
-	</atom_site>
-	<atom_site>
-		<label>Sr2</label>
-		<symbol>Sr</symbol>
-		<fract>3/4 1/4 1/4</fract>
-		<occupancy>0.712</occupancy>
-		<oxidation>2</oxidation>
-		<WyckoffSymbol>d</WyckoffSymbol>
-	</atom_site>
-
-	<atom_site>
-		<label>La1</label>
-		<symbol>La</symbol>
-		<fract>1/4 1/4 1/4</fract>
-		<occupancy>0.288</occupancy>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.29</occupancy>
 		<oxidation>3</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
-		<label>Sr1</label>
+		<label>Sr</label>
 		<symbol>Sr</symbol>
-		<fract>1/4 1/4 1/4</fract>
-		<occupancy>0.712</occupancy>
+		<fract>1/2 1/2 1/2</fract>
+		<occupancy>0.71</occupancy>
 		<oxidation>2</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 
 	<atom_site>
-		<label>Al1</label>
+		<label>Al</label>
 		<symbol>Al</symbol>
-		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.633</occupancy>
+		<fract>0 0 0</fract>
+		<occupancy>0.65</occupancy>
 		<oxidation>3</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
-		<label>Ta1</label>
+		<label>Ta</label>
 		<symbol>Ta</symbol>
-		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.356</occupancy>
+		<fract>0 0 0</fract>
+		<occupancy>0.35</occupancy>
 		<oxidation>5</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 	</atom_site>
 
 	<atom_site>
-		<label>Al2</label>
-		<symbol>Al</symbol>
-		<fract>0 1/2 0</fract>
-		<occupancy>0.633</occupancy>
-		<oxidation>3</oxidation>
-		<WyckoffSymbol>c</WyckoffSymbol>
-	</atom_site>
-	<atom_site>
-		<label>Ta2</label>
-		<symbol>Ta</symbol>
-		<fract>0 1/2 0</fract>
-		<occupancy>0.356</occupancy>
-		<oxidation>5</oxidation>
-		<WyckoffSymbol>c</WyckoffSymbol>
-	</atom_site>
-
-	<atom_site>
-		<label>O2</label>
+		<label>O</label>
 		<symbol>O</symbol>
-		<fract>0 1/4 1/4</fract>
-		<occupancy>0.5</occupancy>
-		<oxidation>-2</oxidation>
-		<WyckoffSymbol>g</WyckoffSymbol>
-	</atom_site>
-
-	<atom_site>
-		<label>O1</label>
-		<symbol>O</symbol>
-		<fract>0 0.254 1/2</fract>
+		<fract>1/2 0 0</fract>
 		<occupancy>0.5</occupancy>
 		<oxidation>-2</oxidation>
 		<WyckoffSymbol>k</WyckoffSymbol>
 	</atom_site>
 
-	<atom_site>
-		<label>O3</label>
-		<symbol>O</symbol>
-		<fract>3/4 0 1/4</fract>
-		<occupancy>0.5</occupancy>
-		<oxidation>-2</oxidation>
-		<WyckoffSymbol>f</WyckoffSymbol>
-	</atom_site>
+	<bond_chemical unit="nm" n0="Al" n1="O">0.193418</bond_chemical>
 
-	<bond_chemical unit="nm" n0="Al2" n1="O1">0.189912 0.196088</bond_chemical>
-	<bond_chemical unit="nm" n0="La1" n1="O2">0.193</bond_chemical>
-	<bond_chemical unit="nm" n0="La2" n1="O2">0.193</bond_chemical>
-
-	<citation>
-		<title>Structure and spectroscopic properties of (A A') (B B') O3 mixed-perovskitecrystals</title>
-		<journal>Journal of Materials Research</journal>
-		<volume>20</volume>
-		<year>2005</year>
-		<pages>3329 3337</pages>
-		<ASTM>JMREEE</ASTM>
-		<author>D.A. Pawlak</author>
-		<author>M. Ito</author>
-		<author>L. Dobrzycki</author>
-		<author>K. Wozniak</author>
-		<author>M. Oku</author>
-		<author>K. Shimamura</author>
-		<author>T. Fukuda</author>
+	<citation doi="10.1063/1.366925">
+		<title>Thermal expansion of LaAlO3 and (La,Sr)(Al,Ta)O3, substrate materials for superconducting thin-film device applications</title>
+		<journal>Journal of Applied Physics</journal>
+		<volume>83</volume>
+		<year>1998</year>
+		<pages>1979 1982</pages>
+		<author>B. C. Chakoumakos</author>
+		<author>D. G. Schlom</author>
+		<author>M. Urbanik</author>
+		<author>J. Luine</author>
 	</citation>
 </cif>
+
+
+
+
+
+
+<!--
+
+
+for LSAT
+
+
+
+
+a = 3.8603 + 2.246e-5 * T + 1.783e-8 * T^2 - 5.076e-12 * T^3 (Å).
+
+
+
+
+B. C. ChakoumakosD. G. Schlom, M. Urbanik, J. Luine
+
+
+
+
+
+Citation: 83, (1998); doi: 10.1063/1.366925
+
+
+
+
+		<ASTM>JMREEE</ASTM>
+
+
+-->
