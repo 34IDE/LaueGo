@@ -35,7 +35,8 @@
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<Biso>0.63</Biso>
 	</atom_site>
-		<atom_site>
+
+	<atom_site>
 		<label>O</label>
 		<oxidation>-2</oxidation>
 		<fract>0.25 0.25 0.25</fract>
