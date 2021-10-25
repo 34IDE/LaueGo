@@ -3,7 +3,7 @@
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
 	<date>2021-03-17T00:39:20.855Z</date>   <!-- Tuesday, March 16, 2021 at 7:39:20 PM Central Daylight Time -->
-	<chemical_name_common>CdI2</chemical_name_common>
+	<chemical_name_common>CdI2 ω-phase</chemical_name_common>
 	<chemical_formula>CdI2</chemical_formula>
 	<database_code db="COD">1539851</database_code>
 
@@ -41,7 +41,6 @@
 		<WyckoffSymbol>d</WyckoffSymbol>
 		<oxidation>-1</oxidation>
 	</atom_site>
-
 
 	<bond_chemical unit="nm" n0="Cd" n1="I">0.298734 0.298765</bond_chemical>
 
