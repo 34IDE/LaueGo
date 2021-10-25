@@ -7,9 +7,9 @@
 		<IT_number>1</IT_number>
 	</space_group>
 	<cell>
-		<a unit="nm">0.5431</a>
-		<b unit="nm">0.5432</b>
-		<c unit="nm">0.5433</c>
+		<a unit="pm">543.1020511</a>
+		<b>5.431020511</b>						<!-- default is Angstrom -->
+		<c unit="ypc">0.0176007387925964</c>	<!-- parsec is non-standard, but allowed -->
 		<!-- <alpha unit="grad">100</alpha>
 		<beta unit="cos">0</beta>				β=90°,  cos(β) = -0.002
 		<gamma unit="mcir">250</gamma>			Ɣ=90°,  0.25 circlt
@@ -17,7 +17,7 @@
 		<beta unit="kmin">5.4</beta>			β=90°,  90*60(deg/arcmin) = 5400 arcmin
 		 -->
 		<alpha unit="grad">100</alpha>			<!-- 100 grad means ⍺ = 90°, (400 grad/circle) -->
-		<beta unit="mcos">-2</beta>				<!-- -2 mcos means cos(β) = -0.002 so β = 90.11459°-->
+		<beta unit="mcos">-2</beta>				<!-- -2 mcos means: cos(β) = -0.002 so β = 90.11459° -->
 		<gamma unit="K&quot;">324</gamma>		<!-- use an escaped double quote for 324 karcsec, which is 90 deg-->
 	</cell>
 	<atom_site>
