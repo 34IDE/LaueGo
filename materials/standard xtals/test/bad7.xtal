@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Bad because <A>...</A> is NOT <a>...</a> -->
+
+<cif version="2" dim="3">
+	<chemical_name_common>Silicon</chemical_name_common>
+	<space_group>
+		<id>227:2</id>
+		<IT_number>227</IT_number>
+		<H-M>Fd-3m:2</H-M>
+	</space_group>
+	<cell>
+		<!-- from CODATA Internationally recommended 2018 values, set July 2019 -->
+		<A unit="pm">543.1020511</A>
+		<b unit="pm">543.1020511</b>
+		<c unit="pm">543.1020511</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<temperature unit="C">22.5</temperature>
+		<alphaT>2.56e-06</alphaT>		<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
+	</cell>
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0.125 0.125 0.125</fract>
+		<DebyeTemperature unit="K">645</DebyeTemperature>
+	</atom_site>
+	<bond_chemical unit="nm" n0="Si" n1="Si">0.2351700863</bond_chemical>
+	<citation>physics.nist.gov/cuu/Constants/index.html</citation>
+</cif>

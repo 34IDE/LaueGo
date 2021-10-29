@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Bad because alpha is negative, must be in (0,180) -->
+
+<cif version="2" dim="2">
+	<chemical_name_common>Ge surface</chemical_name_common>
+	<space_group>
+		<id>2</id>
+		<H-M>p2</H-M>
+	</space_group>
+	<cell>
+		<a unit="nm">0.56</a>
+		<b unit="nm">0.4</b>
+		<alpha>-10</alpha>
+	</cell>
+	<atom_site>
+		<label>Ge</label>
+		<symbol>Ge</symbol>
+		<fract>0 0</fract>
+		<DebyeTemperature unit="K">360</DebyeTemperature>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+</cif>

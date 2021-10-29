@@ -4,9 +4,11 @@
 <cif>
 	<chemical_name_common>Quartz-alpha</chemical_name_common>
 	<chemical_formula>SiO2</chemical_formula>
-	<space_group_IT_number>154</space_group_IT_number>
-	<space_group_id>154</space_group_id>
-	<H-M>P 32 2 1</H-M>
+	<space_group>
+		<IT_number>154</IT_number>
+		<id>154</id>
+		<H-M>P 32 2 1</H-M>
+	</space_group>
 	<database_code db="ICSD">174</database_code>
 	<temperature unit="K">298</temperature>
 	<cell>
