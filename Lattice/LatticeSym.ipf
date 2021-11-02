@@ -1,15 +1,15 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.33									// based on LatticeSym_6.55
+#pragma version = 7.34									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
-#include "xtl_Locate"										// used to find the path to the materials files (only contains CrystalsAreHere() )
+#include "xtl_Locate"									// used to find the path to the materials files (only contains CrystalsAreHere() )
 
-// #define 	OLD_LATTICE_ORIENTATION					// used to get old direct lattice orientation (pre version 5.00)
-//	#define DO_HEXAGONAL_EXTRA							// If this is used, then Hex & Trigonal F's are too big
+// #define 	OLD_LATTICE_ORIENTATION				// used to get old direct lattice orientation (pre version 5.00)
+//	#define DO_HEXAGONAL_EXTRA						// If this is used, then Hex & Trigonal F's are too big
 // #define SHOW_XML_BONDS_ON_READIN					// Put this in your "Procedure" window if you want to see the <bond_chemical ...</bond_chemical>
 
-Static strConstant NEW_LINE="\n"						//	was NL="\r"
+Static strConstant NEW_LINE="\n"					//	was NL="\r"
 Constant LatticeSym_minBondLen = 0.050				// 0.050 nm = 50 pm, minimum possible distance between atoms (smallest known bond is 74 pm)
 Constant LatticeSym_maxBondLen = 0.56				// 0.56 nm = 560 pm, maximum possible bond distance between atoms, (Cs-Cs) distance, (had been using 0.310 nm)
 Static Constant ELEMENT_Zmax = 118
@@ -17,13 +17,13 @@ Static Constant ELEMENT_Zmax = 118
 strConstant BAR_FONT_ALWAYS = "Tahoma"				//	unicode Overline only works well for Arial and Tahoma fonts, a Qt problem
 Static strConstant OVERLINE = "\xCC\x85"			// put this AFTER a character to put a bar over it (unicode U+0305), see:  https://en.wikipedia.org/wiki/Overline
 Static Constant MAXnumSymmetyrOps=192				// this the maximum number of possible symmetry operations
-Static Constant MAX_NUM_EXPANSION = 201				// maximum number of points in a thermal expansion table
+Static Constant MAX_NUM_EXPANSION = 201			// maximum number of points in a thermal expansion table
 Static Constant xtalStructLen5 = 25672				// length of crystalStructure5 in a string
 Static Constant xtalStructLen6 = 25686				// length of crystalStructure6 in a string
 Static Constant xtalStructLen7 = 25786				// length of crystalStructure7 in a string
 Static Constant xtalStructLen8 = 25794				// length of crystalStructure8 in a string
 Static Constant xtalStructLen9 = 25796				// length of crystalStructure9 in a string
-Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a string
+Static Constant xtalStructLen10 = 29014			// length of crystalStructure10 in a string
 
 
 //	remember to execute    InitLatticeSymPackage()
@@ -261,6 +261,7 @@ Static Constant xtalStructLen10 = 29014				// length of crystalStructure10 in a 
 //	with version 7.31, allow use of Uiso, Biso, U11, U22, U33, U12, U13, U23 in xtal files
 //	with version 7.32, read xtal files that use <oxidation> rather than <valence>
 //	with version 7.33, swap overlne and digit in minus2bar
+//	with version 7.34, call SetSymOpsForSpaceGroup() in FillCrystalStructDefault() and readCrystalStructure(), and in SetSymOpsForSpaceGroup() skip if waves already there.
 
 
 //	Rhombohedral Transformation:
@@ -2497,6 +2498,7 @@ Function FillCrystalStructDefault(xtal)			// fill the crystal structure with 'cu
 		StructPut/S/B=2 xtal, strStruct				// keep a local copy after loading from PackagePreferences
 		String/G root:Packages:Lattices:crystalStructStr = strStruct
 	endif
+	SetSymOpsForSpaceGroup(xtal.SpaceGroupID, xtal.dim)	// someone needs to set this.
 	setDirectRecip(xtal)								// ensure that these are set
 	CleanOutCrystalStructure(xtal)
 	xtal.Vibrate = xtalVibrates(xtal)				// True if some Thermal vibration info present in xtal
@@ -4075,6 +4077,7 @@ Function readCrystalStructure(xtal,fname,[printIt])
 //	if (xtal.Nbonds < 1 && !(xtal.dim==2))		// do NOT recalc bonds if already there (don't for dim=2)
 //		ComputeBonds(xtal, printIt=printIt)		// bonds don't make a lot of sense for 2D structures
 //	endif
+	SetSymOpsForSpaceGroup(xtal.SpaceGroupID, xtal.dim)	// someone needs to set this.
 
 	// for fractional positions of 0.3333 or 0.1667, extend precision to exactly 1/3 or 1/6, etc.
 	Variable i
@@ -10047,6 +10050,23 @@ Static Function SetSymOpsForSpaceGroup(SpaceGroupID, dim)	// make the symmetry o
 	String SpaceGroupID
 	Variable dim
 	dim = dim==2 ? 2 : 3
+
+	String matsName = "root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0)
+	String bvecsName = 	"root:Packages:Lattices:SymOps:"+CleanupName("equivXYZB"+SpaceGroupID,0)
+
+	if ( exists(matsName)==1 && exists(bvecsName)==1 )
+		Wave/Z matsTemp = $matsName
+		Wave/Z bvecsTemp = $bvecsName
+		Variable Nops = DimSize(matsTemp,0)
+		Variable bad = (Nops != DimSize(bvecsTemp,0) )
+		bad = bad || !WaveInClass(matsTemp,"SymmetryOperations")
+		bad = bad || !WaveInClass(bvecsTemp,"SymmetryOperations")
+		bad = bad || CmpStr(SpaceGroupID, StringByKey("SpaceGroupID", note(matsTemp),"=") ,0)
+		bad = bad || CmpStr(SpaceGroupID, StringByKey("SpaceGroupID", note(bvecsTemp),"=") ,0)
+		if (!bad)
+			return Nops												// already present, do not remake
+		endif
+	endif
 
 	Variable SG=str2num(SpaceGroupID)
 	Wave/Z mats = $("root:Packages:Lattices:SymOps:"+CleanupName("equivXYZM"+SpaceGroupID,0))
