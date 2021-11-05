@@ -3,20 +3,32 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Lead</chemical_name_common>
 	<space_group>
-		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<id>225</id>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
 	<cell>
-		<a unit="nm">0.495</a>
-		<b unit="nm">0.495</b>
-		<c unit="nm">0.495</c>
+		<a unit="nm">0.49505</a>
+		<b unit="nm">0.49505</b>
+		<c unit="nm">0.49505</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Pb</label>
-		<symbol>Pb</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Cubic closest packed, ccp, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
 </cif>

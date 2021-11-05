@@ -3,7 +3,7 @@
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
 	<date>2020-09-23T21:26:10.676Z</date>   <!-- Wednesday, September 23, 2020 at 4:26:10 PM Central Daylight Time -->
-	<chemical_name_common>Tin-α (gray), this best fits the indexation. Tin does have a lot reflections!! -Wenjun</chemical_name_common>
+	<chemical_name_common>Tin-&#x03B1; (gray), this best fits the indexation. Tin does have a lot reflections!! -Wenjun</chemical_name_common>
 	<!-- <chemical_name_common>Tin</chemical_name_common> -->
 	<chemical_formula>Sn</chemical_formula>
 	<database_code db="COD">9012005</database_code>

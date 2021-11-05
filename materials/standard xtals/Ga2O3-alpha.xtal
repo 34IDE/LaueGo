@@ -3,7 +3,7 @@
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
 	<date>2020-10-08T21:37:27.925Z</date>   <!-- Thursday, October 8, 2020 at 4:37:27 PM Central Daylight Time -->
-	<chemical_name_common>Ga2O3 - α</chemical_name_common>
+	<chemical_name_common>Ga2O3-&#x03B1;</chemical_name_common>
 	<database_code db="COD">1538347</database_code>
 
 	<space_group>

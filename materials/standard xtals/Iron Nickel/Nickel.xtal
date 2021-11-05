@@ -2,24 +2,38 @@
 
 <cif version="2" dim="3">
 	<chemical_name_common>Nickel</chemical_name_common>
+	<database_code db="COD">9008476</database_code>
+
 	<space_group>
 		<IT_number>225</IT_number>
 		<id>225</id>
-		<H-M>Fm-3m</H-M>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.35238</a>
-		<b unit="nm">0.35238</b>
-		<c unit="nm">0.35238</c>
+		<a unit="nm">0.52387</a>
+		<b unit="nm">0.52387</b>
+		<c unit="nm">0.52387</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Ni</label>
-		<symbol>Ni</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<DebyeTemperature unit="K">397</DebyeTemperature>	<!-- T. Paakkari, Acta Cryst. A30 (1974), pgs. 83-86, doi=10.1107/S0567739474000131 -->
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Cubic closest packed, ccp, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
 </cif>

@@ -1,22 +1,39 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>delta-Pu</chemical_name_common>
+	<chemical_name_common>Pu-&#x03B4;</chemical_name_common>
+	<database_code db="COD">9008481</database_code>
+
 	<space_group>
-		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<id>225</id>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.463</a>
 		<b unit="nm">0.463</b>
 		<c unit="nm">0.463</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
-		<gamma>90</gamma>
+		<gamma>90</gamma>𝛅
+		<formula_units>4</formula_units>
+		<temperature unit="C">320</temperature>
 	</cell>
+
 	<atom_site>
 		<label>Pu</label>
 		<symbol>Pu</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Sample at T = 320 C Cubic closest packed, ccp, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
 </cif>
