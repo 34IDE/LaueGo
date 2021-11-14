@@ -2,9 +2,9 @@
 
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
-	<date>2020-11-06T18:46:00.059Z</date>   <!-- Friday, November 6, 2020 at 12:46:00 PM Central Standard Time -->
+	<date>2021-11-13T23:27:00.157Z</date>   <!-- Saturday, November 13, 2021 at 5:27:00 PM Central Standard Time -->
 	<chemical_name_common>Davemaoite</chemical_name_common>
-	<chemical_formula>(Ca.42 K.2 Na.1 Fe.08 Mg.06 Al.06 Cr.05 La.02 Ce.01) (Si.99 Al.01) O3</chemical_formula>
+	<chemical_formula>Ca.43 K.2 Fe.11 Al.08 Mg.06 Na.06 Cr.04 Si O3</chemical_formula>
 	<crystal_description>xenomorph inclusion in diamond</crystal_description>
 	<chemical_source>Orapa Mine Botswana</chemical_source>
 
@@ -32,7 +32,7 @@
 		<label>Ca</label>
 		<symbol>Ca</symbol>
 		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.42</occupancy>
+		<occupancy>0.43</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
@@ -45,16 +45,16 @@
 		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
-		<label>Na</label>
-		<symbol>Na</symbol>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
 		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.1</occupancy>
+		<occupancy>0.11</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
-		<label>Fe</label>
-		<symbol>Fe</symbol>
+		<label>Al1</label>
+		<symbol>Al</symbol>
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.08</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
@@ -69,8 +69,8 @@
 		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
 	<atom_site>
-		<label>Al1</label>
-		<symbol>Al</symbol>
+		<label>Na</label>
+		<symbol>Na</symbol>
 		<fract>1/2 1/2 1/2</fract>
 		<occupancy>0.06</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
@@ -80,23 +80,7 @@
 		<label>Cr</label>
 		<symbol>Cr</symbol>
 		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.05</occupancy>
-		<WyckoffSymbol>b</WyckoffSymbol>
-		<Uiso unit="Å^2">0.0025</Uiso>
-	</atom_site>
-	<atom_site>
-		<label>La</label>
-		<symbol>La</symbol>
-		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.02</occupancy>
-		<WyckoffSymbol>b</WyckoffSymbol>
-		<Uiso unit="Å^2">0.0025</Uiso>
-	</atom_site>
-	<atom_site>
-		<label>Ce</label>
-		<symbol>Ce</symbol>
-		<fract>1/2 1/2 1/2</fract>
-		<occupancy>0.01</occupancy>
+		<occupancy>0.04</occupancy>
 		<WyckoffSymbol>b</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0025</Uiso>
 	</atom_site>
@@ -105,30 +89,49 @@
 		<label>Si</label>
 		<symbol>Si</symbol>
 		<fract>0 0 0</fract>
-		<occupancy>0.99</occupancy>
+		<occupancy>1</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<Uiso unit="Å^2">0.00507</Uiso>
+		<Uiso unit="Å^2">0.0051</Uiso>
 	</atom_site>
 	<atom_site>
 		<label>Al2</label>
 		<symbol>Al</symbol>
 		<fract>0 0 0</fract>
-		<occupancy>0.01</occupancy>
+		<occupancy>0</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
-		<Uiso unit="Å^2">0.00507</Uiso>
+		<Uiso unit="Å^2">0.0051</Uiso>
 	</atom_site>
 
 	<atom_site>
 		<label>O</label>
 		<symbol>O</symbol>
-		<fract>1/2 0 1/2</fract>
-		<WyckoffSymbol>c</WyckoffSymbol>
+		<fract>1/2 0 0</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
 		<Uiso unit="Å^2">0.0038</Uiso>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="K" n1="O">0.17955</bond_chemical>
+	<bond_chemical unit="nm" n0="Si" n1="O">0.17955</bond_chemical>
 
-	<citation id="primary" doi="10.5194/ejm-32-645-2020">
+	<comment>measured at 34IDE, APS, in transmission powder with 24 keV</comment>
+
+	<citation doi="10.1126/science.abl8568" id="primary">
+		<title>Discovery of davemaoite, CaSiO3-perovskite, as a mineral from the lower mantle</title>
+		<journal>Science</journal>
+		<volume>374</volume>
+		<year>2021</year>
+		<pages>891 894</pages>
+		<author>Oliver Tschauner</author>
+		<author>Shichun Huang</author>
+		<author>Shuying Yang</author>
+		<author>Munir Humayun</author>
+		<author>Wenjun Liu</author>
+		<author>Stephanie N. Gilbert Corder</author>
+		<author>Hans A. Bechtel</author>
+		<author>Jon Tischler</author>
+		<author>George R. Rossman</author>
+	</citation>
+
+	<citation doi="10.5194/ejm-32-645-2020" id="2">
 		<title>IMA 2020-012a, in: CNMNC Newsletter 58 Davemaoite</title>
 		<journal>Eur. J. Mineral.</journal>
 		<volume>32</volume>
@@ -138,9 +141,5 @@
 		<author>S. Huang</author>
 		<author>S. Yang</author>
 		<author>M. Humayun</author>
-		<comment>
-			measured at 34IDE, APS, in transmission powder 24 keV,
-			xenomorph inclusion in diamond from Orapa Mine Botswana
-		</comment>
 	</citation>
 </cif>
