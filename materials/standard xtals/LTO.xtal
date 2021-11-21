@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-11-19T18:19:00.576Z</date>   <!-- Friday, November 19, 2021 at 12:19:00 PM Central Standard Time -->
+	<chemical_name_common>LTO</chemical_name_common>
+	<chemical_formula>LaTiO3</chemical_formula>
+	<database_code db="COD">1532652</database_code>
+
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.56336</a>
+		<b unit="nm">0.56156</b>
+		<c unit="nm">0.79145</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>0.9916 0.0457 1/4</fract>
+		<oxidation>3</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Ti</label>
+		<symbol>Ti</symbol>
+		<fract>1/2 0 0</fract>
+		<oxidation>3</oxidation>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.0799 0.4913 1/4</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.7096 0.2941 0.0417</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>d</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Ti" n1="O1">0.202977</bond_chemical>
+	<bond_chemical unit="nm" n0="Ti" n1="O2">0.203035 0.20569</bond_chemical>
+	<bond_chemical unit="nm" n0="La" n1="O1">0.243325 0.255128</bond_chemical>
+	<bond_chemical unit="nm" n0="La" n1="O2">0.244926</bond_chemical>
+
+	<citation>
+		<title>Crystal and magnetic structure of LaTiO3 : evidence for nondegenerate t2g orbitals</title>
+		<journal>Physical Review, Serie 3. B - Condensed Matter (18,1978-)</journal>
+		<volume>68</volume>
+		<year>2003</year>
+		<pages>060401</pages>
+		<author>M. Cwik</author>
+		<author>F. Bouree</author>
+		<author>T. Lorenz</author>
+		<author>J. Baier</author>
+		<author>R. Mueller</author>
+		<author>G. Andre</author>
+		<author>F. Lichtenberg</author>
+		<author>M. Braden</author>
+		<author>E. Mueller-Hartmann</author>
+		<author>R. Schmitz</author>
+		<author>A. Freimuth</author>
+	</citation>
+</cif>
