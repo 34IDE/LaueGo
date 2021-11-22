@@ -6,6 +6,7 @@
 	<!-- <chemical_name_common>Tin-&#x03B1; (gray), this best fits the indexation. Tin does have a lot reflections!! -Wenjun</chemical_name_common> -->
 	<chemical_name_common>Tin-&#x03B1; (gray)</chemical_name_common>
 	<chemical_formula>Sn</chemical_formula>
+	<chemical_source>synthetic</chemical_source>
 	<database_code db="COD">9012005</database_code>
 
 	<space_group>
@@ -36,7 +37,7 @@
 	</atom_site>
 
 	<citation doi="10.1063/1.1698520">
-		<title>The precision determination of lattice constants by the powder and rotation crystal methods and applications Locality: synthetic Sample: at T = 25 C</title>
+		<title>The Precision Determination of Lattice Constants by the Powder and Rotating Crystal Methods and Applications</title>
 		<journal>Journal of Applied Physics</journal>
 		<volume>20</volume>
 		<year>1949</year>
@@ -48,14 +49,14 @@
 		This best fits the indexation. Tin does have a lot reflections!! -Wenjun.
 		
 		As pointed out by Prof. Dr. Klaus-Dieter Liss from Technion - Israel
-		Institute of Technology in his 2018-12-07 07:39 report, the cell
-		constants in this entry were actually recorded in kX units, not in Å
-		units as the CIF standard mandates. To make data uniform and to match
-		the definition of the CIF _cell_length_* data items, all cell
-		constants were multiplied by the 1.00202 coefficient (taken from Wood,
-		E. A.  The Conversion Factor for kX Units to Angstrom Units Journal
-		of Applied Physics, AIP Publishing, 1947, 18, 929 DOI:
-		10.1063/1.1697570, https://doi.org/10.1063/1.1697570).
+		Institute of Technology in his 2018-12-07 07:39 report, the cell constants
+		in this entry were actually recorded in kX units, not in Å units
+		as the CIF standard mandates. To make data uniform and to match the
+		definition of the CIF _cell_length_* data items, all cell constants
+		were multiplied by the 1.00202 coefficient (taken from E.A. Wood,
+		The Conversion Factor for kX Units to Angstrom Units Journal of 
+		Applied Physics, AIP Publishing, 1947, 18, 929
+		DOI:10.1063/1.1697570, https://doi.org/10.1063/1.1697570).
 
 		In addition, in the original entry the _cell_length_c was apparently
 		taken from the wrong column, under (incorrect) assumption of the cubic
