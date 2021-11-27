@@ -49,10 +49,12 @@
 	<bond_chemical unit="nm" n0="Zr" n1="O">0.2234</bond_chemical>
 	<!-- bond length = ao*sqrt(3)/4 -->
 
-	<citation>
+	<comment>This is simplified, the real structure is weireder, see doi="10.1107/S0108768199005108" (1999)</comment>
+
+	<citation doi="10.1107/S0108768184002329">
 		<journal>Acta Crystallographica, Section B: Structural Science</journal>
 		<year>1984</year>
-		<volume>40</volume>
+		<volume>B40</volume>
 		<pages>367 372</pages>
 		<author>H. Horiuchi</author>
 		<author>A.J. Schultz</author>
