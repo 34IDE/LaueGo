@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-06-16T15:42:47.794Z</date>   <!-- Wednesday, June 16, 2021 at 10:42:47 AM Central Daylight Time -->
+	<chemical_name_common>Galena</chemical_name_common>
+	<chemical_formula>PbS</chemical_formula>
+	<database_code db="COD">9013403</database_code>
+
+	<space_group>
+		<id>225</id>
+		<IT_number>225</IT_number>
+		<system>cubic</system>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
+		<Schoenflies>Oh^5</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.59315</a>
+		<b unit="nm">0.59315</b>
+		<c unit="nm">0.59315</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<temperature unit="C">24.85</temperature>
+	</cell>
+
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract>1/2 1/2 1/2</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U_iso unit="Å^2">0.01558</U_iso>
+	</atom_site>
+
+	<atom_site>
+		<label>Pb</label>
+		<symbol>Pb</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U_iso unit="Å^2">0.01634</U_iso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Pb" n1="S">0.296575</bond_chemical>
+
+	<citation doi="10.1107/S0108270187091509">
+		<title>Temperature dependence of atomic thermal parameters of lead chalcogenides, PbS, PbSe and PbTe</title>
+		<journal>Acta Crystallographica, Section C</journal>
+		<volume>43</volume>
+		<year>1987</year>
+		<pages>1443 1445</pages>
+		<author>Y. Noda</author>
+		<author>K. Masumoto</author>
+		<author>S. Ohba</author>
+		<author>Y. Saito</author>
+		<author>K. Toriumi</author>
+		<author>Y. Iwata</author>
+		<author>I. Shibuya</author>
+	</citation>
+</cif>

@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.14
+#pragma version=2.15
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -16,7 +16,7 @@
 Static Constant NindexedMIN = 4
 //Static StrConstant XMLfilters = "XML Files (*.xml,*.txt):.xml,.txt;All Files:.*;"	// moved to Utility_JZT.ipf
 Static Constant hc = 1.239841857		// keV-nm
-
+Static Constant VerboseLoadXML = 0
 
 Menu "Rotations"
 	"-"
@@ -1831,7 +1831,7 @@ Function/T DeviatoricStrainRefineXML(m,pattern,constrain,[coords,xmlFileFull,pri
 	svec = ReplaceString(" ",xmlTagContents("Intens",peaksXY),";")
 	FullPeakList[][11] = str2num(StringFromList(p,svec))
 
-	String roi = xmlTagKeyVals("ROI",detector)
+	String roi = xmlTagKeyValsLocal("ROI",detector)
 	roi = RemoveFromList("/",roi)
 	String wnote = ReplaceStringByKey("waveClass","","FittedPeakList","=")
 	wnote += roi
@@ -2011,7 +2011,7 @@ End
 //	svec = ReplaceString(" ",xmlTagContents("Intens",step),";")
 //	FullPeakList[][10] = str2num(StringFromList(p,svec))
 //
-//	String roi = xmlTagKeyVals("ROI",step)
+//	String roi = xmlTagKeyValsLocal("ROI",step)
 //	roi = RemoveFromList("/",roi)
 //	String wnote = ReplaceStringByKey("waveClass","","FittedPeakList","=")
 //	wnote += roi
@@ -4568,49 +4568,55 @@ Function Load3dRecipLatticesFileXML(FullFileName,[appendXML,printIt])
 			endif
 		endif
 
-		detector = xmlTagContents("detector",step)
-		indexing = xmlTagContents("indexing",step)
-		patternKeyVals = xmlTagKeyVals("pattern",indexing)
-		N0 = NumberByKey("Nindexed", patternKeyVals,"=")
-		rms = NumberByKey("rms_error", patternKeyVals,"=")
-		goodness0 = NumberByKey("goodness", patternKeyVals,"=")
-		if (NumberByKey("num", patternKeyVals,"=")!=0 || N0<NindexedMIN)
-			//if (strlen(patternKeyVals))
-			//	print xmlTagContents("inputImage",step)
-			//	print patternKeyVals
-			//endif
-			continue										// skip this image, it was not adequately indexed
-		endif
-		pattern = xmlTagContents("pattern",indexing)
-		recip_lattice = xmlTagContents("recip_lattice",pattern)
-		svec = xmlTagContents("astar",recip_lattice)
-		sscanf svec,"%g %g %g",as0,as1,as2
-		svec = xmlTagContents("bstar",recip_lattice)
-		sscanf svec,"%g %g %g",bs0,bs1,bs2
-		svec = xmlTagContents("cstar",recip_lattice)
-		sscanf svec,"%g %g %g",cs0,cs1,cs2
+		Variable occurance=0								// used to step over multiple <pattern ...>
+		do														// loop over all of the found patterns
+			detector = xmlTagContents("detector",step)
+			indexing = xmlTagContents("indexing",step)
+			patternKeyVals = xmlTagKeyVals("pattern",indexing,occurance=occurance)
+			N0 = NumberByKey("Nindexed", patternKeyVals,"=")
+			rms = NumberByKey("rms_error", patternKeyVals,"=")
+			goodness0 = NumberByKey("goodness", patternKeyVals,"=")
+			if (N0<NindexedMIN || numtype(N0))
+				//if (strlen(patternKeyVals))
+				//	print xmlTagContents("inputImage",step)
+				//	print patternKeyVals
+				//endif
+				break											// skip this image, it was not adequately indexed
+			endif
+			pattern = xmlTagContents("pattern",indexing, occurance=occurance)
+			occurance += 1
 
-		if (N>=Nalloc)									// need longer arrays
-			Nalloc += 1000
-			Redimension/N=(Nalloc) Xsample,Ysample,Zsample,depth, totalSum, sumAboveThreshold, numAboveThreshold, Nindexed, rmsIndexed, goodness, HutchTempC, imageNames
-			Redimension/N=(3,3,Nalloc) gm
-		endif
-		depth[N] = str2num(xmlTagContents("depth",step))
-		Xsample[N] = str2num(xmlTagContents("Xsample",step))
-		Ysample[N] = str2num(xmlTagContents("Ysample",step))
-		Zsample[N] = str2num(xmlTagContents("Zsample",step))
-		Nindexed[N] = N0
-		rmsIndexed[N] = rms
-		goodness[N] = goodness0
-		HutchTempC[N] = str2num(xmlTagContents("hutchTemperature",step))
-		totalSum[N] = str2num(xmlTagContents("totalSum",detector))
-		sumAboveThreshold[N] = str2num(xmlTagContents("sumAboveThreshold",detector))
-		numAboveThreshold[N] = str2num(xmlTagContents("numAboveThreshold",detector))
-		imageNames[N] = xmlTagContents("inputImage",detector)
-		gm[0][0][N] = as0;		gm[0][1][N] = bs0;	gm[0][2][N] = cs0	// save measured reciprocal lattice for this point
-		gm[1][0][N] = as1;		gm[1][1][N] = bs1;	gm[1][2][N] = cs1
-		gm[2][0][N] = as2;		gm[2][1][N] = bs2;	gm[2][2][N] = cs2
-		N += 1
+			recip_lattice = xmlTagContents("recip_lattice",pattern)
+			svec = xmlTagContents("astar",recip_lattice)
+			sscanf svec,"%g %g %g",as0,as1,as2
+			svec = xmlTagContents("bstar",recip_lattice)
+			sscanf svec,"%g %g %g",bs0,bs1,bs2
+			svec = xmlTagContents("cstar",recip_lattice)
+			sscanf svec,"%g %g %g",cs0,cs1,cs2
+
+			if (N>=Nalloc)									// need longer arrays
+				Nalloc += 1000
+				Redimension/N=(Nalloc) Xsample,Ysample,Zsample,depth, totalSum, sumAboveThreshold, numAboveThreshold, Nindexed, rmsIndexed, goodness, HutchTempC, imageNames
+				Redimension/N=(3,3,Nalloc) gm
+			endif
+			depth[N] = str2num(xmlTagContents("depth",step))
+			Xsample[N] = str2num(xmlTagContents("Xsample",step))
+			Ysample[N] = str2num(xmlTagContents("Ysample",step))
+			Zsample[N] = str2num(xmlTagContents("Zsample",step))
+			Nindexed[N] = N0
+			rmsIndexed[N] = rms
+			goodness[N] = goodness0
+			HutchTempC[N] = str2num(xmlTagContents("hutchTemperature",step))
+			totalSum[N] = str2num(xmlTagContents("totalSum",detector))
+			sumAboveThreshold[N] = str2num(xmlTagContents("sumAboveThreshold",detector))
+			numAboveThreshold[N] = str2num(xmlTagContents("numAboveThreshold",detector))
+			imageNames[N] = xmlTagContents("inputImage",detector)
+			gm[0][0][N] = as0;		gm[0][1][N] = bs0;	gm[0][2][N] = cs0	// save measured reciprocal lattice for this point
+			gm[1][0][N] = as1;		gm[1][1][N] = bs1;	gm[1][2][N] = cs1
+			gm[2][0][N] = as2;		gm[2][1][N] = bs2;	gm[2][2][N] = cs2
+			N += 1
+		while (VerboseLoadXML)
+
 	while(1)
 	Close f
 	if (printIt)
@@ -5078,7 +5084,7 @@ Function LatticeParametersFromXML(FullFileName,xtal)
 			break
 		endif
 
-		list = xmlTagKeyVals("atom",buf[i0,Inf])
+		list = xmlTagKeyValsLocal("atom",buf[i0,Inf])
 		n = NumberByKey("n",list,"=")
 		Zatom = NumberByKey("Z",list,"=")
 		atomLabel = StringByKey("label",list,"=")
@@ -5126,8 +5132,44 @@ End
 //	End
 
 
+Static Function/T xmlTagKeyVals(key,buf,[occurance,delimiters])
+	String key
+	String buf
+	Variable occurance				// use 0 for first occurance, 1 for second, ...
+	String delimiters					// characters that might be used for delimiters (NOT semi-colon), default is space, tab, cr, or nl = " \t\r\n"
+	occurance = ParamIsDefault(occurance) ? 0 : occurance
+	if (ParamIsDefault(delimiters) || strlen(delimiters)==0)
+		delimiters = WhiteSpaceChars											// the usual white-space characters
+	endif
 
-Static Function/T xmlTagKeyVals(key,buf)
+	Variable j0 = JZTutil#startOfxmltag(key,buf,occurance)
+	if (j0<0)
+		return ""
+	endif
+
+	Variable jend,jmid
+	j0 = strsearch(buf,"<"+key+" ",j0)
+	if (j0<0)
+		j0 = strsearch(buf,"<"+key+" \t",0)
+	endif
+	if (j0<0)
+		return ""
+	endif
+	j0 += 2+strlen(key)
+	jmid = strsearch(buf,">",j0)-1
+	if (jmid<=j0)
+		return ""
+	endif
+
+	String str
+	str = ReplaceString("\t", buf[j0,jmid]," ")
+	str = ReplaceString("  ", str," ")
+	str = ReplaceString(" ", str,";")
+	str = ReplaceString("\"", str,"")
+	return str
+End
+
+Static Function/T xmlTagKeyValsLocal(key,buf)
 	String key
 	String buf
 
