@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.34									// based on LatticeSym_6.55
+#pragma version = 7.35									// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"									// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -262,6 +262,7 @@ Static Constant xtalStructLen10 = 29014			// length of crystalStructure10 in a s
 //	with version 7.32, read xtal files that use <oxidation> rather than <valence>
 //	with version 7.33, swap overlne and digit in minus2bar
 //	with version 7.34, call SetSymOpsForSpaceGroup() in FillCrystalStructDefault() and readCrystalStructure(), and in SetSymOpsForSpaceGroup() skip if waves already there.
+//	with version 7.35, call in xml files, change <temperature> --> <T>,  and <pressure> --> <P> for both reading and writing
 
 
 //	Rhombohedral Transformation:
@@ -4343,7 +4344,7 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.SpaceGroup = str2num(xtal.SpaceGroupID)						// the IT space group number [1,230]
 	String SpaceGroupID = xtal.SpaceGroupID								// local string for convienence
 
-	// process the cell group: lattice constants, Pressure, Temperature, alphaT
+	// process the cell group: lattice constants, P, T, alphaT
 	String cell = XMLtagContents("cell",cif)							// cell group
 	String unit
 	xtal.a = str2num(XMLtagContents("a",cell))
@@ -4367,10 +4368,18 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	xtal.gam = ConvertAngleUnits(xtal.gam, unit, "degree", defaultUnit="degree")
 
 	xtal.alphaT = str2num(XMLtagContents("alphaT",cell))
-	Variable Temperature = str2num(XMLtagContents("temperature",cell))
-	unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
-	unit = SelectString(strlen(unit),"C",unit)							// default Temperature units are C
-	xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
+
+	Variable Temperature = str2num(XMLtagContents("T",cell))
+	if (numtype(Temperature)==0)
+		unit = StringByKey("unit", XMLattibutes2KeyList("T",cell),"=")
+	else
+		Temperature = str2num(XMLtagContents("temperature",cell))
+		unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cell),"=")
+	endif
+	if (numtype(Temperature)==0)
+		unit = SelectString(strlen(unit),"C",unit)					// default Temperature units are C
+		xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
+	endif
 
 	String expansion = XMLtagContents("thermalExpansion",cell)
 	xtal.NL_L = 0
@@ -4396,11 +4405,17 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 		endif
 	endif
 
-	Variable Pressure = str2num(XMLtagContents("pressure",cif))
+	Variable Pressure = str2num(XMLtagContents("P",cif))
 	if (numtype(Pressure)==0)
+		unit = StringByKey("unit", XMLattibutes2KeyList("P",cif),"=")
+	else 
+		Pressure = str2num(XMLtagContents("pressure",cif))
 		unit = StringByKey("unit", XMLattibutes2KeyList("pressure",cif),"=")
+	endif
+	if (numtype(Pressure)==0)
 		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1000)	// internally I use Pa, but default input is kPa
 	endif
+
 	xtal.Unconventional00=NaN;  xtal.Unconventional01=NaN;  xtal.Unconventional02=NaN	// transform matrix for an unconventional unit cel
 	xtal.Unconventional10=NaN;  xtal.Unconventional11=NaN;  xtal.Unconventional12=NaN	// default to a conventional cell
 	xtal.Unconventional20=NaN;  xtal.Unconventional21=NaN;  xtal.Unconventional22=NaN
@@ -4414,18 +4429,6 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 			xtal.Unconventional20 = u20;	xtal.Unconventional21 = u21;	xtal.Unconventional22 = u22
  		endif
 	endif
-
-//	Variable Pressure = str2num(XMLtagContents("pressure",cif))
-//	if (numtype(Pressure)==0)
-//		unit = StringByKey("unit", XMLattibutes2KeyList("Pressure",cif),"=")
-//		xtal.Pressure = Pressure * ConvertUnits2Pascal(unit,defaultP=1)
-//	endif
-//	if (numtype(xtal.Temperature))
-//		Temperature = str2num(XMLtagContents("temperature",cif))
-//		unit = StringByKey("unit", XMLattibutes2KeyList("temperature",cif),"=")
-//		unit = SelectString(strlen(unit),"C",unit)						// default Temperature units are C
-//		xtal.Temperature = ConvertTemperatureUnits(Temperature,unit,"C")
-//	endif
 
 	// process the various information: desc, formula
 	str = XMLtagContents("chemical_name_common",cif)
@@ -4791,7 +4794,7 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		cif += "\t\t<volume>"+num2StrFull(xtal.Vc)+"</volume>"+NL
 	endif
 	if (xtal.Pressure > 0)
-		cif += "\t\t<pressure unit=\"Pa\">"+num2istr(xtal.Pressure)+"</pressure>"+NL
+		cif += "\t\t<P unit=\"Pa\">"+num2istr(xtal.Pressure)+"</P>"+NL
 	endif
 	if (numtype(xtal.Temperature)==0)
 		Variable Temperature = xtal.Temperature
@@ -4800,7 +4803,7 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 			Tunits = "K"
 			Temperature = ConvertTemperatureUnits(Temperature,"C","K")
 		endif
-		sprintf str, "<temperature unit=\"%s\">%s</temperature>",Tunits,num2StrFull(Temperature)
+		sprintf str, "<T unit=\"%s\">%s</T>",Tunits,num2StrFull(Temperature)
 		cif += "\t\t"+str+NL
 	endif
 	Variable alphaT = xtal.alphaT
@@ -4997,7 +5000,7 @@ Static Function/T convertOneXTL2XML(xtl,NL)	// read in the xtl file, returns str
 	cif += "\t\t<gamma>"+num2StrFull(gam)+"</gamma>"+NL
 	// cif += "\t\t<volume>"+num2StrFull(volume)+"</volume>"
 	if (numtype(temperature)==0)
-		cif += "\t\t<temperature unit=\"C\">"+num2StrFull(temperature)+"</temperature>"+NL
+		cif += "\t\t<T unit=\"C\">"+num2StrFull(temperature)+"</T>"+NL
 	endif
 	if (numtype(alphaT)==0)
 		cif += "\t\t<alphaT>"+num2StrFull(alphaT)+"</alphaT>"

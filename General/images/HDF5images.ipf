@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 0.35
+#pragma version = 0.36
 #pragma ModuleName=HDF5images
 
 // Dec 12, 2009, version 0.200		Added support for multiple images in one HDF5 file
@@ -15,6 +15,7 @@
 //	Apr 11, 2016, version 0.34		renamed HDF5DataInfo to HDF5DataInfoLaueGo
 //	Jan 12, 2017, version 0.35		also from /entry1/user, read:  {email, proposal, phone, affiliation, badge}
 //	Apr 26, 2018, version 0.36		fixed multibyte writing problem
+//	Jun  4, 2021, version 0.36		with Igor 9, change HDF5DataInfoLaueGo --> HDF5DataInfo (now in built in to Igor)
 
 Static Constant SKIP_FIRST_N = 2		// skip the first SKIP_FIRST_N points in a vector
 
@@ -33,6 +34,7 @@ Strconstant HDF5_MetaUnits ="X1:µm;Y1:µm;Z1:µm;H1:µm;F1:µm;X2:µm;Y2:µm;Z2:µm;H2:
 Static Constant H5S_MAX_RANK = 32
 Static Constant kHDF5DataInfoVersion = 1000		// 1000 means 1.000.
 //Static Structure HDF5DataInfo					// Use with HDF5DatasetInfo and HDF5AttributeInfo functions
+#if IgorVersion() < 9
 Structure HDF5DataInfoLaueGo			//rxadd
 	// Input fields (inputs to HDF5 XOP)
 	uint32 version							// Must be set to kHDF5DataInfoVersion
@@ -57,7 +59,7 @@ Static Function InitHDF5DataInfo(di)		// Sets input fields.
 	di.version = kHDF5DataInfoVersion
 	di.structName = "HDF5DataInfo"
 End
-
+#endif
 
 Function/S LoadHDF5imageFile(fName,[extras])
 	String fName													// fully qualified name of file to open
@@ -89,10 +91,14 @@ Function/S LoadHDF5imageFile(fName,[extras])
 		return ""
 	endif
 
-	STRUCT HDF5DataInfoLaueGo di	// Defined in HDF5 Browser.ipf.
+#if IgorVersion() < 9
+	STRUCT HDF5DataInfoLaueGo di
+#else
+	STRUCT HDF5DataInfo di			// Defined in HDF5 Browser.ipf.
+#endif
 	InitHDF5DataInfo(di)			// Initialize structure.
 	HDF5OpenFile/R f as fName
-	HDF5DatasetInfo(f,"/entry1/data/data",0,di)
+	Variable dummy = HDF5DatasetInfo(f,"/entry1/data/data",0,di)
 	HDF5CloseFile f
 	Variable nx,ny,Nslices, ndims=di.ndims
 	if (ndims!=3 && ndims!=2)		// must be dim 2 or 3
@@ -462,9 +468,13 @@ Function/T ReadHDF5header(fName,[extras])
 		return ""
 	endif
 
+#if IgorVersion() < 9
 	STRUCT HDF5DataInfoLaueGo di	// Defined in HDF5 Browser.ipf.
+#else
+	STRUCT HDF5DataInfo di	// Defined in HDF5 Browser.ipf.
+#endif
 	InitHDF5DataInfo(di)			// Initialize structure.
-	HDF5DatasetInfo(f,"/entry1/data/data",0,di)
+	Variable dummy = HDF5DatasetInfo(f,"/entry1/data/data",0,di)
 	Variable Nslices = (di.ndims == 3) ? di.dims[0] : 0	// 0 means 2-d data
 	if (Nslices)
 		wnote= ReplaceNumberByKey("Nslices",wnote,round(Nslices),"=")

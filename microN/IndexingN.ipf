@@ -2,7 +2,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 5.04
+#pragma version = 5.05
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -7819,6 +7819,7 @@ Function/T FillIndexParametersPanel(strStruct,hostWin,left,top)
 
 	NewDataFolder/O root:Packages:micro				// ensure that the needed data folders exist
 	NewDataFolder/O root:Packages:micro:Index
+	NewDataFolder/O root:Packages:Lattices:PanelValues
 	String/G root:Packages:Lattices:PanelValues:desc
 	Variable/G root:Packages:micro:Index:h_e
 	Variable/G root:Packages:micro:Index:k_e

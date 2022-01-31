@@ -19,4 +19,4 @@ echo " "
 echo "**********  Not doing a diff, this is the main directory for xtal files.  **********"
 echo " "
 echo " "
-diff -x *.ipf -x *.pxp -x "checkAll.command" -x ".DS_Store" --brief -r . /Users/tischler/Documents/materials/standard\ xtals
+diff -x *.ipf -x *.pxp -x *.py -x "checkAll.command" -x ".DS_Store" --brief -r . /Users/tischler/Documents/materials/standard\ xtals
