@@ -5,8 +5,10 @@
 	<chemical_formula>FeS2</chemical_formula>
 
 	<space_group>
+		<id>205</id>
 		<IT_number>205</IT_number>
 		<H-M>Pa-3</H-M>
+		<Hall>-P 2ac 2ab 3</Hall>
 	</space_group>
 
 	<cell>

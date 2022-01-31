@@ -4,8 +4,10 @@
 	<chemical_name_common>Titanium hcp</chemical_name_common>
 
 	<space_group>
+		<id>194</id>
 		<IT_number>194</IT_number>
 		<H-M>P63/mmc</H-M>
+		<Hall>-P 6c 2c</Hall>
 	</space_group>
 
 	<cell>

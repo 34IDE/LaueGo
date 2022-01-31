@@ -27,8 +27,8 @@
 	</cell>
 
 	<atom_site>
-		<label>Si1</label>
-		<symbol>Si</symbol>
+		<label>Al</label>
+		<symbol>Al</symbol>
 		<fract>0.0095 0.1842 0.2247</fract>
 		<occupancy>0.5</occupancy>
 		<WyckoffSymbol>j</WyckoffSymbol>
@@ -40,8 +40,8 @@
 		<U23 unit="Å^2">-0.0019</U23>
 	</atom_site>
 	<atom_site>
-		<label>Al</label>
-		<symbol>Al</symbol>
+		<label>Si1</label>
+		<symbol>Si</symbol>
 		<fract>0.0095 0.1842 0.2247</fract>
 		<occupancy>0.5</occupancy>
 		<WyckoffSymbol>j</WyckoffSymbol>
@@ -92,6 +92,7 @@
 		<U13 unit="Å^2">0.00697</U13>
 		<U23 unit="Å^2">0.00038</U23>
 	</atom_site>
+
 	<atom_site>
 		<label>O_A(1)</label>
 		<symbol>O</symbol>
@@ -157,14 +158,15 @@
 	<bond_chemical unit="nm" n0="Si2" n1="O_D">0.161274</bond_chemical>
 	<bond_chemical unit="nm" n0="Si2" n1="O_C">0.16168</bond_chemical>
 	<bond_chemical unit="nm" n0="Si2" n1="O_A(2)">0.162947</bond_chemical>
+
 	<bond_chemical unit="nm" n0="Al" n1="O_B">0.166099</bond_chemical>
-	<bond_chemical unit="nm" n0="Si1" n1="O_B">0.166099</bond_chemical>
-	<bond_chemical unit="nm" n0="Si1" n1="O_A(1)">0.166502</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Si1" n1="O_B">0.166099</bond_chemical> -->
 	<bond_chemical unit="nm" n0="Al" n1="O_A(1)">0.166502</bond_chemical>
-	<bond_chemical unit="nm" n0="Si1" n1="O_D">0.167165</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Si1" n1="O_A(1)">0.166502</bond_chemical> -->
 	<bond_chemical unit="nm" n0="Al" n1="O_D">0.167165</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Si1" n1="O_D">0.167165</bond_chemical> -->
 	<bond_chemical unit="nm" n0="Al" n1="O_C">0.167329</bond_chemical>
-	<bond_chemical unit="nm" n0="Si1" n1="O_C">0.167329</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Si1" n1="O_C">0.167329</bond_chemical> -->
 
 	<citation>
 		<title>Neutron diffraction refinement of an ordered orthoclase structure</title>

@@ -1,42 +1,92 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>BaTiO3 ferroelectric compound</chemical_name_common>
+	<program>BraggPanel</program>
+	<date>2021-12-28T17:19:38.590Z</date>   <!-- Tuesday, December 28, 2021 at 12:19:38 PM Eastern Standard Time -->
+	<chemical_name_common>BaTiO3 (ferroelectric)</chemical_name_common>
+	<chemical_formula>BaTiO3</chemical_formula>
+	<database_code db="COD">1513252</database_code>
+
 	<space_group>
 		<id>99</id>
 		<IT_number>99</IT_number>
-		<H-M>P4mm</H-M>
+		<system>tetragonal</system>
+		<H-M>P 4 m m</H-M>
+		<Hall>P 4 -2</Hall>
+		<Schoenflies>C4v^1</Schoenflies>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.39947</a>
-		<b unit="nm">0.39947</b>
-		<c unit="nm">0.40336</c>
+		<a unit="nm">0.39905</a>
+		<b unit="nm">0.39905</b>
+		<c unit="nm">0.40412</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>1</formula_units>
+		<T unit="C">26.85</T>
 	</cell>
+
 	<atom_site>
 		<label>Ba</label>
 		<symbol>Ba</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<Uiso unit="Å^2">0.0073</Uiso>
+		<U11 unit="Å^2">0.0055</U11>
+		<U22 unit="Å^2">0.0055</U22>
+		<U33 unit="Å^2">0.0108</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0</U23>
 	</atom_site>
+
 	<atom_site>
 		<label>Ti</label>
 		<symbol>Ti</symbol>
-		<fract>0.5 0.5 0.512</fract>
+		<fract>1/2 1/2 0.476</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<Uiso unit="Å^2">0.005</Uiso>
 	</atom_site>
-	<atom_site>
-		<label>O1</label>
-		<symbol>O</symbol>
-		<fract>0.5 0.5 0.023</fract>
-	</atom_site>
+
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
-		<fract>0.5 0 0.486</fract>
+		<fract>0 1/2 0.533</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Uiso unit="Å^2">0.007</Uiso>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Ti" n1="O1">0.1972 0.2061</bond_chemical>
-	<bond_chemical unit="nm" n0="Ti" n1="O2">0.2000</bond_chemical>
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>1/2 1/2 0.043</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<Uiso unit="Å^2">0.005</Uiso>
+	</atom_site>
 
+	<bond_chemical unit="nm" n0="Ti" n1="O1">0.174984</bond_chemical>
+	<bond_chemical unit="nm" n0="Ti" n1="O2">0.20085</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Ba" n1="O2">0.27464 0.293608</bond_chemical>
+	<bond_chemical unit="nm" n0="Ba" n1="O1">0.282706</bond_chemical> -->
+
+	<citation doi="10.1107/S090904950900675X">
+		<title>X-ray diffractometry for the structure determination of a submicrometre single powder grain</title>
+		<journal>Journal of Synchrotron Radiation</journal>
+		<volume>16</volume>
+		<year>2009</year>
+		<pages>352 357</pages>
+		<author>Nobuhiro Yasuda</author>
+		<author>Haruno Murayama</author>
+		<author>Yoshimitsu Fukuyama</author>
+		<author>Jungeun Kim</author>
+		<author>Shigeru Kimura</author>
+		<author>Koshiro Toriumi</author>
+		<author>Yoshihito Tanaka</author>
+		<author>Yutaka Moritomo</author>
+		<author>Yoshihiro Kuroiwa</author>
+		<author>Kenichi Kato</author>
+		<author>Hitoshi Tanaka</author>
+		<author>Masaki Takata</author>
+	</citation>
 </cif>

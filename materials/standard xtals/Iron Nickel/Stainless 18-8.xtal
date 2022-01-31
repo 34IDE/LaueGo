@@ -5,14 +5,16 @@
 	<comment>18%Cr  8%Ni  74%Fe  by weight, lattice constant is approximate.</comment>
 
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.3592</a>
-		<b unit="nm">0.3592</b>
-		<c unit="nm">0.3592</c>
+		<a unit="nm">0.35918</a>
+		<b unit="nm">0.35918</b>
+		<c unit="nm">0.35918</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
@@ -36,4 +38,19 @@
 		<occupancy unit="wt%">8</occupancy>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<citation doi="10.1590/S1516-14392009000200011">
+		<title>A Comparative Study of Mechanical and Tribological Properties of AISI-304 and AISI-316 Submitted to Glow Discharge Nitriding</title>
+		<journal>Materials Research</journal>
+		<volume>12</volume>
+		<year>2009</year>
+		<pages>173 180</pages>
+		<author>Fabiana Cristina Nascimento</author>
+		<author>Carlos Eugênio Foerster</author>
+		<author>Silvio Luiz Rutz da Silva</author>
+		<author>Carlos Mauricio Lepienski</author>
+		<author>Carlos José de Mesquita Siqueira</author>
+		<author>Clodomiro Alves Junior</author>
+		<comment>Commercial sheets of AISI 304 (Ni 8.63%, Cr 16.04%, C 0.047%, Si 0.48%, Mn 1.37%, S 0.005%, Mo 0.09%, P 0.029% weight, with Fe being the balance)</comment>
+	</citation>
 </cif>

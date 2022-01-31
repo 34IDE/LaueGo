@@ -24,7 +24,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<formula_units>2</formula_units>
-		<temperature unit="K">98</temperature>
+		<T unit="K">98</T>
 	</cell>
 
 	<atom_site>

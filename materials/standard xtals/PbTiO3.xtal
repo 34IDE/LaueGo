@@ -4,8 +4,10 @@
 	<chemical_name_common>Lead Titanate</chemical_name_common>
 
 	<space_group>
+		<id>99</id>
 		<IT_number>99</IT_number>
 		<H-M>P4mm</H-M>
+		<Hall>P 4 -2</Hall>
 	</space_group>
 
 	<cell>
@@ -45,4 +47,15 @@
 	<bond_chemical unit="nm" n0="Ti" n1="O1">0.2075</bond_chemical>
 	<bond_chemical unit="nm" n0="Ti" n1="O2">0.1948</bond_chemical>
 
+	<citation doi="10.1088/0957-4484/18/37/375603">
+		<title>Ferroelectric self-assembled PbTiO3 perovskite nanostructures onto (100)SrTiO3 substrates from a novel microemulsion aided sol–gel preparation method</title>
+		<journal>Nanotechnology</journal>
+		<volume>18</volume>
+		<author>M.L. Calzada</author>
+		<author>M. Torres</author>
+		<author>L.E. Fuentes-Cobas</author>
+		<author>A Mehta</author>
+		<author>J. Ricot</author>e
+		<author>L. Pardo</author>
+	</citation>
 </cif>

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
-	<chemical_name_common>Pu-&#x03B2;</chemical_name_common>
+	<chemical_name_common>Pu-&#x03B1;</chemical_name_common>
 	<space_group>
+		<id>11:b</id>
 		<IT_number>11</IT_number>
+		<H-M>P 1 2₁/m 1</H-M>
+		<Hall>-P 2yb</Hall>
 	</space_group>
 	<cell>
 		<a unit="nm">0.6183</a>
@@ -12,18 +15,50 @@
 		<alpha>90</alpha>
 		<beta>101.79</beta>
 		<gamma>90</gamma>
+		<T unit="C">21</T>
+		<alphaT>60e-06</alphaT>			<!-- a = ao*(1+alphaT*(TempC-21)) -->
 	</cell>
+
 	<atom_site>
-		<label>Pu</label>
-		<symbol>Pu</symbol>
-		<fract>0.345 0.25 0.152</fract>
+		<label>PuI</label>
+		<fract>0.345 0.25 0.162</fract>
 	</atom_site>
-	<citation>
-		<author>Zachariasen</author>
-		<journal>Acta Cryst.</journal>
+	<atom_site>
+		<label>PuII</label>
+		<fract>0.767 0.25 0.168</fract>
+	</atom_site>
+	<atom_site>
+		<label>PuIII</label>
+		<fract>0.128 0.25 0.340</fract>
+	</atom_site>
+	<atom_site>
+		<label>PuIV</label>
+		<fract>0.657 0.25 0.457</fract>
+	</atom_site>
+	<atom_site>
+		<label>PuV</label>
+		<fract>0.025 0.25 0.618</fract>
+	</atom_site>
+	<atom_site>
+		<label>PuVI</label>
+		<fract>0.473 0.25 0.653</fract>
+	</atom_site>
+	<atom_site>
+		<label>PuVII</label>
+		<fract>0.328 0.25 0.926</fract>
+	</atom_site>
+	<atom_site>
+		<label>PuVIII</label>
+		<fract>0.869 0.25 0.894</fract>
+	</atom_site>
+
+	<citation doi="10.1107/S0365110X63002012">
+		<title>The Crystal Structure of Alpha Plutonium Metal</title>
+		<journal>Acta Crystallographica</journal>
 		<year>1963</year>
 		<volume>16</volume>
 		<pages>777 783</pages>
+		<author>W.H. Zachariasen</author>
+		<author>F.H. Ellinger</author>
 	</citation>
-	<!-- M.P. 914K, Cell 377K, 6.214, 4.852, 10.989, 90,101.75, 90 -->
 </cif>

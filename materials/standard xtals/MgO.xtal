@@ -19,8 +19,8 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">24</temperature>
-		<pressure unit="atm">1</pressure>
+		<T unit="C">24</T>
+		<P unit="atm">1</P>
 	</cell>
 
 	<atom_site>

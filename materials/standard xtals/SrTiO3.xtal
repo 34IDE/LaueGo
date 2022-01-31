@@ -17,9 +17,9 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">20</temperature>
+		<T unit="C">20</T>
 		<thermalExpansion>
-			<T unit="K">293 400 500 600 700 800 900 1000 1100 1200</T>
+			<Tpt unit="K">293 400 500 600 700 800 900 1000 1100 1200</Tpt>
 			<dL_L>0 0.00106 0.00212 0.0032 0.0043 0.00545 0.0066 0.0078 0.009 0.01025</dL_L>
 		</thermalExpansion>
 	</cell>

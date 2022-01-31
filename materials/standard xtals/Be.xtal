@@ -9,7 +9,7 @@
 		<system>hexagonal</system>
 		<H-M>P 63/m m c</H-M>
 		<Hall>-P 6c 2c</Hall>
-		<temperature unit="C">25</temperature>
+		<T unit="C">25</T>
 	</space_group>
 
 	<cell>

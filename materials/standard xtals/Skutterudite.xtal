@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-12-31T19:30:36.558Z</date>   <!-- Friday, December 31, 2021 at 2:30:36 PM Eastern Standard Time -->
+	<chemical_name_common>Skutterudite</chemical_name_common>
+	<chemical_formula>CoAs3</chemical_formula>
+	<database_code db="COD">2106188</database_code>
+
+	<space_group>
+		<id>204</id>
+		<IT_number>204</IT_number>
+		<system>cubic</system>
+		<H-M>I m -3</H-M>
+		<Hall>-I 2 2 3</Hall>
+		<Schoenflies>Th^5</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.8195</a>
+		<b unit="nm">0.8195</b>
+		<c unit="nm">0.8195</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>8</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Co</label>
+		<symbol>Co</symbol>
+		<fract>1/4 1/4 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>As</label>
+		<symbol>As</symbol>
+		<fract>0 0.3431 0.1503</fract>
+		<WyckoffSymbol>g</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Co" n1="As">0.233389</bond_chemical>
+<!--	<bond_chemical unit="nm" n0="As" n1="As">0.246342 0.257159</bond_chemical> -->
+<!--	<bond_chemical unit="nm" n0="As" n1="As">0.246342 0.257159 0.314149</bond_chemical> -->
+
+	<citation>
+		<title>The refinement of the crystal structure of skutterudite, Co As3</title>
+		<journal>Acta Crystallographica B (24,1968-38,1982)</journal>
+		<volume>27</volume>
+		<year>1971</year>
+		<pages>2288 2289</pages>
+		<author>N. Mandel</author>
+		<author>J. Donohue</author>
+		<ASTM>ACBCAR</ASTM>
+	</citation>
+</cif>

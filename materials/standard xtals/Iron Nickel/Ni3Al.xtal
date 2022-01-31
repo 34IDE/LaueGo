@@ -3,25 +3,42 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Ni3Al</chemical_name_common>
 	<space_group>
+		<id>221</id>
 		<IT_number>221</IT_number>
 		<H-M>Pm-3m</H-M>
+		<Hall>-P 4 2 3</Hall>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.3572</a>
-		<b unit="nm">0.3572</b>
-		<c unit="nm">0.3572</c>
+		<a unit="nm">0.35718</a>
+		<b unit="nm">0.35718</b>
+		<c unit="nm">0.35718</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 	</cell>
+
 	<atom_site>
 		<label>Ni</label>
 		<symbol>Ni</symbol>
 		<fract>0.5 0.5 0.0</fract>
 	</atom_site>
+
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
 		<fract>0.0 0.0 0.0</fract>
 	</atom_site>
+
+	<citation doi="10.1088/0953-8984/1/32/004">
+		<title>The high-temperature thermal expansion of Ni3Al measured by X-ray diffraction and dilation methods</title>
+		<journal>Journal of Physics: Condensed Matter</journal>
+		<year>1989</year>
+		<volume>1</volume>
+		<pages>5357 5361</pages>
+		<author>P.V. Mohan Rao</author>
+		<author>S.V. Suryanarayana</author>
+		<author>K. Satyanarayana Murthy</author>
+		<author>S.V. Nagender Naidu</author>
+	</citation>
 </cif>

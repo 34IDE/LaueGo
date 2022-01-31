@@ -25,7 +25,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<formula_units>4</formula_units>
-		<pressure unit="GPa">10</pressure>
+		<P unit="GPa">10</P>
 	</cell>
 
 	<atom_site>

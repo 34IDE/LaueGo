@@ -15,7 +15,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="K">1663</temperature>
+		<T unit="K">1663</T>
 	</cell>
 	<atom_site>
 		<label>Fe</label>

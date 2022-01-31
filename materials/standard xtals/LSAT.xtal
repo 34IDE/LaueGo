@@ -22,7 +22,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<formula_units>1</formula_units>
-		<temperature unit="C">22.5</temperature>
+		<T unit="C">22.5</T>
 		<!-- a = 3.8603 + 2.246e-5 * T + 1.783e-8 * T^2 - 5.076e-12 * T^3 (Å),  at T=22.5C = 3.86837 Å -->
 	</cell>
 

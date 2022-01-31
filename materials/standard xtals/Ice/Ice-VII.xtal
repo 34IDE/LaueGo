@@ -24,8 +24,8 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<formula_units>2</formula_units>
-		<temperature unit="K">223</temperature>
-		<pressure unit="GPa">2.5</pressure>	
+		<T unit="K">223</T>
+		<P unit="GPa">2.5</P>	
 	</cell>
 
 	<atom_site>

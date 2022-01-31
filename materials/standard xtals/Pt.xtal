@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-12-27T19:16:54.622Z</date>   <!-- Monday, December 27, 2021 at 2:16:54 PM Eastern Standard Time -->
 	<chemical_name_common>Platinum</chemical_name_common>
+	<chemical_formula>Pt</chemical_formula>
+	<database_code db="COD">9008480</database_code>
+
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<system>cubic</system>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
+		<Schoenflies>Oh^5</Schoenflies>
 	</space_group>
+
 	<cell>
 		<a unit="nm">0.39231</a>
 		<b unit="nm">0.39231</b>
@@ -13,11 +23,23 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Pt</label>
 		<symbol>Pt</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 		<DebyeTemperature unit="K">240</DebyeTemperature>
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Cubic closest packed, ccp, structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
 </cif>

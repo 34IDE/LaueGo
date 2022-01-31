@@ -13,7 +13,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<temperature unit="C">86.85</temperature>
+		<T unit="C">86.85</T>
 	</cell>
 	<atom_site>
 		<label>V</label>

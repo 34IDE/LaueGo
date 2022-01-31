@@ -20,7 +20,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">20</temperature>
+		<T unit="C">20</T>
 		<formula_units>4</formula_units>
 	</cell>
 

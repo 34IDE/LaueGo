@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>Bragg Law</program>
+	<date>2021-12-31T02:08:35.599Z</date>   <!-- Thursday, December 30, 2021 at 9:08:35 PM Eastern Standard Time -->
+	<chemical_name_common>Beryl</chemical_name_common>
+	<chemical_formula>Be3Al2Si6O18</chemical_formula>
+	<database_code db="COD">9001018</database_code>
+
+	<space_group>
+		<id>192</id>
+		<IT_number>192</IT_number>
+		<system>hexagonal</system>
+		<H-M>P 6/m c c</H-M>
+		<Hall>-P 6 2c</Hall>
+		<Schoenflies>D6h^2</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.9208</a>
+		<b unit="nm">0.9208</b>
+		<c unit="nm">0.9188</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>2</formula_units>
+ 		<P unit="kbar">0.001</P>
+ </cell>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.4985 0.1456 0.1453</fract>
+		<WyckoffSymbol>m</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00861</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>Si</label>
+		<symbol>Si</symbol>
+		<fract>0.3876 0.1159 0</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00557</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.3103 0.2369 0</fract>
+		<WyckoffSymbol>l</WyckoffSymbol>
+		<Uiso unit="Å^2">0.01039</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>Al</label>
+		<symbol>Al</symbol>
+		<fract>1/3 2/3 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00646</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>Be</label>
+		<symbol>Be</symbol>
+		<fract>1/2 0 1/4</fract>
+		<WyckoffSymbol>f</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00722</Uiso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Si" n1="O1">0.159406 0.159534</bond_chemical>
+	<bond_chemical unit="nm" n0="O2" n1="Si">0.161882</bond_chemical>
+	<bond_chemical unit="nm" n0="O2" n1="Be">0.165576</bond_chemical>
+	<bond_chemical unit="nm" n0="O2" n1="Al">0.190652</bond_chemical>
+
+	<citation>
+		<title>High-pressure crystal chemistry of beryl (Be3Al2Si6O18) and euclase (BeAlSiO4OH)</title>
+		<journal>American Mineralogist</journal>
+		<volume>71</volume>
+		<year>1986</year>
+		<pages>977 984</pages>
+		<author>R.M. Hazen</author>
+		<author>A.Y. Au</author>
+		<author>L.W. Finger</author>
+	</citation>
+</cif>

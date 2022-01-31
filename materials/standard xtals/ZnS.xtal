@@ -5,8 +5,10 @@
 	<database_code db="amcsd">0000110</database_code>
 
 	<space_group>
+		<id>216</id>
 		<IT_number>216</IT_number>
 		<H-M>F -4 3 m</H-M>
+		<Hall>F -4 2 3</Hall>
 	</space_group>
 
 	<cell>

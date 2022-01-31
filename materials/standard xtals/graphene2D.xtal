@@ -19,4 +19,15 @@
 	</atom_site>
 	<bond_chemical unit="nm" n0="C" n1="C">0.142</bond_chemical>
 	<!--   bond length is a*sqrt(3) -->
+	
+	<citation doi="10.1080/14686996.2018.1494493">	
+		<journal>Science and Technology of Advanced Materials</journal>
+		<year>2018</year>
+		<volume>19</volume>
+		<pages>613 648</pages>
+		<author>Gao Yang</author>
+		<author>Lihua Li</author>
+		<author>Wing Bun Lee</author>
+		<author>Man Cheung Ng</author>		
+	</citation>		
 </cif>

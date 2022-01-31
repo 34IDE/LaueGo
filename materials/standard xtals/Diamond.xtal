@@ -16,7 +16,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">25</temperature>
+		<T unit="C">25</T>
 		<alphaT>2.6e-06</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>
 

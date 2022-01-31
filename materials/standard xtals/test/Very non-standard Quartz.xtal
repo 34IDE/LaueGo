@@ -28,8 +28,8 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<temperature unit="K">298</temperature>
-		<pressure unit="atm">1</pressure>
+		<T unit="K">298</T>
+		<P unit="atm">1</P>
 	</cell>
 
 	<atom_site>

@@ -10,7 +10,7 @@
 		<H-M>P 32 2 1</H-M>
 	</space_group>
 	<database_code db="ICSD">174</database_code>
-	<temperature unit="K">298</temperature>
+	<T unit="K">298</T>
 	<cell>
 		<A unit="nm">0.49134</a>
 		<b unit="nm">0.49134</b>

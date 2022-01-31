@@ -1,27 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-12-28T16:47:34.548Z</date>   <!-- Tuesday, December 28, 2021 at 11:47:34 AM Eastern Standard Time -->
 	<chemical_name_common>NiAl ordered B2</chemical_name_common>
+	<chemical_formula>NiAl</chemical_formula>
+	<database_code db="COD">9008802</database_code>
+
 	<space_group>
+		<id>221</id>
 		<IT_number>221</IT_number>
-		<H-M>Pm-3m</H-M>
+		<system>cubic</system>
+		<H-M>P m -3 m</H-M>
+		<Hall>-P 4 2 3</Hall>
+		<Schoenflies>Oh^1</Schoenflies>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.2887</a>
-		<b unit="nm">0.2887</b>
-		<c unit="nm">0.2887</c>
+		<a unit="nm">0.2881</a>
+		<b unit="nm">0.2881</b>
+		<c unit="nm">0.2881</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>1</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Ni</label>
 		<symbol>Ni</symbol>
-		<fract>0 0 0</fract>
+		<fract>1/2 1/2 1/2</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>Al</label>
 		<symbol>Al</symbol>
-		<fract>0.5 0.5 0.5</fract>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Note: CsCl structure, cesium chloride structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>85 237</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
 </cif>

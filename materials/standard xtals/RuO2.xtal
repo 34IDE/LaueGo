@@ -4,8 +4,10 @@
 	<chemical_name_common>Ruthenium Oxide (Rutile)</chemical_name_common>
 
 	<space_group>
+		<id>136</id>
 		<IT_number>136</IT_number>
 		<H-M>P42/mnm</H-M>
+		<Hall>-P 4n 2n</Hall>
 	</space_group>
 
 	<cell>
@@ -16,7 +18,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<volume>0.062693244848</volume>
-		<temperature unit="C">20</temperature>
+		<T unit="C">20</T>
 	</cell>
 	<atom_site>
 		<label>Ru</label>
@@ -33,4 +35,20 @@
 
 	<bond_chemical unit="nm" n0="Ru" n1="O">0.1906 0.2006</bond_chemical>
 
+	<citation doi="10.1039/C3CE41552J">
+		<title>Oxidation triggered atomic restructures enhancing the electrooxidation activities of carbon supported platinum–ruthenium catalysts</title>
+		<journal>CrystEngComm</journal>
+		<year>2014</year>
+		<volume>16</volume>
+		<pages>10066 10079</pages>
+		<author>Po-Chun Huang</author>
+		<author>Hong-Shuo Chen</author>
+		<author>Yu-Ting Liu</author>
+		<author>I-Li Chen</author>
+		<author>Sheng-Yang Huang</author>
+		<author>Ha M. Nguyen</author>
+		<author>Kuan-Wen Wang</author>
+		<author>Chi-Chang Hu</author>
+		<author>Tsan-Yao Chen</author>
+	</citation>
 </cif>

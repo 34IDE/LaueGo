@@ -188,7 +188,7 @@
 	<bond_chemical unit="nm" n0="P" n1="O6">0.15373</bond_chemical>
 
 	<bond_chemical unit="nm" n0="U" n1="O1">0.17835</bond_chemical>
-	<bond_chemical unit="nm" n0="U" n1="O2">0.17938 0.2264</bond_chemical>
+	<bond_chemical unit="nm" n0="U" n1="O2">0.17938</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O3">0.2264</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O4">0.2275</bond_chemical>
 	<bond_chemical unit="nm" n0="U" n1="O5">0.2288</bond_chemical>

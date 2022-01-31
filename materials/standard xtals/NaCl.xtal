@@ -1,35 +1,62 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2021-12-28T16:37:53.828Z</date>   <!-- Tuesday, December 28, 2021 at 11:37:53 AM Eastern Standard Time -->
 	<chemical_name_common>Halite</chemical_name_common>
+	<chemical_formula>NaCl</chemical_formula>
+	<database_code db="COD">9003308</database_code>
 
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
-		<H-M>Fm-3m</H-M>
+		<system>cubic</system>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
+		<Schoenflies>Oh^5</Schoenflies>
 	</space_group>
 
 	<cell>
-		<a unit="pm">564.02</a>
-		<b unit="pm">564.02</b>
-		<c unit="pm">564.02</c>
+		<a unit="pm">564.01</a>
+		<b unit="pm">564.01</b>
+		<c unit="pm">564.01</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+		<T unit="C">25</T>
 	</cell>
 
 	<atom_site>
 		<label>Na</label>
 		<symbol>Na</symbol>
 		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
 		<oxidation>1</oxidation>
 	</atom_site>
+
 	<atom_site>
 		<label>Cl</label>
 		<symbol>Cl</symbol>
-		<fract>0.5 0.5 0.5</fract>
+		<fract>1/2 1/2 1/2</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
 		<oxidation>-1</oxidation>
 	</atom_site>
 
-	<bond_chemical unit="pm" n0="Na" n1="Cl">282.01</bond_chemical>
+	<bond_chemical unit="pm" n0="Na" n1="Cl">282.005</bond_chemical>
 	<!-- bond length = ao/2 -->
+
+	<citation>
+		<title>Halite-sylvite thermoelasticity Sample: msl416031, T = 25 C, P = 0.0 kbar, cell volume = 179.42 ang**3</title>
+		<journal>American Mineralogist</journal>
+		<volume>89</volume>
+		<year>2004</year>
+		<pages>204 210</pages>
+		<author>D. Walker</author>
+		<author>P.K. Verma</author>
+		<author>L.M.D. Cranswick</author>
+		<author>R.L. Jones</author>
+		<author>S.M. Clark</author>
+		<author>S. Buhre</author>
+	</citation>
 </cif>

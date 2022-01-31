@@ -3,8 +3,10 @@
 <cif version="2" dim="3">
 	<chemical_name_common>spec default</chemical_name_common>
 	<space_group>
-		<IT_number>221</IT_number>
+		<id>195</id>
+		<IT_number>195</IT_number>
 		<H-M>Pm-3m</H-M>
+		<Hall>-P 4 2 3</Hall>
 	</space_group>
 	<cell>
 		<a unit="nm">0.154</a>

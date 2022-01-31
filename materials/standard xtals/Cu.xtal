@@ -3,8 +3,10 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Copper</chemical_name_common>
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
 	<cell>
 		<a unit="nm">0.361496</a>
@@ -13,7 +15,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">22.5</temperature>
+		<T unit="C">22.5</T>
 		<alphaT>17e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>
 	<atom_site>

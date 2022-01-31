@@ -22,7 +22,7 @@
 		<alpha>90</alpha>
 		<beta>90.051</beta>
 		<gamma>90</gamma>
-		<temperature unit="K">300</temperature>
+		<T unit="K">300</T>
 	</cell>
 
 	<atom_site>

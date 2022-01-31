@@ -3,8 +3,10 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Gallium</chemical_name_common>
 	<space_group>
+		<id>64</id>
 		<IT_number>64</IT_number>
 		<H-M>Cmca</H-M>
+		<Hall>-C 2bc 2</Hall>
 	</space_group>
 	<database_code db="ICSD">43388</database_code>
 	<database_code db="COD">9008085</database_code>
@@ -17,7 +19,7 @@
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<volume>0.156759780372</volume>
-		<temperature unit="C">20</temperature>
+		<T unit="C">20</T>
 	</cell>
 
 	<atom_site>

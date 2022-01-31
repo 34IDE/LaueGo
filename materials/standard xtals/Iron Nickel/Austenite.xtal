@@ -4,8 +4,10 @@
 	<chemical_name_common>Austenite (&#x03B3;-iron)</chemical_name_common>
 	<chemical_formula>Fe</chemical_formula>
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
 	<cell>
 		<a unit="nm">0.3554</a>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>Bragg Law</program>
+	<date>2021-12-30T22:15:50.682Z</date>   <!-- Thursday, December 30, 2021 at 5:15:50 PM Eastern Standard Time -->
+	<chemical_name_common>Chrysoberyl</chemical_name_common>
+	<chemical_formula>BeAl2O4</chemical_formula>
+	<database_code db="COD">9000120</database_code>
+
+	<space_group>
+		<id>62</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P n m a</H-M>
+		<Hall>-P 2ac 2n</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.9404</a>
+		<b unit="nm">0.5476</b>
+		<c unit="nm">0.4427</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Al1</label>
+		<symbol>Al</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00092</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>Al2</label>
+		<symbol>Al</symbol>
+		<fract>0.27319 1/4 0.99405</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Uiso unit="Å^2">0.0013</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>Be</label>
+		<symbol>Be</symbol>
+		<fract>0.09294 1/4 0.43347</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00191</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.09051 1/4 0.79016</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00077</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.43343 1/4 0.24097</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00286</Uiso>
+	</atom_site>
+
+	<atom_site>
+		<label>O3</label>
+		<symbol>O</symbol>
+		<fract>0.16318 0.01718 0.2585</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<Uiso unit="Å^2">0.00177</Uiso>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="O1" n1="Be">0.157923</bond_chemical>
+	<bond_chemical unit="nm" n0="O3" n1="Be">0.163148</bond_chemical>
+	<bond_chemical unit="nm" n0="O2" n1="Be">0.168715</bond_chemical>
+	<bond_chemical unit="nm" n0="O1" n1="Al1">0.186054</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O2">0.186162</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O2">0.189237</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O3">0.189368 0.20165</bond_chemical>
+	<bond_chemical unit="nm" n0="Al1" n1="O3">0.191658</bond_chemical>
+	<bond_chemical unit="nm" n0="Al2" n1="O1">0.194061</bond_chemical>
+
+	<citation>
+		<title>Refinement of the chrysoberyl structure</title>
+		<journal>American Mineralogist</journal>
+		<volume>48</volume>
+		<year>1963</year>
+		<pages>804 810</pages>
+		<author>E.F. Farrell</author>
+		<author>J.H. Fang</author>
+		<author>R.E. Newnham</author>
+	</citation>
+</cif>

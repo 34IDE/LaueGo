@@ -4,8 +4,10 @@
 	<chemical_name_common>Aluminum</chemical_name_common>
 
 	<space_group>
+		<id>225</id>
 		<IT_number>225</IT_number>
 		<H-M>Fm-3m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
 
 	<cell>
@@ -15,7 +17,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">22.5</temperature>
+		<T unit="C">22.5</T>
 		<alphaT>24e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
 	</cell>
 

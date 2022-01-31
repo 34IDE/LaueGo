@@ -28,7 +28,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<temperature unit="K">298</temperature>
+		<T unit="K">298</T>
 	</cell>
 
 	<atom_site>
@@ -96,7 +96,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>120</gamma>
-		<temperature unit="K">298</temperature>
+		<T unit="K">298</T>
 	</cell>
 	<atom_site>
 		<label>Si</label>

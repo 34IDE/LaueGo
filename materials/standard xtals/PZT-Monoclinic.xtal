@@ -18,7 +18,7 @@
 		<alpha>90</alpha>
 		<beta>90.498</beta>
 		<gamma>90</gamma>
-		<temperature unit="K">20</temperature>
+		<T unit="K">20</T>
 	</cell>
 	<atom_site>
 		<label>Pb</label>

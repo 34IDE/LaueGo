@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-01-12T21:25:44.212Z</date>   <!-- Wednesday, January 12, 2022 at 3:25:44 PM Central Standard Time -->
+	<chemical_formula>CuAu</chemical_formula>
+	<database_code db="COD">1510112</database_code>
+
+	<space_group>
+		<id>225</id>
+		<IT_number>225</IT_number>
+		<system>cubic</system>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
+		<Schoenflies>Oh^5</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.3872</a>
+		<b unit="nm">0.3872</b>
+		<c unit="nm">0.3872</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Au</label>
+		<fract>0 0 0</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Cu</label>
+		<fract>0 0 0</fract>
+		<occupancy>0.5</occupancy>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<citation doi="10.1016/0925-8388(94)90037-X">
+		<title>Thermal expansion of alpha-Au Cu, Au Cu(II) and Au Cu(I) at low temperatures</title>
+		<journal>Journal of Alloys and Compounds</journal>
+		<volume>206</volume>
+		<year>1994</year>
+		<pages>211 213</pages>
+		<ASTM>JALCOM</ASTM>
+		<author>Ignacy Uszyński</author>
+		<author>Jan Janczak</author>
+		<author>Ryszard Kubiak</author>
+	</citation>
+</cif>

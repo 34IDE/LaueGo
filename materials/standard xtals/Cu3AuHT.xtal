@@ -17,7 +17,7 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
-		<temperature unit="C">600</temperature>
+		<T unit="C">600</T>
 	</cell>
 
 	<atom_site>

@@ -25,8 +25,8 @@
 		<beta>113.1</beta>
 		<gamma>113.1</gamma>
 		<formula_units>12</formula_units>
-		<temperature unit="C">-75</temperature>
-		<pressure unit="GPa">0.3</pressure>
+		<T unit="C">-75</T>
+		<P unit="GPa">0.3</P>
 	</cell>
 
 	<atom_site>
