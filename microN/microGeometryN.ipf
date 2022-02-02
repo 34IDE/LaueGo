@@ -1,7 +1,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=microGeo
 #pragma IgorVersion = 6.11
-#pragma version = 2.05
+#pragma version = 2.06
 #include  "LatticeSym", version>=4.29
 //#define MICRO_VERSION_N
 //#define MICRO_GEOMETRY_EXISTS
@@ -100,13 +100,13 @@ End
 // =================================== Start of micro Panel ===================================
 
 Function MakeMicroPanel(tab)							// makes the main microPanel
-	Variable tab
-	if (WinType("micropanel")==7)
+	Variable tab											// starting tab, must be in [0,4]
+	if (WinType("micropanel")==7)					// 7 means Panel exists, so just set the tab
 		DoWindow/F microPanel
 		if (!(tab>=0 && tab<=4))
-			ControlInfo/W=microPanel tabMicroA
+			ControlInfo/W=microPanel tabMicroA		// start with tab "tab" in tabMicroB
 			tab = V_Value
-			if (tab<0)
+			if (tab<0)									// tab is negative (failed), so using tabMicroB
 				ControlInfo/W=microPanel tabMicroB
 				tab = V_Value
 			endif
@@ -147,7 +147,12 @@ Function MakeMicroPanel(tab)							// makes the main microPanel
 	tca.eventCode=2
 	tca.tab = tab
 	microGeo#microGeneralTabProc(tca)
-	SetWindow kwTopWin,hook(closeWin)=microGeo#microPanelHook	// used to save values if window is killed
+
+	if (IgorVersion() < 9)									// used to save values if window (actually sub-window) is killed
+		SetWindow kwTopWin,hook(closeWin)=microGeo#microPanelHook
+	else
+		SetWindow kwTopWin,hook(subwindowKill)=microGeo#microPanelHook
+	endif
 End
 //
 Static Function microGeneralTabProc(tca) : TabControl		// changes the panel for each tab when a tab is selected
@@ -507,7 +512,6 @@ End
 //	Sleep/B/S delay
 //	DoWindow/K testWindow
 //End
-
 
 // ==================================== End of micro Panel ====================================
 // ============================================================================================
@@ -4164,19 +4168,19 @@ End
 
 //	Function 			MakeGeometryParametersPanel(strStruct)							// entry used by a Menu
 //	Function/T			FillGeometryParametersPanel(strStruct,hostWin,left,top)	// the main entry, makes the controls
-//	Static Function	GeoDetectorPopMenuProc(pa) : PopupMenuControl
+//	Static Function		GeoDetectorPopMenuProc(pa) : PopupMenuControl
 //	Static Function/T	detectorPopMenuStr(g)					// re-make the string of detector names for detectorPopup
 //	Static Function 	UpDatePanelValuesFromStruct(win,iDetector)	// reads geoPanelStructStr and sets Panel values
 //	Static Function 	GeoPanelUsedCheckBoxProc(cba) : CheckBoxControl
 //	Static Function 	GeoKnifePopMenuProc(pa) : PopupMenuControl
 //	Static Function 	GeoPanelVarChangedProc(sva) : SetVariableControl
-//	Static Function	SetDetectorColor(sva.win,g,iDetector)
+//	Static Function		SetDetectorColor(sva.win,g,iDetector)
 //	Static Function 	GeoPanelDetectorDisable(win)			// Only enable/disable detector fields based on check box
-//	Function 			SetGeoPanelHook(s)						// provides for saving changed values if panel killed
+//	Function 				SetGeoPanelHook(s)						// provides for saving changed values if panel killed
 //	Static Function 	GeoPanelDirtyUpdate(win,dirty)		// change dirty global, and update buttons to reflect dirty status
 //	Static Function 	GeoSaveFilePopMenuProc(pa) : PopupMenuControl
 //	Static Function 	GeometryPanelButtonProc(B_Struct) : ButtonControl
-//	Function 			fileTime2EpochProto(fileTime,[UTC])
+//	Function 				fileTime2EpochProto(fileTime,[UTC])
 //	Static Function 	SetGeoStructFromPanelValues(g)		// set structure g the values in geoPanelStructStr
 //	
 //	============================================================================================
@@ -4199,7 +4203,11 @@ Function MakeGeometryParametersPanel(strStruct)
 	endif
 	NewPanel /K=1 /W=(675,60,895,653)
 	DoWindow/C GeometrySet
-	SetWindow kwTopWin,hook(closeWin)=microPanelHook	// used to save values if window is killed
+	if (IgorVersion() < 9)									// used to save values if window is killed
+		SetWindow kwTopWin,hook(closeWin)=microGeo#microPanelHook	
+	else
+		SetWindow kwTopWin,hook(subwindowKill)=microGeo#microPanelHook
+	endif
 	FillGeometryParametersPanel(strStruct,"GeometrySet",0,0)
 End
 //
@@ -4762,7 +4770,12 @@ Static Function GeometryPanelButtonProc(B_Struct) : ButtonControl
 	if (stringmatch(ctrlName,"buttonCancel"))		// close window, do not save numbers
 		GeoPanelDirtyUpdate(B_Struct.win,0)			// set dirty = 0
 		String win = StringFromLIst(0,WinList("*",";","WIN:64"))
-		SetWindow $win,hook(closeWin)= $""
+		if (IgorVersion() < 9)									// used to save values if window is killed
+			SetWindow $win,hook(closeWin) = $""
+		else
+			SetWindow kwTopWin,hook(kill) = $""
+			SetWindow kwTopWin,hook(subwindowKill) = $""
+		endif
 		DoWindow/K $win
 		return 0
 	elseif (stringmatch(ctrlName,"buttonSaveDefault"))

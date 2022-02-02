@@ -1,5 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method.
-#pragma version = 2.26
+#pragma version = 2.27
 #pragma IgorVersion = 6.3
 #pragma ModuleName=GMarkers
 #include "GizmoUtility", version>=2.15
@@ -1308,10 +1308,8 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	endif
 	M.wName = GetWavesDataFolder(scatter,2)
 	ControlInfo/W=$win MarkerNumberPopup
-	Variable i = strsearch(S_recreation, "value= #\"",0)
-	String list = S_recreation[i+11,Inf]
-	i = strsearch(list, "\"",0)
-	list = list[0,i-2]
+	String list = StringByKey("value", S_recreation, "=",",")
+	list = TrimBoth(list,chars=" #\"\r\n\\")
 	M.MarkerName = StringFromList(MarkerNum,list)
 	Variable point = NaN
 
@@ -1375,6 +1373,7 @@ Static Function GizmoMarkerInfo1(M,win,MarkerNum)
 	endif
 	if (WaveExists(RL))							// save the reciprocal lattice
 		Redimension/N=9 RL
+		Variable i
 		for (i=0;i<9;i+=1)
 			M.recip[i] = RL[i]
 		endfor

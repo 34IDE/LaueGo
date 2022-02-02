@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=EnergyScans
-#pragma version = 2.59
+#pragma version = 2.60
 
 // version 2.00 brings all of the Q-distributions in to one single routine whether depth or positioner
 // version 2.10 cleans out a lot of the old stuff left over from pre 2.00
@@ -19,6 +19,7 @@
 // version 2.56 Fixed bug in Fill_Q_Positions(), it now recalculates sinTheta array when the depth changes
 // version 2.58 fixed printing values with errors in textQ_fromWnote()
 // version 2.59 added more waves to reFitAllQdistributions(), improved MakeRGBforQdistribution() & fitOneQhist()
+// version 2.60 in QhistFromQpositions(), fixed error, had two "case 1:"
 
 #include "ImageDisplayScaling", version>=2.11
 #if (Exists("HDF5OpenFile")==4)
@@ -2334,7 +2335,7 @@ Function/WAVE QhistFromQpositions(source,i,j,k)		// from a Q_posiitions type arr
 				labelQ = SelectString(strlen(labelQ),labelY,labelQ)
 				wnote = ReplaceStringByKey("source_labelY",wnote,labelY,"=")
 			endif
-		case 1:
+		case 0:
 			if (strlen(labelX))
 				labelQ = SelectString(strlen(labelQ),labelX,labelQ)
 				wnote = ReplaceStringByKey("source_labelX",wnote,labelX,"=")
