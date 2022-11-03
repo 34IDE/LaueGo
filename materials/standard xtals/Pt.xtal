@@ -23,6 +23,24 @@
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<alphaT>8.9e-6</alphaT>			<!-- a = ao*(1+alphaT*(TempC-22.5)) -->
+		<T unit="C">20</T>
+		<thermalExpansion>
+			<Tpt unit="C">-100 -90 -80 -70 -60 -50 -40 -30 -20 -10 0 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180
+			190 200 210 220 230 240 250 260 270 280 290 300 310 320 330 340 350 360 370 380 390 400 410 420 430 440 450 460 470 480
+			490 500 510 520 530 540 550 560 570 580 590 600 610 620 630 640 650 660 670 680 690 700 710 720 730 740 750 760 770 780
+			790 800 810 820 830 840 850 860 870 880 890 900 910 920 930 940 950 960 970 980 990 1000</Tpt>
+			<dL_L>-0.0010451 -0.0009602 -0.00087485 -0.0007891 -0.00070294 -0.00061638 -0.00052943 -0.0004421 -0.0003544 -0.00026633
+			-0.0001779 -8.9124e-05 0 8.9463e-05 0.00017926 0.00026938 0.00035982 0.00045058 0.00054164 0.00063301 0.00072468
+			0.00081664 0.0009089 0.0010014 0.0010943 0.0011873 0.0012807 0.0013743 0.0014683 0.0015624 0.0016568 0.0017515
+			0.0018465 0.0019417 0.0020371 0.0021328 0.0022287 0.0023249 0.0024214 0.002518 0.0026149 0.0027121 0.0028095 0.0029071
+			0.003005 0.0031032 0.0032015 0.0033002 0.003399 0.0034981 0.0035975 0.0036971 0.0037969 0.003897 0.0039974 0.004098
+			0.0041989 0.0043 0.0044014 0.0045031 0.0046051 0.0047073 0.0048098 0.0049126 0.0050157 0.005119 0.0052227 0.0053267
+			0.005431 0.0055356 0.0056405 0.0057457 0.0058513 0.0059572 0.0060635 0.0061701 0.0062771 0.0063844 0.0064921 0.0066002
+			0.0067087 0.0068176 0.0069268 0.0070365 0.0071467 0.0072572 0.0073682 0.0074796 0.0075915 0.0077039 0.0078167 0.00793
+			0.0080439 0.0081582 0.0082731 0.0083885 0.0085044 0.0086209 0.0087379 0.0088556 0.0089738 0.0090926 0.009212 0.0093321
+			0.0094528 0.0095742 0.0096962 0.0098189 0.0099423 0.010066 0.010191</dL_L>
+		</thermalExpansion>
 		<formula_units>4</formula_units>
 	</cell>
 
@@ -34,7 +52,7 @@
 		<DebyeTemperature unit="K">240</DebyeTemperature>
 	</atom_site>
 
-	<citation>
+	<citation id="primary">
 		<title>Second edition. Interscience Publishers, New York, New York Cubic closest packed, ccp, structure</title>
 		<journal>Crystal Structures</journal>
 		<volume>1</volume>
@@ -42,4 +60,22 @@
 		<pages>7 83</pages>
 		<author>R.W.G. Wyckoff</author>
 	</citation>
+
+	<citation id="2">
+		<url>nvlpubs.nist.gov/nistpubs/jres/091/jresv91n6p333_A1b.pdf</url>
+		<title>Thermal Expansion of Platinum And Platinum-Rhodium Alloys</title>
+		<journal>Journal of Research of the National Bureau of Standards</journal>
+		<volume>91</volume>
+		<year>1986</year>
+		<pages>333 356</pages>
+		<author>R.E. Edsinger</author>
+		<author>M.L. Reilly</author>
+		<author>J.F. Schooley</author>
+	</citation>
 </cif>
+
+
+<!--
+	https://link.springer.com/article/10.1007/BF00534223
+	https://psec.uchicago.edu/thermal_coefficients/cte_metals_05517-90143.pdf
+-->

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-08-31T16:50:27.643Z</date>   <!-- Wednesday, August 31, 2022 at 11:50:27 AM Central Daylight Time -->
+	<chemical_name_common>LCMO</chemical_name_common>
+	<chemical_formula>(La⅔ Ca⅓) Mn O3</chemical_formula>
+	<database_code db="COD">1533310</database_code>
+
+	<space_group>
+		<id>62:cab</id>
+		<IT_number>62</IT_number>
+		<system>orthorhombic</system>
+		<H-M>P b n m</H-M>
+		<Hall>-P 2c 2ab</Hall>
+		<Schoenflies>D2h^16</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.54744</a>
+		<b unit="nm">0.54601</b>
+		<c unit="nm">0.77147</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>La</label>
+		<symbol>La</symbol>
+		<fract>0.997 0.018 1/4</fract>
+		<occupancy>2/3</occupancy>
+		<oxidation>3</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+	<atom_site>
+		<label>Ca</label>
+		<symbol>Ca</symbol>
+		<fract>0.997 0.018 1/4</fract>
+		<occupancy>1/3</occupancy>
+		<oxidation>2</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Mn</label>
+		<symbol>Mn</symbol>
+		<fract>1/2 0 0</fract>
+		<oxidation>3</oxidation>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O1</label>
+		<symbol>O</symbol>
+		<fract>0.053 0.496 1/4</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O2</label>
+		<symbol>O</symbol>
+		<fract>0.719 0.274 0.039</fract>
+		<oxidation>-2</oxidation>
+		<WyckoffSymbol>d</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Mn" n1="O2">0.194064 0.19949</bond_chemical>
+	<bond_chemical unit="nm" n0="Mn" n1="O1">0.19505</bond_chemical>
+	<!--<bond_chemical unit="nm" n0="La" n1="O2">0.241307 0.263053 0.278167</bond_chemical>
+	<bond_chemical unit="nm" n0="La" n1="O1">0.246641 0.262787 0.286661</bond_chemical> -->
+
+	<citation doi="10.1016/S0921-5107(02)00758-4">
+		<title>Possible origin of magnetic transition ordering in La⅔ A⅓ Mn O3 oxides</title>
+		<journal>Materials Science and Engineering B</journal>
+		<volume>98</volume>
+		<year>2003</year>
+		<pages>54 59</pages>
+		<author>Y.B. Zhang</author>
+		<author>W. Gao</author>
+		<author>S. Li</author>
+		<author>C.Q. Sun</author>
+	</citation>
+</cif>

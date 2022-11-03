@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-04-08T21:53:39.947Z</date>   <!-- Friday, April 8, 2022 at 4:53:39 PM Central Daylight Time -->
+	<chemical_name_common>Indium</chemical_name_common>
+	<chemical_formula>In</chemical_formula>
+	<database_code db="COD">2100456</database_code>
+
+	<space_group>
+		<id>139</id>
+		<IT_number>139</IT_number>
+		<system>tetragonal</system>
+		<H-M>I 4/m m m</H-M>
+		<Hall>-I 4 2</Hall>
+		<Schoenflies>D4h^17</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="Å">3.25094</a>
+		<b unit="Å">3.25094</b>
+		<c unit="Å">4.9474</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>2</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>In</label>
+		<symbol>In</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<Uiso unit="Å^2">0.063</Uiso>
+	</atom_site>
+
+	<bond_chemical unit="Å" n0="In" n1="In">3.25094</bond_chemical>
+
+	<citation doi="10.1107/S0108768106003314">
+		<title>Structure of Ce₂RhIn₈: an example of complementary use of high-resolution neutron powder diffraction and reciprocal-space mapping to study complex materials</title>
+		<journal>Acta Crystallographica Section B</journal>
+		<volume>62</volume>
+		<year>2006</year>
+		<pages>173 189</pages>
+		<author>E.G. Moshopoulou</author>
+		<author>R.M. Ibberson</author>
+		<author>J.L. Sarrao</author>
+		<author>J.D. Thompson</author>
+		<author>Z.Fisk</author>
+	</citation>
+</cif>

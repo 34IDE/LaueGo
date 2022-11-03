@@ -5,7 +5,8 @@
 	<date>2021-05-05T06:03:01.201Z</date>   <!-- Wednesday, May 5, 2021 at 1:03:01 AM Central Daylight Time -->
 	<chemical_name_common>Ice VII</chemical_name_common>
 	<chemical_formula>H2O</chemical_formula>
-	<database_code db="ICSD">31868</database_code>
+	<database_code db="amcsd">0018369</database_code>
+	<database_code db="COD">9016611</database_code>
 
 	<space_group>
 		<id>224:1</id>
@@ -47,7 +48,7 @@
 
 	<bond_chemical unit="nm" n0="O" n1="H">0.0971681</bond_chemical>
 
-	<citation>
+	<citation doi="10.1073/pnas.52.6.1433">
 		<title>Ice VII, the densest form of ice</title>
 		<journal>Proceedings of the National Academy of Sciences of the United States of America</journal>
 		<volume>52</volume>
@@ -57,4 +58,6 @@
 		<author>B. Kamb</author>
 		<author>B.L. Davis</author>
 	</citation>
+
+	<comment> from: Synthetic </comment>
 </cif>

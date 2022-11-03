@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-03-29T21:54:09.411Z</date>   <!-- Tuesday, March 29, 2022 at 4:54:09 PM Central Daylight Time -->
+	<chemical_name_common>Hawleyite</chemical_name_common>
+	<chemical_formula>CdS</chemical_formula>
+	<database_code db="COD">9008839</database_code>
+
+	<space_group>
+		<id>216</id>
+		<IT_number>216</IT_number>
+		<system>cubic</system>
+		<H-M>F -4 3 m</H-M>
+		<Hall>F -4 2 3</Hall>
+		<Schoenflies>Td^2</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.5818</a>
+		<b unit="nm">0.5818</b>
+		<c unit="nm">0.5818</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract>1/4 1/4 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Cd</label>
+		<symbol>Cd</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="S" n1="Cd">0.251927</bond_chemical>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York Note: ZnS structure, sphalerite structure</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>85 237</pages>
+		<author>R.W.G. Wyckoff</author>
+	</citation>
+</cif>

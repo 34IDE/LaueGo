@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-03-04T17:26:56.745Z</date>   <!-- Friday, March 4, 2022 at 11:26:56 AM Central Standard Time -->
+	<chemical_name_common>YIG</chemical_name_common>
+	<!-- <chemical_formula>Y3 Fe5 O12</chemical_formula> -->
+	<chemical_formula_structural>Y3 Fe2 (FeO4)3</chemical_formula_structural>
+	<database_code db="COD">2101364</database_code>
+
+	<space_group>
+		<id>230</id>
+		<IT_number>230</IT_number>
+		<system>cubic</system>
+		<H-M>I a -3 d</H-M>
+		<Hall>-I 4bd 2c 3</Hall>
+		<Schoenflies>Oh^10</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">1.2375</a>
+		<b unit="nm">1.2375</b>
+		<c unit="nm">1.2375</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>8</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Y_x</label>
+		<symbol>Y</symbol>
+		<fract>1/8 0 1/4</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Fe_y</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>3/8 0 1/4</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O</label>
+		<symbol>O</symbol>
+		<fract>0.9731 0.057 0.1501</fract>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Fe" n1="O">0.187074</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe_y" n1="O">0.20146</bond_chemical>
+
+	<citation doi="10.1107/S0108768194014813">
+		<title>Site Preference of Cations and Structural Variation in Y3 Fe(5-x) Ga(x) O12 (0 &lt; x &lt; 5) Solid Solutions with Garnet Structure</title>
+		<journal>Acta Crystallographica Section B</journal>
+		<volume>51</volume>
+		<year>1995</year>
+		<pages>737 745</pages>
+		<author>Akihiko Nakatsuka</author>
+		<author>Akira Yoshiasa</author>
+		<author>Setsuo Takeno</author>
+	</citation>
+</cif>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>Bragg Law</program>
+	<date>2022-04-08T05:02:29.629Z</date>   <!-- Friday, April 8, 2022 at 12:02:29 AM Central Daylight Time -->
+	<chemical_name_common>Chalcopyrite</chemical_name_common>
+	<chemical_formula>CuFeS2</chemical_formula>
+	<database_code db="COD">9007572</database_code>
+
+	<space_group>
+		<id>122</id>
+		<IT_number>122</IT_number>
+		<system>tetragonal</system>
+		<H-M>I -4 2 d</H-M>
+		<Hall>I -4 2bw</Hall>
+		<Schoenflies>D2d^12</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.5289</a>
+		<b unit="nm">0.5289</b>
+		<c unit="nm">1.0423</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>90</gamma>
+		<formula_units>4</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Fe</label>
+		<symbol>Fe</symbol>
+		<fract>0 0 1/2</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+		<U11 unit="Å^2">0.0117</U11>
+		<U22 unit="Å^2">0.0117</U22>
+		<U33 unit="Å^2">0.0118</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0</U23>
+	</atom_site>
+
+	<atom_site>
+		<label>S</label>
+		<symbol>S</symbol>
+		<fract>0.2574 1/4 1/8</fract>
+		<WyckoffSymbol>d</WyckoffSymbol>
+		<U11 unit="Å^2">0.0113</U11>
+		<U22 unit="Å^2">0.0132</U22>
+		<U33 unit="Å^2">0.0136</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0.0014</U23>
+	</atom_site>
+
+	<atom_site>
+		<label>Cu</label>
+		<symbol>Cu</symbol>
+		<fract>0 0 0</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+		<U11 unit="Å^2">0.0184</U11>
+		<U22 unit="Å^2">0.0184</U22>
+		<U33 unit="Å^2">0.0197</U33>
+		<U12 unit="Å^2">0</U12>
+		<U13 unit="Å^2">0</U13>
+		<U23 unit="Å^2">0</U23>
+	</atom_site>
+
+	<bond_chemical unit="nm" n0="Fe" n1="S">0.225659</bond_chemical>
+	<bond_chemical unit="nm" n0="S" n1="Cu">0.2302</bond_chemical>
+
+	<citation doi="10.1107/S0567740873002943">
+		<title>The crystal structure refinement of chalcopyrite, CuFeS2</title>
+		<journal>Acta Crystallographica, Section B</journal>
+		<volume>29</volume>
+		<year>1973</year>
+		<pages>579 585</pages>
+		<author>S.R. Hall</author>
+		<author>J.M. Stewart</author>
+	</citation>
+</cif>

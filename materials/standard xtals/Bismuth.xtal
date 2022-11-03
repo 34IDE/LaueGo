@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-01-25T17:27:52.865Z</date>   <!-- Tuesday, January 25, 2022 at 11:27:52 AM Central Standard Time -->
+	<chemical_name_common>Bismuth</chemical_name_common>
+	<chemical_formula>Bi</chemical_formula>
+	<database_code db="COD">9008576</database_code>
+
+	<space_group>
+		<id>166:R</id>
+		<IT_number>166</IT_number>
+		<system>trigonal</system>
+		<H-M>R -3 m:R</H-M>
+		<Hall>-P 3* 2</Hall>
+		<Schoenflies>D3d^5</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="nm">0.47459</a>
+		<b unit="nm">0.47459</b>
+		<c unit="nm">0.47459</c>
+		<alpha>57.237</alpha>
+		<beta>57.237</beta>
+		<gamma>57.237</gamma>
+		<formula_units>2</formula_units>
+	</cell>
+
+	<atom_site>
+		<label>Bi</label>
+		<symbol>Bi</symbol>
+		<fract>0.237 0.237 0.237</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<citation>
+		<title>Second edition. Interscience Publishers, New York, New York</title>
+		<journal>Crystal Structures</journal>
+		<volume>1</volume>
+		<year>1963</year>
+		<pages>7 83</pages>
+		<author>Wyckoff, R. W. G.</author>
+	</citation>
+</cif>

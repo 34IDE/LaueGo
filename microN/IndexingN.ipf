@@ -2,7 +2,7 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=Indexing
 #pragma IgorVersion = 6.2
-#pragma version = 5.05
+#pragma version = 5.06
 #include "LatticeSym", version>=6.28
 #include "microGeometryN", version>=1.98
 #include "Masking", version>1.04
@@ -3330,7 +3330,7 @@ Static Function/S runPeakSearchCommand(image,boxSize,maxRfactor,minSize,threshol
 	if (V_Flag || !V_isFile)							// could not find original image file, try to save this one from Igor
 		imageFile = ""
 #if (Exists("Write1HDF5imageFile")==6)
-		imageFile = Write1HDF5imageFile(image,mpath+"peakFitFile")	// write image to temporary file
+		imageFile = Write1HDF5imageFile(image,mpath+"peakFitFile.h5")	// write image to temporary file
 		deleteImage = strlen(imageFile)>1
 #endif
 	endif

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2022-07-20T19:15:58.996Z</date>   <!-- Wednesday, July 20, 2022 at 3:15:58 PM Eastern Daylight Time -->
+	<chemical_name_common>Boron(I) carbide</chemical_name_common>
+	<chemical_formula>B4C</chemical_formula>
+	<database_code db="ICSD">29093</database_code>
+
+	<space_group>
+		<id>166:H</id>
+		<IT_number>166</IT_number>
+		<system>trigonal</system>
+		<H-M>R -3 m:H</H-M>
+		<Hall>-R 3 2"</Hall>
+		<Schoenflies>D3d^5</Schoenflies>
+	</space_group>
+
+	<cell>
+		<a unit="Å">5.6003</a>
+		<b unit="Å">5.6003</b>
+		<c unit="Å">12.086</c>
+		<alpha>90</alpha>
+		<beta>90</beta>
+		<gamma>120</gamma>
+		<formula_units>3</formula_units>
+		<T unit="C">23.5</T>
+	</cell>
+
+	<atom_site>
+		<label>C1</label>
+		<symbol>C</symbol>
+		<fract>0 0 0.385</fract>
+		<WyckoffSymbol>c</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>B1</label>
+		<symbol>B</symbol>
+		<fract>0.8333 0.1667 0.36</fract>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>C2</label>
+		<symbol>C</symbol>
+		<fract>0 0 1/2</fract>
+		<WyckoffSymbol>b</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>B2</label>
+		<symbol>B</symbol>
+		<fract>0.894 0.106 0.113</fract>
+		<WyckoffSymbol>h</WyckoffSymbol>
+	</atom_site>
+
+	<citation id="primary">
+		<title>The crystal structure of boron carbide</title>
+		<journal>Journal of the American Chemical Society</journal>
+		<volume>65</volume>
+		<year>1943</year>
+		<pages>2115 2119</pages>
+		<ASTM>JACSAT</ASTM>
+		<author>Clark, H.K.</author>
+		<author>Hoard, J.L.</author>
+		<comment>used a=5.61Å,  c=12.14Å</comment>
+	</citation>
+
+	<citation id="2">
+		<journal>National Bureau of Standards Monograph 25 Section 21 - Data for 92 Substances</journal>
+		<title>Standard X-ray diffraction Powder Patterns</title>
+		<volume>25</volume>
+		<year>1985</year>
+		<pages>43</pages>
+	</citation>
+</cif>

@@ -3,6 +3,7 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Pigeonite</chemical_name_common>
 	<chemical_formula>(Mg.72Fe.28) (Fe.76Ca.18Mg.06) Si2 O6</chemical_formula>
+	<chemical_source>Isle of Mull, Scotland</chemical_source>
 	<database_code db="amcsd">0000209</database_code>
 
 	<space_group>
@@ -200,6 +201,5 @@
 		<pages>1195 1209</pages>
 		<author>N. Morimoto</author>
 		<author>N. Guven</author>
-		<comment>source: Isle of Mull, Scotland</comment>
 	</citation>
 </cif>

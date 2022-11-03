@@ -3,7 +3,9 @@
 <cif version="2" dim="3">
 	<chemical_name_common>Goethite</chemical_name_common>
 	<chemical_formula>FeO2H</chemical_formula>
+	<chemical_source>Park County, Colorado, USA</chemical_source>
 	<database_code db="amcsd">0010471</database_code>
+
 	<space_group>
 		<id>62:cab</id>
 		<IT_number>62</IT_number>
@@ -67,7 +69,6 @@
 	<bond_chemical unit="nm" n0="O-h2" n1="H">0.087306</bond_chemical>
 
 	<citation>
-		source: Park County, Colorado, USA
 		<author>H. Yangm</author>
 		<author>R.T. Downs</author>
 		<author>G. Costin</author>
