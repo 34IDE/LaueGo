@@ -339,9 +339,9 @@ if __name__ == '__main__':
 		imagePVroot = imagePVroot.rstrip(':')
 		imagePVroot += ':'
 	except:
-		print 'No pv name given for the image, '
-		print '  usage: getADimage.py 34idePE2:image1 [detination folder]'
-		print '     or: getADimage.py dp_pilatus3:image1 [detination folder]'
+		print('No pv name given for the image, ')
+		print('  usage: getADimage.py 34idePE2:image1 [detination folder]')
+		print('     or: getADimage.py dp_pilatus3:image1 [detination folder]')
 		raise NameError('No pv name given')
 
 	try:
@@ -369,7 +369,7 @@ if __name__ == '__main__':
 	#	print 'destFile = ',destFile
 
 	if socket.gethostname().find('.xray.aps.anl.gov') < 0:
-		print 'Using debug values'
+		print('Using debug values')
 		image = getImageDebug(imagePVroot)
 		pvValues = getAllPVsDebug(PVroot)
 	else:

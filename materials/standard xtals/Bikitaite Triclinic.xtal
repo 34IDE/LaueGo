@@ -146,16 +146,11 @@
 		<fract>0.5217 0.6345 0.9289</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
+
 	<atom_site>
 		<label>O17</label>
 		<symbol>O</symbol>
 		<fract>0.3951 0.2779 0.4472</fract>
-		<WyckoffSymbol>a</WyckoffSymbol>
-	</atom_site>
-	<atom_site>
-		<label>O27</label>
-		<symbol>O</symbol>
-		<fract>0.5634 0.7773 0.5357</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>
@@ -168,6 +163,13 @@
 		<label>H12</label>
 		<symbol>H</symbol>
 		<fract>0.4695 0.123 0.4807</fract>
+		<WyckoffSymbol>a</WyckoffSymbol>
+	</atom_site>
+
+	<atom_site>
+		<label>O27</label>
+		<symbol>O</symbol>
+		<fract>0.5634 0.7773 0.5357</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
 	<atom_site>

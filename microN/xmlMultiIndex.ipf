@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma ModuleName=multiIndex
-#pragma version=2.15
+#pragma version=2.19
 #include "microGeometryN", version>=1.15
 #include "LatticeSym", version>=4.32
 //#include "DepthResolvedQueryN"
@@ -1681,9 +1681,11 @@ Function DeviatoricStrainRefineXML_ALL(range,constrain,[coords,pattern])
 				break																//   and break out of loop
 			endif
 		endif
-		strainClass = StringBykey("waveClass",note(eWave),"=")
+
+		Wave eWave = $DeviatoricStrainRefineXML(m,pattern,constrain,coords=coords,xmlFileFull=xmlFileFull,printit=0)
 		if (WaveExists(eWave))
 			Wave eWave = $DeviatoricStrainRefineXML(m,pattern,constrain,coords=coords,xmlFileFull=xmlFileFull,printit=0)
+			strainClass = StringBykey("waveClass",note(eWave),"=")
 			ok += 1
 			epsilonN[][][j]  = eWave[p][q]
 			vonMisesN[j] = NumberByKey("vonMisesStrain", note(eWave),"=")
@@ -4117,14 +4119,14 @@ Function/T ProcessLoadedXMLfile(maxAngle,refType,[iref,Xoff,Yoff,Zoff,centerVolu
 	Make/N=(3,3)/D/FREE rl0, gmi, mat3, id33=p==q
 	Make/N=3/D/FREE vec3
 	String progressWin = ProgressPanelStart("",stop=1,showTime=1,status="starting")	// display a progress bar
-	if (refType==2 && (iref>=0 && iref<Nraw))		// a specific point was chosen as the reference
+	if (refType==2 && (iref>=0 && iref<Nraw))			// a specific point was chosen as the reference
 		gmi = gmRaw[p][q][iref]
 		if (useSymmetry)										// symmetry reduce this structure
 			angle = symReducedRecipLattice(std,id33,gmi,mat3)
 		else
 			MatrixOp/O/FREE mat3 = gmi x Inv(std)		// gmi = mat3 x std
 		endif
-		MatrixOp/O/FREE rl0 = mat3 x std				// reference reciprocal lattice
+		MatrixOp/O/FREE rl0 = mat3 x std					// reference reciprocal lattice
 
 	elseif (refType==1)										// find central orientation by averaging
 		Make/N=3/D/FREE vecCenter=0
@@ -4456,6 +4458,7 @@ Function Load3dRecipLatticesFileXML(FullFileName,[appendXML,printIt])
 	LatticeSym#ForceLatticeToStructure(xtal)	// mostly calling this to call reMakeAtomXYZs(xtal)
 	initSymmetryOperations()							// initialize all symmetry operations
 	Variable/G useSymmetry=strlen(LatticeSym#MakeSymmetryOps(xtal))>0	// make a wave with the symmetry operation
+//	MakeProperRotations(xtal)											// make the proper rotations for this xtal
 	Make/N=(3,3)/O/D stdLattice						// reciprocal lattice in standard orientation (used for sym reduction)
 	stdLattice[0][0] = xtal.as0 ;	stdLattice[0][1] = xtal.bs0 ;	stdLattice[0][2] = xtal.cs0
 	stdLattice[1][0] = xtal.as1 ;	stdLattice[1][1] = xtal.bs1 ;	stdLattice[1][2] = xtal.cs1
@@ -4756,7 +4759,7 @@ Static Function ValidRawXMLdataAvailable(fldr)	// returns true if fldr is the fo
 	endif
 	Variable i, N=DimSize($gm,2)
 
-	String wlist="depth;goodness;Nindexed;Xsample;Ysample;Zsample;imageNames;numAboveThreshold;rmsIndexed;sumAboveThreshold;totalSum"
+	String wlist="goodness;Nindexed;Xsample;Ysample;Zsample;imageNames;numAboveThreshold;rmsIndexed;sumAboveThreshold;totalSum"
 	for (i=0;i<ItemsInList(wlist);i+=1)
 		name = fldr + StringFromList(i,wlist)
 		if (!WaveInClass($name,"Random3dArrays*"))		// right type of wave

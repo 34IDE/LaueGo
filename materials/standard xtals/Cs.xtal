@@ -1,38 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <cif version="2" dim="3">
+	<program>BraggPanel</program>
+	<date>2023-11-16T20:31:57.172Z</date>   <!-- Thursday, November 16, 2023 at 2:31:57 PM Central Standard Time -->
 	<chemical_name_common>Cesium</chemical_name_common>
+	<chemical_formula>Cs</chemical_formula>
+	<database_code db="COD">9012722</database_code>
+	<database_code db="amcsd">0013140</database_code>
+
 	<space_group>
-		<id>229</id>
-		<IT_number>229</IT_number>
-		<H-M>Im-3m</H-M>
-		<Hall>-I 4 2 3</Hall>
+		<id>225</id>
+		<IT_number>225</IT_number>
+		<H-M>F m -3 m</H-M>
+		<Hall>-F 4 2 3</Hall>
 	</space_group>
+
 	<cell>
-		<a unit="nm">0.6141</a>
-		<b unit="nm">0.6141</b>
-		<c unit="nm">0.6141</c>
+		<a unit="nm">0.6465</a>
+		<b unit="nm">0.6465</b>
+		<c unit="nm">0.6465</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
+		<formula_units>4</formula_units>
 	</cell>
+
 	<atom_site>
 		<label>Cs</label>
 		<symbol>Cs</symbol>
 		<fract>0 0 0</fract>
 		<WyckoffSymbol>a</WyckoffSymbol>
 	</atom_site>
-	<bond_chemical unit="nm" n0="Cs" n1="Cs">0.532</bond_chemical>
+
 	<citation doi="10.1063/1.1675251">
-		rad = 0.26 nm -> dist = 0.2
-		<url>http://periodictable.com/Elements/055/data.html</url>
-		<author>C. E. Weir</author>
-		<author>G. J. Piermarini</author>
-		<author>S. Block</author>
-		<journal>J. Chem. Phys.</journal>
-		<year>1971</year>
+		<title>On the Crystal Structures of Cs II and Ga II Sample: at room T Note: known as cesium-II</title>
+		<journal>Journal of Physical Chemistry</journal>
 		<volume>54</volume>
+		<year>1971</year>
 		<pages>2768 2770</pages>
-		<title>On the Crystal Structures of Cs II and Ga II</title>
+		<author>C.E. Weir</author>
+		<author>G.J. Piermarini</author>
+		<author>S. Block</author>
 	</citation>
 </cif>

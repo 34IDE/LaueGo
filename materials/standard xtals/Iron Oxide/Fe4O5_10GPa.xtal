@@ -3,7 +3,7 @@
 <cif version="2" dim="3">
 	<program>BraggPanel</program>
 	<date>2020-12-18T17:37:02.598Z</date>   <!-- Friday, December 18, 2020 at 11:37:02 AM Central Standard Time -->
-	<chemical_name_common>Fe4 O5 ambient</chemical_name_common>
+	<chemical_name_common>Fe4 O5 high pressure</chemical_name_common>
 	<chemical_formula>Fe4 O5</chemical_formula>
 	<database_code db="amcsd">0018509</database_code>
 	<database_code db="COD">9014235</database_code>
@@ -18,78 +18,74 @@
 	</space_group>
 
 	<cell>
-		<a unit="nm">0.28933</a>
-		<b unit="nm">0.98092</b>
-		<c unit="nm">1.2583</c>
+		<a unit="nm">0.2843</a>
+		<b unit="nm">0.97</b>
+		<c unit="nm">1.229</c>
 		<alpha>90</alpha>
 		<beta>90</beta>
 		<gamma>90</gamma>
 		<formula_units>4</formula_units>
 		<T unit="K">298</T>
-		<P unit="atm">1</P>
+		<P unit="GPa">10</P>
 	</cell>
 
 	<atom_site>
 		<label>Fe1</label>
 		<symbol>Fe</symbol>
 		<fract>0 0 0</fract>
-		<oxidation>2</oxidation>
 		<WyckoffSymbol>a</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>2</oxidation>
 	</atom_site>
-
 	<atom_site>
 		<label>Fe2</label>
 		<symbol>Fe</symbol>
 		<fract>0 0.2616 0.1131</fract>
-		<oxidation>2</oxidation>
 		<WyckoffSymbol>f</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>2</oxidation>
 	</atom_site>
-
 	<atom_site>
 		<label>Fe3</label>
 		<symbol>Fe</symbol>
 		<fract>0 0.5048 1/4</fract>
-		<oxidation>2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>2</oxidation>
 	</atom_site>
-
 	<atom_site>
 		<label>O1</label>
 		<symbol>O</symbol>
 		<fract>0 0.158 1/4</fract>
-		<oxidation>-2</oxidation>
 		<WyckoffSymbol>c</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>-2</oxidation>
 	</atom_site>
-
 	<atom_site>
 		<label>O2</label>
 		<symbol>O</symbol>
 		<fract>0 0.365 0.55</fract>
-		<oxidation>-2</oxidation>
 		<WyckoffSymbol>f</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>-2</oxidation>
 	</atom_site>
-
 	<atom_site>
 		<label>O3</label>
 		<symbol>O</symbol>
 		<fract>0 0.085 0.643</fract>
-		<oxidation>-2</oxidation>
 		<WyckoffSymbol>f</WyckoffSymbol>
 		<Uiso unit="Å^2">0.02</Uiso>
+		<oxidation>-2</oxidation>
 	</atom_site>
 
-	<bond_chemical unit="nm" n0="Fe1" n1="O3">0.198316</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe2" n1="O1">0.200003</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe1" n1="O2">0.205967</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe2" n1="O2">0.206528</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe3" n1="O1">0.208593</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe2" n1="O3">0.212098</bond_chemical>
-	<bond_chemical unit="nm" n0="Fe3" n1="O3">0.216367</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O3">0.194126</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe2" n1="O1">0.195976</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe1" n1="O2">0.202807</bond_chemical>
+	<!-- <bond_chemical unit="nm" n0="Fe2" n1="O2">0.203226 0.224142</bond_chemical> -->
+	<bond_chemical unit="nm" n0="Fe2" n1="O2">0.203226</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe3" n1="O1">0.205645</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe2" n1="O3">0.20904</bond_chemical>
+	<bond_chemical unit="nm" n0="Fe3" n1="O3">0.212337</bond_chemical>
 
 	<citation doi="10.1073/pnas.1107573108">
 		<title>Discovery of the recoverable high-pressure iron oxide Fe4O5</title>

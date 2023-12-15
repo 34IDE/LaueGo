@@ -27,7 +27,7 @@ Menu "Analysis"
 			help = {"Load procedures for providing Cromer-Liberman"}
 			"Ion Chamber",Execute/P "INSERTINCLUDE  \"IonChamber\", version>=3.2";Execute/P "COMPILEPROCEDURES ";Execute/P "ionChamberInitPackage()"
 			help = {"Load procedures for evaluating ion chamber output"}
-			"Lattices",Execute/P "INSERTINCLUDE  \"LatticeSym\", version>=3.77";Execute/P "COMPILEPROCEDURES ";Execute/P "InitLatticeSymPackage(showPanel=1)"
+			"Lattice",Execute/P "INSERTINCLUDE  \"LatticeSym\", version>=3.77";Execute/P "COMPILEPROCEDURES ";Execute/P "InitLatticeSymPackage(showPanel=1)"
 			help = {"Load lattice symmetry procedures"}
 			"-"
 			"Neutron Scattering Data",Execute/P "INSERTINCLUDE  \"Neutron\", version>=1.1";Execute/P "COMPILEPROCEDURES ";Execute/P "NeutronDataInitPackage()"

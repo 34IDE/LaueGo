@@ -1,5 +1,5 @@
 #pragma rtGlobals=1		// Use modern global access method.
-#pragma version = 2.18
+#pragma version = 2.19
 #pragma ModuleName=ImageDisplayScaling
 //
 // Routines for rescaling the color table for images, by Jon Tischler, Oak Ridge National Lab
@@ -538,7 +538,7 @@ Function/T ReadGenericHeader(fName,[extras])
 	String extras					// optional switches
 	extras = SelectString(ParamIsDefault(extras),extras,"")
 	GetFileFolderInfo/Q /Z=1 fName							// check if file exists
-	if (!V_isFile || V_Flag)									// file not there
+	if (!V_isFile || V_Flag<0)								// file not there (positive V_Flag happens when file is remote)
 		return ""
 	endif
 

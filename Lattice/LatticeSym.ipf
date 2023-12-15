@@ -1,7 +1,7 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #pragma ModuleName=LatticeSym
-#pragma version = 7.35									// based on LatticeSym_6.55
+#pragma version = 7.36								// based on LatticeSym_6.55
 #include "Utility_JZT" version>=4.60
 #include "xtl_Locate"									// used to find the path to the materials files (only contains CrystalsAreHere() )
 
@@ -4384,20 +4384,28 @@ Static Function readCrystalStructureXML(xtal,fileName,[path])
 	String expansion = XMLtagContents("thermalExpansion",cell)
 	xtal.NL_L = 0
 	if (strlen(expansion)>1)
-		unit = StringByKey("unit", XMLattibutes2KeyList("T",expansion),"=")
+		unit = StringByKey("unit", XMLattibutes2KeyList("Tpt",expansion),"=")
 		unit = SelectString(strlen(unit),"K",unit)
-		Wave Ttemp = str2vec(XMLtagContents("T",expansion))
-		Wave dLtemp = str2vec(XMLtagContents("dL_L",expansion))
+		str = ReplaceCharacters("\t\r\n",XMLtagContents("Tpt",expansion)," ", noMults=1)
+		Wave Ttemp = str2vec(str)
+		str = ReplaceCharacters("\t\r\n",XMLtagContents("dL_L",expansion)," ", noMults=1)
+		Wave dLtemp = str2vec(str)
 		Variable NL_L = min(numpnts(dLtemp),MAX_NUM_EXPANSION)
 		Variable dL_OK = (NL_L > 1 && (numpnts(Ttemp) == NL_L))
 		WaveStats/Q/M=1 Ttemp
 		dL_OK = dL_OK && V_numNans==0 && V_numINFs==0
 		WaveStats/Q/M=1 dLtemp
 		dL_OK = dL_OK && V_numNans==0 && V_numINFs==0
-		dl_OK = dl_OK && monotonic(Ttemp)
+		dL_OK = dL_OK && monotonic(Ttemp)
+
+		Variable iex
+		for (iex=0;iex<MAX_NUM_EXPANSION;iex+=1)						// init to all NaN's
+			xtal.dL_L[iex] = NaN
+			xtal.dL_LT[iex] = NaN
+		endfor
+
 		if (dL_OK)
 			xtal.NL_L = NL_L
-			Variable iex
 			for (iex=0;iex<NL_L;iex+=1)
 				xtal.dL_L[iex] = dLtemp[iex]
 				xtal.dL_LT[iex] = ConvertTemperatureUnits(Ttemp[iex],unit,"K")	// always store T in Kelvin
@@ -4812,6 +4820,40 @@ Static Function/T crystalStructure2xml(xtal,NL,[symOp])	// convert contents of x
 		cif += "\t\t<alphaT>"+num2StrFull(alphaT)+"</alphaT>"
 		cif += "\t\t	<!-- a = ao*(1+alphaT*(TempC-20)) -->"+NL
 	endif
+
+	Variable iLT, NdLT = min(xtal.NL_L, MAX_NUM_EXPANSION)
+	if (NdLT > 2)											// wite the dL_L vs dL_LT table if present
+		cif += "\t\t<thermalExpansion>"
+		String line = "\t\t\t<Tpt unit=\"K\">"
+		for (iLT=0;iLT<NdLT;iLT+=1)
+			sprintf str, "%g", xtal.dL_LT[iLT]
+			if (iLT==0)
+				line += str 									// no leading space after leading <Tpt>
+			elseif ((strlen(str)+strlen(line))<131)	// line is short enough, append to existing line
+				line += " " + str
+			else												// line is too long, start a new line
+				cif += NL + line							// add full line to cif
+				line = "\t\t\t" + str						// beginning of a fresh line
+			endif
+		endfor
+		cif += NL + line + "</Tpt>"						// add the last line to cif
+
+		line = "\t\t\t<dL_L>"
+		for (iLT=0;iLT<NdLT;iLT+=1)
+			sprintf str, "%g", xtal.dL_L[iLT]
+			if (iLT==0)
+				line += str 									// no leading space after leading <dL_L>
+			elseif ((strlen(str)+strlen(line))<131)	// line is short enough, append to existing line
+				line += " " + str
+			else												// line is too long, start a new line
+				cif += NL + line							// add full line to cif
+				line = "\t\t\t" + str						// beginning of a fresh line
+			endif
+		endfor
+		cif += NL + line + "</dL_L>"						// add the last line to cif
+		cif += NL + "\t\t</thermalExpansion>"+NL
+	endif
+
 	if (numtype(xtal.Unconventional00)==0)
 		str="{"
 		str += "{"+num2StrFull(xtal.Unconventional00)+","+num2StrFull(xtal.Unconventional10)+","+num2StrFull(xtal.Unconventional20)+","+"}, "

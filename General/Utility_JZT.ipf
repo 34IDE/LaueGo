@@ -2,7 +2,7 @@
 #pragma TextEncoding = "MacRoman"
 #pragma ModuleName=JZTutil
 #pragma IgorVersion = 6.11
-#pragma version = 4.90
+#pragma version = 4.93
 // #pragma hide = 1
 
 Menu "Graph"
@@ -3187,6 +3187,26 @@ ThreadSafe Function isRotationMat(mat,[tol])	// true if mat is a rotation matrix
 	return (err[0]<tol)
 End
 
+ThreadSafe Function isIdentity(mat,[tol])		// returns true if mat is an identity matrix
+	Wave mat							// a square 2D array
+	Variable tol						// tolerance, uses default values when tol is bad
+	Variable n=DimSize(mat,0)
+
+	if (!WaveExists(mat))
+		return 0						// mat does not exist
+	elseif ((WaveDims(mat) != 2) || (n != DimSize(mat,1)))
+		return 0						// mat is not a square 2D array
+	endif
+
+	tol = ParamIsDefault(tol) || numtype(tol) || tol<=0 ? NaN : tol
+	if (numtype(tol))
+		tol = WaveType(mat) & 0x04 ? 1e-13 : 1e-6
+	endif
+
+	MatrixOP/FREE delta = sum(magSqr(mat - Identity(n)))
+	return (delta[0] < (tol*tol))	// use tol*tol since I used magSqr
+End
+
 
 // compute angle and axis of a rotation matrix
 // Aug 2, 2007, this was giving the wrong sign for the rotation, so I reversed the "curl" in defn of axis.  JZT
@@ -4401,9 +4421,10 @@ Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.
 End
 #elif (stringmatch(IgorInfo(2),"Macintosh"))
 Function/T sytemHostname()				// returns the full hostname as a string e.g. bob.xray.aps.anl.gov  (not ip address)
-	if (!stringmatch(StringByKey("OS",IgorInfo(3)),"Macintosh OS X"))
+	String OS = StringByKey("OS",IgorInfo(3))
+	if (!CmpStr(OS,"Macintosh OS X") && !CmpStr(OS,"macOS"))
 		DoAlert 0, "Only know how to get hostname from a Mac"
-		return ""								// cannot get answer
+		return ""							// cannot get answer
 	endif
 #if (IgorVersion()<7)
 	ExecuteScriptText "do shell script \"host $(hostname)\""		//returns something like:  "bob.xray.aps.anl.gov"
@@ -5093,7 +5114,7 @@ ThreadSafe Function/T vec2str(w1,[places,fmt,maxPrint,bare,zeroThresh,sep])		// 
 	endif
 
 	Duplicate/FREE w1, wInternal
-	if (numeric)
+	if (numeric && !waveIsComplex)
 		if (!zeroThresh || numtype(zeroThresh))
 			zeroThresh = DefaultZeroThresh(w1)
 		endif
@@ -5439,18 +5460,40 @@ End
 
 
 
-ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
+ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement, [noMults])
 	// replace all occurances of a character in chars[] with replacement
 	String chars			// look for each of the characters in chars
 	String inStr			// input string
 	String replacement	// replace every occurance of chars[i] with this
+	Variable noMults	// when true, change runs of replacement to a single replacement
+	noMults = ParamIsDefault(noMults) || numtype(noMults) ? 0 : noMults
 
 	Variable i, N=strlen(chars)
 	for (i=0;i<N;i+=1)
 		inStr = ReplaceString(chars[i],inStr,replacement)	
 	endfor
+
+	if (noMults)
+		String find = replacement + replacement
+		do
+			inStr = ReplaceString(find,inStr,replacement)	// replace all multiple replacement with a single replacement
+		while(strsearch(inStr,find,0)>=0)
+	endif
+
 	return inStr
 End
+//ThreadSafe Function/T ReplaceCharacters(chars,inStr,replacement)
+//	// replace all occurances of a character in chars[] with replacement
+//	String chars			// look for each of the characters in chars
+//	String inStr			// input string
+//	String replacement	// replace every occurance of chars[i] with this
+//
+//	Variable i, N=strlen(chars)
+//	for (i=0;i<N;i+=1)
+//		inStr = ReplaceString(chars[i],inStr,replacement)	
+//	endfor
+//	return inStr
+//End
 
 
 //  ====================================================================================  //

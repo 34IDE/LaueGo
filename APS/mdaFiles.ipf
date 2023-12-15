@@ -1,6 +1,6 @@
 #pragma rtGlobals=1		// Use modern global access method.
 #pragma IgorVersion = 6.11
-#pragma version = 1.15
+#pragma version = 1.16
 #pragma ModuleName=mdaAPS
 
 StrConstant mdaFilters = "Data Files (*.mda,*.MDA):.mda,.mda;All Files:.*;"
@@ -100,6 +100,7 @@ Static Function/T LoadMDAfile(inFile0)
 	Variable err=0
 	err = strsearch(S_value,"Traceback (most recent call last)",0)>=0
 	err = err || strsearch(S_value,"ERROR --",0)==0
+	err = err || strsearch(S_value,"No such file or directory",0)>0
 	if (err)
 		DoAlert 0, "failure in LoadMDAfile()"
 		print "\r\r"
@@ -158,7 +159,11 @@ Static Function isFile(path,name)		// returns TRUE if path & name is a file
 		name = S_path+name	// add the path to name
 	endif
 	GetFileFolderInfo/Q/Z=1 name
-	return V_isFile && (V_Flag==0)
+	if (StringMatch(name, "*:nfs:*"))
+		return V_isFile
+	else
+		return V_isFile && (V_Flag==0)
+	endif
 End
 #endif
 

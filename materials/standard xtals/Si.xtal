@@ -66,6 +66,6 @@
 		<year>2015</year>
 		<title>Thermal expansion coefficient of single-crystal silicon from 7 K to 293 K</title>
 		<url>https://arxiv.org/abs/1507.06822v1</url>
-		only used for dL/L(T) and alphaT
+		Only used for dL/L(T) and alphaT, min at 123 K.
 	</citation>
 </cif>
